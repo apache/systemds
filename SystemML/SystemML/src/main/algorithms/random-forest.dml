@@ -9,26 +9,30 @@
 #  
 # THIS SCRIPT IMPLEMENTS CLASSIFICATION RANDOM FOREST WITH BOTH SCALE AND CATEGORICAL FEATURES
 #
-# INPUT         PARAMETERS:
+# INPUT         		PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# NAME          TYPE     DEFAULT      MEANING
+# NAME          		TYPE     DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded 
-# Y 			String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
-# R   	  		String   " "	      Location to read the matrix R which for each feature in X contains the following information 
-#										- R[,1]: column ids
-#										- R[,2]: start indices 
-#										- R[,3]: end indices
-#									  If R is not provided by default all variables are assumed to be scale
-# bins          Int 	 20			  Number of equiheight bins per scale feature to choose thresholds
-# depth         Int 	 25			  Maximum depth of the learnt tree
-# num_leaf      Int      10           Number of samples when splitting stops and a leaf node is added
-# num_samples   Int 	 3000		  Number of samples at which point we switch to in-memory subtree building
-# num_trees     Int 	 10			  Number of trees used in the random forest model
-# impurity      String   "Gini"    	  Impurity measure: entropy or Gini (the default)
-# M             String 	 ---	   	  Location to write matrix M containing the learnt tree
-# O     		String   " "          Location to write the training accuracy; by default is standard output
-# fmt     	    String   "text"       The output format of the model (matrix M), such as "text" or "csv"
+# X             		String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded 
+# Y 					String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
+# R   	  				String   " "	      Location to read the matrix R which for each feature in X contains the following information 
+#												- R[,1]: column ids
+#												- R[,2]: start indices 
+#												- R[,3]: end indices
+#											  If R is not provided by default all variables are assumed to be scale
+# bins          		Int 	 20			  Number of equiheight bins per scale feature to choose thresholds
+# depth         		Int 	 25			  Maximum depth of the learnt tree
+# num_leaf      		Int      10           Number of samples when splitting stops and a leaf node is added
+# num_samples   		Int 	 3000		  Number of samples at which point we switch to in-memory subtree building
+# num_trees     		Int 	 10			  Number of trees used in the random forest model
+# subsamp_rate  		Double   1.0		  Parameter controlling the size of each tree in the forest; samples are selected from a 
+#											  Poisson distribution with parameter subsamp_rate (the default value is 1.0)
+# feature_subset    	Double   0.5    	  Number of feature used as candidates for splitting at each tree node as a power of features in dataset;
+#											  by default square root of features (i.e., feature_subset = 0.5) are used as each tree node 
+# impurity      		String   "Gini"    	  Impurity measure: entropy or Gini (the default)
+# M             		String 	 ---	   	  Location to write matrix M containing the learnt tree
+# C 					String   " "		  Location to write matrix C containing the number of times samples are chosen in each tree of the random forest 
+# fmt     	    		String   "text"       The output format of the model (matrix M), such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
 # Matrix M where each column corresponds to a node in the learnt tree and each row contains the following information:
@@ -45,28 +49,25 @@
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f random-forest.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/M
-#     				                 				   bins=20 depth=20 num_leaf=1 num_samples=3000 num_trees = 50 impurity=entropy fmtO=csv
+#     				                 				   bins=20 depth=20 num_leaf=1 num_samples=3000 num_trees = 50 impurity=entropy fmt=csv
 
 
-# udf for binning
+# External function for binning
 binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) return (Matrix[Double] B, Integer numbinsdef) 
 	implemented in (classname="com.ibm.bi.dml.udf.lib.BinningWrapper",exectype="mem")
 
-sample_poisson = externalFunction(Integer n) return (Matrix[Double] sample) 
-	implemented in (classname="com.ibm.bi.dml.udf.lib.PoissonWrapper",exectype="mem")
-
-sample_wr = externalFunction(Integer n, Integer k) return (Matrix[Double] sample) 
-	implemented in (classname="com.ibm.bi.dml.udf.lib.SampleWRWrapper",exectype="mem")
 	
 # Default values of some parameters	
-fileT = ifdef ($T, " ");	
-fileO = ifdef ($O, " ");
-num_bins = ifdef($bins, 5); # 20 
-depth = ifdef($depth, 20); # 25
-num_leaf = ifdef($leaf, 2); # 10
+fileR = ifdef ($R, " ");
+fileC = ifdef ($C, " ");	
+num_bins = ifdef($bins, 20); 
+depth = ifdef($depth, 25);
+num_leaf = ifdef($leaf, 10);
 num_trees = ifdef($trees, 1); 
-threshold = ifdef ($num_samples, 5); # 3000 
+threshold = ifdef ($num_samples, 3000);
 imp = ifdef($impurity, "Gini");
+rate = ifdef ($subsamp_rate, 1.0);
+fpow = ifdef ($feature_subset, 0.5);
 fmtO = ifdef($fmt, "text");
 
 X = read($X);
@@ -160,33 +161,57 @@ if (num_scale_features > 0) {
 	}
 }
 
+num_features_total = num_scale_features + num_cat_features;
+num_feature_samples = as.integer (floor (num_features_total ^ fpow));
 
 ##### INITIALIZATION
-L = matrix (1, rows = num_records, cols = num_trees); # last visited
+L = matrix (1, rows = num_records, cols = num_trees); # last visited node id for each training sample
 
 # create matrix of counts (generated by Poisson distribution) storing how many times each sample appears in each tree
 print ("CONPUTING COUNTS...");
-C = rand (rows = num_records, cols = num_trees, pdf = "poisson", mean = 1.0);
+C = rand (rows = num_records, cols = num_trees, pdf = "poisson", mean = rate);
 Ix_nonzero = ppred (C, 0, "!=");
 L = L * Ix_nonzero;
 total_counts = sum (C);
 
 
 # model
-# leaf nodes
-NC_large = matrix (0, rows = 4, cols = 1); # ids, class labels, no. of misclassified points at LARGE leaf nodes, tree id 
-NC_small = matrix (0, rows = 4, cols = 1); # ids, class labels, no. of misclassified points at SMALL leaf nodes, tree id (to be initialized) 
+# LARGE leaf nodes
+# NC_large[,1]: node id
+# NC_large[,2]: tree id
+# NC_large[,3]: class label
+# NC_large[,4]: no. of misclassified samples 
+# NC_large[,5]: 1 if special leaf (impure and 3 samples at that leaf > threshold) or 0 otherwise 
+NC_large = matrix (0, rows = 5, cols = 1); 
 
-# internal nodes
-Q_large = matrix (0, rows = 2, cols = num_trees); # ids of LARGE internal nodes, tree id 
+# SMALL leaf nodes 
+# same schema as for LARGE leaf nodes (to be initialized)
+NC_small = matrix (0, rows = 5, cols = 1); 
+
+# LARGE internal nodes
+# Q_large[,1]: node id
+# Q_large[,2]: tree id
+Q_large = matrix (0, rows = 2, cols = num_trees); 
 Q_large[1,] = matrix (1, rows = 1, cols = num_trees);
 Q_large[2,] = t (seq (1, num_trees));
-Q_small = matrix (0, rows = 2, cols = 1); # ids of SMALL internal nodes, tree id (to be initialized)
 
-F_large = matrix (0, rows = 3, cols = 1); # features, types, offsets for LARGE internal nodes
-F_small = matrix (0, rows = 3, cols = 1); # features, types, offsets for SMALL internal nodes
-S_large = matrix (0, rows = 1, cols = 1); # split points for LARGE internal nodes
-S_small = matrix (0, rows = 1, cols = 1); # split points for SMALL internal nodes
+# SMALL internal nodes
+# same schema as for LARGE internal nodes (to be initialized)
+Q_small = matrix (0, rows = 2, cols = 1); 
+
+# F_large[,1]: feature
+# F_large[,2]: type
+# F_large[,3]: offset 
+F_large = matrix (0, rows = 3, cols = 1);
+
+# same schema as for LARGE nodes
+F_small = matrix (0, rows = 3, cols = 1); 
+
+# split points for LARGE internal nodes
+S_large = matrix (0, rows = 1, cols = 1);
+
+# split points for SMALL internal nodes 
+S_small = matrix (0, rows = 1, cols = 1); 
 
 # initialize queue
 cur_nodes_large = matrix (1, rows = 2, cols = num_trees);
@@ -204,7 +229,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	##### PREPARE MODEL
 	if (num_cur_nodes_large > 0) { # LARGE nodes to process
 		cur_Q_large = matrix (0, rows = 2, cols = 2 * num_cur_nodes_large);
-		cur_NC_large = matrix (0, rows = 4, cols = 2 * num_cur_nodes_large); 
+		cur_NC_large = matrix (0, rows = 5, cols = 2 * num_cur_nodes_large); 
 		cur_F_large = matrix (0, rows = 3, cols = num_cur_nodes_large); 
 		cur_S_large = matrix (0, rows = 1, cols = num_cur_nodes_large * distinct_values_max); # split values of the best feature, worst case for cat. features
 		cur_nodes_small = matrix (0, rows = 3, cols = 2 * num_cur_nodes_large); 
@@ -457,7 +482,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			cur_impurity_left = as.scalar(impurity_left_scale[best_scale_split,]); # max_I_gain_ind_scale
 			cur_impurity_right = as.scalar(impurity_right_scale[best_scale_split,]); # max_I_gain_ind_scale
 			if ( (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth)) & 
-			   (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) ) { # both left and right nodes are leaf	
+			   (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) | 
+			   (left_child_size <= threshold & right_child_size <= threshold & (level == depth)) ) { # both left and right nodes are leaf	
 				
 				cur_label_counts_left = label_counts_left_scale[best_scale_split,]; # max_I_gain_ind_scale
 				cur_NC_large[1,(2 * (i6 - 1) + 1)] = left_child; 
@@ -475,7 +501,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				cur_NC_large[3,(2 * i6)] = right_child_size - max (cur_label_counts_right); 
 				cur_NC_large[4,(2 * i6)] = cur_tree;
 				
-			} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth)) {
+			} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth) | 
+					  (left_child_size <= threshold & (level == depth))) {	
 				
 				cur_label_counts_left = label_counts_left_scale[best_scale_split,]; # max_I_gain_ind_scale
 				cur_NC_large[1,(2 * (i6 - 1) + 1)] = left_child; 
@@ -485,7 +512,9 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				cur_NC_large[3,(2 * (i6 - 1) + 1)] = left_child_size - max (cur_label_counts_left);
 				cur_NC_large[4,(2 * (i6 - 1) + 1)] = cur_tree;
 				
-			} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) {
+			} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth) |
+					  (right_child_size <= threshold & (level == depth))) {
+					  
 				cur_label_counts_right = label_counts_right_scale[best_scale_split,]; # max_I_gain_ind_scale
 				cur_NC_large[1,(2 * i6)] = right_child; 
 				cur_NC_large[2,(2 * i6)] = as.scalar( rowIndexMax (cur_label_counts_right)); # leaf class label
@@ -528,7 +557,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			cur_impurity_left = as.scalar(impurities_left[,best_cat_feature]); 
 			cur_impurity_right = as.scalar(impurities_right[,best_cat_feature]); 
 			if ( (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth)) & 
-			   (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) ) { # both left and right nodes are leaf	
+			   (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) | 
+			   (left_child_size <= threshold & right_child_size <= threshold & (level == depth)) ) { # both left and right nodes are leaf	
 				
 				cur_label_counts_left = best_label_counts_left[best_cat_feature,];
 				cur_NC_large[1,(2 * (i6 - 1) + 1)] = left_child; 
@@ -546,7 +576,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				cur_NC_large[3,(2 * i6)] = right_child_size - max (cur_label_counts_right);
 				cur_NC_large[4,(2 * i6)] = cur_tree;				
 			
-			} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth)) {	
+			} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | (level == depth) |
+					  (left_child_size <= threshold & (level == depth))) {	
 				
 				cur_label_counts_left = best_label_counts_left[best_cat_feature,];
 				cur_NC_large[1,(2 * (i6 - 1) + 1)] = left_child; 
@@ -556,7 +587,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				cur_NC_large[3,(2 * (i6 - 1) + 1)] = left_child_size - max (cur_label_counts_left);	
 				cur_NC_large[4,(2 * (i6 - 1) + 1)] = cur_tree;				
 			
-			} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth)) {
+			} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | (level == depth) |
+					  (right_child_size <= threshold & (level == depth))) {
 				
 				cur_label_counts_right = best_label_counts_right[best_cat_feature,];
 				cur_NC_large[1,(2 * i6)] = right_child; 
@@ -576,7 +608,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			cur_NC_large[2,(2 * (i6 - 1) + 1)] = class_label;
 			cur_NC_large[3,(2 * (i6 - 1) + 1)] = label_sum_overall - class_label;
 			cur_NC_large[4,(2 * (i6 - 1) + 1)] = cur_tree;
-			
+			cur_NC_large[5,(2 * (i6 - 1) + 1)] = 1; # special leaf	
+						
 		}
 		
 		# add nodes to Q
@@ -634,7 +667,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		reserve_len = sum (2 ^ (ceil (log (cur_nodes_small_nonzero[2,]) / log (2))));
 		cur_Q_small =  matrix (0, rows = 2, cols = reserve_len);
 		cur_F_small = matrix (0, rows = 3, cols = reserve_len); 
-		cur_NC_small = matrix (0, rows = 4, cols = reserve_len); 
+		cur_NC_small = matrix (0, rows = 5, cols = reserve_len); 
 		cur_S_small = matrix (0, rows = 1, cols = reserve_len * distinct_values_max); # split values of the best feature	
 	}
 
@@ -669,7 +702,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		Q[1,1] = cur_node_small;
 		Q[2,1] = cur_tree_small;
 		F = matrix (0, rows = 3, cols = 1); 
-		NC = matrix (0, rows = 4, cols = 1); 
+		NC = matrix (0, rows = 5, cols = 1); 
 		S = matrix (0, rows = 1, cols = 1); 
 
 		cur_nodes_ = matrix (cur_node_small, rows = 2, cols = 1);
@@ -677,7 +710,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		cur_nodes_[2,1] = cur_tree_small;
 		
 		num_cur_nodes = 1;
-		level_ = level - 1;
+		level_ = level;
 		while (num_cur_nodes > 0 & level_ < depth) {
 			
 			level_ = level_ + 1;
@@ -685,7 +718,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				
 			cur_Q = matrix (0, rows = 2, cols = 2 * num_cur_nodes);
 			cur_F = matrix (0, rows = 3, cols = num_cur_nodes); 
-			cur_NC = matrix (0, rows = 4, cols = 2 * num_cur_nodes); 
+			cur_NC = matrix (0, rows = 5, cols = 2 * num_cur_nodes); 
 			cur_S = matrix (0, rows = 1, cols = num_cur_nodes * distinct_values_max);
 		
 			parfor (i8 in 1:num_cur_nodes, check = 0) { 
@@ -695,8 +728,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				# print ("    ---> Expanding SMALL node: " + cur_node + " in tree " + cur_tree);
 				
 				# select sample features WOR
-				# feature_samples = sample (num_features_total, num_feature_samples);
-				feature_samples = sample_wr (num_features_total, num_feature_samples);
+				feature_samples = sample (num_features_total, num_feature_samples);
 				feature_samples = order (target = feature_samples, by = 1);
 				num_scale_feature_samples = sum (ppred (feature_samples, num_scale_features, "<="));
 				num_cat_feature_samples = num_feature_samples - num_scale_feature_samples;
@@ -1055,6 +1087,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					cur_NC[2,(2 * (i8 - 1) + 1)] = class_label;
 					cur_NC[3,(2 * (i8 - 1) + 1)] = label_sum_overall - class_label;
 					cur_NC[4,(2 * (i8 - 1) + 1)] = cur_tree;
+					cur_NC[5,(2 * (i8 - 1) + 1)] = 1; # special leaf
 					
 				}
 			
@@ -1114,6 +1147,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 
 
 #### prepare model
+print ("PREPARING MODEL...")
 # large nodes
 if (as.scalar (Q_large[1,1]) == 0 & ncol (Q_large) > 1) {
 	Q_large = Q_large[,2:ncol (Q_large)];
@@ -1141,30 +1175,31 @@ if (as.scalar (F_small[1,1]) == 0 & ncol (F_small) > 1) {
 	F_small = F_small[,2:ncol (F_small)];
 }
 
-num_misclassified_per_tree_small = aggregate (target = t (NC_small[3,]), groups = t (NC_small[4,]), fn = "sum");
-num_misclassified_per_tree_large = aggregate (target = t (NC_large[3,]), groups = t (NC_large[4,]), fn = "sum");	
-
-num_misclassified_total = sum (num_misclassified_per_tree_small) + sum (num_misclassified_per_tree_large);
-accuracy = (1 - (num_misclassified_total / total_counts)) * 100;
-str_o = "no. of misclassified " + num_misclassified_total + " training accuracy " + accuracy + " %";
-if (fileO != " ") {
-	ACCURACY = matrix (accuracy, rows = 1, cols = 1);
-	write (str_o, fileO, format = "text")
-} else {
-	print (str_o);
+# check for special leaves and if there are any remove them from Q_large and Q_small 
+special_large_leaves_ind = NC_large[5,];
+if (sum (special_large_leaves_ind) > 0) {
+	print ("PROCESSING SPECIAL LARGE LEAVES...");
+	special_large_leaves = removeEmpty (target = NC_large[1,] * special_large_leaves_ind, margin = "cols");
+	large_internal_ind = 1 - colSums (outer (t (special_large_leaves), Q_large[1,], "=="));
+	Q_large = removeEmpty (target = Q_large * large_internal_ind, margin = "cols");
 }
-# training_accuracy = total_counts - num_misclassified_total;
-# print ("no.of misclassified total" + num_misclassified_total + " training accuracy " + ((1 - (num_misclassified_total / total_counts)) * 100) + " %");
+
+special_small_leaves_ind = NC_small[5,];
+if (sum (special_small_leaves_ind) > 0) {
+	print ("PROCESSING SPECIAL SMALL LEAVES...");
+	special_small_leaves = removeEmpty (target = NC_small[1,] * special_small_leaves_ind, margin = "cols");
+	small_internal_ind = 1 - colSums (outer (t (special_small_leaves), Q_small[1,], "=="));
+	Q_small = removeEmpty (target = Q_small * small_internal_ind, margin = "cols");
+}
 
 # model corresponding to large internal nodes
 no_large_internal_node = FALSE;
 if (as.scalar (Q_large[1,1]) != 0) {
 	num_large_internal = ncol (Q_large);
 	max_offset = max (max (F_large[3,]), max (F_small[3,]));
-	print ("max offset " + max_offset);
-	M1_large = matrix (0, rows = 5 + max_offset, cols = num_large_internal);
-	M1_large[1,] = Q_large;
-	M1_large[3:5,] = F_large;
+	M1_large = matrix (0, rows = 6 + max_offset, cols = num_large_internal);
+	M1_large[1:2,] = Q_large;
+	M1_large[4:6,] = F_large;
 	# process S_large
 	cum_offsets_large = cumsum (t (F_large[3,]));
 	parfor (it in 1:num_large_internal, check = 0) {
@@ -1173,7 +1208,7 @@ if (as.scalar (Q_large[1,1]) != 0) {
 			start_ind = start_ind + as.scalar (cum_offsets_large[(it - 1),]);
 		}
 		offset = as.scalar (F_large[3,it]);
-		M1_large[6:(6 + offset - 1),it] = t (S_large[1,start_ind:(start_ind + offset - 1)]); 
+		M1_large[7:(7 + offset - 1),it] = t (S_large[1,start_ind:(start_ind + offset - 1)]); 
 	}	
 } else {
 	print ("No LARGE internal nodes available");
@@ -1184,9 +1219,9 @@ if (as.scalar (Q_large[1,1]) != 0) {
 no_small_internal_node = FALSE;
 if (as.scalar (Q_small[1,1]) != 0) {
 	num_small_internal = ncol (Q_small);
-	M1_small = matrix (0, rows = 5 + max_offset, cols = num_small_internal);
-	M1_small[1,] = Q_small;
-	M1_small[3:5,] = F_small;
+	M1_small = matrix (0, rows = 6 + max_offset, cols = num_small_internal);
+	M1_small[1:2,] = Q_small;
+	M1_small[4:6,] = F_small;
 	# process S_small
 	cum_offsets_small = cumsum (t (F_small[3,]));
 	parfor (it in 1:num_small_internal, check = 0) {
@@ -1195,7 +1230,7 @@ if (as.scalar (Q_small[1,1]) != 0) {
 			start_ind = start_ind + as.scalar (cum_offsets_small[(it - 1),]);
 		}
 		offset = as.scalar (F_small[3,it]);
-		M1_small[6:(6 + offset - 1),it] = t (S_small[1,start_ind:(start_ind + offset - 1)]); 
+		M1_small[7:(7 + offset - 1),it] = t (S_small[1,start_ind:(start_ind + offset - 1)]); 
 	}
 } else {
 	print ("No SMALL internal nodes available");	
@@ -1206,10 +1241,9 @@ if (as.scalar (Q_small[1,1]) != 0) {
 no_large_leaf_node = FALSE;
 if (as.scalar (NC_large[1,1]) != 0) {
 	num_large_leaf = ncol (NC_large);
-	M2_large = matrix (0, rows = 5 + max_offset, cols = num_large_leaf);
-	M2_large[1,] = NC_large[1,];
-	M2_large[4,] = NC_large[2,];
-	M2_large[5,] = NC_large[3,];
+	M2_large = matrix (0, rows = 6 + max_offset, cols = num_large_leaf);
+	M2_large[1:2,] = NC_large[1:2,];
+	M2_large[5:7,] = NC_large[3:5,];
 } else {
 	print ("No LARGE leaf nodes available");
 	no_large_leaf_node = TRUE;
@@ -1219,10 +1253,9 @@ if (as.scalar (NC_large[1,1]) != 0) {
 no_small_leaf_node = FALSE;
 if (as.scalar (NC_small[1,1]) != 0) {
 	num_small_leaf = ncol (NC_small);
-	M2_small = matrix (0, rows = 5 + max_offset, cols = num_small_leaf);
-	M2_small[1,] = NC_small[1,];
-	M2_small[4,] = NC_small[2,];
-	M2_small[5,] = NC_small[3,];
+	M2_small = matrix (0, rows = 6 + max_offset, cols = num_small_leaf);
+	M2_small[1:2,] = NC_small[1:2,];
+	M2_small[5:7,] = NC_small[3:5,];
 } else {
 	print ("No SMALL leaf nodes available");
 	no_small_leaf_node = TRUE;
@@ -1245,26 +1278,57 @@ if (no_large_leaf_node) {
 }
 
 M = append (M1, M2);
-M = t (order (target = t (M), by = 1));
+M = t (order (target = t (M), by = 2)); # sort by tree id
+
+# count nodes per tree
+num_nodes_per_tree = aggregate (target = t (M[2,]), groups = t (M[2,]), fn = "count");
+num_nodes_per_tree_cum = cumsum (num_nodes_per_tree);
+
+parfor (it in 1:num_trees, check = 0) {
+	start_ind = 1;
+	if (it > 1) {
+		start_ind = start_ind + as.scalar (num_nodes_per_tree_cum[it - 1,]);
+	}
+	offset = as.scalar (num_nodes_per_tree_cum[it,]);
+	M_portion = M[,start_ind:offset];
+	M[,start_ind:offset] = t (order (target = t (M_portion), by = 1));
+}
 
 if (!no_large_internal_node) {
-	parfor (it in 1:ncol (Q_large), check = 0) {
-		a1 = as.scalar (Q_large[1,it]);
-		pos_a1 = sum (ppred (M[1,], a1, "<="));
+	parfor (it in 1:ncol (Q_large), check = 0) { # iterate over LARGE internal nodes
+		a1 = as.scalar (Q_large[1,it]);		
+		t1 = as.scalar (Q_large[2,it]);
+		start_ind = 1;
+		if (t1 > 1) {
+			start_ind = start_ind + as.scalar (num_nodes_per_tree_cum[t1 - 1,]);
+		}
+		offset = as.scalar (num_nodes_per_tree_cum[t1,]);		
+		M_portion = M[,start_ind:offset];		
+		pos_a1 = as.scalar (rowIndexMax (ppred (M_portion[1,], a1, "==")));
 		a2 = 2 * a1;
-		pos_a2 = sum (ppred (M[1,], a2, "<="));
-		M[2,pos_a1] = pos_a2 - pos_a1;
+		pos_a2 = as.scalar (rowIndexMax (ppred (M_portion[1,], a2, "==")));
+		M[3,(start_ind + pos_a1 - 1)] = pos_a2 - pos_a1;
 	}
 }
 
 if (!no_small_internal_node) {
-	parfor (it2 in 1:ncol (Q_small), check = 0) {
-		b1 = as.scalar (Q_small[1,it2]);
-		pos_b1 = sum (ppred (M[1,], b1, "<="));
-		b2 = 2 * b1;
-		pos_b2 = sum (ppred (M[1,], b2, "<="));
-		M[2,pos_b1] = pos_b2 - pos_b1;
+	parfor (it in 1:ncol (Q_small), check = 0) { # iterate over SMALL internal nodes
+		a1 = as.scalar (Q_small[1,it]);		
+		t1 = as.scalar (Q_small[2,it]);
+		start_ind = 1;
+		if (t1 > 1) {
+			start_ind = start_ind + as.scalar (num_nodes_per_tree_cum[t1 - 1,]);
+		}
+		offset = as.scalar (num_nodes_per_tree_cum[t1,]);
+		M_portion = M[,start_ind:offset];		
+		pos_a1 = as.scalar (rowIndexMax (ppred (M_portion[1,], a1, "==")));
+		a2 = 2 * a1;
+		pos_a2 = as.scalar (rowIndexMax (ppred (M_portion[1,], a2, "==")));
+		M[3,(start_ind + pos_a1 - 1)] = pos_a2 - pos_a1;
 	}
 }
 
+if (fileC != " ") {
+	write (C, fileC, format = fmtO);
+}
 write (M, fileM, format = fmtO);

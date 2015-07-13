@@ -20,7 +20,7 @@
 #								 - X[,2]: whether an event occurred (1) or data is censored (0)
 #								 - X[,3:]: feature vectors 	
 # TE	  String   ---          Column indices of X as a column vector which contain timestamp (first row) and event information (second row)
-# F 	  String   ---			Column indices of X as a column vector which are to be used for fitting the Cox model
+# F 	  String   " "			Column indices of X as a column vector which are to be used for fitting the Cox model
 # R   	  String   " "	        If factors (categorical variables) are available in the input matrix X, location to read the matrix R containing 
 #								the start and end indices of the factors in X
 #								 - R[,1]: start indices
@@ -77,16 +77,17 @@
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f cox.dml -nvargs X=INPUT_DIR/X F=INPUT_DIR/F M=OUTPUT_DIR/M S=OUTPUT_DIR/S 
 #									  T=OUTPUT_DIR/T COV=OUTPUT_DIR/COV RT=OUTPUT_DIR/RT XO=OUTPUT_DIR/XO 
-#									  MF=OUTPUT/MF alpha=0.01 tol=0.000001 moi=100 mii=20 fmtO=csv
+#									  MF=OUTPUT/MF alpha=0.01 tol=0.000001 moi=100 mii=20 fmt=csv
 
 fileX = $X;
 fileTE = $TE;
-fileF = $F;
+fileRT = $RT;
 fileM = $M;
 fileXO = $XO;
 fileCOV = $COV;
 
 # Default values of some parameters
+fileF = ifdef ($F, " ");			 # $F=" "
 fileR = ifdef ($R, " ");         	 # $R=" " 
 fileS = ifdef ($S, " ");         	 # $S=" " 
 fileT = ifdef ($T, " ");         	 # $T=" " 
@@ -101,32 +102,39 @@ maxinneriter = ifdef ($mii, 0);      # $mii=0;
 X_orig = read (fileX);
 
 TE = read (fileTE);
-F = read (fileF);
-TE_F = t (append (t (TE), t (F)));
 
 ######## CHECK FOR FACTORS AND REMOVE THE BASELINE OF EACH FACTOR FROM THE DATASET
 
-if (fileR != " ") { # factors available
+if (fileR != " " & fileF != " ") { # factors available
 	R = read (fileR);
+	F = read (fileF);
 	if (ncol (R) != 2) {
 		stop ("Matrix R has wrong dimensions!");
 	}
 	print ("REMOVING BASLINE LEVEL OF EACH FACTOR...");	
 	# identify baseline columns to be removed from X_orig
 	col_sum = colSums (X_orig);
+	col_seq = t (seq(1, ncol (X_orig)));
 	parfor (i in 1:nrow (R), check = 0) {
 		start_ind = as.scalar (R[i,1]);
 		end_ind = as.scalar (R[i,2]);
 		baseline_ind = as.scalar (rowIndexMax (col_sum[1, start_ind:end_ind])) + start_ind - 1;
-		TE_F[baseline_ind,] = 0;
+		col_seq[,baseline_ind] = 0;
 	}
-	TE_F = removeEmpty (target = TE_F, margin = "rows");
+	ones = matrix (1, rows = nrow (F), cols = 1);
+	F_filter = table (ones, F, 1, ncol (X_orig));
+	F_filter = removeEmpty (target = F_filter * col_seq, margin = "cols");
+	TE_F = t(append (t (TE), F_Filter));
 	if (fileMF != " ") {
-		write (TE_F, fileMF, fmtO);
+		write (TE_F, fileMF, format = fmtO);
 	} else {
 		stop ("Please provide argument MF!");
 	}	
-} 
+} else if( fileF != " " ) { # all features scale
+	TE_F = t(append (t (TE), t(F)));
+} else { # no features available 
+	TE_F = TE;
+}
 
 X_orig = X_orig %*% table (TE_F, seq (1, nrow (TE_F)), ncol (X_orig), nrow (TE_F));
 
@@ -151,10 +159,7 @@ if (N == 1) {
 		RT = matrix (1, rows = N, cols = 1);
 	}
 }
-E = X_orig[,2];
-X = X_orig[,3:ncol(X_orig)];
-D = ncol (X);
-
+E = X_orig[,2]; 
 
 print ("BEGIN COX PROPORTIONAL HAZARD SCRIPT");
 
@@ -176,14 +181,16 @@ print ("BEGIN COX PROPORTIONAL HAZARD SCRIPT");
 #  j: inner (CG) iteration count
 
 # computing initial coefficients b (all initialized to 0)
-zeros_D = matrix (0, rows = D, cols = 1);
-b = zeros_D; 
+if (ncol (X_orig) > 2) {
+	X = X_orig[,3:ncol(X_orig)];
+	D = ncol (X);
+	zeros_D = matrix (0, rows = D, cols = 1);
+	b = zeros_D; 
+}
 d_r = aggregate (target = E, groups = RT, fn = "sum"); 
 e_r = aggregate (target = RT, groups = RT, fn = "count");
 
 # computing initial loss function value o
-if (TRUE) {
-}
 num_distinct = nrow (d_r); # no. of distinct timestamps
 I_rev = table (seq (1, num_distinct, 1), seq (num_distinct, 1, -1)); 
 I_rev_all = table (seq (1, N, 1), seq (N, 1, -1));
@@ -191,6 +198,16 @@ e_r_rev_agg = cumsum (I_rev %*% e_r);
 d_r_rev = I_rev %*% d_r;
 o = sum (d_r_rev * log (e_r_rev_agg));
 o_init = o;
+if (ncol (X_orig) < 3) {
+	loglik = -o;
+	S_str = append (S_str, "loglik " + loglik + " ");
+	if (fileS != " ") {
+		write (S_str, fileS, format = fmtO);
+	} else {
+		print (S_str);
+	}
+	stop ("No features are selected!");
+}
 
 # computing initial gradient g 
 # part 1 g0_1
@@ -361,9 +378,8 @@ CI_l = b - se_b * z_alpha_2;
 CI_r = b - se_b + z_alpha_2;
 
 ######## SOME STATISTICS AND TESTS
-S_str = "";
 # no. of records
-S_str = append (S_str, "no. of records " + N);
+S_str = "no. of records " + N;
 
 # no.of events
 S_str = append (S_str, "no. of events " + sum (E));
@@ -376,11 +392,10 @@ S_str = append (S_str, "loglik " + loglik + " ");
 AIC = -2 * loglik + 2 * D;
 S_str = append (S_str, "AIC " + AIC + " ");
 
-T_str = "";
 # Wald test
 wald_t = as.scalar (t(b) %*% H %*% b);
 wald_p = 1 - cdf (target = wald_t, dist = "chisq", df = D);
-T_str = append (T_str, "Wald test = " + wald_t + " on " + D + " df, p = " + wald_p + " ");
+T_str = "Wald test = " + wald_t + " on " + D + " df, p = " + wald_p + " ";
 
 # Likelihood ratio test
 lratio_t = 2 * o_init - 2 * o;
@@ -433,21 +448,21 @@ M[,5] = P;
 M[,6] = CI_l;
 M[,7] = CI_r;
 
-write (M, fileM, fmtO);
+write (M, fileM, format = fmtO);
 if (fileS != " ") {
-	write (S_str, fileS);
+	write (S_str, fileS, format = fmtO);
 } else {
 	print (S_str);
 }
 if (fileT != " ") {
-	write (T_str, fileT);
+	write (T_str, fileT, format = fmtO);
 } else {
 	print (T_str);
 }
 # needed for prediction
-write (RT, fileRT, fmtO);
-write (H_inv, fileCOV, fmtO);
-write (X_orig, fileXO, fmtO);
+write (RT, fileRT, format = fmtO);
+write (H_inv, fileCOV, format = fmtO);
+write (X_orig, fileXO, format = fmtO);
 
 
 ####### UDFS FOR TRUST REGION NEWTON METHOD

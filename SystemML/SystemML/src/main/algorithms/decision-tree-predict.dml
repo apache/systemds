@@ -101,8 +101,6 @@ parfor (i in 1:num_records, check = 0) {
 				cur_value = as.scalar (rowIndexMax(cur_sample[,cur_start_ind:cur_end_ind])); # as.scalar (cur_sample[,cur_feature]);
 				cur_offset = as.scalar (M[5,cur_node]);
 				value_found = sum (ppred (M[6:(6 + cur_offset - 1),cur_node], cur_value, "=="));
-				print ("find " + cur_value);
-				success = print_result (M[6:(6 + cur_offset - 1),cur_node]);
 				if (value_found) { # go to left branch
 					cur_node = cur_node + as.scalar (M[2,cur_node]);
 				} else { # go to right branch

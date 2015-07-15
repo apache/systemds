@@ -10,6 +10,8 @@ package com.ibm.bi.dml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.BinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
@@ -610,8 +612,23 @@ public class HopRewriteUtils
 				&& hop1.getDim2() == hop2.getDim2());
 	}
 	
+	/**
+	 * Checks our BLOCKSIZE CONSTRAINT, w/ awareness of forced single node
+	 * execution mode.
+	 * 
+	 * @param hop
+	 * @param cols
+	 * @return
+	 */
 	public static boolean isSingleBlock( Hop hop, boolean cols )
 	{
+		//awareness of forced exec single node (e.g., standalone), where we can 
+		//guarantee a single block independent of the size because always in CP.
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+			return true;
+		}
+		
+		//check row- or column-wise single block constraint 
 		return cols ? (hop.getDim2()>0 && hop.getDim2()<=hop.getColsInBlock())
 				    : (hop.getDim1()>0 && hop.getDim1()<=hop.getRowsInBlock());
 	}

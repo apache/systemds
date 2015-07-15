@@ -23,6 +23,7 @@ import com.ibm.bi.dml.hops.recompile.Recompiler;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.parser.DMLProgram;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
@@ -48,6 +49,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MMTSJCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.StringInitCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.UnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
@@ -334,7 +336,12 @@ public abstract class CostEstimator
 				String varname2 = parts[2];
 				VarStats vs = stats.get(varname);
 				stats.put(varname2, vs);
-				//System.out.println(varname2+" "+vs);
+			}
+			else if ( optype.equals("mvvar") ) {
+				String varname = parts[1];
+				String varname2 = parts[2];
+				VarStats vs = stats.remove(varname);
+				stats.put(varname2, vs);
 			}
 			else if( optype.equals("rmvar") ) {
 				String varname = parts[1];
@@ -351,7 +358,14 @@ public abstract class CostEstimator
 			long nnz = (long) (randInst.getSparsity() * rlen * clen);
 			VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, true);
 			stats.put(varname, vs);
-			//System.out.println(varname+" "+vs);
+		}
+		else if( inst instanceof StringInitCPInstruction ){
+			StringInitCPInstruction iinst = (StringInitCPInstruction) inst;
+			String varname = iinst.output.getName();
+			long rlen = iinst.getRows();
+			long clen = iinst.getCols();
+			VarStats vs = new VarStats(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, rlen*clen, true);
+			stats.put(varname, vs);	
 		}
 		else if( inst instanceof FunctionCallCPInstruction )
 		{
@@ -517,6 +531,13 @@ public abstract class CostEstimator
 				else if( rinst.getSparsity() == 1.0 && rinst.getMinValue() == rinst.getMaxValue() )
 					type = 1;
 				attr = new String[]{String.valueOf(type)};
+			}
+			else if( inst instanceof StringInitCPInstruction )
+			{
+				StringInitCPInstruction rinst = (StringInitCPInstruction) inst;
+				vs[0] = _unknownStats;
+				vs[1] = _unknownStats;
+				vs[2] = stats.get( rinst.output.getName() );
 			}
 			else //general unary
 			{

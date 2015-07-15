@@ -53,6 +53,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.RemoveEmptyMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
@@ -337,14 +338,19 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			vs[1] = _unknownStats;
 			vs[2] = stats[Integer.parseInt(parts[2])];
 			
-			double minValue = Double.parseDouble(parts[7]);
-			double maxValue = Double.parseDouble(parts[8]);
-			double sparsity = Double.parseDouble(parts[9]);
 			int type = 2; 
-			if( minValue == 0.0 && maxValue == 0.0 )
-				type = 0;
-			else if( sparsity == 1.0 && minValue == maxValue )
-				type = 1;
+			//awareness of instruction patching min/max
+			if(    !parts[7].contains(Lop.VARIABLE_NAME_PLACEHOLDER) 
+				&& !parts[8].contains(Lop.VARIABLE_NAME_PLACEHOLDER) )
+			{
+				double minValue = Double.parseDouble(parts[7]);
+				double maxValue = Double.parseDouble(parts[8]);
+				double sparsity = Double.parseDouble(parts[9]);
+				if( minValue == 0.0 && maxValue == 0.0 )
+					type = 0;
+				else if( sparsity == 1.0 && minValue == maxValue )
+					type = 1;
+			}
 			attr = new String[]{String.valueOf(type)};
 		}	
 		if( opcode.equals(DataGen.SEQ_OPCODE) )
@@ -404,6 +410,11 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					vs[1] = _scalarStats;
 				if( vs[2] == null ) //scalar output
 					vs[2] = _scalarStats;
+				
+				if( opcode.equals("rmempty") ) {
+					RemoveEmptyMRInstruction rbinst = (RemoveEmptyMRInstruction) mrinst;
+					attr = new String[]{rbinst.isRemoveRows()?"0":"1"};
+				}
 			}
 			else if( mrinst instanceof TernaryInstruction )
 			{
@@ -1073,6 +1084,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					else //seq
 						return d3m * d3n * DEFAULT_NFLOP_CP;
 				
+				case StringInit: //sinit
+					return d3m * d3n * DEFAULT_NFLOP_CP;
+					
 				case External: //opcodes: extfunct
 					//note: should be invoked independently for multiple outputs
 					return d1m * d1n * d1s * DEFAULT_NFLOP_UNKNOWN;

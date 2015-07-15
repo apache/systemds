@@ -41,6 +41,14 @@ public class StringInitCPInstruction extends UnaryCPInstruction
 		_data = data;
 	}
 
+	public long getRows() {
+		return _rlen;
+	}
+	
+	public long getCols() {
+		return _clen;
+	}
+	
 	/**
 	 * 
 	 * @param str

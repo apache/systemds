@@ -24,7 +24,7 @@ public abstract class MRInstruction extends Instruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public enum MRINSTRUCTION_TYPE { INVALID, Append, Aggregate, ArithmeticBinary, AggregateBinary, AggregateUnary, 
-		Rand, Seq, CSVReblock, CSVWrite,
+		Rand, Seq, CSVReblock, CSVWrite, Transform,
 		Reblock, Reorg, Replicate, Unary, CombineBinary, CombineUnary, CombineTernary, PickByCount, Partition,
 		Ternary, Quaternary, CM_N_COV, Combine, GroupedAggregate, RangeReIndex, ZeroOut, MMTSJ, PMMJ, MatrixReshape, ParameterizedBuiltin, Sort, MapMultChain,
 		CumsumAggregate, CumsumSplit, CumsumOffset, BinUaggChain, RemoveEmpty}; 

@@ -18,12 +18,12 @@ import com.ibm.bi.dml.runtime.functionobjects.OffsetColumnIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class AppendMSPInstruction extends BinarySPInstruction
 {
@@ -103,7 +103,7 @@ public class AppendMSPInstruction extends BinarySPInstruction
 			}
 			
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			Broadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( input2.getName() );
+			Broadcast<PartitionedMatrixBlock> in2 = sec.getBroadcastForVariable( input2.getName() );
 			
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.flatMapToPair(
 					new MapSideAppend(in2, mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
@@ -122,14 +122,14 @@ public class AppendMSPInstruction extends BinarySPInstruction
 	public static class MapSideAppend implements  PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> {
 
 		private static final long serialVersionUID = 2738541014432173450L;
-		private Broadcast<MatrixBlock> binput = null;
+		private Broadcast<PartitionedMatrixBlock> pm = null;
 		long left_rlen; long left_clen; int left_brlen; int left_bclen;
 		//long right_rlen; long right_clen; int right_brlen; int right_bclen;
 		long rightMostBlockIndex;
 		
-		public MapSideAppend(Broadcast<MatrixBlock> binput, 
+		public MapSideAppend(Broadcast<PartitionedMatrixBlock> binput, 
 				long left_rlen, long left_clen, int left_brlen, int left_bclen)  {
-			this.binput = binput;
+			pm = binput;
 			this.left_rlen = left_rlen; this.left_clen = left_clen;
 			this.left_brlen = left_brlen; this.left_bclen = left_bclen;
 			
@@ -137,20 +137,12 @@ public class AppendMSPInstruction extends BinarySPInstruction
 			
 		}
 		
-		private MatrixBlock getRHSBlock(Tuple2<MatrixIndexes, MatrixBlock> kv) throws DMLRuntimeException, DMLUnsupportedOperationException {
-			MatrixBlock rhsMatBlock = binput.getValue();
-			long rowLower = UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), left_brlen, 0);
-			long rowUpper = UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), left_brlen, kv._2.getNumRows()-1);
-			MatrixBlock slicedRhsMatBlock = rhsMatBlock.sliceOperations(rowLower, rowUpper, 1, rhsMatBlock.getNumColumns(), new MatrixBlock());
-			return slicedRhsMatBlock;
-		}
-		
 		@Override
 		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
 			if(kv._1.getColumnIndex() == rightMostBlockIndex) {
 				MatrixBlock lhsMatrixBlock = kv._2;
-				MatrixBlock rhsMatBlock = getRHSBlock(kv);
+				MatrixBlock rhsMatBlock = pm.value().getMatrixBlock((int)kv._1.getRowIndex(), 1);
 				
 				if(lhsMatrixBlock.getNumColumns() == left_bclen) {
 					// No need to perform append

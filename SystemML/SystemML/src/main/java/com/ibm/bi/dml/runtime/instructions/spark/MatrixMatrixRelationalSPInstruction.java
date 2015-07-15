@@ -15,13 +15,13 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -104,7 +104,7 @@ public class MatrixMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 					}
 					
 					JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-					Broadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
+					Broadcast<PartitionedMatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
 					out = in1.mapToPair(new RDDMatrixVectorRelationalFunction(isBroadcastRHSVar, isColumnVectorOperation, in2, bop, rddMC.getRowsPerBlock(), rddMC.getColsPerBlock(), rddMC.getRows(), rddMC.getCols()));
 				}
 				
@@ -172,71 +172,42 @@ public class MatrixMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 		private BinaryOperator op;
 		private boolean isBroadcastRHSVar;
 		private boolean isColumnVector; 
-		private MatrixBlock[] _partBlocks = null;
+		private Broadcast<PartitionedMatrixBlock> _pmV;
 		
-		public RDDMatrixVectorRelationalFunction( boolean isBroadcastRHSVar, boolean isColumnVector, Broadcast<MatrixBlock> binput, BinaryOperator op, int brlen, int bclen, long rdd_rlen, long rdd_clen ) {
+		
+		public RDDMatrixVectorRelationalFunction( boolean isBroadcastRHSVar, boolean isColumnVector, Broadcast<PartitionedMatrixBlock> binput, BinaryOperator op, int brlen, int bclen, long rdd_rlen, long rdd_clen ) {
 			this.isBroadcastRHSVar = isBroadcastRHSVar;
 			this.isColumnVector = isColumnVector;
 			this.op = op;
 			
 			//get the broadcast vector
-			MatrixBlock mb = binput.value();
-			
-			//partition vector for fast in memory lookup
-			int numBlocks;
-			if(isColumnVector) {
-				numBlocks = (int)Math.ceil((double)mb.getNumRows()/brlen);
-			}
-			else {
-				numBlocks = (int)Math.ceil((double)mb.getNumColumns()/bclen);
-			}
-			
-			try {
-				_partBlocks = new MatrixBlock[numBlocks];
-				long rowLower = 1; long colLower = 1;
-				long rowUpper = 1; long colUpper = 1;
-				for( int i=0; i<numBlocks; i++ )
-				{
-					MatrixBlock tmp = new MatrixBlock();
-					if(isColumnVector) {
-						rowLower = i*brlen + 1;
-						rowUpper = Math.min((i+1)*brlen, mb.getNumRows());
-					}
-					else {
-						colLower = i*bclen + 1;
-						colUpper = Math.min((i+1)*bclen, mb.getNumColumns());
-					}
-					mb.sliceOperations(rowLower, rowUpper, colLower, colUpper,  tmp);
-					_partBlocks[i] = tmp;
-				}
-			}
-			catch(DMLException ex) {
-				LOG.error("Failed partitioning of broadcast variable input.", ex);
-			}
+			_pmV = binput;
 		}
 		
 		
 		@Override
-		public Tuple2<MatrixIndexes,MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
+		public Tuple2<MatrixIndexes,MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
+			throws Exception 
+		{
 			MatrixBlock blk1 = null;
 			MatrixBlock blk2 = null;
 			
 			if(isBroadcastRHSVar) {
 				blk1 = kv._2;
 				if(this.isColumnVector) {
-					blk2 = _partBlocks[(int) (kv._1.getRowIndex()-1)];
+					blk2 = _pmV.value().getMatrixBlock((int) kv._1.getRowIndex(),1);
 				}
 				else {
-					blk2 = _partBlocks[(int) (kv._1.getColumnIndex()-1)];
+					blk2 = _pmV.value().getMatrixBlock(1, (int) kv._1.getColumnIndex());
 				}
 			}
 			else {
 				blk2 = kv._2;
 				if(this.isColumnVector) {
-					blk1 = _partBlocks[(int) (kv._1.getRowIndex()-1)];
+					blk2 = _pmV.value().getMatrixBlock((int) kv._1.getRowIndex(),1);
 				}
 				else {
-					blk1 = _partBlocks[(int) (kv._1.getColumnIndex()-1)];
+					blk2 = _pmV.value().getMatrixBlock(1, (int) kv._1.getColumnIndex());
 				}
 			}
 			

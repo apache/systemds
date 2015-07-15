@@ -24,9 +24,8 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcast;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -130,12 +129,11 @@ public class MapmmChainSPInstruction extends SPInstruction
 		
 		//get rdd and broadcast inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getBinaryBlockRDDHandleForVariable( _input1.getName() );
-		Broadcast<MatrixBlock> inV = sec.getBroadcastForVariable( _input2.getName() );
-		Broadcast<MatrixBlock> inW = (_chainType==ChainType.XtwXv) ? sec.getBroadcastForVariable( _input3.getName() ) : null;
+		Broadcast<PartitionedMatrixBlock> inV = sec.getBroadcastForVariable( _input2.getName() );
+		Broadcast<PartitionedMatrixBlock> inW = (_chainType==ChainType.XtwXv) ? sec.getBroadcastForVariable( _input3.getName() ) : null;
 		
 		//execute mapmmchain (guaranteed to have single output block)
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(_output.getName());
-		MatrixBlock out = inX.mapToPair(new RDDMapMMChainFunction(_chainType, inV, inW, mc.getRowsPerBlock(), mc.getColsPerBlock()))
+		MatrixBlock out = inX.mapToPair(new RDDMapMMChainFunction(_chainType, inV, inW))
 					         .values()
 					         .reduce(new AggregateSumSingleBlockFunction());
 		
@@ -153,25 +151,23 @@ public class MapmmChainSPInstruction extends SPInstruction
 		private static final long serialVersionUID = 8197406787010296291L;
 
 		private ChainType _type = null;
-		private int _brlen = -1;
 		
-		private MatrixBlock _mV = null;
-		private PartitionedBroadcast _pmW = null;
+		private Broadcast<PartitionedMatrixBlock> _pmV = null;
+		private Broadcast<PartitionedMatrixBlock> _pmW = null;
 		
-		public RDDMapMMChainFunction( ChainType type, Broadcast<MatrixBlock> bV, Broadcast<MatrixBlock> bW, int brlen, int bclen ) 
+		public RDDMapMMChainFunction( ChainType type, Broadcast<PartitionedMatrixBlock> bV, Broadcast<PartitionedMatrixBlock> bW) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
 		{
 			_type = type;
-			_brlen = brlen;
 			
 			//get first broadcast vector (always single block)
-			_mV = bV.value();
+			_pmV = bV;
 			
 			//get second broadcast vector (partitioning for fast in memory lookup)
 			if( _type == ChainType.XtwXv )
 			{
 				//in-memory rowblock partitioning (according to bclen of rdd)
-				_pmW = new PartitionedBroadcast(bW, _brlen, _brlen);
+				_pmW = bW;
 			}
 		}
 		
@@ -179,6 +175,8 @@ public class MapmmChainSPInstruction extends SPInstruction
 		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
+			MatrixBlock pmV = _pmV.value().getMatrixBlock(1, 1);
+			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 			int rowIx = (int)ixIn.getRowIndex();
@@ -188,9 +186,12 @@ public class MapmmChainSPInstruction extends SPInstruction
 			
 			//core mapmmchain operation
 			if( _type == ChainType.XtXv )
-				blkIn.chainMatrixMultOperations(_mV, null, blkOut, _type);
+				blkIn.chainMatrixMultOperations(pmV, null, blkOut, _type);
 			else if ( _type == ChainType.XtwXv )
-				blkIn.chainMatrixMultOperations(_mV, _pmW.getMatrixBlock(rowIx,1), blkOut, _type);
+			{
+				PartitionedMatrixBlock pmW = _pmW.value();
+				blkIn.chainMatrixMultOperations(pmV, pmW.getMatrixBlock(rowIx,1), blkOut, _type);
+			}
 				
 			//output new tuple
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);

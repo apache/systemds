@@ -30,7 +30,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcast;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.RemoveEmptyBlockFunction;
@@ -113,8 +113,8 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		
 		//get inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-		Broadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar ); 
-		
+		Broadcast<PartitionedMatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar ); 
+				
 		//empty input block filter
 		if( !_outputEmpty )
 			in1 = in1.filter(new RemoveEmptyBlockFunction());
@@ -178,14 +178,14 @@ public class MapmmSPInstruction extends BinarySPInstruction
 
 		private CacheType _type = null;
 		private AggregateBinaryOperator _op = null;
-		private PartitionedBroadcast _pbc = null;
+		private Broadcast<PartitionedMatrixBlock> _pbc = null;
 		
-		public RDDMapMMFunction( CacheType type, Broadcast<MatrixBlock> binput, int brlen, int bclen )
+		public RDDMapMMFunction( CacheType type, Broadcast<PartitionedMatrixBlock> binput, int brlen, int bclen )
 		{
 			_type = type;
 			
 			//partition vector for fast in memory lookup
-			_pbc = new PartitionedBroadcast(binput, brlen, bclen);
+			_pbc = binput;
 			
 			//created operator for reuse
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
@@ -196,6 +196,8 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
+			PartitionedMatrixBlock pm = _pbc.value();
+			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 
@@ -205,7 +207,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			if( _type == CacheType.LEFT )
 			{
 				//get the right hand side matrix
-				MatrixBlock left = _pbc.getMatrixBlock(1, (int)ixIn.getRowIndex());
+				MatrixBlock left = pm.getMatrixBlock(1, (int)ixIn.getRowIndex());
 				
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.performAggregateBinary( 
@@ -214,7 +216,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			else //if( _type == CacheType.RIGHT )
 			{
 				//get the right hand side matrix
-				MatrixBlock right = _pbc.getMatrixBlock((int)ixIn.getColumnIndex(), 1);
+				MatrixBlock right = pm.getMatrixBlock((int)ixIn.getColumnIndex(), 1);
 				
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.performAggregateBinary(
@@ -237,14 +239,14 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		
 		private CacheType _type = null;
 		private AggregateBinaryOperator _op = null;
-		private PartitionedBroadcast _pbc = null;
+		private Broadcast<PartitionedMatrixBlock> _pbc = null;
 		
-		public RDDFlatMapMMFunction( CacheType type, Broadcast<MatrixBlock> binput, int brlen, int bclen )
+		public RDDFlatMapMMFunction( CacheType type, Broadcast<PartitionedMatrixBlock> binput, int brlen, int bclen )
 		{
 			_type = type;
 			
 			//partition vector for fast in memory lookup
-			_pbc = new PartitionedBroadcast(binput, brlen, bclen);
+			_pbc = binput;
 			
 			//created operator for reuse
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
@@ -256,6 +258,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+			PartitionedMatrixBlock pm = _pbc.value();
 			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
@@ -263,9 +266,9 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			if( _type == CacheType.LEFT )
 			{
 				//for all matching left-hand-side blocks
-				for( int i=0; i<_pbc.getNumRowBlocks(); i++ ) 
+				for( int i=0; i<pm.getNumRowBlocks(); i++ ) 
 				{
-					MatrixBlock left = _pbc.getMatrixBlock(i, (int)ixIn.getRowIndex());
+					MatrixBlock left = pm.getMatrixBlock(i, (int)ixIn.getRowIndex());
 					MatrixIndexes ixOut = new MatrixIndexes();
 					MatrixBlock blkOut = new MatrixBlock();
 					
@@ -279,10 +282,10 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			else //if( _type == CacheType.RIGHT )
 			{
 				//for all matching right-hand-side blocks
-				for( int j=0; j<_pbc.getNumColumnBlocks(); j++ ) 
+				for( int j=0; j<pm.getNumColumnBlocks(); j++ ) 
 				{
 					//get the right hand side matrix
-					MatrixBlock right = _pbc.getMatrixBlock((int)ixIn.getColumnIndex(), j);
+					MatrixBlock right = pm.getMatrixBlock((int)ixIn.getColumnIndex(), j);
 					MatrixIndexes ixOut = new MatrixIndexes();
 					MatrixBlock blkOut = new MatrixBlock();
 					

@@ -29,6 +29,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -175,7 +176,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		else if ( opcode.equalsIgnoreCase("leftIndex"))
 		{
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			Broadcast<MatrixBlock> in2 = null;
+			Broadcast<PartitionedMatrixBlock> in2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 
@@ -232,10 +233,10 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		
 		long rl; long ru; long cl; long cu;
 		int brlen; int bclen;
-		Broadcast<MatrixBlock> binput;
+		Broadcast<PartitionedMatrixBlock> binput;
 		long left_rlen; long left_clen; long right_rlen; long right_clen;
 		
-		public LeftIndexBroadcastMatrix(Broadcast<MatrixBlock> binput, long rl, long ru, long cl, long cu, int brlen, int bclen,
+		public LeftIndexBroadcastMatrix(Broadcast<PartitionedMatrixBlock> binput, long rl, long ru, long cl, long cu, int brlen, int bclen,
 				long left_rlen, long left_clen, long right_rlen, long right_clen) {
 			this.rl = rl;
 			this.ru = ru;
@@ -280,9 +281,8 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			long rhs_cl = Math.max(cl, bCLowerIndex) - cl + 1;
 			long rhs_cu = Math.min(cu, bCUpperIndex) - cl + 1;
 			
-			MatrixBlock rhsMatBlock = binput.getValue();
+			PartitionedMatrixBlock rhsMatBlock = binput.getValue();
 			MatrixBlock slicedRHSMatBlock = rhsMatBlock.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
-			
 			MatrixBlock resultBlock = (MatrixBlock) kv._2.leftIndexingOperations(slicedRHSMatBlock, lhs_rl, lhs_ru, lhs_cl, lhs_cu, new MatrixBlock(), true);
 			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, resultBlock);
 		}

@@ -2571,6 +2571,16 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	
 	/**
 	 * 
+	 * @return
+	 */
+	public long estimateSizeInMemory() 
+	{
+		double sp = OptimizerUtils.getSparsity(rlen, clen, nonZeros);
+		return estimateSizeInMemory(rlen, clen, sp);
+	}
+	
+	/**
+	 * 
 	 * @param nrows
 	 * @param ncols
 	 * @param sparsity
@@ -2635,6 +2645,15 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		//size += nrows * (28 + 12 * len );
 		
 		return size;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public long estimateSizeOnDisk()
+	{
+		return estimateSizeOnDisk(rlen, clen, nonZeros);
 	}
 	
 	/**

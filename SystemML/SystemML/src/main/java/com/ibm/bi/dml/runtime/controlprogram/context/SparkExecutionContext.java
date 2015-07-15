@@ -30,6 +30,7 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
@@ -238,12 +239,12 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public Broadcast<MatrixBlock> getBroadcastForVariable( String varname ) 
+	public Broadcast<PartitionedMatrixBlock> getBroadcastForVariable( String varname ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		MatrixObject mo = getMatrixObject(varname);
 		
-		Broadcast<MatrixBlock> bret = null;
+		Broadcast<PartitionedMatrixBlock> bret = null;
 		if( mo.getBroadcastHandle()!=null ) 
 		{
 			//reuse existing broadcast handle
@@ -251,9 +252,13 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 		else 
 		{
+			int brlen = (int) mo.getNumRowsPerBlock();
+			int bclen = (int) mo.getNumColumnsPerBlock();
+			
 			//read data into memory (no matter where it comes from)
 			MatrixBlock mb = mo.acquireRead();
-			bret = _spctx.broadcast(mb);
+			PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(mb, brlen, bclen);
+			bret = _spctx.broadcast(pmb);
 			BroadcastObject bchandle = new BroadcastObject(bret, varname);
 			mo.setBroadcastHandle(bchandle);
 			mo.release();

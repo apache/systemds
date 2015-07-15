@@ -27,13 +27,16 @@
 # impurity      String   "Gini"    	  Impurity measure: entropy or Gini (the default)
 # M             String 	 ---	   	  Location to write matrix M containing the learnt tree
 # O     		String   " "          Location to write the training accuracy; by default is standard output
+# S_map			String   " "		  Location to write the mappings from scale feature ids to global feature ids
+# C_map			String   " "		  Location to write the mappings from categorical feature ids to global feature ids
 # fmt     	    String   "text"       The output format of the model (matrix M), such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
 # Matrix M where each column corresponds to a node in the learnt tree and each row contains the following information:
 #	 M[1,j]: id of node j (in a complete binary tree)
 #	 M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
-#	 M[3,j]: Feature index of the feature that node j looks at if j is an internal node, otherwise 0
+#	 M[3,j]: Feature index of the feature (scale feature id if the feature is scale or categorical feature id if the feature is categorical) 
+#			 that node j looks at if j is an internal node, otherwise 0
 #	 M[4,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2 for categorical features, 
 #		     otherwise the label that leaf node j is supposed to predict
 #	 M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale, otherwise the size of the subset of values 
@@ -56,6 +59,8 @@ binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) r
 # Default values of some parameters	
 fileR = ifdef ($R, " ");	
 fileO = ifdef ($O, " ");
+fileS_map = ifdef ($S_map, " ");
+fileC_map = ifdef ($C_map, " ");
 fileM = $M;
 num_bins = ifdef($bins, 20);  
 depth = ifdef($depth, 25); 
@@ -76,6 +81,14 @@ if (fileR != " ") {
 	dummy_coded = ppred (R[,2], R[,3], "!=");
 	R_scale = removeEmpty (target = R[,2:3] * (1 - dummy_coded), margin = "rows");
 	R_cat = removeEmpty (target = R[,2:3] * dummy_coded, margin = "rows");
+	if (fileS_map != " ") {
+		scale_feature_mapping = removeEmpty (target = (1 - dummy_coded) * seq (1, nrow (R)), margin = "rows");
+		write (scale_feature_mapping, fileS_map, format = fmtO);
+	}
+	if (fileC_map != " ") }
+		cat_feature_mapping = removeEmpty (target = dummy_coded * seq (1, nrow (R)), margin = "rows");	
+		write (cat_feature_mapping, fileC_map, format = fmtO);		
+	}
 	sum_dummy = sum (dummy_coded);	
 	if (sum_dummy == num_records) { # all features categorical
 		print ("All features categorical");

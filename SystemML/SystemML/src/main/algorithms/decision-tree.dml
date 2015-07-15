@@ -74,8 +74,8 @@ if (fileR != " ") {
 	R = read (fileR);
 	R = order (target = R, by = 2); # sort by start indices
 	dummy_coded = ppred (R[,2], R[,3], "!=");
-	R_scale = removeEmpty (target = R[,1:2] * (1 - dummy_coded), margin = "rows");
-	R_cat = removeEmpty (target = R[,1:2] * dummy_coded, margin = "rows");
+	R_scale = removeEmpty (target = R[,2:3] * (1 - dummy_coded), margin = "rows");
+	R_cat = removeEmpty (target = R[,2:3] * dummy_coded, margin = "rows");
 	sum_dummy = sum (dummy_coded);	
 	if (sum_dummy == num_records) { # all features categorical
 		print ("All features categorical");

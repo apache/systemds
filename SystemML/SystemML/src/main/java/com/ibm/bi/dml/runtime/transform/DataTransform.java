@@ -371,6 +371,17 @@ public class DataTransform {
 		 * 
 		 */
 		
+		if(mvList != null)
+			for(int i=0; i < mvList.length; i++)
+				if(mvMethods[i] == 1) 
+				{
+					int colID = mvList[i];
+					if ( rcdList != null && Arrays.binarySearch(rcdList, colID) >= 0 ) 
+						throw new IllegalArgumentException("Invalid transformations on column ID " + colID + ". A numeric column can not be recoded.");
+					if ( dcdList != null && Arrays.binarySearch(dcdList, colID) >= 0 ) 
+						throw new IllegalArgumentException("Invalid transformations on column ID " + colID + ". A numeric column can not be dummycoded.");
+				}
+		
 		if(scaleList != null)
 		for(int i=0; i < scaleList.length; i++) 
 		{

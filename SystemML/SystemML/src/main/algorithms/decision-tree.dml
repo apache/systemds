@@ -59,7 +59,7 @@ fileO = ifdef ($O, " ");
 fileM = $M;
 num_bins = ifdef($bins, 20);  
 depth = ifdef($depth, 25); 
-num_leaf = ifdef($leaf, 10); 
+num_leaf = ifdef($num_leaf, 10); 
 threshold = ifdef ($num_samples, 3000);  
 imp = ifdef($impurity, "Gini");
 fmtO = ifdef($fmt, "text");
@@ -1026,6 +1026,25 @@ if (as.scalar (S_small[1,1]) == 0 & ncol (S_small) > 1) {
 }
 if (as.scalar (F_small[1,1]) == 0 & ncol (F_small) > 1) {
 	F_small = F_small[,2:ncol (F_small)];
+}
+
+# check for special leaves and if there are any remove them from Q_large and Q_small 
+special_large_leaves_ind = NC_large[4,];
+if (sum (special_large_leaves_ind) > 0) {
+	print ("PROCESSING SPECIAL LARGE LEAVES...");
+	special_large_leaves = removeEmpty (target = NC_large[1,] * special_large_leaves_ind, margin = "cols");
+	large_internal_ind = 1 - colSums (outer (t (special_large_leaves), Q_large[1,], "=="));
+	Q_large = removeEmpty (target = Q_large * large_internal_ind, margin = "cols");
+	F_large = removeEmpty (target = F_large, margin = "cols"); # remove special leaves from F
+}
+
+special_small_leaves_ind = NC_small[4,];
+if (sum (special_small_leaves_ind) > 0) {
+	print ("PROCESSING SPECIAL SMALL LEAVES...");
+	special_small_leaves = removeEmpty (target = NC_small[1,] * special_small_leaves_ind, margin = "cols");
+	small_internal_ind = 1 - colSums (outer (t (special_small_leaves), Q_small[1,], "=="));
+	Q_small = removeEmpty (target = Q_small * small_internal_ind, margin = "cols");
+	F_small = removeEmpty (target = F_small, margin = "cols"); # remove special leaves from F
 }
 
 # model corresponding to large internal nodes

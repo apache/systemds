@@ -59,14 +59,15 @@ binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) r
 	
 # Default values of some parameters	
 fileR = ifdef ($R, " ");
-fileC = ifdef ($C, " ");	
+fileC = ifdef ($C, " ");
+fileM = $M;	
 num_bins = ifdef($bins, 20); 
 depth = ifdef($depth, 25);
-num_leaf = ifdef($leaf, 10);
-num_trees = ifdef($trees, 1); 
+num_leaf = ifdef($num_leaf, 10);
+num_trees = ifdef($num_trees, 1); 
 threshold = ifdef ($num_samples, 3000);
 imp = ifdef($impurity, "Gini");
-rate = ifdef ($subsamp_rate, 1.0);
+rate = ifdef ($subsamp_rate, 1);
 fpow = ifdef ($feature_subset, 0.5);
 fmtO = ifdef($fmt, "text");
 
@@ -274,7 +275,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		if (num_scale_features > 0) {
 			
 			# main operation	
-			label_counts_left_scale = t (t (cur_Y_bin) %*% X_ext_left); 
+			label_counts_left_scale = t (t (cur_Y_bin) %*% X_scale_ext); 
 		
 			# compute left and right label distribution
 			label_sum_left = rowSums (label_counts_left_scale);
@@ -352,7 +353,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			best_label_counts_right = matrix (0, rows = num_cat_features, cols = num_classes);
 			
 			# main operation
-			label_counts = t (t (cur_Y_bin) %*% X_ext);  
+			label_counts = t (t (cur_Y_bin) %*% X_cat);  
 
 			if (num_cat_feature_samples > 0) {			
 			
@@ -465,7 +466,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			right_child = 2 * (cur_node - 1) + 2 + 1;
 					
 			# samples going to the left subtree
-			Ix_left = X_ext_left[,best_scale_split]; # max_I_gain_ind_scale
+			Ix_left = X_scale_ext[,best_scale_split]; # max_I_gain_ind_scale
 											
 			Ix_left = Ix * Ix_left;		
 			Ix_right = Ix * (1 - Ix_left);
@@ -539,7 +540,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			right_child = 2 * (cur_node - 1) + 2 + 1;
 					
 			# samples going to the left subtree
-			Ix_left = rowSums (X_ext[,start_ind:(start_ind + offset - 1)] * best_split_values_bin);
+			Ix_left = rowSums (X_cat[,start_ind:(start_ind + offset - 1)] * best_split_values_bin);
 			Ix_left = ppred (Ix_left, 1, ">=");
 											  
 			Ix_left = Ix * Ix_left;		
@@ -601,6 +602,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			}		
 		} else {
 			
+			print ("NUMBER OF SAMPLES AT NODE " + cur_node + " in tree " + cur_tree + " CANNOT BE REDUCED TO MATCH " + num_leaf + ". THIS NODE IS DECLARED AS LEAF!");
 			right_pure = TRUE;
 			left_pure = TRUE;
 			cur_NC_large[1,(2 * (i6 - 1) + 1)] = cur_node;
@@ -681,10 +683,10 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		# build dataset for SMALL node
 		Ix = ppred (L[,cur_tree_small], cur_node_small, "==");	
 		if (num_scale_features > 0) {
-			X_ext_left_small = removeEmpty (target = X_ext_left * Ix, margin = "rows");
+			X_scale_ext_small = removeEmpty (target = X_scale_ext * Ix, margin = "rows");
 		}
 		if (num_cat_features > 0) {
-			X_ext_small = removeEmpty (target = X_ext * Ix, margin = "rows");
+			X_cat_small = removeEmpty (target = X_cat * Ix, margin = "rows");
 		}
 		L_small = removeEmpty (target = L * Ix, margin = "rows");
 		C_small = removeEmpty (target = C * Ix, margin = "rows");
@@ -758,7 +760,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				if (num_scale_features > 0) {
 					
 					# main operation	
-					label_counts_left_scale = t (t (cur_Y_bin) %*% X_ext_left_small); 
+					label_counts_left_scale = t (t (cur_Y_bin) %*% X_scale_ext_small); 
 		
 					# compute left and right label distribution
 					label_sum_left = rowSums (label_counts_left_scale);
@@ -838,7 +840,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					best_label_counts_right = matrix (0, rows = num_cat_features, cols = num_classes);
 			
 					# main operation
-					label_counts = t (t (cur_Y_bin) %*% X_ext_small);  
+					label_counts = t (t (cur_Y_bin) %*% X_cat_small);  
 
 					if (num_cat_feature_samples > 0) {			
 					
@@ -951,7 +953,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					right_child = 2 * (cur_node - 1) + 2 + 1;
 					
 					# samples going to the left subtree
-					Ix_left = X_ext_left_small[, best_scale_split]; # max_I_gain_ind_scale
+					Ix_left = X_scale_ext_small[, best_scale_split]; # max_I_gain_ind_scale
 											
 					Ix_left = Ix * Ix_left;		
 					Ix_right = Ix * (1 - Ix_left);
@@ -1022,7 +1024,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					right_child = 2 * (cur_node - 1) + 2 + 1;
 					
 					# samples going to the left subtree
-					Ix_left = rowSums (X_ext_small[,start_ind:(start_ind + offset - 1)] * best_split_values_bin);
+					Ix_left = rowSums (X_cat_small[,start_ind:(start_ind + offset - 1)] * best_split_values_bin);
 					Ix_left = ppred (Ix_left, 1, ">=");
 											  
 					Ix_left = Ix * Ix_left;		
@@ -1079,7 +1081,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						
 					}		
 				} else {
-								
+							
+					print ("NUMBER OF SAMPLES AT NODE " + cur_node + " in tree " + cur_tree + " CANNOT BE REDUCED TO MATCH " + num_leaf + ". THIS NODE IS DECLARED AS LEAF!");							
 					right_pure = TRUE;
 					left_pure = TRUE;
 					cur_NC[1,(2 * (i8 - 1) + 1)] = cur_node;
@@ -1182,6 +1185,7 @@ if (sum (special_large_leaves_ind) > 0) {
 	special_large_leaves = removeEmpty (target = NC_large[1,] * special_large_leaves_ind, margin = "cols");
 	large_internal_ind = 1 - colSums (outer (t (special_large_leaves), Q_large[1,], "=="));
 	Q_large = removeEmpty (target = Q_large * large_internal_ind, margin = "cols");
+	F_large = removeEmpty (target = F_large, margin = "cols"); # remove special leaves from F
 }
 
 special_small_leaves_ind = NC_small[5,];
@@ -1190,6 +1194,7 @@ if (sum (special_small_leaves_ind) > 0) {
 	special_small_leaves = removeEmpty (target = NC_small[1,] * special_small_leaves_ind, margin = "cols");
 	small_internal_ind = 1 - colSums (outer (t (special_small_leaves), Q_small[1,], "=="));
 	Q_small = removeEmpty (target = Q_small * small_internal_ind, margin = "cols");
+	F_small = removeEmpty (target = F_small, margin = "cols"); # remove special leaves from F
 }
 
 # model corresponding to large internal nodes

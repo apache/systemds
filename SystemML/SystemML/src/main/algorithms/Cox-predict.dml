@@ -28,7 +28,7 @@
 #								 - M[,7]: upper 100*(1-alpha)% confidence interval of betas
 # Y       String   --- 			Location to read matrix Y used for prediction  
 # COV	  String   ---			Location to read the variance-covariance matrix of the betas	
-# MF      String   " "			If factors available in the input matrix X, location to read the column indices the non-baseline factors of X
+# MF      String   ---          Location to read column indices of X excluding the baseline factors if available
 # P       String   ---          Location to store matrix P containing the results of prediction
 # fmt     String   "text"       Matrix output format, usually "text" or "csv" (for matrices only)
 # ---------------------------------------------------------------------------------------------
@@ -45,17 +45,17 @@
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f cox-predict.dml -nvargs X=INPUT_DIR/X RT=INPUT_DIR/RT M=INPUT_DIR/M Y=INPUT_DIR/Y 
-#											  COV=INTPUT_DIR/COV MF=INPUT_DIR/MF P=OUTPUT_DIR/P fmtO=csv
+#											  COV=INTPUT_DIR/COV MF=INPUT_DIR/MF P=OUTPUT_DIR/P fmt=csv
 
 fileX = $X;
 fileRT = $RT;
+fileMF = $MF;
 fileY = $Y; 
 fileM = $M;
 fileCOV = $COV;
 fileP = $P; 
 
 # Default values of some parameters
-fileMF = ifdef ($MF, " ");         # MF=" " 
 fmtO = ifdef ($fmt, "text");       # $fmt="text" 
 
 X_orig = read (fileX);
@@ -64,11 +64,11 @@ Y_orig = read (fileY);
 M = read (fileM);
 b = M[,1];
 COV = read (fileCOV);
-if (fileMF != " ") {
-	col_ind = read (fileMF);
-	tab = table (col_ind, seq (1, nrow (col_ind)), ncol (Y_orig), nrow (col_ind));
-	Y_orig = Y_orig %*% tab;
-}
+
+col_ind = read (fileMF);
+tab = table (col_ind, seq (1, nrow (col_ind)), ncol (Y_orig), nrow (col_ind));
+Y_orig = Y_orig %*% tab;
+
 
 # Y and X have the same dimensions and schema
 if (ncol (Y_orig) != ncol (X_orig)) { 

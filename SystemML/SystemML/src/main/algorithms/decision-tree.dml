@@ -85,7 +85,7 @@ if (fileR != " ") {
 		scale_feature_mapping = removeEmpty (target = (1 - dummy_coded) * seq (1, nrow (R)), margin = "rows");
 		write (scale_feature_mapping, fileS_map, format = fmtO);
 	}
-	if (fileC_map != " ") }
+	if (fileC_map != " ") {
 		cat_feature_mapping = removeEmpty (target = dummy_coded * seq (1, nrow (R)), margin = "rows");	
 		write (cat_feature_mapping, fileC_map, format = fmtO);		
 	}

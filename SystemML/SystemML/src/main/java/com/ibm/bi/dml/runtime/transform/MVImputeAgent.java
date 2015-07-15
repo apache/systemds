@@ -219,9 +219,9 @@ public class MVImputeAgent extends TransformationAgent {
 			if(_mvList != null)
 			for(int i=0; i <_mvList.length; i++) {
 				int colID = _mvList[i];
-				
 				w = UtilFunctions.unquote(words[colID-1].trim());
 				
+				try {
 				if(!isNA(w)) {
 					_countList[i]++;
 					
@@ -238,6 +238,10 @@ public class MVImputeAgent extends TransformationAgent {
 						// global_mode or constant
 						// Nothing to do here. Mode is computed using recode maps.
 					}
+				}
+				} catch (NumberFormatException e) 
+				{
+					throw new RuntimeException("Encountered \"" + w + "\" in column \"" + columnNames[colID-1] + "\", when expecting a numeric value. Consider adding \"" + w + "\" to na.strings, along with an appropriate imputation method.");
 				}
 			}
 			

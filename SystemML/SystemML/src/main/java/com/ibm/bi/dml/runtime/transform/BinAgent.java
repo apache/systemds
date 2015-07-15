@@ -253,6 +253,7 @@ public class BinAgent extends TransformationAgent {
 		for(int i=0; i < _binList.length; i++) {
 			int colID = _binList[i];
 			
+			try {
 			double val = UtilFunctions.parseToDouble(words[colID-1]);
 			int binid = 1;
 			double tmp = _min[i] + _binWidths[i];
@@ -261,7 +262,10 @@ public class BinAgent extends TransformationAgent {
 				binid++;
 			}
 			words[colID-1] = Integer.toString(binid);
-			
+			} catch(NumberFormatException e)
+			{
+				throw new RuntimeException("Encountered \"" + words[colID-1] + "\" in column \"" + columnNames[colID-1] + "\", when expecting a numeric value. Consider adding \"" + words[colID-1] + "\" to na.strings, along with an appropriate imputation method.");
+			}
 			//long binid = Math.min(Math.round((val-_min[i])/_binWidths[i] - 0.5) + 1, _numBins[i]);
 			//words[colID-1] = Long.toString(binid);
 		}

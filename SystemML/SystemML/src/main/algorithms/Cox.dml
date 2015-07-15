@@ -38,7 +38,7 @@
 # COV	  String   ---			Location to store the variance-covariance matrix of the betas
 # RT      String   ---			Location to store matrix RT containing the order-preserving recoded timestamps from X 
 # XO      String   ---			Location to store sorted input matrix by the timestamps 
-# MF      String   " "          If factors available in the input matrix X, location to store column indices of X excluding the baseline factors
+# MF      String   ---          Location to store column indices of X excluding the baseline factors if available
 # alpha   Double   0.05         Parameter to compute a 100*(1-alpha)% confidence interval for the betas  
 # tol     Double   0.000001     Tolerance ("epsilon")
 # moi     Int      100     		Max. number of outer (Newton) iterations
@@ -75,13 +75,14 @@
 # 4- A column matrix MF that contains the column indices of X excluding the baseline factors if available
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f cox.dml -nvargs X=INPUT_DIR/X F=INPUT_DIR/F M=OUTPUT_DIR/M S=OUTPUT_DIR/S 
-#									  T=OUTPUT_DIR/T COV=OUTPUT_DIR/COV RT=OUTPUT_DIR/RT XO=OUTPUT_DIR/XO 
-#									  MF=OUTPUT/MF alpha=0.01 tol=0.000001 moi=100 mii=20 fmt=csv
+# hadoop jar SystemML.jar -f Cox.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE F=INTPUT_DIR/F R=INTPUT_DIR/R 
+#									  M=OUTPUT_DIR/M S=OUTPUT_DIR/S T=OUTPUT_DIR/T COV=OUTPUT_DIR/COV RT=OUTPUT_DIR/RT 
+#									  XO=OUTPUT_DIR/XO MF=OUTPUT/MF alpha=0.01 tol=0.000001 moi=100 mii=20 fmt=csv
 
 fileX = $X;
 fileTE = $TE;
 fileRT = $RT;
+fileMF = $MF;
 fileM = $M;
 fileXO = $XO;
 fileCOV = $COV;
@@ -91,10 +92,8 @@ fileF = ifdef ($F, " ");			 # $F=" "
 fileR = ifdef ($R, " ");         	 # $R=" " 
 fileS = ifdef ($S, " ");         	 # $S=" " 
 fileT = ifdef ($T, " ");         	 # $T=" " 
-fileMF = ifdef ($MF, " ");         	 # $MF=" " 
 fmtO = ifdef ($fmt, "text");         # $fmt="text" 
 alpha = ifdef ($alpha, 0.05);        # $alpha=0.05
-lambda = ifdef ($lambda, 0.0);       # $lambda=0.0;
 tol = ifdef ($tol, 0.000001);   	 # $tol=0.000001;
 maxiter = ifdef ($moi, 100);    	 # $moi=100;
 maxinneriter = ifdef ($mii, 0);      # $mii=0;
@@ -125,16 +124,13 @@ if (fileR != " " & fileF != " ") { # factors available
 	F_filter = table (ones, F, 1, ncol (X_orig));
 	F_filter = removeEmpty (target = F_filter * col_seq, margin = "cols");
 	TE_F = t(append (t (TE), F_Filter));
-	if (fileMF != " ") {
-		write (TE_F, fileMF, format = fmtO);
-	} else {
-		stop ("Please provide argument MF!");
-	}	
 } else if( fileF != " " ) { # all features scale
 	TE_F = t(append (t (TE), t(F)));
 } else { # no features available 
 	TE_F = TE;
 }
+
+write (TE_F, fileMF, format = fmtO);
 
 X_orig = X_orig %*% table (TE_F, seq (1, nrow (TE_F)), ncol (X_orig), nrow (TE_F));
 
@@ -175,7 +171,6 @@ print ("BEGIN COX PROPORTIONAL HAZARD SCRIPT");
 # Hd: = H %*% d
 #  c: scalar coefficient in CG
 # delta: trust region size
-# lambda: regularization constant
 # tol: tolerance value
 #  i: outer (Newton) iteration count
 #  j: inner (CG) iteration count
@@ -299,7 +294,7 @@ while (sum_g2 > exit_g2 & i < maxiter) {
 	so_2 = sum (d_r_rev * log (cumsum (I_rev %*% exp_Xbsb_agg)));
 	#
 	so = so_1 + so_2;
-	so = so + 0.5 * lambda * sum ((b + sb) ^ 2) - o; 
+	so = so - o; 
 	
 	delta = update_trust_bound (delta, sqrt (sum (sb ^ 2)), so, sum (sb * g), 0.5 * sum (sb * (r + g)));
     if (so < 0) {
@@ -318,7 +313,7 @@ while (sum_g2 > exit_g2 & i < maxiter) {
 		
 		D_r_rev = cumsum (I_rev %*% exp_Xb_agg); # denominator
 		g_2 = t (colSums ((X_exp_Xb_rev_agg / D_r_rev) * d_r_rev));
-		g = g0_1 + g_2 + (lambda * b);
+		g = g0_1 + g_2;
 		sum_g2 = sum (g ^ 2);
     }
 }

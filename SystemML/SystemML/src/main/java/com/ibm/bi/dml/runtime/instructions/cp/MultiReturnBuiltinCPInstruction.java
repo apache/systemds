@@ -8,9 +8,6 @@
 package com.ibm.bi.dml.runtime.instructions.cp;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-
-import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -49,20 +46,6 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		return _outputs.get(i);
 	}
 	
-	public static HashMap<String, String> constructParameterMap(String[] params) {
-		// process all elements in "params" except first(opcode) and last(output)
-		HashMap<String,String> paramMap = new HashMap<String,String>();
-		
-		// all parameters are of form <name=value>
-		String[] parts;
-		for ( int i=1; i <= params.length-2; i++ ) {
-			parts = params[i].split(Lop.SEPARATOR_WITHIN_OPRAND);
-			paramMap.put(parts[0], parts[1]);
-		}
-		
-		return paramMap;
-	}
-	
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
@@ -74,10 +57,8 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		if ( opcode.equalsIgnoreCase("qr") ) {
 			// one input and two ouputs
 			CPOperand in1 = new CPOperand(parts[1]);
-			
-			String[] operandParts = parts[2].split(Lop.SEPARATOR_WITHIN_OPRAND);
-			outputs.add ( new CPOperand(operandParts[0], ValueType.DOUBLE, DataType.MATRIX) );
-			outputs.add ( new CPOperand(operandParts[1], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[2], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[3], ValueType.DOUBLE, DataType.MATRIX) );
 			
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 		}
@@ -85,21 +66,18 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 			CPOperand in1 = new CPOperand(parts[1]);
 			
 			// one input and three outputs
-			String[] operandParts = parts[2].split(Lop.SEPARATOR_WITHIN_OPRAND);
-			outputs.add ( new CPOperand(operandParts[0], ValueType.DOUBLE, DataType.MATRIX) );
-			outputs.add ( new CPOperand(operandParts[1], ValueType.DOUBLE, DataType.MATRIX) );
-			outputs.add ( new CPOperand(operandParts[2], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[2], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[3], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[4], ValueType.DOUBLE, DataType.MATRIX) );
 			
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 			
 		}
 		else if ( opcode.equalsIgnoreCase("eigen") ) {
-			CPOperand in1 = new CPOperand(parts[1]);
-			
 			// one input and two outputs
-			String[] operandParts = parts[2].split(Lop.SEPARATOR_WITHIN_OPRAND);
-			outputs.add ( new CPOperand(operandParts[0], ValueType.DOUBLE, DataType.MATRIX) );
-			outputs.add ( new CPOperand(operandParts[1], ValueType.DOUBLE, DataType.MATRIX) );
+			CPOperand in1 = new CPOperand(parts[1]);
+			outputs.add ( new CPOperand(parts[2], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[3], ValueType.DOUBLE, DataType.MATRIX) );
 			
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 			

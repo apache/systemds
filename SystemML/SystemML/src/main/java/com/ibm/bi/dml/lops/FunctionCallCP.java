@@ -86,13 +86,13 @@ public class FunctionCallCP extends Lop
 		for(int i=0; i< inputs.length; i++) {
 			sb.append( getInputs().get(0).prepInputOperand(inputs[i]) );
 			if ( i != inputs.length-1 )
-				sb.append(Lop.SEPARATOR_WITHIN_OPRAND);
+				sb.append(Lop.OPERAND_DELIMITOR);
 		}
 		sb.append(Lop.OPERAND_DELIMITOR); 
 		for(int i=0; i< _outputs.length; i++) {
 			sb.append(_outputs[i]);
 			if ( i != _outputs.length-1 )
-				sb.append(Lop.SEPARATOR_WITHIN_OPRAND);
+				sb.append(Lop.OPERAND_DELIMITOR);
 		}
 		return sb.toString();
 	}

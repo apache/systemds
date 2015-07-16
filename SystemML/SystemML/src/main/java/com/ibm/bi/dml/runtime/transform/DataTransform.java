@@ -547,8 +547,9 @@ public class DataTransform {
 		// move files from temporary location to txMtdPath
 		fs.rename( new Path(tmpPath + "/" + "column.names.given"), new Path(txMtdPath + "/" + "column.names.given"));
 		fs.rename( new Path(tmpPath + "/" + "column.names.transformed"), new Path(txMtdPath + "/" + "column.names.transformed"));
-		if(fs.exists(new Path(tmpPath +"/Dummycode/" + "dummyCodeMaps.csv")))
-			fs.rename( new Path(tmpPath + "/Dummycode/" + "dummyCodeMaps.csv"), new Path(txMtdPath + "/Dummycode/" + "dummyCodeMaps.csv"));
+		fs.rename( new Path(tmpPath + "/" + TransformationAgent.COLTYPES_FILE_NAME), new Path(txMtdPath + "/" + TransformationAgent.COLTYPES_FILE_NAME));
+		if(fs.exists(new Path(tmpPath +"/Dummycode/" + TransformationAgent.DCD_FILE_NAME)))
+			fs.rename( new Path(tmpPath + "/Dummycode/" + TransformationAgent.DCD_FILE_NAME), new Path(txMtdPath + "/Dummycode/" + TransformationAgent.DCD_FILE_NAME));
 		
 		MapReduceTool.deleteFileIfExistOnHDFS(tmpPath);
 	}
@@ -1012,15 +1013,16 @@ public class DataTransform {
 		for(int fileNo=0; fileNo<files.size(); fileNo++)
 		{
 			br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
-			if(fileNo==0 && prop.hasHeader() ) { 
-				String header = br.readLine();
-				
+			if ( fileNo == 0 ) 
+			{
+				String header = null;
+				if ( prop.hasHeader() )
+					header = br.readLine();
+				else
+					header = headerLine;
 				String dcdHeader = _da.constructDummycodedHeader(header, prop.getDelim());
 				numColumnsTf = _da.genDcdMapsAndColTypes(fs, txMtdPath, ncols, _ra, _ba);
 				DataTransform.generateHeaderFiles(fs, txMtdPath, header, dcdHeader);
-				
-				//if ( isCSV )
-				//	out.write(dcdHeader + "\n");
 			}
 			
 			line = null;
@@ -1084,13 +1086,13 @@ public class DataTransform {
 		// write out given header line
 		Path pt=new Path(txMtdDir+"/column.names.given");
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(origHeader);
+		br.write(origHeader+"\n");
 		br.close();
 
 		// write out the new header line (after all transformations)
 		pt = new Path(txMtdDir + "/column.names.transformed");
 		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(newHeader);
+		br.write(newHeader+"\n");
 		br.close();
 	}
 }

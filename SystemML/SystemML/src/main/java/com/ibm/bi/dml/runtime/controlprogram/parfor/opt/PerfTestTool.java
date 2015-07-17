@@ -84,18 +84,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
  * real executions of DML instructions on random input data. Finally, during runtime, the profile
  * is used by the costs estimator in order to create statistic estimates for cost-based optimization.
  * 
- * TODO perftesttool: create dir if not existing
- * TODO perftesttool: dml via text in code 
- * TODO clarify lapack usage in perftest tool
  * 
- * TODO gen input data via rand MR job instead of in-memory (otherwise we cannot work on large data)
- * 
- * TODO: complete all CP instructions
- * TODO: add support for MR instructions (beispiel fix MR_datasize=dim*10, sort-io exec)
- * TODO: add support for TestVariable.PARALLELISM 
- * TODO: add support for instruction-invariant cost functions
- * TODO: add support for constants such as IO throughput (e.g., DFSIOTest) 
- * TODO: add support for known external functions and DML scripts / functions 
  */
 public class PerfTestTool 
 {

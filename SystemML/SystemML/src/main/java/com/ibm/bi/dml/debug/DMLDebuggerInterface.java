@@ -216,7 +216,7 @@ public class DMLDebuggerInterface
 	public void getDebuggerCLI()
 	{
 		// if(!DMLScript.ENABLE_SERVER_SIDE_DEBUG_MODE) {
-			// Not using formatter because it outputs -h, -s commands. But, I still want to use GNU Parser
+			// Not using formatter because it outputs -h, -s commands. But, I still want to use GnuParser
 			// HelpFormatter debuggerUsage = new HelpFormatter();
 			// debuggerUsage.setLongOptPrefix("-"); //Eliminates the use of "--" for alternate commands
 			// debuggerUsage.setWidth(125); //Enables readability of commands description
@@ -276,7 +276,7 @@ public class DMLDebuggerInterface
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 			try {
 				//read command line argument(s)
-				// To add up,down feature, use jline: http://jline.sourceforge.net/downloads.html
+				// To add 'up/down'-feature, use jline library
 				String line = br.readLine();
 				if(line != null && !line.isEmpty() ) {
 					args = line.split(" ");

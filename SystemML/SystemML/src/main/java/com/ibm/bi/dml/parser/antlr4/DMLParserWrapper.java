@@ -71,8 +71,6 @@ import com.ibm.bi.dml.runtime.util.LocalFileUtils;
  * 
  * As of this moment, Antlr4ParserWrapper is stateful and cannot be multithreaded. This is not big deal because each users calls SystemML in different process.
  * If in future we intend to make it multi-threaded, look at cleanUpState method and resolve the dependency accordingly.    
- * 
- * @author npansar
  *
  */
 public class DMLParserWrapper {

@@ -101,12 +101,14 @@ maxinneriter = ifdef ($mii, 0);      # $mii=0;
 X_orig = read (fileX);
 
 TE = read (fileTE);
+if (fileF != " ") {
+	F = read (fileF);
+}
 
 ######## CHECK FOR FACTORS AND REMOVE THE BASELINE OF EACH FACTOR FROM THE DATASET
 
-if (fileR != " " & fileF != " ") { # factors available
+if (fileR != " ") { # factors available
 	R = read (fileR);
-	F = read (fileF);
 	if (ncol (R) != 2) {
 		stop ("Matrix R has wrong dimensions!");
 	}
@@ -124,7 +126,7 @@ if (fileR != " " & fileF != " ") { # factors available
 	F_filter = table (ones, F, 1, ncol (X_orig));
 	F_filter = removeEmpty (target = F_filter * col_seq, margin = "cols");
 	TE_F = t(append (t (TE), F_Filter));
-} else if( fileF != " " ) { # all features scale
+} else if (fileF != " ") { # all features scale
 	TE_F = t(append (t (TE), t(F)));
 } else { # no features available 
 	TE_F = TE;

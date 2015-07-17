@@ -438,21 +438,29 @@ public class MatrixObject extends CacheableData
 		if( _data == null )
 			getCache();
 		
-		//read data from HDFS if required
+		//read data from HDFS/RDD if required
 		if( isEmpty() && _data==null ) //probe data for jvm_reuse support  
-		{
-			//check filename
-			if( _hdfsFileName == null )
-				throw new CacheException("Cannot read matrix for empty filename.");
-			
+		{			
 			try
 			{
 				if( DMLScript.STATISTICS )
 					CacheStatistics.incrementHDFSHits();
+				
 				if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
+				{
+					//check filename
+					if( _hdfsFileName == null )
+						throw new CacheException("Cannot read matrix for empty filename.");
+
+					//read matrix from hdfs
 					_data = readMatrixFromHDFS( _hdfsFileName );
+				}
 				else
+				{
+					//read matrix from rdd (incl execute pending rdd operations)
 					_data = readMatrixFromRDD( getRDDHandle() );
+				}
+				
 				_dirtyFlag = false;
 			}
 			catch (IOException e)

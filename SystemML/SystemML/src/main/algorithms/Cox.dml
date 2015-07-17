@@ -195,7 +195,6 @@ e_r_rev_agg = cumsum (I_rev %*% e_r);
 d_r_rev = I_rev %*% d_r;
 o = sum (d_r_rev * log (e_r_rev_agg));
 o_init = o;
-S_str = "no. of records " + N;
 if (ncol (X_orig) < 3) {
 	loglik = -o;
 	S_str = "no. of records " + N + " loglik " + loglik;

@@ -164,5 +164,5 @@ P[,3] = R;
 P[,4] = se_R;
 P[,5] = H;
 P[,6] = se_H;
-write (P, fileP, fmtO);
+write (P, fileP, format=fmtO);
 

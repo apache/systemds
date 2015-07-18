@@ -190,7 +190,7 @@ public class ApplyTfHelper {
 				else 
 					sb.append(words[0]);
 			else
-				sb.append("");
+				sb.append("0");
 			
 			for(i=1; i<words.length; i++) 
 			{
@@ -202,16 +202,16 @@ public class ApplyTfHelper {
 					else 
 						sb.append(words[i]);
 				else
-					sb.append("");
+					sb.append("0");
 			}
 		}
 		else 
 		{
-			sb.append(words[0] != null ? words[0] : "");
+			sb.append(words[0] != null ? words[0] : "0");
 			for(i=1; i<words.length; i++) 
 			{
 				sb.append(_delimString);
-				sb.append(words[i] != null ? words[i] : "");
+				sb.append(words[i] != null ? words[i] : "0");
 			}
 		}
 		

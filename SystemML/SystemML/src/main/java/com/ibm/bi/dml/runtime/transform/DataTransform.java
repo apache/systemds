@@ -1040,11 +1040,11 @@ public class DataTransform {
 				if (isCSV)
 				{
 					sb.setLength(0);
-					sb.append(words[0] != null ? words[0] : "");
+					sb.append(words[0] != null ? words[0] : "0");
 					for(int i=1; i<words.length; i++) 
 					{
 						sb.append(prop.getDelim());
-						sb.append(words[i] != null ? words[i] : "");
+						sb.append(words[i] != null ? words[i] : "0");
 					}
 					out.write(sb.toString());
 					out.write("\n");

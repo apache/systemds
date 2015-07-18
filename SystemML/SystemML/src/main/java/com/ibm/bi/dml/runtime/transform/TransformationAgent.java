@@ -104,7 +104,7 @@ public abstract class TransformationAgent {
 		case SCALE: return 1;
 		case NOMINAL: return 2;
 		case ORDINAL: return 3;
-		case DUMMYCODED: return 4;
+		case DUMMYCODED: return 1; // Ideally, dummycoded columns should be of a different type. Treating them as SCALE is incorrect, semantically.
 		default:
 			throw new IOException("Invalid Column Type: " + type);
 		}

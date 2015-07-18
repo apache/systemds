@@ -141,7 +141,7 @@ public class DummycodeAgent extends TransformationAgent {
 			{
 				br.write(colID + "," + "1" + "," + sum + "," + (sum+_domainSizes[idx]-1) + "\n");
 
-				for(int i=sum; i <(sum+_domainSizes[idx]-1); i++)
+				for(int i=sum; i <=(sum+_domainSizes[idx]-1); i++)
 					ctypes[i-1] = ColumnTypes.DUMMYCODED;
 				
 				sum += _domainSizes[idx];

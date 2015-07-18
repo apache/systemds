@@ -7,6 +7,8 @@
 
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Binary;
@@ -1253,6 +1255,14 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	 */
 	private boolean isLeftTransposeRewriteApplicable(boolean CP, boolean checkMemMR)
 	{
+		//check for forced MR or Spark execution modes, which prevent the introduction of
+		//additional CP operations and hence the rewrite application
+		if(    DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP  //not hybrid_mr
+			|| DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK ) //not hybrid_spark
+		{
+			return false;
+		}
+		
 		boolean ret = false;
 		Hop h1 = getInput().get(0);
 		Hop h2 = getInput().get(1);

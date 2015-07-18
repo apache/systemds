@@ -25,6 +25,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CentralMomentCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.CovarianceCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.DataGenCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.DataPartitionCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.FileCPInstruction;
@@ -196,7 +197,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "ctableexpand", 	CPINSTRUCTION_TYPE.Ternary);
 		
 		String2CPInstructionType.put( "cm"    , CPINSTRUCTION_TYPE.CentralMoment);
-		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.AggregateBinary);
+		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.Covariance);
 		String2CPInstructionType.put( "sort"  , CPINSTRUCTION_TYPE.Sort);
 		String2CPInstructionType.put( "inmem-iqm"  		, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "mr-iqm"  		, CPINSTRUCTION_TYPE.Variable);
@@ -350,6 +351,9 @@ public class CPInstructionParser extends InstructionParser
 		case CentralMoment:
 			return (CPInstruction) CentralMomentCPInstruction.parseInstruction(str);
 
+		case Covariance:
+			return (CPInstruction) CovarianceCPInstruction.parseInstruction(str);
+			
 		case INVALID:
 		default: 
 			throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );

@@ -36,6 +36,11 @@ public class TsmmSPInstruction extends UnarySPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	//internal configuration to use tree aggregation (treeReduce w/ depth=2),
+	//this is currently disabled because it was 2x slower than a simple
+	//single-block reduce due to additional overhead for shuffling 
+	private static final boolean TREE_AGGREGATION = false; 
+	
 	private MMTSJType _type = null;
 	
 	public TsmmSPInstruction(Operator op, CPOperand in1, CPOperand out, MMTSJType type, String opcode, String istr )
@@ -58,18 +63,18 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 
 		String opcode = InstructionUtils.getOpCode(str);
-
-		if ( "tsmm".equals(opcode) ) {
-			String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
-			in1.split(parts[1]);
-			out.split(parts[2]);
-			MMTSJType type = MMTSJType.valueOf(parts[3]);
+		
+		//check supported opcode 
+		if ( !opcode.equalsIgnoreCase("tsmm") ) {
+			throw new DMLRuntimeException("TsmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);			
+		}
 			
-			return new TsmmSPInstruction(null, in1, out, type, opcode, str);
-		} 
-		else {
-			throw new DMLRuntimeException("TsmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}		
+		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
+		in1.split(parts[1]);
+		out.split(parts[2]);
+		MMTSJType type = MMTSJType.valueOf(parts[3]);
+		
+		return new TsmmSPInstruction(null, in1, out, type, opcode, str);
 	}
 	
 	@Override
@@ -81,16 +86,19 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		//get input
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		
-		//NOTE: reduce formulation without values() gave (in future spark versions, we need to check if still required):			
-		// Exception in thread "Driver" scala.MatchError: java.lang.NoSuchMethodError: org/apache/spark/api/java/JavaPairRDD.reduce(Lorg/apache/spark/api/java/function/Function2;)Lscala/Tuple2; (of class java.lang.NoSuchMethodError)
-        //    at org.apache.spark.deploy.yarn.ApplicationMaster$$anon$2.run(ApplicationMaster.scala:432)
-
 		//execute tsmm instruction (always produce exactly one output block)
 		//(this formulation with values() requires --conf spark.driver.maxResultSize=0)
-		MatrixBlock out = in.mapToPair( new RDDTSMMFunction(_type) )
-				            .values()
-		                    .reduce( new AggregateSumSingleBlockFunction() );
-		
+		RDDTSMMFunction ftsmm = new RDDTSMMFunction(_type);		
+		MatrixBlock out = null;
+		if( TREE_AGGREGATION ) {
+			out = in.mapToPair( ftsmm ).values()
+					.treeReduce( new AggregateSumSingleBlockFunction() );   
+		}
+		else { //DEFAULT
+			out = in.mapToPair( ftsmm ).values()
+					.reduce( new AggregateSumSingleBlockFunction() );
+		}
+		      
 		//put output block into symbol table (no lineage because single block)
 		//this also includes implicit maintenance of matrix characteristics
 		sec.setMatrixOutput(output.getName(), out);
@@ -106,8 +114,7 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		
 		private MMTSJType _type = null;
 		
-		public RDDTSMMFunction( MMTSJType type )
-		{
+		public RDDTSMMFunction( MMTSJType type ) {
 			_type = type;
 		}
 		

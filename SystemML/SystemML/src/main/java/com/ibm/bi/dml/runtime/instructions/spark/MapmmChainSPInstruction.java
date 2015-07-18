@@ -39,6 +39,12 @@ public class MapmmChainSPInstruction extends SPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	//internal configuration to use tree aggregation (treeReduce w/ depth=2),
+	//this is currently disabled because it was 2x slower than a simple
+	//single-block reduce due to additional overhead for shuffling 
+	private static final boolean TREE_AGGREGATION = false; 
+		
+	
 	private ChainType _chainType = null;
 	
 	private CPOperand _input1 = null;
@@ -90,35 +96,34 @@ public class MapmmChainSPInstruction extends SPInstruction
 
 		String opcode = InstructionUtils.getOpCode(str);
 
-		if ( opcode.equalsIgnoreCase(MapMultChain.OPCODE)) {
-			//check number of fields (2/3 inputs, output, type)
-			InstructionUtils.checkNumFields ( str, 4, 5 );
-			
-			//parse instruction parts (without exec type)
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );	
-			in1.split(parts[1]);
-			in2.split(parts[2]);
-			
-			if( parts.length==5 )
-			{
-				out.split(parts[3]);
-				ChainType type = ChainType.valueOf(parts[4]);
-				
-				return new MapmmChainSPInstruction(null, in1, in2, out, type, opcode, str);
-			}
-			else //parts.length==6
-			{
-				in3.split(parts[3]);
-				out.split(parts[4]);
-				ChainType type = ChainType.valueOf(parts[5]);
-			
-				return new MapmmChainSPInstruction(null, in1, in2, in3, out, type, opcode, str);
-			}
-		} 
-		else {
-			throw new DMLRuntimeException("MapmmChainSPInstruction.parseInstruction():: Unknown opcode " + opcode);
+		//check supported opcode 
+		if ( !opcode.equalsIgnoreCase(MapMultChain.OPCODE)){
+			throw new DMLRuntimeException("MapmmChainSPInstruction.parseInstruction():: Unknown opcode " + opcode);	
 		}
 		
+		//check number of fields (2/3 inputs, output, type)
+		InstructionUtils.checkNumFields ( str, 4, 5 );
+			
+		//parse instruction parts (without exec type)
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );	
+		in1.split(parts[1]);
+		in2.split(parts[2]);
+		
+		if( parts.length==5 )
+		{
+			out.split(parts[3]);
+			ChainType type = ChainType.valueOf(parts[4]);
+			
+			return new MapmmChainSPInstruction(null, in1, in2, out, type, opcode, str);
+		}
+		else //parts.length==6
+		{
+			in3.split(parts[3]);
+			out.split(parts[4]);
+			ChainType type = ChainType.valueOf(parts[5]);
+		
+			return new MapmmChainSPInstruction(null, in1, in2, in3, out, type, opcode, str);
+		}
 	}
 	
 	@Override
@@ -133,9 +138,16 @@ public class MapmmChainSPInstruction extends SPInstruction
 		Broadcast<PartitionedMatrixBlock> inW = (_chainType==ChainType.XtwXv) ? sec.getBroadcastForVariable( _input3.getName() ) : null;
 		
 		//execute mapmmchain (guaranteed to have single output block)
-		MatrixBlock out = inX.mapToPair(new RDDMapMMChainFunction(_chainType, inV, inW))
-					         .values()
-					         .reduce(new AggregateSumSingleBlockFunction());
+		RDDMapMMChainFunction fmmc = new RDDMapMMChainFunction(_chainType, inV, inW);
+		MatrixBlock out = null;
+		if( TREE_AGGREGATION ) {
+			out = inX.mapToPair(fmmc).values()
+					 .treeReduce(new AggregateSumSingleBlockFunction());	
+		}
+		else { //DEFAULT
+			out = inX.mapToPair(fmmc).values()
+					 .reduce(new AggregateSumSingleBlockFunction());	
+		}
 		
 		//put output block into symbol table (no lineage because single block)
 		//this also includes implicit maintenance of matrix characteristics

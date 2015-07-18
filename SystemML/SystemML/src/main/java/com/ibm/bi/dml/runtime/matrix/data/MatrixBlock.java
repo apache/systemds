@@ -3644,8 +3644,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public MatrixValue leftIndexingOperations(MatrixValue rhsMatrix, long rowLower, long rowUpper, 
-			long colLower, long colUpper, MatrixValue ret, boolean inplace) 
+	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, long rowLower, long rowUpper, 
+			long colLower, long colUpper, MatrixBlock ret, boolean inplace) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
 		// Check the validity of bounds
@@ -3662,7 +3662,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 					"do not match the shape of the matrix specified by indices [" +
 					rowLower +":" + rowUpper + ", " + colLower + ":" + colUpper + "].");
 		}
-		MatrixBlock result=checkType(ret);
+		MatrixBlock result = ret;
+		
 		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, 
 				     rhsMatrix.getNumRows(), rhsMatrix.getNumColumns(), rhsMatrix.getNonZeros());
 		

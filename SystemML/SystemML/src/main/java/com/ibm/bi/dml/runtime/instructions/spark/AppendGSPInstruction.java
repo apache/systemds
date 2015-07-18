@@ -189,7 +189,7 @@ public class AppendGSPInstruction extends BinarySPInstruction
 			if(kv._1.getColumnIndex() == lastColumnOfLeft && firstBlk.getNumColumns() < secondBlk.getNumColumns()) {
 				// This case occurs for last block of LHS matrix
 				MatrixBlock replaceFirstBlk = new MatrixBlock(firstBlk.getNumRows(), secondBlk.getNumColumns(), true);
-				replaceFirstBlk = (MatrixBlock) replaceFirstBlk.leftIndexingOperations(firstBlk, 1, firstBlk.getNumRows(), 1, firstBlk.getNumColumns(), new MatrixBlock(), true);
+				replaceFirstBlk = replaceFirstBlk.leftIndexingOperations(firstBlk, 1, firstBlk.getNumRows(), 1, firstBlk.getNumColumns(), new MatrixBlock(), true);
 				firstBlk = replaceFirstBlk;
 			}
 			
@@ -236,19 +236,19 @@ public class AppendGSPInstruction extends BinarySPInstruction
 			if(cutAt >= kv._2.getNumColumns()) {
 				// The block is too small to be cut
 				MatrixBlock firstBlk = new MatrixBlock(kv._2.getNumRows(), lclen1, true);
-				firstBlk = (MatrixBlock) firstBlk.leftIndexingOperations(kv._2, 1, kv._2.getNumRows(), lclen1-kv._2.getNumColumns()+1, lclen1, new MatrixBlock(), true);
+				firstBlk = firstBlk.leftIndexingOperations(kv._2, 1, kv._2.getNumRows(), lclen1-kv._2.getNumColumns()+1, lclen1, new MatrixBlock(), true);
 				retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(firstIndex, firstBlk));
 			}
 			else {
 				// Since merge requires the dimensions matching, shifting = slicing + left indexing
 				MatrixBlock firstSlicedBlk = kv._2.sliceOperations(1, kv._2.getNumRows(), 1, cutAt, new MatrixBlock());
 				MatrixBlock firstBlk = new MatrixBlock(kv._2.getNumRows(), lclen1, true);
-				firstBlk = (MatrixBlock) firstBlk.leftIndexingOperations(firstSlicedBlk, 1, kv._2.getNumRows(), shiftBy+1, bclen, new MatrixBlock(), true);
+				firstBlk = firstBlk.leftIndexingOperations(firstSlicedBlk, 1, kv._2.getNumRows(), shiftBy+1, bclen, new MatrixBlock(), true);
 				
 				MatrixBlock secondSlicedBlk = kv._2.sliceOperations(1, kv._2.getNumRows(), cutAt+1, kv._2.getNumColumns(), new MatrixBlock());
 				int lclen2 = UtilFunctions.computeBlockSize(clenOutput, secondIndex.getColumnIndex(), bclen);
 				MatrixBlock secondBlk = new MatrixBlock(kv._2.getNumRows(), lclen2, true);
-				secondBlk = (MatrixBlock) secondBlk.leftIndexingOperations(secondSlicedBlk, 1, kv._2.getNumRows(), 1, secondSlicedBlk.getNumColumns(), new MatrixBlock(), true);
+				secondBlk = secondBlk.leftIndexingOperations(secondSlicedBlk, 1, kv._2.getNumRows(), 1, secondSlicedBlk.getNumColumns(), new MatrixBlock(), true);
 				
 				retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(firstIndex, firstBlk));
 				retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(secondIndex, secondBlk));

@@ -155,7 +155,7 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 			if(input2.getDataType() == DataType.MATRIX) //MATRIX<-MATRIX
 			{
 				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.getName());
-				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock(), inplace);
+				resultBlock = matBlock.leftIndexingOperations(rhsMatBlock, rl, ru, cl, cu, new MatrixBlock(), inplace);
 				ec.releaseMatrixInput(input2.getName());
 			}
 			else //MATRIX<-SCALAR 

@@ -278,7 +278,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			
 			PartitionedMatrixBlock rhsMatBlock = binput.getValue();
 			MatrixBlock slicedRHSMatBlock = rhsMatBlock.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
-			MatrixBlock resultBlock = (MatrixBlock) kv._2.leftIndexingOperations(slicedRHSMatBlock, lhs_rl, lhs_ru, lhs_cl, lhs_cu, new MatrixBlock(), true);
+			MatrixBlock resultBlock = kv._2.leftIndexingOperations(slicedRHSMatBlock, lhs_rl, lhs_ru, lhs_cl, lhs_cu, new MatrixBlock(), true);
 			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, resultBlock);
 		}
 		

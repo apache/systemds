@@ -292,14 +292,14 @@ public class AggUnaryOp extends Hop
 		
 		checkAndSetForcedPlatform();
 		
+		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		
 		if( _etypeForced != null ) 			
 		{
 			_etype = _etypeForced;
 		}
 		else
 		{
-			ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
-			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
 			{
 				_etype = findExecTypeByMemEstimate();
@@ -316,11 +316,11 @@ public class AggUnaryOp extends Hop
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
-			
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE ) {
-				setRequiresRecompile();
-			}
+		}
+
+		//mark for recompile (forever)
+		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE ) {
+			setRequiresRecompile();
 		}
 		
 		return _etype;

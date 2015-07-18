@@ -612,14 +612,14 @@ public class UnaryOp extends Hop
 	{		
 		checkAndSetForcedPlatform();
 	
+		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		
 		if( _etypeForced != null ) 			
 		{
 			_etype = _etypeForced;		
 		}
 		else 
 		{
-			ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
-			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}
@@ -637,12 +637,12 @@ public class UnaryOp extends Hop
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
-			
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
-				setRequiresRecompile();
 		}
-		
+	
+		//mark for recompile (forever)
+		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
+			setRequiresRecompile();
+
 		if( _op == OpOp1.PRINT || _op == OpOp1.STOP || _op == OpOp1.INVERSE )
 			_etype = ExecType.CP;
 		

@@ -135,10 +135,8 @@ public class ProgramBlock
 			
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-				&& OptimizerUtils.isHybridExecutionMode()	
 				&& _sb != null 
 				&& _sb.requiresRecompilation() )
-				//&& Recompiler.requiresRecompilation(_sb.get_hops()) )
 			{
 				tmp = Recompiler.recompileHopsDag(_sb, _sb.get_hops(), ec.getVariables(), null, false, _tid);
 			}
@@ -176,9 +174,7 @@ public class ProgramBlock
 		try {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-				&& OptimizerUtils.isHybridExecutionMode()	
 				&& requiresRecompile )
-				//&& Recompiler.requiresRecompilation(hops)         )
 			{
 				tmp = Recompiler.recompileHopsDag(hops, ec.getVariables(), false, _tid);
 			}

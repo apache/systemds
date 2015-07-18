@@ -411,8 +411,7 @@ public class ForStatementBlock extends StatementBlock
 	public void updatePredicateRecompilationFlags() 
 		throws HopsException
 	{
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-            && OptimizerUtils.isHybridExecutionMode()	 )
+		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION )
 		{
 			_requiresFromRecompile = Recompiler.requiresRecompilation(getFromHops());
 			_requiresToRecompile = Recompiler.requiresRecompilation(getToHops());

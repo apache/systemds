@@ -317,7 +317,6 @@ public class WhileStatementBlock extends StatementBlock
 		throws HopsException
 	{
 		_requiresPredicateRecompile =  OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-			                           && OptimizerUtils.isHybridExecutionMode()	
 			                           && Recompiler.requiresRecompilation(getPredicateHops());
 	}
 	

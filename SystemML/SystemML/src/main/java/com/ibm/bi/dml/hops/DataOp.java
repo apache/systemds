@@ -442,11 +442,11 @@ public class DataOp extends Hop
 			
 				//check for valid CP dimensions and matrix size
 				checkAndSetInvalidCPDimsAndSize();
-				
-				//mark for recompile (forever)
-				if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
-					setRequiresRecompile();
 			}
+			
+			//mark for recompile (forever)
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
+				setRequiresRecompile();
 		}
 	    else //READ
 		{

@@ -353,14 +353,14 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	{	
 		checkAndSetForcedPlatform();
 
+		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		
 		if( _etypeForced != null ) 			
 		{
 			_etype = _etypeForced;
 		}
 		else 
 		{
-			ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
-			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
 			{
 				_etype = findExecTypeByMemEstimate();
@@ -379,11 +379,11 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
-			
-			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE ) {
-				setRequiresRecompile();			
-			}
+		}
+		
+		//mark for recompile (forever)
+		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE ) {
+			setRequiresRecompile();			
 		}
 		
 		return _etype;

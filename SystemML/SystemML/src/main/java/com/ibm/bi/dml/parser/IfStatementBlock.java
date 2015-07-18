@@ -537,8 +537,7 @@ public class IfStatementBlock extends StatementBlock
 	public void updatePredicateRecompilationFlag() 
 		throws HopsException
 	{
-		_requiresPredicateRecompile =  OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-			                           && OptimizerUtils.isHybridExecutionMode()	
+		_requiresPredicateRecompile =  OptimizerUtils.ALLOW_DYN_RECOMPILATION 	
 			                           && Recompiler.requiresRecompilation(getPredicateHops());
 	}
 	

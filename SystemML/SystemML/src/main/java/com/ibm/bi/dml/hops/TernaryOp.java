@@ -150,17 +150,16 @@ public class TernaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsCentralMoment() throws HopsException, LopsException {
-		
+	private void constructLopsCentralMoment() 
+		throws HopsException, LopsException 
+	{	
 		if ( _op != OpOp3.CENTRALMOMENT )
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.CENTRALMOMENT );
 		
 		ExecType et = optFindExecType();
-		if ( et == ExecType.SPARK )  {
-			// TODO implement Spark support
-			et = ExecType.CP;
-		}
-		if ( et == ExecType.MR ) {
+		
+		if ( et == ExecType.MR ) 
+		{
 			CombineBinary combine = CombineBinary.constructCombineLop(
 					OperationTypes.PreCentralMoment, 
 					getInput().get(0).constructLops(), 
@@ -177,25 +176,24 @@ public class TernaryOp extends Hop
 					.get(2).constructLops(), DataType.MATRIX,
 					getValueType(), et);
 			cm.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
-			
-			cm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(cm);
 			
 			UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
 					.get(OpOp1.CAST_AS_SCALAR), getDataType(),
 					getValueType());
 			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(unary1);
 			setLops(unary1);
 		}
-		else {
-			//System.out.println("CM Tertiary executing in CP...");
+		else //CP / SPARK
+		{
 			CentralMoment cm = new CentralMoment(
 					getInput().get(0).constructLops(),
 					getInput().get(1).constructLops(),
 					getInput().get(2).constructLops(),
 					getDataType(), getValueType(), et);
 			cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			cm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(cm);
 			setLops(cm);
 		}
 	}
@@ -746,6 +744,8 @@ public class TernaryOp extends Hop
 		throws HopsException 
 	{	
 		checkAndSetForcedPlatform();
+
+		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if( _etypeForced != null ) 			
 		{
@@ -753,8 +753,6 @@ public class TernaryOp extends Hop
 		}
 		else
 		{	
-			ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
-			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}
@@ -769,15 +767,15 @@ public class TernaryOp extends Hop
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
-			
-			//mark for recompile (forever)
-			// Necessary condition for recompilation is unknown dimensions.
-			// When execType=CP, it is marked for recompilation only when additional
-			// dimension inputs are provided (and those values are unknown at initial compile time).
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) ) {
-				if ( _etype==REMOTE || (_etype == ExecType.CP && _dimInputsPresent))
-					setRequiresRecompile();
-			}
+		}
+
+		//mark for recompile (forever)
+		// Necessary condition for recompilation is unknown dimensions.
+		// When execType=CP, it is marked for recompilation only when additional
+		// dimension inputs are provided (and those values are unknown at initial compile time).
+		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) ) {
+			if ( _etype==REMOTE || (_etype == ExecType.CP && _dimInputsPresent))
+				setRequiresRecompile();
 		}
 		
 		return _etype;

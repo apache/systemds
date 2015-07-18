@@ -1027,9 +1027,8 @@ public class StatementBlock extends LiveVariableAnalysis
 	public void updateRecompilationFlag() 
 		throws HopsException
 	{
-		_requiresRecompile =   OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-			                   && OptimizerUtils.isHybridExecutionMode() 	
-			                   && Recompiler.requiresRecompilation(get_hops());
+		_requiresRecompile = OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+			                 && Recompiler.requiresRecompilation(get_hops());
 	}
 	
 	public boolean requiresRecompilation()

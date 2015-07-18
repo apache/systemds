@@ -253,8 +253,10 @@ public class MapMultChainTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
-			//check compiled/executed jobs
-			int expectedNumCompiled = (sumProductRewrites)?2:4; //GMR Reblock, 2x(GMR mapmult), GMR write -> GMR Reblock, GMR mapmultchain+write
+			//check compiled/executed jobs 
+			//changed 07/2015: by disabling the mm-transpose rewrite in forced mr/spark, the write is packed 
+			//into the GMR for mapmult because the additional CP r' does not create a cut anymore.
+			int expectedNumCompiled = (sumProductRewrites)?2:3; //GMR Reblock, 2x(GMR mapmult, incl write) -> GMR Reblock, GMR mapmultchain+write
 			int expectedNumExecuted = expectedNumCompiled;
 			if( instType != ExecType.MR ) {
 				expectedNumCompiled = (instType==ExecType.SPARK)?0:1; //REBLOCK in CP

@@ -61,7 +61,10 @@ public class GDFOLinregDS extends AutomatedTestBase
 	{
 		runGDFOTest(TEST_NAME1, true, ExecType.CP);
 	}
-	
+
+	/* TODO mr/spark backend currently fails w/ wrong blocksizes (see reblock)
+	 * need to fix plan validity issue of inconsistent input blocksizes
+
 	@Test
 	public void testGDFOLinregDSDenseMR() 
 	{
@@ -74,8 +77,6 @@ public class GDFOLinregDS extends AutomatedTestBase
 		runGDFOTest(TEST_NAME1, true, ExecType.MR);
 	}
 	
-	/* TODO spark backend currently fails w/ wrong blocksizes (see reblock)
-	 * need to fix, but optimizer already works fine.
 	@Test
 	public void testGDFOLinregDSDenseSpark() 
 	{

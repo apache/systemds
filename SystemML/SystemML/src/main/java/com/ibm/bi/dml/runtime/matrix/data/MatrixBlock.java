@@ -2998,7 +2998,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		MatrixBlock that = checkType(thatValue);
 		MatrixBlock ret = checkType(result);
 		if( !LibMatrixBincell.isValidDimensionsBinary(this, that) ) {
-			throw new RuntimeException("block sizes are not matched for binary " +
+			throw new RuntimeException("Block sizes are not matched for binary " +
 					"cell operations: "+this.rlen+"x"+this.clen+" vs "+ that.rlen+"x"+that.clen);
 		}
 		

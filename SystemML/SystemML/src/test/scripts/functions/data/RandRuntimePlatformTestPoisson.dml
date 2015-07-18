@@ -8,5 +8,5 @@
 # This script simply generates a matrix with random numbers according to a given set of arguments.
 # This script must be invoked with via runtime platforms (for example, -exec hadoop -exec singlenode etc.)
 
-A = Rand(rows=$1, cols=$2, sparsity=$3, seed=$4, pdf=$5, mean=$6);
+A = Rand(rows=$1, cols=$2, sparsity=$3, seed=$4, pdf=$5, lambda=$6);
 write(A, $7);

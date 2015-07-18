@@ -42,7 +42,7 @@ public class DataExpression extends DataIdentifier
 	public static final String RAND_SPARSITY = "sparsity"; 
 	public static final String RAND_SEED    =  "seed";
 	public static final String RAND_PDF		=  "pdf";
-	public static final String RAND_MEAN	=  "mean";
+	public static final String RAND_LAMBDA	=  "lambda";
 	
 	public static final String RAND_PDF_UNIFORM = "uniform";
 	
@@ -79,7 +79,7 @@ public class DataExpression extends DataIdentifier
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
 	public static final String[] RAND_VALID_PARAM_NAMES = 
-		{ RAND_ROWS, RAND_COLS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_MEAN}; 
+		{ RAND_ROWS, RAND_COLS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA}; 
 	
 	public static final String[] MATRIX_VALID_PARAM_NAMES = 
 		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS};
@@ -277,7 +277,7 @@ public class DataExpression extends DataIdentifier
 					"\". Legal parameters for Rand statement are " 
 					+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
 					+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
-					+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF + ", " + RAND_MEAN);
+					+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF + ", " + RAND_LAMBDA);
 		}
 		if (getVarParam(paramName) != null){
 			throw new DMLParseException(paramValue.getFilename(), paramValue.printErrorLocation() + "attempted to add Rand statement parameter " + paramValue + " more than once");
@@ -417,11 +417,11 @@ public class DataExpression extends DataIdentifier
 					this.getBeginLine(), this.getBeginColumn());
 			addVarParam(RAND_PDF, id);
 		}
-		if (getVarParam(RAND_MEAN)== null){
-			DoubleIdentifier id = new DoubleIdentifier(-1.0,
+		if (getVarParam(RAND_LAMBDA)== null){
+			DoubleIdentifier id = new DoubleIdentifier(1.0,
 					this.getFilename(), this.getBeginLine(), this.getBeginColumn(),
 					this.getBeginLine(), this.getBeginColumn());
-			addVarParam(RAND_MEAN, id);
+			addVarParam(RAND_LAMBDA, id);
 		}
 	}
 	
@@ -1110,7 +1110,7 @@ public class DataExpression extends DataIdentifier
 							"\". Legal parameters for Rand statement are " 
 							+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
 							+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
-							+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF  + ", " + RAND_MEAN, conditional);
+							+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF  + ", " + RAND_LAMBDA, conditional);
 				}
 			}
 			//TODO: Leo Need to check with Doug about the data types
@@ -1143,10 +1143,14 @@ public class DataExpression extends DataIdentifier
 				raiseValidateError("for Rand statement " + RAND_PDF + " has incorrect data type", conditional);
 			}
 	
-			if (!(getVarParam(RAND_MEAN) instanceof DoubleIdentifier || getVarParam(RAND_MEAN) instanceof IntIdentifier)) {
-				raiseValidateError("for Rand statement " + RAND_MEAN + " has incorrect data type", conditional);
+			Expression lambda = getVarParam(RAND_LAMBDA);
+			if (!( (lambda instanceof DataIdentifier 
+					|| lambda instanceof ConstIdentifier) 
+				&& (lambda.getOutput().getValueType() == ValueType.DOUBLE 
+					|| lambda.getOutput().getValueType() == ValueType.INT) )) {
+				raiseValidateError("for Rand statement " + RAND_LAMBDA + " has incorrect data type", conditional);
 			}
-	
+				
 			long rowsLong = -1L, colsLong = -1L;
 
 			///////////////////////////////////////////////////////////////////

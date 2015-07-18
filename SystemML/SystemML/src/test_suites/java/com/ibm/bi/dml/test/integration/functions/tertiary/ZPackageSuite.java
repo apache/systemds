@@ -9,7 +9,8 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 	CTableMatrixIgnoreZerosTest.class,
 	CTableSequenceTest.class,
-	TableOutputTest.class
+	TableOutputTest.class,
+	CentralMomentWeightsTest.class
 })
 
 

@@ -31,6 +31,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.BuiltinBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.CentralMomentSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CheckpointSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CpmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CumulativeAggregateSPInstruction;
@@ -108,8 +109,9 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "%%"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "%/%"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "^"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-		String2SPInstructionType.put( "^2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); //TODO: special ^ case
-		String2SPInstructionType.put( "*2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); //TODO: special * case
+		String2SPInstructionType.put( "^2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
+		String2SPInstructionType.put( "*2"   , SPINSTRUCTION_TYPE.ArithmeticBinary); 
+		
 		// Relational Instruction Opcodes 
 		String2SPInstructionType.put( "=="   , SPINSTRUCTION_TYPE.RelationalBinary);
 		String2SPInstructionType.put( "!="   , SPINSTRUCTION_TYPE.RelationalBinary);
@@ -142,7 +144,6 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "atan"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sqrt"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "plogp" , SPINSTRUCTION_TYPE.BuiltinUnary);
-		// String2SPInstructionType.put( "print" , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "round" , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "ceil"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "floor" , SPINSTRUCTION_TYPE.BuiltinUnary);
@@ -150,7 +151,6 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "ucum*" , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "ucummin", SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "ucummax", SPINSTRUCTION_TYPE.BuiltinUnary);
-		// String2SPInstructionType.put( "stop"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "inverse", SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sprop", SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sigmoid", SPINSTRUCTION_TYPE.BuiltinUnary);
@@ -190,6 +190,7 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "bcumoffmin", SPINSTRUCTION_TYPE.CumsumOffset);
 		String2SPInstructionType.put( "bcumoffmax", SPINSTRUCTION_TYPE.CumsumOffset);
 		
+		String2SPInstructionType.put( "cm"    , SPINSTRUCTION_TYPE.CentralMoment);
 		
 		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
 		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
@@ -330,6 +331,9 @@ public class SPInstructionParser extends InstructionParser {
 				
 			case CumsumOffset:
 				return CumulativeOffsetSPInstruction.parseInstruction(str); 
+		
+			case CentralMoment:
+				return CentralMomentSPInstruction.parseInstruction(str);
 				
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);

@@ -341,15 +341,18 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void constructLopsCentralMoment(ExecType et) throws HopsException, LopsException {
+	private void constructLopsCentralMoment(ExecType et) 
+		throws HopsException, LopsException 
+	{
 		// The output data type is a SCALAR if central moment 
-		// gets computed in CP, and it will be MATRIX otherwise.
+		// gets computed in CP/SPARK, and it will be MATRIX otherwise.
 		DataType dt = (et == ExecType.MR ? DataType.MATRIX : DataType.SCALAR );
-		CentralMoment cm = new CentralMoment(getInput().get(0)
-				.constructLops(), getInput().get(1).constructLops(),
+		CentralMoment cm = new CentralMoment(
+				getInput().get(0).constructLops(), 
+				getInput().get(1).constructLops(),
 				dt, getValueType(), et);
 
-		cm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+		setLineNumbers(cm);
 		
 		if ( et == ExecType.MR ) {
 			cm.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
@@ -357,7 +360,7 @@ public class BinaryOp extends Hop
 					.get(OpOp1.CAST_AS_SCALAR), getDataType(),
 					getValueType());
 			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(unary1);
 			setLops(unary1);
 		}
 		else {

@@ -14,7 +14,7 @@ import org.junit.runners.Suite;
 	ElementwiseModulusTest.class,
 	ElementwiseMultiplicationTest.class,
 	ElementwiseSubtractionTest.class,
-
+	
 	MapMultChainTest.class,
 	MapMultLimitTest.class,
 	MatrixMultiplicationTest.class,
@@ -27,9 +27,9 @@ import org.junit.runners.Suite;
 	ScalarSubtractionTest.class,
 	UltraSparseMRMatrixMultiplicationTest.class,
 	DiagMatrixMultiplicationTest.class,
-	TransposeMatrixMultiplicationTest.class
+	TransposeMatrixMultiplicationTest.class,
 	
-
+	CentralMomentTest.class
 })
 
 

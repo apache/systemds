@@ -209,13 +209,8 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				if(!(rl==ru && cl==cu))
 					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"]." );
 				ScalarObject scalar = sec.getScalarInput(input2.getName(), ValueType.DOUBLE, input2.isLiteral());
-				double scalarValue = 0;
-				if(scalar instanceof DoubleObject) {
-					scalarValue = scalar.getDoubleValue();
-				}
-				else {
-					throw new DMLRuntimeException("Invalid valuetype of input parameter in MatrixIndexingSPInstruction");
-				}
+				double scalarValue = scalar.getDoubleValue();
+				
 				out = in1.mapToPair(new LeftIndexScalar(scalarValue, rl, cl, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()));
 			}
 			

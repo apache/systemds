@@ -273,8 +273,10 @@ public class OptimizerRuleBased extends Optimizer
 			HashSet<String> inplaceResultVars = new HashSet<String>();
 			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
 			
-			// rewrite 16: runtime piggybacking
-			rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
+			if( !OptimizerUtils.isSparkExecutionMode() ) {
+				// rewrite 16: runtime piggybacking
+				rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
+			}
 		}	
 	
 		// rewrite 17: set result merge

@@ -106,11 +106,11 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		{
 			if( _aggtype == SparkAggType.MULTI_BLOCK ) {
 				out = out.reduceByKey( new AggregateMultiBlockFunction(aggop) );
-			}
-			
-			//drop correction after aggregation
-			if( auop.aggOp.correctionExists ) {
-				out = out.mapToPair( new AggregateDropCorrectionFunction(aggop) );
+	
+				//drop correction after aggregation
+				if( auop.aggOp.correctionExists ) {
+					out = out.mapToPair( new AggregateDropCorrectionFunction(aggop) );
+				}
 			}
 			
 			//put output RDD handle into symbol table

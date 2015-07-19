@@ -62,15 +62,12 @@ public class GDFOLinregDS extends AutomatedTestBase
 		runGDFOTest(TEST_NAME1, true, ExecType.CP);
 	}
 
-	/* TODO mr/spark backend currently fails w/ wrong blocksizes (see reblock)
-	 * need to fix plan validity issue of inconsistent input blocksizes
-
 	@Test
 	public void testGDFOLinregDSDenseMR() 
 	{
 		runGDFOTest(TEST_NAME1, false, ExecType.MR);
 	}
-	
+
 	@Test
 	public void testGDFOLinregDSSparseMR() 
 	{
@@ -78,17 +75,16 @@ public class GDFOLinregDS extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testGDFOLinregDSDenseSpark() 
+	public void testGDFOLinregDSDenseSP() 
 	{
 		runGDFOTest(TEST_NAME1, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testGDFOLinregDSSparseSpark() 
+	public void testGDFOLinregDSSparseSP() 
 	{
 		runGDFOTest(TEST_NAME1, true, ExecType.SPARK);
 	}
-	*/
 	
 	/**
 	 * 
@@ -118,7 +114,7 @@ public class GDFOLinregDS extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-explain",//"hops",
+			programArgs = new String[]{ "-explain","hops",
 					                    "-config="+HOME+TEST_CONF,
 					                    "-args", HOME + INPUT_DIR + "X",
 					                             HOME + INPUT_DIR + "y",

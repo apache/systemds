@@ -2,9 +2,12 @@ package com.ibm.bi.dml.hops.globalopt;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
+import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
+import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
@@ -95,7 +98,7 @@ public class Plan
 		boolean ret = true;
 		ExecType CLUSTER = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
-		if(    _conf.getExecType()==CLUSTER 
+		if( _conf.getExecType()==CLUSTER 
 			&& _childs != null && _childs.size() > 1 ) 
 		{
 			int size0 = _childs.get(0)._conf.getBlockSize();
@@ -106,6 +109,31 @@ public class Plan
 			}
 		}
 		
+		return ret;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean checkValidBlocksizesTRead()
+	{
+		boolean ret = true;
+		
+		if( _node.getNodeType() == NodeType.HOP_NODE
+			&& _node.getHop() instanceof DataOp 
+			&& ((DataOp)_node.getHop()).getDataOpType() == DataOpTypes.TRANSIENTREAD )
+		{
+			for( Plan c : _childs )
+				ret &= (  _conf.getBlockSize() == c._conf.getBlockSize() );
+		}
+		
+		if( _node.getNodeType() == NodeType.CROSS_BLOCK_NODE )
+		{
+			for( Plan c : _childs )
+				ret &= (  _conf.getBlockSize() == c._conf.getBlockSize() );
+		}
+
 		return ret;
 	}
 	

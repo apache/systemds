@@ -134,11 +134,12 @@ public class PlanSet
 		Plan optPlan = null;
 		
 		//compare costs of all plans
-		for( Plan p : _plans )
+		for( Plan p : _plans ) {
 			if( p.getCosts() < optCosts ) {
 				optCosts = p.getCosts();
 				optPlan = p;
 			}
+		}	
 		
 		return optPlan;
 	}

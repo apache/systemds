@@ -51,7 +51,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
  * TODO partial runtime plan generation
  * TODO partial runtime plan costing  
  * 
- * FIXME: hash for interesting properties
  */
 public class GDFEnumOptimizer extends GlobalOptimizer
 {
@@ -66,12 +65,14 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	private static final boolean BRANCH_AND_BOUND_PRUNING = true; 
 	private static final boolean PREFERRED_PLAN_SELECTION = true;
 	private static final boolean COST_FULL_PROGRAMS       = false;
+	private static final boolean ENUM_CP_BLOCKSIZES  	  = false;
 	private static final MismatchHeuristicType DEFAULT_MISMATCH_HEURISTIC = MismatchHeuristicType.FIRST;
 	
 	//internal configuration parameters 
-	private static final int[] BLOCK_SIZES = new int[]{ 1 * DMLTranslator.DMLBlockSize,
-													    2 * DMLTranslator.DMLBlockSize,
-														4 * DMLTranslator.DMLBlockSize};
+	private static final int[] BLOCK_SIZES = new int[]{ 1024,//1 * DMLTranslator.DMLBlockSize,
+													    2048,//2 * DMLTranslator.DMLBlockSize,
+														4096};//4 * DMLTranslator.DMLBlockSize};
+	private static final double BRANCH_AND_BOUND_REL_THRES = Math.pow(10, -5);
 	//private static final int[] REPLICATION_FACTORS = new int[]{1,3,5};
 			
 	private MemoStructure _memo = null; //plan memoization table
@@ -109,6 +110,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		double initCosts = Double.MAX_VALUE;
 		if( BRANCH_AND_BOUND_PRUNING ) {
 			initCosts = CostEstimationWrapper.getTimeEstimate(prog, ec);
+			initCosts = initCosts * (1+BRANCH_AND_BOUND_REL_THRES);
 		}
 		
 		//Step 2: dynamic programming plan generation
@@ -213,24 +215,8 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		// CASE 1: core hop enumeration (other than persistent/transient read/write) 
 		if( node.getNodeType() == NodeType.HOP_NODE && !(node.getHop() instanceof DataOp ) ) 
 		{
-			//create cp plan, if allowed (note: most interesting properties are irrelevant for CP)
-			if( node.getHop().getMemEstimate() < OptimizerUtils.getLocalMemBudget() ) {
-				RewriteConfig rccp = new RewriteConfig(ExecType.CP, BLOCK_SIZES[0], FileFormatTypes.BINARY);
-				InterestingProperties ipscp = rccp.deriveInterestingProperties();
-				Plan cpplan = new Plan(node, ipscp, rccp, null);
-				plans.add( cpplan );
-			}
-			
-			//create mr plans, if required
-			if( node.requiresMREnumeration() ) {
-				for( Integer bs : BLOCK_SIZES )
-				{
-					RewriteConfig rcmr = new RewriteConfig(CLUSTER, bs, FileFormatTypes.BINARY);
-					InterestingProperties ipsmr = rcmr.deriveInterestingProperties();
-					Plan mrplan = new Plan(node, ipsmr, rcmr, null);
-					plans.add( mrplan );			
-				}
-			}
+			//core rewrite enumeration for cp and mr
+			enumHopNodePlans(node, plans);
 		}
 		//CASE 2: dataop hop enumeration 
 		else if( node.getHop() instanceof DataOp )
@@ -269,7 +255,9 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 			else if(   dhop.getDataOpType()==DataOpTypes.TRANSIENTREAD
 					|| dhop.getDataOpType()==DataOpTypes.TRANSIENTWRITE)
 			{
-				//do nothing for transient read/write (leads to pass-through on cross product)			
+				//note: full enumeration for transient read and write; otherwise the properties
+				//of these hops are never set because pass-through plans refer to different hops
+				enumHopNodePlans(node, plans);
 			}
 		}
 		//ENUMERATE LOOP PLANS
@@ -316,6 +304,38 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	
 	/**
 	 * 
+	 * @param node
+	 * @param plans
+	 */
+	private static void enumHopNodePlans(GDFNode node, ArrayList<Plan> plans)
+	{ 
+		ExecType CLUSTER = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		
+		//create cp plan, if allowed (note: most interesting properties are irrelevant for CP)
+		if( node.getHop().getMemEstimate() < OptimizerUtils.getLocalMemBudget() ) {
+			int[] bstmp = ENUM_CP_BLOCKSIZES ? BLOCK_SIZES : new int[]{BLOCK_SIZES[0]};
+			for( Integer bs : bstmp ) {
+				RewriteConfig rccp = new RewriteConfig(ExecType.CP, bs, FileFormatTypes.BINARY);
+				InterestingProperties ipscp = rccp.deriveInterestingProperties();
+				Plan cpplan = new Plan(node, ipscp, rccp, null);
+				plans.add( cpplan );
+			}
+		}
+		
+		//create mr plans, if required
+		if( node.requiresMREnumeration() ) {
+			for( Integer bs : BLOCK_SIZES )
+			{
+				RewriteConfig rcmr = new RewriteConfig(CLUSTER, bs, FileFormatTypes.BINARY);
+				InterestingProperties ipsmr = rcmr.deriveInterestingProperties();
+				Plan mrplan = new Plan(node, ipsmr, rcmr, null);
+				plans.add( mrplan );			
+			}
+		}
+	}
+	
+	/**
+	 * 
 	 * @param plans
 	 */
 	private static void pruneInvalidPlans( PlanSet plans )
@@ -327,17 +347,23 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		{
 			//a) check matching blocksizes if operation in MR
 			if( !plan.checkValidBlocksizesInMR() ) {
-				//System.out.println("pruned invalid blocksize");
+				//System.out.println("pruned invalid blocksize mr op");
 				continue;
 			}
 			
-			//b) check valid format in MR
+			//b) check matching blocksizes of tread/twrite pairs
+			if( !plan.checkValidBlocksizesTRead() ) {
+				//System.out.println("pruned invalid blocksize tread");
+				continue;
+			}
+			
+			//c) check valid format in MR
 			if( !plan.checkValidFormatInMR() ) {
 				//System.out.println("pruned invalid format: "+plan.getNode().getHop().getClass());
 				continue;
 			}
 				
-			//c) check valid execution type per hop (e.g., function, reblock)
+			//d) check valid execution type per hop (e.g., function, reblock)
 			if( !plan.checkValidExecutionType() ) {
 				//System.out.println("pruned invalid execution type: "+plan.getNode().getHop().getClass());
 				continue;
@@ -514,8 +540,10 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 			hop.setColsInBlock(rc.getBlockSize());
 			if( rc.getExecType()==CLUSTER ) //after blocksize update
 			{
-				hop.setRequiresReblock( hop.hasMatrixInputWithDifferentBlocksizes() 
-						|| HopRewriteUtils.alwaysRequiresReblock(hop));
+				//TODO double check dataop condition - side effect from plan validity
+				boolean reblock = HopRewriteUtils.alwaysRequiresReblock(hop) ||
+						(hop.hasMatrixInputWithDifferentBlocksizes() && !(hop instanceof DataOp));				
+				hop.setRequiresReblock(reblock);
 			}
 			else
 				hop.setRequiresReblock(false);

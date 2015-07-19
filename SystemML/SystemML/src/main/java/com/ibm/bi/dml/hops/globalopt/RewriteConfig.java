@@ -83,8 +83,7 @@ public class RewriteConfig
 	@Override
 	public String toString() 
 	{
-		//TODO
-		return "RC["+_rewriteSetExecType+"]";//+_type+"="+_value + "]";
+		return "RC["+_rewriteSetExecType+","+_rewriteSetBlockSize+"]";//+_type+"="+_value + "]";
 	}
 
 }

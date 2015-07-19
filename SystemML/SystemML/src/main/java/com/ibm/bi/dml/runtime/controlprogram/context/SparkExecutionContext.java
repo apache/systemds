@@ -278,7 +278,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param rdd
 	 * @throws DMLRuntimeException 
 	 */
-	public void setRDDHandleForVariable(String varname, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd) 
+	public void setRDDHandleForVariable(String varname, JavaPairRDD<MatrixIndexes,?> rdd) 
 		throws DMLRuntimeException
 	{
 		MatrixObject mo = getMatrixObject(varname);

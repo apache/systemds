@@ -12,6 +12,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -64,6 +65,142 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 	}
 
+	@Test
+	public void testGroupedAggSumDenseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.SUM, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggSumSparseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.SUM, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggSumDenseWeightsSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.SUM, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggSumSparseWeightsSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.SUM, true, true, false, ExecType.SPARK);
+	}
+	
+	// This is not applicable for spark instruction
+//	@Test
+//	public void testGroupedAggSumDenseTransposeSP() 
+//	{
+//		runGroupedAggregateOperationTest(OpType.SUM, false, false, true, ExecType.SPARK);
+//	}
+//	
+//	@Test
+//	public void testGroupedAggSumSparseTransposeSP() 
+//	{
+//		runGroupedAggregateOperationTest(OpType.SUM, true, false, true, ExecType.SPARK);
+//	}
+//	
+//	@Test
+//	public void testGroupedAggSumDenseWeightsTransposeSP() 
+//	{
+//		runGroupedAggregateOperationTest(OpType.SUM, false, true, true, ExecType.SPARK);
+//	}
+//	
+//	@Test
+//	public void testGroupedAggSumSparseWeightsTransposeSP() 
+//	{
+//		runGroupedAggregateOperationTest(OpType.SUM, true, true, true, ExecType.SPARK);
+//	}
+	
+	@Test
+	public void testGroupedAggCountDenseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.COUNT, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggCountSparseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.COUNT, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggCountDenseWeightsSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.COUNT, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggCountSparseWeightsSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.COUNT, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggMeanDenseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.MEAN, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggMeanSparseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.MEAN, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggMeanDenseWeightsSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.MEAN, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggMeanSparseWeightsSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.MEAN, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggVarianceDenseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.VARIANCE, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggVarianceSparseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.VARIANCE, true, false, false, ExecType.SPARK);
+	}
+	
+	
+	@Test
+	public void testGroupedAggMoment3DenseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.MOMENT3, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggMoment3SparseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.MOMENT3, true, false, false, ExecType.SPARK);
+	}
+	
+	
+	@Test
+	public void testGroupedAggMoment4DenseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.MOMENT4, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGroupedAggMoment4SparseSP() 
+	{
+		runGroupedAggregateOperationTest(OpType.MOMENT4, true, false, false, ExecType.SPARK);
+	}
+	
+	// -----------------------------------------------------------------------
 	
 	@Test
 	public void testGroupedAggSumDenseCP() 
@@ -400,7 +537,15 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		try
 		{
@@ -468,6 +613,7 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 	

@@ -99,7 +99,8 @@ public abstract class SPInstruction extends Instruction
 			&& ec instanceof SparkExecutionContext ) 
 		{
 			SparkExecutionContext sec = (SparkExecutionContext) ec;
-			sec.getSparkListener().addCurrentInstruction((SPInstruction)tmp);
+			if(sec.getSparkListener() != null)
+				sec.getSparkListener().addCurrentInstruction((SPInstruction)tmp);
 		}
 		
 		return tmp;
@@ -120,7 +121,8 @@ public abstract class SPInstruction extends Instruction
 		{
 			SparkExecutionContext sec = (SparkExecutionContext) ec;
 			sec.setDebugString(this, ((ComputationSPInstruction) this).getOutputVariableName());
-			sec.getSparkListener().removeCurrentInstruction(this);
+			if(sec.getSparkListener() != null)
+				sec.getSparkListener().removeCurrentInstruction(this);
 		}
 		
 		//default post-process behavior

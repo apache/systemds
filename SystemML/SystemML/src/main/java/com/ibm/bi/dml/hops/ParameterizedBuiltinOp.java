@@ -23,6 +23,7 @@ import com.ibm.bi.dml.lops.ParameterizedBuiltin;
 import com.ibm.bi.dml.lops.RepMat;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 
@@ -196,11 +197,6 @@ public class ParameterizedBuiltinOp extends Hop
 		//reset reblock requirement (see MR aggregate / construct lops)
 		setRequiresReblock( false );
 		
-		if ( et == ExecType.SPARK )  {
-			// TODO: implement Spark support
-			et = ExecType.CP;
-		}
-		
 		if ( et == ExecType.MR ) 
 		{
 			// construct necessary lops: combineBinary/combineTertiary and
@@ -284,12 +280,15 @@ public class ParameterizedBuiltinOp extends Hop
 			grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
 			// introduce a reblock lop only if it is NOT single_node execution
-			if( et == ExecType.CP ){
+			if( et == ExecType.CP || et == ExecType.SPARK){
 				//force blocked output in CP (see below)
-				grp_agg.getOutputParameters().setDimensions(-1, 1, 1000, 1000, -1);
+				grp_agg.getOutputParameters().setDimensions(-1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
 			}
 			//grouped agg, w/o reblock in CP
 			setLops(grp_agg);
+//			if(et == ExecType.SPARK) {
+//				setRequiresReblock( true );
+//			}
 		}
 	}
 

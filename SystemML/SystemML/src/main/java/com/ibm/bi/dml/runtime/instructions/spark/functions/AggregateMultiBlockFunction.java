@@ -19,7 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
  * drop them at the end because during aggregation we dont know if we produce an
  * intermediate or the final aggregate. 
  */
-public class AggregateGenericFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+public class AggregateMultiBlockFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -30,7 +30,7 @@ public class AggregateGenericFunction implements Function2<MatrixBlock, MatrixBl
 	private AggregateOperator _op = null;
 	private MatrixBlock _corr = null;
 	
-	public AggregateGenericFunction( AggregateOperator op )
+	public AggregateMultiBlockFunction( AggregateOperator op )
 	{
 		_op = op;	
 		_corr = new MatrixBlock();

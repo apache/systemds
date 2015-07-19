@@ -7,7 +7,10 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public abstract class ComputationSPInstruction extends SPInstruction {
@@ -37,5 +40,19 @@ public abstract class ComputationSPInstruction extends SPInstruction {
 
 	public String getOutputVariableName() {
 		return output.getName();
+	}
+	
+	/**
+	 * 
+	 * @param ec
+	 * @throws DMLRuntimeException 
+	 */
+	protected void checkExistingOutputDimensions(ExecutionContext ec) 
+		throws DMLRuntimeException
+	{
+		MatrixCharacteristics mcOut = ec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown()) {
+			throw new DMLRuntimeException("The output dimensions have not been inferred.");
+		}
 	}
 }

@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -45,8 +46,7 @@ public class PartialAggregate extends Lop
 	private boolean _dropCorr = false;
 	
 	//optional attribute for spark exec type
-	private boolean _aggregate = true;
-	
+	private SparkAggType _aggtype = SparkAggType.MULTI_BLOCK;
 	
 	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
 			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt)
@@ -65,12 +65,12 @@ public class PartialAggregate extends Lop
 	}
 	
 	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
-			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, boolean aggregate, ExecType et)
+			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et)
 		throws LopsException 
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
 		init(input, op, direct, dt, vt, et);
-		_aggregate = aggregate;
+		_aggtype = aggtype;
 	}
 	
 	/**
@@ -248,7 +248,7 @@ public class PartialAggregate extends Lop
 		//in case of spark, we also compile the optional aggregate flag into the instruction.
 		if( getExecType() == ExecType.SPARK ) {
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( _aggregate );	
+			sb.append( _aggtype );	
 		}
 		
 		return sb.toString();

@@ -39,7 +39,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 	
 	public CumulativeAggregateSPInstruction(AggregateUnaryOperator op, CPOperand in1, CPOperand out, String opcode, String istr )
 	{
-		super(op, in1, out, true, opcode, istr);
+		super(op, in1, out, null, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.CumsumAggregate;		
 	}
 

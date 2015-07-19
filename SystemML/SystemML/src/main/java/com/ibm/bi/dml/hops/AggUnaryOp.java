@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Group;
@@ -162,10 +163,11 @@ public class AggUnaryOp extends Hop
 			else if( et == ExecType.SPARK )
 			{
 				boolean needAgg = requiresAggregation(input, _direction);
+				SparkAggType aggtype = getSparkUnaryAggregationType(needAgg);
 				
 				//unary aggregate
 				PartialAggregate transform1 = new PartialAggregate(input.constructLops(), 
-						HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType(), needAgg, et);
+						HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType(), aggtype, et);
 				transform1.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
 				setLineNumbers(transform1);
 				setLops(transform1);
@@ -342,6 +344,23 @@ public class AggUnaryOp extends Hop
 				||( input.getDim2()>1 && input.getDim2()<=input.getColsInBlock() && dir==Direction.Row ); //e.g., rowSums(X) with ncol(X)<=1000
 	
 		return !noAggRequired;
+	}
+	
+
+	/**
+	 * 
+	 * @param agg
+	 * @return
+	 */
+	private SparkAggType getSparkUnaryAggregationType( boolean agg )
+	{
+		if( !agg )
+			return SparkAggType.NONE;
+		
+		if( dimsKnown() && getDim1()<=getRowsInBlock() && getDim2()<=getColsInBlock() )
+			return SparkAggType.SINGLE_BLOCK;
+		else
+			return SparkAggType.MULTI_BLOCK;
 	}
 	
 	/**

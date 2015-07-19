@@ -43,7 +43,7 @@ public class CentralMomentSPInstruction extends AggregateUnarySPInstruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public CentralMomentSPInstruction(AggregateUnaryOperator op, CPOperand in, CPOperand out, String opcode, String istr){
-		super(op, in, out, true, opcode, istr);
+		super(op, in, out, null, opcode, istr);
 	}
 	
 	/**

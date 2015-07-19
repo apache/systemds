@@ -1322,6 +1322,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		return ret;
 	}
 	
+
 	/**
 	 * 
 	 * @param agg

@@ -21,9 +21,12 @@ import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.api.datasource.MLBlock;
+import com.ibm.bi.dml.api.datasource.functions.GetMLBlock;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -59,6 +62,21 @@ public class MLOutput {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
 		if(rdd != null) {
 			return getDF(sqlContext, rdd, varName);
+		}
+		return null;
+	}
+	
+	public MLMatrix getMLMatrix(SQLContext sqlContext, MLContext ml, String varName) {
+		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
+		if(rdd != null) {
+			long rlen = _outMetadata.get(varName).getRows(); long clen = _outMetadata.get(varName).getCols();
+			int brlen = _outMetadata.get(varName).getRowsPerBlock(); int bclen = _outMetadata.get(varName).getColsPerBlock();
+			
+			// TODO: Get estimated number of nnz
+			long estimatedNNZ = -1;
+			
+			StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
+			return new MLMatrix(sqlContext.createDataFrame(rdd.map(new GetMLBlock()).rdd(), schema), ml, rlen, clen, brlen, bclen, estimatedNNZ);
 		}
 		return null;
 	}

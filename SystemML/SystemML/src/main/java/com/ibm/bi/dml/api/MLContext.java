@@ -64,7 +64,6 @@ import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.utils.Explain;
 
 import org.apache.spark.sql.DataFrame;
-
 import scala.collection.Seq;
 import scala.xml.Node;
 
@@ -143,7 +142,7 @@ public class MLContext {
 	private String _explainOutput = "";
 	
 	public MLContext(SparkContext sc) throws DMLRuntimeException {
-		initializeSpark(sc, false);
+		initializeSpark(sc, false, false);
 	}
 	
 	/**
@@ -153,15 +152,23 @@ public class MLContext {
 	 * @throws DMLRuntimeException 
 	 */
 	public MLContext(SparkContext sc, boolean monitorPerformance) throws DMLRuntimeException {
-		initializeSpark(sc, monitorPerformance);
+		initializeSpark(sc, monitorPerformance, false);
 	}
 	
 	public MLContext(JavaSparkContext sc) throws DMLRuntimeException {
-		initializeSpark(sc.sc(), false);
+		initializeSpark(sc.sc(), false, false);
 	}
 	
 	public MLContext(JavaSparkContext sc, boolean monitorPerformance) throws DMLRuntimeException {
-		initializeSpark(sc.sc(), monitorPerformance);
+		initializeSpark(sc.sc(), monitorPerformance, false);
+	}
+	
+	public MLContext(SparkContext sc, boolean monitorPerformance, boolean setForcedSparkExecType) throws DMLRuntimeException {
+		initializeSpark(sc, monitorPerformance, setForcedSparkExecType);
+	}
+	
+	public MLContext(JavaSparkContext sc, boolean monitorPerformance, boolean setForcedSparkExecType) throws DMLRuntimeException {
+		initializeSpark(sc.sc(), monitorPerformance, setForcedSparkExecType);
 	}
 	
 	
@@ -191,17 +198,21 @@ public class MLContext {
 		return 0;
 	}
 	
-	private void initializeSpark(SparkContext sc, boolean monitorPerformance) throws DMLRuntimeException {
+	private void initializeSpark(SparkContext sc, boolean monitorPerformance, boolean setForcedSparkExecType) throws DMLRuntimeException {
 		if(MLContext._sc != null) {
 			throw new DMLRuntimeException("Creating multiple MLContexts is not allowed in single process.");
 		}
 		MLContext._sc = sc;
 		
-		if(compareVersion(sc.version(), "1.3.0")  <= 0 ) {
+		if(compareVersion(sc.version(), "1.3.0")  < 0 ) {
 			throw new DMLRuntimeException("Expected spark version >= 1.3.0 for running SystemML");
 		}
 		
-		DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
+		if(setForcedSparkExecType)
+			DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
+		else
+			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+		
 		this._monitorPerformance = monitorPerformance;
 		if(_monitorPerformance) {
 			initializeSparkListener(sc);
@@ -209,7 +220,7 @@ public class MLContext {
 	}
 	
 	private void initializeSparkListener(SparkContext sc) throws DMLRuntimeException {
-		if(compareVersion(sc.version(), "1.4.0")  <= 0 ) {
+		if(compareVersion(sc.version(), "1.4.0")  < 0 ) {
 			throw new DMLRuntimeException("Expected spark version >= 1.4.0 for monitoring MLContext performance");
 		}
 		_sparkListener = new SparkListener(sc);
@@ -233,6 +244,8 @@ public class MLContext {
 			throw new DMLRuntimeException("Unsupported execution type:" + execType + ". Valid options are: hybrid, hadoop, singlenode.");
 		}
 	}
+	
+
 	
 	/**
 	 * Call this method if you want to clear any RDDs set via registerInput, registerOutput.
@@ -281,6 +294,10 @@ public class MLContext {
 		registerInput(varName, rdd, "csv", -1, -1);
 	}
 	
+	public void registerInput(String varName, MLMatrix df) throws DMLRuntimeException {
+		registerInput(varName, MLMatrix.getRDDLazily(df), df.rlen, df.clen, df.brlen, df.bclen);
+	}
+	
 	// ------------------------------------------------------------------------------------
 	// 2. CSV/Text: Usually JavaRDD<String>, but also supports JavaPairRDD<LongWritable, Text>
 	public void registerInput(String varName, JavaRDD<String> rdd, String format, boolean hasHeader, String delim, boolean fill, double missingValue) throws DMLRuntimeException {
@@ -305,7 +322,7 @@ public class MLContext {
 	}
 	// Register input for csv/text format
 	public void registerInput(String varName, JavaPairRDD<LongWritable, Text> textOrCsv_rdd, String format, long rlen, long clen, RDDProperties properties) throws DMLRuntimeException {
-		if(DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK) {
+		if(!(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)) {
 			throw new DMLRuntimeException("The registerInput functionality only supported for spark runtime. Please use MLContext(sc) instead of default constructor.");
 		}
 		
@@ -338,6 +355,9 @@ public class MLContext {
 	// ------------------------------------------------------------------------------------
 	
 	// 3. Binary blocked RDD: Support JavaPairRDD<MatrixIndexes,MatrixBlock> and also RDD<Tuple2<MatrixIndexes,MatrixBlock>>
+	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd) throws DMLRuntimeException {
+		registerInput(varName, rdd, -1, -1);
+	}
 	public void registerInput(String varName, RDD<Tuple2<MatrixIndexes,MatrixBlock>> rdd) throws DMLRuntimeException {
 		registerInput(varName, org.apache.spark.api.java.JavaPairRDD.fromJavaRDD(rdd.toJavaRDD()), -1, -1);
 	}
@@ -346,6 +366,10 @@ public class MLContext {
 	}
 	// Register input for binary format
 	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd1, long rlen, long clen) throws DMLRuntimeException {
+		registerInput(varName, rdd1, rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+	}
+	
+	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd1, long rlen, long clen, int brlen, int bclen) throws DMLRuntimeException {
 		if(_variables == null)
 			_variables = new LocalVariableMap();
 		if(_inVarnames == null)
@@ -353,8 +377,8 @@ public class MLContext {
 		// Bug in Spark is messing up blocks and indexes due to too eager reuse of data structures
 		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = rdd1.mapToPair( new CopyBlockFunction() );
 		
-		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
-		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, brlen, bclen);
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "temp", new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		mo.setRDDHandle(new RDDObject(rdd, varName));
 		_variables.put(varName, mo);
 		_inVarnames.add(varName);
@@ -363,7 +387,7 @@ public class MLContext {
 	// =============================================================================================
 	
 	public void registerOutput(String varName) throws DMLRuntimeException {
-		if(DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK) {
+		if(!(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)) {
 			throw new DMLRuntimeException("The registerOutput functionality only supported for spark runtime. Please use MLContext(sc) instead of default constructor.");
 		}
 		if(_outVarnames == null)
@@ -435,9 +459,19 @@ public class MLContext {
 		return compileAndExecuteScript(dmlScriptFilePath, null, false);
 	}
 	
+	public MLOutput executeScript(String dmlScript) throws IOException, DMLException, ParseException {
+		return compileAndExecuteScript(dmlScript, null, false, false);
+	}
+	
+	// Only file based input
+	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument) throws IOException, DMLException, ParseException {
+		return compileAndExecuteScript(dmlScriptFilePath, args, isNamedArgument, true);
+	}
+	
 	/**
 	 * All the execute() methods call this, which  after setting appropriate input/output variables
 	 * calls _compileAndExecuteScript
+	 * We have explicitly synchronized this function because MLContext/SystemML does not yet support multi-threading.
 	 * @param dmlScriptFilePath
 	 * @param args
 	 * @param isNamedArgument
@@ -446,10 +480,10 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException
 	 */
-	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument) throws IOException, DMLException, ParseException {
+	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument, boolean isFile) throws IOException, DMLException, ParseException {
 		resetMonitoringData();
 		
-		if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK) {
+		if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK) {
 			
 			HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> retVal = null;
 			
@@ -472,7 +506,7 @@ public class MLContext {
 			HashMap<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
 			
 			// Run the DML script
-			ExecutionContext ec = _compileAndExecuteScript(dmlScriptFilePath, argVals, _parsePyDML, inputs, outputs, _variables);
+			ExecutionContext ec = _compileAndExecuteScript(dmlScriptFilePath, isFile, argVals, _parsePyDML, inputs, outputs, _variables);
 			
 			// Now collect the output
 			if(_outVarnames != null) {
@@ -563,12 +597,17 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException
 	 */
-	private ExecutionContext _compileAndExecuteScript(String dmlScriptFilePath, HashMap<String, String> argVals, boolean parsePyDML, 
+	private ExecutionContext _compileAndExecuteScript(String dmlScriptFilePath, boolean isFile, HashMap<String, String> argVals, boolean parsePyDML, 
 			String[] inputs, String[] outputs, LocalVariableMap inputSymbolTable) throws IOException, DMLException, ParseException {
 		DMLConfig config = new DMLConfig();
 		ConfigurationManager.setConfig(config);
 		
-		String dmlScriptStr = DMLScript.readDMLScript("-f", dmlScriptFilePath);
+		String dmlScriptStr = null;
+		if(isFile)
+			dmlScriptStr = DMLScript.readDMLScript("-f", dmlScriptFilePath);
+		else 
+			dmlScriptStr = DMLScript.readDMLScript("-s", dmlScriptFilePath);
+			
 		DataExpression.REJECT_READ_UNKNOWN_SIZE = false;
 		
 		//simplified compilation chain
@@ -621,6 +660,8 @@ public class MLContext {
 		if(inputSymbolTable != null) {
 			ec.setVariables(inputSymbolTable);
 		}
+		
+		System.out.println(Explain.explain(rtprog));
 		
 		//core execute runtime program	
 		rtprog.execute( ec );

@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -20,45 +20,9 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class CoVariance extends Lop 
 {
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
-	private void init(Lop input1, Lop input2, Lop input3, ExecType et) throws LopsException {
-		/*
-		 * When et = MR: covariance lop will have a single input lop, which
-		 * denote the combined input data -- output of combinebinary, if unweighed;
-		 * and output combineteriaty (if weighted).
-		 * 
-		 * When et = CP: covariance lop must have at least two input lops, which
-		 * denote the two input columns on which covariance is computed. It also
-		 * takes an optional third arguments, when weighted covariance is computed.
-		 */
-		this.addInput(input1);
-		input1.addOutput(this);
 
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = true;
-		if ( et == ExecType.MR ) {
-			lps.addCompatibility(JobType.CM_COV);
-			this.lps.setProperties(inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
-		}
-		else {
-			definesMRJob = false;
-			if ( input2 == null ) {
-				throw new LopsException(this.printErrorLocation() + "Invalid inputs to covariance lop.");
-			}
-			this.addInput(input2);
-			input2.addOutput(this);
-			
-			if ( input3 != null ) {
-				this.addInput(input3);
-				input3.addOutput(this);
-			}
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
-	}
 	
 	/**
 	 * Constructor to perform covariance.
@@ -83,6 +47,47 @@ public class CoVariance extends Lop
 	public CoVariance(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) throws LopsException {
 		super(Lop.Type.CoVariance, dt, vt);
 		init(input1, input2, input3, et);
+	}
+
+	private void init(Lop input1, Lop input2, Lop input3, ExecType et) 
+		throws LopsException 
+	{
+		/*
+		 * When et = MR: covariance lop will have a single input lop, which
+		 * denote the combined input data -- output of combinebinary, if unweighed;
+		 * and output combineteriaty (if weighted).
+		 * 
+		 * When et = CP: covariance lop must have at least two input lops, which
+		 * denote the two input columns on which covariance is computed. It also
+		 * takes an optional third arguments, when weighted covariance is computed.
+		 */
+		addInput(input1);
+		input1.addOutput(this);
+
+		boolean breaksAlignment = false;
+		boolean aligner = false;
+		boolean definesMRJob = true;
+		if ( et == ExecType.MR ) 
+		{
+			lps.addCompatibility(JobType.CM_COV);
+			lps.setProperties(inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+		}
+		else //CP/SPARK
+		{
+			definesMRJob = false;
+			if ( input2 == null ) {
+				throw new LopsException(this.printErrorLocation() + "Invalid inputs to covariance lop.");
+			}
+			addInput(input2);
+			input2.addOutput(this);
+			
+			if ( input3 != null ) {
+				addInput(input3);
+				input3.addOutput(this);
+			}
+			lps.addCompatibility(JobType.INVALID);
+			lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		}
 	}
 
 	@Override

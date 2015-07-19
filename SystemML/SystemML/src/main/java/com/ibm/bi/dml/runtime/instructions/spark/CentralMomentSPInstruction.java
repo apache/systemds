@@ -128,7 +128,7 @@ public class CentralMomentSPInstruction extends AggregateUnarySPInstruction
 		}
 		else //with weights
 		{
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 			cmobj = in1.join( in2 )
 					   .values().map(new RDDCMWeightsFunction(cop))
 			           .reduce(new RDDCMReduceFunction(cop));
@@ -187,12 +187,13 @@ public class CentralMomentSPInstruction extends AggregateUnarySPInstruction
 		}
 	}
 	
-	/**
-	 * 
-	 */
-	private static class RDDCMReduceFunction implements Function2<CM_COV_Object, CM_COV_Object, CM_COV_Object> 
+	public class RDDCMReduceFunction implements Function2<CM_COV_Object, CM_COV_Object, CM_COV_Object>
 	{
-		private static final long serialVersionUID = 6175110783088073856L;
+		@SuppressWarnings("unused")
+		private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
+	                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+
+		private static final long serialVersionUID = 3272260751983866544L;
 		
 		private CMOperator _op = null;
 		

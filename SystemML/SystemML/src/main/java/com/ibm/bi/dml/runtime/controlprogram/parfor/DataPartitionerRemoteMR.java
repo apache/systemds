@@ -19,6 +19,7 @@ import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableCell;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -60,7 +61,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 
 
 	@Override
-	protected void partitionMatrix(String fname, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
+	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 			throws DMLRuntimeException 
 	{
 		String jobname = "ParFor-DPMR";
@@ -78,7 +79,10 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		
 		try
 		{
-			Path path = new Path(fname);
+			//force writing to disk (typically not required since partitioning only applied if dataset exceeds CP size)
+			in.exportData(); //written to disk iff dirty
+			
+			Path path = new Path(in.getFileName());
 			
 			/////
 			//configure the MR job

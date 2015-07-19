@@ -204,17 +204,16 @@ public class TernaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private void constructLopsCovariance() throws HopsException, LopsException {
-		
+	private void constructLopsCovariance()
+		throws HopsException, LopsException 
+	{	
 		if ( _op != OpOp3.COVARIANCE )
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.COVARIANCE );
 		
 		ExecType et = optFindExecType();
-		if ( et == ExecType.SPARK )  {
-			// TODO implement Spark support
-			et = ExecType.CP;
-		}
-		if ( et == ExecType.MR ) {
+		
+		if ( et == ExecType.MR ) 
+		{
 			// combineTertiary -> CoVariance -> CastAsScalar
 			CombineTernary combine = CombineTernary
 					.constructCombineLop(
@@ -235,25 +234,24 @@ public class TernaryOp extends Hop
 					combine, DataType.MATRIX, getValueType(), et);
 
 			cov.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
-			
-			cov.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(cov);
 			
 			UnaryCP unary1 = new UnaryCP(
 					cov, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
 					getDataType(), getValueType());
 			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(unary1);
 			setLops(unary1);
 		}
-		else {
-			//System.out.println("COV Tertiary executing in CP...");
+		else //CP / SPARK
+		{
 			CoVariance cov = new CoVariance(
 					getInput().get(0).constructLops(), 
 					getInput().get(1).constructLops(), 
 					getInput().get(2).constructLops(), 
 					getDataType(), getValueType(), et);
 			cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			cov.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(cov);
 			setLops(cov);
 		}
 	}

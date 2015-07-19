@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.test.integration.functions.tertiary;
+package com.ibm.bi.dml.test.integration.functions.ternary;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -10,7 +10,8 @@ import org.junit.runners.Suite;
 	CTableMatrixIgnoreZerosTest.class,
 	CTableSequenceTest.class,
 	TableOutputTest.class,
-	CentralMomentWeightsTest.class
+	CentralMomentWeightsTest.class,
+	CovarianceWeightsTest.class
 })
 
 

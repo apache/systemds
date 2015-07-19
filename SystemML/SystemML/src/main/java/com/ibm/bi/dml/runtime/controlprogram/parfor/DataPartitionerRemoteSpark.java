@@ -7,13 +7,16 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
-import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.JavaPairRDD;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
@@ -34,9 +37,6 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 	public DataPartitionerRemoteSpark(PDataPartitionFormat dpf, int n, ExecutionContext ec, long numRed, boolean keepIndexes) 
 	{
 		super(dpf, n);
-	
-		//TODO extend for general purpose partitioning
-		//_keepIndexes = keepIndexes;
 		
 		_ec = ec;
 		_numRed = numRed;
@@ -44,11 +44,10 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected void partitionMatrix(String fname, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
+	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 			throws DMLRuntimeException 
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)_ec;
-		JavaSparkContext sc = sec.getSparkContext();
 
 		try
 		{
@@ -58,13 +57,16 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 		    //determine degree of parallelism
 			int numRed = (int)determineNumReducers(rlen, clen, brlen, bclen, _numRed);
 	
+			//get input rdd
+			JavaPairRDD<MatrixIndexes, MatrixBlock> inRdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
+					sec.getRDDHandleForMatrixObject(in, InputInfo.BinaryBlockInputInfo);
+			
 			//run spark remote data partition job 
 			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(rlen, clen, brlen, bclen, ii, oi, _format);
 			DataPartitionerRemoteSparkReducer wfun = new DataPartitionerRemoteSparkReducer(fnameNew, oi);
-			sc.hadoopFile(fname, ii.inputFormatClass, ii.inputKeyClass, ii.inputValueClass)
-			  .flatMapToPair(dpfun) //partition the input blocks
-			  .groupByKey(numRed)   //group partition blocks 		          
-			  .foreach( wfun );     //write partitions to hdfs 
+			inRdd.flatMapToPair(dpfun) //partition the input blocks
+			     .groupByKey(numRed)   //group partition blocks 		          
+			     .foreach( wfun );     //write partitions to hdfs 
 		}
 		catch(Exception ex)
 		{

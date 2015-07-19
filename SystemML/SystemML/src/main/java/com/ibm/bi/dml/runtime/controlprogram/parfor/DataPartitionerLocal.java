@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.Cell;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.StagingFileUtils;
@@ -97,9 +98,13 @@ public class DataPartitionerLocal extends DataPartitioner
 	}
 	
 	@Override
-	protected void partitionMatrix(String fname, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
+	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 			throws DMLRuntimeException 
 	{
+		//force writing to disk (typically not required since partitioning only applied if dataset exceeds CP size)
+		in.exportData(); //written to disk iff dirty
+		
+		String fname = in.getFileName();
 		String fnameStaging = LocalFileUtils.getUniqueWorkingDir( LocalFileUtils.CATEGORY_PARTITIONING );
 		
 		//reblock input matrix

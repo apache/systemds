@@ -369,7 +369,15 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void constructLopsCovariance(ExecType et) throws LopsException, HopsException {
+	/**
+	 * 
+	 * @param et
+	 * @throws LopsException
+	 * @throws HopsException
+	 */
+	private void constructLopsCovariance(ExecType et) 
+		throws LopsException, HopsException 
+	{
 		if ( et == ExecType.MR ) {
 			// combineBinary -> CoVariance -> CastAsScalar
 			CombineBinary combine = CombineBinary.constructCombineLop(
@@ -388,24 +396,23 @@ public class BinaryOp extends Hop
 			CoVariance cov = new CoVariance(combine, DataType.MATRIX,
 					getValueType(), et);
 			cov.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
-			
-			cov.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(cov);
 
 			UnaryCP unary1 = new UnaryCP(cov, HopsOpOp1LopsUS
 					.get(OpOp1.CAST_AS_SCALAR), getDataType(),
 					getValueType());
 			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
+			setLineNumbers(unary1);	
 			setLops(unary1);
 		}
-		else {
+		else //CP/SPARK
+		{
 			CoVariance cov = new CoVariance(
 					getInput().get(0).constructLops(), 
 					getInput().get(1).constructLops(), 
 					getDataType(), getValueType(), et);
 			cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			cov.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(cov);
 			setLops(cov);
 		}
 	}

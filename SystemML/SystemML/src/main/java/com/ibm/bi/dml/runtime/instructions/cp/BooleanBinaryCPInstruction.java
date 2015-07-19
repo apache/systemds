@@ -12,6 +12,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
@@ -43,7 +44,8 @@ public class BooleanBinaryCPInstruction extends BinaryCPInstruction
 			throw new DMLRuntimeException("Unexpected ValueType in ArithmeticInstruction.");
 		
 		// Determine appropriate Function Object based on opcode	
-		return new BooleanBinaryCPInstruction(getBinaryOperator(opcode), in1, in2, out, opcode, str);
+		BinaryOperator bop = InstructionUtils.parseBinaryOperator(opcode);
+		return new BooleanBinaryCPInstruction(bop, in1, in2, out, opcode, str);
 	}
 	
 	@Override

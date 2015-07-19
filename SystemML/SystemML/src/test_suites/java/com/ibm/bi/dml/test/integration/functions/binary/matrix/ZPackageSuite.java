@@ -29,7 +29,8 @@ import org.junit.runners.Suite;
 	DiagMatrixMultiplicationTest.class,
 	TransposeMatrixMultiplicationTest.class,
 	
-	CentralMomentTest.class
+	CentralMomentTest.class,
+	CovarianceTest.class
 })
 
 

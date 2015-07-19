@@ -12,6 +12,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 
@@ -61,10 +62,9 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 										  + out.getName()
 										  + "is not");
 		
-		Operator operator = 
-			(dt1 != dt2) ?
-					getScalarOperator(opcode, (dt1 == DataType.SCALAR))
-					: getBinaryOperator(opcode);
+		Operator operator = (dt1 != dt2) ?
+					InstructionUtils.parseScalarBinaryOperator(opcode, (dt1 == DataType.SCALAR)) : 
+					InstructionUtils.parseBinaryOperator(opcode);
 		
 		if ( opcode.equalsIgnoreCase("+") && dt1 == DataType.SCALAR && dt2 == DataType.SCALAR) 
 		{

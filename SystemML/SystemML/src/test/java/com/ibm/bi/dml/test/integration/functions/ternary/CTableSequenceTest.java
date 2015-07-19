@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.test.integration.functions.tertiary;
+package com.ibm.bi.dml.test.integration.functions.ternary;
 
 import java.util.HashMap;
 
@@ -41,7 +41,7 @@ public class CTableSequenceTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "CTableSequenceLeft";
 	private final static String TEST_NAME2 = "CTableSequenceRight";
 	
-	private final static String TEST_DIR = "functions/tertiary/";
+	private final static String TEST_DIR = "functions/ternary/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 2407;

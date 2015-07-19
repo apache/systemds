@@ -63,10 +63,9 @@ public abstract class RelationalBinaryCPInstruction extends BinaryCPInstruction
 										  + out.getName()
 										  + " is not");
 		
-		Operator operator = 
-			(dt1 != dt2) ?
-					getScalarOperator(opcode, (dt1 == DataType.SCALAR))
-					: getBinaryOperator(opcode);
+		Operator operator = (dt1 != dt2) ?
+					InstructionUtils.parseScalarBinaryOperator(opcode, (dt1 == DataType.SCALAR)) : 
+					InstructionUtils.parseBinaryOperator(opcode);
 		
 		//for scalar relational operations we only allow boolean operands
 		//or when both operands are numeric (int or double)

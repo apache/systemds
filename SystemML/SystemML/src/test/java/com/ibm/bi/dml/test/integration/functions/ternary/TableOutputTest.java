@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.test.integration.functions.tertiary;
+package com.ibm.bi.dml.test.integration.functions.ternary;
 
 import java.util.HashMap;
 
@@ -27,7 +27,7 @@ public class TableOutputTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "TableOutputTest";
 	
-	private final static String TEST_DIR = "functions/tertiary/";
+	private final static String TEST_DIR = "functions/ternary/";
 	
 	private final static int rows = 50000;
 	private final static int maxVal1 = 7, maxVal2 = 15; 

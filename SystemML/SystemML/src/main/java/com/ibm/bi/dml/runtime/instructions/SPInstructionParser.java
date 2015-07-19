@@ -33,6 +33,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CentralMomentSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CheckpointSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.CovarianceSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CpmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CumulativeAggregateSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CumulativeOffsetSPInstruction;
@@ -191,6 +192,7 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "bcumoffmax", SPINSTRUCTION_TYPE.CumsumOffset);
 		
 		String2SPInstructionType.put( "cm"    , SPINSTRUCTION_TYPE.CentralMoment);
+		String2SPInstructionType.put( "cov"    , SPINSTRUCTION_TYPE.Covariance);
 		
 		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
 		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
@@ -334,7 +336,10 @@ public class SPInstructionParser extends InstructionParser {
 		
 			case CentralMoment:
 				return CentralMomentSPInstruction.parseInstruction(str);
-				
+			
+			case Covariance:
+				return CovarianceSPInstruction.parseInstruction(str);
+			
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);
 				

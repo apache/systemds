@@ -54,6 +54,8 @@ public abstract class DataPartitioner
 		_n = n;
 	}
 	
+	
+	
 	/**
 	 * 
 	 * @param in
@@ -110,7 +112,6 @@ public abstract class DataPartitioner
 		//analyze input matrix object
 		MatrixFormatMetaData meta = (MatrixFormatMetaData)in.getMetaData();
 		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
-		String fname = in.getFileName();
 		InputInfo ii = meta.getInputInfo();
 		OutputInfo oi = meta.getOutputInfo();
 		long rows = mc.getRows(); 
@@ -154,10 +155,7 @@ public abstract class DataPartitioner
 			oi = OutputInfo.BinaryCellOutputInfo;
 			convertBlock2Cell = true;
 		}
-		
-		//force writing to disk (typically not required since partitioning only applied if dataset exceeds CP size)
-		in.exportData(); //written to disk iff dirty
-		
+				
 		//prepare filenames and cleanup if required
 		String fnameNew = out.getFileName();
 		try{
@@ -168,7 +166,7 @@ public abstract class DataPartitioner
 		}
 		
 		//core partitioning (depending on subclass)
-		partitionMatrix( fname, fnameNew, ii, oi, rows, cols, brlen, bclen );
+		partitionMatrix( in, fnameNew, ii, oi, rows, cols, brlen, bclen );
 		
 		//create output matrix object
 		out.setPartitioned( _format, _n ); 
@@ -204,7 +202,7 @@ public abstract class DataPartitioner
 	 * @param bclen
 	 * @throws DMLRuntimeException
 	 */
-	protected abstract void partitionMatrix( String fname, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen )
+	protected abstract void partitionMatrix( MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen )
 		throws DMLRuntimeException;
 
 	

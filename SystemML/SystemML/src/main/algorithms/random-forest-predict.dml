@@ -7,13 +7,15 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 #  
-# THIS SCRIPT COMPUTES LABEL PREDICTIONS MEANT FOR USE WITH A DECISION TREE MODEL ON A HELD OUT TEST SET.
+# THIS SCRIPT COMPUTES LABEL PREDICTIONS MEANT FOR USE WITH A RANDOM FOREST MODEL ON A HELD OUT TEST SET 
+# OR FOR COMPUTING THE OUT-OF-BAG ERROR ON THE TRAINING SET.
 #
 # INPUT         PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE     DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# X             String   ---          Location to read test feature matrix X; note that X needs to be both recoded and dummy coded 
+# X             String   ---          Location to read test feature matrix or training feature matrix for computing Out-Of-Bag error; 
+#									  note that X needs to be both recoded and dummy coded 
 # Y	 		    String   " "		  Location to read true label matrix Y if requested; note that Y needs to be both recoded and dummy coded
 # R   	  		String   " "	      Location to read the matrix R which for each feature in X contains the following information 
 #										- R[,1]: column ids
@@ -60,10 +62,10 @@ fileOOB = ifdef ($OOB, " ");
 fileCM = ifdef ($CM, " ");
 fileA = ifdef ($A, " ");
 fmtO = ifdef ($fmt, "text");
-X_test = read (fileX);
+X = read (fileX);
 M = read (fileM);
 
-num_records = nrow (X_test);
+num_records = nrow (X);
 Y_predicted = matrix (0, rows = num_records, cols = 1);
 num_trees  = max (M[2,]);
 num_labels = max (M[5,]);
@@ -79,7 +81,7 @@ if (fileR != " ") {
 	R_scale = removeEmpty (target = R[,2] * (1 - dummy_coded), margin = "rows");
 	R_cat = removeEmpty (target = R[,2:3] * dummy_coded, margin = "rows");
 } else { # only scale features available
-	R_scale = seq (1, ncol (X_test));
+	R_scale = seq (1, ncol (X));
 }
 
 if (fileC != " ") {
@@ -88,22 +90,23 @@ if (fileC != " ") {
 }
 
 label_counts = matrix (0, rows = num_records, cols = num_labels); 
-for (j in 1:num_trees, check = 0) {
+parfor (j in 1:num_trees, check = 0) {
 	
 	start_ind = 1;
 	if (j > 1) {
 		start_ind = start_ind + as.scalar (num_nodes_per_tree_cum[j - 1,]);
 	}
 	offset = as.scalar (num_nodes_per_tree_cum[j,]);
-	cur_M = M[,start_ind:offset];
-		
+	cur_M = M[,start_ind:offset];	
 	parfor (i in 1:num_records, check = 0) {
-		cur_sample = X_test[i,];
-		cur_node = 1;
+	
+		cur_sample = X[i,];
+		cur_node_pos = 1;
+		# cur_node = 1;
 		label_found = FALSE;
 		while (!label_found) {
-			cur_feature = as.scalar (cur_M[4,cur_node]);
-			type_label = as.scalar (cur_M[5,cur_node]);
+			cur_feature = as.scalar (cur_M[4,cur_node_pos]);
+			type_label = as.scalar (cur_M[5,cur_node_pos]);
 			if (cur_feature == 0) { # leaf node
 				label_found = TRUE;
 				label_counts[i,type_label] = label_counts[i,type_label] + 1;
@@ -115,33 +118,37 @@ for (j in 1:num_trees, check = 0) {
 				if (type_label == 1) { # scale feature
 					cur_start_ind = as.scalar (R_scale[cur_feature,]);
 					cur_value = as.scalar (cur_sample[,cur_start_ind]);
-					cur_split = as.scalar (M[7,cur_node]);
+					cur_split = as.scalar (cur_M[7,cur_node_pos]);
 					if (cur_value < cur_split) { # go to left branch
-						cur_node = cur_node + as.scalar (M[3,cur_node]);
+						cur_node_pos = cur_node_pos + as.scalar (cur_M[3,cur_node_pos]);
+						# cur_node = as.scalar (cur_M[1,cur_node_pos]);
 					} else { # go to right branch
-						cur_node = cur_node + as.scalar (M[3,cur_node]) + 1;
+						cur_node_pos = cur_node_pos + as.scalar (cur_M[3,cur_node_pos]) + 1;
+						# cur_node = as.scalar (cur_M[1,cur_node_pos]);					
 					}
 				} else if (type_label == 2) { # categorical feature				
 					cur_start_ind = as.scalar (R_cat[cur_feature,1]);
 					cur_end_ind = as.scalar (R_cat[cur_feature,2]);					
-					cur_value = as.scalar (rowIndexMax(cur_sample[,cur_start_ind:cur_end_ind])); # as.scalar (cur_sample[,cur_feature]);
-					cur_offset = as.scalar (M[6,cur_node]);
-					value_found = sum (ppred (M[7:(7 + cur_offset - 1),cur_node], cur_value, "=="));
-					if (value_found) { # go to left branch
-						cur_node = cur_node + as.scalar (M[3,cur_node]);
+					cur_value = as.scalar (rowIndexMax(cur_sample[,cur_start_ind:cur_end_ind])); 
+					cur_offset = as.scalar (cur_M[6,cur_node_pos]);
+					value_found = sum (ppred (cur_M[7:(7 + cur_offset - 1),cur_node_pos], cur_value, "=="));
+					if (value_found >= 1) { # go to left branch
+						cur_node_pos = cur_node_pos + as.scalar (cur_M[3,cur_node_pos]);
+						# cur_node = as.scalar (cur_M[1,cur_node_pos]);
 					} else { # go to right branch
-						cur_node = cur_node + as.scalar (M[3,cur_node]) + 1;
+						cur_node_pos = cur_node_pos + as.scalar (cur_M[3,cur_node_pos]) + 1;
+						# cur_node = as.scalar (cur_M[1,cur_node_pos]);						
 					}
 }}}}}
 
-Y_predicted = t (rowIndexMax (label_counts));
+Y_predicted = rowIndexMax (label_counts);
 write (Y_predicted, fileP, format = fmtO);
 
 if (fileY != " ") {
-	Y_test = read (fileY);
-	num_classes = ncol (Y_test);
-	Y_test = rowSums (Y_test * t (seq (1, num_classes)));
-	result = ppred (Y_test, Y_predicted, "==");
+	Y_dummy = read (fileY);
+	num_classes = ncol (Y_dummy);
+	Y = rowSums (Y_dummy * t (seq (1, num_classes)));
+	result = ppred (Y, Y_predicted, "==");
 	result = sum (result);
 	accuracy = result / num_records * 100;
 	acc_str = "Accuracy (%): " + accuracy;
@@ -151,9 +158,9 @@ if (fileY != " ") {
 		print (acc_str);
 	}
 	if (fileC != " ") {
-		Y_predicted_oob = t (rowIndexMax (label_counts_oob));
-		result = ppred (Y_test, Y_predicted_oob, "==");
-		oob_error = (1 - (result / num_records)) * 100;
+		Y_predicted_oob = rowIndexMax (label_counts_oob);
+		result = ppred (Y, Y_predicted_oob, "==");
+		oob_error = (1 - (sum (result) / num_records)) * 100;
 		oob_str = "Out-Of-Bag error (%): " + oob_error;
 		if (fileOOB != " ") {
 			write (oob_str, fileOOB, format = fmtO);
@@ -162,7 +169,7 @@ if (fileY != " ") {
 		}
 	}
 	if (fileCM != " ") {
-		confusion_mat = table(Y_predicted, Y_test, num_classes, num_classes)
+		confusion_mat = table(Y_predicted, Y, num_classes, num_classes)
         write(confusion_mat, fileCM, format = fmtO)
 	}
 }

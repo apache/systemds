@@ -620,7 +620,10 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		if (i7 > 1) {
 			start_ind_global = start_ind_global + as.scalar (offsets[(i7 - 1),]);
 		}
-		end_ind = as.scalar (offsets[i7,]);
+		start_ind_S_global = 1;
+		if (i7 > 1) {
+			start_ind_S_global = start_ind_S_global + (as.scalar (offsets[(i7 - 1),]) * distinct_values_max);
+		}
 			
 		Q = matrix (cur_node_small, rows = 1, cols = 1); 
 		NC = matrix (0, rows = 4, cols = 1); 
@@ -979,8 +982,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		
 		cur_Q_small[,start_ind_global:(start_ind_global + ncol (Q) - 1)] = Q;
 		cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1 - 1)] = NC[,2:ncol (NC)];
-		cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1 - 1)] = F[,2:ncol (F)];
-		cur_S_small[,start_ind_global:(start_ind_global + ncol (S) - 1 - 1)] = S[,2:ncol (S)];		
+		cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1 - 1)] = F[,2:ncol (F)];	
+		cur_S_small[,start_ind_S_global:(start_ind_S_global + ncol (S) - 1 - 1)] = S[,2:ncol (S)]; 
 	}
 
 	##### PREPARE MODEL FOR SMALL NODES	

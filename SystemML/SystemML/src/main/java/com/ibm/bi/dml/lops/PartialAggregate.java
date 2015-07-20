@@ -118,20 +118,11 @@ public class PartialAggregate extends Lop
 		_dropCorr = true;
 	}
 	
-	public static CorrectionLocationType decodeCorrectionLocation(String loc) throws LopsException {
-		if ( loc.equals("NONE") )
-			return CorrectionLocationType.NONE;
-		else if ( loc.equals("LASTROW") )
-			return CorrectionLocationType.LASTROW;
-		else if ( loc.equals("LASTCOLUMN") )
-			return CorrectionLocationType.LASTCOLUMN;
-		else if ( loc.equals("LASTTWOROWS") )
-			return CorrectionLocationType.LASTTWOROWS;
-		else if ( loc.equals("LASTTWOCOLUMNS") )
-			return CorrectionLocationType.LASTTWOCOLUMNS;
-		else 
-			throw new LopsException("In PartialAggregate Lop, Unrecognized correction location: " + loc);
+	public static CorrectionLocationType decodeCorrectionLocation(String loc) 
+	{
+		return CorrectionLocationType.valueOf(loc);
 	}
+	
 	/**
 	 * This method computes the location of "correction" terms in the output
 	 * produced by PartialAgg instruction.
@@ -148,29 +139,35 @@ public class PartialAggregate extends Lop
 	 * appropriate aggregate operator is used at runtime (see:
 	 * dml.runtime.matrix.operator.AggregateOperator.java and dml.runtime.matrix)
 	 */
-	public CorrectionLocationType getCorrectionLocation() throws LopsException {
-
+	public CorrectionLocationType getCorrectionLocation() 
+		throws LopsException 
+	{
+		return getCorrectionLocation(operation, direction);
+	}
+	
+	public static CorrectionLocationType getCorrectionLocation(Aggregate.OperationTypes operation, DirectionTypes direction) 
+		throws LopsException 
+	{
 		CorrectionLocationType loc;
 
 		switch (operation) {
 		case KahanSum:
 		case KahanTrace:
 			switch (direction) {
-			case Col:
-				// colSums: corrections will be present as a last row in the
-				// result
-				loc = CorrectionLocationType.LASTROW;
-				break;
-			case Row:
-			case RowCol:
-				// rowSums, sum: corrections will be present as a last column in
-				// the result
-				loc = CorrectionLocationType.LASTCOLUMN;
-				break;
-			default:
-				throw new LopsException(this.printErrorLocation() + 
-						"in PartialAggregate Lop,  getCorrectionLocation() Unknown aggregarte direction - "
-								+ direction);
+				case Col:
+					// colSums: corrections will be present as a last row in the
+					// result
+					loc = CorrectionLocationType.LASTROW;
+					break;
+				case Row:
+				case RowCol:
+					// rowSums, sum: corrections will be present as a last column in
+					// the result
+					loc = CorrectionLocationType.LASTCOLUMN;
+					break;
+				default:
+					throw new LopsException("PartialAggregate.getCorrectionLocation() - "
+										+ "Unknown aggregate direction: " + direction);
 			}
 			break;
 
@@ -178,19 +175,18 @@ public class PartialAggregate extends Lop
 			// Computation of stable mean requires each mapper to output both
 			// the running mean as well as the count
 			switch (direction) {
-			case Col:
-				// colMeans: last row is correction 2nd last is count
-				loc = CorrectionLocationType.LASTTWOROWS;
-				break;
-			case Row:
-			case RowCol:
-				// rowMeans, mean: last column is correction 2nd last is count
-				loc = CorrectionLocationType.LASTTWOCOLUMNS;
-				break;
-			default:
-				throw new LopsException( this.printErrorLocation() + 
-						"getCorrectionLocaion():: Unknown aggregarte direction - "
-								+ direction);
+				case Col:
+					// colMeans: last row is correction 2nd last is count
+					loc = CorrectionLocationType.LASTTWOROWS;
+					break;
+				case Row:
+				case RowCol:
+					// rowMeans, mean: last column is correction 2nd last is count
+					loc = CorrectionLocationType.LASTTWOCOLUMNS;
+					break;
+				default:
+					throw new LopsException("PartialAggregate.getCorrectionLocation() - "
+							+ "Unknown aggregate direction: " + direction);
 			}
 			break;
 			

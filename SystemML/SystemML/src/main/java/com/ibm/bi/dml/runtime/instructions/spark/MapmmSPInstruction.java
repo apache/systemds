@@ -33,7 +33,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.RemoveEmptyBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -117,7 +117,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 				
 		//empty input block filter
 		if( !_outputEmpty )
-			in1 = in1.filter(new RemoveEmptyBlockFunction());
+			in1 = in1.filter(new FilterNonEmptyBlocksFunction());
 			
 		//execute mapmult instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
@@ -128,7 +128,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		
 		//empty output block filter
 		if( !_outputEmpty )
-			in1 = in1.filter(new RemoveEmptyBlockFunction());
+			in1 = in1.filter(new FilterNonEmptyBlocksFunction());
 		
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
@@ -144,7 +144,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		{
 			if( _aggtype == SparkAggType.MULTI_BLOCK )
 				out = out.reduceByKey( new AggregateSumMultiBlockFunction() );
-			
+		
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddVar);

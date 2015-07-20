@@ -374,6 +374,49 @@ public class InstructionUtils
 	/**
 	 * 
 	 * @param opcode
+	 * @param corrExists
+	 * @param corrLoc
+	 * @return
+	 */
+	public static AggregateOperator parseAggregateOperator(String opcode, String corrExists, String corrLoc)
+	{
+		AggregateOperator agg = null;
+	
+		if ( opcode.equalsIgnoreCase("ak+") || opcode.equalsIgnoreCase("aktrace") ) {
+			boolean lcorrExists = (corrExists==null) ? true : Boolean.parseBoolean(corrExists);
+			CorrectionLocationType lcorrLoc = (corrLoc==null) ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.valueOf(corrLoc);
+			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), lcorrExists, lcorrLoc);
+		} 
+		else if ( opcode.equalsIgnoreCase("a+") ) {
+			agg = new AggregateOperator(0, Plus.getPlusFnObject());
+		} 
+		else if ( opcode.equalsIgnoreCase("a*") ) {
+			agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
+		}
+		else if (opcode.equalsIgnoreCase("arimax")){
+			agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
+		}
+		else if ( opcode.equalsIgnoreCase("amax") ) {
+			agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
+		}
+		else if ( opcode.equalsIgnoreCase("amin") ) {
+			agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
+		}
+		else if (opcode.equalsIgnoreCase("arimin")){
+			agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("minindex"), true, CorrectionLocationType.LASTCOLUMN);
+		}
+		else if ( opcode.equalsIgnoreCase("amean") ) {
+			boolean lcorrExists = (corrExists==null) ? true : Boolean.parseBoolean(corrExists);
+			CorrectionLocationType lcorrLoc = (corrLoc==null) ? CorrectionLocationType.LASTTWOCOLUMNS : CorrectionLocationType.valueOf(corrLoc);
+			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), lcorrExists, lcorrLoc);
+		}
+		
+		return agg;
+	}
+	
+	/**
+	 * 
+	 * @param opcode
 	 * @return
 	 */
 	public static AggregateUnaryOperator parseCumulativeAggregateUnaryOperator(String opcode)
@@ -549,5 +592,56 @@ public class InstructionUtils
 		}
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
+	}
+	
+
+	/**
+	 * 
+	 * @param opcode
+	 * @return
+	 */
+	public static String deriveAggregateOperatorOpcode(String opcode)
+	{
+		if ( opcode.equalsIgnoreCase("uak+") || opcode.equalsIgnoreCase("uark+") || opcode.equalsIgnoreCase("uack+"))
+			return "ak+";
+		else if ( opcode.equalsIgnoreCase("uamean") || opcode.equalsIgnoreCase("uarmean") || opcode.equalsIgnoreCase("uacmean") )
+			return "amean";
+		else if ( opcode.equalsIgnoreCase("ua+") || opcode.equalsIgnoreCase("uar+") || opcode.equalsIgnoreCase("uac+") )
+			return "a+";
+		else if ( opcode.equalsIgnoreCase("ua*") )
+			return "a*";
+		else if ( opcode.equalsIgnoreCase("uatrace") || opcode.equalsIgnoreCase("uaktrace") ) 
+			return "aktrace";
+		else if ( opcode.equalsIgnoreCase("uamax") || opcode.equalsIgnoreCase("uarmax") || opcode.equalsIgnoreCase("uacmax") )
+			return "amax";
+		else if ( opcode.equalsIgnoreCase("uamin") || opcode.equalsIgnoreCase("uarmin") || opcode.equalsIgnoreCase("uacmin") )
+			return "amin";
+		else if (opcode.equalsIgnoreCase("uarimax") )
+			return "arimax";
+		else if (opcode.equalsIgnoreCase("uarimin") )
+			return "arimin";
+	
+		return null;
+	}
+
+	/**
+	 * 
+	 * @param opcode
+	 * @return
+	 */
+	public static CorrectionLocationType deriveAggregateOperatorCorrectionLocation(String opcode)
+	{
+		if (   opcode.equalsIgnoreCase("uak+") || opcode.equalsIgnoreCase("uark+") || opcode.equalsIgnoreCase("uatrace") || opcode.equalsIgnoreCase("uaktrace") )
+			return CorrectionLocationType.LASTCOLUMN;
+		else if ( opcode.equalsIgnoreCase("uack+") ) 
+			return CorrectionLocationType.LASTROW;
+		else if ( opcode.equalsIgnoreCase("uamean") || opcode.equalsIgnoreCase("uarmean") )
+			return CorrectionLocationType.LASTTWOCOLUMNS;
+		else if ( opcode.equalsIgnoreCase("uacmean") )
+			return CorrectionLocationType.LASTTWOROWS;
+		else if (opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin") )	
+			return CorrectionLocationType.LASTCOLUMN;
+		
+		return CorrectionLocationType.NONE;
 	}
 }

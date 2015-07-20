@@ -15,12 +15,7 @@ import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-
-
-
-
 
 import scala.Tuple2;
 
@@ -38,6 +33,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertColumnRDDToBinaryBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocksFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReorgMapFunction;
@@ -154,7 +150,8 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			}
 			else { // diagM2V
 				//execute diagM2V operation
-				out = in1.filter(new RDDFilterM2VFunction()).mapToPair(new ReorgMapFunction("rdiag"));
+				out = in1.filter(new FilterDiagBlocksFunction())
+					     .mapToPair(new ReorgMapFunction("rdiag"));
 			}
 			
 			//store output rdd handle
@@ -357,22 +354,6 @@ public class ReorgSPInstruction extends UnarySPInstruction
 				retVal.add(new Tuple2<IndexWithValue, Double>(new IndexWithValue(val, globalIndex), (double) globalIndex));
 			}
 			return retVal;
-		}
-		
-	}
-	
-	public static class RDDFilterM2VFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> {
-
-		private static final long serialVersionUID = -6928954547682014216L;
-
-		@Override
-		public Boolean call(Tuple2<MatrixIndexes, MatrixBlock> arg0) throws Exception {
-			if(arg0._1.getRowIndex() == arg0._1.getColumnIndex()) {
-				return true;
-			}
-			else {
-				return false;
-			}
 		}
 		
 	}

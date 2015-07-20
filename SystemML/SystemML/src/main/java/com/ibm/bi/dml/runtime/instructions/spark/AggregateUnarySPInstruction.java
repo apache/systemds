@@ -13,6 +13,7 @@ import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
+import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -25,6 +26,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateDropCorrectionFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateMultiBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSingleBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -33,7 +35,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 
 /**
- * TODO different aggregation types (single block / multi block via reduce/reducebykey)
  * 
  */
 public class AggregateUnarySPInstruction extends UnarySPInstruction
@@ -42,11 +43,13 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private SparkAggType _aggtype;
+	private SparkAggType _aggtype = null;
+	private AggregateOperator _aop = null;
 	
-	public AggregateUnarySPInstruction(AggregateUnaryOperator op, CPOperand in, CPOperand out, SparkAggType aggtype, String opcode, String istr){
-		super(op, in, out, opcode, istr);
+	public AggregateUnarySPInstruction(AggregateUnaryOperator auop, AggregateOperator aop, CPOperand in, CPOperand out, SparkAggType aggtype, String opcode, String istr){
+		super(auop, in, out, opcode, istr);
 		_aggtype = aggtype;
+		_aop = aop;
 	}
 	
 	/**
@@ -68,8 +71,13 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		out.split(parts[2]);
 		SparkAggType aggtype = SparkAggType.valueOf(parts[3]);
 		
+		String aopcode = InstructionUtils.deriveAggregateOperatorOpcode(opcode);
+		CorrectionLocationType corrLoc = InstructionUtils.deriveAggregateOperatorCorrectionLocation(opcode);
+		String corrExists = (corrLoc != CorrectionLocationType.NONE) ? "true" : "false";
+		
 		AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
-		return new AggregateUnarySPInstruction(aggun, in1, out, aggtype, opcode, str);
+		AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrExists, corrLoc.toString());
+		return new AggregateUnarySPInstruction(aggun, aop, in1, out, aggtype, opcode, str);
 	}
 	
 	@Override
@@ -82,12 +90,16 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		
 		//get input
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in;
+		
+		//filter input blocks for trace
+		if( getOpcode().equalsIgnoreCase("uaktrace") )
+			out = out.filter(new FilterDiagBlocksFunction());
 		
 		//execute unary aggregate operation
 		AggregateUnaryOperator auop = (AggregateUnaryOperator)_optr;
-		AggregateOperator aggop = auop.aggOp;
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in.mapToPair(
-				new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock(), !aggregate));		
+		AggregateOperator aggop = _aop;
+		out = out.mapToPair(new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock(), !aggregate));		
 		
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
@@ -108,9 +120,8 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 				out = out.reduceByKey( new AggregateMultiBlockFunction(aggop) );
 	
 				//drop correction after aggregation
-				if( auop.aggOp.correctionExists ) {
+				if( auop.aggOp.correctionExists )
 					out = out.mapToPair( new AggregateDropCorrectionFunction(aggop) );
-				}
 			}
 			
 			//put output RDD handle into symbol table

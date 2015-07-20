@@ -17,7 +17,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 /**
  * 
  */
-public class RemoveEmptyBlockFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
+public class FilterNonEmptyBlocksFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -356,6 +357,150 @@ public class FullAggregateTest extends AutomatedTestBase
 	{
 		runColAggregateOperationTest(OpType.TRACE, true, true, ExecType.MR);
 	}
+
+	@Test
+	public void testSumDenseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.SUM, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMeanDenseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.MEAN, false, false, ExecType.SPARK);
+	}	
+	
+	@Test
+	public void testMaxDenseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.MAX, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMinDenseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.MIN, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testProdDenseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.PROD, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTraceDenseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSumDenseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.SUM, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMeanDenseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.MEAN, false, true, ExecType.SPARK);
+	}	
+	
+	@Test
+	public void testMaxDenseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.MAX, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMinDenseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.MIN, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testProdDenseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.PROD, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTraceDenseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSumSparseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.SUM, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMeanSparseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.MEAN, true, false, ExecType.SPARK);
+	}	
+	
+	@Test
+	public void testMaxSparseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.MAX, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMinSparseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.MIN, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testProdSparseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.PROD, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTraceSparseMatrixSP() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSumSparseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.SUM, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMeanSparseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.MEAN, true, true, ExecType.SPARK);
+	}	
+	
+	@Test
+	public void testMaxSparseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.MAX, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMinSparseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.MIN, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testProdSparseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.PROD, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testTraceSparseVectorSP() 
+	{
+		runColAggregateOperationTest(OpType.TRACE, true, true, ExecType.SPARK);
+	}
 	
 	
 	/**
@@ -366,10 +511,17 @@ public class FullAggregateTest extends AutomatedTestBase
 	 */
 	private void runColAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType)
 	{
-		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
 	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
 		try
 		{
 			String TEST_NAME = null;
@@ -420,6 +572,7 @@ public class FullAggregateTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 	

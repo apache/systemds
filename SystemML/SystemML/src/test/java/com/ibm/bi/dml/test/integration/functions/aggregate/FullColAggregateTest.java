@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
@@ -448,6 +449,102 @@ public class FullColAggregateTest extends AutomatedTestBase
 		runColAggregateOperationTest(OpType.COL_MIN, true, true, ExecType.MR, false);
 	}
 	
+	@Test
+	public void testColSumsDenseMatrixNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, false, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColMeansDenseMatrixNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, false, false, ExecType.SPARK, false);
+	}	
+	
+	@Test
+	public void testColMaxDenseMatrixNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, false, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColMinDenseMatrixNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, false, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColSumsDenseVectorNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, false, true, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColMeansDenseVectorNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, false, true, ExecType.SPARK, false);
+	}	
+	
+	@Test
+	public void testColMaxDenseVectorNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, false, true, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColMinDenseVectorNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, false, true, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColSumsSparseMatrixNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, true, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColMeansSparseMatrixNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, true, false, ExecType.SPARK, false);
+	}	
+	
+	@Test
+	public void testColMaxSparseMatrixNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, true, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColMinSparseMatrixNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, true, false, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColSumsSparseVectorNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_SUMS, true, true, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColMeansSparseVectorNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MEANS, true, true, ExecType.SPARK, false);
+	}	
+	
+	@Test
+	public void testColMaxSparseVectorNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MAX, true, true, ExecType.SPARK, false);
+	}
+	
+	@Test
+	public void testColMinSparseVectorNoRewritesSP() 
+	{
+		runColAggregateOperationTest(OpType.COL_MIN, true, true, ExecType.SPARK, false);
+	}
+	
 	/**
 	 * 
 	 * @param type
@@ -469,10 +566,17 @@ public class FullColAggregateTest extends AutomatedTestBase
 	 */
 	private void runColAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType, boolean rewrites)
 	{
-		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
 	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
 		boolean oldRewritesFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 		
@@ -523,6 +627,7 @@ public class FullColAggregateTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewritesFlag;
 		}
 	}

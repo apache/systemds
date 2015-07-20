@@ -1,0 +1,106 @@
+#-------------------------------------------------------------
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2015
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+#  
+# THIS SCRIPT GENERATED RANDOM DATA FOR KAPLAN-MEIER AND COX PROPORTIONAL HAZARD MODELS
+# ASSUMPTION: BASELINE HAZARD HAS WEIBULL DISTIRUTION WITH PARAMETERS LAMBDA AND V 
+#
+# INPUT   PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    TYPE     DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# type    Sting    ---          The type of model for which the data is being generated: "kaplan-meier" or "cox"
+# n       Int                   Number of records 
+# lambda  Double   2            Scale parameter of the Weibull distribution used for generating timestamps 
+# v       Double   1.5          Shape parameter of the Weibull distribution used for generating timestamps 
+# p       Double   0.8          1 - probability of a record being censored
+# g       Int                   If type=kaplan-meier the number of categorical features used for grouping 
+# s       Int                   If type=kaplan-meier the number of categorical features used for stratifying
+# f       Int                   If type=kaplan-meier maximum number of levels (i.e., distinct values) of g+s categorical features
+# m       Int                   If type=cox the number of features in the model
+# sp      Double   0.8          If type=cox the sparsity of the feature matrix 
+# O       String   ---          Location to write the output matrix containing random data for the kaplan-meier or the cox model 
+# B       String   ---          If type=cox location to write the output matrix containing the coefficients for the cox model 
+# fmt     String   "text"       The output format of results of the kaplan-meier analysis, such as "text" or "csv"
+# ---------------------------------------------------------------------------------------------
+# OUTPUTS: 
+# 1- If type=kaplan-meier an n x (2+g+s) matrix O with      
+#    - column 1 contains timestamps generated randomly from a Weibull distribution with parameters lambda and v
+#	 - column 2 contains the information whether an event occurred (1) or data is censored (0)
+#	 - columns 3:2+g contain categorical features used for grouping	
+#    - columns 3+g:2+g+s contain categorical features used for stratifying
+#   if type=cox an n x (2+m) matrix O with 
+#	 - column 1 contains timestamps generated randomly from a Weibull distribution with parameters lambda and v
+#	 - column 2 contains the information whether an event occurred (1) or data is censored (0)
+#	 - columns 3:2+m contain scale features 
+# 2- If type=cox a coefficient matrix B
+
+type = $type; # either "kaplan-meier" or "cox" 
+num_records = $n; 
+lambda = $l; 
+v = $v;
+p_event = $p; # 1 - prob. of a record being censored
+# parameters related to the kaplan-meier model
+n_groups = $g;
+n_strata = $s;
+max_level = $f;
+# parameters related to the cox model
+num_features = $m;  
+sparsity = $sp; 
+fileO = $O;
+fileB = $B; 
+fmtO = ifdef ($fmt, "text"); # $fmt="text" 
+p_censor = 1 - p_event; # prob. that record is censored
+
+if (type == "kaplan-meier") {
+	
+	# generate categorical features used for grouping and stratifying
+	X = ceil (rand (rows = num_records, cols = n_groups + n_strata, min = 0.000000001, max = max_level - 0.000000001, pdf = "uniform"));
+	
+	# generate timestamps
+	U = rand (rows = num_records, cols = 1, min = 0.000000001, max = 1); 
+	T = (-log (U) / lambda) ^ (1/v);
+
+} else if (type == "cox") {
+
+	# generate feature matrix
+	X = rand (rows = num_records, cols = num_features, min = 1, max = 5, pdf = "uniform", sparsity = sp);
+
+	# generate coefficients
+	B = rand (rows = num_features, cols = 1, min = -1.0, max = 1.0, pdf = "uniform", sparsity = 1.0); # * beta_range;	
+
+	# generate timestamps
+	U = rand (rows = num_records, cols = 1, min = 0.000000001, max = 1); 
+	T = (-log (U) / (lambda * exp (X %*% B)) ) ^ (1/v);
+
+} else {
+	stop ("Wrong model type!");
+}
+
+Y = matrix (0, rows = num_records, cols = 2);
+event = floor (rand (rows = num_records, cols = 1, min = (1 - p_censor), max = (1 + p_event)));
+n_time = sum (event);
+Y[,2] = event;
+  	
+# binning of event times
+min_T = min (T);
+max_T = max (T);
+# T = T - min_T;
+len = max_T - min_T;
+num_bins = len / n_time;
+T = ceil (T / num_bins);
+
+# print ("min(T) " + min(T) + " max(T) " + max(T));
+Y[,1] = T;
+
+O = append (Y, X);
+write (O, fileO, format = fmtO);
+
+if (type == "cox") {
+	write (B, fileB, format = fmtO);
+}

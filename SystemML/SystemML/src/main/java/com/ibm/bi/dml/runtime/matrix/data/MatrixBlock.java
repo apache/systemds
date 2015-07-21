@@ -3494,7 +3494,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixValue transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype ) 	
+	public MatrixBlock transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype ) 	
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		return transposeSelfMatrixMultOperations(out, tstype, 1);
@@ -3508,7 +3508,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixValue transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype, int k ) 	
+	public MatrixBlock transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype, int k ) 	
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//check for transpose type
@@ -3544,7 +3544,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixValue chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype ) 
+	public MatrixBlock chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 	
 	{
 		return chainMatrixMultOperations(v, w, out, ctype, 1);
@@ -3560,7 +3560,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixValue chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k ) 	
+	public MatrixBlock chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k ) 	
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//check for transpose type

@@ -9,9 +9,7 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.PairFunction;
-
-import scala.Tuple2;
+import org.apache.spark.api.java.function.Function;
 
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -84,7 +82,7 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		//execute tsmm instruction (always produce exactly one output block)
 		//(this formulation with values() requires --conf spark.driver.maxResultSize=0)
 		RDDTSMMFunction ftsmm = new RDDTSMMFunction(_type);		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = in.mapToPair(ftsmm);
+		JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = in.mapValues(ftsmm);
 		MatrixBlock out = RDDAggregateUtils.sumStable(tmp);
 		      
 		//put output block into symbol table (no lineage because single block)
@@ -96,7 +94,7 @@ public class TsmmSPInstruction extends UnarySPInstruction
 	 * 
 	 * 
 	 */
-	private static class RDDTSMMFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	private static class RDDTSMMFunction implements Function<MatrixBlock, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 2935770425858019666L;
 		
@@ -107,19 +105,12 @@ public class TsmmSPInstruction extends UnarySPInstruction
 		}
 		
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public MatrixBlock call( MatrixBlock arg0 ) 
 			throws Exception 
 		{
-			MatrixBlock blkIn = arg0._2();
-
-			MatrixIndexes ixOut = new MatrixIndexes(1,1);
-			MatrixBlock blkOut = new MatrixBlock();
-			
-			//execute matrix-vector mult
-			blkIn.transposeSelfMatrixMultOperations(blkOut, _type);
-			
-			//output new tuple
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
+			//execute transpose-self matrix multiplication
+			MatrixBlock out = new MatrixBlock();
+			return arg0.transposeSelfMatrixMultOperations(out, _type);
 		}
 	}
 	

@@ -22,7 +22,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 /**
  * Collection of utility methods for aggregating binary block rdds. As a general
  * policy always call stable algorithms which maintain corrections over blocks
- * per key. The performance overhead over a simple reducebykey is roughly 10% 
+ * per key. The performance overhead over a simple reducebykey is roughly 7-10% 
  * and with that acceptable. 
  * 
  */
@@ -47,11 +47,11 @@ public class RDDAggregateUtils
 		//stable sum of all blocks with correction block per function instance
 		if( TREE_AGGREGATION ) {
 			return in.values().treeReduce( 
-					new AggregateSumSingleBlockFunction() );	
+					new SumSingleBlockFunction() );	
 		}
 		else { //DEFAULT
 			return in.values().reduce( 
-					new AggregateSumSingleBlockFunction() );
+					new SumSingleBlockFunction() );
 		}
 	}
 	
@@ -64,7 +64,7 @@ public class RDDAggregateUtils
 	{
 		//sum of blocks per key, w/o exploitation of correction blocks
 		return in.reduceByKey(
-				new AggregateSumMultiBlockFunction());
+				new SumMultiBlockFunction());
 	}
 	
 	/**
@@ -300,5 +300,162 @@ public class RDDAggregateUtils
 		{
 			return arg0.getValue();
 		}	
+	}
+
+	/**
+	 * This aggregate function uses kahan+ with corrections to aggregate input blocks; it is meant for 
+	 * reduce all operations where we can reuse the same correction block independent of the input
+	 * block indexes. Note that this aggregation function does not apply to embedded corrections.
+	 * 
+	 */
+	private static class SumSingleBlockFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 1737038715965862222L;
+		
+		private AggregateOperator _op = null;
+		private MatrixBlock _corr = null;
+		
+		public SumSingleBlockFunction()
+		{
+			_op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);	
+			_corr = null;
+		}
+		
+		@Override
+		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
+			throws Exception 
+		{
+			//create correction block (on demand)
+			if( _corr == null ){
+				_corr = new MatrixBlock(arg0.getNumRows(), arg0.getNumColumns(), false);
+			}
+			
+			//copy one input to output
+			MatrixBlock out = new MatrixBlock(arg0);
+			
+			//aggregate other input
+			OperationsOnMatrixValues.incrementalAggregation(out, _corr, arg1, _op, false);
+			
+			return out;
+		}
+	}
+	
+	/**
+	 * This aggregate function uses kahan+ with corrections to aggregate input blocks; it is meant for 
+	 * reducebykey operations where we CANNOT reuse the same correction block independent of the input
+	 * block indexes. Note that this aggregation function does not apply to embedded corrections.
+	 * 
+	 */
+	private static class SumMultiBlockFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+	{
+		private static final long serialVersionUID = -4015979658416853324L;
+
+		private AggregateOperator _op = null;
+		private MatrixBlock _corr = null;
+		
+		public SumMultiBlockFunction()
+		{
+			_op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);	
+			_corr = new MatrixBlock();
+		}
+		
+		@Override
+		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
+			throws Exception 
+		{
+			//copy one input to output
+			MatrixBlock out = new MatrixBlock(arg0);
+			
+			//aggregate other input
+			_corr.reset(out.getNumRows(), out.getNumColumns());
+			OperationsOnMatrixValues.incrementalAggregation(out, _corr, arg1, _op, false);
+			
+			return out;
+		}
+	}
+	
+
+	/**
+	 * Note: currently we always include the correction and use a subsequent maptopair to
+	 * drop them at the end because during aggregation we dont know if we produce an
+	 * intermediate or the final aggregate. 
+	 */
+	private static class AggregateSingleBlockFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+	{
+		private static final long serialVersionUID = -3672377410407066396L;
+
+		private AggregateOperator _op = null;
+		private MatrixBlock _corr = null;
+		
+		public AggregateSingleBlockFunction( AggregateOperator op )
+		{
+			_op = op;	
+			_corr = null;
+		}
+		
+		@Override
+		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
+			throws Exception 
+		{
+			//copy one first input
+			MatrixBlock out = new MatrixBlock(arg0); 
+			
+			//create correction block (on demand)
+			if( _corr == null ){
+				_corr = new MatrixBlock(arg0.getNumRows(), arg0.getNumColumns(), false);
+			}
+			
+			//aggregate second input
+			if(_op.correctionExists) {
+				OperationsOnMatrixValues.incrementalAggregation(
+						out, _corr, arg1, _op, true);
+			}
+			else {
+				OperationsOnMatrixValues.incrementalAggregation(
+						out, null, arg1, _op, true);
+			}
+			
+			return out;
+		}
+	}
+	
+	/**
+	 * Note: currently we always include the correction and use a subsequent maptopair to
+	 * drop them at the end because during aggregation we dont know if we produce an
+	 * intermediate or the final aggregate. 
+	 */
+	private static class AggregateMultiBlockFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+	{
+		private static final long serialVersionUID = -3672377410407066396L;
+
+		private AggregateOperator _op = null;
+		private MatrixBlock _corr = null;
+		
+		public AggregateMultiBlockFunction( AggregateOperator op )
+		{
+			_op = op;	
+			_corr = new MatrixBlock();
+		}
+		
+		@Override
+		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1)
+			throws Exception 
+		{
+			//copy one first input
+			MatrixBlock out = new MatrixBlock(arg0); 
+			
+			//aggregate second input
+			_corr.reset(out.getNumRows(), out.getNumColumns());
+			if(_op.correctionExists) {
+				OperationsOnMatrixValues.incrementalAggregation(
+						out, _corr, arg1, _op, true);
+			}
+			else {
+				OperationsOnMatrixValues.incrementalAggregation(
+						out, null, arg1, _op, true);
+			}
+			
+			return out;
+		}
 	}
 }

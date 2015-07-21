@@ -8,9 +8,6 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.PairFunction;
-
-import scala.Tuple2;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -19,7 +16,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -31,12 +28,8 @@ public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public MatrixScalarBuiltinSPInstruction(Operator op,
-											CPOperand in1,
-											CPOperand in2,
-											CPOperand out,
-											String opcode,
-											String instr){
+	public MatrixScalarBuiltinSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String instr)
+	{
 		super(op, in1, in2, out, 2, opcode, instr);
 	}
 	
@@ -46,43 +39,22 @@ public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		if(!mcOut.dimsKnown() && !mc1.dimsKnown()) {
-			throw new DMLRuntimeException("The output dimensions are not specified for MatrixScalarBuiltinSPInstruction");
-		}
-		else {
-			mcOut.set(mc1);
-			// mcOut.setDimension(mc1.getRows(), mc1.getCols());
-		}
+		//get input RDD
+		String rddVar = (input1.getDataType() == DataType.MATRIX) ? input1.getName() : input2.getName();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
 		
-		CPOperand mat = ( input1.getDataType() == DataType.MATRIX ) ? input1 : input2;
+		//get operator and scalar
 		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
+		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
+		ScalarOperator sc_op = (ScalarOperator) _optr;
+		sc_op.setConstant(constant.getDoubleValue());
 		
-		ScalarObject constant = (ScalarObject) sec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
-		
-		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( mat.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new RDDMatrixScalarBuiltinUnaryOp( (ScalarOperator)_optr, constant.getDoubleValue()));
-		
+		//execute scalar matrix arithmetic instruction
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapValues( new MatrixScalarUnaryFunction(sc_op) );
+					
+		//put output RDD handle into symbol table
+		updateUnaryOutputMatrixCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
-		sec.addLineageRDD(output.getName(), mat.getName());
-	}
-	
-	public static class RDDMatrixScalarBuiltinUnaryOp implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes,MatrixBlock> {
-		private static final long serialVersionUID = -3128192099832877491L;
-		ScalarOperator sc_op;
-		
-		public RDDMatrixScalarBuiltinUnaryOp(ScalarOperator sc_op, double constant) {	
-			this.sc_op = sc_op;
-			this.sc_op.setConstant(constant);
-		}
-
-		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
-			MatrixBlock resultBlock = (MatrixBlock) kv._2.scalarOperations(sc_op, new MatrixBlock());
-			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, resultBlock);
-		}
-		
+		sec.addLineageRDD(output.getName(), rddVar);
 	}
 }

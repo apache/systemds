@@ -1,0 +1,25 @@
+# generates random correlated data
+# can generate any number of variables/columns
+# used to test univariate stats computation
+# by systemml
+
+# $1 is number of variables/columns
+# $2 is number of samples to create
+# $3 is the location to write out the covariance mat
+# $4 is the location to write out the generated data
+dims = $1
+numSamples = $2
+
+U = Rand(rows=dims, cols=dims, min=-1.0, max=1.0, pdf="uniform", seed=0)
+denoms = sqrt(colSums(U*U))
+parfor(i in 1:dims){
+	U[i,] = U[i,] / denoms
+}
+
+C = t(U)%*%U
+write(C, $3, format="binary")
+
+R = Rand(rows=numSamples, cols=dims, pdf="normal", seed=0)
+Rc = R%*%U
+write(Rc, $4, format="binary")
+

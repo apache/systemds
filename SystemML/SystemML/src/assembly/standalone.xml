@@ -25,7 +25,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>${basedir}/src/main/algorithms</directory>
+			<directory>${basedir}/scripts/algorithms</directory>
 			<includes>
 				<include>GLM-predict.dml</include>
 				<include>GLM.dml</include>
@@ -47,16 +47,23 @@
 				<include>apply-transform.dml</include>
 				<include>decision-tree.dml</include>
 				<include>decision-tree-predict.dml</include>
-				<include>utils/cbind.dml</include>
-				<include>utils/head.dml</include>
-				<include>utils/project.dml</include>
-				<include>utils/splitXY.dml</include>
-				<include>utils/write.dml</include>
-				<include>utils/csv2bin.dml</include>
-				<include>utils/sample.dml</include>
-				<include>utils/rowIndexMax.dml</include>
 			</includes>
 			<outputDirectory>./algorithms</outputDirectory>
+		</fileSet>
+    
+    <fileSet>
+			<directory>${basedir}/scripts/utils</directory>
+			<includes>
+				<include>cbind.dml</include>
+				<include>head.dml</include>
+				<include>project.dml</include>
+				<include>splitXY.dml</include>
+				<include>write.dml</include>
+				<include>csv2bin.dml</include>
+				<include>sample.dml</include>
+				<include>rowIndexMax.dml</include>
+			</includes>
+			<outputDirectory>./algorithms/utils</outputDirectory>
 		</fileSet>
 
 		<fileSet>

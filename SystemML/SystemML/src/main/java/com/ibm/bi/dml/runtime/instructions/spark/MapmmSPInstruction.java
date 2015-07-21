@@ -31,9 +31,8 @@ import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -133,8 +132,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
-			MatrixBlock out2 = out.values()
-					              .reduce(new AggregateSumSingleBlockFunction());
+			MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
 			
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of matrix characteristics
@@ -143,7 +141,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		else //MULTI_BLOCK or NONE
 		{
 			if( _aggtype == SparkAggType.MULTI_BLOCK )
-				out = out.reduceByKey( new AggregateSumMultiBlockFunction() );
+				out = RDDAggregateUtils.sumByKeyStable(out);
 		
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

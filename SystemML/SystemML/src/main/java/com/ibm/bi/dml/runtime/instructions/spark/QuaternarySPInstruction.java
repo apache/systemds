@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -234,8 +234,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		if( qop.wtype1 != null ) //mapwsloss, redwsloss
 		{
 			//full aggregate and cast to scalar
-			MatrixBlock tmp = out.values()
-					             .reduce(new AggregateSumSingleBlockFunction());
+			MatrixBlock tmp = RDDAggregateUtils.sumStable(out);
 			DoubleObject ret = new DoubleObject(tmp.getValue(0, 0));
 			sec.setVariable(output.getName(), ret);
 		}

@@ -25,7 +25,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumSingleBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -38,13 +38,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
-	//internal configuration to use tree aggregation (treeReduce w/ depth=2),
-	//this is currently disabled because it was 2x slower than a simple
-	//single-block reduce due to additional overhead for shuffling 
-	private static final boolean TREE_AGGREGATION = false; 
 		
-	
 	private ChainType _chainType = null;
 	
 	private CPOperand _input1 = null;
@@ -139,15 +133,8 @@ public class MapmmChainSPInstruction extends SPInstruction
 		
 		//execute mapmmchain (guaranteed to have single output block)
 		RDDMapMMChainFunction fmmc = new RDDMapMMChainFunction(_chainType, inV, inW);
-		MatrixBlock out = null;
-		if( TREE_AGGREGATION ) {
-			out = inX.mapToPair(fmmc).values()
-					 .treeReduce(new AggregateSumSingleBlockFunction());	
-		}
-		else { //DEFAULT
-			out = inX.mapToPair(fmmc).values()
-					 .reduce(new AggregateSumSingleBlockFunction());	
-		}
+		JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = inX.mapToPair(fmmc);
+		MatrixBlock out = RDDAggregateUtils.sumStable(tmp);
 		
 		//put output block into symbol table (no lineage because single block)
 		//this also includes implicit maintenance of matrix characteristics

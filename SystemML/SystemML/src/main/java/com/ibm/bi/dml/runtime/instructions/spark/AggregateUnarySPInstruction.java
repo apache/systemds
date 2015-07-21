@@ -24,9 +24,8 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateDropCorrectionFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateMultiBlockFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSingleBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -104,8 +103,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
-			MatrixBlock out2 = out.values()
-					.reduce(new AggregateSingleBlockFunction(aggop));
+			MatrixBlock out2 = RDDAggregateUtils.aggStable(out, aggop);
 			
 			//drop correction after aggregation
 			out2.dropLastRowsOrColums(aggop.correctionLocation);
@@ -117,7 +115,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		else //MULTI_BLOCK or NONE
 		{
 			if( _aggtype == SparkAggType.MULTI_BLOCK ) {
-				out = out.reduceByKey( new AggregateMultiBlockFunction(aggop) );
+				out = RDDAggregateUtils.aggByKeyStable(out, aggop);
 	
 				//drop correction after aggregation
 				if( auop.aggOp.correctionExists )

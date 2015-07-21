@@ -26,7 +26,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateSumMultiBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -98,9 +98,9 @@ public class RmmSPInstruction extends BinarySPInstruction
 		
 		//step 2: join prepared datasets, multiply, and aggregate
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
-				tmp1.join( tmp2 )                                         //join by result block 
-		            .mapToPair( new RmmMultiplyFunction() )               //do matrix multiplication
-		            .reduceByKey( new AggregateSumMultiBlockFunction() ); //aggregation per result block
+				tmp1.join( tmp2 )                              //join by result block 
+		            .mapToPair( new RmmMultiplyFunction() );   //do matrix multiplication
+		out = RDDAggregateUtils.sumByKeyStable(out);           //aggregation per result block
 		
 		//put output block into symbol table (no lineage because single block)
 		updateBinaryMMOutputMatrixCharacteristics(sec, true);

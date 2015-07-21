@@ -18,7 +18,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 /**
  * This aggregate function uses kahan+ with corrections to aggregate input blocks; it is meant for 
  * reduce all operations where we can reuse the same correction block independent of the input
- * block indexes.
+ * block indexes. Note that this aggregation function does not apply to embedded corrections.
  * 
  */
 public class AggregateSumSingleBlockFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 

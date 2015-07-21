@@ -6,7 +6,9 @@
 # what has been deposited with the U.S. Copyright Office.
 #-------------------------------------------------------------
 
-# Utility script to split X into new X and Y.
+# Utility script to split X into new X and Y, which can be used for machine learning 
+# algorithms with response variables. This script has the same functionality as splitXY.dml but also
+# handles the case of dummycoded Y variables, where they may have multiple columns. 
 #
 # Parameters:
 #    X       : (input)  filename of data matrix

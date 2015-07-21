@@ -1,0 +1,50 @@
+# IBM Confidential
+# OCO Source Materials
+# (C) Copyright IBM Corp. 2010, 2014
+# The source code for this program is not published or
+# otherwise divested of its trade secrets, irrespective of
+# what has been deposited with the U.S. Copyright Office.
+#-------------------------------------------------------------
+
+# Utility script to split X into new X and Y.
+#
+# Parameters:
+#    X       : (input)  filename of data matrix
+#    S       : (input, default ncol(x) - N+1) starting index of dummycoding 
+#    N	     : (input, default 1) number of features present (i.e. dummycoded columns)
+#    OX      : (output) filename of output matrix with all columns except y
+#    OY      : (output) filename of output matrix with y column
+#    ofmt    : (default binary) format of OX and OY output matrix
+#
+# Example:
+#   hadoop jar SystemML.jar -f algorithms/utils/splitXY-dummy.dml -nvargs X="/tmp/X.mtx" S=4 N=3 OX=/tmp/OX.mtx OY=/tmp/OY.mtx ofmt=csv 
+#
+
+
+ofmt = ifdef($ofmt, "binary")
+X = read ($X)
+N = ifdef($N, 1)
+nc = ncol(X)
+S = ifdef($S, nc-N+1) 
+
+if (S==1)
+{
+    OX = X[,N+1:nc]
+    OY = X[,1:N]
+}
+else if (S == nc-N+1) 
+{
+    OX = X[,1:nc-N]
+    OY = X[,nc-N+1:nc]
+}
+else 
+{
+    OX1 = X[,1:S-1]
+    OX2 = X[,S+N:nc]
+    OX = append (OX1, OX2)
+    OY = X[,S:S+N-1]
+}
+
+# Write output
+write (OX, $OX, format=ofmt)
+write (OY, $OY, format=ofmt) 

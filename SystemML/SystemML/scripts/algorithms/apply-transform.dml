@@ -11,4 +11,4 @@ cmdLine_fmt = ifdef($FMT, "csv")
 
 raw = read($DATA_PATH);
 A = transform(target=raw, transformPath=$TRANSFORM_PATH, applyTransformPath=$APPLY_TRANSFORM_PATH);
-write(A, $OUTPUT_DATA_PATH, format=cmdList_fmt);
+write(A, $OUTPUT_DATA_PATH, format=cmdLine_fmt);

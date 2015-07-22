@@ -75,9 +75,9 @@ public class BinaryOp extends Hop
 	private enum MMBinaryMethod{
 		CP_BINARY,
 		MR_BINARY_R, //both mm, mv 
-		MR_BINARY_M, //only mv
-		MR_BINARY_OUTER, //only vv
-		MR_BINARY_UAGG_CHAIN,
+		MR_BINARY_M, //only mv (mr/spark)
+		MR_BINARY_OUTER, //only vv 
+		MR_BINARY_UAGG_CHAIN, //(mr/spark)
 	}
 	
 	private BinaryOp() {
@@ -591,27 +591,49 @@ public class BinaryOp extends Hop
 			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			setLops(unary1);
 			
-		} else {
-
+		} 
+		else 
+		{
 			// Both operands are Matrixes
 			ExecType et = optFindExecType();
-			if ( et == ExecType.CP || et == ExecType.SPARK) {
+			if ( et == ExecType.CP ) 
+			{
 				Binary binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
 						getDataType(), getValueType(), et);
 				
-				binary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-				
-				binary.getOutputParameters().setDimensions(getDim1(),
-						getDim2(), getRowsInBlock(),
-						getColsInBlock(), getNnz());
+				setLineNumbers(binary);
+				setOutputDimensions(binary);
 				setLops(binary);
 			}
-			else 
+			else if(et == ExecType.SPARK)
+			{
+				Hop left = getInput().get(0);
+				Hop right = getInput().get(1);
+				//TODO need to create spark-specific op selection for supporting binarym/binaryr
+				MMBinaryMethod mbin = optFindMMBinaryMethod(left, right);
+				
+				Lop  binary = null;
+				if( mbin == MMBinaryMethod.MR_BINARY_UAGG_CHAIN ) {
+					AggUnaryOp uRight = (AggUnaryOp)right;
+					binary = new BinaryUAggChain(left.constructLops(), HopsOpOp2LopsB.get(op),
+							HopsAgg2Lops.get(uRight.getOp()), HopsDirection2Lops.get(uRight.getDirection()),
+							getDataType(), getValueType(), et);
+				}
+				else {
+					binary = new Binary(left.constructLops(), right.constructLops(), 
+							HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
+				}
+				
+				setLineNumbers(binary);
+				setOutputDimensions(binary);
+				setLops(binary);
+			}
+			else //MR
 			{
 				Hop left = getInput().get(0);
 				Hop right = getInput().get(1);
 				MMBinaryMethod mbin = optFindMMBinaryMethod(left, right);
-		
+				
 				if( mbin == MMBinaryMethod.MR_BINARY_M )
 				{
 					boolean needPart = requiresPartitioning(right);
@@ -638,8 +660,8 @@ public class BinaryOp extends Hop
 					AggUnaryOp uRight = (AggUnaryOp)right;
 					BinaryUAggChain bin = new BinaryUAggChain(left.constructLops(), HopsOpOp2LopsB.get(op),
 							HopsAgg2Lops.get(uRight.getOp()), HopsDirection2Lops.get(uRight.getDirection()),
-							getDataType(), getValueType());
-					bin.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+							getDataType(), getValueType(), et);
+					setOutputDimensions(bin);
 					setLineNumbers(bin);
 					setLops(bin);
 				}

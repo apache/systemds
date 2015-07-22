@@ -28,6 +28,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.AppendGSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AppendMSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AppendRSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ArithmeticBinarySPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.BinUaggChainSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.BuiltinBinarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
@@ -193,6 +194,8 @@ public class SPInstructionParser extends InstructionParser {
 		
 		String2SPInstructionType.put( "cm"    , SPINSTRUCTION_TYPE.CentralMoment);
 		String2SPInstructionType.put( "cov"    , SPINSTRUCTION_TYPE.Covariance);
+
+		String2SPInstructionType.put( "binuaggchain", SPINSTRUCTION_TYPE.BinUaggChain);
 		
 		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
 		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
@@ -340,6 +343,9 @@ public class SPInstructionParser extends InstructionParser {
 			case Covariance:
 				return CovarianceSPInstruction.parseInstruction(str);
 			
+			case BinUaggChain:
+				return BinUaggChainSPInstruction.parseInstruction(str);
+				
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);
 				

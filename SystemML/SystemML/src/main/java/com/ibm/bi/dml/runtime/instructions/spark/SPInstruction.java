@@ -34,7 +34,7 @@ public abstract class SPInstruction extends Instruction
 		MatrixIndexing, Reorg, ArithmeticBinary, RelationalBinary, AggregateUnary, Reblock, CSVReblock, 
 		Builtin, BuiltinUnary, BuiltinBinary, Sort, Variable, Checkpoint, CentralMoment, Covariance,
 		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, 
-		MatrixReshape, Ternary, Quaternary, CumsumAggregate, CumsumOffset,
+		MatrixReshape, Ternary, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain,
 		INVALID, 
 	};
 	

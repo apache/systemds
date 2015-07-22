@@ -15,10 +15,10 @@
 # ---------------------------------------------------------------------------------------------
 # NAME    TYPE     DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# X       String   ---          Location to read the input matrix X containing the survival data with the following schema:
-# 								 - X[,1]: timestamps 
-#								 - X[,2]: whether an event occurred (1) or data is censored (0)
-#								 - X[,3:]: feature vectors 	
+# X       String   ---          Location to read the input matrix X containing the survival data containing the following information
+# 								 - 1: timestamps 
+#								 - 2: whether an event occurred (1) or data is censored (0)
+#								 - 3: feature vectors 	
 # TE	  String   ---          Column indices of X as a column vector which contain timestamp (first row) and event information (second row)
 # F 	  String   " "			Column indices of X as a column vector which are to be used for fitting the Cox model
 # R   	  String   " "	        If factors (categorical variables) are available in the input matrix X, location to read the matrix R containing 
@@ -211,12 +211,8 @@ if (ncol (X_orig) < 3) {
 g0_1 = - t (colSums (X * E)); # g_1
 # part 2 g0_2
 X_rev_agg = cumsum (I_rev_all %*% X);
-select = t (colSums (table (seq (1, num_distinct), e_r_rev_agg))); 
-# replace 0s by NaNs
-X_rev_agg = replace (target = X_rev_agg, pattern = 0, replacement = "NaN");
-X_agg = removeEmpty (target = X_rev_agg * select, margin = "rows");
-# replace back NaNs by 0s
-X_agg = replace (target = X_agg, pattern = "NaN", replacement = 0);
+select = table (seq (1, num_distinct), e_r_rev_agg);
+X_agg = select %*% X_rev_agg;
 g0_2 = t (colSums ((X_agg * d_r_rev)/ e_r_rev_agg));
 #
 g0 = g0_1 + g0_2;
@@ -248,30 +244,18 @@ while (sum_g2 > exit_g2 & i < maxiter) {
 		Xd = X %*% d;
 		X_Xd_exp_Xb = X * (Xd) * exp_Xb;
 		X_Xd_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_Xd_exp_Xb);
-		# replace 0s by NaNs
-		X_Xd_exp_Xb_rev_agg = replace (target = X_Xd_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
-		X_Xd_exp_Xb_rev_agg = removeEmpty (target = X_Xd_exp_Xb_rev_agg * select, margin = "rows");
-		# replace back NaNs by 0s
-		X_Xd_exp_Xb_rev_agg = replace (target = X_Xd_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);
+		X_Xd_exp_Xb_rev_agg = select %*% X_Xd_exp_Xb_rev_agg;
 		
 		D_r_rev = cumsum (I_rev %*% exp_Xb_agg); # denominator
 		Hd_1 = X_Xd_exp_Xb_rev_agg / D_r_rev;
 		# part 2 Hd_2
 		X_exp_Xb = X * exp_Xb;
 		X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
-		# replace 0s by NaNs
-		X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
-		X_exp_Xb_rev_agg = removeEmpty (target = X_exp_Xb_rev_agg * select, margin = "rows");
-		# replace back NaNs by 0s
-		X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);
+		X_exp_Xb_rev_agg = select %*% X_exp_Xb_rev_agg;
 		
 		Xd_exp_Xb = Xd * exp_Xb;
 		Xd_exp_Xb_rev_agg = cumsum (I_rev_all %*% Xd_exp_Xb);
-		# replace 0s by NaNs
-		Xd_exp_Xb_rev_agg = replace (target = Xd_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
-		Xd_exp_Xb_rev_agg = removeEmpty (target = Xd_exp_Xb_rev_agg * select, margin = "rows");	
-		# replace back NaNs by 0s
-		Xd_exp_Xb_rev_agg = replace (target = Xd_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);
+		Xd_exp_Xb_rev_agg = select %*% Xd_exp_Xb_rev_agg;
 		
 		Hd_2_num = X_exp_Xb_rev_agg * Xd_exp_Xb_rev_agg; # numerator
 		Hd_2 = Hd_2_num / (D_r_rev ^ 2);
@@ -307,11 +291,7 @@ while (sum_g2 > exit_g2 & i < maxiter) {
 		exp_Xb_agg = aggregate (target = exp_Xb, groups = RT, fn = "sum");
 		X_exp_Xb = X * exp_Xb;
 		X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
-		# replace 0s by NaNs
-		X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
-		X_exp_Xb_rev_agg = removeEmpty (target = X_exp_Xb_rev_agg * select, margin = "rows"); # numerator	
-		# replace back NaNs by 0s
-		X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);
+		X_exp_Xb_rev_agg = select %*% X_exp_Xb_rev_agg;
 		
 		D_r_rev = cumsum (I_rev %*% exp_Xb_agg); # denominator
 		g_2 = t (colSums ((X_exp_Xb_rev_agg / D_r_rev) * d_r_rev));
@@ -333,22 +313,14 @@ parfor (i in 1:D, check = 0) {
 	# part 1 H_1
 	Xi_X_exp_Xb = X_exp_Xb * Xi;
 	Xi_X_exp_Xb_rev_agg = cumsum (I_rev_all %*% Xi_X_exp_Xb);
-	# replace 0s by NaNs
-	Xi_X_exp_Xb_rev_agg = replace (target = Xi_X_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
-	Xi_X_exp_Xb_rev_agg = removeEmpty (target = Xi_X_exp_Xb_rev_agg * select, margin = "rows"); # numerator
-	# replace back NaNs by 0s
-	Xi_X_exp_Xb_rev_agg = replace (target = Xi_X_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);	
-
+	Xi_X_exp_Xb_rev_agg = select %*% Xi_X_exp_Xb_rev_agg;
+	
 	H_1 = Xi_X_exp_Xb_rev_agg / D_r_rev;
 	# part 2 H_2
 	Xi_exp_Xb = exp_Xb * Xi;
 	Xi_exp_Xb_agg = aggregate (target = Xi_exp_Xb, groups = RT, fn = "sum"); 
 	X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
-	# replace 0s by NaNs
-	X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = 0, replacement = "NaN");
-	X_exp_Xb_rev_agg = removeEmpty (target = X_exp_Xb_rev_agg * select, margin = "rows");
-	# replace back NaNs by 0s
-	X_exp_Xb_rev_agg = replace (target = X_exp_Xb_rev_agg, pattern = "NaN", replacement = 0);	
+	X_exp_Xb_rev_agg = select %*% X_exp_Xb_rev_agg; 
 	
 	Xi_exp_Xb_agg_rev_agg = cumsum (I_rev %*% Xi_exp_Xb_agg);
 	H_2_num = X_exp_Xb_rev_agg * Xi_exp_Xb_agg_rev_agg; # numerator
@@ -409,11 +381,7 @@ parfor (i in 1:D, check = 0) {
 	# part 1 H0_1
 	Xi_X = X * Xi;
 	Xi_X_rev_agg = cumsum (I_rev_all %*% Xi_X);
-	# replace 0s by NaNs
-	Xi_X_rev_agg = replace (target = Xi_X_rev_agg, pattern = 0, replacement = "NaN");
-	Xi_X_rev_agg = removeEmpty (target = Xi_X_rev_agg * select, margin = "rows"); # numerator
- 	# replace back NaNs by 0s
-	Xi_X_rev_agg = replace (target = Xi_X_rev_agg, pattern = "NaN", replacement = 0);
+	Xi_X_rev_agg = select %*% Xi_X_rev_agg;
 	
 	H0_1 = Xi_X_rev_agg / e_r_rev_agg;
 	# part 2 H0_2

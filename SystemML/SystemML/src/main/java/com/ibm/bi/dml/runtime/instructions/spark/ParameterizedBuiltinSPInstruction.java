@@ -1,7 +1,16 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2015
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.HashMap;
+
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.storage.StorageLevel;
 
@@ -26,7 +35,6 @@ import com.ibm.bi.dml.runtime.instructions.spark.functions.PerformGroupByAggInCo
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractGroup;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractGroupNWeights;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.PerformGroupByAggInReducer;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.UnflattenIterablesAfterCogroup;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -324,8 +332,8 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			ec.setMatrixOutput(output.getName(), soresBlock);
 			ec.releaseMatrixInput(params.get("target"));
 		}
-		else if ( opcode.equalsIgnoreCase("replace") ) {
-			
+		else if ( opcode.equalsIgnoreCase("replace") ) 
+		{	
 			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(params.get("target"));
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			if(!mcOut.dimsKnown()) {
@@ -343,13 +351,8 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//execute replace operation
 			double pattern = Double.parseDouble( params.get("pattern") );
 			double replacement = Double.parseDouble( params.get("replacement") );
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-			if(pattern == 0) {
-				in1 = SparkUtils.getRDDWithEmptyBlocks(sec, 
-						in1, mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-			}
-			
-			out = in1.mapToPair(new ReplaceMapFunction(pattern, replacement));
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
+					in1.mapValues(new ReplaceMapFunction(pattern, replacement));
 			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -361,21 +364,26 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		
 	}
 	
-	public static class ReplaceMapFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> {
+	/**
+	 * 
+	 */
+	public static class ReplaceMapFunction implements Function<MatrixBlock, MatrixBlock> 
+	{
 		private static final long serialVersionUID = 6576713401901671659L;
 		
-		double pattern; double replacement;
+		private double _pattern; 
+		private double _replacement;
+		
 		public ReplaceMapFunction(double pattern, double replacement) {
-			this.pattern = pattern;
-			this.replacement = replacement;
+			_pattern = pattern;
+			_replacement = replacement;
 		}
 		
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
-			MatrixBlock ret = (MatrixBlock) kv._2.replaceOperations(new MatrixBlock(), pattern, replacement);
-			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, ret);
-		}
-		
+		public MatrixBlock call(MatrixBlock arg0) 
+			throws Exception 
+		{
+			return (MatrixBlock) arg0.replaceOperations(new MatrixBlock(), _pattern, _replacement);
+		}		
 	}
-
 }

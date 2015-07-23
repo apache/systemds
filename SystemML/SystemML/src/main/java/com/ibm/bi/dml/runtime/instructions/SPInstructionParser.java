@@ -22,6 +22,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MatrixReshapeCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.AggregateTernarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AppendGSPInstruction;
@@ -65,13 +66,6 @@ public class SPInstructionParser extends InstructionParser {
 	public static final HashMap<String, SPINSTRUCTION_TYPE> String2SPInstructionType;
 	static {
 		String2SPInstructionType = new HashMap<String, SPInstruction.SPINSTRUCTION_TYPE>();
-		//matrix multiplication operators
-		String2SPInstructionType.put( "mapmm"      , SPINSTRUCTION_TYPE.MAPMM);
-		String2SPInstructionType.put( "mapmmchain" , SPINSTRUCTION_TYPE.MAPMMCHAIN);
-		String2SPInstructionType.put( "tsmm"       , SPINSTRUCTION_TYPE.TSMM);
-		String2SPInstructionType.put( "cpmm"   	   , SPINSTRUCTION_TYPE.CPMM);
-		String2SPInstructionType.put( "rmm"        , SPINSTRUCTION_TYPE.RMM);
-		String2SPInstructionType.put( "pmm"        , SPINSTRUCTION_TYPE.PMM);
 		
 		//unary aggregate operators
 		String2SPInstructionType.put( "uak+"   	, SPINSTRUCTION_TYPE.AggregateUnary);
@@ -95,6 +89,18 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "uatrace" , SPINSTRUCTION_TYPE.AggregateUnary);
 		String2SPInstructionType.put( "uaktrace", SPINSTRUCTION_TYPE.AggregateUnary);
 
+		//binary aggregate operators (matrix multiplication operators)
+		String2SPInstructionType.put( "mapmm"      , SPINSTRUCTION_TYPE.MAPMM);
+		String2SPInstructionType.put( "mapmmchain" , SPINSTRUCTION_TYPE.MAPMMCHAIN);
+		String2SPInstructionType.put( "tsmm"       , SPINSTRUCTION_TYPE.TSMM);
+		String2SPInstructionType.put( "cpmm"   	   , SPINSTRUCTION_TYPE.CPMM);
+		String2SPInstructionType.put( "rmm"        , SPINSTRUCTION_TYPE.RMM);
+		String2SPInstructionType.put( "pmm"        , SPINSTRUCTION_TYPE.PMM);
+		
+		//ternary aggregate operators
+		String2SPInstructionType.put( "tak+*"      , SPINSTRUCTION_TYPE.AggregateTernary);
+
+		
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		
@@ -241,6 +247,9 @@ public class SPInstructionParser extends InstructionParser {
 				
 			case AggregateUnary:
 				return AggregateUnarySPInstruction.parseInstruction(str);
+				
+			case AggregateTernary:
+				return AggregateTernarySPInstruction.parseInstruction(str);
 				
 			case MatrixIndexing:
 				return MatrixIndexingSPInstruction.parseInstruction(str);

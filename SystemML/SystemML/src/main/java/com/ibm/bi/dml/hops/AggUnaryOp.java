@@ -91,7 +91,7 @@ public class AggUnaryOp extends Hop
 			{
 				Lop agg1 = null;
 				if( isTernaryAggregateRewriteApplicable() ) {
-					agg1 = constructLopsTernaryAggregateRewrite();
+					agg1 = constructLopsTernaryAggregateRewrite(et);
 				}
 				else { //general case
 					agg1 = new PartialAggregate(input.constructLops(), 
@@ -166,18 +166,28 @@ public class AggUnaryOp extends Hop
 				SparkAggType aggtype = getSparkUnaryAggregationType(needAgg);
 				
 				//unary aggregate
-				PartialAggregate transform1 = new PartialAggregate(input.constructLops(), 
-						HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType(), aggtype, et);
-				transform1.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
-				setLineNumbers(transform1);
-				setLops(transform1);
-
-				if (getDataType() == DataType.SCALAR) {
-					UnaryCP unary1 = new UnaryCP(transform1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-							                    getDataType(), getValueType());
-					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-					setLineNumbers(unary1);
-					setLops(unary1);
+				if( isTernaryAggregateRewriteApplicable() ) 
+				{
+					Lop aggregate = constructLopsTernaryAggregateRewrite(et);
+					setOutputDimensions(aggregate); //0x0 (scalar)
+					setLineNumbers(aggregate);
+					setLops(aggregate);
+				}
+				else //default
+				{
+					PartialAggregate aggregate = new PartialAggregate(input.constructLops(), 
+							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType(), aggtype, et);
+					aggregate.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
+					setLineNumbers(aggregate);
+					setLops(aggregate);
+				
+					if (getDataType() == DataType.SCALAR) {
+						UnaryCP unary1 = new UnaryCP(aggregate, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
+								                    getDataType(), getValueType());
+						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+						setLineNumbers(unary1);
+						setLops(unary1);
+					}
 				}
 			}
 		} 
@@ -407,7 +417,7 @@ public class AggUnaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	private Lop constructLopsTernaryAggregateRewrite() 
+	private Lop constructLopsTernaryAggregateRewrite(ExecType et) 
 		throws HopsException, LopsException
 	{
 		Hop input1 = getInput().get(0);
@@ -437,7 +447,7 @@ public class AggUnaryOp extends Hop
 		}
 
 		//create new ternary aggregate operator 
-		ret = new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE);
+		ret = new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE, et);
 		
 		return ret;
 	}

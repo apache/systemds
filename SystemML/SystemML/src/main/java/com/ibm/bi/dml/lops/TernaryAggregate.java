@@ -30,10 +30,11 @@ public class TernaryAggregate extends Lop
 	//private Binary.OperationTypes _binOp = null;
 	
 	/**
+	 * @param et 
 	 * @param input - input lop
 	 * @param op - operation type
 	 */
-	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt ) 
+	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt, ExecType et ) 
 	{
 		super(Lop.Type.TernaryAggregate, dt, vt);
 		
@@ -51,7 +52,7 @@ public class TernaryAggregate extends Lop
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties( inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 	
 	@Override
@@ -79,7 +80,4 @@ public class TernaryAggregate extends Lop
 		
 		return sb.toString();
 	}
-
- 
- 
 }

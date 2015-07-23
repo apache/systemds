@@ -26,13 +26,9 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public AggregateTernaryCPInstruction(Operator op, 
-										CPOperand in1, 
-										CPOperand in2,
-										CPOperand in3,
-										CPOperand out, 
-										String opcode,
-										String istr ){
+	public AggregateTernaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, 
+                                         CPOperand out, String opcode, String istr  )
+	{
 		super(op, in1, in2, in3, out, opcode, istr);
 		_cptype = CPINSTRUCTION_TYPE.AggregateTernary;
 	}
@@ -69,27 +65,18 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
-	{	
-		String opcode = getOpcode();
-		
+	{		
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
         MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
         MatrixBlock matBlock3 = ec.getMatrixInput(input3.getName());
-		
-		if ( opcode.equalsIgnoreCase("tak+*")) {
 			
-			AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
-			ScalarObject ret = matBlock1.aggregateTernaryOperations(matBlock1, matBlock2, matBlock3, ab_op);
+		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
+		ScalarObject ret = matBlock1.aggregateTernaryOperations(matBlock1, matBlock2, matBlock3, ab_op);
 			
-			//release inputs/outputs
-			ec.releaseMatrixInput(input1.getName());
-			ec.releaseMatrixInput(input2.getName());
-			ec.releaseMatrixInput(input3.getName());
-			ec.setScalarOutput(output.getName(), ret);
-			
-		} 
-		else {
-			throw new DMLRuntimeException("Unknown instruction opcode: " + opcode);
-		}
+		//release inputs/outputs
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(input2.getName());
+		ec.releaseMatrixInput(input3.getName());
+		ec.setScalarOutput(output.getName(), ret);
 	}
 }

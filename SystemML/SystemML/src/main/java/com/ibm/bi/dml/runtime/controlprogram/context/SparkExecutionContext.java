@@ -106,7 +106,7 @@ public class SparkExecutionContext extends ExecutionContext
 				}
 				
 				//globally add binaryblock serialization framework for all hdfs read/write operations
-				//TODO if spark context passed in from outside (mlcontext), we need to cleanup up any global configurations at the end 
+				//TODO if spark context passed in from outside (mlcontext), we need to clean this up at the end 
 				if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
 					MRJobConfiguration.addBinaryBlockSerializationFramework( _spctx.hadoopConfiguration() );
 				

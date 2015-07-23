@@ -578,9 +578,14 @@ public class StatementBlock extends LiveVariableAnalysis
 				if (source instanceof FunctionCallIdentifier)			
 					((FunctionCallIdentifier) source).validateExpression(dmlProg, ids.getVariables(),currConstVars, conditional);
 				else {
-					MLContext mlContext = MLContext.getCurrentMLContext();
-					if(mlContext != null) {
-						mlContext.internal_setAppropriateVarsForRead(source, target._name);
+					try {
+						MLContext mlContext = MLContext.getCurrentMLContext();
+						if(mlContext != null) {
+							mlContext.internal_setAppropriateVarsForRead(source, target._name);
+						}
+					}
+					catch(NoClassDefFoundError e1) {
+						// Spark libraries are not set as going through hadoop jar
 					}
 					source.validateExpression(ids.getVariables(), currConstVars, conditional);
 				}

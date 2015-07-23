@@ -140,8 +140,13 @@ public class ProgramBlock
 				&& _sb.requiresRecompilation() )
 			{
 				tmp = Recompiler.recompileHopsDag(_sb, _sb.get_hops(), ec.getVariables(), null, false, _tid);
-				if(MLContext.getCurrentMLContext() != null) {
-					MLContext.getCurrentMLContext().performCleanupAfterRecompilation(tmp);
+				try {
+					if(MLContext.getCurrentMLContext() != null) {
+						MLContext.getCurrentMLContext().performCleanupAfterRecompilation(tmp);
+					}
+				}
+				catch(NoClassDefFoundError e1) {
+					// Spark libraries are not set as going through hadoop jar
 				}
 				
 			}

@@ -58,9 +58,14 @@ public abstract class Instruction
 		this.endLine = endLine;
 		this.beginCol = beginCol;
 		this.endCol = endCol;
-		MLContext mlContext = MLContext.getCurrentMLContext();
-		if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-			mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+		try {
+			MLContext mlContext = MLContext.getCurrentMLContext();
+			if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+				mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+			}
+		}
+		catch(NoClassDefFoundError e1) {
+			// Spark libraries are not set as going through hadoop jar
 		}
 	}
 	
@@ -70,9 +75,14 @@ public abstract class Instruction
 			this.endLine = lop._endLine;
 			this.beginCol = lop._beginColumn;
 			this.endCol = lop._endColumn;
-			MLContext mlContext = MLContext.getCurrentMLContext();
-			if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-				mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+			try {
+				MLContext mlContext = MLContext.getCurrentMLContext();
+				if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+					mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+				}
+			}
+			catch(NoClassDefFoundError e1) {
+				// Spark libraries are not set as going through hadoop jar
 			}
 		}
 	}
@@ -83,9 +93,15 @@ public abstract class Instruction
 			this.endLine = id.getEndLine();
 			this.beginCol = id.getBeginColumn();
 			this.endCol = id.getEndColumn();
-			MLContext mlContext = MLContext.getCurrentMLContext();
-			if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-				mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+			
+			try {
+				MLContext mlContext = MLContext.getCurrentMLContext();
+				if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+					mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+				}
+			}
+			catch(NoClassDefFoundError e1) {
+				// Spark libraries are not set as going through hadoop jar
 			}
 		}
 	}
@@ -96,9 +112,14 @@ public abstract class Instruction
 			this.endLine = oldInst.endLine;
 			this.beginCol = oldInst.beginCol;
 			this.endCol = oldInst.endCol;
-			MLContext mlContext = MLContext.getCurrentMLContext();
-			if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-				mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+			try {
+				MLContext mlContext = MLContext.getCurrentMLContext();
+				if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+					mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+				}
+			}
+			catch(NoClassDefFoundError e1) {
+				// Spark libraries are not set as going through hadoop jar
 			}
 		}
 	}

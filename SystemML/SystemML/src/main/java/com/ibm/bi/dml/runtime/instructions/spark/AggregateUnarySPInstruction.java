@@ -14,8 +14,6 @@ import scala.Tuple2;
 
 import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -60,14 +58,12 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 	public static Instruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		
 		InstructionUtils.checkNumFields(str, 3);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		in1.split(parts[1]);
-		out.split(parts[2]);
+		
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand out = new CPOperand(parts[2]);
 		SparkAggType aggtype = SparkAggType.valueOf(parts[3]);
 		
 		String aopcode = InstructionUtils.deriveAggregateOperatorOpcode(opcode);

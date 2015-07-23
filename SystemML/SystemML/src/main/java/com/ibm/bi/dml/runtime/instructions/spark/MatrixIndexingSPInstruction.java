@@ -31,6 +31,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocksFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -86,19 +87,12 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		if ( opcode.equalsIgnoreCase("rangeReIndex") ) {
 			if ( parts.length == 7 ) {
 				// Example: rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
-				CPOperand in, rl, ru, cl, cu, out;
-				in = new CPOperand();
-				rl = new CPOperand();
-				ru = new CPOperand();
-				cl = new CPOperand();
-				cu = new CPOperand();
-				out = new CPOperand();
-				in.split(parts[1]);
-				rl.split(parts[2]);
-				ru.split(parts[3]);
-				cl.split(parts[4]);
-				cu.split(parts[5]);
-				out.split(parts[6]);
+				CPOperand in = new CPOperand(parts[1]);
+				CPOperand rl = new CPOperand(parts[2]);
+				CPOperand ru = new CPOperand(parts[3]);
+				CPOperand cl = new CPOperand(parts[4]);
+				CPOperand cu = new CPOperand(parts[5]);
+				CPOperand out = new CPOperand(parts[6]);
 				return new MatrixIndexingSPInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, opcode, str);
 			}
 			else {
@@ -108,21 +102,13 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		else if ( opcode.equalsIgnoreCase("leftIndex")) {
 			if ( parts.length == 8 ) {
 				// Example: leftIndex:mVar1:mvar2:Var3:Var4:Var5:Var6:mVar7
-				CPOperand lhsInput, rhsInput, rl, ru, cl, cu, out;
-				lhsInput = new CPOperand();
-				rhsInput = new CPOperand();
-				rl = new CPOperand();
-				ru = new CPOperand();
-				cl = new CPOperand();
-				cu = new CPOperand();
-				out = new CPOperand();
-				lhsInput.split(parts[1]);
-				rhsInput.split(parts[2]);
-				rl.split(parts[3]);
-				ru.split(parts[4]);
-				cl.split(parts[5]);
-				cu.split(parts[6]);
-				out.split(parts[7]);
+				CPOperand lhsInput = new CPOperand(parts[1]);
+				CPOperand rhsInput = new CPOperand(parts[2]);
+				CPOperand rl = new CPOperand(parts[3]);
+				CPOperand ru = new CPOperand(parts[4]);
+				CPOperand cl = new CPOperand(parts[5]);
+				CPOperand cu = new CPOperand(parts[6]);
+				CPOperand out = new CPOperand(parts[7]);
 				return new MatrixIndexingSPInstruction(new SimpleOperator(null), lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
 			}
 			else {
@@ -150,25 +136,23 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		//right indexing
 		if( opcode.equalsIgnoreCase("rangeReIndex") )
 		{
+			//check and set output dimensions
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 			if(!mcOut.dimsKnown()) {
-				if(!mc.dimsKnown()) {
+				if(!mc.dimsKnown())
 					throw new DMLRuntimeException("The output dimensions are not specified for MatrixIndexingSPInstruction");
-				}
-				else {
-					mcOut.set(ru-rl+1, cu-cl+1, mc.getRowsPerBlock(), mc.getColsPerBlock());
-				}
+				mcOut.set(ru-rl+1, cu-cl+1, mc.getRowsPerBlock(), mc.getColsPerBlock());
 			}
 			
+			//execute right indexing operation
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out 
-				= in1
-				.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()))
-				.flatMapToPair(new SliceBlock(rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()))
-				.groupByKey()
-				.mapToPair(new MergeMiniBlocks(mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()));
-			
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out =
+					in1.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()))
+				       .flatMapToPair(new SliceBlock(rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()))
+				       .reduceByKey(new MergeBlocksFunction()); 
+				       
+			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}
@@ -324,83 +308,65 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		
 	}
 	
-	public static class MergeMiniBlocks implements PairFunction<Tuple2<MatrixIndexes,Iterable<MatrixBlock>>, MatrixIndexes,MatrixBlock> {
-		private static final long serialVersionUID = -6062101460171640670L;
-		long brlen; long bclen;
-		
-		public MergeMiniBlocks(long brlen, long bclen) {
-			this.brlen = brlen;
-			this.bclen = bclen;
-		}
-
-		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Iterable<MatrixBlock>> kv) throws Exception {
-			if(!kv._2.iterator().hasNext()) {
-				throw new Exception("Expected atleast one MatrixBlock while merging in MatrixIndexingSPInstruction");
-			}
-			MatrixBlock firstBlock = kv._2.iterator().next();
-			
-			MatrixBlock retVal = new MatrixBlock(firstBlock.getNumRows(), firstBlock.getNumColumns(), firstBlock.isInSparseFormat());
-			for(MatrixBlock miniBlock : kv._2) {
-				retVal.merge(miniBlock, true); // its ok to do append only here because we are doing sort after.
-			}
-			retVal.sortSparseRows();
-			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, retVal);
-		}
-		
-	}
-	
-	public static class SliceBlock implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> {
+	/**
+	 * 
+	 */
+	public static class SliceBlock implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	{
 		private static final long serialVersionUID = 580877584337511817L;
 		
-		long rl; long ru; long cl; long cu;
-		int brlen; int bclen;
+		private long _rl; 
+		private long _ru; 
+		private long _cl; 
+		private long _cu;
+		private int _brlen; 
+		private int _bclen;
 		
 		public SliceBlock(long rl, long ru, long cl, long cu, int brlen, int bclen) {
-			this.rl = rl;
-			this.ru = ru;
-			this.cl = cl;
-			this.cu = cu;
-			this.brlen = brlen;
-			this.bclen = bclen;
+			_rl = rl;
+			_ru = ru;
+			_cl = cl;
+			_cu = cu;
+			_brlen = brlen;
+			_bclen = bclen;
 		}
 
 		@Override
 		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
 			
-			long cellIndexTopRow=UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), brlen, 0);
-			long cellIndexBottomRow=UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), brlen, kv._2.getNumRows()-1);
-			long cellIndexLeftCol=UtilFunctions.cellIndexCalculation(kv._1.getColumnIndex(), bclen, 0);
-			long cellIndexRightCol=UtilFunctions.cellIndexCalculation(kv._1.getColumnIndex(), bclen, kv._2.getNumColumns()-1);
+			long cellIndexTopRow=UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), _brlen, 0);
+			long cellIndexBottomRow=UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), _brlen, kv._2.getNumRows()-1);
+			long cellIndexLeftCol=UtilFunctions.cellIndexCalculation(kv._1.getColumnIndex(), _bclen, 0);
+			long cellIndexRightCol=UtilFunctions.cellIndexCalculation(kv._1.getColumnIndex(), _bclen, kv._2.getNumColumns()-1);
 			
-			IndexRange indexRange = new IndexRange(rl,ru,cl,cu);
+			IndexRange indexRange = new IndexRange(_rl,_ru,_cl,_cu);
 			long cellIndexOverlapTop=Math.max(cellIndexTopRow, indexRange.rowStart);
 			long cellIndexOverlapBottom=Math.min(cellIndexBottomRow, indexRange.rowEnd);
 			long cellIndexOverlapLeft=Math.max(cellIndexLeftCol, indexRange.colStart);
 			long cellIndexOverlapRight=Math.min(cellIndexRightCol, indexRange.colEnd);
 			
-			IndexRange tempRange = new IndexRange(rl,ru,cl,cu);
-			tempRange.set(UtilFunctions.cellInBlockCalculation(cellIndexOverlapTop, brlen), 
-					UtilFunctions.cellInBlockCalculation(cellIndexOverlapBottom, brlen), 
-					UtilFunctions.cellInBlockCalculation(cellIndexOverlapLeft, bclen), 
-					UtilFunctions.cellInBlockCalculation(cellIndexOverlapRight, bclen));
+			IndexRange tempRange = new IndexRange(_rl,_ru,_cl,_cu);
+			tempRange.set(UtilFunctions.cellInBlockCalculation(cellIndexOverlapTop, _brlen), 
+					UtilFunctions.cellInBlockCalculation(cellIndexOverlapBottom, _brlen), 
+					UtilFunctions.cellInBlockCalculation(cellIndexOverlapLeft, _bclen), 
+					UtilFunctions.cellInBlockCalculation(cellIndexOverlapRight, _bclen));
 			
-			int rowCut=UtilFunctions.cellInBlockCalculation(indexRange.rowStart, brlen);
-			int colCut=UtilFunctions.cellInBlockCalculation(indexRange.colStart, bclen);
+			int rowCut=UtilFunctions.cellInBlockCalculation(indexRange.rowStart, _brlen);
+			int colCut=UtilFunctions.cellInBlockCalculation(indexRange.colStart, _bclen);
 			
-			int rowsInLastBlock=(int)((indexRange.rowEnd-indexRange.rowStart+1)%brlen);
-			if(rowsInLastBlock==0) rowsInLastBlock=brlen;
-			int colsInLastBlock=(int)((indexRange.colEnd-indexRange.colStart+1)%bclen);
-			if(colsInLastBlock==0) colsInLastBlock=bclen;
+			int rowsInLastBlock=(int)((indexRange.rowEnd-indexRange.rowStart+1)%_brlen);
+			int colsInLastBlock=(int)((indexRange.colEnd-indexRange.colStart+1)%_bclen);
+			rowsInLastBlock = (rowsInLastBlock==0) ? _brlen : rowsInLastBlock;
+			colsInLastBlock = (colsInLastBlock==0) ? _bclen : colsInLastBlock;
 
-			long resultBlockIndexTop=UtilFunctions.blockIndexCalculation(cellIndexOverlapTop-indexRange.rowStart+1, brlen);
-			long resultBlockIndexBottom=UtilFunctions.blockIndexCalculation(cellIndexOverlapBottom-indexRange.rowStart+1, brlen);
-			long resultBlockIndexLeft=UtilFunctions.blockIndexCalculation(cellIndexOverlapLeft-indexRange.colStart+1, bclen);
-			long resultBlockIndexRight=UtilFunctions.blockIndexCalculation(cellIndexOverlapRight-indexRange.colStart+1, bclen);
+			long resultBlockIndexTop=UtilFunctions.blockIndexCalculation(cellIndexOverlapTop-indexRange.rowStart+1, _brlen);
+			long resultBlockIndexBottom=UtilFunctions.blockIndexCalculation(cellIndexOverlapBottom-indexRange.rowStart+1, _brlen);
+			long resultBlockIndexLeft=UtilFunctions.blockIndexCalculation(cellIndexOverlapLeft-indexRange.colStart+1, _bclen);
+			long resultBlockIndexRight=UtilFunctions.blockIndexCalculation(cellIndexOverlapRight-indexRange.colStart+1, _bclen);
 
-			int boundaryRlen=brlen, boundaryClen=bclen;
-			long finalBlockIndexBottom=UtilFunctions.blockIndexCalculation(indexRange.rowEnd-indexRange.rowStart+1, brlen);
-			long finalBlockIndexRight=UtilFunctions.blockIndexCalculation(indexRange.colEnd-indexRange.colStart+1, bclen);
+			int boundaryRlen=_brlen, boundaryClen=_bclen;
+			long finalBlockIndexBottom=UtilFunctions.blockIndexCalculation(indexRange.rowEnd-indexRange.rowStart+1, _brlen);
+			long finalBlockIndexRight=UtilFunctions.blockIndexCalculation(indexRange.colEnd-indexRange.colStart+1, _bclen);
 			if(resultBlockIndexBottom==finalBlockIndexBottom)
 				boundaryRlen=rowsInLastBlock;
 			if(resultBlockIndexRight==finalBlockIndexRight)
@@ -416,7 +382,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			}
 			
 			//process instruction
-			OperationsOnMatrixValues.performSlice(kv._1, kv._2, outlist, tempRange, rowCut, colCut, brlen, bclen, boundaryRlen, boundaryClen);
+			OperationsOnMatrixValues.performSlice(kv._1, kv._2, outlist, tempRange, rowCut, colCut, _brlen, _bclen, boundaryRlen, boundaryClen);
 
 			final ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
 			for(IndexedMatrixValue miniBlocks : outlist) {

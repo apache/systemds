@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -34,23 +32,19 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 	}
 
 	public static AggregateTernaryCPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException {
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-
+		throws DMLRuntimeException 
+	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase("tak+*")) {
 			InstructionUtils.checkNumFields ( str, 4 );
 			
-			in1.split(parts[1]);
-			in2.split(parts[2]);
-			in3.split(parts[3]);
-			out.split(parts[4]);
-			
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand out = new CPOperand(parts[4]);
+		
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject());
 			AggregateBinaryOperator op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 			

@@ -23,23 +23,17 @@ public class CPOperand
 	private DataType _dataType;
 	private boolean _isLiteral;
 	
-	public CPOperand(String str) {
-		split(str);
-		//split_by_value_type_prefix(str);
-	}
-	
 	public CPOperand() {
-		_name = "";
-		_valueType = ValueType.UNKNOWN;
-		_dataType = DataType.UNKNOWN;
-		_isLiteral = false;
+		this("", ValueType.UNKNOWN, DataType.UNKNOWN);
+	}
+
+	public CPOperand(String str) {
+		this("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		split(str);
 	}
 	
 	public CPOperand(String name, ValueType vt, DataType dt ) {
-		_name = name;
-		_valueType = vt;
-		_dataType = dt;
-		_isLiteral = false;
+		this(name, vt, dt, false);
 	}
 	
 	public CPOperand(String name, ValueType vt, DataType dt, boolean literal ) {

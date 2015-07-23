@@ -298,7 +298,16 @@ public class MatrixCharacteristics
 		else if(ins instanceof BinaryInstruction || ins instanceof BinaryMInstruction || ins instanceof CombineBinaryInstruction )
 		{
 			BinaryMRInstructionBase realIns=(BinaryMRInstructionBase)ins;
-			dimOut.set(dims.get(realIns.input1));
+			MatrixCharacteristics mc1 = dims.get(realIns.input1);
+			MatrixCharacteristics mc2 = dims.get(realIns.input2);
+			if(    mc1.getRows()>1 && mc1.getCols()==1 
+				&& mc2.getRows()==1 && mc2.getCols()>1 ) //outer
+			{
+				dimOut.set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc2.getColsPerBlock());
+			}
+			else { //default case
+				dimOut.set(mc1);	
+			}
 		}
 		else if (ins instanceof CombineTernaryInstruction ) {
 			TernaryInstruction realIns=(TernaryInstruction)ins;

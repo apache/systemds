@@ -42,8 +42,6 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.Explain;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkListener;
 
 
 public class SparkExecutionContext extends ExecutionContext
@@ -64,7 +62,6 @@ public class SparkExecutionContext extends ExecutionContext
 	// Only one SparkContext may be active per JVM. You must stop() the active SparkContext before creating a new one. 
 	// This limitation may eventually be removed; see SPARK-2243 for more details.
 	private static JavaSparkContext _singletonSpctx = null;
-	protected static SparkListener _sparkListener = null;
 	
 	private JavaSparkContext _spctx = null; 
 	
@@ -86,10 +83,11 @@ public class SparkExecutionContext extends ExecutionContext
 			else {
 				//create a default spark context (master, appname, etc refer to system properties
 				//as given in the spark configuration or during spark-submit)
-				if(MLContext._sc != null) {
+				MLContext mlCtx = MLContext.getCurrentMLContext();
+				if(mlCtx != null) {
 					// This is when DML is called through spark shell
 					// Will clean the passing of static variables later as this involves minimal change to DMLScript
-					_spctx = new JavaSparkContext(MLContext._sc);
+					_spctx = new JavaSparkContext(mlCtx.getSparkContext());
 				}
 				else {
 					if(DMLScript.USE_LOCAL_SPARK_CONFIG) {
@@ -108,10 +106,6 @@ public class SparkExecutionContext extends ExecutionContext
 				_singletonSpctx = _spctx;
 			}
 		}
-	}
-	
-	public SparkListener getSparkListener() {
-		return _sparkListener;
 	}
 
 	public void close() {
@@ -623,34 +617,34 @@ public class SparkExecutionContext extends ExecutionContext
 	public void setDebugString(SPInstruction inst, String outputVarName) 
 		throws DMLRuntimeException 
 	{
-		if(Explain.PRINT_EXPLAIN_WITH_LINEAGE && inst.getDebugString() == null) {
-			RDDObject parentLineage = getMatrixObject(outputVarName).getRDDHandle();
-			if(parentLineage != null) {
-				JavaPairRDD<?, ?> out = parentLineage.getRDD();
-				if(out != null) {
-					JavaPairRDD<?, ?> in1 = null; JavaPairRDD<?, ?> in2 = null;
-					String input1VarName = null; String input2VarName = null;
-					if(parentLineage.getLineageChilds() != null) {
-						for(LineageObject child : parentLineage.getLineageChilds()) {
-							if(child instanceof RDDObject) {
-								if(in1 == null) {
-									in1 = ((RDDObject) child).getRDD();
-									input1VarName = child.getVarName();
-								}
-								else if(in2 == null) {
-									in2 = ((RDDObject) child).getRDD();
-									input2VarName = child.getVarName();
-								}
-								else {
-									throw new DMLRuntimeException("PRINT_EXPLAIN_WITH_LINEAGE not yet supported for three outputs");
-								}
+		
+		RDDObject parentLineage = getMatrixObject(outputVarName).getRDDHandle();
+		if(parentLineage != null) {
+			JavaPairRDD<?, ?> out = parentLineage.getRDD();
+			if(out != null) {
+				JavaPairRDD<?, ?> in1 = null; JavaPairRDD<?, ?> in2 = null;
+				String input1VarName = null; String input2VarName = null;
+				if(parentLineage.getLineageChilds() != null) {
+					for(LineageObject child : parentLineage.getLineageChilds()) {
+						if(child instanceof RDDObject) {
+							if(in1 == null) {
+								in1 = ((RDDObject) child).getRDD();
+								input1VarName = child.getVarName();
+							}
+							else if(in2 == null) {
+								in2 = ((RDDObject) child).getRDD();
+								input2VarName = child.getVarName();
+							}
+							else {
+								throw new DMLRuntimeException("PRINT_EXPLAIN_WITH_LINEAGE not yet supported for three outputs");
 							}
 						}
 					}
-					setLineageInfoForExplain(inst, out, in1, input1VarName, in2, input2VarName);
 				}
+				setLineageInfoForExplain(inst, out, in1, input1VarName, in2, input2VarName);
 			}
 		}
+		
 	}
 	
 	// The most expensive operation here is rdd.toDebugString() which can be a major hit because
@@ -660,56 +654,60 @@ public class SparkExecutionContext extends ExecutionContext
 			JavaPairRDD<?, ?> out, 
 			JavaPairRDD<?, ?> in1, String in1Name, 
 			JavaPairRDD<?, ?> in2, String in2Name) throws DMLRuntimeException {
-		if(inst.getDebugString() == null && Explain.PRINT_EXPLAIN_WITH_LINEAGE) {
+		
 			
-			// RDDInfo outInfo = org.apache.spark.storage.RDDInfo.fromRdd(out.rdd());
-			
-			// First fetch start lines from input RDDs
-			String startLine1 = null; 
-			String startLine2 = null;
-			int i1length = 0, i2length = 0;
-			if(in1 != null) {
-				String [] lines = in1.toDebugString().split("\\r?\\n");
-				startLine1 = SparkUtils.getStartLineFromSparkDebugInfo(lines[0]); // lines[0].substring(4, lines[0].length());
-				i1length = lines.length;
-			}
-			if(in2 != null) {
-				String [] lines = in2.toDebugString().split("\\r?\\n");
-				startLine2 =  SparkUtils.getStartLineFromSparkDebugInfo(lines[0]); // lines[0].substring(4, lines[0].length());
-				i2length = lines.length;
-			}
-			
-			String outDebugString = "";
-			int skip = 0;
-			
-			// Now process output RDD and replace inputRDD debug string by the matrix variable name
-			String [] outLines = out.toDebugString().split("\\r?\\n");
-			for(int i = 0; i < outLines.length; i++) {
-				if(skip > 0) {
-					skip--;
-					// outDebugString += "\nSKIP:" + outLines[i];
-				}
-				else if(startLine1 != null && outLines[i].contains(startLine1)) {
-					String prefix = SparkUtils.getPrefixFromSparkDebugInfo(outLines[i]); // outLines[i].substring(0, outLines[i].length() - startLine1.length());
-					outDebugString += "\n" + prefix + "[[" + in1Name + "]]";
-					//outDebugString += "\n{" + prefix + "}[[" + in1Name + "]] => " + outLines[i];
-					skip = i1length - 1;  
-				}
-				else if(startLine2 != null && outLines[i].contains(startLine2)) {
-					String prefix = SparkUtils.getPrefixFromSparkDebugInfo(outLines[i]); // outLines[i].substring(0, outLines[i].length() - startLine2.length());
-					outDebugString += "\n" + prefix + "[[" + in2Name + "]]";
-					skip = i2length - 1;
-				}
-				else {
-					outDebugString += "\n" + outLines[i];
-				}
-			}
-			
-			// outDebugString += "\n{" + startLine1 + "}\n{" + startLine2 + "}";
-			
-			inst.setDebugString(outDebugString + "\n");
-			
+		// RDDInfo outInfo = org.apache.spark.storage.RDDInfo.fromRdd(out.rdd());
+		
+		// First fetch start lines from input RDDs
+		String startLine1 = null; 
+		String startLine2 = null;
+		int i1length = 0, i2length = 0;
+		if(in1 != null) {
+			String [] lines = in1.toDebugString().split("\\r?\\n");
+			startLine1 = SparkUtils.getStartLineFromSparkDebugInfo(lines[0]); // lines[0].substring(4, lines[0].length());
+			i1length = lines.length;
 		}
+		if(in2 != null) {
+			String [] lines = in2.toDebugString().split("\\r?\\n");
+			startLine2 =  SparkUtils.getStartLineFromSparkDebugInfo(lines[0]); // lines[0].substring(4, lines[0].length());
+			i2length = lines.length;
+		}
+		
+		String outDebugString = "";
+		int skip = 0;
+		
+		// Now process output RDD and replace inputRDD debug string by the matrix variable name
+		String [] outLines = out.toDebugString().split("\\r?\\n");
+		for(int i = 0; i < outLines.length; i++) {
+			if(skip > 0) {
+				skip--;
+				// outDebugString += "\nSKIP:" + outLines[i];
+			}
+			else if(startLine1 != null && outLines[i].contains(startLine1)) {
+				String prefix = SparkUtils.getPrefixFromSparkDebugInfo(outLines[i]); // outLines[i].substring(0, outLines[i].length() - startLine1.length());
+				outDebugString += "\n" + prefix + "[[" + in1Name + "]]";
+				//outDebugString += "\n{" + prefix + "}[[" + in1Name + "]] => " + outLines[i];
+				skip = i1length - 1;  
+			}
+			else if(startLine2 != null && outLines[i].contains(startLine2)) {
+				String prefix = SparkUtils.getPrefixFromSparkDebugInfo(outLines[i]); // outLines[i].substring(0, outLines[i].length() - startLine2.length());
+				outDebugString += "\n" + prefix + "[[" + in2Name + "]]";
+				skip = i2length - 1;
+			}
+			else {
+				outDebugString += "\n" + outLines[i];
+			}
+		}
+		
+		MLContext mlContext = MLContext.getCurrentMLContext();
+		if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+			mlContext.getMonitoringUtil().setLineageInfo(inst, outDebugString);
+		}
+		else {
+			throw new DMLRuntimeException("The method setLineageInfoForExplain should be called only through MLContext");
+		}
+		
 	}
+	
 
 }

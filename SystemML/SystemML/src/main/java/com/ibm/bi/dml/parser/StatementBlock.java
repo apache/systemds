@@ -15,6 +15,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.MLContext;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -576,8 +577,13 @@ public class StatementBlock extends LiveVariableAnalysis
 				
 				if (source instanceof FunctionCallIdentifier)			
 					((FunctionCallIdentifier) source).validateExpression(dmlProg, ids.getVariables(),currConstVars, conditional);
-				else
+				else {
+					MLContext mlContext = MLContext.getCurrentMLContext();
+					if(mlContext != null) {
+						mlContext.internal_setAppropriateVarsForRead(source, target._name);
+					}
 					source.validateExpression(ids.getVariables(), currConstVars, conditional);
+				}
 		
 				if (source instanceof DataExpression && ((DataExpression)source).getOpCode() == Expression.DataOp.READ)
 					setStatementFormatType(as, conditional);

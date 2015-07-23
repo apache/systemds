@@ -110,6 +110,11 @@ public class DataExpression extends DataIdentifier
 	private HashMap<String, Expression> _varParams;
 	private boolean _strInit = false; //string initialize
 	
+	private boolean checkMetadata = true;
+	public void setCheckMetadata(boolean checkMetadata) {
+		this.checkMetadata = checkMetadata;
+	}
+
 	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs, 
 				String filename, int blp, int bcp, int elp, int ecp) throws DMLParseException {
 		
@@ -617,7 +622,7 @@ public class DataExpression extends DataIdentifier
 			
 
 			// track whether should attempt to read MTD file or not
-			boolean shouldReadMTD = true;
+			boolean shouldReadMTD = checkMetadata;
 			
 			// track whether format type has been inferred 
 			boolean inferredFormatType = false;
@@ -626,7 +631,7 @@ public class DataExpression extends DataIdentifier
 			String formatTypeString = (getVarParam(FORMAT_TYPE) == null) ? null : getVarParam(FORMAT_TYPE).toString();
 			
 			// check if file is matrix market format
-			if (formatTypeString == null){
+			if (formatTypeString == null && shouldReadMTD){
 				boolean isMatrixMarketFormat = checkHasMatrixMarketFormat(inputFileName, mtdFileName); 
 				if (isMatrixMarketFormat){
 					

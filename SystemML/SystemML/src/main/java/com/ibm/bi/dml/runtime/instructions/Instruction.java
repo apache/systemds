@@ -10,7 +10,10 @@ package com.ibm.bi.dml.runtime.instructions;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.api.MLContext;
+import com.ibm.bi.dml.api.monitoring.Location;
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -34,7 +37,8 @@ public abstract class Instruction
 	protected INSTRUCTION_TYPE type = null;
 	protected String instString = null;
 	protected String instOpcode = null;
-	private int lineNum = -1;
+	private int beginLine = -1;
+	private int endLine = -1;  private int beginCol = -1; private int endCol = -1;
 	private long instID = -1;
 	
 	public void setType (INSTRUCTION_TYPE tp ) {
@@ -49,16 +53,63 @@ public abstract class Instruction
 	 * Setter for instruction line number 
 	 * @param ln Exact (or approximate) DML script line number
 	 */
-	public void setLineNum ( int ln ) {
-		lineNum = ln;
+	public void setLocation ( int beginLine, int endLine,  int beginCol, int endCol) {
+		this.beginLine = beginLine;
+		this.endLine = endLine;
+		this.beginCol = beginCol;
+		this.endCol = endCol;
+		MLContext mlContext = MLContext.getCurrentMLContext();
+		if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+			mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+		}
 	}
+	
+	public void setLocation(Lop lop) {
+		if(lop != null) {
+			this.beginLine = lop._beginLine;
+			this.endLine = lop._endLine;
+			this.beginCol = lop._beginColumn;
+			this.endCol = lop._endColumn;
+			MLContext mlContext = MLContext.getCurrentMLContext();
+			if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+				mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+			}
+		}
+	}
+	
+	public void setLocation(DataIdentifier id) {
+		if(id != null) {
+			this.beginLine = id.getBeginLine();
+			this.endLine = id.getEndLine();
+			this.beginCol = id.getBeginColumn();
+			this.endCol = id.getEndColumn();
+			MLContext mlContext = MLContext.getCurrentMLContext();
+			if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+				mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+			}
+		}
+	}
+	
+	public void setLocation(Instruction oldInst) {
+		if(oldInst != null) {
+			this.beginLine = oldInst.beginLine;
+			this.endLine = oldInst.endLine;
+			this.beginCol = oldInst.beginCol;
+			this.endCol = oldInst.endCol;
+			MLContext mlContext = MLContext.getCurrentMLContext();
+			if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+				mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
+			}
+		}
+	}
+	
 	
 	/**
 	 * Getter for instruction line number
 	 * @return lineNum Instruction approximate DML script line number
 	 */
 	public int getLineNum() {
-		return lineNum;
+		return beginLine;
 	}
 
 	/**

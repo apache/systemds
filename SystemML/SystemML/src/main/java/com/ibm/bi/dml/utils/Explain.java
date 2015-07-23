@@ -68,10 +68,6 @@ public class Explain
 	private static final boolean SHOW_DATA_DEPENDENCIES     = true;
 	private static final boolean SHOW_DATA_FLOW_PROPERTIES  = true;
 
-	//temporary spark-sepcific constant
-	public static boolean PRINT_EXPLAIN_WITH_LINEAGE = false;
-
-
 	//different explain levels
 	public enum ExplainType { 
 		NONE, 	  // explain disabled
@@ -845,15 +841,7 @@ public class Explain
 		String tmp = null;
 		if( inst instanceof MRJobInstruction )
 			tmp = explainMRJobInstruction((MRJobInstruction)inst, level+1);
-		else if ( inst instanceof SPInstruction )
-		{
-			SPInstruction spinst = (SPInstruction) inst;
-			if( spinst.getDebugString() != null && PRINT_EXPLAIN_WITH_LINEAGE )
-				tmp = inst.toString() + "\n" + spinst.getSparkInfo() + "\n" +  spinst.getDebugString();
-			else
-				tmp = inst.toString();
-		}
-		else //CP
+		else if ( inst instanceof SPInstruction || inst instanceof CPInstruction)
 			tmp = inst.toString();
 		
 		if( REPLACE_SPECIAL_CHARACTERS ){

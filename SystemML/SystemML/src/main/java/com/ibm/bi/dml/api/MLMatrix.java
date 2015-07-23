@@ -388,13 +388,14 @@ public class MLMatrix extends DataFrame {
 		}
 		
 		ml.reset();
-		ml.registerInput("left", getRDDLazily(this), rlen, clen, brlen, bclen);
-		ml.registerInput("right", getRDDLazily(that), that.rlen, that.clen, that.brlen, that.bclen);
+		long estimatedNNZ = -1; // TODO: Estimate number of non-zeros after matrix-matrix operation
+		ml.registerInput("left", getRDDLazily(this), rlen, clen, brlen, bclen, estimatedNNZ);
+		ml.registerInput("right", getRDDLazily(that), that.rlen, that.clen, that.brlen, that.bclen, estimatedNNZ);
 		ml.registerOutput("output");
 		MLOutput out = ml.executeScript(getScript(op, that.rlen, that.clen, that.nnz));
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
-		long estimatedNNZ = -1; // TODO: Estimate number of non-zeros after matrix-matrix operation
+		
 		if(op.compareTo("%*%") == 0) {
 			return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), ml, rlen, that.clen, brlen, bclen, estimatedNNZ);
 		}
@@ -408,12 +409,12 @@ public class MLMatrix extends DataFrame {
 			throw new DMLRuntimeException("MLContext needs to be set");
 		}
 		ml.reset();
-		ml.registerInput("left", getRDDLazily(this), rlen, clen, brlen, bclen);
+		long estimatedNNZ = -1; // TODO: Estimate number of non-zeros after matrix-scalar operation
+		ml.registerInput("left", getRDDLazily(this), rlen, clen, brlen, bclen, estimatedNNZ);
 		ml.registerOutput("output");
 		MLOutput out = ml.executeScript(getScalarBinaryScript(op, scalar, isScalarLeft));
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
-		long estimatedNNZ = -1; // TODO: Estimate number of non-zeros after matrix-scalar operation
 		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), ml, rlen, clen, brlen, bclen, estimatedNNZ);
 	}
 	

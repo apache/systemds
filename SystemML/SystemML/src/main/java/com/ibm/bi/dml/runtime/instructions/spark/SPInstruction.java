@@ -7,8 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
-import java.util.ArrayList;
-
+import com.ibm.bi.dml.api.MLContext;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -43,11 +42,6 @@ public abstract class SPInstruction extends Instruction
 	
 	protected boolean _requiresLabelUpdate = false;
 	
-	// Fields that help monitor spark execution
-	protected String           debugString;
-	public ArrayList<Integer> stageSubmittedIds = new ArrayList<Integer>();
-	public ArrayList<Integer> stageCompletedIds = new ArrayList<Integer>();
-		
 	public SPInstruction(String opcode, String istr) {
 		type = INSTRUCTION_TYPE.SPARK;
 		instString = istr;
@@ -93,14 +87,13 @@ public abstract class SPInstruction extends Instruction
 		}
 
 		//spark-explain-specific handling of current instructions 
-		//TODO why is this only relevant for ComputationSPInstruction  
+		//This only relevant for ComputationSPInstruction as in postprocess we call setDebugString which is valid only for ComputationSPInstruction
+		MLContext mlCtx = MLContext.getCurrentMLContext();
 		if(    tmp instanceof ComputationSPInstruction 
-			&& Explain.PRINT_EXPLAIN_WITH_LINEAGE 
+			&& mlCtx != null && mlCtx.getMonitoringUtil() != null 
 			&& ec instanceof SparkExecutionContext ) 
 		{
-			SparkExecutionContext sec = (SparkExecutionContext) ec;
-			if(sec.getSparkListener() != null)
-				sec.getSparkListener().addCurrentInstruction((SPInstruction)tmp);
+			mlCtx.getMonitoringUtil().addCurrentInstruction((SPInstruction)tmp);
 		}
 		
 		return tmp;
@@ -114,70 +107,19 @@ public abstract class SPInstruction extends Instruction
 	public void postprocessInstruction(ExecutionContext ec)
 			throws DMLRuntimeException 
 	{
-		//spark-explain-specific handling of current instructions 
+		//spark-explain-specific handling of current instructions
+		MLContext mlCtx = MLContext.getCurrentMLContext();
 		if(    this instanceof ComputationSPInstruction 
-			&& Explain.PRINT_EXPLAIN_WITH_LINEAGE
+			&& mlCtx != null && mlCtx.getMonitoringUtil() != null
 			&& ec instanceof SparkExecutionContext ) 
 		{
 			SparkExecutionContext sec = (SparkExecutionContext) ec;
 			sec.setDebugString(this, ((ComputationSPInstruction) this).getOutputVariableName());
-			if(sec.getSparkListener() != null)
-				sec.getSparkListener().removeCurrentInstruction(this);
+			mlCtx.getMonitoringUtil().removeCurrentInstruction(this);
 		}
 		
 		//default post-process behavior
 		super.postprocessInstruction(ec);
-	}
-	
-	///////////////////////////////////////
-	// debug functionality for monitoring
-	////////
-	
-	/**
-	 * 
-	 * @param al
-	 * @return
-	 */
-	private String getStringFromArrayList(ArrayList<Integer> al) 
-	{
-		StringBuilder sb = new StringBuilder("");
-		for(Integer i : al) {
-			if( sb.length() > 0 )
-				sb.append(", ");
-			sb.append(i);
-		}
-		
-		return sb.toString();
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public String getSparkInfo() 
-	{
-		return "\nStage Submitted IDs:[" + getStringFromArrayList(stageSubmittedIds) + "]" +
-				"\nStage Completed IDs:[" + getStringFromArrayList(stageCompletedIds) + "]";
-	}
-	
-
-	/**
-	 * Do not call this method directly, instead go through SparkUtils.setLineageInfoForExplain
-	 *
-	 * @param debugString
-	 */
-	public void setDebugString(String debugString) {
-		if(this.debugString == null) {
-			this.debugString = debugString;
-		}
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public String getDebugString() {
-		return debugString;
 	}
 	
 }

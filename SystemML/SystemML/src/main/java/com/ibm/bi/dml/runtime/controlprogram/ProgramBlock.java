@@ -13,6 +13,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.MLContext;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.recompile.Recompiler;
@@ -139,6 +140,10 @@ public class ProgramBlock
 				&& _sb.requiresRecompilation() )
 			{
 				tmp = Recompiler.recompileHopsDag(_sb, _sb.get_hops(), ec.getVariables(), null, false, _tid);
+				if(MLContext.getCurrentMLContext() != null) {
+					MLContext.getCurrentMLContext().performCleanupAfterRecompilation(tmp);
+				}
+				
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();

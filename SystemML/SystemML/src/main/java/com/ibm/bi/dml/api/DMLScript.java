@@ -370,7 +370,7 @@ public class DMLScript
 	 * @param scriptArguments
 	 * @throws LanguageException
 	 */
-	protected static HashMap<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args) 
+	public static HashMap<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args) 
 		throws LanguageException
 	{			
 		HashMap<String, String> argMap = new HashMap<String,String>();
@@ -506,7 +506,7 @@ public class DMLScript
 	 * @param platform
 	 * @return
 	 */
-	private static RUNTIME_PLATFORM parseRuntimePlatform( String platform )
+	public static RUNTIME_PLATFORM parseRuntimePlatform( String platform )
 	{
 		RUNTIME_PLATFORM lrtplatform = null;
 		

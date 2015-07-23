@@ -15,19 +15,16 @@ import java.util.Set;
 
 import org.apache.spark.JavaSparkListener;
 import org.apache.spark.SparkContext;
-import org.apache.spark.ui.jobs.StagePage;
-import org.apache.spark.ui.jobs.StagesTab;
 import org.apache.spark.scheduler.SparkListenerExecutorMetricsUpdate;
 import org.apache.spark.scheduler.SparkListenerStageCompleted;
 import org.apache.spark.scheduler.SparkListenerStageSubmitted;
-import org.apache.spark.ui.SparkUI;
 import org.apache.spark.ui.jobs.UIData.TaskUIData;
 
 import scala.Option;
 import scala.collection.Seq;
-import scala.collection.immutable.List;
 import scala.xml.Node;
 
+import com.ibm.bi.dml.api.MLContext;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 
 /**
@@ -80,7 +77,6 @@ public class SparkListener extends JavaSparkListener {
 			stageTaskMapping.put(stageID, new ArrayList<TaskUIData>());
 		}
 		
-		
 		Option<org.apache.spark.ui.scope.RDDOperationGraph> rddOpGraph = Option.apply(org.apache.spark.ui.scope.RDDOperationGraph.makeOperationGraph(stageSubmitted.stageInfo()));
 		Seq<Node> stageDAG = org.apache.spark.ui.UIUtils.showDagVizForStage(stageID, rddOpGraph);
 		// Use org.apache.spark.ui.jobs.StagePage, org.apache.spark.ui.jobs.JobPage's makeTimeline method() to print timeline
@@ -90,7 +86,10 @@ public class SparkListener extends JavaSparkListener {
 		
 		synchronized(currentInstructions) {
 			for(SPInstruction inst : currentInstructions) {
-				inst.stageSubmittedIds.add(stageSubmitted.stageInfo().stageId());
+				MLContext mlContext = MLContext.getCurrentMLContext();
+				if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+					mlContext.getMonitoringUtil().setStageId(inst, stageSubmitted.stageInfo().stageId());
+				}
 			}
 		}
 	}
@@ -113,23 +112,7 @@ public class SparkListener extends JavaSparkListener {
 	
 	@Override
 	public void onStageCompleted(SparkListenerStageCompleted stageCompleted) {
-		super.onStageCompleted(stageCompleted);
-		Integer stageID = stageCompleted.stageInfo().stageId();
-		synchronized(currentInstructions) {
-			for(SPInstruction inst : currentInstructions) {
-				inst.stageCompletedIds.add(stageID);
-			}
-			
-			if(stageTaskMapping.containsKey(stageID)) {
-				Option<SparkUI> ui = _sc.ui();
-				if(ui.get() != null) {
-					List<TaskUIData> tasksForThisStage = scala.collection.JavaConversions.asScalaBuffer(stageTaskMapping.get(stageID)).toList();
-					Seq<Node> timeLineDOM = (new StagePage(new StagesTab(ui.get()))).makeTimeline(tasksForThisStage, System.currentTimeMillis());
-					stageTimeline.put(stageID, timeLineDOM);
-				}
-			}
-		}
-		
+		super.onStageCompleted(stageCompleted);	
 	}
 	
 }

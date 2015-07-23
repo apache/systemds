@@ -27,6 +27,7 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;
+import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 
 /**
  * This class contains the parsed and compiled DML script w/ hops, lops and runtime program.
@@ -170,7 +171,7 @@ public class DMLDebuggerProgramInfo
 					// Check if current instruction line number correspond to breakpoint line number
 					if (currMRInst.findMRInstructions(lineNumber))  {						
 						BreakPointInstruction breakpoint = new BreakPointInstruction();
-						breakpoint.setLineNum(lineNumber);
+						breakpoint.setLocation(currInst);
 						breakpoint.setInstID(instID++);
 						breakpoint.setBPInstructionLocation(location);
 						instructions.add(i, breakpoint);
@@ -178,12 +179,12 @@ public class DMLDebuggerProgramInfo
 						return;
 					}
 				}
-				else if (currInst instanceof CPInstruction) 
+				else if (currInst instanceof CPInstruction || currInst instanceof SPInstruction) 
 				{
 					// Check if current instruction line number correspond to breakpoint line number
 					if (currInst.getLineNum() == lineNumber) {
 						BreakPointInstruction breakpoint = new BreakPointInstruction();
-						breakpoint.setLineNum(lineNumber);
+						breakpoint.setLocation(currInst);
 						breakpoint.setInstID(instID++);
 						breakpoint.setBPInstructionLocation(location);
 						instructions.add(i, breakpoint);
@@ -209,7 +210,7 @@ public class DMLDebuggerProgramInfo
 					if (op == 1) 
 					{
 						BreakPointInstruction breakpoint = (BreakPointInstruction) currInst;
-						breakpoint.setLineNum(currInst.getLineNum());
+						breakpoint.setLocation(currInst);
 						breakpoint.setInstID(currInst.getInstID());
 						breakpoint.setBPInstructionStatus(status);
 						breakpoint.setBPInstructionLocation(location);
@@ -333,24 +334,23 @@ public class DMLDebuggerProgramInfo
 				}
 				//set MR job line number
 				if (min == 0 || min == Integer.MAX_VALUE)
-					currMRInst.setLineNum(prevLineNum); //last seen instruction line number
+					currMRInst.setLocation(prevLineNum, prevLineNum, -1, -1); //last seen instruction line number
 				else
-					currMRInst.setLineNum(min); //minimum instruction line number for this MR job
+					currMRInst.setLocation(min, min, -1, -1); //minimum instruction line number for this MR job
 				//insert current MR instruction into corresponding source code line
 				if (!disassembler.containsKey(currMRInst.getLineNum()))
 					disassembler.put(currMRInst.getLineNum(), new ArrayList<Instruction>());
 				disassembler.get(currMRInst.getLineNum()).add(currMRInst);
 			}
-			else if (currInst instanceof CPInstruction)
+			else if (currInst instanceof CPInstruction || currInst instanceof SPInstruction)
 			{
-				CPInstruction currCPInst = (CPInstruction) currInst;
 				//if CP instruction line number is not set, then approximate to last seen line number
-				if (currCPInst.getLineNum() == 0)
-					currCPInst.setLineNum(prevLineNum);
+				if (currInst.getLineNum() == 0)
+					currInst.setLocation(prevLineNum, prevLineNum, -1, -1);
 				//insert current CP instruction into corresponding source code line
-				if (!disassembler.containsKey(currCPInst.getLineNum()))
-					disassembler.put(currCPInst.getLineNum(), new ArrayList<Instruction>());
-				disassembler.get(currCPInst.getLineNum()).add(currCPInst);
+				if (!disassembler.containsKey(currInst.getLineNum()))
+					disassembler.put(currInst.getLineNum(), new ArrayList<Instruction>());
+				disassembler.get(currInst.getLineNum()).add(currInst);
 			}
 			else if (currInst instanceof BreakPointInstruction)
 			{

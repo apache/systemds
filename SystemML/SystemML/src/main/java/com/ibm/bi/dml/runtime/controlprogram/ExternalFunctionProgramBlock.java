@@ -298,14 +298,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		ExternalFunctionInvocationInstruction einst = new ExternalFunctionInvocationInstruction(
 				className, configFile, inputParameterString,
 				outputParameterString);
-		if(DMLScript.ENABLE_DEBUG_MODE) {
-			if (getInputParams().size() > 0)
-				einst.setLineNum(getInputParams().get(0).getBeginLine());
-			else if (getOutputParams().size() > 0)
-				einst.setLineNum(getOutputParams().get(0).getBeginLine());
-			else
-				einst.setLineNum(this._beginLine);
-		}
+		
+		if (getInputParams().size() > 0)
+			einst.setLocation(getInputParams().get(0));
+		else if (getOutputParams().size() > 0)
+			einst.setLocation(getOutputParams().get(0));
+		else
+			einst.setLocation(this._beginLine, this._endLine, this._beginColumn, this._endColumn);
+		
 		_inst.add(einst);
 
 		// block output matrices
@@ -398,9 +398,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			  		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo) ) ;
 					c2binst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));*/
 					Instruction createInst = VariableCPInstruction.prepareCreateVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo));
-					if(DMLScript.ENABLE_DEBUG_MODE) {
-						createInst.setLineNum(matrices.get(i).getBeginLine());
-					}
+					
+					createInst.setLocation(matrices.get(i));
+					
 					c2binst.add(createInst);
 
 				}
@@ -414,10 +414,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				for (int i = 0; i < matrices.size(); i++) {
 					cpInst = VariableCPInstruction.prepareCopyInstruction(outLabels.get(i), matrices.get(i).getName());
 					rmInst = VariableCPInstruction.prepareRemoveInstruction(outLabels.get(i));
-					if(DMLScript.ENABLE_DEBUG_MODE) {
-						cpInst.setLineNum(matrices.get(i).getBeginLine());
-						rmInst.setLineNum(matrices.get(i).getBeginLine());
-					}
+					
+					cpInst.setLocation(matrices.get(i));
+					rmInst.setLocation(matrices.get(i));
+					
 					c2binst.add(cpInst);
 					c2binst.add(rmInst);
 					//c2binst.add(CPInstructionParser.parseSingleInstruction("CP" + Lops.OPERAND_DELIMITOR + "cpvar"+Lops.OPERAND_DELIMITOR+ outLabels.get(i) + Lops.OPERAND_DELIMITOR + matrices.get(i).getName()));
@@ -527,9 +527,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					b2cinst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));*/
 					
 			 		Instruction createInst = VariableCPInstruction.prepareCreateVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo));
-			 		if(DMLScript.ENABLE_DEBUG_MODE) {
-			 			createInst.setLineNum(matrices.get(i).getBeginLine());
-			 		}
+			 		
+			 		createInst.setLocation(matrices.get(i));
+			 		
 			 		b2cinst.add(createInst);
 				}
 			
@@ -544,10 +544,10 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				for (int i = 0; i < matrices.size(); i++) {
 						cpInst = VariableCPInstruction.prepareCopyInstruction(outLabels.get(i), matrices.get(i).getName());
 						rmInst = VariableCPInstruction.prepareRemoveInstruction(outLabels.get(i));
-						if(DMLScript.ENABLE_DEBUG_MODE) {
-							cpInst.setLineNum(matrices.get(i).getBeginLine());
-							rmInst.setLineNum(matrices.get(i).getBeginLine());
-						}
+						
+						cpInst.setLocation(matrices.get(i));
+						rmInst.setLocation(matrices.get(i));
+						
 						b2cinst.add(cpInst);
 						b2cinst.add(rmInst);
 				}

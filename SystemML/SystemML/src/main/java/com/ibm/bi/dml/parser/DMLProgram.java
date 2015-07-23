@@ -595,9 +595,9 @@ public class DMLProgram
 				{
 					//create RMVAR instruction and put it into the programblock
 					Instruction inst = createCleanupInstruction(varName);
-					if (DMLScript.ENABLE_DEBUG_MODE) {
-						inst.setLineNum(in.getVariable(varName).getBeginLine());
-					}
+					
+					inst.setLocation(in.getVariable(varName));
+					
 					addCleanupInstruction(pb, inst);
 
 					LOG.trace("Adding instruction (r1) "+inst.toString());
@@ -619,9 +619,9 @@ public class DMLProgram
 				{
 					//create RMVAR instruction and put it into the programblock
 					Instruction inst = createCleanupInstruction(varName);
-					if (DMLScript.ENABLE_DEBUG_MODE) {
-						inst.setLineNum(kill.getVariable(varName).getBeginLine());
-					}
+					
+					inst.setLocation(kill.getVariable(varName));
+					
 					//System.out.println("add rvar rule2 "+inst.toString());
 					addCleanupInstruction(pb, inst);
 					

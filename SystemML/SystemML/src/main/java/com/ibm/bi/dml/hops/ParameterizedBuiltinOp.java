@@ -280,15 +280,17 @@ public class ParameterizedBuiltinOp extends Hop
 			grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
 			// introduce a reblock lop only if it is NOT single_node execution
-			if( et == ExecType.CP || et == ExecType.SPARK){
+			if( et == ExecType.CP){
 				//force blocked output in CP (see below)
-				grp_agg.getOutputParameters().setDimensions(-1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
+				grp_agg.getOutputParameters().setDimensions(-1, 1, getRowsInBlock(), getColsInBlock(), -1);
+			}
+			else if(et == ExecType.SPARK) {
+				grp_agg.getOutputParameters().setDimensions(-1, 1, -1, -1, -1);
+				setRequiresReblock( true );
 			}
 			//grouped agg, w/o reblock in CP
 			setLops(grp_agg);
-//			if(et == ExecType.SPARK) {
-//				setRequiresReblock( true );
-//			}
+			
 		}
 	}
 

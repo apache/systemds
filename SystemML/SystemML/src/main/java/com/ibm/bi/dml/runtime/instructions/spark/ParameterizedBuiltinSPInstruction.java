@@ -300,13 +300,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			setOutputCharacteristicsForGroupedAgg(mc1, mcOut, out);
 			
 			//store output rdd handle
-//			sec.setRDDHandleForVariable(output.getName(), out);
-			
-			boolean outputEmptyBlocks = true;
-			JavaPairRDD<MatrixIndexes,MatrixBlock> outTemp = 
-					ReblockSPInstruction.processBinaryCellReblock(sec, out, 
-					mcOut, mcOut, outputEmptyBlocks, brlen, mcOut.getColsPerBlock());
-			sec.setRDDHandleForVariable(output.getName(), outTemp);
+			sec.setRDDHandleForVariable(output.getName(), out);
 			
 			sec.addLineageRDD(output.getName(), params.get(Statement.GAGG_TARGET) );
 			sec.addLineageRDD(output.getName(), params.get(Statement.GAGG_GROUPS) );

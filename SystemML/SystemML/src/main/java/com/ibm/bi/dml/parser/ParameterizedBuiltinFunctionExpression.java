@@ -405,8 +405,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			}
 			
 			//precompute number of rows and columns because target can be row or column vector
-			long rowsTarget = Math.max(targetid.getDim1(),targetid.getDim2());
-			long colsTarget = Math.min(targetid.getDim1(),targetid.getDim2());
+			long rowsTarget = targetid.getDim1(); // Math.max(targetid.getDim1(),targetid.getDim2());
+			long colsTarget = targetid.getDim2(); // Math.min(targetid.getDim1(),targetid.getDim2());
 			
 			if( targetid.dimsKnown() && groupsid.dimsKnown() &&
 				(rowsTarget != groupsid.getDim1() || colsTarget != groupsid.getDim2()) )

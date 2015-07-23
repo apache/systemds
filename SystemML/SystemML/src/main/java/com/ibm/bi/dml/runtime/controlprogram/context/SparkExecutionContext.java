@@ -41,6 +41,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
@@ -103,6 +104,12 @@ public class SparkExecutionContext extends ExecutionContext
 						_spctx = new JavaSparkContext();
 					}
 				}
+				
+				//globally add binaryblock serialization framework for all hdfs read/write operations
+				//TODO if spark context passed in from outside (mlcontext), we need to cleanup up any global configurations at the end 
+				if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+					MRJobConfiguration.addBinaryBlockSerializationFramework( _spctx.hadoopConfiguration() );
+				
 				_singletonSpctx = _spctx;
 			}
 		}
@@ -199,6 +206,8 @@ public class SparkExecutionContext extends ExecutionContext
 			// For binary block, these are: SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class
 			if(inputInfo == InputInfo.BinaryBlockInputInfo) {
 				rdd = _spctx.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				//note: this copy is still required in Spark 1.4 because spark hands out whatever the inputformat
+				//recordreader returns; the javadoc explicitly recommend to copy all key/value pairs
 				rdd = ((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd).mapToPair( new CopyBlockFunction() ); //cp is workaround for read bug
 			}
 			else if(inputInfo == InputInfo.TextCellInputInfo || inputInfo == InputInfo.CSVInputInfo || inputInfo == InputInfo.MatrixMarketInputInfo) {
@@ -541,8 +550,8 @@ public class SparkExecutionContext extends ExecutionContext
 					}
 					
 					//cleanup RDD and broadcast variables (recursive)
-					if( mo.getRDDHandle()!=null ) {
-						rCleanupLineageObject(mo.getRDDHandle());
+					if( mo.getRDDHandle()!=null ) { 
+ 						rCleanupLineageObject(mo.getRDDHandle());
 					}	
 					if( mo.getBroadcastHandle()!=null ) {
 						rCleanupLineageObject(mo.getBroadcastHandle());

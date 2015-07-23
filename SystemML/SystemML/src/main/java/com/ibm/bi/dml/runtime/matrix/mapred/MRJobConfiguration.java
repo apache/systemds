@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -1892,7 +1893,7 @@ public class MRJobConfiguration
 		return job.get(SYSTEMML_LOCAL_TMP_DIR);
 	}
 	
-	public static void addBinaryBlockSerializationFramework( JobConf job )
+	public static void addBinaryBlockSerializationFramework( Configuration job )
 	{
 		String frameworkList = job.get("io.serializations");
 		String frameworkClassBB = BinaryBlockSerialization.class.getCanonicalName();

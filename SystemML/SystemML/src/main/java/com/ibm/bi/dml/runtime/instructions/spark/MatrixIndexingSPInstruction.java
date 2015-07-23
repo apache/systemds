@@ -16,6 +16,7 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -61,16 +62,21 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 	 *  
 	 */
 	protected CPOperand rowLower, rowUpper, colLower, colUpper;
+	protected SparkAggType _aggType = null;
 	
-	public MatrixIndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr){
+	public MatrixIndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
+			                          CPOperand out, SparkAggType aggtype, String opcode, String istr){
 		super(op, in, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
 		colUpper = cu;
+
+		_aggType = aggtype;
 	}
 	
-	public MatrixIndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr){
+	public MatrixIndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
+			                          CPOperand out, String opcode, String istr){
 		super(op, lhsInput, rhsInput, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
@@ -85,7 +91,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase("rangeReIndex") ) {
-			if ( parts.length == 7 ) {
+			if ( parts.length == 8 ) {
 				// Example: rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
 				CPOperand in = new CPOperand(parts[1]);
 				CPOperand rl = new CPOperand(parts[2]);
@@ -93,7 +99,8 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				CPOperand cl = new CPOperand(parts[4]);
 				CPOperand cu = new CPOperand(parts[5]);
 				CPOperand out = new CPOperand(parts[6]);
-				return new MatrixIndexingSPInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, opcode, str);
+				SparkAggType aggtype = SparkAggType.valueOf(parts[7]);
+				return new MatrixIndexingSPInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, aggtype, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
@@ -149,8 +156,11 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out =
 					in1.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()))
-				       .flatMapToPair(new SliceBlock(rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()))
-				       .reduceByKey(new MergeBlocksFunction()); 
+				       .flatMapToPair(new SliceBlock(rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()));
+			
+			//aggregation if required 
+			if( _aggType != SparkAggType.NONE )
+				out = out.reduceByKey(new MergeBlocksFunction()); 
 				       
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

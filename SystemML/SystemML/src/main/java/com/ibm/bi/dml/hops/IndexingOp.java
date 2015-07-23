@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Data;
@@ -136,12 +137,31 @@ public class IndexingOp extends Hop
 						setLops(reindex);
 					}
 				}
-				else {
+				else if( et == ExecType.SPARK )
+				{
+					IndexingMethod method = optFindIndexingMethod( _rowLowerEqualsUpper, _colLowerEqualsUpper,
+                            input._dim1, input._dim2, _dim1, _dim2);
+					SparkAggType aggtype = (method==IndexingMethod.MR_VRIX) ? 
+							SparkAggType.NONE : SparkAggType.MULTI_BLOCK;
+					
+					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
+					RangeBasedReIndex reindex = new RangeBasedReIndex(
+							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
+							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
+							getDataType(), getValueType(), aggtype, et);
+				
+					setOutputDimensions(reindex);
+					setLineNumbers(reindex);
+					setLops(reindex);
+				}
+				else //CP
+				{
 					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
 					RangeBasedReIndex reindex = new RangeBasedReIndex(
 							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
 							getDataType(), getValueType(), et);
+					
 					setOutputDimensions(reindex);
 					setLineNumbers(reindex);
 					setLops(reindex);

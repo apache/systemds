@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.lops;
 
+import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
@@ -29,18 +30,46 @@ public class RangeBasedReIndex extends Lop
 	 * @throws LopsException
 	 */
 	
-	private boolean forLeftIndexing=false;
+	private boolean forLeftIndexing = false;
+
+	//optional attribute for spark exec type
+	private SparkAggType _aggtype = SparkAggType.MULTI_BLOCK;
+
+	public RangeBasedReIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
+			DataType dt, ValueType vt, ExecType et, boolean forleft)
+		throws LopsException 
+	{
+		super(Lop.Type.RangeReIndex, dt, vt);
+		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, forleft);
+	}
+
+	public RangeBasedReIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
+			DataType dt, ValueType vt, ExecType et)
+		throws LopsException 
+	{
+		super(Lop.Type.RangeReIndex, dt, vt);
+		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, false);
+	}
+
+	public RangeBasedReIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
+			DataType dt, ValueType vt, SparkAggType aggtype, ExecType et)
+		throws LopsException 
+	{
+		super(Lop.Type.RangeReIndex, dt, vt);
+		_aggtype = aggtype;
+		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, false);
+	}
 
 	private void init(Lop inputMatrix, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop leftMatrixRowDim, 
-			Lop leftMatrixColDim, DataType dt, ValueType vt, ExecType et, boolean forleft) {
-		
-		this.addInput(inputMatrix);
-		this.addInput(rowL);
-		this.addInput(rowU);
-		this.addInput(colL);
-		this.addInput(colU);
-		this.addInput(leftMatrixRowDim);
-		this.addInput(leftMatrixColDim);
+			Lop leftMatrixColDim, DataType dt, ValueType vt, ExecType et, boolean forleft) 
+	{	
+		addInput(inputMatrix);
+		addInput(rowL);
+		addInput(rowU);
+		addInput(colL);
+		addInput(colU);
+		addInput(leftMatrixRowDim);
+		addInput(leftMatrixColDim);
 		
 		inputMatrix.addOutput(this);		
 		rowL.addOutput(this);
@@ -60,42 +89,14 @@ public class RangeBasedReIndex extends Lop
 			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.MMCJ);
 			lps.addCompatibility(JobType.MMRJ);
-			this.lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
+			lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
 		} 
 		else {
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+			lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
 		
 		forLeftIndexing=forleft;
-	}
-	
-	public RangeBasedReIndex(
-			Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, DataType dt, ValueType vt, boolean forleft)
-			throws LopsException {
-		super(Lop.Type.RangeReIndex, dt, vt);
-		init(input, rowL, rowU, colL, colU,  rowDim, colDim, dt, vt, ExecType.MR, forleft);
-	}
-
-	public RangeBasedReIndex(
-			Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, DataType dt, ValueType vt, ExecType et, boolean forleft)
-			throws LopsException {
-		super(Lop.Type.RangeReIndex, dt, vt);
-		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, forleft);
-	}
-	
-	public RangeBasedReIndex(
-			Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, DataType dt, ValueType vt)
-			throws LopsException {
-		super(Lop.Type.RangeReIndex, dt, vt);
-		init(input, rowL, rowU, colL, colU,  rowDim, colDim, dt, vt, ExecType.MR, false);
-	}
-
-	public RangeBasedReIndex(
-			Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, DataType dt, ValueType vt, ExecType et)
-			throws LopsException {
-		super(Lop.Type.RangeReIndex, dt, vt);
-		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, false);
 	}
 	
 	private String getOpcode() {
@@ -142,6 +143,12 @@ public class RangeBasedReIndex extends Lop
 			sb.append( getInputs().get(5).prepScalarInputOperand(leftRowDim));
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(6).prepScalarInputOperand(leftColDim));
+		}
+		
+		//in case of spark, we also compile the optional aggregate flag into the instruction.
+		if( getExecType() == ExecType.SPARK ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _aggtype );	
 		}
 		
 		return sb.toString();

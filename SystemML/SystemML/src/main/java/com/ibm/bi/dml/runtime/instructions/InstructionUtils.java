@@ -161,7 +161,7 @@ public class InstructionUtils
 	public static String[] getInstructionPartsWithValueType( String str ) 
 	{
 		//note: split required for empty tokens
-		String[] parts = str.split(Instruction.OPERAND_DELIM);
+		String[] parts = str.split(Instruction.OPERAND_DELIM, -1);
 		String[] ret = new String[parts.length-1]; // stripping-off the exectype
 		ret[0] = parts[1]; // opcode
 		for( int i=1; i<parts.length; i++ )

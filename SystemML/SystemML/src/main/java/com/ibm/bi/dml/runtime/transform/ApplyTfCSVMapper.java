@@ -27,6 +27,7 @@ public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	ApplyTfHelper tfmapper = null;
+	Reporter _reporter = null;
 	
 	@Override
 	public void configure(JobConf job) {
@@ -46,30 +47,31 @@ public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable
 		// output the header line
 		if ( rawKey.get() == 0 && tfmapper._partFileWithHeader ) 
 		{
-			int numColumnsTf = tfmapper.processHeaderLine(rawValue);
-			reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS, numColumnsTf);
-			
+			_reporter = reporter;
+			tfmapper.processHeaderLine(rawValue);
 			if ( tfmapper._hasHeader )
 				return;
 		}
 		
 		// parse the input line and apply transformation
 		String[] words = tfmapper.getWords(rawValue);
-		words = tfmapper.apply(words);
-		
-		try
+		if(!tfmapper.omit(words))
 		{
-			String outStr = tfmapper.checkAndPrepOutputString(words);
-			out.collect(NullWritable.get(), new Text(outStr));
-		}
-		catch(DMLRuntimeException e)
-		{
-			throw new IOException(e.getMessage() + ": " + rawValue.toString());
+			try {
+				words = tfmapper.apply(words);
+				String outStr = tfmapper.checkAndPrepOutputString(words);
+				out.collect(NullWritable.get(), new Text(outStr));
+			} catch(DMLRuntimeException e)
+			{
+				throw new RuntimeException(e.getMessage() + ": " + rawValue.toString());
+			}
 		}
 	}
 
 	@Override
 	public void close() throws IOException {
+		_reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_ROWS, tfmapper.getNumTransformedRows());
+		_reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS, tfmapper.getNumTransformedColumns());
 	}
 
 }

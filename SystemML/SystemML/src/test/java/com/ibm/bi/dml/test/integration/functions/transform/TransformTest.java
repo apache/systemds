@@ -28,8 +28,8 @@ public class TransformTest extends AutomatedTestBase
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private final static String TEST_NAME1 = "transform";
-	private final static String TEST_NAME2 = "apply";
+	private final static String TEST_NAME1 = "Transform";
+	private final static String TEST_NAME2 = "Apply";
 	private final static String TEST_DIR = "functions/transform/";
 	
 	private final static String HOMES_DATASET 	= "homes/homes.csv";

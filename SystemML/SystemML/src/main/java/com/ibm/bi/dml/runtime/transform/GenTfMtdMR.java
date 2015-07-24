@@ -22,6 +22,7 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
@@ -72,7 +73,8 @@ public class GenTfMtdMR {
 		job.set(MRJobConfiguration.TF_HAS_HEADER, Boolean.toString(inputDataProperties.hasHeader()));
 		job.set(MRJobConfiguration.TF_DELIM, inputDataProperties.getDelim());
 		if ( inputDataProperties.getNAStrings() != null)
-			job.set(MRJobConfiguration.TF_NA_STRINGS, inputDataProperties.getNAStrings());
+			// Adding "dummy" string to handle the case of na_strings = ""
+			job.set(MRJobConfiguration.TF_NA_STRINGS, inputDataProperties.getNAStrings() + DataExpression.DELIM_NA_STRING_SEP + "dummy");
 		job.set(MRJobConfiguration.TF_SPEC_FILE, specFileWithIDs);
 		job.set(MRJobConfiguration.TF_SMALLEST_FILE, smallestFile);
 		job.setLong(MRJobConfiguration.TF_NUM_COLS, numCols);

@@ -193,13 +193,26 @@ public class DataTransform {
 		byte btmp = 0;
 		
 		final int[] mvList;
-		int[] rcdList, dcdList;
+		int[] rcdList, dcdList, omitList;
 		final int[] binList;
 		final int[] scaleList;
 		byte[] mvMethods = null, binMethods=null, scaleMethods=null;
 		Object[] numBins = null;
 		Object[] mvConstants = null;
 		
+		// --------------------------------------------------------------------------
+		// Recoding
+		if( inputSpec.get(TX_METHOD.OMIT.toString()) != null ) {
+			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.OMIT.toString());
+			omitList = new int[arrtmp.size()];
+			for(int i=0; i<arrtmp.size(); i++) {
+				stmp = UtilFunctions.unquote( (String)arrtmp.get(i) );
+				omitList[i] = colNames.get(stmp);
+			}
+			Arrays.sort(omitList);
+		}
+		else
+			omitList = null;
 		// --------------------------------------------------------------------------
 		// Missing value imputation
 		if( inputSpec.get(TX_METHOD.IMPUTE.toString()) != null ) {
@@ -359,6 +372,23 @@ public class DataTransform {
 			scaleList = null;
 		// --------------------------------------------------------------------------
 		
+		// check for column IDs that are imputed with mode, but not recoded
+		// These columns have be handled separately, because the computation of mode 
+		// requires the computation of distinct values (i.e., recode maps)
+		ArrayList<Integer> tmpList = new ArrayList<Integer>();
+		if(mvList != null)
+		for(int i=0; i < mvList.length; i++) {
+			int colID = mvList[i];
+			if(mvMethods[i] == 2 && rcdList != null && Arrays.binarySearch(rcdList, colID) == -1 ) 
+				tmpList.add(colID);
+		}
+		
+		int[] mvrcdList = null;
+		if ( tmpList.size() > 0 ) {
+			mvrcdList = new int[tmpList.size()];
+			for(int i=0; i < tmpList.size(); i++)
+				mvrcdList[i] = tmpList.get(i);
+		}
 		// Perform Validity Checks
 		
 		/*
@@ -372,15 +402,24 @@ public class DataTransform {
 		 */
 		
 		if(mvList != null)
-			for(int i=0; i < mvList.length; i++)
+			for(int i=0; i < mvList.length; i++) 
+			{
+				int colID = mvList[i];
+
+				if ( omitList != null && Arrays.binarySearch(omitList, colID) >= 0 ) 
+					throw new IllegalArgumentException("Invalid transformations on column ID " + colID + ". A column can not be both omitted and imputed.");
+				
 				if(mvMethods[i] == 1) 
 				{
-					int colID = mvList[i];
 					if ( rcdList != null && Arrays.binarySearch(rcdList, colID) >= 0 ) 
 						throw new IllegalArgumentException("Invalid transformations on column ID " + colID + ". A numeric column can not be recoded.");
-					if ( dcdList != null && Arrays.binarySearch(dcdList, colID) >= 0 ) 
-						throw new IllegalArgumentException("Invalid transformations on column ID " + colID + ". A numeric column can not be dummycoded.");
+					
+					if ( dcdList != null && Arrays.binarySearch(dcdList, colID) >= 0 )
+						// throw an error only if the column is not binned
+						if ( binList == null || Arrays.binarySearch(binList, colID) < 0 )
+							throw new IllegalArgumentException("Invalid transformations on column ID " + colID + ". A numeric column can not be dummycoded.");
 				}
+			}
 		
 		if(scaleList != null)
 		for(int i=0; i < scaleList.length; i++) 
@@ -426,6 +465,13 @@ public class DataTransform {
 		// Prepare output spec
 		JSONObject outputSpec = new JSONObject();
 
+		if (omitList != null)
+		{
+			JSONObject rcdSpec = new JSONObject();
+			rcdSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(omitList));
+			outputSpec.put(TX_METHOD.OMIT.toString(), rcdSpec);
+		}
+		
 		if (mvList != null)
 		{
 			JSONObject mvSpec = new JSONObject();
@@ -464,6 +510,13 @@ public class DataTransform {
 			scaleSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(scaleList));
 			scaleSpec.put(TransformationAgent.JSON_MTHD, toJSONArray(scaleMethods));
 			outputSpec.put(TX_METHOD.SCALE.toString(), scaleSpec);
+		}
+		
+		if (mvrcdList != null)
+		{
+			JSONObject mvrcd = new JSONObject();
+			mvrcd.put(TransformationAgent.JSON_ATTRS, toJSONArray(mvrcdList));
+			outputSpec.put(TX_METHOD.MVRCD.toString(), mvrcd);
 		}
 		
 		 // write out the spec with IDs
@@ -865,20 +918,55 @@ public class DataTransform {
 		return files;
 	}
 	
-	private static int countNumRows(ArrayList<Path> files, CSVFileFormatProperties prop, FileSystem fs) throws IOException 
+	private static int[] countNumRows(ArrayList<Path> files, CSVFileFormatProperties prop, FileSystem fs, boolean omit, OmitAgent oa) throws IOException 
 	{
-		int numRows=0;
-		for(int fileNo=0; fileNo<files.size(); fileNo++)
+		int[] rows = new int[2];
+		
+		int numRows=0, numRowsTf=0;
+		
+		if(!omit)
 		{
-			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
-			if(fileNo==0 && prop.hasHeader() ) 
-				br.readLine(); //ignore header
-			
-			while ( br.readLine() != null)
-				numRows++;
-			br.close();
+			for(int fileNo=0; fileNo<files.size(); fileNo++)
+			{
+				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
+				if(fileNo==0 && prop.hasHeader() ) 
+					br.readLine(); //ignore header
+				
+				while ( br.readLine() != null)
+					numRows++;
+				br.close();
+			}
+			numRowsTf = numRows;
 		}
-		return numRows;
+		else
+		{
+			String line = null;
+			String[] words;
+			
+			Pattern delim = Pattern.compile(Pattern.quote(prop.getDelim()));
+			
+			for(int fileNo=0; fileNo<files.size(); fileNo++)
+			{
+				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
+				if(fileNo==0 && prop.hasHeader() ) 
+					br.readLine(); //ignore header
+				
+				while ( (line=br.readLine()) != null)
+				{
+					numRows++;
+					
+					words = delim.split(line, -1);
+					if(!oa.omit(words))
+						numRowsTf++;
+				}
+				br.close();
+			}
+		}
+		
+		rows[0] = numRows;
+		rows[1] = numRowsTf;
+		
+		return rows;
 	}
 	
 	/**
@@ -914,6 +1002,7 @@ public class DataTransform {
 			_naStrings = Pattern.compile(Pattern.quote(DataExpression.DELIM_NA_STRING_SEP)).split(prop.getNAStrings(), -1);
 		
 		TransformationAgent.init(_naStrings, headerLine, prop.getDelim());
+		OmitAgent _oa = new OmitAgent(spec);
 		MVImputeAgent _mia = new MVImputeAgent(spec);
 		RecodeAgent _ra = new RecodeAgent(spec);
 		BinAgent _ba = new BinAgent(spec);
@@ -932,6 +1021,7 @@ public class DataTransform {
 		
 		int numColumnsTf=0;
 		TransformationAgent._numRecordsInPartFile = 0;
+		TransformationAgent._numValidRecords = 0;
 		
 		if (!isApply) {
 			for(int fileNo=0; fileNo<files.size(); fileNo++)
@@ -942,13 +1032,15 @@ public class DataTransform {
 				
 				line = null;
 				while ( (line = br.readLine()) != null) {
-					//System.out.println(line);
 					words = _delim.split(line.toString().trim(), -1);
 				
-					_mia.prepare(words);
-					_ra.prepare(words);
-					_ba.prepare(words);
-					
+					if(!_oa.omit(words))
+					{
+						_mia.prepare(words);
+						_ra.prepare(words);
+						_ba.prepare(words);
+						TransformationAgent._numValidRecords++;
+					}
 					TransformationAgent._numRecordsInPartFile++;
 				}
 				br.close();
@@ -971,7 +1063,9 @@ public class DataTransform {
 		}
 		else {
 			// Count the number of rows
-			TransformationAgent._numRecordsInPartFile = countNumRows(files, prop, fs);
+			int rows[] = countNumRows(files, prop, fs, _oa.isApplicable(), _oa);
+			TransformationAgent._numRecordsInPartFile = rows[0];
+			TransformationAgent._numValidRecords = rows[1]; 
 			
 			// Load transformation metadata
 			// prepare agents for the subsequent phase of applying transformation metadata
@@ -998,9 +1092,8 @@ public class DataTransform {
 		MatrixBlock mb = null; 
 		if ( isBB ) 
 		{
-			int numRows = (int)TransformationAgent._numRecordsInPartFile;
-			int estNNZ = numRows * ncols;
-			mb = new MatrixBlock(numRows, numColumnsTf, estNNZ );
+			int estNNZ = (int)TransformationAgent._numValidRecords * ncols;
+			mb = new MatrixBlock((int)TransformationAgent._numValidRecords, numColumnsTf, estNNZ );
 			
 			if ( mb.isInSparseFormat() )
 				mb.allocateSparseRowsBlock();
@@ -1008,7 +1101,7 @@ public class DataTransform {
 				mb.allocateDenseBlock();
 		}
 
-		int r = 0; // rowid to be used in filling the matrix block
+		int rowID = 0; // rowid to be used in filling the matrix block
 		
 		for(int fileNo=0; fileNo<files.size(); fileNo++)
 		{
@@ -1029,37 +1122,40 @@ public class DataTransform {
 			while ( (line = br.readLine()) != null) {
 				words = _delim.split(line.toString().trim(), -1);
 
-				words = _mia.apply(words);
-				if(!isApply)
-					words = _ra.cp_apply(words);
-				else
-					words = _ra.apply(words);
-				words = _ba.apply(words);
-				words = _da.apply(words);
-
-				if (isCSV)
+				if(!_oa.omit(words))
 				{
-					sb.setLength(0);
-					sb.append(words[0] != null ? words[0] : "0");
-					for(int i=1; i<words.length; i++) 
+					words = _mia.apply(words);
+					if(!isApply)
+						words = _ra.cp_apply(words);
+					else
+						words = _ra.apply(words);
+					words = _ba.apply(words);
+					words = _da.apply(words);
+	
+					if (isCSV)
 					{
-						sb.append(prop.getDelim());
-						sb.append(words[i] != null ? words[i] : "0");
+						sb.setLength(0);
+						sb.append(words[0] != null ? words[0] : "0");
+						for(int i=1; i<words.length; i++) 
+						{
+							sb.append(prop.getDelim());
+							sb.append(words[i] != null ? words[i] : "0");
+						}
+						out.write(sb.toString());
+						out.write("\n");
 					}
-					out.write(sb.toString());
-					out.write("\n");
-				}
-				if( isBB ) 
-				{
-					for(int c=0; c<words.length; c++)
+					if( isBB ) 
 					{
-						if(words[c] == null || words[c].isEmpty())
-							;
-						else 
-							mb.appendValue(r, c, UtilFunctions.parseToDouble(words[c]));
+						for(int c=0; c<words.length; c++)
+						{
+							if(words[c] == null || words[c].isEmpty())
+								;
+							else 
+								mb.appendValue(rowID, c, UtilFunctions.parseToDouble(words[c]));
+						}
 					}
+					rowID++;
 				}
-				r++;
 			}
 			br.close();
 		}
@@ -1075,9 +1171,10 @@ public class DataTransform {
 			result.exportData();
 		}
 		
-		MatrixCharacteristics mc = new MatrixCharacteristics(TransformationAgent._numRecordsInPartFile, numColumnsTf, (int) result.getNumRowsPerBlock(), (int) result.getNumColumnsPerBlock());
+		MatrixCharacteristics mc = new MatrixCharacteristics(TransformationAgent._numValidRecords, numColumnsTf, (int) result.getNumRowsPerBlock(), (int) result.getNumColumnsPerBlock());
 		JobReturn ret = new JobReturn(new MatrixCharacteristics[]{mc}, true);
 		TransformationAgent._numRecordsInPartFile = 0;
+		TransformationAgent._numValidRecords = 0;
 
 		return ret;
 	}
@@ -1094,6 +1191,21 @@ public class DataTransform {
 		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(newHeader+"\n");
 		br.close();
+	}
+	
+	public static String[] parseNAStrings(JobConf job) 
+	{
+		String[] naStrings = null;
+		
+		if ( job.get(MRJobConfiguration.TF_NA_STRINGS) == null)
+			naStrings = null;
+		else
+		{
+			naStrings = Pattern.compile(Pattern.quote(DataExpression.DELIM_NA_STRING_SEP)).split(job.get(MRJobConfiguration.TF_NA_STRINGS), -1);
+			naStrings = Arrays.copyOf(naStrings, naStrings.length-1);
+		}
+		return naStrings;
+
 	}
 }
 

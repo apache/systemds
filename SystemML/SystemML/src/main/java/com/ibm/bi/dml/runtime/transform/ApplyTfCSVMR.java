@@ -22,6 +22,7 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -73,7 +74,8 @@ public class ApplyTfCSVMR {
 		job.set(MRJobConfiguration.TF_HAS_HEADER, 	Boolean.toString(inputDataProperties.hasHeader()));
 		job.set(MRJobConfiguration.TF_DELIM, 		inputDataProperties.getDelim());
 		if ( inputDataProperties.getNAStrings() != null)
-			job.set(MRJobConfiguration.TF_NA_STRINGS, 	inputDataProperties.getNAStrings());
+			// Adding "dummy" string to handle the case of na_strings = ""
+			job.set(MRJobConfiguration.TF_NA_STRINGS, inputDataProperties.getNAStrings() + DataExpression.DELIM_NA_STRING_SEP + "dummy");
 		job.set(MRJobConfiguration.TF_SPEC_FILE, 	specPath);
 		job.set(MRJobConfiguration.TF_SMALLEST_FILE, CSVReblockMR.findSmallestFile(job, inputPath));
 		job.set(MRJobConfiguration.OUTPUT_MATRICES_DIRS_CONFIG, outputPath);
@@ -89,7 +91,7 @@ public class ApplyTfCSVMR {
 		RunningJob runjob = JobClient.runJob(job);
 		
 		Counters c = runjob.getCounters();
-		long tx_numRows = c.findCounter("org.apache.hadoop.mapred.Task$Counter", "MAP_OUTPUT_RECORDS").getCounter();
+		long tx_numRows = c.findCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_ROWS).getCounter();
 		long tx_numCols = c.findCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS).getCounter();
 		MatrixCharacteristics mc = new MatrixCharacteristics(tx_numRows, tx_numCols, -1, -1);
 		

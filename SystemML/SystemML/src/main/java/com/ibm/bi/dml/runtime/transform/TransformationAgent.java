@@ -31,7 +31,9 @@ public abstract class TransformationAgent {
 		RECODE ("recode"), 
 		BIN ("bin"), 
 		DUMMYCODE ("dummycode"), 
-		SCALE ("scale");
+		SCALE ("scale"),
+		OMIT ("omit"),
+		MVRCD ("mvrcd");
 		
 		private String _name;
 		
@@ -69,7 +71,8 @@ public abstract class TransformationAgent {
 	protected static final String TXMTD_SEP 	= ",";
 	protected static final String DCD_NAME_SEP 	= "_";
 	
-	protected static long _numRecordsInPartFile = 0;
+	protected static long _numRecordsInPartFile = 0;	// Total number of records in the data file
+	protected static long _numValidRecords = 0;			// (_numRecordsInPartFile - #of omitted records)
 
 	abstract public void print();
 	abstract public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException;

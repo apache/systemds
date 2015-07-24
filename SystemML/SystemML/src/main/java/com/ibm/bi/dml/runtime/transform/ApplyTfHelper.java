@@ -17,7 +17,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -42,10 +41,14 @@ public class ApplyTfHelper {
 	
 	boolean _partFileWithHeader = false;
 	
+	OmitAgent _oa = null;
 	MVImputeAgent _mia = null;
 	RecodeAgent _ra = null;	
 	BinAgent _ba = null;
 	DummycodeAgent _da = null;
+	
+	long _numTransformedRows; 
+	long _numTransformedColumns; 
 
 	public ApplyTfHelper(JobConf job) throws IllegalArgumentException, IOException {
 		_hasHeader = Boolean.parseBoolean(job.get(MRJobConfiguration.TF_HAS_HEADER));
@@ -53,15 +56,15 @@ public class ApplyTfHelper {
 		_delimString = job.get(MRJobConfiguration.TF_DELIM);
 		_delim = Pattern.compile(Pattern.quote(_delimString));
 		
-		if ( job.get(MRJobConfiguration.TF_NA_STRINGS) == null)
-			_naStrings = null;
-		else
-			_naStrings = Pattern.compile(Pattern.quote(DataExpression.DELIM_NA_STRING_SEP)).split(job.get(MRJobConfiguration.TF_NA_STRINGS), -1);
+		_naStrings = DataTransform.parseNAStrings(job);
 		
 		_numCols = UtilFunctions.parseToLong( job.get(MRJobConfiguration.TF_NUM_COLS) );		// #of columns in input data
 		_tmpPath = job.get(MRJobConfiguration.TF_TMP_LOC);
 		
 		_specFile = job.get(MRJobConfiguration.TF_SPEC_FILE);
+		
+		_numTransformedRows = 0;
+		_numTransformedColumns = 0;
 		
 		_rJob = job;
 	}
@@ -79,6 +82,7 @@ public class ApplyTfHelper {
 	{
 		// Set up transformation agents
 		TransformationAgent.init(_naStrings, _rJob.get(MRJobConfiguration.TF_HEADER), _delimString);
+		_oa = new OmitAgent(spec);
 		_mia = new MVImputeAgent(spec);
 		_ra = new RecodeAgent(spec);
 		_ba = new BinAgent(spec);
@@ -114,7 +118,7 @@ public class ApplyTfHelper {
 			
 	}
 
-	public int processHeaderLine(Text rawValue) throws IOException 
+	public long processHeaderLine(Text rawValue) throws IOException 
 	{
 		String header = null;
 		if(_hasHeader)
@@ -129,12 +133,18 @@ public class ApplyTfHelper {
 		// these files are copied into txMtdPath, once the ApplyTf job is complete.
 		DataTransform.generateHeaderFiles(FileSystem.get(_rJob), _tmpPath, header, dcdHeader);
 
-		return _delim.split(dcdHeader, -1).length;
+		_numTransformedColumns = _delim.split(dcdHeader, -1).length; 
+		return _numTransformedColumns;
 	}
 	
 	public String[] getWords(Text line)
 	{
 		return _delim.split(line.toString(), -1);
+	}
+	
+	public boolean omit(String[] words) 
+	{
+		return _oa.omit(words);
 	}
 	
 	public String[] apply ( String[] words ) 
@@ -143,8 +153,12 @@ public class ApplyTfHelper {
 		words = _ra.apply(words);
 		words = _ba.apply(words);
 		words = _da.apply(words);
+		_numTransformedRows++;
 		return words;
 	}
+	
+	public long getNumTransformedRows() { return _numTransformedRows; }
+	public long getNumTransformedColumns() { return _numTransformedColumns; }
 	
 	public void check(String []words) throws DMLRuntimeException 
 	{

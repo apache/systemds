@@ -24,7 +24,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -55,10 +54,7 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 		_offsetFile = job.get(MRJobConfiguration.TF_OFFSETS_FILE);
 		
 		_delim = Pattern.compile(Pattern.quote(job.get(MRJobConfiguration.TF_DELIM)));
-		if ( job.get(MRJobConfiguration.TF_NA_STRINGS) == null)
-			_naStrings = null;
-		else
-			_naStrings = Pattern.compile(Pattern.quote(DataExpression.DELIM_NA_STRING_SEP)).split(job.get(MRJobConfiguration.TF_NA_STRINGS), -1);
+		_naStrings = DataTransform.parseNAStrings(job);
 		
 		TransformationAgent.init(_naStrings, job.get(MRJobConfiguration.TF_HEADER), _delim.pattern());
 	}

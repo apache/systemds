@@ -41,6 +41,7 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	ApplyTfHelper tfmapper = null;
+	Reporter _reporter = null;
 	
 	// variables relevant to CSV Reblock
 	private IndexedBlockRow idxRow = null;
@@ -99,46 +100,42 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
 		
 		if(_first) {
 			rowOffset=offsetMap.get(rawKey.get());
+			_reporter = reporter;
 			_first=false;
 		}
 		
 		// output the header line
 		if ( rawKey.get() == 0 && tfmapper._partFileWithHeader ) 
 		{
-			int numColumnsTf = tfmapper.processHeaderLine(rawValue);
-			reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS, numColumnsTf);
-			
+			tfmapper.processHeaderLine(rawValue);
 			if ( tfmapper._hasHeader )
 				return;
 		}
 		
 		// parse the input line and apply transformation
 		String[] words = tfmapper.getWords(rawValue);
-		words = tfmapper.apply(words);
-
-		try {
-			tfmapper.check(words);
-		}
-		catch(DMLRuntimeException e)
+		
+		if(!tfmapper.omit(words))
 		{
-			throw new RuntimeException(e.getMessage() + ":" + rawValue.toString());
+			words = tfmapper.apply(words);
+			try {
+				tfmapper.check(words);
+				
+				// Perform CSV Reblock
+				CSVReblockInstruction ins = csv_reblock_instructions.get(0).get(0);
+				idxRow = CSVReblockMapper.processRow(idxRow, words, rowOffset, num, ins.output, ins.brlen, ins.bclen, ins.fill, ins.fillValue, out);
+			}
+			catch(DMLRuntimeException e) {
+				throw new RuntimeException(e.getMessage() + ":" + rawValue.toString());
+			}
+			num++;
 		}
-		
-		// Perform CSV Reblock
-		
-		CSVReblockInstruction ins = csv_reblock_instructions.get(0).get(0);
-		try {
-			idxRow = CSVReblockMapper.processRow(idxRow, words, rowOffset, num, ins.output, ins.brlen, ins.bclen, ins.fill, ins.fillValue, out);
-		} catch(Exception e) {
-			throw new RuntimeException(e);
-		}
-		num++;
-		
-		//out.collect(NullWritable.get(), new Text(sb.toString()));
 	}
 
 	@Override
 	public void close() throws IOException {
+		_reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_ROWS, tfmapper.getNumTransformedRows());
+		_reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS, tfmapper.getNumTransformedColumns());
 	}
 
 	@Override

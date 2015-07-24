@@ -21,11 +21,10 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.parser.DataExpression;
+import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.json.java.JSONObject;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
 
 
 public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, DistinctValue>{
@@ -44,6 +43,7 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 	private static String   _specFile = null;	// Transform specification file on HDFS
 	private static long _numCols = 0;
 	
+	OmitAgent _oa = null;
 	MVImputeAgent _mia = null;
 	RecodeAgent _ra = null;	
 	BinAgent _ba = null;
@@ -67,10 +67,7 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 	private JSONObject loadTransformSpecs(JobConf job) throws IllegalArgumentException, IOException {
 		_hasHeader = Boolean.parseBoolean(job.get(MRJobConfiguration.TF_HAS_HEADER));
 		_delim = Pattern.compile(Pattern.quote(job.get(MRJobConfiguration.TF_DELIM)));
-		if ( job.get(MRJobConfiguration.TF_NA_STRINGS) == null)
-			_naStrings = null;
-		else
-			_naStrings = Pattern.compile(Pattern.quote(DataExpression.DELIM_NA_STRING_SEP)).split(job.get(MRJobConfiguration.TF_NA_STRINGS), -1);
+		_naStrings = DataTransform.parseNAStrings(job);
 		_specFile = job.get(MRJobConfiguration.TF_SPEC_FILE);
 		_numCols = UtilFunctions.parseToLong( job.get(MRJobConfiguration.TF_NUM_COLS) );		// #of columns in input data
 	
@@ -98,6 +95,8 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 			JSONObject spec = loadTransformSpecs(job);
 
 			TransformationAgent.init(_naStrings, job.get(MRJobConfiguration.TF_HEADER), _delim.pattern());
+			
+			_oa = new OmitAgent(spec);
 			_mia = new MVImputeAgent(spec);
 			_ra = new RecodeAgent(spec);
 			_ba = new BinAgent(spec);
@@ -134,10 +133,13 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 			return;
 		
 		String[] words = _delim.split(rawValue.toString(),-1);
-		_mia.prepare(words);
-		_ra.prepare(words);
-		_ba.prepare(words);
-		
+		if(!_oa.omit(words))
+		{
+			_mia.prepare(words);
+			_ra.prepare(words);
+			_ba.prepare(words);
+			TransformationAgent._numValidRecords++;
+		}
 		TransformationAgent._numRecordsInPartFile++;
 	}
 
@@ -155,6 +157,8 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 		_firstRecordInSplit = true;
 		_offsetInPartFile = -1;
 		TransformationAgent._numRecordsInPartFile = 0;
+		TransformationAgent._numValidRecords = 0;
+		
 		_partFileWithHeader = false;
 	}
 }

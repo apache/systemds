@@ -35,6 +35,8 @@ public class RecodeAgent extends TransformationAgent {
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private int[] _rcdList = null;
+	private int[] _mvrcdList = null;
+	private int[] _fullrcdList = null;
 
 	// HashMap< columnID, HashMap<distinctValue, count> >
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
@@ -47,8 +49,8 @@ public class RecodeAgent extends TransformationAgent {
 	
 	RecodeAgent(JSONObject parsedSpec) {
 		Object obj = parsedSpec.get(TX_METHOD.RECODE.toString());
+		int rcdCount = 0;
 		if(obj == null) {
-			
 		}
 		else {
 			JSONArray attrs = (JSONArray) ((JSONObject)obj).get(JSON_ATTRS);
@@ -56,14 +58,37 @@ public class RecodeAgent extends TransformationAgent {
 			_rcdList = new int[attrs.size()];
 			for(int i=0; i < _rcdList.length; i++) 
 				_rcdList[i] = ((Long) attrs.get(i)).intValue();
+			rcdCount = _rcdList.length;
 		}
+		
+		obj = parsedSpec.get(TX_METHOD.MVRCD.toString());
+		if(obj == null) {
+		}
+		else {
+			JSONArray attrs = (JSONArray) ((JSONObject)obj).get(JSON_ATTRS);
+			_mvrcdList = new int[attrs.size()];
+			for(int i=0; i < _mvrcdList.length; i++) 
+				_mvrcdList[i] = ((Long) attrs.get(i)).intValue();
+			rcdCount += attrs.size();
+		}
+		
+		_fullrcdList = new int[rcdCount];
+		int idx = -1;
+		if(_rcdList != null)
+			for(int i=0; i < _rcdList.length; i++)
+				_fullrcdList[++idx] = _rcdList[i]; 
+		
+		if(_mvrcdList != null)
+			for(int i=0; i < _mvrcdList.length; i++)
+				_fullrcdList[++idx] = _mvrcdList[i]; 
 	}
 	
 	void prepare(String[] words) {
-		if ( _rcdList == null )
+		if ( _rcdList == null && _mvrcdList == null )
 			return;
+		
 		String w = null;
-		for (int colID : _rcdList) {
+		for (int colID : _fullrcdList) {
 			w = UtilFunctions.unquote(words[colID-1].trim());
 			if(_rcdMaps.get(colID) == null ) 
 				_rcdMaps.put(colID, new HashMap<String, Long>());
@@ -87,11 +112,12 @@ public class RecodeAgent extends TransformationAgent {
 				throw new RuntimeException("Expecting a constant replacement value for column ID " + colID);
 			
 			repValue = UtilFunctions.unquote(repValue);
-			if(map.get(repValue) == null)
-			{
-				long mvCount = TransformationAgent._numRecordsInPartFile - mvagent.getNonMVCount(colID);
+			Long count = map.get(repValue);
+			long mvCount = TransformationAgent._numValidRecords - mvagent.getNonMVCount(colID);
+			if(count == null)
 				map.put(repValue, mvCount);
-			}
+			else
+				map.put(repValue, count + mvCount);
 		}
 		return map;
 	}
@@ -105,23 +131,22 @@ public class RecodeAgent extends TransformationAgent {
 	 */
 	@Override
 	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException {
-		if ( _rcdList == null )
+		if ( _rcdList == null  && _mvrcdList == null )
 			return;
 		
 		try 
 		{ 
 			MVImputeAgent mvagent = (MVImputeAgent) agent;
 			
-			for(int i=0; i < _rcdList.length; i++) 
+			for(int i=0; i < _fullrcdList.length; i++) 
 			{
-				int colID = _rcdList[i];
+				int colID = _fullrcdList[i];
 				HashMap<String, Long> map = _rcdMaps.get(colID);
 				
 				if(map != null) 
 				{
-					
 					map = handleMVConstant(colID, mvagent,  map);
-
+					
 					IntWritable iw = new IntWritable(colID);
 					for(String s : map.keySet()) 
 						out.collect(iw, new DistinctValue(s, map.get(s)));
@@ -202,10 +227,10 @@ public class RecodeAgent extends TransformationAgent {
 	}
 	
 	public void outputTransformationMetadata(String outputDir, FileSystem fs, MVImputeAgent mvagent) throws IOException {
-		if(_rcdList == null)
+		if(_rcdList == null && _mvrcdList == null )
 			return;
-		for(int i=0; i<_rcdList.length; i++) {
-			int colID = _rcdList[i];
+		for(int i=0; i<_fullrcdList.length; i++) {
+			int colID = _fullrcdList[i];
 			writeMetadata(_rcdMaps.get(colID), outputDir, colID, fs, mvagent);
 		}
 		

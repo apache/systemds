@@ -191,11 +191,6 @@ public class SparseRow implements Serializable
 	 */
 	public boolean set(int col, double v)
 	{
-		//early abort on zero 
-		if( v == 0.0 ) { 
-			return false;
-		}
-		
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
 		if( index >= 0 ) {

@@ -31,7 +31,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.data.CountLinesInfo;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertCSVLinesToMatrixBlocks;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToText;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CountLines;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocksFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -138,12 +138,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 									hasHeader, delim, fill, missingValue), true));
 
 			// Merge chunks according to their block index
-			// Each entry in chunks is a tuple
-			// ((block row number, block column number), (row within block, list
-			// of values))
-			// We need to group by the block row number and block column number.
-			// The nested lists are already set up to help us do this.
-			JavaPairRDD<MatrixIndexes, MatrixBlock> blocksRDD = chunks.reduceByKey(new MergeBlocksFunction());
+			JavaPairRDD<MatrixIndexes, MatrixBlock> blocksRDD = RDDAggregateUtils.mergeByKey(chunks);
 			
 			// SparkUtils.setLineageInfoForExplain(this, blocksRDD, output.getName());
 			sec.setRDDHandleForVariable(output.getName(), blocksRDD);

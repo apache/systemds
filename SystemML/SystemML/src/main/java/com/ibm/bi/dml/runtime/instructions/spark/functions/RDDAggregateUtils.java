@@ -12,6 +12,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.instructions.spark.data.CorrMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -134,6 +135,21 @@ public class RDDAggregateUtils
 		
 		//return the aggregate rdd
 		return out;
+	}
+	
+	/**
+	 * Merges disjoint data of all blocks per key.
+	 * 
+	 * Note: The behavior of this method is undefined for both sparse and dense data if the 
+	 * assumption of disjoint data is violated.
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> mergeByKey( JavaPairRDD<MatrixIndexes, MatrixBlock> in )
+	{
+		return in.reduceByKey(
+				new MergeBlocksFunction());
 	}
 	
 	/**
@@ -457,5 +473,38 @@ public class RDDAggregateUtils
 			
 			return out;
 		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class MergeBlocksFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+	{		
+		private static final long serialVersionUID = -8881019027250258850L;
+
+		@Override
+		public MatrixBlock call(MatrixBlock b1, MatrixBlock b2) 
+			throws Exception 
+		{
+			// sanity check input dimensions
+			if (b1.getNumRows() != b2.getNumRows() || b1.getNumColumns() != b2.getNumColumns()) {
+				throw new DMLRuntimeException("Mismatched block sizes: "
+						+ b1.getNumRows() + " " + b1.getNumColumns() + " "
+						+ b2.getNumRows() + " " + b2.getNumColumns());
+			}
+
+			// execute merge (never pass by reference)
+			MatrixBlock ret = new MatrixBlock(b1);
+			ret.merge(b2, false);
+
+			// sanity check output number of non-zeros
+			if (ret.getNonZeros() != b1.getNonZeros() + b2.getNonZeros()) {
+				throw new DMLRuntimeException("Number of non-zeros does not match: "
+						+ ret.getNonZeros() + " != " + b1.getNonZeros() + " + " + b2.getNonZeros());
+			}
+
+			return ret;
+		}
+
 	}
 }

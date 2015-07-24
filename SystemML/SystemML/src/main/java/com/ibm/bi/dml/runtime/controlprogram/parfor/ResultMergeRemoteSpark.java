@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 
 import org.apache.spark.api.java.JavaPairRDD;
+
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -16,6 +17,7 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -159,8 +161,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		    else
 		    {
 		    	//direct merge in any order (disjointness guaranteed)
-		    	ResultMergeRemoteSparkWoCompare mfun = new ResultMergeRemoteSparkWoCompare();
-		    	out = rdd.reduceByKey(mfun, numRed);
+		    	out = RDDAggregateUtils.mergeByKey(rdd);
 		    }
 		    
 		    //Step 3: create output rdd handle w/ lineage

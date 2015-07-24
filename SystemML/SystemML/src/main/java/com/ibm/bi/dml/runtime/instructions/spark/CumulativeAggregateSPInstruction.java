@@ -21,7 +21,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocksFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -84,8 +84,8 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		//execute unary aggregate (w/ implicit drop correction)
 		AggregateUnaryOperator auop = (AggregateUnaryOperator) _optr;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
-				in.mapToPair(new RDDCumAggFunction(auop, rlen, brlen, bclen))
-				  .reduceByKey(new MergeBlocksFunction());  
+				in.mapToPair(new RDDCumAggFunction(auop, rlen, brlen, bclen));
+		out = RDDAggregateUtils.mergeByKey(out);
 		
 		//put output handle in symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);	

@@ -23,7 +23,6 @@ import com.ibm.bi.dml.lops.ParameterizedBuiltin;
 import com.ibm.bi.dml.lops.RepMat;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 

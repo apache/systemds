@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertColumnRDDToBinaryBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.MergeBlocksFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReorgMapFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -206,8 +206,8 @@ public class ReorgSPInstruction extends UnarySPInstruction
 				// This means materializedSortedIndexes has 2GB limit
 				// Later, this will be replaced by PMMJ
 				List<Double> materializedSortedIndexes = sortedIndexes.collect();
-				out = in1.flatMapToPair(new ExtractSortedRows(materializedSortedIndexes, mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock()))
-						.reduceByKey(new MergeBlocksFunction());
+				out = in1.flatMapToPair(new ExtractSortedRows(materializedSortedIndexes, mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
+				out = RDDAggregateUtils.mergeByKey(out);
 			}
 			
 			//store output rdd handle

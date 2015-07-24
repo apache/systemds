@@ -166,7 +166,11 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		    
 		    //Step 3: create output rdd handle w/ lineage
 		    ret = new RDDObject(out, varname);
-		    //TODO need to add lineage information
+		    for( int i=0; i<_inputs.length; i++ ) {
+		    	//child rdd handles guaranteed to exist
+		    	RDDObject child = _inputs[i].getRDDHandle();
+				ret.addLineageChild(child);
+		    }
 		}
 		catch( Exception ex )
 		{

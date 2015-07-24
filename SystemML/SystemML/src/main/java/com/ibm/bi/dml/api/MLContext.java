@@ -417,7 +417,9 @@ public class MLContext {
 	 * @param target
 	 * @throws LanguageException
 	 */
-	public void internal_setAppropriateVarsForRead(Expression source, String target) throws LanguageException {
+	protected void setAppropriateVarsForRead(Expression source, String target) 
+		throws LanguageException 
+	{
 		boolean isTargetRegistered = isRegisteredAsInput(target);
 		boolean isReadExpression = (source instanceof DataExpression && ((DataExpression) source).isRead());
 		if(isTargetRegistered && isReadExpression) {
@@ -586,6 +588,7 @@ public class MLContext {
 		}
 		else {
 			_mlContext = this;
+			MLContextProxy.setActive(true);
 		}
 		
 		this._sc = sc;

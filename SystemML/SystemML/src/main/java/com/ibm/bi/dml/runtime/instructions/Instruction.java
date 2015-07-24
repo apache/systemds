@@ -10,8 +10,6 @@ package com.ibm.bi.dml.runtime.instructions;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.api.MLContext;
-import com.ibm.bi.dml.api.monitoring.Location;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -58,15 +56,6 @@ public abstract class Instruction
 		this.endLine = endLine;
 		this.beginCol = beginCol;
 		this.endCol = endCol;
-		try {
-			MLContext mlContext = MLContext.getCurrentMLContext();
-			if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-				mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
-			}
-		}
-		catch(NoClassDefFoundError e1) {
-			// Spark libraries are not set as going through hadoop jar
-		}
 	}
 	
 	public void setLocation(Lop lop) {
@@ -75,15 +64,6 @@ public abstract class Instruction
 			this.endLine = lop._endLine;
 			this.beginCol = lop._beginColumn;
 			this.endCol = lop._endColumn;
-			try {
-				MLContext mlContext = MLContext.getCurrentMLContext();
-				if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-					mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
-				}
-			}
-			catch(NoClassDefFoundError e1) {
-				// Spark libraries are not set as going through hadoop jar
-			}
 		}
 	}
 	
@@ -93,16 +73,6 @@ public abstract class Instruction
 			this.endLine = id.getEndLine();
 			this.beginCol = id.getBeginColumn();
 			this.endCol = id.getEndColumn();
-			
-			try {
-				MLContext mlContext = MLContext.getCurrentMLContext();
-				if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-					mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
-				}
-			}
-			catch(NoClassDefFoundError e1) {
-				// Spark libraries are not set as going through hadoop jar
-			}
 		}
 	}
 	
@@ -112,15 +82,6 @@ public abstract class Instruction
 			this.endLine = oldInst.endLine;
 			this.beginCol = oldInst.beginCol;
 			this.endCol = oldInst.endCol;
-			try {
-				MLContext mlContext = MLContext.getCurrentMLContext();
-				if(mlContext != null && mlContext.getMonitoringUtil() != null) {
-					mlContext.getMonitoringUtil().setInstructionLocation(new Location(beginLine, endLine, beginCol, endCol), this);
-				}
-			}
-			catch(NoClassDefFoundError e1) {
-				// Spark libraries are not set as going through hadoop jar
-			}
 		}
 	}
 	

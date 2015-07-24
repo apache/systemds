@@ -15,7 +15,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.MLContext;
+import com.ibm.bi.dml.api.MLContextProxy;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -575,18 +575,13 @@ public class StatementBlock extends LiveVariableAnalysis
 				DataIdentifier target = as.getTarget(); 
 			 	Expression source = as.getSource();
 				
-				if (source instanceof FunctionCallIdentifier)			
+				if (source instanceof FunctionCallIdentifier) {
 					((FunctionCallIdentifier) source).validateExpression(dmlProg, ids.getVariables(),currConstVars, conditional);
+				}
 				else {
-					try {
-						MLContext mlContext = MLContext.getCurrentMLContext();
-						if(mlContext != null) {
-							mlContext.internal_setAppropriateVarsForRead(source, target._name);
-						}
-					}
-					catch(NoClassDefFoundError e1) {
-						// Spark libraries are not set as going through hadoop jar
-					}
+					if( MLContextProxy.isActive() )
+						MLContextProxy.setAppropriateVarsForRead(source, target._name);
+					
 					source.validateExpression(ids.getVariables(), currConstVars, conditional);
 				}
 		

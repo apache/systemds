@@ -1631,9 +1631,12 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	private static MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
             long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, MMTSJType mmtsj, ChainType chainType, boolean leftPMInput ) 
 	{	
-		//note: for spark we are taking half of the available budget since we do an in-memory partitioning
-		double memBudget = MAPMULT_MEM_MULTIPLIER * SparkExecutionContext.getBroadcastMemoryBudget() / 2;		
-
+		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
+		//and needs to fit once in executor broadcast memory. The 2GB broadcast constraint is no longer
+		//required because the max_int byte buffer constraint has been fixed in Spark 1.4 
+		double memBudgetExec = MAPMULT_MEM_MULTIPLIER * SparkExecutionContext.getBroadcastMemoryBudget();		
+		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
+		
 		// Step 0: check for forced mmultmethod
 		if( FORCED_MMULT_METHOD !=null )
 			return FORCED_MMULT_METHOD;
@@ -1658,13 +1661,15 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				&& m2_cols>=0 && m2_cols<=m2_cpb )
 			{
 				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0 
-					&& OptimizerUtils.estimateSize(m1_rows, m2_cols ) < memBudget )
+					&& OptimizerUtils.estimateSize(m1_rows, m2_cols ) < memBudgetExec )
 				{
 					return MMultMethod.MAPMM_CHAIN;
 				}
 				else if( chainType==ChainType.XtwXv && m1_rows>=0 && m2_cols>=0 && m1_cols>=0
-					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols ) 
-					   + OptimizerUtils.estimateSize(m1_cols, m2_cols) < memBudget )
+					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols) 
+					   + OptimizerUtils.estimateSize(m1_cols, m2_cols) < memBudgetExec
+					&& 2*(OptimizerUtils.estimateSize(m1_rows, m2_cols) 
+					   + OptimizerUtils.estimateSize(m1_cols, m2_cols)) < memBudgetLocal )
 				{
 					return MMultMethod.MAPMM_CHAIN;
 				}
@@ -1675,7 +1680,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
 		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
 		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
-		if( (footprintPM1 < memBudget && m1_rows>=0 || footprintPM2 < memBudget && m2_rows>=0 ) 
+		if( (footprintPM1 < memBudgetExec && m1_rows>=0 || footprintPM2 < memBudgetExec && m2_rows>=0)
+			&& 2*OptimizerUtils.estimateSize(m1_rows, 1) < memBudgetLocal
 			&& leftPMInput ) 
 		{
 			return MMultMethod.PMM;
@@ -1689,8 +1695,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols);
 		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols);
 		
-		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0)
-			|| (footprint2 < memBudget && m2_rows>=0 && m2_cols>=0) ) 
+		if (   (footprint1 < memBudgetExec && 2*m1Size < memBudgetLocal && m1_rows>=0 && m1_cols>=0)
+			|| (footprint2 < memBudgetExec && 2*m2Size < memBudgetLocal && m2_rows>=0 && m2_cols>=0) ) 
 		{
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)

@@ -403,9 +403,12 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
 		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
 		
-		//note: for spark we are taking half of the available budget since we do an in-memory partitioning
-		double memBudget = SparkExecutionContext.getBroadcastMemoryBudget() / 2;		
-		
+		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
+		//and needs to fit once in executor broadcast memory. The 2GB broadcast constraint is no longer
+		//required because the max_int byte buffer constraint has been fixed in Spark 1.4 
+		double memBudgetExec = SparkExecutionContext.getBroadcastMemoryBudget();
+		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
+
 		Hop X = getInput().get(0);
 		Hop U = getInput().get(1);
 		Hop V = getInput().get(2);
@@ -414,7 +417,8 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (wtype == WeightsType.NONE && m1Size+m2Size < memBudget); 
+		boolean isMapWsloss = (wtype == WeightsType.NONE && m1Size+m2Size < memBudgetExec
+				&& 2*m1Size < memBudgetLocal && 2*m2Size < memBudgetLocal); 
 		
 		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
 		{
@@ -428,9 +432,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		else //general case
 		{
 			//MR operator selection part 2
-			boolean cacheU = !FORCE_REPLICATION && (m1Size < memBudget);
-			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudget) 
-					        || (cacheU && m1Size+m2Size < memBudget));
+			boolean cacheU = !FORCE_REPLICATION && (m1Size < memBudgetExec && 2*m1Size < memBudgetLocal);
+			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudgetExec ) 
+					        || (cacheU && m1Size+m2Size < memBudgetExec)) && 2*m2Size < memBudgetLocal;
 			
 			//reduce-side wsloss w/ or without broadcast
 			Lop wsloss = new WeightedSquaredLossR( 
@@ -607,8 +611,11 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
 		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
 
-		//note: for spark we are taking half of the available budget since we do an in-memory partitioning
-		double memBudget = SparkExecutionContext.getBroadcastMemoryBudget() / 2;		
+		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
+		//and needs to fit once in executor broadcast memory. The 2GB broadcast constraint is no longer
+		//required because the max_int byte buffer constraint has been fixed in Spark 1.4 
+		double memBudgetExec = SparkExecutionContext.getBroadcastMemoryBudget();
+		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
 
 		Hop X = getInput().get(0);
 		Hop U = getInput().get(1);
@@ -617,7 +624,8 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (m1Size+m2Size < memBudget); 
+		boolean isMapWsloss = (m1Size+m2Size < memBudgetExec
+				&& 2*m1Size<memBudgetLocal && 2*m2Size<memBudgetLocal); 
 		
 		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
 		{
@@ -631,9 +639,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		else //general case
 		{
 			//MR operator selection part 2
-			boolean cacheU = !FORCE_REPLICATION && (m1Size < memBudget);
-			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudget) 
-					        || (cacheU && m1Size+m2Size < memBudget));
+			boolean cacheU = !FORCE_REPLICATION && (m1Size < memBudgetExec && 2*m1Size < memBudgetLocal);
+			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudgetExec ) 
+					        || (cacheU && m1Size+m2Size < memBudgetExec)) && 2*m2Size < memBudgetLocal;
 			
 			//reduce-side wsloss w/ or without broadcast
 			Lop wsigmoid = new WeightedSigmoidR( 

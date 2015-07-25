@@ -162,9 +162,6 @@ public class AggUnaryOp extends Hop
 			}
 			else if( et == ExecType.SPARK )
 			{
-				boolean needAgg = requiresAggregation(input, _direction);
-				SparkAggType aggtype = getSparkUnaryAggregationType(needAgg);
-				
 				//unary aggregate
 				if( isTernaryAggregateRewriteApplicable() ) 
 				{
@@ -175,6 +172,9 @@ public class AggUnaryOp extends Hop
 				}
 				else //default
 				{
+					boolean needAgg = requiresAggregation(input, _direction);
+					SparkAggType aggtype = getSparkUnaryAggregationType(needAgg);
+					
 					PartialAggregate aggregate = new PartialAggregate(input.constructLops(), 
 							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType(), aggtype, et);
 					aggregate.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
@@ -367,7 +367,8 @@ public class AggUnaryOp extends Hop
 		if( !agg )
 			return SparkAggType.NONE;
 		
-		if( dimsKnown() && getDim1()<=getRowsInBlock() && getDim2()<=getColsInBlock() )
+		if(   getDataType()==DataType.SCALAR //in case of scalars the block dims are not set
+		   || dimsKnown() && getDim1()<=getRowsInBlock() && getDim2()<=getColsInBlock() )
 			return SparkAggType.SINGLE_BLOCK;
 		else
 			return SparkAggType.MULTI_BLOCK;

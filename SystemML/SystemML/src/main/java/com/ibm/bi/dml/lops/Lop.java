@@ -35,7 +35,8 @@ public abstract class Lop
 		MMCJ, MMRJ, MMTSJ, PMMJ, MapMult, MapMultChain,     //MR matrix multiplications
 		UnaryCP, UNARY, BinaryCP, Binary, Ternary,          //CP/MR unary/binary/ternary
 		RangeReIndex, LeftIndex, ZeroOut,                   //CP/MR indexing 
-		Aggregate, PartialAggregate, BinUaggChain,  	    //CP/MR aggregation
+		Aggregate, PartialAggregate,   	   				    //CP/MR aggregation
+		BinUaggChain, UaggOuterChain,  	                    //CP/MR aggregation
 		TernaryAggregate,                                   //CP ternary-binary aggregates
 		Grouping, 											//MR grouping
 		Append,                                             //CP/MR append (column append)

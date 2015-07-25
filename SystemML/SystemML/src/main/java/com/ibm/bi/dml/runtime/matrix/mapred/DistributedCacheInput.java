@@ -1,7 +1,7 @@
 /**
  * IBM Confidential
  * OCO Source Materials
- * (C) Copyright IBM Corp. 2010, 2014
+ * (C) Copyright IBM Corp. 2010, 2015
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
@@ -17,12 +17,14 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 import com.ibm.bi.dml.runtime.io.MatrixReaderFactory;
 import com.ibm.bi.dml.runtime.io.ReaderBinaryBlock;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 
 public class DistributedCacheInput 
 {	
 	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	//internal partitioning parameter (threshold and partition size) 
@@ -96,6 +98,25 @@ public class DistributedCacheInput
 		
 		//return read or existing block
 		return dataBlocks[rowBlockIndex-1][colBlockIndex-1];
+	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public double[] getRowVectorArray() 
+		throws DMLRuntimeException
+	{
+		double[] ret = new double[(int)_clen];
+		
+		for( int j=0; j<_clen; j+=_bclen ) {
+			MatrixBlock mb = (MatrixBlock) getDataBlock(1, (int)Math.ceil((double)(j+1)/_bclen)).getValue(); 
+			double[] mbtmp = DataConverter.convertToDoubleVector(mb);
+			System.arraycopy(mbtmp, 0, ret, j, mbtmp.length);
+		}
+		
+		return ret;
 	}
 	
 	/**

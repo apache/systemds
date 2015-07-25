@@ -76,7 +76,8 @@ public class BinaryOp extends Hop
 		CP_BINARY,
 		MR_BINARY_R, //both mm, mv 
 		MR_BINARY_M, //only mv (mr/spark)
-		MR_BINARY_OUTER, //only vv 
+		MR_BINARY_OUTER_M,
+		MR_BINARY_OUTER_R, //only vv 
 		MR_BINARY_UAGG_CHAIN, //(mr/spark)
 	}
 	
@@ -665,7 +666,7 @@ public class BinaryOp extends Hop
 					setLineNumbers(bin);
 					setLops(bin);
 				}
-				else if( mbin == MMBinaryMethod.MR_BINARY_OUTER )
+				else if( mbin == MMBinaryMethod.MR_BINARY_OUTER_R )
 				{
 					boolean requiresRepLeft = (right.getDim2() > right.getColsInBlock());
 					boolean requiresRepRight = (left.getDim1() > right.getRowsInBlock());
@@ -1291,7 +1292,7 @@ public class BinaryOp extends Hop
 		
 		//MR_BINARY_OUTER only applied if outer vector operation 
 		if( outer ) {
-			return MMBinaryMethod.MR_BINARY_OUTER;
+			return MMBinaryMethod.MR_BINARY_OUTER_R;
 		}
 		
 		//MR_BINARY_UAGG_CHAIN only applied if result is column/row vector of MV binary operation.

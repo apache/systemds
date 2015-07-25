@@ -202,21 +202,29 @@ public class PartialAggregate extends Lop
 	}
 
 	public void setDimensionsBasedOnDirection(long dim1, long dim2,  
-			long rowsPerBlock, long colsPerBlock) throws LopsException {
-		try {
-		if (direction == DirectionTypes.Row)
-			outParams.setDimensions(dim1, 1, rowsPerBlock, colsPerBlock, -1);
-		else if (direction == DirectionTypes.Col)
-			outParams.setDimensions(1, dim2, rowsPerBlock, colsPerBlock, -1);
-		else if (direction == DirectionTypes.RowCol)
-			outParams.setDimensions(1, 1, rowsPerBlock, colsPerBlock, -1);
-		else
-			throw new LopsException(this.printErrorLocation() + "In PartialAggregate Lop, Unknown aggregate direction " + direction);
-		} catch (HopsException e) {
-			throw new LopsException(this.printErrorLocation() + "In PartialAggregate Lop, error setting dimensions based on direction", e);
-		}
+			long rowsPerBlock, long colsPerBlock) throws LopsException 
+	{
+		setDimensionsBasedOnDirection(this, dim1, dim2, rowsPerBlock, colsPerBlock, direction);
 	}
 
+	public static void setDimensionsBasedOnDirection(Lop lop, long dim1, long dim2,  
+			long rowsPerBlock, long colsPerBlock, DirectionTypes dir) 
+		throws LopsException 
+	{
+		try {
+			if (dir == DirectionTypes.Row)
+				lop.outParams.setDimensions(dim1, 1, rowsPerBlock, colsPerBlock, -1);
+			else if (dir == DirectionTypes.Col)
+				lop.outParams.setDimensions(1, dim2, rowsPerBlock, colsPerBlock, -1);
+			else if (dir == DirectionTypes.RowCol)
+				lop.outParams.setDimensions(1, 1, rowsPerBlock, colsPerBlock, -1);
+			else
+				throw new LopsException("In PartialAggregate Lop, Unknown aggregate direction " + dir);
+		} catch (HopsException e) {
+			throw new LopsException("In PartialAggregate Lop, error setting dimensions based on direction", e);
+		}
+	}
+	
 	public String toString() {
 		return "Partial Aggregate " + operation;
 	}

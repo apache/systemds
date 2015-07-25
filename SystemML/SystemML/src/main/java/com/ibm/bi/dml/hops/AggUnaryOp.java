@@ -9,12 +9,15 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.lops.Aggregate;
+import com.ibm.bi.dml.lops.Aggregate.OperationTypes;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.Group;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.PartialAggregate;
+import com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes;
 import com.ibm.bi.dml.lops.TernaryAggregate;
+import com.ibm.bi.dml.lops.UAggOuterChain;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -108,16 +111,31 @@ public class AggUnaryOp extends Hop
 			}
 			else if( et == ExecType.MR )
 			{
-				//unary aggregate
-				PartialAggregate transform1 = new PartialAggregate(input.constructLops(), 
-						HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType());
-				transform1.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
+				OperationTypes op = HopsAgg2Lops.get(_op);
+				DirectionTypes dir = HopsDirection2Lops.get(_direction);
+				
+				//unary aggregate operation
+				Lop transform1 = null;
+				if( isUnaryAggregateOuterRewriteApplicable() ) 
+				{
+					BinaryOp binput = (BinaryOp)getInput().get(0);
+					transform1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
+							binput.getInput().get(1).constructLops(), op, dir, 
+							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.MR);
+					PartialAggregate.setDimensionsBasedOnDirection(transform1, getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), dir);
+				}
+				else //default
+				{
+					transform1 = new PartialAggregate(input.constructLops(), op, dir, DataType.MATRIX, getValueType());
+					((PartialAggregate) transform1).setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
+				}
 				setLineNumbers(transform1);
 				
+				//aggregation if required
 				Lop aggregate = null;
 				Group group1 = null; 
 				Aggregate agg1 = null;
-				if( requiresAggregation(input, _direction) )
+				if( requiresAggregation(input, _direction) || transform1 instanceof UAggOuterChain )
 				{
 					group1 = new Group(transform1, Group.OperationTypes.Sort, DataType.MATRIX, getValueType());
 					group1.getOutputParameters().setDimensions(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), getNnz());
@@ -125,25 +143,26 @@ public class AggUnaryOp extends Hop
 					
 					agg1 = new Aggregate(group1, HopsAgg2Lops.get(_op), DataType.MATRIX, getValueType(), et);
 					agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), getNnz());
-					agg1.setupCorrectionLocation(transform1.getCorrectionLocation());
+					agg1.setupCorrectionLocation(PartialAggregate.getCorrectionLocation(op,dir));
 					setLineNumbers(agg1);
 					
 					aggregate = agg1;
 				}
 				else
 				{
-					transform1.setDropCorrection();
+					((PartialAggregate) transform1).setDropCorrection();
 					aggregate = transform1;
 				}
 				
 				setLops(aggregate);
 
+				//cast if required
 				if (getDataType() == DataType.SCALAR) {
 
 					// Set the dimensions of PartialAggregate LOP based on the
 					// direction in which aggregation is performed
-					transform1.setDimensionsBasedOnDirection(input.getDim1(), input.getDim2(),
-							input.getRowsInBlock(), input.getColsInBlock());
+					PartialAggregate.setDimensionsBasedOnDirection(transform1, input.getDim1(), input.getDim2(),
+							input.getRowsInBlock(), input.getColsInBlock(), dir);
 					
 					if( group1 != null && agg1 != null ) { //if aggregation required
 						group1.getOutputParameters().setDimensions(input.getDim1(), input.getDim2(), 
@@ -406,6 +425,28 @@ public class AggUnaryOp extends Hop
 							&& input12.getInput().get(1).getDim1()==input1.getDim1()
 							&& input11.getDim1()==input1.getDim1());
 				}
+			}
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private boolean isUnaryAggregateOuterRewriteApplicable() 
+	{
+		boolean ret = false;
+		Hop input = getInput().get(0);
+		
+		if( input instanceof BinaryOp && ((BinaryOp)input).isOuterVectorOperator() )
+		{
+			Hop right = input.getInput().get(1);
+			if( right.dimsKnown() && OptimizerUtils.estimateSize(right.getDim1(), right.getDim2())
+				< OptimizerUtils.getRemoteMemBudgetMap(true) )
+			{
+				ret = true;
 			}
 		}
 		

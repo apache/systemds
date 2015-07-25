@@ -19,6 +19,7 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
+import com.ibm.bi.dml.lops.UAggOuterChain;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.WeightedSigmoid;
@@ -55,6 +56,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RemoveEmptyMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.UaggOuterChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -667,7 +669,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
 		else if( inst.contains(WeightedSigmoidR.OPCODE) )
 			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
-		
+		else if( inst.contains(UAggOuterChain.OPCODE) )
+			UaggOuterChainInstruction.addDistCacheIndex(inst, indexes);
 		if( !indexes.isEmpty() )
 			return indexes.get(0);
 		else

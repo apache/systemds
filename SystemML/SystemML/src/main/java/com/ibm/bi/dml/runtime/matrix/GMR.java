@@ -28,6 +28,7 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
+import com.ibm.bi.dml.lops.UAggOuterChain;
 import com.ibm.bi.dml.lops.WeightedSigmoid;
 import com.ibm.bi.dml.lops.WeightedSigmoidR;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
@@ -45,6 +46,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.UaggOuterChainInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
@@ -351,6 +353,8 @@ public class GMR
 					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
 				else if( tmp.contains(WeightedSigmoidR.OPCODE) )
 					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
+				else if( tmp.contains(UAggOuterChain.OPCODE) )
+					UaggOuterChainInstruction.addDistCacheIndex(tmp, tmpindexList);	
 				
 				//copy distinct indexes only (prevent redundant add to distcache)
 				for( Byte tmpix : tmpindexList )
@@ -431,6 +435,8 @@ public class GMR
 							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
 						else if( tmp.contains(WeightedSigmoidR.OPCODE) )
 							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
+						else if( tmp.contains(UAggOuterChain.OPCODE) )
+							lcache = UaggOuterChainInstruction.isDistCacheOnlyIndex(tmp, index);
 						
 						distCacheOnly &= (lcache || !tmp.contains(indexStr));
 						use |= tmp.contains(indexStr);

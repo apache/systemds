@@ -55,6 +55,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.ReplicateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ScalarInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.SeqInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.UaggOuterChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
@@ -171,6 +172,8 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "map<="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "map=="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
 		String2MRInstructionType.put( "map!="   , MRINSTRUCTION_TYPE.ArithmeticBinary);
+	
+		String2MRInstructionType.put( "uaggouterchain", MRINSTRUCTION_TYPE.UaggOuterChain);
 		
 		// REORG Instruction Opcodes 
 		String2MRInstructionType.put( "r'"     , MRINSTRUCTION_TYPE.Reorg);
@@ -339,6 +342,9 @@ public class MRInstructionParser extends InstructionParser
 		
 		case BinUaggChain:
 			return (MRInstruction) BinUaggChainInstruction.parseInstruction(str);
+		
+		case UaggOuterChain:
+			return (MRInstruction) UaggOuterChainInstruction.parseInstruction(str);
 			
 		case CombineTernary:
 			return (MRInstruction) CombineTernaryInstruction.parseInstruction(str);

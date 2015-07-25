@@ -15,6 +15,7 @@ import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
+import com.ibm.bi.dml.lops.UAggOuterChain;
 import com.ibm.bi.dml.lops.WeightedSigmoid;
 import com.ibm.bi.dml.lops.WeightedSigmoidR;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
@@ -263,7 +264,8 @@ public class InstructionUtils
 			   || opcode.equalsIgnoreCase(WeightedSquaredLossR.OPCODE)
 			   || opcode.equalsIgnoreCase(WeightedSigmoid.OPCODE)
 			   || opcode.equalsIgnoreCase(WeightedSigmoidR.OPCODE)
-			   || BinaryM.isOpcode( opcode ) ) //multiple opcodes
+			   || opcode.equalsIgnoreCase(UAggOuterChain.OPCODE)
+			   || BinaryM.isOpcode( opcode ) ) //multiple opcodes	
 			{
 				return true;
 			}

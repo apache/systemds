@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
+import com.ibm.bi.dml.lops.SortKeys;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -18,7 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 
-public class SortCPInstruction extends UnaryCPInstruction
+public class QuantileSortCPInstruction extends UnaryCPInstruction
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -33,13 +34,13 @@ public class SortCPInstruction extends UnaryCPInstruction
 	 *  
 	 */
 	
-	public SortCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
+	public QuantileSortCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
 		this(op, in, null, out, opcode, istr);
 	}
 	
-	public SortCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr){
+	public QuantileSortCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr){
 		super(op, in1, in2, out, opcode, istr);
-		_cptype = CPINSTRUCTION_TYPE.Sort;
+		_cptype = CPINSTRUCTION_TYPE.QSort;
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
@@ -51,24 +52,24 @@ public class SortCPInstruction extends UnaryCPInstruction
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if ( opcode.equalsIgnoreCase("sort") ) {
+		if ( opcode.equalsIgnoreCase(SortKeys.OPCODE) ) {
 			if ( parts.length == 3 ) {
 				// Example: sort:mVar1:mVar2 (input=mVar1, output=mVar2)
 				parseUnaryInstruction(str, in1, out);
-				return new SortCPInstruction(new SimpleOperator(null), in1, out, opcode, str);
+				return new QuantileSortCPInstruction(new SimpleOperator(null), in1, out, opcode, str);
 			}
 			else if ( parts.length == 4 ) {
 				// Example: sort:mVar1:mVar2:mVar3 (input=mVar1, weights=mVar2, output=mVar3)
 				in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 				parseUnaryInstruction(str, in1, in2, out);
-				return new SortCPInstruction(new SimpleOperator(null), in1, in2, out, opcode, str);
+				return new QuantileSortCPInstruction(new SimpleOperator(null), in1, in2, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		} 
 		else {
-			throw new DMLRuntimeException("Unknown opcode while parsing a SortCPInstruction: " + str);
+			throw new DMLRuntimeException("Unknown opcode while parsing a QuantileSortCPInstruction: " + str);
 		}
 	}
 	

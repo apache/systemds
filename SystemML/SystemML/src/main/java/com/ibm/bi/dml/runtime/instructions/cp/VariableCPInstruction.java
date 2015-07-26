@@ -30,7 +30,6 @@ import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -73,12 +72,6 @@ public class VariableCPInstruction extends CPInstruction
 		CastAsDoubleVariable,
 		CastAsIntegerVariable,
 		CastAsBooleanVariable,
-		ValuePick, 
-		InMemValuePick,
-		Median,
-		InMemMedian,
-		InMemIQM,
-		MRIQM,
 		Write, 
 		Read, 
 		SetFileName, 
@@ -135,24 +128,6 @@ public class VariableCPInstruction extends CPInstruction
 		
 		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_BOOLEAN_OPCODE) ) 
 			return VariableOperationCode.CastAsBooleanVariable;
-		
-		else if ( str.equalsIgnoreCase("valuepick") ) 
-			return VariableOperationCode.ValuePick;
-		
-		else if ( str.equalsIgnoreCase("inmem-valuepick") ) 
-			return VariableOperationCode.InMemValuePick;
-		
-		else if ( str.equalsIgnoreCase("median") ) 
-			return VariableOperationCode.Median;
-		
-		else if ( str.equalsIgnoreCase("inmem-median") ) 
-			return VariableOperationCode.InMemMedian;
-		
-		else if ( str.equalsIgnoreCase("inmem-iqm") ) 
-			return VariableOperationCode.InMemIQM;
-		
-		else if ( str.equalsIgnoreCase("mr-iqm") ) 
-			return VariableOperationCode.MRIQM;
 		
 		else if ( str.equalsIgnoreCase("write") ) 
 			return VariableOperationCode.Write;
@@ -245,11 +220,8 @@ public class VariableCPInstruction extends CPInstruction
 		switch(op) {
 		case RemoveVariable:
 			return 1;
-		case ValuePick:
-		case InMemValuePick:
 		case Write:
 		case SetFileName:
-		case MRIQM:
 		case SequenceIncrement:
 			return 3;
 		default:
@@ -398,27 +370,7 @@ public class VariableCPInstruction extends CPInstruction
 			in1 = new CPOperand(parts[1]); // first operand is a variable name => string value type 
 			out = new CPOperand(parts[2]); // output variable name 
 			break;
-			
-		case ValuePick:
-		case InMemValuePick: 
-			in1 = new CPOperand(parts[1]); // sorted data, which is input to Valuepick 
-			in2 = new CPOperand(parts[2]); // second operand is a variable and is assumed to be double
-			out = new CPOperand(parts[3]); // output variable name
-			break;
-		
-		case Median:
-		case InMemMedian: 
-		case InMemIQM:
-			in1 = new CPOperand(parts[1]); // sorted data, which is input to IQM
-			out = new CPOperand(parts[2]);
-			break;
-			
-		case MRIQM:
-			in1 = new CPOperand(parts[1]);
-			in2 = new CPOperand(parts[2]);
-			out = new CPOperand(parts[3]);
-			return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, opcode, str); 
-			
+	
 		case Write:
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
@@ -570,112 +522,6 @@ public class VariableCPInstruction extends CPInstruction
 			ec.setScalarOutput(output.getName(), new BooleanObject(scalarInput.getBooleanValue()));
 			break;
 		}
-		
-		case ValuePick:
-			// example = valuepickCP:::temp3:DOUBLE:::0.5:DOUBLE:::Var0:DOUBLE
-			// pick a value from "temp3" and assign to Var0
-			
-			MatrixObject mat = (MatrixObject)ec.getVariable(input1.getName());
-			String fname = mat.getFileName();
-			MetaData mdata = mat.getMetaData();
-			ScalarObject pickindex = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
-			
-			if ( mdata != null ) {
-				try {
-					double picked = MapReduceTool.pickValue(fname, (NumItemsByEachReducerMetaData) mdata, pickindex.getDoubleValue());
-					ScalarObject result = (ScalarObject) new DoubleObject(picked);
-					ec.setVariable(output.getName(), result);
-				} catch (Exception e ) {
-					throw new DMLRuntimeException(e);
-				}
-			}
-			else {
-				throw new DMLRuntimeException("Unexpected error while executing ValuePickCP: otherMetaData for file (" + fname + ") not found." );
-			}
-			break;
-			
-		case InMemValuePick:
-			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
-
-			if ( input2.getDataType() == DataType.SCALAR ) {
-				ScalarObject quantile = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
-				double picked = matBlock.pickValue(quantile.getDoubleValue());
-				ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(picked));
-			} 
-			else {
-				MatrixBlock quantiles = ec.getMatrixInput(input2.getName());
-				MatrixBlock resultBlock = (MatrixBlock) matBlock.pickValues(quantiles, new MatrixBlock());
-				quantiles = null;
-				ec.releaseMatrixInput(input2.getName());
-				ec.setMatrixOutput(output.getName(), resultBlock);
-			}
-			matBlock = null;
-			ec.releaseMatrixInput(input1.getName());
-			break;
-			
-		case InMemMedian:
-			double picked = ec.getMatrixInput(input1.getName()).median();
-			ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(picked));
-			ec.releaseMatrixInput(input1.getName());
-			break;
-		
-		case Median:
-			MatrixObject mat1 = (MatrixObject)ec.getVariable(input1.getName());
-			String fname1 = mat1.getFileName();
-			MetaData mdata1 = mat1.getMetaData();
-			
-			if ( mdata1 != null ) {
-				try {
-					double median = MapReduceTool.median(fname1, (NumItemsByEachReducerMetaData) mdata1);
-					//double picked = MapReduceTool.pickValue(fname1, (NumItemsByEachReducerMetaData) mdata1, 0.5);
-					ScalarObject result = (ScalarObject) new DoubleObject(median);
-					ec.setVariable(output.getName(), result);
-				} catch (Exception e ) {
-					throw new DMLRuntimeException(e);
-				}
-			}
-			else {
-				throw new DMLRuntimeException("Unexpected error while executing ValuePickCP: otherMetaData for file (" + fname1 + ") not found." );
-			}
-			break;
-			
-		case InMemIQM:
-			MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-			double iqm = matBlock1.interQuartileMean();
-			
-			matBlock1 = null;
-			ec.releaseMatrixInput(input1.getName());
-			ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(iqm));
-			break;
-		
-		case MRIQM:
-			MatrixObject inputMatrix = (MatrixObject)ec.getVariable(input1.getName());
-			ScalarObject iqsum = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
-			
-			double[] q25 = null;
-			double[] q75 = null;
-			try {
-				q25 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (NumItemsByEachReducerMetaData) inputMatrix.getMetaData(), 0.25, false);
-				q75 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (NumItemsByEachReducerMetaData) inputMatrix.getMetaData(), 0.75, false);
-			} catch (IOException e1) {
-				throw new DMLRuntimeException(e1);
-			}
-			
-			double sumwt = UtilFunctions.getTotalLength((NumItemsByEachReducerMetaData) ec.getMetaData(input1.getName()));
-			double q25d = sumwt*0.25;
-			double q75d = sumwt*0.75;
-			
-			// iqsum = interQuartileSum that includes complete portions of q25 and q75
-			//   . exclude top portion of q25 and bottom portion of q75 
-			double q25entry_weight = q25[0]*q25[1];
-			double q25portion_include = (q25[2]-q25d)*q25[0];
-			double q25portion_exclude = q25entry_weight-q25portion_include;
-			double q75portion_exclude = (q75[2]-q75d)*q75[0];
-			
-			double mriqm = (iqsum.getDoubleValue() - q25portion_exclude - q75portion_exclude)/(sumwt*0.5);
-
-			ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(mriqm));
-			break;
 			
 		case Read:
 			ScalarObject res = null;

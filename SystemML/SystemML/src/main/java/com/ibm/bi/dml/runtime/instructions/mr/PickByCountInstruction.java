@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.mr;
 
+import com.ibm.bi.dml.lops.PickByCount.OperationTypes;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -58,35 +59,30 @@ public class PickByCountInstruction extends MRInstruction
 		isValuePick=false;
 	}
 
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{	
+		InstructionUtils.checkNumFields ( str, 5 );
+		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
-		InstructionUtils.checkNumFields ( str, 3 );
+		OperationTypes ptype = OperationTypes.valueOf(parts[4]);
 		
-		String opcode = InstructionUtils.getOpCode(str);
-		
-		if ( opcode.equalsIgnoreCase("valuepick") ) {
-			String[] parts = InstructionUtils.getInstructionParts ( str );
-			
-			byte in1, in2, out;
-			in1 = Byte.parseByte(parts[1]);
-			in2 = Byte.parseByte(parts[2]);
-			out = Byte.parseByte(parts[3]);
-			
+		if ( ptype == OperationTypes.VALUEPICK ) 
+		{
+			byte in1 = Byte.parseByte(parts[1]);
+			byte in2 = Byte.parseByte(parts[2]);
+			byte out = Byte.parseByte(parts[3]);
 			return new PickByCountInstruction(null, in1, in2, out, str);
 		} 
-		else if ( opcode.equalsIgnoreCase("rangepick")) {
-			String[] parts = InstructionUtils.getInstructionParts ( str );
-			
-			byte in1, out;
-			double cstant;
-			in1 = Byte.parseByte(parts[1]);
-			cstant = Double.parseDouble(parts[2]);
-			out = Byte.parseByte(parts[3]);
-			
+		else if ( ptype == OperationTypes.RANGEPICK ) 
+		{
+			byte in1 = Byte.parseByte(parts[1]);
+			double cstant = Double.parseDouble(parts[2]);
+			byte out = Byte.parseByte(parts[3]);
 			return new PickByCountInstruction(null, in1, cstant, out, str);
 		}
-		else
-			return null;
+		
+		return null;
 	}
 
 	@Override
@@ -100,32 +96,22 @@ public class PickByCountInstruction extends MRInstruction
 
 	@Override
 	public byte[] getAllIndexes() throws DMLRuntimeException {
-		String opcode = InstructionUtils.getOpCode(instString);		
-		if ( opcode.equalsIgnoreCase("valuepick") ) {
+		if( isValuePick ) {
 			return new byte[]{input1,input2,output};
 		}
-		else if ( opcode.equalsIgnoreCase("rangepick") ) {
+		else { //range pick
 			return new byte[]{input1, output};
 		}
-		return null;
+		
 	}
 
 	@Override
 	public byte[] getInputIndexes() throws DMLRuntimeException {
-		String opcode = InstructionUtils.getOpCode(instString);		
-		if ( opcode.equalsIgnoreCase("valuepick") ) {
+		if( isValuePick ) {
 			return new byte[]{input1,input2};
 		}
-		else if ( opcode.equalsIgnoreCase("rangepick") ) {
+		else { //range pick
 			return new byte[]{input1};
 		}
-		return null;
 	}
-	
-/*	boolean isValuePick() {
-		String opcode = InstructionUtils.getOpCode(instString);
-		return ( opcode.equalsIgnoreCase("valuepick"));
-	}*/
-	
-
 }

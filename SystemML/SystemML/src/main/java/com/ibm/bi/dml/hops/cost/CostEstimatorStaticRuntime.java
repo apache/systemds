@@ -1132,7 +1132,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					}	
 					return 0;
 					
-				case Sort: //opcodes: sort
+				case QSort: //opcodes: sort
 					if( optype.equals("sort") ){
 						//note: mergesort since comparator used
 						double sortCosts = 0;

@@ -37,10 +37,11 @@ import com.ibm.bi.dml.runtime.instructions.cp.MatrixReshapeCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.PMMJCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.QuantilePickCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.QuantileSortCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.QuaternaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.RelationalBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ReorgCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.SortCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.StringInitCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.TernaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
@@ -196,15 +197,12 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "ctable", 		CPINSTRUCTION_TYPE.Ternary);
 		String2CPInstructionType.put( "ctableexpand", 	CPINSTRUCTION_TYPE.Ternary);
 		
+		//central moment, covariance, quantiles (sort/pick)
 		String2CPInstructionType.put( "cm"    , CPINSTRUCTION_TYPE.CentralMoment);
 		String2CPInstructionType.put( "cov"   , CPINSTRUCTION_TYPE.Covariance);
-		String2CPInstructionType.put( "sort"  , CPINSTRUCTION_TYPE.Sort);
-		String2CPInstructionType.put( "inmem-iqm"  		, CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "mr-iqm"  		, CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "valuepick"   	, CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "inmem-valuepick" , CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "median"   		, CPINSTRUCTION_TYPE.Variable);
-		String2CPInstructionType.put( "inmem-median" 	, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( "qsort"  , CPINSTRUCTION_TYPE.QSort);
+		String2CPInstructionType.put( "qpick"  , CPINSTRUCTION_TYPE.QPick);
+		
 		
 		String2CPInstructionType.put( "rangeReIndex", CPINSTRUCTION_TYPE.MatrixIndexing);
 		String2CPInstructionType.put( "leftIndex"   , CPINSTRUCTION_TYPE.MatrixIndexing);
@@ -315,8 +313,11 @@ public class CPInstructionParser extends InstructionParser
 		case MultiReturnBuiltin:
 			return (CPInstruction) MultiReturnBuiltinCPInstruction.parseInstruction(str);
 			
-		case Sort: 
-			return (CPInstruction) SortCPInstruction.parseInstruction(str);
+		case QSort: 
+			return (CPInstruction) QuantileSortCPInstruction.parseInstruction(str);
+		
+		case QPick: 
+			return (CPInstruction) QuantilePickCPInstruction.parseInstruction(str);
 		
 		case MatrixIndexing: 
 			execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
@@ -324,6 +325,7 @@ public class CPInstructionParser extends InstructionParser
 				return (CPInstruction) MatrixIndexingCPInstruction.parseInstruction(str);
 			else //exectype CP_FILE
 				return (CPInstruction) MatrixIndexingCPFileInstruction.parseInstruction(str);
+		
 		case Builtin: 
 			String []parts = InstructionUtils.getInstructionPartsWithValueType(str);
 			if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {

@@ -267,7 +267,7 @@ public class Unary extends Lop
 			return "inverse";
 			
 		case MR_IQM:
-			return "mr-iqm";
+			return "qpick";
 
 		case SPROP:
 			return "sprop";

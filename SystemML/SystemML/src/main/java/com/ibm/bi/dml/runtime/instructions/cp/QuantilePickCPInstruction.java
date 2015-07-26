@@ -1,0 +1,221 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2015
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
+package com.ibm.bi.dml.runtime.instructions.cp;
+
+import java.io.IOException;
+
+import com.ibm.bi.dml.lops.PickByCount.OperationTypes;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.MetaData;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
+import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
+
+public class QuantilePickCPInstruction extends BinaryCPInstruction
+{
+	@SuppressWarnings("unused")
+	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
+                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	private OperationTypes _type = null;
+	private boolean _inmem = true;
+	
+	public QuantilePickCPInstruction(Operator op, CPOperand in, CPOperand out, OperationTypes type, boolean inmem, String opcode, String istr){
+		this(op, in, null, out, type, inmem, opcode, istr);
+	}
+	
+	public QuantilePickCPInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out,  OperationTypes type, boolean inmem, String opcode, String istr){
+		super(op, in, in2, out, opcode, istr);
+		_cptype = CPINSTRUCTION_TYPE.QPick;
+		
+		_type = type;
+		_inmem = inmem;
+	}
+	
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
+		
+		//sanity check opcode
+		if ( !opcode.equalsIgnoreCase("qpick") ) {
+			throw new DMLRuntimeException("Unknown opcode while parsing a QuantilePickCPInstruction: " + str);
+		}
+		
+		//instruction parsing
+		if( parts.length == 4 )
+		{
+			//instructions of length 4 originate from unary - mr-iqm
+			//TODO this should be refactored to use pickvaluecount lops
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand out = new CPOperand(parts[3]);
+			OperationTypes ptype = OperationTypes.IQM;
+			boolean inmem = false;
+			return new QuantilePickCPInstruction(null, in1, in2, out, ptype, inmem, opcode, str);			
+		}
+		else if( parts.length == 5 )
+		{
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand out = new CPOperand(parts[2]);
+			OperationTypes ptype = OperationTypes.valueOf(parts[3]);
+			boolean inmem = Boolean.parseBoolean(parts[4]);
+			return new QuantilePickCPInstruction(null, in1, out, ptype, inmem, opcode, str);
+		}
+		else if( parts.length == 6 )
+		{
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand out = new CPOperand(parts[3]);
+			OperationTypes ptype = OperationTypes.valueOf(parts[4]);
+			boolean inmem = Boolean.parseBoolean(parts[5]);
+			return new QuantilePickCPInstruction(null, in1, in2, out, ptype, inmem, opcode, str);
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public void processInstruction(ExecutionContext ec)
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
+		switch( _type ) 
+		{
+			case VALUEPICK: 
+				if( _inmem ) //INMEM VALUEPICK
+				{
+					MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+
+					if ( input2.getDataType() == DataType.SCALAR ) {
+						ScalarObject quantile = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
+						double picked = matBlock.pickValue(quantile.getDoubleValue());
+						ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(picked));
+					} 
+					else {
+						MatrixBlock quantiles = ec.getMatrixInput(input2.getName());
+						MatrixBlock resultBlock = (MatrixBlock) matBlock.pickValues(quantiles, new MatrixBlock());
+						quantiles = null;
+						ec.releaseMatrixInput(input2.getName());
+						ec.setMatrixOutput(output.getName(), resultBlock);
+					}
+					matBlock = null;
+					ec.releaseMatrixInput(input1.getName());										
+				}
+				else //MR VALUEPICK
+				{
+					MatrixObject mat = (MatrixObject)ec.getVariable(input1.getName());
+					String fname = mat.getFileName();
+					MetaData mdata = mat.getMetaData();
+					ScalarObject pickindex = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
+					
+					if ( mdata != null ) {
+						try {
+							double picked = MapReduceTool.pickValue(fname, (NumItemsByEachReducerMetaData) mdata, pickindex.getDoubleValue());
+							ScalarObject result = (ScalarObject) new DoubleObject(picked);
+							ec.setVariable(output.getName(), result);
+						} catch (Exception e ) {
+							throw new DMLRuntimeException(e);
+						}
+					}
+					else {
+						throw new DMLRuntimeException("Unexpected error while executing ValuePickCP: otherMetaData for file (" + fname + ") not found." );
+					}
+				}				
+				break;
+
+			case MEDIAN:
+				if( _inmem ) //INMEM MEDIAN
+				{
+					double picked = ec.getMatrixInput(input1.getName()).median();
+					ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(picked));
+					ec.releaseMatrixInput(input1.getName());
+					break;
+				}
+				else //MR MEDIAN
+				{
+					MatrixObject mat1 = (MatrixObject)ec.getVariable(input1.getName());
+					String fname1 = mat1.getFileName();
+					MetaData mdata1 = mat1.getMetaData();
+					
+					if ( mdata1 != null ) {
+						try {
+							double median = MapReduceTool.median(fname1, (NumItemsByEachReducerMetaData) mdata1);
+							//double picked = MapReduceTool.pickValue(fname1, (NumItemsByEachReducerMetaData) mdata1, 0.5);
+							ScalarObject result = (ScalarObject) new DoubleObject(median);
+							ec.setVariable(output.getName(), result);
+						} catch (Exception e ) {
+							throw new DMLRuntimeException(e);
+						}
+					}
+					else {
+						throw new DMLRuntimeException("Unexpected error while executing ValuePickCP: otherMetaData for file (" + fname1 + ") not found." );
+					}
+				}
+				break;
+				
+			case IQM:
+				if( _inmem ) //INMEM IQM
+				{
+					MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+					double iqm = matBlock1.interQuartileMean();
+					
+					matBlock1 = null;
+					ec.releaseMatrixInput(input1.getName());
+					ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(iqm));
+				}
+				else //MR IQM
+				{
+					MatrixObject inputMatrix = (MatrixObject)ec.getVariable(input1.getName());
+					ScalarObject iqsum = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
+					
+					double[] q25 = null;
+					double[] q75 = null;
+					try {
+						q25 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (NumItemsByEachReducerMetaData) inputMatrix.getMetaData(), 0.25, false);
+						q75 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (NumItemsByEachReducerMetaData) inputMatrix.getMetaData(), 0.75, false);
+					} catch (IOException e1) {
+						throw new DMLRuntimeException(e1);
+					}
+					
+					double sumwt = UtilFunctions.getTotalLength((NumItemsByEachReducerMetaData) ec.getMetaData(input1.getName()));
+					double q25d = sumwt*0.25;
+					double q75d = sumwt*0.75;
+					
+					// iqsum = interQuartileSum that includes complete portions of q25 and q75
+					//   . exclude top portion of q25 and bottom portion of q75 
+					double q25entry_weight = q25[0]*q25[1];
+					double q25portion_include = (q25[2]-q25d)*q25[0];
+					double q25portion_exclude = q25entry_weight-q25portion_include;
+					double q75portion_exclude = (q75[2]-q75d)*q75[0];
+					
+					double mriqm = (iqsum.getDoubleValue() - q25portion_exclude - q75portion_exclude)/(sumwt*0.5);
+
+					ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(mriqm));
+				}
+				break;
+				
+			default:
+				throw new DMLRuntimeException("Unsupported qpick operation type: "+_type);
+		}
+	}
+}

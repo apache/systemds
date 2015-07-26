@@ -21,6 +21,8 @@ public class SortKeys extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
+	public static final String OPCODE = "qsort"; //quantile sort 
+	
 	public enum OperationTypes { 
 		WithWeights, 
 		WithoutWeights,
@@ -101,7 +103,7 @@ public class SortKeys extends Lop
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "sort" );
+		sb.append( OPCODE );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input));
 		sb.append( OPERAND_DELIMITOR );
@@ -122,7 +124,7 @@ public class SortKeys extends Lop
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "sort" );
+		sb.append( OPCODE );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( Lop.OPERAND_DELIMITOR );

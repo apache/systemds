@@ -20,38 +20,18 @@ public class PickByCount extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
-	public enum OperationTypes {VALUEPICK, RANGEPICK, IQM, MEDIAN};	
-	OperationTypes operation;
-	boolean inMemoryInput = false;
+	public static final String OPCODE = "qpick";
 	
+	public enum OperationTypes {
+		VALUEPICK, 
+		RANGEPICK, 
+		IQM, 
+		MEDIAN
+	};	
 	
-	private void init(Lop input1, Lop input2, OperationTypes op, ExecType et) {
-		this.addInput(input1);
-		input1.addOutput(this);
-		
-		if ( input2 != null ) {
-			this.addInput(input2);
-			input2.addOutput(this);
-		}
-		
-		operation = op;
-		
-		/*
-		 * This lop can be executed only in RecordReader of GMR job.
-		 */
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if ( et == ExecType.MR ) {
-			lps.addCompatibility(JobType.GMR);
-			this.lps.setProperties( inputs, et, ExecLocation.RecordReader, breaksAlignment, aligner, definesMRJob );
-		}
-		else {
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
-	}
+	private OperationTypes operation;
+	private boolean inMemoryInput = false;
+
 	
 	/*
 	 * valuepick: first input is always a matrix, second input can either be a scalar or a matrix
@@ -70,6 +50,32 @@ public class PickByCount extends Lop
 		super(Lop.Type.PickValues, dt, vt);
 		this.inMemoryInput = inMemoryInput;
 		init(input1, input2, op, et);
+	}
+
+	
+	private void init(Lop input1, Lop input2, OperationTypes op, ExecType et) {
+		this.addInput(input1);
+		input1.addOutput(this);
+		
+		if ( input2 != null ) {
+			this.addInput(input2);
+			input2.addOutput(this);
+		}
+		
+		operation = op;
+		
+		boolean breaksAlignment = false;
+		boolean aligner = false;
+		boolean definesMRJob = false;
+		
+		if ( et == ExecType.MR ) {
+			lps.addCompatibility(JobType.GMR);
+			lps.setProperties( inputs, et, ExecLocation.RecordReader, breaksAlignment, aligner, definesMRJob );
+		}
+		else {
+			lps.addCompatibility(JobType.INVALID);
+			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
 	}
 
 	@Override
@@ -106,38 +112,12 @@ public class PickByCount extends Lop
 	 */
 	@Override
 	public String getInstructions(String input1, String input2, String output) throws LopsException
-	{
-		String opString = null;
-		switch(operation) {
-		case VALUEPICK:
-			opString = (inMemoryInput ? "inmem-valuepick" : "valuepick");
-			break;
-		case RANGEPICK:
-			opString = (inMemoryInput ? "inmem-rangepick" : "rangepick");
-			if ( getInputs().get(1).getDataType() != DataType.SCALAR  )
-				throw new LopsException(this.printErrorLocation() + "In PickByCount Lop, Unexpected input datatype " + this.getInputs().get(1).getDataType() + " for rangepick: expecting a SCALAR.");
-			break;
-		case IQM:
-			if ( !inMemoryInput ) {
-				throw new LopsException(this.printErrorLocation() + "Pick.IQM in can only execute in Control Program on in-memory matrices.");
-			}
-			opString = "inmem-iqm";
-			break;
-			
-		case MEDIAN:
-			opString = (inMemoryInput ? "inmem-median" : "median");
-			break;
-			
-		default:
-			throw new LopsException(this.printErrorLocation() + "Invalid operation specified for PickByCount: " + operation);
-				
-		}
-		
+	{		
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		
-		sb.append( opString );
+		sb.append( OPCODE );
 		sb.append( OPERAND_DELIMITOR );
 
 		sb.append( getInputs().get(0).prepInputOperand(input1));
@@ -153,7 +133,13 @@ public class PickByCount extends Lop
 		}
 		
 		sb.append( this.prepOutputOperand(output));
-
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append(operation);
+		
+		sb.append( OPERAND_DELIMITOR );		
+		sb.append(inMemoryInput);
+		
 		return sb.toString();
 	}
 	
@@ -164,17 +150,25 @@ public class PickByCount extends Lop
 	 *   iqm:::input:::output
 	 */
 	@Override
-	public String getInstructions(String input, String output) throws LopsException {
+	public String getInstructions(String input, String output) 
+		throws LopsException 
+	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "inmem-iqm" );
+		sb.append( OPCODE );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		
 		sb.append( getInputs().get(0).prepInputOperand(input));
 		sb.append( OPERAND_DELIMITOR );
 		
 		sb.append( this.prepOutputOperand(output) );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append(operation);
+		
+		sb.append( OPERAND_DELIMITOR );		
+		sb.append(inMemoryInput);
 		
 		return sb.toString();
 	}

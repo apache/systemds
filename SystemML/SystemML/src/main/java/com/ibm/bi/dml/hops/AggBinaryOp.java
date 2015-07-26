@@ -1543,42 +1543,11 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			return MMultMethod.CPMM;
 
 		// Step 6: Decide CPMM vs RMM based on io costs
-		long m1_nrb = (long) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
-		long m1_ncb = (long) Math.ceil((double)m1_cols/m1_cpb); // number of column blocks in m1
-		long m2_ncb = (long) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2
 
-		// TODO: we must factor in the "sparsity"
-		double m1_size = m1_rows * m1_cols;
-		double m2_size = m2_rows * m2_cols;
-		double result_size = m1_rows * m2_cols;
-
-		int numReducersRMM = OptimizerUtils.getNumReducers(true);
-		int numReducersCPMM = OptimizerUtils.getNumReducers(false);
-		
-		// Estimate the cost of RMM
-		// RMM phase 1
-		double rmm_shuffle = (m2_ncb*m1_size) + (m1_nrb*m2_size);
-		double rmm_io = m1_size + m2_size + result_size;
-		double rmm_nred = Math.min( m1_nrb * m2_ncb, //max used reducers 
-				                    numReducersRMM); //available reducers
-		// RMM total costs
-		double rmm_costs = (rmm_shuffle + rmm_io) / rmm_nred;
-		
-		// Estimate the cost of CPMM
-		// CPMM phase 1
-		double cpmm_shuffle1 = m1_size + m2_size;
-		double cpmm_nred1 = Math.min( m1_ncb, //max used reducers 
-                                      numReducersCPMM); //available reducers		
-		double cpmm_io1 = m1_size + m2_size + cpmm_nred1 * result_size;
-		// CPMM phase 2
-		double cpmm_shuffle2 = cpmm_nred1 * result_size;
-		double cpmm_io2 = cpmm_nred1 * result_size + result_size;			
-		double cpmm_nred2 = Math.min( m1_nrb * m2_ncb, //max used reducers 
-                                      numReducersCPMM); //available reducers		
-		// CPMM total costs
-		double cpmm_costs =  (cpmm_shuffle1+cpmm_io1)/cpmm_nred1  //cpmm phase1
-		                    +(cpmm_shuffle2+cpmm_io2)/cpmm_nred2; //cpmm phase2
-		
+		//estimate shuffle costs weighted by parallelism
+		double rmm_costs = getRMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);
+		double cpmm_costs = getCPMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);
+				
 		//final mmult method decision 
 		if ( cpmm_costs < rmm_costs ) 
 			return MMultMethod.CPMM;
@@ -1706,12 +1675,106 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				return MMultMethod.MAPMM_R;
 		}
 		
-		//TODO CPMM vs RMM decision 
-		//currently always RMM because CPMM pure CP right now
-		return MMultMethod.RMM;
+		// Step 5: check for unknowns
+		// If the dimensions are unknown at compilation time, simply assume 
+		// the worst-case scenario and produce the most robust plan -- which is CPMM
+		if ( m1_rows == -1 || m1_cols == -1 || m2_rows == -1 || m2_cols == -1 )
+			return MMultMethod.CPMM;
+
+		// Step 6: Decide CPMM vs RMM based on io costs
+		//estimate shuffle costs weighted by parallelism
+		//TODO currently we reuse the mr estimates, these need to be fine-tune for our spark operators
+		double rmm_costs = getRMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);
+		double cpmm_costs = getCPMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);
+				
+		//final mmult method decision 
+		if ( cpmm_costs < rmm_costs ) 
+			return MMultMethod.CPMM;
+		else 
+			return MMultMethod.RMM;
+	}
+
+	/**
+	 * 
+	 * @param m1_rows
+	 * @param m1_cols
+	 * @param m1_rpb
+	 * @param m1_cpb
+	 * @param m2_rows
+	 * @param m2_cols
+	 * @param m2_rpb
+	 * @param m2_cpb
+	 * @return
+	 */
+	private static double getRMMCostEstimate( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
+			long m2_rows, long m2_cols, long m2_rpb, long m2_cpb )
+	{
+		long m1_nrb = (long) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
+		long m2_ncb = (long) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2
+
+		// TODO: we must factor in the "sparsity"
+		double m1_size = m1_rows * m1_cols;
+		double m2_size = m2_rows * m2_cols;
+		double result_size = m1_rows * m2_cols;
+
+		int numReducersRMM = OptimizerUtils.getNumReducers(true);
 		
-		// Step 5: fallback strategy MMCJ
-		//return MMultMethod.CPMM;
+		// Estimate the cost of RMM
+		// RMM phase 1
+		double rmm_shuffle = (m2_ncb*m1_size) + (m1_nrb*m2_size);
+		double rmm_io = m1_size + m2_size + result_size;
+		double rmm_nred = Math.min( m1_nrb * m2_ncb, //max used reducers 
+				                    numReducersRMM); //available reducers
+		// RMM total costs
+		double rmm_costs = (rmm_shuffle + rmm_io) / rmm_nred;
+		
+		// return total costs
+		return rmm_costs;
+	}
+	
+	/**
+	 * 
+	 * @param m1_rows
+	 * @param m1_cols
+	 * @param m1_rpb
+	 * @param m1_cpb
+	 * @param m2_rows
+	 * @param m2_cols
+	 * @param m2_rpb
+	 * @param m2_cpb
+	 * @return
+	 */
+	private static double getCPMMCostEstimate( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
+            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb )
+	{
+		long m1_nrb = (long) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
+		long m1_ncb = (long) Math.ceil((double)m1_cols/m1_cpb); // number of column blocks in m1
+		long m2_ncb = (long) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2
+
+		// TODO: we must factor in the "sparsity"
+		double m1_size = m1_rows * m1_cols;
+		double m2_size = m2_rows * m2_cols;
+		double result_size = m1_rows * m2_cols;
+
+		int numReducersCPMM = OptimizerUtils.getNumReducers(false);
+		
+		// Estimate the cost of CPMM
+		// CPMM phase 1
+		double cpmm_shuffle1 = m1_size + m2_size;
+		double cpmm_nred1 = Math.min( m1_ncb, //max used reducers 
+                                      numReducersCPMM); //available reducers		
+		double cpmm_io1 = m1_size + m2_size + cpmm_nred1 * result_size;
+		// CPMM phase 2
+		double cpmm_shuffle2 = cpmm_nred1 * result_size;
+		double cpmm_io2 = cpmm_nred1 * result_size + result_size;			
+		double cpmm_nred2 = Math.min( m1_nrb * m2_ncb, //max used reducers 
+                                      numReducersCPMM); //available reducers		
+		// CPMM total costs
+		double cpmm_costs =  (cpmm_shuffle1+cpmm_io1)/cpmm_nred1  //cpmm phase1
+		                    +(cpmm_shuffle2+cpmm_io2)/cpmm_nred2; //cpmm phase2
+		
+		//return total costs
+		return cpmm_costs;
 	}
 	
 	@Override

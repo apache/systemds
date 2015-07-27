@@ -191,23 +191,21 @@ public class BinaryOp extends Hop
 					getInput().get(0).getNnz());
 
 			Data lit = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.25));
-			
-			lit.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
+			setLineNumbers(lit);
+	
 			PickByCount pick = new PickByCount(
 					sort, lit, DataType.MATRIX, getValueType(),
 					PickByCount.OperationTypes.RANGEPICK);
 
 			pick.getOutputParameters().setDimensions(-1, -1, 
 					getRowsInBlock(), getColsInBlock(), -1);
-			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(pick);
 			
 			PartialAggregate pagg = new PartialAggregate(pick,
 					HopsAgg2Lops.get(Hop.AggOp.SUM),
 					HopsDirection2Lops.get(Hop.Direction.RowCol),
 					DataType.MATRIX, getValueType());
-
-			pagg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(pagg);
 			
 			// Set the dimensions of PartialAggregate LOP based on the
 			// direction in which aggregation is performed
@@ -216,36 +214,29 @@ public class BinaryOp extends Hop
 
 			Group group1 = new Group(pagg, Group.OperationTypes.Sort,
 					DataType.MATRIX, getValueType());
-			group1.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(),
-					getColsInBlock(), getNnz());
-			
-			group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setOutputDimensions(group1);
+			setLineNumbers(group1);
 
 			Aggregate agg1 = new Aggregate(group1, HopsAgg2Lops
 					.get(Hop.AggOp.SUM), DataType.MATRIX,
 					getValueType(), ExecType.MR);
-			agg1.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(),
-					getColsInBlock(), getNnz());
+			setOutputDimensions(agg1);
 			agg1.setupCorrectionLocation(pagg.getCorrectionLocation());
-			
-			agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(agg1);
 
 			UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS
 					.get(OpOp1.CAST_AS_SCALAR), DataType.SCALAR,
 					getValueType());
 			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(unary1);
 			
 			Unary iqm = new Unary(sort, unary1, Unary.OperationTypes.MR_IQM, DataType.SCALAR, ValueType.DOUBLE, ExecType.CP);
 			iqm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			iqm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
+			setLineNumbers(iqm);			
 			setLops(iqm);
-
 		}
-		else {
+		else 
+		{
 			SortKeys sort = SortKeys.constructSortByValueLop(
 					getInput().get(0).constructLops(), 
 					getInput().get(1).constructLops(), 
@@ -263,11 +254,9 @@ public class BinaryOp extends Hop
 					getDataType(),
 					getValueType(),
 					PickByCount.OperationTypes.IQM, et, true);
-			pick.getOutputParameters().setDimensions(getDim1(),
-					getDim1(), getRowsInBlock(), getColsInBlock(), getNnz());
-
-			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
+			setOutputDimensions(pick);
+			setLineNumbers(pick);
 			setLops(pick);
 		}
 	}
@@ -429,7 +418,8 @@ public class BinaryOp extends Hop
 		else
 			pick_op = PickByCount.OperationTypes.RANGEPICK;
 
-		if ( et == ExecType.MR ) {
+		if ( et == ExecType.MR ) 
+		{
 			CombineUnary combine = CombineUnary.constructCombineLop(
 					getInput().get(0).constructLops(),
 					getDataType(), getValueType());
@@ -466,7 +456,8 @@ public class BinaryOp extends Hop
 
 			setLops(pick);
 		}
-		else {
+		else //CP/SPARK 
+		{
 			SortKeys sort = SortKeys.constructSortByValueLop(
 								getInput().get(0).constructLops(), 
 								SortKeys.OperationTypes.WithoutWeights, 
@@ -477,18 +468,11 @@ public class BinaryOp extends Hop
 					getInput().get(0).getRowsInBlock(),
 					getInput().get(0).getColsInBlock(), 
 					getInput().get(0).getNnz());
-			PickByCount pick = new PickByCount(
-					sort,
-					getInput().get(1).constructLops(),
-					getDataType(),
-					getValueType(),
-					pick_op, et, true);
+			PickByCount pick = new PickByCount( sort, getInput().get(1).constructLops(),
+					getDataType(), getValueType(), pick_op, et, true);
 
-			pick.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			
-			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
+			setOutputDimensions(pick);
+			setLineNumbers(pick);
 			setLops(pick);
 		}
 	}

@@ -8,7 +8,9 @@
 package com.ibm.bi.dml.runtime.util;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
@@ -314,7 +316,7 @@ public class DataConverter
 			}
 		}
 		else
-		{
+		{			
 			for( int i=0; i<rows; i++ )
 				for( int j=0; j<cols; j++ )
 					ret[i][j] = mb.getValueDenseUnsafe(i, j);
@@ -348,6 +350,39 @@ public class DataConverter
 			//memcopy row major representation if at least 1 non-zero
 			if( !mb.isEmptyBlock(false) )
 				System.arraycopy(mb.getDenseArray(), 0, ret, 0, rows*cols);
+		}
+				
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param mb
+	 * @return
+	 */
+	public static List<Double> convertToDoubleList( MatrixBlock mb )
+	{
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		long nnz = mb.getNonZeros();
+		ArrayList<Double> ret = new ArrayList<Double>();
+		
+		if( mb.isInSparseFormat() )
+		{
+			SparseRowsIterator iter = mb.getSparseRowsIterator();
+			while( iter.hasNext() )
+			{
+				IJV cell = iter.next();
+				ret.add( cell.v );
+			}
+			for( long i=nnz; i<(long)rows*cols; i++ )
+				ret.add( 0d ); //add remaining values
+		}
+		else
+		{
+			for( int i=0; i<rows; i++ )
+				for( int j=0; j<cols; j++ )
+					ret.add( mb.getValueDenseUnsafe(i, j) );
 		}
 				
 		return ret;

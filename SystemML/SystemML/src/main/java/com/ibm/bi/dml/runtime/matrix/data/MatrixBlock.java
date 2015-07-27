@@ -4753,6 +4753,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	}
 	
 	public double interQuartileMean() throws DMLRuntimeException {
+		
 		double sum_wt = sumWeightForQuantile();
 		
 		double q25d = 0.25*sum_wt;

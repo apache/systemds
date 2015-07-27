@@ -269,12 +269,8 @@ public class TernaryOp extends Hop
 		
 		ExecType et = optFindExecType();
 		
-		if ( et == ExecType.SPARK )  {
-			// TODO implement Spark support
-			et = ExecType.CP;
-		}
-		
-		if ( et == ExecType.MR ) {
+		if ( et == ExecType.MR ) 
+		{
 			CombineBinary combine = CombineBinary
 					.constructCombineLop(
 							OperationTypes.PreSort,
@@ -298,8 +294,6 @@ public class TernaryOp extends Hop
 					(_op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
 							: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
 
-			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			
 			combine.getOutputParameters().setDimensions(
 					getInput().get(0).getDim1(),
 					getInput().get(0).getDim2(), 
@@ -312,12 +306,13 @@ public class TernaryOp extends Hop
 					getInput().get(0).getRowsInBlock(), 
 					getInput().get(0).getColsInBlock(),
 					getInput().get(0).getNnz());
-			pick.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-
+			
+			setOutputDimensions(pick);
+			setLineNumbers(pick);
 			setLops(pick);
 		}
-		else {
+		else //CP/Spark 
+		{
 			SortKeys sort = SortKeys.constructSortByValueLop(
 					getInput().get(0).constructLops(), 
 					getInput().get(1).constructLops(), 
@@ -336,9 +331,9 @@ public class TernaryOp extends Hop
 					getInput().get(0).getRowsInBlock(), 
 					getInput().get(0).getColsInBlock(),
 					getInput().get(0).getNnz());
-			pick.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-
+			
+			setOutputDimensions(pick);
+			setLineNumbers(pick);
 			setLops(pick);
 		}
 	}

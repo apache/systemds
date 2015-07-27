@@ -125,5 +125,4 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction
 			return out;
 		}
 	}
-
 }

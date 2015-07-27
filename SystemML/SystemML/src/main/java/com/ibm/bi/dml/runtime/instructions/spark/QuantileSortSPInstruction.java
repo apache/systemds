@@ -7,19 +7,26 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
+import org.apache.spark.api.java.JavaPairRDD;
+
+import com.ibm.bi.dml.lops.SortKeys;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDSortUtils;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 
-public class SortSPInstruction extends UnarySPInstruction
+public class QuantileSortSPInstruction extends UnarySPInstruction
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -34,13 +41,13 @@ public class SortSPInstruction extends UnarySPInstruction
 	 *  
 	 */
 	
-	public SortSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
+	public QuantileSortSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
 		this(op, in, null, out, opcode, istr);
 	}
 	
-	public SortSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr){
+	public QuantileSortSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr){
 		super(op, in1, in2, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.Sort;
+		_sptype = SPINSTRUCTION_TYPE.QSort;
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
@@ -52,17 +59,17 @@ public class SortSPInstruction extends UnarySPInstruction
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if ( opcode.equalsIgnoreCase("sort") ) {
+		if ( opcode.equalsIgnoreCase(SortKeys.OPCODE) ) {
 			if ( parts.length == 3 ) {
 				// Example: sort:mVar1:mVar2 (input=mVar1, output=mVar2)
 				parseUnaryInstruction(str, in1, out);
-				return new SortSPInstruction(new SimpleOperator(null), in1, out, opcode, str);
+				return new QuantileSortSPInstruction(new SimpleOperator(null), in1, out, opcode, str);
 			}
 			else if ( parts.length == 4 ) {
 				// Example: sort:mVar1:mVar2:mVar3 (input=mVar1, weights=mVar2, output=mVar3)
 				in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 				parseUnaryInstruction(str, in1, in2, out);
-				return new SortSPInstruction(new SimpleOperator(null), in1, in2, out, opcode, str);
+				return new QuantileSortSPInstruction(new SimpleOperator(null), in1, in2, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
@@ -77,22 +84,33 @@ public class SortSPInstruction extends UnarySPInstruction
 	public void processInstruction(ExecutionContext ec)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
-		//acquire inputs matrices
-		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
-		MatrixBlock wtBlock = null;
- 		if (input2 != null) {
-			wtBlock = ec.getMatrixInput(input2.getName());
+		SparkExecutionContext sec = (SparkExecutionContext)ec;
+		boolean weighted = (input2 != null);
+		
+		//get input rdds
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> inW = weighted ? sec.getBinaryBlockRDDHandleForVariable( input2.getName() ) : null;
+		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
+		
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+		long clen = -1;
+		if( !weighted ) { //W/O WEIGHTS (default)
+			out = RDDSortUtils.sortByVal(in, mc.getRows(), mc.getRowsPerBlock());
+			clen = 1;
 		}
+		else { //W/ WEIGHTS
+			out = RDDSortUtils.sortByVal(in, inW, mc.getRows(), mc.getRowsPerBlock());
+			clen = 2;
+		}
+
+		//put output RDD handle into symbol table
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), input1.getName());
+		if( weighted )
+			sec.addLineageRDD(output.getName(), input2.getName());
 		
- 		//process core instruction
-		MatrixBlock resultBlock = (MatrixBlock) matBlock.sortOperations(wtBlock, new MatrixBlock());
-		
-		//release inputs
-		ec.releaseMatrixInput(input1.getName());
-		if (input2 != null)
-			ec.releaseMatrixInput(input2.getName());
-		
-		//set and release output
-		ec.setMatrixOutput(output.getName(), resultBlock);
+		//update output matrix characteristics
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		mcOut.set(mc.getRows(), clen, mc.getRowsPerBlock(), mc.getColsPerBlock());
 	}
 }

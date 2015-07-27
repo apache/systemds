@@ -198,8 +198,7 @@ public class UnaryOp extends Hop
 
 			pick.getOutputParameters().setDimensions(getDim1(),
 					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			
-			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(pick);
 
 			return pick;
 		}
@@ -223,10 +222,9 @@ public class UnaryOp extends Hop
 
 			pick.getOutputParameters().setDimensions(getDim1(),
 					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			
-			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
+			setLineNumbers(pick);
 			setLops(pick);
+			
 			return pick;
 		}
 	}
@@ -270,15 +268,13 @@ public class UnaryOp extends Hop
 
 			pick.getOutputParameters().setDimensions(-1, -1,  
 					getRowsInBlock(), getColsInBlock(), -1);
+			setLineNumbers(pick);
 			
-			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
 			PartialAggregate pagg = new PartialAggregate(
 					pick, HopsAgg2Lops.get(Hop.AggOp.SUM),
 					HopsDirection2Lops.get(Hop.Direction.RowCol),
 					DataType.MATRIX, getValueType());
-			
-			pagg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(pagg);
 
 			// Set the dimensions of PartialAggregate LOP based on the
 			// direction in which aggregation is performed
@@ -292,7 +288,7 @@ public class UnaryOp extends Hop
 			group1.getOutputParameters().setDimensions(getDim1(),
 					getDim2(), getRowsInBlock(),
 					getColsInBlock(), getNnz());
-			group1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(group1);
 
 			Aggregate agg1 = new Aggregate(
 					group1, HopsAgg2Lops.get(Hop.AggOp.SUM),
@@ -301,18 +297,17 @@ public class UnaryOp extends Hop
 					getDim2(), getRowsInBlock(),
 					getColsInBlock(), getNnz());
 			agg1.setupCorrectionLocation(pagg.getCorrectionLocation());
-			
-			agg1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(agg1);
 			
 			UnaryCP unary1 = new UnaryCP(
 					agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
 					getDataType(), getValueType());
 			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
+			setLineNumbers(unary1);
+		
 			Unary iqm = new Unary(sort, unary1, Unary.OperationTypes.MR_IQM, DataType.SCALAR, ValueType.DOUBLE, ExecType.CP);
 			iqm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			iqm.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(iqm);
 
 			return iqm;
 		}
@@ -333,8 +328,7 @@ public class UnaryOp extends Hop
 
 			pick.getOutputParameters().setDimensions(getDim1(),
 					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-
-			pick.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(pick);
 			
 			return pick;
 		}

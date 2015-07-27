@@ -30,10 +30,11 @@ public abstract class SPInstruction extends Instruction
 	public enum SPINSTRUCTION_TYPE { 
 		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, PMM, //matrix multiplication instructions  
 		MatrixIndexing, Reorg, ArithmeticBinary, RelationalBinary, AggregateUnary, AggregateTernary, Reblock, CSVReblock, 
-		Builtin, BuiltinUnary, BuiltinBinary, Sort, Variable, Checkpoint, CentralMoment, Covariance,
+		Builtin, BuiltinUnary, BuiltinBinary, Checkpoint, 
+		CentralMoment, Covariance, QSort, QPick,
 		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, 
 		MatrixReshape, Ternary, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain,
-		INVALID, 
+		Write, INVALID, 
 	};
 	
 	protected SPINSTRUCTION_TYPE _sptype;

@@ -21,7 +21,6 @@ import com.ibm.bi.dml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.MatrixReshapeCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateTernarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AppendGAlignedSPInstruction;
@@ -44,6 +43,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.MapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.PmmSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.QuantilePickSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.QuaternarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.RandSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ReblockSPInstruction;
@@ -54,7 +54,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.spark.TernarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.TsmmSPInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.SortSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.QuantileSortSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.WriteSPInstruction;
 
 
@@ -197,15 +197,16 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "bcumoff*"  , SPINSTRUCTION_TYPE.CumsumOffset);
 		String2SPInstructionType.put( "bcumoffmin", SPINSTRUCTION_TYPE.CumsumOffset);
 		String2SPInstructionType.put( "bcumoffmax", SPINSTRUCTION_TYPE.CumsumOffset);
-		
-		String2SPInstructionType.put( "cm"    , SPINSTRUCTION_TYPE.CentralMoment);
-		String2SPInstructionType.put( "cov"    , SPINSTRUCTION_TYPE.Covariance);
 
+		//central moment, covariance, quantiles (sort/pick)
+		String2SPInstructionType.put( "cm"     , SPINSTRUCTION_TYPE.CentralMoment);
+		String2SPInstructionType.put( "cov"    , SPINSTRUCTION_TYPE.Covariance);
+		String2SPInstructionType.put( "qsort"  , SPINSTRUCTION_TYPE.QSort);
+		String2SPInstructionType.put( "qpick"  , SPINSTRUCTION_TYPE.QPick);
+		
 		String2SPInstructionType.put( "binuaggchain", SPINSTRUCTION_TYPE.BinUaggChain);
 		
-		String2SPInstructionType.put( "sort"  , SPINSTRUCTION_TYPE.Sort);
-		String2SPInstructionType.put( "inmem-iqm"  		, SPINSTRUCTION_TYPE.Variable);
-		String2SPInstructionType.put( "write" 		, SPINSTRUCTION_TYPE.Variable);
+		String2SPInstructionType.put( "write"   , SPINSTRUCTION_TYPE.Write);
 	}
 
 	public static Instruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
@@ -328,17 +329,14 @@ public class SPInstructionParser extends InstructionParser {
 			case Rand:
 				return (SPInstruction) RandSPInstruction.parseInstruction(str);
 				
-			case Sort: 
-				return (SPInstruction) SortSPInstruction.parseInstruction(str);
-				
-			case Variable:
-				String lopcode = InstructionUtils.getOpCode(str);
-				if ( "write".equals(lopcode) ) {
-					// TODO: Some bug while writing in case of CTable test suite
-					return (SPInstruction) WriteSPInstruction.parseInstruction(str);
-				}
-				else
-					return (CPInstruction) VariableCPInstruction.parseInstruction(str);
+			case QSort: 
+				return (SPInstruction) QuantileSortSPInstruction.parseInstruction(str);
+			
+			case QPick: 
+				return (SPInstruction) QuantilePickSPInstruction.parseInstruction(str);
+			
+			case Write:
+				return (SPInstruction) WriteSPInstruction.parseInstruction(str);
 				
 			case CumsumAggregate:
 				return CumulativeAggregateSPInstruction.parseInstruction(str);

@@ -101,7 +101,7 @@ public class CpmmSPInstruction extends BinarySPInstruction
 		JavaPairRDD<Long, IndexedMatrixValue> tmp1 = in1.mapToPair(new CpmmIndexFunction(true));
 		JavaPairRDD<Long, IndexedMatrixValue> tmp2 = in2.mapToPair(new CpmmIndexFunction(false));
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = tmp1
-				   .join( tmp2 )                            // join over common dimension
+				   .join(tmp2)                              // join over common dimension
 				   .mapToPair(new CpmmMultiplyFunction());  // compute block multiplications
 				   
 		//process cpmm aggregation and handle outputs				

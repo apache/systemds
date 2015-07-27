@@ -109,7 +109,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 					if ( input2.getDataType() == DataType.SCALAR ) {
 						ScalarObject quantile = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
 						double picked = matBlock.pickValue(quantile.getDoubleValue());
-						ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(picked));
+						ec.setScalarOutput(output.getName(), new DoubleObject(picked));
 					} 
 					else {
 						MatrixBlock quantiles = ec.getMatrixInput(input2.getName());
@@ -118,7 +118,6 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 						ec.releaseMatrixInput(input2.getName());
 						ec.setMatrixOutput(output.getName(), resultBlock);
 					}
-					matBlock = null;
 					ec.releaseMatrixInput(input1.getName());										
 				}
 				else //MR VALUEPICK
@@ -131,8 +130,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 					if ( mdata != null ) {
 						try {
 							double picked = MapReduceTool.pickValue(fname, (NumItemsByEachReducerMetaData) mdata, pickindex.getDoubleValue());
-							ScalarObject result = (ScalarObject) new DoubleObject(picked);
-							ec.setVariable(output.getName(), result);
+							ec.setVariable(output.getName(), new DoubleObject(picked));
 						} catch (Exception e ) {
 							throw new DMLRuntimeException(e);
 						}
@@ -147,7 +145,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 				if( _inmem ) //INMEM MEDIAN
 				{
 					double picked = ec.getMatrixInput(input1.getName()).median();
-					ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(picked));
+					ec.setScalarOutput(output.getName(), new DoubleObject(picked));
 					ec.releaseMatrixInput(input1.getName());
 					break;
 				}
@@ -160,9 +158,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 					if ( mdata1 != null ) {
 						try {
 							double median = MapReduceTool.median(fname1, (NumItemsByEachReducerMetaData) mdata1);
-							//double picked = MapReduceTool.pickValue(fname1, (NumItemsByEachReducerMetaData) mdata1, 0.5);
-							ScalarObject result = (ScalarObject) new DoubleObject(median);
-							ec.setVariable(output.getName(), result);
+							ec.setVariable(output.getName(), new DoubleObject(median));
 						} catch (Exception e ) {
 							throw new DMLRuntimeException(e);
 						}
@@ -178,10 +174,8 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 				{
 					MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 					double iqm = matBlock1.interQuartileMean();
-					
-					matBlock1 = null;
 					ec.releaseMatrixInput(input1.getName());
-					ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(iqm));
+					ec.setScalarOutput(output.getName(), new DoubleObject(iqm));
 				}
 				else //MR IQM
 				{
@@ -210,7 +204,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 					
 					double mriqm = (iqsum.getDoubleValue() - q25portion_exclude - q75portion_exclude)/(sumwt*0.5);
 
-					ec.setScalarOutput(output.getName(), (ScalarObject) new DoubleObject(mriqm));
+					ec.setScalarOutput(output.getName(), new DoubleObject(mriqm));
 				}
 				break;
 				

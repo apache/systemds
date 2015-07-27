@@ -35,7 +35,7 @@
 #	          									   If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
 # P				String   ---		  Location to store the label predictions for X
 # A     		String   " "          Location to write the test accuracy (%) for the prediction if requested
-# C     		String   " "		  Location to write the confusion matrix if requested 
+# CM     		String   " "		  Location to write the confusion matrix if requested 
 # fmt     	    String   "text"       The output format of the output, such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
@@ -44,15 +44,15 @@
 #   3- Confusion matrix C if requested
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f decision-tree-predict.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=INPUT_DIR/M P=OUTPUT_DIR/P
-#														accuracy=OUTPUT_DIR/accuracy confusion=OUTPUT_DIR/confusion fmt=csv
+# hadoop jar SystemML.jar -f decision-tree-predict.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=INPUT_DIR/model P=OUTPUT_DIR/predictions
+#														A=OUTPUT_DIR/accuracy CM=OUTPUT_DIR/confusion fmt=csv
 
 fileX = $X;
 fileM = $M;
 fileP = $P;
 fileY = ifdef ($Y, " ");
 fileR = ifdef ($R, " ");
-fileC = ifdef ($C, " ");
+fileCM = ifdef ($CM, " ");
 fileA = ifdef ($A, " ");
 fmtO = ifdef ($fmt, "text");
 X_test = read (fileX);
@@ -122,8 +122,8 @@ if (fileY != " ") {
 	} else {
 		print (acc_str);
 	}
-	if (fileC != " ") {
+	if (fileCM != " ") {
 		confusion_mat = table(Y_predicted, Y_test, num_classes, num_classes)
-        write(confusion_mat, fileC, format = fmtO)
+        write(confusion_mat, fileCM, format = fmtO)
 	}
 }

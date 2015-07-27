@@ -50,7 +50,7 @@
 # 			  If the feature chosen for j is categorical rows 7,8,... depict the value subset chosen for j   
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f random-forest.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/M
+# hadoop jar SystemML.jar -f random-forest.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/model
 #     				                 				   bins=20 depth=20 num_leaf=1 num_samples=3000 num_trees = 50 impurity=entropy fmt=csv
 
 
@@ -124,7 +124,9 @@ if (fileR != " ") {
 		R_cat_vec = matrix (R_cat, rows = 2 * num_cat_features, cols = 1);	
 		W = matrix (1, rows = num_cat_features, cols = 1) %*% matrix ("1 -1", rows = 1, cols = 2);
 		W = matrix (W, rows = 2 * num_cat_features, cols = 1);
-		W[2 * num_cat_features,] = 0;
+		if (as.scalar (R_cat_vec[nrow (R_cat_vec),])== ncol (X)) {
+			W[2 * num_cat_features,] = 0;
+		}
 		v = matrix (1, rows = 2 * num_cat_features, cols = 1);
 		col_tab = table (v, R_cat_vec, W, 1, ncol (X));
 		col_ind = cumsum (t (col_tab));

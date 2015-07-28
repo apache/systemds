@@ -12,6 +12,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -284,17 +285,14 @@ public class RecodeAgent extends TransformationAgent {
 	 */
 	@Override
 	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir) throws IOException {
-		if ( _rcdList == null )
+		if ( _rcdList == null && _mvrcdList == null)
 			return;
 		
 		_finalMaps = new HashMap<Integer, HashMap<String, String>>();
-		//Path txMtdDir = (DistributedCache.getLocalCacheFiles(job))[0];
-		
-		//FileSystem fs = FileSystem.getLocal(job);
-		
+	
 		if(fs.isDirectory(txMtdDir)) {
-			for(int i=0; i<_rcdList.length;i++) {
-				int colID = _rcdList[i];
+			for(int i=0; i<_fullrcdList.length;i++) {
+				int colID = _fullrcdList[i];
 				
 				Path path = new Path( txMtdDir + "/Recode/" + columnNames[colID-1] + RCD_MAP_FILE_SUFFIX);
 				TransformationAgent.checkValidInputFile(fs, path, true); 
@@ -362,11 +360,8 @@ public class RecodeAgent extends TransformationAgent {
 		if(_rcdList == null)
 			return -1;
 		
-		for(int i=0; i < _rcdList.length; i++)
-			if( _rcdList[i] == colID )
-				return i;
-		
-		return -1;
+		int idx = Arrays.binarySearch(_rcdList, colID);
+		return ( idx >= 0 ? idx : -1);
 	}
 
 	public String[] cp_apply(String[] words) {

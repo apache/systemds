@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.runtime.transform;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -74,11 +75,8 @@ public class OmitAgent extends TransformationAgent {
 		if(_omitList == null)
 			return -1;
 		
-		for(int i=0; i < _omitList.length; i++)
-			if( _omitList[i] == colID )
-				return i;
-		
-		return -1;
+		int idx = Arrays.binarySearch(_omitList, colID);
+		return ( idx >= 0 ? idx : -1);
 	}
 
 	@Override

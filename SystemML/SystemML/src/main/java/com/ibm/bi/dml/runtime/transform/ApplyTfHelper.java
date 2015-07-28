@@ -188,7 +188,7 @@ public class ApplyTfHelper {
 		 * denotes an erroneous condition.  
 		 */
 		boolean checkEmptyString = false;
-		if ( TransformationAgent.NAstrings != null && !MVImputeAgent.isNA("", TransformationAgent.NAstrings) ) {
+		if ( TransformationAgent.NAstrings != null ) { //&& !MVImputeAgent.isNA("", TransformationAgent.NAstrings) ) {
 			checkEmptyString = true;
 		}
 		

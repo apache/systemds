@@ -378,11 +378,8 @@ public class DummycodeAgent extends TransformationAgent {
 		if(_dcdList == null)
 			return -1;
 		
-		for(int i=0; i < _dcdList.length; i++)
-			if( _dcdList[i] == colID )
-				return i;
-		
-		return -1;
+		int idx = Arrays.binarySearch(_dcdList, colID);
+		return ( idx >= 0 ? idx : -1);
 	}
 	
 	@Override

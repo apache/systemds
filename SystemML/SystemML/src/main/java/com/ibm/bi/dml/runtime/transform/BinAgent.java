@@ -21,6 +21,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 
+import com.ibm.bi.dml.runtime.transform.MVImputeAgent.MVMethod;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
@@ -129,6 +130,14 @@ public class BinAgent extends TransformationAgent {
 		}
 	}
 	
+	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs) throws IOException 
+	{
+		Path pt = new Path(tfMtdDir+"/Bin/"+ columnNames[colID-1] + BIN_FILE_SUFFIX);
+		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
+		br.write(colID + TXMTD_SEP + min + TXMTD_SEP + max + TXMTD_SEP + binwidth + TXMTD_SEP + nbins + "\n");
+		br.close();
+	}
+
 	/** 
 	 * Method to merge map output transformation metadata.
 	 * 
@@ -169,26 +178,30 @@ public class BinAgent extends TransformationAgent {
 		
 		// write merged metadata
 		FileSystem fs = FileSystem.get(job);
-		Path pt=new Path(outputDir+"/Bin/"+ columnNames[colID-1] + BIN_FILE_SUFFIX);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		double binwidth = (max-min)/nbins;
-		br.write(colID + TXMTD_SEP + Double.toString(min) + TXMTD_SEP + Double.toString(max) + TXMTD_SEP + Double.toString(binwidth) + TXMTD_SEP + Integer.toString(nbins) + "\n");
-		br.close();
+		writeTfMtd(colID, Double.toString(min), Double.toString(max), Double.toString(binwidth), Integer.toString(nbins), outputDir, fs);
 	}
 	
 	
-	public void outputTransformationMetadata(String outputDir, FileSystem fs) throws IOException {
+	public void outputTransformationMetadata(String outputDir, FileSystem fs, MVImputeAgent mvagent) throws IOException {
 		if(_binList == null)
 			return;
 		
 		for(int i=0; i < _binList.length; i++) {
 			int colID = _binList[i];
 			
-			Path pt=new Path(outputDir+"/Bin/"+ columnNames[colID-1] + BIN_FILE_SUFFIX);
-			BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
+			// If the column is imputed with a constant, then adjust min and max based the value of the constant.
+			if ( mvagent.isImputed(colID) != -1 && mvagent.getMethod(colID) == MVMethod.CONSTANT ) 
+			{
+				double cst = UtilFunctions.parseToDouble( mvagent.getReplacement(colID) );
+				if ( cst < _min[i])
+					_min[i] = cst;
+				if ( cst > _max[i])
+					_max[i] = cst;
+			}
+			
 			double binwidth = (_max[i] - _min[i])/_numBins[i];
-			br.write(colID + TXMTD_SEP + Double.toString(_min[i]) + TXMTD_SEP + Double.toString(_max[i]) + TXMTD_SEP + Double.toString(binwidth) + TXMTD_SEP + Integer.toString(_numBins[i]) + "\n");
-			br.close();
+			writeTfMtd(colID, Double.toString(_min[i]), Double.toString(_max[i]), Double.toString(binwidth), Integer.toString(_numBins[i]), outputDir, fs);
 		}
 	}
 	
@@ -257,7 +270,7 @@ public class BinAgent extends TransformationAgent {
 			double val = UtilFunctions.parseToDouble(words[colID-1]);
 			int binid = 1;
 			double tmp = _min[i] + _binWidths[i];
-			while(val > tmp && binid <= _numBins[i]) {
+			while(val > tmp && binid < _numBins[i]) {
 				tmp += _binWidths[i];
 				binid++;
 			}
@@ -282,11 +295,8 @@ public class BinAgent extends TransformationAgent {
 		if(_binList == null)
 			return -1;
 		
-		for(int i=0; i < _binList.length; i++)
-			if( _binList[i] == colID )
-				return i;
-		
-		return -1;
+		int idx = Arrays.binarySearch(_binList, colID);
+		return ( idx >= 0 ? idx : -1);
 	}
 
 

@@ -379,7 +379,7 @@ public class DataTransform {
 		if(mvList != null)
 		for(int i=0; i < mvList.length; i++) {
 			int colID = mvList[i];
-			if(mvMethods[i] == 2 && rcdList != null && Arrays.binarySearch(rcdList, colID) == -1 ) 
+			if(mvMethods[i] == 2 && (rcdList == null || Arrays.binarySearch(rcdList, colID) < 0) )
 				tmpList.add(colID);
 		}
 		
@@ -392,13 +392,13 @@ public class DataTransform {
 		// Perform Validity Checks
 		
 		/*
-		 * 			MVI	RCD	BIN	DCD	SCL
-		 * MVI		 -	 *	 *	 *	 *
-		 * RCD		 *	 -   x   *   x
- 		 * BIN		 *	 x	 -   *	 x
-		 * DCD		 *	 *	 *	 -   x
-		 * SCL		 *	 x	 x	 x   -
-		 * 
+			      OMIT MVI RCD BIN DCD SCL
+			OMIT     -  x   *   *   *   *
+			MVI      x  -   *   *   *   *
+			RCD      *  *   -   x   *   x
+			BIN      *  *   x   -   *   x
+			DCD      *  *   *   *   -   x
+			SCL      *  *   x   x   x   -
 		 */
 		
 		if(mvList != null)
@@ -441,15 +441,17 @@ public class DataTransform {
 				throw new IllegalArgumentException("Invalid transformations on column ID " + colID + ". A column can not be recoded and binned.");
 		}
 		
-		// make sure dummycoded columns are either recoded or binned
+		// Check if dummycoded columns are either recoded or binned.
+		// If not, add them to recode list.
 		ArrayList<Integer> addToRcd = new ArrayList<Integer>();
 		if(dcdList != null)
 		for(int i=0; i < dcdList.length; i++) 
 		{
 			int colID = dcdList[i];
+			boolean isRecoded = (rcdList != null && Arrays.binarySearch(rcdList, colID) >= 0);
+			boolean isBinned = (binList != null && Arrays.binarySearch(binList, colID) >= 0);
 			// If colID is neither recoded nor binned, then, add it to rcdList.
-			if ( (rcdList != null && Arrays.binarySearch(rcdList, colID) < 0) 
-					&& (binList != null && Arrays.binarySearch(binList, colID) < 0) )
+			if ( !isRecoded && !isBinned )
 				addToRcd.add(colID);
 		}
 		if ( addToRcd.size() > 0 ) 
@@ -1047,7 +1049,7 @@ public class DataTransform {
 			}
 			
 			_mia.outputTransformationMetadata(txMtdPath, fs);
-			_ba.outputTransformationMetadata(txMtdPath, fs);
+			_ba.outputTransformationMetadata(txMtdPath, fs, _mia);
 			_ra.outputTransformationMetadata(txMtdPath, fs, _mia);
 		
 			// prepare agents for the subsequent phase of applying transformation metadata

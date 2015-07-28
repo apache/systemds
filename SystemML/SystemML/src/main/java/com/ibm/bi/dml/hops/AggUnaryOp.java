@@ -442,9 +442,18 @@ public class AggUnaryOp extends Hop
 		
 		if( input instanceof BinaryOp && ((BinaryOp)input).isOuterVectorOperator() )
 		{
+			//for special cases, we need to hold the broadcast twice in order to allow for
+			//an efficient binary search over a plain java array
+			double factor = (((BinaryOp)input).getOp()==OpOp2.LESS 
+					&& _direction == Direction.Row && _op == AggOp.SUM) ? 2.0 : 1.0;
+			
+			//note: memory constraint only needs to take the rhs into account because the output
+			//is guaranteed to be an aggregate of <=16KB
 			Hop right = input.getInput().get(1);
-			if( right.dimsKnown() && OptimizerUtils.estimateSize(right.getDim1(), right.getDim2())
-				< OptimizerUtils.getRemoteMemBudgetMap(true) )
+			if(  (right.dimsKnown() && factor*OptimizerUtils.estimateSize(right.getDim1(), right.getDim2())
+				  < OptimizerUtils.getRemoteMemBudgetMap(true)) //dims known and estimate fits
+			   ||(!right.dimsKnown() && factor*right.getOutputMemEstimate()
+				  <	OptimizerUtils.getRemoteMemBudgetMap(true)))//dims unknown but worst-case estimate fits 
 			{
 				ret = true;
 			}

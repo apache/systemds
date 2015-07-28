@@ -1815,8 +1815,8 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//NOTE: currently this rule is too conservative (the result variable is assumed to be dense and
 		//most importantly counted twice if this is part of the maximum operation)
-		double totalMem = Math.min((M+sum), rComputeSumMemoryIntermediates(pn, new HashSet<String>()));
-	
+		double totalMem = Math.max((M+sum), rComputeSumMemoryIntermediates(pn, new HashSet<String>()));
+		
 		//optimization decision
 		if( rHasOnlyInPlaceSafeLeftIndexing(pn, retVars) ) //basic correctness constraint
 		{
@@ -1857,7 +1857,7 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		
 		LOG.debug(getOptMode()+" OPT: rewrite 'set in-place result indexing' - result="+
-		          apply+" ("+ProgramConverter.serializeStringCollection(inPlaceResultVars)+", M="+toMB(M+sum)+")" );	
+		          apply+" ("+ProgramConverter.serializeStringCollection(inPlaceResultVars)+", M="+toMB(totalMem)+")" );	
 	}
 	
 	/**

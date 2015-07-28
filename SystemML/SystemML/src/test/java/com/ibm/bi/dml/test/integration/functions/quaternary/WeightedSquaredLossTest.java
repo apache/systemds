@@ -383,7 +383,7 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 			double[][] V = getRandomMatrix(cols, rank, 0, 1, 1.0, 312); 
 			writeInputMatrixWithMTD("V", V, true);
 			if( !TEST_NAME.equals(TEST_NAME3) ) {
-				double[][] W = getRandomMatrix(rows, cols, 1, 1, sparsity, 1467); 
+				double[][] W = getRandomMatrix(rows, cols, 0, 1, sparsity, 1467); 
 				writeInputMatrixWithMTD("W", W, true);
 			}
 			

@@ -1635,7 +1635,7 @@ public class LibMatrixMult
 							double wij = w[ix+j];
 							if( wij != 0 ) {
 								double uvij = dotProduct(u, v, uix, vix, cd);
-								wsloss += (wij*(x[ix+j]-uvij))*(wij*(x[ix+j]-uvij)); //^2
+								wsloss += wij*(x[ix+j]-uvij)*(x[ix+j]-uvij); //^2
 							}
 						}	
 				}
@@ -1698,7 +1698,7 @@ public class LibMatrixMult
 					for( int k=0; k<wlen; k++ ) {
 						double xi = mX.quickGetValue(i, wix[k]);
 						double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
-						wsloss += (wval[k]*(xi-uvij))*(wval[k]*(xi-uvij));
+						wsloss += wval[k]*(xi-uvij)*(xi-uvij);
 					}
 				}	
 		}
@@ -1793,7 +1793,7 @@ public class LibMatrixMult
 							double uvij = 0;
 							for( int k2=0; k2<cd; k2++ )
 								uvij += mU.quickGetValue(i, k2) * mV.quickGetValue(wix[k], k2);
-							wsloss += (wval[k]*(xi-uvij))*(wval[k]*(xi-uvij));
+							wsloss += wval[k]*(xi-uvij)*(xi-uvij);
 						}
 					}	
 			}
@@ -1810,7 +1810,7 @@ public class LibMatrixMult
 							double uvij = 0;
 							for( int k=0; k<cd; k++ )
 								uvij += mU.quickGetValue(i, k) * mV.quickGetValue(j, k);
-							wsloss += (wij*(xij-uvij))*(wij*(xij-uvij));
+							wsloss += wij*(xij-uvij)*(xij-uvij);
 						}
 					}	
 			}

@@ -123,9 +123,12 @@ public class LibMatrixAgg
 	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, AggregateOperator aop) 
 		throws DMLRuntimeException
 	{	
+		//sanity check matching dimensions 
+		if( in.getNumRows()!=aggVal.getNumRows() || in.getNumColumns()!=aggVal.getNumColumns() )
+			throw new DMLRuntimeException("Dimension mismatch on aggregate: "+in.getNumRows()+"x"+in.getNumColumns()+
+					" vs "+aggVal.getNumRows()+"x"+aggVal.getNumColumns());
+		
 		//Timing time = new Timing(true);
-		//boolean saggVal = aggVal.isInSparseFormat(); 
-		//long naggVal = aggVal.getNonZeros();
 		
 		//core aggregation
 		boolean lastRowCorr = (aop.correctionLocation == CorrectionLocationType.LASTROW);

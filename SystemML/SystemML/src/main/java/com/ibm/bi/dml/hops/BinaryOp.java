@@ -652,8 +652,8 @@ public class BinaryOp extends Hop
 				}
 				else if( mbin == MMBinaryMethod.MR_BINARY_OUTER_R )
 				{
-					boolean requiresRepLeft = (right.getDim2() > right.getColsInBlock());
-					boolean requiresRepRight = (left.getDim1() > right.getRowsInBlock());
+					boolean requiresRepLeft = (!right.dimsKnown() || right.getDim2() > right.getColsInBlock());
+					boolean requiresRepRight = (!left.dimsKnown() || left.getDim1() > right.getRowsInBlock());
 					
 					Lop leftLop = left.constructLops();
 					Lop rightLop = right.constructLops();

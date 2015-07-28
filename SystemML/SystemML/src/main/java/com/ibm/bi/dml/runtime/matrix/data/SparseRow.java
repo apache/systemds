@@ -197,6 +197,11 @@ public class SparseRow implements Serializable
 			values[index] = v;
 			return false; //overwritten
 		}
+
+		//early abort on zero (if no overwrite)
+		if( v==0.0 ) {
+			return false;
+		}
 		
 		//insert new index-value pair
 		index = Math.abs( index+1 );

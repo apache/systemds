@@ -118,18 +118,21 @@ if (fileR != " ") {
 		distinct_values_max = max (distinct_values);
 		distinct_values_offset = cumsum (t (distinct_values));
 		distinct_values_overall = sum (distinct_values);
+		
+		W = matrix (1, rows = num_cat_features, cols = 1) %*% matrix ("1 -1", rows = 1, cols = 2);
+		W = matrix (W, rows = 2 * num_cat_features, cols = 1);
+		if (as.scalar (R_cat[num_cat_features, 2]) == ncol (X)) {
+			W[2 * num_cat_features,] = 0;
+		}
+		
 		last = ppred (R_cat[,2], ncol (X), "!=");
 		R_cat1 = (R_cat[,2] + 1) * last;
 		R_cat[,2] = (R_cat[,2] * (1 - last)) + R_cat1;
 		R_cat_vec = matrix (R_cat, rows = 2 * num_cat_features, cols = 1);	
-		W = matrix (1, rows = num_cat_features, cols = 1) %*% matrix ("1 -1", rows = 1, cols = 2);
-		W = matrix (W, rows = 2 * num_cat_features, cols = 1);
-		if (as.scalar (R_cat_vec[nrow (R_cat_vec),])== ncol (X)) {
-			W[2 * num_cat_features,] = 0;
-		}
-		v = matrix (1, rows = 2 * num_cat_features, cols = 1);
-		col_tab = table (v, R_cat_vec, W, 1, ncol (X));
-		col_ind = cumsum (t (col_tab));
+
+		col_tab = table (R_cat_vec, 1, W, ncol (X), 1);
+		col_ind = cumsum (col_tab);
+		
 		col_ind_cat = removeEmpty (target = col_ind * seq (1, ncol (X)), margin = "rows");
 		col_ind_scale = removeEmpty (target = (1 - col_ind) * seq (1, ncol (X)), margin = "rows");	
 		X_cat = X %*% table (col_ind_cat, seq (1, nrow (col_ind_cat)), ncol (X), nrow (col_ind_cat));
@@ -262,12 +265,12 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		feature_samples = order (target = feature_samples, by = 1);
 		num_scale_feature_samples = sum (ppred (feature_samples, num_scale_features, "<="));
 		num_cat_feature_samples = num_feature_samples - num_scale_feature_samples;
-		if (num_scale_feature_samples > 0) {
-			scale_feature_samples = feature_samples[1:num_scale_feature_samples,];
-		} 
-		if (num_cat_feature_samples > 0) {
-			cat_feature_samples = feature_samples[(num_scale_feature_samples + 1):(num_scale_feature_samples + num_cat_feature_samples),] - num_scale_features;
-		}
+		# if (num_scale_feature_samples > 0) {
+			# scale_feature_samples = feature_samples[1:num_scale_feature_samples,];
+		# } 
+		# if (num_cat_feature_samples > 0) {
+			# cat_feature_samples = feature_samples[(num_scale_feature_samples + 1):(num_scale_feature_samples + num_cat_feature_samples),] - num_scale_features;
+		# }
 		
 		# --- find best split ---
 		# samples that reach cur_node 
@@ -286,7 +289,9 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		}
 		best_scale_gain = 0;
 		best_cat_gain = 0;
-		if (num_scale_features > 0) {
+		if (num_scale_features > 0 & num_scale_feature_samples > 0) {
+			
+			scale_feature_samples = feature_samples[1:num_scale_feature_samples,];
 			
 			# main operation	
 			label_counts_left_scale = t (t (cur_Y_bin) %*% X_scale_ext); 
@@ -325,7 +330,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			max_I_gain_found_ind = 0;
 			best_i = 0;
 			
-			if (num_scale_feature_samples > 0) {	
+			# if (num_scale_feature_samples > 0) {	
 			
 				for (i in 1:num_scale_feature_samples) { # assuming feature_samples is 5x1
 					cur_feature_samples_bin = as.scalar (scale_feature_samples[i,]); 
@@ -351,11 +356,13 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				if (best_scale_feature > 1) {
 					best_scale_split = best_scale_split + as.scalar(cum_count_thresholds[,(best_scale_feature - 1)]);
 				}				
-			}		
+			# }		
 		}
 	
-		if (num_cat_features > 0){
-					
+		if (num_cat_features > 0 & num_cat_feature_samples > 0){
+			
+			cat_feature_samples = feature_samples[(num_scale_feature_samples + 1):(num_scale_feature_samples + num_cat_feature_samples),] - num_scale_features;
+			
 			# initialization
 			split_values_bin = matrix (0, rows = 1, cols = distinct_values_overall); 
 			split_values = split_values_bin; 
@@ -369,7 +376,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			# main operation
 			label_counts = t (t (cur_Y_bin) %*% X_cat);  
 
-			if (num_cat_feature_samples > 0) {			
+			# if (num_cat_feature_samples > 0) {			
 			
 				parfor (i9 in 1:num_cat_feature_samples, check = 0){
 			
@@ -464,7 +471,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				}
 				offset = as.scalar (distinct_values[1,best_cat_feature]);
 				best_split_values_bin = split_values_bin[1, start_ind:(start_ind + offset - 1)];
-			}			
+			# }			
 		}		
 	
 		# compare best scale feature to best cat. feature and pick the best one
@@ -623,7 +630,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			cur_NC_large[2,(2 * (i6 - 1) + 1)] = cur_tree;
 			class_label = as.scalar (rowIndexMax (label_counts_overall));
 			cur_NC_large[3,(2 * (i6 - 1) + 1)] = class_label;
-			cur_NC_large[4,(2 * (i6 - 1) + 1)] = label_sum_overall - class_label;
+			cur_NC_large[4,(2 * (i6 - 1) + 1)] = label_sum_overall - max (label_counts_overall);
 			cur_NC_large[5,(2 * (i6 - 1) + 1)] = 1; # special leaf	
 						
 		}
@@ -662,7 +669,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 
 		F_large = append (F_large, cur_F_large);
 		cur_S_large = removeEmpty (target = cur_S_large, margin = "cols");
-		S_large = append (S_large, cur_S_large);	
+		if (as.scalar (cur_S_large[1,1]) != 0) S_large = append (S_large, cur_S_large);	
 			
 		num_cur_nodes_large_pre = 2 * num_cur_nodes_large;
 		if (as.scalar (cur_Q_large[1,1]) == 0) {
@@ -751,12 +758,12 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				feature_samples = order (target = feature_samples, by = 1);
 				num_scale_feature_samples = sum (ppred (feature_samples, num_scale_features, "<="));
 				num_cat_feature_samples = num_feature_samples - num_scale_feature_samples;
-				if (num_scale_feature_samples > 0) {
-					scale_feature_samples = feature_samples[1:num_scale_feature_samples,];
-				} 
-				if (num_cat_feature_samples > 0) {
-					cat_feature_samples = feature_samples[(num_scale_feature_samples + 1):(num_scale_feature_samples + num_cat_feature_samples),] - num_scale_features;
-				}
+				# if (num_scale_feature_samples > 0) {
+					# scale_feature_samples = feature_samples[1:num_scale_feature_samples,];
+				# } 
+				# if (num_cat_feature_samples > 0) {
+					# cat_feature_samples = feature_samples[(num_scale_feature_samples + 1):(num_scale_feature_samples + num_cat_feature_samples),] - num_scale_features;
+				# }
 		
 				# --- find best split ---
 				# samples that reach cur_node 
@@ -774,7 +781,9 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				}
 				best_scale_gain = 0;
 				best_cat_gain = 0;
-				if (num_scale_features > 0) {
+				if (num_scale_features > 0 & num_scale_feature_samples > 0) {
+					
+					scale_feature_samples = feature_samples[1:num_scale_feature_samples,];
 					
 					# main operation	
 					label_counts_left_scale = t (t (cur_Y_bin) %*% X_scale_ext_small); 
@@ -814,7 +823,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					max_I_gain_found_ind = 0;
 					best_i = 0;
 					
-					if (num_scale_feature_samples > 0) {				
+					# if (num_scale_feature_samples > 0) {				
 						
 						for (i in 1:num_scale_feature_samples) { # assuming feature_samples is 5x1
 							cur_feature_samples_bin = as.scalar (scale_feature_samples[i,]); 
@@ -840,10 +849,12 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						if (best_scale_feature > 1) {
 							best_scale_split = best_scale_split + as.scalar(cum_count_thresholds[,(best_scale_feature - 1)]);
 						}	
-					}					
+					# }					
 				}
 				
-				if (num_cat_features > 0){
+				if (num_cat_features > 0 & num_cat_feature_samples > 0){
+						
+					cat_feature_samples = feature_samples[(num_scale_feature_samples + 1):(num_scale_feature_samples + num_cat_feature_samples),] - num_scale_features;
 						
 					# initialization
 					split_values_bin = matrix (0, rows = 1, cols = distinct_values_overall); 
@@ -858,7 +869,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					# main operation
 					label_counts = t (t (cur_Y_bin) %*% X_cat_small);  
 
-					if (num_cat_feature_samples > 0) {			
+					# if (num_cat_feature_samples > 0) {			
 					
 						parfor (i9 in 1:num_cat_feature_samples, check = 0){
 					
@@ -953,7 +964,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						}
 						offset = as.scalar (distinct_values[1,best_cat_feature]);
 						best_split_values_bin = split_values_bin[1, start_ind:(start_ind + offset - 1)];
-					}				   
+					# }				   
 				}
 				
 				# compare best scale feature to best cat. feature and pick the best one
@@ -1105,7 +1116,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					cur_NC[2,(2 * (i8 - 1) + 1)] = cur_tree;
 					class_label = as.scalar (rowIndexMax (label_counts_overall));
 					cur_NC[3,(2 * (i8 - 1) + 1)] = class_label;
-					cur_NC[4,(2 * (i8 - 1) + 1)] = label_sum_overall - class_label;
+					cur_NC[4,(2 * (i8 - 1) + 1)] = label_sum_overall - max (label_counts_overall);
 					cur_NC[5,(2 * (i8 - 1) + 1)] = 1; # special leaf
 					
 				}
@@ -1128,7 +1139,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	
 			F = append (F, cur_F);
 			cur_S = removeEmpty (target = cur_S, margin = "cols");
-			S = append (S, cur_S);
+			if (as.scalar (cur_S[1,1]) != 0) S = append (S, cur_S);
 		
 			num_cur_nodes_pre = 2 * num_cur_nodes;
 			if (as.scalar (cur_Q[1,1]) == 0) {
@@ -1191,11 +1202,6 @@ if (as.scalar (S_small[1,1]) == 0 & ncol (S_small) > 1) {
 if (as.scalar (F_small[1,1]) == 0 & ncol (F_small) > 1) {
 	F_small = F_small[,2:ncol (F_small)];
 }
-
-Q_large_col_before = ncol (Q_large);
-Q_small_col_before = ncol (Q_small);
-F_large_col_before = ncol (F_large);
-F_small_col_before = ncol (F_small);
 
 # check for special leaves and if there are any remove them from Q_large and Q_small 
 special_large_leaves_ind = NC_large[5,];

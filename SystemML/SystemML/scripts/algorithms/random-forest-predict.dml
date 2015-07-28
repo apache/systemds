@@ -104,13 +104,14 @@ parfor (i in 1:num_records, check = 0) {
 		if (cur_feature == 0) { # leaf found
 			label_counts[i,type_label] = label_counts[i,type_label] + 1;
 			if (fileC != " ") {
-				if (as.scalar (C[1,j]) == 0) label_counts_oob[i,type_label] = label_counts_oob[i,type_label] + 1;
+				if (as.scalar (C[i,cur_tree]) == 0) label_counts_oob[i,type_label] = label_counts_oob[i,type_label] + 1;
 			}
 			if (cur_tree < num_trees) {
 				cur_node_pos = as.scalar (num_nodes_per_tree_cum[cur_tree,]) + 1;
 			} else if (cur_tree == num_trees) {
 				labels_found = TRUE;
 			}
+			cur_tree = cur_tree + 1;
 		} else {
 			# determine type: 1 for scale, 2 for categorical 
 			if (type_label == 1) { # scale feature
@@ -158,9 +159,13 @@ if (fileY != " ") {
 		print (acc_str);
 	}
 	if (fileC != " ") {
+		oob_ind = ppred (rowSums (label_counts_oob), 0, ">")
+		label_counts_oob = removeEmpty (target = label_counts_oob, margin = "rows");
+		num_oob = nrow (label_counts_oob);
 		Y_predicted_oob = rowIndexMax (label_counts_oob);
-		result = ppred (Y, Y_predicted_oob, "==");
-		oob_error = (1 - (sum (result) / num_records)) * 100;
+		Y_oob = removeEmpty (target = Y * oob_ind, margin = "rows");
+		result = ppred (Y_oob, Y_predicted_oob, "==");
+		oob_error = (1 - (sum (result) / num_oob)) * 100;
 		oob_str = "Out-Of-Bag error (%): " + oob_error;
 		if (fileOOB != " ") {
 			write (oob_str, fileOOB, format = fmtO);

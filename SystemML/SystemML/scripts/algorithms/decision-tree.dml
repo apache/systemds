@@ -112,18 +112,21 @@ if (fileR != " ") {
 		distinct_values_max = max (distinct_values);
 		distinct_values_offset = cumsum (t (distinct_values));
 		distinct_values_overall = sum (distinct_values);
+		
+		W = matrix (1, rows = num_cat_features, cols = 1) %*% matrix ("1 -1", rows = 1, cols = 2);
+		W = matrix (W, rows = 2 * num_cat_features, cols = 1);
+		if (as.scalar (R_cat[num_cat_features, 2]) == ncol (X)) {
+			W[2 * num_cat_features,] = 0;
+		}
+		
 		last = ppred (R_cat[,2], ncol (X), "!=");
 		R_cat1 = (R_cat[,2] + 1) * last;
 		R_cat[,2] = (R_cat[,2] * (1 - last)) + R_cat1;
 		R_cat_vec = matrix (R_cat, rows = 2 * num_cat_features, cols = 1);	
-		W = matrix (1, rows = num_cat_features, cols = 1) %*% matrix ("1 -1", rows = 1, cols = 2);
-		W = matrix (W, rows = 2 * num_cat_features, cols = 1);
-		if (as.scalar (R_cat_vec[nrow (R_cat_vec),])== ncol (X)) {
-			W[2 * num_cat_features,] = 0;
-		}
-		v = matrix (1, rows = 2 * num_cat_features, cols = 1);
-		col_tab = table (v, R_cat_vec, W, 1, ncol (X));
-		col_ind = cumsum (t (col_tab));
+
+		col_tab = table (R_cat_vec, 1, W, ncol (X), 1);
+		col_ind = cumsum (col_tab);
+		
 		col_ind_cat = removeEmpty (target = col_ind * seq (1, ncol (X)), margin = "rows");
 		col_ind_scale = removeEmpty (target = (1 - col_ind) * seq (1, ncol (X)), margin = "rows");	
 		X_cat = X %*% table (col_ind_cat, seq (1, nrow (col_ind_cat)), ncol (X), nrow (col_ind_cat));
@@ -573,7 +576,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	
 		F_large = append (F_large, cur_F_large);
 		cur_S_large = removeEmpty (target = cur_S_large, margin = "cols");
-		S_large = append (S_large, cur_S_large);	
+		if (as.scalar (cur_S_large[1,1]) != 0) S_large = append (S_large, cur_S_large);	
 			
 		num_cur_nodes_large_pre = 2 * num_cur_nodes_large;
 		if (as.scalar (cur_Q_large[1,1]) == 0) {
@@ -971,7 +974,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	
 			F = append (F, cur_F);
 			cur_S = removeEmpty (target = cur_S, margin = "cols");
-			S = append (S, cur_S);
+			if (as.scalar (cur_S[1,1]) != 0) S = append (S, cur_S);
 		
 			num_cur_nodes_pre = 2 * num_cur_nodes;
 			if (as.scalar (cur_Q[1,1]) == 0) {

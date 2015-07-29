@@ -21,11 +21,27 @@ public abstract class RelationalBinarySPInstruction extends BinarySPInstruction 
 	}
 	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
-		InstructionUtils.checkNumFields (str, 3);
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		String opcode = parseBinaryInstruction(str, in1, in2, out);
+		String opcode = null;
+		
+		boolean isBroadcast = false;
+		
+		if(str.startsWith("SPARK°map")) {
+			InstructionUtils.checkNumFields ( str, 5 );
+			
+			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+			opcode = parts[0];
+			in1.split(parts[1]);
+			in2.split(parts[2]);
+			out.split(parts[3]);
+			isBroadcast = true;
+		}
+		else {
+			InstructionUtils.checkNumFields (str, 3);
+			opcode = parseBinaryInstruction(str, in1, in2, out);
+		}
 		
 		// TODO: Relational operations need not have value type checking
 		ValueType vt1 = in1.getValueType();
@@ -75,8 +91,12 @@ public abstract class RelationalBinarySPInstruction extends BinarySPInstruction 
 			return new ScalarScalarRelationalCPInstruction(operator, in1, in2, out, opcode, str);
 		
 		}else if (dt1 == DataType.MATRIX || dt2 == DataType.MATRIX){
-			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX)
-				return new MatrixMatrixRelationalSPInstruction(operator, in1, in2, out, opcode, str);
+			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX) {
+				if(isBroadcast)
+					return new MatrixBVectorRelationalSPInstruction(operator, in1, in2, out, opcode, str);
+				else
+					return new MatrixMatrixRelationalSPInstruction(operator, in1, in2, out, opcode, str);
+			}
 			else
 				return new ScalarMatrixRelationalSPInstruction(operator, in1, in2, out, opcode, str);
 		}

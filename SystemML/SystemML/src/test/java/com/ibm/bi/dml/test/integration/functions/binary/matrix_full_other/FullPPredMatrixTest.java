@@ -11,6 +11,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -200,7 +201,151 @@ public class FullPPredMatrixTest extends AutomatedTestBase
 	}
 	
 	
-//TODO
+	// ------------------------
+	@Test
+	public void testPPredGreaterDenseDenseSP() 
+	{
+		runPPredTest(Type.GREATER, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredGreaterDenseSparseSP() 
+	{
+		runPPredTest(Type.GREATER, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredGreaterSparseDenseSP() 
+	{
+		runPPredTest(Type.GREATER, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredGreaterSparseSparseSP() 
+	{
+		runPPredTest(Type.GREATER, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredGreaterEqualsDenseDenseSP() 
+	{
+		runPPredTest(Type.GREATER_EQUALS, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredGreaterEqualsDenseSparseSP() 
+	{
+		runPPredTest(Type.GREATER_EQUALS, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredGreaterEqualsSparseDenseSP() 
+	{
+		runPPredTest(Type.GREATER_EQUALS, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredGreaterEqualsSparseSparseSP() 
+	{
+		runPPredTest(Type.GREATER_EQUALS, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredEqualsDenseDenseSP() 
+	{
+		runPPredTest(Type.EQUALS, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredEqualsDenseSparseSP() 
+	{
+		runPPredTest(Type.EQUALS, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredEqualsSparseDenseSP() 
+	{
+		runPPredTest(Type.EQUALS, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredEqualsSparseSparseSP() 
+	{
+		runPPredTest(Type.EQUALS, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredNotEqualsDenseDenseSP() 
+	{
+		runPPredTest(Type.NOT_EQUALS, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredNotEqualsDenseSparseSP() 
+	{
+		runPPredTest(Type.NOT_EQUALS, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredNotEqualsSparseDenseSP() 
+	{
+		runPPredTest(Type.NOT_EQUALS, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredNotEqualsSparseSparseSP() 
+	{
+		runPPredTest(Type.NOT_EQUALS, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredLessDenseDenseSP() 
+	{
+		runPPredTest(Type.LESS, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredLessDenseSparseSP() 
+	{
+		runPPredTest(Type.LESS, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredLessSparseDenseSP() 
+	{
+		runPPredTest(Type.LESS, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredLessSparseSparseSP() 
+	{
+		runPPredTest(Type.LESS, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredLessEqualsDenseDenseSP() 
+	{
+		runPPredTest(Type.LESS_EQUALS, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredLessEqualsDenseSparseSP() 
+	{
+		runPPredTest(Type.LESS_EQUALS, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredLessEqualsSparseDenseSP() 
+	{
+		runPPredTest(Type.LESS_EQUALS, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testPPredLessEqualsSparseSparseSP() 
+	{
+		runPPredTest(Type.LESS_EQUALS, true, true, ExecType.SPARK);
+	}
+	// ----------------------
 	
 	@Test
 	public void testPPredGreaterDenseDenseMR() 
@@ -358,10 +503,17 @@ public class FullPPredMatrixTest extends AutomatedTestBase
 		String TEST_NAME = TEST_NAME1;
 		int rows = rows1;
 		int cols = cols1;
+		    
+	    RUNTIME_PLATFORM platformOld = rtplatform;
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
 		
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+	    if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		double sparsityLeft = sp1 ? sparsity2 : sparsity1;
 		double sparsityRight = sp2 ? sparsity2 : sparsity1;
@@ -401,6 +553,7 @@ public class FullPPredMatrixTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 }

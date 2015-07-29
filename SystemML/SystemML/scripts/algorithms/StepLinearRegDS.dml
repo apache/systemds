@@ -17,16 +17,14 @@
 # X       String   	---      Location (on HDFS) to read the matrix X of feature vectors
 # Y       String   	---      Location (on HDFS) to read the 1-column matrix Y of response values
 # B       String   	---      Location to store estimated regression parameters (the betas)
-# O       String   	" "      Location to write the printed statistics; by default is standard output
 # S       String    ---      Location to write the selected features ordered as computed by the algorithm
+# O       String   	" "      Location to write the printed statistics; by default is standard output
 # icpt    Int        0       Intercept presence, shifting and rescaling the columns of X:
 #                            0 = no intercept, no shifting, no rescaling;
 #                            1 = add intercept, but neither shift nor rescale X;
 #                            2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
 # thr     Double    0.01     Threshold to stop the algorithm: if the decrease in the value of AIC falls below thr
 #                            no further features are being checked and the algorithm stops 
-# dir     String  "forward"  The mode of stepwise search; start from one feature and iteratively add 
-#							 features until AIC improves. Currently only forward selection is supported 
 # fmt     String   "text"    Matrix output format for B (the betas) only, usually "text" or "csv"
 # --------------------------------------------------------------------------------------------
 # OUTPUT: Matrix of regression parameters (the betas) and its size depend on icpt input value:
@@ -58,14 +56,19 @@
 # Moreover, in this case no further statistics will be produced  
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f StepLinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B
-#     O=OUTPUT_DIR/Out S=OUTPUT_DIR/Selected icpt=2 thr=0.01 dir=forward fmt=csv
+# hadoop jar SystemML.jar -f StepLinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas
+#     O=OUTPUT_DIR/stats S=OUTPUT_DIR/selected icpt=2 thr=0.01 fmt=csv
 
 fileX = $X;
 fileY = $Y;
 fileB = $B;
 fileS = $S;
-dir = ifdef ($dir, "forward"); 
+
+# currently only the forward selection strategy in supported: start from one feature and iteratively add 
+# features until AIC improves
+dir = "forward";
+
+fmt  = ifdef ($fmt, "text");
 intercept_status = ifdef ($icpt, 0);   
 thr = ifdef ($thr, 0.01);  
 
@@ -124,8 +127,8 @@ if (dir == "forward") {
 			B_tmp[m_orig + 1,] = beta;
 			B = B_tmp;
 		}
-		write (S, fileS, format="text");
-		write (B, fileB, format="text");
+		write (S, fileS, format=fmt);
+		write (B, fileB, format=fmt);
 		stop ("");
 	}
 	print ("Best AIC " + AIC_best + " achieved with feature: " + column_best);	
@@ -176,7 +179,7 @@ if (dir == "forward") {
 	[AIC] = linear_regression (X_global, y, m_orig, columns_fixed_ordered, fileB); 
 	
 } else {
-	stop ("Currently only forward direction is implemented!");
+	stop ("Currently only forward selection strategy is supported!");
 } 
 
 
@@ -243,7 +246,6 @@ linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig,
 	
 		fileO = ifdef ($O, " ");
 		fileS = $S;
-		fmt  = ifdef ($fmt, "text");
 		
 		print ("Computing the statistics...");
 		avg_tot = sum (y) / n;

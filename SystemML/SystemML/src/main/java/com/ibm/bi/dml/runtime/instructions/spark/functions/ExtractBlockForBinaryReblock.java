@@ -6,6 +6,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
@@ -15,10 +16,13 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 	private static final long serialVersionUID = -762987655085029215L;
 	long rlen; long clen; 
 	int in_brlen; int in_bclen; int out_brlen; int out_bclen;
-	public ExtractBlockForBinaryReblock(long rlen, long clen, int in_brlen, int in_bclen, int out_brlen, int out_bclen) {
+	public ExtractBlockForBinaryReblock(long rlen, long clen, int in_brlen, int in_bclen, int out_brlen, int out_bclen) throws DMLRuntimeException {
 		this.rlen = rlen; this.clen = clen;
 		this.in_brlen = in_brlen; this.in_bclen = in_bclen;
 		this.out_brlen = out_brlen; this.out_bclen = out_bclen;
+		if(in_brlen <= 0 || in_bclen <= 0 || out_brlen <= 0 || out_bclen <= 0) {
+			throw new DMLRuntimeException("Block sizes not unknown:" + in_brlen + "," +  in_bclen + "," +  out_brlen + "," + out_bclen);
+		}
 	}
 	
 	private long getStartGlobalIndex(long blockIndex, boolean isIn, boolean isRow) {
@@ -80,7 +84,7 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 		long endColGlobalCellIndex = getEndGlobalIndex(kv._1.getColumnIndex(), true, false);
 		
 		if(startRowGlobalCellIndex > endRowGlobalCellIndex || startColGlobalCellIndex > endColGlobalCellIndex) {
-			throw new Exception("Incorrect global cell calculation");
+			throw new Exception("Incorrect global cell calculation:" + kv._1 + ":" + startRowGlobalCellIndex + ">" +  endRowGlobalCellIndex + " || " +  startColGlobalCellIndex + " > " + endColGlobalCellIndex);
 		}
 		
 		long out_startRowBlockIndex = getBlockIndex(startRowGlobalCellIndex, false, true);

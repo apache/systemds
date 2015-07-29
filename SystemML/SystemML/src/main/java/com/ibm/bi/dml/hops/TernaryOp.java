@@ -394,10 +394,17 @@ public class TernaryOp extends Hop
 			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
 			//force blocked output in CP (see below), otherwise binarycell
-			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
+			if ( et == ExecType.SPARK ) {
+				tertiary.getOutputParameters().setDimensions(_dim1, _dim2, -1, -1, -1);
+				setRequiresReblock( true );
+			}
+			else
+				tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
 			
 			//tertiary opt, w/o reblock in CP
 			setLops(tertiary);
+			
+			
 		}
 		else //MR
 		{

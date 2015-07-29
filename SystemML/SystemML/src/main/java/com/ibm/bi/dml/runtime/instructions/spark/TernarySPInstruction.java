@@ -114,8 +114,10 @@ public class TernarySPInstruction extends ComputationSPInstruction
 				mcOut.set(mc1.getCols(), mc1.getRows(), mc1.getColsPerBlock(), mc1.getRowsPerBlock());
 			}
 		}
-		int brlen = mcOut.getRowsPerBlock();
-		int bclen = mcOut.getColsPerBlock();
+		
+		// First get the block sizes and then set them as -1 to allow for binary cell reblock
+		int brlen = mc1.getRowsPerBlock();
+		int bclen = mc1.getColsPerBlock();
 		
 		JavaPairRDD<MatrixIndexes, ArrayList<MatrixBlock>> inputMBs = null;
 		JavaPairRDD<MatrixIndexes, CTableMap> ctables = null;
@@ -213,18 +215,12 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = 
 				binaryCellsAfterFilter
 				.mapToPair(new ConvertToBinaryCell(brlen, bclen, mcBinaryCells.getRows(), mcBinaryCells.getCols()));
-				
-		
-		// Now, reblock the binary cells into MatrixBlock
-		// TODO: Add reblock rewrite and remove this part of code
-		boolean outputEmptyBlocks = true;
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
-				ReblockSPInstruction.processBinaryCellReblock(sec, binaryCells, 
-				mcBinaryCells, mcBinaryCells, outputEmptyBlocks, brlen, bclen);
 		
 		//store output rdd handle
-		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.setRDDHandleForVariable(output.getName(), binaryCells);
 		mcOut.set(mcBinaryCells);
+		// Since we are outputing binary cells, we set block sizes = -1
+		mcOut.setRowsPerBlock(-1); mcOut.setColsPerBlock(-1);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		if(setLineage2)
 			sec.addLineageRDD(output.getName(), input2.getName());
@@ -449,11 +445,14 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		
 		int brlen; int bclen;
 		long rlen; long clen;
-		public ConvertToBinaryCell(int brlen, int bclen, long rlen, long clen) {
+		public ConvertToBinaryCell(int brlen, int bclen, long rlen, long clen) throws DMLRuntimeException {
 			this.brlen = brlen;
 			this.bclen = bclen;
 			this.rlen = rlen;
 			this.clen = clen;
+			if(brlen == -1 || bclen == -1) {
+				throw new DMLRuntimeException("The block sizes cannot be -1");
+			}
 		}
 
 		@Override
@@ -475,7 +474,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 			long colIndexInBlock = UtilFunctions.cellInBlockCalculation(j, bclen);
 			// Perform sanity check
 			if(blockRowIndex <= 0 || blockColIndex <= 0 || rowIndexInBlock < 0 || colIndexInBlock < 0) {
-				throw new Exception("Error computing indexes for (:" + i + ", " + j + "," + v + ")");
+				throw new Exception("Error computing indexes for (" + i + ", " + j + "," + v + "): " + blockRowIndex + " " + blockColIndex + " " + rowIndexInBlock + " " + colIndexInBlock + " where brlen=" + brlen + " and bclen=" + bclen);
 			}
 			// ------------------------------------------------------------------------------------------
 			

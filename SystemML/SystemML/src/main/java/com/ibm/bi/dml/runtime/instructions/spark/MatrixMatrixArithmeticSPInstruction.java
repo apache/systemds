@@ -7,21 +7,15 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.broadcast.Broadcast;
-
-import scala.Tuple2;
-
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixMatrixBinaryOpFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVector;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -43,14 +37,31 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 		super(op, in1, in2, out, opcode, istr);
 	}
 	
-//	public String outputMatrixIndexes(List<Tuple2<MatrixIndexes, MatrixBlock>> vals) {
-//		String retVal = "{";
-//		for(Tuple2<MatrixIndexes, MatrixBlock> kv : vals) {
-//			retVal += kv._1.toString() + " ";
-//		}
-//		retVal += "}";
-//		return retVal;
-//	}
+	private String getReplicatedVar(String rddVar1, String rddVar2, boolean isRowVectorOperation, MatrixCharacteristics mc1) {
+		String replicatedVar = rddVar2;
+		if(isRowVectorOperation) {
+			if(mc1.getCols() == 1) {
+				replicatedVar = rddVar1;
+			}
+		}
+		else {
+			if(mc1.getRows() == 1) {
+				replicatedVar = rddVar1;
+			}
+		}
+		return replicatedVar;
+	}
+	
+	private long getNumReplications(boolean isRowVectorOperation, MatrixCharacteristics otherMc) {
+		long numReplications;
+		if(isRowVectorOperation) {
+			numReplications = (long) Math.ceil(otherMc.getRows() / otherMc.getRowsPerBlock());
+		}
+		else {
+			numReplications = (long) Math.ceil(otherMc.getCols() / otherMc.getColsPerBlock());
+		}
+		return numReplications;
+	}
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
@@ -77,64 +88,82 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 				}
 				 
 				
+				JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = null;
+				JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 				BinaryOperator bop = (BinaryOperator) _optr;
-				boolean isBroadcastRHSVar = true;
 				
-				if(mc1.getRows() == mc2.getRows() && mc1.getCols() == mc2.getCols()) {
+				boolean isOuter = (mc1.getRows() != 1 && mc2.getCols() != 1 && mc1.getCols() == 1 && mc2.getRows() == 1);
+				if(isOuter) {
+					// Outer operation
+					if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
+						throw new DMLRuntimeException("Outer for incompatible block sizes is not implemented");
+					}
+					in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar1 )
+							.flatMapToPair(new ReplicateVector(false, mc2.getCols() ));
+					in2 = sec.getBinaryBlockRDDHandleForVariable( rddVar2 )
+							.flatMapToPair(new ReplicateVector(true, mc1.getRows()));
+				}
+				else if(mc1.getRows() == mc2.getRows() && mc1.getCols() == mc2.getCols()) {
 					// Matrix-matrix operation
-					JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar1 );
-					JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( rddVar2 );
-					JavaPairRDD<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> cogroupRdd = in1.cogroup(in2);
-					out = cogroupRdd.mapToPair(new RDDMatrixMatrixArithmeticFunction(bop, this.instString));
-					isBroadcastRHSVar = false;
+					in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar1 );
+					in2 = sec.getBinaryBlockRDDHandleForVariable( rddVar2 );
 				}
 				else {
-					// Matrix-column vector operation
+					// Matrix vector operation where vector doesnot fit in broadcast memory
+					// Replicate the vector
+					// Conservative approach: so as not to crash when matrix is large. 
+					// This can be improved further when we know number of blocks (of non-replicated dimension) fit into task limit
+					// by cogrouping the entire row/column of matrix with that of vector
 					boolean atLeastOneColumnVector = mc1.getCols() == 1 || mc2.getCols() == 1;
-					boolean isColumnVectorOperation = mc1.getRows() == mc2.getRows() && mc1.getCols() != mc2.getCols() && atLeastOneColumnVector;
+					boolean isColumnVectorOperation = mc1.getRows() == mc2.getRows() && atLeastOneColumnVector;
 					boolean atLeastOneRowVector = mc1.getRows() == 1 || mc2.getRows() == 1;
-					boolean isRowVectorOperation = mc1.getRows() != mc2.getRows() && mc1.getCols() == mc2.getCols() && atLeastOneRowVector;
+					boolean isRowVectorOperation = mc1.getCols() == mc2.getCols() && atLeastOneRowVector;
 					if(!isColumnVectorOperation && !isRowVectorOperation) {
 						throw new DMLRuntimeException("Incorrect input dimensions for MatrixMatrixArithmeticSPInstruction");
 					}
+					 
+					String replicatedVar = getReplicatedVar(rddVar1,rddVar2, isRowVectorOperation, mc1);
 					
-					String rddVar = rddVar1; 
-					String bcastVar = rddVar2;
-					MatrixCharacteristics rddMC = mc1;
-					if(isRowVectorOperation) {
-						if(mc1.getCols() == 1) {
-							isBroadcastRHSVar = false; rddVar = rddVar2;  bcastVar = rddVar1;
-							rddMC = mc2;
-						}
+					if(rddVar1.compareTo(replicatedVar) == 0) {
+						long numReplications = getNumReplications(isRowVectorOperation, mc2);
+						in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar1 )
+								.flatMapToPair(new ReplicateVector(isRowVectorOperation, numReplications));
 					}
 					else {
-						if(mc1.getRows() == 1) {
-							isBroadcastRHSVar = false; rddVar = rddVar2;  bcastVar = rddVar1;
-							rddMC = mc2;
-						}
+						in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar1 );
 					}
 					
-					JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-					Broadcast<PartitionedMatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
-					out = in1.mapToPair(new RDDMatrixVectorArithmeticFunction(isBroadcastRHSVar, isColumnVectorOperation, in2, bop, rddMC.getRowsPerBlock(), rddMC.getColsPerBlock(), rddMC.getRows(), rddMC.getCols()));
+					if(rddVar2.compareTo(replicatedVar) == 0) {
+						long numReplications = getNumReplications(isRowVectorOperation, mc1);
+						in2 = sec.getBinaryBlockRDDHandleForVariable( rddVar2 )
+								.flatMapToPair(new ReplicateVector(isRowVectorOperation, numReplications));
+					}
+					else {
+						in2 = sec.getBinaryBlockRDDHandleForVariable( rddVar2 );
+					}
+					
 				}
+				
+				// Core operation: perform cogroup and then map
+				out = in1.join(in2).mapValues(new MatrixMatrixBinaryOpFunction(bop));
 				
 				// put output RDD handle into symbol table
 				MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 				if(!mcOut.dimsKnown()) {
 					if(!mc1.dimsKnown())
 						throw new DMLRuntimeException("The output dimensions are not specified for MatrixMatrixArithmeticSPInstruction");
-					else
+					else if(isOuter) {
+						sec.getMatrixCharacteristics(output.getName()).set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+					}
+					else {
 						sec.getMatrixCharacteristics(output.getName()).set(mc1);
+					}
 				}
 				
 				sec.setRDDHandleForVariable(output.getName(), out);
 				sec.addLineageRDD(output.getName(), rddVar1);
-				if( isBroadcastRHSVar )
-					sec.addLineageBroadcast(output.getName(), rddVar2);
-				else
-					sec.addLineageRDD(output.getName(), rddVar2);
+				sec.addLineageRDD(output.getName(), rddVar2);
 			}
 			else {
 				throw new DMLRuntimeException("Unknown opcode in MatrixMatrixArithmeticSPInstruction: " + toString());
@@ -145,99 +174,4 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 		}
 	}
 	
-	private static class RDDMatrixMatrixArithmeticFunction implements PairFunction<Tuple2<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>>, MatrixIndexes, MatrixBlock> 
-	{
-		private static final long serialVersionUID = 8197406787010296291L;
-		private BinaryOperator op;
-		
-		private String instructionString;
-		public RDDMatrixMatrixArithmeticFunction(BinaryOperator op, String instructionString) {
-			this.op = op;
-			this.instructionString = instructionString;
-		}
-
-		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> kv) throws Exception {
-			// MatrixBlock resultBlk = new MatrixBlock(brlen, bclen, false);
-			Iterator<MatrixBlock> iter1 = kv._2._1.iterator();
-			MatrixBlock blk1 = null;
-			if(iter1.hasNext()) {
-				blk1 = iter1.next();
-			}
-			Iterator<MatrixBlock> iter2 = kv._2._2.iterator();
-			MatrixBlock blk2 = null;
-			if(iter2.hasNext()) {
-				blk2 = iter2.next();
-			}
-			
-			if(blk1 == null && blk2 == null) {
-				throw new Exception("Error: In instruction:[" + instructionString + "]: The input variables donot have blocks for index:"+ kv._1.toString());
-			}
-			else if(blk1 == null) {
-				throw new Exception("Error: In instruction:[" + instructionString + "]: The LHS variable doesnot have a block for index:"+ kv._1.toString());
-			}
-			else if(blk2 == null) {
-				throw new Exception("Error: In instruction:[" + instructionString + "]: The RHS variable doesnot have a block for index:"+ kv._1.toString());
-			}
-			else if(iter1.hasNext() || iter2.hasNext()) {
-				throw new Exception("Error: In instruction:[" + instructionString + "]: The iterator for RDDMatrixMatrixArithmeticFunction should be size of 1.");
-			}
-			
-			MatrixBlock resultBlk = (MatrixBlock) (blk1.binaryOperations (op, blk2, new MatrixBlock()));
-			// LibMatrixBincell.bincellOp(blk1, blk2, resultBlk, op);
-			
-			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, resultBlk);
-		}
-	}
-	
-	private static class RDDMatrixVectorArithmeticFunction implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes,MatrixBlock> {
-		private static final long serialVersionUID = 2814994742189295067L;
-		private BinaryOperator op;
-		private boolean isBroadcastRHSVar;
-		private boolean isColumnVector; 
-		Broadcast<PartitionedMatrixBlock> _pmV;
-		
-		public RDDMatrixVectorArithmeticFunction( boolean isBroadcastRHSVar, boolean isColumnVector, Broadcast<PartitionedMatrixBlock> binput, BinaryOperator op, int brlen, int bclen, long rdd_rlen, long rdd_clen ) {
-			this.isBroadcastRHSVar = isBroadcastRHSVar;
-			this.isColumnVector = isColumnVector;
-			this.op = op;
-			
-			//get the broadcast vector
-			_pmV = binput;
-		}
-		
-		
-		@Override
-		public Tuple2<MatrixIndexes,MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
-			throws Exception 
-		{
-			MatrixBlock blk1 = null;
-			MatrixBlock blk2 = null;
-			
-			if(isBroadcastRHSVar) {
-				blk1 = kv._2;
-				if(this.isColumnVector) {
-					blk2 = _pmV.value().getMatrixBlock((int) kv._1.getRowIndex(),1);
-				}
-				else {
-					blk2 = _pmV.value().getMatrixBlock(1, (int) kv._1.getColumnIndex());
-				}
-			}
-			else {
-				blk2 = kv._2;
-				if(this.isColumnVector) {
-					blk2 = _pmV.value().getMatrixBlock((int) kv._1.getRowIndex(),1);
-				}
-				else {
-					blk2 = _pmV.value().getMatrixBlock(1, (int) kv._1.getColumnIndex());
-				}
-			}
-			
-			MatrixBlock resultBlk = (MatrixBlock) (blk1.binaryOperations (op, blk2, new MatrixBlock()));
-			// LibMatrixBincell.bincellOp(blk1, blk2, resultBlk, op);
-			
-			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, resultBlk);
-		}
-		
-	}
 }

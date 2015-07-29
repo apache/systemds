@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import com.ibm.bi.dml.api.MLContext;
+import com.ibm.bi.dml.api.MLContextProxy;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -85,6 +86,7 @@ public abstract class SPInstruction extends Instruction
 			String updInst = RunMRJobs.updateLabels(tmp.toString(), ec.getVariables());
 			tmp = SPInstructionParser.parseSingleInstruction(updInst);
 		}
+		
 
 		//spark-explain-specific handling of current instructions 
 		//This only relevant for ComputationSPInstruction as in postprocess we call setDebugString which is valid only for ComputationSPInstruction
@@ -94,6 +96,7 @@ public abstract class SPInstruction extends Instruction
 			&& ec instanceof SparkExecutionContext ) 
 		{
 			mlCtx.getMonitoringUtil().addCurrentInstruction((SPInstruction)tmp);
+			MLContextProxy.setInstructionForMonitoring(tmp);
 		}
 		
 		return tmp;

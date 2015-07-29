@@ -595,7 +595,7 @@ public class BinaryOp extends Hop
 				Hop left = getInput().get(0);
 				Hop right = getInput().get(1);
 				//TODO need to create spark-specific op selection for supporting binarym/binaryr
-				MMBinaryMethod mbin = optFindMMBinaryMethod(left, right);
+				MMBinaryMethod mbin = optFindMMBinaryMethodSpark(left, right);
 				
 				Lop  binary = null;
 				if( mbin == MMBinaryMethod.MR_BINARY_UAGG_CHAIN ) {
@@ -603,6 +603,13 @@ public class BinaryOp extends Hop
 					binary = new BinaryUAggChain(left.constructLops(), HopsOpOp2LopsB.get(op),
 							HopsAgg2Lops.get(uRight.getOp()), HopsDirection2Lops.get(uRight.getDirection()),
 							getDataType(), getValueType(), et);
+				}
+				else if (mbin == MMBinaryMethod.MR_BINARY_M) {
+					boolean partitioned = false;
+					boolean isColVector = (right.getDim2()==1);
+					
+					binary = new BinaryM(left.constructLops(), right.constructLops(),
+							HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et, partitioned, isColVector); 
 				}
 				else {
 					binary = new Binary(left.constructLops(), right.constructLops(), 
@@ -633,7 +640,7 @@ public class BinaryOp extends Hop
 					}					
 					
 					BinaryM binary = new BinaryM(left.constructLops(), dcInput, HopsOpOp2LopsB.get(op),
-							getDataType(), getValueType(), needPart, (right.getDim2()==1));
+							getDataType(), getValueType(), ExecType.MR, needPart, (right.getDim2()==1));
 					binary.getOutputParameters().setDimensions(getDim1(), getDim2(), 
 											getRowsInBlock(), getColsInBlock(), getNnz());
 					binary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
@@ -1258,6 +1265,37 @@ public class BinaryOp extends Hop
 				||(left.getDim1() > 1 && right.getDim1()==1 && left.getDim1()>=left.getRowsInBlock() )); //row MV and more than 1 block
 	}
 
+	private MMBinaryMethod optFindMMBinaryMethodSpark(Hop left, Hop right) {
+		long m1_dim1 = left.getDim1();
+		long m1_dim2 = left.getDim2();
+		long m2_dim1 =  right.getDim1();
+		long m2_dim2 = right.getDim2();
+		long m1_rpb = left.getRowsInBlock();
+		long m1_cpb = left.getColsInBlock();
+		
+		//MR_BINARY_UAGG_CHAIN only applied if result is column/row vector of MV binary operation.
+		if( right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
+			&& ((((AggUnaryOp) right).getDirection() == Direction.Row && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //single column block
+		    ||  (((AggUnaryOp) right).getDirection() == Direction.Col && m1_dim1 > 1 && m1_dim1 <= m1_rpb ))) //single row block
+		{
+			return MMBinaryMethod.MR_BINARY_UAGG_CHAIN;
+		}
+		
+		//MR_BINARY_M currently only applied for MV because potential partitioning job may cause additional latency for VV.
+		if( m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 
+			&& ((m1_dim2 >= 1 && m2_dim2 == 1)  //rhs column vector	
+			  ||(m1_dim1 >= 1 && m2_dim1 == 1 )) ) //rhs row vector
+		{
+			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
+			double memBudget = SparkExecutionContext.getBroadcastMemoryBudget() / 2;
+			if(footprint < memBudget) {
+				return MMBinaryMethod.MR_BINARY_M;
+			}
+		}
+		
+		//MR_BINARY_R as robust fallback strategy
+		return MMBinaryMethod.MR_BINARY_R;
+	}
 	
 	/**
 	 * 

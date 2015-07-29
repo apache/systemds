@@ -12,6 +12,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarScalarArithmeticCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -33,11 +34,29 @@ public abstract class ArithmeticBinarySPInstruction extends BinarySPInstruction
 		_sptype = SPINSTRUCTION_TYPE.ArithmeticBinary;
 	}
 	
+	
+	
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		String opcode = parseBinaryInstruction(str, in1, in2, out);
+		String opcode = null;
+		
+		boolean isBroadcast = false;
+		
+		if(str.startsWith("SPARK°map")) {
+			InstructionUtils.checkNumFields ( str, 5 );
+			
+			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+			opcode = parts[0];
+			in1.split(parts[1]);
+			in2.split(parts[2]);
+			out.split(parts[3]);
+			isBroadcast = true;
+		}
+		else {
+			opcode = parseBinaryInstruction(str, in1, in2, out);
+		}
 		
 		// Arithmetic operations must be performed on DOUBLE or INT
 		ValueType vt1 = in1.getValueType();
@@ -95,8 +114,12 @@ public abstract class ArithmeticBinarySPInstruction extends BinarySPInstruction
 												  + " and "
 												  + out.getName());
 				
-			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX)
-				return new MatrixMatrixArithmeticSPInstruction(operator, in1, in2, out, opcode, str);
+			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX) {
+				if(isBroadcast)
+					return new MatrixBVectorArithmeticSPInstruction(operator, in1, in2, out, opcode, str);
+				else
+					return new MatrixMatrixArithmeticSPInstruction(operator, in1, in2, out, opcode, str);
+			}
 			else
 				return new ScalarMatrixArithmeticSPInstruction(operator, in1, in2, out, opcode, str);	
 		}

@@ -43,9 +43,10 @@ public class BinaryM extends Lop
 	 * Constructor to perform a binary operation.
 	 * @param input
 	 * @param op
+	 * @throws DMLRuntimeException 
 	 */
 
-	public BinaryM(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, boolean partitioned, boolean colVector ) {
+	public BinaryM(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean partitioned, boolean colVector ) throws LopsException {
 		super(Lop.Type.Binary, dt, vt);
 		
 		_operation = op;
@@ -61,9 +62,19 @@ public class BinaryM extends Lop
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		
-		lps.addCompatibility(JobType.GMR);
-		lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );	
+		if(et == ExecType.MR) {
+			lps.addCompatibility(JobType.GMR);
+			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		}
+		else if(et == ExecType.SPARK) {
+			lps.addCompatibility(JobType.INVALID);
+			lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
+		else {
+			throw new LopsException("Incorrect execution type for BinaryM lop:" + et.name());
+		}
 	}
+	
 
 	@Override
 	public String toString() 

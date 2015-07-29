@@ -8,6 +8,7 @@
 
 package com.ibm.bi.dml.runtime.matrix;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
@@ -43,6 +44,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.ReplicateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ScalarInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.SeqInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.UaggOuterChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.ZeroOutInstruction;
@@ -51,8 +53,10 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 
 
-public class MatrixCharacteristics
+public class MatrixCharacteristics implements Serializable
 {
+	private static final long serialVersionUID = 8300479822915546000L;
+
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
 	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -294,6 +298,12 @@ public class MatrixCharacteristics
 				dimOut.set(realIns.getOutputLen(), mc.getCols(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
 			else
 				dimOut.set(mc.getRows(), realIns.getOutputLen(), mc.numRowsPerBlock, mc.numColumnsPerBlock);
+		}
+		else if(ins instanceof UaggOuterChainInstruction) //needs to be checked before binary
+		{
+			UaggOuterChainInstruction realIns=(UaggOuterChainInstruction)ins;
+			MatrixCharacteristics mc = dims.get(realIns.input1);
+			realIns.computeOutputCharacteristics(mc, dimOut);
 		}
 		else if(ins instanceof BinaryInstruction || ins instanceof BinaryMInstruction || ins instanceof CombineBinaryInstruction )
 		{

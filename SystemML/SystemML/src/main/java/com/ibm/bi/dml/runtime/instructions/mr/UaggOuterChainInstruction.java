@@ -15,9 +15,12 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.functionobjects.LessThan;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
@@ -102,6 +105,21 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 		AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrExists, corrLoc.toString());
 	
 		return new UaggOuterChainInstruction(bop, uaggop, aop, in1, in2, out, str);
+	}
+	
+	/**
+	 * 
+	 * @param mcIn
+	 * @param mcOut
+	 */
+	public void computeOutputCharacteristics(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut)
+	{
+		if( _uaggOp.indexFn instanceof ReduceAll )
+			mcOut.set(1, 1, mcIn.getRowsPerBlock(), mcOut.getColsPerBlock());
+		else if( _uaggOp.indexFn instanceof ReduceCol ) //e.g., rowSums
+			mcOut.set(mcIn.getRows(), 1, mcIn.getRowsPerBlock(), mcOut.getColsPerBlock());
+		else if( _uaggOp.indexFn instanceof ReduceRow ) //e.g., colSums
+			mcOut.set(1, mcIn.getCols(), mcIn.getRowsPerBlock(), mcOut.getColsPerBlock());
 	}
 	
 	@Override

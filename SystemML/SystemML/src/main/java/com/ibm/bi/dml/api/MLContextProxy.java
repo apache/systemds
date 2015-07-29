@@ -9,6 +9,7 @@ package com.ibm.bi.dml.api;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.api.monitoring.Location;
 import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -48,11 +49,12 @@ public class MLContextProxy
 	 * 
 	 * @param tmp
 	 */
-	public static void performCleanupAfterRecompilation(ArrayList<Instruction> tmp) 
+	public static ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> tmp) 
 	{
 		if(MLContext.getCurrentMLContext() != null) {
-			MLContext.getCurrentMLContext().performCleanupAfterRecompilation(tmp);
+			return MLContext.getCurrentMLContext().performCleanupAfterRecompilation(tmp);
 		}
+		return tmp;
 	}
 
 	/**
@@ -67,6 +69,14 @@ public class MLContextProxy
 		MLContext mlContext = MLContext.getCurrentMLContext();
 		if(mlContext != null) {
 			mlContext.setAppropriateVarsForRead(source, targetname);
+		}
+	}
+	
+	public static void setInstructionForMonitoring(Instruction inst) {
+		Location loc = inst.getLocation();
+		MLContext mlContext = MLContext.getCurrentMLContext();
+		if(loc != null && mlContext != null && mlContext.getMonitoringUtil() != null) {
+			mlContext.getMonitoringUtil().setInstructionLocation(loc, inst);
 		}
 	}
 	

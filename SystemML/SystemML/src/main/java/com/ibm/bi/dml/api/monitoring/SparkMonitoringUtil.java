@@ -8,35 +8,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.spark.SparkContext;
-
 import scala.collection.Seq;
 import scala.xml.Node;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
-import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.MLContext;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkListener;
 
-/*
- /home/biadmin/spark-1.4.0/spark-1.4.0-SNAPSHOT-bin-hadoop2.4/bin/spark-submit \
-      --class com.ibm.bi.dml.api.monitoring.SparkMonitoringUtil \
-      --master yarn-client \
-      --num-executors 4 \
-      --driver-memory 5g \
-      --executor-memory 5g \
-      --executor-cores 12 \
-      --queue default \
-      ./SystemML.jar \
-      -f hdfs:/user/biadmin/nike/GNMF.dml -exec hybrid_spark -args V.mtx W.mtx H.mtx 2000 1500 50 3 WOut2.mtx HOut2.mtx
+/**
+ * Usage guide:
+ * MLContext mlCtx = new MLContext(sc, true);
+ * mlCtx.register...
+ * mlCtx.execute(...)
+ * mlCtx.getMonitoringUtil().getRuntimeInfoInHTML("runtime.html");
  */
 public class SparkMonitoringUtil {
 	// ----------------------------------------------------
@@ -86,11 +74,24 @@ public class SparkMonitoringUtil {
 	
 	// public Multimap<Location, String> hops = ArrayListMultimap.create(); TODO:
 	private String dmlStrForMonitoring = null;
-	String libFolder ="/home/biadmin/spark-1.4.0/spark-1.4.0-hadoop-2.3/core/src/main/resources/org/apache/spark/ui/static";
 	public void getRuntimeInfoInHTML(String htmlFilePath) throws DMLRuntimeException, IOException {
+		String jsAndCSSFiles = "<script src=\"js/lodash.min.js\"></script>"
+				+ "<script src=\"js/jquery-1.11.1.min.js\"></script>"
+				+ "<script src=\"js/d3.min.js\"></script>"
+				+ "<script src=\"js/bootstrap-tooltip.js\"></script>"
+				+ "<script src=\"js/dagre-d3.min.js\"></script>"
+				+ "<script src=\"js/graphlib-dot.min.js\"></script>"
+				+ "<script src=\"js/spark-dag-viz.js\"></script>"
+				+ "<script src=\"js/timeline-view.js\"></script>"
+				+ "<script src=\"js/vis.min.js\"></script>"
+				+ "<link rel=\"stylesheet\" href=\"css/bootstrap.min.css\">"
+				+ "<link rel=\"stylesheet\" href=\"css/vis.min.css\">"
+				+ "<link rel=\"stylesheet\" href=\"css/spark-dag-viz.css\">"
+				+ "<link rel=\"stylesheet\" href=\"css/timeline-view.css\"> ";
 		BufferedWriter bw = new BufferedWriter(new FileWriter(htmlFilePath));
-		bw.write("<html>\n");
-		bw.write("<body>\n<table border=1>\n");
+		bw.write("<html><head>\n");
+		bw.write(jsAndCSSFiles + "\n");
+		bw.write("</head><body>\n<table border=1>\n");
 		
 		bw.write("<tr>\n");
 		bw.write("<td><b>Position in script</b></td>\n");
@@ -154,8 +155,11 @@ public class SparkMonitoringUtil {
 	private String getStageIDAsString(String instruction) {
 		String retVal = "";
 		for(Integer stageId : stageIDs.get(instruction)) {
-			// TODO: Add visualization (DAG and timeline) code here !!!
-			retVal +=  stageId + ","; 
+			retVal +=  "Stage:" + stageId + 
+					" ("
+					+ "<div>" + getStageDAGs(stageId).toString().replaceAll("toggleDagViz\\(false\\)", "toggleDagViz(false, this)") + "</div>, "
+					+ "<div>" + getStageTimeLine(stageId) + "</div>"
+					+ ")"; 
 		}
 		return retVal;
 	}
@@ -218,70 +222,4 @@ public class SparkMonitoringUtil {
 		tmp = tmp.replaceAll(Lop.INSTRUCTION_DELIMITOR, ", ");
 		return tmp;
 	}
-	
-	public static void main(String[] args) throws IOException, DMLException, ParseException {
-		if (!args[0].equals("-f")){
-			System.err.println("ERROR: First argument must be either -f");
-			return;
-		}
-		
-		boolean setForcedSparkExecType = false;
-		boolean namedScriptArgs = false;
-		String[] scriptArgs = null; //optional script arguments
-		for( int i=2; i<args.length; i++ )
-		{
-			if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize"))
-				throw new DMLRuntimeException("-visualize is not yet supported while monitoring");
-			else if( args[i].equalsIgnoreCase("-explain") ) { 
-//					EXPLAIN = ExplainType.RUNTIME;
-//					if( args.length > (i+1) && !args[i+1].startsWith("-") )
-//						EXPLAIN = Explain.parseExplainType(args[++i]);
-				throw new DMLRuntimeException("-explain is not yet supported while monitoring");
-			}
-			else if( args[i].equalsIgnoreCase("-stats") )
-				throw new DMLRuntimeException("-stats is not yet supported while monitoring");
-			else if ( args[i].equalsIgnoreCase("-exec")) {
-				RUNTIME_PLATFORM rtplatform = DMLScript.parseRuntimePlatform(args[++i]);
-				if( rtplatform==null ) 
-					throw new DMLRuntimeException("Unknown runtime platform in -exec");
-				else if( rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK) {
-					setForcedSparkExecType = false;
-				}
-				else if( rtplatform == RUNTIME_PLATFORM.SPARK) {
-					setForcedSparkExecType = true;
-				}
-				else {
-					throw new DMLRuntimeException("Unsupported runtime platform in -exec");
-				}
-			}
-			else if (args[i].startsWith("-config="))
-				throw new DMLRuntimeException("-config is not yet supported while monitoring");
-			else if( args[i].equalsIgnoreCase("-debug") ) {					
-				throw new DMLRuntimeException("Debugging not supported while monitoring");
-			}
-			else if( args[i].equalsIgnoreCase("-python") ) {
-				throw new DMLRuntimeException("PyDML not supported while monitoring");
-			}
-			else if (args[i].startsWith("-args") || args[i].startsWith("-nvargs")) {
-				namedScriptArgs = args[i].startsWith("-nvargs"); i++;
-				scriptArgs = new String[args.length - i];
-				System.arraycopy(args, i, scriptArgs, 0, scriptArgs.length); 
-				break;
-			}
-			else{
-				throw new DMLRuntimeException("ERROR: Unknown argument: " + args[i]);
-			}
-		}
-		
-		MLContext mlCtx = new MLContext(new SparkContext(), true, setForcedSparkExecType);
-		if(namedScriptArgs) {
-			HashMap<String, String> argVals = DMLScript.createArgumentsMap(namedScriptArgs, scriptArgs);	
-			mlCtx.execute(args[1], argVals);
-		}
-		else {
-			mlCtx.execute(args[1], scriptArgs);
-		}
-		mlCtx.getMonitoringUtil().getRuntimeInfoInHTML("runtime.html");
-	}
-	// ----------------------------------------------------
 }

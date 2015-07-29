@@ -142,7 +142,7 @@ public class ProgramBlock
 				tmp = Recompiler.recompileHopsDag(_sb, _sb.get_hops(), ec.getVariables(), null, false, _tid);
 				
 				if( MLContextProxy.isActive() )
-					MLContextProxy.performCleanupAfterRecompilation(tmp);
+					tmp = MLContextProxy.performCleanupAfterRecompilation(tmp);
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();

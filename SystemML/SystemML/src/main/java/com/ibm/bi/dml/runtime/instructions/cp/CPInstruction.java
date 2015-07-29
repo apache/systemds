@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
+import com.ibm.bi.dml.api.MLContextProxy;
 import com.ibm.bi.dml.lops.runtime.RunMRJobs;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -77,6 +78,9 @@ public abstract class CPInstruction extends Instruction
 			//note: no exchange of updated instruction as labels might change in the general case
 			String updInst = RunMRJobs.updateLabels(tmp.toString(), ec.getVariables());
 			tmp = CPInstructionParser.parseSingleInstruction(updInst);
+			if(MLContextProxy.isActive()) {
+				MLContextProxy.setInstructionForMonitoring(tmp);
+			}
 		}
 
 		return tmp;

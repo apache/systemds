@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.instructions;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.ibm.bi.dml.api.monitoring.Location;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -35,8 +36,8 @@ public abstract class Instruction
 	protected INSTRUCTION_TYPE type = null;
 	protected String instString = null;
 	protected String instOpcode = null;
-	private int beginLine = -1;
-	private int endLine = -1;  private int beginCol = -1; private int endCol = -1;
+	protected int beginLine = -1;
+	protected int endLine = -1;  protected int beginCol = -1; protected int endCol = -1;
 	private long instID = -1;
 	
 	public void setType (INSTRUCTION_TYPE tp ) {
@@ -83,6 +84,15 @@ public abstract class Instruction
 			this.beginCol = oldInst.beginCol;
 			this.endCol = oldInst.endCol;
 		}
+	}
+	
+	public Location getLocation() {
+		// Rather than exposing 4 different getter methods. Also Location doesnot contain any references to Spark libraries
+		if(beginLine == -1 || endLine == -1 || beginCol == -1 || endCol == -1) {
+			return null;
+		}
+		else
+			return new Location(beginLine, endLine, beginCol, endCol);
 	}
 	
 	

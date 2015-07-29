@@ -17,10 +17,6 @@ import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.cp.BuiltinBinaryCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.BuiltinUnaryCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.MatrixReshapeCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateTernarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.AppendGAlignedSPInstruction;
@@ -41,6 +37,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.CumulativeOffsetSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapmmChainSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.MatrixReshapeSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.PmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.QuantilePickSPInstruction;
@@ -105,10 +102,10 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		
 		// Reorg Instruction Opcodes (repositioning of existing values)
-		String2SPInstructionType.put( "r'"   	    , SPINSTRUCTION_TYPE.Reorg);
-		String2SPInstructionType.put( "rdiag"   	    , SPINSTRUCTION_TYPE.Reorg);
-		String2SPInstructionType.put( "rshape"      , SPINSTRUCTION_TYPE.MatrixReshape);
-		String2SPInstructionType.put( "rsort"   	    , SPINSTRUCTION_TYPE.Reorg);
+		String2SPInstructionType.put( "r'"   	   , SPINSTRUCTION_TYPE.Reorg);
+		String2SPInstructionType.put( "rdiag"      , SPINSTRUCTION_TYPE.Reorg);
+		String2SPInstructionType.put( "rshape"     , SPINSTRUCTION_TYPE.MatrixReshape);
+		String2SPInstructionType.put( "rsort"      , SPINSTRUCTION_TYPE.Reorg);
 		
 		String2SPInstructionType.put( "+"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "-"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
@@ -140,7 +137,6 @@ public class SPInstructionParser extends InstructionParser {
 		
 		String2SPInstructionType.put( "max"  , SPINSTRUCTION_TYPE.BuiltinBinary);
 		String2SPInstructionType.put( "min"  , SPINSTRUCTION_TYPE.BuiltinBinary);
-		String2SPInstructionType.put( "solve"  , SPINSTRUCTION_TYPE.BuiltinBinary);
 		
 		String2SPInstructionType.put( "exp"   , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "abs"   , SPINSTRUCTION_TYPE.BuiltinUnary);
@@ -155,11 +151,6 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "round" , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "ceil"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "floor" , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "ucumk+", SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "ucum*" , SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "ucummin", SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "ucummax", SPINSTRUCTION_TYPE.BuiltinUnary);
-		String2SPInstructionType.put( "inverse", SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sprop", SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sigmoid", SPINSTRUCTION_TYPE.BuiltinUnary);
 		
@@ -291,28 +282,16 @@ public class SPInstructionParser extends InstructionParser {
 				}
 				
 			case BuiltinBinary:
-				parts = InstructionUtils.getInstructionPartsWithValueType(str);
-				if ( parts[0].equals("solve") ) {
-					return (CPInstruction) BuiltinBinaryCPInstruction.parseInstruction(str);
-				}
 				return (SPInstruction) BuiltinBinarySPInstruction.parseInstruction(str);
 				
 			case BuiltinUnary:
-				parts = InstructionUtils.getInstructionPartsWithValueType(str);
-				if ( parts[0].equals("ucumk+") || parts[0].equals("ucum*") || parts[0].equals("ucummin") || parts[0].equals("ucummax") 
-						|| parts[0].equals("inverse") ) {
-					// For now, ucumk+ and similar alternatives, inverse are not implemented
-					return (CPInstruction) BuiltinUnaryCPInstruction.parseInstruction(str);
-				}
-				else {
-					return (SPInstruction) BuiltinUnarySPInstruction.parseInstruction(str);
-				}
+				return (SPInstruction) BuiltinUnarySPInstruction.parseInstruction(str);
 				
 			case ParameterizedBuiltin:
 				return (SPInstruction) ParameterizedBuiltinSPInstruction.parseInstruction(str);
 				
 			case MatrixReshape:
-				return (CPInstruction) MatrixReshapeCPInstruction.parseInstruction(str);
+				return (SPInstruction) MatrixReshapeSPInstruction.parseInstruction(str);
 				
 			case MAppend:
 				return (SPInstruction) AppendMSPInstruction.parseInstruction(str);

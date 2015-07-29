@@ -1,47 +1,42 @@
 package com.ibm.bi.dml.api;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SQLContext.QueryExecution;
-import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.api.datasource.MLBlock;
-import com.ibm.bi.dml.api.datasource.functions.GetMIMBFromRow;
-import com.ibm.bi.dml.api.datasource.functions.GetMLBlock;
-import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMLLibBlocksToBinaryBlocks;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMIMBFromRow;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLLibBlocks;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.json.java.JSONObject;
+
+import org.apache.spark.mllib.linalg.Matrix;
+import org.apache.spark.mllib.linalg.distributed.BlockMatrix;
 
 /**
- * This class serves three purposes:
+ * This class serves four purposes:
  * 1. It allows SystemML to fit nicely in MLPipeline by reducing number of reblocks.
- * 2. It simplifies interaction with SystemML's datasource api allowing user to easily read and write matrices without worrying 
+ * 2. It allows users to easily read and write matrices without worrying 
  * too much about format, metadata and type of underlying RDDs.
- * 3. It provides off-the-shelf library for Distributed Blocked Matrix and reduces learning curve for using SystemML.
+ * 3. It provides mechanism to convert to and from MLLib's BlockedMatrix format
+ * 4. It provides off-the-shelf library for Distributed Blocked Matrix and reduces learning curve for using SystemML.
  * However, it is important to know that it is easy to abuse this off-the-shelf library and think it as replacement
  * to writing DML, which it is not. It does not provide any optimization between calls. A simple example
  * of the optimization that is conveniently skipped is: (t(m) %*% m)).
@@ -49,24 +44,18 @@ import com.ibm.json.java.JSONObject;
  * enforced by scala compiler), so please use appropriate brackets to enforce precedence. 
 
  import com.ibm.bi.dml.api.{MLContext, MLMatrix}
- import org.apache.spark.sql.SaveMode
- val ml = new MLContext(sc, false, true)
- val mat1 = MLMatrix.load(sqlContext, ml, "V_small.mtx", "binary")
- val mat2 = MLMatrix.load(sqlContext, ml, "W_small.mtx", "binary")
+ val ml = new MLContext(sc)
+ val mat1 = MLMatrix.create(sqlContext, "V_small.csv", "csv")
+ val mat2 = MLMatrix.create(sqlContext, "W_small.mtx", "binary")
  val result = mat1.transpose() %*% mat2
- result.save("Result_small.mtx", "binary")
+ result.write("Result_small.mtx", "text")
  
  */
 public class MLMatrix extends DataFrame {
 	private static final long serialVersionUID = -7005940673916671165L;
 	protected static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
-	protected MLContext ml = null;
-	protected long rlen = -1;
-	protected long clen = -1;
-	protected int brlen = DMLTranslator.DMLBlockSize; 
-	protected int bclen = DMLTranslator.DMLBlockSize;
-	protected long nnz;
+	protected MatrixCharacteristics mc = null;
 	
 	protected MLMatrix(SQLContext sqlContext, LogicalPlan logicalPlan) {
 		super(sqlContext, logicalPlan);
@@ -77,220 +66,91 @@ public class MLMatrix extends DataFrame {
 	}
 	
 	// Only used internally to set a new MLMatrix after one of matrix operations.
-	// Not to be used externally. 
-	protected MLMatrix(DataFrame df, MLContext ml, long rlen, long clen, int brlen, int bclen, long nnz) {
+	// Not to be used externally.
+	protected MLMatrix(DataFrame df, MatrixCharacteristics mc) throws DMLRuntimeException {
 		super(df.sqlContext(), df.logicalPlan());
-		this.ml = ml;
-		this.rlen = rlen;
-		this.clen = clen;
-		this.brlen = brlen;
-		this.bclen = bclen;
-		this.nnz = nnz;
+		this.mc = mc;
 	}
 	
-	// TODO: Add additional load to provide sep, missing values, etc. for CSV
-	public static MLMatrix load(SQLContext sqlContext, MLContext ml, String filePath, String format) throws LanguageException, DMLRuntimeException {
-		// First read metadata file and get rows, cols, rows_in_block, cols_in_block and nnz
-		long rlen = -1; long clen = -1; long nnz = -1;
-		int brlen = DMLTranslator.DMLBlockSize;  int bclen = DMLTranslator.DMLBlockSize; 
-		JSONObject jsonObject = readMetadataFile(filePath+".mtd");
-		if(jsonObject != null) {
-			// Metadata file present 
-			for( Object obj : jsonObject.entrySet() ){
-				@SuppressWarnings("unchecked")
-				Entry<Object,Object> e = (Entry<Object, Object>) obj;
-	    		String key = e.getKey().toString();
-	    		String val = e.getValue().toString();
-	    		if(key.compareTo("rows") == 0) {
-	    			rlen = Long.parseLong(val);
-	    		}
-	    		else if(key.compareTo("cols") == 0) {
-	    			clen = Long.parseLong(val);
-	    		}
-	    		else if(key.compareTo("rows_in_block") == 0) {
-	    			brlen = Integer.parseInt(val);
-	    		}
-	    		else if(key.compareTo("cols_in_block") == 0) {
-	    			bclen = Integer.parseInt(val);
-	    		}
-	    		else if(key.compareTo("nnz") == 0) {
-	    			nnz = Long.parseLong(val);
-	    		}
-			}
-		}
-		else {
-			// Metadata file no present -- only proceed if csv file
-			if(format.compareTo("csv") != 0) {
-				throw new DMLRuntimeException("Metadata information expected for format \"" + format +"\"."
-						+ "Either provide a " + filePath + ".mtd file or use the overloaded load(sqlContext, mlCtx, file, format, numRows, numCols, numRowsPerBlock, numColsPerBlock, nnz) method");
-			}
+	private static String writeStmt = "write(output, \"tmp\", format=\"binary\", rows_in_block=" + DMLTranslator.DMLBlockSize + ", cols_in_block=" + DMLTranslator.DMLBlockSize + ");";
+	
+	// TODO: Add additional create to provide sep, missing values, etc. for CSV
+	public static MLMatrix create(SQLContext sqlContext, String filePath, String format) throws IOException, DMLException, ParseException {
+		MLContext ml = checkAndGetMLContext();
+		ml.reset();
+		ml.registerOutput("output");
+		MLOutput out = ml.executeScript("output = read(\"" + filePath + "\", format=\"" + format + "\"); " + writeStmt);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = out.getBinaryBlockedRDD("output");
+		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
+		return createMLMatrix(sqlContext, blocks, mcOut);
+	}
+	
+	// ------------------------------------------------------------------------------------------------
+	// TODO: Test this in different scenarios: sparse/dense/mixed
+	public static MLMatrix create(SQLContext sqlContext, BlockMatrix mllibMatrix) throws DMLRuntimeException {
+		long nnz = -1; // TODO: Find number of non-zeros from mllibMatrix ... This is important !!
+		
+		JavaPairRDD<Tuple2<Object, Object>, Matrix> mllibBlocks = JavaPairRDD.fromJavaRDD(mllibMatrix.blocks().toJavaRDD());
+		long rlen = mllibMatrix.numRows(); long clen = mllibMatrix.numCols();
+		int brlen = mllibMatrix.numRowBlocks();
+		int bclen = mllibMatrix.numColBlocks();
+		if(mllibMatrix.numRowBlocks() != DMLTranslator.DMLBlockSize && mllibMatrix.numColBlocks() != DMLTranslator.DMLBlockSize) {
+			// TODO: Show warning as this will require an reblock later 
+			// OR perform reblock while creating itself
 		}
 		
-		return load(sqlContext, ml, filePath, format, rlen, clen, brlen, bclen, nnz);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = mllibBlocks
+				.mapToPair(new ConvertMLLibBlocksToBinaryBlocks(rlen, clen, brlen, bclen));
+		
+		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, brlen, bclen, nnz);
+		return createMLMatrix(sqlContext, blocks, mc);
 	}
 	
 	/**
-	 * Load factory method where no metadata file reading is performed.
-	 * 
-	 * @param sqlContext
-	 * @param ml
-	 * @param filePath
-	 * @param format
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @param nnz
+	 * Converts our blocked matrix format to MLLib's format (Not tested!!)
 	 * @return
 	 */
-	public static MLMatrix load(SQLContext sqlContext, MLContext ml, String filePath, String format, long rlen, long clen, int brlen, int bclen, long nnz) {
-		HashMap<String, String> parameters = new HashMap<String, String>();
-		parameters.put("file", filePath);
-		parameters.put("format", format);
+	public BlockMatrix toBlockedMatrix() {
+		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = getRDDLazily(this);
+		RDD<Tuple2<Tuple2<Object, Object>, Matrix>> mllibBlocks = blocks.mapToPair(new GetMLLibBlocks(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock())).rdd();
+		return new BlockMatrix(mllibBlocks, mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getRows(), mc.getCols());
+	}
+	
+	// ------------------------------------------------------------------------------------------------
 		
-		DataFrame df = sqlContext.load("com.ibm.bi.dml.api.datasource", parameters);
-		MLMatrix retVal = new MLMatrix(df.sqlContext(), df.logicalPlan());
-		retVal.ml = ml;
-		retVal.rlen = rlen;
-		retVal.clen = clen;
-		retVal.brlen = brlen;
-		retVal.bclen = bclen;
-		retVal.nnz = nnz;
-		return retVal;
+	private static MLMatrix createMLMatrix(SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> blocks, MatrixCharacteristics mc) throws DMLRuntimeException {
+		RDD<Row> rows = blocks.map(new GetMLBlock()).rdd();
+		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
+		return new MLMatrix(sqlContext.createDataFrame(rows.toJavaRDD(), schema), mc);
 	}
 	
 	/**
-	 * Convenient method to save a MLMatrix.
+	 * Convenient method to write a MLMatrix.
 	 */
-	public void save(String filePath, String format) {
-		HashMap<String, String> parameters = new HashMap<String, String>();
-		parameters.put("file", filePath);
-		parameters.put("format", format);
-		this.save("com.ibm.bi.dml.api.datasource", SaveMode.Overwrite, parameters);
+	public void write(String filePath, String format) throws IOException, DMLException, ParseException {
+		MLContext ml = checkAndGetMLContext();
+		ml.reset();
+		ml.registerInput("left", this);
+		ml.executeScript("left = read(\"\"); output=left; write(output, \"" + filePath + "\", format=\"" + format + "\");");
 	}
 	
-	private static JSONObject readMetadataFile(String filename) throws LanguageException {
-		
-		JSONObject retVal = null;
-		boolean exists = false;
-		FileSystem fs = null;
-		
-		try {
-			fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-		} catch (Exception e){
-			LOG.error("ERROR: could not read the configuration file.");
-			throw new LanguageException("ERROR: could not read the configuration file.", e);
+	private static MLContext checkAndGetMLContext() throws DMLRuntimeException {
+		if(MLContext.getCurrentMLContext() == null) {
+			throw new DMLRuntimeException("ERROR: No MLContext is created for this session");
 		}
-		
-		Path pt = new Path(filename);
-		try {
-			if (fs.exists(pt)){
-				exists = true;
-			}
-		} catch (Exception e){
-			exists = false;
-		}
-	
-		boolean isDirBoolean = false;
-		try {
-			if (exists && fs.getFileStatus(pt).isDirectory())
-				isDirBoolean = true;
-			else
-				isDirBoolean = false;
-		}
-		catch(Exception e){
-			LOG.error("ERROR: error validing whether path " + pt.toString() + " is directory or not");
-        	throw new LanguageException("ERROR: error validing whether path " + pt.toString() + " is directory or not", e);			
-		}
-		
-		// CASE: filename is a directory -- process as a directory
-		if (exists && isDirBoolean){
-			
-			// read directory contents
-			retVal = new JSONObject();
-			
-			FileStatus[] stats = null;
-			
-			try {
-				stats = fs.listStatus(pt);
-			}
-			catch (Exception e){
-				LOG.error(e.toString());
-				LOG.error("ERROR: for MTD file in directory, error reading directory with MTD file " + pt.toString() + ": " + e.toString());
-				throw new LanguageException("ERROR: for MTD file in directory, error reading directory with MTD file " + pt.toString() + ": " + e.toString());	
-			}
-			
-			for(FileStatus stat : stats){
-				Path childPath = stat.getPath(); // gives directory name
-				if (childPath.getName().startsWith("part")){
-					
-					BufferedReader br = null;
-					try {
-						br = new BufferedReader(new InputStreamReader(fs.open(childPath)));
-					}
-					catch(Exception e){
-						LOG.error(e.toString());
-						LOG.error("ERROR: for MTD file in directory, error reading part of MTD file with path " + childPath.toString() + ": " + e.toString());
-						throw new LanguageException("ERROR: for MTD file in directory, error reading part of MTD file with path " + childPath.toString() + e.toString());	
-					}
-					
-					JSONObject childObj = null;
-					try {
-						childObj = JSONObject.parse(br);
-					}
-					catch(Exception e){
-						LOG.error("ERROR: for MTD file in directory, error parsing part of MTD file with path " + childPath.toString() + ": " + e.toString());
-						throw new LanguageException("ERROR: for MTD file in directory, error parsing part of MTD file with path " + childPath.toString() + ": " + e.toString());		
-					}
-					
-			    	for( Object obj : childObj.entrySet() ){
-						@SuppressWarnings("unchecked")
-						Entry<Object,Object> e = (Entry<Object, Object>) obj;
-			    		Object key = e.getKey();
-			    		Object val = e.getValue();
-			    		retVal.put(key, val);
-					}
-				}
-			} // end for 
-		}
-		
-		// CASE: filename points to a file
-		else if (exists){
-			
-			BufferedReader br = null;
-			
-			// try reading MTD file
-			try {
-				br=new BufferedReader(new InputStreamReader(fs.open(pt)));
-			} catch (Exception e){
-				LOG.error("ERROR: reading MTD file with path " + pt.toString() + ": " + e.toString());
-				throw new LanguageException("ERROR: reading with path " + pt.toString() + ": " + e.toString());
-	        }
-			
-			// try parsing MTD file
-			try {
-				retVal =  JSONObject.parse(br);	
-			} catch (Exception e){
-				LOG.error("ERROR: parsing MTD file with path " + pt.toString() + ": " + e.toString());
-				throw new LanguageException("ERROR: parsing MTD with path " + pt.toString() + ": " + e.toString());
-	        }
-		}
-			
-		return retVal;
+		return MLContext.getCurrentMLContext();
 	}
 	
 	private double getScalarBuiltinFunctionResult(String fn) throws IOException, DMLException, ParseException {
 		if(fn.compareTo("nrow") == 0 || fn.compareTo("ncol") == 0) {
-			if(ml == null) {
-				throw new DMLRuntimeException("MLContext needs to be set");
-			}
+			MLContext ml = checkAndGetMLContext();
 			ml.reset();
-			ml.registerInput("left", getRDDLazily(this), rlen, clen, brlen, bclen);
+			ml.registerInput("left", getRDDLazily(this), mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
 			ml.registerOutput("output");
-			String script = "left = read(\"ignore1.mtx\", rows=" + rlen + ", cols=" + clen + ", rows_in_block=" + brlen + ", cols_in_block=" + bclen + ", nnz=" + nnz + ", format=\"binary\");"
+			String script = "left = read(\"\");"
 					+ "val = " + fn + "(left); "
 					+ "output = matrix(val, rows=1, cols=1); "
-					+ "write(output, \"ignore3.mtx\", rows_in_block=" + brlen + ", cols_in_block=" + bclen + ", format=\"binary\"); ";
+					+ writeStmt;
 			MLOutput out = ml.executeScript(script);
 			List<Tuple2<MatrixIndexes, MatrixBlock>> result = out.getBinaryBlockedRDD("output").collect();
 			if(result == null || result.size() != 1) {
@@ -311,11 +171,11 @@ public class MLMatrix extends DataFrame {
 	 * @throws IOException 
 	 */
 	public long numRows() throws IOException, DMLException, ParseException {
-		if(clen != -1) {
-			return clen;
+		if(mc.rowsKnown()) {
+			return mc.getRows();
 		}
 		else {
-			return (long) getScalarBuiltinFunctionResult("nrow");
+			return  (long) getScalarBuiltinFunctionResult("nrow");
 		}
 	}
 	
@@ -327,8 +187,8 @@ public class MLMatrix extends DataFrame {
 	 * @throws IOException 
 	 */
 	public long numCols() throws IOException, DMLException, ParseException {
-		if(clen != -1) {
-			return clen;
+		if(mc.colsKnown()) {
+			return mc.getCols();
 		}
 		else {
 			return (long) getScalarBuiltinFunctionResult("ncol");
@@ -336,31 +196,30 @@ public class MLMatrix extends DataFrame {
 	}
 	
 	public int rowsPerBlock() {
-		return brlen;
+		return mc.getRowsPerBlock();
 	}
 	
 	public int colsPerBlock() {
-		return bclen;
+		return mc.getColsPerBlock();
 	}
 	
-	private String getScript(String binaryOperator, long rightNumRows, long rightNumCols, long rightNNZ) {
-		// Since blocksizes have already been checked, no need to pass them
-		return 	"left = read(\"ignore1.mtx\", rows=" + rlen + ", cols=" + clen + ", rows_in_block=" + brlen + ", cols_in_block=" + bclen + ", nnz=" + nnz + ", format=\"binary\");"
-				+ "right = read(\"ignore2.mtx\", rows=" + rightNumRows + ", cols=" + rightNumCols + ", rows_in_block=" + brlen + ", cols_in_block=" + bclen + ", nnz=" + rightNNZ + ", format=\"binary\");"
+	private String getScript(String binaryOperator) {
+		return 	"left = read(\"\");"
+				+ "right = read(\"\");"
 				+ "output = left " + binaryOperator + " right; "
-				+ "write(output, \"ignore3.mtx\", rows_in_block=" + brlen + ", cols_in_block=" + bclen + ", format=\"binary\"); ";
+				+ writeStmt;
 	}
 	
 	private String getScalarBinaryScript(String binaryOperator, double scalar, boolean isScalarLeft) {
 		if(isScalarLeft) {
-			return 	"left = read(\"ignore1.mtx\", rows=" + rlen + ", cols=" + clen + ", format=\"binary\");"
+			return 	"left = read(\"\");"
 					+ "output = " + scalar + " " + binaryOperator + " left ;"
-					+ "write(output, \"ignore3.mtx\", rows_in_block=" + brlen + ", cols_in_block=" + bclen + ", format=\"binary\"); ";
+					+ writeStmt;
 		}
 		else {
-			return 	"left = read(\"ignore1.mtx\", rows=" + rlen + ", cols=" + clen + ", rows_in_block=" + brlen + ", cols_in_block=" + bclen + ", nnz=" + nnz + ", format=\"binary\");"
+			return 	"left = read(\"\");"
 				+ "output = left " + binaryOperator + " " + scalar + ";"
-				+ "write(output, \"ignore3.mtx\", rows_in_block=" + brlen + ", cols_in_block=" + bclen + ", format=\"binary\"); ";
+				+ writeStmt;
 		}
 	}
 	
@@ -369,53 +228,45 @@ public class MLMatrix extends DataFrame {
 	}
 	
 	private MLMatrix matrixBinaryOp(MLMatrix that, String op) throws IOException, DMLException, ParseException {
-		if(ml == null) {
-			throw new DMLRuntimeException("MLContext needs to be set");
-		}
-		if(brlen != that.brlen || bclen != that.bclen) {
-			throw new DMLRuntimeException("Incompatible block sizes:" + brlen + "!=" +  that.brlen + " || " + bclen + "!=" + that.bclen);
+		MLContext ml = checkAndGetMLContext();
+		
+		if(mc.getRowsPerBlock() != that.mc.getRowsPerBlock() || mc.getColsPerBlock() != that.mc.getColsPerBlock()) {
+			throw new DMLRuntimeException("Incompatible block sizes: brlen:" + mc.getRowsPerBlock() + "!=" +  that.mc.getRowsPerBlock() + " || bclen:" + mc.getColsPerBlock() + "!=" + that.mc.getColsPerBlock());
 		}
 		
 		if(op.compareTo("%*%") == 0) {
-			if(clen != that.rlen) {
-				throw new DMLRuntimeException("Dimensions mismatch:" + clen + "!=" +  that.rlen);
+			if(mc.getCols() != that.mc.getRows()) {
+				throw new DMLRuntimeException("Dimensions mismatch:" + mc.getCols() + "!=" +  that.mc.getRows());
 			}
 		}
 		else {
-			if(rlen != that.rlen || clen != that.clen) {
-				throw new DMLRuntimeException("Dimensions mismatch:" + rlen + "!=" +  that.rlen + " || " + clen + "!=" + that.clen);
+			if(mc.getRows() != that.mc.getRows() || mc.getCols() != that.mc.getCols()) {
+				throw new DMLRuntimeException("Dimensions mismatch:" + mc.getRows() + "!=" +  that.mc.getRows() + " || " + mc.getCols() + "!=" + that.mc.getCols());
 			}
 		}
 		
 		ml.reset();
-		long estimatedNNZ = -1; // TODO: Estimate number of non-zeros after matrix-matrix operation
-		ml.registerInput("left", getRDDLazily(this), rlen, clen, brlen, bclen, estimatedNNZ);
-		ml.registerInput("right", getRDDLazily(that), that.rlen, that.clen, that.brlen, that.bclen, estimatedNNZ);
+		ml.registerInput("left", this);
+		ml.registerInput("right", that);
 		ml.registerOutput("output");
-		MLOutput out = ml.executeScript(getScript(op, that.rlen, that.clen, that.nnz));
+		MLOutput out = ml.executeScript(getScript(op));
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
-		
-		if(op.compareTo("%*%") == 0) {
-			return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), ml, rlen, that.clen, brlen, bclen, estimatedNNZ);
-		}
-		else {
-			return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), ml, rlen, clen, brlen, bclen, estimatedNNZ);
-		}
+		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
+		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut);
 	}
 	
 	private MLMatrix scalarBinaryOp(Double scalar, String op, boolean isScalarLeft) throws IOException, DMLException, ParseException {
-		if(ml == null) {
-			throw new DMLRuntimeException("MLContext needs to be set");
-		}
+		MLContext ml = checkAndGetMLContext();
+		
 		ml.reset();
-		long estimatedNNZ = -1; // TODO: Estimate number of non-zeros after matrix-scalar operation
-		ml.registerInput("left", getRDDLazily(this), rlen, clen, brlen, bclen, estimatedNNZ);
+		ml.registerInput("left", this);
 		ml.registerOutput("output");
 		MLOutput out = ml.executeScript(getScalarBinaryScript(op, scalar, isScalarLeft));
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
-		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), ml, rlen, clen, brlen, bclen, estimatedNNZ);
+		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
+		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut);
 	}
 	
 	// ---------------------------------------------------
@@ -510,19 +361,19 @@ public class MLMatrix extends DataFrame {
 	}
 	
 	public MLMatrix transpose() throws IOException, DMLException, ParseException {
-		if(ml == null) {
-			throw new DMLRuntimeException("MLContext needs to be set");
-		}
+		MLContext ml = checkAndGetMLContext();
+		
 		ml.reset();
-		ml.registerInput("left", getRDDLazily(this), rlen, clen, brlen, bclen);
+		ml.registerInput("left", this);
 		ml.registerOutput("output");
-		String script = "left = read(\"ignore1.mtx\", rows=" + rlen + ", cols=" + clen + ", rows_in_block=" + brlen + ", cols_in_block=" + bclen + ", nnz=" + nnz + ", format=\"binary\");"
+		String script = "left = read(\"\");"
 				+ "output = t(left); "
-				+ "write(output, \"ignore3.mtx\", rows_in_block=" + brlen + ", cols_in_block=" + bclen + ", format=\"binary\"); ";
+				+ writeStmt;
 		MLOutput out = ml.executeScript(script);
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
-		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), ml, clen, rlen, brlen, bclen, nnz);
+		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
+		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut);
 	}
 	
 	// TODO: For 'scalar op matrix' operations: Do implicit conversions 

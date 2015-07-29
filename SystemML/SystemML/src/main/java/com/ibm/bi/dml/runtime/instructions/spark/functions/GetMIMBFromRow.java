@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.api.datasource.functions;
+package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.sql.Row;

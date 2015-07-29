@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.api.datasource;
+package com.ibm.bi.dml.api;
 
 import java.math.BigDecimal;
 import java.sql.Date;

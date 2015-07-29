@@ -358,6 +358,13 @@
 			<scope>provided</scope>
 		</dependency>
 		
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-mllib_2.10</artifactId>
+			<version>1.4.0_IBM_1</version>
+			<scope>provided</scope>
+		</dependency>
+		
 		<!-- To support dataframe in mlcontext -->
 		<dependency>
 			<groupId>org.apache.spark</groupId>

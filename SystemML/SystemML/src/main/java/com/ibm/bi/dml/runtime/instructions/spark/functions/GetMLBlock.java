@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.api.datasource.functions;
+package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
 import java.io.Serializable;
 
@@ -7,7 +7,7 @@ import org.apache.spark.sql.Row;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.api.datasource.MLBlock;
+import com.ibm.bi.dml.api.MLBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 

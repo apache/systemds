@@ -15,6 +15,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.mllib.linalg.distributed.BlockMatrix;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -25,8 +26,8 @@ import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.api.datasource.MLBlock;
-import com.ibm.bi.dml.api.datasource.functions.GetMLBlock;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLBlock;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -51,39 +52,59 @@ public class MLOutput {
 		this._outMetadata = outMetadata;
 	}
 	
-	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockedRDD(String varName) {
+	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockedRDD(String varName) throws DMLRuntimeException {
 		if(_outputs.containsKey(varName)) {
 			return _outputs.get(varName);
 		}
-		return null;
+		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
 	
-	public DataFrame getDF(SQLContext sqlContext, String varName) {
+	MatrixCharacteristics getMatrixCharacteristics(String varName) throws DMLRuntimeException {
+		if(_outputs.containsKey(varName)) {
+			return _outMetadata.get(varName);
+		}
+		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+	}
+	
+	/**
+	 * Note, the output DataFrame has an additional column ID.
+	 * An easy way to get DataFrame without ID is by df.sort("ID").drop("ID")
+	 * @param sqlContext
+	 * @param varName
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public DataFrame getDF(SQLContext sqlContext, String varName) throws DMLRuntimeException {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
 		if(rdd != null) {
 			return getDF(sqlContext, rdd, varName);
 		}
-		return null;
+		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
 	
-	public MLMatrix getMLMatrix(SQLContext sqlContext, MLContext ml, String varName) {
+	public MLMatrix getMLMatrix(SQLContext sqlContext, String varName) throws DMLRuntimeException {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
 		if(rdd != null) {
-			long rlen = _outMetadata.get(varName).getRows(); long clen = _outMetadata.get(varName).getCols();
-			int brlen = _outMetadata.get(varName).getRowsPerBlock(); int bclen = _outMetadata.get(varName).getColsPerBlock();
-			
-			// TODO: Get estimated number of nnz
-			long estimatedNNZ = -1;
-			
+			MatrixCharacteristics mc = getMatrixCharacteristics(varName);
 			StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
-			return new MLMatrix(sqlContext.createDataFrame(rdd.map(new GetMLBlock()).rdd(), schema), ml, rlen, clen, brlen, bclen, estimatedNNZ);
+			return new MLMatrix(sqlContext.createDataFrame(rdd.map(new GetMLBlock()).rdd(), schema), mc);
 		}
-		return null;
+		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
 	
-	private DataFrame getDF(SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, String varName) {
-		long rlen = _outMetadata.get(varName).getRows(); long clen = _outMetadata.get(varName).getCols();
-		int brlen = _outMetadata.get(varName).getRowsPerBlock(); int bclen = _outMetadata.get(varName).getColsPerBlock();
+	/**
+	 * Experimental: Please use this with caution as it will fail in many corner cases.
+	 * @return org.apache.spark.mllib.linalg.distributed.BlockMatrix
+	 * @throws DMLRuntimeException 
+	 */
+	public BlockMatrix getMLLibBlockedMatrix(SQLContext sqlContext, String varName) throws DMLRuntimeException {
+		return getMLMatrix(sqlContext, varName).toBlockedMatrix();
+	}
+	
+	private DataFrame getDF(SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, String varName) throws DMLRuntimeException {
+		MatrixCharacteristics mc = _outMetadata.get(varName);
+		long rlen = mc.getRows(); long clen = mc.getCols();
+		int brlen = mc.getRowsPerBlock(); int bclen = mc.getColsPerBlock();
 		
 		// Very expensive operation here: groupByKey (where number of keys might be too large)
 		JavaRDD<Row> rowsRDD = binaryBlockRDD.flatMapToPair(new ProjectRows(rlen, clen, brlen, bclen))
@@ -91,7 +112,8 @@ public class MLOutput {
 		
 		int numColumns = (int) clen;
 		if(numColumns <= 0) {
-			numColumns = rowsRDD.first().length() - 1; // Ugly
+			// numColumns = rowsRDD.first().length() - 1; // Ugly, so instead prefer to throw
+			throw new DMLRuntimeException("Output dimensions unknown after executing the script and hence cannot create the dataframe");
 		}
 		
 		List<StructField> fields = new ArrayList<StructField>();
@@ -134,7 +156,7 @@ public class MLOutput {
 			MatrixBlock blk = kv._2;
 			ArrayList<Tuple2<Long, Tuple2<Long, Double[]>>> retVal = new ArrayList<Tuple2<Long,Tuple2<Long,Double[]>>>();
 			for(int i = 0; i < lrlen; i++) {
-				Double[] partialRow = new Double[bclen];
+				Double[] partialRow = new Double[lclen];
 				for(int j = 0; j < lclen; j++) {
 					partialRow[j] = blk.getValue(i, j);
 				}
@@ -146,10 +168,11 @@ public class MLOutput {
 	
 	public static class ConvertDoubleArrayToRows implements Function<Tuple2<Long, Iterable<Tuple2<Long, Double[]>>>, Row> {
 		private static final long serialVersionUID = 4441184411670316972L;
+		
 		int bclen; long clen;
 		public ConvertDoubleArrayToRows(long clen, int bclen) {
-			this.clen = clen;
 			this.bclen = bclen;
+			this.clen = clen;
 		}
 
 		@Override
@@ -161,10 +184,6 @@ public class MLOutput {
 				partialRows.put(kv._1, kv._2);
 				sizeOfPartialRows += kv._2.length;
 			}
-			// TODO: Make this check: It is quite possible the matrix characteristics are not inferred
-//			if(clen != sizeOfPartialRows) {
-//				throw new Exception("Incorrect number of columns in the row:" + clen + " != " + sizeOfPartialRows);
-//			}
 			
 			// Insert first row as row index
 			Double[] row = new Double[sizeOfPartialRows + 1];
@@ -173,7 +192,14 @@ public class MLOutput {
 			for(long columnBlockIndex = 1; columnBlockIndex <= partialRows.size(); columnBlockIndex++) {
 				if(partialRows.containsKey(columnBlockIndex)) {
 					Double [] array = partialRows.get(columnBlockIndex);
-					for(int i = 0; i < array.length; i++) {
+					// ------------------------------------------------------------------
+					//	Compute local block size: 
+					int lclen = UtilFunctions.computeBlockSize(clen, columnBlockIndex, bclen);
+					// ------------------------------------------------------------------
+					if(array.length != lclen) {
+						throw new Exception("Incorrect double array provided by ProjectRows");
+					}
+					for(int i = 0; i < lclen; i++) {
 						row[(int) ((columnBlockIndex-1)*bclen + i) + 1] = array[i];
 					}
 				}

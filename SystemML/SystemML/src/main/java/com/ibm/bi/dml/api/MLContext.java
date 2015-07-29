@@ -72,61 +72,78 @@ import org.apache.spark.sql.DataFrame;
 /**
  * MLContext is useful for passing RDDs as input/output to SystemML. This API avoids the need to read/write
  * from HDFS (which is another way to pass inputs to SystemML).
- * 
+ * <p>
  * Typical usage for MLContext is as follows:
+ * <pre><code>
  * scala> import com.ibm.bi.dml.api.MLContext
- * 
+ * </code></pre>
+ * <p>
  * Create input DataFrame from CSV file and potentially perform some feature transformation
+ * <pre><code>
  * scala> val W = sqlContext.load("com.databricks.spark.csv", Map("path" -> "W.csv", "header" -> "false"))
  * scala> val H = sqlContext.load("com.databricks.spark.csv", Map("path" -> "H.csv", "header" -> "false"))
  * scala> val V = sqlContext.load("com.databricks.spark.csv", Map("path" -> "V.csv", "header" -> "false"))
- * 
+ * </code></pre>
+ * <p>
  * Create MLContext
+ * <pre><code>
  * scala> val ml = new MLContext(sc)
- * To monitor performance (only supported for Spark 1.4.0 or higher),
- * scala> val ml = new MLContext(sc, true)
- * To run SystemML using execution types different than Spark (for example: hybrid, hadoop or single node mode),
- * scala> val ml = new MLContext("hybrid") 
- * scala> val ml = new MLContext("hadoop")
- * scala> val ml = new MLContext("singlenode")
- * 
+ * </code></pre>
+ * <p>
  * Register input and output DataFrame/RDD 
  * Supported format: 
- * 1. DataFrame
- * 2. CSV/Text (as JavaRDD<String> or JavaPairRDD<LongWritable, Text>)
- * 3. Binary blocked RDD (JavaPairRDD<MatrixIndexes,MatrixBlock>))
+ * <ol>
+ * <li> DataFrame
+ * <li> CSV/Text (as JavaRDD<String> or JavaPairRDD<LongWritable, Text>)
+ * <li> Binary blocked RDD (JavaPairRDD<MatrixIndexes,MatrixBlock>))
+ * </ol>
  * Also overloaded to support metadata information such as format, rlen, clen, ...
  * Please note the variable names given below in quotes correspond to the variables in DML script.
  * These variables need to have corresponding read/write associated in DML script.
  * Currently, only matrix variables are supported through registerInput/registerOutput interface.
  * To pass scalar variables, use named/positional arguments (described later) or wrap them into matrix variable.
+ * <pre><code>
  * scala> ml.registerInput("V", V)
  * scala> ml.registerInput("W", W)
  * scala> ml.registerInput("H", H)
  * scala> ml.registerOutput("H")
  * scala> ml.registerOutput("W")
- * 
+ * </code></pre>
+ * <p>
  * Call script with default arguments:
+ * <pre><code>
  * scala> val outputs = ml.execute("GNMF.dml")
- * 
- * Also supported: calling script with positional arguments (args) and named arguments (nargs): 
+ * </code></pre>
+ * <p>
+ * Also supported: calling script with positional arguments (args) and named arguments (nargs):
+ * <pre><code> 
  * scala> val args = Array("V.mtx", "W.mtx",  "H.mtx",  "2000", "1500",  "50",  "1",  "WOut.mtx",  "HOut.mtx")
  * scala> val nargs = Map("maxIter"->"1", "V" -> "") 
- * scala> val outputs = ml.execute("GNMF.dml", args) # or ml.execute("GNMF_namedArgs.dml", nargs)  
- *  
- * If monitoring performance is enabled,
- * scala> print(ml.getExplainOutput())
- * scala> val stageId = 6                      # Assuming one of the stage id displayed above is '6'  
- * scala> print(ml.getStageDAGs(stageId))
- * scala> print(ml.getStageTimeLine(stageId))
- * 
+ * scala> val outputs = ml.execute("GNMF.dml", args) # or ml.execute("GNMF_namedArgs.dml", nargs)
+ * </code></pre>  
+ * <p>
  * To run the script again using different (or even same arguments), but using same registered input/outputs:
+ * <pre><code> 
  * scala> val new_outputs = ml.execute("GNMF.dml", new_args)
- * 
+ * </code></pre>
+ * <p>
  * However, to register new input/outputs, you need to first reset MLContext
+ * <pre><code> 
  * scala> ml.reset()
  * scala> ml.registerInput("V", newV)
- * 
+ * </code></pre>
+ * <p>
+ * Experimental API:
+ * To monitor performance (only supported for Spark 1.4.0 or higher),
+ * <pre><code>
+ * scala> val ml = new MLContext(sc, true)
+ * </code></pre>
+ * <p>
+ * If monitoring performance is enabled,
+ * <pre><code> 
+ * scala> print(ml.getMonitoringUtil().getExplainOutput())
+ * scala> ml.getMonitoringUtil().getRuntimeInfoInHTML("runtime.html")
+ * </code></pre>
  */
 public class MLContext {
 	@SuppressWarnings("unused")
@@ -175,14 +192,31 @@ public class MLContext {
 	// Register input APIs
 	// 1. DataFrame
 	/**
-	 * Experimental:
 	 * Register DataFrame as input. 
-	 * Note: Spark 
 	 * @param varName
 	 * @param df
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, DataFrame df) throws DMLRuntimeException {
+		registerInput(varName, df, false);
+	}
+	
+	/**
+	 * Register DataFrame as input. 
+	 * Current version doesnot support containsID=true.
+	 * Note: for Spark 1.4.0 or higher, registerInput(varName, df.sort("ID").drop("ID"), true) = registerInput(varName, df, false)  
+	 * @param varName
+	 * @param df
+	 * @param containsID false if the DataFrame has an column ID which denotes the row ID.
+	 * @throws DMLRuntimeException
+	 */
+	public void registerInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
+		if(containsID) {
+			// Uncomment this when we move to Spark 1.4.0 or higher 
+			// df = df.sort("ID").drop("ID");
+			throw new DMLRuntimeException("Ignoring ID is not supported yet");
+		}
+		
 		JavaRDD<String> rdd = null;
 		if(df != null && df.javaRDD() != null) {
 			rdd = df.javaRDD().map(new ConvertRowToCSVString());
@@ -200,7 +234,7 @@ public class MLContext {
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, MLMatrix df) throws DMLRuntimeException {
-		registerInput(varName, MLMatrix.getRDDLazily(df), df.rlen, df.clen, df.brlen, df.bclen);
+		registerInput(varName, MLMatrix.getRDDLazily(df), df.mc);
 	}
 	
 	// ------------------------------------------------------------------------------------
@@ -297,8 +331,23 @@ public class MLContext {
 		registerInput(varName, rdd1, rlen, clen, brlen, bclen, -1);
 	}
 	
+	void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd1, MatrixCharacteristics mc) throws DMLRuntimeException {
+		if(_variables == null)
+			_variables = new LocalVariableMap();
+		if(_inVarnames == null)
+			_inVarnames = new ArrayList<String>();
+		// Bug in Spark is messing up blocks and indexes due to too eager reuse of data structures
+		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = rdd1.mapToPair( new CopyBlockFunction() );
+		
+		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "temp", new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		mo.setRDDHandle(new RDDObject(rdd, varName));
+		_variables.put(varName, mo);
+		_inVarnames.add(varName);
+		checkIfRegisteringInputAllowed();
+	}
+			
 	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd1, long rlen, long clen, int brlen, int bclen, long nnz) throws DMLRuntimeException {
-		if(rlen != -1 || clen != -1) {
+		if(rlen == -1 || clen == -1) {
 			throw new DMLRuntimeException("The metadata is required in registerInput for binary format");
 		}
 		
@@ -326,6 +375,8 @@ public class MLContext {
 		if(_outVarnames == null)
 			_outVarnames = new ArrayList<String>();
 		_outVarnames.add(varName);
+		if(_variables == null)
+			_variables = new LocalVariableMap();
 	}
 	
 	// =============================================================================================
@@ -417,7 +468,7 @@ public class MLContext {
 	 * @param target
 	 * @throws LanguageException
 	 */
-	protected void setAppropriateVarsForRead(Expression source, String target) 
+	void setAppropriateVarsForRead(Expression source, String target) 
 		throws LanguageException 
 	{
 		boolean isTargetRegistered = isRegisteredAsInput(target);
@@ -460,7 +511,7 @@ public class MLContext {
 		}
 	}
 	
-	public void performCleanupAfterRecompilation(ArrayList<Instruction> tmp) {
+	ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> tmp) {
 		String [] outputs = null;
 		if(_outVarnames != null) {
 			outputs = _outVarnames.toArray(new String[0]);
@@ -468,6 +519,10 @@ public class MLContext {
 		else {
 			outputs = new String[0];
 		}
+		
+		// No need to clean up entire program as this method is only called for last level program block
+//		JMLCUtils.cleanupRuntimeProgram(_rtprog, outputs);
+		
 		for( int i=0; i<tmp.size(); i++ )
 		{
 			Instruction linst = tmp.get(i);
@@ -483,6 +538,8 @@ public class MLContext {
 					}
 			}
 		}
+		
+		return tmp;
 	}
 	
 	// -------------------------------- Utility methods ends ----------------------------------------------------------
@@ -508,26 +565,7 @@ public class MLContext {
 	public MLContext(JavaSparkContext sc, boolean monitorPerformance, boolean setForcedSparkExecType) throws DMLRuntimeException {
 		initializeSpark(sc.sc(), monitorPerformance, setForcedSparkExecType);
 	}
-//	/**
-//	 * Experimental api:
-//	 */
-//	public MLContext(String execType) throws DMLRuntimeException {
-//		if(execType.compareTo("hybrid") == 0) {
-//			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
-//		}
-//		else if(execType.compareTo("hadoop") == 0) {
-//			DMLScript.rtplatform = RUNTIME_PLATFORM.HADOOP;
-//		}
-//		else if(execType.compareTo("singlenode") == 0) {
-//			DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-//		}
-//		else if(execType.compareTo("spark") == 0 || execType.compareTo("hybrid_spark") == 0) {
-//			throw new DMLRuntimeException("Error: The constructor MLContext(String) is not applicable for spark. Please use MLContext(sc) instead.");
-//		}
-//		else {
-//			throw new DMLRuntimeException("Unsupported execution type:" + execType + ". Valid options are: hybrid, hadoop, singlenode.");
-//		}
-//	}
+	
 	// -------------------------------- Experimental API ends ----------------------------------------------------------
 	
 	// -------------------------------- Private methods begins ----------------------------------------------------------
@@ -683,6 +721,10 @@ public class MLContext {
 			
 			// Now collect the output
 			if(_outVarnames != null) {
+				if(_variables == null) {
+					throw new DMLRuntimeException("The symbol table returned after executing the script is empty");
+				}
+				
 				for( String ovar : _outVarnames ) {
 					if( _variables.keySet().contains(ovar) ) {
 						if(retVal == null) {
@@ -699,57 +741,6 @@ public class MLContext {
 			
 			return new MLOutput(retVal, outMetadata);
 		}
-//		else if(DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID ||
-//				DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP ||
-//				DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE) {
-//			// Instead of calling DMLScript directly, create a new process.
-//			// This ensures that environment variables, security permission are preserved as well as
-//			// memory budgets are not messed up.
-//			List<String> commandLineArgs = new ArrayList<String>();
-//			commandLineArgs.add("hadoop"); commandLineArgs.add("jar");
-//			String jarFilePath = "SystemML.jar";
-//			if(!(new File(jarFilePath)).exists()) {
-//				throw new DMLRuntimeException("In this experimental API, we expect " + jarFilePath + " to be present in current directory");
-//			}
-//			commandLineArgs.add(jarFilePath);
-//			commandLineArgs.add("-f"); commandLineArgs.add(dmlScriptFilePath);
-//			commandLineArgs.add("-exec"); 
-//			if(DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID) {
-//				commandLineArgs.add("hybrid");
-//			}
-//			else if(DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP) {
-//				commandLineArgs.add("hadoop");
-//			}
-//			else if(DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE) {
-//				commandLineArgs.add("singlenode");
-//			}
-//			else {
-//				throw new DMLRuntimeException("Unsupported execution type");
-//			}
-//			commandLineArgs.add("-explain");
-//			if(args != null && args.length > 0) {
-//				if(isNamedArgument) {
-//					commandLineArgs.add("-nvargs");
-//				}
-//				else {
-//					commandLineArgs.add("-args");
-//				}
-//				for(String arg : args) {
-//					commandLineArgs.add(arg);
-//				}
-//			}
-//			ProcessBuilder builder = new ProcessBuilder(commandLineArgs);
-//			final Process process = builder.start();
-//			InputStream is = process.getInputStream();
-//		    InputStreamReader isr = new InputStreamReader(is);
-//		    BufferedReader br = new BufferedReader(isr);
-//		    String line;
-//		    while ((line = br.readLine()) != null) {
-//		      System.out.println(line);
-//		    }
-//		    
-//			return null;
-//		}
 		else {
 			throw new DMLRuntimeException("Unsupported runtime:" + DMLScript.rtplatform.name());
 		}
@@ -816,6 +807,8 @@ public class MLContext {
 		dmlt.constructHops(prog);
 		dmlt.rewriteHopsDAG(prog);
 		
+		Explain.explain(prog);
+		
 		//rewrite persistent reads/writes
 		if(inputSymbolTable != null) {
 			RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs);
@@ -835,6 +828,8 @@ public class MLContext {
 		if(inputSymbolTable != null) {
 			ec.setVariables(inputSymbolTable);
 		}
+		
+		// System.out.println(Explain.explain(_rtprog));
 		
 		//core execute runtime program	
 		_rtprog.execute( ec );

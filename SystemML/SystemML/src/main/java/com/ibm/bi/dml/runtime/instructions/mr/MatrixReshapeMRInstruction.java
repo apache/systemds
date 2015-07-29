@@ -97,7 +97,6 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction
 				
 				//get cached blocks
 				ArrayList<IndexedMatrixValue> out = _cache;
-				//ArrayList<IndexedMatrixValue> out = cachedValues.get(output);
 	
 				//process instruction
 				IndexedMatrixValue in = imv;

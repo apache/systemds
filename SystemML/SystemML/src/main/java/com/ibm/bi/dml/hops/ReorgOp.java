@@ -140,7 +140,7 @@ public class ReorgOp extends Hop
 					
 					setLops(agg1);
 				}
-				else //CP
+				else //CP/SPARK
 				{
 					Transform transform1 = new Transform( getInput().get(0).constructLops(), 
 							HopsTransf2Lops.get(op), getDataType(), getValueType(), et);

@@ -79,11 +79,12 @@ public class Transform extends Lop
 			else
 				this.lps.setProperties( inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob );
 		}
-		else {
+		else //CP/SPARK
+		{
 			// <code>breaksAlignment</code> is not meaningful when <code>Transform</code> executes in CP. 
 			breaksAlignment = false;
 			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 	}
 

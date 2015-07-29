@@ -7,7 +7,6 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
-import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -51,22 +50,16 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in4 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		
 		InstructionUtils.checkNumFields( str, 5 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		in1.split(parts[1]);
-		in2.split(parts[2]);
-		in3.split(parts[3]);
-		in4.split(parts[4]);
-		out.split(parts[5]);
-		 
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
+		CPOperand in3 = new CPOperand(parts[3]);
+		CPOperand in4 = new CPOperand(parts[4]);
+		CPOperand out = new CPOperand(parts[5]);
+			 
 		if(!opcode.equalsIgnoreCase("rshape"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MatrixReshapeInstruction: " + str);
 		else

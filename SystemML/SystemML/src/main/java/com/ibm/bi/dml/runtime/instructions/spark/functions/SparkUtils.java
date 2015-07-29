@@ -21,6 +21,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class SparkUtils {
@@ -28,6 +29,39 @@ public class SparkUtils {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static IndexedMatrixValue toIndexedMatrixBlock( Tuple2<MatrixIndexes,MatrixBlock> in ) {
+		return new IndexedMatrixValue(in._1(), in._2());
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static Tuple2<MatrixIndexes,MatrixBlock> fromIndexedMatrixBlock( IndexedMatrixValue in ){
+		return new Tuple2<MatrixIndexes,MatrixBlock>(in.getIndexes(), (MatrixBlock)in.getValue());
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlock( ArrayList<IndexedMatrixValue> in )
+	{
+		ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+		for( IndexedMatrixValue imv : in )
+			ret.add(fromIndexedMatrixBlock(imv));
+		
+		return ret;
+	}
+	
 	
 	/**
 	 * 

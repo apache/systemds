@@ -579,7 +579,9 @@ public class TernaryOp extends Hop
 			
 			Lop lctable = tertiary;
 			
-			if( !_disjointInputs ) { //no need for aggregation if input indexed disjoint		
+			if( !(_disjointInputs || tertiaryOp == Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT) ) 
+			{ 
+				//no need for aggregation if (1) input indexed disjoint	or one side is sequence	w/ 1 increment
 				
 				group4 = new Group(
 						tertiary, Group.OperationTypes.Sort, getDataType(),

@@ -27,7 +27,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	public static final String TF_FN_PARAM_TXMTD = "transformPath";
 	public static final String TF_FN_PARAM_TXSPEC = "transformSpec";
 	public static final String TF_FN_PARAM_APPLYMTD = "applyTransformPath";
-	
+	public static final String TF_FN_PARAM_OUTNAMES = "outputNames";
 	
 	private static HashMap<String, Expression.ParameterizedBuiltinFunctionOp> opcodeMap;
 	static {
@@ -262,9 +262,16 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			}
 			
 			if(txspec != null ) {
-				raiseValidateError("transform(): Only one of '" + TF_FN_PARAM_APPLYMTD + "' or '" + TF_FN_PARAM_TXSPEC + "' can be specified.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Only one of '" + TF_FN_PARAM_APPLYMTD + "' or '" + TF_FN_PARAM_TXSPEC + "' can be specified in transform().", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-			
+		}
+		
+		Expression outNames = getVarParam(TF_FN_PARAM_OUTNAMES);
+		if ( outNames != null ) {
+			if( outNames.getOutput().getDataType() != DataType.SCALAR || outNames.getOutput().getValueType() != ValueType.STRING )				
+				raiseValidateError("The parameter specifying column names in the output file '" + TF_FN_PARAM_TXMTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			if ( applyMTD != null)
+				raiseValidateError("Only one of '" + TF_FN_PARAM_APPLYMTD + "' or '" + TF_FN_PARAM_OUTNAMES + "' can be specified in transform().", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		
 		// Output is a matrix with same dims as input

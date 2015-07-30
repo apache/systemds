@@ -166,7 +166,7 @@ public class RecodeAgent extends TransformationAgent {
 		int rcdIndex = 0, modeIndex = 0;
 		long maxCount = Long.MIN_VALUE;
 		
-		Path pt=new Path(outputDir+"/Recode/"+ columnNames[colID-1] + RCD_MAP_FILE_SUFFIX);
+		Path pt=new Path(outputDir+"/Recode/"+ outputColumnNames[colID-1] + RCD_MAP_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
 
 		// remove NA strings
@@ -184,7 +184,7 @@ public class RecodeAgent extends TransformationAgent {
 		
 		if ( map.size() == 0 ) 
 		{
-			throw new RuntimeException("Can not proceed since \"" + columnNames[colID-1] + "\" (id=" + colID + ") contains only the missing values, and not a single valid value -- set imputation method to \"constant\".");
+			throw new RuntimeException("Can not proceed since \"" + outputColumnNames[colID-1] + "\" (id=" + colID + ") contains only the missing values, and not a single valid value -- set imputation method to \"constant\".");
 		}
 		
 		// Order entries by category (string) value
@@ -215,13 +215,13 @@ public class RecodeAgent extends TransformationAgent {
 		}
 		
 		// output number of distinct values
-		pt=new Path(outputDir+"/Recode/"+ columnNames[colID-1] + MODE_FILE_SUFFIX);
+		pt=new Path(outputDir+"/Recode/"+ outputColumnNames[colID-1] + MODE_FILE_SUFFIX);
 		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(UtilFunctions.quote(mode) + "," + modeIndex + "," + maxCount );
 		br.close();
 		
 		// output "mode"
-		pt=new Path(outputDir+"/Recode/"+ columnNames[colID-1] + NDISTINCT_FILE_SUFFIX);
+		pt=new Path(outputDir+"/Recode/"+ outputColumnNames[colID-1] + NDISTINCT_FILE_SUFFIX);
 		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(""+map.size());
 		br.close();
@@ -294,7 +294,7 @@ public class RecodeAgent extends TransformationAgent {
 			for(int i=0; i<_fullrcdList.length;i++) {
 				int colID = _fullrcdList[i];
 				
-				Path path = new Path( txMtdDir + "/Recode/" + columnNames[colID-1] + RCD_MAP_FILE_SUFFIX);
+				Path path = new Path( txMtdDir + "/Recode/" + outputColumnNames[colID-1] + RCD_MAP_FILE_SUFFIX);
 				TransformationAgent.checkValidInputFile(fs, path, true); 
 				
 				HashMap<String,String> map = new HashMap<String,String>();
@@ -374,7 +374,7 @@ public class RecodeAgent extends TransformationAgent {
 				words[colID-1] = Long.toString(_rcdMaps.get(colID).get(UtilFunctions.unquote(words[colID-1].trim())));
 			} catch(NullPointerException e) {
 				if(words[colID-1].isEmpty() && MVImputeAgent.isNA("", TransformationAgent.NAstrings) )
-					throw new RuntimeException("Empty string (a missing value) in column \"" + columnNames[colID-1] + "\" is not handled. Consider adding an imputation method on this column.");		
+					throw new RuntimeException("Empty string (a missing value) in column ID \"" + colID + "\" is not handled. Consider adding an imputation method on this column.");		
 				throw new RuntimeException("ColID="+colID + ", word=" + words[colID-1] + ", maps entry not found (map = " + _rcdMaps.get(colID) + ")");
 			}
 		}

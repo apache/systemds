@@ -34,10 +34,12 @@ public class TransformTest extends AutomatedTestBase
 	
 	private final static String HOMES_DATASET 	= "homes/homes.csv";
 	private final static String HOMES_SPEC 		= "homes/homes.tfspec.json";
+	private final static String HOMES_IDSPEC 	= "homes/homes.tfidspec.json";
 	private final static String HOMES_TFDATA 	= "homes/homes.transformed.csv";
 	
 	private final static String IRIS_DATASET 	= "iris/iris.csv";
 	private final static String IRIS_SPEC 		= "iris/iris.tfspec.json";
+	private final static String IRIS_IDSPEC 	= "iris/iris.tfidspec.json";
 	private final static String IRIS_TFDATA 	= "iris/iris.transformed.csv";
 	
 	@Override
@@ -52,65 +54,113 @@ public class TransformTest extends AutomatedTestBase
 	@Test
 	public void testIrisHybridCSV() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "iris");
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "iris", false);
 	}
 	
 	@Test
 	public void testIrisHybridBB() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "iris");
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "iris", false);
 	}
 	
 	@Test
 	public void testIrisHadoopCSV() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "iris");
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "iris", false);
 	}
 
 	@Test
 	public void testIrisHadoopBB() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "iris");
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "iris", false);
 	}
 	
 	@Test
 	public void testHomesHybridCSV() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "homes");
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "homes", false);
 	}
 	
 	@Test
 	public void testHomesHybridBB() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes");
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes", false);
 	}
 	
 	@Test
 	public void testHomesHadoopCSV() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homes");
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homes", false);
 	}
 
 	@Test
 	public void testHomesHadoopBB() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "homes");
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "homes", false);
 	}
 	
-	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, String dataset )
+	@Test
+	public void testIrisHybridIDCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "iris", true);
+	}
+	
+	@Test
+	public void testIrisHybridIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "iris", true);
+	}
+	
+	@Test
+	public void testIrisHadoopIDCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "iris", true);
+	}
+
+	@Test
+	public void testIrisHadoopIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "iris", true);
+	}
+	
+	@Test
+	public void testHomesHybridIDCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "homes", true);
+	}
+	
+	@Test
+	public void testHomesHybridIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes", true);
+	}
+	
+	@Test
+	public void testHomesHadoopIDCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homes", true);
+	}
+
+	@Test
+	public void testHomesHadoopIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "homes", true);
+	}
+	
+	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, String dataset, boolean byid )
 	{
 		String DATASET = null, SPEC=null, TFDATA=null;
 		
 		if(dataset.equals("homes"))
 		{
 			DATASET = HOMES_DATASET;
-			SPEC = HOMES_SPEC;
+			SPEC = (byid ? HOMES_IDSPEC : HOMES_SPEC);
 			TFDATA = HOMES_TFDATA;
 		}
 		else if (dataset.equals("iris"))
 		{
 			DATASET = IRIS_DATASET;
-			SPEC = IRIS_SPEC;
+			SPEC = (byid ? IRIS_IDSPEC : IRIS_SPEC);
 			TFDATA = IRIS_TFDATA;
 		}
 

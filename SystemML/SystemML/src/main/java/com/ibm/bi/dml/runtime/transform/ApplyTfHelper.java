@@ -121,10 +121,7 @@ public class ApplyTfHelper {
 	public long processHeaderLine(Text rawValue) throws IOException 
 	{
 		String header = null;
-		if(_hasHeader)
-			header = rawValue.toString();
-		else
-			header = _rJob.get(MRJobConfiguration.TF_HEADER);
+		header = _rJob.get(MRJobConfiguration.TF_HEADER);
 		
 		String dcdHeader = _da.constructDummycodedHeader(header, _delimString);
 		_da.genDcdMapsAndColTypes(FileSystem.get(_rJob), _tmpPath, (int) _numCols, _ra, _ba);
@@ -160,23 +157,24 @@ public class ApplyTfHelper {
 	public long getNumTransformedRows() { return _numTransformedRows; }
 	public long getNumTransformedColumns() { return _numTransformedColumns; }
 	
-	public void check(String []words) throws DMLRuntimeException 
+	public static void check(String []words) throws DMLRuntimeException 
 	{
-		boolean checkEmptyString = false;
-		if ( TransformationAgent.NAstrings != null && !MVImputeAgent.isNA("", TransformationAgent.NAstrings) ) {
-			checkEmptyString = true;
-		}
-		
+		boolean checkEmptyString = ( TransformationAgent.NAstrings != null );
 		if ( checkEmptyString ) 
 		{
-			final String msg = "When na.strings are provided, empty string \"\" is considered as a missing value, and it must be imputed appropriately. Encountered an unhandled empty string in line: ";
+			final String msg = "When na.strings are provided, empty string \"\" is considered as a missing value, and it must be imputed appropriately. Encountered an unhandled empty string in column ID: ";
 			for(int i=0; i<words.length; i++) 
 				if ( words[i] != null && words[i].equals(""))
-					throw new DMLRuntimeException(msg);
+					throw new DMLRuntimeException(msg + i);
 		}
 	}
 	
 	public String checkAndPrepOutputString(String []words) throws DMLRuntimeException 
+	{
+		return checkAndPrepOutputString(words, new StringBuilder(), _delimString);
+	}
+	
+	public static String checkAndPrepOutputString(String []words, StringBuilder sb, String delim) throws DMLRuntimeException 
 	{
 		/*
 		 * Check if empty strings ("") have to be handled.
@@ -187,20 +185,18 @@ public class ApplyTfHelper {
 		 * are provided, "" encountered in any column (after all transformations are applied) 
 		 * denotes an erroneous condition.  
 		 */
-		boolean checkEmptyString = false;
-		if ( TransformationAgent.NAstrings != null ) { //&& !MVImputeAgent.isNA("", TransformationAgent.NAstrings) ) {
-			checkEmptyString = true;
-		}
+		boolean checkEmptyString = ( TransformationAgent.NAstrings != null ); //&& !MVImputeAgent.isNA("", TransformationAgent.NAstrings) ) {
 		
-		StringBuilder sb = new StringBuilder();
+		//StringBuilder sb = new StringBuilder();
+		sb.setLength(0);
 		int i =0;
 		
 		if ( checkEmptyString ) 
 		{
-			final String msg = "When na.strings are provided, empty string \"\" is considered as a missing value, and it must be imputed appropriately. Encountered an unhandled empty string in line: ";
+			final String msg = "When na.strings are provided, empty string \"\" is considered as a missing value, and it must be imputed appropriately. Encountered an unhandled empty string in column ID: ";
 			if ( words[0] != null ) 
 				if ( words[0].equals("") )
-					throw new DMLRuntimeException( msg );
+					throw new DMLRuntimeException( msg + "0");
 				else 
 					sb.append(words[0]);
 			else
@@ -208,11 +204,11 @@ public class ApplyTfHelper {
 			
 			for(i=1; i<words.length; i++) 
 			{
-				sb.append(_delimString);
+				sb.append(delim);
 				
 				if ( words[i] != null ) 
 					if ( words[i].equals("") )
-						throw new DMLRuntimeException(msg);
+						throw new DMLRuntimeException(msg + i);
 					else 
 						sb.append(words[i]);
 				else
@@ -224,7 +220,7 @@ public class ApplyTfHelper {
 			sb.append(words[0] != null ? words[0] : "0");
 			for(i=1; i<words.length; i++) 
 			{
-				sb.append(_delimString);
+				sb.append(delim);
 				sb.append(words[i] != null ? words[i] : "0");
 			}
 		}

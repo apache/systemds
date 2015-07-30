@@ -132,7 +132,7 @@ public class BinAgent extends TransformationAgent {
 	
 	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs) throws IOException 
 	{
-		Path pt = new Path(tfMtdDir+"/Bin/"+ columnNames[colID-1] + BIN_FILE_SUFFIX);
+		Path pt = new Path(tfMtdDir+"/Bin/"+ outputColumnNames[colID-1] + BIN_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TXMTD_SEP + min + TXMTD_SEP + max + TXMTD_SEP + binwidth + TXMTD_SEP + nbins + "\n");
 		br.close();
@@ -228,7 +228,7 @@ public class BinAgent extends TransformationAgent {
 			for(int i=0; i<_binList.length;i++) {
 				int colID = _binList[i];
 				
-				Path path = new Path( txMtdDir + "/Bin/" + columnNames[colID-1] + BIN_FILE_SUFFIX);
+				Path path = new Path( txMtdDir + "/Bin/" + outputColumnNames[colID-1] + BIN_FILE_SUFFIX);
 				TransformationAgent.checkValidInputFile(fs, path, true); 
 					
 				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
@@ -277,7 +277,7 @@ public class BinAgent extends TransformationAgent {
 			words[colID-1] = Integer.toString(binid);
 			} catch(NumberFormatException e)
 			{
-				throw new RuntimeException("Encountered \"" + words[colID-1] + "\" in column \"" + columnNames[colID-1] + "\", when expecting a numeric value. Consider adding \"" + words[colID-1] + "\" to na.strings, along with an appropriate imputation method.");
+				throw new RuntimeException("Encountered \"" + words[colID-1] + "\" in column ID \"" + colID + "\", when expecting a numeric value. Consider adding \"" + words[colID-1] + "\" to na.strings, along with an appropriate imputation method.");
 			}
 			//long binid = Math.min(Math.round((val-_min[i])/_binWidths[i] - 0.5) + 1, _numBins[i]);
 			//words[colID-1] = Long.toString(binid);

@@ -343,12 +343,19 @@ public class ParameterizedBuiltin extends Lop
 				else {
 					iLop3 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC);
 				}
-				
 				sb.append(iLop3.prepScalarLabel());
 				sb.append( OPERAND_DELIMITOR );
-
+				
 				sb.append(isApply);
 				sb.append( OPERAND_DELIMITOR );
+				
+				Lop iLop4 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_OUTNAMES);
+				if( iLop4 != null ) 
+				{
+					sb.append(iLop4.prepScalarLabel());
+					sb.append( OPERAND_DELIMITOR );
+				}
+
 				break;
 			}	
 				

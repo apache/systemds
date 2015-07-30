@@ -34,9 +34,9 @@ import com.ibm.bi.dml.runtime.instructions.InstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
+import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.AssignRowIDMRReturn;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.AssignRowIDMRReturn;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -178,6 +178,7 @@ public class DataTransform {
 		br.close();
 		
 		final String NAME = "name";
+		final String ID = "id";
 		final String METHOD = "method";
 		final String VALUE = "value";
 		final String MV_METHOD_MEAN = "global_mean";
@@ -187,6 +188,7 @@ public class DataTransform {
 		final String BIN_METHOD_HEIGHT = "equi-height";
 		final String SCALE_METHOD_Z = "z-score";
 		final String SCALE_METHOD_M = "mean-subtraction";
+		final String JSON_BYPOS = "ids";
 		
 		String stmp = null;
 		JSONObject entry = null;
@@ -200,14 +202,22 @@ public class DataTransform {
 		Object[] numBins = null;
 		Object[] mvConstants = null;
 		
+		boolean byPositions = false;
+		if(inputSpec.get(JSON_BYPOS) != null && ((Boolean)inputSpec.get(JSON_BYPOS)).booleanValue() == true)
+			byPositions = true;
+		
 		// --------------------------------------------------------------------------
 		// Recoding
 		if( inputSpec.get(TX_METHOD.OMIT.toString()) != null ) {
 			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.OMIT.toString());
 			omitList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
-				stmp = UtilFunctions.unquote( (String)arrtmp.get(i) );
-				omitList[i] = colNames.get(stmp);
+				if(byPositions)
+					omitList[i] = ((Long) arrtmp.get(i)).intValue();
+				else {
+					stmp = UtilFunctions.unquote( (String)arrtmp.get(i) );
+					omitList[i] = colNames.get(stmp);
+				}
 			}
 			Arrays.sort(omitList);
 		}
@@ -224,8 +234,13 @@ public class DataTransform {
 			
 			for(int i=0; i<arrtmp.size(); i++) {
 				entry = (JSONObject)arrtmp.get(i);
-				stmp = UtilFunctions.unquote((String) entry.get(NAME));
-				mvList[i] = colNames.get(stmp);
+				if (byPositions) {
+					mvList[i] = ((Long) entry.get(ID)).intValue();
+				}
+				else {
+					stmp = UtilFunctions.unquote((String) entry.get(NAME));
+					mvList[i] = colNames.get(stmp);
+				}
 				
 				stmp = UtilFunctions.unquote((String) entry.get(METHOD));
 				if(stmp.equals(MV_METHOD_MEAN))
@@ -267,8 +282,12 @@ public class DataTransform {
 			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.RECODE.toString());
 			rcdList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
-				stmp = UtilFunctions.unquote( (String)arrtmp.get(i) );
-				rcdList[i] = colNames.get(stmp);
+				if (byPositions)
+					rcdList[i] = ((Long) arrtmp.get(i)).intValue();
+				else {
+					stmp = UtilFunctions.unquote( (String)arrtmp.get(i) );
+					rcdList[i] = colNames.get(stmp);
+				}
 			}
 			Arrays.sort(rcdList);
 		}
@@ -286,9 +305,13 @@ public class DataTransform {
 			for(int i=0; i<arrtmp.size(); i++) {
 				entry = (JSONObject)arrtmp.get(i);
 				
-				stmp = UtilFunctions.unquote((String) entry.get(NAME));
-				binList[i] = colNames.get(stmp);
-				
+				if (byPositions) {
+					binList[i] = ((Long) entry.get(ID)).intValue();
+				}
+				else {
+					stmp = UtilFunctions.unquote((String) entry.get(NAME));
+					binList[i] = colNames.get(stmp);
+				}
 				stmp = UtilFunctions.unquote((String) entry.get(METHOD));
 				if(stmp.equals(BIN_METHOD_WIDTH))
 					btmp = (byte)1;
@@ -324,8 +347,12 @@ public class DataTransform {
 			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.DUMMYCODE.toString());
 			dcdList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
-				stmp = UtilFunctions.unquote( (String)arrtmp.get(i) );
-				dcdList[i] = colNames.get(stmp);
+				if (byPositions)
+					dcdList[i] = ((Long) arrtmp.get(i)).intValue();
+				else {
+					stmp = UtilFunctions.unquote( (String)arrtmp.get(i) );
+					dcdList[i] = colNames.get(stmp);
+				}
 			}
 			Arrays.sort(dcdList);
 		}
@@ -342,9 +369,13 @@ public class DataTransform {
 			for(int i=0; i<arrtmp.size(); i++) {
 				entry = (JSONObject)arrtmp.get(i);
 				
-				stmp = UtilFunctions.unquote((String) entry.get(NAME));
-				scaleList[i] = colNames.get(stmp);
-				
+				if (byPositions) {
+					scaleList[i] = ((Long) entry.get(ID)).intValue();
+				}
+				else {
+					stmp = UtilFunctions.unquote((String) entry.get(NAME));
+					scaleList[i] = colNames.get(stmp);
+				}
 				stmp = UtilFunctions.unquote((String) entry.get(METHOD));
 				if(stmp.equals(SCALE_METHOD_M))
 					btmp = (byte)1;
@@ -559,7 +590,7 @@ public class DataTransform {
 	 * Private class to hold the relevant input parameters to transform operation.
 	 */
 	private static class TransformOperands {
-		String inputPath=null, txMtdPath=null, applyTxPath=null, specFile=null;
+		String inputPath=null, txMtdPath=null, applyTxPath=null, specFile=null, outNamesFile=null;
 		boolean isApply=false;
 		CSVFileFormatProperties inputCSVProperties = null;
 		
@@ -576,7 +607,10 @@ public class DataTransform {
 			else {
 				specFile = instParts[4];
 			}
-	
+			
+			if (instParts.length == 8)
+				outNamesFile = instParts[6];
+			
 			inputCSVProperties = (CSVFileFormatProperties)inputMatrix.getFileFormatProperties();
 		}
 	}
@@ -695,6 +729,7 @@ public class DataTransform {
 		// find column names
 		String headerLine = readHeaderLine(fs, oprnds.inputCSVProperties, smallestFile);
 		HashMap<String, Integer> colNamesToIds = processColumnNames(fs, oprnds.inputCSVProperties, headerLine, smallestFile);
+		String outHeader = getOutputHeader(fs, headerLine, oprnds);
 		int numColumns = colNamesToIds.size();
 		
 		ArrayList<Integer> csvoutputs= new ArrayList<Integer>();
@@ -731,12 +766,12 @@ public class DataTransform {
 												oprnds.txMtdPath, specFileWithIDs, 
 												smallestFile, partOffsetsFile, 
 												oprnds.inputCSVProperties, numColumns, 
-												replication, headerLine);
+												replication, outHeader);
 			
 			// store the specFileWithIDs as transformation metadata
 			MapReduceTool.copyFileOnHDFS(specFileWithIDs, oprnds.txMtdPath + "/" + "spec.json");
 			
-			int numColumnsTf = getNumColumnsTf(fs, headerLine, oprnds.inputCSVProperties.getDelim(), oprnds.txMtdPath);
+			int numColumnsTf = getNumColumnsTf(fs, outHeader, oprnds.inputCSVProperties.getDelim(), oprnds.txMtdPath);
 			
 			// Apply transformation metadata, and perform actual transformation 
 			if(isCSV)
@@ -744,7 +779,7 @@ public class DataTransform {
 												oprnds.txMtdPath, tmpPath, 
 												outputMatrices[csvoutputs.get(0)].getFileName(), 
 												oprnds.inputCSVProperties, numColumns, 
-												replication, headerLine);
+												replication, outHeader);
 			
 			if(isBB)
 				retBB = ApplyTfBBMR.runJob(oprnds.inputPath, 
@@ -753,7 +788,7 @@ public class DataTransform {
 											tmpPath, outputMatrices[bboutputs.get(0)].getFileName(), 
 											partOffsetsFile, oprnds.inputCSVProperties, 
 											numRows, numColumns, numColumnsTf, 
-											replication, headerLine);
+											replication, outHeader);
 			
 			MapReduceTool.deleteFileIfExistOnHDFS(new Path(partOffsetsFile), job);
 				
@@ -767,7 +802,7 @@ public class DataTransform {
 			
 			// path to specification file
 			String specFileWithIDs = oprnds.txMtdPath + "/" + "spec.json";
-			int numColumnsTf = getNumColumnsTf(fs, headerLine, 
+			int numColumnsTf = getNumColumnsTf(fs, outHeader, 
 												oprnds.inputCSVProperties.getDelim(), 
 												oprnds.txMtdPath);
 			
@@ -777,7 +812,7 @@ public class DataTransform {
 												oprnds.applyTxPath, tmpPath, 
 												outputMatrices[csvoutputs.get(0)].getFileName(), 
 												oprnds.inputCSVProperties, numColumns, 
-												replication, headerLine);
+												replication, outHeader);
 			
 			if(isBB) 
 			{
@@ -797,7 +832,7 @@ public class DataTransform {
 													ret1.counterFile.toString(), 
 													oprnds.inputCSVProperties, 
 													ret1.rlens[0], ret1.clens[0], numColumnsTf, 
-													replication, headerLine);
+													replication, outHeader);
 			}
 		}
 		
@@ -829,6 +864,29 @@ public class DataTransform {
 			
 	}
 	
+	private static String getOutputHeader(FileSystem fs, String headerLine, TransformOperands oprnds) throws IOException
+	{
+		String ret = null;
+		
+		if(oprnds.isApply)
+		{
+			BufferedReader br = new BufferedReader(new InputStreamReader( fs.open(new Path(oprnds.applyTxPath + "/" + TransformationAgent.OUT_HEADER)) ));
+			ret = br.readLine();
+			br.close();
+		}
+		else {
+			if ( oprnds.outNamesFile == null )
+				ret = headerLine;
+			else {
+				BufferedReader br = new BufferedReader(new InputStreamReader( fs.open(new Path(oprnds.outNamesFile)) ));
+				ret = br.readLine();
+				br.close();
+			}
+		}
+		
+		return ret;
+	}
+	
 	/**
 	 * Main method to create and/or apply transformation metdata in-memory, on a
 	 * single node.
@@ -854,6 +912,7 @@ public class DataTransform {
 		// find column names
 		String headerLine = readHeaderLine(fs, oprnds.inputCSVProperties, smallestFile);
 		HashMap<String, Integer> colNamesToIds = processColumnNames(fs, oprnds.inputCSVProperties, headerLine, smallestFile);
+		String outHeader = getOutputHeader(fs, headerLine, oprnds);
 		
 		ArrayList<Integer> csvoutputs= new ArrayList<Integer>();
 		ArrayList<Integer> bboutputs = new ArrayList<Integer>();
@@ -876,8 +935,7 @@ public class DataTransform {
 			String specFileWithIDs = processSpecFile(fs, oprnds.inputPath, smallestFile, colNamesToIds, oprnds.inputCSVProperties, oprnds.specFile);
 			MapReduceTool.copyFileOnHDFS(specFileWithIDs, oprnds.txMtdPath + "/" + "spec.json");
 	
-			ret = performTransform(job, fs, oprnds.inputPath, colNamesToIds.size(), oprnds.inputCSVProperties, specFileWithIDs, oprnds.txMtdPath, oprnds.isApply, outputMatrices[0], headerLine, isBB, isCSV );
-			
+			ret = performTransform(job, fs, oprnds.inputPath, colNamesToIds.size(), oprnds.inputCSVProperties, specFileWithIDs, oprnds.txMtdPath, oprnds.isApply, outputMatrices[0], outHeader, isBB, isCSV );
 		}
 		else {
 			// copy given transform metadata (applyTxPath) to specified location (txMtdPath)
@@ -887,7 +945,7 @@ public class DataTransform {
 			// path to specification file
 			String specFileWithIDs = oprnds.txMtdPath + "/" + "spec.json";
 			
-			ret = performTransform(job, fs, oprnds.inputPath, colNamesToIds.size(), oprnds.inputCSVProperties, specFileWithIDs,  oprnds.txMtdPath, oprnds.isApply, outputMatrices[0], headerLine, isBB, isCSV );
+			ret = performTransform(job, fs, oprnds.inputPath, colNamesToIds.size(), oprnds.inputCSVProperties, specFileWithIDs,  oprnds.txMtdPath, oprnds.isApply, outputMatrices[0], outHeader, isBB, isCSV );
 		}
 		
 		return ret;
@@ -1112,9 +1170,9 @@ public class DataTransform {
 			{
 				String header = null;
 				if ( prop.hasHeader() )
-					header = br.readLine();
-				else
-					header = headerLine;
+					br.readLine(); // ignore the header line from data file
+				
+				header = headerLine;
 				String dcdHeader = _da.constructDummycodedHeader(header, prop.getDelim());
 				numColumnsTf = _da.genDcdMapsAndColTypes(fs, txMtdPath, ncols, _ra, _ba);
 				DataTransform.generateHeaderFiles(fs, txMtdPath, header, dcdHeader);
@@ -1136,18 +1194,12 @@ public class DataTransform {
 	
 					if (isCSV)
 					{
-						sb.setLength(0);
-						sb.append(words[0] != null ? words[0] : "0");
-						for(int i=1; i<words.length; i++) 
-						{
-							sb.append(prop.getDelim());
-							sb.append(words[i] != null ? words[i] : "0");
-						}
-						out.write(sb.toString());
+						out.write( ApplyTfHelper.checkAndPrepOutputString(words, sb, prop.getDelim()) );
 						out.write("\n");
 					}
 					if( isBB ) 
 					{
+						ApplyTfHelper.check(words);
 						for(int c=0; c<words.length; c++)
 						{
 							if(words[c] == null || words[c].isEmpty())
@@ -1183,13 +1235,13 @@ public class DataTransform {
 	
 	public static void generateHeaderFiles(FileSystem fs, String txMtdDir, String origHeader, String newHeader) throws IOException {
 		// write out given header line
-		Path pt=new Path(txMtdDir+"/column.names.given");
+		Path pt=new Path(txMtdDir+"/" + TransformationAgent.OUT_HEADER);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(origHeader+"\n");
 		br.close();
 
 		// write out the new header line (after all transformations)
-		pt = new Path(txMtdDir + "/column.names.transformed");
+		pt = new Path(txMtdDir + "/" + TransformationAgent.OUT_DCD_HEADER);
 		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(newHeader+"\n");
 		br.close();

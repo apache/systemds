@@ -119,7 +119,7 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
 		{
 			words = tfmapper.apply(words);
 			try {
-				tfmapper.check(words);
+				ApplyTfHelper.check(words);
 				
 				// Perform CSV Reblock
 				CSVReblockInstruction ins = csv_reblock_instructions.get(0).get(0);

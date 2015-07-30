@@ -244,7 +244,7 @@ public class MVImputeAgent extends TransformationAgent {
 				}
 				} catch (NumberFormatException e) 
 				{
-					throw new RuntimeException("Encountered \"" + w + "\" in column \"" + columnNames[colID-1] + "\", when expecting a numeric value. Consider adding \"" + w + "\" to na.strings, along with an appropriate imputation method.");
+					throw new RuntimeException("Encountered \"" + w + "\" in column ID \"" + colID + "\", when expecting a numeric value. Consider adding \"" + w + "\" to na.strings, along with an appropriate imputation method.");
 				}
 			}
 			
@@ -376,7 +376,7 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	private void writeTfMtd(int colID, String mean, String tfMtdDir, FileSystem fs) throws IOException 
 	{
-		Path pt=new Path(tfMtdDir+"/Impute/"+columnNames[colID-1]+ MV_FILE_SUFFIX);
+		Path pt=new Path(tfMtdDir+"/Impute/"+outputColumnNames[colID-1]+ MV_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TXMTD_SEP + mean + "\n");
 		br.close();
@@ -384,7 +384,7 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	private void writeTfMtd(int colID, String mean, String sdev, String tfMtdDir, FileSystem fs) throws IOException 
 	{
-		Path pt=new Path(tfMtdDir+"/Scale/"+columnNames[colID-1]+ SCALE_FILE_SUFFIX);
+		Path pt=new Path(tfMtdDir+"/Scale/"+outputColumnNames[colID-1]+ SCALE_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TXMTD_SEP + mean + TXMTD_SEP + sdev + "\n");
 		br.close();
@@ -392,7 +392,7 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs) throws IOException 
 	{
-		Path pt = new Path(tfMtdDir+"/Bin/"+ columnNames[colID-1] + BIN_FILE_SUFFIX);
+		Path pt = new Path(tfMtdDir+"/Bin/"+ outputColumnNames[colID-1] + BIN_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TXMTD_SEP + min + TXMTD_SEP + max + TXMTD_SEP + binwidth + TXMTD_SEP + nbins + "\n");
 		br.close();
@@ -656,7 +656,7 @@ public class MVImputeAgent extends TransformationAgent {
 
 	private String readReplacement(int colID, FileSystem fs, Path  txMtdDir) throws IOException
 	{
-		Path path = new Path( txMtdDir + "/Impute/" + columnNames[colID-1] + MV_FILE_SUFFIX);
+		Path path = new Path( txMtdDir + "/Impute/" + outputColumnNames[colID-1] + MV_FILE_SUFFIX);
 		TransformationAgent.checkValidInputFile(fs, path, true); 
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
@@ -669,7 +669,7 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	private String readMode(int colID, FileSystem fs, Path txMtdDir) throws IOException
 	{
-		Path path = new Path( txMtdDir + "/Recode/" + columnNames[colID-1] + MODE_FILE_SUFFIX);
+		Path path = new Path( txMtdDir + "/Recode/" + outputColumnNames[colID-1] + MODE_FILE_SUFFIX);
 		TransformationAgent.checkValidInputFile(fs, path, true); 
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
@@ -690,7 +690,7 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	public String readScaleLine(int colID, FileSystem fs, Path txMtdDir) throws IOException
 	{
-		Path path = new Path( txMtdDir + "/Scale/" + columnNames[colID-1] + SCALE_FILE_SUFFIX);
+		Path path = new Path( txMtdDir + "/Scale/" + outputColumnNames[colID-1] + SCALE_FILE_SUFFIX);
 		TransformationAgent.checkValidInputFile(fs, path, true); 
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
 		String line = br.readLine();

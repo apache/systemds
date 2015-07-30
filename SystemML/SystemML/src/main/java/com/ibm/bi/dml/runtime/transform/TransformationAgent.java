@@ -71,8 +71,8 @@ public abstract class TransformationAgent {
 	protected static final String TXMTD_SEP 	= ",";
 	protected static final String DCD_NAME_SEP 	= "_";
 	
-	protected static final String OUT_HEADER = "column.names.given";
-	protected static final String OUT_DCD_HEADER = "column.names.transformed";
+	protected static final String OUT_HEADER = "column.names";
+	protected static final String OUT_DCD_HEADER = "dummycoded.column.names";
 	
 	protected static long _numRecordsInPartFile = 0;	// Total number of records in the data file
 	protected static long _numValidRecords = 0;			// (_numRecordsInPartFile - #of omitted records)

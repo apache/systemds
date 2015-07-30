@@ -129,7 +129,7 @@ public class GLMTest extends AutomatedTestBase
 			{  20000,  100,  2,  1.0,  5,  0.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.cauchit
 */				
 				
-
+/*
         // THIS IS TO TEST "INTERCEPT AND SHIFT/SCALE" OPTION ("icpt=2"):
 			{ 200000,   50,  1,  0.0,  1,  0.0,  0.01, 3.0,  10.0,  2.0,  2.5 },   // Gaussian.log     // CHECK DEVIANCE !!!
 			{  10000,  100,  1,  0.0,  1,  1.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Gaussian.id
@@ -144,7 +144,7 @@ public class GLMTest extends AutomatedTestBase
 			{  10000,  100,  1,  3.0,  1, -1.0,  0.01, 3.0,  10.0,  2.0,  2.5 },   // InvGaussian.inverse
 			{ 100000,   50,  1,  3.0,  1,  0.0,  0.5,  3.0,  -2.0,  1.0,  2.5 },   // InvGaussian.log
 			{ 100000,  100,  1,  3.0,  1,  1.0,  0.01, 3.0,   0.2,  0.03, 2.5 },   // InvGaussian.id
-
+*/
 			{ 100000,   50,  2, -1.0,  1,  0.0,  0.01, 3.0,  -5.0,  1.0,  1.0 },   // Bernoulli {-1, 1}.log     // Note: Y is sparse
 			{ 100000,   50,  2, -1.0,  1,  1.0,  0.01, 3.0,   0.4,  0.1,  1.0 },   // Bernoulli {-1, 1}.id
 			{ 100000,   40,  2, -1.0,  1,  0.5,  0.1,  3.0,   0.4,  0.1,  1.0 },   // Bernoulli {-1, 1}.sqrt
@@ -155,7 +155,7 @@ public class GLMTest extends AutomatedTestBase
 			{  10000,  100,  2, -1.0,  4,  0.0,  0.01, 3.0,  -2.0,  1.0,  1.0 },   // Bernoulli {-1, 1}.cloglog
 			{  50000,   20,  2, -1.0,  4,  0.0,  0.01, 3.0,  -2.0, 50.0,  1.0 },   // Bernoulli {-1, 1}.cloglog // Pr[y|x] near 0, 1
 			{  20000,  100,  2, -1.0,  5,  0.0,  0.01, 3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.cauchit
-        
+/*        
 			{  50000,  100,  2,  1.0,  1,  0.0,  0.01, 3.0,  -5.0,  1.0,  2.5 },   // Binomial two-column.log   // Note: Y is sparse
 			{  10000,  100,  2,  1.0,  1,  1.0,  0.0,  0.0,   0.4,  0.05, 2.5 },   // Binomial two-column.id
 			{ 100000,  100,  2,  1.0,  1,  0.5,  0.1,  3.0,   0.4,  0.05, 2.5 },   // Binomial two-column.sqrt
@@ -163,7 +163,7 @@ public class GLMTest extends AutomatedTestBase
 			{  20000,  100,  2,  1.0,  3,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.probit
 			{  10000,  100,  2,  1.0,  4,  0.0,  0.01, 3.0,  -2.0,  1.0,  2.5 },   // Binomial two-column.cloglog
 			{  20000,  100,  2,  1.0,  5,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.cauchit
-			
+*/			
 
 
 		//  DML WORKS, BUT R FAILS:

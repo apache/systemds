@@ -611,10 +611,12 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		# build dataset for SMALL node
 		Ix = ppred (L[,1], cur_node_small, "==");	
 		if (num_scale_features > 0) {
-			X_scale_ext_small = removeEmpty (target = X_scale_ext * Ix, margin = "rows");
+			X_scale_ext_small = removeEmpty (target = append (X_scale_ext, Ix) * Ix, margin = "rows");
+			X_scale_ext_small = X_scale_ext_small[,1:(ncol (X_scale_ext_small) - 1)];
 		}
 		if (num_cat_features > 0) {
-			X_cat_small = removeEmpty (target = X_cat * Ix, margin = "rows");
+			X_cat_small = removeEmpty (target = append (X_cat, Ix) * Ix, margin = "rows");
+			X_cat_small = X_cat_small[,1:(ncol (X_cat_small) - 1)];
 		}
 		L_small = removeEmpty (target = L * Ix, margin = "rows");
 		Y_bin_small = removeEmpty (target = Y_bin * Ix, margin = "rows");

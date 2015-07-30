@@ -488,7 +488,7 @@ public class RDDAggregateUtils
 		{
 			// sanity check input dimensions
 			if (b1.getNumRows() != b2.getNumRows() || b1.getNumColumns() != b2.getNumColumns()) {
-				throw new DMLRuntimeException("Mismatched block sizes: "
+				throw new DMLRuntimeException("Mismatched block sizes for: "
 						+ b1.getNumRows() + " " + b1.getNumColumns() + " "
 						+ b2.getNumRows() + " " + b2.getNumColumns());
 			}

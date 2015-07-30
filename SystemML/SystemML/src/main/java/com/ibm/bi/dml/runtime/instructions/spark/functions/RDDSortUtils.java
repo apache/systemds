@@ -9,22 +9,18 @@ package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -47,7 +43,6 @@ public class RDDSortUtils
 	 * @param brlen
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> in, long rlen, int brlen )
 	{
 		//create value-index rdd from inputs
@@ -60,26 +55,12 @@ public class RDDSortUtils
 		JavaRDD<Double> sdvals = dvals
 				.sortBy(new CreateDoubleKeyFunction(), true, numPartitions);
 		
-		//obtain partition sizes
-		List<Tuple2<Integer,Long>> offsets = sdvals
-				.mapPartitionsWithIndex(new GetPartitionSizesFunction(), true)
-				.collect();
-		
-		//compute partition offsets via shifted prefix sum
-		Tuple2<Integer,Long>[] tmpoffsets = offsets.toArray(new Tuple2[0]);
-		long[][] poffsets = new long[tmpoffsets.length][2];
-		poffsets[0] = new long[]{tmpoffsets[0]._1,0};
-		for( int i=1; i<poffsets.length; i++ ) {
-			poffsets[i][0] = tmpoffsets[i]._1;
-			poffsets[i][1] = poffsets[i-1][1]+tmpoffsets[i]._2;
-		}
-		
-		//create binary block rdd (offsets not shipped via broadcast since only used once
-		//and in order to simplify the api of these sort utils)		
+		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
-				.mapPartitionsWithIndex(new ConvertToBinaryBlockFunction(poffsets, rlen, brlen), true)
-				.mapToPair(new UnfoldBinaryBlockFunction());
-		ret = RDDAggregateUtils.mergeByKey(ret);		
+				.zipWithIndex()
+		        .mapPartitions(new ConvertToBinaryBlockFunction(rlen, brlen))
+		        .mapToPair(new UnfoldBinaryBlockFunction());
+		ret = RDDAggregateUtils.mergeByKey(ret);	
 		
 		return ret;
 	}
@@ -92,7 +73,6 @@ public class RDDSortUtils
 	 * @param brlen
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> in, 
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in2, long rlen, int brlen )
 	{
@@ -105,26 +85,12 @@ public class RDDSortUtils
 		int numPartitions = (int)Math.ceil(((double)rlen*8)/hdfsBlocksize);
 		JavaRDD<DoublePair> sdvals = dvals
 				.sortBy(new CreateDoubleKeyFunction2(), true, numPartitions);
-		
-		//obtain partition sizes
-		List<Tuple2<Integer,Long>> offsets = sdvals
-				.mapPartitionsWithIndex(new GetPartitionSizesFunction2(), true)
-				.collect();
-		
-		//compute partition offsets via shifted prefix sum
-		Tuple2<Integer,Long>[] tmpoffsets = offsets.toArray(new Tuple2[0]);
-		long[][] poffsets = new long[tmpoffsets.length][2];
-		poffsets[0] = new long[]{tmpoffsets[0]._1,0};
-		for( int i=1; i<poffsets.length; i++ ) {
-			poffsets[i][0] = tmpoffsets[i]._1;
-			poffsets[i][1] = poffsets[i-1][1]+tmpoffsets[i]._2;
-		}
-		
-		//create binary block rdd (offsets not shipped via broadcast since only used once
-		//and in order to simplify the api of these sort utils)		
+
+		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
-				.mapPartitionsWithIndex(new ConvertToBinaryBlockFunction2(poffsets, rlen, brlen), true)
-				.mapToPair(new UnfoldBinaryBlockFunction());
+				.zipWithIndex()
+		        .mapPartitions(new ConvertToBinaryBlockFunction2(rlen, brlen))
+		        .mapToPair(new UnfoldBinaryBlockFunction());
 		ret = RDDAggregateUtils.mergeByKey(ret);		
 		
 		return ret;
@@ -137,7 +103,6 @@ public class RDDSortUtils
 	 * @param brlen
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortIndexesByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> in, 
 			boolean asc, long rlen, int brlen )
 	{
@@ -151,26 +116,12 @@ public class RDDSortUtils
 		JavaRDD<ValueIndexPair> sdvals = dvals
 				.sortByKey(new IndexComparator(asc), true, numPartitions)
 				.keys(); //workaround for index comparator
-		
-		//obtain partition sizes
-		List<Tuple2<Integer,Long>> offsets = sdvals
-				.mapPartitionsWithIndex(new GetPartitionSizesFunction3(), true)
-				.collect();
-		
-		//compute partition offsets via shifted prefix sum
-		Tuple2<Integer,Long>[] tmpoffsets = offsets.toArray(new Tuple2[0]);
-		long[][] poffsets = new long[tmpoffsets.length][2];
-		poffsets[0] = new long[]{tmpoffsets[0]._1,0};
-		for( int i=1; i<poffsets.length; i++ ) {
-			poffsets[i][0] = tmpoffsets[i]._1;
-			poffsets[i][1] = poffsets[i-1][1]+tmpoffsets[i]._2;
-		}
-		
-		//create binary block rdd (offsets not shipped via broadcast since only used once
-		//and in order to simplify the api of these sort utils)		
+	 
+		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
-				.mapPartitionsWithIndex(new ConvertToBinaryBlockFunction3(poffsets, rlen, brlen), true)
-				.mapToPair(new UnfoldBinaryBlockFunction());
+				.zipWithIndex()
+		        .mapPartitions(new ConvertToBinaryBlockFunction3(rlen, brlen))
+		        .mapToPair(new UnfoldBinaryBlockFunction());
 		ret = RDDAggregateUtils.mergeByKey(ret);		
 		
 		return ret;	
@@ -279,290 +230,157 @@ public class RDDSortUtils
 	/**
 	 * 
 	 */
-	private static class GetPartitionSizesFunction implements Function2<Integer,Iterator<Double>,Iterator<Tuple2<Integer,Long>>> 
-	{
-		private static final long serialVersionUID = 5491422398886449135L;
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public Iterator<Tuple2<Integer,Long>> call(Integer arg0, Iterator<Double> arg1)
-			throws Exception 
-		{
-			ArrayList<Tuple2<Integer,Long>> ret = new ArrayList<Tuple2<Integer,Long>>();
-			
-			if( arg1 instanceof Collection ) {
-				ret.add(new Tuple2<Integer,Long>(arg0,(long)((Collection<Double>)arg1).size()));
-			}
-			else {
-				int size = 0;
-				while( arg1.hasNext() ) {
-					arg1.next();
-					size++;
-				}
-				ret.add(new Tuple2<Integer,Long>(arg0,(long)size));
-			}
-			
-			return ret.iterator();
-		}
-	}
-	
-	/**
-	 * 
-	 */
-	private static class GetPartitionSizesFunction2 implements Function2<Integer,Iterator<DoublePair>,Iterator<Tuple2<Integer,Long>>> 
-	{
-		private static final long serialVersionUID = 3735593665863933572L;
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public Iterator<Tuple2<Integer,Long>> call(Integer arg0, Iterator<DoublePair> arg1)
-			throws Exception 
-		{
-			ArrayList<Tuple2<Integer,Long>> ret = new ArrayList<Tuple2<Integer,Long>>();
-			
-			if( arg1 instanceof Collection ) {
-				ret.add(new Tuple2<Integer,Long>(arg0,(long)((Collection<DoublePair>)arg1).size()));
-			}
-			else {
-				int size = 0;
-				while( arg1.hasNext() ) {
-					arg1.next();
-					size++;
-				}
-				ret.add(new Tuple2<Integer,Long>(arg0,(long)size));
-			}
-			
-			return ret.iterator();
-		}
-	}
-	
-	/**
-	 * 
-	 */
-	private static class GetPartitionSizesFunction3 implements Function2<Integer,Iterator<ValueIndexPair>,Iterator<Tuple2<Integer,Long>>> 
-	{
-		private static final long serialVersionUID = -6144308545615151619L;
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public Iterator<Tuple2<Integer,Long>> call(Integer arg0, Iterator<ValueIndexPair> arg1)
-			throws Exception 
-		{
-			ArrayList<Tuple2<Integer,Long>> ret = new ArrayList<Tuple2<Integer,Long>>();
-			
-			if( arg1 instanceof Collection ) {
-				ret.add(new Tuple2<Integer,Long>(arg0,(long)((Collection<ValueIndexPair>)arg1).size()));
-			}
-			else {
-				int size = 0;
-				while( arg1.hasNext() ) {
-					arg1.next();
-					size++;
-				}
-				ret.add(new Tuple2<Integer,Long>(arg0,(long)size));
-			}
-			
-			return ret.iterator();
-		}
-	}
-	/**
-	 * 
-	 */
-	private static class ConvertToBinaryBlockFunction implements Function2<Integer,Iterator<Double>,Iterator<Tuple2<MatrixIndexes,MatrixBlock>>> 
+	private static class ConvertToBinaryBlockFunction implements FlatMapFunction<Iterator<Tuple2<Double,Long>>,Tuple2<MatrixIndexes,MatrixBlock>> 
 	{
 		private static final long serialVersionUID = 5000298196472931653L;
 		
-		private long[][] _offsets = null; //id/offset
 		private long _rlen = -1;
 		private int _brlen = -1;
 		
-		public ConvertToBinaryBlockFunction(long[][] boff, long rlen, int brlen)
+		public ConvertToBinaryBlockFunction(long rlen, int brlen)
 		{
-			_offsets = boff;
 			_rlen = rlen;
 			_brlen = brlen;
 		}
 		
-		public Iterator<Tuple2<MatrixIndexes,MatrixBlock>> call(Integer arg0, Iterator<Double> arg1)
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Double,Long>> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-			long rowoffset = getOffset(arg0)+1; //1-based
 			
-			//create initial matrix block
-			long rix = UtilFunctions.blockIndexCalculation(rowoffset, _brlen);
-			long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
-			int pos = UtilFunctions.cellInBlockCalculation(rowoffset, _brlen);
-			MatrixIndexes ix = new MatrixIndexes(rix,1);
-			MatrixBlock mb = new MatrixBlock((int)len, 1, false);
+			MatrixIndexes ix = null;
+			MatrixBlock mb = null;
 			
-			while( arg1.hasNext() ) 
+			while( arg0.hasNext() ) 
 			{
-				mb.quickSetValue(pos, 0, arg1.next());
-				pos++;
+				Tuple2<Double,Long> val = arg0.next();
+				long valix = val._2 + 1;
+				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
+				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
 				
-				//create next block if necessary
-				if( pos==mb.getNumRows() ){
-					ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
-					rix++;
-					len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+				if( ix == null || ix.getRowIndex() != rix )
+				{
+					if( ix !=null )
+						ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
-					mb = new MatrixBlock((int)len, 1, false);
-					pos=0;
+					mb = new MatrixBlock((int)len, 1, false);	
 				}
+				
+				mb.quickSetValue(pos, 0, val._1);
 			}
 			
 			//flush last block
-			if( pos != 0 )
+			if( mb!=null && mb.getNonZeros() != 0 )
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
 			
-			return ret.iterator();
-		}
-		
-		private long getOffset(long partid) 
-			throws DMLRuntimeException
-		{
-			for( int i=0; i<_offsets.length; i++ )
-				if( _offsets[i][0] == partid )
-					return _offsets[i][1];
-				
-			throw new DMLRuntimeException("Could not find partition offset for id="+partid);	
+			return ret;
 		}
 	}
 
 	/**
 	 * 
 	 */
-	private static class ConvertToBinaryBlockFunction2 implements Function2<Integer,Iterator<DoublePair>,Iterator<Tuple2<MatrixIndexes,MatrixBlock>>> 
+	private static class ConvertToBinaryBlockFunction2 implements FlatMapFunction<Iterator<Tuple2<DoublePair,Long>>,Tuple2<MatrixIndexes,MatrixBlock>> 
 	{
 		private static final long serialVersionUID = -8638434373377180192L;
 		
-		private long[][] _offsets = null; //id/offset
 		private long _rlen = -1;
 		private int _brlen = -1;
 		
-		public ConvertToBinaryBlockFunction2(long[][] boff, long rlen, int brlen)
+		public ConvertToBinaryBlockFunction2(long rlen, int brlen)
 		{
-			_offsets = boff;
 			_rlen = rlen;
 			_brlen = brlen;
 		}
 		
-		public Iterator<Tuple2<MatrixIndexes,MatrixBlock>> call(Integer arg0, Iterator<DoublePair> arg1)
-			throws Exception 
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<DoublePair,Long>> arg0) 
+			throws Exception
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-			long rowoffset = getOffset(arg0)+1; //1-based
 			
-			//create initial matrix block
-			long rix = UtilFunctions.blockIndexCalculation(rowoffset, _brlen);
-			long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
-			int pos = UtilFunctions.cellInBlockCalculation(rowoffset, _brlen);
-			MatrixIndexes ix = new MatrixIndexes(rix,1);
-			MatrixBlock mb = new MatrixBlock((int)len, 2, false);
+			MatrixIndexes ix = null;
+			MatrixBlock mb = null;
 			
-			while( arg1.hasNext() ) 
+			while( arg0.hasNext() ) 
 			{
-				DoublePair val = arg1.next();
-				mb.quickSetValue(pos, 0, val.val1);
-				mb.quickSetValue(pos, 1, val.val2);
-				pos++;
+				Tuple2<DoublePair,Long> val = arg0.next();
+				long valix = val._2 + 1;
+				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
+				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
 				
-				//create next block if necessary
-				if( pos==mb.getNumRows() ){
-					ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
-					rix++;
-					len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+				if( ix == null || ix.getRowIndex() != rix )
+				{
+					if( ix !=null )
+						ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
-					mb = new MatrixBlock((int)len, 2, false);
-					pos=0;
+					mb = new MatrixBlock((int)len, 2, false);	
 				}
+				
+				mb.quickSetValue(pos, 0, val._1.val1);
+				mb.quickSetValue(pos, 1, val._1.val2);
 			}
 			
 			//flush last block
-			if( pos != 0 )
+			if( mb!=null && mb.getNonZeros() != 0 )
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
 			
-			return ret.iterator();
-		}
-		
-		private long getOffset(long partid) 
-			throws DMLRuntimeException
-		{
-			for( int i=0; i<_offsets.length; i++ )
-				if( _offsets[i][0] == partid )
-					return _offsets[i][1];
-				
-			throw new DMLRuntimeException("Could not find partition offset for id="+partid);	
+			return ret;
 		}
 	}
 	
 	/**
 	 * 
 	 */
-	private static class ConvertToBinaryBlockFunction3 implements Function2<Integer,Iterator<ValueIndexPair>,Iterator<Tuple2<MatrixIndexes,MatrixBlock>>> 
-	{
-		private static final long serialVersionUID = -8638434373377180192L;
+	private static class ConvertToBinaryBlockFunction3 implements FlatMapFunction<Iterator<Tuple2<ValueIndexPair,Long>>,Tuple2<MatrixIndexes,MatrixBlock>> 
+	{		
+		private static final long serialVersionUID = 9113122668214965797L;
 		
-		private long[][] _offsets = null; //id/offset
 		private long _rlen = -1;
 		private int _brlen = -1;
 		
-		public ConvertToBinaryBlockFunction3(long[][] boff, long rlen, int brlen)
+		public ConvertToBinaryBlockFunction3(long rlen, int brlen)
 		{
-			_offsets = boff;
 			_rlen = rlen;
 			_brlen = brlen;
 		}
 		
-		public Iterator<Tuple2<MatrixIndexes,MatrixBlock>> call(Integer arg0, Iterator<ValueIndexPair> arg1)
-			throws Exception 
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<ValueIndexPair,Long>> arg0) 
+			throws Exception
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-			long rowoffset = getOffset(arg0)+1; //1-based
 			
-			//create initial matrix block
-			long rix = UtilFunctions.blockIndexCalculation(rowoffset, _brlen);
-			long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
-			int pos = UtilFunctions.cellInBlockCalculation(rowoffset, _brlen);
-			MatrixIndexes ix = new MatrixIndexes(rix,1);
-			MatrixBlock mb = new MatrixBlock((int)len, 1, false);
+			MatrixIndexes ix = null;
+			MatrixBlock mb = null;
 			
-			while( arg1.hasNext() ) 
+			while( arg0.hasNext() ) 
 			{
-				ValueIndexPair val = arg1.next();
-				mb.quickSetValue(pos, 0, val.ix);
-				pos++;
+				Tuple2<ValueIndexPair,Long> val = arg0.next();
+				long valix = val._2 + 1;
+				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
+				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
 				
-				//create next block if necessary
-				if( pos==mb.getNumRows() ){
-					ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
-					rix++;
-					len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+				if( ix == null || ix.getRowIndex() != rix )
+				{
+					if( ix !=null )
+						ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
-					mb = new MatrixBlock((int)len, 1, false);
-					pos=0;
+					mb = new MatrixBlock((int)len, 1, false);	
 				}
+				
+				mb.quickSetValue(pos, 0, val._1.ix);
 			}
 			
 			//flush last block
-			if( pos != 0 )
+			if( mb!=null && mb.getNonZeros() != 0 )
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
 			
-			return ret.iterator();
-		}
-		
-		private long getOffset(long partid) 
-			throws DMLRuntimeException
-		{
-			for( int i=0; i<_offsets.length; i++ )
-				if( _offsets[i][0] == partid )
-					return _offsets[i][1];
-				
-			throw new DMLRuntimeException("Could not find partition offset for id="+partid);	
+			return ret;
 		}
 	}
-
+	
 	
 	/**
 	 * 

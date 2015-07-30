@@ -165,7 +165,7 @@ public class ApplyTfHelper {
 			final String msg = "When na.strings are provided, empty string \"\" is considered as a missing value, and it must be imputed appropriately. Encountered an unhandled empty string in column ID: ";
 			for(int i=0; i<words.length; i++) 
 				if ( words[i] != null && words[i].equals(""))
-					throw new DMLRuntimeException(msg + i);
+					throw new DMLRuntimeException(msg + (i+1));
 		}
 	}
 	
@@ -196,7 +196,7 @@ public class ApplyTfHelper {
 			final String msg = "When na.strings are provided, empty string \"\" is considered as a missing value, and it must be imputed appropriately. Encountered an unhandled empty string in column ID: ";
 			if ( words[0] != null ) 
 				if ( words[0].equals("") )
-					throw new DMLRuntimeException( msg + "0");
+					throw new DMLRuntimeException( msg + "1");
 				else 
 					sb.append(words[0]);
 			else
@@ -208,7 +208,7 @@ public class ApplyTfHelper {
 				
 				if ( words[i] != null ) 
 					if ( words[i].equals("") )
-						throw new DMLRuntimeException(msg + i);
+						throw new DMLRuntimeException(msg + (i+1));
 					else 
 						sb.append(words[i]);
 				else

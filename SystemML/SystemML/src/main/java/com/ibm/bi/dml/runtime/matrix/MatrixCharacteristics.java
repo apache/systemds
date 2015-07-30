@@ -264,10 +264,14 @@ public class MatrixCharacteristics implements Serializable
 			DataGenMRInstruction dataIns=(DataGenMRInstruction)ins;
 			dimOut.set(dims.get(dataIns.getInput()));
 		}
+		else if( ins instanceof ReplicateInstruction )
+		{
+			ReplicateInstruction realIns=(ReplicateInstruction)ins;
+			realIns.computeOutputDimension(dims.get(realIns.input), dimOut);
+		}
 		else if(ins instanceof ScalarInstruction 
 				|| ins instanceof AggregateInstruction
 				||(ins instanceof UnaryInstruction && !(ins instanceof MMTSJMRInstruction))
-				|| ins instanceof ReplicateInstruction
 				|| ins instanceof ZeroOutInstruction)
 		{
 			UnaryMRInstructionBase realIns=(UnaryMRInstructionBase)ins;

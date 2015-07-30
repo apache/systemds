@@ -13,6 +13,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
@@ -39,6 +40,19 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 		
 		_repCols = repCols;
 		_lenM = lenM;
+	}
+	
+	/**
+	 * 
+	 * @param mcIn
+	 * @param mcOut
+	 */
+	public void computeOutputDimension(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut)
+	{
+		if( _repCols )
+			mcOut.set(mcIn.getRows(), _lenM, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+		else
+			mcOut.set(_lenM, mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 	}
 	
 	/**

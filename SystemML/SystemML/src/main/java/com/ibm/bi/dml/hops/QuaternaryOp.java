@@ -841,10 +841,14 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		
 		//compare basic inputs and weights (always existing)
 		boolean ret = (_op == that2._op
+				&& getInput().size() == getInput().size()
 				&& getInput().get(0) == that2.getInput().get(0)
 				&& getInput().get(1) == that2.getInput().get(1)
-				&& getInput().get(2) == that2.getInput().get(2)
-				&& getInput().get(3) == that2.getInput().get(3));
+				&& getInput().get(2) == that2.getInput().get(2) );
+	
+		//check for 4th argument if same size (see above)
+		if( ret && getInput().size()==4 ) 
+			ret &= (getInput().get(3) == that2.getInput().get(3));
 		
 		//compare specific parameters
 		ret &= _postWeights == that2._postWeights;

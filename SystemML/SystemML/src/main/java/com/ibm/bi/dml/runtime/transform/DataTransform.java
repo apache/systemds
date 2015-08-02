@@ -634,8 +634,8 @@ public class DataTransform {
 	private static void moveFilesFromTmp(FileSystem fs, String tmpPath, String txMtdPath) throws IllegalArgumentException, IOException 
 	{
 		// move files from temporary location to txMtdPath
-		fs.rename( new Path(tmpPath + "/" + "column.names.given"), new Path(txMtdPath + "/" + "column.names.given"));
-		fs.rename( new Path(tmpPath + "/" + "column.names.transformed"), new Path(txMtdPath + "/" + "column.names.transformed"));
+		fs.rename( new Path(tmpPath + "/" + TransformationAgent.OUT_HEADER), new Path(txMtdPath + "/" + TransformationAgent.OUT_HEADER));
+		fs.rename( new Path(tmpPath + "/" + TransformationAgent.OUT_DCD_HEADER), new Path(txMtdPath + "/" + TransformationAgent.OUT_DCD_HEADER));
 		fs.rename( new Path(tmpPath + "/" + TransformationAgent.COLTYPES_FILE_NAME), new Path(txMtdPath + "/" + TransformationAgent.COLTYPES_FILE_NAME));
 		if(fs.exists(new Path(tmpPath +"/Dummycode/" + TransformationAgent.DCD_FILE_NAME)))
 			fs.rename( new Path(tmpPath + "/Dummycode/" + TransformationAgent.DCD_FILE_NAME), new Path(txMtdPath + "/Dummycode/" + TransformationAgent.DCD_FILE_NAME));

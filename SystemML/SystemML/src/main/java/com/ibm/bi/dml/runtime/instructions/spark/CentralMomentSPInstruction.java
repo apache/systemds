@@ -24,26 +24,26 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.cp.CentralMomentCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
 /**
  * 
  */
-public class CentralMomentSPInstruction extends AggregateUnarySPInstruction
+public class CentralMomentSPInstruction extends UnarySPInstruction
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public CentralMomentSPInstruction(AggregateUnaryOperator op, CPOperand in, CPOperand out, String opcode, String istr){
-		super(op, null, in, out, null, opcode, istr);
+	public CentralMomentSPInstruction(CMOperator op, CPOperand in1, CPOperand in2, 
+			CPOperand in3, CPOperand out, String opcode, String str)
+	{
+		super(op, in1, in2, in3, out, opcode, str);
 	}
 	
 	/**
@@ -99,7 +99,7 @@ public class CentralMomentSPInstruction extends AggregateUnarySPInstruction
 		
 		AggregateOperationTypes opType = CMOperator.getCMAggOpType(cmOrder);
 		CMOperator cm = new CMOperator(CM.getCMFnObject(opType), opType);
-		return new CentralMomentCPInstruction(cm, in1, in2, in3, out, opcode, str);
+		return new CentralMomentSPInstruction(cm, in1, in2, in3, out, opcode, str);
 	}
 	
 	@Override
@@ -187,7 +187,7 @@ public class CentralMomentSPInstruction extends AggregateUnarySPInstruction
 		}
 	}
 	
-	public class RDDCMReduceFunction implements Function2<CM_COV_Object, CM_COV_Object, CM_COV_Object>
+	private static class RDDCMReduceFunction implements Function2<CM_COV_Object, CM_COV_Object, CM_COV_Object>
 	{
 		@SuppressWarnings("unused")
 		private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +

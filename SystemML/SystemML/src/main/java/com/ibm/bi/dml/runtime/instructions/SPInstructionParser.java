@@ -123,8 +123,6 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "map%%"   , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "map%/%"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "map^"    , SPINSTRUCTION_TYPE.ArithmeticBinary);
-//		String2SPInstructionType.put( "mapmax"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
-//		String2SPInstructionType.put( "mapmin"  , SPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2SPInstructionType.put( "map>"    , SPINSTRUCTION_TYPE.RelationalBinary);
 		String2SPInstructionType.put( "map>="   , SPINSTRUCTION_TYPE.RelationalBinary);
 		String2SPInstructionType.put( "map<"    , SPINSTRUCTION_TYPE.RelationalBinary);
@@ -152,6 +150,8 @@ public class SPInstructionParser extends InstructionParser {
 		
 		String2SPInstructionType.put( "max"  , SPINSTRUCTION_TYPE.BuiltinBinary);
 		String2SPInstructionType.put( "min"  , SPINSTRUCTION_TYPE.BuiltinBinary);
+		String2SPInstructionType.put( "mapmax"  , SPINSTRUCTION_TYPE.BuiltinBinary);
+		String2SPInstructionType.put( "mapmin"  , SPINSTRUCTION_TYPE.BuiltinBinary);
 		
 		String2SPInstructionType.put( "exp"   , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "abs"   , SPINSTRUCTION_TYPE.BuiltinUnary);
@@ -170,8 +170,6 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "sigmoid", SPINSTRUCTION_TYPE.BuiltinUnary);
 		
 		// Parameterized Builtin Functions
-		String2SPInstructionType.put( "cdf"	 		, SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "invcdf"	 	, SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2SPInstructionType.put( "groupedagg"	, SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2SPInstructionType.put( "rmempty"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2SPInstructionType.put( "replace"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);

@@ -161,7 +161,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	{
 		//applies to all binary matrix operations, if one input is unnecessarily vectorized 
 		if(    hi instanceof BinaryOp && hi.getDataType()==DataType.MATRIX 
-			&& ((BinaryOp)hi).supportsMatrixScalarOperations()               )
+			&& ((BinaryOp)hi).supportsMatrixScalarOperations()   )
 		{
 			BinaryOp bop = (BinaryOp)hi;
 			Hop left = bop.getInput().get(0);
@@ -169,49 +169,50 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			
 			//NOTE: these rewrites of binary cell operations need to be aware that right is 
 			//potentially a vector but the result is of the size of left
+			//TODO move to dynamic rewrites (since size dependent to account for mv binary cell and outer operations)
 			
-			//check and remove right vectorized scalar
-			if( left.getDataType() == DataType.MATRIX && right instanceof DataGenOp )
+			if( !(left.getDim1()>1 && left.getDim2()==1 && right.getDim1()==1 && right.getDim2()>1) ) // no outer
 			{
-				DataGenOp dright = (DataGenOp) right;
-				if( dright.getOp()==DataGenMethod.RAND && dright.hasConstantValue() )
+				//check and remove right vectorized scalar
+				if( left.getDataType() == DataType.MATRIX && right instanceof DataGenOp )
 				{
-					Hop drightIn = dright.getInput().get(dright.getParamIndex(DataExpression.RAND_MIN));
-					HopRewriteUtils.removeChildReference(bop, dright);
-					HopRewriteUtils.addChildReference(bop, drightIn, 1);
-					//cleanup if only consumer of intermediate
-					if( dright.getParent().isEmpty() ) 
-						HopRewriteUtils.removeAllChildReferences( dright );
-					
-					LOG.debug("Applied removeUnnecessaryVectorizeOperation1");
+					DataGenOp dright = (DataGenOp) right;
+					if( dright.getOp()==DataGenMethod.RAND && dright.hasConstantValue() )
+					{
+						Hop drightIn = dright.getInput().get(dright.getParamIndex(DataExpression.RAND_MIN));
+						HopRewriteUtils.removeChildReference(bop, dright);
+						HopRewriteUtils.addChildReference(bop, drightIn, 1);
+						//cleanup if only consumer of intermediate
+						if( dright.getParent().isEmpty() ) 
+							HopRewriteUtils.removeAllChildReferences( dright );
+						
+						LOG.debug("Applied removeUnnecessaryVectorizeOperation1");
+					}
 				}
-			}
-			//TODO move to dynamic rewrites (since size dependent to account for mv binary cell operations)
-			//check and remove left vectorized scalar
-			else if( right.getDataType() == DataType.MATRIX && left instanceof DataGenOp )
-			{
-				DataGenOp dleft = (DataGenOp) left;
-				if( dleft.getOp()==DataGenMethod.RAND && dleft.hasConstantValue()
-					&& (left.getDim2()==1 || right.getDim2()>1) 
-					&& (left.getDim1()==1 || right.getDim1()>1))
+				//check and remove left vectorized scalar
+				else if( right.getDataType() == DataType.MATRIX && left instanceof DataGenOp )
 				{
-					Hop dleftIn = dleft.getInput().get(dleft.getParamIndex(DataExpression.RAND_MIN));
-					HopRewriteUtils.removeChildReference(bop, dleft);
-					HopRewriteUtils.addChildReference(bop, dleftIn, 0);
-					//cleanup if only consumer of intermediate
-					if( dleft.getParent().isEmpty() ) 
-						HopRewriteUtils.removeAllChildReferences( dleft );
-					
-					LOG.debug("Applied removeUnnecessaryVectorizeOperation2");
+					DataGenOp dleft = (DataGenOp) left;
+					if( dleft.getOp()==DataGenMethod.RAND && dleft.hasConstantValue()
+						&& (left.getDim2()==1 || right.getDim2()>1) 
+						&& (left.getDim1()==1 || right.getDim1()>1))
+					{
+						Hop dleftIn = dleft.getInput().get(dleft.getParamIndex(DataExpression.RAND_MIN));
+						HopRewriteUtils.removeChildReference(bop, dleft);
+						HopRewriteUtils.addChildReference(bop, dleftIn, 0);
+						//cleanup if only consumer of intermediate
+						if( dleft.getParent().isEmpty() ) 
+							HopRewriteUtils.removeAllChildReferences( dleft );
+						
+						LOG.debug("Applied removeUnnecessaryVectorizeOperation2");
+					}
 				}
-			}
-			
 
-			//Note: we applied this rewrite to at most one side in order to keep the
-			//output semantically equivalent. However, future extensions might consider
-			//to remove vectors from both side, compute the binary op on scalars and 
-			//finally feed it into a datagenop of the original dimensions.
-			
+				//Note: we applied this rewrite to at most one side in order to keep the
+				//output semantically equivalent. However, future extensions might consider
+				//to remove vectors from both side, compute the binary op on scalars and 
+				//finally feed it into a datagenop of the original dimensions.
+			}
 		}
 		
 		return hi;

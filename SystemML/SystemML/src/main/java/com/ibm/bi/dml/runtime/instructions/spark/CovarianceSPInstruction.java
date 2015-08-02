@@ -24,11 +24,9 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.cp.CovarianceCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
 
 /**
@@ -40,13 +38,13 @@ public class CovarianceSPInstruction extends BinarySPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public CovarianceSPInstruction(AggregateUnaryOperator op, CPOperand in, CPOperand in2, CPOperand out, 
+	public CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand out, 
 			                      String opcode, String istr)
 	{
 		super(op, in, in2, out, opcode, istr);
 	}
 	
-	public CovarianceSPInstruction(AggregateUnaryOperator op, CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, 
+	public CovarianceSPInstruction(COVOperator op, CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, 
             String opcode, String istr)
 	{
 		super(op, in, in2, out, opcode, istr);
@@ -77,12 +75,12 @@ public class CovarianceSPInstruction extends BinarySPInstruction
 		if ( parts.length == 4 ) {
 			// CP.cov.mVar0.mVar1.mVar2
 			parseBinaryInstruction(str, in1, in2, out);
-			return new CovarianceCPInstruction(cov, in1, in2, out, opcode, str);
+			return new CovarianceSPInstruction(cov, in1, in2, out, opcode, str);
 		} else if ( parts.length == 5 ) {
 			// CP.cov.mVar0.mVar1.mVar2.mVar3
 			in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 			parseBinaryInstruction(str, in1, in2, in3, out);
-			return new CovarianceCPInstruction(cov, in1, in2, in3, out, opcode, str);
+			return new CovarianceSPInstruction(cov, in1, in2, in3, out, opcode, str);
 		}
 		else {
 			throw new DMLRuntimeException("Invalid number of arguments in Instruction: " + str);
@@ -177,7 +175,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction
 	/**
 	 * 
 	 */
-	public class RDDCOVReduceFunction implements Function2<CM_COV_Object, CM_COV_Object, CM_COV_Object>
+	private static class RDDCOVReduceFunction implements Function2<CM_COV_Object, CM_COV_Object, CM_COV_Object>
 	{
 		private static final long serialVersionUID = 1118102911706607118L;
 		

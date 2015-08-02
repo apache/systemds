@@ -18,6 +18,7 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.QuaternaryOp;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.WeightedSigmoid;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -474,12 +475,13 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
-		
+			
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			
+			checkDMLMetaDataFile("R", new MatrixCharacteristics(rows,cols,1,1));
+
 			//check statistics for right operator in cp
 			if( instType == ExecType.CP && rewrites )
 				Assert.assertTrue(Statistics.getCPHeavyHitterOpCodes().contains(WeightedSigmoid.OPCODE_CP));

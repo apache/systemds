@@ -11,9 +11,12 @@ package com.ibm.bi.dml.runtime.matrix;
 import java.io.Serializable;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.WeightedSquaredLoss;
+import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateUnaryInstruction;
@@ -241,10 +244,19 @@ public class MatrixCharacteristics implements Serializable
 		}
 		else if(ins instanceof QuaternaryInstruction)
 		{
-			//output size independent of chain type
 			QuaternaryInstruction realIns=(QuaternaryInstruction)ins;
 			MatrixCharacteristics mc1 = dims.get(realIns.getInput1());
-			dimOut.set(1, 1, mc1.numRowsPerBlock, mc1.numColumnsPerBlock);	
+			String opcode = InstructionUtils.getOpCode(ins.toString());
+			if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)    //wsloss
+				|| WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode) )
+			{
+				//output size independent of chain type (scalar)
+				dimOut.set(1, 1, mc1.numRowsPerBlock, mc1.numColumnsPerBlock);	
+			}
+			else //wsigmoid
+			{
+				dimOut.set(mc1.getRows(), mc1.getCols(), mc1.numRowsPerBlock, mc1.numColumnsPerBlock);
+			}	
 		}
 		else if(ins instanceof ReblockInstruction)
 		{

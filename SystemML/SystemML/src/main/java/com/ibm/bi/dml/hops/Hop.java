@@ -335,7 +335,7 @@ public abstract class Hop
 		//determine execution type
 		ExecType et = ExecType.CP;
 		if( OptimizerUtils.isSparkExecutionMode() 
-			&& !(getDataType()==DataType.SCALAR) )
+			&& getDataType()!=DataType.SCALAR )
 		{
 			et = ExecType.SPARK;
 		}
@@ -556,7 +556,7 @@ public abstract class Hop
 	 * 
 	 * @return computed estimate
 	 */
-	protected void computeMemEstimate( MemoTable memo )
+	public void computeMemEstimate( MemoTable memo )
 	{
 		long[] wstats = null; 
 		

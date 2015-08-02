@@ -53,18 +53,17 @@ public class ParameterizedBuiltin extends Lop
 	 * @param numCols
 	 *            number of resulting columns
 	 */
-	public ParameterizedBuiltin(HashMap<String, Lop> 
-				inputParametersLops, OperationTypes op, DataType dt, ValueType vt) 
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt) 
 	{
 		super(Lop.Type.ParameterizedBuiltin, dt, vt);
 		_operation = op;
 		
-		for (Lop lop : inputParametersLops.values()) {
+		for (Lop lop : paramLops.values()) {
 			this.addInput(lop);
 			lop.addOutput(this);
 		}
 		
-		_inputParams = inputParametersLops;
+		_inputParams = paramLops;
 		
 		/*
 		 * This lop is executed in control program. 
@@ -73,21 +72,21 @@ public class ParameterizedBuiltin extends Lop
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties(inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		lps.setProperties(inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 	}
 	
-	public ParameterizedBuiltin(ExecType et, HashMap<String, Lop> 
-		       inputParametersLops, OperationTypes op, DataType dt, ValueType vt) throws HopsException 
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+		throws HopsException 
 	{
 		super(Lop.Type.ParameterizedBuiltin, dt, vt);
 		_operation = op;
 		
-		for (Lop lop : inputParametersLops.values()) {
+		for (Lop lop : paramLops.values()) {
 			this.addInput(lop);
 			lop.addOutput(this);
 		}
 		
-		_inputParams = inputParametersLops;
+		_inputParams = paramLops;
 		
 		boolean breaksAlignment = false;
 		boolean aligner = false;
@@ -116,7 +115,7 @@ public class ParameterizedBuiltin extends Lop
 			eloc = ExecLocation.MapAndReduce;
 			lps.addCompatibility(JobType.TRANSFORM);
 		}
-		else //executed in CP / CP_FILE
+		else //executed in CP / CP_FILE / SPARK
 		{
 			eloc = ExecLocation.ControlProgram;
 			lps.addCompatibility(JobType.INVALID);
@@ -124,7 +123,9 @@ public class ParameterizedBuiltin extends Lop
 		lps.setProperties(inputs, et, eloc, breaksAlignment, aligner, definesMRJob);
 	}
 
-	public OperationTypes getOp() { return _operation; }
+	public OperationTypes getOp() { 
+		return _operation; 
+	}
 	
 	public int getInputIndex(String name) { 
 		Lop n = _inputParams.get(name);
@@ -175,14 +176,16 @@ public class ParameterizedBuiltin extends Lop
 					sb.append(NAME_VALUE_SEPARATOR);
 					
 					// get the value/label of the scalar input associated with name "s"
+					// (offset and maxdim only apply to exec type spark)
 					Lop iLop = _inputParams.get(s);
-					if( s.equals("target") )
-						sb.append(iLop.getOutputParameters().getLabel());
+					if( s.equals( "target") || getExecType()==ExecType.SPARK )
+						sb.append( iLop.getOutputParameters().getLabel());
 					else
 						sb.append( iLop.prepScalarLabel() );
 					
 					sb.append(OPERAND_DELIMITOR);
 				}
+				
 				break;
 			
 			case REPLACE:

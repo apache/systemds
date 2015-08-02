@@ -133,7 +133,7 @@ public class ParameterizedBuiltinOp extends Hop
 		if ( _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF ) 
 		{
 			// simply pass the hashmap of parameters to the lop
-			// set the lop for the function call
+			// set the lop for the function call (always CP)
 			
 			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
 					HopsParameterizedBuiltinLops.get(_op), getDataType(),
@@ -160,9 +160,8 @@ public class ParameterizedBuiltinOp extends Hop
 		{
 			ExecType et = optFindExecType();
 			
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
-					et, inputlops,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
 			
 			setOutputDimensions(pbilop);
 			setLineNumbers(pbilop);
@@ -172,9 +171,8 @@ public class ParameterizedBuiltinOp extends Hop
 		{
 			ExecType et = optFindExecType();
 			
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
-					et, inputlops,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
 			setOutputDimensions(pbilop);
 			setLineNumbers(pbilop);
 			// output of transform is always in CSV format
@@ -293,23 +291,23 @@ public class ParameterizedBuiltinOp extends Hop
 		}
 	}
 
+	/**
+	 * 
+	 * @param inputlops
+	 * @param et
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
 	private void constructLopsRemoveEmpty(HashMap<String, Lop> inputlops, ExecType et) 
 		throws HopsException, LopsException 
 	{
 		Hop targetHop = getInput().get(_paramIndexMap.get("target"));
 		Hop marginHop = getInput().get(_paramIndexMap.get("margin"));
 		
-		if ( et == ExecType.SPARK )  {
-			// TODO implement Spark support
-			et = ExecType.CP;
-		}
-		
 		if( et == ExecType.CP || et == ExecType.CP_FILE )
 		{
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inputlops,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
-			
-			pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
+			setOutputDimensions(pbilop);
 			setLineNumbers(pbilop);
 			setLops(pbilop);
 			
@@ -368,86 +366,174 @@ public class ParameterizedBuiltinOp extends Hop
 			}
 			*/
 		}
-		//special compile for mr removeEmpty-diag 
-		else if( et == ExecType.MR && isTargetDiagInput() && marginHop instanceof LiteralOp 
-				 && ((LiteralOp)marginHop).getStringValue().equals("rows") )
- 		{
-			//get input vector (without materializing diag())
-			Hop input = targetHop.getInput().get(0);
-			long brlen = input.getRowsInBlock();
-			long bclen = input.getColsInBlock();
-			MemoTable memo = new MemoTable();
-		
-			boolean isPPredInput = (input instanceof BinaryOp && ((BinaryOp)input).isPPredOperation());
-			
-			//step1: compute index vectors
-			Hop ppred0 = input;
-			if( !isPPredInput ) { //ppred only if required
-				ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
-				HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
-				ppred0.refreshSizeInformation();
-				ppred0.computeMemEstimate(memo); //select exec type
-				HopRewriteUtils.copyLineNumbers(this, ppred0);
-			}
-			
-			UnaryOp cumsum = new UnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, ppred0); 
-			HopRewriteUtils.setOutputBlocksizes(cumsum, brlen, bclen);
-			cumsum.refreshSizeInformation(); 
-			cumsum.computeMemEstimate(memo); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, cumsum);	
-		
-			Lop loutput = null;
-			double mest = AggBinaryOp.getMapmmMemEstimate(input.getDim1(), 1, brlen, bclen, brlen, bclen, brlen, bclen, 1, true);
-			double mbudget = OptimizerUtils.getRemoteMemBudgetMap(true);
-			if( _outputPermutationMatrix && mest < mbudget ) //SPECIAL CASE: SELECTION VECTOR
-			{
-				BinaryOp sel = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, ppred0, cumsum);
-				HopRewriteUtils.setOutputBlocksizes(sel, brlen, bclen); 
-				sel.refreshSizeInformation();
-				sel.computeMemEstimate(memo); //select exec type
-				HopRewriteUtils.copyLineNumbers(this, sel);
-				
-				loutput = sel.constructLops();
-			}
-			else //GENERAL CASE: GENERAL PERMUTATION MATRIX
-			{
-				//max ensures non-zero entries and at least one output row
-				BinaryOp max = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MAX, cumsum, new LiteralOp("1",1));
-				HopRewriteUtils.setOutputBlocksizes(max, brlen, bclen); 
-				max.refreshSizeInformation();
-				max.computeMemEstimate(memo); //select exec type
-				HopRewriteUtils.copyLineNumbers(this, max);
-				
-				DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(input);
-				seq.setName("tmp4");
-				seq.refreshSizeInformation(); 
-				seq.computeMemEstimate(memo); //select exec type
-				HopRewriteUtils.copyLineNumbers(this, seq);	
-				
-				//step 2: compute removeEmpty(rows) output via table, seq guarantees right column dimension
-				//note: weights always the input (even if isPPredInput) because input also includes 0s
-				TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
-				HopRewriteUtils.setOutputBlocksizes(table, brlen, bclen);
-				table.refreshSizeInformation();
-				table.setForcedExecType(ExecType.MR); //force MR 
-				HopRewriteUtils.copyLineNumbers(this, table);
-				table.setDisjointInputs(true);
-				table.setOutputEmptyBlocks(_outputEmptyBlocks);
-				loutput = table.constructLops();
-				
-				HopRewriteUtils.removeChildReference(table, input);	
-			}
-			
-			//Step 4: cleanup hops (allow for garbage collection)
-			HopRewriteUtils.removeChildReference(ppred0, input);
-			
-			setLops( loutput );
-		}
-		//default mr remove empty
 		else if( et == ExecType.MR )
 		{
-			//TODO additional physical operator if offsets fit in memory
+			//special compile for mr removeEmpty-diag 
+			if(    isTargetDiagInput() && marginHop instanceof LiteralOp 
+				&& ((LiteralOp)marginHop).getStringValue().equals("rows") )
+	 		{
+				//get input vector (without materializing diag())
+				Hop input = targetHop.getInput().get(0);
+				long brlen = input.getRowsInBlock();
+				long bclen = input.getColsInBlock();
+				MemoTable memo = new MemoTable();
 			
+				boolean isPPredInput = (input instanceof BinaryOp && ((BinaryOp)input).isPPredOperation());
+				
+				//step1: compute index vectors
+				Hop ppred0 = input;
+				if( !isPPredInput ) { //ppred only if required
+					ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+					HopRewriteUtils.updateHopCharacteristics(ppred0, brlen, bclen, memo, this);
+				}
+				
+				UnaryOp cumsum = new UnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, ppred0); 
+				HopRewriteUtils.updateHopCharacteristics(cumsum, brlen, bclen, memo, this);
+			
+				Lop loutput = null;
+				double mest = AggBinaryOp.getMapmmMemEstimate(input.getDim1(), 1, brlen, bclen, brlen, bclen, brlen, bclen, 1, true);
+				double mbudget = OptimizerUtils.getRemoteMemBudgetMap(true);
+				if( _outputPermutationMatrix && mest < mbudget ) //SPECIAL CASE: SELECTION VECTOR
+				{
+					BinaryOp sel = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, ppred0, cumsum);
+					HopRewriteUtils.updateHopCharacteristics(sel, brlen, bclen, memo, this);
+					loutput = sel.constructLops();
+				}
+				else //GENERAL CASE: GENERAL PERMUTATION MATRIX
+				{
+					//max ensures non-zero entries and at least one output row
+					BinaryOp max = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MAX, cumsum, new LiteralOp("1",1));
+					HopRewriteUtils.updateHopCharacteristics(max, brlen, bclen, memo, this);
+					
+					DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(input);
+					seq.setName("tmp4");
+					HopRewriteUtils.updateHopCharacteristics(seq, brlen, bclen, memo, this);
+					
+					//step 2: compute removeEmpty(rows) output via table, seq guarantees right column dimension
+					//note: weights always the input (even if isPPredInput) because input also includes 0s
+					TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
+					HopRewriteUtils.setOutputBlocksizes(table, brlen, bclen);
+					table.refreshSizeInformation();
+					table.setForcedExecType(ExecType.MR); //force MR 
+					HopRewriteUtils.copyLineNumbers(this, table);
+					table.setDisjointInputs(true);
+					table.setOutputEmptyBlocks(_outputEmptyBlocks);
+					loutput = table.constructLops();
+					
+					HopRewriteUtils.removeChildReference(table, input);	
+				}
+				
+				//Step 4: cleanup hops (allow for garbage collection)
+				HopRewriteUtils.removeChildReference(ppred0, input);
+				
+				setLops( loutput );
+			}
+			//default mr remove empty
+			else if( et == ExecType.MR )
+			{
+				//TODO additional physical operator if offsets fit in memory
+				
+				if( !(marginHop instanceof LiteralOp) )
+					throw new HopsException("Parameter 'margin' must be a literal argument.");
+					
+				Hop input = targetHop;
+				long rlen = input.getDim1();
+				long clen = input.getDim2();
+				long brlen = input.getRowsInBlock();
+				long bclen = input.getColsInBlock();
+				long nnz = input.getNnz();
+				boolean rmRows = ((LiteralOp)marginHop).getStringValue().equals("rows");
+				
+				//construct lops via new partial hop dag and subsequent lops construction 
+				//in order to reuse of operator selection decisions
+				
+				//Step1: compute row/col non-empty indicators 
+				BinaryOp ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+				HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
+				ppred0.refreshSizeInformation();
+				ppred0.setForcedExecType(ExecType.MR); //always MR 
+				HopRewriteUtils.copyLineNumbers(this, ppred0);
+				
+				Hop emptyInd = ppred0;
+				if( !((rmRows && clen == 1) || (!rmRows && rlen==1)) ){
+					emptyInd = new AggUnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, rmRows?Direction.Row:Direction.Col, ppred0);
+					HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
+					emptyInd.refreshSizeInformation();
+					emptyInd.setForcedExecType(ExecType.MR); //always MR
+					HopRewriteUtils.copyLineNumbers(this, emptyInd);
+				}
+				
+				//Step 2: compute row offsets for non-empty rows
+				Hop cumsumInput = emptyInd;
+				if( !rmRows ){
+					cumsumInput = HopRewriteUtils.createTranspose(emptyInd);
+					HopRewriteUtils.updateHopCharacteristics(cumsumInput, brlen, bclen, this);	
+				}
+			
+				UnaryOp cumsum = new UnaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, cumsumInput); 
+				HopRewriteUtils.updateHopCharacteristics(cumsum, brlen, bclen, this);
+			
+				Hop cumsumOutput = cumsum;
+				if( !rmRows ){
+					cumsumOutput = HopRewriteUtils.createTranspose(cumsum);
+					HopRewriteUtils.updateHopCharacteristics(cumsumOutput, brlen, bclen, this);	
+				}
+				
+				Hop maxDim = new AggUnaryOp("tmp4", DataType.SCALAR, ValueType.DOUBLE, AggOp.MAX, Direction.RowCol, cumsumOutput); //alternative: right indexing
+				HopRewriteUtils.updateHopCharacteristics(maxDim, brlen, bclen, this);
+				
+				BinaryOp offsets = new BinaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, cumsumOutput, emptyInd);
+				HopRewriteUtils.updateHopCharacteristics(offsets, brlen, bclen, this);
+				
+				//Step 3: gather non-empty rows/cols into final results 
+				Lop linput = input.constructLops();
+				Lop loffset = offsets.constructLops();
+				Lop lmaxdim = maxDim.constructLops();
+				
+				boolean requiresRep =   ((clen>bclen || clen<=0) &&  rmRows) 
+						             || ((rlen>brlen || rlen<=0) && !rmRows);
+				
+				if( requiresRep ) {
+					Lop pos = createOffsetLop(input, rmRows); //ncol of left input (determines num replicates)
+					loffset = new RepMat(loffset, pos, rmRows, DataType.MATRIX, ValueType.DOUBLE);
+					loffset.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
+					setLineNumbers(loffset);
+				}
+				
+				Group group1 = new Group(linput, Group.OperationTypes.Sort, getDataType(), getValueType());
+				setLineNumbers(group1);
+				group1.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
+			
+				Group group2 = new Group( loffset, Group.OperationTypes.Sort, getDataType(), getValueType());
+				setLineNumbers(group2);
+				group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
+			
+				HashMap<String, Lop> inMap = new HashMap<String, Lop>();
+				inMap.put("target", group1);
+				inMap.put("offset", group2);
+				inMap.put("maxdim", lmaxdim);
+				inMap.put("margin", inputlops.get("margin"));
+				
+				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inMap, HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);			
+				setOutputDimensions(pbilop);
+				setLineNumbers(pbilop);
+			
+				Group group3 = new Group( pbilop, Group.OperationTypes.Sort, getDataType(), getValueType());
+				setLineNumbers(group3);
+				group3.getOutputParameters().setDimensions(-1, -1, brlen, bclen, -1);
+				
+				Aggregate finalagg = new Aggregate(group3, Aggregate.OperationTypes.Sum, DataType.MATRIX, getValueType(), ExecType.MR);
+				finalagg.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+				setLineNumbers(finalagg);
+				
+				//Step 4: cleanup hops (allow for garbage collection)
+				HopRewriteUtils.removeChildReference(ppred0, input);
+				
+				setLops(finalagg);
+			}	
+		}
+		else if( et == ExecType.SPARK )
+		{
 			if( !(marginHop instanceof LiteralOp) )
 				throw new HopsException("Parameter 'margin' must be a literal argument.");
 				
@@ -456,7 +542,6 @@ public class ParameterizedBuiltinOp extends Hop
 			long clen = input.getDim2();
 			long brlen = input.getRowsInBlock();
 			long bclen = input.getColsInBlock();
-			long nnz = input.getNnz();
 			boolean rmRows = ((LiteralOp)marginHop).getStringValue().equals("rows");
 			
 			//construct lops via new partial hop dag and subsequent lops construction 
@@ -466,7 +551,7 @@ public class ParameterizedBuiltinOp extends Hop
 			BinaryOp ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
 			HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
 			ppred0.refreshSizeInformation();
-			ppred0.setForcedExecType(ExecType.MR); //always MR 
+			ppred0.setForcedExecType(ExecType.SPARK); //always Spark
 			HopRewriteUtils.copyLineNumbers(this, ppred0);
 			
 			Hop emptyInd = ppred0;
@@ -474,7 +559,7 @@ public class ParameterizedBuiltinOp extends Hop
 				emptyInd = new AggUnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, rmRows?Direction.Row:Direction.Col, ppred0);
 				HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
 				emptyInd.refreshSizeInformation();
-				emptyInd.setForcedExecType(ExecType.MR); //always MR
+				emptyInd.setForcedExecType(ExecType.SPARK); //always Spark
 				HopRewriteUtils.copyLineNumbers(this, emptyInd);
 			}
 			
@@ -482,81 +567,45 @@ public class ParameterizedBuiltinOp extends Hop
 			Hop cumsumInput = emptyInd;
 			if( !rmRows ){
 				cumsumInput = HopRewriteUtils.createTranspose(emptyInd);
-				cumsumInput.computeMemEstimate(new MemoTable()); //select exec type
-				HopRewriteUtils.copyLineNumbers(this, cumsumInput);	
+				HopRewriteUtils.updateHopCharacteristics(cumsumInput, brlen, bclen, this);
 			}
 		
 			UnaryOp cumsum = new UnaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, cumsumInput); 
-			HopRewriteUtils.setOutputBlocksizes(cumsum, brlen, bclen);
-			cumsum.refreshSizeInformation(); 
-			cumsum.computeMemEstimate(new MemoTable()); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, cumsum);	
-		
+			HopRewriteUtils.updateHopCharacteristics(cumsum, brlen, bclen, this);
+			
 			Hop cumsumOutput = cumsum;
 			if( !rmRows ){
 				cumsumOutput = HopRewriteUtils.createTranspose(cumsum);
-				cumsumOutput.computeMemEstimate(new MemoTable()); //select exec type
-				HopRewriteUtils.copyLineNumbers(this, cumsumOutput);	
+				HopRewriteUtils.updateHopCharacteristics(cumsumOutput, brlen, bclen, this);	
 			}
 			
 			Hop maxDim = new AggUnaryOp("tmp4", DataType.SCALAR, ValueType.DOUBLE, AggOp.MAX, Direction.RowCol, cumsumOutput); //alternative: right indexing
-			HopRewriteUtils.setOutputBlocksizes(maxDim, brlen, bclen);
-			maxDim.refreshSizeInformation();
-			maxDim.computeMemEstimate(new MemoTable()); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, maxDim);
+			HopRewriteUtils.updateHopCharacteristics(maxDim, brlen, bclen, this);
 			
 			BinaryOp offsets = new BinaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, cumsumOutput, emptyInd);
-			HopRewriteUtils.setOutputBlocksizes(offsets, brlen, bclen);
-			offsets.refreshSizeInformation();
-			offsets.computeMemEstimate(new MemoTable()); //select exec type
-			HopRewriteUtils.copyLineNumbers(this, offsets);	
+			HopRewriteUtils.updateHopCharacteristics(offsets, brlen, bclen, this);
 			
 			//Step 3: gather non-empty rows/cols into final results 
 			Lop linput = input.constructLops();
 			Lop loffset = offsets.constructLops();
 			Lop lmaxdim = maxDim.constructLops();
 			
-			boolean requiresRep =   ((clen>bclen || clen<=0) &&  rmRows) 
-					             || ((rlen>brlen || rlen<=0) && !rmRows);
-			
-			if( requiresRep ) {
-				Lop pos = createOffsetLop(input, rmRows); //ncol of left input (determines num replicates)
-				loffset = new RepMat(loffset, pos, rmRows, DataType.MATRIX, ValueType.DOUBLE);
-				loffset.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
-				setLineNumbers(loffset);
-			}
-			
-			Group group1 = new Group(linput, Group.OperationTypes.Sort, getDataType(), getValueType());
-			setLineNumbers(group1);
-			group1.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
-		
-			Group group2 = new Group( loffset, Group.OperationTypes.Sort, getDataType(), getValueType());
-			setLineNumbers(group2);
-			group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
-		
 			HashMap<String, Lop> inMap = new HashMap<String, Lop>();
-			inMap.put("target", group1);
-			inMap.put("offset", group2);
+			inMap.put("target", linput);
+			inMap.put("offset", loffset);
 			inMap.put("maxdim", lmaxdim);
 			inMap.put("margin", inputlops.get("margin"));
-			
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inMap,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());			
+		
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( inMap, HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);			
 			pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(pbilop);
 		
-			Group group3 = new Group( pbilop, Group.OperationTypes.Sort, getDataType(), getValueType());
-			setLineNumbers(group3);
-			group3.getOutputParameters().setDimensions(-1, -1, brlen, bclen, -1);
-			
-			Aggregate finalagg = new Aggregate(group3, Aggregate.OperationTypes.Sum, DataType.MATRIX, getValueType(), ExecType.MR);
-			finalagg.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			setLineNumbers(finalagg);
-			
 			//Step 4: cleanup hops (allow for garbage collection)
 			HopRewriteUtils.removeChildReference(ppred0, input);
 			
-			setLops(finalagg);
+			setLops(pbilop);	
+			
+			//NOTE: in contrast to mr, replication and aggregation handled instruction-local
 		}
 	}
 	

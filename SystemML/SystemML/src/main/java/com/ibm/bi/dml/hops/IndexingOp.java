@@ -201,7 +201,7 @@ public class IndexingOp extends Hop
 	}
 	
 	@Override
-	protected void computeMemEstimate( MemoTable memo )
+	public void computeMemEstimate( MemoTable memo )
 	{
 		//default behavior
 		super.computeMemEstimate(memo);

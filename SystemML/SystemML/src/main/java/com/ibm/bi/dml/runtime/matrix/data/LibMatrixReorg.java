@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.DiagIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SortIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
@@ -34,6 +35,7 @@ import com.ibm.bi.dml.runtime.util.SortUtils;
  *  - r' (transpose), 
  *  - rdiag (diagV2M/diagM2V), 
  *  - rsort (sorting data/indexes)
+ *  - rmempty (remove empty)
  * 
  */
 public class LibMatrixReorg 
@@ -341,7 +343,7 @@ public class LibMatrixReorg
 
 
 	/**
-	 * MR interface - for reshape we cannot view blocks independently, and hence,
+	 * MR reshape interface - for reshape we cannot view blocks independently, and hence,
 	 * there are different CP and MR interfaces.
 	 *  
 	 * @param in
@@ -386,7 +388,124 @@ public class LibMatrixReorg
 		return out;
 	}
 	
-	
+	/**
+	 * CP rmempty operation (single input, single output matrix) 
+	 * 
+	 * @param in
+	 * @param out
+	 * @param rows
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
+	 */
+	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//check for empty inputs 
+		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
+		//is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
+		if( in.isEmptyBlock(false) ) {
+			if( rows )
+				ret.reset(1, in.clen, in.sparse);
+			else //cols
+				ret.reset(in.rlen, 1, in.sparse);	
+			return ret;
+		}
+		
+		if( rows )
+			return removeEmptyRows(in, ret);
+		else //cols
+			return removeEmptyColumns(in, ret);
+	}
+
+	/**
+	 * MR rmempty interface - for rmempty we cannot view blocks independently, and hence,
+	 * there are different CP and MR interfaces.
+	 * 
+	 * @param imv1
+	 * @param imv2
+	 * @param out
+	 * @throws DMLRuntimeException 
+	 */
+	public static void rmempty(IndexedMatrixValue data, IndexedMatrixValue offset, boolean rmRows, long len, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) 
+		throws DMLRuntimeException
+	{
+		//sanity check inputs
+		if( !(data.getValue() instanceof MatrixBlock && offset.getValue() instanceof MatrixBlock) )
+			throw new DMLRuntimeException("Unsupported input data: expected "+MatrixBlock.class.getName()+" but got "+data.getValue().getClass().getName()+" and "+offset.getValue().getClass().getName());
+		if(     rmRows && data.getValue().getNumRows()!=offset.getValue().getNumRows() 
+			|| !rmRows && data.getValue().getNumColumns()!=offset.getValue().getNumColumns()  ){
+			throw new DMLRuntimeException("Dimension mismatch between input data and offsets: ["
+					+data.getValue().getNumRows()+"x"+data.getValue().getNumColumns()+" vs "+offset.getValue().getNumRows()+"x"+offset.getValue().getNumColumns());
+		}
+		
+		//compute outputs (at most two output blocks)
+		HashMap<MatrixIndexes,IndexedMatrixValue> out = new HashMap<MatrixIndexes,IndexedMatrixValue>();
+		MatrixBlock linData = (MatrixBlock) data.getValue();
+		MatrixBlock linOffset = (MatrixBlock) offset.getValue();
+		MatrixIndexes tmpIx = new MatrixIndexes(-1,-1);
+		if( rmRows ) //margin = "rows"
+		{
+			long rlen = len;
+			long clen = linData.getNumColumns();
+			
+			for( int i=0; i<linOffset.getNumRows(); i++ ) {
+				long rix = (long)linOffset.quickGetValue(i, 0);
+				if( rix > 0 ) //otherwise empty row
+				{
+					//get single row from source block
+					MatrixBlock src = (MatrixBlock) linData.sliceOperations(
+							  i+1, i+1, 1, clen, new MatrixBlock());
+					long brix = (rix-1)/brlen+1;
+					long lbrix = (rix-1)%brlen;
+					tmpIx.setIndexes(brix, data.getIndexes().getColumnIndex());
+					 //create target block if necessary
+					if( !out.containsKey(tmpIx) ) {
+						IndexedMatrixValue tmpIMV = new IndexedMatrixValue(new MatrixIndexes(),new MatrixBlock());
+						tmpIMV.getIndexes().setIndexes(tmpIx);
+						((MatrixBlock)tmpIMV.getValue()).reset((int)Math.min(brlen, rlen-((brix-1)*brlen)), (int)clen);
+						out.put(tmpIMV.getIndexes(), tmpIMV);
+					}
+					//put single row into target block
+					((MatrixBlock)out.get(tmpIx).getValue()).copy(
+							  (int)lbrix, (int)lbrix, 0, (int)clen-1, src, false);
+				}
+			}
+		}
+		else //margin = "cols"
+		{
+			long rlen = linData.getNumRows();
+			long clen = len;
+			
+			for( int i=0; i<linOffset.getNumColumns(); i++ ) {
+				long cix = (long)linOffset.quickGetValue(0, i);
+				if( cix > 0 ) //otherwise empty row
+				{
+					//get single row from source block
+					MatrixBlock src = (MatrixBlock) linData.sliceOperations(
+							  1, rlen, i+1, i+1, new MatrixBlock());
+					long bcix = (cix-1)/bclen+1;
+					long lbcix = (cix-1)%bclen;
+					tmpIx.setIndexes(data.getIndexes().getRowIndex(), bcix);
+					 //create target block if necessary
+					if( !out.containsKey(tmpIx) ) {
+						IndexedMatrixValue tmpIMV = new IndexedMatrixValue(new MatrixIndexes(),new MatrixBlock());
+						tmpIMV.getIndexes().setIndexes(tmpIx);
+						((MatrixBlock)tmpIMV.getValue()).reset((int)rlen,(int)Math.min(bclen, clen-((bcix-1)*bclen)));
+						out.put(tmpIMV.getIndexes(), tmpIMV);
+					}
+					//put single row into target block
+					((MatrixBlock)out.get(tmpIx).getValue()).copy(
+							  0, (int)rlen-1, (int)lbcix, (int)lbcix, src, false);
+				}
+			}
+		}
+		
+		//prepare and return outputs (already in cached values)
+		for( IndexedMatrixValue imv : out.values() ){
+			((MatrixBlock)imv.getValue()).recomputeNonZeros();
+			outList.add(imv);
+		}
+	}
 
 	///////////////////////////////
 	// private CP implementation //
@@ -1420,6 +1539,195 @@ public class LibMatrixReorg
 		return ixout;
 	}
 
+
+	/**
+	 * 
+	 * @param ret
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{	
+		final int m = in.rlen;
+		final int n = in.clen;
+		
+		//Step 1: scan block and determine non-empty rows
+		boolean[] flags = new boolean[ m ]; //false
+		int rlen2 = 0; 
+		if( in.sparse ) //SPARSE 
+		{
+			SparseRow[] a = in.sparseRows;
+			
+			for ( int i=0; i < m; i++ )
+				if ( a[i] != null && !a[i].isEmpty() ) {
+					flags[i] = true;
+					rlen2++;
+				}
+		}
+		else //DENSE
+		{
+			double[] a = in.denseBlock;
+			
+			for(int i=0, aix=0; i<m; i++, aix+=n) {
+				for(int j=0; j<n; j++)
+					if( a[aix+j] != 0 )
+					{
+						flags[i] = true;
+						rlen2++;
+						//early abort for current row
+						break; 
+					}
+			}
+		}
+
+		//Step 2: reset result and copy rows
+		//dense stays dense if correct input representation (but robust for any input), 
+		//sparse might be dense/sparse
+		rlen2 = Math.max(rlen2, 1); //ensure valid output
+		boolean sp = MatrixBlock.evalSparseFormatInMemory(rlen2, n, in.nonZeros);
+		ret.reset(rlen2, n, sp);
+		
+		if( in.sparse ) //* <- SPARSE
+		{
+			//note: output dense or sparse
+			for( int i=0, cix=0; i<m; i++ )
+				if( flags[i] )
+					ret.appendRow(cix++, in.sparseRows[i]);
+		}
+		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
+		{
+			ret.allocateDenseBlock();
+			double[] a = in.denseBlock;
+			double[] c = ret.denseBlock;
+			
+			for( int i=0, aix=0, cix=0; i<m; i++, aix+=n )
+				if( flags[i] ) {
+					System.arraycopy(a, aix, c, cix, n);
+					cix += n; //target index
+				}
+		}
+		else //SPARSE <- DENSE
+		{
+			ret.allocateSparseRowsBlock();
+			double[] a = in.denseBlock;
+			
+			for( int i=0, aix=0, cix=0; i<m; i++, aix+=n )
+				if( flags[i] ) {
+					for( int j=0; j<n; j++ )
+						ret.appendValue(cix, j, a[aix+j]);
+					cix++;
+				}
+		}
+		
+		//check sparsity
+		ret.nonZeros = in.nonZeros;
+		ret.examSparsity();
+
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param ret
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		final int m = in.rlen;
+		final int n = in.clen;
+		
+		//Step 1: scan block and determine non-empty columns 
+		//(we optimized for cache-friendly behavior and hence don't do early abort)
+		boolean[] flags = new boolean[ n ]; //false 
+		
+		if( in.sparse ) //SPARSE 
+		{
+			SparseRow[] a = in.sparseRows;
+			
+			for( int i=0; i<m; i++ ) 
+				if ( a[i] != null && !a[i].isEmpty() ) {
+					int alen = a[i].size();
+					int[] aix = a[i].getIndexContainer();
+					for( int j=0; j<alen; j++ )
+						flags[ aix[j] ] = true;
+				}
+		}
+		else //DENSE
+		{
+			double[] a = in.denseBlock;
+			
+			for(int i=0, aix=0; i<m; i++)
+				for(int j=0; j<n; j++, aix++)
+					if( a[aix] != 0 )
+						flags[j] = true; 	
+		}
+		
+		//Step 2: determine number of columns
+		int clen2 = 0;
+		for( int j=0; j<n; j++ )
+			clen2 += flags[j] ? 1 : 0;
+		
+		//Step 3: create mapping of flags to target indexes
+		int[] cix = new int[n];
+		for( int j=0, pos=0; j<n; j++ )
+			if( flags[j] )
+				cix[j] = pos++;	
+		
+		//Step 3: reset result and copy cols
+		//dense stays dense if correct input representation (but robust for any input), 
+		// sparse might be dense/sparse
+		clen2 = Math.max(clen2, 1); //ensure valid output
+		boolean sp = MatrixBlock.evalSparseFormatInMemory(m, clen2, in.nonZeros);
+		ret.reset(m, clen2, sp);
+			
+		if( in.sparse ) //* <- SPARSE 
+		{
+			//note: output dense or sparse
+			SparseRow[] a = in.sparseRows;
+			
+			for( int i=0; i<m; i++ ) 
+				if ( a[i] != null && !a[i].isEmpty() ) {
+					int alen = a[i].size();
+					int[] aix = a[i].getIndexContainer();
+					double[] avals = a[i].getValueContainer();
+					for( int j=0; j<alen; j++ )
+						ret.appendValue(i, cix[aix[j]], avals[j]);
+				}
+		}
+		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
+		{
+			ret.allocateDenseBlock();
+			double[] a = in.denseBlock;
+			double[] c = ret.denseBlock;
+			
+			for(int i=0, aix=0, lcix=0; i<m; i++, lcix+=clen2)
+				for(int j=0; j<n; j++, aix++)
+					if( a[aix] != 0 )
+						 c[ lcix+cix[j] ] = a[aix];	
+		}
+		else //SPARSE <- DENSE
+		{
+			ret.allocateSparseRowsBlock();
+			double[] a = in.denseBlock;
+			
+			for(int i=0, aix=0; i<m; i++)
+				for(int j=0; j<n; j++, aix++)
+					if( a[aix] != 0 )
+						 ret.appendValue(i, cix[j], a[aix]);	
+		}
+		
+		//check sparsity
+		ret.nonZeros = in.nonZeros;
+		ret.examSparsity();
+		
+		return ret;
+	}
+	
 
 	/**
 	 * Utility method for in-place transformation of an ascending sorted

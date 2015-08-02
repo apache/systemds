@@ -41,6 +41,16 @@ public class SparkUtils {
 	
 	/**
 	 * 
+	 * @param ix
+	 * @param mb
+	 * @return
+	 */
+	public static IndexedMatrixValue toIndexedMatrixBlock( MatrixIndexes ix, MatrixBlock mb ) {
+		return new IndexedMatrixValue(ix, mb);
+	}
+	
+	/**
+	 * 
 	 * @param in
 	 * @return
 	 */

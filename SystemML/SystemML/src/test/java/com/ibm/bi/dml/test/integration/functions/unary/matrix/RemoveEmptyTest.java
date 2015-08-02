@@ -9,6 +9,7 @@ package com.ibm.bi.dml.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -19,7 +20,7 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
+
 	private final static String TEST_NAME1 = "removeEmpty1";
 	private final static String TEST_NAME2 = "removeEmpty2";
 	private final static String TEST_NAME3 = "removeEmpty3";
@@ -71,34 +72,7 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	{
 		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.CP, true );
 	}
-	@Test
-	public void testRemoveEmptyRowsDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.SPARK, false );
-	}
 	
-	@Test
-	public void testRemoveEmptyRowsSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.SPARK, true );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.SPARK, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.SPARK, true );
-	}
-
 	@Test
 	public void testRemoveEmptyRowsDenseMR() 
 	{
@@ -122,6 +96,31 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	{
 		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.MR, true );
 	}
+
+	@Test
+	public void testRemoveEmptyRowsDenseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsSparseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.SPARK, true );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsDenseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsSparseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.SPARK, true );
+	}
+
 	
 	@Test
 	public void testRemoveEmptyRowsMultipleDenseCP() 
@@ -148,34 +147,6 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRemoveEmptyRowsMultipleDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.SPARK, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyRowsMultipleSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.SPARK, true );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsMultipleDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.SPARK, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsMultipleSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.SPARK, true );
-	}
-
-	@Test
 	public void testRemoveEmptyRowsMultipleDenseMR() 
 	{
 		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.MR, false );
@@ -200,6 +171,31 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testRemoveEmptyRowsMultipleDenseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsMultipleSparseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.SPARK, true );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsMultipleDenseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsMultipleSparseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.SPARK, true );
+	}
+	
+	
+	@Test
 	public void testRemoveEmptyRowsDiagDenseCP() 
 	{
 		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.CP, false );
@@ -221,34 +217,6 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	public void testRemoveEmptyColsDiagSparseCP() 
 	{
 		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.CP, true );
-	}
-	
-	@Test
-	public void testRemoveEmptyRowsDiagDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.SPARK, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyRowsDiagSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.SPARK, true );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsDiagDenseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.SPARK, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsDiagSparseSP() 
-	{
-		if(rtplatform == RUNTIME_PLATFORM.SPARK)
-		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.SPARK, true );
 	}
 
 	@Test
@@ -275,6 +243,30 @@ public class RemoveEmptyTest extends AutomatedTestBase
 		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.MR, true );
 	}
 	
+	@Test
+	public void testRemoveEmptyRowsDiagDenseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsDiagSparseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.SPARK, true );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsDiagDenseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.SPARK, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsDiagSparseSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.SPARK, true );
+	}
+	
 	/**
 	 * 
 	 * @param testname
@@ -284,17 +276,20 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	 */
 	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse )
 	{		
+		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		if(et == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;  //force filebased access
-	    }
-
+		switch( et ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
 		try
 		{
-		
 			//setup dims and sparsity
 			int rows = _rows;
 			int cols = (testname.equals(TEST_NAME3))? 1 : _cols;
@@ -329,6 +324,7 @@ public class RemoveEmptyTest extends AutomatedTestBase
 		{
 			//reset platform for additional tests
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 

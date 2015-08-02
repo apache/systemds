@@ -26,6 +26,7 @@ import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.UnaryOp;
@@ -591,6 +592,39 @@ public class HopRewriteUtils
 	public static void copyLineNumbers( Hop src, Hop dest )
 	{
 		dest.setAllPositions(src.getBeginLine(), src.getBeginColumn(), src.getEndLine(), src.getEndColumn());
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @param brlen
+	 * @param bclen
+	 * @param src
+	 */
+	public static void updateHopCharacteristics( Hop hop, long brlen, long bclen, Hop src )
+	{
+		updateHopCharacteristics(hop, brlen, bclen, new MemoTable(), src);
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @param brlen
+	 * @param bclen
+	 * @param memo
+	 * @param src
+	 */
+	public static void updateHopCharacteristics( Hop hop, long brlen, long bclen, MemoTable memo, Hop src )
+	{
+		//update block sizes and dimensions  
+		setOutputBlocksizes(hop, brlen, bclen);
+		hop.refreshSizeInformation();
+		
+		//compute memory estimates (for exec type selection)
+		hop.computeMemEstimate(memo);
+		
+		//update line numbers 
+		HopRewriteUtils.copyLineNumbers(src, hop);
 	}
 	
 	///////////////////////////////////

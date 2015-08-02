@@ -8,8 +8,6 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -31,16 +29,13 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDSortUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReorgMapFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
-import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class ReorgSPInstruction extends UnarySPInstruction
@@ -68,7 +63,8 @@ public class ReorgSPInstruction extends UnarySPInstruction
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
-		throws DMLRuntimeException {
+		throws DMLRuntimeException 
+	{
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = InstructionUtils.getOpCode(str);
@@ -153,25 +149,24 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			// get input rdd handle
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+			boolean singleCol = (mc1.getCols() == 1);
 			
-			//sort indexes 
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-					.filter(new IsBlockInRange(1, mc1.getRows(), col, col, mc1.getRowsPerBlock(), mc1.getColsPerBlock()))
-					.mapValues(new ExtractColumn((int)UtilFunctions.cellInBlockCalculation(col, mc1.getColsPerBlock())));
-			out = RDDSortUtils.sortIndexesByVal(out, !desc, mc1.getRows(), mc1.getRowsPerBlock());
+			// extract column (if necessary) and sort 
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1;
+			if( !singleCol ){
+				out = out.filter(new IsBlockInRange(1, mc1.getRows(), col, col, mc1.getRowsPerBlock(), mc1.getColsPerBlock()))
+						 .mapValues(new ExtractColumn((int)UtilFunctions.cellInBlockCalculation(col, mc1.getColsPerBlock())));
+			}
 			
-			//sort data if required
-			if( !ixret ) 
-			{
-				// TODO: In first version, we will assume the the indexes can be materialized in the driver.
-				// This means materializedSortedIndexes has 2GB limit
-				// Later, this will be replaced by PMMJ
-				
-				MatrixBlock tmp = SparkExecutionContext.toMatrixBlock(out, (int)mc1.getRows(), 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-				List<Double> materializedSortedIndexes = DataConverter.convertToDoubleList(tmp);
-				
-				out = in1.flatMapToPair(new ExtractSortedRows(materializedSortedIndexes, mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
-				out = RDDAggregateUtils.mergeByKey(out);
+			//actual index/data sort operation
+			if( ixret ) { //sort indexes 
+				out = RDDSortUtils.sortIndexesByVal(out, !desc, mc1.getRows(), mc1.getRowsPerBlock());
+			}	
+			else if( singleCol && !desc) { //sort single-column matrix
+				out = RDDSortUtils.sortByVal(out, mc1.getRows(), mc1.getRowsPerBlock());
+			}
+			else { //sort multi-column matrix
+				out = RDDSortUtils.sortDataByVal(out, in1, !desc, mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			}
 			
 			//store output rdd handle
@@ -261,7 +256,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 	/**
 	 *
 	 */
-	public static class ExtractColumn implements Function<MatrixBlock, MatrixBlock>  
+	private static class ExtractColumn implements Function<MatrixBlock, MatrixBlock>  
 	{
 		private static final long serialVersionUID = -1472164797288449559L;
 		
@@ -278,81 +273,5 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			return arg0.sliceOperations(1, arg0.getNumRows(), _col+1, _col+1, new MatrixBlock());
 		}
 	}
-
-	
-	//TODO MB we need a scalable implementation for this 
-	public static class ExtractSortedRows implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> {
-		private static final long serialVersionUID = -938021325076154672L;
-		private List<Double> sortedIndexes;
-		int brlen; int bclen;
-		long rlen; long clen;
-		public ExtractSortedRows(List<Double> sortedIndexes, long rlen, long clen, int brlen, int bclen) {
-			this.sortedIndexes = sortedIndexes;
-			this.rlen = rlen;
-			this.clen = clen;
-			this.brlen = brlen;
-			this.bclen = bclen;
-		}
-		
-		private HashMap<Long, Long> efficientSortedIndex = null;
-		private long getNewSortedRowID(long currentRowID) throws Exception {
-			if(efficientSortedIndex == null) {
-				efficientSortedIndex = new HashMap<Long, Long>(sortedIndexes.size());
-				for(int i = 0; i < sortedIndexes.size(); i++) {
-					efficientSortedIndex.put((long)Math.floor(sortedIndexes.get(i)), (long) i + 1);
-				}
-				sortedIndexes = null;
-			}
-			if(!efficientSortedIndex.containsKey(currentRowID)) {
-				throw new Exception("The index " + currentRowID + " not found in sorted indexes.");
-			}
-			return efficientSortedIndex.get(currentRowID);
-		}
-		
-		private long getRowBlockIndex(long globalRowIndex) {
-			return UtilFunctions.blockIndexCalculation(globalRowIndex, (int) brlen);
-		}
-		
-		private long getStartGlobalRowIndex(MatrixIndexes blockIndex) {
-			return UtilFunctions.cellIndexCalculation(blockIndex.getRowIndex(), brlen, 0);
-		}
-		
-		private long getEndGlobalRowIndex(MatrixIndexes blockIndex) {
-			int new_lrlen = UtilFunctions.computeBlockSize(rlen, blockIndex.getRowIndex(), brlen);
-			return UtilFunctions.cellIndexCalculation(blockIndex.getRowIndex(), brlen, new_lrlen-1);
-		}
-		
-		private int getCellRowIndex(long globalCellIndex) {
-			return UtilFunctions.cellInBlockCalculation(globalCellIndex, brlen);
-		}
-
-		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>(brlen);
-			for(long i = getStartGlobalRowIndex(kv._1); i <= getEndGlobalRowIndex(kv._1); i++) {
-				long newRowCellIndex = getNewSortedRowID(i);
-				
-				// Shift the row block index according to newRowCellIndex, but column block index remains same
-				MatrixIndexes newIndex = new MatrixIndexes(getRowBlockIndex(newRowCellIndex), kv._1.getColumnIndex());
-				
-				int new_lrlen = UtilFunctions.computeBlockSize(rlen, newIndex.getRowIndex(), brlen);
-				int new_lclen = UtilFunctions.computeBlockSize(clen, newIndex.getColumnIndex(), bclen);
-				MatrixBlock extractedRowWithNewRowIndex = new MatrixBlock(new_lrlen, new_lclen, true);
-				
-				SparseRow row = new SparseRow(new_lclen);
-				for( int j = 0; j < new_lclen; j++ ) {
-					row.append(j, kv._2.getValue(getCellRowIndex(i), j));
-				}
-				extractedRowWithNewRowIndex.appendRow(getCellRowIndex(newRowCellIndex), row);
-				retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(newIndex, extractedRowWithNewRowIndex));
-			}
-			
-			// Since we are doing a reduceByKey which has an implicit combiner, no need to do merging here.
-			
-			return retVal;
-		}
-		
-	}
-	
 }
 

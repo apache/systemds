@@ -43,6 +43,7 @@ import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.TernaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
+import com.ibm.bi.dml.hops.ipa.InterProceduralAnalysis;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.hops.recompile.Recompiler;
 import com.ibm.bi.dml.lops.Lop;
@@ -1286,6 +1287,7 @@ public class DMLTranslator
 			
 			// creating transient read for live in variables
 			DataIdentifier var = passedSB.liveIn().getVariables().get(varName);
+			
 			DataOp read = null;
 			
 			if (var == null) {
@@ -1714,7 +1716,6 @@ public class DMLTranslator
 		Hop right = processExpression(source.getRight(), null, hops);
 
 		if (left == null || right == null){
-			//System.out.println("broken");
 			left  = processExpression(source.getLeft(),  null, hops);
 			right = processExpression(source.getRight(), null, hops);
 		}

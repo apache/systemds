@@ -33,41 +33,25 @@ public class IfStatementBlock extends StatementBlock
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException, ParseException, IOException 
-	{
-		
+	{		
 		if (_statements.size() > 1){
 			raiseValidateError("IfStatementBlock should only have 1 statement (IfStatement)", conditional);
 		}
 		
 		IfStatement ifstmt = (IfStatement) _statements.get(0);
-			
+		
 		ConditionalPredicate predicate = ifstmt.getConditionalPredicate();
 		predicate.getPredicate().validateExpression(ids.getVariables(), constVars, conditional);
 			
-		HashMap<String,ConstIdentifier> constVarsIfCopy = new HashMap<String,ConstIdentifier> ();
-		HashMap<String,ConstIdentifier> constVarsElseCopy = new HashMap<String,ConstIdentifier> ();
-		HashMap<String,ConstIdentifier> constVarsOrigCopy = new HashMap<String,ConstIdentifier> ();
+		HashMap<String,ConstIdentifier> constVarsIfCopy = new HashMap<String,ConstIdentifier>(constVars);
+		HashMap<String,ConstIdentifier> constVarsElseCopy = new HashMap<String,ConstIdentifier> (constVars);
 		
-		for (Entry<String, ConstIdentifier> e : constVars.entrySet() ){
-			String varName = e.getKey();
-			ConstIdentifier cid = e.getValue(); 
-			constVarsIfCopy.put(varName, cid);
-			constVarsElseCopy.put(varName, cid);
-			constVarsOrigCopy.put(varName, cid);
-		}
-		
-		VariableSet idsIfCopy 	= new VariableSet();
-		VariableSet idsElseCopy = new VariableSet();
-		VariableSet	idsOrigCopy = new VariableSet();
+		VariableSet idsIfCopy 	= new VariableSet(ids);
+		VariableSet idsElseCopy = new VariableSet(ids);
+		VariableSet	idsOrigCopy = new VariableSet(ids);
 
-		for (String varName : ids.getVariableNames()){
-			idsIfCopy.addVariable(varName, ids.getVariable(varName));
-			idsElseCopy.addVariable(varName, ids.getVariable(varName));
-			idsOrigCopy.addVariable(varName, ids.getVariable(varName));
-		}
-		
 		// handle if stmt body
-		this._dmlProg = dmlProg;
+		_dmlProg = dmlProg;
 		ArrayList<StatementBlock> ifBody = ifstmt.getIfBody();
 		for(StatementBlock sb : ifBody){ //conditional exec
 			idsIfCopy = sb.validate(dmlProg, idsIfCopy, constVarsIfCopy, true);
@@ -127,12 +111,12 @@ public class IfStatementBlock extends StatementBlock
 		// STEP 1:  (IF UNION ELSE) MINUS updated vars
 		for (Entry<String,ConstIdentifier> e : constVarsIfCopy.entrySet() ){
 			String varName = e.getKey();
-			if (!this._updated.containsVariable(varName))
+			if (!_updated.containsVariable(varName))
 				recConstVars.put(varName, e.getValue());
 		}
 		for (Entry<String,ConstIdentifier> e : constVarsElseCopy.entrySet() ){
 			String varName = e.getKey();
-			if (!this._updated.containsVariable(varName))
+			if (!_updated.containsVariable(varName))
 				recConstVars.put(varName, e.getValue());
 		}
 		
@@ -141,7 +125,7 @@ public class IfStatementBlock extends StatementBlock
 		//		a) same data type, 
 		//		b) same value type (SCALAR),
 		//		c) same value
-		for (String updatedVar : this._updated.getVariableNames()){
+		for (String updatedVar : _updated.getVariableNames()){
 			DataIdentifier ifVersion 	= idsIfCopy.getVariable(updatedVar);
 			DataIdentifier elseVersion  = idsElseCopy.getVariable(updatedVar);
 			
@@ -172,11 +156,8 @@ public class IfStatementBlock extends StatementBlock
 				else if (ifConstVersion != null && elseConstVersion != null && ifConstVersion instanceof StringIdentifier && elseConstVersion instanceof StringIdentifier){
 					if ( ((StringIdentifier)ifConstVersion).getValue().equals(((StringIdentifier) elseConstVersion).getValue()) )
 						recConstVars.put(updatedVar, ifConstVersion);
-				}
-				
+				}	
 			}
-					
-			
 		}
 		
 		//////////////////////////////////////////////////////////////////////////////////
@@ -192,16 +173,16 @@ public class IfStatementBlock extends StatementBlock
 		VariableSet recVars = new VariableSet();
 	
 		for (String varName : idsIfCopy.getVariableNames()){
-			if (!this._updated.containsVariable(varName))
+			if (!_updated.containsVariable(varName))
 				recVars.addVariable(varName,idsIfCopy.getVariable(varName));
 		}
 		for (String varName : idsElseCopy.getVariableNames()){
-			if (!this._updated.containsVariable(varName))
+			if (!_updated.containsVariable(varName))
 				recVars.addVariable(varName,idsElseCopy.getVariable(varName));
 		}
 		
 		// STEP 2: reconcile size of updated variables
-		for (String updatedVar : this._updated.getVariableNames()){
+		for (String updatedVar : _updated.getVariableNames()){
 			DataIdentifier ifVersion 	= idsIfCopy.getVariable(updatedVar);
 			DataIdentifier elseVersion  = idsElseCopy.getVariable(updatedVar);
 			DataIdentifier origVersion = idsOrigCopy.getVariable(updatedVar);
@@ -283,9 +264,8 @@ public class IfStatementBlock extends StatementBlock
 			}
 		}
 		
-		// propogate updated variables
-		VariableSet allIdVars = new VariableSet();
-		allIdVars.addVariables(recVars);
+		// propagate updated variables
+		VariableSet allIdVars = new VariableSet(recVars);
 		
 		_constVarsIn.putAll(constVars);
 		_constVarsOut.putAll(recConstVars);
@@ -293,8 +273,10 @@ public class IfStatementBlock extends StatementBlock
 		return allIdVars;
 	}
 	
-	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
-		
+	@Override
+	public VariableSet initializeforwardLV(VariableSet activeInPassed) 
+		throws LanguageException 
+	{	
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1){
 			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
@@ -317,15 +299,14 @@ public class IfStatementBlock extends StatementBlock
 		///////////////////////////////////////////////////////////////////////
 		
 		// initialize forward for each statement block in if body
-		VariableSet ifCurrent = new VariableSet();
-		ifCurrent.addVariables(activeInPassed);
+		VariableSet ifCurrent = new VariableSet(activeInPassed);
 		VariableSet genIfBody = new VariableSet();
 		VariableSet killIfBody = new VariableSet();
 		VariableSet updatedIfBody = new VariableSet();
 		VariableSet readIfBody = new VariableSet();
 		
-		for (StatementBlock sb : ifstmt.getIfBody()){
-				
+		for (StatementBlock sb : ifstmt.getIfBody())
+		{		
 			ifCurrent = sb.initializeforwardLV(ifCurrent);
 				
 			// for each generated variable in this block, check variable not killed
@@ -353,16 +334,15 @@ public class IfStatementBlock extends StatementBlock
 		///////////////////////////////////////////////////////////////////////
 		
 		// initialize forward for each statement block in if body
-		VariableSet elseCurrent = new VariableSet();
-		elseCurrent.addVariables(activeInPassed);
+		VariableSet elseCurrent = new VariableSet(activeInPassed);
 		VariableSet genElseBody = new VariableSet();
 		VariableSet killElseBody = new VariableSet();
 		VariableSet updatedElseBody = new VariableSet();
 		VariableSet readElseBody = new VariableSet();
 		
 		// initialize forward for each statement block in else body
-		for (StatementBlock sb : ifstmt.getElseBody()){
-			
+		for (StatementBlock sb : ifstmt.getElseBody())
+		{	
 			elseCurrent = sb.initializeforwardLV(elseCurrent);
 			
 			// for each generated variable in this block, check variable not killed
@@ -427,17 +407,18 @@ public class IfStatementBlock extends StatementBlock
 		return _liveOut;
 	}
 
-	public VariableSet initializebackwardLV(VariableSet loPassed) throws LanguageException{
-		
+	@Override
+	public VariableSet initializebackwardLV(VariableSet loPassed) 
+		throws LanguageException
+	{	
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1){
 			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 		}
-		VariableSet currentLiveOutIf = new VariableSet();
-		currentLiveOutIf.addVariables(loPassed);
-		VariableSet currentLiveOutElse = new VariableSet();
-		currentLiveOutElse.addVariables(loPassed);
+		
+		VariableSet currentLiveOutIf = new VariableSet(loPassed);
+		VariableSet currentLiveOutElse = new VariableSet(loPassed);
 			
 		int numBlocks = ifstmt.getIfBody().size();
 		for (int i = numBlocks - 1; i >= 0; i--){
@@ -489,12 +470,8 @@ public class IfStatementBlock extends StatementBlock
 		VariableSet predVars = ((IfStatement)_statements.get(0)).getConditionalPredicate().variablesRead();
 		predVars.addVariables(((IfStatement)_statements.get(0)).getConditionalPredicate().variablesUpdated());
 		
-	 	VariableSet candidateLO = new VariableSet();
-	 	//candidateLO.addVariables(_gen);
-	 	candidateLO.addVariables(loPassed);
-	 	
-	 	VariableSet origLiveOut = new VariableSet();
-	 	origLiveOut.addVariables(_liveOut);
+	 	VariableSet candidateLO = new VariableSet(loPassed);
+	 	VariableSet origLiveOut = new VariableSet(_liveOut);
 	 	
 	 	_liveOut = new VariableSet();
 	 	for (String name : candidateLO.getVariableNames()){
@@ -519,6 +496,7 @@ public class IfStatementBlock extends StatementBlock
 			LOG.warn(_warnSet.getVariable(varName).printWarningLocation() + "Initialization of " + varName + " depends on if-else execution");
 		}
 		
+		//data flow equation: liveout = gen \cup (liveout - kill)
 		_liveIn = new VariableSet();
 		_liveIn.addVariables(_liveOut);
 		_liveIn.removeVariables(_kill);

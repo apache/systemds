@@ -848,6 +848,7 @@ public class StatementBlock extends LiveVariableAnalysis
 	 * add to kill. 
 	 *  
 	 */
+	@Override
 	public VariableSet initializeforwardLV(VariableSet activeIn) throws LanguageException {
 		
 		for (Statement s : _statements){
@@ -865,7 +866,7 @@ public class StatementBlock extends LiveVariableAnalysis
 				// 		any prior statement, add to sb._gen
 				
 				for (String var : read.getVariableNames()) {
-					if (!_updated.containsVariable(var)){
+					if (!_updated.containsVariable(var)) {
 						_gen.addVariable(var, read.getVariable(var));
 					}
 				}
@@ -876,10 +877,16 @@ public class StatementBlock extends LiveVariableAnalysis
 
 			if (updated != null) {
 				// for each updated variable that is not read
-				for (String var : updated.getVariableNames()){
-					if (!_read.containsVariable(var)) {
-						_kill.addVariable(var, _updated.getVariable(var));
-					}
+				for (String var : updated.getVariableNames()) 
+				{
+					//NOTE MB: always add updated vars to kill (in order to prevent side effects
+					//of implicitly updated statistics over common data identifiers, propagated from
+					//downstream operators to its inputs due to 'livein = gen \cup (liveout-kill))'.
+					_kill.addVariable(var, _updated.getVariable(var));
+					
+					//if (!_read.containsVariable(var)) {
+					//	_kill.addVariable(var, _updated.getVariable(var));
+					//}
 				}
 			}
 		}
@@ -889,20 +896,17 @@ public class StatementBlock extends LiveVariableAnalysis
 		return _liveOut;
 	}
 	
-	
-	public VariableSet initializebackwardLV(VariableSet loPassed) throws LanguageException{
+	@Override
+	public VariableSet initializebackwardLV(VariableSet loPassed) 
+		throws LanguageException
+	{
 		int numStatements = _statements.size();
-
-		VariableSet lo = new VariableSet();
-		lo.addVariables(loPassed);
-		
+		VariableSet lo = new VariableSet(loPassed);
 		for (int i = numStatements-1; i>=0; i--){
-			lo =  _statements.get(i).initializebackwardLV(lo);
+			lo = _statements.get(i).initializebackwardLV(lo);
 		}
 		
-		VariableSet loReturn = new VariableSet();
-		loReturn.addVariables(lo);
-		return loReturn;
+		return new VariableSet(lo);
 	}
 
 	public HashMap<String, ConstIdentifier> getConstIn(){

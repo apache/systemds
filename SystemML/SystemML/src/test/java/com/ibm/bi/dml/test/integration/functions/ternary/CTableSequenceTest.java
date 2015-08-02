@@ -260,10 +260,10 @@ public class CTableSequenceTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
-			//5 instead of 4 for rewrite because we dont pull it into the map task yet.
+			//w/ rewrite: 4 instead of 6 because seq and aggregation are not required for ctable_expand
 			//2 for CP due to reblock jobs for input and table
 			if(et != ExecType.SPARK) {
-				int expectedNumCompiled = ((et==ExecType.CP) ? 2 :(rewrite ? 5 : 6))+(withAgg ? 1 : 0);
+				int expectedNumCompiled = ((et==ExecType.CP) ? 2 :(rewrite ? 4 : 6))+(withAgg ? 1 : 0);
 				checkNumCompiledMRJobs(expectedNumCompiled);
 			}
 			

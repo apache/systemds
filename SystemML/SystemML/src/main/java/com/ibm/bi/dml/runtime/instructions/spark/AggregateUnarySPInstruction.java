@@ -18,6 +18,9 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
@@ -119,10 +122,39 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 			}
 			
 			//put output RDD handle into symbol table
-			checkExistingOutputDimensions(sec);
+			updateUnaryAggOutputMatrixCharacteristics(sec);
 			sec.setRDDHandleForVariable(output.getName(), out);	
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}		
+	}
+	
+	/**
+	 * 
+	 * @param sec
+	 * @param auop
+	 * @throws DMLRuntimeException
+	 */
+	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec) 
+		throws DMLRuntimeException
+	{
+		AggregateUnaryOperator auop = (AggregateUnaryOperator)_optr;
+		
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown()) {
+			if(!mc1.dimsKnown()) {
+				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + mc1.toString() + " " + mcOut.toString());
+			}
+			else {
+				//infer statistics from input based on operator
+				if( auop.indexFn instanceof ReduceAll )
+					mcOut.set(1, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				else if (auop.indexFn instanceof ReduceCol)
+					mcOut.set(mc1.getRows(), 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				else if (auop.indexFn instanceof ReduceRow)
+					mcOut.set(1, mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+			}
+		}
 	}
 
 	/**

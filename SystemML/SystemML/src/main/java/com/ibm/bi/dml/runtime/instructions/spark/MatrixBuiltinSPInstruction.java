@@ -29,7 +29,7 @@ public class MatrixBuiltinSPInstruction extends BuiltinUnarySPInstruction
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public MatrixBuiltinSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
-		super(op, in, out, 1, opcode, instr);
+		super(op, in, out, opcode, instr);
 	}
 
 	@Override 
@@ -54,7 +54,7 @@ public class MatrixBuiltinSPInstruction extends BuiltinUnarySPInstruction
 	/**
 	 * 
 	 */
-	public static class RDDMatrixBuiltinUnaryOp implements Function<MatrixBlock,MatrixBlock> 
+	private static class RDDMatrixBuiltinUnaryOp implements Function<MatrixBlock,MatrixBlock> 
 	{
 		private static final long serialVersionUID = -3128192099832877491L;
 		

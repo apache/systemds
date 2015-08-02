@@ -8,11 +8,9 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.Not;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 
@@ -90,23 +88,5 @@ public abstract class UnarySPInstruction extends ComputationSPInstruction
 			return new SimpleOperator(Not.getNotFnObject());
 
 		throw new DMLRuntimeException("Unknown unary operator " + opcode);
-	}
-	
-	/**
-	 * 
-	 * @param sec
-	 * @throws DMLRuntimeException 
-	 */
-	protected void updateOutputMatrixCharacteristics(SparkExecutionContext sec) 
-		throws DMLRuntimeException
-	{
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		if(!mcOut.dimsKnown()) {
-			if(!mc1.dimsKnown())
-				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + mc1.toString() + " " + mcOut.toString());
-			else
-				mcOut.set(mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-		}
 	}
 }

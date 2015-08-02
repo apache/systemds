@@ -115,6 +115,10 @@ public class DataExpression extends DataIdentifier
 		this.checkMetadata = checkMetadata;
 	}
 
+	public DataExpression(){
+		//do nothing
+	}
+	
 	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs, 
 				String filename, int blp, int bcp, int elp, int ecp) throws DMLParseException {
 		

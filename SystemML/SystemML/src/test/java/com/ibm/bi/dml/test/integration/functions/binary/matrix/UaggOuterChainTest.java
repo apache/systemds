@@ -14,6 +14,7 @@ import org.junit.Test;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -151,6 +152,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+			checkDMLMetaDataFile("C", new MatrixCharacteristics(rows,1,1,1)); //rowsums
 			
 			//check compiled/executed jobs
 			if( rtplatform != RUNTIME_PLATFORM.SPARK ) {

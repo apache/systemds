@@ -19,6 +19,7 @@ import java.util.HashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 
 import com.ibm.bi.dml.api.DMLScript;
@@ -26,6 +27,7 @@ import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -34,6 +36,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.ParameterBuilder;
 import com.ibm.bi.dml.utils.Statistics;
+import com.ibm.json.java.JSONObject;
 
 
 /**
@@ -613,6 +616,29 @@ public abstract class AutomatedTestBase
 	public static HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + fileName);
 		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + fileName);
+	}
+	
+	/**
+	 * 
+	 * @param fileName
+	 * @param mc
+	 */
+	public static void checkDMLMetaDataFile(String fileName, MatrixCharacteristics mc)
+	{
+		try
+		{
+			String fname = baseDirectory + OUTPUT_DIR + fileName +".mtd";
+			JSONObject meta = new DataExpression().readMetadataFile(fname);
+			long rlen = Long.parseLong(meta.get(DataExpression.READROWPARAM).toString());
+			long clen = Long.parseLong(meta.get(DataExpression.READCOLPARAM).toString());
+			
+			Assert.assertEquals(mc.getRows(), rlen);
+			Assert.assertEquals(mc.getCols(), clen);
+		}
+		catch(Exception ex)
+		{
+			throw new RuntimeException(ex);
+		}
 	}
 	
 	/**

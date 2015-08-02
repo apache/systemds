@@ -35,9 +35,9 @@ import com.ibm.bi.dml.runtime.instructions.spark.functions.PerformGroupByAggInCo
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractGroup;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractGroupNWeights;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.PerformGroupByAggInReducer;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVectorFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.UnflattenIterablesAfterCogroup;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReorg;

@@ -6,7 +6,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.instructions.spark.functions;
+package com.ibm.bi.dml.runtime.instructions.spark.utils;
 
 import java.util.ArrayList;
 import java.util.Collections;

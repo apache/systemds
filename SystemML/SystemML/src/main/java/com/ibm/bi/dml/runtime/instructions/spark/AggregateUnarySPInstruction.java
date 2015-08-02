@@ -26,7 +26,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateDropCorrectionFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDAggregateUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;

@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -623,37 +623,43 @@ public class SparkExecutionContext extends ExecutionContext
 	// Debug String Handling (see explain); TODO to be removed
 	///////
 
+	/**
+	 * 
+	 * @param inst
+	 * @param outputVarName
+	 * @throws DMLRuntimeException
+	 */
 	public void setDebugString(SPInstruction inst, String outputVarName) 
 		throws DMLRuntimeException 
 	{
-		
 		RDDObject parentLineage = getMatrixObject(outputVarName).getRDDHandle();
-		if(parentLineage != null) {
-			JavaPairRDD<?, ?> out = parentLineage.getRDD();
-			if(out != null) {
-				JavaPairRDD<?, ?> in1 = null; JavaPairRDD<?, ?> in2 = null;
-				String input1VarName = null; String input2VarName = null;
-				if(parentLineage.getLineageChilds() != null) {
-					for(LineageObject child : parentLineage.getLineageChilds()) {
-						if(child instanceof RDDObject) {
-							if(in1 == null) {
-								in1 = ((RDDObject) child).getRDD();
-								input1VarName = child.getVarName();
-							}
-							else if(in2 == null) {
-								in2 = ((RDDObject) child).getRDD();
-								input2VarName = child.getVarName();
-							}
-							else {
-								throw new DMLRuntimeException("PRINT_EXPLAIN_WITH_LINEAGE not yet supported for three outputs");
-							}
-						}
+		
+		if( parentLineage == null || parentLineage.getRDD() == null )
+			return;
+		
+		JavaPairRDD<?, ?> out = parentLineage.getRDD();
+		JavaPairRDD<?, ?> in1 = null; 
+		JavaPairRDD<?, ?> in2 = null;
+		String input1VarName = null; 
+		String input2VarName = null;
+		if(parentLineage.getLineageChilds() != null) {
+			for(LineageObject child : parentLineage.getLineageChilds()) {
+				if(child instanceof RDDObject) {
+					if(in1 == null) {
+						in1 = ((RDDObject) child).getRDD();
+						input1VarName = child.getVarName();
+					}
+					else if(in2 == null) {
+						in2 = ((RDDObject) child).getRDD();
+						input2VarName = child.getVarName();
+					}
+					else {
+						throw new DMLRuntimeException("PRINT_EXPLAIN_WITH_LINEAGE not yet supported for three outputs");
 					}
 				}
-				setLineageInfoForExplain(inst, out, in1, input1VarName, in2, input2VarName);
 			}
 		}
-		
+		setLineageInfoForExplain(inst, out, in1, input1VarName, in2, input2VarName);
 	}
 	
 	// The most expensive operation here is rdd.toDebugString() which can be a major hit because

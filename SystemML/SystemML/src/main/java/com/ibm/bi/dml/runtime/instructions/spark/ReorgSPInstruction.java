@@ -29,7 +29,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.RDDSortUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDSortUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReorgMapFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;

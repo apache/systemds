@@ -30,7 +30,7 @@ public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
 	
 	public MatrixScalarBuiltinSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String instr)
 	{
-		super(op, in1, in2, out, 2, opcode, instr);
+		super(op, in1, in2, out, opcode, instr);
 	}
 	
 	@Override 
@@ -53,7 +53,7 @@ public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapValues( new MatrixScalarUnaryFunction(sc_op) );
 					
 		//put output RDD handle into symbol table
-		updateUnaryOutputMatrixCharacteristics(sec);
+		updateUnaryOutputMatrixCharacteristics(sec, rddVar, output.getName());
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), rddVar);
 	}

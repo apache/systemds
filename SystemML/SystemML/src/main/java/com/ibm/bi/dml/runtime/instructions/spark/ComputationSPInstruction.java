@@ -8,7 +8,6 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -42,36 +41,58 @@ public abstract class ComputationSPInstruction extends SPInstruction {
 	public String getOutputVariableName() {
 		return output.getName();
 	}
-	
-	/**
-	 * 
-	 * @param ec
-	 * @throws DMLRuntimeException 
-	 */
-	protected void checkExistingOutputDimensions(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
-		MatrixCharacteristics mcOut = ec.getMatrixCharacteristics(output.getName());
-		if(!mcOut.dimsKnown()) {
-			throw new DMLRuntimeException("The output dimensions have not been inferred.");
-		}
-	}
-	
+
 	/**
 	 * 
 	 * @param sec
 	 * @throws DMLRuntimeException 
 	 */
 	protected void updateUnaryOutputMatrixCharacteristics(SparkExecutionContext sec) 
-		throws DMLRuntimeException 
+		throws DMLRuntimeException
 	{
-		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(output.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		updateUnaryOutputMatrixCharacteristics(sec, input1.getName(), output.getName());
+	}
+	
+	/**
+	 * 
+	 * @param sec
+	 * @param nameIn
+	 * @param nameOut
+	 * @throws DMLRuntimeException
+	 */
+	protected void updateUnaryOutputMatrixCharacteristics(SparkExecutionContext sec, String nameIn, String nameOut) 
+		throws DMLRuntimeException
+	{
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(nameIn);
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(nameOut);
 		if(!mcOut.dimsKnown()) {
-			if(!mcIn.dimsKnown())
-				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + mcIn.toString() + " " + mcOut.toString());
+			if(!mc1.dimsKnown())
+				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + mc1.toString() + " " + mcOut.toString());
 			else
-				mcOut.set(mcIn);
+				mcOut.set(mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+		}
+	}
+	
+	/**
+	 * 
+	 * @param sec
+	 * @throws DMLRuntimeException
+	 */
+	protected void updateBinaryOutputMatrixCharacteristics(SparkExecutionContext sec) 
+		throws DMLRuntimeException
+	{
+		MatrixCharacteristics mcIn1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mcIn2 = sec.getMatrixCharacteristics(input2.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		boolean outer = (mcIn1.getRows()>1 && mcIn1.getCols()==1 && mcIn2.getRows()==1 && mcIn2.getCols()>1);
+		
+		if(!mcOut.dimsKnown()) {
+			if(!mcIn1.dimsKnown())
+				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + mcIn1.toString() + " " + mcIn2.toString() + " " + mcOut.toString());
+			else if(outer)
+				sec.getMatrixCharacteristics(output.getName()).set(mcIn1.getRows(), mcIn2.getCols(), mcIn1.getRowsPerBlock(), mcIn2.getColsPerBlock());
+			else
+				sec.getMatrixCharacteristics(output.getName()).set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getRowsPerBlock());
 		}
 	}
 }

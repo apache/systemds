@@ -1,12 +1,12 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
+import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.cp.ScalarScalarRelationalCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public abstract class RelationalBinarySPInstruction extends BinarySPInstruction {
@@ -20,7 +20,9 @@ public abstract class RelationalBinarySPInstruction extends BinarySPInstruction 
 		_sptype = SPINSTRUCTION_TYPE.RelationalBinary;
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -28,7 +30,7 @@ public abstract class RelationalBinarySPInstruction extends BinarySPInstruction 
 		
 		boolean isBroadcast = false;
 		
-		if(str.startsWith("SPARK°map")) {
+		if(str.startsWith("SPARK"+Lop.OPERAND_DELIMITOR+"map")) {
 			InstructionUtils.checkNumFields ( str, 5 );
 			
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
@@ -43,54 +45,14 @@ public abstract class RelationalBinarySPInstruction extends BinarySPInstruction 
 			opcode = parseBinaryInstruction(str, in1, in2, out);
 		}
 		
-		// TODO: Relational operations need not have value type checking
-		ValueType vt1 = in1.getValueType();
 		DataType dt1 = in1.getDataType();
-		ValueType vt2 = in2.getValueType();
 		DataType dt2 = in2.getDataType();
-		DataType dt3 = out.getDataType();
 		
-		//if ( vt3 != ValueType.BOOLEAN )
-		//	throw new DMLRuntimeException("Unexpected ValueType in RelationalCPInstruction: " + str);
-		
-		if ( vt1 == ValueType.BOOLEAN && !opcode.equalsIgnoreCase("==") && !opcode.equalsIgnoreCase("!=") ) 
-			throw new DMLRuntimeException("Operation " + opcode + " can not be applied on boolean values "
-					 					  + "(Instruction = " + str + ").");
-		
-		//prithvi TODO
-		//make sure these checks belong here
-		//if either input is a matrix, then output
-		//has to be a matrix
-		if((dt1 == DataType.MATRIX 
-			|| dt2 == DataType.MATRIX) 
-		   && dt3 != DataType.MATRIX)
-			throw new DMLRuntimeException("Element-wise matrix operations between variables "
-										  + in1.getName()
-										  + " and "
-										  + in2.getName()
-										  + " must produce a matrix, which "
-										  + out.getName()
-										  + " is not");
-		
-		Operator operator = 
-			(dt1 != dt2) ?
+		Operator operator = (dt1 != dt2) ?
 					getScalarOperator(opcode, (dt1 == DataType.SCALAR))
 					: getBinaryOperator(opcode);
 		
-		//for scalar relational operations we only allow boolean operands
-		//or when both operands are numeric (int or double)
-		if(dt1 == DataType.SCALAR && dt2 == DataType.SCALAR){
-			if (!(  (vt1 == ValueType.BOOLEAN && vt2 == ValueType.BOOLEAN)
-				  ||(vt1 == ValueType.STRING && vt2 == ValueType.STRING)
-				  ||( (vt1 == ValueType.DOUBLE || vt1 == ValueType.INT) && (vt2 == ValueType.DOUBLE || vt2 == ValueType.INT))))
-			{
-				throw new DMLRuntimeException("unexpected value-type in "
-											  + "Relational Binary Instruction "
-											  + "involving scalar operands.");
-			}
-			return new ScalarScalarRelationalCPInstruction(operator, in1, in2, out, opcode, str);
-		
-		}else if (dt1 == DataType.MATRIX || dt2 == DataType.MATRIX){
+		if (dt1 == DataType.MATRIX || dt2 == DataType.MATRIX){
 			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX) {
 				if(isBroadcast)
 					return new MatrixBVectorRelationalSPInstruction(operator, in1, in2, out, opcode, str);
@@ -98,7 +60,7 @@ public abstract class RelationalBinarySPInstruction extends BinarySPInstruction 
 					return new MatrixMatrixRelationalSPInstruction(operator, in1, in2, out, opcode, str);
 			}
 			else
-				return new ScalarMatrixRelationalSPInstruction(operator, in1, in2, out, opcode, str);
+				return new MatrixScalarRelationalSPInstruction(operator, in1, in2, out, opcode, str);
 		}
 		
 		return null;

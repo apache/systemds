@@ -52,20 +52,7 @@ public class OuterProductTest extends AutomatedTestBase
 	public void testMMSparseSparseMR() 
 	{
 		runMatrixMatrixMultiplicationTest(true, true, ExecType.MR);
-	}
-	
-//	@Test
-//	public void testMMDenseDenseSP() 
-//	{
-//		runMatrixMatrixMultiplicationTest(false, false, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testMMSparseSparseSP() 
-//	{
-//		runMatrixMatrixMultiplicationTest(true, true, ExecType.SPARK);
-//	}
-	
+	}	
 
 	/**
 	 * 

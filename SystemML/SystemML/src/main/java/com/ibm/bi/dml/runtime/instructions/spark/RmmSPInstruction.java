@@ -73,7 +73,7 @@ public class RmmSPInstruction extends BinarySPInstruction
 			return new RmmSPInstruction(null, in1, in2, out, opcode, str);
 		} 
 		else {
-			throw new DMLRuntimeException("TsmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
+			throw new DMLRuntimeException("RmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}		
 	}
 	

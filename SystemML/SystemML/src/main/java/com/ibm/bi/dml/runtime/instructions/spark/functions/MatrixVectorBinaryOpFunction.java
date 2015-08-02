@@ -21,8 +21,7 @@ public class MatrixVectorBinaryOpFunction implements PairFlatMapFunction<Tuple2<
 	boolean isOuter;
 	
 	public MatrixVectorBinaryOpFunction( boolean isBroadcastRHSVar, boolean isColumnVector, 
-			Broadcast<PartitionedMatrixBlock> binput, BinaryOperator op, 
-			int brlen, int bclen, long rdd_rlen, long rdd_clen, boolean isOuter ) {
+			Broadcast<PartitionedMatrixBlock> binput, BinaryOperator op, boolean isOuter ) {
 		this.isBroadcastRHSVar = isBroadcastRHSVar;
 		this.isColumnVector = isColumnVector;
 		this.op = op;

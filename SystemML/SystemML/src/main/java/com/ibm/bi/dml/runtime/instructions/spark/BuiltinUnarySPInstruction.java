@@ -7,61 +7,38 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.cp.ScalarBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 
 
-public abstract class BuiltinUnarySPInstruction extends UnarySPInstruction {
+public abstract class BuiltinUnarySPInstruction extends UnarySPInstruction 
+{
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	int arity;
-	
-	public BuiltinUnarySPInstruction(Operator op, CPOperand in, CPOperand out, int _arity, String opcode, String istr )
+	public BuiltinUnarySPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr )
 	{
 		super(op, in, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.BuiltinUnary;
-		arity = _arity;
-	}
-
-	public int getArity() {
-		return arity;
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static Instruction parseInstruction ( String str ) 
+			throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode = null;
-		ValueFunction func = null;
-		
-		if( parts.length==4 ) //print or stop
-		{
-			opcode = parts[0];
-			in.split(parts[1]);
-			out.split(parts[2]);
-			func = Builtin.getBuiltinFnObject(opcode);
-			
-			return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
-		}
-		else //2+1, general case
-		{
-			opcode = parseUnaryInstruction(str, in, out);
-			func = Builtin.getBuiltinFnObject(opcode);
-			
-			if(in.getDataType() == DataType.SCALAR)
-				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
-			else if(in.getDataType() == DataType.MATRIX)
-				return new MatrixBuiltinSPInstruction(new UnaryOperator(func), in, out, opcode, str);
-		}
-		
-		return null;
+		String opcode = parseUnaryInstruction(str, in, out);
+		ValueFunction func = Builtin.getBuiltinFnObject(opcode);
+		return new MatrixBuiltinSPInstruction(new UnaryOperator(func), in, out, opcode, str);
 	}
-
 }

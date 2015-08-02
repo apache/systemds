@@ -15,13 +15,13 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 
-public class ScalarMatrixRelationalSPInstruction extends RelationalBinarySPInstruction  
+public class MatrixScalarRelationalSPInstruction extends RelationalBinarySPInstruction  
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public ScalarMatrixRelationalSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr)
+	public MatrixScalarRelationalSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr)
 	{
 		super(op, in1, in2, out, opcode, istr);
 	}
@@ -49,11 +49,11 @@ public class ScalarMatrixRelationalSPInstruction extends RelationalBinarySPInstr
 		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op.setConstant(constant.getDoubleValue());
 		
-		//execute scalar matrix arithmetic instruction
+		//execute scalar matrix relational instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapValues( new MatrixScalarUnaryFunction(sc_op) );
 		
 		//put output RDD handle into symbol table
-		updateUnaryOutputMatrixCharacteristics(sec);
+		updateUnaryOutputMatrixCharacteristics(sec, rddVar, output.getName());
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), rddVar);
 	}

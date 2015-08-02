@@ -109,8 +109,7 @@ public class TsmmSPInstruction extends UnarySPInstruction
 			throws Exception 
 		{
 			//execute transpose-self matrix multiplication
-			MatrixBlock out = new MatrixBlock();
-			return arg0.transposeSelfMatrixMultOperations(out, _type);
+			return arg0.transposeSelfMatrixMultOperations(new MatrixBlock(), _type);
 		}
 	}
 	

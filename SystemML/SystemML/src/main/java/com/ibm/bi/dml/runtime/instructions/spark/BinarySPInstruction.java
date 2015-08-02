@@ -61,10 +61,18 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		super(op, in1, in2, in3, out, opcode, istr);
 	}
 	
-
-	static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
-		throws DMLRuntimeException{
-		
+	/**
+	 * 
+	 * @param instr
+	 * @param in1
+	 * @param in2
+	 * @param out
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
+		throws DMLRuntimeException
+	{	
 		InstructionUtils.checkNumFields ( instr, 3 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
@@ -76,9 +84,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		return opcode;
 	}
 	
-	static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out)
-	throws DMLRuntimeException{
-	
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out)
+		throws DMLRuntimeException
+	{
 		InstructionUtils.checkNumFields ( instr, 4 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
@@ -250,6 +258,73 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 			else {
 				mcOut.set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			}
+		}	
+	}
+	
+
+	protected String getReplicatedVar(String rddVar1, String rddVar2, boolean isRowVectorOperation, MatrixCharacteristics mc1) {
+		String replicatedVar = rddVar2;
+		if(isRowVectorOperation) {
+			if(mc1.getCols() == 1) {
+				replicatedVar = rddVar1;
+			}
+		}
+		else {
+			if(mc1.getRows() == 1) {
+				replicatedVar = rddVar1;
+			}
+		}
+		return replicatedVar;
+	}
+	
+	/**
+	 * 
+	 * @param mc1
+	 * @param mc2
+	 * @param left
+	 * @return
+	 */
+	protected long getNumReplicas(MatrixCharacteristics mc1, MatrixCharacteristics mc2, boolean left) 
+	{
+		if( left ) 
+		{
+			if(mc1.getCols()==1 ) //outer
+				return (long) Math.ceil((double)mc2.getCols() / mc2.getColsPerBlock());	
+		}
+		else
+		{
+			if(mc2.getRows()==1 && mc1.getRows()>1) //outer, row vector
+				return (long) Math.ceil((double)mc1.getRows() / mc1.getRowsPerBlock());	
+			else if( mc2.getCols()==1 && mc1.getCols()>1 ) //col vector
+				return (long) Math.ceil((double)mc1.getCols() / mc1.getColsPerBlock());			
+		}
+		
+		return 1; //matrix-matrix
+	}
+	
+	/**
+	 * 
+	 * @param sec
+	 * @throws DMLRuntimeException
+	 */
+	protected void checkMatrixMatrixBinaryCharacteristics(SparkExecutionContext sec) 
+		throws DMLRuntimeException 
+	{
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		
+		if( (mc1.getRows() != mc2.getRows() ||  mc1.getCols() != mc2.getCols())
+			&& !(mc1.getRows() == mc2.getRows() && mc2.getCols()==1 ) //matrix-colvector
+			&& !(mc1.getCols() == mc2.getCols() && mc2.getRows()==1 ) //matrix-rowvector
+			&& !(mc1.getCols()==1 && mc2.getRows()==1) )     //outer colvector-rowvector 
+		{
+			throw new DMLRuntimeException("Dimensions mismatch matrix-matrix binary operations: "
+					+ "[" + mc1.getRows() + "x" + mc1.getCols()  + " vs " + mc2.getRows() + "x" + mc2.getCols() + "]");
+		}	
+		
+		if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() ||  mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
+			throw new DMLRuntimeException("Blocksize mismatch matrix-matrix binary operations: "
+					+ "[" + mc1.getRowsPerBlock() + "x" + mc1.getColsPerBlock()  + " vs " + mc2.getRowsPerBlock() + "x" + mc2.getColsPerBlock() + "]");
 		}	
 	}
 }

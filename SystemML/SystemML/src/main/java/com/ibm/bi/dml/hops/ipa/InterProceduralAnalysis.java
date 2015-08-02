@@ -5,7 +5,7 @@
  * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
  */
 
-package com.ibm.bi.dml.parser;
+package com.ibm.bi.dml.hops.ipa;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,8 +29,23 @@ import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.hops.recompile.Recompiler;
+import com.ibm.bi.dml.parser.DMLProgram;
+import com.ibm.bi.dml.parser.DMLTranslator;
+import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.parser.ExternalFunctionStatement;
+import com.ibm.bi.dml.parser.ForStatement;
+import com.ibm.bi.dml.parser.ForStatementBlock;
+import com.ibm.bi.dml.parser.FunctionStatement;
+import com.ibm.bi.dml.parser.FunctionStatementBlock;
+import com.ibm.bi.dml.parser.IfStatement;
+import com.ibm.bi.dml.parser.IfStatementBlock;
+import com.ibm.bi.dml.parser.LanguageException;
+import com.ibm.bi.dml.parser.ParseException;
+import com.ibm.bi.dml.parser.StatementBlock;
+import com.ibm.bi.dml.parser.WhileStatement;
+import com.ibm.bi.dml.parser.WhileStatementBlock;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
@@ -151,7 +166,7 @@ public class InterProceduralAnalysis
 		}
 		
 		//step 4: flag functions with loops for 'recompile-on-entry'
-		if( FLAG_FUNCTION_RECOMPILE_ONCE && OptimizerUtils.isHybridExecutionMode()){
+		if( FLAG_FUNCTION_RECOMPILE_ONCE ){
 			flagFunctionsForRecompileOnce( dmlp );
 		}
 	}

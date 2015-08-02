@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.hops.ipa.InterProceduralAnalysis;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteRule;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriteStatus;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
@@ -32,7 +33,6 @@ import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.IfStatementBlock;
-import com.ibm.bi.dml.parser.InterProceduralAnalysis;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
@@ -219,8 +219,7 @@ public class OptimizationWrapper
 		OptTree tree = null;
 		
 		//recompile parfor body 
-		if(   OptimizerUtils.ALLOW_DYN_RECOMPILATION 
-		   && OptimizerUtils.isHybridExecutionMode() )
+		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION )
 		{
 			ForStatement fs = (ForStatement) sb.getStatement(0);
 			

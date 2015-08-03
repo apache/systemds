@@ -12,36 +12,26 @@
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# NAME  TYPE     DEFAULT  MEANING
+# NAME  TYPE     DEFAULT   MEANING
 # ---------------------------------------------------------------------------------------------
-# X     String    ---     Location to read the matrix X of feature vectors
-# Y     String    ---     Location to read response matrix Y with either 1 or 2 columns:
-#                         if dfam = 2, Y is 1-column Bernoulli or 2-column Binomial (#pos, #neg)
-# B     String    ---     Location to store estimated regression parameters (the betas)
-# O     String    " "     Location to write the printed statistics; by default is standard output
-# S     String    " "     Location to write the selected features ordered as computed by the algorithm;
-#		  			      by default is standard output
-# dir   String  "forward" The mode of stepwise search; start from one feature and iteratively add 
-#    				      features until AIC improves. Currently only forward selection is implemented 
-# fmt   String   "text"   The betas matrix output format, such as "text" or "csv"
-# dfam  Int       1       Distribution family code: 1 = Power, 2 = Binomial
-# vpow  Double    0.0     Power for Variance defined as (mean)^power (ignored if dfam != 1):
-#                         0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian
-# link  Int       0       Link function code: 0 = canonical (depends on distribution),
-#                         1 = Power, 2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit
-# lpow  Double    1.0     Power for Link function defined as (mean)^power (ignored if link != 1):
-#                         -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
-# yneg  Double    0.0     Response value for Bernoulli "No" label, usually 0.0 or -1.0
-# icpt  Int       0       Intercept presence, X columns shifting and rescaling:
-#                         0 = no intercept, no shifting, no rescaling;
-#                         1 = add intercept, but neither shift nor rescale X;
-#                         2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# tol   Double   0.000001 Tolerance (epsilon)
-# disp  Double    0.0     (Over-)dispersion value, or 0.0 to estimate it from data
-# moi   Int       200     Maximum number of outer (Newton / Fisher Scoring) iterations
-# mii   Int       0       Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
-# thr   Double   0.01     Threshold to stop the algorithm: if the decrease in the value of AIC falls below thr
-#                         no further features are being checked and the algorithm stops 
+# X     String    ---      Location to read the matrix X of feature vectors
+# Y     String    ---      Location to read response matrix Y with 1 column
+# B     String    ---      Location to store estimated regression parameters (the betas)
+# S     String    ---      Location to write the selected features ordered as computed by the algorithm
+# O     String    " "      Location to write the printed statistics; by default is standard output
+# link  Int       2        Link function code: 1 = log, 2 = Logit, 3 = Probit, 4 = Cloglog
+# yneg  Double    0.0      Response value for Bernoulli "No" label, usually 0.0 or -1.0
+# icpt  Int       0        Intercept presence, X columns shifting and rescaling:
+#                          0 = no intercept, no shifting, no rescaling;
+#                          1 = add intercept, but neither shift nor rescale X;
+#                          2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# tol   Double    0.000001 Tolerance (epsilon)
+# disp  Double    0.0      (Over-)dispersion value, or 0.0 to estimate it from data
+# moi   Int       200      Maximum number of outer (Newton / Fisher Scoring) iterations
+# mii   Int       0        Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
+# thr   Double    0.01     Threshold to stop the algorithm: if the decrease in the value of AIC falls below thr
+#                          no further features are being checked and the algorithm stops 
+# fmt   String   "text"    The betas matrix output format, such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: Matrix beta, whose size depends on icpt:
 #     icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2
@@ -66,47 +56,30 @@
 # DEVIANCE_SCALED       Deviance from the saturated model, scaled by the DISPERSION value
 # -------------------------------------------------------------------------------------------
 #
-# Example with distribution = "Binomial.logit":
-# hadoop jar SystemML.jar -f StepGLM.dml -nvargs dfam=2 link=2 yneg=-1.0 icpt=2 reg=0.001
-#     tol=0.00000001 disp=1.0 moi=100 mii=10 thr=0.01 X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas 
-#     fmt=csv O=OUTPUT_DIR/stats 
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f StepGLM.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas
+# 			 S=OUTPUT_DIR_S/selected O=OUTPUT_DIR/stats link=2 yneg=-1.0 icpt=2 tol=0.00000001 
+#			 disp=1.0 moi=100 mii=10 thr=0.01 fmt=csv  
 #
-# The GML SCRIPT SUPPORTES THE FOLLOWING DISTRIBUTION FAMILIES AND LINK FUNCTIONS, 
-# HOWEVER THE StepGLM SCRIPT CURRENTLY SUPPORTS ONLY THE BINOMIAL DISTRIBUTION FAMILY!
-# -----------------------------------------------
-# INPUT PARAMETERS:    MEANING:            Cano-
-# dfam vpow link lpow  Distribution.link   nical?
-# -----------------------------------------------
-#  1   0.0   1  -1.0   Gaussian.inverse
-#  1   0.0   1   0.0   Gaussian.log
-#  1   0.0   1   1.0   Gaussian.id          Yes
-#  1   1.0   1   0.0   Poisson.log          Yes
-#  1   1.0   1   0.5   Poisson.sqrt
-#  1   1.0   1   1.0   Poisson.id
-#  1   2.0   1  -1.0   Gamma.inverse        Yes
-#  1   2.0   1   0.0   Gamma.log
-#  1   2.0   1   1.0   Gamma.id
-#  1   3.0   1  -2.0   InvGaussian.1/mu^2   Yes
-#  1   3.0   1  -1.0   InvGaussian.inverse
-#  1   3.0   1   0.0   InvGaussian.log
-#  1   3.0   1   1.0   InvGaussian.id
-#  1    *    1    *    AnyVariance.AnyLink
-# -----------------------------------------------
-#  2    *    1   0.0   Binomial.log
-#  2    *    1   0.5   Binomial.sqrt
-#  2    *    2    *    Binomial.logit       Yes
-#  2    *    3    *    Binomial.probit
-#  2    *    4    *    Binomial.cloglog
-#  2    *    5    *    Binomial.cauchit
-# -----------------------------------------------
-
+# THE StepGLM SCRIPT CURRENTLY SUPPORTS BERNOULLI DISTRIBUTION FAMILY AND THE FOLLOWING LINK FUNCTIONS ONLY!
+# 	- LOG
+#	- LOGIT
+#	- PROBIT
+#	- CLOGLOG
+	
 fileX = $X;
 fileY = $Y;
 fileB = $B;
-fileS = $S;
-dir = ifdef ($dir, "forward"); 
 intercept_status = ifdef ($icpt, 0);   
 thr = ifdef ($thr, 0.01); 
+bernoulli_No_label = ifdef ($yneg, 0.0);    # $yneg = 0.0;
+distribution_type = 2;
+
+bernoulli_No_label = as.double (bernoulli_No_label);
+
+# currently only the forward selection strategy in supported: start from one feature and iteratively add 
+# features until AIC improves
+dir = "forward";
 
 print("BEGIN STEPWISE GLM SCRIPT");
 print ("Reading X and Y...");
@@ -115,11 +88,21 @@ Y = read (fileY);
 
 Y_min = min (Y);
 Y_max = max (Y);
-if (Y_min == 1 & Y_max == 2) {
-	Y = Y * ppred (Y, 2, "!=");
-} else if (Y_min == -1 & Y_max == 1) {
-	Y = Y + ppred (Y, -1, "==");
-} 
+if (bernoulli_No_label != Y_min & bernoulli_No_label != Y_max) {
+	stop ("GLM Input Error: No-label is not among Y-values");
+}
+
+if (distribution_type == 2 & ncol(Y) == 1) {
+	is_Y_negative = ppred (Y, bernoulli_No_label, "==");
+	Y = append (1 - is_Y_negative, is_Y_negative);
+	count_Y_negative = sum (is_Y_negative);
+	if (count_Y_negative == 0) {
+		stop ("GLM Input Error: all Y-values encode Bernoulli YES-label, none encode NO-label");
+	}
+	if (count_Y_negative == nrow(Y)) {
+		stop ("GLM Input Error: all Y-values encode Bernoulli NO-label, none encode YES-label");
+	}
+}
 
 num_records = nrow (X_orig);
 num_features = ncol (X_orig);
@@ -222,28 +205,30 @@ if (dir == "forward") {
 	[AIC] = glm (X_global, Y, intercept_status, num_features, columns_fixed_ordered, fileB);
   
 } else {
-	stop ("Currently only forward direction is implemented!");
+	stop ("Currently only forward selection strategy is supported!");
 }
 
 
 ################### UDFS USED IN THIS SCRIPT ##################
 
 glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double num_features_orig, Matrix[Double] Selected, String fileB) return (Double AIC) {
-				
-	distribution_type = ifdef ($dfam, 2);                # $dfam = 2;
-	variance_as_power_of_the_mean = ifdef ($vpow, 0.0);  # $vpow = 0.0;
-	link_type = ifdef ($link, 2);                        # $link = 2;
-	link_as_power_of_the_mean = ifdef ($lpow, 1.0);      # $lpow = 1.0;
-	bernoulli_No_label = ifdef ($yneg, 0.0);             # $yneg = 0.0;
-###	intercept_status = ifdef ($icpt, 0);                 # $icpt = 0;
-	dispersion = ifdef ($disp, 0.0);                     # $disp = 0.0;
-	eps = ifdef ($tol, 0.000001);                        # $tol  = 0.000001;
-	max_iteration_IRLS = ifdef ($moi, 200);              # $moi  = 200;
-	max_iteration_CG = ifdef ($mii, 0);                  # $mii  = 0;
+		
+	# distribution family code: 1 = Power, 2 = Bernoulli/Binomial; currently only Bernouli distribution family is supported!		
+	distribution_type = 2;                		# $dfam = 2;
+	variance_as_power_of_the_mean = 0.0;  		# $vpow = 0.0;
+	# link function code: 0 = canonical (depends on distribution), 1 = Power, 2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit;
+	# currently only log (link = 1), logit (link = 2), probit (link = 3), and cloglog (link = 4) are supported!
+	link_type = ifdef ($link, 2);         		# $link = 2;
+	link_as_power_of_the_mean = 0.0;      		# $lpow = 0.0;
+
+	dispersion = ifdef ($disp, 0.0);            # $disp = 0.0;
+	eps = ifdef ($tol, 0.000001);               # $tol  = 0.000001;
+	max_iteration_IRLS = ifdef ($moi, 200);     # $moi  = 200;
+	max_iteration_CG = ifdef ($mii, 0);         # $mii  = 0;
 
 	variance_as_power_of_the_mean = as.double (variance_as_power_of_the_mean);
 	link_as_power_of_the_mean = as.double (link_as_power_of_the_mean);
-	bernoulli_No_label = as.double (bernoulli_No_label);
+
 	dispersion = as.double (dispersion);
 	eps = as.double (eps);              
 
@@ -314,17 +299,6 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 		max_iteration_CG = num_features;
     }
                   
-    # In Bernoulli case, convert one-column "Y" into two-column
-                  
-    if (distribution_type == 2 & ncol(Y) == 1) {
-		if (bernoulli_No_label == 1.0) {
-			print ("GLM Input Error: the NO-label for Bernoulli distribution cannot be identical to the YES-label, which is 1.0.");
-        } else {
-            Y = append (Y - bernoulli_No_label, 1.0 - Y);
-            Y = Y / (1.0 - bernoulli_No_label);
-        }   
-    }
-                  
     # Set up the canonical link, if requested [Then we have: Var(mu) * (d link / d mu) = const]
                   
     if (link_type == 0) {
@@ -347,8 +321,14 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
     # is also special as it represents the logarithm link.
                   
     num_response_columns = ncol (Y);
-                  
-    is_supported = check_if_supported (num_response_columns, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean);
+    is_supported = 0;              
+	if (num_response_columns == 2 & distribution_type == 2 & link_type >= 1 & link_type <= 4) { # BERNOULLI DISTRIBUTION
+		is_supported = 1;			  
+	}
+	if (num_response_columns == 1 & distribution_type == 2) {
+		print ("Error: Bernoulli response matrix has not been converted into two-column format.");
+    }
+
 	if (is_supported == 1) {
                     
 		#####   INITIALIZE THE BETAS   #####
@@ -473,18 +453,17 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 
 			if (termination_code != 1) {
 				print ("One of the runs of GLM did not converged in " + i_IRLS + " steps!");
-				# stop ("");
 			}
                       
             ##### COMPUTE AIC ##### 
             
-			if (distribution_type == 2 & link_type >= 1 & link_type <= 5) {			
+			if (distribution_type == 2 & link_type >= 1 & link_type <= 4) {			
 				AIC = -2 * log_l;
 				if (sum (X) != 0) {
 					AIC = AIC + 2 * num_features;	
 				}
 			} else {
-				stop ("Currently only the binomial distribution family is supported!");
+				stop ("Currently only the Bernoulli distribution family the following link functions are supported: log, logit, probit, and cloglog!");
 			}
 					           
             if (fileB != " ") {
@@ -637,73 +616,13 @@ glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double
 			}
                       
 		} else { 
-			print ("Input matrices are out of range!"); 
-			stop ("");
+			stop ("Input matrices X and/or Y are out of range!"); 
         }
 	} else { 
-		print ("Distribution/Link not supported!"); 
-		stop ("");
+		stop ("Response matrix with " + num_response_columns + " columns, distribution family (" + distribution_type + ", " + variance_as_power_of_the_mean
+               + ") and link family (" + link_type + ", " + link_as_power_of_the_mean + ") are NOT supported together.");
     }
 }
-
-check_if_supported = 
-  function (int ncol_y, int dist_type, double var_power, int link_type, double link_power)
-    return   (int is_supported)
-{
-      is_supported = 0;
-      if (ncol_y == 1 & dist_type == 1 & link_type == 1)
-      { # POWER DISTRIBUTION
-        is_supported = 1;
-/*        if (var_power == 0.0 & link_power == -1.0) {print ("Gaussian.inverse");      } else {
-          if (var_power == 0.0 & link_power ==  0.0) {print ("Gaussian.log");          } else {
-            if (var_power == 0.0 & link_power ==  0.5) {print ("Gaussian.sqrt");         } else {
-              if (var_power == 0.0 & link_power ==  1.0) {print ("Gaussian.id");           } else {
-                if (var_power == 0.0                     ) {print ("Gaussian.power_nonlog"); } else {
-                  if (var_power == 1.0 & link_power == -1.0) {print ("Poisson.inverse");       } else {
-                    if (var_power == 1.0 & link_power ==  0.0) {print ("Poisson.log");           } else {
-                      if (var_power == 1.0 & link_power ==  0.5) {print ("Poisson.sqrt");          } else {
-                        if (var_power == 1.0 & link_power ==  1.0) {print ("Poisson.id");            } else {
-                          if (var_power == 1.0                     ) {print ("Poisson.power_nonlog");  } else {
-                            if (var_power == 2.0 & link_power == -1.0) {print ("Gamma.inverse");         } else {
-                              if (var_power == 2.0 & link_power ==  0.0) {print ("Gamma.log");             } else {
-                                if (var_power == 2.0 & link_power ==  0.5) {print ("Gamma.sqrt");            } else {
-                                  if (var_power == 2.0 & link_power ==  1.0) {print ("Gamma.id");              } else {
-                                    if (var_power == 2.0                     ) {print ("Gamma.power_nonlog");    } else {
-                                      if (var_power == 3.0 & link_power == -2.0) {print ("InvGaussian.1/mu^2");    } else {
-                                        if (var_power == 3.0 & link_power == -1.0) {print ("InvGaussian.inverse");   } else {
-                                          if (var_power == 3.0 & link_power ==  0.0) {print ("InvGaussian.log");       } else {
-                                            if (var_power == 3.0 & link_power ==  0.5) {print ("InvGaussian.sqrt");      } else {
-                                              if (var_power == 3.0 & link_power ==  1.0) {print ("InvGaussian.id");        } else {
-                                                if (var_power == 3.0                     ) {print ("InvGaussian.power_nonlog");}else{
-                                                  if (                   link_power ==  0.0) {print ("PowerDist.log");         } else {
-                                                    print ("PowerDist.power_nonlog");
-                                                  }   }}}}} }}}}} }}}}} }}}}} }
-*/												  
-												  }
-      if (ncol_y == 1 & dist_type == 2)
-      {
-        print ("Error: Bernoulli response matrix has not been converted into two-column format.");
-      }
-      if (ncol_y == 2 & dist_type == 2 & link_type >= 1 & link_type <= 5)
-      { # BINOMIAL/BERNOULLI DISTRIBUTION
-        is_supported = 1;
-/*        if (link_type == 1 & link_power == -1.0) {print ("Binomial.inverse");        } else {
-          if (link_type == 1 & link_power ==  0.0) {print ("Binomial.log");            } else {
-            if (link_type == 1 & link_power ==  0.5) {print ("Binomial.sqrt");           } else {
-              if (link_type == 1 & link_power ==  1.0) {print ("Binomial.id");             } else {
-                if (link_type == 1)                      {print ("Binomial.power_nonlog");   } else {
-                  if (link_type == 2)                      {print ("Binomial.logit");          } else {
-                    if (link_type == 3)                      {print ("Binomial.probit");         } else {
-                      if (link_type == 4)                      {print ("Binomial.cloglog");        } else {
-                        if (link_type == 5)                      {print ("Binomial.cauchit");        }
-                      }   }}}}} }}
-*/					  
-					  }
-      if (is_supported == 0) {
-        print ("Response matrix with " + ncol_y + " columns, distribution family (" + dist_type + ", " + var_power
-               + ") and link family (" + link_type + ", " + link_power + ") are NOT supported together.");
-      }
-    }
 
 glm_initialize = function (Matrix[double] X, Matrix[double] Y, int dist_type, double var_power, int link_type, double link_power, int icept_status, int max_iter_CG)
   return (Matrix[double] beta, double saturated_log_l, int isNaN)

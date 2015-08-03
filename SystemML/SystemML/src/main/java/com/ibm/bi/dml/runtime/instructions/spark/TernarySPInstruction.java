@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2015
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
@@ -22,6 +29,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -180,10 +188,10 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		}
 		
 		// Now perform aggregation on ctables to get binaryCells 
-		JavaPairRDD<MatrixIndexes, Double> binaryCellsWithoutFilter =  
+		JavaPairRDD<MatrixIndexes, Double> bincellsNoFilter =  
 				ctables.values()
-				.flatMapToPair(new ExtractBinaryCellsFromCTable())
-				.reduceByKey(new AggregateCells());
+				.flatMapToPair(new ExtractBinaryCellsFromCTable());
+		bincellsNoFilter = RDDAggregateUtils.sumCellsByKeyStable(bincellsNoFilter);
 		
 		// For filtering, we need to know the dimensions
 		// So, compute dimension if necessary
@@ -193,8 +201,8 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		boolean findDimensions = (outputDim1 == -1 && outputDim2 == -1); 
 		
 		if(findDimensions) {			
-			binaryCellsWithoutFilter = binaryCellsWithoutFilter.persist(StorageLevel.MEMORY_AND_DISK());
-			MatrixIndexes dims = binaryCellsWithoutFilter.keys().reduce(new FindOutputDimensions());
+			bincellsNoFilter = bincellsNoFilter.persist(StorageLevel.MEMORY_AND_DISK());
+			MatrixIndexes dims = bincellsNoFilter.keys().reduce(new FindOutputDimensions());
 			mcBinaryCells = new MatrixCharacteristics(dims.getRowIndex(), dims.getColumnIndex(), brlen, bclen);
 		}
 		else if((outputDim1 == -1 && outputDim2 != -1) || (outputDim1 != -1 && outputDim2 == -1)) {
@@ -204,11 +212,11 @@ public class TernarySPInstruction extends ComputationSPInstruction
 			mcBinaryCells = new MatrixCharacteristics(outputDim1, outputDim2, brlen, bclen);
 		
 		// Now that dimensions are computed, do filtering
-		JavaPairRDD<MatrixIndexes, Double> binaryCellsAfterFilter = binaryCellsWithoutFilter;
+		JavaPairRDD<MatrixIndexes, Double> binaryCellsAfterFilter = bincellsNoFilter;
 		if(!findDimensions) {
-			binaryCellsAfterFilter = binaryCellsWithoutFilter.filter(
+			binaryCellsAfterFilter = bincellsNoFilter.filter(
 					new FilterCells(mcBinaryCells.getRows(), mcBinaryCells.getCols()));
-			binaryCellsWithoutFilter = binaryCellsWithoutFilter.unpersist();	
+			bincellsNoFilter = bincellsNoFilter.unpersist();	
 		}
 		
 		// Convert value 'Double' to 'MatrixCell'
@@ -481,16 +489,6 @@ public class TernarySPInstruction extends ComputationSPInstruction
 			MatrixIndexes blockIndexes = new MatrixIndexes(blockRowIndex, blockColIndex);
 			MatrixCell cell = new MatrixCell(rowIndexInBlock, colIndexInBlock, v);
 			return new Tuple2<MatrixIndexes, MatrixCell>(blockIndexes, cell);
-		}
-		
-	}
-	
-	public static class AggregateCells implements Function2<Double, Double, Double> {
-		private static final long serialVersionUID = -8167625566734873796L;
-
-		@Override
-		public Double call(Double v1, Double v2) throws Exception {
-			return v1 + v2;
 		}
 		
 	}

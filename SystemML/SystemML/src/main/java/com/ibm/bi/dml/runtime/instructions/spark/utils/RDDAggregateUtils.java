@@ -14,6 +14,7 @@ import org.apache.spark.api.java.function.Function2;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
+import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.CorrMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -73,17 +74,50 @@ public class RDDAggregateUtils
 	 * @param in
 	 * @return
 	 */
+	public static JavaPairRDD<MatrixIndexes, Double> sumCellsByKey( JavaPairRDD<MatrixIndexes, Double> in )
+	{
+		//sum of blocks per key, w/o exploitation of corrections
+		return in.reduceByKey(
+				new SumDoubleCellsFunction());
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sumByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in )
 	{
 		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
 		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
-				in.combineByKey( new CreateCombinerFunction(), 
-							     new MergeSumValueFunction(), 
-							     new MergeSumCombinerFunction() );
+				in.combineByKey( new CreateBlockCombinerFunction(), 
+							     new MergeSumBlockValueFunction(), 
+							     new MergeSumBlockCombinerFunction() );
 		
 		//strip-off correction blocks from 					     
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out =  
 				tmp.mapValues( new ExtractMatrixBlock() );
+		
+		//return the aggregate rdd
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static JavaPairRDD<MatrixIndexes, Double> sumCellsByKeyStable( JavaPairRDD<MatrixIndexes, Double> in )
+	{
+		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
+		JavaPairRDD<MatrixIndexes, KahanObject> tmp = 
+				in.combineByKey( new CreateCellCombinerFunction(), 
+							     new MergeSumCellValueFunction(), 
+							     new MergeSumCellCombinerFunction() );
+		
+		//strip-off correction blocks from 					     
+		JavaPairRDD<MatrixIndexes, Double> out =  
+				tmp.mapValues( new ExtractDoubleCell() );
 		
 		//return the aggregate rdd
 		return out;
@@ -125,9 +159,9 @@ public class RDDAggregateUtils
 	{
 		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
 		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
-				in.combineByKey( new CreateCombinerFunction(), 
-							     new MergeAggValueFunction(aop), 
-							     new MergeAggCombinerFunction(aop) );
+				in.combineByKey( new CreateBlockCombinerFunction(), 
+							     new MergeAggBlockValueFunction(aop), 
+							     new MergeAggBlockCombinerFunction(aop) );
 		
 		//strip-off correction blocks from 					     
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out =  
@@ -155,7 +189,7 @@ public class RDDAggregateUtils
 	/**
 	 * 
 	 */
-	private static class CreateCombinerFunction implements Function<MatrixBlock, CorrMatrixBlock> 
+	private static class CreateBlockCombinerFunction implements Function<MatrixBlock, CorrMatrixBlock> 
 	{
 		private static final long serialVersionUID = -3666451526776017343L;
 
@@ -170,7 +204,7 @@ public class RDDAggregateUtils
 	/**
 	 * 
 	 */
-	private static class MergeSumValueFunction implements Function2<CorrMatrixBlock, MatrixBlock, CorrMatrixBlock> 
+	private static class MergeSumBlockValueFunction implements Function2<CorrMatrixBlock, MatrixBlock, CorrMatrixBlock> 
 	{
 		private static final long serialVersionUID = 3703543699467085539L;
 		
@@ -199,7 +233,7 @@ public class RDDAggregateUtils
 	/**
 	 * 
 	 */
-	private static class MergeSumCombinerFunction implements Function2<CorrMatrixBlock, CorrMatrixBlock, CorrMatrixBlock> 
+	private static class MergeSumBlockCombinerFunction implements Function2<CorrMatrixBlock, CorrMatrixBlock, CorrMatrixBlock> 
 	{
 		private static final long serialVersionUID = 7664941774566119853L;
 		
@@ -230,13 +264,70 @@ public class RDDAggregateUtils
 	/**
 	 * 
 	 */
-	private static class MergeAggValueFunction implements Function2<CorrMatrixBlock, MatrixBlock, CorrMatrixBlock> 
+	private static class CreateCellCombinerFunction implements Function<Double, KahanObject> 
+	{
+		private static final long serialVersionUID = 3697505233057172994L;
+
+		@Override
+		public KahanObject call(Double arg0) 
+			throws Exception 
+		{
+			return new KahanObject(arg0, 0.0);
+		}	
+	}
+	
+	/**
+	 * 
+	 */
+	private static class MergeSumCellValueFunction implements Function2<KahanObject, Double, KahanObject> 
+	{
+		private static final long serialVersionUID = 468335171573184825L;
+
+		@Override
+		public KahanObject call(KahanObject arg0, Double arg1) 
+			throws Exception 
+		{
+			//get reused kahan plus object
+			KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+			
+			//compute kahan plus and keep correction
+			kplus.execute2(arg0, arg1);	
+			
+			return arg0;
+		}	
+	}
+	
+	/**
+	 * 
+	 */
+	private static class MergeSumCellCombinerFunction implements Function2<KahanObject, KahanObject, KahanObject> 
+	{
+		private static final long serialVersionUID = 8726716909849119657L;
+
+		@Override
+		public KahanObject call(KahanObject arg0, KahanObject arg1) 
+			throws Exception 
+		{
+			//get reused kahan plus object
+			KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+			
+			//compute kahan plus and keep correction
+			kplus.execute2(arg0, arg1._sum);
+			
+			return arg0;
+		}	
+	}
+	
+	/**
+	 * 
+	 */
+	private static class MergeAggBlockValueFunction implements Function2<CorrMatrixBlock, MatrixBlock, CorrMatrixBlock> 
 	{
 		private static final long serialVersionUID = 389422125491172011L;
 		
 		private AggregateOperator _op = null;	
 		
-		public MergeAggValueFunction(AggregateOperator aop)
+		public MergeAggBlockValueFunction(AggregateOperator aop)
 		{
 			_op = aop;
 		}
@@ -267,13 +358,13 @@ public class RDDAggregateUtils
 	/**
 	 * 
 	 */
-	private static class MergeAggCombinerFunction implements Function2<CorrMatrixBlock, CorrMatrixBlock, CorrMatrixBlock> 
+	private static class MergeAggBlockCombinerFunction implements Function2<CorrMatrixBlock, CorrMatrixBlock, CorrMatrixBlock> 
 	{
 		private static final long serialVersionUID = 4803711632648880797L;
 		
 		private AggregateOperator _op = null;
 		
-		public MergeAggCombinerFunction(AggregateOperator aop)
+		public MergeAggBlockCombinerFunction(AggregateOperator aop)
 		{
 			_op = aop;
 		}
@@ -315,6 +406,22 @@ public class RDDAggregateUtils
 			throws Exception 
 		{
 			return arg0.getValue();
+		}	
+	}
+	
+	/**
+	 * 
+	 */
+	private static class ExtractDoubleCell implements Function<KahanObject, Double> 
+	{
+		private static final long serialVersionUID = -2873241816558275742L;
+
+		@Override
+		public Double call(KahanObject arg0) 
+			throws Exception 
+		{
+			//return sum and drop correction
+			return arg0._sum;
 		}	
 	}
 
@@ -506,5 +613,18 @@ public class RDDAggregateUtils
 			return ret;
 		}
 
+	}
+	
+	/**
+	 * 
+	 */
+	private static class SumDoubleCellsFunction implements Function2<Double, Double, Double> 
+	{
+		private static final long serialVersionUID = -8167625566734873796L;
+
+		@Override
+		public Double call(Double v1, Double v2) throws Exception {
+			return v1 + v2;
+		}	
 	}
 }

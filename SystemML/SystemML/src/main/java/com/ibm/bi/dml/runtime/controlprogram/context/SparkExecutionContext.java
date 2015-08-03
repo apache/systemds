@@ -10,6 +10,8 @@ package com.ibm.bi.dml.runtime.controlprogram.context;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
@@ -51,13 +53,16 @@ public class SparkExecutionContext extends ExecutionContext
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
+	private static final Log LOG = LogFactory.getLog(SparkExecutionContext.class.getName());
+
 	private static boolean ASYNCHRONOUS_VAR_DESTROY = true;
 	
 	//executor memory and relative fractions as obtained from the spark configuration
 	private static long _memExecutors = -1;
 	private static double _memRatioData = -1;
 	private static double _memRatioShuffle = -1;
-	private static long _defaultPar = -1; //vcores 
+	private static long _numExecutors = -1; //num executors
+	private static long _defaultPar = -1; //total vcores 
 	
 	// TODO: This needs to be debugged further. For now getting around the problem with Singleton
 	// Only one SparkContext may be active per JVM. You must stop() the active SparkContext before creating a new one. 
@@ -76,7 +81,9 @@ public class SparkExecutionContext extends ExecutionContext
 	{
 		//protected constructor to force use of ExecutionContextFactory
 		super( allocateVars, prog );
-		synchronized(SparkExecutionContext.class) {
+		
+		synchronized(SparkExecutionContext.class) 
+		{
 			if(_singletonSpctx != null) {
 				// Reuse the context
 				_spctx = _singletonSpctx;
@@ -451,6 +458,14 @@ public class SparkExecutionContext extends ExecutionContext
 		return membudget;
 	}
 	
+	public static long getNumExecutors()
+	{
+		if( _numExecutors < 0 )
+			analyzeSparkConfiguation();
+		
+		return _numExecutors;
+	}
+	
 	public static long getDefaultParallelism()
 	{
 		if( _defaultPar < 0 )
@@ -481,11 +496,48 @@ public class SparkExecutionContext extends ExecutionContext
 		_memRatioData = sconf.getDouble("spark.storage.memoryFraction", 0.6); //default 60%
 		_memRatioShuffle = sconf.getDouble("spark.shuffle.memoryFraction", 0.2); //default 20%
 		
-		//get default parallelism
-		//TODO on Spark 1.2, the default parallelism is not set (but spark.executor.instances, no info on cores)
-		_defaultPar = sconf.getLong("spark.default.parallelism", 144); 
+		//get default parallelism (total number of executors and cores)
+		//note: spark context provides this information while conf does not
+		SparkExecutionContext sec = new SparkExecutionContext(false, null);
+		_numExecutors = sec._spctx.sc().getExecutorMemoryStatus().size(); 
+		_defaultPar = sec._spctx.defaultParallelism(); 
+
+		//note: required time for infrastructure analysis on 5 node cluster: ~5-20ms. 
 	}
 
+	/**
+	 * 
+	 */
+	public void checkAndRaiseValidationWarningJDKVersion()
+	{
+		//get the jre version 
+		String version = System.getProperty("java.version");
+		
+		//parse jre version
+		int ix1 = version.indexOf('.');
+		int ix2 = version.indexOf('.', ix1+1);
+		int versionp1 = Integer.parseInt(version.substring(0, ix1));
+		int versionp2 = Integer.parseInt(version.substring(ix1+1, ix2));
+		
+		//check multi-threaded executors
+		long numExecutors = getNumExecutors();
+		long numCores = getDefaultParallelism();
+		boolean multiThreaded = (numCores > numExecutors);
+		
+		//check for jdk version less than 8 (and raise warning if multi-threaded)
+		if( versionp1 == 1 && versionp2 < 8 && multiThreaded) 
+		{
+			LOG.warn("########################################################################################");
+			LOG.warn("### WARNING: Multi-threaded text reblock may lead to thread contention on JRE < 1.8 ####");
+			LOG.warn("### java.version = " + version);
+			LOG.warn("### total number of executors = " + numExecutors);
+			LOG.warn("### total number of cores = " + numCores);
+			LOG.warn("### JDK-7032154: Performance tuning of sun.misc.FloatingDecimal/FormattedFloatingDecimal");
+			LOG.warn("### Workaround: Convert text to binary w/ changed configuration of one executor per core");
+			LOG.warn("########################################################################################");
+		}
+	}
+	
 	///////////////////////////////////////////
 	// Cleanup of RDDs and Broadcast variables
 	///////

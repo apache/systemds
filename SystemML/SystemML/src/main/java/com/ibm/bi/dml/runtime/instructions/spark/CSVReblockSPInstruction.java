@@ -65,11 +65,12 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 	}
 
 	public static Instruction parseInstruction(String str)
-			throws DMLRuntimeException {
+			throws DMLRuntimeException 
+	{
 		String opcode = InstructionUtils.getOpCode(str);
 		if (opcode.compareTo("csvrblk") != 0) {
 			throw new DMLRuntimeException(
-					"Incorrect opcode for ReblockSPInstruction:" + opcode);
+					"Incorrect opcode for CSVReblockSPInstruction:" + opcode);
 		}
 
 		// Example parts of CSVReblockSPInstruction:
@@ -97,56 +98,54 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException, DMLUnsupportedOperationException {
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 		SparkExecutionContext sec = (SparkExecutionContext) ec;
-		String opcode = getOpcode();
 
-		if (opcode.equalsIgnoreCase("csvrblk")) {
-			MatrixObject mo = sec.getMatrixObject(input1.getName());
-			MatrixFormatMetaData iimd = (MatrixFormatMetaData) mo.getMetaData();
-			if (iimd.getInputInfo() != InputInfo.CSVInputInfo) {
-				throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:"
-								+ iimd.getInputInfo());
-			}
-			
-			@SuppressWarnings("unchecked")
-			JavaPairRDD<LongWritable, Text> csvLines1 = (JavaPairRDD<LongWritable, Text>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
-			JavaRDD<String> csvLines = csvLines1.values().map(new ConvertStringToText());
-			
-			// Since all instructions should read directly from RDD rather than file,
-			// changed this logic
-			// String fileName = mo.getFileName();
-			// JavaRDD<String> csvLines = sec.getSparkContext().textFile(fileName);
-
-			// Compute (if not already computed) the start offset of each
-			// partition of our input,
-			// RDD, so that we can parse all the partitions in parallel and send
-			// each chunk of
-			// the matrix to the appropriate block.
-			getRowOffsets(csvLines, delim);
-			
-			// put output RDD handle into symbol table
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			if(!mcOut.dimsKnown()) {
-				mcOut.set(numRows, expectedNumColumns, brlen, bclen);
-			}
-						
-//			Broadcast<HashMap<Integer, Long>> offsetsBroadcast = sec.getSparkContext().broadcast(rowOffsets);
-			JavaPairRDD<MatrixIndexes, MatrixBlock> chunks = JavaPairRDD.fromJavaRDD(csvLines.mapPartitionsWithIndex(
-							new ConvertCSVLinesToMatrixBlocks(rowOffsets, 
-									mcOut.getRows(), mcOut.getCols(), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), 
-									hasHeader, delim, fill, missingValue), true));
-
-			// Merge chunks according to their block index
-			JavaPairRDD<MatrixIndexes, MatrixBlock> blocksRDD = RDDAggregateUtils.mergeByKey(chunks);
-			
-			// SparkUtils.setLineageInfoForExplain(this, blocksRDD, output.getName());
-			sec.setRDDHandleForVariable(output.getName(), blocksRDD);
-			
-		} else {
-			throw new DMLRuntimeException("In CSVReblockSPInstruction,  Unknown opcode in Instruction: " + toString());
+		//sanity check input info
+		MatrixObject mo = sec.getMatrixObject(input1.getName());
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) mo.getMetaData();
+		if (iimd.getInputInfo() != InputInfo.CSVInputInfo) {
+			throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:"
+							+ iimd.getInputInfo());
 		}
+		
+		//check jdk version (prevent double.parseDouble contention on <jdk8)
+		sec.checkAndRaiseValidationWarningJDKVersion();
+		
+		@SuppressWarnings("unchecked")
+		JavaPairRDD<LongWritable, Text> csvLines1 = (JavaPairRDD<LongWritable, Text>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
+		JavaRDD<String> csvLines = csvLines1.values().map(new ConvertStringToText());
+		
+		// Since all instructions should read directly from RDD rather than file,
+		// changed this logic
+		// String fileName = mo.getFileName();
+		// JavaRDD<String> csvLines = sec.getSparkContext().textFile(fileName);
 
+		// Compute (if not already computed) the start offset of each
+		// partition of our input,
+		// RDD, so that we can parse all the partitions in parallel and send
+		// each chunk of
+		// the matrix to the appropriate block.
+		getRowOffsets(csvLines, delim);
+		
+		// put output RDD handle into symbol table
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown()) {
+			mcOut.set(numRows, expectedNumColumns, brlen, bclen);
+		}
+					
+//			Broadcast<HashMap<Integer, Long>> offsetsBroadcast = sec.getSparkContext().broadcast(rowOffsets);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> chunks = JavaPairRDD.fromJavaRDD(csvLines.mapPartitionsWithIndex(
+						new ConvertCSVLinesToMatrixBlocks(rowOffsets, 
+								mcOut.getRows(), mcOut.getCols(), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), 
+								hasHeader, delim, fill, missingValue), true));
+
+		// Merge chunks according to their block index
+		JavaPairRDD<MatrixIndexes, MatrixBlock> blocksRDD = RDDAggregateUtils.mergeByKey(chunks);
+		
+		// SparkUtils.setLineageInfoForExplain(this, blocksRDD, output.getName());
+		sec.setRDDHandleForVariable(output.getName(), blocksRDD);
 	}
 	
 	private long expectedNumColumns = -1;

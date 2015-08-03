@@ -165,7 +165,7 @@ public class ApplyTfHelper {
 			final String msg = "When na.strings are provided, empty string \"\" is considered as a missing value, and it must be imputed appropriately. Encountered an unhandled empty string in column ID: ";
 			for(int i=0; i<words.length; i++) 
 				if ( words[i] != null && words[i].equals(""))
-					throw new DMLRuntimeException(msg + (i+1) + da.mapDcdColumnID(i+1));
+					throw new DMLRuntimeException(msg + da.mapDcdColumnID(i+1));
 		}
 	}
 	

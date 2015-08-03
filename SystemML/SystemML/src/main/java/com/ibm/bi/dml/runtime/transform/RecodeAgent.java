@@ -374,7 +374,7 @@ public class RecodeAgent extends TransformationAgent {
 				words[colID-1] = Long.toString(_rcdMaps.get(colID).get(UtilFunctions.unquote(words[colID-1].trim())));
 			} catch(NullPointerException e) {
 				if(words[colID-1].isEmpty() && MVImputeAgent.isNA("", TransformationAgent.NAstrings) )
-					throw new RuntimeException("Empty string (a missing value) in column ID \"" + colID + "\" is not handled. Consider adding an imputation method on this column.");		
+					throw new RuntimeException("Empty string (a missing value) in column ID " + colID + " is not handled. Consider adding an imputation method on this column.");		
 				throw new RuntimeException("ColID="+colID + ", word=" + words[colID-1] + ", maps entry not found (map = " + _rcdMaps.get(colID) + ")");
 			}
 		}

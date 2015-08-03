@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ "$5" == "SPARK" ]; then CMD="./sparkDML "; DASH="-"; elif [ "$5" == "MR" ]; then CMD="hadoop jar SystemML.jar " ; else CMD="echo " ; fi
+if [ "$5" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$5" == "MR" ]; then CMD="hadoop jar SystemML.jar " ; else CMD="echo " ; fi
 
 BASE=$4/multinomial
 

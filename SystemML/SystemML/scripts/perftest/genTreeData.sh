@@ -4,13 +4,15 @@ if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK 
 if [ "$2" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$2" == "MR" ]; then CMD="hadoop jar SystemML.jar " ; else CMD="echo " ; fi
 
 
-BASE=$1/binomial
+BASE=$1/trees
 
 FORMAT="csv" 
 DENSE_SP=0.9
 SPARSE_SP=0.01
 
 export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
+
+echo "NOT DONE YET. WAITING FOR DML SCRIPT FROM FARAZ" ; exit 1
 
 
 #generate XS scenarios (80MB)
@@ -42,9 +44,4 @@ ${CMD} -f extractTestData.dml $DASH-args $BASE/X10k_1k_sparse_csv $BASE/y10k_1k_
 #${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 100000000 1000 5 5 $BASE/w100M_1k_sparse_csv $BASE/X100M_1k_sparse_csv $BASE/y100M_1k_sparse_csv 1 0 $SPARSE_SP $FORMAT
 #${CMD} -f extractTestData.dml $DASH-args $BASE/X100M_1k_dense_csv $BASE/y100M_1k_dense_csv $BASE/X100M_1k_dense_csv_test $BASE/y100M_1k_dense_csv_test $FORMAT
 #${CMD} -f extractTestData.dml $DASH-args $BASE/X100M_1k_sparse_csv $BASE/y100M_1k_sparse_csv $BASE/X100M_1k_sparse_csv_test $BASE/y100M_1k_sparse_csv_test $FORMAT
-#
-###generate KDD scenario (csv would be infeasible)
-##${CMD} -f changeFormat.dml $DASH-args mboehm/data/rdata_kdd2010/X mboehm/data/rdata_kdd2010/y 1 $BASE/X_KDD_csv $BASE/y_KDD_csv "text"
-##${CMD} -f extractTestData.dml $DASH-args $BASE/X_KDD_csv $BASE/y_KDD_csv $BASE/X_KDD_csv_test $BASE/y_KDD_csv_test "text"
-##${CMD} -f changeFormat.dml $DASH-args /user/biadmin/statiko/rdata_kdd2010/X /user/biadmin/statiko/rdata_kdd2010/y 150 $BASE/X_KDD_csv $BASE/y_KDD_csv "text"
-##${CMD} -f extractTestData.dml $DASH-args $BASE/X_KDD_csv $BASE/y_KDD_csv $BASE/X_KDD_csv_test $BASE/y_KDD_csv_test "text"
+

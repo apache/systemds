@@ -17,6 +17,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
 
@@ -55,7 +56,7 @@ public class OmitAgent extends TransformationAgent {
 		for(int i=0; i<_omitList.length; i++) 
 		{
 			int colID = _omitList[i];
-			if(MVImputeAgent.isNA(words[colID-1], TransformationAgent.NAstrings))
+			if(MVImputeAgent.isNA(UtilFunctions.unquote(words[colID-1].trim()), TransformationAgent.NAstrings))
 				return true;
 		}
 		return false;

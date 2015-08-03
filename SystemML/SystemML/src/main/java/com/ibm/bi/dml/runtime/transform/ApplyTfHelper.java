@@ -157,7 +157,7 @@ public class ApplyTfHelper {
 	public long getNumTransformedRows() { return _numTransformedRows; }
 	public long getNumTransformedColumns() { return _numTransformedColumns; }
 	
-	public static void check(String []words) throws DMLRuntimeException 
+	public static void check(String []words, DummycodeAgent da) throws DMLRuntimeException 
 	{
 		boolean checkEmptyString = ( TransformationAgent.NAstrings != null );
 		if ( checkEmptyString ) 
@@ -165,16 +165,16 @@ public class ApplyTfHelper {
 			final String msg = "When na.strings are provided, empty string \"\" is considered as a missing value, and it must be imputed appropriately. Encountered an unhandled empty string in column ID: ";
 			for(int i=0; i<words.length; i++) 
 				if ( words[i] != null && words[i].equals(""))
-					throw new DMLRuntimeException(msg + (i+1));
+					throw new DMLRuntimeException(msg + (i+1) + da.mapDcdColumnID(i+1));
 		}
 	}
 	
-	public String checkAndPrepOutputString(String []words) throws DMLRuntimeException 
+	public String checkAndPrepOutputString(String []words, DummycodeAgent da) throws DMLRuntimeException 
 	{
-		return checkAndPrepOutputString(words, new StringBuilder(), _delimString);
+		return checkAndPrepOutputString(words, new StringBuilder(), _delimString, da);
 	}
 	
-	public static String checkAndPrepOutputString(String []words, StringBuilder sb, String delim) throws DMLRuntimeException 
+	public static String checkAndPrepOutputString(String []words, StringBuilder sb, String delim, DummycodeAgent da) throws DMLRuntimeException 
 	{
 		/*
 		 * Check if empty strings ("") have to be handled.
@@ -196,7 +196,7 @@ public class ApplyTfHelper {
 			final String msg = "When na.strings are provided, empty string \"\" is considered as a missing value, and it must be imputed appropriately. Encountered an unhandled empty string in column ID: ";
 			if ( words[0] != null ) 
 				if ( words[0].equals("") )
-					throw new DMLRuntimeException( msg + "1");
+					throw new DMLRuntimeException( msg + da.mapDcdColumnID(1));
 				else 
 					sb.append(words[0]);
 			else
@@ -208,7 +208,7 @@ public class ApplyTfHelper {
 				
 				if ( words[i] != null ) 
 					if ( words[i].equals("") )
-						throw new DMLRuntimeException(msg + (i+1));
+						throw new DMLRuntimeException(msg + da.mapDcdColumnID(i+1));
 					else 
 						sb.append(words[i]);
 				else

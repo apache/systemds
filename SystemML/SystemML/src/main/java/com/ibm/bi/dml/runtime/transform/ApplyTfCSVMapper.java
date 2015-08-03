@@ -59,7 +59,7 @@ public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable
 		{
 			try {
 				words = tfmapper.apply(words);
-				String outStr = tfmapper.checkAndPrepOutputString(words);
+				String outStr = tfmapper.checkAndPrepOutputString(words, tfmapper._da);
 				out.collect(NullWritable.get(), new Text(outStr));
 			} catch(DMLRuntimeException e)
 			{

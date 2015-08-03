@@ -43,6 +43,7 @@ public class DummycodeAgent extends TransformationAgent {
 	private int[] _numBins = null;
 	
 	private int[] _domainSizes = null;			// length = #of dummycoded columns
+	private int[] _dcdColumnMap = null;			// to help in translating between original and dummycoded column IDs
 	private long _dummycodedLength = 0;			// #of columns after dummycoded
 	
 	DummycodeAgent(int[] list) {
@@ -130,6 +131,8 @@ public class DummycodeAgent extends TransformationAgent {
 		for(int i=0; i < _dummycodedLength; i++)
 			ctypes[i] = ColumnTypes.SCALE;
 		
+		_dcdColumnMap = new int[numCols];
+
 		Path pt=new Path(txMtdDir+"/Dummycode/" + DCD_FILE_NAME);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		
@@ -140,6 +143,7 @@ public class DummycodeAgent extends TransformationAgent {
 			if ( _dcdList != null && idx < _dcdList.length && _dcdList[idx] == colID )
 			{
 				br.write(colID + "," + "1" + "," + sum + "," + (sum+_domainSizes[idx]-1) + "\n");
+				_dcdColumnMap[colID-1] = (sum+_domainSizes[idx]-1)-1;
 
 				for(int i=sum; i <=(sum+_domainSizes[idx]-1); i++)
 					ctypes[i-1] = ColumnTypes.DUMMYCODED;
@@ -150,6 +154,7 @@ public class DummycodeAgent extends TransformationAgent {
 			else 
 			{
 				br.write(colID + "," + "0" + "," + sum + "," + sum + "\n");
+				_dcdColumnMap[colID-1] = sum-1;
 				
 				if ( ba.isBinned(colID) != -1 )
 					ctypes[sum-1] = ColumnTypes.ORDINAL;	// binned variable results in an ordinal column
@@ -174,6 +179,26 @@ public class DummycodeAgent extends TransformationAgent {
 		return sum-1;
 	}
 	
+	/**
+	 * Given a dummycoded column id, find the corresponding original column ID.
+	 *  
+	 * @param colID
+	 * @return
+	 */
+	public int mapDcdColumnID(int colID) 
+	{
+		for(int i=0; i < _dcdColumnMap.length; i++)
+		{
+			int st = (i==0 ? 1 : _dcdColumnMap[i-1]+1+1);
+			int end = _dcdColumnMap[i]+1;
+			System.out.println((i+1) + ": " + "[" + st + "," + end + "]");
+			
+			if ( colID >= st && colID <= end)
+				return i+1;
+		}
+		return -1;
+	}
+	
 	public String constructDummycodedHeader(String header, String delim) {
 		
 		if(_dcdList == null && _binList == null )
@@ -183,7 +208,7 @@ public class DummycodeAgent extends TransformationAgent {
 		Pattern _delim = Pattern.compile(Pattern.quote(delim));
 		String[] names = _delim.split(header, -1);
 		List<String> newNames = null;
-
+		
 		StringBuilder sb = new StringBuilder();
 		
 		// Dummycoding can be performed on either on a recoded column or on a binned column

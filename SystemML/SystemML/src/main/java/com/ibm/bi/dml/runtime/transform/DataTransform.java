@@ -487,8 +487,14 @@ public class DataTransform {
 		}
 		if ( addToRcd.size() > 0 ) 
 		{
-			int[] newRcdList = Arrays.copyOf(rcdList, rcdList.length + addToRcd.size());
-			for(int i=rcdList.length, idx=0; i < newRcdList.length; i++, idx++)
+			int[] newRcdList = null;
+			if ( rcdList != null)  
+				newRcdList = Arrays.copyOf(rcdList, rcdList.length + addToRcd.size());
+			else
+				newRcdList = new int[addToRcd.size()];
+			
+			int i = (rcdList != null ? rcdList.length : 0);
+			for(int idx=0; i < newRcdList.length; i++, idx++)
 				newRcdList[i] = addToRcd.get(idx);
 			Arrays.sort(newRcdList);
 			rcdList = newRcdList;
@@ -1194,12 +1200,12 @@ public class DataTransform {
 	
 					if (isCSV)
 					{
-						out.write( ApplyTfHelper.checkAndPrepOutputString(words, sb, prop.getDelim()) );
+						out.write( ApplyTfHelper.checkAndPrepOutputString(words, sb, prop.getDelim(), _da) );
 						out.write("\n");
 					}
 					if( isBB ) 
 					{
-						ApplyTfHelper.check(words);
+						ApplyTfHelper.check(words, _da);
 						for(int c=0; c<words.length; c++)
 						{
 							if(words[c] == null || words[c].isEmpty())

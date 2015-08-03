@@ -1,0 +1,10 @@
+n = 5000;
+
+X = read($1);
+y = read($2);
+
+X = X[1:n,];
+y = y[1:n,];
+
+write(X, $3, format=$5);
+write(y, $4, format=$5);

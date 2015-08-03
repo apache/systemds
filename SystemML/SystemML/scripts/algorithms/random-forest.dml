@@ -96,7 +96,7 @@ if (fileR != " ") {
 		write (cat_feature_mapping, fileC_map, format = fmtO);		
 	}
 	sum_dummy = sum (dummy_coded);	
-	if (sum_dummy == num_records) { # all features categorical
+	if (sum_dummy == nrow (R)) { # all features categorical
 		print ("All features categorical");
 		num_cat_features = nrow (R_cat);
 		num_scale_features = 0;

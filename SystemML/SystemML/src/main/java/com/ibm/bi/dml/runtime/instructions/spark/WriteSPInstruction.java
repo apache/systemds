@@ -16,7 +16,6 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 
-import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -26,7 +25,6 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -42,8 +40,8 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 
 import scala.Tuple2;
 
-public class WriteSPInstruction extends SPInstruction {
-
+public class WriteSPInstruction extends SPInstruction 
+{
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
@@ -66,11 +64,14 @@ public class WriteSPInstruction extends SPInstruction {
 		formatProperties = null; // set in case of csv
 	}
 
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{
 		String opcode = InstructionUtils.getOpCode(str);
-		if(opcode.compareTo("write") != 0) {
+		if( !opcode.equals("write") ) {
 			throw new DMLRuntimeException("Unsupported opcode");
 		}
+		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		
 		// All write instructions have 3 parameters, except in case of delimited/csv file.
@@ -95,8 +96,7 @@ public class WriteSPInstruction extends SPInstruction {
 			FileFormatProperties formatProperties = new CSVFileFormatProperties(hasHeader, delim, sparse);
 			inst.setFormatProperties(formatProperties);
 		}
-		return inst;
-		
+		return inst;		
 	}
 	
 	
@@ -108,59 +108,23 @@ public class WriteSPInstruction extends SPInstruction {
 		formatProperties = prop;
 	}
 	
-	private void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) throws DMLRuntimeException {
-		//if the file already exists on HDFS, remove it.
-		try {
-			MapReduceTool.deleteFileIfExistOnHDFS( fname );
-		} catch (IOException e) {
-			throw new DMLRuntimeException("Error: While deleting file on HDFS");
-		}
-		
-		if(inSingleFile) {
-			Random rand = new Random();
-			String randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
-			try {
-				while(MapReduceTool.existsFileOnHDFS(randFName)) {
-					randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
-				}
-				
-				rdd.saveAsTextFile(randFName);
-				MapReduceTool.mergeIntoSingleFile(randFName, fname); // Faster version :)
-				
-				// rdd.coalesce(1, true).saveAsTextFile(randFName);
-				// MapReduceTool.copyFileOnHDFS(randFName + "/part-00000", fname);
-			} catch (IOException e) {
-				throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
-			}
-			finally {
-				try {
-					// This is to make sure that we donot create random files on HDFS
-					MapReduceTool.deleteFileIfExistOnHDFS( randFName );
-				} catch (IOException e) {
-					throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
-				}
-			}
-		}
-		else {
-			rdd.saveAsTextFile(fname);
-		}
-	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
+			throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{			
+		SparkExecutionContext sec = (SparkExecutionContext) ec;
+
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(input2.getName(), ValueType.STRING, input2.isLiteral()).getStringValue();
 		
-		SparkExecutionContext sec = (SparkExecutionContext) ec;
-		if ( input1.getDataType() == DataType.SCALAR ) {
-			writeScalarToHDFS(sec, fname);
-		}
-		else 
+		try
 		{
+			//if the file already exists on HDFS, remove it.
+			MapReduceTool.deleteFileIfExistOnHDFS( fname );
+
 			String outFmt = input3.getName();
-			
+				
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 			MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 			
@@ -233,7 +197,49 @@ public class WriteSPInstruction extends SPInstruction {
 				MapReduceTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), mc, oi, formatProperties);
 			} catch (IOException e) {
 				throw new DMLRuntimeException("Unable to write metadata file in WriteSPInstruction");
+			}	
+		}
+		catch(IOException ex)
+		{
+			throw new DMLRuntimeException("Failed to process write instruction", ex);
+		}
+	}
+	
+	private void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) throws DMLRuntimeException {
+		//if the file already exists on HDFS, remove it.
+		try {
+			MapReduceTool.deleteFileIfExistOnHDFS( fname );
+		} catch (IOException e) {
+			throw new DMLRuntimeException("Error: While deleting file on HDFS");
+		}
+		
+		if(inSingleFile) {
+			Random rand = new Random();
+			String randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
+			try {
+				while(MapReduceTool.existsFileOnHDFS(randFName)) {
+					randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
+				}
+				
+				rdd.saveAsTextFile(randFName);
+				MapReduceTool.mergeIntoSingleFile(randFName, fname); // Faster version :)
+				
+				// rdd.coalesce(1, true).saveAsTextFile(randFName);
+				// MapReduceTool.copyFileOnHDFS(randFName + "/part-00000", fname);
+			} catch (IOException e) {
+				throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
 			}
+			finally {
+				try {
+					// This is to make sure that we donot create random files on HDFS
+					MapReduceTool.deleteFileIfExistOnHDFS( randFName );
+				} catch (IOException e) {
+					throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
+				}
+			}
+		}
+		else {
+			rdd.saveAsTextFile(fname);
 		}
 	}
 	
@@ -255,21 +261,23 @@ public class WriteSPInstruction extends SPInstruction {
 		}
 
 		@Override
-		public Iterable<Tuple2<Long, Tuple2<Long, String>>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
-			long columnBlockIndex = kv._1.getColumnIndex();
+		public Iterable<Tuple2<Long, Tuple2<Long, String>>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+			throws Exception 
+		{
+			MatrixIndexes ix = arg0._1();
+			MatrixBlock mb = arg0._2();
 			
-			int lrlen = UtilFunctions.computeBlockSize(rlen, kv._1.getRowIndex(), brlen);
-    		int lclen = UtilFunctions.computeBlockSize(clen, kv._1.getColumnIndex(), bclen);
-    		long cellIndexTopRow = UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), brlen, 0);
+			long columnBlockIndex = ix.getColumnIndex();
+			long cellIndexTopRow = UtilFunctions.cellIndexCalculation(ix.getRowIndex(), brlen, 0);
     		
-    		ArrayList<Tuple2<Long, Tuple2<Long, String>>> retVal = new ArrayList<Tuple2<Long,Tuple2<Long,String>>>(lrlen);
-    		for(int i = 0; i < lrlen; i++) {
+    		ArrayList<Tuple2<Long, Tuple2<Long, String>>> retVal = new ArrayList<Tuple2<Long,Tuple2<Long,String>>>(mb.getNumRows());
+    		for(int i = 0; i < mb.getNumRows(); i++) {
     			StringBuffer buf = new StringBuffer();
-	    		for(int j = 0; j < lclen; j++) {
+	    		for(int j = 0; j < mb.getNumColumns(); j++) {
 	    			if(j != 0) {
 	    				buf.append(sep);
 	    			}
-	    			double val = kv._2.getValue(i, j);
+	    			double val = mb.quickGetValue(i, j);
 	    			if(!(sparse && val == 0))
 	    				buf.append(val);
 				}
@@ -297,7 +305,7 @@ public class WriteSPInstruction extends SPInstruction {
 		
 		public String getValue(Iterable<Tuple2<Long, String>> collection, Long key) throws Exception {
 			for(Tuple2<Long, String> entry : collection) {
-				if(entry._1== key) {
+				if(entry._1.equals(key)) {
 					return entry._2;
 				}
 			}
@@ -317,37 +325,4 @@ public class WriteSPInstruction extends SPInstruction {
 		}
 		
 	}
-	
-	/**
-	 * Helper function to write scalars to HDFS based on its value type.
-	 * @throws DMLRuntimeException 
-	 */
-	private void writeScalarToHDFS(ExecutionContext ec, String fname) 
-		throws DMLRuntimeException 
-	{
-		ScalarObject scalar = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
-		try {
-			switch ( input1.getValueType() ) {
-			case DOUBLE:
-				MapReduceTool.writeDoubleToHDFS(scalar.getDoubleValue(), fname);
-				break;
-			case INT:
-				MapReduceTool.writeIntToHDFS(scalar.getLongValue(), fname);
-				break;
-			case BOOLEAN:
-				MapReduceTool.writeBooleanToHDFS(scalar.getBooleanValue(), fname);
-				break;
-			case STRING:
-				MapReduceTool.writeStringToHDFS(scalar.getStringValue(), fname);
-				break;
-			default:
-				throw new DMLRuntimeException("Invalid value type (" + input1.getValueType() + ") in write instruction while writing scalar: " + instString);
-			}
-		  // write out .mtd file
-		  MapReduceTool.writeScalarMetaDataFile(fname +".mtd", input1.getValueType());
-		} catch ( IOException e ) {
-			throw new DMLRuntimeException(e);
-		}
-	}
-	
 }

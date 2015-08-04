@@ -111,14 +111,14 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 	 * @param mcIn
 	 * @param mcOut
 	 */
-	public void computeOutputCharacteristics(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut)
+	public void computeOutputCharacteristics(MatrixCharacteristics mcIn1, MatrixCharacteristics mcIn2, MatrixCharacteristics mcOut)
 	{
 		if( _uaggOp.indexFn instanceof ReduceAll )
-			mcOut.set(1, 1, mcIn.getRowsPerBlock(), mcOut.getColsPerBlock());
+			mcOut.set(1, 1, mcIn1.getRowsPerBlock(), mcIn2.getColsPerBlock());
 		else if( _uaggOp.indexFn instanceof ReduceCol ) //e.g., rowSums
-			mcOut.set(mcIn.getRows(), 1, mcIn.getRowsPerBlock(), mcOut.getColsPerBlock());
+			mcOut.set(mcIn1.getRows(), 1, mcIn1.getRowsPerBlock(), mcIn2.getColsPerBlock());
 		else if( _uaggOp.indexFn instanceof ReduceRow ) //e.g., colSums
-			mcOut.set(1, mcIn.getCols(), mcIn.getRowsPerBlock(), mcOut.getColsPerBlock());
+			mcOut.set(1, mcIn2.getCols(), mcIn1.getRowsPerBlock(), mcIn2.getColsPerBlock());
 	}
 	
 	@Override

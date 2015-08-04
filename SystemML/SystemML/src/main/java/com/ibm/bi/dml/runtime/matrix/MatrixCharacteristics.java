@@ -318,8 +318,9 @@ public class MatrixCharacteristics implements Serializable
 		else if(ins instanceof UaggOuterChainInstruction) //needs to be checked before binary
 		{
 			UaggOuterChainInstruction realIns=(UaggOuterChainInstruction)ins;
-			MatrixCharacteristics mc = dims.get(realIns.input1);
-			realIns.computeOutputCharacteristics(mc, dimOut);
+			MatrixCharacteristics mc1 = dims.get(realIns.input1);
+			MatrixCharacteristics mc2 = dims.get(realIns.input2);
+			realIns.computeOutputCharacteristics(mc1, mc2, dimOut);
 		}
 		else if(ins instanceof BinaryInstruction || ins instanceof BinaryMInstruction || ins instanceof CombineBinaryInstruction )
 		{

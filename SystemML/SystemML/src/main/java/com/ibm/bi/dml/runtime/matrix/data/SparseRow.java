@@ -389,8 +389,13 @@ public class SparseRow implements Serializable
 		for( int i=vix; i<vix+len; i++ )
 			lnnz += ( v[i] != 0 ) ? 1 : 0;
 		
-		//insert values
+		//prepare free space (allocate and shift)
+		int lsize = size+lnnz-(end-start);
+		if( values.length < lsize )
+			recap(lsize);
 		shiftRightByN(end, lnnz-(end-start));
+		
+		//insert values
 		for( int i=vix; i<vix+len; i++ )
 			if( v[i] != 0 ) {
 				values[ start+i-vix ] = v[i];

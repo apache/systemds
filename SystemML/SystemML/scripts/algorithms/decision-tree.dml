@@ -402,7 +402,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		}	
 	
 		# compare best scale feature to best cat. feature and pick the best one
-		if (best_scale_gain >= best_cat_gain & best_scale_gain > 0) {
+		if (num_scale_features > 0 & best_scale_gain >= best_cat_gain & best_scale_gain > 0) {
 			
 			# --- update model ---
 			cur_F_large[1,i6] = best_scale_feature; 
@@ -466,7 +466,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				
 			}
 		
-		} else if (best_cat_gain > 0) {
+		} else if (num_cat_features > 0 & best_cat_gain > 0) {
 			
 			# --- update model ---
 			cur_F_large[1,i6] = best_cat_feature;
@@ -822,7 +822,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				}
 				
 				# compare best scale feature to best cat. feature and pick the best one
-				if (best_scale_gain >= best_cat_gain & best_scale_gain > 0) {
+				if (num_scale_features > 0 & best_scale_gain >= best_cat_gain & best_scale_gain > 0) {
 					
 					# --- update model ---
 					cur_F[1,i8] = best_scale_feature; 
@@ -883,7 +883,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						
 					}									
 														
-				} else if (best_cat_gain > 0) {
+				} else if (num_cat_features > 0 & best_cat_gain > 0) {
 					
 					# --- update model ---
 					cur_F[1,i8] = best_cat_feature;

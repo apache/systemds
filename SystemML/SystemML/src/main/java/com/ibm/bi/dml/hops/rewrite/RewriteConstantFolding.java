@@ -155,6 +155,17 @@ public class RewriteConstantFolding extends HopRewriteRule
 				}
 			}		
 		}
+		//fold conjunctive predicate if at least one input is literal 'false'
+		else if( isApplicableFalseConjunctivePredicate(root) )
+		{
+			root = new LiteralOp(String.valueOf(false), false);
+		}
+		//fold disjunctive predicate if at least one input is literal 'true'
+		else if( isApplicableFalseConjunctivePredicate(root) )
+		{
+			root = new LiteralOp(String.valueOf(true), true);
+		}
+			
 		
 		//mark processed
 		root.setVisited( VisitStatus.DONE );
@@ -276,5 +287,37 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return (   hop instanceof UnaryOp 
 				&& in.get(0) instanceof LiteralOp 
 				&& HopRewriteUtils.isValueTypeCast(((UnaryOp)hop).getOp()));			
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 * @throws HopsException
+	 */
+	private boolean isApplicableFalseConjunctivePredicate( Hop hop ) 
+		throws HopsException
+	{
+		ArrayList<Hop> in = hop.getInput();
+		return (   hop instanceof BinaryOp 
+				&& ((BinaryOp)hop).getOp()==OpOp2.AND
+				&& ( (in.get(0) instanceof LiteralOp && !((LiteralOp)in.get(0)).getBooleanValue())   
+				   ||(in.get(1) instanceof LiteralOp && !((LiteralOp)in.get(1)).getBooleanValue())) );			
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 * @throws HopsException
+	 */
+	private boolean isApplicableTrueDisjunctivePredicate( Hop hop ) 
+		throws HopsException
+	{
+		ArrayList<Hop> in = hop.getInput();
+		return (   hop instanceof BinaryOp 
+				&& ((BinaryOp)hop).getOp()==OpOp2.OR
+				&& ( (in.get(0) instanceof LiteralOp && ((LiteralOp)in.get(0)).getBooleanValue())   
+				   ||(in.get(1) instanceof LiteralOp && ((LiteralOp)in.get(1)).getBooleanValue())) );			
 	}
 }

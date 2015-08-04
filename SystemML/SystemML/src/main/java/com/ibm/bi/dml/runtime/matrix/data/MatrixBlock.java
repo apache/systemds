@@ -1746,10 +1746,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				}
 				else
 				{
-					brow.deleteIndexRange(cl, cu);
-					for( int j=0; j<src.clen; j++ )
-						if( (val = src.denseBlock[ix+j]) != 0 ) 
-							brow.set(cl+j, val);	
+					brow.setIndexRange(cl, cu, src.denseBlock, ix, src.clen);
 				}
 				nonZeros += (brow.size() - lnnz);
 			}	

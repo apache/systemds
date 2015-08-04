@@ -356,7 +356,47 @@ public class SparseRow implements Serializable
 		System.arraycopy(indexes, end, indexes, start, size-end);
 		size-=(end-start);
 	}
-
+	
+	/**
+	 * Inserts a dense vector into a column range; calling this methods helps to
+	 * avoid repeated shifting of remaining values/indexes for every set value. 
+	 * 
+	 * @param lowerCol
+	 * @param upperCol
+	 * @param v
+	 * @param vix
+	 * @param len
+	 */
+	public void setIndexRange(int lowerCol, int upperCol, double[] v, int vix, int len)
+	{
+		int start = searchIndexesFirstGTE(lowerCol);
+		if( start < 0 ) { //nothing to delete/shift
+			for( int i=vix; i<vix+len; i++ )
+				append(lowerCol+i-vix, v[i]);
+			return;
+		}
+		
+		int end = searchIndexesFirstGT(upperCol);
+		if( end < 0 ) { //delete all remaining
+			size = start;
+			for( int i=vix; i<vix+len; i++ )
+				append(lowerCol+i-vix, v[i]);
+			return;
+		}
+		
+		//determine input nnz
+		int lnnz = 0;
+		for( int i=vix; i<vix+len; i++ )
+			lnnz += ( v[i] != 0 ) ? 1 : 0;
+		
+		//insert values
+		shiftRightByN(end, lnnz-(end-start));
+		for( int i=vix; i<vix+len; i++ )
+			if( v[i] != 0 ) {
+				values[ start+i-vix ] = v[i];
+				indexes[ start+i-vix ] = lowerCol+i-vix;
+			}
+	}
 
 	/**
 	 * 
@@ -403,6 +443,19 @@ public class SparseRow implements Serializable
 		values[index] = v;
 		indexes[index] = col;
 		size++;
+	}
+	
+	/**
+	 * 
+	 * @param index
+	 * @param n
+	 */
+	private void shiftRightByN(int index, int n) 
+	{		
+		//overlapping array copy (shift rhs values right by 1)
+		System.arraycopy(values, index, values, index+n, size-index);
+		System.arraycopy(indexes, index, indexes, index+n, size-index);
+		size+=n;
 	}
 	
 	/**

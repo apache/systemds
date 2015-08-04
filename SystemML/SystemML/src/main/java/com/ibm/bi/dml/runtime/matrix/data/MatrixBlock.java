@@ -1865,24 +1865,24 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		//this also does a best effort check for disjoint input blocks via the number of non-zeros
 		if( rlen != that.rlen || clen != that.clen )
 			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+rlen+"x"+clen+", source="+that.rlen+"x"+that.clen+")");
-		if( (long)this.nonZeros+ that.nonZeros > (long)rlen*clen )
+		if( (long)nonZeros+ that.nonZeros > (long)rlen*clen )
 			throw new DMLRuntimeException("Number of non-zeros mismatch on merge disjoint (target="+rlen+"x"+clen+", nnz target="+nonZeros+", nnz source="+that.nonZeros+")");
 		
 		//check for empty target (copy in full)
-		if( this.isEmptyBlock(false) ) {
-			this.copy(that);
+		if( isEmptyBlock(false) ) {
+			copy(that);
 			return;
 		}
 		
 		//core matrix block merge (guaranteed non-empty source/target, nnz maintenance not required)
-		long nnz = this.nonZeros + that.nonZeros;
+		long nnz = nonZeros + that.nonZeros;
 		if( sparse )
-			this.mergeIntoSparse(that, appendOnly);
+			mergeIntoSparse(that, appendOnly);
 		else
-			this.mergeIntoDense(that);	
+			mergeIntoDense(that);	
 		
 		//maintain number of nonzeros
-		this.nonZeros = nnz;
+		nonZeros = nnz;
 	}
 	
 	/**
@@ -1893,8 +1893,12 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	{
 		if( that.sparse ) //DENSE <- SPARSE
 		{
+			double[] a = denseBlock;
 			SparseRow[] b = that.sparseRows;
-			for( int i=0; i<rlen; i++ )
+			int m = rlen;
+			int n = clen;
+			
+			for( int i=0, aix=0; i<m; i++, aix+=n )
 				if( b[i] != null && !b[i].isEmpty() )
 				{
 					SparseRow brow = b[i];
@@ -1903,14 +1907,15 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 					double[] bval = brow.getValueContainer();
 					for( int j=0; j<blen; j++ )
 						if( bval[j] != 0 )
-							this.quickSetValue(i, bix[j], bval[j]);
+							a[ aix + bix[j] ] = bval[j];
 				}
 		}
 		else //DENSE <- DENSE
 		{
-			double[] a = this.denseBlock;
+			double[] a = denseBlock;
 			double[] b = that.denseBlock;
 			int len = rlen * clen;
+			
 			for( int i=0; i<len; i++ )
 				a[i] = ( b[i] != 0 ) ? b[i] : a[i];
 		}
@@ -1925,9 +1930,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	{
 		if( that.sparse ) //SPARSE <- SPARSE
 		{
-			SparseRow[] a = this.sparseRows;
+			SparseRow[] a = sparseRows;
 			SparseRow[] b = that.sparseRows;
-			for( int i=0; i<rlen; i++ ) 
+			int m = rlen;
+			
+			for( int i=0; i<m; i++ ) 
 			{
 				if( b[i] != null && !b[i].isEmpty() )
 				{
@@ -1938,38 +1945,43 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 					else
 					{
 						boolean appended = false;
+						SparseRow arow = a[i];
 						SparseRow brow = b[i];
 						int blen = brow.size();
 						int[] bix = brow.getIndexContainer();
 						double[] bval = brow.getValueContainer();
 						for( int j=0; j<blen; j++ ) {
 							if( bval[j] != 0 ) {
-								this.appendValue(i, bix[j], bval[j]);
+								arow.append(bix[j], bval[j]);
 								appended = true;
 							}
 						}
 						//only sort if value appended
 						if( !appendOnly && appended )
-							this.sparseRows[i].sort();		
+							arow.sort();		
 					}
 				}
 			}
 		}
 		else //SPARSE <- DENSE
 		{
+			SparseRow[] a = sparseRows;
 			double[] b = that.denseBlock;
-			for( int i=0, bix=0; i<rlen; i++, bix+=clen )
+			int m = rlen;
+			int n = clen;
+			
+			for( int i=0, bix=0; i<m; i++, bix+=n )
 			{
 				boolean appended = false;
-				for( int j=0; j<clen; j++ ) {
+				for( int j=0; j<n; j++ ) {
 					if( b[bix+j] != 0 ) {
-						this.appendValue(i, j, b[bix+j]);
+						appendValue(i, j, b[bix+j]);
 						appended = true;
 					}
 				}
 				//only sort if value appended
 				if( !appendOnly && appended )
-					this.sparseRows[i].sort();
+					a[i].sort();
 			}
 		}
 	}

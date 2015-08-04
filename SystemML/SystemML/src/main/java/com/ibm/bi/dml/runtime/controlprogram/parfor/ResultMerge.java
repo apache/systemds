@@ -109,16 +109,16 @@ public abstract class ResultMerge
 		{
 			int rows = in.getNumRows();
 			int cols = in.getNumColumns();
-				for( int i=0; i<rows; i++ )
-					for( int j=0; j<cols; j++ )
-					{	
-					    double value = in.getValueSparseUnsafe(i,j);  //input value
-						if(   (value != compare[i][j] && !Double.isNaN(value) )     //for new values only (div)
-							|| Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness 
-						{
-					    	out.quickSetValue( i, j, value );	
-						}
+			for( int i=0; i<rows; i++ )
+				for( int j=0; j<cols; j++ )
+				{	
+				    double value = in.getValueSparseUnsafe(i,j);  //input value
+					if(   (value != compare[i][j] && !Double.isNaN(value) )     //for new values only (div)
+						|| Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness 
+					{
+				    	out.quickSetValue( i, j, value );	
 					}
+				}
 		}
 		else //dense input format
 		{
@@ -126,16 +126,16 @@ public abstract class ResultMerge
 			//has at most 1/numThreads of all values in it.
 			int rows = in.getNumRows();
 			int cols = in.getNumColumns();
-				for( int i=0; i<rows; i++ )
-					for( int j=0; j<cols; j++ )
-					{
-					    double value = in.getValueDenseUnsafe(i,j);  //input value
-					    if(    (value != compare[i][j] && !Double.isNaN(value) )    //for new values only (div)
-					    	|| Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness
-					    {
-					    	out.quickSetValue( i, j, value );	
-					    }
-					}
+			for( int i=0; i<rows; i++ )
+				for( int j=0; j<cols; j++ )
+				{
+				    double value = in.getValueDenseUnsafe(i,j);  //input value
+				    if(    (value != compare[i][j] && !Double.isNaN(value) )    //for new values only (div)
+				    	|| Double.isNaN(value) != Double.isNaN(compare[i][j]) ) //NaN awareness
+				    {
+				    	out.quickSetValue( i, j, value );	
+				    }
+				}
 		}	
 	}
 

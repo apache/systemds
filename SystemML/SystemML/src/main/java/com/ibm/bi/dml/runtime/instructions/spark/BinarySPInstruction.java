@@ -7,33 +7,27 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.broadcast.Broadcast;
+
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.functionobjects.And;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.Divide;
-import com.ibm.bi.dml.runtime.functionobjects.Equals;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
-import com.ibm.bi.dml.runtime.functionobjects.LessThan;
-import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.Minus;
-import com.ibm.bi.dml.runtime.functionobjects.Modulus;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
-import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
-import com.ibm.bi.dml.runtime.functionobjects.Or;
-import com.ibm.bi.dml.runtime.functionobjects.Plus;
-import com.ibm.bi.dml.runtime.functionobjects.Power;
-import com.ibm.bi.dml.runtime.functionobjects.Power2;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixMatrixBinaryOpFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixVectorBinaryOpFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVectorFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.LeftScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.matrix.operators.RightScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 
 public abstract class BinarySPInstruction extends ComputationSPInstruction
@@ -42,22 +36,11 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public BinarySPInstruction(Operator op, 
-							 CPOperand in1, 
-							 CPOperand in2, 
-							 CPOperand out, 
-							 String opcode,
-						     String istr ){
+	public BinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr ){
 		super(op, in1, in2, out, opcode, istr);
 	}
 
-	public BinarySPInstruction(Operator op, 
-			 CPOperand in1, 
-			 CPOperand in2, 
-			 CPOperand in3, 
-			 CPOperand out, 
-			 String opcode,
-		     String istr ){
+	public BinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr ){
 		super(op, in1, in2, in3, out, opcode, istr);
 	}
 	
@@ -98,144 +81,120 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		
 		return opcode;
 	}
-	
-	//what follows is all the binary operators that we currently allow
-	
-	//scalar-scalar or matrix-matrix operator 
-	//is searched for by this function
-	public static BinaryOperator getBinaryOperator(String opcode) throws DMLRuntimeException{
-		if(opcode.equalsIgnoreCase("==") || opcode.equalsIgnoreCase("map=="))
-			return new BinaryOperator(Equals.getEqualsFnObject());
-		else if(opcode.equalsIgnoreCase("!=") || opcode.equalsIgnoreCase("map!="))
-			return new BinaryOperator(NotEquals.getNotEqualsFnObject());
-		else if(opcode.equalsIgnoreCase("<") || opcode.equalsIgnoreCase("map<"))
-			return new BinaryOperator(LessThan.getLessThanFnObject());
-		else if(opcode.equalsIgnoreCase(">") || opcode.equalsIgnoreCase("map>"))
-			return new BinaryOperator(GreaterThan.getGreaterThanFnObject());
-		else if(opcode.equalsIgnoreCase("<=") || opcode.equalsIgnoreCase("map<="))
-			return new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(">=") || opcode.equalsIgnoreCase("map>="))
-			return new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject());
-		else if(opcode.equalsIgnoreCase("&&"))
-			return new BinaryOperator(And.getAndFnObject());
-		else if(opcode.equalsIgnoreCase("||"))
-			return new BinaryOperator(Or.getOrFnObject());
-		else if(opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("map+"))
-			return new BinaryOperator(Plus.getPlusFnObject());
-		else if(opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("map-"))
-			return new BinaryOperator(Minus.getMinusFnObject());
-		else if(opcode.equalsIgnoreCase("*") || opcode.equalsIgnoreCase("map*"))
-			return new BinaryOperator(Multiply.getMultiplyFnObject());
-		else if ( opcode.equalsIgnoreCase("*2") ) 
-			return new BinaryOperator(Multiply2.getMultiply2FnObject());
-		else if(opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("map/"))
-			return new BinaryOperator(Divide.getDivideFnObject());
-		else if(opcode.equalsIgnoreCase("%%") || opcode.equalsIgnoreCase("map%%"))
-			return new BinaryOperator(Modulus.getModulusFnObject());
-		else if(opcode.equalsIgnoreCase("%/%") || opcode.equalsIgnoreCase("map%/%"))
-			return new BinaryOperator(IntegerDivide.getIntegerDivideFnObject());
-		else if(opcode.equalsIgnoreCase("^") || opcode.equalsIgnoreCase("map^"))
-			return new BinaryOperator(Power.getPowerFnObject());
-		else if ( opcode.equalsIgnoreCase("^2") )
-			return new BinaryOperator(Power2.getPower2FnObject());
-		else if ( opcode.equalsIgnoreCase("max") ) 
-			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
-		else if ( opcode.equalsIgnoreCase("min") ) 
-			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
+
+	/**
+	 * Common binary matrix-matrix process instruction
+	 * 
+	 * @param ec
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	protected void processMatrixMatrixBinaryInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
+		//sanity check dimensions
+		checkMatrixMatrixBinaryCharacteristics(sec);
+		
+		// Get input RDDs
+		String rddVar1 = input1.getName();
+		String rddVar2 = input2.getName();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar1 );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( rddVar2 );
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( rddVar1 );
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics( rddVar2 );
+		
+		BinaryOperator bop = (BinaryOperator) _optr;
+	
+		//vector replication if required (mv or outer operations)
+		boolean rowvector = (mc2.getRows()==1 && mc1.getRows()>1);
+		long numRepLeft = getNumReplicas(mc1, mc2, true);
+		long numRepRight = getNumReplicas(mc1, mc2, false);
+		if( numRepLeft > 1 )
+			in1 = in1.flatMapToPair(new ReplicateVectorFunction(false, numRepLeft ));
+		if( numRepRight > 1 )
+			in2 = in2.flatMapToPair(new ReplicateVectorFunction(rowvector, numRepRight));
+		
+		//execute binary operation
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
+				.join(in2)
+				.mapValues(new MatrixMatrixBinaryOpFunction(bop));
+		
+		//set output RDD
+		updateBinaryOutputMatrixCharacteristics(sec);
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), rddVar1);
+		sec.addLineageRDD(output.getName(), rddVar2);
 	}
 	
-	//scalar-matrix operator is searched for by this function
-	static ScalarOperator getScalarOperator(String opcode,
-											boolean arg1IsScalar)
-		throws DMLRuntimeException{
-		double default_constant = 0;
+	/**
+	 * 
+	 * @param ec
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	protected void processMatrixBVectorBinaryInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		//commutative operators
-		if ( opcode.equalsIgnoreCase("+") ){ 
-			return new RightScalarOperator(Plus.getPlusFnObject(), default_constant); 
-		}
-		else if ( opcode.equalsIgnoreCase("*") ) {
-			return new RightScalarOperator(Multiply.getMultiplyFnObject(), default_constant);
-		} 
-		//non-commutative operators but both scalar-matrix and matrix-scalar makes sense
-		else if ( opcode.equalsIgnoreCase("-") ) {
-			if(arg1IsScalar)
-				return new LeftScalarOperator(Minus.getMinusFnObject(), default_constant);
-			else return new RightScalarOperator(Minus.getMinusFnObject(), default_constant);
-		} 
-		else if ( opcode.equalsIgnoreCase("/") ) {
-			if(arg1IsScalar)
-				return new LeftScalarOperator(Divide.getDivideFnObject(), default_constant);
-			else return new RightScalarOperator(Divide.getDivideFnObject(), default_constant);
-		}  
-		else if ( opcode.equalsIgnoreCase("%%") ) {
-			if(arg1IsScalar)
-				return new LeftScalarOperator(Modulus.getModulusFnObject(), default_constant);
-			else return new RightScalarOperator(Modulus.getModulusFnObject(), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase("%/%") ) {
-			if(arg1IsScalar)
-				return new LeftScalarOperator(IntegerDivide.getIntegerDivideFnObject(), default_constant);
-			else return new RightScalarOperator(IntegerDivide.getIntegerDivideFnObject(), default_constant);
-		}
-		//operations for which only matrix-scalar makes sense
-		else if ( opcode.equalsIgnoreCase("^") ){
-			if(arg1IsScalar)
-				return new LeftScalarOperator(Power.getPowerFnObject(), default_constant);
-			else return new RightScalarOperator(Power.getPowerFnObject(), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase("max") ) {
-			return new RightScalarOperator(Builtin.getBuiltinFnObject("max"), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase("min") ) {
-			return new RightScalarOperator(Builtin.getBuiltinFnObject("min"), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase("log") ){
-			return new RightScalarOperator(Builtin.getBuiltinFnObject("log"), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase(">") ) {
-			if(arg1IsScalar)
-				return new LeftScalarOperator(GreaterThan.getGreaterThanFnObject(), default_constant);
-			return new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase(">=") ) {
-			if(arg1IsScalar)
-				return new LeftScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), default_constant);
-			return new RightScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase("<") ) {
-			if(arg1IsScalar)
-				return new LeftScalarOperator(LessThan.getLessThanFnObject(), default_constant);
-			return new RightScalarOperator(LessThan.getLessThanFnObject(), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase("<=") ) {
-			if(arg1IsScalar)
-				return new LeftScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), default_constant);
-			return new RightScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase("==") ) {
-			if(arg1IsScalar)
-				return new LeftScalarOperator(Equals.getEqualsFnObject(), default_constant);
-			return new RightScalarOperator(Equals.getEqualsFnObject(), default_constant);
-		}
-		else if ( opcode.equalsIgnoreCase("!=") ) {
-			if(arg1IsScalar)
-				return new LeftScalarOperator(NotEquals.getNotEqualsFnObject(), default_constant);
-			return new RightScalarOperator(NotEquals.getNotEqualsFnObject(), default_constant);
-		}
+		//sanity check dimensions
+		checkMatrixMatrixBinaryCharacteristics(sec);
+
+		//get input RDDs
+		String rddVar = input1.getName(); 
+		String bcastVar = input2.getName();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
+		Broadcast<PartitionedMatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(rddVar);
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(bcastVar);
 		
-		//operation that only exist for performance purposes
-		else if ( opcode.equalsIgnoreCase("*2") ) {
-			return new RightScalarOperator(Multiply2.getMultiply2FnObject(), default_constant);
-		} 
-		else if ( opcode.equalsIgnoreCase("^2") ){
-			return new RightScalarOperator(Power2.getPower2FnObject(), default_constant);
-		}
+		BinaryOperator bop = (BinaryOperator) _optr;
+		boolean isColVector = (mc2.getCols() == 1);
+		boolean isOuter = (mc1.getCols() == 1 && mc2.getRows() == 1);
 		
-		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
+		//execute map binary operation
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
+				.flatMapToPair(new MatrixVectorBinaryOpFunction(true, isColVector, in2, bop, isOuter));
+		
+		//set output RDD
+		updateBinaryOutputMatrixCharacteristics(sec);
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), rddVar);
+		sec.addLineageBroadcast(output.getName(), bcastVar);
 	}
+	
+	/**
+	 * 
+	 * @param ec
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	protected void processMatrixScalarBinaryInstruction(ExecutionContext ec) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		SparkExecutionContext sec = (SparkExecutionContext)ec;
+	
+		//get input RDD
+		String rddVar = (input1.getDataType() == DataType.MATRIX) ? input1.getName() : input2.getName();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
+		
+		//get operator and scalar
+		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
+		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
+		ScalarOperator sc_op = (ScalarOperator) _optr;
+		sc_op.setConstant(constant.getDoubleValue());
+		
+		//execute scalar matrix arithmetic instruction
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapValues( new MatrixScalarUnaryFunction(sc_op) );
+			
+		//put output RDD handle into symbol table
+		updateUnaryOutputMatrixCharacteristics(sec, rddVar, output.getName());
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), rddVar);
+	}
+	
 	
 	/**
 	 * 
@@ -260,23 +219,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 			}
 		}	
 	}
-	
 
-	protected String getReplicatedVar(String rddVar1, String rddVar2, boolean isRowVectorOperation, MatrixCharacteristics mc1) {
-		String replicatedVar = rddVar2;
-		if(isRowVectorOperation) {
-			if(mc1.getCols() == 1) {
-				replicatedVar = rddVar1;
-			}
-		}
-		else {
-			if(mc1.getRows() == 1) {
-				replicatedVar = rddVar1;
-			}
-		}
-		return replicatedVar;
-	}
-	
 	/**
 	 * 
 	 * @param mc1

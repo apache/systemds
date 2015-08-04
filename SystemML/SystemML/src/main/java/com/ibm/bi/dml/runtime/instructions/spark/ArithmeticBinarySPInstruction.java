@@ -64,8 +64,8 @@ public abstract class ArithmeticBinarySPInstruction extends BinarySPInstruction
 		DataType dt2 = in2.getDataType();
 		
 		Operator operator = (dt1 != dt2) ?
-					getScalarOperator(opcode, (dt1 == DataType.SCALAR))
-					: getBinaryOperator(opcode);
+					InstructionUtils.parseScalarBinaryOperator(opcode, (dt1 == DataType.SCALAR))
+					: InstructionUtils.parseExtendedBinaryOperator(opcode);
 		
 		if (dt1 == DataType.MATRIX || dt2 == DataType.MATRIX)
 		{				

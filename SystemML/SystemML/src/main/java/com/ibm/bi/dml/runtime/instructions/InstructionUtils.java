@@ -594,9 +594,61 @@ public class InstructionUtils
 		}
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
+	}	
+
+
+	/**
+	 * 
+	 * @param opcode
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static BinaryOperator parseExtendedBinaryOperator(String opcode) 
+		throws DMLRuntimeException
+	{
+		if(opcode.equalsIgnoreCase("==") || opcode.equalsIgnoreCase("map=="))
+			return new BinaryOperator(Equals.getEqualsFnObject());
+		else if(opcode.equalsIgnoreCase("!=") || opcode.equalsIgnoreCase("map!="))
+			return new BinaryOperator(NotEquals.getNotEqualsFnObject());
+		else if(opcode.equalsIgnoreCase("<") || opcode.equalsIgnoreCase("map<"))
+			return new BinaryOperator(LessThan.getLessThanFnObject());
+		else if(opcode.equalsIgnoreCase(">") || opcode.equalsIgnoreCase("map>"))
+			return new BinaryOperator(GreaterThan.getGreaterThanFnObject());
+		else if(opcode.equalsIgnoreCase("<=") || opcode.equalsIgnoreCase("map<="))
+			return new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject());
+		else if(opcode.equalsIgnoreCase(">=") || opcode.equalsIgnoreCase("map>="))
+			return new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject());
+		else if(opcode.equalsIgnoreCase("&&"))
+			return new BinaryOperator(And.getAndFnObject());
+		else if(opcode.equalsIgnoreCase("||"))
+			return new BinaryOperator(Or.getOrFnObject());
+		else if(opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("map+"))
+			return new BinaryOperator(Plus.getPlusFnObject());
+		else if(opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("map-"))
+			return new BinaryOperator(Minus.getMinusFnObject());
+		else if(opcode.equalsIgnoreCase("*") || opcode.equalsIgnoreCase("map*"))
+			return new BinaryOperator(Multiply.getMultiplyFnObject());
+		else if ( opcode.equalsIgnoreCase("*2") ) 
+			return new BinaryOperator(Multiply2.getMultiply2FnObject());
+		else if(opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("map/"))
+			return new BinaryOperator(Divide.getDivideFnObject());
+		else if(opcode.equalsIgnoreCase("%%") || opcode.equalsIgnoreCase("map%%"))
+			return new BinaryOperator(Modulus.getModulusFnObject());
+		else if(opcode.equalsIgnoreCase("%/%") || opcode.equalsIgnoreCase("map%/%"))
+			return new BinaryOperator(IntegerDivide.getIntegerDivideFnObject());
+		else if(opcode.equalsIgnoreCase("^") || opcode.equalsIgnoreCase("map^"))
+			return new BinaryOperator(Power.getPowerFnObject());
+		else if ( opcode.equalsIgnoreCase("^2") )
+			return new BinaryOperator(Power2.getPower2FnObject());
+		else if ( opcode.equalsIgnoreCase("max") ) 
+			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
+		else if ( opcode.equalsIgnoreCase("min") ) 
+			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
+		
+		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
 	}
 	
-
+	
 	/**
 	 * 
 	 * @param opcode

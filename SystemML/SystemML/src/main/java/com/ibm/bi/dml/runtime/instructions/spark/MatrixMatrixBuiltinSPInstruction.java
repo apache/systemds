@@ -7,19 +7,10 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
-import org.apache.spark.api.java.JavaPairRDD;
-
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixMatrixBinaryOpFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVectorFunction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public class MatrixMatrixBuiltinSPInstruction extends BuiltinBinarySPInstruction
@@ -37,39 +28,7 @@ public class MatrixMatrixBuiltinSPInstruction extends BuiltinBinarySPInstruction
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{	
-		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		
-		//sanity check dimensions
-		checkMatrixMatrixBinaryCharacteristics(sec);
-		
-		// Get input RDDs
-		String rddVar1 = input1.getName();
-		String rddVar2 = input2.getName();
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar1 );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( rddVar2 );
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( rddVar1 );
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics( rddVar2 );
-		
-		BinaryOperator bop = (BinaryOperator) _optr;
-	
-		//vector replication if required (mv or outer operations)
-		boolean rowvector = (mc2.getRows()==1 && mc1.getRows()>1);
-		long numRepLeft = getNumReplicas(mc1, mc2, true);
-		long numRepRight = getNumReplicas(mc1, mc2, false);
-		if( numRepLeft > 1 )
-			in1 = in1.flatMapToPair(new ReplicateVectorFunction(false, numRepLeft ));
-		if( numRepRight > 1 )
-			in2 = in2.flatMapToPair(new ReplicateVectorFunction(rowvector, numRepRight));
-	
-		//execute binary operation
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-				.join(in2)
-				.mapValues(new MatrixMatrixBinaryOpFunction(bop));
-		
-		//set output RDD
-		updateBinaryOutputMatrixCharacteristics(sec);
-		sec.setRDDHandleForVariable(output.getName(), out);
-		sec.addLineageRDD(output.getName(), input1.getName());
-		sec.addLineageRDD(output.getName(), input2.getName());
+		//common binary matrix-matrix process instruction
+		super.processMatrixMatrixBinaryInstruction(ec);
 	}
 }

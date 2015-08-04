@@ -13,14 +13,13 @@ import java.util.Arrays;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixUaggOuter;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
@@ -148,8 +147,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 			//process instruction
 			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
 			
-			if(    _bOp.fn instanceof LessThan && _uaggOp.aggOp.increOp.fn instanceof KahanPlus
-				&& _uaggOp.indexFn instanceof ReduceCol ) //special case: rowsSums(outer(A,B,<))
+			if (LibMatrixUaggOuter.isSupportedUnaryAggregateOperator(_uaggOp, _bOp))
 			{
 				//approach: for each ai, do binary search in B, position gives counts
 				//step 1: prepare sorted rhs input (once per task)
@@ -157,24 +155,9 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 					_bv = dcInput.getRowVectorArray();
 					Arrays.sort(_bv);
 				}
+		
+				LibMatrixUaggOuter.aggregateMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _bv);
 				
-				//step2: prepare output (last col corr)
-				outIx.setIndexes(in1Ix.getRowIndex(), 1); 
-				outVal.reset(in1Val.getNumRows(), 2, false);
-				
-				//step3: compute unary aggregate outer chain
-				MatrixBlock a = (MatrixBlock)in1Val;
-				MatrixBlock c = (MatrixBlock)outVal;
-				for( int i=0; i<a.getNumRows(); i++ ) {
-					double ai = a.quickGetValue(i, 0);
-					int ix = Arrays.binarySearch(_bv, ai);
-					if( ix >= 0 ){ //match, scan to next val
-						while( ai==_bv[ix++] && ix<_bv.length );
-						ix += (ai==_bv[_bv.length-1])?1:0;
-					}
-					int cnt = _bv.length-Math.abs(ix)+1;
-					c.quickSetValue(i, 0, cnt);
-				}
 			}
 			else //default case 
 			{

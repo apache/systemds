@@ -73,31 +73,31 @@ public class UaggOuterChainTest extends AutomatedTestBase
 	}
 	
 	// -------------------------
-	/*
+	
 	@Test
-	public void testBinUaggChainColSingleDenseSP() 
+	public void testUaggOuterChainSingleDenseSP() 
 	{
 		 runBinUaggTest(TEST_NAME1, true, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinUaggChainColSingleSparseSP() 
+	public void testUaggOuterChainSingleSparseSP() 
 	{
 		runBinUaggTest(TEST_NAME1, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinUaggChainColMultiDenseSP() 
+	public void testUaggOuterChainMultiDenseSP() 
 	{
 		runBinUaggTest(TEST_NAME1, false, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinUaggChainColMultiSparseSP() 
+	public void testUaggOuterChainMultiSparseSP() 
 	{
 		runBinUaggTest(TEST_NAME1, false, true, ExecType.SPARK);
 	}
-	*/
+	
 	// ----------------------
 	
 
@@ -130,7 +130,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
+			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
 					                            HOME + INPUT_DIR + "B",
 					                            HOME + OUTPUT_DIR + "C"};
 			fullRScriptName = HOME + TEST_NAME + ".R";

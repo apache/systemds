@@ -181,6 +181,9 @@ public class AggUnaryOp extends Hop
 			}
 			else if( et == ExecType.SPARK )
 			{
+				OperationTypes op = HopsAgg2Lops.get(_op);
+				DirectionTypes dir = HopsDirection2Lops.get(_direction);
+
 				//unary aggregate
 				if( isTernaryAggregateRewriteApplicable() ) 
 				{
@@ -189,6 +192,16 @@ public class AggUnaryOp extends Hop
 					setLineNumbers(aggregate);
 					setLops(aggregate);
 				}
+				else if( isUnaryAggregateOuterSPRewriteApplicable() ) 
+				{
+					BinaryOp binput = (BinaryOp)getInput().get(0);
+					Lop transform1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
+							binput.getInput().get(1).constructLops(), op, dir, 
+							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.SPARK);
+					PartialAggregate.setDimensionsBasedOnDirection(transform1, getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), dir);
+					setLineNumbers(transform1);
+					setLops(transform1);
+				}				
 				else //default
 				{
 					boolean needAgg = requiresAggregation(input, _direction);
@@ -454,6 +467,43 @@ public class AggUnaryOp extends Hop
 				  < OptimizerUtils.getRemoteMemBudgetMap(true)) //dims known and estimate fits
 			   ||(!right.dimsKnown() && factor*right.getOutputMemEstimate()
 				  <	OptimizerUtils.getRemoteMemBudgetMap(true)))//dims unknown but worst-case estimate fits 
+			{
+				ret = true;
+			}
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * This will check if there is sufficient memory locally (twice the size of second matrix, for original and sort data), and remotely (size of second matrix (sorted data)).  
+	 * @return
+	 */
+	private boolean isUnaryAggregateOuterSPRewriteApplicable() 
+	{
+		boolean ret = false;
+		Hop input = getInput().get(0);
+		
+		if( input instanceof BinaryOp && ((BinaryOp)input).isOuterVectorOperator() )
+		{
+			//for special cases, we need to hold the broadcast twice in order to allow for
+			//an efficient binary search over a plain java array
+			double factor = (((BinaryOp)input).getOp()==OpOp2.LESS 
+					&& _direction == Direction.Row && _op == AggOp.SUM) ? 2.0 : 1.0;
+			
+			//note: memory constraint only needs to take the rhs into account because the output
+			//is guaranteed to be an aggregate of <=16KB
+			Hop right = input.getInput().get(1);
+			if((  (right.dimsKnown() && OptimizerUtils.estimateSize(right.getDim1(), right.getDim2())
+				  < OptimizerUtils.getRemoteMemBudgetMap(true)) //dims known and estimate fits
+			   ||(!right.dimsKnown() && right.getOutputMemEstimate()
+				  <	OptimizerUtils.getRemoteMemBudgetMap(true)))//dims unknown but worst-case estimate fits
+				&&
+				  ((right.dimsKnown() && factor*OptimizerUtils.estimateSize(right.getDim1(), right.getDim2())
+						  < OptimizerUtils.getLocalMemBudget()) //dims known and estimate fits
+					   ||(!right.dimsKnown() && factor*right.getOutputMemEstimate()
+						  <	OptimizerUtils.getLocalMemBudget())))//dims unknown but worst-case estimate fits
+						
 			{
 				ret = true;
 			}

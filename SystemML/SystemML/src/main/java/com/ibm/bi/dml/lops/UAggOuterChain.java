@@ -118,9 +118,34 @@ public class UAggOuterChain extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input1, String output)
+	public String getInstructions(String input1, String input2, String output)
 	{
-		throw new RuntimeException("not implemented yet.");
+		StringBuilder sb = new StringBuilder();
+		
+		//exec type
+		sb.append(getExecType());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		
+		//inst op code
+		sb.append(OPCODE);
+		sb.append(Lop.OPERAND_DELIMITOR);
+
+		//outer operation op code
+		sb.append(PartialAggregate.getOpcode(_uaggOp, _uaggDir));		
+		sb.append(Lop.OPERAND_DELIMITOR);
+
+		//inner operation op code
+		sb.append(Binary.getOpcode(_binOp));
+		sb.append(Lop.OPERAND_DELIMITOR);
+				
+		//inputs and outputs
+		sb.append( getInputs().get(0).prepInputOperand(input1));
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(0).prepInputOperand(input2));
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( this.prepOutputOperand(output));
+				
+		return sb.toString();
 	}
 	
 	

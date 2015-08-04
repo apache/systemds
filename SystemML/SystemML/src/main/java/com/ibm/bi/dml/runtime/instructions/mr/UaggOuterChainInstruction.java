@@ -19,7 +19,7 @@ import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.LibMatrixUaggOuter;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixOuterAgg;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
@@ -147,7 +147,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 			//process instruction
 			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
 			
-			if (LibMatrixUaggOuter.isSupportedUnaryAggregateOperator(_uaggOp, _bOp))
+			if (LibMatrixOuterAgg.isSupportedUnaryAggregateOperator(_uaggOp, _bOp))
 			{
 				//approach: for each ai, do binary search in B, position gives counts
 				//step 1: prepare sorted rhs input (once per task)
@@ -156,7 +156,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 					Arrays.sort(_bv);
 				}
 		
-				LibMatrixUaggOuter.aggregateMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _bv);
+				LibMatrixOuterAgg.aggregateMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _bv);
 				
 			}
 			else //default case 

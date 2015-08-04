@@ -32,7 +32,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.BinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.LibMatrixUaggOuter;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixOuterAgg;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
@@ -126,7 +126,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		//execute UAggOuterChain instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;		
 
-		if (LibMatrixUaggOuter.isSupportedUnaryAggregateOperator(_uaggOp, _bOp))
+		if (LibMatrixOuterAgg.isSupportedUnaryAggregateOperator(_uaggOp, _bOp))
 		{
 			//created sorted rhs matrix broadcast
 			MatrixBlock mb = sec.getMatrixInput(input2.getName());
@@ -226,7 +226,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			MatrixIndexes outIx = new MatrixIndexes();
 			MatrixBlock outVal = new MatrixBlock();
 			
-			LibMatrixUaggOuter.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value());
+			LibMatrixOuterAgg.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value());
 
 			return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);
 		}
@@ -298,7 +298,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 				OperationsOnMatrixValues.performAggregateUnary( in1Ix, _tmpVal1, outIx, _tmpVal2, _uaggOp, _brlen, _bclen);
 				
 				//aggregate over all rhs blocks
-				if( corr == null ) {		//TODO
+				if( corr == null ) {
 					outVal.reset(_tmpVal2.getNumRows(), _tmpVal2.getNumColumns(), false);
 					corr = new MatrixBlock(_tmpVal2.getNumRows(), _tmpVal2.getNumColumns(), false);
 				}

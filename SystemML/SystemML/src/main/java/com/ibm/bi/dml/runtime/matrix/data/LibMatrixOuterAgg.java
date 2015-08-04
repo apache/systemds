@@ -18,22 +18,13 @@ import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 
 /**
  * ACS:
- * Library for matrix aggregations including TODO ak+, uak+ for all
- * combinations of dense and sparse representations, and corrections.
- * Those are performance-critical operations because they are used
- * on combiners/reducers of important operations like tsmm, mvmult,
- * indexing, but also basic sum/min/max/mean, row*, col*, etc. Specific
- * handling is especially required for all non sparse-safe operations
- * in order to prevent unnecessary worse asymptotic behavior.
- *
- * This library currently covers the following opcodes:
- * TODO ak+, uak+, uark+, uack+, uamin, uarmin, uacmin, uamax, uarmax, uacmax,
- * TODO ua*, uamean, uarmean, uacmean, uarimax, uaktrace.
- * 
- * TODO next opcode extensions: a+, colindexmax
- * TODO low level optimization (potential 3x, sum non-conclusive yet)
+ * Purpose of this library is to make some of the unary outer aggregate operator more efficient.
+ * Today these operators are being handled through common operations.
+ * This library will expand per need and priority to include these operators through this support.
+ * To begin with, first operator being handled is unary aggregate for less than (<), rowsum operation.
+ * Other list will be added soon are rowsum on >, <=, >=, ==, and != operation.  
  */
-public class LibMatrixUaggOuter 
+public class LibMatrixOuterAgg 
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
@@ -41,7 +32,7 @@ public class LibMatrixUaggOuter
 
 
 
-	private LibMatrixUaggOuter() {
+	private LibMatrixOuterAgg() {
 		//prevent instantiation via private constructor
 	}
 	

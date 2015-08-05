@@ -86,21 +86,15 @@ print ("Reading X and Y...");
 X_orig = read (fileX);
 Y = read (fileY);
 
-Y_min = min (Y);
-Y_max = max (Y);
-if (bernoulli_No_label != Y_min & bernoulli_No_label != Y_max) {
-	stop ("GLM Input Error: No-label is not among Y-values");
-}
-
 if (distribution_type == 2 & ncol(Y) == 1) {
 	is_Y_negative = ppred (Y, bernoulli_No_label, "==");
 	Y = append (1 - is_Y_negative, is_Y_negative);
 	count_Y_negative = sum (is_Y_negative);
 	if (count_Y_negative == 0) {
-		stop ("GLM Input Error: all Y-values encode Bernoulli YES-label, none encode NO-label");
+		stop ("StepGLM Input Error: all Y-values encode Bernoulli YES-label, none encode NO-label");
 	}
 	if (count_Y_negative == nrow(Y)) {
-		stop ("GLM Input Error: all Y-values encode Bernoulli NO-label, none encode YES-label");
+		stop ("StepGLM Input Error: all Y-values encode Bernoulli NO-label, none encode YES-label");
 	}
 }
 

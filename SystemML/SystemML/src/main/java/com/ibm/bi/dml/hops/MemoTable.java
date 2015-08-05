@@ -181,10 +181,12 @@ public class MemoTable
 		
 		//determine if hop itself has worst-case stats (this is important
 		//for transient read with cross-dag worst-case estimates)
-		if( h instanceof DataOp && ((DataOp)h).getDataOpType()==DataOpTypes.TRANSIENTREAD ) {
-			return true;
+		if(   (h instanceof DataOp && ((DataOp)h).getDataOpType()==DataOpTypes.TRANSIENTREAD)
+		    ||(h instanceof DataGenOp) ) 
+		{
+			ret = true;
 		}
-			
+		
 		return ret;
 	}
 	

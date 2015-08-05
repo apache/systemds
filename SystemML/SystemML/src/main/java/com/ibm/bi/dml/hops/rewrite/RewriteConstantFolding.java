@@ -161,7 +161,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 			root = new LiteralOp(String.valueOf(false), false);
 		}
 		//fold disjunctive predicate if at least one input is literal 'true'
-		else if( isApplicableFalseConjunctivePredicate(root) )
+		else if( isApplicableTrueDisjunctivePredicate(root) )
 		{
 			root = new LiteralOp(String.valueOf(true), true);
 		}

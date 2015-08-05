@@ -1694,9 +1694,15 @@ public abstract class Hop
 					{
 						case PLUS:	ret = lret + rret; break;
 						case MULT:  ret = lret * rret; break;
+						case MIN:   ret = Math.min(lret, rret); break;
 						case MAX:   ret = Math.max(lret, rret); break;
 						default:    ret = Long.MAX_VALUE;
 					}
+				}
+				//exploit min constraint to propagate 
+				else if( broot.getOp()==OpOp2.MIN && (lret!=Double.MAX_VALUE || rret!=Double.MAX_VALUE) )
+				{
+					ret = Math.min(lret, rret);
 				}
 			}
 		}

@@ -136,7 +136,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			
 			_bv = sec.getSparkContext().broadcast(bv);
 		
-			out = in1.mapToPair( new RDDMapUAggOuterChainFunction(_bv) );
+			out = in1.mapToPair( new RDDMapUAggOuterChainFunction(_bv, _bOp) );
 		}
 		else
 		{
@@ -201,11 +201,13 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 
 		private Broadcast<double[]> _bv = null;
 		
+		private BinaryOperator _bOp = null;
+
 		//reused intermediates  
 		
 
 		
-		public RDDMapUAggOuterChainFunction(Broadcast<double[]> bv)
+		public RDDMapUAggOuterChainFunction(Broadcast<double[]> bv, BinaryOperator bOp)
 		{
 			// Do not get data from BroadCast variables here, as it will try to deserialize the data whenever it gets instantiated through driver class. This will cause unnecessary delay in iinstantiating class
 			// through driver, and overall process.
@@ -213,6 +215,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 
 			//Sorted array
 			_bv = bv;
+			_bOp = bOp;
 			
 		}
 		
@@ -226,7 +229,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			MatrixIndexes outIx = new MatrixIndexes();
 			MatrixBlock outVal = new MatrixBlock();
 			
-			LibMatrixOuterAgg.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value());
+			LibMatrixOuterAgg.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value(), _bOp);
 
 			return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);
 		}

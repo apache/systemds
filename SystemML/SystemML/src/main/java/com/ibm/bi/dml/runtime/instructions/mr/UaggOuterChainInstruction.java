@@ -156,7 +156,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 					Arrays.sort(_bv);
 				}
 		
-				LibMatrixOuterAgg.aggregateMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _bv);
+				LibMatrixOuterAgg.aggregateMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _bv, _bOp);
 				
 			}
 			else //default case 

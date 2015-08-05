@@ -41,6 +41,15 @@ public class UaggOuterChainTest extends AutomatedTestBase
 	private final static double sparsity1 = 0.5; //dense 
 	private final static double sparsity2 = 0.1; //sparse
 	
+	public enum Type{
+		GREATER,
+		LESS,
+		EQUALS,
+		NOT_EQUALS,
+		GREATER_EQUALS,
+		LESS_EQUALS,
+	}
+		
 	@Override
 	public void setUp() 
 	{
@@ -48,55 +57,314 @@ public class UaggOuterChainTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "C" })); 
 	}
 
+	// Less Uagg sum -- MR
 	@Test
 	public void testUaggOuterChainSingleDenseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, true, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS, true, false, ExecType.MR);
 	}
 	
 	@Test
 	public void testUaggOuterChainSingleSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, true, true, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS, true, true, ExecType.MR);
 	}
 	
 	@Test
 	public void testUaggOuterChainMultiDenseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, false, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, false, ExecType.MR);
 	}
 	
 	@Test
 	public void testUaggOuterChainMultiSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, false, true, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, true, ExecType.MR);
 	}
 	
+	// Greater Uagg sum -- MR
+	@Test
+	public void testGreaterUaggOuterChainSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, true, ExecType.MR);
+	}
+	
+	// LessEquals Uagg sum -- MR
+	@Test
+	public void testLessEqualsUaggOuterChainSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, true, ExecType.MR);
+	}
+	
+	// GreaterEquals Uagg sum -- MR
+	@Test
+	public void testGreaterEqualsUaggOuterChainSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, ExecType.MR);
+	}
+	
+	// Equals Uagg sum -- MR
+	@Test
+	public void testEqualsUaggOuterChainSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, ExecType.MR);
+	}
+	
+	// NotEquals Uagg sum -- MR
+	@Test
+	public void testNotEqualsUaggOuterChainSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, true, ExecType.MR);
+	}
+	
+
 	// -------------------------
-	
+
+	// Less Uagg sum
 	@Test
-	public void testUaggOuterChainSingleDenseSP() 
+	public void testLessUaggOuterChainSingleDenseSP() 
 	{
-		 runBinUaggTest(TEST_NAME1, true, false, ExecType.SPARK);
+		 runBinUaggTest(TEST_NAME1, Type.LESS, true, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testUaggOuterChainSingleSparseSP() 
+	public void testLessUaggOuterChainSingleSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, true, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.LESS, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testUaggOuterChainMultiDenseSP() 
+	public void testLessUaggOuterChainMultiDenseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, false, false, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testUaggOuterChainMultiSparseSP() 
+	public void testLessUaggOuterChainMultiSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, false, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, true, ExecType.SPARK);
 	}
+	
+	// Greater Uagg sum
+	@Test
+	public void testGreaterUaggOuterChainSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, true, ExecType.SPARK);
+	}
+
+	
+	// LessEquals Uagg sum
+	@Test
+	public void testLessEqualsUaggOuterChainSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, true, ExecType.SPARK);
+	}
+	
+	
+	// GreaterEquals Uagg sum
+	@Test
+	public void testGreaterEqualsUaggOuterChainSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, ExecType.SPARK);
+	}
+	
+	
+	// Equals Uagg sum
+	@Test
+	public void testEqualsUaggOuterChainSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, ExecType.SPARK);
+	}
+	
+
+
+	// NotEquals Uagg sum
+	@Test
+	public void testNotEqualsUaggOuterChainSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, true, ExecType.SPARK);
+	}
+	
 	
 	// ----------------------
 	
@@ -108,7 +376,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runBinUaggTest( String testname, boolean singleBlock, boolean sparse, ExecType instType)
+	private void runBinUaggTest( String testname, Type type, boolean singleBlock, boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -128,12 +396,37 @@ public class UaggOuterChainTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+
+			String suffix = "";
+			
+			switch (type) {
+				case GREATER:
+					suffix = "Greater";
+					break;
+				case LESS:
+					suffix = "";
+					break;
+				case EQUALS:
+					suffix = "Equals";
+					break;
+				case NOT_EQUALS:
+					suffix = "NotEquals";
+					break;
+				case GREATER_EQUALS:
+					suffix = "GreaterEquals";
+					break;
+				case LESS_EQUALS:
+					suffix = "LessEquals";
+					break;
+			}
+
+			
+			String HOME = SCRIPT_DIR + TEST_DIR;			
+			fullDMLScriptName = HOME + TEST_NAME + suffix + ".dml";
 			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
 					                            HOME + INPUT_DIR + "B",
 					                            HOME + OUTPUT_DIR + "C"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
+			fullRScriptName = HOME + TEST_NAME + suffix +".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
 			

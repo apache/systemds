@@ -488,7 +488,9 @@ public class AggUnaryOp extends Hop
 		{
 			//for special cases, we need to hold the broadcast twice in order to allow for
 			//an efficient binary search over a plain java array
-			double factor = (((BinaryOp)input).getOp()==OpOp2.LESS 
+			double factor = (( ((BinaryOp)input).getOp()==OpOp2.LESS || ((BinaryOp)input).getOp()==OpOp2.GREATER
+							|| ((BinaryOp)input).getOp()==OpOp2.LESSEQUAL || ((BinaryOp)input).getOp()==OpOp2.GREATEREQUAL
+							|| ((BinaryOp)input).getOp()==OpOp2.EQUAL || ((BinaryOp)input).getOp()==OpOp2.NOTEQUAL )
 					&& _direction == Direction.Row && _op == AggOp.SUM) ? 2.0 : 1.0;
 			
 			//note: memory constraint only needs to take the rhs into account because the output

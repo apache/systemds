@@ -917,7 +917,8 @@ public class OptimizerRuleBased extends Optimizer
 			int cpk = (int) Math.min( _lk, Math.floor( _lm / M ) ); //estimated local exploited par  
 			
 			//MR if local par cannot be exploited due to mem constraints (this implies that we work on large data)
-			if( cpk < _lk && cpk < _N && cpk < _rk )
+			//(the factor of 2 is to account for hyper-threading and in order prevent too eager remote parfor)
+			if( 2*cpk < _lk && 2*cpk < _N && 2*cpk < _rk )
 			{
 				n.setExecType( REMOTE ); //remote parfor
 			}

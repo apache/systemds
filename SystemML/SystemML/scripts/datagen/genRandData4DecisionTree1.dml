@@ -1,0 +1,19 @@
+
+
+XCatFile = $XCat;
+YFile = $Y;
+num_records = $num_records;
+num_cat_features = $num_cat;
+num_class = $num_class;
+num_distinct = $num_distinct;
+sparsity = $sp;
+
+# generate class labels
+Y = floor (rand (rows = num_records, cols = 1, min = 1, max = num_class + 0.99999999999999)); 
+Y_bin = table (seq (1, num_records), Y); 
+write (Y_bin, YFile);
+
+# generate categorical features
+X_cat = floor (rand (rows = num_records, cols = num_cat_features, min = 1, max = num_distinct + 0.99999999999999, sparsity = sparsity));
+write (X_cat, XCatFile, format = "csv");
+

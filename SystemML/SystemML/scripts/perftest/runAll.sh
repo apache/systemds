@@ -12,18 +12,14 @@ date >> times.txt
 # add stepwise GLM
 ./runAllStats.sh $1 $2
 ./runAllClustering.sh $1 $2
-
 ./runAllTrees $1 $2
-#DecisionTree
-#RandomForest
-
-#./runAllDimensionReduction $1 $2
-##PCA
+#randomForest
+./runAllDimensionReduction $1 $2
 #./runAllMatrixFactorization $1 $2
-##ALS
+#ALS
 #./runAllSurvival $1 $2
-##KaplanMeier
-##Cox
+#KaplanMeier
+#Cox
 
 
 

@@ -1,0 +1,20 @@
+
+
+transformPath = $tPath;
+transformSpec = $tSpec;
+XCatFile = $XCat;
+XFile = $X;
+num_records = $num_records;
+num_scale_features = $num_scale;
+sparsity = $sp;
+fmt = $fmt;
+
+# generate scale features
+X_scale = rand (rows = num_records, cols = num_scale_features, min = 0, max = 10, sparsity = sparsity); 
+
+# transform categorical features
+XCF = read (XCatFile);
+X_cat_transformed = transform (target = XCF, transformSpec = transformSpec, transformPath = transformPath);
+
+X = append (X_scale, X_cat_transformed);
+write (X, XFile, format = fmt);

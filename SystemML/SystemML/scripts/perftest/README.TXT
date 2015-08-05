@@ -34,19 +34,21 @@ Following alternative run modes are supported from <...>/perftest/
    The scripts append to a trace/time file ./times.txt, and output log
    files in folder ./logs/*
 
-   Below scripts can be invoked accordingly:
+   Below scripts can be invoked accordingly, e.g.
 
    ./runAllBinomial.sh $1 $2
    ./runAllClustering.sh $1 $2
    ./runAllMultinomial.sh $1 $2
    ./runAllRegression.sh $1 $2
    ./runAllStats.sh $1 $2
+   ./runAllDimensionReduction.sh $1 $2
 
    ./genBinomialData.sh $1 $2
    ./genMultinomialData.sh $1 $2
    ./genClusteringData.sh $1 $2
    ./genDescriptiveStatisticsData.sh $1 $2
    ./genStratStatisticsData.sh $1 $2
+   ./genDimensionReductionData.sh $1 $2
 
 
 

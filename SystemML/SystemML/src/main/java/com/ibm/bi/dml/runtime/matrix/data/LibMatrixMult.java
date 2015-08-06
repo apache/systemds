@@ -673,6 +673,16 @@ public class LibMatrixMult
 				for( int i=rl, aix=rl*cd; i < ru; i++, aix+=cd) 
 					c[ i ] = dotProduct(a, b, aix, 0, cd);	
 			}
+			else if( m==1 && n < 64) //VECTOR-MATRIX
+			{
+				//rest not aligned to blocks of 2 rows
+				if( cd % 2 == 1 )
+					vectMultiplyAdd(a[0], b, c, 0, 0, n);
+				
+				//compute blocks of 2 rows (2 instead of 4 for small n<64) 
+				for( int k=cd%2, bix=(cd%2)*n; k<cd; k+=2, bix+=2*n )
+					vectMultiplyAdd2(a[k], a[k+1], b, c, bix, bix+n, 0, n);    
+			}
 			else //MATRIX-MATRIX
 			{	
 				//1) Unrolled inner loop (for better instruction-level parallelism)

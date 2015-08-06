@@ -22,6 +22,7 @@ import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 
 
@@ -493,13 +494,14 @@ public class AggUnaryOp extends Hop
 							|| ((BinaryOp)input).getOp()==OpOp2.EQUAL || ((BinaryOp)input).getOp()==OpOp2.NOTEQUAL )
 					&& _direction == Direction.Row && _op == AggOp.SUM) ? 2.0 : 1.0;
 			
+			
 			//note: memory constraint only needs to take the rhs into account because the output
 			//is guaranteed to be an aggregate of <=16KB
 			Hop right = input.getInput().get(1);
 			if((  (right.dimsKnown() && OptimizerUtils.estimateSize(right.getDim1(), right.getDim2())
-				  < OptimizerUtils.getRemoteMemBudgetMap(true)) //dims known and estimate fits
+				  < SparkExecutionContext.getBroadcastMemoryBudget()) //dims known and estimate fits
 			   ||(!right.dimsKnown() && right.getOutputMemEstimate()
-				  <	OptimizerUtils.getRemoteMemBudgetMap(true)))//dims unknown but worst-case estimate fits
+				  <	SparkExecutionContext.getBroadcastMemoryBudget()))//dims unknown but worst-case estimate fits
 				&&
 				  ((right.dimsKnown() && factor*OptimizerUtils.estimateSize(right.getDim1(), right.getDim2())
 						  < OptimizerUtils.getLocalMemBudget()) //dims known and estimate fits

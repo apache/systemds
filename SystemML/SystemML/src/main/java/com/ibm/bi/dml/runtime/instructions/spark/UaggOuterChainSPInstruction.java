@@ -104,7 +104,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			return new UaggOuterChainSPInstruction(bop, uaggop, aop, in1, in2, out, opcode, str);
 		} 
 		else {
-			throw new DMLRuntimeException("MapmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
+			throw new DMLRuntimeException("UaggOuterChainSPInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}
 
 	}

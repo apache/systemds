@@ -118,10 +118,9 @@ public class LibMatrixOuterAgg
 				ix += (ai==bv[bv.length-1])?1:0;
 			}
 				
-			if (!(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals))
-				cnt = bv.length-Math.abs(ix)+1;
+			cnt = bv.length-Math.abs(ix)+1;
 			
-			if (bOp.fn instanceof GreaterThanEquals || bOp.fn instanceof GreaterThan || bOp.fn instanceof NotEquals)
+			if (bOp.fn instanceof GreaterThanEquals)
 				cnt = bv.length - cnt;
 			c.quickSetValue(i, 0, cnt);
 		}

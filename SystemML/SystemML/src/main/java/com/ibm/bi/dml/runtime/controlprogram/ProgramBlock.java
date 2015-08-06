@@ -180,7 +180,7 @@ public class ProgramBlock
 			if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
 				&& requiresRecompile )
 			{
-				tmp = Recompiler.recompileHopsDag(hops, ec.getVariables(), false, _tid);
+				tmp = Recompiler.recompileHopsDag(hops, ec.getVariables(), null, false, _tid);
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();

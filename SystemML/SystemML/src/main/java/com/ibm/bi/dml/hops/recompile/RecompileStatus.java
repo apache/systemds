@@ -7,8 +7,10 @@
 
 package com.ibm.bi.dml.hops.recompile;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.parser.VariableSet;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 
 public class RecompileStatus 
@@ -32,5 +34,21 @@ public class RecompileStatus
 	public void clearStatus()
 	{
 		_lastTWrites.clear();
+	}
+	
+	public void clearStatus(VariableSet vars)
+	{
+		ArrayList<String> lvars = new ArrayList<String>(vars.getVariableNames());
+		for( String var : lvars ) {
+			_lastTWrites.remove(var);
+		}
+	}
+	
+	@Override
+	public Object clone()
+	{
+		RecompileStatus ret = new RecompileStatus();
+		ret._lastTWrites.putAll(this._lastTWrites);
+		return ret;
 	}
 }

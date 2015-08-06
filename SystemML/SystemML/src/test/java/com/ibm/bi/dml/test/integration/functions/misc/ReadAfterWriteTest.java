@@ -103,7 +103,7 @@ public class ReadAfterWriteTest extends AutomatedTestBase
 			//generate random file suffix
 			int suffix = Math.abs(new Random().nextInt());
 			String filename = SCRIPT_DIR + TEST_DIR + OUTPUT_DIR + suffix;
-			String filename2 = positive ? filename : filename+"XXX";
+			String filename2 = positive ? filename : filename+"_nonexisting";
 			
 			//test configuration
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

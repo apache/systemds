@@ -378,7 +378,7 @@ public class ProgramRecompiler
 			if( ret )
 			{
 				//construct new instructions
-				tmp = Recompiler.recompileHopsDag(hop, ec.getVariables(), true, 0);
+				tmp = Recompiler.recompileHopsDag(hop, ec.getVariables(), null, true, 0);
 			}
 		}
 		catch(Exception ex)

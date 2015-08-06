@@ -244,7 +244,7 @@ public class ResourceOptimizer
 			WhileProgramBlock wpb = (WhileProgramBlock)pb;
 			WhileStatementBlock sb = (WhileStatementBlock) pb.getStatementBlock();
 			if( INCLUDE_PREDICATES && sb!=null && sb.getPredicateHops()!=null ){
-				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), false, 0);
+				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), null, false, 0);
 				wpb.setPredicate( inst );
 				B.add(wpb);
 				_cntCompilePB ++;
@@ -256,7 +256,7 @@ public class ResourceOptimizer
 			IfProgramBlock ipb = (IfProgramBlock)pb;
 			IfStatementBlock sb = (IfStatementBlock) ipb.getStatementBlock();
 			if( INCLUDE_PREDICATES && sb!=null && sb.getPredicateHops()!=null ){
-				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), false, 0);
+				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), null, false, 0);
 				ipb.setPredicate( inst );
 				B.add(ipb);
 				_cntCompilePB ++;
@@ -270,15 +270,15 @@ public class ResourceOptimizer
 			ForStatementBlock sb = (ForStatementBlock) fpb.getStatementBlock();
 			if( INCLUDE_PREDICATES && sb!=null ){
 				if( sb.getFromHops()!=null ){
-					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getFromHops(), new LocalVariableMap(), false, 0);
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getFromHops(), new LocalVariableMap(), null, false, 0);
 					fpb.setFromInstructions( inst );	
 				}
 				if( sb.getToHops()!=null ){
-					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getToHops(), new LocalVariableMap(), false, 0);
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getToHops(), new LocalVariableMap(), null, false, 0);
 					fpb.setToInstructions( inst );	
 				}
 				if( sb.getIncrementHops()!=null ){
-					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getIncrementHops(), new LocalVariableMap(), false, 0);
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getIncrementHops(), new LocalVariableMap(), null, false, 0);
 					fpb.setIncrementInstructions( inst );	
 				}
 				B.add(fpb);
@@ -348,7 +348,7 @@ public class ResourceOptimizer
 			WhileProgramBlock wpb = (WhileProgramBlock)pb;
 			WhileStatementBlock sb = (WhileStatementBlock) pb.getStatementBlock();
 			if( INCLUDE_PREDICATES && sb!=null && sb.getPredicateHops()!=null ){
-				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), false, 0);
+				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), null, false, 0);
 				inst = annotateMRJobInstructions(inst, cp, mr);
 				wpb.setPredicate( inst );
 			}				
@@ -358,7 +358,7 @@ public class ResourceOptimizer
 			IfProgramBlock ipb = (IfProgramBlock)pb;
 			IfStatementBlock sb = (IfStatementBlock) ipb.getStatementBlock();
 			if( INCLUDE_PREDICATES && sb!=null && sb.getPredicateHops()!=null ){
-				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), false, 0);
+				ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getPredicateHops(), new LocalVariableMap(), null, false, 0);
 				inst = annotateMRJobInstructions(inst, cp, mr);
 				ipb.setPredicate( inst );
 			}
@@ -369,17 +369,17 @@ public class ResourceOptimizer
 			ForStatementBlock sb = (ForStatementBlock) fpb.getStatementBlock();
 			if( INCLUDE_PREDICATES && sb!=null ){
 				if( sb.getFromHops()!=null ){
-					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getFromHops(), new LocalVariableMap(), false, 0);
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getFromHops(), new LocalVariableMap(), null, false, 0);
 					inst = annotateMRJobInstructions(inst, cp, mr);
 					fpb.setFromInstructions( inst );	
 				}
 				if( sb.getToHops()!=null ){
-					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getToHops(), new LocalVariableMap(), false, 0);
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getToHops(), new LocalVariableMap(), null, false, 0);
 					inst = annotateMRJobInstructions(inst, cp, mr);
 					fpb.setToInstructions( inst );	
 				}
 				if( sb.getIncrementHops()!=null ){
-					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getIncrementHops(), new LocalVariableMap(), false, 0);
+					ArrayList<Instruction> inst = Recompiler.recompileHopsDag(sb.getIncrementHops(), new LocalVariableMap(), null, false, 0);
 					inst = annotateMRJobInstructions(inst, cp, mr);
 					fpb.setIncrementInstructions( inst );	
 				}

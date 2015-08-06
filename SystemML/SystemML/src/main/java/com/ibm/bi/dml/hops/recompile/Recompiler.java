@@ -241,7 +241,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	public static ArrayList<Instruction> recompileHopsDag( Hop hops, LocalVariableMap vars, boolean inplace, long tid ) 
+	public static ArrayList<Instruction> recompileHopsDag( Hop hops, LocalVariableMap vars, RecompileStatus status, boolean inplace, long tid ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
@@ -279,8 +279,11 @@ public class Recompiler
 				rewriter.rewriteHopDAG( hops, null );
 			
 			// refresh memory estimates (based on updated stats)
+			MemoTable memo = new MemoTable();
 			hops.resetVisitStatus();
-			hops.refreshMemEstimates(new MemoTable()); 		
+			memo.init(hops, status);
+			hops.resetVisitStatus();
+			hops.refreshMemEstimates(memo); 		
 			
 			// construct lops			
 			Dag<Lop> dag = new Dag<Lop>();
@@ -801,18 +804,18 @@ public class Recompiler
 			WhileProgramBlock wpb = (WhileProgramBlock)pb;
 			WhileStatementBlock wsb = (WhileStatementBlock) wpb.getStatementBlock();
 			//recompile predicate
-			recompileWhilePredicate(wpb, wsb, vars, tid, resetRecompile);
+			recompileWhilePredicate(wpb, wsb, vars, status, tid, resetRecompile);
 			//remove updated scalars because in loop
 			removeUpdatedScalars(vars, wsb); 
 			//copy vars for later compare
 			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
-			status.clearStatus();
+			RecompileStatus oldStatus = (RecompileStatus) status.clone();
 			for (ProgramBlock pb2 : wpb.getChildBlocks())
 				rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
-			if( reconcileUpdatedCallVarsLoops(oldVars, vars, wsb) ) {
+			if( reconcileUpdatedCallVarsLoops(oldVars, vars, wsb) 
+				| reconcileUpdatedCallVarsLoops(oldStatus, status, wsb) ) {
 				//second pass with unknowns if required
-				recompileWhilePredicate(wpb, wsb, vars, tid, resetRecompile);
-				status.clearStatus();
+				recompileWhilePredicate(wpb, wsb, vars, status, tid, resetRecompile);
 				for (ProgramBlock pb2 : wpb.getChildBlocks())
 					rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
 			}
@@ -823,18 +826,18 @@ public class Recompiler
 			IfProgramBlock ipb = (IfProgramBlock)pb;	
 			IfStatementBlock isb = (IfStatementBlock)ipb.getStatementBlock();
 			//recompile predicate
-			recompileIfPredicate(ipb, isb, vars, tid, resetRecompile);
+			recompileIfPredicate(ipb, isb, vars, status, tid, resetRecompile);
 			//copy vars for later compare
 			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
 			LocalVariableMap varsElse = (LocalVariableMap) vars.clone();
-			status.clearStatus();
+			RecompileStatus oldStatus = (RecompileStatus)status.clone();
+			RecompileStatus statusElse = (RecompileStatus)status.clone();
 			for( ProgramBlock pb2 : ipb.getChildBlocksIfBody() )
 				rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
-			status.clearStatus();
 			for( ProgramBlock pb2 : ipb.getChildBlocksElseBody() )
-				rRecompileProgramBlock(pb2, varsElse, status, tid, resetRecompile);
-			status.clearStatus();
+				rRecompileProgramBlock(pb2, varsElse, statusElse, tid, resetRecompile);
 			reconcileUpdatedCallVarsIf(oldVars, vars, varsElse, isb);
+			reconcileUpdatedCallVarsIf(oldStatus, status, statusElse, isb);
 			removeUpdatedScalars(vars, ipb.getStatementBlock());
 		}
 		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
@@ -842,18 +845,18 @@ public class Recompiler
 			ForProgramBlock fpb = (ForProgramBlock)pb;	
 			ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
 			//recompile predicates
-			recompileForPredicates(fpb, fsb, vars, tid, resetRecompile);
+			recompileForPredicates(fpb, fsb, vars, status, tid, resetRecompile);
 			//remove updated scalars because in loop
 			removeUpdatedScalars(vars, fpb.getStatementBlock()); 
 			//copy vars for later compare
 			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
-			status.clearStatus();
+			RecompileStatus oldStatus = (RecompileStatus) status.clone();
 			for( ProgramBlock pb2 : fpb.getChildBlocks() )
 				rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
-			if( reconcileUpdatedCallVarsLoops(oldVars, vars, fsb) ) {
+			if( reconcileUpdatedCallVarsLoops(oldVars, vars, fsb) 
+				| reconcileUpdatedCallVarsLoops(oldStatus, status, fsb)) {
 				//second pass with unknowns if required
-				recompileForPredicates(fpb, fsb, vars, tid, resetRecompile);
-				status.clearStatus();
+				recompileForPredicates(fpb, fsb, vars, status, tid, resetRecompile);
 				for( ProgramBlock pb2 : fpb.getChildBlocks() )
 					rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);		
 			}
@@ -920,22 +923,22 @@ public class Recompiler
 					|| mcOld.getCols() != mc.getCols()
 					|| mcOld.getNonZeros() != mc.getNonZeros() )
 				{
-					long ldim1 =mc.getRows(), ldim2=mc.getCols(), lnnz=mc.getNonZeros();
-					//handle dimension change in body
-					if(    mcOld.getRows() != mc.getRows() 
-						|| mcOld.getCols() != mc.getCols() )
-					{
-						ldim1=-1;
+					long ldim1 = mc.getRows(), ldim2 = mc.getCols(), lnnz = mc.getNonZeros();
+					//handle row dimension change in body
+					if( mcOld.getRows() != mc.getRows() ) {
+						ldim1=-1; //unknown
+						requiresRecompile = true;
+					}
+					//handle column dimension change in body
+					if( mcOld.getCols() != mc.getCols() ) {
 						ldim2=-1; //unknown
 						requiresRecompile = true;
 					}
 					//handle sparsity change
-					if( mcOld.getNonZeros() != mc.getNonZeros() )
-					{
+					if( mcOld.getNonZeros() != mc.getNonZeros() ) {
 						lnnz=-1; //unknown		
 						requiresRecompile = true;
 					}
-					
 					
 					MatrixObject moNew = createOutputMatrix(ldim1, ldim2, lnnz);
 					callVars.put(varname, moNew);
@@ -946,6 +949,57 @@ public class Recompiler
 		return requiresRecompile;
 	}
 
+	/**
+	 * 
+	 * @param oldCallVars
+	 * @param callVars
+	 * @param sb
+	 * @return
+	 */
+	public static boolean reconcileUpdatedCallVarsLoops( RecompileStatus oldCallStatus, RecompileStatus callStatus, StatementBlock sb )
+	{
+		boolean requiresRecompile = false;
+		
+		//handle matrices
+		for( String varname : sb.variablesUpdated().getVariableNames() )
+		{
+			MatrixCharacteristics dat1 = oldCallStatus.getTWriteStats().get(varname);
+			MatrixCharacteristics dat2 = callStatus.getTWriteStats().get(varname);
+			if( dat1!=null  && dat2!=null  )
+			{
+				MatrixCharacteristics mcOld = dat1;
+				MatrixCharacteristics mc = dat2;
+				
+				if( mcOld.getRows() != mc.getRows() 
+					|| mcOld.getCols() != mc.getCols()
+					|| mcOld.getNonZeros() != mc.getNonZeros() )
+				{
+					long ldim1 = mc.getRows(), ldim2 = mc.getCols(), lnnz = mc.getNonZeros();
+					//handle row dimension change in body
+					if( mcOld.getRows() != mc.getRows() ) {
+						ldim1 = Math.max( mcOld.getRows(), mc.getRows() );
+						requiresRecompile = true;
+					}
+					//handle column dimension change in body
+					if( mcOld.getCols() != mc.getCols() ) {
+						ldim2 = Math.max( mcOld.getCols(), mc.getCols() );
+						requiresRecompile = true;
+					}
+					//handle sparsity change
+					if( mcOld.getNonZeros() != mc.getNonZeros() ) {
+						lnnz = Math.max( mcOld.getNonZeros(), mc.getNonZeros() );		
+						requiresRecompile = true;
+					}
+					
+					MatrixCharacteristics moNew = new MatrixCharacteristics(ldim1, ldim2, -1, -1, lnnz);
+					callStatus.getTWriteStats().put(varname, moNew);
+				}
+			}
+		}
+		
+		return requiresRecompile;
+	}
+	
 	/**
 	 * 
 	 * @param oldCallVars
@@ -1018,6 +1072,60 @@ public class Recompiler
 	
 	/**
 	 * 
+	 * @param oldStatus
+	 * @param callStatusIf
+	 * @param callStatusElse
+	 * @param sb
+	 * @return
+	 */
+	public static RecompileStatus reconcileUpdatedCallVarsIf( RecompileStatus oldStatus, RecompileStatus callStatusIf, RecompileStatus callStatusElse, StatementBlock sb )
+	{
+		for( String varname : sb.variablesUpdated().getVariableNames() )
+		{	
+			MatrixCharacteristics origVar = oldStatus.getTWriteStats().get(varname);
+			MatrixCharacteristics ifVar = callStatusIf.getTWriteStats().get(varname);
+			MatrixCharacteristics elseVar = callStatusElse.getTWriteStats().get(varname);
+			MatrixCharacteristics dat1 = null, dat2 = null;
+			
+			if( ifVar!=null && elseVar!=null ){ // both branches exists
+				dat1 = ifVar;
+				dat2 = elseVar;
+			}
+			else if( ifVar!=null && elseVar==null ){ //only if
+				dat1 = origVar;
+				dat2 = ifVar;
+			}
+			else { //only else
+				dat1 = origVar;
+				dat2 = elseVar;
+			}
+			
+			//compare size and value information (note: by definition both dat1 and dat2 are of same type
+			//because we do not allow data type changes)
+			if( dat1 != null && dat2!=null )
+			{
+				MatrixCharacteristics mcOld = dat1;
+				MatrixCharacteristics mc = dat2;
+					
+				if( mcOld.getRows() != mc.getRows() 
+						|| mcOld.getCols() != mc.getCols()
+						|| mcOld.getNonZeros() != mc.getNonZeros() )
+				{
+					long ldim1 = Math.max( mc.getRows(), mcOld.getRows() ); 
+					long ldim2 = Math.max( mc.getCols(), mcOld.getCols() ); 
+					long lnnz = Math.max( mc.getNonZeros(), mcOld.getNonZeros() ); 
+					
+					MatrixCharacteristics mcNew = new MatrixCharacteristics(ldim1, ldim2, -1, -1, lnnz);
+					callStatusIf.getTWriteStats().put(varname, mcNew);
+				}
+			}
+		}
+		
+		return callStatusIf;
+	}
+	
+	/**
+	 * 
 	 * @param hops
 	 * @return
 	 */
@@ -1066,14 +1174,14 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	private static void recompileIfPredicate( IfProgramBlock ipb, IfStatementBlock isb, LocalVariableMap vars, long tid, boolean resetRecompile ) 
+	private static void recompileIfPredicate( IfProgramBlock ipb, IfStatementBlock isb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		if( isb != null )
 		{
 			Hop hops = isb.getPredicateHops();
 			if( hops != null ) {
-				ArrayList<Instruction> tmp = recompileHopsDag(hops, vars, true, tid);
+				ArrayList<Instruction> tmp = recompileHopsDag(hops, vars, status, true, tid);
 				ipb.setPredicate( tmp );
 				if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs
 					&& resetRecompile ) 
@@ -1101,14 +1209,14 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	private static void recompileWhilePredicate( WhileProgramBlock wpb, WhileStatementBlock wsb, LocalVariableMap vars, long tid, boolean resetRecompile ) 
+	private static void recompileWhilePredicate( WhileProgramBlock wpb, WhileStatementBlock wsb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		if( wsb != null )
 		{
 			Hop hops = wsb.getPredicateHops();
 			if( hops != null ) {
-				ArrayList<Instruction> tmp = recompileHopsDag(hops, vars, true, tid);
+				ArrayList<Instruction> tmp = recompileHopsDag(hops, vars, status, true, tid);
 				wpb.setPredicate( tmp );
 				if( ParForProgramBlock.RESET_RECOMPILATION_FLAGs 
 					&& resetRecompile ) 
@@ -1136,7 +1244,7 @@ public class Recompiler
 	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
-	private static void recompileForPredicates( ForProgramBlock fpb, ForStatementBlock fsb, LocalVariableMap vars, long tid, boolean resetRecompile ) 
+	private static void recompileForPredicates( ForProgramBlock fpb, ForStatementBlock fsb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
 		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
 	{
 		if( fsb != null )
@@ -1150,17 +1258,17 @@ public class Recompiler
 				&& resetRecompile ) 
 			{
 				if( fromHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(fromHops, vars, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(fromHops, vars, status, true, tid);
 					fpb.setFromInstructions(tmp);
 					Hop.resetRecompilationFlag(fromHops,ExecType.CP);
 				}
 				if( toHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(toHops, vars, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(toHops, vars, status, true, tid);
 					fpb.setToInstructions(tmp);
 					Hop.resetRecompilationFlag(toHops,ExecType.CP);
 				}
 				if( incrHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(incrHops, vars, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(incrHops, vars, status, true, tid);
 					fpb.setIncrementInstructions(tmp);
 					Hop.resetRecompilationFlag(incrHops,ExecType.CP);
 				}
@@ -1169,15 +1277,15 @@ public class Recompiler
 			else //no reset of recompilation flags
 			{
 				if( fromHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(fromHops, vars, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(fromHops, vars, status, true, tid);
 					fpb.setFromInstructions(tmp);
 				}
 				if( toHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(toHops, vars, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(toHops, vars, status, true, tid);
 					fpb.setToInstructions(tmp);
 				}
 				if( incrHops != null ) {
-					ArrayList<Instruction> tmp = recompileHopsDag(incrHops, vars, true, tid);
+					ArrayList<Instruction> tmp = recompileHopsDag(incrHops, vars, status, true, tid);
 					fpb.setIncrementInstructions(tmp);
 				}
 			}

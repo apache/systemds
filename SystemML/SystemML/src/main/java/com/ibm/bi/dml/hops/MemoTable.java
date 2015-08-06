@@ -55,6 +55,25 @@ public class MemoTable
 	
 	/**
 	 * 
+	 * @param hop
+	 * @param status
+	 */
+	public void init( Hop hop, RecompileStatus status)
+	{
+		//check existing status
+		if(    hop == null || status == null 
+			|| status.getTWriteStats().isEmpty() )
+		{
+			return; //nothing to do
+		}
+		
+		//population via recursive search for treads
+		hop.resetVisitStatus();
+		rinit(hop, status);
+	}
+	
+	/**
+	 * 
 	 * @param hops
 	 * @param status
 	 */
@@ -63,9 +82,6 @@ public class MemoTable
 		//check existing status
 		if( status == null )
 			return; //nothing to do
-		
-		//clear old cached state
-		status.clearStatus();
 		
 		//extract all transient writes (must be dag root)
 		for( Hop hop : hops ) {
@@ -77,6 +93,8 @@ public class MemoTable
 				MatrixCharacteristics mc = getAllInputStats(input);
 				if( mc != null )
 					status.getTWriteStats().put(varname, mc);
+				else
+					status.getTWriteStats().remove(varname);
 			}
 		}
 	}

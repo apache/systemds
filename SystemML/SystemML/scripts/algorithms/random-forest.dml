@@ -1153,17 +1153,18 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			}
 		
 			cur_Q = removeEmpty (target = cur_Q, margin = "cols"); # needed
-			if (as.scalar (cur_Q[1,1]) != 0) Q = append (Q, cur_Q);
-			cur_NC = removeEmpty (target = cur_NC, margin = "cols");
-			if (as.scalar (cur_NC[1,1]) != 0) NC = append (NC, cur_NC);
+			# if (as.scalar (cur_Q[1,1]) != 0) Q = append (Q, cur_Q);
+			# cur_NC = removeEmpty (target = cur_NC, margin = "cols");
+			# if (as.scalar (cur_NC[1,1]) != 0) NC = append (NC, cur_NC);
 	
+			# cur_F = removeEmpty (target = cur_F, margin = "cols");
+			# if (as.scalar (cur_F[1,1]) != 0) F = append (F, cur_F);
+			# cur_S = removeEmpty (target = cur_S, margin = "cols");
+			# if (as.scalar (cur_S[1,1]) != 0) S = append (S, cur_S);
+			Q = append (Q, cur_Q);
+			NC = append (NC, cur_NC);
 			F = append (F, cur_F);
-			cur_S = removeEmpty (target = cur_S, margin = "cols");
-			if (as.scalar (cur_S[1,1]) != 0) S = append (S, cur_S);
-			# Q = append (Q, cur_Q);
-			# NC = append (NC, cur_NC);
-			# F = append (F, cur_F);
-			# S = append (S, cur_S);
+			S = append (S, cur_S);
 		
 			num_cur_nodes_pre = 2 * num_cur_nodes;
 			if (as.scalar (cur_Q[1,1]) == 0) {
@@ -1174,14 +1175,14 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			}
 		}
 		
-		cur_Q_small[,start_ind_global:(start_ind_global + ncol (Q) - 1)] = Q;
-		cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1 - 1)] = NC[,2:ncol (NC)];
-		cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1 - 1)] = F[,2:ncol (F)];	
-		cur_S_small[,start_ind_S_global:(start_ind_S_global + ncol (S) - 1 - 1)] = S[,2:ncol (S)]; 
 		# cur_Q_small[,start_ind_global:(start_ind_global + ncol (Q) - 1)] = Q;
-		# cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1)] = NC;
-		# cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1)] = F;	
-		# cur_S_small[,start_ind_S_global:(start_ind_S_global + ncol (S) - 1)] = S; 
+		# cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1 - 1)] = NC[,2:ncol (NC)];
+		# cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1 - 1)] = F[,2:ncol (F)];	
+		# cur_S_small[,start_ind_S_global:(start_ind_S_global + ncol (S) - 1 - 1)] = S[,2:ncol (S)]; 
+		cur_Q_small[,start_ind_global:(start_ind_global + ncol (Q) - 1)] = Q;
+		cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1)] = NC;
+		cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1)] = F;	
+		cur_S_small[,start_ind_S_global:(start_ind_S_global + ncol (S) - 1)] = S; 
 	}
 
 	##### PREPARE MODEL FOR SMALL NODES	

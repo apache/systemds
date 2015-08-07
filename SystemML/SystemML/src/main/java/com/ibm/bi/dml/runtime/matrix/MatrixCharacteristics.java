@@ -174,6 +174,10 @@ public class MatrixCharacteristics implements Serializable
 		return ( numColumns > 0 );
 	}
 	
+	public boolean nnzKnown() {
+		return ( nonZero >= 0 );
+	}
+	
 	public static void reorg(MatrixCharacteristics dim, ReorgOperator op, 
 			MatrixCharacteristics dimOut) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{

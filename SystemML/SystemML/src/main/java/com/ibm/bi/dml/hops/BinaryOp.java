@@ -531,7 +531,14 @@ public class BinaryOp extends Hop
 		setLops(append);
 	}
 	
-	private void constructLopsBinaryDefault() throws HopsException, LopsException {
+	/**
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructLopsBinaryDefault() 
+		throws HopsException, LopsException 
+	{
 		/* Default behavior for BinaryOp */
 		// it depends on input data types
 		DataType dt1 = getInput().get(0).getDataType();
@@ -545,24 +552,23 @@ public class BinaryOp extends Hop
 					getInput().get(1).constructLops(), HopsOpOp2LopsBS
 							.get(op), getDataType(), getValueType());
 			binScalar1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			
-			binScalar1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-			
+			setLineNumbers(binScalar1);
 			setLops(binScalar1);
 
-		} else if ((dt1 == DataType.MATRIX && dt2 == DataType.SCALAR)
+		} 
+		else if ((dt1 == DataType.MATRIX && dt2 == DataType.SCALAR)
 				   || (dt1 == DataType.SCALAR && dt2 == DataType.MATRIX)) {
 
 			// One operand is Matrix and the other is scalar
 			ExecType et = optFindExecType();
 			
 			//select specific operator implementations
-			com.ibm.bi.dml.lops.Unary.OperationTypes ot = null;
+			Unary.OperationTypes ot = null;
 			Hop right = getInput().get(1);
 			if( op==OpOp2.POW && right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==2.0  )
-				ot = com.ibm.bi.dml.lops.Unary.OperationTypes.POW2;
+				ot = Unary.OperationTypes.POW2;
 			else if( op==OpOp2.MULT && right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==2.0  )
-				ot = com.ibm.bi.dml.lops.Unary.OperationTypes.MULTIPLY2;
+				ot = Unary.OperationTypes.MULTIPLY2;
 			else //general case
 				ot = HopsOpOp2LopsU.get(op);
 			
@@ -570,10 +576,8 @@ public class BinaryOp extends Hop
 			Unary unary1 = new Unary(getInput().get(0).constructLops(),
 						   getInput().get(1).constructLops(), ot, getDataType(), getValueType(), et);
 		
-			unary1.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(),
-					getColsInBlock(), getNnz());
-			unary1.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setOutputDimensions(unary1);
+			setLineNumbers(unary1);
 			setLops(unary1);
 			
 		} 
@@ -586,8 +590,8 @@ public class BinaryOp extends Hop
 				Binary binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
 						getDataType(), getValueType(), et);
 				
-				setLineNumbers(binary);
 				setOutputDimensions(binary);
+				setLineNumbers(binary);
 				setLops(binary);
 			}
 			else if(et == ExecType.SPARK)
@@ -616,8 +620,8 @@ public class BinaryOp extends Hop
 							HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
 				}
 				
-				setLineNumbers(binary);
 				setOutputDimensions(binary);
+				setLineNumbers(binary);
 				setLops(binary);
 			}
 			else //MR
@@ -641,10 +645,8 @@ public class BinaryOp extends Hop
 					
 					BinaryM binary = new BinaryM(left.constructLops(), dcInput, HopsOpOp2LopsB.get(op),
 							getDataType(), getValueType(), ExecType.MR, needPart, (right.getDim2()==1));
-					binary.getOutputParameters().setDimensions(getDim1(), getDim2(), 
-											getRowsInBlock(), getColsInBlock(), getNnz());
-					binary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-					
+					setOutputDimensions(binary);
+					setLineNumbers(binary);
 					setLops(binary);
 				}
 				else if( mbin == MMBinaryMethod.MR_BINARY_UAGG_CHAIN )
@@ -821,8 +823,17 @@ public class BinaryOp extends Hop
 		
 		if( op== OpOp2.APPEND )
 		{
-			if( mc[0].dimsKnown() && mc[1].dimsKnown() ) 
-				ret = new long[]{mc[0].getRows(), mc[0].getCols()+mc[1].getCols(), mc[0].getNonZeros() + mc[1].getNonZeros()};
+			long ldim1 = -1, ldim2 = -1, lnnz = -1;
+			
+			if( mc[0].rowsKnown() || mc[1].rowsKnown() )
+				ldim1 = mc[0].rowsKnown() ? mc[0].getRows() : mc[1].getRows();
+			if( mc[0].colsKnown() && mc[1].colsKnown() )
+				ldim2 = mc[0].getCols()+mc[1].getCols();
+			if( mc[0].nnzKnown() && mc[1].nnzKnown() )
+				lnnz = mc[0].getNonZeros() + mc[1].getNonZeros();
+			
+			if( ldim1 > 0 || ldim2 > 0 || lnnz >= 0 )
+				return new long[]{ldim1, ldim2, lnnz};
 		}
 		else if ( op == OpOp2.SOLVE ) {
 			// Output is a (likely to be dense) vector of size number of columns in the first input

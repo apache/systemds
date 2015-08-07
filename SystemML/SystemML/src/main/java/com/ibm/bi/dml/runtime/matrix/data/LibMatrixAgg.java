@@ -1600,6 +1600,16 @@ public class LibMatrixAgg
 				c[i] = builtin.execute2(c[i], 0);	
 	}
 
+	/**
+	 * ROWINDEXMAX, opcode: uarimax, sparse input.
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 * @param init
+	 * @param builtin
+	 */
 	private static void s_uarimxx( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin ) 
 	{
 		for( int i=0, cix=0; i<m; i++, cix+=2 )
@@ -1634,6 +1644,16 @@ public class LibMatrixAgg
 		}
 	}
 	
+	/**
+	 * ROWINDEXMIN, opcode: uarimin, sparse input.
+	 * 
+	 * @param a
+	 * @param c
+	 * @param m
+	 * @param n
+	 * @param init
+	 * @param builtin
+	 */
 	private static void s_uarimin( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin ) 
 	{
 		for( int i=0, cix=0; i<m; i++, cix+=2 )
@@ -2084,16 +2104,12 @@ public class LibMatrixAgg
 	{
 		double maxval = init;
 		int maxindex = -1;
-		for( int i=0; i<len; i++ )
-		{
-			double val = a[ai+i];
-			if( aggop.execute2( val, maxval ) == 1 )
-			{
-				maxval = val;
-				maxindex = i;
-			}
-		}
 		
+		for( int i=ai; i<ai+len; i++ ) {
+			maxindex = (a[i]>=maxval) ? i-ai : maxindex;
+			maxval = (a[i]>=maxval) ? a[i] : maxval;
+		}
+
 		return maxindex;
 	}
 	
@@ -2110,14 +2126,10 @@ public class LibMatrixAgg
 	{
 		double minval = init;
 		int minindex = -1;
-		for( int i=0; i<len; i++ )
-		{
-			double val = a[ai+i];
-			if( aggop.execute2( val, minval ) == 1 )
-			{
-				minval = val;
-				minindex = i;
-			}
+		
+		for( int i=ai; i<ai+len; i++ ) {
+			minindex = (a[i]<=minval) ? i-ai : minindex;
+			minval = (a[i]<=minval) ? a[i] : minval;
 		}
 		
 		return minindex;

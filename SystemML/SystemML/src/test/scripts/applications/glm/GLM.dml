@@ -218,13 +218,8 @@ if (max_iteration_CG == 0) {
 
 # In Bernoulli case, convert one-column "Y" into two-column
 
-test_condition = (distribution_type == 2 & ncol(Y) == 1);
-print ("test_condition = " + test_condition);
-
 if (distribution_type == 2 & ncol(Y) == 1)
 {
-print ("WE ARE HERE!");
-
     is_Y_negative = ppred (Y, bernoulli_No_label, "==");
     Y = append (1 - is_Y_negative, is_Y_negative);
     count_Y_negative = sum (is_Y_negative);
@@ -234,11 +229,7 @@ print ("WE ARE HERE!");
     if (count_Y_negative == nrow(Y)) {
         stop ("GLM Input Error: all Y-values encode Bernoulli NO-label, none encode YES-label");
     }
-} else {
-print ("WE ARE ELSEWHERE!");
-
 }
-
 
 # Set up the canonical link, if requested [Then we have: Var(mu) * (d link / d mu) = const]
 

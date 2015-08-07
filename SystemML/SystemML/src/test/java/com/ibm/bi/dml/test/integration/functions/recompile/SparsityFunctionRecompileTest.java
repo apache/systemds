@@ -185,7 +185,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = false;
 			
-			MatrixBlock mb = MatrixBlock.randOperations((int)rows, (int)cols, sparsity, 0, 1, "uniform", System.currentTimeMillis());
+			MatrixBlock mb = MatrixBlock.randOperations((int)rows, (int)cols, sparsity, 0, 1, "uniform", 732);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows,cols,DMLTranslator.DMLBlockSize,DMLTranslator.DMLBlockSize,(long)(rows*cols*sparsity));
 			DataConverter.writeMatrixToHDFS(mb, HOME + INPUT_DIR + "V", OutputInfo.TextCellOutputInfo, mc);
 			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "V.mtd", ValueType.DOUBLE, mc, OutputInfo.TextCellOutputInfo);

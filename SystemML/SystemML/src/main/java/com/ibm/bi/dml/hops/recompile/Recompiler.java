@@ -977,17 +977,17 @@ public class Recompiler
 					long ldim1 = mc.getRows(), ldim2 = mc.getCols(), lnnz = mc.getNonZeros();
 					//handle row dimension change in body
 					if( mcOld.getRows() != mc.getRows() ) {
-						ldim1 = Math.max( mcOld.getRows(), mc.getRows() );
+						ldim1 = -1;
 						requiresRecompile = true;
 					}
 					//handle column dimension change in body
 					if( mcOld.getCols() != mc.getCols() ) {
-						ldim2 = Math.max( mcOld.getCols(), mc.getCols() );
+						ldim2 = -1;
 						requiresRecompile = true;
 					}
 					//handle sparsity change
 					if( mcOld.getNonZeros() != mc.getNonZeros() ) {
-						lnnz = Math.max( mcOld.getNonZeros(), mc.getNonZeros() );		
+						lnnz = -1;		
 						requiresRecompile = true;
 					}
 					
@@ -1048,16 +1048,16 @@ public class Recompiler
 					{
 						long ldim1 =mc.getRows(), ldim2=mc.getCols(), lnnz=mc.getNonZeros();
 						
-						//handle dimension change
-						if(    mcOld.getRows() != mc.getRows() 
-							|| mcOld.getCols() != mc.getCols() )
-						{
-							ldim1=-1; ldim2=-1; //unknown
+						//handle row dimension change
+						if( mcOld.getRows() != mc.getRows() ) {
+							ldim1 = -1; //unknown
+						}
+						if( mcOld.getCols() != mc.getCols() ) {
+							ldim2 = -1; //unknown
 						}
 						//handle sparsity change
-						if( mcOld.getNonZeros() != mc.getNonZeros() )
-						{
-							lnnz=-1; //unknown		
+						if( mcOld.getNonZeros() != mc.getNonZeros() ) {
+							lnnz = -1; //unknown		
 						}
 						
 						MatrixObject moNew = createOutputMatrix(ldim1, ldim2, lnnz);
@@ -1111,9 +1111,12 @@ public class Recompiler
 						|| mcOld.getCols() != mc.getCols()
 						|| mcOld.getNonZeros() != mc.getNonZeros() )
 				{
-					long ldim1 = Math.max( mc.getRows(), mcOld.getRows() ); 
-					long ldim2 = Math.max( mc.getCols(), mcOld.getCols() ); 
-					long lnnz = Math.max( mc.getNonZeros(), mcOld.getNonZeros() ); 
+					long ldim1 = (mcOld.getRows()>=0 && mc.getRows()>=0) ? 
+							Math.max( mcOld.getRows(), mc.getRows() ) : -1;
+					long ldim2 = (mcOld.getCols()>=0 && mc.getCols()>=0) ?
+							Math.max( mcOld.getCols(), mc.getCols() ) : -1;
+					long lnnz = (mcOld.getNonZeros()>=0 && mc.getNonZeros()>=0) ? 
+							Math.max( mcOld.getNonZeros(), mc.getNonZeros() ) : -1;	
 					
 					MatrixCharacteristics mcNew = new MatrixCharacteristics(ldim1, ldim2, -1, -1, lnnz);
 					callStatusIf.getTWriteStats().put(varname, mcNew);

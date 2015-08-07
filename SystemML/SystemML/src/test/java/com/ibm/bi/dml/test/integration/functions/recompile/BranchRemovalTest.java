@@ -143,13 +143,12 @@ public class BranchRemovalTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
 			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = 5; //reblock, 3xGMR (append), write
+			int expectedNumCompiled = 4; //reblock, 3xGMR (append), write
 			int expectedNumExecuted = 0;			
 			if( branchRemoval && IPA )
 				expectedNumCompiled = 1; //reblock
 			else if( branchRemoval ){
-				if( condition ) expectedNumCompiled = 4; //reblock, 2xGMR (append), write
-				else            expectedNumCompiled = 3; //reblock, GMR (append), write
+				expectedNumCompiled = 3; //reblock, GMR (append), write
 			}
 				
 			

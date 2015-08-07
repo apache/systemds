@@ -42,12 +42,6 @@ public class RecodeAgent extends TransformationAgent {
 	// HashMap< columnID, HashMap<distinctValue, count> >
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
 	
-	RecodeAgent() { }
-	
-	RecodeAgent(int[] list) {
-		_rcdList = list;
-	}
-	
 	RecodeAgent(JSONObject parsedSpec) {
 		Object obj = parsedSpec.get(TX_METHOD.RECODE.toString());
 		int rcdCount = 0;
@@ -158,7 +152,26 @@ public class RecodeAgent extends TransformationAgent {
 		}
 	}
 	
-	private void writeMetadata(HashMap<String,Long> map, String outputDir, int colID, FileSystem fs, MVImputeAgent mvagent) throws IOException {
+	/**
+	 * Function to output transformation metadata, including: 
+	 * - recode maps, 
+	 * - number of distinct values, 
+	 * - mode, and 
+	 * - imputation value (in the case of global_mode)
+	 * 
+	 * The column for which this function is invoked can be one of the following:
+	 * - just recoded						(write .map, .ndistinct, .mode)
+	 * - just mv imputed (w/ global_mode)	(write .impute)
+	 * - both recoded and mv imputed		(write .map, .ndistinct, .mode, .impute)
+	 * 
+	 * @param map
+	 * @param outputDir
+	 * @param colID
+	 * @param fs
+	 * @param mvagent
+	 * @throws IOException
+	 */
+	private void writeMetadata(HashMap<String,Long> map, String outputDir, int colID, FileSystem fs, MVImputeAgent mvagent, boolean fromCP) throws IOException {
 		// output recode maps and mode
 		
 		String mode = null;
@@ -166,8 +179,13 @@ public class RecodeAgent extends TransformationAgent {
 		int rcdIndex = 0, modeIndex = 0;
 		long maxCount = Long.MIN_VALUE;
 		
+		boolean isRecoded = (isRecoded(colID) != -1);
+		boolean isModeImputed = (mvagent.getMethod(colID) == MVMethod.GLOBAL_MODE);
+		
 		Path pt=new Path(outputDir+"/Recode/"+ outputColumnNames[colID-1] + RCD_MAP_FILE_SUFFIX);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
+		BufferedWriter br=null;
+		if(isRecoded)
+			br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
 
 		// remove NA strings
 		if ( TransformationAgent.NAstrings != null ) 
@@ -176,16 +194,11 @@ public class RecodeAgent extends TransformationAgent {
 				map.remove(naword);
 		}
 		
-		if(mvagent != null)
-		{
-			// called from CP
+		if(fromCP)
 			map = handleMVConstant(colID, mvagent,  map);
-		}
 		
 		if ( map.size() == 0 ) 
-		{
 			throw new RuntimeException("Can not proceed since \"" + outputColumnNames[colID-1] + "\" (id=" + colID + ") contains only the missing values, and not a single valid value -- set imputation method to \"constant\".");
-		}
 		
 		// Order entries by category (string) value
 		Ordering<String> valueComparator = Ordering.natural();
@@ -196,7 +209,8 @@ public class RecodeAgent extends TransformationAgent {
 				++rcdIndex;
 				
 				// output (w, count, rcdIndex)
-				br.write(UtilFunctions.quote(w) + TXMTD_SEP + rcdIndex + TXMTD_SEP + count  + "\n");
+				if(br != null)		
+					br.write(UtilFunctions.quote(w) + TXMTD_SEP + rcdIndex + TXMTD_SEP + count  + "\n");
 				
 				if(maxCount < count) {
 					maxCount = count;
@@ -207,34 +221,48 @@ public class RecodeAgent extends TransformationAgent {
 				// Replace count with recode index (useful when invoked from CP)
 				map.put(w, (long)rcdIndex);
 		}
-		br.close();
+		
+		if(br != null)		
+			br.close();
 		
 		if ( mode == null ) {
 			mode = "";
 			maxCount = 0;
 		}
 		
-		// output number of distinct values
-		pt=new Path(outputDir+"/Recode/"+ outputColumnNames[colID-1] + MODE_FILE_SUFFIX);
-		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(UtilFunctions.quote(mode) + "," + modeIndex + "," + maxCount );
-		br.close();
+		if ( isRecoded ) 
+		{
+			// output mode
+			pt=new Path(outputDir+"/Recode/"+ outputColumnNames[colID-1] + MODE_FILE_SUFFIX);
+			br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
+			br.write(UtilFunctions.quote(mode) + "," + modeIndex + "," + maxCount );
+			br.close();
 		
-		// output "mode"
-		pt=new Path(outputDir+"/Recode/"+ outputColumnNames[colID-1] + NDISTINCT_FILE_SUFFIX);
-		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(""+map.size());
-		br.close();
+			// output number of distinct values
+			pt=new Path(outputDir+"/Recode/"+ outputColumnNames[colID-1] + NDISTINCT_FILE_SUFFIX);
+			br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
+			br.write(""+map.size());
+			br.close();
+		}
+		
+		if (isModeImputed) 
+		{
+			pt=new Path(outputDir+"/Impute/"+ outputColumnNames[colID-1] + MV_FILE_SUFFIX);
+			br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
+			br.write(colID + "," + UtilFunctions.quote(mode));
+			br.close();
+		}
+		
 	}
 	
 	public void outputTransformationMetadata(String outputDir, FileSystem fs, MVImputeAgent mvagent) throws IOException {
 		if(_rcdList == null && _mvrcdList == null )
 			return;
+		
 		for(int i=0; i<_fullrcdList.length; i++) {
 			int colID = _fullrcdList[i];
-			writeMetadata(_rcdMaps.get(colID), outputDir, colID, fs, mvagent);
+			writeMetadata(_rcdMaps.get(colID), outputDir, colID, fs, mvagent, true);
 		}
-		
 	}
 	
 	/** 
@@ -245,7 +273,7 @@ public class RecodeAgent extends TransformationAgent {
 	 * @throws IOException 
 	 */
 	@Override
-	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, JobConf job) throws IOException {
+	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, JobConf job, TfAgents agents) throws IOException {
 		HashMap<String, Long> map = new HashMap<String,Long>();
 		
 		DistinctValue d = new DistinctValue();
@@ -265,7 +293,7 @@ public class RecodeAgent extends TransformationAgent {
 				map.put(word, val+count);
 		}
 		
-		writeMetadata(map, outputDir, colID, FileSystem.get(job), null);
+		writeMetadata(map, outputDir, colID, FileSystem.get(job), agents.getMVImputeAgent(), false);
 	}
 	
 	// ------------------------------------------------------------------------------------------------
@@ -285,14 +313,14 @@ public class RecodeAgent extends TransformationAgent {
 	 */
 	@Override
 	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir) throws IOException {
-		if ( _rcdList == null && _mvrcdList == null)
+		if ( _rcdList == null )
 			return;
 		
 		_finalMaps = new HashMap<Integer, HashMap<String, String>>();
 	
 		if(fs.isDirectory(txMtdDir)) {
-			for(int i=0; i<_fullrcdList.length;i++) {
-				int colID = _fullrcdList[i];
+			for(int i=0; i<_rcdList.length;i++) {
+				int colID = _rcdList[i];
 				
 				Path path = new Path( txMtdDir + "/Recode/" + outputColumnNames[colID-1] + RCD_MAP_FILE_SUFFIX);
 				TransformationAgent.checkValidInputFile(fs, path, true); 

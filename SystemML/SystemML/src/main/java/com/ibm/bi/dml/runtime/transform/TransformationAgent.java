@@ -79,7 +79,7 @@ public abstract class TransformationAgent {
 
 	abstract public void print();
 	abstract public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException;
-	abstract public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, JobConf job) throws IOException;
+	abstract public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, JobConf job, TfAgents agents) throws IOException;
 	
 	abstract public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir) throws IOException;
 	abstract public String[] apply(String[] words);

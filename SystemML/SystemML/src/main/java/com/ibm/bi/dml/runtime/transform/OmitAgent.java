@@ -97,7 +97,7 @@ public class OmitAgent extends TransformationAgent {
 	@Override
 	public void mergeAndOutputTransformationMetadata(
 			Iterator<DistinctValue> values, String outputDir, int colID,
-			JobConf job) throws IOException {
+			JobConf job, TfAgents agents) throws IOException {
 	}
 
 	@Override

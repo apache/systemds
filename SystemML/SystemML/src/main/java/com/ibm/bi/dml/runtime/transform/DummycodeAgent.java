@@ -88,7 +88,7 @@ public class DummycodeAgent extends TransformationAgent {
 	
 	@Override
 	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values,
-			String outputDir, int colID, JobConf job) throws IOException {
+			String outputDir, int colID, JobConf job, TfAgents agents) throws IOException {
 		// Nothing to do here
 	}
 
@@ -191,7 +191,7 @@ public class DummycodeAgent extends TransformationAgent {
 		{
 			int st = (i==0 ? 1 : _dcdColumnMap[i-1]+1+1);
 			int end = _dcdColumnMap[i]+1;
-			System.out.println((i+1) + ": " + "[" + st + "," + end + "]");
+			//System.out.println((i+1) + ": " + "[" + st + "," + end + "]");
 			
 			if ( colID >= st && colID <= end)
 				return i+1;
@@ -253,7 +253,7 @@ public class DummycodeAgent extends TransformationAgent {
 					Ordering<String> orderByID = new Ordering<String>() 
 					{
 			    		public int compare(String s1, String s2) {
-			        		return Integer.compare(Integer.parseInt(s1), Integer.parseInt(s2));
+			        		return (Integer.parseInt(s1) - Integer.parseInt(s2));
 			    		}
 					};
 					

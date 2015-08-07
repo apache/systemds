@@ -81,11 +81,6 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	
 	private String[] _replacementList = null;		// replacements: for global_mean, mean; and for global_mode, recode id of mode category
-	private String[] _modeList = null;
-	
-	MVImputeAgent() {
-		
-	}
 	
 	MVImputeAgent(JSONObject parsedSpec) {
 		JSONObject mvobj = (JSONObject) parsedSpec.get(TX_METHOD.IMPUTE.toString());
@@ -122,8 +117,7 @@ public class MVImputeAgent extends TransformationAgent {
 				_meanList[i] = new KahanObject(0, 0);
 			}
 			
-			_modeList = new String[mvLength];			// contains replacements for "categorical" columns
-			_replacementList = new String[mvLength]; 	// contains replacements for "scale" columns, including computed means as well constants
+			_replacementList = new String[mvLength]; 	// contains replacements for all columns (scale and categorical)
 			
 			JSONArray constants = (JSONArray)mvobj.get(JSON_CONSTS);
 			for(int i=0; i < constants.size(); i++) {
@@ -469,7 +463,7 @@ public class MVImputeAgent extends TransformationAgent {
 	 * @throws IOException 
 	 */
 	@Override
-	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, JobConf job) throws IOException {
+	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, JobConf job, TfAgents agents) throws IOException {
 		double min = Double.MAX_VALUE;
 		double max = Double.MIN_VALUE;
 		int nbins = 0;
@@ -661,31 +655,10 @@ public class MVImputeAgent extends TransformationAgent {
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
 		String line = br.readLine();
-		String replacement = line.split(TXMTD_SEP)[1];
+		String replacement =  UtilFunctions.unquote(line.split(TXMTD_SEP)[1]);
 		br.close();
 		
 		return replacement;
-	}
-	
-	private String readMode(int colID, FileSystem fs, Path txMtdDir) throws IOException
-	{
-		Path path = new Path( txMtdDir + "/Recode/" + outputColumnNames[colID-1] + MODE_FILE_SUFFIX);
-		TransformationAgent.checkValidInputFile(fs, path, true); 
-		
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
-		String line = br.readLine();
-
-		int idxQuote = line.lastIndexOf('"');
-		String mode = UtilFunctions.unquote(line.substring(0,idxQuote+1));	// mode in string form
-		br.close();
-		
-		/*int idx = idxQuote+2;
-		while(line.charAt(idx) != TXMTD_SEP.charAt(0))
-			idx++;
-		_replacementList[i] = line.substring(idxQuote+2,idx); // recode id of mode (unused)
-		*/
-		
-		return mode;
 	}
 	
 	public String readScaleLine(int colID, FileSystem fs, Path txMtdDir) throws IOException
@@ -730,12 +703,9 @@ public class MVImputeAgent extends TransformationAgent {
 				for(int i=0; i<_mvList.length;i++) {
 					int colID = _mvList[i];
 					
-					if ( _mvMethodList[i] == 1 )
-						// global_mean
+					if ( _mvMethodList[i] == 1 || _mvMethodList[i] == 2 )
+						// global_mean or global_mode
 						_replacementList[i] = readReplacement(colID, fs, tfMtdDir);
-					else if ( _mvMethodList[i] == 2 )
-						// global_mode: located along with recode maps
-						_modeList[i] = readMode(colID, fs, tfMtdDir);
 					else if ( _mvMethodList[i] == 3 ) {
 						// constant: replace a missing value by a given constant
 						// nothing to do. The constant values are loaded already during configure 
@@ -774,7 +744,7 @@ public class MVImputeAgent extends TransformationAgent {
 			int colID = _mvList[i];
 			String w = UtilFunctions.unquote(words[colID-1]);
 			if(isNA(w))
-				words[colID-1] = (_mvMethodList[i] == 2 ? _modeList[i] : _replacementList[i] );
+				words[colID-1] = _replacementList[i];
 			
 			if ( _isMVScaled.get(i) )
 				if ( _mvscMethodList[i] == 1 )

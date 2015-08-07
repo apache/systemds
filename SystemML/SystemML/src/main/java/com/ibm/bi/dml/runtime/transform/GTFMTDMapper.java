@@ -48,6 +48,7 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 	RecodeAgent _ra = null;	
 	BinAgent _ba = null;
 	DummycodeAgent _da = null;
+	TfAgents _agents = null;
 
 	private static boolean _partFileWithHeader = false;
 	
@@ -101,6 +102,7 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 			_ra = new RecodeAgent(spec);
 			_ba = new BinAgent(spec);
 			_da = new DummycodeAgent(spec, _numCols);
+			_agents = new TfAgents(_oa, _mia, _ra, _ba, _da);
 			
 			fs = FileSystem.get(job);
 			Path thisPath=new Path(job.get("map.input.file")).makeQualified(fs);

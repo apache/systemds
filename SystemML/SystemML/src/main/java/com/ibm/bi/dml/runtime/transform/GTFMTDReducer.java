@@ -6,7 +6,9 @@
  */
 
 package com.ibm.bi.dml.runtime.transform;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -27,6 +29,7 @@ import org.apache.hadoop.mapred.Reporter;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.json.java.JSONObject;
 
 
 public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, LongWritable> {
@@ -43,6 +46,10 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 	private static String _offsetFile = null;
 	private static Pattern _delim = null;		// Delimiter in the input file
 	private static String[] _naStrings = null;	// Strings denoting missing value
+
+	private static MVImputeAgent _mia = null;
+	private static RecodeAgent _ra = null;
+	TfAgents _agents = null;
 	
 	@Override
 	public void configure(JobConf job) {
@@ -57,6 +64,20 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 		_naStrings = DataTransform.parseNAStrings(job);
 		
 		TransformationAgent.init(_naStrings, job.get(MRJobConfiguration.TF_HEADER), _delim.pattern());
+		
+		try {
+			String specFile = job.get(MRJobConfiguration.TF_SPEC_FILE);
+			FileSystem fs = FileSystem.get(job);
+			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(specFile))));
+			JSONObject spec = JSONObject.parse(br);
+			_mia = new MVImputeAgent(spec);
+			_ra = new RecodeAgent(spec);
+			_agents = new TfAgents(null, _mia, _ra, null, null);
+		} 
+		catch(IOException e) 
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -76,8 +97,7 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 		{
 			// process mapper output for MV and Bin agents
 			colID = colID*-1;
-			MVImputeAgent mia = new MVImputeAgent();
-			mia.mergeAndOutputTransformationMetadata(values, _outputDir, colID, _rJob);
+			_mia.mergeAndOutputTransformationMetadata(values, _outputDir, colID, _rJob, _agents);
 		}
 		else if ( colID == _numCols + 1)
 		{
@@ -107,8 +127,7 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 		else 
 		{
 			// process mapper output for Recode agent
-			RecodeAgent ra = new RecodeAgent();
-			ra.mergeAndOutputTransformationMetadata(values, _outputDir, colID, _rJob);
+			_ra.mergeAndOutputTransformationMetadata(values, _outputDir, colID, _rJob, _agents);
 		}
 		
 	}

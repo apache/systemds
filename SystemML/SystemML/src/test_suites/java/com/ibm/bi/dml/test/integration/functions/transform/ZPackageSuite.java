@@ -9,6 +9,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 	TransformTest.class,
 	ScalingTest.class,
+	RunTest.class
 })
 
 

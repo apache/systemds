@@ -504,6 +504,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		if ( incr.getLongValue() <= 0 ) //would produce infinite loop
 			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment of variable '" + iterVarName + "' must evaluate to a positive value.");
 		
+		//early exit on num iterations = zero
+		if( computeNumIterations(from, to, incr) <= 0 )
+			return; //avoid unnecessary optimization/initialization
+		
 		///////
 		//OPTIMIZATION of ParFOR body (incl all child parfor PBs)
 		///////
@@ -1782,6 +1786,17 @@ public class ParForProgramBlock extends ForProgramBlock
 				StatisticMonitor.putPfPwMapping(_ID, _pwIDs[i]);
 		}
 	}
+
+	/**
+	 * 
+	 * @param from
+	 * @param to
+	 * @param incr
+	 */
+	private long computeNumIterations( IntObject from, IntObject to, IntObject incr )
+	{
+		return (long)Math.ceil(((double)(to.getLongValue() - from.getLongValue() + 1)) / incr.getLongValue()); 
+	}
 	
 	/**
 	 * 
@@ -1792,7 +1807,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private void updateIterablePredicateVars(String iterVarName, IntObject from, IntObject to, IntObject incr) 
 	{
-		_numIterations = (long)Math.ceil(((double)(to.getLongValue() - from.getLongValue() + 1)) / incr.getLongValue()); 
+		_numIterations = computeNumIterations(from, to, incr); 
 		
 		//keep original iterable predicate
 		_iterablePredicateVarsOriginal = new String[4];

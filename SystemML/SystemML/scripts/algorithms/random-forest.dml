@@ -80,6 +80,14 @@ Y_bin = read($Y);
 num_records = nrow (X);
 num_classes = ncol (Y_bin);
 
+# check if there is only one class label
+Y_bin_sum = sum (ppred (colSums (Y_bin), num_records, "=="));
+if (Y_bin_sum == 1) {
+	stop ("Y contains only one class label. No model will be learned!");
+} else if (Y_bin_sum > 1) {
+	stop ("Y is not properly dummy coded. Multiple columns of Y contain only ones!")
+}
+
 # split data into X_scale and X_cat
 if (fileR != " ") {
 	R = read (fileR);
@@ -325,7 +333,9 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			# determine best feature to split on and the split value
 			feature_start_ind = matrix (0, rows = 1, cols = num_scale_features);
 			feature_start_ind[1,1] = 1;
-			feature_start_ind[1,2:num_scale_features] = cum_count_thresholds[1,1:(num_scale_features - 1)] + 1;
+			if (num_scale_features > 1) {
+				feature_start_ind[1,2:num_scale_features] = cum_count_thresholds[1,1:(num_scale_features - 1)] + 1;
+			}
 			max_I_gain_found = 0;
 			max_I_gain_found_ind = 0;
 			best_i = 0;
@@ -475,7 +485,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		}		
 	
 		# compare best scale feature to best cat. feature and pick the best one
-		if (best_scale_gain >= best_cat_gain & best_scale_gain > 0) {
+		if (num_scale_features > 0 & num_scale_feature_samples > 0 & best_scale_gain >= best_cat_gain & best_scale_gain > 0) {
 			
 			# --- update model ---
 			cur_F_large[1,i6] = best_scale_feature;
@@ -547,7 +557,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				
 			}
 		
-		} else if (best_cat_gain > 0) {
+		} else if (num_cat_features > 0 & num_cat_feature_samples > 0 & best_cat_gain > 0) {
 			
 			# --- update model ---
 			cur_F_large[1,i6] = best_cat_feature;
@@ -662,7 +672,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	
 	##### PREPARE MODEL FOR LARGE NODES
 	if (num_cur_nodes_large > 0) {
-		cur_Q_large = removeEmpty (target = cur_Q_large, margin = "cols");
+		cur_Q_large = removeEmpty (target = cur_Q_large, margin = "cols"); # needed
 		if (as.scalar (cur_Q_large[1,1]) != 0) Q_large = append (Q_large, cur_Q_large);
 		cur_NC_large = removeEmpty (target = cur_NC_large, margin = "cols");
 		if (as.scalar (cur_NC_large[1,1]) != 0) NC_large = append (NC_large, cur_NC_large);
@@ -670,6 +680,10 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		F_large = append (F_large, cur_F_large);
 		cur_S_large = removeEmpty (target = cur_S_large, margin = "cols");
 		if (as.scalar (cur_S_large[1,1]) != 0) S_large = append (S_large, cur_S_large);	
+		# Q_large = append (Q_large, cur_Q_large);
+		# NC_large = append (NC_large, cur_NC_large);
+		# F_large = append (F_large, cur_F_large);
+		# S_large = append (S_large, cur_S_large);
 			
 		num_cur_nodes_large_pre = 2 * num_cur_nodes_large;
 		if (as.scalar (cur_Q_large[1,1]) == 0) {
@@ -821,7 +835,9 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					# determine best feature to split on and the split value
 					feature_start_ind = matrix (0, rows = 1, cols = num_scale_features);
 					feature_start_ind[1,1] = 1;
-					feature_start_ind[1,2:num_scale_features] = cum_count_thresholds[1,1:(num_scale_features - 1)] + 1;
+					if (num_scale_features > 1) {
+						feature_start_ind[1,2:num_scale_features] = cum_count_thresholds[1,1:(num_scale_features - 1)] + 1;
+					}
 					max_I_gain_found = 0;
 					max_I_gain_found_ind = 0;
 					best_i = 0;
@@ -971,7 +987,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				}
 				
 				# compare best scale feature to best cat. feature and pick the best one
-				if (best_scale_gain >= best_cat_gain & best_scale_gain > 0) {
+				if (num_scale_features > 0 & num_scale_feature_samples > 0 & best_scale_gain >= best_cat_gain & best_scale_gain > 0) {
 					
 					# --- update model ---
 					cur_F[1,i8] = best_scale_feature;
@@ -1040,7 +1056,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						
 					}									
 														
-				} else if (best_cat_gain > 0) {
+				} else if (num_cat_features > 0 & num_cat_feature_samples > 0 & best_cat_gain > 0) {
 					
 					# --- update model ---
 					cur_F[1,i8] = best_cat_feature;
@@ -1135,7 +1151,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				}
 			}
 		
-			cur_Q = removeEmpty (target = cur_Q, margin = "cols");
+			cur_Q = removeEmpty (target = cur_Q, margin = "cols"); # needed
 			if (as.scalar (cur_Q[1,1]) != 0) Q = append (Q, cur_Q);
 			cur_NC = removeEmpty (target = cur_NC, margin = "cols");
 			if (as.scalar (cur_NC[1,1]) != 0) NC = append (NC, cur_NC);
@@ -1143,6 +1159,10 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			F = append (F, cur_F);
 			cur_S = removeEmpty (target = cur_S, margin = "cols");
 			if (as.scalar (cur_S[1,1]) != 0) S = append (S, cur_S);
+			# Q = append (Q, cur_Q);
+			# NC = append (NC, cur_NC);
+			# F = append (F, cur_F);
+			# S = append (S, cur_S);
 		
 			num_cur_nodes_pre = 2 * num_cur_nodes;
 			if (as.scalar (cur_Q[1,1]) == 0) {
@@ -1157,6 +1177,10 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1 - 1)] = NC[,2:ncol (NC)];
 		cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1 - 1)] = F[,2:ncol (F)];	
 		cur_S_small[,start_ind_S_global:(start_ind_S_global + ncol (S) - 1 - 1)] = S[,2:ncol (S)]; 
+		# cur_Q_small[,start_ind_global:(start_ind_global + ncol (Q) - 1)] = Q;
+		# cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1)] = NC;
+		# cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1)] = F;	
+		# cur_S_small[,start_ind_S_global:(start_ind_S_global + ncol (S) - 1)] = S; 
 	}
 
 	##### PREPARE MODEL FOR SMALL NODES	
@@ -1169,8 +1193,12 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		cur_F_small = removeEmpty (target = cur_F_small, margin = "cols"); # 
 		F_small = append (F_small, cur_F_small);
 		cur_S_small = removeEmpty (target = cur_S_small, margin = "cols"); #		
-		S_small = append (S_small, cur_S_small)
-
+		if (as.scalar (cur_S_small[1,1]) != 0) S_small = append (S_small, cur_S_small); ###NEW
+		# Q_small = append (Q_small, cur_Q_small);
+		# NC_small = append (NC_small, cur_NC_small);
+		# F_small = append (F_small, cur_F_small);
+		# S_small = append (S_small, cur_S_small); ###NEW
+		
 		num_cur_nodes_small = 0; # reset
 	} 
 		
@@ -1179,7 +1207,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 
 #### prepare model
 print ("PREPARING MODEL...")
-# large nodes
+### large nodes
 if (as.scalar (Q_large[1,1]) == 0 & ncol (Q_large) > 1) {
 	Q_large = Q_large[,2:ncol (Q_large)];
 }
@@ -1192,7 +1220,7 @@ if (as.scalar (S_large[1,1]) == 0 & ncol (S_large) > 1) {
 if (as.scalar (F_large[1,1]) == 0 & ncol (F_large) > 1) {
 	F_large = F_large[,2:ncol (F_large)];
 }
-# small nodes
+### small nodes
 if (as.scalar (Q_small[1,1]) == 0 & ncol (Q_small) > 1) {
 	Q_small = Q_small[,2:ncol (Q_small)];
 }
@@ -1205,6 +1233,14 @@ if (as.scalar (S_small[1,1]) == 0 & ncol (S_small) > 1) {
 if (as.scalar (F_small[1,1]) == 0 & ncol (F_small) > 1) {
 	F_small = F_small[,2:ncol (F_small)];
 }
+# Q_large = removeEmpty (target = Q_large, margin = "cols");
+# NC_large = removeEmpty (target = NC_large, margin = "cols");
+# S_large = removeEmpty (target = S_large, margin = "cols");
+# F_large = removeEmpty (target = F_large, margin = "cols");
+# Q_small = removeEmpty (target = Q_small, margin = "cols");
+# NC_small = removeEmpty (target = NC_small, margin = "cols");
+# S_small = removeEmpty (target = S_small, margin = "cols");
+# F_small = removeEmpty (target = F_small, margin = "cols");
 
 # check for special leaves and if there are any remove them from Q_large and Q_small 
 special_large_leaves_ind = NC_large[5,];
@@ -1230,6 +1266,7 @@ if (num_special_small_leaf > 0) {
 # model corresponding to large internal nodes
 no_large_internal_node = FALSE;
 if (as.scalar (Q_large[1,1]) != 0) {
+	print ("PROCESSING LARGE INTERNAL NODES...");
 	num_large_internal = ncol (Q_large);
 	max_offset = max (max (F_large[3,]), max (F_small[3,]));
 	M1_large = matrix (0, rows = 6 + max_offset, cols = num_large_internal);
@@ -1253,6 +1290,7 @@ if (as.scalar (Q_large[1,1]) != 0) {
 # model corresponding to small internal nodes
 no_small_internal_node = FALSE;
 if (as.scalar (Q_small[1,1]) != 0) {
+	print ("PROCESSING SMALL INTERNAL NODES...");
 	num_small_internal = ncol (Q_small);
 	M1_small = matrix (0, rows = 6 + max_offset, cols = num_small_internal);
 	M1_small[1:2,] = Q_small;
@@ -1275,6 +1313,7 @@ if (as.scalar (Q_small[1,1]) != 0) {
 # model corresponding to large leaf nodes
 no_large_leaf_node = FALSE;
 if (as.scalar (NC_large[1,1]) != 0) {
+	print ("PROCESSING LARGE LEAF NODES...");
 	num_large_leaf = ncol (NC_large);
 	M2_large = matrix (0, rows = 6 + max_offset, cols = num_large_leaf);
 	M2_large[1:2,] = NC_large[1:2,];
@@ -1287,6 +1326,7 @@ if (as.scalar (NC_large[1,1]) != 0) {
 # model corresponding to small leaf nodes
 no_small_leaf_node = FALSE;
 if (as.scalar (NC_small[1,1]) != 0) {
+	print ("PROCESSING SMALL LEAF NODES...");
 	num_small_leaf = ncol (NC_small);
 	M2_small = matrix (0, rows = 6 + max_offset, cols = num_small_leaf);
 	M2_small[1:2,] = NC_small[1:2,];
@@ -1313,54 +1353,70 @@ if (no_large_leaf_node) {
 }
 
 M = append (M1, M2);
-M = t (order (target = t (M), by = 2)); # sort by tree id sequentially
+M = t (order (target = t (M), by = 1)); # sort by node id
+M = t (order (target = t (M), by = 2)); # sort by tree id
 
-# count nodes per tree
-num_nodes_per_tree = aggregate (target = t (M[2,]), groups = t (M[2,]), fn = "count");
-num_nodes_per_tree_cum = cumsum (num_nodes_per_tree);
 
-for (it in 1:num_trees, check = 0) {
-	start_ind = 1;
-	if (it > 1) {
-		start_ind = start_ind + as.scalar (num_nodes_per_tree_cum[it - 1,]);
+# removing redundant subtrees
+if (ncol (M) > 1) {
+	print ("CHECKING FOR REDUNDANT SUBTREES...");
+	red_leaf = TRUE;
+	process_red_subtree = FALSE;
+	invalid_node_ind = matrix (0, rows = 1, cols = ncol (M));
+	while (red_leaf & ncol (M) > 1) {
+		leaf_ind = ppred (M[4,], 0, "==");
+		labels = M[5,] * leaf_ind;
+		tree_ids = M[2,];
+		parent_ids = floor (M[1,] /2);
+		cond1 = ppred (labels[,1:(ncol (M) - 1)], labels[,2:ncol (M)], "=="); # siebling leaves with same label
+		cond2 = ppred (parent_ids[,1:(ncol (M) - 1)], parent_ids[,2:ncol (M)], "=="); # same parents
+		cond3 = ppred (tree_ids[1,(ncol (M) - 1)], tree_ids[,2:ncol (M)], "=="); # same tree
+		red_leaf_ind =  cond1 * cond2 * cond3 * leaf_ind[,2:ncol (M)];	
+		
+		if (sum (red_leaf_ind) > 0) { # if redundant subtrees exist
+			red_leaf_ids = M[1:2,2:ncol (M)] * red_leaf_ind;
+			red_leaf_ids_nonzero = removeEmpty (target = red_leaf_ids, margin = "cols");
+			parfor (it in 1:ncol (red_leaf_ids_nonzero), check = 0){
+				cur_right_leaf_id = as.scalar (red_leaf_ids_nonzero[1,it]); 
+				cur_parent_id = floor (cur_right_leaf_id / 2);
+				cur_tree_id = as.scalar (red_leaf_ids_nonzero[2,it]); 
+				cur_right_leaf_pos = as.scalar (rowIndexMax (ppred (M[1,], cur_right_leaf_id, "==") * ppred (M[2,], cur_tree_id, "==")));
+				cur_parent_pos = as.scalar(rowIndexMax (ppred (M[1,], cur_parent_id, "==") * ppred (M[2,], cur_tree_id, "==")));
+				M[3:nrow (M), cur_parent_pos] = M[3:nrow (M), cur_right_leaf_pos];
+				M[4,cur_right_leaf_pos] = -1;
+				M[4,cur_right_leaf_pos - 1] = -1;
+				invalid_node_ind[1,cur_right_leaf_pos] = 1;
+				invalid_node_ind[1,cur_right_leaf_pos - 1] = 1;				
+			}
+			process_red_subtree = TRUE;
+		} else {
+			red_leaf = FALSE;
+		}
 	}
-	offset = as.scalar (num_nodes_per_tree_cum[it,]);
-	M_portion = M[,start_ind:offset];
-	M[,start_ind:offset] = t (order (target = t (M_portion), by = 1));
+	
+	if (process_red_subtree) {
+		print ("REMOVING REDUNDANT SUBTREES...");
+		valid_node_ind = ppred (invalid_node_ind, 0, "==");
+		M = removeEmpty (target = M * valid_node_ind, margin = "cols");
+	}
 }
 
-if (!no_large_internal_node) {
-	parfor (it in 1:ncol (Q_large), check = 0) { # iterate over LARGE internal nodes
-		a1 = as.scalar (Q_large[1,it]);		
-		t1 = as.scalar (Q_large[2,it]);
-		start_ind = 1;
-		if (t1 > 1) {
-			start_ind = start_ind + as.scalar (num_nodes_per_tree_cum[t1 - 1,]);
-		}
-		offset = as.scalar (num_nodes_per_tree_cum[t1,]);		
-		M_portion = M[,start_ind:offset];		
-		pos_a1 = as.scalar (rowIndexMax (ppred (M_portion[1,], a1, "==")));
+internal_ind = ppred (M[4,], 0, ">");
+internal_ids = M[1:2,] * internal_ind; 
+internal_ids_nonzero = removeEmpty (target = internal_ids, margin = "cols");
+if (as.scalar (internal_ids_nonzero[1,1]) > 0) { # if internal nodes exist 
+	parfor (it in 1:ncol (internal_ids_nonzero), check = 0) {
+		a1 = as.scalar (internal_ids_nonzero[1,it]);
+		cur_tree_id = as.scalar (internal_ids_nonzero[2,it]);
+		# pos_a1 = sum (ppred (M[1,], a1, "<="));
+		pos_a1 = as.scalar (rowIndexMax (ppred (M[1,], a1, "==") * ppred (M[2,], cur_tree_id, "==")));
 		a2 = 2 * a1;
-		pos_a2 = as.scalar (rowIndexMax (ppred (M_portion[1,], a2, "==")));
-		M[3,(start_ind + pos_a1 - 1)] = pos_a2 - pos_a1;
+		# pos_a2 = sum (ppred (M[1,], a2, "<="));
+		pos_a2 = as.scalar (rowIndexMax (ppred (M[1,], a2, "==")* ppred (M[2,], cur_tree_id, "==")));
+		M[3,pos_a1] = pos_a2 - pos_a1;
 	}
-}
-
-if (!no_small_internal_node) {
-	parfor (it in 1:ncol (Q_small), check = 0) { # iterate over SMALL internal nodes
-		a1 = as.scalar (Q_small[1,it]);		
-		t1 = as.scalar (Q_small[2,it]);
-		start_ind = 1;
-		if (t1 > 1) {
-			start_ind = start_ind + as.scalar (num_nodes_per_tree_cum[t1 - 1,]);
-		}
-		offset = as.scalar (num_nodes_per_tree_cum[t1,]);
-		M_portion = M[,start_ind:offset];		
-		pos_a1 = as.scalar (rowIndexMax (ppred (M_portion[1,], a1, "==")));
-		a2 = 2 * a1;
-		pos_a2 = as.scalar (rowIndexMax (ppred (M_portion[1,], a2, "==")));
-		M[3,(start_ind + pos_a1 - 1)] = pos_a2 - pos_a1;
-	}
+} else {
+	print ("All trees in the random forest contain only one leaf!");
 }
 
 if (fileC != " ") {

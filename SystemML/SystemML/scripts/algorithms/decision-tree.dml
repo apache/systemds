@@ -74,6 +74,14 @@ Y_bin = read($Y);
 num_records = nrow (X);
 num_classes = ncol (Y_bin);
 
+# check if there is only one class label
+Y_bin_sum = sum (ppred (colSums (Y_bin), num_records, "=="));
+if (Y_bin_sum == 1) {
+	stop ("Y contains only one class label. No model will be learned!");
+} else if (Y_bin_sum > 1) {
+	stop ("Y is not properly dummy coded. Multiple columns of Y contain only ones!")
+}
+
 # split data into X_scale and X_cat
 if (fileR != " ") {
 	R = read (fileR);
@@ -635,8 +643,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		F = matrix (0, rows = 3, cols = 1); 
 		S = matrix (0, rows = 1, cols = 1); 
 
-		cur_nodes_ = matrix (cur_node_small, rows = 1, cols = 1);
-		
+		cur_nodes_ = matrix (cur_node_small, rows = 1, cols = ncol(cur_Q_small));
+
 		num_cur_nodes = 1;
 		level_ = level;
 		while (num_cur_nodes > 0 & level_ < depth) {
@@ -980,8 +988,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			if (as.scalar (cur_Q[1,1]) == 0) {
 				num_cur_nodes = 0;
 			} else {
-				cur_nodes_ = cur_Q;
-				num_cur_nodes = ncol (cur_Q);
+				cur_nodes_[,1:ncol(cur_Q)] = cur_Q;
+        		num_cur_nodes = ncol (cur_Q);
 			}
 		}
 		
@@ -1072,6 +1080,7 @@ if (sum (special_small_leaves_ind) > 0) {
 max_offset = 1;
 no_large_internal_node = FALSE;
 if (as.scalar (Q_large[1,1]) != 0) {
+	print ("PROCESSING LARGE INTERNAL NODES...");
 	num_large_internal = ncol (Q_large);
 	max_offset = max (max (F_large[3,]), max (F_small[3,]));
 	M1_large = matrix (0, rows = 5 + max_offset, cols = num_large_internal);
@@ -1095,6 +1104,7 @@ if (as.scalar (Q_large[1,1]) != 0) {
 # model corresponding to small internal nodes
 no_small_internal_node = FALSE;
 if (as.scalar (Q_small[1,1]) != 0) {
+	print ("PROCESSING SMALL INTERNAL NODES...");
 	num_small_internal = ncol (Q_small);
 	M1_small = matrix (0, rows = 5 + max_offset, cols = num_small_internal);
 	M1_small[1,] = Q_small;
@@ -1117,6 +1127,7 @@ if (as.scalar (Q_small[1,1]) != 0) {
 # model corresponding to large leaf nodes
 no_large_leaf_node = FALSE;
 if (as.scalar (NC_large[1,1]) != 0) {
+	print ("PROCESSING LARGE LEAF NODES...");
 	num_large_leaf = ncol (NC_large);
 	M2_large = matrix (0, rows = 5 + max_offset, cols = num_large_leaf);
 	M2_large[1,] = NC_large[1,];
@@ -1131,6 +1142,7 @@ if (as.scalar (NC_large[1,1]) != 0) {
 # model corresponding to small leaf nodes
 no_small_leaf_node = FALSE;
 if (as.scalar (NC_small[1,1]) != 0) {
+	print ("PROCESSING SMALL LEAF NODES...");
 	num_small_leaf = ncol (NC_small);
 	M2_small = matrix (0, rows = 5 + max_offset, cols = num_small_leaf);
 	M2_small[1,] = NC_small[1,];
@@ -1161,9 +1173,55 @@ if (no_large_leaf_node) {
 M = append (M1, M2);
 M = t (order (target = t (M), by = 1));
 
-if (!no_large_internal_node) {
-	parfor (it in 1:ncol (Q_large), check = 0) {
-		a1 = as.scalar (Q_large[1,it]);
+# removing redundant subtrees
+if (ncol (M) > 1) {
+	print ("CHECKING FOR REDUNDANT SUBTREES...");
+	red_leaf = TRUE;
+	process_red_subtree = FALSE;
+	invalid_node_ind = matrix (0, rows = 1, cols = ncol (M));
+	while (red_leaf & ncol (M) > 1) {
+		leaf_ind = ppred (M[3,], 0, "==");
+		labels = M[4,] * leaf_ind;
+		parent_ids = floor (M[1,] /2);
+		cond1 = ppred (labels[,1:(ncol (M) - 1)], labels[,2:ncol (M)], "=="); # siebling leaves with same label
+		cond2 = ppred (parent_ids[,1:(ncol (M)- 1)], parent_ids[,2:ncol (M)], "=="); # same parents
+		red_leaf_ind =  cond1 * cond2 * leaf_ind[,2:ncol (M)];	
+		
+		if (sum (red_leaf_ind) > 0) { # if redundant subtrees exist
+			red_leaf_ids = red_leaf_ind * M[1,2:ncol (M)];
+			red_leaf_ids_nonzero = removeEmpty (target = red_leaf_ids, margin = "cols");
+			parfor (it in 1:ncol (red_leaf_ids_nonzero), check = 0){
+				cur_right_leaf_id = as.scalar (red_leaf_ids_nonzero[1,it]); 
+				cur_parent_id = floor (cur_right_leaf_id / 2);
+				cur_right_leaf_pos = as.scalar (rowIndexMax (ppred (M[1,], cur_right_leaf_id, "==")));
+				cur_parent_pos = as.scalar(rowIndexMax (ppred (M[1,], cur_parent_id, "==")));
+				M[2:nrow (M), cur_parent_pos] = M[2:nrow (M), cur_right_leaf_pos];
+				M[3,cur_right_leaf_pos] = -1;
+				M[3,cur_right_leaf_pos - 1] = -1;
+				M[5,cur_parent_pos] = M[5,cur_parent_pos] + M[5,cur_right_leaf_pos - 1];
+				invalid_node_ind[1,cur_right_leaf_pos] = 1;
+				invalid_node_ind[1,cur_right_leaf_pos - 1] = 1;
+			}
+			process_red_subtree = TRUE;
+		} else {
+			red_leaf = FALSE;
+		}
+	}
+	
+	if (process_red_subtree) {
+		print ("REMOVING REDUNDANT SUBTREES...");
+		valid_node_ind = ppred (invalid_node_ind, 0, "==");
+		M = removeEmpty (target = M * valid_node_ind, margin = "cols");
+	}
+}
+
+if (ncol (M) > 1) { # if internal nodes exist
+	print ("COMPUTING OFFSETS TO THE LEFT CHILD FOR INTERNAL NODES...");
+	internal_ind = ppred (M[3,], 0, ">");
+	internal_ids = internal_ind * M[1,]; 
+	internal_ids_nonzero = removeEmpty (target = internal_ids, margin = "cols");
+	parfor (it in 1:ncol (internal_ids_nonzero), check = 0) {
+		a1 = as.scalar (internal_ids_nonzero[1,it]);
 		# pos_a1 = sum (ppred (M[1,], a1, "<="));
 		pos_a1 = as.scalar (rowIndexMax (ppred (M[1,], a1, "==")));
 		a2 = 2 * a1;
@@ -1171,18 +1229,8 @@ if (!no_large_internal_node) {
 		pos_a2 = as.scalar (rowIndexMax (ppred (M[1,], a2, "==")));
 		M[2,pos_a1] = pos_a2 - pos_a1;
 	}
-}
-
-if (!no_small_internal_node) {
-	parfor (it2 in 1:ncol (Q_small), check = 0) {
-		b1 = as.scalar (Q_small[1,it2]);
-		# pos_b1 = sum (ppred (M[1,], b1, "<="));
-		pos_b1 = as.scalar (rowIndexMax (ppred (M[1,], b1, "==")));
-		b2 = 2 * b1;
-		# pos_b2 = sum (ppred (M[1,], b2, "<="));
-		pos_b2 = as.scalar (rowIndexMax ( ppred (M[1,], b2, "==")));
-		M[2,pos_b1] = pos_b2 - pos_b1;
-	}
+} else {
+	print ("The tree model contains only one leaf with label " + as.scalar (M[4,]));
 }
 
 write (M, fileM, format = fmtO);

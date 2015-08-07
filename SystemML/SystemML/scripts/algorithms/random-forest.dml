@@ -51,7 +51,7 @@
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f random-forest.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/model
-#     				                 				   bins=20 depth=20 num_leaf=1 num_samples=3000 num_trees = 50 impurity=entropy fmt=csv
+#     				                 				   bins=20 depth=25 num_leaf=10 num_samples=3000 num_trees = 50 impurity=Gini fmt=csv
 
 
 # External function for binning
@@ -677,7 +677,8 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		cur_NC_large = removeEmpty (target = cur_NC_large, margin = "cols");
 		if (as.scalar (cur_NC_large[1,1]) != 0) NC_large = append (NC_large, cur_NC_large);
 
-		F_large = append (F_large, cur_F_large);
+		cur_F_large = removeEmpty (target = cur_F_large, margin = "cols");
+		if (as.scalar (cur_F_large[1,1]) != 0) F_large = append (F_large, cur_F_large);
 		cur_S_large = removeEmpty (target = cur_S_large, margin = "cols");
 		if (as.scalar (cur_S_large[1,1]) != 0) S_large = append (S_large, cur_S_large);	
 		# Q_large = append (Q_large, cur_Q_large);
@@ -701,7 +702,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	}
 		
 	if (num_cur_nodes_small > 0) { # SMALL nodes to process		
-		reserve_len = sum (2 ^ (ceil (log (cur_nodes_small_nonzero[2,]) / log (2))));
+		reserve_len = sum (2 ^ (ceil (log (cur_nodes_small_nonzero[2,]) / log (2)))) + num_cur_nodes_small;
 		cur_Q_small =  matrix (0, rows = 2, cols = reserve_len);
 		cur_F_small = matrix (0, rows = 3, cols = reserve_len); 
 		cur_NC_small = matrix (0, rows = 5, cols = reserve_len); 
@@ -1186,14 +1187,14 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	##### PREPARE MODEL FOR SMALL NODES	
 	if (num_cur_nodes_small > 0) {	# small nodes already processed
 		cur_Q_small = removeEmpty (target = cur_Q_small, margin = "cols");
-		Q_small = append (Q_small, cur_Q_small);
+		if (as.scalar (cur_Q_small[1,1]) != 0) Q_small = append (Q_small, cur_Q_small);
 		cur_NC_small = removeEmpty (target = cur_NC_small, margin = "cols");
-		NC_small = append (NC_small, cur_NC_small);
+		if (as.scalar (cur_NC_small[1,1]) != 0) NC_small = append (NC_small, cur_NC_small);
 	
 		cur_F_small = removeEmpty (target = cur_F_small, margin = "cols"); # 
-		F_small = append (F_small, cur_F_small);
+		if (as.scalar (cur_F_small[1,1]) != 0) F_small = append (F_small, cur_F_small);
 		cur_S_small = removeEmpty (target = cur_S_small, margin = "cols"); #		
-		if (as.scalar (cur_S_small[1,1]) != 0) S_small = append (S_small, cur_S_small); ###NEW
+		if (as.scalar (cur_S_small[1,1]) != 0) S_small = append (S_small, cur_S_small); 
 		# Q_small = append (Q_small, cur_Q_small);
 		# NC_small = append (NC_small, cur_NC_small);
 		# F_small = append (F_small, cur_F_small);

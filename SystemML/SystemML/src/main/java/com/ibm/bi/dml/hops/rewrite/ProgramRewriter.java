@@ -112,9 +112,10 @@ public class ProgramRewriter
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: cse
 			}
 			
+			//reapply cse after rewrites because (1) applied rewrites on operators w/ multiple parents, and
+			//(2) newly introduced operators potentially created redundancy (incl leaf merge to allow for cse)
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             
-				_dagRuleSet.add( new RewriteCommonSubexpressionElimination(false) ); //dependency: simplifications (no need to merge leafs again) 
-			
+				_dagRuleSet.add( new RewriteCommonSubexpressionElimination(true) ); //dependency: simplifications 			
 		}
 	}
 	

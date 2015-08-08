@@ -122,36 +122,39 @@ public class BinaryMInstruction extends BinaryMRInstructionBase
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput,
 			int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		
-		IndexedMatrixValue in1=cachedValues.getFirst(input1);
-		if( in1==null )
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{	
+		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input1);
+		if( blkList == null ) 
 			return;
 		
-		//allocate space for the output value
-		//try to avoid coping as much as possible
-		IndexedMatrixValue out;
-		if( (output!=input1 && output!=input2) )
-			out=cachedValues.holdPlace(output, valueClass);
-		else
-			out=tempValue;
-		
-		//get second 
-		DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
-		IndexedMatrixValue in2 = null;
-		if( _vectorType == VectorType.COL_VECTOR )
-			in2 = dcInput.getDataBlock((int)in1.getIndexes().getRowIndex(), 1);
-		else //_vectorType == VectorType.ROW_VECTOR
-			in2 = dcInput.getDataBlock(1, (int)in1.getIndexes().getColumnIndex());
-		
-		//process instruction
-		out.getIndexes().setIndexes(in1.getIndexes());
-		OperationsOnMatrixValues.performBinaryIgnoreIndexes(in1.getValue(), 
-				in2.getValue(), out.getValue(), ((BinaryOperator)optr));
-		
-		//put the output value in the cache
-		if(out==tempValue)
-			cachedValues.add(output, out);
+		for(IndexedMatrixValue in1 : blkList)
+		{
+			//allocate space for the output value
+			//try to avoid coping as much as possible
+			IndexedMatrixValue out;
+			if( (output!=input1 && output!=input2) )
+				out=cachedValues.holdPlace(output, valueClass);
+			else
+				out=tempValue;
+			
+			//get second 
+			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
+			IndexedMatrixValue in2 = null;
+			if( _vectorType == VectorType.COL_VECTOR )
+				in2 = dcInput.getDataBlock((int)in1.getIndexes().getRowIndex(), 1);
+			else //_vectorType == VectorType.ROW_VECTOR
+				in2 = dcInput.getDataBlock(1, (int)in1.getIndexes().getColumnIndex());
+			
+			//process instruction
+			out.getIndexes().setIndexes(in1.getIndexes());
+			OperationsOnMatrixValues.performBinaryIgnoreIndexes(in1.getValue(), 
+					in2.getValue(), out.getValue(), ((BinaryOperator)optr));
+			
+			//put the output value in the cache
+			if(out==tempValue)
+				cachedValues.add(output, out);
+		}
 	}
 
 	public static boolean isDistCacheOnlyIndex( String inst, byte index )

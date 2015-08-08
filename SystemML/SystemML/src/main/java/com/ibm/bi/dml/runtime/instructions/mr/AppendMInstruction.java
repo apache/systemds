@@ -14,6 +14,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
@@ -96,16 +97,30 @@ public class AppendMInstruction extends AppendInstruction
 		//right now this only deals with appending matrix with number of column <= blockColFactor
 		for(IndexedMatrixValue in1 : blkList)
 		{
-			if(in1==null)
+			if(in1 == null)
 				continue;
+		
+			//check for boundary block
+			long lastBlockColIndex = (long)Math.ceil((double)_offset/blockColFactor);
 			
-			//check if this is a boundary block
-			long lastBlockColIndex=_offset/blockColFactor;
-			if(_offset%blockColFactor!=0)
-				lastBlockColIndex++;
-			if(in1.getIndexes().getColumnIndex()!=lastBlockColIndex)
+			//case 1: pass through of non-boundary blocks
+			if( in1.getIndexes().getColumnIndex()!=lastBlockColIndex ) {
 				cachedValues.add(output, in1);
-			else
+			}
+			//case 2: pass through full input block and rhs block 
+			else if( in1.getValue().getNumColumns() == blockColFactor ) {
+				//output lhs block
+				cachedValues.add(output, in1);
+				
+				//output shallow copy of rhs block
+				DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
+				IndexedMatrixValue tmp = new IndexedMatrixValue(
+						new MatrixIndexes(in1.getIndexes().getRowIndex(), in1.getIndexes().getColumnIndex()+1),
+						dcInput.getDataBlock((int)in1.getIndexes().getRowIndex(), 1).getValue());
+				cachedValues.add(output, tmp);
+			}
+			//case 3: append operation on boundary block
+			else 
 			{
 				DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
 				MatrixValue value_in2 = dcInput.getDataBlock((int)in1.getIndexes().getRowIndex(), 1).getValue();
@@ -124,8 +139,7 @@ public class AppendMInstruction extends AppendInstruction
 				}
 	
 				OperationsOnMatrixValues.performAppend(in1.getValue(), value_in2, outlist, 
-					blockRowFactor, blockColFactor, true, 0);
-			
+					blockRowFactor, blockColFactor, true, 0);			
 			}
 		}
 	}

@@ -4032,99 +4032,35 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public void appendOperations(MatrixValue v2,
 			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor,
 			int blockColFactor, boolean m2IsLast, int nextNCol)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{	
+		MatrixBlock m2 = (MatrixBlock)v2;
 		
-		MatrixBlock m2=(MatrixBlock)v2;
-		//System.out.println("second matrix: \n"+m2);
-		Iterator<IndexedMatrixValue> p=outlist.iterator();
-		if(this.clen==blockColFactor)
+		//case 1: copy lhs and rhs to output
+		if( clen==blockColFactor )
 		{
-			MatrixBlock first=(MatrixBlock) p.next().getValue();
-			first.copy(this);
-			MatrixBlock second=(MatrixBlock) p.next().getValue();
-			second.copy(m2);
-		}else
+			((MatrixBlock) outlist.get(0).getValue()).copy(this);
+			((MatrixBlock) outlist.get(1).getValue()).copy(m2);
+		}
+		//case 2: append part of rhs to lhs, append to 2nd output if necessary
+		else
 		{
-			int ncol=Math.min(clen+m2.getNumColumns(), blockColFactor);
-			int part=ncol-clen;
-			MatrixBlock first=(MatrixBlock) p.next().getValue();
-			first.reset(rlen, ncol, this.nonZeros+m2.getNonZeros()*part/m2.getNumColumns());
-			
-			//copy the first matrix
-			if(this.sparse)
+			//single output block (via plain append operation)
+			if( clen + m2.clen < blockColFactor )
 			{
-				if(this.sparseRows!=null)
-				{
-					for(int i=0; i<Math.min(rlen, this.sparseRows.length); i++)
-					{
-						if(this.sparseRows[i]!=null)
-							first.appendRow(i, this.sparseRows[i]);
-					}
-				}
-			}else if(this.denseBlock!=null)
-			{
-				int sindx=0;
-				for(int r=0; r<rlen; r++)
-					for(int c=0; c<clen; c++)
-					{
-						first.appendValue(r, c, this.denseBlock[sindx]);
-						sindx++;
-					}
+				appendOperations(m2, (MatrixBlock) outlist.get(0).getValue());
 			}
-			
-			
-			MatrixBlock second=null;
-			
-			if(part<m2.clen)
+			//two output blocks (via slice and append)
+			else
 			{
-				second=(MatrixBlock) p.next().getValue();
-				if(m2IsLast)
-					second.reset(m2.rlen, m2.clen-part, m2.sparse);
-				else
-					second.reset(m2.rlen, Math.min(m2.clen-part+nextNCol, blockColFactor), m2.sparse);
-			}
-			
-			//copy the second
-			if(m2.sparse)
-			{
-				if(m2.sparseRows!=null)
-				{
-					for(int i=0; i<Math.min(m2.rlen, m2.sparseRows.length); i++)
-					{
-						if(m2.sparseRows[i]!=null)
-						{
-							int[] indexContainer=m2.sparseRows[i].getIndexContainer();
-							double[] valueContainer=m2.sparseRows[i].getValueContainer();
-							for(int j=0; j<m2.sparseRows[i].size(); j++)
-							{
-								if(indexContainer[j]<part)
-									first.appendValue(i, clen+indexContainer[j], valueContainer[j]);
-								else
-									second.appendValue(i, indexContainer[j]-part, valueContainer[j]);
-							}
-						}
-					}
-				}
-			}else if(m2.denseBlock!=null)
-			{
-				int sindx=0;
-				for(int r=0; r<m2.rlen; r++)
-				{
-					int c=0;
-					for(; c<part; c++)
-					{
-						first.appendValue(r, clen+c, m2.denseBlock[sindx+c]);
-					//	System.out.println("access "+(sindx+c));
-					//	System.out.println("add first ("+r+", "+(clen+c)+"), "+m2.denseBlock[sindx+c]);
-					}
-					for(; c<m2.clen; c++)
-					{
-						second.appendValue(r, c-part, m2.denseBlock[sindx+c]);
-					//	System.out.println("access "+(sindx+c));
-					//	System.out.println("add second ("+r+", "+(c-part)+"), "+m2.denseBlock[sindx+c]);
-					}
-					sindx+=m2.clen;
-				}
+				//prepare output block 1
+				MatrixBlock ret1 = (MatrixBlock) outlist.get(0).getValue();
+				MatrixBlock tmp1 = m2.sliceOperations(1, rlen, 1, blockColFactor-clen, new MatrixBlock());
+				appendOperations(tmp1, ret1);
+				
+				//prepare output block 2
+				MatrixBlock ret2 = (MatrixBlock) outlist.get(1).getValue();
+				m2.sliceOperations(1, rlen, m2.clen-(blockColFactor-clen)+1, m2.clen, ret2);
 			}
 		}
 	}

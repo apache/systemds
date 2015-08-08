@@ -692,6 +692,17 @@ public class UnaryOp extends Hop
 		if( !(that instanceof UnaryOp) )
 			return false;
 		
+		/*
+		 * NOTE:
+		 * This compare() method currently is invoked from Hops RewriteCommonSubexpressionElimination,
+		 * which tries to merge two hops if this function returns true. However, two PRINT hops should
+		 * never be merged, and hence returning false.
+		 * 
+		 * If this method needs to be used elsewhere, then it must be refactored accordingly.
+		 */
+		if( _op == OpOp1.PRINT )
+			return false;
+		
 		UnaryOp that2 = (UnaryOp)that;		
 		return (   _op == that2._op
 				&& getInput().get(0) == that2.getInput().get(0));

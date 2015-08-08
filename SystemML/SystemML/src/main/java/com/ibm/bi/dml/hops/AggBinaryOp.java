@@ -1489,8 +1489,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		{
 			//matmultchain if dim2(X)<=blocksize and all vectors fit in mappers
 			//(X: m1_cols x m1_rows, v: m1_rows x m2_cols, w: m1_cols x m2_cols) 
-			if( chainType!=ChainType.NONE && m1_rows>=0 && m1_rows<= m1_rpb
-				&& m2_cols>=0 && m2_cols<=m2_cpb )
+			//NOTE: generalization possibe: m2_cols>=0 && m2_cols<=m2_cpb
+			if( chainType!=ChainType.NONE && m1_rows>=0 && m1_rows<= m1_rpb  && m2_cols==1 )
 			{
 				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0 
 					&& OptimizerUtils.estimateSize(m1_rows, m2_cols ) < memBudget )
@@ -1626,8 +1626,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		{
 			//matmultchain if dim2(X)<=blocksize and all vectors fit in mappers
 			//(X: m1_cols x m1_rows, v: m1_rows x m2_cols, w: m1_cols x m2_cols) 
-			if( chainType!=ChainType.NONE && m1_rows>=0 && m1_rows<= m1_rpb
-				&& m2_cols>=0 && m2_cols<=m2_cpb )
+			//NOTE: generalization possibe: m2_cols>=0 && m2_cols<=m2_cpb
+			if( chainType!=ChainType.NONE && m1_rows >=0 && m1_rows <= m1_rpb && m2_cols==1 )
 			{
 				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0 
 					&& OptimizerUtils.estimateSize(m1_rows, m2_cols ) < memBudgetExec )

@@ -47,8 +47,6 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 	private static Pattern _delim = null;		// Delimiter in the input file
 	private static String[] _naStrings = null;	// Strings denoting missing value
 
-	private static MVImputeAgent _mia = null;
-	private static RecodeAgent _ra = null;
 	TfAgents _agents = null;
 	
 	@Override
@@ -70,9 +68,9 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 			FileSystem fs = FileSystem.get(job);
 			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(specFile))));
 			JSONObject spec = JSONObject.parse(br);
-			_mia = new MVImputeAgent(spec);
-			_ra = new RecodeAgent(spec);
-			_agents = new TfAgents(null, _mia, _ra, null, null);
+			MVImputeAgent mia = new MVImputeAgent(spec);
+			RecodeAgent ra = new RecodeAgent(spec);
+			_agents = new TfAgents(null, mia, ra, null, null);
 		} 
 		catch(IOException e) 
 		{
@@ -97,7 +95,7 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 		{
 			// process mapper output for MV and Bin agents
 			colID = colID*-1;
-			_mia.mergeAndOutputTransformationMetadata(values, _outputDir, colID, _rJob, _agents);
+			_agents.getMVImputeAgent().mergeAndOutputTransformationMetadata(values, _outputDir, colID, _rJob, _agents);
 		}
 		else if ( colID == _numCols + 1)
 		{
@@ -127,7 +125,7 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 		else 
 		{
 			// process mapper output for Recode agent
-			_ra.mergeAndOutputTransformationMetadata(values, _outputDir, colID, _rJob, _agents);
+			_agents.getRecodeAgent().mergeAndOutputTransformationMetadata(values, _outputDir, colID, _rJob, _agents);
 		}
 		
 	}

@@ -918,16 +918,25 @@ public class DataExpression extends DataIdentifier
 				
 				// find "format": 1=text, 2=binary
 				int format = 1; // default is "text"
-				if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text")){
+				String fmt =  (getVarParam(FORMAT_TYPE) == null ? null : getVarParam(FORMAT_TYPE).toString());
+				
+				if (fmt == null || fmt.equalsIgnoreCase("text")){
+					getOutput().setFormatType(FormatType.TEXT);
 					format = 1;
-				} else if ( getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary") ) {
+				} else if ( fmt.equalsIgnoreCase("binary") ) {
+					getOutput().setFormatType(FormatType.BINARY);
 					format = 2;
-				} else if ( getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) 
-							|| getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) 
+				} else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) 
 				{
+					getOutput().setFormatType(FormatType.CSV);
+					format = 1;
+				} 
+				else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) )
+				{
+					getOutput().setFormatType(FormatType.MM);
 					format = 1;
 				} else {
-					raiseValidateError("Invalid format '" + getVarParam(FORMAT_TYPE)+ "' in statement: " + this.toString(), conditional);
+					raiseValidateError("Invalid format '" + fmt+ "' in statement: " + this.toString(), conditional);
 				}
 				
 				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {

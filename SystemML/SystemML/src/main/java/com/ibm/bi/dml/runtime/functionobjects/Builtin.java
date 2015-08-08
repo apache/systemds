@@ -353,8 +353,8 @@ public class Builtin extends ValueFunction
 		}
 	}
 
-	public double execute (int in) throws DMLRuntimeException {
-		return this.execute( (double) in);
+	public double execute (long in) throws DMLRuntimeException {
+		return this.execute((double)in);
 	}
 
 	/*
@@ -457,7 +457,7 @@ public class Builtin extends ValueFunction
 		}
 	}
 	
-	public double execute (int in1, int in2) throws DMLRuntimeException {
+	public double execute (long in1, long in2) throws DMLRuntimeException {
 		switch(bFunc) {
 		
 		case MAX:    

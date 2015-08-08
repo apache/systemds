@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.runtime.instructions.cp;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -56,9 +57,16 @@ public class ScalarBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 		}
 		else {
 			//Inputs for all builtins other than PRINT are treated as DOUBLE.
-			double rval;
-			rval = dop.fn.execute(so.getDoubleValue());
-			sores = (ScalarObject) new DoubleObject(rval);
+			if ( so instanceof IntObject  && output.getValueType() == ValueType.INT )
+			{
+				long rval = (long) dop.fn.execute(so.getLongValue());
+				sores = (ScalarObject) new IntObject(rval);
+			}
+			else 
+			{
+				double rval = dop.fn.execute(so.getDoubleValue());
+				sores = (ScalarObject) new DoubleObject(rval);
+			}
 		}
 		
 		ec.setScalarOutput(output.getName(), sores);

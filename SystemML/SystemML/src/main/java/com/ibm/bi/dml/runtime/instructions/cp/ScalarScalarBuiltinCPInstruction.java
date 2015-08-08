@@ -65,13 +65,18 @@ public class ScalarScalarBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 			}
 		}
 		else {
-			/*
-			 * Inputs for all builtins other than PRINT are treated as DOUBLE.
-			 */
 			BinaryOperator dop = (BinaryOperator) _optr;
-			double rval = dop.fn.execute(so1.getDoubleValue(), so2.getDoubleValue());
 			
-			sores = (ScalarObject) new DoubleObject(rval);
+			if ( so1 instanceof IntObject 
+					&& so2 instanceof IntObject 
+					&& output.getValueType() == ValueType.INT) {
+				long rval = (long) dop.fn.execute(so1.getLongValue(), so2.getLongValue());
+				sores = (ScalarObject) new IntObject(rval);
+			}
+			else {
+				double rval = dop.fn.execute(so1.getDoubleValue(), so2.getDoubleValue());
+				sores = (ScalarObject) new DoubleObject(rval);
+			}
 		}
 		
 		// 3) Put the result value into ProgramBlock

@@ -50,16 +50,16 @@ public class FunctionObject
 	}
 	
 	public boolean execute ( boolean in1, boolean in2 )  throws DMLRuntimeException  {
-		throw new DMLRuntimeException("FunctionObject.execute(int,int): should never get called in the base class");
+		throw new DMLRuntimeException("FunctionObject.execute(boolean,boolean): should never get called in the base class");
 	}
 	
 	public boolean execute ( boolean in )  throws DMLRuntimeException  {
-		throw new DMLRuntimeException("FunctionObject.execute(int,int): should never get called in the base class");
+		throw new DMLRuntimeException("FunctionObject.execute(boolean): should never get called in the base class");
 	}
 	
 	// this version is for parameterized builtins with input parameters of form: name=value 
 	public double execute ( HashMap<String,String> params )  throws DMLRuntimeException  {
-		throw new DMLRuntimeException("FunctionObject.execute(int,int): should never get called in the base class");
+		throw new DMLRuntimeException("FunctionObject.execute(HashMap<String,String> params): should never get called in the base class");
 	}
 	
 	

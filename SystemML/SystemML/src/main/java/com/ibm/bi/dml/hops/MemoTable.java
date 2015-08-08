@@ -165,12 +165,10 @@ public class MemoTable
 		{
 			ret = new MatrixCharacteristics(dim1, dim2, -1, -1, nnz);
 		}
-		else
+		else //enrich exact information with worst-case stats
 		{
 			MatrixCharacteristics tmp = _memo.get(input.getHopID());
-			if( tmp != null )
-			{
-				//enrich exact information with worst-case stats
+			if( tmp != null ) {
 				dim1 = (dim1<=0) ? tmp.getRows() : dim1;
 				dim2 = (dim2<=0) ? tmp.getCols() : dim2;
 				nnz = (nnz<0) ? tmp.getNonZeros() : nnz;

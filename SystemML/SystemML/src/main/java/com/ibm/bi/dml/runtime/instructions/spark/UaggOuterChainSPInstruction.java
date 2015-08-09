@@ -115,28 +115,39 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		String rddVar = input1.getName();
+		String rddVar = (_uaggOp.indexFn instanceof ReduceRow) ? input2.getName() : input1.getName();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
+		
 		String bcastVar = null;
 
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
-		//get inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-
 		//execute UAggOuterChain instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;		
 
-		if (LibMatrixOuterAgg.isSupportedUnaryAggregateOperator(_uaggOp, _bOp))
+		if (LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp))
 		{
-			//created sorted rhs matrix broadcast
-			MatrixBlock mb = sec.getMatrixInput(input2.getName());
+			if(_uaggOp.indexFn instanceof ReduceRow)
+				rddVar = input2.getName();
+			
+			MatrixBlock mb;
+			
+			if(_uaggOp.indexFn instanceof ReduceCol) {
+				//created sorted rhs matrix broadcast
+				mb = sec.getMatrixInput(input2.getName());
+				sec.releaseMatrixInput(input2.getName());
+			} else {
+				//created sorted rhs matrix broadcast
+				mb = sec.getMatrixInput(input1.getName());
+				sec.releaseMatrixInput(input1.getName());
+			}
+
 			double[] bv = DataConverter.convertToDoubleVector(mb);
-			Arrays.sort(bv);
-			sec.releaseMatrixInput(input2.getName());
+			Arrays.sort(bv);			
 			
 			_bv = sec.getSparkContext().broadcast(bv);
 		
-			out = in1.mapToPair( new RDDMapUAggOuterChainFunction(_bv, _bOp) );
+			out = in1.mapToPair( new RDDMapUAggOuterChainFunction(_bv, _bOp, _uaggOp) );
 		}
 		else
 		{
@@ -171,8 +182,18 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec) 
 		throws DMLRuntimeException
 	{	
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		String strInput1Name, strInput2Name;
+		
+		if(_uaggOp.indexFn instanceof ReduceCol) {
+			strInput1Name = input1.getName();
+			strInput2Name = input2.getName();
+		} else {
+			strInput1Name = input2.getName();
+			strInput2Name = input1.getName();
+		}
+				
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(strInput1Name);
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(strInput2Name);
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		if(!mcOut.dimsKnown()) {
 			if(!mc1.dimsKnown()) {
@@ -202,12 +223,14 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		private Broadcast<double[]> _bv = null;
 		
 		private BinaryOperator _bOp = null;
+		
+		private AggregateUnaryOperator _uaggOp = null;
 
 		//reused intermediates  
 		
 
 		
-		public RDDMapUAggOuterChainFunction(Broadcast<double[]> bv, BinaryOperator bOp)
+		public RDDMapUAggOuterChainFunction(Broadcast<double[]> bv, BinaryOperator bOp, AggregateUnaryOperator uaggOp)
 		{
 			// Do not get data from BroadCast variables here, as it will try to deserialize the data whenever it gets instantiated through driver class. This will cause unnecessary delay in iinstantiating class
 			// through driver, and overall process.
@@ -216,6 +239,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			//Sorted array
 			_bv = bv;
 			_bOp = bOp;
+			_uaggOp = uaggOp;
 			
 		}
 		
@@ -229,7 +253,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			MatrixIndexes outIx = new MatrixIndexes();
 			MatrixBlock outVal = new MatrixBlock();
 			
-			LibMatrixOuterAgg.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value(), _bOp);
+			LibMatrixOuterAgg.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value(), _bOp, _uaggOp);
 
 			return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);
 		}

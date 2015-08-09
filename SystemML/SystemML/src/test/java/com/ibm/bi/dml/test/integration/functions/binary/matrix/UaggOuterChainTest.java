@@ -56,317 +56,632 @@ public class UaggOuterChainTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "C" })); 
 	}
-
-	// Less Uagg sum -- MR
+	
+	// Less Uagg RowSums -- MR
 	@Test
-	public void testUaggOuterChainSingleDenseMR() 
+	public void testUaggOuterChainRowSumsSingleDenseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS, true, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS, true, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testUaggOuterChainSingleSparseMR() 
+	public void testUaggOuterChainRowSumsSingleSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS, true, true, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS, true, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testUaggOuterChainMultiDenseMR() 
+	public void testUaggOuterChainRowSumsMultiDenseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS, false, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testUaggOuterChainMultiSparseMR() 
+	public void testUaggOuterChainRowSumsMultiSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS, false, true, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, true, true, ExecType.MR);
 	}
 	
-	// Greater Uagg sum -- MR
+	// Greater Uagg RowSums -- MR
 	@Test
-	public void testGreaterUaggOuterChainSingleDenseMR() 
+	public void testGreaterUaggOuterChainRowSumsSingleDenseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testGreaterUaggOuterChainSingleSparseMR() 
-	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER, true, true, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.GREATER, true, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testGreaterUaggOuterChainMultiDenseMR() 
+	public void testGreaterUaggOuterChainRowSumsSingleSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER, false, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.GREATER, true, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testGreaterUaggOuterChainMultiSparseMR() 
+	public void testGreaterUaggOuterChainRowSumsMultiDenseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER, false, true, ExecType.MR);
-	}
-	
-	// LessEquals Uagg sum -- MR
-	@Test
-	public void testLessEqualsUaggOuterChainSingleDenseMR() 
-	{
-		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testLessEqualsUaggOuterChainSingleSparseMR() 
+	public void testGreaterUaggOuterChainRowSumsMultiSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, true, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, true, true, ExecType.MR);
+	}
+	
+	// LessEquals Uagg RowSums -- MR
+	@Test
+	public void testLessEqualsUaggOuterChainRowSumsSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testLessEqualsUaggOuterChainMultiDenseMR() 
+	public void testLessEqualsUaggOuterChainRowSumsSingleSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testLessEqualsUaggOuterChainMultiSparseMR() 
+	public void testLessEqualsUaggOuterChainRowSumsMultiDenseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, true, ExecType.MR);
-	}
-	
-	// GreaterEquals Uagg sum -- MR
-	@Test
-	public void testGreaterEqualsUaggOuterChainSingleDenseMR() 
-	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testGreaterEqualsUaggOuterChainSingleSparseMR() 
+	public void testLessEqualsUaggOuterChainRowSumsMultiSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, true, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, true, true, ExecType.MR);
+	}
+	
+	// GreaterEquals Uagg RowSums -- MR
+	@Test
+	public void testGreaterEqualsUaggOuterChainRowSumsSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testGreaterEqualsUaggOuterChainMultiDenseMR() 
+	public void testGreaterEqualsUaggOuterChainRowSumsSingleSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testGreaterEqualsUaggOuterChainMultiSparseMR() 
+	public void testGreaterEqualsUaggOuterChainRowSumsMultiDenseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, ExecType.MR);
-	}
-	
-	// Equals Uagg sum -- MR
-	@Test
-	public void testEqualsUaggOuterChainSingleDenseMR() 
-	{
-		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testEqualsUaggOuterChainSingleSparseMR() 
+	public void testGreaterEqualsUaggOuterChainRowSumsMultiSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, true, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, true, ExecType.MR);
+	}
+	
+	// Equals Uagg RowSums -- MR
+	@Test
+	public void testEqualsUaggOuterChainRowSumsSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testEqualsUaggOuterChainMultiDenseMR() 
+	public void testEqualsUaggOuterChainRowSumsSingleSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testEqualsUaggOuterChainMultiSparseMR() 
+	public void testEqualsUaggOuterChainRowSumsMultiDenseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, ExecType.MR);
-	}
-	
-	// NotEquals Uagg sum -- MR
-	@Test
-	public void testNotEqualsUaggOuterChainSingleDenseMR() 
-	{
-		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testNotEqualsUaggOuterChainSingleSparseMR() 
+	public void testEqualsUaggOuterChainRowSumsMultiSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, true, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, true, ExecType.MR);
+	}
+	
+	// NotEquals Uagg RowSums -- MR
+	@Test
+	public void testNotEqualsUaggOuterChainRowSumsSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, false, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testNotEqualsUaggOuterChainMultiDenseMR() 
+	public void testNotEqualsUaggOuterChainRowSumsSingleSparseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, false, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, true, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testNotEqualsUaggOuterChainMultiSparseMR() 
+	public void testNotEqualsUaggOuterChainRowSumsMultiDenseMR() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, true, ExecType.MR);
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, false, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainRowSumsMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, true, true, ExecType.MR);
 	}
 	
 
 	// -------------------------
 
-	// Less Uagg sum
+	// Less Uagg RowSums -- SP
 	@Test
-	public void testLessUaggOuterChainSingleDenseSP() 
+	public void testLessUaggOuterChainRowSumsSingleDenseSP() 
 	{
-		 runBinUaggTest(TEST_NAME1, Type.LESS, true, false, ExecType.SPARK);
+		 runBinUaggTest(TEST_NAME1, Type.LESS, true, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testLessUaggOuterChainSingleSparseSP() 
+	public void testLessUaggOuterChainRowSumsSingleSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS, true, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.LESS, true, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testLessUaggOuterChainMultiDenseSP() 
+	public void testLessUaggOuterChainRowSumsMultiDenseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS, false, false, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testLessUaggOuterChainMultiSparseSP() 
+	public void testLessUaggOuterChainRowSumsMultiSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS, false, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, true, true, ExecType.SPARK);
 	}
 	
-	// Greater Uagg sum
+	// Greater Uagg RowSums -- SP
 	@Test
-	public void testGreaterUaggOuterChainSingleDenseSP() 
+	public void testGreaterUaggOuterChainRowSumsSingleDenseSP() 
 	{
-		 runBinUaggTest(TEST_NAME1, Type.GREATER, true, false, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testGreaterUaggOuterChainSingleSparseSP() 
-	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER, true, true, ExecType.SPARK);
+		 runBinUaggTest(TEST_NAME1, Type.GREATER, true, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testGreaterUaggOuterChainMultiDenseSP() 
+	public void testGreaterUaggOuterChainRowSumsSingleSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER, false, false, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.GREATER, true, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testGreaterUaggOuterChainMultiSparseSP() 
+	public void testGreaterUaggOuterChainRowSumsMultiDenseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER, false, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainRowSumsMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, true, true, ExecType.SPARK);
 	}
 
 	
-	// LessEquals Uagg sum
+	// LessEquals Uagg RowSums -- SP
 	@Test
-	public void testLessEqualsUaggOuterChainSingleDenseSP() 
+	public void testLessEqualsUaggOuterChainRowSumsSingleDenseSP() 
 	{
-		 runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, false, ExecType.SPARK);
+		 runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testLessEqualsUaggOuterChainSingleSparseSP() 
+	public void testLessEqualsUaggOuterChainRowSumsSingleSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testLessEqualsUaggOuterChainMultiDenseSP() 
+	public void testLessEqualsUaggOuterChainRowSumsMultiDenseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, false, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testLessEqualsUaggOuterChainMultiSparseSP() 
+	public void testLessEqualsUaggOuterChainRowSumsMultiSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, true, true, ExecType.SPARK);
 	}
 	
 	
-	// GreaterEquals Uagg sum
+	// GreaterThanEquals Uagg RowSums -- SP
 	@Test
-	public void testGreaterEqualsUaggOuterChainSingleDenseSP() 
+	public void testGreaterEqualsUaggOuterChainRowSumsSingleDenseSP() 
 	{
-		 runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, ExecType.SPARK);
+		 runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testGreaterEqualsUaggOuterChainSingleSparseSP() 
+	public void testGreaterEqualsUaggOuterChainRowSumsSingleSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testGreaterEqualsUaggOuterChainMultiDenseSP() 
+	public void testGreaterEqualsUaggOuterChainRowSumsMultiDenseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, false, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testGreaterEqualsUaggOuterChainMultiSparseSP() 
+	public void testGreaterEqualsUaggOuterChainRowSumsMultiSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, true, ExecType.SPARK);
 	}
 	
 	
-	// Equals Uagg sum
+	// Equals Uagg RowSums -- SP
 	@Test
-	public void testEqualsUaggOuterChainSingleDenseSP() 
+	public void testEqualsUaggOuterChainRowSumsSingleDenseSP() 
 	{
-		 runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, ExecType.SPARK);
+		 runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testEqualsUaggOuterChainSingleSparseSP() 
+	public void testEqualsUaggOuterChainRowSumsSingleSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testEqualsUaggOuterChainMultiDenseSP() 
+	public void testEqualsUaggOuterChainRowSumsMultiDenseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, false, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testEqualsUaggOuterChainMultiSparseSP() 
+	public void testEqualsUaggOuterChainRowSumsMultiSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, true, ExecType.SPARK);
 	}
 	
 
 
-	// NotEquals Uagg sum
+	// NotEquals Uagg RowSums -- SP
 	@Test
-	public void testNotEqualsUaggOuterChainSingleDenseSP() 
+	public void testNotEqualsUaggOuterChainRowSumsSingleDenseSP() 
 	{
-		 runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, false, ExecType.SPARK);
+		 runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testNotEqualsUaggOuterChainSingleSparseSP() 
+	public void testNotEqualsUaggOuterChainRowSumsSingleSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testNotEqualsUaggOuterChainMultiDenseSP() 
+	public void testNotEqualsUaggOuterChainRowSumsMultiDenseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, false, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testNotEqualsUaggOuterChainMultiSparseSP() 
+	public void testNotEqualsUaggOuterChainRowSumsMultiSparseSP() 
 	{
-		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, true, ExecType.SPARK);
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, true, true, ExecType.SPARK);
 	}
 	
 	
 	// ----------------------
+	// Column Sums
+	
+	// Less Uagg ColumnSums -- MR
+	@Test
+	public void testUaggOuterChainColSumsSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS, true, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testUaggOuterChainColSumsSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testUaggOuterChainColSumsMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testUaggOuterChainColSumsMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, true, false, ExecType.MR);
+	}
+	
+	
+	// GreaterThanEquals Uagg ColumnSums -- MR
+	@Test
+	public void testGreaterEqualsUaggOuterChainColSumsSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainColSumsSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainColSumsMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainColSumsMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, false, ExecType.MR);
+	}
+	
+	
+	// Greater Uagg ColumnSums -- MR
+	@Test
+	public void testGreaterUaggOuterChainColSumsSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, true, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainColSumsSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainColSumsMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainColSumsMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, true, false, ExecType.MR);
+	}
+	
+	
+	// LessThanEquals Uagg ColumnSums -- MR
+	@Test
+	public void testLessEqualsUaggOuterChainColSumsSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainColSumsSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainColSumsMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainColSumsMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, true, false, ExecType.MR);
+	}
+	
+	
+	// Equals Uagg ColumnSums -- MR
+	@Test
+	public void testEqualsUaggOuterChainColSumsSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainColSumsSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainColSumsMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainColSumsMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, false, ExecType.MR);
+	}
+	
+	
+	// NotEquals Uagg ColumnSums -- MR
+	@Test
+	public void testNotEqualsUaggOuterChainColSumsSingleDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainColSumsSingleSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainColSumsMultiDenseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainColSumsMultiSparseMR() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, true, false, ExecType.MR);
+	}
+	
+	
+	// -------------------------
+	// ColSums
+
+	// Less Uagg ColSums -- SP
+	@Test
+	public void testLessUaggOuterChainColSumsSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.LESS, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessUaggOuterChainColSumsSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessUaggOuterChainColSumsMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessUaggOuterChainColSumsMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, true, false, ExecType.SPARK);
+	}
+	
+	// GreaterThanEquals Uagg ColSums -- SP
+	@Test
+	public void testGreaterEqualsUaggOuterChainColSumsSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainColSumsSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainColSumsMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainColSumsMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, false, ExecType.SPARK);
+	}
+	
+	
+	// Greater Uagg ColSums -- SP
+	@Test
+	public void testGreaterUaggOuterChainColSumsSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainColSumsSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainColSumsMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainColSumsMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER, false, true, false, ExecType.SPARK);
+	}
+
+	
+	// LessEquals Uagg RowSums -- SP
+	@Test
+	public void testLessEqualsUaggOuterChainColSumsSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainColSumsSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainColSumsMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainColSumsMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, true, false, ExecType.SPARK);
+	}
+	
+
+	// Equals Uagg ColSums -- SP
+	@Test
+	public void testEqualsUaggOuterChainColSumsSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainColSumsSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainColSumsMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testEqualsUaggOuterChainColSumsMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, false, ExecType.SPARK);
+	}
+	
+
+
+	// NotEquals Uagg ColSums -- SP
+	@Test
+	public void testNotEqualsUaggOuterChainColSumsSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainColSumsSingleSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainColSumsMultiDenseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainColSumsMultiSparseSP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, true, false, ExecType.SPARK);
+	}
 	
 
 
@@ -376,7 +691,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runBinUaggTest( String testname, Type type, boolean singleBlock, boolean sparse, ExecType instType)
+	private void runBinUaggTest( String testname, Type type, boolean singleBlock, boolean sparse, boolean bRowSums, ExecType instType)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -420,13 +735,16 @@ public class UaggOuterChainTest extends AutomatedTestBase
 					break;
 			}
 
+			String strSumTypeSuffix = ""; 
+			if(!bRowSums)
+				strSumTypeSuffix = "ColSums";
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;			
-			fullDMLScriptName = HOME + TEST_NAME + suffix + ".dml";
+			fullDMLScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix + ".dml";
 			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
 					                            HOME + INPUT_DIR + "B",
 					                            HOME + OUTPUT_DIR + "C"};
-			fullRScriptName = HOME + TEST_NAME + suffix +".R";
+			fullRScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix +".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
 			
@@ -445,7 +763,11 @@ public class UaggOuterChainTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			checkDMLMetaDataFile("C", new MatrixCharacteristics(rows,1,1,1)); //rowsums
+			
+			if(bRowSums)
+				checkDMLMetaDataFile("C", new MatrixCharacteristics(rows,1,1,1)); //rowsums
+			else
+				checkDMLMetaDataFile("C", new MatrixCharacteristics(1,singleBlock?cols1:cols2,1,1)); //colsums
 			
 			//check compiled/executed jobs
 			if( rtplatform != RUNTIME_PLATFORM.SPARK ) {

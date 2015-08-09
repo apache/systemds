@@ -121,6 +121,25 @@ public class DistributedCacheInput
 	
 	/**
 	 * 
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public double[] getColumnVectorArray() 
+		throws DMLRuntimeException
+	{
+		double[] ret = new double[(int)_rlen];
+		
+		for( int j=0; j<_rlen; j+=_brlen ) {
+			MatrixBlock mb = (MatrixBlock) getDataBlock((int)Math.ceil((double)(j+1)/_brlen),1).getValue(); 
+			double[] mbtmp = DataConverter.convertToDoubleVector(mb);
+			System.arraycopy(mbtmp, 0, ret, j, mbtmp.length);
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
 	 * @param rowBlockSize
 	 * @param colBlockSize
 	 * @throws DMLRuntimeException

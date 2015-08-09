@@ -18,6 +18,7 @@ import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 
@@ -35,29 +36,23 @@ public class LibMatrixOuterAgg
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
-
-
 	private LibMatrixOuterAgg() {
 		//prevent instantiation via private constructor
 	}
-	
-	
-	
-	
 	
 	/**
 	 * 
 	 * @param op
 	 * @return
 	 */
-	public static boolean isSupportedUnaryAggregateOperator( AggregateUnaryOperator uaggOp, BinaryOperator bOp )
+	public static boolean isSupportedUaggOp( AggregateUnaryOperator uaggOp, BinaryOperator bOp )
 	{
 		boolean bSupported = false;
 		
 		if( (bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals || bOp.fn instanceof GreaterThanEquals
 				|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals)				
 				&& uaggOp.aggOp.increOp.fn instanceof KahanPlus
-				&& uaggOp.indexFn instanceof ReduceCol ) //special case: rowsSums(outer(A,B,<))
+				&& (uaggOp.indexFn instanceof ReduceCol || uaggOp.indexFn instanceof ReduceRow)) //special case: rowsSums(outer(A,B,<))
 			bSupported = true;
 		
 		return bSupported;
@@ -69,132 +64,414 @@ public class LibMatrixOuterAgg
 	 * @param in1Ix
 	 * @param in1Val
 	 * @param outIx
+	 * @param outVal
 	 * @param bv
 	 * @param bOp
 	 * @throws DMLRuntimeException
 	 */
-	public static void aggregateMatrix(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, double[] bv, BinaryOperator bOp) 
+	public static void aggregateMatrix(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, double[] bv, 
+			BinaryOperator bOp, AggregateUnaryOperator uaggOp) 
 			throws DMLRuntimeException
 	{		
 		//step1: prepare output (last col corr)
-		outIx.setIndexes(in1Ix.getRowIndex(), 1); 
-		outVal.reset(in1Val.getNumRows(), 2, false);
+		if(uaggOp.indexFn instanceof ReduceCol) {
+			outIx.setIndexes(in1Ix.getRowIndex(), 1); 
+			outVal.reset(in1Val.getNumRows(), 2, false);
+		} else {
+			outIx.setIndexes(1, in1Ix.getColumnIndex()); 
+			outVal.reset(2, in1Val.getNumColumns(), false);
+		}
 		
 		//step2: compute unary aggregate outer chain
-		if(bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThanEquals) {
-			aggregateMatrixForLessAndGreaterThanEquals(in1Ix, in1Val, outIx, outVal, bv, bOp);
-		} else if(bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals) {
-			aggregateMatrixForGreaterAndLessThanEquals(in1Ix, in1Val, outIx, outVal, bv, bOp);
-		} else if(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals) {
-			aggregateMatrixForEqualAndNotEquals(in1Ix, in1Val, outIx, outVal, bv, bOp);
+		if(uaggOp.indexFn instanceof ReduceCol) {
+			if(bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThanEquals) {
+				uaRowSumLtGe(in1Val, outVal, bv, bOp);
+			} else if(bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals) {
+				uaRowSumGtLe(in1Val, outVal, bv, bOp);
+			} else if(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals) {
+				uaRowSumEqNe(in1Val, outVal, bv, bOp);
+			}
+		} else {
+			if(bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThanEquals) {
+				uaColSumLtGe(in1Val, outVal, bv, bOp);
+			} else if(bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals) {
+				uaColSumGtLe(in1Val, outVal, bv, bOp);
+			} else if(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals) {
+				uaColSumEqNe(in1Val, outVal, bv, bOp);
+			}
 		}
 	}
 	
 	/**
+	 * UAgg rowSums for LessThan and GreaterThanEqual operator
 	 * 
-	 * @param in1Ix
-	 * @param in1Val
-	 * @param outIx
+	 * @param in
+	 * @param out
 	 * @param bv
 	 * @param bOp
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateMatrixForLessAndGreaterThanEquals(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, double[] bv, BinaryOperator bOp) 
+	private static void uaRowSumLtGe(MatrixBlock in, MatrixBlock out, double[] bv, BinaryOperator bOp) 
 			throws DMLRuntimeException
 	{		
-		MatrixBlock a = in1Val;
-		MatrixBlock c = outVal;
-
-		if(!(bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThanEquals))
-			return;
+		int agg0 = sumRowSumLtGeColSumGtLe(0.0, bv, bOp);
+		int m = in.rlen;
 		
-		for( int i=0; i<a.getNumRows(); i++ ) {
-			double ai = a.quickGetValue(i, 0);
-			int ix = Arrays.binarySearch(bv, ai);
-			int cnt = 0;
-			
-			if( ix >= 0 ){ //match, scan to next val
-				while( ai==bv[ix++] && ix<bv.length );
-				ix += (ai==bv[bv.length-1])?1:0;
-			}
-				
-			cnt = bv.length-Math.abs(ix)+1;
-			
-			if (bOp.fn instanceof GreaterThanEquals)
-				cnt = bv.length - cnt;
-			c.quickSetValue(i, 0, cnt);
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int cnt = (ai == 0) ? agg0: sumRowSumLtGeColSumGtLe(ai, bv, bOp);
+			out.quickSetValue(i, 0, cnt);
 		}
 	}
 	
 	/**
+	 * UAgg rowSums for GreaterThan and LessThanEqual operator
 	 * 
-	 * @param in1Ix
-	 * @param in1Val
-	 * @param outIx
+	 * @param in
+	 * @param out
 	 * @param bv
 	 * @param bOp
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateMatrixForGreaterAndLessThanEquals(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, double[] bv, BinaryOperator bOp) 
+	private static void uaRowSumGtLe(MatrixBlock in, MatrixBlock out, double[] bv, BinaryOperator bOp) 
 			throws DMLRuntimeException
 	{		
-		MatrixBlock a = in1Val;
-		MatrixBlock c = outVal;
+		int agg0 = sumRowSumGtLeColSumLtGe(0.0, bv, bOp);
+		int m = in.rlen;
 		
-		if(!(bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals))
-			return;
-					
-		for( int i=0; i<a.getNumRows(); i++ ) {
-			double ai = a.quickGetValue(i, 0);
-			int ix = Arrays.binarySearch(bv, ai);
-			int cnt = 0;
-			
-			if( ix >= 0 ){ //match, scan to next val
-				while( ix > 0 && ai==bv[ix-1]) --ix;
-				ix++;	//Readjust index to match subsenquent index calculation.
-			}
-				
-			cnt = bv.length-Math.abs(ix)+1;
-			
-			if (bOp.fn instanceof GreaterThan)
-				cnt = bv.length - cnt;
-			c.quickSetValue(i, 0, cnt);
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int cnt = (ai == 0) ? agg0: sumRowSumGtLeColSumLtGe(ai, bv, bOp);
+			out.quickSetValue(i, 0, cnt);
 		}
 	}
 	
-
+	
 	/**
+	 * UAgg rowSums for Equal and NotEqual operator
 	 * 
-	 * @param in1Ix
-	 * @param in1Val
-	 * @param outIx
+	 * @param in
+	 * @param out
 	 * @param bv
 	 * @param bOp
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateMatrixForEqualAndNotEquals(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, double[] bv, BinaryOperator bOp) 
+	private static void uaRowSumEqNe(MatrixBlock in, MatrixBlock out, double[] bv, BinaryOperator bOp) 
 			throws DMLRuntimeException
 	{		
-		MatrixBlock a = in1Val;
-		MatrixBlock c = outVal;
-
-		if(!(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals))
-			return;
-			
-		for( int i=0; i<a.getNumRows(); i++ ) {
-			double ai = a.quickGetValue(i, 0);
-			int ix = Arrays.binarySearch(bv, ai);
-			int cnt = 0;
-			
-			if( ix >= 0 ){ //match, scan to next val
-				while( ix > 0 && ai==bv[ix-1]) --ix;
-				while( ix<bv.length && ai==bv[ix]) {ix++; cnt++;}
-			}
-				
-			if (bOp.fn instanceof NotEquals)
-				cnt = bv.length - cnt;
-			c.quickSetValue(i, 0, cnt);
+		int agg0 = sumEqNe(0.0, bv, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int cnt = (ai == 0) ? agg0: sumEqNe(ai, bv, bOp);
+			out.quickSetValue(i, 0, cnt);
 		}
 	}
+
+	/**
+	 * UAgg colSums for LessThan and GreaterThanEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaColSumLtGe(MatrixBlock in1Val, MatrixBlock outVal, double[] bv, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		if (in1Val.isInSparseFormat())
+			s_uaColSumLtGe(in1Val, outVal, bv, bOp);
+		else
+			d_uaColSumLtGe(in1Val, outVal, bv, bOp);
+	}
+
+	/**
+	 * UAgg colSums for GreaterThan and LessThanEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaColSumGtLe(MatrixBlock in1Val, MatrixBlock outVal, double[] bv, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		if (in1Val.isInSparseFormat())
+			s_uaColSumGtLe(in1Val, outVal, bv, bOp);
+		else
+			d_uaColSumGtLe(in1Val, outVal, bv, bOp);
+	}
+
 	
+	/**
+	 * UAgg colSums for Equal and NotEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaColSumEqNe(MatrixBlock in1Val, MatrixBlock outVal, double[] bv, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		if (in1Val.isInSparseFormat())
+			s_uaColSumEqNe(in1Val, outVal, bv, bOp);
+		else
+			d_uaColSumEqNe(in1Val, outVal, bv, bOp);
+	}
+
+
+	/**
+	 * UAgg colSums Dense Matrix for LessThan and GreaterThanEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void d_uaColSumLtGe(MatrixBlock in, MatrixBlock out, double[] bv, 
+			BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int agg0 = sumRowSumGtLeColSumLtGe(0.0, bv, bOp);
+		int m = in.clen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(0, i);
+			int cnt = (ai == 0) ? agg0: sumRowSumGtLeColSumLtGe(ai, bv, bOp);
+			out.quickSetValue(0, i, cnt);
+		}
+	}
+
+	/**
+	 * UAgg colSums Sparse Matrix for LessThan and GreaterThanEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void s_uaColSumLtGe(MatrixBlock in, MatrixBlock out, double[] bv,	BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int agg0 = sumRowSumGtLeColSumLtGe(0.0, bv, bOp);
+
+		//allocate and initialize output values (not indices) 
+		out.allocateDenseBlock(true);
+		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
+		
+		SparseRow[] aSparseRows = in.getSparseRows();		
+		for (int j = 0; j < aSparseRows.length; ++j)
+		{
+			double [] aValues = aSparseRows[j].getValueContainer();
+			int [] aIndexes = aSparseRows[j].getIndexContainer();
+			
+			for (int i=0; i < aValues.length; ++i)
+			{
+				int cnt = sumRowSumGtLeColSumLtGe(aValues[i], bv, bOp);
+				out.quickSetValue(0, aIndexes[i], cnt);
+			}
+		}		
+	}
+
+	/**
+	 * UAgg colSums Dense Matrix for GreaterThan and LessThanEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void d_uaColSumGtLe(MatrixBlock in, MatrixBlock out, double[] bv, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int agg0 = sumRowSumLtGeColSumGtLe(0.0, bv, bOp);
+		int m = in.clen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(0, i);
+			int cnt = (ai == 0) ? agg0: sumRowSumLtGeColSumGtLe(ai, bv, bOp);
+			out.quickSetValue(0, i, cnt);
+		}
+	}
+
+	/**
+	 * UAgg colSums Sparse Matrix for GreaterThan and LessThanEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void s_uaColSumGtLe(MatrixBlock in, MatrixBlock out, double[] bv, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int agg0 = sumRowSumLtGeColSumGtLe(0.0, bv, bOp);
+
+		//allocate and initialize output values (not indices) 
+		out.allocateDenseBlock(true);
+		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
+		
+		SparseRow[] aSparseRows = in.getSparseRows();		
+		for (int j = 0; j < aSparseRows.length; ++j)
+		{
+			double [] aValues = aSparseRows[j].getValueContainer();
+			int [] aIndexes = aSparseRows[j].getIndexContainer();
+			
+			for (int i=0; i < aValues.length; ++i)
+			{
+				int cnt = sumRowSumLtGeColSumGtLe(aValues[i], bv, bOp);
+				out.quickSetValue(0, aIndexes[i], cnt);
+			}
+		}		
+	}
+
+	/**
+	 * UAgg colSums Dense Matrix for Equal and NotEqual operator 
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void d_uaColSumEqNe(MatrixBlock in, MatrixBlock out, double[] bv, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int agg0 = sumEqNe(0.0, bv, bOp);
+		int m = in.clen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(0, i);
+			int cnt = (ai == 0) ? agg0: sumEqNe(ai, bv, bOp);
+			out.quickSetValue(0, i, cnt);
+		}
+	}
+
+	/**
+	 * UAgg colSums Sparse Matrix for Equal and NotEqual operator 
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void s_uaColSumEqNe(MatrixBlock in, MatrixBlock out, double[] bv, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int agg0 = sumEqNe(0.0, bv, bOp);
+
+		//allocate and initialize output values (not indices) 
+		out.allocateDenseBlock(true);
+		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
+		
+		SparseRow[] aSparseRows = in.getSparseRows();		
+		for (int j = 0; j < aSparseRows.length; ++j)
+		{
+			double [] aValues = aSparseRows[j].getValueContainer();
+			int [] aIndexes = aSparseRows[j].getIndexContainer();
+			
+			for (int i=0; i < aValues.length; ++i)
+			{
+				int cnt = sumEqNe(aValues[i], bv, bOp);
+				out.quickSetValue(0, aIndexes[i], cnt);
+			}
+		}		
+	}
+
+	
+	/**
+	 * Calculates the sum of number for rowSum of GreaterThan and LessThanEqual, and 
+	 * 									colSum of LessThan and GreaterThanEqual operators.
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int sumRowSumGtLeColSumLtGe(double value, double[] bv, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ix = Arrays.binarySearch(bv, value);
+		int cnt = 0;
+		
+		if( ix >= 0 ){ //match, scan to next val
+			while( ix > 0 && value==bv[ix-1]) --ix;
+			ix++;	//Readjust index to match subsenquent index calculation.
+		}
+
+		cnt = bv.length-Math.abs(ix)+1;
+
+		//cnt = Math.abs(ix) - 1;
+		if ((bOp.fn instanceof LessThan) || (bOp.fn instanceof GreaterThan))
+			cnt = bv.length - cnt;
+
+		return cnt;
+	}
+
+	
+	/**
+	 * Calculates the sum of number for rowSum of LessThan and GreaterThanEqual, and 
+	 * 									colSum of GreaterThan and LessThanEqual operators.
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int sumRowSumLtGeColSumGtLe(double value, double[] bv, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ix = Arrays.binarySearch(bv, value);
+		int cnt = 0;
+		
+		if( ix >= 0 ){ //match, scan to next val
+			while( value==bv[ix++] && ix<bv.length );
+			ix += (value==bv[bv.length-1])?1:0;
+		}
+			
+		cnt = bv.length-Math.abs(ix)+1;
+		
+		if (bOp.fn instanceof LessThanEquals || bOp.fn instanceof GreaterThanEquals)
+			cnt = bv.length - cnt;		
+
+		return cnt;
+	}
+
+	
+	/**
+	 * Calculates the sum of number for Equal and NotEqual operators 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int sumEqNe(double value, double[] bv, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ix = Arrays.binarySearch(bv, value);
+		int cnt = 0;
+		
+		if( ix >= 0 ){ //match, scan to next val
+			while( ix > 0 && value==bv[ix-1]) --ix;
+			while( ix<bv.length && value==bv[ix]) {
+				ix++; cnt++;
+			}
+		}
+			
+		if (bOp.fn instanceof NotEquals)
+			cnt = bv.length - cnt;
+
+		return cnt;
+	}
 }

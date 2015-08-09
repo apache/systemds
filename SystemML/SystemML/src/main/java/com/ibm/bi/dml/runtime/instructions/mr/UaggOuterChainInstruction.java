@@ -126,7 +126,13 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 			           IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
-		ArrayList<IndexedMatrixValue> blkList = cachedValues.get( input1 );
+		ArrayList<IndexedMatrixValue> blkList; 
+				
+		if(_uaggOp.indexFn instanceof ReduceCol) 
+			blkList = cachedValues.get( input1 );
+		else 
+			blkList = cachedValues.get( input2 );
+			
 		if( blkList == null )
 			return;
 
@@ -134,7 +140,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 		{
 			if(imv == null)
 				continue;
-			
+
 			MatrixIndexes in1Ix = imv.getIndexes();
 			MatrixValue in1Val = imv.getValue();
 			
@@ -145,18 +151,25 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 			MatrixBlock corr = null;
 			
 			//process instruction
-			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
-			
-			if (LibMatrixOuterAgg.isSupportedUnaryAggregateOperator(_uaggOp, _bOp))
+			DistributedCacheInput dcInput;
+			if(_uaggOp.indexFn instanceof ReduceCol) 
+				dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
+			else
+				dcInput = MRBaseForCommonInstructions.dcValues.get(input1);
+				
+			if (LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp))
 			{
 				//approach: for each ai, do binary search in B, position gives counts
 				//step 1: prepare sorted rhs input (once per task)
 				if( _bv == null ) {
-					_bv = dcInput.getRowVectorArray();
+					if(_uaggOp.indexFn instanceof ReduceCol)
+						_bv = dcInput.getRowVectorArray();
+					else
+						_bv = dcInput.getColumnVectorArray();
 					Arrays.sort(_bv);
 				}
 		
-				LibMatrixOuterAgg.aggregateMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _bv, _bOp);
+				LibMatrixOuterAgg.aggregateMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _bv, _bOp, _uaggOp);
 				
 			}
 			else //default case 
@@ -198,7 +211,11 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 		String[] parts = inst.split(Instruction.OPERAND_DELIM);
 		byte in1 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
 		byte in2 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
-		ret = (index==in2 && index!=in1);
+		AggregateUnaryOperator uaggOp = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
+		if(uaggOp.indexFn instanceof ReduceCol) 
+			ret = (index==in2 && index!=in1);
+		else
+			ret = (index==in1 && index!=in2);
 		
 		return ret;
 	}
@@ -207,7 +224,12 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 	{
 		//parse instruction parts (with exec type)
 		String[] parts = inst.split(Instruction.OPERAND_DELIM);
+		byte in1 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
 		byte in2 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
-		indexes.add(in2);
+		AggregateUnaryOperator uaggOp = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
+		if(uaggOp.indexFn instanceof ReduceCol) 
+			indexes.add(in2);
+		else
+			indexes.add(in1);
 	}
 }

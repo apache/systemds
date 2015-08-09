@@ -10,6 +10,7 @@
 # $8 is 0/1. 0 suppresses noise, 1 will add noise to Y
 # $9 is b, 0 disables intercept
 # $10 controls sparsity in the generated data
+# $11 output format
 
 numSamples = $1
 numFeatures = $2
@@ -17,6 +18,7 @@ maxFeatureValue = $3
 maxWeight = $4
 addNoise = $8
 b = $9
+fmt = $11
 
 X = Rand(rows=numSamples, cols=numFeatures, min=-1, max=1, pdf="uniform", seed=0, sparsity=$10)
 w = Rand(rows=numFeatures, cols=1, min=-1, max=1, pdf="uniform", seed=0)
@@ -33,6 +35,6 @@ if(b!=0) {
 noise = Rand(rows=numSamples, cols=1, pdf="normal", seed=0)
 Y = Y + addNoise*noise
 
-write(w, $5, format="binary")
-write(X, $6, format="text")
-write(Y, $7, format="binary")
+write(w, $5, format=fmt)
+write(X, $6, format=fmt)
+write(Y, $7, format=fmt)

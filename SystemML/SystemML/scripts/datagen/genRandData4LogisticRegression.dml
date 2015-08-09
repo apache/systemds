@@ -10,6 +10,8 @@
 # $8 addNoise. if 0 then no noise is added, to add noise set this to 1
 # $9 is b, 0 disables intercept
 # $10 controls sparsity in the generated data
+# $11 output format
+# $12 transform labels. if 0 then -1/1; otherwise 1/2
 
 numSamples = $1
 numFeatures = $2
@@ -40,7 +42,10 @@ if(addNoise == 1){
 	#r = Rand(rows=numSamples, cols=1, min=0.5, max=0.5, pdf="uniform")
 }
 Y = 1 - 2*ppred(prob, r, "<")
+if( $12 == 1 ) {
+  Y = (Y+3)/2;
+}
 
-write(w, $5, format="binary")
-write(X, $6, format="binary")
-write(Y, $7, format="binary")
+write(w, $5, format=$11)
+write(X, $6, format=$11)
+write(Y, $7, format=$11)

@@ -20,11 +20,11 @@ do
    for f in "runMultiLogReg" "runMSVM" "runNaiveBayes"
    do
       echo "-- Running "$f" on "$d" (all configs)" >> times.txt;
-      ./${f}.sh ${BASE}/X${d}_k150_csv ${BASE}/y${d}_k150_csv 150 ${BASE} $2 &> logs/${f}_${d}_k150.out;       
+      ./${f}.sh ${BASE}/X${d}_k150 ${BASE}/y${d}_k150 150 ${BASE} $2 &> logs/${f}_${d}_k150.out;       
    done 
 done
 
 #run KDD only on naive bayes (see binomial for the others)
-#./runNaiveBayes.sh ${BASE0}/X_KDD_k150_csv ${BASE}/y_KDD_k150_csv 150 &> logs/runNaiveBayes__KDD_k150.out;       
-#./runNaiveBayes.sh ${BASE0}/X_KDD_csv ${BASE}/y_KDD_csv 150 &> logs/runNaiveBayes__KDD_k150.out;       
+#./runNaiveBayes.sh ${BASE0}/X_KDD_k150 ${BASE}/y_KDD_k150 150 &> logs/runNaiveBayes__KDD_k150.out;       
+#./runNaiveBayes.sh ${BASE0}/X_KDD ${BASE}/y_KDD 150 &> logs/runNaiveBayes__KDD_k150.out;       
    

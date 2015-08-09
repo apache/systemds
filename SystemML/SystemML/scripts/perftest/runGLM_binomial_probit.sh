@@ -18,7 +18,7 @@ do
 
    #predict
    tstart=$SECONDS   
-   ${CMD} -f ../algoritms/GLM-predict.dml $DASH-explain $DASH-stats $DASH-nvargs dfam=2 link=3 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
+   ${CMD} -f ../algorithms/GLM-predict.dml $DASH-explain $DASH-stats $DASH-nvargs dfam=2 link=3 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
    tpredict=$(($SECONDS - $tstart - 3))
    echo "GLM_binomial_probit predict ict="$i" on "$1": "$tpredict >> times.txt
 done

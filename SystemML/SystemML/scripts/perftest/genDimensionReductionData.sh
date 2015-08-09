@@ -4,8 +4,8 @@ if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK 
 if [ "$2" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$2" == "MR" ]; then CMD="hadoop jar SystemML.jar " ; else CMD="echo " ; fi
 
 
+FORMAT="binary" 
 BASE=$1/dimensionreduction
-FORMAT="csv" 
 
 export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
 

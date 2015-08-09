@@ -12,13 +12,13 @@ do
 
    #training
    tstart=$SECONDS
-   ${CMD} -f ../algorithms/LinearRegDS.dml -explain -stats -nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" reg=0.01
+   ${CMD} -f ../algorithms/LinearRegDS.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" reg=0.01
    ttrain=$(($SECONDS - $tstart - 3))
    echo "LinRegDS train ict="$i" on "$1": "$ttrain >> times.txt
 
    #predict
    tstart=$SECONDS
-   ${CMD} -f ../algorithms/GLM-predict.dml -explain -stats -nvargs dfam=1 link=1 vpow=0.0 lpow=1.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
+   ${CMD} -f ../algorithms/GLM-predict.dml $DASH-explain $DASH-stats $DASH-nvargs dfam=1 link=1 vpow=0.0 lpow=1.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
    tpredict=$(($SECONDS - $tstart - 3))
    echo "LinRegDS predict ict="$i" on "$1": "$tpredict >> times.txt
 done

@@ -8,13 +8,14 @@ date >> times.txt
 ./runAllBinomial.sh $1 $2
 ./runAllMultinomial.sh $1 $2
 ./runAllRegression.sh $1 $2
-# add stepwise Linear 
-# add stepwise GLM
 ./runAllStats.sh $1 $2
 ./runAllClustering.sh $1 $2
-./runAllTrees $1 $2
-#randomForest
-./runAllDimensionReduction $1 $2
+
+# add stepwise Linear 
+# add stepwise GLM
+#./runAllTrees $1 $2
+# add randomForest
+#./runAllDimensionReduction $1 $2
 #./runAllMatrixFactorization $1 $2
 #ALS
 #./runAllSurvival $1 $2

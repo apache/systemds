@@ -9,10 +9,10 @@ SYSTEMML_HOME="."
 # Default Values
 
 master=yarn-client
-driver_memory=5G
-num_executors=4
-executor_memory=5G
-executor_cores=12
+driver_memory=20G
+num_executors=5
+executor_memory=60G
+executor_cores=24
 conf="--conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128"
 
 # error help print
@@ -44,7 +44,8 @@ Usage: $0 [-h] [SPARK-SUBMIT OPTIONS] -f <dml-filename> [SYSTEMML OPTIONS]
 
    SYSTEMML OPTIONS:
    --stats                     Monitor and report caching/recompilation statistics
-   --explain [<string>]        Explain plan (hops, [runtime], recompile_hops, recompile_runtime)
+   --explain                   Explain plan (runtime)
+   --explain2 <string>         Explain plan (hops, runtime, recompile_hops, recompile_runtime)
    --nvargs <varName>=<value>  List of attributeName-attributeValue pairs
    --args <string>             List of positional argument values
 EOF
@@ -53,9 +54,6 @@ EOF
 
 
 # command line parameter processing
-
-ARGS=`getopt -o h?f: --long conf:,driver-memory:,executor-cores:,executor-memory:,master:,num-executors:,nvargs:,args:,stats,explain: -- "$@"`
-eval set -- "$ARGS"
 
 while true ; do
   case "$1" in
@@ -68,14 +66,13 @@ while true ; do
     --conf)            conf=${conf}' --conf '$2 ; shift 2 ;;
      -f)               f=$2 ; shift 2 ;;
     --stats)           stats="-stats" ; shift 1 ;;
-    --explain)         explain="-explain "$2 ; shift 2 ;;  
-    --nvargs)          nvargs="-nvargs "$2 ; shift 2 ;;
-    --args)            args="-args "$2 ; shift 2 ;;
-    --)                shift ; if [ "$nvargs" != "" ]; then nvargs+=" $@" ; else args+=" $@" ; fi; shift ; break ;;
+    --explain)         explain="-explain" ; shift 1 ;;
+    --explain2)        explain="-explain "$2 ; shift 2 ;;  
+    --nvargs)          shift 1 ; nvargs="-nvargs "$@ ; break ;;
+    --args)            shift 1 ; args="-args "$@ ; break ;; 
     *)                 echo "Error: Wrong usage. Try -h" ; exit 1 ;;
   esac
 done
-
 
 # SystemML Spark invocation
 
@@ -89,7 +86,7 @@ $SPARK_HOME/bin/spark-submit \
      $SYSTEMML_HOME/SystemML.jar \
          -f ${f} \
          -config=$SYSTEMML_HOME/SystemML-config.xml \
-         -exec spark \
+         -exec hybrid_spark \
          $explain \
          $stats \
          $nvargs $args

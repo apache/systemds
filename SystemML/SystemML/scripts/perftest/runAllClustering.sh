@@ -17,6 +17,6 @@ echo "-- Using cluster data." >> times.txt;
 for d in "10k_1k_dense" #"100k_1k_dense" "1M_1k_dense" #"10M_1k_dense" #"100M_1k_dense"
 do 
    echo "-- Running Kmeans on "$d >> times.txt;
-   ./runKmeans.sh ${BASE} X${d}_csv 3 ${BASE} $2 &> logs/runKmeans_${d}.out;
+   ./runKmeans.sh ${BASE}/X${d} 3 ${BASE} $2 &> logs/runKmeans_${d}.out;
 
 done

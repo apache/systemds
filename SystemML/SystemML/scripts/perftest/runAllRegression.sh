@@ -9,7 +9,7 @@ echo $2" RUN REGRESSION EXPERIMENTS" $(date) >> times.txt;
 if [ ! -d logs ]; then mkdir logs ; fi
 
 # data generation
-echo $2"-- Using binomial data: "$(date) >> times.txt;
+echo $2"-- Using binomial data: " >> times.txt;
 ./genBinomialData.sh $1 $2 &>> logs/genBinomialData.out
 
 # run all regression algorithms with binomial labels on all datasets
@@ -18,6 +18,6 @@ do
    for f in "runLinearRegDS" "runLinearRegCG" "runGLM_poisson_log" "runGLM_gamma_log" "runGLM_binomial_probit"
    do
       echo "-- Running "$f" on "$d" (all configs)" >> times.txt;
-      ./${f}.sh ${BASE}/X${d}_csv ${BASE}/y${d}_csv ${BASE} $2 &> logs/${f}_${d}.out;       
+      ./${f}.sh ${BASE}/X${d} ${BASE}/y${d} ${BASE} $2 &> logs/${f}_${d}.out;       
    done 
 done

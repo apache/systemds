@@ -10,11 +10,11 @@ repository SystemML/system-ml: machine/cluster:
 
 Also copy:
 
-   scripts/sparkDML     to <...>/perftest/                     // Edit sparkDML and set SPARK_HOME and SYSTEMML_HOME.
-   target/SystemML.jar  to <...>/perftest/SystemML.jar
-   test/config/SystemML-config.xml to <...>/perftest/SystemML-config.jar
+   scripts/sparkDML.sh     to <...>/perftest/                     // Edit sparkDML and set SPARK_HOME and SYSTEMML_HOME.
+   target/system-ml-5.0-SNAPSHOT.jar  to <...>/perftest/SystemML.jar
+   test/config/SystemML-config.xml to <...>/perftest/SystemML-config.xml
 
-   chmod +x <...>/perftest/*.sh sparkDML                       // Change permissions
+   chmod -R +x <...>/./*                        // Change permissions
 
 
 Customize in runAll*.sh to choose data sizes as well as in gen*Data.sh.

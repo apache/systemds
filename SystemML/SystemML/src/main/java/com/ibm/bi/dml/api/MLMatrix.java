@@ -19,18 +19,15 @@ import scala.Tuple2;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMLLibBlocksToBinaryBlocks;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMIMBFromRow;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLBlock;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLLibBlocks;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 
-import org.apache.spark.mllib.linalg.Matrix;
-import org.apache.spark.mllib.linalg.distributed.BlockMatrix;
-
 /**
+ * Experimental API: Might be discontinued in future release
+ * 
  * This class serves four purposes:
  * 1. It allows SystemML to fit nicely in MLPipeline by reducing number of reblocks.
  * 2. It allows users to easily read and write matrices without worrying 
@@ -45,8 +42,8 @@ import org.apache.spark.mllib.linalg.distributed.BlockMatrix;
 
  import com.ibm.bi.dml.api.{MLContext, MLMatrix}
  val ml = new MLContext(sc)
- val mat1 = MLMatrix.create(sqlContext, "V_small.csv", "csv")
- val mat2 = MLMatrix.create(sqlContext, "W_small.mtx", "binary")
+ val mat1 = ml.read(sqlContext, "V_small.csv", "csv")
+ val mat2 = ml.read(sqlContext, "W_small.mtx", "binary")
  val result = mat1.transpose() %*% mat2
  result.write("Result_small.mtx", "text")
  
@@ -56,94 +53,58 @@ public class MLMatrix extends DataFrame {
 	protected static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
 	protected MatrixCharacteristics mc = null;
+	protected MLContext ml = null;
 	
-	protected MLMatrix(SQLContext sqlContext, LogicalPlan logicalPlan) {
+	protected MLMatrix(SQLContext sqlContext, LogicalPlan logicalPlan, MLContext ml) {
 		super(sqlContext, logicalPlan);
+		this.ml = ml;
 	}
 
-	protected MLMatrix(SQLContext sqlContext, QueryExecution queryExecution) {
+	protected MLMatrix(SQLContext sqlContext, QueryExecution queryExecution, MLContext ml) {
 		super(sqlContext, queryExecution);
+		this.ml = ml;
 	}
 	
 	// Only used internally to set a new MLMatrix after one of matrix operations.
 	// Not to be used externally.
-	protected MLMatrix(DataFrame df, MatrixCharacteristics mc) throws DMLRuntimeException {
+	protected MLMatrix(DataFrame df, MatrixCharacteristics mc, MLContext ml) throws DMLRuntimeException {
 		super(df.sqlContext(), df.logicalPlan());
 		this.mc = mc;
+		this.ml = ml;
 	}
 	
-	private static String writeStmt = "write(output, \"tmp\", format=\"binary\", rows_in_block=" + DMLTranslator.DMLBlockSize + ", cols_in_block=" + DMLTranslator.DMLBlockSize + ");";
-	
-	// TODO: Add additional create to provide sep, missing values, etc. for CSV
-	public static MLMatrix create(SQLContext sqlContext, String filePath, String format) throws IOException, DMLException, ParseException {
-		MLContext ml = checkAndGetMLContext();
-		ml.reset();
-		ml.registerOutput("output");
-		MLOutput out = ml.executeScript("output = read(\"" + filePath + "\", format=\"" + format + "\"); " + writeStmt);
-		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = out.getBinaryBlockedRDD("output");
-		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
-		return createMLMatrix(sqlContext, blocks, mcOut);
-	}
+	static String writeStmt = "write(output, \"tmp\", format=\"binary\", rows_in_block=" + DMLTranslator.DMLBlockSize + ", cols_in_block=" + DMLTranslator.DMLBlockSize + ");";
 	
 	// ------------------------------------------------------------------------------------------------
-	// TODO: Test this in different scenarios: sparse/dense/mixed
-	public static MLMatrix create(SQLContext sqlContext, BlockMatrix mllibMatrix) throws DMLRuntimeException {
-		long nnz = -1; // TODO: Find number of non-zeros from mllibMatrix ... This is important !!
-		
-		JavaPairRDD<Tuple2<Object, Object>, Matrix> mllibBlocks = JavaPairRDD.fromJavaRDD(mllibMatrix.blocks().toJavaRDD());
-		long rlen = mllibMatrix.numRows(); long clen = mllibMatrix.numCols();
-		int brlen = mllibMatrix.numRowBlocks();
-		int bclen = mllibMatrix.numColBlocks();
-		if(mllibMatrix.numRowBlocks() != DMLTranslator.DMLBlockSize && mllibMatrix.numColBlocks() != DMLTranslator.DMLBlockSize) {
-			// TODO: Show warning as this will require an reblock later 
-			// OR perform reblock while creating itself
-		}
-		
-		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = mllibBlocks
-				.mapToPair(new ConvertMLLibBlocksToBinaryBlocks(rlen, clen, brlen, bclen));
-		
-		MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, brlen, bclen, nnz);
-		return createMLMatrix(sqlContext, blocks, mc);
-	}
 	
-	/**
-	 * Converts our blocked matrix format to MLLib's format (Not tested!!)
-	 * @return
-	 */
-	public BlockMatrix toBlockedMatrix() {
-		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = getRDDLazily(this);
-		RDD<Tuple2<Tuple2<Object, Object>, Matrix>> mllibBlocks = blocks.mapToPair(new GetMLLibBlocks(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock())).rdd();
-		return new BlockMatrix(mllibBlocks, mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getRows(), mc.getCols());
-	}
+//	/**
+//	 * Experimental unstable API: Converts our blocked matrix format to MLLib's format
+//	 * @return
+//	 */
+//	public BlockMatrix toBlockedMatrix() {
+//		JavaPairRDD<MatrixIndexes, MatrixBlock> blocks = getRDDLazily(this);
+//		RDD<Tuple2<Tuple2<Object, Object>, Matrix>> mllibBlocks = blocks.mapToPair(new GetMLLibBlocks(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock())).rdd();
+//		return new BlockMatrix(mllibBlocks, mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getRows(), mc.getCols());
+//	}
 	
 	// ------------------------------------------------------------------------------------------------
-		
-	private static MLMatrix createMLMatrix(SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> blocks, MatrixCharacteristics mc) throws DMLRuntimeException {
+	static MLMatrix createMLMatrix(MLContext ml, SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> blocks, MatrixCharacteristics mc) throws DMLRuntimeException {
 		RDD<Row> rows = blocks.map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
-		return new MLMatrix(sqlContext.createDataFrame(rows.toJavaRDD(), schema), mc);
+		return new MLMatrix(sqlContext.createDataFrame(rows.toJavaRDD(), schema), mc, ml);
 	}
 	
 	/**
 	 * Convenient method to write a MLMatrix.
 	 */
 	public void write(String filePath, String format) throws IOException, DMLException, ParseException {
-		MLContext ml = checkAndGetMLContext();
 		ml.reset();
 		ml.registerInput("left", this);
 		ml.executeScript("left = read(\"\"); output=left; write(output, \"" + filePath + "\", format=\"" + format + "\");");
 	}
 	
-	private static MLContext checkAndGetMLContext() throws DMLRuntimeException {
-		if(MLContext.getCurrentMLContext() == null) {
-			throw new DMLRuntimeException("ERROR: No MLContext is created for this session");
-		}
-		return MLContext.getCurrentMLContext();
-	}
-	
 	private double getScalarBuiltinFunctionResult(String fn) throws IOException, DMLException, ParseException {
 		if(fn.compareTo("nrow") == 0 || fn.compareTo("ncol") == 0) {
-			MLContext ml = checkAndGetMLContext();
 			ml.reset();
 			ml.registerInput("left", getRDDLazily(this), mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
 			ml.registerOutput("output");
@@ -228,7 +189,6 @@ public class MLMatrix extends DataFrame {
 	}
 	
 	private MLMatrix matrixBinaryOp(MLMatrix that, String op) throws IOException, DMLException, ParseException {
-		MLContext ml = checkAndGetMLContext();
 		
 		if(mc.getRowsPerBlock() != that.mc.getRowsPerBlock() || mc.getColsPerBlock() != that.mc.getColsPerBlock()) {
 			throw new DMLRuntimeException("Incompatible block sizes: brlen:" + mc.getRowsPerBlock() + "!=" +  that.mc.getRowsPerBlock() + " || bclen:" + mc.getColsPerBlock() + "!=" + that.mc.getColsPerBlock());
@@ -253,12 +213,10 @@ public class MLMatrix extends DataFrame {
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
 		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
-		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut);
+		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut, ml);
 	}
 	
 	private MLMatrix scalarBinaryOp(Double scalar, String op, boolean isScalarLeft) throws IOException, DMLException, ParseException {
-		MLContext ml = checkAndGetMLContext();
-		
 		ml.reset();
 		ml.registerInput("left", this);
 		ml.registerOutput("output");
@@ -266,7 +224,7 @@ public class MLMatrix extends DataFrame {
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
 		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
-		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut);
+		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut, ml);
 	}
 	
 	// ---------------------------------------------------
@@ -361,8 +319,6 @@ public class MLMatrix extends DataFrame {
 	}
 	
 	public MLMatrix transpose() throws IOException, DMLException, ParseException {
-		MLContext ml = checkAndGetMLContext();
-		
 		ml.reset();
 		ml.registerInput("left", this);
 		ml.registerOutput("output");
@@ -373,7 +329,7 @@ public class MLMatrix extends DataFrame {
 		RDD<Row> rows = out.getBinaryBlockedRDD("output").map(new GetMLBlock()).rdd();
 		StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
 		MatrixCharacteristics mcOut = out.getMatrixCharacteristics("output");
-		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut);
+		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut, ml);
 	}
 	
 	// TODO: For 'scalar op matrix' operations: Do implicit conversions 

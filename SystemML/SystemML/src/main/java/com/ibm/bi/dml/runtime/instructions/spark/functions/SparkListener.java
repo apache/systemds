@@ -25,6 +25,7 @@ import scala.collection.Seq;
 import scala.xml.Node;
 
 import com.ibm.bi.dml.api.MLContext;
+import com.ibm.bi.dml.api.MLContextProxy;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 
 /**
@@ -86,7 +87,7 @@ public class SparkListener extends JavaSparkListener {
 		
 		synchronized(currentInstructions) {
 			for(SPInstruction inst : currentInstructions) {
-				MLContext mlContext = MLContext.getCurrentMLContext();
+				MLContext mlContext = MLContextProxy.getActiveMLContext();
 				if(mlContext != null && mlContext.getMonitoringUtil() != null) {
 					mlContext.getMonitoringUtil().setStageId(inst, stageSubmitted.stageInfo().stageId());
 				}

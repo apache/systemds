@@ -24,6 +24,7 @@ import scala.Tuple2;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.MLContext;
+import com.ibm.bi.dml.api.MLContextProxy;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -91,7 +92,7 @@ public class SparkExecutionContext extends ExecutionContext
 			else {
 				//create a default spark context (master, appname, etc refer to system properties
 				//as given in the spark configuration or during spark-submit)
-				MLContext mlCtx = MLContext.getCurrentMLContext();
+				MLContext mlCtx = MLContextProxy.getActiveMLContext();
 				if(mlCtx != null) {
 					// This is when DML is called through spark shell
 					// Will clean the passing of static variables later as this involves minimal change to DMLScript
@@ -766,7 +767,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 		}
 		
-		MLContext mlContext = MLContext.getCurrentMLContext();
+		MLContext mlContext = MLContextProxy.getActiveMLContext();
 		if(mlContext != null && mlContext.getMonitoringUtil() != null) {
 			mlContext.getMonitoringUtil().setLineageInfo(inst, outDebugString);
 		}

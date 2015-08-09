@@ -51,8 +51,8 @@ public class MLContextProxy
 	 */
 	public static ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> tmp) 
 	{
-		if(MLContext.getCurrentMLContext() != null) {
-			return MLContext.getCurrentMLContext().performCleanupAfterRecompilation(tmp);
+		if(MLContext.getActiveMLContext() != null) {
+			return MLContext.getActiveMLContext().performCleanupAfterRecompilation(tmp);
 		}
 		return tmp;
 	}
@@ -66,15 +66,19 @@ public class MLContextProxy
 	public static void setAppropriateVarsForRead(Expression source, String targetname) 
 		throws LanguageException 
 	{
-		MLContext mlContext = MLContext.getCurrentMLContext();
+		MLContext mlContext = MLContext.getActiveMLContext();
 		if(mlContext != null) {
 			mlContext.setAppropriateVarsForRead(source, targetname);
 		}
 	}
 	
+	public static MLContext getActiveMLContext() {
+		return MLContext.getActiveMLContext();
+	}
+	
 	public static void setInstructionForMonitoring(Instruction inst) {
 		Location loc = inst.getLocation();
-		MLContext mlContext = MLContext.getCurrentMLContext();
+		MLContext mlContext = MLContext.getActiveMLContext();
 		if(loc != null && mlContext != null && mlContext.getMonitoringUtil() != null) {
 			mlContext.getMonitoringUtil().setInstructionLocation(loc, inst);
 		}

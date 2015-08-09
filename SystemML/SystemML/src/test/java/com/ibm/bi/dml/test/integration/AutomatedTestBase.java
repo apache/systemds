@@ -24,11 +24,16 @@ import org.junit.Before;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.api.MLContext;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -242,6 +247,25 @@ public abstract class AutomatedTestBase
 	 */
 	protected File getCurConfigFile() {
 		return new File(getCurLocalTempDir(), "SystemML-config.xml");
+	}
+	
+	protected MLContext getMLContextForTesting() throws DMLRuntimeException {
+		synchronized(AutomatedTestBase.class) {
+			
+			RUNTIME_PLATFORM oldRT = DMLScript.rtplatform;
+			try {
+				DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+				ExecutionContext ec = ExecutionContextFactory.createContext();
+				if(ec instanceof SparkExecutionContext) {
+					MLContext mlCtx = new MLContext(((SparkExecutionContext) ec).getSparkContext());
+					return mlCtx;
+				}
+			}
+			finally {
+				DMLScript.rtplatform = oldRT;
+			}
+			throw new DMLRuntimeException("Cannot create MLContext");
+		}
 	}
 
 	/**

@@ -15,7 +15,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.mllib.linalg.distributed.BlockMatrix;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -26,7 +25,9 @@ import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLBlock;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -82,24 +83,39 @@ public class MLOutput {
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
 	
-	public MLMatrix getMLMatrix(SQLContext sqlContext, String varName) throws DMLRuntimeException {
+	public JavaRDD<String> getStringRDD(String varName, String format) throws DMLRuntimeException {
+		if(format.compareTo("text") == 0) {
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = getBinaryBlockedRDD(varName);
+			JavaRDD<String> ijv = in1.flatMap(new ConvertMatrixBlockToIJVLines(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize));
+			return ijv;
+		}
+//		else if(format.compareTo("csv") == 0) {
+//			
+//		}
+		else {
+			throw new DMLRuntimeException("The output format:" + format + " is not implemented yet.");
+		}
+		
+	}
+	
+	public MLMatrix getMLMatrix(MLContext ml, SQLContext sqlContext, String varName) throws DMLRuntimeException {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
 		if(rdd != null) {
 			MatrixCharacteristics mc = getMatrixCharacteristics(varName);
 			StructType schema = MLBlock.getDefaultSchemaForBinaryBlock();
-			return new MLMatrix(sqlContext.createDataFrame(rdd.map(new GetMLBlock()).rdd(), schema), mc);
+			return new MLMatrix(sqlContext.createDataFrame(rdd.map(new GetMLBlock()).rdd(), schema), mc, ml);
 		}
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
 	
-	/**
-	 * Experimental: Please use this with caution as it will fail in many corner cases.
-	 * @return org.apache.spark.mllib.linalg.distributed.BlockMatrix
-	 * @throws DMLRuntimeException 
-	 */
-	public BlockMatrix getMLLibBlockedMatrix(SQLContext sqlContext, String varName) throws DMLRuntimeException {
-		return getMLMatrix(sqlContext, varName).toBlockedMatrix();
-	}
+//	/**
+//	 * Experimental: Please use this with caution as it will fail in many corner cases.
+//	 * @return org.apache.spark.mllib.linalg.distributed.BlockMatrix
+//	 * @throws DMLRuntimeException 
+//	 */
+//	public BlockMatrix getMLLibBlockedMatrix(MLContext ml, SQLContext sqlContext, String varName) throws DMLRuntimeException {
+//		return getMLMatrix(ml, sqlContext, varName).toBlockedMatrix();
+//	}
 	
 	private DataFrame getDF(SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, String varName) throws DMLRuntimeException {
 		MatrixCharacteristics mc = _outMetadata.get(varName);
@@ -211,8 +227,6 @@ public class MLOutput {
 			Object[] row_fields = row;
 			return RowFactory.create(row_fields);
 		}
-
-		
 		
 	}
 	

@@ -13,12 +13,12 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 
 import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -153,7 +153,7 @@ public class SparkUtils {
 		return UtilFunctions.cellIndexCalculation(blockIndex, blen, 0);
 	}
 	
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getRDDWithEmptyBlocks(SparkExecutionContext sec, 
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getRDDWithEmptyBlocks(JavaSparkContext sc, 
 			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithoutEmptyBlocks,
 			long numRows, long numColumns, int brlen, int bclen) throws DMLRuntimeException {
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithEmptyBlocks = null;
@@ -165,7 +165,7 @@ public class SparkUtils {
 		ArrayList<Tuple2<MatrixIndexes, MatrixBlock> > emptyBlocksList = getEmptyBlocks(indexes, numRows, numColumns, brlen, bclen);
 		if(emptyBlocksList != null && emptyBlocksList.size() > 0) {
 			// Empty blocks needs to be inserted
-			binaryBlocksWithEmptyBlocks = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(emptyBlocksList))
+			binaryBlocksWithEmptyBlocks = JavaPairRDD.fromJavaRDD(sc.parallelize(emptyBlocksList))
 					.union(binaryBlocksWithoutEmptyBlocks);
 		}
 		else {

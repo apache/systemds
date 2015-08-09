@@ -30,10 +30,14 @@ public class ConvertTextLineToBinaryCellFunction implements PairFunction<Tuple2<
 	private static final long serialVersionUID = -3672377410407066396L;
 	private int brlen; 
 	private int bclen;
+	private long rlen; 
+	private long clen;
 	
-	public ConvertTextLineToBinaryCellFunction(int brlen, int bclen) {
+	public ConvertTextLineToBinaryCellFunction(long rlen, long clen, int brlen, int bclen) {
 		this.brlen = brlen;
 		this.bclen = bclen;
+		this.rlen = rlen;
+		this.clen = clen;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -48,6 +52,10 @@ public class ConvertTextLineToBinaryCellFunction implements PairFunction<Tuple2<
 		if(converter.hasNext()) {
 			retVal = converter.next();
 			
+			if(retVal.getKey().getRowIndex() > rlen || retVal.getKey().getColumnIndex() > clen) {
+				throw new Exception("Either incorrect metadata provided to text reblock (" + rlen + "," + clen
+						+ ") or incorrect input line:" + arg0._2);
+			}
 			// ------------------------------------------------------------------------------------------
 			// Get appropriate indexes for blockIndexes and cell
 			// For line: 1020 704 2.362153706180234 (assuming default block size: 1000 X 1000),

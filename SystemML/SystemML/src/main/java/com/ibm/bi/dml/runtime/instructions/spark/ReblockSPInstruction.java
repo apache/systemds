@@ -122,7 +122,7 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithEmptyBlocks = null;
 		if(outputEmptyBlocks) {
-			binaryBlocksWithEmptyBlocks = SparkUtils.getRDDWithEmptyBlocks(sec, 
+			binaryBlocksWithEmptyBlocks = SparkUtils.getRDDWithEmptyBlocks(sec.getSparkContext(), 
 					binaryBlocksWithoutEmptyBlocks, numRows, numColumns, brlen, bclen);
 		}
 		else {
@@ -166,7 +166,7 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		}
 		
 		JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = 
-				lines.mapToPair(new ConvertTextLineToBinaryCellFunction(brlen, bclen))
+				lines.mapToPair(new ConvertTextLineToBinaryCellFunction(numRows, numColumns, brlen, bclen))
 				.filter(new DropEmptyBinaryCells());
 				
 		

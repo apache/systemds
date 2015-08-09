@@ -90,7 +90,7 @@ public abstract class SPInstruction extends Instruction
 
 		//spark-explain-specific handling of current instructions 
 		//This only relevant for ComputationSPInstruction as in postprocess we call setDebugString which is valid only for ComputationSPInstruction
-		MLContext mlCtx = MLContext.getCurrentMLContext();
+		MLContext mlCtx = MLContextProxy.getActiveMLContext();
 		if(    tmp instanceof ComputationSPInstruction 
 			&& mlCtx != null && mlCtx.getMonitoringUtil() != null 
 			&& ec instanceof SparkExecutionContext ) 
@@ -111,7 +111,7 @@ public abstract class SPInstruction extends Instruction
 			throws DMLRuntimeException 
 	{
 		//spark-explain-specific handling of current instructions
-		MLContext mlCtx = MLContext.getCurrentMLContext();
+		MLContext mlCtx = MLContextProxy.getActiveMLContext();
 		if(    this instanceof ComputationSPInstruction 
 			&& mlCtx != null && mlCtx.getMonitoringUtil() != null
 			&& ec instanceof SparkExecutionContext ) 

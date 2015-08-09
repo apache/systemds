@@ -19,6 +19,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReIndexOperator;
+import com.ibm.bi.dml.runtime.util.IndexRange;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
@@ -35,35 +36,6 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 	private IndexRange indexRange=null;
 	private IndexRange tempRange=new IndexRange(-1, -1, -1, -1);
 	
-	
-	//start and end are all inclusive
-	public static class IndexRange
-	{
-		public long rowStart=0;
-		public long rowEnd=0;
-		public long colStart=0;
-		public long colEnd=0;
-		
-		public IndexRange(long rs, long re, long cs, long ce)
-		{
-			set(rs, re, cs, ce);
-		}
-		public void set(long rs, long re, long cs, long ce)
-		{
-			//if(re<rs || ce<cs)
-			//	throw new RuntimeException("This is invalid index range: ["+rs+":"+re+", "+cs+":"+ce+"]!");
-			rowStart=rs;
-			rowEnd=re;
-			colStart=cs;
-			colEnd=ce;
-		}
-		
-		@Override
-		public String toString()
-		{
-			return "["+rowStart+":"+rowEnd+", "+colStart+":"+colEnd+"]";
-		}
-	}
 	
 	public RangeBasedReIndexInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {
 		super(op, in, out);

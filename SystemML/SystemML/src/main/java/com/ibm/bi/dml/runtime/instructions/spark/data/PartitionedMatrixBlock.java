@@ -15,13 +15,17 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+
+import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction.SliceBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.util.FastBufferedDataInputStream;
 import com.ibm.bi.dml.runtime.util.FastBufferedDataOutputStream;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 /**
  * The main purpose of this class is to provide a handle for partitioned matrix blocks, to be used
@@ -87,6 +91,14 @@ public class PartitionedMatrixBlock implements Externalizable
 	public int getNumRowBlocks() 
 	{
 		return (int)Math.ceil((double)_rlen/_brlen);
+	}
+	
+	public long getNumRows() {
+		return _rlen;
+	}
+	
+	public long getNumCols() {
+		return _clen;
 	}
 	
 	/**
@@ -167,31 +179,40 @@ public class PartitionedMatrixBlock implements Externalizable
 		int lcl = (int) cl;
 		int lcu = (int) cu;
 		
-		//allocate output matrix
-		MatrixBlock ret = new MatrixBlock(lru-lrl+1, lcu-lcl+1, false);
-		
-		//slice operations (at most 4 blocks)
-		for( int i = lrl; i <= lru; i+=_brlen )
-			for(int j = lcl; j <= lcu; j+=_bclen)
+		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> allBlks = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+		int start_iix = (lrl-1)/_brlen+1;
+		int end_iix = (lru-1)/_brlen+1;
+		int start_jix = (lcl-1)/_bclen+1;
+		int end_jix = (lcu-1)/_bclen+1;
+				
+		for( int iix = start_iix; iix <= end_iix; iix++ )
+			for(int jix = start_jix; jix <= end_jix; jix++)		
 			{
-				//get the current block
-				int iix = (i-1)/_brlen+1;
-				int jix = (j-1)/_bclen+1;
 				MatrixBlock in = getMatrixBlock(iix, jix);
-				
-				//slice out relevant portion of current block
-				int ix1 = UtilFunctions.cellInBlockCalculation(i, _brlen)+1;
-				int ix2 = UtilFunctions.cellInBlockCalculation(Math.min(i+_brlen, lru), _brlen)+1;
-				int ix3 = UtilFunctions.cellInBlockCalculation(j, _bclen)+1;
-				int ix4 = UtilFunctions.cellInBlockCalculation(Math.min(j+_bclen, lcu), _bclen)+1;
-				MatrixBlock in2 = in.sliceOperations(ix1, ix2, ix3, ix4, new MatrixBlock());
-				
-				//left indexing temporary block into result
-				ret.leftIndexingOperations(in2, i-lrl+1, Math.min(i-lrl+1+_brlen, lru-lrl+1), 
-						                   j-lcl+1, Math.min(j-lcl+1+_bclen, lcu-lcl+1), ret, true);
+				try {
+					Iterable<Tuple2<MatrixIndexes, MatrixBlock>> blks = 
+							(new SliceBlock(rl, ru, cl, cu, _brlen, _bclen))
+							.call(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(iix, jix), in));
+					
+					for(Tuple2<MatrixIndexes, MatrixBlock> kv : blks) {
+						allBlks.add(kv);
+					}
+				} catch (Exception e) {
+					throw new DMLRuntimeException(e);
+				}
 			}
-			
-		return ret;
+		
+		if(allBlks.size() == 1) {
+			return allBlks.get(0)._2;
+		}
+		else {
+			//allocate output matrix
+			MatrixBlock ret = new MatrixBlock(lru-lrl+1, lcu-lcl+1, false);
+			for(Tuple2<MatrixIndexes, MatrixBlock> kv : allBlks) {
+				ret.merge(kv._2, false);
+			}
+			return ret;
+		}
 	}
 	
 	/**

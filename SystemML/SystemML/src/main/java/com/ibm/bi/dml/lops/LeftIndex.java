@@ -72,9 +72,21 @@ public class LeftIndex extends Lop
 		super(Lop.Type.LeftIndex, dt, vt);
 		init(lhsInput, rhsInput, rowL, rowU, colL, colU, et);
 	}
+	
+	boolean isBroadcast = false;
+	public LeftIndex(
+			Lop lhsInput, Lop rhsInput, Lop rowL, Lop rowU, Lop colL, Lop colU, DataType dt, ValueType vt, ExecType et, boolean isBroadcast)
+			throws LopsException {
+		super(Lop.Type.LeftIndex, dt, vt);
+		this.isBroadcast = isBroadcast;
+		init(lhsInput, rhsInput, rowL, rowU, colL, colU, et);
+	}
 
 	private String getOpcode() {
-		return "leftIndex";
+		if(isBroadcast)
+			return "mapLeftIndex";
+		else
+			return "leftIndex";
 	}
 	
 	@Override

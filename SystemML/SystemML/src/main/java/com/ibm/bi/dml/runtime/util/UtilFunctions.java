@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.runtime.util;
 
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
+import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 
 public class UtilFunctions 
 {
@@ -76,6 +77,41 @@ public class UtilFunctions
 		return (point>=s && point<=f);
 	}
 	
+	// Reused by both MR and Spark for performing zero out
+	public static IndexRange getSelectedRangeForZeroOut(IndexedMatrixValue in, int blockRowFactor, int blockColFactor, IndexRange indexRange) {
+		IndexRange tempRange = new IndexRange(-1, -1, -1, -1);
+		
+		long topBlockRowIndex=UtilFunctions.blockIndexCalculation(indexRange.rowStart, blockRowFactor);
+		int topRowInTopBlock=UtilFunctions.cellInBlockCalculation(indexRange.rowStart, blockRowFactor);
+		long bottomBlockRowIndex=UtilFunctions.blockIndexCalculation(indexRange.rowEnd, blockRowFactor);
+		int bottomRowInBottomBlock=UtilFunctions.cellInBlockCalculation(indexRange.rowEnd, blockRowFactor);
+		
+		long leftBlockColIndex=UtilFunctions.blockIndexCalculation(indexRange.colStart, blockColFactor);
+		int leftColInLeftBlock=UtilFunctions.cellInBlockCalculation(indexRange.colStart, blockColFactor);
+		long rightBlockColIndex=UtilFunctions.blockIndexCalculation(indexRange.colEnd, blockColFactor);
+		int rightColInRightBlock=UtilFunctions.cellInBlockCalculation(indexRange.colEnd, blockColFactor);
+		
+		//no overlap
+		if(in.getIndexes().getRowIndex()<topBlockRowIndex || in.getIndexes().getRowIndex()>bottomBlockRowIndex
+		   || in.getIndexes().getColumnIndex()<leftBlockColIndex || in.getIndexes().getColumnIndex()>rightBlockColIndex)
+		{
+			tempRange.set(-1,-1,-1,-1);
+			return tempRange;
+		}
+		
+		//get the index range inside the block
+		tempRange.set(0, in.getValue().getNumRows()-1, 0, in.getValue().getNumColumns()-1);
+		if(topBlockRowIndex==in.getIndexes().getRowIndex())
+			tempRange.rowStart=topRowInTopBlock;
+		if(bottomBlockRowIndex==in.getIndexes().getRowIndex())
+			tempRange.rowEnd=bottomRowInBottomBlock;
+		if(leftBlockColIndex==in.getIndexes().getColumnIndex())
+			tempRange.colStart=leftColInLeftBlock;
+		if(rightBlockColIndex==in.getIndexes().getColumnIndex())
+			tempRange.colEnd=rightColInRightBlock;
+		
+		return tempRange;
+	}
 	public static long getTotalLength(NumItemsByEachReducerMetaData metadata) {
 		long[] counts=metadata.getNumItemsArray();
 		long total=0;

@@ -103,6 +103,7 @@ public class SPInstructionParser extends InstructionParser {
 		
 		String2SPInstructionType.put( "rangeReIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		String2SPInstructionType.put( "leftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
+		String2SPInstructionType.put( "mapLeftIndex"   	, SPINSTRUCTION_TYPE.MatrixIndexing);
 		
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2SPInstructionType.put( "r'"   	   , SPINSTRUCTION_TYPE.Reorg);

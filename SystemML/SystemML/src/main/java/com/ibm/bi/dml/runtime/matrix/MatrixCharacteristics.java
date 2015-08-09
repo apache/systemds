@@ -39,7 +39,6 @@ import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.instructions.mr.ReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RemoveEmptyMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.ReorgInstruction;
@@ -54,6 +53,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.ZeroOutInstruction;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
+import com.ibm.bi.dml.runtime.util.IndexRange;
 
 
 public class MatrixCharacteristics implements Serializable

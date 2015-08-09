@@ -20,6 +20,7 @@ import com.ibm.bi.dml.lops.UnaryCP.OperationTypes;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 
 public class LeftIndexingOp  extends Hop 
@@ -27,6 +28,13 @@ public class LeftIndexingOp  extends Hop
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
+	
+	public static LeftIndexingMethod FORCED_LEFT_INDEXING = null;
+	
+	public enum LeftIndexingMethod { 
+		SP_GLEFTINDEX, // general case
+		SP_MLEFTINDEX //map-only left index where we broadcast right hand side matrix
+	}
 	
 	public static String OPSTRING = "lix"; //"LeftIndexing";
 	
@@ -48,6 +56,18 @@ public class LeftIndexingOp  extends Hop
 		_colLowerEqualsUpper = passed;
 	}
 	
+	private LeftIndexingMethod getOptMethodLeftIndexingMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb ) {
+		if(FORCED_LEFT_INDEXING != null) {
+			return FORCED_LEFT_INDEXING;
+		}
+		// Broadcast based left index behaves like a map binary op in worst case where we fit entire rhs broadcast in memory
+		// and only one block from lhs and output
+		double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
+		if(footprint < SparkExecutionContext.getBroadcastMemoryBudget()) {
+			return LeftIndexingMethod.SP_MLEFTINDEX;
+		}
+		return LeftIndexingMethod.SP_GLEFTINDEX;
+	}
 	
 	private LeftIndexingOp() {
 		//default constructor for clone
@@ -165,6 +185,30 @@ public class LeftIndexingOp  extends Hop
 				setLineNumbers(binary);
 				
 				setLops(binary);
+			}
+			else if(et == ExecType.SPARK)  {				
+				boolean isBroadcast = false;
+				Hop left = getInput().get(0);
+				Hop right = getInput().get(0);
+				long m1_dim1 = left.getDim1();
+				long m1_dim2 = left.getDim2();		
+				long m2_dim1 = right.getDim1();
+				long m2_dim2 = right.getDim2();
+				long brlen = left.getRowsInBlock();
+				long bclen = left.getColsInBlock();
+				LeftIndexingMethod method = getOptMethodLeftIndexingMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
+				if(method == LeftIndexingMethod.SP_MLEFTINDEX) {
+					isBroadcast = true;
+				}
+				
+				LeftIndex leftIndexLop = new LeftIndex(
+						getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 
+						getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
+						getDataType(), getValueType(), et, isBroadcast);
+				
+				setOutputDimensions(leftIndexLop);
+				setLineNumbers(leftIndexLop);
+				setLops(leftIndexLop);
 			}
 			else 
 			{

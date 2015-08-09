@@ -50,7 +50,6 @@ import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction.IndexRange;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
@@ -67,6 +66,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 import com.ibm.bi.dml.runtime.util.FastBufferedDataInputStream;
 import com.ibm.bi.dml.runtime.util.FastBufferedDataOutputStream;
+import com.ibm.bi.dml.runtime.util.IndexRange;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
@@ -1784,8 +1784,15 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		if(clen == src.clen) //optimization for equal width
 			System.arraycopy(src.denseBlock, 0, denseBlock, rl*clen+cl, src.rlen*src.clen);
 		else
-			for( int i=0, ix1=0, ix2=rl*clen+cl; i<src.rlen; i++, ix1+=src.clen, ix2+=clen )
-				System.arraycopy(src.denseBlock, ix1, denseBlock, ix2, rowLen);
+			for( int i=0, ix1=0, ix2=rl*clen+cl; i<src.rlen; i++, ix1+=src.clen, ix2+=clen ) {
+				try {
+					System.arraycopy(src.denseBlock, ix1, denseBlock, ix2, rowLen);
+				}
+				catch(Exception e) {
+					throw new DMLRuntimeException(e.getMessage() + " " + src.denseBlock.length + " " + denseBlock.length + " " + ix1 + " " + ix2);
+				}
+				
+			}
 	}
 	
 	private void copyEmptyToSparse(int rl, int ru, int cl, int cu, boolean updateNNZ ) 

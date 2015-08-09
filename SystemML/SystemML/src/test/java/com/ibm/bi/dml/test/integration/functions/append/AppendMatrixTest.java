@@ -15,6 +15,8 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.BinaryOp;
+import com.ibm.bi.dml.hops.BinaryOp.AppendMethod;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -61,54 +63,74 @@ public class AppendMatrixTest extends AutomatedTestBase
 
 	@Test
 	public void testAppendInBlock1DenseCP() {
-		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1a, cols2a, false);
+		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1a, cols2a, false, null);
 	}
 	
 	@Test
 	public void testAppendInBlock1SparseCP() {
-		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1a, cols2a, true);
+		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1a, cols2a, true, null);
 	}
 	
 	// -----------------------------------------------------------------
 	
 	@Test
 	public void testAppendInBlock1DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, false);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, false, AppendMethod.MR_RAPPEND);
 	}   
 	
 	@Test
 	public void testAppendInBlock1SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, true);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, true, AppendMethod.MR_RAPPEND);
 	}   
 	
 	@Test
-	public void testAppendInBlock2DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, false);
+	public void testMapAppendInBlock2DenseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, false, AppendMethod.MR_MAPPEND);
 	}
 	
 	@Test
-	public void testAppendInBlock2SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, true);
+	public void testMapAppendInBlock2SparseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, true, AppendMethod.MR_MAPPEND);
+	}
+	
+	@Test
+	public void testMapAppendOutBlock2DenseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, false, AppendMethod.MR_MAPPEND);
+	}
+	
+	@Test
+	public void testMapAppendOutBlock2SparseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, true, AppendMethod.MR_MAPPEND);
 	}
 	
 	@Test
 	public void testAppendOutBlock1DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1c, cols2c, false);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1c, cols2c, false, AppendMethod.SP_GAlignedAppend);
 	}
 	
 	@Test
 	public void testAppendOutBlock1SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1c, cols2c, true);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1c, cols2c, true, AppendMethod.SP_GAlignedAppend);
+	}
+	
+	@Test
+	public void testAppendInBlock2DenseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, false, AppendMethod.MR_GAPPEND);
+	}
+	
+	@Test
+	public void testAppendInBlock2SparseSP() {
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, true, AppendMethod.MR_GAPPEND);
 	}
 	
 	@Test
 	public void testAppendOutBlock2DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, false);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, false, AppendMethod.MR_GAPPEND);
 	}
 	
 	@Test
 	public void testAppendOutBlock2SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, true);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, true, AppendMethod.MR_GAPPEND);
 	}
 	
 	// -----------------------------------------------------------------
@@ -132,42 +154,42 @@ public class AppendMatrixTest extends AutomatedTestBase
 	
 	@Test
 	public void testAppendInBlock1DenseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1a, cols2a, false);
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1a, cols2a, false, null);
 	}   
 	
 	@Test
 	public void testAppendInBlock1SparseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1a, cols2a, true);
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1a, cols2a, true, null);
 	}   
 	
 	@Test
 	public void testAppendInBlock2DenseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1b, cols2b, false);
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1b, cols2b, false, null);
 	}
 	
 	@Test
 	public void testAppendInBlock2SparseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1b, cols2b, true);
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1b, cols2b, true, null);
 	}
 	
 	@Test
 	public void testAppendOutBlock1DenseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1c, cols2c, false);
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1c, cols2c, false, null);
 	}
 	
 	@Test
 	public void testAppendOutBlock1SparseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1c, cols2c, true);
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1c, cols2c, true, null);
 	}
 	
 	@Test
 	public void testAppendOutBlock2DenseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1d, cols2d, false);
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1d, cols2d, false, null);
 	}
 	
 	@Test
 	public void testAppendOutBlock2SparseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1d, cols2d, true);
+		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1d, cols2d, true, null);
 	}
 	
 	/**
@@ -178,7 +200,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 	 * @param cols2
 	 * @param sparse
 	 */
-	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols1, int cols2, boolean sparse)
+	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod)
 	{
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 	    
@@ -189,6 +211,9 @@ public class AppendMatrixTest extends AutomatedTestBase
 		
 		try
 		{
+			if(forcedAppendMethod != null) {
+				BinaryOp.FORCED_APPEND_METHOD = forcedAppendMethod;
+			}
 		    rtplatform = platform;
 		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -237,6 +262,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 			//reset execution platform
 			rtplatform = prevPlfm;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			BinaryOp.FORCED_APPEND_METHOD = null;
 		}
 	}
    

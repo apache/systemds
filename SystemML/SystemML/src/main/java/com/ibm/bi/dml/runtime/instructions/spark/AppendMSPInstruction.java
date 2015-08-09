@@ -142,23 +142,61 @@ public class AppendMSPInstruction extends BinarySPInstruction
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
 			if(kv._1.getColumnIndex() == rightMostBlockIndex) {
 				MatrixBlock lhsMatrixBlock = kv._2;
-				MatrixBlock rhsMatBlock = pm.value().getMatrixBlock((int)kv._1.getRowIndex(), 1);
+				PartitionedMatrixBlock partitionedMat = pm.value();
 				
 				if(lhsMatrixBlock.getNumColumns() == left_bclen) {
-					// No need to perform append
+					// No need to perform append, just add an additional blocks in RHS.
 					retVal.add(kv);
-					retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(
-							new MatrixIndexes(kv._1.getRowIndex(), kv._1.getColumnIndex()+1), rhsMatBlock));
+					
+					long colIndex = kv._1.getColumnIndex() + 1;
+					for(int i = 1; i <= partitionedMat.getNumColumnBlocks(); i++) {
+						MatrixBlock part = partitionedMat.getMatrixBlock((int)kv._1.getRowIndex(), i);
+						retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(
+								new MatrixIndexes(kv._1.getRowIndex(), colIndex), part));
+						colIndex++;
+					}
 				}
 				else {
-					MatrixBlock retBlk = kv._2.appendOperations(rhsMatBlock, new MatrixBlock());
+					// Unaligned matrix blocks
+					// First get the entire RHS Matrix
+					MatrixBlock rhsMatBlock = null;
+					if(partitionedMat.getNumColumnBlocks() == 1) {
+						// Avoids an unnecessary left indexing operation.
+						rhsMatBlock = partitionedMat.getMatrixBlock((int)kv._1.getRowIndex(), 1);
+					}
+					else {
+						rhsMatBlock = new MatrixBlock(lhsMatrixBlock.getNumRows(), (int)partitionedMat.getNumCols(), false);
+						long colLower = 1;
+						long colUpper = 0;
+						for(int i = 1; i <= partitionedMat.getNumColumnBlocks(); i++) {
+							MatrixBlock part = partitionedMat.getMatrixBlock((int)kv._1.getRowIndex(), i);
+							colUpper += part.getNumColumns();
+							rhsMatBlock = rhsMatBlock.leftIndexingOperations(
+									part, 1, lhsMatrixBlock.getNumRows(), colLower, colUpper, 
+									null, true);
+							colLower = colUpper + 1;
+						}
+					}
+					
+					// Then perform append operations 
+					MatrixBlock retBlk = lhsMatrixBlock.appendOperations(rhsMatBlock, new MatrixBlock());
+					
+					// Output the appended blocks
 					if(retBlk.getNumColumns() > left_bclen) {
-						MatrixBlock blk1 = retBlk.sliceOperations(1, retBlk.getNumRows(), 1, left_bclen, new MatrixBlock());
-						MatrixBlock blk2 = retBlk.sliceOperations(1, retBlk.getNumRows(), left_bclen+1, retBlk.getNumColumns(), new MatrixBlock());
-						retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(
-								new MatrixIndexes(kv._1.getRowIndex(), kv._1.getColumnIndex()), blk1));
-						retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(
-								new MatrixIndexes(kv._1.getRowIndex(), kv._1.getColumnIndex()+1), blk2));
+						// Since retBlk is greater than left_bclen, slice it
+						long numBlocks = (long) Math.ceil((double)retBlk.getNumColumns() / left_bclen);
+						long colLower = 1;
+						long colUpper = 0;
+						long colIndex = kv._1.getColumnIndex();
+						for(int i = 1; i <= numBlocks; i++) {
+							colUpper = Math.min(colUpper + left_bclen, retBlk.getNumColumns());
+							// Slice blocks so as to get them of size "left_bclen" 
+							MatrixBlock blk = retBlk.sliceOperations(1, retBlk.getNumRows(), colLower, colUpper, new MatrixBlock());
+							colLower = colUpper + 1;
+							retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(
+									new MatrixIndexes(kv._1.getRowIndex(), colIndex), blk));
+							colIndex++;
+						}
 					}
 					else {
 						// appended block has only 1 block

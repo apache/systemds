@@ -94,7 +94,7 @@ public class AppendVectorTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "A" , 
+			programArgs = new String[]{"-explain", "-args",  RI_HOME + INPUT_DIR + "A" , 
 					Long.toString(rows), Long.toString(cols),
 								RI_HOME + INPUT_DIR + "B" ,
 		                         RI_HOME + OUTPUT_DIR + "C" };

@@ -99,7 +99,7 @@ public class AppendRSPInstruction extends BinarySPInstruction
 				mcOut.set(mc1.getRows(), mc1.getCols() + mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			}
 			
-			if(mc1.getRows() + mc2.getRows() > mc1.getRowsPerBlock()) {
+			if(mc1.getCols() + mc2.getCols() > mc1.getColsPerBlock()) {
 				throw new DMLRuntimeException("In AppendRSPInstruction, output must have at most one column block"); 
 			}
 			
@@ -119,7 +119,7 @@ public class AppendRSPInstruction extends BinarySPInstruction
 		}		
 	}
 	
-	public class ReduceSideAppend implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, MatrixIndexes, MatrixBlock> {
+	public static class ReduceSideAppend implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, MatrixIndexes, MatrixBlock> {
 
 		private static final long serialVersionUID = -6763904972560309095L;
 

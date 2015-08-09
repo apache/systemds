@@ -64,7 +64,8 @@ public class BinaryOp extends Hop
 	private Hop.OpOp2 op;
 	private boolean outer = false;
 	
-	private enum AppendMethod { 
+	public static AppendMethod FORCED_APPEND_METHOD = null;
+	public enum AppendMethod { 
 		CP_APPEND, //in-memory general case append
 		MR_MAPPEND, //map-only append (rhs must be vector and fit in mapper mem)
 		MR_RAPPEND, //reduce-only append (output must have at most one column block)
@@ -1204,6 +1205,10 @@ public class BinaryOp extends Hop
 	 */
 	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb )
 	{
+		if(FORCED_APPEND_METHOD != null) {
+			return FORCED_APPEND_METHOD;
+		}
+		
 		//check for best case (map-only)		
 		if(    m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 				
 			&& m2_dim2 <= m1_cpb  ) //rhs is smaller than column block 
@@ -1226,6 +1231,10 @@ public class BinaryOp extends Hop
 	
 	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb )
 	{
+		if(FORCED_APPEND_METHOD != null) {
+			return FORCED_APPEND_METHOD;
+		}
+		
 		//check for best case (map-only)		
 		if(    m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 				
 			&& m2_dim2 <= m1_cpb  ) //rhs is smaller than column block 

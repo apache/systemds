@@ -155,10 +155,27 @@ public class SparkMonitoringUtil {
 	private String getStageIDAsString(String instruction) {
 		String retVal = "";
 		for(Integer stageId : stageIDs.get(instruction)) {
+			String stageDAG = "";
+			String stageTimeLine = "";
+			
+			if(getStageDAGs(stageId) != null) {
+				stageDAG = getStageDAGs(stageId).toString();
+			}
+			
+			if(getStageTimeLine(stageId) != null) {
+				stageTimeLine = getStageTimeLine(stageId).toString();
+			}
+			
 			retVal +=  "Stage:" + stageId + 
 					" ("
-					+ "<div>" + getStageDAGs(stageId).toString().replaceAll("toggleDagViz\\(false\\)", "toggleDagViz(false, this)") + "</div>, "
-					+ "<div>" + getStageTimeLine(stageId) + "</div>"
+					+ "<div>" 
+						+ stageDAG.replaceAll("toggleDagViz\\(false\\)", "toggleDagViz(false, this)") 
+					+ "</div>, "
+					+ "<div id=\"timeline-" + stageId + "\">"
+						+ stageTimeLine
+							.replaceAll("drawTaskAssignmentTimeline\\(", "registerTimelineData(" + stageId + ", ")
+							.replaceAll("class=\"expand-task-assignment-timeline\"",  "class=\"expand-task-assignment-timeline\" onclick=\"toggleStageTimeline(this)\"")
+					+ "</div>"
 					+ ")"; 
 		}
 		return retVal;

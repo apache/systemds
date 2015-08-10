@@ -20,7 +20,6 @@ import com.ibm.bi.dml.lops.UnaryCP.OperationTypes;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 
 public class LeftIndexingOp  extends Hop 
@@ -62,8 +61,8 @@ public class LeftIndexingOp  extends Hop
 		}
 		// Broadcast based left index behaves like a map binary op in worst case where we fit entire rhs broadcast in memory
 		// and only one block from lhs and output
-		double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
-		if(footprint < SparkExecutionContext.getBroadcastMemoryBudget()) {
+		double size = OptimizerUtils.estimateSize(m2_dim1, m2_dim2);
+		if( OptimizerUtils.checkSparkBroadcastMemoryBudget(size) ) {
 			return LeftIndexingMethod.SP_MLEFTINDEX;
 		}
 		return LeftIndexingMethod.SP_GLEFTINDEX;

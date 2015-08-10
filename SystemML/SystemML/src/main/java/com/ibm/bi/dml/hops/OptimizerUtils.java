@@ -20,6 +20,7 @@ import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
@@ -394,6 +395,21 @@ public class OptimizerUtils
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
 
+	/**
+	 * 
+	 * @param size
+	 * @return
+	 */
+	public static boolean checkSparkBroadcastMemoryBudget( double size )
+	{
+		double memBudgetExec = SparkExecutionContext.getBroadcastMemoryBudget();
+		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
+
+		//basic requirement: the broadcast needs to to fit once in the remote broadcast memory 
+		//and twice into the local memory budget because we have to create a partitioned broadcast
+		//memory and hand it over to the spark context as in-memory object
+		return ( size < memBudgetExec && 2*size < memBudgetLocal );
+	}
 	
 	/**
 	 * Returns the number of reducers that potentially run in parallel.

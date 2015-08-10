@@ -40,7 +40,6 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 
@@ -1239,8 +1238,8 @@ public class BinaryOp extends Hop
 		if(    m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 				
 			&& m2_dim2 <= m1_cpb  ) //rhs is smaller than column block 
 		{
-			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
-			if(footprint < SparkExecutionContext.getBroadcastMemoryBudget()) {
+			double size = OptimizerUtils.estimateSize(m2_dim1, m2_dim2);
+			if( OptimizerUtils.checkSparkBroadcastMemoryBudget(size) ) {
 				return AppendMethod.MR_MAPPEND;
 			}
 		}
@@ -1306,9 +1305,8 @@ public class BinaryOp extends Hop
 			&& ((m1_dim2 >= 1 && m2_dim2 == 1)  //rhs column vector	
 			  ||(m1_dim1 >= 1 && m2_dim1 == 1 )) ) //rhs row vector
 		{
-			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
-			double memBudget = SparkExecutionContext.getBroadcastMemoryBudget() / 2;
-			if(footprint < memBudget) {
+			double size = OptimizerUtils.estimateSize(m2_dim1, m2_dim2);
+			if( OptimizerUtils.checkSparkBroadcastMemoryBudget(size) ) {
 				return MMBinaryMethod.MR_BINARY_M;
 			}
 		}

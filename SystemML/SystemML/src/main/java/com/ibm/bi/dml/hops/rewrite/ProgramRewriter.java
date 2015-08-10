@@ -23,6 +23,7 @@ import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
 import com.ibm.bi.dml.parser.IfStatementBlock;
 import com.ibm.bi.dml.parser.LanguageException;
+import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.WhileStatement;
 import com.ibm.bi.dml.parser.WhileStatementBlock;
@@ -98,7 +99,7 @@ public class ProgramRewriter
  				_sbRuleSet.add(  new RewriteSplitDagDataDependentOperators()     );
  			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_sbRuleSet.add(  new RewriteForLoopVectorization()               ); //dependency: reblock (reblockop)
- 			_sbRuleSet.add( new RewriteInjectSparkLoopCheckpointing()            ); //dependency: reblock (blocksizes)
+ 			_sbRuleSet.add( new RewriteInjectSparkLoopCheckpointing(true)        ); //dependency: reblock (blocksizes)
 		}
 		
 		// DYNAMIC REWRITES (which do require size information)
@@ -317,7 +318,7 @@ public class ProgramRewriter
 	 * @return
 	 * @throws HopsException
 	 */
-	private ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb, ProgramRewriteStatus state ) 
+	private ArrayList<StatementBlock> rewriteStatementBlock( StatementBlock sb, ProgramRewriteStatus status ) 
 		throws HopsException
 	{
 		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
@@ -328,26 +329,33 @@ public class ProgramRewriter
 		{
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody(), state) );			
+			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody(), status) );			
 		}
 		else if (sb instanceof WhileStatementBlock)
 		{
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			wstmt.setBody( rewriteStatementBlocks( wstmt.getBody(), state ) );
+			wstmt.setBody( rewriteStatementBlocks( wstmt.getBody(), status ) );
 		}	
 		else if (sb instanceof IfStatementBlock)
 		{
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			istmt.setIfBody( rewriteStatementBlocks( istmt.getIfBody(), state ) );
-			istmt.setElseBody( rewriteStatementBlocks( istmt.getElseBody(), state ) );
+			istmt.setIfBody( rewriteStatementBlocks( istmt.getIfBody(), status ) );
+			istmt.setElseBody( rewriteStatementBlocks( istmt.getElseBody(), status ) );
 		}
 		else if (sb instanceof ForStatementBlock) //incl parfor
 		{
+			//maintain parfor context information (e.g., for checkpointing)
+			boolean prestatus = status.isInParforContext();
+			if( sb instanceof ParForStatementBlock )
+				status.setInParforContext(true);
+			
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody(), state) );
+			fstmt.setBody( rewriteStatementBlocks(fstmt.getBody(), status) );
+			
+			status.setInParforContext(prestatus);
 		}
 		
 		//apply rewrite rules
@@ -355,7 +363,7 @@ public class ProgramRewriter
 		{
 			ArrayList<StatementBlock> tmp = new ArrayList<StatementBlock>();			
 			for( StatementBlock sbc : ret )
-				tmp.addAll( r.rewriteStatementBlock(sbc, state) );
+				tmp.addAll( r.rewriteStatementBlock(sbc, status) );
 			
 			//take over set of rewritten sbs		
 			ret.clear();

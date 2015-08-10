@@ -13,16 +13,19 @@ public class ProgramRewriteStatus
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	//private boolean _rmHopsCSE  = false; //removed hops during common subexpression elimination
-	//private boolean _rmHopsCF   = false; //removed hops during constant folding
+	//status of applied rewrites
 	private boolean _rmBranches = false; //removed branches
 	private int _blkSize = -1;
+	private boolean _injectCheckpoints = false;
+	
+	//current context
+	private boolean _inParforCtx = false;
 	
 	public ProgramRewriteStatus()
 	{
-		//_rmHopsCSE = false;
-		//_rmHopsCF = false;
 		_rmBranches = false;
+		_inParforCtx = false;
+		_injectCheckpoints = false;
 	}
 	
 	public void setRemovedBranches(){
@@ -33,11 +36,27 @@ public class ProgramRewriteStatus
 		return _rmBranches;
 	}
 	
+	public void setInParforContext(boolean flag){
+		_inParforCtx = flag;
+	}
+	
+	public boolean isInParforContext(){
+		return _inParforCtx;
+	}
+	
 	public void setBlocksize( int blkSize ){
 		_blkSize = blkSize;
 	}
 	
 	public int getBlocksize() {
 		return _blkSize;
+	}
+	
+	public void setInjectedCheckpoints(){
+		_injectCheckpoints = true;
+	}
+	
+	public boolean getInjectedCheckpoints(){
+		return _injectCheckpoints;
 	}
 }

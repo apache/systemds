@@ -32,6 +32,9 @@ import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
+import com.ibm.bi.dml.hops.rewrite.ProgramRewriteStatus;
+import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
+import com.ibm.bi.dml.hops.rewrite.RewriteInjectSparkLoopCheckpointing;
 import com.ibm.bi.dml.hops.recompile.Recompiler;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.lops.LopsException;
@@ -39,6 +42,7 @@ import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.FunctionStatementBlock;
 import com.ibm.bi.dml.parser.LanguageException;
+import com.ibm.bi.dml.parser.ParForStatement;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -94,10 +98,11 @@ import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
  * - 14) rewrite set in-place result indexing
  * - 15) rewrite disable caching (prevent sparse serialization)
  * - 16) rewrite enable runtime piggybacking
- * - 17) rewrite set result merge 		 		 
- * - 18) rewrite set recompile memory budget
- * - 19) rewrite remove recursive parfor	
- * - 20) rewrite remove unnecessary parfor		
+ * - 17) rewrite inject spark loop checkpointing
+ * - 18) rewrite set result merge 		 		 
+ * - 19) rewrite set recompile memory budget
+ * - 20) rewrite remove recursive parfor	
+ * - 21) rewrite remove unnecessary parfor		
  * 	 
  * TODO fuse also result merge into fused data partitioning and execute
  *      (for writing the result directly from execute we need to partition
@@ -277,21 +282,25 @@ public class OptimizerRuleBased extends Optimizer
 				// rewrite 16: runtime piggybacking
 				rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
 			}
+			else {
+				//rewrite 17: checkpoint injection for parfor loop body
+				rewriteInjectSparkLoopCheckpointing( pn );
+			}
 		}	
 	
-		// rewrite 17: set result merge
+		// rewrite 18: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		// rewrite 18: set local recompile memory budget
+		// rewrite 19: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 19: parfor (in recursive functions) to for
+		// rewrite 20: parfor (in recursive functions) to for
 		rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 20: parfor (par=1) to for 
+		// rewrite 21: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -2082,6 +2091,50 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 
+
+	///////
+	//REWRITE inject spark loop checkpointing
+	///
+	
+	/**
+	 * 
+	 * @param n
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	protected void rewriteInjectSparkLoopCheckpointing(OptNode n) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//get program blocks of root parfor
+		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
+		ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
+		ParForStatement fs = (ParForStatement) pfsb.getStatement(0);
+		ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
+		
+		boolean applied = false;
+		
+		try
+		{
+			//apply hop rewrite inject spark checkpoints (but without context awareness)
+			RewriteInjectSparkLoopCheckpointing rewrite = new RewriteInjectSparkLoopCheckpointing(false);
+			ProgramRewriter rewriter = new ProgramRewriter(rewrite);
+			ProgramRewriteStatus state = new ProgramRewriteStatus();
+			rewriter.rewriteStatementBlockHopDAGs( pfsb, state );
+			fs.setBody(rewriter.rewriteStatementBlocks(fs.getBody(), state));
+			
+			//recompile if additional checkpoints introduced
+			if( state.getInjectedCheckpoints() ) {
+				pfpb.setChildBlocks(ProgramRecompiler.generatePartitialRuntimeProgram(pfpb.getProgram(), fs.getBody()));
+				applied = true;
+			}
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+			
+		LOG.debug(getOptMode()+" OPT: rewrite 'inject spark loop checkpointing' - result="+applied );
+	}
+	
 	///////
 	//REWRITE remove compare matrix (for result merge, needs to be invoked before setting result merge)
 	///
@@ -2925,7 +2978,6 @@ public class OptimizerRuleBased extends Optimizer
 		
 		return count;
 	}
-
 	
 	
 	////////////////////////

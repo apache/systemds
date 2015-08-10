@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.LopProperties;
 import com.ibm.bi.dml.parser.ParForStatementBlock;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -166,23 +167,29 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			// rewrite 11: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
 			
-			// rewrite 16: runtime piggybacking
-			super.rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
+			if( !OptimizerUtils.isSparkExecutionMode() ) {
+				// rewrite 16: runtime piggybacking
+				super.rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
+			}
+			else {
+				//rewrite 17: checkpoint injection for parfor loop body
+				super.rewriteInjectSparkLoopCheckpointing( pn );
+			}
 		}	
 		
-		//rewrite 17: set result merge
+		//rewrite 18: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		//rewrite 18: set local recompile memory budget
+		//rewrite 19: set local recompile memory budget
 		super.rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 19: parfor (in recursive functions) to for
+		// rewrite 20: parfor (in recursive functions) to for
 		super.rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 20: parfor (par=1) to for 
+		// rewrite 21: parfor (par=1) to for 
 		super.rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result

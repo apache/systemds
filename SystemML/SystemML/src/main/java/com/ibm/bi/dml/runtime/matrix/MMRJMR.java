@@ -109,7 +109,6 @@ public class MMRJMR
 
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
-		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
 
 		//set up map/reduce memory configurations (if in AM context)
 		DMLConfig config = ConfigurationManager.getConfig();

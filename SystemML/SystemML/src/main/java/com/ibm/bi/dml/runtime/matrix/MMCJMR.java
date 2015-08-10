@@ -196,7 +196,6 @@ public class MMCJMR
 		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
-		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize);  TODO MP
 
 		//set up preferred custom serialization framework for binary block format
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )

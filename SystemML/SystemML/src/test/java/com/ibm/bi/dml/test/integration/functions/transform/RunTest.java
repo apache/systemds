@@ -34,15 +34,15 @@ public class RunTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/transform/";
 	
 	private final static String HOMES_DATASET 	= "homes/homes.csv";
-	private final static String HOMES_SPEC 		= "homes/homes.tfspec.json";
+	//private final static String HOMES_SPEC 		= "homes/homes.tfspec.json";
 	private final static String HOMES_SPEC2 	= "homes/homes.tfspec2.json";
-	private final static String HOMES_IDSPEC 	= "homes/homes.tfidspec.json";
-	private final static String HOMES_TFDATA 	= "homes/homes.transformed.csv";
-	private final static String HOMES_COLNAMES 	= "homes/homes.csv.colnames";
+	//private final static String HOMES_IDSPEC 	= "homes/homes.tfidspec.json";
+	//private final static String HOMES_TFDATA 	= "homes/homes.transformed.csv";
+	//private final static String HOMES_COLNAMES 	= "homes/homes.csv.colnames";
 	
 	private final static String HOMES_NAN_DATASET 	= "homes/homesNAN.csv";
 	private final static String HOMES_NAN_SPEC 		= "homes/homesNAN.tfspec.json";
-	private final static String HOMES_NAN_IDSPEC 	= "homes/homesNAN.tfidspec.json";
+	//private final static String HOMES_NAN_IDSPEC 	= "homes/homesNAN.tfidspec.json";
 	private final static String HOMES_NAN_COLNAMES 	= "homes/homesNAN.csv.colnames";
 	
 	@Override

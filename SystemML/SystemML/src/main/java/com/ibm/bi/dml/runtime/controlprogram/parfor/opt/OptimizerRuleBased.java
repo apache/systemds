@@ -334,8 +334,11 @@ public class OptimizerRuleBased extends Optimizer
 		if( OptimizerUtils.isSparkExecutionMode() ) {
 			_rk = (int) SparkExecutionContext.getDefaultParallelism();
 			_rk2 = _rk; //equal map/reduce unless we find counter-examples 
-			_rm = SparkExecutionContext.getBroadcastMemoryBudget();
-			_rm2 = SparkExecutionContext.getBroadcastMemoryBudget();
+			int cores = SparkExecutionContext.getDefaultParallelism()
+					/ SparkExecutionContext.getNumExecutors();
+			int ccores = (int) Math.min(cores, _N);
+			_rm = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
+			_rm2 = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
 		}
 	}
 	

@@ -78,7 +78,6 @@ public class CMCOVMR
 		
 		//set up the replication factor for the results
 		job.setInt("dfs.replication", replication);
-		//job.setInt("DMLBlockSize", DMLTranslator.DMLBlockSize); TODO MP
 		
 		//set up what matrices are needed to pass from the mapper to reducer
 		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes, instructionsInMapper, null, 

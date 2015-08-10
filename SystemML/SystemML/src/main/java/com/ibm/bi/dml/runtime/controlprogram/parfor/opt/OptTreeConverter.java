@@ -59,6 +59,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.DataGenCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
 import com.ibm.bi.dml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -524,8 +525,12 @@ public class OptTreeConverter
 			node.setLineNumbers(sb.getBeginLine(), sb.getEndLine());
 			
 			//TODO remove this workaround once this information can be obtained from hops/lops compiler
-			if( node.isCPOnly() && containsMRJobInstruction(pb, false) )
-				node.setExecType(ExecType.MR);
+			if( node.isCPOnly() ) {
+				if( containsMRJobInstruction(pb, false, false) )
+					node.setExecType(ExecType.MR);
+				else if(containsMRJobInstruction(pb, false, true))
+					node.setExecType(ExecType.SPARK);
+			}
 		}
 		
 		//final cleanup
@@ -672,7 +677,7 @@ public class OptTreeConverter
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
-			ret = containsMRJobInstruction(tmp.getPredicate(), true);
+			ret = containsMRJobInstruction(tmp.getPredicate(), true, true);
 			if( ret ) return ret;
 			for (ProgramBlock pb2 : tmp.getChildBlocks()) {
 				ret = rContainsMRJobInstruction(pb2, inclFunctions);
@@ -682,7 +687,7 @@ public class OptTreeConverter
 		else if (pb instanceof IfProgramBlock)
 		{
 			IfProgramBlock tmp = (IfProgramBlock)pb;	
-			ret = containsMRJobInstruction(tmp.getPredicate(), true);
+			ret = containsMRJobInstruction(tmp.getPredicate(), true, true);
 			if( ret ) return ret;
 			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() ){
 				ret = rContainsMRJobInstruction(pb2, inclFunctions);
@@ -696,9 +701,9 @@ public class OptTreeConverter
 		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
 		{ 
 			ForProgramBlock tmp = (ForProgramBlock)pb;	
-			ret = containsMRJobInstruction(tmp.getFromInstructions(), true);
-			ret |= containsMRJobInstruction(tmp.getToInstructions(), true);
-			ret |= containsMRJobInstruction(tmp.getIncrementInstructions(), true);
+			ret = containsMRJobInstruction(tmp.getFromInstructions(), true, true);
+			ret |= containsMRJobInstruction(tmp.getToInstructions(), true, true);
+			ret |= containsMRJobInstruction(tmp.getIncrementInstructions(), true, true);
 			if( ret ) return ret;
 			for( ProgramBlock pb2 : tmp.getChildBlocks() ){
 				ret = rContainsMRJobInstruction(pb2, inclFunctions);
@@ -711,7 +716,7 @@ public class OptTreeConverter
 		}
 		else 
 		{
-			ret =   containsMRJobInstruction(pb, true)
+			ret =   containsMRJobInstruction(pb, true, true)
 			      | (inclFunctions && containsFunctionCallInstruction(pb));
 		}
 
@@ -723,9 +728,9 @@ public class OptTreeConverter
 	 * @param pb
 	 * @return
 	 */
-	public static boolean containsMRJobInstruction( ProgramBlock pb, boolean inclCPFile )
+	public static boolean containsMRJobInstruction( ProgramBlock pb, boolean inclCPFile, boolean inclSpark )
 	{
-		return containsMRJobInstruction(pb.getInstructions(), inclCPFile);
+		return containsMRJobInstruction(pb.getInstructions(), inclCPFile, inclSpark);
 	}
 	
 	/**
@@ -733,12 +738,13 @@ public class OptTreeConverter
 	 * @param pb
 	 * @return
 	 */
-	public static boolean containsMRJobInstruction( ArrayList<Instruction> instSet, boolean inclCPFile )
+	public static boolean containsMRJobInstruction( ArrayList<Instruction> instSet, boolean inclCPFile, boolean inclSpark )
 	{
 		boolean ret = false;
 		if( instSet!=null )
 			for( Instruction inst : instSet )
-				if( inst instanceof MRJobInstruction
+				if(    inst instanceof MRJobInstruction
+					|| (inclSpark && inst instanceof SPInstruction)	
 					|| (inclCPFile && (inst instanceof MatrixIndexingCPFileInstruction || inst instanceof ParameterizedBuiltinCPFileInstruction)))
 				{
 					ret = true;

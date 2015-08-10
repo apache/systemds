@@ -91,7 +91,7 @@ public class RemoteParForSpark
 	    Statistics.incrementNoOfCompiledSPInst();
 	    Statistics.incrementNoOfExecutedSPInst();
 	    if( DMLScript.STATISTICS ){
-			Statistics.maintainCPHeavyHitters("SP_"+jobname, System.nanoTime()-t0);
+			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
 		}
 		
 		return ret;

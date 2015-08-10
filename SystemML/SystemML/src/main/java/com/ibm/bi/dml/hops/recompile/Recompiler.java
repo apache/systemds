@@ -1322,7 +1322,7 @@ public class Recompiler
 			WhileProgramBlock pbTmp = (WhileProgramBlock)pb;
 			WhileStatementBlock sbTmp = (WhileStatementBlock)pbTmp.getStatementBlock();
 			//recompile predicate
-			if(	sbTmp!=null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getPredicate(), true)) )			
+			if(	sbTmp!=null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getPredicate(), true, true)) )			
 				pbTmp.setPredicate( Recompiler.recompileHopsDag2Forced(sbTmp.getPredicateHops(), tid, et) );
 			
 			//recompile body
@@ -1334,7 +1334,7 @@ public class Recompiler
 			IfProgramBlock pbTmp = (IfProgramBlock)pb;	
 			IfStatementBlock sbTmp = (IfStatementBlock)pbTmp.getStatementBlock();
 			//recompile predicate
-			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getPredicate(), true)) )			
+			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getPredicate(), true, true)) )			
 				pbTmp.setPredicate( Recompiler.recompileHopsDag2Forced(sbTmp.getPredicateHops(), tid, et) );				
 			//recompile body
 			for( ProgramBlock pb2 : pbTmp.getChildBlocksIfBody() )
@@ -1347,11 +1347,11 @@ public class Recompiler
 			ForProgramBlock pbTmp = (ForProgramBlock)pb;	
 			ForStatementBlock sbTmp = (ForStatementBlock) pbTmp.getStatementBlock();
 			//recompile predicate
-			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getFromInstructions(), true)) )			
+			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getFromInstructions(), true, true)) )			
 				pbTmp.setFromInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getFromHops(), tid, et) );				
-			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getToInstructions(), true)) )			
+			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getToInstructions(), true, true)) )			
 				pbTmp.setToInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getToHops(), tid, et) );				
-			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getIncrementInstructions(), true)) )			
+			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getIncrementInstructions(), true, true)) )			
 				pbTmp.setIncrementInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getIncrementHops(), tid, et) );				
 			//recompile body
 			for( ProgramBlock pb2 : pbTmp.getChildBlocks() )
@@ -1368,7 +1368,7 @@ public class Recompiler
 			StatementBlock sb = pb.getStatementBlock();
 			
 			//recompile hops dag to CP (opt: don't recompile if CP and no MR inst)
-			if(	sb != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pb, true)) )
+			if(	sb != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pb, true, true)) )
 			{
 				ArrayList<Instruction> tmp = pb.getInstructions();
 				tmp = Recompiler.recompileHopsDag2Forced(sb, sb.get_hops(), tid, et);

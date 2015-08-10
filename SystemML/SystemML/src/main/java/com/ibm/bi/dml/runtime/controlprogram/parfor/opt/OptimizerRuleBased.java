@@ -343,6 +343,8 @@ public class OptimizerRuleBased extends Optimizer
 		if( OptimizerUtils.isSparkExecutionMode() ) {
 			_rk = (int) SparkExecutionContext.getDefaultParallelism();
 			_rk2 = _rk; //equal map/reduce unless we find counter-examples 
+			_rkmax   = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
+			_rkmax2  = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
 			int cores = SparkExecutionContext.getDefaultParallelism()
 					/ SparkExecutionContext.getNumExecutors();
 			int ccores = (int) Math.min(cores, _N);
@@ -918,9 +920,12 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		boolean isCPOnly = n.isCPOnly();
 		boolean isCPOnlyPossible = isCPOnly || isCPOnlyPossible(n, _rm);
-		
+
+
+		String datapartitioner = n.getParam(ParamType.DATA_PARTITIONER);
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
-		
+		PDataPartitioner REMOTE_DP = OptimizerUtils.isSparkExecutionMode() ? PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
+
 		//deciding on the execution strategy
 		if(    (isCPOnly && M <= _rm )   //Required: all instruction can be be executed in CP
 			|| (isCPOnlyPossible && M2 <= _rm) )  //Required: cp inst fit into remote JVM mem 
@@ -950,7 +955,7 @@ public class OptimizerRuleBased extends Optimizer
 				n.setExecType( REMOTE );  //remote parfor
 			}
 			//MR if remote data partitioning, because data will be distributed on all nodes 
-			else if( n.getParam(ParamType.DATA_PARTITIONER)!=null && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.toString())
+			else if( datapartitioner!=null && datapartitioner.equals(REMOTE_DP.toString())
 					 && !InfrastructureAnalyzer.isLocalMode())
 			{
 				n.setExecType( REMOTE );  //remote parfor
@@ -1629,15 +1634,16 @@ public class OptimizerRuleBased extends Optimizer
 		
 		boolean apply = false;
 		String partitioner = pn.getParam(ParamType.DATA_PARTITIONER);
+		PDataPartitioner REMOTE_DP = OptimizerUtils.isSparkExecutionMode() ? PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
 		PExecMode REMOTE_DPE = OptimizerUtils.isSparkExecutionMode() ? PExecMode.REMOTE_SPARK_DP : PExecMode.REMOTE_MR_DP;
 		
 		//precondition: rewrite only invoked if exec type MR 
 		// (this also implies that the body is CP only)
 		
 		// try to merge MR data partitioning and MR exec 
-		if( (pn.getExecType()==ExecType.MR || pn.getExecType()==ExecType.SPARK)   //MR EXEC and CP body
+		if( (pn.getExecType()==ExecType.MR || pn.getExecType()==ExecType.SPARK) //MR/SP EXEC and CP body
 			&& M < _rm2 //fits into remote memory of reducers	
-			&& partitioner!=null && partitioner.equals(PDataPartitioner.REMOTE_MR.toString()) //MR partitioning
+			&& partitioner!=null && partitioner.equals(REMOTE_DP.toString()) //MR/SP partitioning
 			&& partitionedMatrices.size()==1 ) //only one partitioned matrix
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter

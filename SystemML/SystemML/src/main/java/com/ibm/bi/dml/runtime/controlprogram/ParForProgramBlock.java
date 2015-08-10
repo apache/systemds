@@ -624,7 +624,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		//TODO reset of hop parallelism constraint (e.g., ba+*)
 		for( String dpvar : _variablesDPOriginal.keySet() ) //release forced exectypes
 		    ProgramRecompiler.rFindAndRecompileIndexingHOP(sb, this, dpvar, ec, false);
-		if( _execMode == PExecMode.REMOTE_MR_DP ) //release forced exectypes for fused dp/exec
+		 //release forced exectypes for fused dp/exec
+		if( _execMode == PExecMode.REMOTE_MR_DP || _execMode == PExecMode.REMOTE_SPARK_DP )
 			ProgramRecompiler.rFindAndRecompileIndexingHOP(sb, this, _colocatedDPMatrix, ec, false); 
 		resetIterablePredicateVars();
 		resetOptimizerFlags(); //after release, deletes dp_varnames

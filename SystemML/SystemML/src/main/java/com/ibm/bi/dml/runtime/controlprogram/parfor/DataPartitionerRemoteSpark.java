@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import org.apache.spark.api.java.JavaPairRDD;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -19,6 +20,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.utils.Statistics;
 
 /**
  * MR job class for submitting parfor remote partitioning MR jobs.
@@ -47,6 +49,9 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 			throws DMLRuntimeException 
 	{
+		String jobname = "ParFor-DPSP";
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
 		SparkExecutionContext sec = (SparkExecutionContext)_ec;
 
 		try
@@ -71,6 +76,13 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 		catch(Exception ex)
 		{
 			throw new DMLRuntimeException(ex);
+		}
+		
+		//maintain statistics
+	    Statistics.incrementNoOfCompiledSPInst();
+	    Statistics.incrementNoOfExecutedSPInst();
+	    if( DMLScript.STATISTICS ){
+			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
 		}
 	}
 	

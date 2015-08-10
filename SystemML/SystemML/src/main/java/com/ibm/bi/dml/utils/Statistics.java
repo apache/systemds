@@ -96,7 +96,6 @@ public class Statistics
 		iNoOfCompiledMRJobs ++;
 	}
 
-
 	public static synchronized int getNoOfExecutedSPInst() {
 		return iNoOfExecutedSPInst;
 	}
@@ -111,6 +110,10 @@ public class Statistics
 
 	public static synchronized int getNoOfCompiledSPInst() {
 		return iNoOfCompiledSPInst;
+	}
+
+	public static synchronized void incrementNoOfCompiledSPInst() {
+		iNoOfCompiledSPInst ++;
 	}
 	
 	public static synchronized void incrementJITCompileTime( long time ) {

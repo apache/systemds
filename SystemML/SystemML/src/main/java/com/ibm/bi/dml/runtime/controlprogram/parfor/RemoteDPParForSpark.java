@@ -17,6 +17,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -28,6 +29,7 @@ import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.utils.Statistics;
 
 /**
  * TODO robustness on failures (cleanup files)
@@ -63,6 +65,9 @@ public class RemoteDPParForSpark
 			                                   boolean enableCPCaching, int numReducers )  //opt params
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
+		String jobname = "ParFor-DPESP";
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaSparkContext sc = sec.getSparkContext();
 		
@@ -95,7 +100,13 @@ public class RemoteDPParForSpark
 		//create output symbol table entries
 		RemoteParForJobReturn ret = new RemoteParForJobReturn(true, numTasks, numIters, results);
 		
+		//maintain statistics
+	    Statistics.incrementNoOfCompiledSPInst();
+	    Statistics.incrementNoOfExecutedSPInst();
+	    if( DMLScript.STATISTICS ){
+			Statistics.maintainCPHeavyHitters("SP_"+jobname, System.nanoTime()-t0);
+		}
+		
 		return ret;
-		//MRJobConfiguration.setPartitioningInfo(job, rlen, clen, brlen, bclen, InputInfo.BinaryBlockInputInfo, oi, dpf, 1, input.getFileName(), itervar, matrixvar, tSparseCol);
 	}
 }

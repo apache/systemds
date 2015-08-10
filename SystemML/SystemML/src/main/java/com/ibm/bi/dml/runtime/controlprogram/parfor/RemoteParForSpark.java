@@ -16,11 +16,13 @@ import org.apache.spark.api.java.JavaSparkContext;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
+import com.ibm.bi.dml.utils.Statistics;
 
 /**
  * This class serves two purposes: (1) isolating Spark imports to enable running in 
@@ -59,6 +61,9 @@ public class RemoteParForSpark
 			                                   boolean cpCaching, int numMappers) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException  
 	{
+		String jobname = "ParFor-ESP";
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaSparkContext sc = sec.getSparkContext();
 		
@@ -81,6 +86,13 @@ public class RemoteParForSpark
 		
 		//create output symbol table entries
 		RemoteParForJobReturn ret = new RemoteParForJobReturn(true, numTasks, numIters, results);
+		
+		//maintain statistics
+	    Statistics.incrementNoOfCompiledSPInst();
+	    Statistics.incrementNoOfExecutedSPInst();
+	    if( DMLScript.STATISTICS ){
+			Statistics.maintainCPHeavyHitters("SP_"+jobname, System.nanoTime()-t0);
+		}
 		
 		return ret;
 	}

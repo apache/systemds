@@ -513,7 +513,7 @@ public class SparkExecutionContext extends ExecutionContext
 		//note: spark context provides this information while conf does not
 		//(for num executors we need to correct for driver and local mode)
 		SparkExecutionContext sec = new SparkExecutionContext(false, null);
-		_numExecutors = Math.min(sec._spctx.sc().getExecutorMemoryStatus().size() - 1, 1);  
+		_numExecutors = Math.max(sec._spctx.sc().getExecutorMemoryStatus().size() - 1, 1);  
 		_defaultPar = sec._spctx.defaultParallelism(); 
 
 		//note: required time for infrastructure analysis on 5 node cluster: ~5-20ms. 

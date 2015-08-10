@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import org.apache.spark.api.java.JavaPairRDD;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -24,6 +25,7 @@ import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.utils.Statistics;
 
 /**
  * MR job class for submitting parfor result merge MR jobs.
@@ -121,6 +123,9 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	protected RDDObject executeMerge(MatrixObject compare, MatrixObject[] inputs, String varname, long rlen, long clen, int brlen, int bclen)
 		throws DMLRuntimeException 
 	{
+		String jobname = "ParFor-RMSP";
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
 		SparkExecutionContext sec = (SparkExecutionContext)_ec;
 		boolean withCompare = (compare!=null);
 
@@ -177,6 +182,13 @@ public class ResultMergeRemoteSpark extends ResultMerge
 			throw new DMLRuntimeException(ex);
 		}	    
 		
+		//maintain statistics
+	    Statistics.incrementNoOfCompiledSPInst();
+	    Statistics.incrementNoOfExecutedSPInst();
+	    if( DMLScript.STATISTICS ){
+			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
+		}
+	    
 		return ret;
 	}
 

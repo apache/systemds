@@ -22,7 +22,6 @@ import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 
 
@@ -487,28 +486,18 @@ public class AggUnaryOp extends Hop
 		
 		if( input instanceof BinaryOp && ((BinaryOp)input).isOuterVectorOperator() )
 		{
-			//for special cases, we need to hold the broadcast twice in order to allow for
-			//an efficient binary search over a plain java array
-			Hop.OpOp2 opCode = ((BinaryOp)input).getOp();
-			double factor = ((  opCode==OpOp2.LESS 		|| opCode==OpOp2.GREATER
-							|| 	opCode==OpOp2.LESSEQUAL || opCode==OpOp2.GREATEREQUAL
-							|| 	opCode==OpOp2.EQUAL 	|| opCode==OpOp2.NOTEQUAL )
-							&& _direction == Direction.Row && _op == AggOp.SUM) ? 2.0 : 1.0;
+			//note: both cases (partitioned matrix, and sorted double array), require to
+			//fit the broadcast twice into the local memory budget. Also, the memory 
+			//constraint only needs to take the rhs into account because the output is 
+			//guaranteed to be an aggregate of <=16KB
 			
-			double dBCMemBudget = SparkExecutionContext.getBroadcastMemoryBudget();
-			double dLocMemBudget = OptimizerUtils.getLocalMemBudget();
-			
-			//note: memory constraint only needs to take the rhs into account because the output
-			//is guaranteed to be an aggregate of <=16KB
 			Hop right = input.getInput().get(1);
-			long lHopSize = OptimizerUtils.estimateSize(right.getDim1(), right.getDim2());
 			
-			if((  (right.dimsKnown() && lHopSize < dBCMemBudget) //dims known and estimate fits
-			   ||(!right.dimsKnown() && right.getOutputMemEstimate() < dBCMemBudget))//dims unknown but worst-case estimate fits
-				&&
-				  ((right.dimsKnown() && factor*lHopSize < dLocMemBudget) //dims known and estimate fits
-				||(!right.dimsKnown() && factor*right.getOutputMemEstimate() < dLocMemBudget)))//dims unknown but worst-case estimate fits						
-			{
+			double size = right.dimsKnown() ? 
+					OptimizerUtils.estimateSize(right.getDim1(), right.getDim2()) : //dims known and estimate fits
+					right.getOutputMemEstimate();                      //dims unknown but worst-case estimate fits
+			
+			if( OptimizerUtils.checkSparkBroadcastMemoryBudget(size) ) {
 				ret = true;
 			}
 		}

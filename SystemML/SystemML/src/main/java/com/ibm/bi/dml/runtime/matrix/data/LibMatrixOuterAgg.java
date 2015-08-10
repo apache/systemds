@@ -266,8 +266,12 @@ public class LibMatrixOuterAgg
 		out.allocateDenseBlock(true);
 		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
 		
+		if( in.isEmptyBlock(false) )
+			return;
+			
 		SparseRow[] aSparseRows = in.getSparseRows();		
 		for (int j = 0; j < aSparseRows.length; ++j)
+		if( aSparseRows[j]!=null && !aSparseRows[j].isEmpty() )
 		{
 			double [] aValues = aSparseRows[j].getValueContainer();
 			int [] aIndexes = aSparseRows[j].getIndexContainer();
@@ -320,8 +324,12 @@ public class LibMatrixOuterAgg
 		out.allocateDenseBlock(true);
 		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
 		
+		if( in.isEmptyBlock(false) )
+			return;
+			
 		SparseRow[] aSparseRows = in.getSparseRows();		
 		for (int j = 0; j < aSparseRows.length; ++j)
+		if( aSparseRows[j]!=null && !aSparseRows[j].isEmpty() )
 		{
 			double [] aValues = aSparseRows[j].getValueContainer();
 			int [] aIndexes = aSparseRows[j].getIndexContainer();
@@ -374,8 +382,12 @@ public class LibMatrixOuterAgg
 		out.allocateDenseBlock(true);
 		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
 		
+		if( in.isEmptyBlock(false) )
+			return;
+			
 		SparseRow[] aSparseRows = in.getSparseRows();		
 		for (int j = 0; j < aSparseRows.length; ++j)
+		if( aSparseRows[j]!=null && !aSparseRows[j].isEmpty() )
 		{
 			double [] aValues = aSparseRows[j].getValueContainer();
 			int [] aIndexes = aSparseRows[j].getIndexContainer();

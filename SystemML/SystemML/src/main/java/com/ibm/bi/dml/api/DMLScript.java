@@ -809,9 +809,15 @@ public class DMLScript
 				DMLAppMasterUtils.setupProgramMappingRemoteMaxMemory(rtprog);
 		}
 		
-		//count number compiled MR jobs	
-		int jobCount = Explain.countCompiledMRJobs(rtprog);
-		Statistics.setNoOfCompiledMRJobs( jobCount );				
+		//count number compiled MR jobs / SP instructions	
+		if( OptimizerUtils.isSparkExecutionMode() ) {
+			int jobCount = Explain.countCompiledSPInst(rtprog);
+			Statistics.setNoOfCompiledSPInst( jobCount );					
+		}
+		else {
+			int jobCount = Explain.countCompiledMRJobs(rtprog);
+			Statistics.setNoOfCompiledMRJobs( jobCount );				
+		}
 		
 		//explain plan of program (hops or runtime)
 		if( EXPLAIN != ExplainType.NONE ) {

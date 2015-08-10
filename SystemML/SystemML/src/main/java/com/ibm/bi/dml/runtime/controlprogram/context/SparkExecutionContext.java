@@ -59,11 +59,11 @@ public class SparkExecutionContext extends ExecutionContext
 	private static boolean ASYNCHRONOUS_VAR_DESTROY = true;
 	
 	//executor memory and relative fractions as obtained from the spark configuration
-	private static long _memExecutors = -1;
-	private static double _memRatioData = -1;
+	private static long _memExecutors = -1; //mem per executors
+	private static double _memRatioData = -1; 
 	private static double _memRatioShuffle = -1;
-	private static long _numExecutors = -1; //num executors
-	private static long _defaultPar = -1; //total vcores 
+	private static int _numExecutors = -1; //total executors
+	private static int _defaultPar = -1; //total vcores  
 	
 	// TODO: This needs to be debugged further. For now getting around the problem with Singleton
 	// Only one SparkContext may be active per JVM. You must stop() the active SparkContext before creating a new one. 
@@ -454,12 +454,24 @@ public class SparkExecutionContext extends ExecutionContext
 		//70% of remaining free memory
 		double membudget = OptimizerUtils.MEM_UTIL_FACTOR *
 			              (  _memExecutors 
-			               - _memExecutors*(_memRatioData+_memRatioShuffle));
+			               - _memExecutors*(_memRatioData+_memRatioShuffle) );
 		
 		return membudget;
 	}
 	
-	public static long getNumExecutors()
+	/**
+	 * 
+	 * @return
+	 */
+	public static double getConfiguredTotalDataMemory()
+	{
+		if( _memExecutors < 0 || _memRatioData < 0 )
+			analyzeSparkConfiguation();
+		
+		return ( _memExecutors * _memRatioData * _numExecutors );
+	}
+	
+	public static int getNumExecutors()
 	{
 		if( _numExecutors < 0 )
 			analyzeSparkConfiguation();
@@ -467,7 +479,7 @@ public class SparkExecutionContext extends ExecutionContext
 		return _numExecutors;
 	}
 	
-	public static long getDefaultParallelism()
+	public static int getDefaultParallelism()
 	{
 		if( _defaultPar < 0 )
 			analyzeSparkConfiguation();
@@ -499,8 +511,9 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		//get default parallelism (total number of executors and cores)
 		//note: spark context provides this information while conf does not
+		//(for num executors we need to correct for driver and local mode)
 		SparkExecutionContext sec = new SparkExecutionContext(false, null);
-		_numExecutors = sec._spctx.sc().getExecutorMemoryStatus().size(); 
+		_numExecutors = Math.min(sec._spctx.sc().getExecutorMemoryStatus().size() - 1, 1);  
 		_defaultPar = sec._spctx.defaultParallelism(); 
 
 		//note: required time for infrastructure analysis on 5 node cluster: ~5-20ms. 
@@ -521,8 +534,8 @@ public class SparkExecutionContext extends ExecutionContext
 		int versionp2 = Integer.parseInt(version.substring(ix1+1, ix2));
 		
 		//check multi-threaded executors
-		long numExecutors = getNumExecutors();
-		long numCores = getDefaultParallelism();
+		int numExecutors = getNumExecutors();
+		int numCores = getDefaultParallelism();
 		boolean multiThreaded = (numCores > numExecutors);
 		
 		//check for jdk version less than 8 (and raise warning if multi-threaded)

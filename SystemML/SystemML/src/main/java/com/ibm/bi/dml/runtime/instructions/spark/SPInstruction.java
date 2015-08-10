@@ -17,6 +17,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.SPInstructionParser;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.utils.Statistics;
 
 /**
  * 
@@ -120,6 +121,9 @@ public abstract class SPInstruction extends Instruction
 			sec.setDebugString(this, ((ComputationSPInstruction) this).getOutputVariableName());
 			mlCtx.getMonitoringUtil().removeCurrentInstruction(this);
 		}
+		
+		//maintain statistics
+		Statistics.incrementNoOfExecutedSPInst();
 		
 		//default post-process behavior
 		super.postprocessInstruction(ec);

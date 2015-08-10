@@ -19,11 +19,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 
 /**
  * This class captures all statistics.
@@ -38,11 +40,13 @@ public class Statistics
 	private static long lEndTime = 0;
 	public static long execTime=0;
 
-	/** number of executed MR jobs */
+	// number of compiled/executed MR jobs
 	private static int iNoOfExecutedMRJobs = 0;
-
-	/** number of compiled MR jobs */
 	private static int iNoOfCompiledMRJobs = 0;
+
+	// number of compiled/executed SP instructions
+	private static int iNoOfExecutedSPInst = 0;
+	private static int iNoOfCompiledSPInst = 0;
 
 	//JVM stats
 	private static long jitCompileTime = 0; //in milli sec
@@ -80,8 +84,8 @@ public class Statistics
 		iNoOfExecutedMRJobs --;
 	}
 
-	public static synchronized void setNoOfCompiledMRJobs(int iNoOfCompiledMRJobs) {
-		Statistics.iNoOfCompiledMRJobs = iNoOfCompiledMRJobs;
+	public static synchronized void setNoOfCompiledMRJobs(int numJobs) {
+		iNoOfCompiledMRJobs = numJobs;
 	}
 
 	public static synchronized int getNoOfCompiledMRJobs() {
@@ -90,6 +94,23 @@ public class Statistics
 	
 	public static synchronized void incrementNoOfCompiledMRJobs() {
 		iNoOfCompiledMRJobs ++;
+	}
+
+
+	public static synchronized int getNoOfExecutedSPInst() {
+		return iNoOfExecutedSPInst;
+	}
+	
+	public static synchronized void incrementNoOfExecutedSPInst() {
+		iNoOfExecutedSPInst ++;
+	}
+	
+	public static synchronized void setNoOfCompiledSPInst(int numJobs) {
+		iNoOfCompiledSPInst = numJobs;
+	}
+
+	public static synchronized int getNoOfCompiledSPInst() {
+		return iNoOfCompiledSPInst;
 	}
 	
 	public static synchronized void incrementJITCompileTime( long time ) {
@@ -218,6 +239,15 @@ public class Statistics
 		{
 			MRJobInstruction mrinst = (MRJobInstruction) inst;
 			opcode = "MR-Job_"+mrinst.getJobType();
+		}
+		else if( inst instanceof SPInstruction )
+		{
+			opcode = "SP_"+InstructionUtils.getOpCode(inst.toString());
+			if( inst instanceof FunctionCallCPInstruction ) {
+				FunctionCallCPInstruction extfunct = (FunctionCallCPInstruction)inst;
+				opcode = extfunct.getFunctionName();
+				//opcode = extfunct.getNamespace()+Program.KEY_DELIM+extfunct.getFunctionName();
+			}	
 		}
 		else //CPInstructions
 		{
@@ -366,9 +396,16 @@ public class Statistics
 		sb.append("SystemML Statistics:\n");
 		double totalT = getRunTime()*1e-9; // nanoSec --> sec
 		sb.append("Total execution time:\t\t" + String.format("%.3f", totalT) + " sec.\n");
-		if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
-			sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
-		sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");
+		if( OptimizerUtils.isSparkExecutionMode() ) {
+			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
+				sb.append("Number of compiled Spark inst:\t" + getNoOfCompiledSPInst() + ".\n");
+			sb.append("Number of executed Spark inst:\t" + getNoOfExecutedSPInst() + ".\n");
+		}
+		else {
+			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
+				sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
+			sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");	
+		}
 		
 		//show extended caching/compilation statistics
 		if( DMLScript.STATISTICS ) 

@@ -14,8 +14,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.VisitStatus;
@@ -48,6 +46,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -87,13 +86,25 @@ public class Explain
 	public static String explainMemoryBudget()
 	{
 		StringBuilder sb = new StringBuilder();
+		
 		sb.append( "# Memory Budget local/remote = " );
 		sb.append( OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) );
 		sb.append( "MB/" );
-		sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudgetMap()) );
-		sb.append( "MB/" );
-		sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudgetReduce()) );
-		sb.append( "MB" );
+		
+		if( OptimizerUtils.isSparkExecutionMode() )
+		{
+			sb.append( OptimizerUtils.toMB(SparkExecutionContext.getConfiguredTotalDataMemory()) );
+			sb.append( "MB/" );
+			sb.append( OptimizerUtils.toMB(SparkExecutionContext.getBroadcastMemoryBudget()) );
+			sb.append( "MB" );	
+		}
+		else
+		{
+			sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudgetMap()) );
+			sb.append( "MB/" );
+			sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudgetReduce()) );
+			sb.append( "MB" );
+		}
 		
 		return sb.toString();		 
 	}
@@ -105,22 +116,33 @@ public class Explain
 	public static String explainDegreeOfParallelism()
 	{
 		int lk = InfrastructureAnalyzer.getLocalParallelism();
-		int rk = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-		int rk2 = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-		
-		//correction max number of mappers/reducers on yarn clusters
-		if( InfrastructureAnalyzer.isYarnEnabled() ){
-			rk = (int)Math.max(rk, YarnClusterAnalyzer.getNumCores());
-			rk2 = (int)Math.max(rk2, YarnClusterAnalyzer.getNumCores()/2);
-		}
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append( "# Degree of Parallelism (vcores) local/remote = " );
 		sb.append( lk );
 		sb.append( "/" );
-		sb.append( rk );
-		sb.append( "/" );
-		sb.append( rk2 );
+		
+		if( OptimizerUtils.isSparkExecutionMode() ) //SP
+		{
+			int rk = SparkExecutionContext.getDefaultParallelism(); 
+					
+			sb.append( rk );
+		}
+		else //MR
+		{
+			int rk = InfrastructureAnalyzer.getRemoteParallelMapTasks();
+			int rk2 = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
+			
+			//correction max number of mappers/reducers on yarn clusters
+			if( InfrastructureAnalyzer.isYarnEnabled() ){
+				rk = (int)Math.max(rk, YarnClusterAnalyzer.getNumCores());
+				rk2 = (int)Math.max(rk2, YarnClusterAnalyzer.getNumCores()/2);
+			}
+			
+			sb.append( rk );
+			sb.append( "/" );
+			sb.append( rk2 );
+		}
 		
 		return sb.toString();		 
 	}
@@ -224,7 +246,7 @@ public class Explain
 		StringBuilder sb = new StringBuilder();		
 	
 		//create header
-		if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK) {
+		if( OptimizerUtils.isSparkExecutionMode() ) {
 			sb.append("\nPROGRAM ( size CP/SP = ");
 			sb.append(countCompiledInstructions(rtprog, false, true, false));
 			sb.append("/");
@@ -437,6 +459,16 @@ public class Explain
 	public static int countCompiledMRJobs( Program rtprog )
 	{
 		return countCompiledInstructions(rtprog, true, false, false);
+	}
+	
+	/**
+	 * 
+	 * @param rtprog
+	 * @return
+	 */
+	public static int countCompiledSPInst( Program rtprog )
+	{
+		return countCompiledInstructions(rtprog, false, false, true);
 	}
 	
 	/**

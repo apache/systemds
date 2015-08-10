@@ -810,14 +810,9 @@ public class DMLScript
 		}
 		
 		//count number compiled MR jobs / SP instructions	
-		if( OptimizerUtils.isSparkExecutionMode() ) {
-			int jobCount = Explain.countCompiledSPInst(rtprog);
-			Statistics.setNoOfCompiledSPInst( jobCount );					
-		}
-		else {
-			int jobCount = Explain.countCompiledMRJobs(rtprog);
-			Statistics.setNoOfCompiledMRJobs( jobCount );				
-		}
+		int jobCount = OptimizerUtils.isSparkExecutionMode() ?
+				Explain.countCompiledSPInst(rtprog) : Explain.countCompiledMRJobs(rtprog);
+		Statistics.resetNoOfCompiledJobs( jobCount );				
 		
 		//explain plan of program (hops or runtime)
 		if( EXPLAIN != ExplainType.NONE ) {
@@ -884,7 +879,7 @@ public class DMLScript
 		CacheableData.initCaching();
 						
 		//reset statistics (required if multiple scripts executed in one JVM)
-		Statistics.setNoOfExecutedMRJobs( 0 );
+		Statistics.resetNoOfExecutedJobs( 0 );
 		if( STATISTICS ) {
 			CacheStatistics.reset();
 			Statistics.reset();

@@ -96,6 +96,10 @@ public class Statistics
 		iNoOfCompiledMRJobs ++;
 	}
 
+	public static synchronized void setNoOfExecutedSPInst(int numJobs) {
+		iNoOfExecutedSPInst = numJobs;
+	}
+	
 	public static synchronized int getNoOfExecutedSPInst() {
 		return iNoOfExecutedSPInst;
 	}
@@ -114,6 +118,42 @@ public class Statistics
 
 	public static synchronized void incrementNoOfCompiledSPInst() {
 		iNoOfCompiledSPInst ++;
+	}
+	
+	/**
+	 * 
+	 * @param count
+	 */
+	public static void resetNoOfCompiledJobs( int count )
+	{
+		//reset both mr/sp for multiple tests within one jvm
+		
+		if(OptimizerUtils.isSparkExecutionMode()) {
+			setNoOfCompiledSPInst(count);
+			setNoOfCompiledMRJobs(0);
+		}
+		else{
+			setNoOfCompiledMRJobs(count);
+			setNoOfCompiledSPInst(0);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param count
+	 */
+	public static void resetNoOfExecutedJobs( int count )
+	{
+		//reset both mr/sp for multiple tests within one jvm
+		
+		if(OptimizerUtils.isSparkExecutionMode()) {
+			setNoOfExecutedSPInst(count);
+			setNoOfExecutedMRJobs(0);		
+		}
+		else {
+			setNoOfExecutedMRJobs(count);
+			setNoOfExecutedSPInst(0);
+		}
 	}
 	
 	public static synchronized void incrementJITCompileTime( long time ) {

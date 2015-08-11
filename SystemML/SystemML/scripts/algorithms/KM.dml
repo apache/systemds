@@ -92,20 +92,18 @@ test_type = ifdef ($ttype, "none");      # $ttype="none"
 
 X = read (fileX);
 TE = read (fileTE, format = "csv");
-if (fileGI != " "){
-        GI = read (fileGI, format = "csv");
-}else{
-        GI = matrix(0,rows=1,cols=1);
+if (fileGI != " ") {
+	GI = read (fileGI, format = "csv");
+} else {
+    GI = matrix(0,rows=1,cols=1);
 }
 
 if (fileSI != " "){
-        SI = read (fileSI, format = "csv");
-}else{
-        SI = matrix(0,rows=1,cols=1);
+	SI = read (fileSI, format = "csv");
+} else {
+    SI = matrix(0,rows=1,cols=1);
 }
 
-
-# TODO add checks for row vectors
 TE = t(TE);
 GI = t(GI);
 SI = t(SI);
@@ -242,8 +240,9 @@ if (n_group_cols == 0 & n_stratum_cols == 0) {
 ######## BEGIN KAPLAN-MEIER ANALYSIS
 print ("BEGIN KAPLAN-MEIER SURVIVAL FIT SCRIPT");
 
-KM = matrix (0, rows = num_records, cols = num_groups * num_strata * 7);
-KM_cols = seq (1, num_groups * num_strata * 7);
+KM = matrix (0, rows = num_records, cols = num_groups * num_strata * 8);
+KM_cols = seq (1, num_groups * num_strata * 8);
+OFFSETS = matrix (0, rows = num_groups * num_strata, cols = 1);
 GSI = matrix (0, rows = num_groups * num_strata, cols = 2);
 a = 1/0;
 M = matrix (a, rows = num_groups * num_strata, cols = 5);
@@ -322,7 +321,7 @@ parfor (s in 1:num_strata, check = 0) {
 	parfor (g in 1:num_groups, check = 0) {
 	
 		group_ind = ppred (G, g, "==");
-		KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
+		KM_offset = (s - 1) * num_groups * 8 + (g - 1) * 8;
 		M_offset = (s - 1) * num_groups + g;
 		if (sum (group_ind) != 0) { # group g is present in the stratum s
 
@@ -398,16 +397,18 @@ parfor (s in 1:num_strata, check = 0) {
 			n_event_sum = sum (n_event);
 			n_event_sum_all = sum(n_event_all);
 			if (n_event_sum > 0) {
-				# KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
+				# KM_offset = (s - 1) * num_groups * 8 + (g - 1) * 8;
 				KM[1:n_time,KM_offset + 1] = time;
 				KM[1:n_time,KM_offset + 2] = n_risk;			
 				KM[1:n_time,KM_offset + 3] = n_event;
 				KM[1:n_time,KM_offset + 4] = surv;
 				KM[1:n_time,KM_offset + 5] = se_surv;
 				KM[1:n_time,KM_offset + 6] = CI_l;
-				KM[1:n_time,KM_offset + 7] = CI_r;
-			}	
-		
+				KM[1:n_time,KM_offset + 7] = CI_r;				
+			}			
+			KM[1:n_time,KM_offset + 8] = matrix (1, rows = n_time, cols = 1);
+			OFFSETS[M_offset,1] = n_time;
+						
 			######## ESTIMATE MEDIAN OF SERVIVAL TIMES AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL
 		
 			p_5 = ppred (surv, 0.5, "<="); 
@@ -464,7 +465,7 @@ parfor (s in 1:num_strata, check = 0) {
 			}
 		} else {
 			print ("group " + g + " is not present in the stratum " + s);
-			KM_cols[(KM_offset + 1):(KM_offset + 7),1] = matrix (0, rows = 7, cols = 1);
+			KM_cols[(KM_offset + 1):(KM_offset + 8),1] = matrix (0, rows = 8, cols = 1);
 			M_cols[M_offset,1] = 0;
 		}		
 	}
@@ -476,7 +477,6 @@ parfor (s in 1:num_strata, check = 0) {
 
 		V = matrix (0, rows = num_groups-1, cols = num_groups-1);
 		parfor (g in 0:(num_groups-1), check = 0) {
-		# for (g in 0:(num_groups - 2), check = 0) {
 		
 			n_risk = n_risk_n_event_stratum[,g * 2 + 1];			
 			n_event = n_risk_n_event_stratum[,g * 2 + 2];
@@ -541,7 +541,7 @@ if (num_groups > 1 & test_type != "none") {
 		TEST[,3] = rowSums(EXP);
 		TEST[,4] = rowSums(U_OE_sum);
 		TEST[,5] = rowSums(V_OE);
-		str = append (str, test_type + "test for " + num_groups + " groups: Chi-squared = " + test_st + " on " + (num_groups - 1) + " df, p = " + p_val + " ");	
+		str = append (str, test_type + " test for " + num_groups + " groups: Chi-squared = " + test_st + " on " + (num_groups - 1) + " df, p = " + p_val + " ");	
 	} 
 }
 
@@ -585,7 +585,13 @@ if (n_group_cols > 0 & n_stratum_cols > 0) {
 # pull out non-empty columns from KM
 KM_cols = removeEmpty (target = KM_cols, margin = "rows");
 tab_KM = table (KM_cols, seq (1, nrow (KM_cols)), ncol (KM), nrow (KM_cols));
+
+KM = replace (target = KM, pattern = "NaN", replacement = "Infinity");
 KM = removeEmpty (target = KM %*% tab_KM, margin = "rows");
+KM = replace (target = KM, pattern = "Infinity", replacement = "NaN");
+OFFSETS = removeEmpty (target = OFFSETS, margin = "rows");
+KM = matrix (KM, rows = nrow (KM) * (ncol (KM) / 8), cols = 8);
+KM = removeEmpty (target = KM, margin = "rows");
 
 # write output matrices
 write (M, fileM, format=fmtO);

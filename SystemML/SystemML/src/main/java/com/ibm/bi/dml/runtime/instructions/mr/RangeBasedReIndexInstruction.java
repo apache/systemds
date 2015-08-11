@@ -34,8 +34,6 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 	protected long leftMatrixNCols=0;
 	
 	private IndexRange indexRange=null;
-	private IndexRange tempRange=new IndexRange(-1, -1, -1, -1);
-	
 	
 	public RangeBasedReIndexInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {
 		super(op, in, out);
@@ -106,63 +104,20 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase
 			throw new DMLRuntimeException("input cannot be the same for output for "+this.instString);
 		
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
-		if( blkList != null )
-			for(IndexedMatrixValue in : blkList)
+		if( blkList != null ) {
+			for(IndexedMatrixValue in : blkList) 
 			{
-				if(in==null)
+				if( in == null )
 					continue;
 	
-				long cellIndexTopRow=UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), blockRowFactor, 0);
-				long cellIndexBottomRow=UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), blockRowFactor, in.getValue().getNumRows()-1);
-				long cellIndexLeftCol=UtilFunctions.cellIndexCalculation(in.getIndexes().getColumnIndex(), blockColFactor, 0);
-				long cellIndexRightCol=UtilFunctions.cellIndexCalculation(in.getIndexes().getColumnIndex(), blockColFactor, in.getValue().getNumColumns()-1);
-				
-				long cellIndexOverlapTop=Math.max(cellIndexTopRow, indexRange.rowStart);
-				long cellIndexOverlapBottom=Math.min(cellIndexBottomRow, indexRange.rowEnd);
-				long cellIndexOverlapLeft=Math.max(cellIndexLeftCol, indexRange.colStart);
-				long cellIndexOverlapRight=Math.min(cellIndexRightCol, indexRange.colEnd);
-				
-				if(cellIndexOverlapTop>cellIndexOverlapBottom || cellIndexOverlapLeft>cellIndexOverlapRight)
-					return;
-				
-				tempRange.set(UtilFunctions.cellInBlockCalculation(cellIndexOverlapTop, blockRowFactor), 
-						UtilFunctions.cellInBlockCalculation(cellIndexOverlapBottom, blockRowFactor), 
-						UtilFunctions.cellInBlockCalculation(cellIndexOverlapLeft, blockColFactor), 
-						UtilFunctions.cellInBlockCalculation(cellIndexOverlapRight, blockColFactor));
-				
-				int rowCut=UtilFunctions.cellInBlockCalculation(indexRange.rowStart, blockRowFactor);
-				int colCut=UtilFunctions.cellInBlockCalculation(indexRange.colStart, blockColFactor);
-				
-				int rowsInLastBlock=(int)((indexRange.rowEnd-indexRange.rowStart+1)%blockRowFactor);
-				if(rowsInLastBlock==0) rowsInLastBlock=blockRowFactor;
-				int colsInLastBlock=(int)((indexRange.colEnd-indexRange.colStart+1)%blockColFactor);
-				if(colsInLastBlock==0) colsInLastBlock=blockColFactor;
-				
-				long resultBlockIndexTop=UtilFunctions.blockIndexCalculation(cellIndexOverlapTop-indexRange.rowStart+1, blockRowFactor);
-				long resultBlockIndexBottom=UtilFunctions.blockIndexCalculation(cellIndexOverlapBottom-indexRange.rowStart+1, blockRowFactor);
-				long resultBlockIndexLeft=UtilFunctions.blockIndexCalculation(cellIndexOverlapLeft-indexRange.colStart+1, blockColFactor);
-				long resultBlockIndexRight=UtilFunctions.blockIndexCalculation(cellIndexOverlapRight-indexRange.colStart+1, blockColFactor);
-				
-				int boundaryRlen=blockRowFactor, boundaryClen=blockColFactor;
-				long finalBlockIndexBottom=UtilFunctions.blockIndexCalculation(indexRange.rowEnd-indexRange.rowStart+1, blockRowFactor);
-				long finalBlockIndexRight=UtilFunctions.blockIndexCalculation(indexRange.colEnd-indexRange.colStart+1, blockColFactor);
-				if(resultBlockIndexBottom==finalBlockIndexBottom)
-					boundaryRlen=rowsInLastBlock;
-				if(resultBlockIndexRight==finalBlockIndexRight)
-					boundaryClen=colsInLastBlock;
-					
-				//allocate space for the output value
-				ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(4);
-				for(long r=resultBlockIndexTop; r<=resultBlockIndexBottom; r++)
-					for(long c=resultBlockIndexLeft; c<=resultBlockIndexRight; c++)
-					{
-						IndexedMatrixValue out=cachedValues.holdPlace(output, valueClass);
-						out.getIndexes().setIndexes(r, c);
-						outlist.add(out);
-					}
-				
-				//process instruction
-				OperationsOnMatrixValues.performSlice(in.getIndexes(), in.getValue(), outlist, tempRange, rowCut, colCut, blockRowFactor, blockColFactor, boundaryRlen, boundaryClen);
+				//process instruction (incl block allocation)
+				ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+				OperationsOnMatrixValues.performSlice(in, indexRange, blockRowFactor, blockColFactor, outlist);
+		
+				//put blocks into result cache
+				for( IndexedMatrixValue ret : outlist )
+					cachedValues.add(output, ret);
 			}
+		}
 	}
 }

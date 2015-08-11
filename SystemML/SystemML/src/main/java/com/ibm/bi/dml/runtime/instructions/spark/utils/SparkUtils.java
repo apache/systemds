@@ -72,7 +72,6 @@ public class SparkUtils {
 		return ret;
 	}
 	
-	
 	/**
 	 * 
 	 * @param mb

@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.util;
 
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 
@@ -77,8 +78,38 @@ public class UtilFunctions
 		return (point>=s && point<=f);
 	}
 	
+	/**
+	 * 
+	 * @param ix
+	 * @param brlen
+	 * @param bclen
+	 * @param rl
+	 * @param ru
+	 * @param cl
+	 * @param cu
+	 * @return
+	 */
+	public static boolean isInBlockRange( MatrixIndexes ix, int brlen, int bclen, long rl, long ru, long cl, long cu )
+	{
+		long bRLowerIndex = (ix.getRowIndex()-1)*brlen + 1;
+		long bRUpperIndex = ix.getRowIndex()*brlen;
+		long bCLowerIndex = (ix.getColumnIndex()-1)*bclen + 1;
+		long bCUpperIndex = ix.getColumnIndex()*bclen;
+		
+		if(rl > bRUpperIndex || ru < bRLowerIndex) {
+			return false;
+		}
+		else if(cl > bCUpperIndex || cu < bCLowerIndex) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+	
 	// Reused by both MR and Spark for performing zero out
-	public static IndexRange getSelectedRangeForZeroOut(IndexedMatrixValue in, int blockRowFactor, int blockColFactor, IndexRange indexRange) {
+	public static IndexRange getSelectedRangeForZeroOut(IndexedMatrixValue in, int blockRowFactor, int blockColFactor, IndexRange indexRange) 
+	{
 		IndexRange tempRange = new IndexRange(-1, -1, -1, -1);
 		
 		long topBlockRowIndex=UtilFunctions.blockIndexCalculation(indexRange.rowStart, blockRowFactor);
@@ -112,6 +143,7 @@ public class UtilFunctions
 		
 		return tempRange;
 	}
+	
 	public static long getTotalLength(NumItemsByEachReducerMetaData metadata) {
 		long[] counts=metadata.getNumItemsArray();
 		long total=0;

@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 import com.ibm.bi.dml.runtime.util.IndexRange;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class OperationsOnMatrixValues 
 {
@@ -73,14 +74,6 @@ public class OperationsOnMatrixValues
 	{
 		valueIn.zeroOutOperations(valueOut, range, complementary);
 		indexesOut.setIndexes(indexesIn);
-	}
-	
-	public static void performSlice(MatrixIndexes indexesIn, MatrixValue valueIn, 
-			ArrayList<IndexedMatrixValue> outlist, IndexRange range, 
-			int rowCut, int colCut, int blockRowFactor, int blockColFactor, int boundaryRlen, int boundaryClen) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		valueIn.sliceOperations(outlist, range, rowCut, colCut, blockRowFactor, blockColFactor, boundaryRlen, boundaryClen);
 	}
 	
 	// ------------- Ternary Operations -------------
@@ -276,5 +269,76 @@ public class OperationsOnMatrixValues
 			
 		//perform on the value
 		value1.aggregateBinaryOperations(value1, value2, valueOut, op);
+	}
+	
+	/**
+	 * 
+	 * @param val
+	 * @param range
+	 * @param brlen
+	 * @param bclen
+	 * @param outlist
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public static void performSlice(IndexedMatrixValue in, IndexRange ixrange, int brlen, int bclen, ArrayList<IndexedMatrixValue> outlist) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		long cellIndexTopRow = UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), brlen, 0);
+		long cellIndexBottomRow = UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), brlen, in.getValue().getNumRows()-1);
+		long cellIndexLeftCol = UtilFunctions.cellIndexCalculation(in.getIndexes().getColumnIndex(), bclen, 0);
+		long cellIndexRightCol = UtilFunctions.cellIndexCalculation(in.getIndexes().getColumnIndex(), bclen, in.getValue().getNumColumns()-1);
+		
+		long cellIndexOverlapTop = Math.max(cellIndexTopRow, ixrange.rowStart);
+		long cellIndexOverlapBottom = Math.min(cellIndexBottomRow, ixrange.rowEnd);
+		long cellIndexOverlapLeft = Math.max(cellIndexLeftCol, ixrange.colStart);
+		long cellIndexOverlapRight = Math.min(cellIndexRightCol, ixrange.colEnd);
+		
+		//check if block is outside the indexing range
+		if(cellIndexOverlapTop>cellIndexOverlapBottom || cellIndexOverlapLeft>cellIndexOverlapRight) {
+			return;
+		}
+		
+		IndexRange tmpRange = new IndexRange(
+			UtilFunctions.cellInBlockCalculation(cellIndexOverlapTop, brlen), 
+			UtilFunctions.cellInBlockCalculation(cellIndexOverlapBottom, brlen), 
+			UtilFunctions.cellInBlockCalculation(cellIndexOverlapLeft, bclen), 
+			UtilFunctions.cellInBlockCalculation(cellIndexOverlapRight, bclen));
+		
+		int rowCut=UtilFunctions.cellInBlockCalculation(ixrange.rowStart, brlen);
+		int colCut=UtilFunctions.cellInBlockCalculation(ixrange.colStart, bclen);
+		
+		int rowsInLastBlock = (int)((ixrange.rowEnd-ixrange.rowStart+1)%brlen);
+		if(rowsInLastBlock==0) 
+			rowsInLastBlock=brlen;
+		int colsInLastBlock = (int)((ixrange.colEnd-ixrange.colStart+1)%bclen);
+		if(colsInLastBlock==0) 
+			colsInLastBlock=bclen;
+		
+		long resultBlockIndexTop=UtilFunctions.blockIndexCalculation(cellIndexOverlapTop-ixrange.rowStart+1, brlen);
+		long resultBlockIndexBottom=UtilFunctions.blockIndexCalculation(cellIndexOverlapBottom-ixrange.rowStart+1, brlen);
+		long resultBlockIndexLeft=UtilFunctions.blockIndexCalculation(cellIndexOverlapLeft-ixrange.colStart+1, bclen);
+		long resultBlockIndexRight=UtilFunctions.blockIndexCalculation(cellIndexOverlapRight-ixrange.colStart+1, bclen);
+		
+		int boundaryRlen = brlen;
+		int boundaryClen = bclen;
+		long finalBlockIndexBottom=UtilFunctions.blockIndexCalculation(ixrange.rowEnd-ixrange.rowStart+1, brlen);
+		long finalBlockIndexRight=UtilFunctions.blockIndexCalculation(ixrange.colEnd-ixrange.colStart+1, bclen);
+		if(resultBlockIndexBottom==finalBlockIndexBottom)
+			boundaryRlen=rowsInLastBlock;
+		if(resultBlockIndexRight==finalBlockIndexRight)
+			boundaryClen=colsInLastBlock;
+			
+		//allocate space for the output value
+		for(long r=resultBlockIndexTop; r<=resultBlockIndexBottom; r++)
+			for(long c=resultBlockIndexLeft; c<=resultBlockIndexRight; c++)
+			{
+				IndexedMatrixValue out=new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
+				out.getIndexes().setIndexes(r, c);
+				outlist.add(out);
+			}
+		
+		//execute actual slice operation
+		in.getValue().sliceOperations(outlist, tmpRange, rowCut, colCut, brlen, bclen, boundaryRlen, boundaryClen);
 	}
 }

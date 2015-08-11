@@ -3746,30 +3746,29 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixValue leftIndexingOperations(ScalarObject scalar, long row, long col, MatrixValue ret, boolean inplace) 
+	public MatrixBlock leftIndexingOperations(ScalarObject scalar, long row, long col, MatrixBlock ret, boolean inplace) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
-		MatrixBlock result=checkType(ret);		
 		double inVal = scalar.getDoubleValue();
 		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, 1, 1, (inVal!=0)?1:0);
 		
 		if( !inplace ) //general case
 		{
-			if(result==null)
-				result=new MatrixBlock(rlen, clen, sp);
+			if(ret==null)
+				ret=new MatrixBlock(rlen, clen, sp);
 			else
-				result.reset(rlen, clen, sp);
-			result.copy(this, sp);
+				ret.reset(rlen, clen, sp);
+			ret.copy(this, sp);
 			
 		}
 		else //update in-place
-			result = this;
+			ret = this;
 		
 		int rl = (int)row-1;
 		int cl = (int)col-1;
 		
-		result.quickSetValue(rl, cl, inVal);
-		return result;
+		ret.quickSetValue(rl, cl, inVal);
+		return ret;
 	}
 	
 	/**

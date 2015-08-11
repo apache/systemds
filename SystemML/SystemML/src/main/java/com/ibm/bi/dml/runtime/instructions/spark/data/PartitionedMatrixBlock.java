@@ -21,11 +21,14 @@ import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction.SliceBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
+import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.util.FastBufferedDataInputStream;
 import com.ibm.bi.dml.runtime.util.FastBufferedDataOutputStream;
+import com.ibm.bi.dml.runtime.util.IndexRange;
 
 /**
  * The main purpose of this class is to provide a handle for partitioned matrix blocks, to be used
@@ -189,17 +192,12 @@ public class PartitionedMatrixBlock implements Externalizable
 			for(int jix = start_jix; jix <= end_jix; jix++)		
 			{
 				MatrixBlock in = getMatrixBlock(iix, jix);
-				try {
-					Iterable<Tuple2<MatrixIndexes, MatrixBlock>> blks = 
-							(new SliceBlock(rl, ru, cl, cu, _brlen, _bclen))
-							.call(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(iix, jix), in));
-					
-					for(Tuple2<MatrixIndexes, MatrixBlock> kv : blks) {
-						allBlks.add(kv);
-					}
-				} catch (Exception e) {
-					throw new DMLRuntimeException(e);
-				}
+				IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), in);
+				
+				ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
+				OperationsOnMatrixValues.performSlice(imv, ixrange, _brlen, _bclen, outlist);
+				allBlks.addAll(SparkUtils.fromIndexedMatrixBlock(outlist));
 			}
 		
 		if(allBlks.size() == 1) {

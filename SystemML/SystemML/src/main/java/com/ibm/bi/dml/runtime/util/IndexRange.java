@@ -17,12 +17,10 @@ public class IndexRange implements Serializable
 	}
 	public void set(long rs, long re, long cs, long ce)
 	{
-		//if(re<rs || ce<cs)
-		//	throw new RuntimeException("This is invalid index range: ["+rs+":"+re+", "+cs+":"+ce+"]!");
-		rowStart=rs;
-		rowEnd=re;
-		colStart=cs;
-		colEnd=ce;
+		rowStart = rs;
+		rowEnd = re;
+		colStart = cs;
+		colEnd = ce;
 	}
 	
 	@Override

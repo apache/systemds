@@ -19,7 +19,8 @@
 # TE	  String   ---          Column indices of X which contain timestamp (first entry) and event information (second entry) in csv format
 # GI	  String   ---          Column indices of X corresponding to the factors to be used for grouping in csv format
 # SI	  String   ---          Column indices of X corresponding to the factors to be used for stratifying in csv format				
-# O       String   ---          Location to write the matrix containing the results of the Kaplan-Meier analysis
+# KM       String   ---          Location to write the matrix containing the results of the Kaplan-Meier analysis; see below for the description
+# OFF     String   ---          Location to write the row offsets of the output matrix KM
 # M       String   ---          Location to write Matrix M containing the following statistic: total number of events, median and its confidence intervals; 
 #								if survival data for multiple groups and strata are provided each row of M contains the above statistics per group and stratum
 # T 	  String   " "			If survival data from multiple groups available and ttype=log-rank or wilcoxon, 
@@ -34,8 +35,7 @@
 # fmt     String   "text"       The output format of results of the Kaplan-Meier analysis, such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
-# 1- Matrix KM whose dimension depends on the number of groups (denoted by g) and strata (denoted by s) in the data: 
-#	each collection of 7 consecutive columns in KM corresponds to a unique combination of groups and strata in the data with the following schema
+# 1- Matrix KM whose dimension depends on the number of groups (denoted by g) and strata (denoted by s) in the data and has the following schema:
 # 	1. col: timestamp
 # 	2. col: no. at risk
 # 	3. col: no. of events
@@ -43,7 +43,8 @@
 # 	5. col: standard error of surv
 # 	6. col: lower 100*(1-alpha)% confidence interval for surv
 # 	7. col: upper 100*(1-alpha)% confidence interval for surv
-# 2- Matrix M whose dimension depends on the number of groups (g) and strata (s) in the data (k denotes the number of factors used for grouping 
+# 2- A column matrix OFF that contains the row offsets of matrix KM: each entry in OFF corresponds to a unique combination of groups and strata in the data  
+# 3- Matrix M whose dimension depends on the number of groups (g) and strata (s) in the data (k denotes the number of factors used for grouping 
 #	,i.e., ncol(GI) and l denotes the number of factors used for stratifying, i.e., ncol(SI))
 #	M[,1:k]: unique combination of values in the k factors used for grouping 
 #	M[,(k+1):(k+l)]: unique combination of values in the l factors used for stratifying
@@ -57,7 +58,7 @@
 #	M[,2]: median of surv
 #	M[,3]: lower 100*(1-alpha)% confidence interval of the median of surv 
 #	M[,4]: upper 100*(1-alpha)% confidence interval of the median of surv
-# 3- If survival data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix T and an g x 5 matrix T_GROUPS_OE with
+# 4- If survival data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix T and an g x 5 matrix T_GROUPS_OE with
 #	T_GROUPS_OE[,1] = no. of events	
 #	T_GROUPS_OE[,2] = observed value (O)
 #	T_GROUPS_OE[,3] = expected value (E)
@@ -69,14 +70,15 @@
 #	T[1,4] = P-value
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f KM.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE GI=INPUT_DIR/GI SI=INPUT_DIR/SI O=OUTPUT_DIR/O M=OUTPUT_DIR/M
-#     				                 T=OUTPUT_DIR/T alpha=0.05 etype=greenwood ctype=log fmt=csv
+# hadoop jar SystemML.jar -f KM.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE GI=INPUT_DIR/GI SI=INPUT_DIR/SI KM=OUTPUT_DIR/KM 
+#											M=OUTPUT_DIR/M OFF=OUTPUT_DIR/OFF T=OUTPUT_DIR/T alpha=0.05 etype=greenwood ctype=log fmt=csv
 
 fileX = $X;
 fileTE = $TE;
 fileGI = ifdef ($GI, " ");
 fileSI = ifdef ($SI, " ");
-fileO = $O;
+fileKM = $KM;
+fileOFF = $OFF;
 fileM = $M;
 
 # Default values of some parameters
@@ -592,10 +594,12 @@ KM = replace (target = KM, pattern = "Infinity", replacement = "NaN");
 OFFSETS = removeEmpty (target = OFFSETS, margin = "rows");
 KM = matrix (KM, rows = nrow (KM) * (ncol (KM) / 8), cols = 8);
 KM = removeEmpty (target = KM, margin = "rows");
+KM = KM[,1:7];
 
 # write output matrices
 write (M, fileM, format=fmtO);
-write (KM, fileO, format=fmtO);
+write (KM, fileKM, format=fmtO);
+write (OFFSETS, fileOFF, format=fmtO);
 
 if (test_type != "none") {
 	if (num_groups > 1 & fileT != " ") { 

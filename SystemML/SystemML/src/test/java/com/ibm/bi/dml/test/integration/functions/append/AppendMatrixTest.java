@@ -50,6 +50,8 @@ public class AppendMatrixTest extends AutomatedTestBase
 	//usecase d: outblock blocksize 
 	private final static int cols1d = 1460;
 	private final static int cols2d = 1920;
+	private final static int cols3d = 990;
+	
 		
 	private final static double sparsity1 = 0.5;
 	private final static double sparsity2 = 0.01;
@@ -83,24 +85,25 @@ public class AppendMatrixTest extends AutomatedTestBase
 		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, true, AppendMethod.MR_RAPPEND);
 	}   
 	
+	//NOTE: mappend only applied for m2_cols<=blocksize
 	@Test
 	public void testMapAppendInBlock2DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, false, AppendMethod.MR_MAPPEND);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2a, false, AppendMethod.MR_MAPPEND);
 	}
 	
 	@Test
 	public void testMapAppendInBlock2SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, true, AppendMethod.MR_MAPPEND);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2a, true, AppendMethod.MR_MAPPEND);
 	}
 	
 	@Test
 	public void testMapAppendOutBlock2DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, false, AppendMethod.MR_MAPPEND);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols3d, false, AppendMethod.MR_MAPPEND);
 	}
 	
 	@Test
 	public void testMapAppendOutBlock2SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, true, AppendMethod.MR_MAPPEND);
+		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols3d, true, AppendMethod.MR_MAPPEND);
 	}
 	
 	@Test

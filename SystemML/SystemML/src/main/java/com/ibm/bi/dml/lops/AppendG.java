@@ -32,37 +32,44 @@ public class AppendG extends Lop
 	
 	public static final String OPCODE = "gappend";
 	
-	public AppendG(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt) 
+	public AppendG(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, ExecType et) 
 	{
 		super(Lop.Type.Append, dt, vt);
-		init(input1, input2, input3, input4, dt, vt);
+		init(input1, input2, input3, input4, dt, vt, et);
 	}
 	
-	public void init(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt) 
+	public void init(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, ExecType et) 
 	{
-		this.addInput(input1);
+		addInput(input1);
 		input1.addOutput(this);
 
-		this.addInput(input2);
+		addInput(input2);
 		input2.addOutput(this);
 		
-		this.addInput(input3);
+		addInput(input3);
 		input3.addOutput(this);
 		
-		this.addInput(input4);
+		addInput(input4);
 		input4.addOutput(this);
 		
 		boolean breaksAlignment = false;
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		
-		lps.addCompatibility(JobType.GMR);
-		this.lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		if( et == ExecType.MR )
+		{
+			lps.addCompatibility(JobType.GMR);
+			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		}
+		else //SP
+		{
+			lps.addCompatibility(JobType.INVALID);
+			lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
 	}
 	
 	@Override
 	public String toString() {
-
 		return " AppendG: ";
 	}
 
@@ -71,9 +78,9 @@ public class AppendG extends Lop
 		throws LopsException
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append( this.lps.execType );
+		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( "gappend" );
+		sb.append( OPCODE );
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input_index1+""));
@@ -91,5 +98,33 @@ public class AppendG extends Lop
 		sb.append( this.prepOutputOperand(output_index+"") );
 		
 		return sb.toString();	
+	}
+	
+	//called when append executes in SP
+	public String getInstructions(String input_index1, String input_index2, String input_index3, String input_index4, String output_index) 
+		throws LopsException
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( OPCODE );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(0).prepInputOperand(input_index1+""));
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(1).prepInputOperand(input_index2+""));
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(3).prepScalarInputOperand(getExecType()));
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( this.prepOutputOperand(output_index+"") );
+		
+		return sb.toString();
 	}
 }

@@ -9,13 +9,10 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.AppendGAlignedSP;
-import com.ibm.bi.dml.lops.AppendGSP;
 import com.ibm.bi.dml.lops.AppendM;
 import com.ibm.bi.dml.lops.AppendCP;
 import com.ibm.bi.dml.lops.AppendG;
-import com.ibm.bi.dml.lops.AppendMSP;
 import com.ibm.bi.dml.lops.AppendR;
-import com.ibm.bi.dml.lops.AppendRSP;
 import com.ibm.bi.dml.lops.Binary;
 import com.ibm.bi.dml.lops.BinaryScalar;
 import com.ibm.bi.dml.lops.BinaryM;
@@ -506,11 +503,12 @@ public class BinaryOp extends Hop
 			{
 				append = constructMRAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), this);				
 			}
-			else if(et == ExecType.SPARK) {
-				
+			else if(et == ExecType.SPARK) 
+			{
+				long ncol = (getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) ? 
+						   getInput().get(0).getDim2()+getInput().get(1).getDim2() : -1; 
 				append = constructSPAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), this);
-				append.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2()+getInput().get(1).getDim2(), 
-							                                getRowsInBlock(), getColsInBlock(), getNnz());
+				append.getOutputParameters().setDimensions(getInput().get(0).getDim1(), ncol, getRowsInBlock(), getColsInBlock(), getNnz());
 			}
 			else //CP
 			{
@@ -1015,7 +1013,7 @@ public class BinaryOp extends Hop
 					dcInput.setAllPositions(right.getBeginLine(), right.getBeginColumn(), right.getEndLine(), right.getEndColumn());
 				}					
 				
-				AppendM appM = new AppendM(left.constructLops(), dcInput, offset, dt, vt, needPart);
+				AppendM appM = new AppendM(left.constructLops(), dcInput, offset, dt, vt, needPart, ExecType.MR);
 				appM.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				appM.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
 				ret = appM;
@@ -1032,7 +1030,7 @@ public class BinaryOp extends Hop
 				group1.getOutputParameters().setDimensions(m2_dim1, m2_dim2, brlen, bclen, right.getNnz());
 				group1.setAllPositions(right.getBeginLine(), right.getBeginColumn(), right.getEndLine(), right.getEndColumn());
 				
-				AppendR appR = new AppendR(group1, group2, dt, vt);
+				AppendR appR = new AppendR(group1, group2, dt, vt, ExecType.MR);
 				appR.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
 				appR.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				
@@ -1044,7 +1042,7 @@ public class BinaryOp extends Hop
 				//general case: map expand append, reduce aggregate
 				Lop offset2 = createOffsetLop( right, true ); //offset second input
 				
-				AppendG appG = new AppendG(left.constructLops(), right.constructLops(),	offset, offset2, dt, vt);
+				AppendG appG = new AppendG(left.constructLops(), right.constructLops(),	offset, offset2, dt, vt, ExecType.MR);
 				appG.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
 				appG.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				
@@ -1067,6 +1065,17 @@ public class BinaryOp extends Hop
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param left
+	 * @param right
+	 * @param dt
+	 * @param vt
+	 * @param current
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
 	public Lop constructSPAppendLop( Hop left, Hop right, DataType dt, ValueType vt, Hop current ) 
 		throws HopsException, LopsException
 	{
@@ -1079,37 +1088,38 @@ public class BinaryOp extends Hop
 		long brlen = left.getRowsInBlock();
 		long bclen = left.getColsInBlock();
 		
+		Lop offset = createOffsetLop( left, true ); //offset 1st input
 		AppendMethod am = optFindAppendSPMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
 	
 		switch( am )
 		{
 			case MR_MAPPEND: //special case map-only append
 			{
-				ret = new AppendMSP(left.constructLops(), right.constructLops(), 
-						     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+				ret = new AppendM(left.constructLops(), right.constructLops(), offset, getDataType(), getValueType(), false, ExecType.SPARK);
 				break;
 			}
 			case MR_RAPPEND: //special case reduce append w/ one column block
 			{
-				ret = new AppendRSP(left.constructLops(), right.constructLops(), 
-					     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+				ret = new AppendR(left.constructLops(), right.constructLops(), getDataType(), getValueType(), ExecType.SPARK);
 				break;
 			}	
 			case MR_GAPPEND:
 			{
-				ret = new AppendGSP(left.constructLops(), right.constructLops(), 
-					     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+				Lop offset2 = createOffsetLop( right, true ); //offset second input
+				ret = new AppendG(left.constructLops(), right.constructLops(), offset, offset2, getDataType(), getValueType(), ExecType.SPARK);
 				break;
 			}
 			case SP_GAlignedAppend:
 			{
-				ret = new AppendGAlignedSP(left.constructLops(), right.constructLops(), 
-					     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+				ret = new AppendGAlignedSP(left.constructLops(), right.constructLops(), offset, getDataType(), getValueType());
 				break;
 			}
 			default:
 				throw new HopsException("Invalid SP append method: "+am);
 		}
+		
+		ret.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
+		
 		
 		return ret;
 	}
@@ -1163,11 +1173,11 @@ public class BinaryOp extends Hop
 		group1.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, right2.getNnz());
 		group1.setAllPositions(right2.getBeginLine(), right2.getBeginColumn(), right2.getEndLine(), right2.getEndColumn());
 		
-		AppendR appR1 = new AppendR(group1, group2, dt, vt);
+		AppendR appR1 = new AppendR(group1, group2, dt, vt, ExecType.MR);
 		appR1.getOutputParameters().setDimensions(m1_dim1, m41_dim2, brlen, bclen, m41_nnz);
 		appR1.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 		
-		AppendR appR2 = new AppendR(appR1, group3, dt, vt);
+		AppendR appR2 = new AppendR(appR1, group3, dt, vt, ExecType.MR);
 		appR1.getOutputParameters().setDimensions(m1_dim1, m42_dim2, brlen, bclen, m42_nnz);
 		appR1.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 	

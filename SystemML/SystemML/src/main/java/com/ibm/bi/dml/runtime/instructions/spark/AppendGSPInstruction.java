@@ -1,3 +1,10 @@
+/**
+ * IBM Confidential
+ * OCO Source Materials
+ * (C) Copyright IBM Corp. 2010, 2015
+ * The source code for this program is not published or otherwise divested of its trade secrets, irrespective of what has been deposited with the U.S. Copyright Office.
+ */
+
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
@@ -8,8 +15,6 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -31,102 +36,81 @@ public class AppendGSPInstruction extends BinarySPInstruction
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public enum AppendType{
-		CBIND,
-		STRING,
-	}
+	//TODO cleanup: use offsets and sp/mr consistency
+	//private CPOperand _offset = null;
+	//private CPOperand _offset2 = null;
 	
-	//type (matrix cbind / scalar string concatenation)
-	private AppendType _type;
-	
-	public AppendGSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, AppendType type, String opcode, String istr)
+	public AppendGSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand offset, CPOperand offset2, CPOperand out, String opcode, String istr)
 	{
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.GAppend;
-
-		_type = type;
+		
+		//_offset = offset;
+		//_offset2 = offset2;
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException {
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		
 		//4 parts to the instruction besides opcode and execlocation
-		//two input args, one output arg and offset = 4
-		InstructionUtils.checkNumFields ( str, 4 );
+		//two input args, one output arg and 2xoffset = 5
+		InstructionUtils.checkNumFields ( str, 5 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		in1.split(parts[1]);
-		in2.split(parts[2]);
-		in3.split(parts[3]);
-		out.split(parts[4]);
-		//String offset_str = parts[4];
-		 
-		AppendType type = (in1.getDataType()==DataType.MATRIX) ? AppendType.CBIND : AppendType.STRING;
-		
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
+		CPOperand in3 = new CPOperand(parts[3]);
+		CPOperand in4 = new CPOperand(parts[4]);
+		CPOperand out = new CPOperand(parts[5]);
 		
 		if(!opcode.equalsIgnoreCase("gappend"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendGSPInstruction: " + str);
 		else
 			return new AppendGSPInstruction(new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1)), 
-										   in1, in2, in3, out, type, opcode, str);
+										   in1, in2, in3, in4, out, opcode, str);
 	}
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
-		if( _type == AppendType.CBIND )
-		{		
-			// general case append (map-extend, aggregate)
-			SparkExecutionContext sec = (SparkExecutionContext)ec;
-			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-			MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			
-			if(!mc1.dimsKnown() || !mc2.dimsKnown()) {
-				throw new DMLRuntimeException("The dimensions unknown for inputs");
-			}
-			else if(mc1.getRows() != mc2.getRows()) {
-				throw new DMLRuntimeException("The number of rows of inputs should match for append instruction");
-			}
-			else if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
-				throw new DMLRuntimeException("The block sizes donot match for input matrices");
-			}
-			
-			if(!mcOut.dimsKnown()) {
-				mcOut.set(mc1.getRows(), mc1.getCols() + mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-			}
-			
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-			
-			if(mc1.getCols() % mc1.getColsPerBlock() == 0) {
-				throw new DMLRuntimeException("Incorrect append instruction when mc1.getCols() % mc1.getColsPerBlock() == 0. Should have used AppendGAlignedSP");
-			}
-			else {
-				// General case: This one needs shifting and merging and hence has huge performance hit.
-				long indexOfLastColumn = (long) Math.ceil( (double)mc1.getCols() / (double)mc1.getColsPerBlock() );
-				int widthOfLastColumn = UtilFunctions.computeBlockSize(mc1.getCols(), indexOfLastColumn, mc1.getColsPerBlock());
-				JavaPairRDD<MatrixIndexes,MatrixBlock> shifted_in2 = 
-						in2.flatMapToPair(new ShiftMatrix(widthOfLastColumn, mc1.getCols(), mc1.getColsPerBlock(), mc1.getCols() + mc2.getCols()));
-				out = in1.cogroup(shifted_in2).mapToPair(new MergeWithShiftedBlocks(mc1.getCols(), mc1.getColsPerBlock(), mc1.getCols() + mc2.getCols()));
-			}
-			
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
-			sec.addLineageRDD(output.getName(), input2.getName());
+		// general case append (map-extend, aggregate)
+		SparkExecutionContext sec = (SparkExecutionContext)ec;
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		
+		if(!mc1.dimsKnown() || !mc2.dimsKnown()) {
+			throw new DMLRuntimeException("The dimensions unknown for inputs");
 		}
-		else //STRING
-		{
-			throw new DMLRuntimeException("Error: String append only valid as CPInstruction");
-			// InstructionUtils.processStringAppendInstruction(ec, input1, input2, output);
-		}		
+		else if(mc1.getRows() != mc2.getRows()) {
+			throw new DMLRuntimeException("The number of rows of inputs should match for append instruction");
+		}
+		else if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
+			throw new DMLRuntimeException("The block sizes donot match for input matrices");
+		}
+		
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+		
+		if(mc1.getCols() % mc1.getColsPerBlock() == 0) {
+			throw new DMLRuntimeException("Incorrect append instruction when mc1.getCols() % mc1.getColsPerBlock() == 0. Should have used AppendGAlignedSP");
+		}
+		else {
+			// General case: This one needs shifting and merging and hence has huge performance hit.
+			long indexOfLastColumn = (long) Math.ceil( (double)mc1.getCols() / (double)mc1.getColsPerBlock() );
+			int widthOfLastColumn = UtilFunctions.computeBlockSize(mc1.getCols(), indexOfLastColumn, mc1.getColsPerBlock());
+			JavaPairRDD<MatrixIndexes,MatrixBlock> shifted_in2 = 
+					in2.flatMapToPair(new ShiftMatrix(widthOfLastColumn, mc1.getCols(), mc1.getColsPerBlock(), mc1.getCols() + mc2.getCols()));
+			out = in1.cogroup(shifted_in2).mapToPair(new MergeWithShiftedBlocks(mc1.getCols(), mc1.getColsPerBlock(), mc1.getCols() + mc2.getCols()));
+		}
+		
+		//put output RDD handle into symbol table
+		updateBinaryAppendOutputMatrixCharacteristics(sec);
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), input1.getName());
+		sec.addLineageRDD(output.getName(), input2.getName());
 	}
 	
 	public static class MergeWithShiftedBlocks implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, MatrixIndexes, MatrixBlock> {

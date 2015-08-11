@@ -219,6 +219,25 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 			}
 		}	
 	}
+	
+	/**
+	 * 
+	 * @param sec
+	 * @throws DMLRuntimeException
+	 */
+	protected void updateBinaryAppendOutputMatrixCharacteristics(SparkExecutionContext sec) 
+		throws DMLRuntimeException
+	{
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown()) { 
+			if( !mc1.dimsKnown() || !mc2.dimsKnown() )
+				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from inputs.");
+			
+			mcOut.set(mc1.getRows(), mc1.getCols()+mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+		}	
+	}
 
 	/**
 	 * 

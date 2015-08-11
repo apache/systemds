@@ -4063,10 +4063,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				MatrixBlock ret1 = (MatrixBlock) outlist.get(0).getValue();
 				MatrixBlock tmp1 = m2.sliceOperations(1, rlen, 1, blockColFactor-clen, new MatrixBlock());
 				appendOperations(tmp1, ret1);
-				
+	
 				//prepare output block 2
 				MatrixBlock ret2 = (MatrixBlock) outlist.get(1).getValue();
-				m2.sliceOperations(1, rlen, m2.clen-(blockColFactor-clen)+1, m2.clen, ret2);
+				m2.sliceOperations(1, rlen, blockColFactor-clen+1, m2.clen, ret2);
 			}
 		}
 	}

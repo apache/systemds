@@ -21,15 +21,15 @@
 #								 - 3: feature vectors 	
 # TE	  String   ---          Column indices of X as a column vector which contain timestamp (first row) and event information (second row)
 # F 	  String   " "			Column indices of X as a column vector which are to be used for fitting the Cox model
-# R   	  String   " "	        If factors (categorical variables) are available in the input matrix X, location to read the matrix R containing 
+# R   	  String   " "	        If factors (categorical variables) are available in the input matrix X, location to read matrix R containing 
 #								the start and end indices of the factors in X
 #								 - R[,1]: start indices
 #								 - R[,2]: end indices	
 #								Alternatively, user can specify the indices of the baseline level of each factor which needs to be removed from X; 
 #								in this case the start and end indices corresponding to the baseline level need to be the same;
 #								if R is not provided by default all variables are considered to be continuous 
-# M       String   ---          Location to store results of Cox regression analysis including estimated regression parameters of the fitted 
-#								Cox model (the betas), their standard errors and confidence intervals and p-values 
+# M       String   ---          Location to store the results of Cox regression analysis including estimated regression parameters of the fitted 
+#								Cox model (the betas), their standard errors, confidence intervals, and P-values 
 # S       String   " "          Location to store a summary of some statistics of the fitted cox proportional hazard model including			
 #								no. of records, no. of events, log-likelihood, AIC, Rsquare (Cox & Snell), and max possible Rsquare; 
 #								by default is standard output  
@@ -51,33 +51,33 @@
 #	M[,2]: exp(betas)
 #	M[,3]: standard error of betas
 #	M[,4]: Z 
-#	M[,5]: p-value
+#	M[,5]: P-value
 #	M[,6]: lower 100*(1-alpha)% confidence interval of betas
 #	M[,7]: upper 100*(1-alpha)% confidence interval of betas
 #
-# Two log files containing a summary of some statistics of the fitted model in CSV format:
+# Two log files containing a summary of some statistics of the fitted model:
 # 1- File S with the following format 
-#	- line 1: no. of records
-#	- line 2: no.of events
+#	- line 1: no. of observations
+#	- line 2: no. of events
 #   - line 3: log-likelihood 
 #	- line 4: AIC
 #	- line 5: Rsquare (Cox & Snell)
 #	- line 6: max possible Rsquare
 # 2- File T with the following format
-#	- line 1: Likelihood ratio test statistic, degree of freedom, p-value
-#	- line 2: Wald test statistic, degree of freedom, p-value
-#	- line 3: Score (log-rank) test statistic, degree of freedom, p-value
+#	- line 1: Likelihood ratio test statistic, degree of freedom, P-value
+#	- line 2: Wald test statistic, degree of freedom, P-value
+#	- line 3: Score (log-rank) test statistic, degree of freedom, P-value
 # 
 # Additionally, the following matrices are stored (needed for prediction)
 # 1- A column matrix RT that contains the order-preserving recoded timestamps from X 
-# 2- Matrix XO which is matrix X sorted according to timestamps  
+# 2- Matrix XO which is matrix X with sorted timestamps  
 # 3- Variance-covariance matrix of the betas COV
-# 4- A column matrix MF that contains the column indices of X excluding the baseline factors if available
+# 4- A column matrix MF that contains the column indices of X with the baseline factors removed (if available)
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f Cox.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE F=INTPUT_DIR/F R=INTPUT_DIR/R 
 #									  M=OUTPUT_DIR/M S=OUTPUT_DIR/S T=OUTPUT_DIR/T COV=OUTPUT_DIR/COV RT=OUTPUT_DIR/RT 
-#									  XO=OUTPUT_DIR/XO MF=OUTPUT/MF alpha=0.01 tol=0.000001 moi=100 mii=20 fmt=csv
+#									  XO=OUTPUT_DIR/XO MF=OUTPUT/MF alpha=0.05 tol=0.000001 moi=100 mii=20 fmt=csv
 
 fileX = $X;
 fileTE = $TE;
@@ -235,23 +235,25 @@ while (sum_g2 > exit_g2 & i < maxiter) {
     d = - r;  
     trust_bound_reached = FALSE;  
     j = 0;
+
+	exp_Xb = exp (X %*% b);
+	exp_Xb_agg = aggregate (target = exp_Xb, groups = RT, fn = "sum");
+	D_r_rev = cumsum (I_rev %*% exp_Xb_agg); # denominator
+	X_exp_Xb = X * exp_Xb;
+	X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
+	X_exp_Xb_rev_agg = select %*% X_exp_Xb_rev_agg;
+
     while (r2 > exit_r2 & (! trust_bound_reached) & j < maxinneriter) { 
         j = j + 1;
 		# computing Hessian times d (Hd)
 		# part 1 Hd_1
-		exp_Xb = exp (X %*% b);
-		exp_Xb_agg = aggregate (target = exp_Xb, groups = RT, fn = "sum");
 		Xd = X %*% d;
 		X_Xd_exp_Xb = X * (Xd) * exp_Xb;
 		X_Xd_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_Xd_exp_Xb);
 		X_Xd_exp_Xb_rev_agg = select %*% X_Xd_exp_Xb_rev_agg;
 		
-		D_r_rev = cumsum (I_rev %*% exp_Xb_agg); # denominator
 		Hd_1 = X_Xd_exp_Xb_rev_agg / D_r_rev;
 		# part 2 Hd_2
-		X_exp_Xb = X * exp_Xb;
-		X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
-		X_exp_Xb_rev_agg = select %*% X_exp_Xb_rev_agg;
 		
 		Xd_exp_Xb = Xd * exp_Xb;
 		Xd_exp_Xb_rev_agg = cumsum (I_rev_all %*% Xd_exp_Xb);
@@ -304,30 +306,58 @@ if (sum_g2 > exit_g2 & i >= maxiter) {
 	print ("Trust region Newton method did not converge!");
 }
 
+
 print ("COMPUTING HESSIAN...");
 
-# compute Hessian
+H0 = matrix (0, rows = D, cols = D);
 H = matrix (0, rows = D, cols = D);
+
+X_exp_Xb_rev_2 = I_rev_all %*% X_exp_Xb;
+X_rev_2 = I_rev_all %*% X;
+
+X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
+X_exp_Xb_rev_agg = select %*% X_exp_Xb_rev_agg; 
+
 parfor (i in 1:D, check = 0) {
 	Xi = X[,i];
+	Xi_rev = I_rev_all %*% Xi;
+
+	## ----------Start calculating H0--------------	
+	# part 1 H0_1
+	Xi_X = X_rev_2[,i:D] * Xi_rev;
+	Xi_X_rev_agg = cumsum (Xi_X);
+	Xi_X_rev_agg = select %*% Xi_X_rev_agg;
+	H0_1 = Xi_X_rev_agg / e_r_rev_agg;
+
+	# part 2 H0_2
+	Xi_agg = aggregate (target = Xi, groups = RT, fn = "sum");
+	Xi_agg_rev_agg = cumsum (I_rev %*% Xi_agg);	
+	H0_2_num = X_agg[,i:D] * Xi_agg_rev_agg; # numerator
+	H0_2 = H0_2_num / (e_r_rev_agg ^ 2);
+
+	H0[i,i:D] = colSums ((H0_1 - H0_2) * d_r_rev);
+	#-----------End calculating H0--------------------
+		
+	## ----------Start calculating H--------------
 	# part 1 H_1
-	Xi_X_exp_Xb = X_exp_Xb * Xi;
-	Xi_X_exp_Xb_rev_agg = cumsum (I_rev_all %*% Xi_X_exp_Xb);
+	Xi_X_exp_Xb = X_exp_Xb_rev_2[,i:D] * Xi_rev;
+	Xi_X_exp_Xb_rev_agg = cumsum (Xi_X_exp_Xb);
 	Xi_X_exp_Xb_rev_agg = select %*% Xi_X_exp_Xb_rev_agg;
-	
 	H_1 = Xi_X_exp_Xb_rev_agg / D_r_rev;
+
 	# part 2 H_2
 	Xi_exp_Xb = exp_Xb * Xi;
 	Xi_exp_Xb_agg = aggregate (target = Xi_exp_Xb, groups = RT, fn = "sum"); 
-	X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
-	X_exp_Xb_rev_agg = select %*% X_exp_Xb_rev_agg; 
 	
 	Xi_exp_Xb_agg_rev_agg = cumsum (I_rev %*% Xi_exp_Xb_agg);
-	H_2_num = X_exp_Xb_rev_agg * Xi_exp_Xb_agg_rev_agg; # numerator
+	H_2_num = X_exp_Xb_rev_agg[,i:D] * Xi_exp_Xb_agg_rev_agg; # numerator
 	H_2 = H_2_num / (D_r_rev ^ 2);
-	#
-	H[i,] = colSums ((H_1 - H_2) * d_r_rev);
+	H[i,i:D] = colSums ((H_1 - H_2) * d_r_rev);
+	#-----------End calculating H--------------------
 }
+H = H + t(H) - diag( diag (H));
+H0 = H0 + t(H0) - diag( diag (H0));
+
 
 # compute standard error for betas
 H_inv = inv (H);
@@ -371,27 +401,6 @@ lratio_t = 2 * o_init - 2 * o;
 lratio_p = 1 - cdf (target = lratio_t, dist = "chisq", df = D);
 T_str = append (T_str, "Likelihood ratio test = " + lratio_t + " on " + D + " df, p = " + lratio_p + " ");
 
-print ("COMPUTING H(0)...");
-
-# Score (log-rank) test
-# compute H(0)
-H0 = matrix (0, rows = D, cols = D);
-parfor (i in 1:D, check = 0) {
-	Xi = X[,i];
-	# part 1 H0_1
-	Xi_X = X * Xi;
-	Xi_X_rev_agg = cumsum (I_rev_all %*% Xi_X);
-	Xi_X_rev_agg = select %*% Xi_X_rev_agg;
-	
-	H0_1 = Xi_X_rev_agg / e_r_rev_agg;
-	# part 2 H0_2
-	Xi_agg = aggregate (target = Xi, groups = RT, fn = "sum");
-	Xi_agg_rev_agg = cumsum (I_rev %*% Xi_agg);	
-	H0_2_num = X_agg * Xi_agg_rev_agg; # numerator
-	H0_2 = H0_2_num / (e_r_rev_agg ^ 2);
-	#
-	H0[i,] = colSums ((H0_1 - H0_2) * d_r_rev);
-}
 
 H0_inv = inv (H0);
 score_t = as.scalar (t (g0) %*% H0_inv %*% g0);

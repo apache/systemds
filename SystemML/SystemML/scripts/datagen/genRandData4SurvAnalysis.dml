@@ -23,7 +23,7 @@
 # s       Int      1            If type=kaplan-meier the number of categorical features used for stratifying
 # f       Int      10           If type=kaplan-meier maximum number of levels (i.e., distinct values) of g+s categorical features
 # m       Int      100          If type=cox the number of features in the model
-# sp      Double   0.8          If type=cox the sparsity of the feature matrix 
+# sp      Double   1.0          If type=cox the sparsity of the feature matrix 
 # O       String   ---          Location to write the output matrix containing random data for the kaplan-meier or the cox model 
 # B       String   ---          If type=cox location to write the output matrix containing the coefficients for the cox model 
 # TE 	  String   ---			Location to store column indices of X corresponding to timestamp (first row) and event information (second row)

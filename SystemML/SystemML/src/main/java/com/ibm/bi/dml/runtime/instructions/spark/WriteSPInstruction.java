@@ -19,7 +19,6 @@ import org.apache.spark.api.java.function.PairFunction;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -27,7 +26,6 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -123,23 +121,23 @@ public class WriteSPInstruction extends SPInstruction
 			//if the file already exists on HDFS, remove it.
 			MapReduceTool.deleteFileIfExistOnHDFS( fname );
 
+			//prepare output info according to meta data
 			String outFmt = input3.getName();
+			OutputInfo oi = OutputInfo.stringToOutputInfo(outFmt);
 				
+			//get input rdd
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 			MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 			
-			
-			MatrixObject mo = (MatrixObject)sec.getVariable(input1.getName());
-			OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
-						
-			if (outFmt.equalsIgnoreCase("matrixmarket") || outFmt.equalsIgnoreCase("textcell")) {
+			if(    oi == OutputInfo.MatrixMarketOutputInfo
+				|| oi == OutputInfo.TextCellOutputInfo     ) 
+			{
 				JavaRDD<String> header = null;
 				
 				if(outFmt.equalsIgnoreCase("matrixmarket")) {
 					ArrayList<String> headerContainer = new ArrayList<String>(1);
 					// First output MM header
-					String headerStr = "%%MatrixMarket matrix coordinate real general\n"
-							+
+					String headerStr = "%%MatrixMarket matrix coordinate real general\n" +
 							// output number of rows, number of columns and number of nnz
 							mc.getRows() + " " + mc.getCols() + " " + mc.getNonZeros() ;
 					headerContainer.add(headerStr);
@@ -147,14 +145,13 @@ public class WriteSPInstruction extends SPInstruction
 				}
 				
 				JavaRDD<String> ijv = in1.flatMap(new ConvertMatrixBlockToIJVLines(mc.getRowsPerBlock(), mc.getColsPerBlock()));
-				if(header != null) {
+				if(header != null)
 					customSaveTextFile(header.union(ijv), fname, true);
-				}
-				else {
+				else
 					customSaveTextFile(ijv, fname, false);
-				}
 			}
-			else if (outFmt.equalsIgnoreCase("csv") ) {
+			else if( oi == OutputInfo.CSVOutputInfo ) 
+			{
 				String sep = ",";
 				boolean sparse = false;
 				boolean hasHeader = false;
@@ -180,24 +177,18 @@ public class WriteSPInstruction extends SPInstruction
 				
 				customSaveTextFile(out, fname, false);
 			}
-			else if (outFmt.equalsIgnoreCase("binaryblock")) {
-			// else if(oi == OutputInfo.BinaryBlockOutputInfo) {
+			else if( oi == OutputInfo.BinaryBlockOutputInfo ) {
 				in1.saveAsHadoopFile(fname, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
 			}
-			else if (outFmt.equalsIgnoreCase("binarycell")) {
-			// else if(oi == OutputInfo.BinaryCellOutputInfo) {
+			else if( oi == OutputInfo.BinaryCellOutputInfo ) {
 				throw new DMLRuntimeException("Writing using binary cell format is not implemented in WriteSPInstruction");
 			}
 			else {
 				throw new DMLRuntimeException("Unexpected data format: " + outFmt);
 			}
 			
-			// Write Metadata file
-			try {
-				MapReduceTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), mc, oi, formatProperties);
-			} catch (IOException e) {
-				throw new DMLRuntimeException("Unable to write metadata file in WriteSPInstruction");
-			}	
+			// write Metadata file
+			MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);	
 		}
 		catch(IOException ex)
 		{
@@ -205,14 +196,9 @@ public class WriteSPInstruction extends SPInstruction
 		}
 	}
 	
-	private void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) throws DMLRuntimeException {
-		//if the file already exists on HDFS, remove it.
-		try {
-			MapReduceTool.deleteFileIfExistOnHDFS( fname );
-		} catch (IOException e) {
-			throw new DMLRuntimeException("Error: While deleting file on HDFS");
-		}
-		
+	private void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) 
+		throws DMLRuntimeException 
+	{
 		if(inSingleFile) {
 			Random rand = new Random();
 			String randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();

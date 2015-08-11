@@ -47,7 +47,6 @@
 type = $type; # either "kaplan-meier" or "cox" 
 num_records = $n; 
 lambda = ifdef ($l, 2.0); 
-v = ifdef ($v, 1.5);
 p_event = ifdef ($p, 0.8); # 1 - prob. of a record being censored
 # parameters related to the kaplan-meier model
 n_groups = ifdef ($g, 2);
@@ -65,8 +64,9 @@ p_censor = 1 - p_event; # prob. that record is censored
 
 if (type == "kaplan-meier") {
 	
+	v = ifdef ($v, 1.5);
 	# generate categorical features used for grouping and stratifying
-	X = ceil (rand (rows = num_records, cols = n_groups + n_strata, min = 0.000000001, max = max_level - 0.000000001, pdf = "uniform", sparsity = sparsity));
+	X = ceil (rand (rows = num_records, cols = n_groups + n_strata, min = 0.000000001, max = max_level - 0.000000001, pdf = "uniform"));
 	
 	# generate timestamps
 	U = rand (rows = num_records, cols = 1, min = 0.000000001, max = 1); 
@@ -74,6 +74,7 @@ if (type == "kaplan-meier") {
 
 } else if (type == "cox") {
 
+	v = ifdef ($v, 50);
 	# generate feature matrix
 	X = rand (rows = num_records, cols = num_features, min = 1, max = 5, pdf = "uniform", sparsity = sparsity);
 

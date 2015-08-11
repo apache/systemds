@@ -21,23 +21,24 @@
 #												- R[,3]: end indices
 #											  If R is not provided by default all variables are assumed to be scale
 # bins          		Int 	 20			  Number of equiheight bins per scale feature to choose thresholds
-# depth         		Int 	 25			  Maximum depth of the learnt tree
+# depth         		Int 	 25			  Maximum depth of the learned tree
 # num_leaf      		Int      10           Number of samples when splitting stops and a leaf node is added
 # num_samples   		Int 	 3000		  Number of samples at which point we switch to in-memory subtree building
-# num_trees     		Int 	 10			  Number of trees used in the random forest model
+# num_trees     		Int 	 10			  Number of trees to be learned in the random forest model
 # subsamp_rate  		Double   1.0		  Parameter controlling the size of each tree in the forest; samples are selected from a 
 #											  Poisson distribution with parameter subsamp_rate (the default value is 1.0)
-# feature_subset    	Double   0.5    	  Number of feature used as candidates for splitting at each tree node as a power of features in dataset;
-#											  by default square root of features (i.e., feature_subset = 0.5) are used as each tree node 
+# feature_subset    	Double   0.5    	  Parameter that controls the number of feature used as candidates for splitting at each tree node 
+#											  as a power of number of features in the dataset;
+#											  by default square root of features (i.e., feature_subset = 0.5) are used at each tree node 
 # impurity      		String   "Gini"    	  Impurity measure: entropy or Gini (the default)
-# M             		String 	 ---	   	  Location to write matrix M containing the learnt tree
+# M             		String 	 ---	   	  Location to write matrix M containing the learned tree
 # C 					String   " "		  Location to write matrix C containing the number of times samples are chosen in each tree of the random forest 
 # S_map					String   " "		  Location to write the mappings from scale feature ids to global feature ids
 # C_map					String   " "		  Location to write the mappings from categorical feature ids to global feature ids
 # fmt     	    		String   "text"       The output format of the model (matrix M), such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
-# Matrix M where each column corresponds to a node in the learnt tree and each row contains the following information:
+# Matrix M where each column corresponds to a node in the learned tree and each row contains the following information:
 #	 M[1,j]: id of node j (in a complete binary tree)
 #	 M[2,j]: tree id to which node j belongs
 #	 M[3,j]: Offset (no. of columns) to left child of j 
@@ -51,7 +52,7 @@
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f random-forest.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/model
-#     				                 				   bins=20 depth=25 num_leaf=10 num_samples=3000 num_trees = 50 impurity=Gini fmt=csv
+#     				                 				   bins=20 depth=25 num_leaf=10 num_samples=3000 num_trees=10 impurity=Gini fmt=csv
 
 
 # External function for binning
@@ -1372,7 +1373,7 @@ if (ncol (M) > 1) {
 		parent_ids = floor (M[1,] /2);
 		cond1 = ppred (labels[,1:(ncol (M) - 1)], labels[,2:ncol (M)], "=="); # siebling leaves with same label
 		cond2 = ppred (parent_ids[,1:(ncol (M) - 1)], parent_ids[,2:ncol (M)], "=="); # same parents
-		cond3 = ppred (tree_ids[1,(ncol (M) - 1)], tree_ids[,2:ncol (M)], "=="); # same tree
+		cond3 = ppred (tree_ids[,1:(ncol (M) - 1)], tree_ids[,2:ncol (M)], "=="); # same tree
 		red_leaf_ind =  cond1 * cond2 * cond3 * leaf_ind[,2:ncol (M)];	
 		
 		if (sum (red_leaf_ind) > 0) { # if redundant subtrees exist

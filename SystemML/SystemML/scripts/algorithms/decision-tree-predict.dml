@@ -13,14 +13,14 @@
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE     DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# X             String   ---          Location to read test feature matrix X; note that X needs to be both recoded and dummy coded 
-# Y	 		    String   " "		  Location to read true label matrix Y if requested; note that Y needs to be both recoded and dummy coded
-# R   	  		String   " "	      Location to read the matrix R which for each feature in X contains the following information 
+# X             String   ---          Location to read the test feature matrix X; note that X needs to be both recoded and dummy coded 
+# Y	 		    String   " "		  Location to read the true label matrix Y if requested; note that Y needs to be both recoded and dummy coded
+# R   	  		String   " "	      Location to read matrix R which for each feature in X contains the following information 
 #										- R[,1]: column ids
 #										- R[,2]: start indices 
 #										- R[,3]: end indices
 #									  If R is not provided by default all variables are assumed to be scale
-# M             String 	 ---	   	  Location to read matrix M containing the learnt tree i the following format
+# M             String 	 ---	   	  Location to read matrix M containing the learned tree in the following format
 #								 		- M[1,j]: id of node j (in a complete binary tree)
 #	 									- M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
 #	 									- M[3,j]: Feature index of the feature that node j looks at if j is an internal node, otherwise 0

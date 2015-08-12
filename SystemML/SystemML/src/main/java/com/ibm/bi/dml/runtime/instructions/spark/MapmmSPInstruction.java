@@ -264,7 +264,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			if( _type == CacheType.LEFT )
 			{
 				//for all matching left-hand-side blocks
-				for( int i=0; i<pm.getNumRowBlocks(); i++ ) 
+				for( int i=1; i<=pm.getNumRowBlocks(); i++ ) 
 				{
 					MatrixBlock left = pm.getMatrixBlock(i, (int)ixIn.getRowIndex());
 					MatrixIndexes ixOut = new MatrixIndexes();
@@ -280,7 +280,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			else //if( _type == CacheType.RIGHT )
 			{
 				//for all matching right-hand-side blocks
-				for( int j=0; j<pm.getNumColumnBlocks(); j++ ) 
+				for( int j=1; j<=pm.getNumColumnBlocks(); j++ ) 
 				{
 					//get the right hand side matrix
 					MatrixBlock right = pm.getMatrixBlock((int)ixIn.getColumnIndex(), j);

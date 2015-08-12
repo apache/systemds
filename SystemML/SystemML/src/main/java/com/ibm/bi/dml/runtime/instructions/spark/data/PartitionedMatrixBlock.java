@@ -118,13 +118,21 @@ public class PartitionedMatrixBlock implements Externalizable
 	 * @param rowIndex
 	 * @param colIndex
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
 	public MatrixBlock getMatrixBlock(int rowIndex, int colIndex) 
+		throws DMLRuntimeException 
 	{
+		//check for valid block index
+		int nrblks = getNumRowBlocks();
+		int ncblks = getNumColumnBlocks();
+		if( rowIndex <= 0 || rowIndex > nrblks || colIndex <= 0 || colIndex > ncblks ) {
+			throw new DMLRuntimeException("Block indexes ["+rowIndex+","+colIndex+"] out of range ["+nrblks+","+ncblks+"]");
+		}
+		
+		//get the requested matrix block
 		int rix = rowIndex - 1;
 		int cix = colIndex - 1;
-		int ncblks = getNumColumnBlocks();
-		
 		return _partBlocks[rix*ncblks + cix];
 	}
 	

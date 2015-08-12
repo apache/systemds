@@ -156,7 +156,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		
 		//execute map binary operation
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-				.flatMapToPair(new MatrixVectorBinaryOpFunction(true, isColVector, in2, bop, isOuter));
+				.flatMapToPair(new MatrixVectorBinaryOpFunction(bop, in2, true, isColVector, isOuter));
 		
 		//set output RDD
 		updateBinaryOutputMatrixCharacteristics(sec);

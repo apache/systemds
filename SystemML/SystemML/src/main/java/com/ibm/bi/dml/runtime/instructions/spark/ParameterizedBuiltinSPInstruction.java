@@ -250,7 +250,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//store output rdd handle
 			updateUnaryOutputMatrixCharacteristics(sec, rddVar, output.getName());
 			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), params.get("target"));
+			sec.addLineageRDD(output.getName(), rddVar);
 		}
 	}
 	

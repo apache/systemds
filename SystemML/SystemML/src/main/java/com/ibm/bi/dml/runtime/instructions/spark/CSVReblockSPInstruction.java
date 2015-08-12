@@ -135,7 +135,6 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 			mcOut.set(numRows, expectedNumColumns, brlen, bclen);
 		}
 					
-//			Broadcast<HashMap<Integer, Long>> offsetsBroadcast = sec.getSparkContext().broadcast(rowOffsets);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> chunks = JavaPairRDD.fromJavaRDD(csvLines.mapPartitionsWithIndex(
 						new ConvertCSVLinesToMatrixBlocks(rowOffsets, 
 								mcOut.getRows(), mcOut.getCols(), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), 
@@ -146,6 +145,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		
 		// SparkUtils.setLineageInfoForExplain(this, blocksRDD, output.getName());
 		sec.setRDDHandleForVariable(output.getName(), blocksRDD);
+		sec.addLineageRDD(output.getName(), input1.getName());
 	}
 	
 	private long expectedNumColumns = -1;

@@ -259,7 +259,7 @@ if (num_groups > 1 & test_type != "none") {
 	U_OE = matrix (0, rows = num_groups, cols = num_strata);
 	OBS = matrix (0, rows = num_groups, cols = num_strata);
 	EXP = matrix (0, rows = num_groups, cols = num_strata);
-	V_sum = matrix (0, rows = num_groups-1, cols = num_groups-1);
+	V_sum_total = matrix (0, rows = num_groups-1, cols = (num_groups-1) * num_strata);
 	n_event_all_global = matrix(1, rows=num_groups, cols=num_strata);
 } else if (num_groups == 1 & test_type != "none") {
 	stop ("Data contains only one group or no groups, at least two groups are required for test!");
@@ -521,8 +521,15 @@ parfor (s in 1:num_strata, check = 0) {
 				}
 			}
 		}
-		V_sum = V_sum + V;
+		V_start_ind = (s - 1) * (num_groups - 1) + 1;
+		V_sum_total[,V_start_ind:(V_start_ind + ncol (V) - 1)] = V;
 	}
+}
+
+V_sum = matrix (0, rows = num_groups-1, cols = num_groups-1);
+for (s in 1:num_strata) {
+	V_start_ind = (s - 1) * (num_groups - 1) + 1;
+	V_sum = V_sum + V_sum_total[,V_start_ind:(V_start_ind + num_groups - 1 - 1)];
 }
 
 if (num_groups > 1 & test_type != "none") {

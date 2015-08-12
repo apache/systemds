@@ -19,8 +19,7 @@
 # TE	  String   ---          Column indices of X which contain timestamp (first entry) and event information (second entry) in csv format
 # GI	  String   ---          Column indices of X corresponding to the factors to be used for grouping in csv format
 # SI	  String   ---          Column indices of X corresponding to the factors to be used for stratifying in csv format				
-# KM       String   ---          Location to write the matrix containing the results of the Kaplan-Meier analysis; see below for the description
-# OFF     String   ---          Location to write the row offsets of the output matrix KM
+# O       String   ---          Location to write the matrix containing the results of the Kaplan-Meier analysis; see below for the description
 # M       String   ---          Location to write Matrix M containing the following statistic: total number of events, median and its confidence intervals; 
 #								if survival data for multiple groups and strata are provided each row of M contains the above statistics per group and stratum
 # T 	  String   " "			If survival data from multiple groups available and ttype=log-rank or wilcoxon, 
@@ -35,7 +34,8 @@
 # fmt     String   "text"       The output format of results of the Kaplan-Meier analysis, such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
-# 1- Matrix KM whose dimension depends on the number of groups (denoted by g) and strata (denoted by s) in the data and has the following schema:
+# 1- Matrix KM whose dimension depends on the number of groups (denoted by g) and strata (denoted by s) in the data: 
+#	each collection of 7 consecutive columns in KM corresponds to a unique combination of groups and strata in the data with the following schema
 # 	1. col: timestamp
 # 	2. col: no. at risk
 # 	3. col: no. of events
@@ -43,8 +43,7 @@
 # 	5. col: standard error of surv
 # 	6. col: lower 100*(1-alpha)% confidence interval for surv
 # 	7. col: upper 100*(1-alpha)% confidence interval for surv
-# 2- A column matrix OFF that contains the row offsets of matrix KM: each entry in OFF corresponds to a unique combination of groups and strata in the data  
-# 3- Matrix M whose dimension depends on the number of groups (g) and strata (s) in the data (k denotes the number of factors used for grouping 
+# 2- Matrix M whose dimension depends on the number of groups (g) and strata (s) in the data (k denotes the number of factors used for grouping 
 #	,i.e., ncol(GI) and l denotes the number of factors used for stratifying, i.e., ncol(SI))
 #	M[,1:k]: unique combination of values in the k factors used for grouping 
 #	M[,(k+1):(k+l)]: unique combination of values in the l factors used for stratifying
@@ -58,7 +57,7 @@
 #	M[,2]: median of surv
 #	M[,3]: lower 100*(1-alpha)% confidence interval of the median of surv 
 #	M[,4]: upper 100*(1-alpha)% confidence interval of the median of surv
-# 4- If survival data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix T and an g x 5 matrix T_GROUPS_OE with
+# 3- If survival data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix T and an g x 5 matrix T_GROUPS_OE with
 #	T_GROUPS_OE[,1] = no. of events	
 #	T_GROUPS_OE[,2] = observed value (O)
 #	T_GROUPS_OE[,3] = expected value (E)
@@ -70,15 +69,14 @@
 #	T[1,4] = P-value
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f KM.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE GI=INPUT_DIR/GI SI=INPUT_DIR/SI KM=OUTPUT_DIR/KM 
-#											M=OUTPUT_DIR/M OFF=OUTPUT_DIR/OFF T=OUTPUT_DIR/T alpha=0.05 etype=greenwood ctype=log fmt=csv
+# hadoop jar SystemML.jar -f KM.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE GI=INPUT_DIR/GI SI=INPUT_DIR/SI O=OUTPUT_DIR/O 
+#											M=OUTPUT_DIR/M T=OUTPUT_DIR/T alpha=0.05 etype=greenwood ctype=log fmt=csv
 
 fileX = $X;
 fileTE = $TE;
 fileGI = ifdef ($GI, " ");
 fileSI = ifdef ($SI, " ");
-fileKM = $KM;
-fileOFF = $OFF;
+fileO = $O;
 fileM = $M;
 
 # Default values of some parameters
@@ -93,17 +91,17 @@ conf_type = ifdef ($ctype, "log");       # $ctype="log"
 test_type = ifdef ($ttype, "none");      # $ttype="none"
 
 X = read (fileX);
-TE = read (fileTE, format = "csv");
+TE = read (fileTE);
 if (fileGI != " ") {
-	GI = read (fileGI, format = "csv");
+	GI = read (fileGI);
 } else {
-    GI = matrix(0,rows=1,cols=1);
+    GI = matrix (0, rows = 1, cols = 1);
 }
 
 if (fileSI != " "){
-	SI = read (fileSI, format = "csv");
+	SI = read (fileSI);
 } else {
-    SI = matrix(0,rows=1,cols=1);
+    SI = matrix (0, rows = 1, cols = 1);
 }
 
 TE = t(TE);
@@ -242,9 +240,8 @@ if (n_group_cols == 0 & n_stratum_cols == 0) {
 ######## BEGIN KAPLAN-MEIER ANALYSIS
 print ("BEGIN KAPLAN-MEIER SURVIVAL FIT SCRIPT");
 
-KM = matrix (0, rows = num_records, cols = num_groups * num_strata * 8);
-KM_cols = seq (1, num_groups * num_strata * 8);
-OFFSETS = matrix (0, rows = num_groups * num_strata, cols = 1);
+KM = matrix (0, rows = num_records, cols = num_groups * num_strata * 7);
+KM_cols_select = matrix (1, rows = num_groups * num_strata * 7, cols = 1);
 GSI = matrix (0, rows = num_groups * num_strata, cols = 2);
 a = 1/0;
 M = matrix (a, rows = num_groups * num_strata, cols = 5);
@@ -323,7 +320,7 @@ parfor (s in 1:num_strata, check = 0) {
 	parfor (g in 1:num_groups, check = 0) {
 	
 		group_ind = ppred (G, g, "==");
-		KM_offset = (s - 1) * num_groups * 8 + (g - 1) * 8;
+		KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
 		M_offset = (s - 1) * num_groups + g;
 		if (sum (group_ind) != 0) { # group g is present in the stratum s
 
@@ -399,7 +396,7 @@ parfor (s in 1:num_strata, check = 0) {
 			n_event_sum = sum (n_event);
 			n_event_sum_all = sum(n_event_all);
 			if (n_event_sum > 0) {
-				# KM_offset = (s - 1) * num_groups * 8 + (g - 1) * 8;
+				# KM_offset = (s - 1) * num_groups * 7 + (g - 1) * 7;
 				KM[1:n_time,KM_offset + 1] = time;
 				KM[1:n_time,KM_offset + 2] = n_risk;			
 				KM[1:n_time,KM_offset + 3] = n_event;
@@ -408,8 +405,6 @@ parfor (s in 1:num_strata, check = 0) {
 				KM[1:n_time,KM_offset + 6] = CI_l;
 				KM[1:n_time,KM_offset + 7] = CI_r;				
 			}			
-			KM[1:n_time,KM_offset + 8] = matrix (1, rows = n_time, cols = 1);
-			OFFSETS[M_offset,1] = n_time;
 						
 			######## ESTIMATE MEDIAN OF SERVIVAL TIMES AND ITS 100(1-ALPHA)% CONFIDENCE INTERVAL
 		
@@ -467,7 +462,7 @@ parfor (s in 1:num_strata, check = 0) {
 			}
 		} else {
 			print ("group " + g + " is not present in the stratum " + s);
-			KM_cols[(KM_offset + 1):(KM_offset + 8),1] = matrix (0, rows = 8, cols = 1);
+			KM_cols_select[(KM_offset + 1):(KM_offset + 7),1] = matrix (0, rows = 7, cols = 1);
 			M_cols[M_offset,1] = 0;
 		}		
 	}
@@ -527,11 +522,11 @@ parfor (s in 1:num_strata, check = 0) {
 }
 
 if (num_groups > 1 & test_type != "none") {
-		V_sum = matrix (0, rows = num_groups-1, cols = num_groups-1);
-		for (s in 1:num_strata) {
-	        V_start_ind = (s - 1) * (num_groups - 1) + 1;
-	       	V_sum_total_part = V_sum_total[,V_start_ind:(V_start_ind + num_groups - 2)];
-			V_sum = V_sum + V_sum_total_part;
+	V_sum = matrix (0, rows = num_groups-1, cols = num_groups-1);
+	for (s in 1:num_strata) {
+		V_start_ind = (s - 1) * (num_groups - 1) + 1;
+	    V_sum_total_part = V_sum_total[,V_start_ind:(V_start_ind + num_groups - 2)];
+		V_sum = V_sum + V_sum_total_part;
 	}
 		
 	U_sum = rowSums (U);
@@ -592,21 +587,14 @@ if (n_group_cols > 0 & n_stratum_cols > 0) {
 }
 
 # pull out non-empty columns from KM
-KM_cols = removeEmpty (target = KM_cols, margin = "rows");
-tab_KM = table (KM_cols, seq (1, nrow (KM_cols)), ncol (KM), nrow (KM_cols));
-
-KM = replace (target = KM, pattern = "NaN", replacement = "Infinity");
-KM = removeEmpty (target = KM %*% tab_KM, margin = "rows");
-KM = replace (target = KM, pattern = "Infinity", replacement = "NaN");
-OFFSETS = removeEmpty (target = OFFSETS, margin = "rows");
-KM = matrix (KM, rows = nrow (KM) * (ncol (KM) / 8), cols = 8);
+KM = t (append (t (KM), KM_cols_select) * KM_cols_select);
+KM = removeEmpty (target = KM, margin = "cols");
 KM = removeEmpty (target = KM, margin = "rows");
-KM = KM[,1:7];
+KM = KM[1:(nrow (KM) - 1),];
 
 # write output matrices
 write (M, fileM, format=fmtO);
-write (KM, fileKM, format=fmtO);
-write (OFFSETS, fileOFF, format=fmtO);
+write (KM, fileO, format=fmtO);
 
 if (test_type != "none") {
 	if (num_groups > 1 & fileT != " ") { 

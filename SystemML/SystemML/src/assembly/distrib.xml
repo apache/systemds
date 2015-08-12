@@ -41,6 +41,18 @@
 				<include>apply-transform.dml</include>
 				<include>decision-tree.dml</include>
 				<include>decision-tree-predict.dml</include>
+				<!-- -->
+				<include>ALS.dml</include>
+				<include>ALS_predict.dml</include>
+				<include>ALS_topk_predict.dml</include>
+				<include>Cox.dml</include>
+				<include>Cox-predict.dml</include>
+				<include>KM.dml</include>
+				<include>PCA.dml</include>
+				<include>random-forest.dml</include>
+				<include>random-forest-predict.dml</include>
+				<include>StepGLM.dml</include>
+				<include>StepLinearRegDS.dml</include>
 			</includes>
 			<outputDirectory>./algorithms</outputDirectory>
 		</fileSet>
@@ -56,6 +68,8 @@
 				<include>csv2bin.dml</include>
 				<include>sample.dml</include>
 				<include>rowIndexMax.dml</include>
+				<!-- -->
+				<include>splitXY-dummy.dml</include>
 			</includes>
 			<outputDirectory>./algorithms/utils</outputDirectory>
 		</fileSet>

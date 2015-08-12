@@ -256,7 +256,8 @@ public class SparkExecutionContext extends ExecutionContext
 		MatrixObject mo = getMatrixObject(varname);
 		
 		Broadcast<PartitionedMatrixBlock> bret = null;
-		if( mo.getBroadcastHandle()!=null ) 
+		if(    mo.getBroadcastHandle()!=null 
+			&& mo.getBroadcastHandle().getBroadcast().isValid() ) 
 		{
 			//reuse existing broadcast handle
 			bret = mo.getBroadcastHandle().getBroadcast();
@@ -616,6 +617,7 @@ public class SparkExecutionContext extends ExecutionContext
 					}
 					
 					//cleanup RDD and broadcast variables (recursive)
+					//note: requires that mo.clearData already removed back references
 					if( mo.getRDDHandle()!=null ) { 
  						rCleanupLineageObject(mo.getRDDHandle());
 					}	
@@ -637,8 +639,9 @@ public class SparkExecutionContext extends ExecutionContext
 		if( lob.getNumReferences() > 0 )
 			return;
 			
-		//abort if still reachable through symbol table
-		if( getVariables().hasReferences(lob) )
+		//abort if still reachable through matrix object (via back references for 
+		//robustness in function calls and to prevent repeated scans of the symbol table)
+		if( lob.hasBackReference() )
 			return;
 		
 		//cleanup current lineage object (from driver/executors)

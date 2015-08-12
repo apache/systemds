@@ -389,7 +389,14 @@ public class MatrixObject extends CacheableData
 	
 	public void setRDDHandle( RDDObject rdd )
 	{
+		//cleanup potential old back reference
+		if( _rddHandle != null )
+			_rddHandle.setBackReference(null);
+		
+		//add new rdd handle
 		_rddHandle = rdd;
+		if( _rddHandle != null )
+			rdd.setBackReference(this);
 	}
 	
 	public BroadcastObject getBroadcastHandle()
@@ -399,7 +406,14 @@ public class MatrixObject extends CacheableData
 	
 	public void setBroadcastHandle( BroadcastObject bc )
 	{
+		//cleanup potential old back reference
+		if( _bcHandle != null )
+			_bcHandle.setBackReference(null);
+			
+		//add new broadcast handle
 		_bcHandle = bc;
+		if( _bcHandle != null )
+			bc.setBackReference(this);
 	}
 	
 	
@@ -682,6 +696,12 @@ public class MatrixObject extends CacheableData
 		// clear the in-memory data
 		_data = null;	
 		clearCache();
+		
+		// clear rdd/broadcast back refs
+		if( _rddHandle != null )
+			_rddHandle.setBackReference(null);
+		if( _bcHandle != null )
+			_bcHandle.setBackReference(null);
 		
 		// change object state EMPTY
 		_dirtyFlag = false;

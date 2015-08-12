@@ -20,9 +20,12 @@
 # Vrows   Integer  ---      The number of rows in the original matrix
 # Vcols   Integer  ---      The number of columns in the original matrix
 # fmt     String   "text"   The output format of the factor matrix user-id/item-id/score
-# hadoop jar system-ml.jar -f ALS_predict.dml -nvargs Vrows=3 Vcols=4  X=OUTPUT/recommend.mtx 
-# L=OUTPUT/L.mtx  R=OUTPUT/R.mtx  Y=OUTPUT/recommend.mtx
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: Matrix Y containing the predicted ratings for users and items specified in input matrix X
 #
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f ALS-predict.dml -nvargs Vrows=100000 Vcols=10000 X=INPUT_DIR/X L=OUTPUT_DIR/L R=OUTPUT_DIR/R 
+#											  Y=OUTPUT_DIR/Y fmt=csv
 
 fileX      = $X;
 fileY 	   = $Y;
@@ -37,46 +40,46 @@ L = read (fileL);
 R = read (fileR);
 
 # we assume that the number of columns in X is equal to 2: user-id and item-id
-n = nrow(X);
-m = ncol(X);
+n = nrow (X);
+m = ncol (X);
 
 if (m != 2){
 	stop("The input matrix must have 2 columns: user-id and item-id");
 }
 
-Lrows = nrow(L);
-Rcols = ncol(R);
+Lrows = nrow (L);
+Rcols = ncol (R);
 
-X_user_max = max(X[,1]);
-X_item_max = max(X[,2]);
+X_user_max = max (X[,1]);
+X_item_max = max (X[,2]);
 
-#initializing Y matrix
-Y = matrix(0,rows=n,cols=3);
+# initializing Y matrix
+Y = matrix(0, rows = n, cols = 3);
 
-if ( Lrows < Vrows | Rcols <  Vcols |  X_user_max > Vrows | X_item_max >  Vcols ){
-       stop("Predictions can be provided only if the number of rows and columns of the original matrix have been retained after the factorization and the users and items
-        in the test data are also available in the factor matrices");
+if (X_user_max > Vrows | X_item_max >  Vcols ) {
+	stop ("Predictions cannot be provided. Maximum user id (item id) exceed the number of rows (columns) of V.");
+}
+if (Lrows != Vrows | Rcols !=  Vcols) {
+	stop ("Predictions cannot be provided. Number of rows L (columns of R) does not match the number of rows (column) of V.");
 }
 
 
 # user2item table
-UI = table(X[,1],X[,2], Vrows, Vcols);
+ones = matrix (1, rows = n, cols = 1);
+UI = table (X[,1], X[,2], ones, Vrows, Vcols);
 
 # summing up over all items for all users
-U = rowSums(UI)
+U = rowSums (UI)
 
 # replacing all rows > 1 with 1
-U =  ppred(U,1,">=");
+U =  ppred (U, 1, ">=");
 
 # selecting users from factor L
 U_prime = L * U;
-
-# removes all rows with 0s
-# U_prime = removeEmpty(target=U_prime, margin="rows")
 
 V_prime = (U_prime %*% R);
 
 # Applying items filter
 V_prime = UI * V_prime;
 
-write(V_prime, fileY, format=fmtO);
+write(V_prime, fileY, format = fmtO);

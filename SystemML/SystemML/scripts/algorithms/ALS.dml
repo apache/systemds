@@ -18,7 +18,7 @@
 # V       String   ---      Location to read the input matrix V to be factorized
 # L       String   ---      Location to write the factor matrix L
 # R       String   ---      Location to write the factor matrix R
-# M       String   ---      Location to write the model: V
+# M      String   ---      Location to write the input matrix M with empty rows and columns removed (if there are any)
 # rank    Int      10       Rank of the factorization
 # reg     String   "L2"	    Regularization: 
 #						    "L2" = L2 regularization;
@@ -31,11 +31,14 @@
 #							if check is FALSE thr is ignored
 # fmt     String   "text"   The output format of the factor matrices L and R, such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
-# OUTPUT: Matrix L and Matrix R
+# OUTPUT: 
+# 1- An m x r matrix L, where r is the factorization rank 
+# 2- An r x n matrix R
+# 3- An m x n input matrix M with empty rows and columns removed (if there are any) 
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f ALS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R V=OUTPUT_DIR/V
-#     				                         rank=10 reg="wL2" lambda=0.0001 fmt=csv
+# hadoop jar SystemML.jar -f ALS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R M=OUTPUT_DIR/M
+#     				                         rank=10 reg="L2" lambda=0.0001 fmt=csv
 
 fileV      = $V;
 fileL	   = $L;
@@ -53,29 +56,30 @@ fmtO       = ifdef ($fmt, "text");      # $fmt="text";
 
 V = read (fileV);
 
+write (V, fileM, format = fmtO);
+
 # check the input matrix V, if some rows or columns contain only zeros remove them from V  
-n_non_empty_rows = rowSums (ppred (V, 0, "!="));
-n_non_empty_cols = colSums (ppred (V, 0, "!="));
-ind_empty_rows = ppred (n_non_empty_rows, 0, "==");
-ind_empty_cols = ppred (n_non_empty_cols, 0, "==");
-n_empty_rows = sum (ind_empty_rows);
-n_empty_cols = sum (ind_empty_cols);
-if (n_empty_rows > 0) {
+V_nonzero_ind = ppred (V, 0, "!=");
+row_nonzeros = rowSums (V_nonzero_ind);
+col_nonzeros = t (colSums (V_nonzero_ind));
+orig_nonzero_rows_ind = ppred (row_nonzeros, 0, "!=");
+orig_nonzero_cols_ind = ppred (col_nonzeros, 0, "!=");
+num_zero_rows = nrow (V) - sum (orig_nonzero_rows_ind);
+num_zero_cols = ncol (V) - sum (orig_nonzero_cols_ind);
+if (num_zero_rows > 0) {
 	print ("Matrix V contains empty rows! These rows will be removed.");
 	V = removeEmpty (target = V, margin = "rows");
 }
-if (n_empty_cols > 0) {
+if (num_zero_cols > 0) {
 	print ("Matrix V contains empty columns! These columns will be removed.");
 	V = removeEmpty (target = V, margin = "cols");
 }
-
-# initialize L and R randomly 
-V_nonzero_ind = ppred (V, 0, "!=")
-# global_sum = sum (V);
-# nnz = sum (V_nonzero_ind);
-# global_mean = global_sum / nnz;
-# center V around its mean
-# V = V - (global_mean * V_nonzero_ind);
+if (num_zero_rows > 0 | num_zero_cols > 0) {
+	print ("Recomputing nonzero rows and columns!");
+	V_nonzero_ind = ppred (V, 0, "!=");
+	row_nonzeros = rowSums (V_nonzero_ind);
+	col_nonzeros = t (colSums (V_nonzero_ind));	
+}
 
 ###### MAIN PART ######
 m = nrow (V);
@@ -87,19 +91,12 @@ R = rand (rows = n, cols = r, min = -0.5, max = 0.5);
 
 # initializing transformed matrices
 Vt = t(V);
-
-V_nonzero_ind_row = nrow (V_nonzero_ind);
-V_nonzero_ind_col = ncol (V_nonzero_ind);
-row_nonzeros = matrix(1, rows = V_nonzero_ind_row, cols = 1);
-col_nonzeros = matrix(1, rows = V_nonzero_ind_col, cols = 1);
   
 # check for regularization
 if (reg == "L2") {
 	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH LAMBDA - " + lambda);
 } else if (reg == "wL2") {
 	print ("BEGIN ALS SCRIPT WITH NONZERO SQUARED LOSS + WEIGHTED L2 WITH LAMBDA - " + lambda);
-	row_nonzeros = rowSums (V_nonzero_ind);
-	col_nonzeros = t(colSums (V_nonzero_ind));
 } else {
 	stop ("wrong regularization! " + reg);
 }
@@ -151,9 +148,15 @@ if (!converged) {
    print ("Max iteration achieved but not converged!");
 } 
 
-Rt = t(R);
+# inject 0s in L if original V had empty rows
+if (num_zero_rows > 0) {
+	L = removeEmpty (target = diag (orig_nonzero_rows_ind), margin = "cols") %*% L;
+}
+# inject 0s in L if original V had empty rows
+if (num_zero_cols > 0) {
+	R = removeEmpty (target = diag (orig_nonzero_cols_ind), margin = "cols") %*% R; 
+}
+Rt = t (R);
 write (L, fileL, format=fmtO);
 write (Rt, fileR, format=fmtO);
-#write V as part of the model
-write(V,fileM, format=fmtO);
 

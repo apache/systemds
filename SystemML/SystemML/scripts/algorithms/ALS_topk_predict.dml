@@ -20,8 +20,12 @@
 # V	  	  String   ---      Location of original matrix V: user-id x item-id
 # K	  	  Int      5	    The number of top K items	
 # fmt     String   "text"   The output format of the factor matrix user-id/item-id/score
-# hadoop jar system-ml.jar -f ALS_topk_predict.dml -nvargs V=OUTPUT_DIR/V.mtx  X=OUTPUT_DIR/topk_recommend.mtx  
-# L=OUTPUT_DIR/L.mtx  R=OUTPUT_DIR/R.mtx  Y=OUTPUT_DIR/predict.mtx fmt=csv
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: Matrix Y containing the top-K predicted ratings for users and items specified in input matrix X
+#
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar system-ml.jar -f ALS-topk-predict.dml -nvargs X=INPUT_DIR/X L=INPUT_DIR/L R=INPUT_DIR/R V=INTPUT_DIR/V.mtx 
+#													Y=OUTPUT_DIR/Y K=5 fmt=csv
 
 fileX      = $X;
 fileY 	   = $Y;
@@ -31,7 +35,6 @@ fileV	   = $V;
 K	  	   = ifdef ($K, 5);
 fmtO       = ifdef ($fmt, "text");    # $fmt="text";
 
-
 X = read (fileX);
 L = read (fileL);
 R = read (fileR);
@@ -40,7 +43,8 @@ V = read (fileV);
 Vrows = nrow(V);
 Vcols = ncol(V);
 
-K = min(Vcols,K);
+zero_cols_ind = ppred (colSums (ppred (R, 0, "!=")), 0, "==");
+K = min (Vcols - sum (zero_cols_ind), K);
 
 n = nrow(X);
 
@@ -55,8 +59,9 @@ if ( Lrows < Vrows | Rcols <  Vcols |  X_user_max > Vrows ){
 }
 
 # creats projection matrix to select users
-s = seq(1,nrow(X[,1]));
-projection_matrix = table(s, X[,1],nrow(X),nrow(L));
+s = seq(1, n);
+ones = matrix (1, rows = n, cols = 1);
+projection_matrix = table(s, X[,1], ones, n, Lrows);
 
 # selects users from factor L
 U_prime = projection_matrix %*% L;
@@ -68,53 +73,34 @@ V_filter = U_prime %*% R;
 V_prime = projection_matrix %*% V;
 
 # filter for already recommended items
-V_prime = ppred(V_prime,0,'==');
+V_prime = ppred(V_prime, 0, '==');
 
 # removes already recommended items and creating user2item matrix
 V_filter = V_prime * V_filter; 
 
 
-#stores sorted movies for selected users 
-V_top_indices = matrix(0, rows=nrow(V_filter), cols=K);
-V_top_values = matrix(0, rows=nrow(V_filter), cols=K);
+# stores sorted movies for selected users 
+V_top_indices = matrix(0, rows = nrow (V_filter), cols = K);
+V_top_values = matrix(0, rows = nrow (V_filter), cols = K);
 
-# a very large number to mask the max ratings
-LARGE_VALUE = 999999;
+# a large number to mask the max ratings
+range = max (V_filter) - min (V_filter) + 1;
 
 # uses rowIndexMax/rowMaxs to update kth ratings
 for (i in 1:K){
-	rowIndexMax = rowIndexMax(V_filter);
-	rowMaxs     = rowMaxs(V_filter);
+	rowIndexMax = rowIndexMax (V_filter);
+	rowMaxs = rowMaxs (V_filter);
 	V_top_indices[,i] = rowIndexMax;
 	V_top_values[,i] = rowMaxs;
-	
-	# projection_matrix to mask the indices with very large negative number
-	projection_matrix = (1 - LARGE_VALUE*table(seq(1,nrow(V_filter),1),rowIndexMax,nrow(V_filter),ncol(V_filter)));
-	
-	#applying the mask to V_filter
-	V_filter = V_filter * projection_matrix;
+	V_filter = V_filter - range * table (seq (1, nrow (V_filter), 1), rowIndexMax, nrow(V_filter), ncol(V_filter));
 }
 
+V_top_indices = V_top_indices * ppred (V_top_values, 0, ">");
+
 # append users as a first column
-V_top_indices = append(X[,1],V_top_indices);
-V_top_values = append(X[,1],V_top_values);
+V_top_indices = append (X[,1], V_top_indices);
+V_top_values = append (X[,1], V_top_values);
 
-#writing top k elements
-write(V_top_indices, fileY, format=fmtO);
-write(V_top_values, fileY+".ratings", format=fmtO);
-
-
-
-### ---  Old logic for selecting top k ratings  ----- 
-# stores sorted items for selected users 
-#V_top_indices = matrix(0, rows=ncol(V_filter), cols=nrow(V_filter));
-#V_top_values = matrix(0, rows=ncol(V_filter), cols=nrow(V_filter));
-
-#parfor (i in 1:ncol(V_filter)){
-#	V_top_indices[i,] = t(order(target=V_filter[,i], decreasing=TRUE, index.return=TRUE));
-#	V_top_values[i,] = t(order(target=V_filter[,i], decreasing=TRUE, index.return=FALSE));
-#}
-
-#selecting top K
-#V_top_indices = V_top_indices[,1:K];
-#V_top_values = V_top_values[,1:K];
+# writing top K elements
+write (V_top_indices, fileY, format = fmtO);
+write(V_top_values, fileY+".ratings", format = fmtO);

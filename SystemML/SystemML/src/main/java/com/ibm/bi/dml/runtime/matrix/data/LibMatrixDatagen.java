@@ -245,8 +245,7 @@ public class LibMatrixDatagen
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static void generateRandomMatrix( MatrixBlock out,
-			                RandomMatrixGenerator rgen, long[] nnzInBlocks, 
+	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen, long[] nnzInBlocks, 
 							Well1024a bigrand, long bSeed ) 
 		throws DMLRuntimeException
 	{
@@ -271,6 +270,9 @@ public class LibMatrixDatagen
 		int rpb = rgen._rowsPerBlock;
 		int cpb = rgen._colsPerBlock;
 		double sparsity = rgen._sparsity;
+		
+		// sanity check valid dimensions and sparsity
+		checkMatrixDimensionsAndSparsity(rows, cols, sparsity);
 		
 		// Determine the sparsity of output matrix
 		// if invoked from CP: estimated NNZ is for entire matrix (nnz=0, if 0 initialized)
@@ -344,8 +346,7 @@ public class LibMatrixDatagen
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static void generateRandomMatrix( MatrixBlock out,
-            RandomMatrixGenerator rgen, long[] nnzInBlocks, 
+	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen, long[] nnzInBlocks, 
 			Well1024a bigrand, long bSeed, int k ) 
 		throws DMLRuntimeException	
 	{	
@@ -364,6 +365,9 @@ public class LibMatrixDatagen
 		if(bigrand == null && nnzInBlocks!=null)
 			invokedFromCP = false;
 
+		// sanity check valid dimensions and sparsity
+		checkMatrixDimensionsAndSparsity(rows, cols, sparsity);
+				
 		/*
 		 * Setup min and max for distributions other than "uniform". Min and Max
 		 * are set up in such a way that the usual logic of
@@ -712,6 +716,20 @@ public class LibMatrixDatagen
 				} // sparse or dense 
 			} // cbj
 		} // rbi	
+	}
+	
+	/**
+	 * 
+	 * @param rows
+	 * @param cols
+	 * @param sp
+	 * @throws DMLRuntimeException
+	 */
+	private static void checkMatrixDimensionsAndSparsity(int rows, int cols, double sp) 
+		throws DMLRuntimeException
+	{
+		if( rows <= 0 || cols <= 0 || sp < 0 || sp > 1)
+			throw new DMLRuntimeException("Invalid matrix characteristics: "+rows+"x"+cols+", "+sp);
 	}
 	
 	// modified version of java.util.nextInt

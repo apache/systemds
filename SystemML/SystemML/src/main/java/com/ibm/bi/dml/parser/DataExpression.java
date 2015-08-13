@@ -490,7 +490,9 @@ public class DataExpression extends DataIdentifier
 		_varParams.remove(name);
 	}
 	
-	private String processInputFileName(HashMap<String, ConstIdentifier> currConstVars) throws LanguageException {
+	private String processInputFileName(HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
+		throws LanguageException 
+	{
 		String filename = null;
 		
 		Expression fileNameExpr = getVarParam(IO_FILENAME);
@@ -505,7 +507,7 @@ public class DataExpression extends DataIdentifier
 				switch (op){
 				case PLUS:
 						filename = "";
-						filename = fileNameCat(expr, currConstVars, filename);
+						filename = fileNameCat(expr, currConstVars, filename, conditional);
 						// Since we have computed the value of filename, we update
 						// varParams with a const string value
 						StringIdentifier fileString = new StringIdentifier(filename, 
@@ -515,14 +517,12 @@ public class DataExpression extends DataIdentifier
 						addVarParam(IO_FILENAME, fileString);
 					break;
 				default:
-					LOG.error(this.printErrorLocation()  + "for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ");
-					throw new LanguageException(this.printErrorLocation()  + "for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ");
+					raiseValidateError("for read method, parameter " + IO_FILENAME + " can only be const string concatenations. ", conditional);
 				}
 			}
 		}
 		else {
-			LOG.error(this.printErrorLocation() + "for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
-			throw new LanguageException(this.printErrorLocation() + "for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ");
+			raiseValidateError("for read method, parameter " + IO_FILENAME + " can only be a const string or const string concatenations. ", conditional);
 		}
 		
 		return filename;
@@ -619,7 +619,7 @@ public class DataExpression extends DataIdentifier
 			JSONObject configObject = null;	
 
 			// Process expressions in input filename
-			String inputFileName = processInputFileName(currConstVars);
+			String inputFileName = processInputFileName(currConstVars, conditional);
 			
 			// Obtain and validate metadata filename
 			String mtdFileName = getMTDFileName(inputFileName);
@@ -636,7 +636,7 @@ public class DataExpression extends DataIdentifier
 			
 			// check if file is matrix market format
 			if (formatTypeString == null && shouldReadMTD){
-				boolean isMatrixMarketFormat = checkHasMatrixMarketFormat(inputFileName, mtdFileName); 
+				boolean isMatrixMarketFormat = checkHasMatrixMarketFormat(inputFileName, mtdFileName, conditional); 
 				if (isMatrixMarketFormat){
 					
 					formatTypeString = FORMAT_TYPE_VALUE_MATRIXMARKET;
@@ -650,7 +650,7 @@ public class DataExpression extends DataIdentifier
 			
 			// check if file is delimited format
 			if (formatTypeString == null) {
-				boolean isDelimitedFormat = checkHasDelimitedFormat(inputFileName); 
+				boolean isDelimitedFormat = checkHasDelimitedFormat(inputFileName, conditional); 
 				
 				if (isDelimitedFormat){
 					addVarParam(FORMAT_TYPE,new StringIdentifier(FORMAT_TYPE_VALUE_CSV,
@@ -687,7 +687,7 @@ public class DataExpression extends DataIdentifier
 				shouldReadMTD = false;
 				
 				// get metadata from MatrixMarket format file
-				String[] headerLines = readMatrixMarketFile(inputFileName);
+				String[] headerLines = readMatrixMarketFile(inputFileName, conditional);
 				
 				// process 1st line of MatrixMarket format -- must be identical to legal header
 				String legalHeaderMM = "%%MatrixMarket matrix coordinate real general";
@@ -755,11 +755,11 @@ public class DataExpression extends DataIdentifier
 			configObject = null;
 			
 			if (shouldReadMTD){
-				configObject = readMetadataFile(mtdFileName);
+				configObject = readMetadataFile(mtdFileName, conditional);
 		        		    
 		        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
 		        if (configObject != null){
-		        	parseMetaDataFileParameters(mtdFileName, configObject);
+		        	parseMetaDataFileParameters(mtdFileName, configObject, conditional);
 		        }
 		        else {
 		        	LOG.warn("Metadata file: " + new Path(mtdFileName) + " not provided");
@@ -1721,12 +1721,14 @@ public class DataExpression extends DataIdentifier
 	}
 	
 	
-	private String fileNameCat(BinaryExpression expr, HashMap<String, ConstIdentifier> currConstVars, String filename)throws LanguageException{
+	private String fileNameCat(BinaryExpression expr, HashMap<String, ConstIdentifier> currConstVars, String filename, boolean conditional)
+		throws LanguageException
+	{
 		// Processing the left node first
 		if (expr.getLeft() instanceof BinaryExpression 
 				&& ((BinaryExpression)expr.getLeft()).getKind()== BinaryExpression.Kind.BinaryOp
 				&& ((BinaryExpression)expr.getLeft()).getOpCode() == BinaryOp.PLUS){
-			filename = fileNameCat((BinaryExpression)expr.getLeft(), currConstVars, filename)+ filename;
+			filename = fileNameCat((BinaryExpression)expr.getLeft(), currConstVars, filename, conditional)+ filename;
 		}
 		else if (expr.getLeft() instanceof ConstIdentifier){
 			filename = ((ConstIdentifier)expr.getLeft()).toString()+ filename;
@@ -1739,14 +1741,13 @@ public class DataExpression extends DataIdentifier
 			filename = ((StringIdentifier)currConstVars.get(name)).getValue() + filename;
 		}
 		else {
-			LOG.error(this.printErrorLocation() + "Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.");
-			throw new LanguageException(this.printErrorLocation() + "Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.");
+			raiseValidateError("Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.", conditional);
 		}
 		// Now process the right node
 		if (expr.getRight()instanceof BinaryExpression 
 				&& ((BinaryExpression)expr.getRight()).getKind()== BinaryExpression.Kind.BinaryOp
 				&& ((BinaryExpression)expr.getRight()).getOpCode() == BinaryOp.PLUS){
-			filename = filename + fileNameCat((BinaryExpression)expr.getRight(), currConstVars, filename);
+			filename = filename + fileNameCat((BinaryExpression)expr.getRight(), currConstVars, filename, conditional);
 		}
 		// DRB: CHANGE
 		else if (expr.getRight() instanceof ConstIdentifier){
@@ -1760,8 +1761,7 @@ public class DataExpression extends DataIdentifier
 			filename =  filename + ((StringIdentifier)currConstVars.get(name)).getValue();
 		}
 		else {
-			LOG.error(this.printErrorLocation() + "Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.");
-			throw new LanguageException(this.printErrorLocation() + "Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.");
+			raiseValidateError("Parameter " + IO_FILENAME + " only supports a const string or const string concatenations.", conditional);
 		}
 		return filename;
 			
@@ -1804,7 +1804,7 @@ public class DataExpression extends DataIdentifier
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void parseMetaDataFileParameters(String mtdFileName, JSONObject configObject) 
+	private void parseMetaDataFileParameters(String mtdFileName, JSONObject configObject, boolean conditional) 
 		throws LanguageException 
 	{
     	for( Object obj : configObject.entrySet() ){
@@ -1818,22 +1818,19 @@ public class DataExpression extends DataIdentifier
 					isValidName = true;
 			}
     		
-			if (!isValidName){
-				LOG.error(this.printErrorLocation() + "MTD file " + mtdFileName + " contains invalid parameter name: " + key);
-				throw new LanguageException(this.printErrorLocation() + "MTD file " + mtdFileName + " contains invalid parameter name: " + key);
+			if (!isValidName){ //wrong parameters always rejected
+				raiseValidateError("MTD file " + mtdFileName + " contains invalid parameter name: " + key, false);
 			}
 			
 			// if the read method parameter is a constant, then verify value matches MTD metadata file
 			if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier) 
-					&& !getVarParam(key.toString()).toString().equalsIgnoreCase(val.toString()) ){
-				
-				LOG.error(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
-						"Config file value: " + val.toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));
-				
-				throw new LanguageException(this.printErrorLocation() + "parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
-						"Config file value: " + val.toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()));	
+					&& !getVarParam(key.toString()).toString().equalsIgnoreCase(val.toString()) )
+			{
+				raiseValidateError("parameter " + key.toString() + " has conflicting values in read statement definition and metadata. " +
+						"Config file value: " + val.toString() + " from MTD file.  Read statement value: " + getVarParam(key.toString()), conditional);
 			}
-			else {
+			else 
+			{
 				// if the read method does not specify parameter value, then add MTD metadata file value to parameter list
 				if (getVarParam(key.toString()) == null){
 					if ( !key.toString().equalsIgnoreCase(DESCRIPTIONPARAM) ) {
@@ -1858,9 +1855,8 @@ public class DataExpression extends DataIdentifier
 										this.getEndLine(), this.getEndColumn());
 							}
 							else {
-								String msg = "Invalid value provided for '" + DELIM_HAS_HEADER_ROW + "' in metadata file '" + mtdFileName + "'. Must be either TRUE or FALSE.";
-								LOG.error(this.printErrorLocation() + msg);
-								throw new LanguageException(this.printErrorLocation() + msg);	
+								raiseValidateError("Invalid value provided for '" + DELIM_HAS_HEADER_ROW + "' in metadata file '" + mtdFileName + "'. "
+										+ "Must be either TRUE or FALSE.", conditional);
 							}
 							removeVarParam(key.toString());
 							addVarParam(key.toString(), boolId);
@@ -1904,8 +1900,15 @@ public class DataExpression extends DataIdentifier
     	}
 	}
 	
-	public JSONObject readMetadataFile(String filename) throws LanguageException {
-	
+	/**
+	 * 
+	 * @param filename
+	 * @return
+	 * @throws LanguageException
+	 */
+	public JSONObject readMetadataFile(String filename, boolean conditional) 
+		throws LanguageException 
+	{
 		JSONObject retVal = null;
 		boolean exists = false;
 		FileSystem fs = null;
@@ -1913,8 +1916,7 @@ public class DataExpression extends DataIdentifier
 		try {
 			fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 		} catch (Exception e){
-			LOG.error(this.printErrorLocation() + "could not read the configuration file.");
-			throw new LanguageException(this.printErrorLocation() + "could not read the configuration file.", e);
+			raiseValidateError("could not read the configuration file: "+e.getMessage(), false);
 		}
 		
 		Path pt = new Path(filename);
@@ -1934,8 +1936,7 @@ public class DataExpression extends DataIdentifier
 				isDirBoolean = false;
 		}
 		catch(Exception e){
-			LOG.error(this.printErrorLocation() + "error validing whether path " + pt.toString() + " is directory or not");
-        	throw new LanguageException(this.printErrorLocation() + "error validing whether path " + pt.toString() + " is directory or not", e);			
+			raiseValidateError("error validing whether path " + pt.toString() + " is directory or not: "+e.getMessage(), conditional);
 		}
 		
 		// CASE: filename is a directory -- process as a directory
@@ -1950,9 +1951,7 @@ public class DataExpression extends DataIdentifier
 				stats = fs.listStatus(pt);
 			}
 			catch (Exception e){
-				LOG.error(e.toString());
-				LOG.error(this.printErrorLocation() + "for MTD file in directory, error reading directory with MTD file " + pt.toString() + ": " + e.toString());
-				throw new LanguageException(this.printErrorLocation() + "for MTD file in directory, error reading directory with MTD file " + pt.toString() + ": " + e.toString());	
+				raiseValidateError("for MTD file in directory, error reading directory with MTD file " + pt.toString() + ": " + e.getMessage(), conditional);
 			}
 			
 			for(FileStatus stat : stats){
@@ -1964,9 +1963,7 @@ public class DataExpression extends DataIdentifier
 						br = new BufferedReader(new InputStreamReader(fs.open(childPath)));
 					}
 					catch(Exception e){
-						LOG.error(e.toString());
-						LOG.error(this.printErrorLocation() + "for MTD file in directory, error reading part of MTD file with path " + childPath.toString() + ": " + e.toString());
-						throw new LanguageException(this.printErrorLocation() + "for MTD file in directory, error reading part of MTD file with path " + childPath.toString() + e.toString());	
+						raiseValidateError("for MTD file in directory, error reading part of MTD file with path " + childPath.toString() + ": " + e.getMessage(), conditional);
 					}
 					
 					JSONObject childObj = null;
@@ -1974,8 +1971,7 @@ public class DataExpression extends DataIdentifier
 						childObj = JSONObject.parse(br);
 					}
 					catch(Exception e){
-						LOG.error(this.printErrorLocation() + "for MTD file in directory, error parsing part of MTD file with path " + childPath.toString() + ": " + e.toString());
-						throw new LanguageException(this.printErrorLocation() + "for MTD file in directory, error parsing part of MTD file with path " + childPath.toString() + ": " + e.toString());		
+						raiseValidateError("for MTD file in directory, error parsing part of MTD file with path " + childPath.toString() + ": " + e.getMessage(), conditional);
 					}
 					
 			    	for( Object obj : childObj.entrySet() ){
@@ -1998,23 +1994,21 @@ public class DataExpression extends DataIdentifier
 			try {
 				br=new BufferedReader(new InputStreamReader(fs.open(pt)));
 			} catch (Exception e){
-				LOG.error(this.printErrorLocation() + "error reading MTD file with path " + pt.toString() + ": " + e.toString());
-				throw new LanguageException(this.printErrorLocation() + "error reading with path " + pt.toString() + ": " + e.toString());
-	        }
+				raiseValidateError("error reading MTD file with path " + pt.toString() + ": " + e.getMessage(), conditional);
+			}
 			
 			// try parsing MTD file
 			try {
 				retVal =  JSONObject.parse(br);	
 			} catch (Exception e){
-				LOG.error(this.printErrorLocation() + "error parsing MTD file with path " + pt.toString() + ": " + e.toString());
-				throw new LanguageException(this.printErrorLocation() + "error parsing MTD with path " + pt.toString() + ": " + e.toString());
-	        }
+				raiseValidateError("error parsing MTD file with path " + pt.toString() + ": " + e.getMessage(), conditional);
+			}
 		}
 			
 		return retVal;
 	}
 
-	public String[] readMatrixMarketFile(String filename) 
+	public String[] readMatrixMarketFile(String filename, boolean conditional) 
 		throws LanguageException 
 	{
 		String[] retVal = new String[2];
@@ -2033,8 +2027,7 @@ public class DataExpression extends DataIdentifier
 			boolean getFileStatusIsDir = fs.getFileStatus(pt).isDirectory();
 			
 			if (exists && getFileStatusIsDir){
-				LOG.error(this.printErrorLocation() + "MatrixMarket files as directories not supported");
-				throw new LanguageException(this.printErrorLocation() + "MatrixMarket files as directories not supported");
+				raiseValidateError("MatrixMarket files as directories not supported", conditional);
 			}
 			else if (exists) {
 				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(pt)));
@@ -2047,8 +2040,7 @@ public class DataExpression extends DataIdentifier
 					} while ( retVal[1].charAt(0) == '%' );
 					
 					if ( !retVal[0].startsWith("%%") ) {
-						LOG.error(this.printErrorLocation() + "MatrixMarket files must begin with a header line.");
-						throw new LanguageException(this.printErrorLocation() + "MatrixMarket files must begin with a header line.");
+						raiseValidateError("MatrixMarket files must begin with a header line.", conditional);
 					}
 				}
 				finally
@@ -2058,8 +2050,7 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 			else {
-				LOG.error(this.printErrorLocation() + "Could not find the file: " + filename);
-				throw new LanguageException(this.printErrorLocation() + "Could not find the file: " + filename);
+				raiseValidateError("Could not find the file: " + filename, conditional);
 			}
 			
 		} catch (IOException e){
@@ -2071,10 +2062,11 @@ public class DataExpression extends DataIdentifier
 		return retVal;
 	}
 	
-	public boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName) throws LanguageException {
-		
+	public boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName, boolean conditional) 
+		throws LanguageException 
+	{
 		// Check the MTD file exists. if there is an MTD file, return false.
-		JSONObject mtdObject = readMetadataFile(mtdFileName);
+		JSONObject mtdObject = readMetadataFile(mtdFileName, conditional);
 	    
 		if (mtdObject != null)
 			return false;
@@ -2134,10 +2126,12 @@ public class DataExpression extends DataIdentifier
 		}
 	}
 	
-	public boolean checkHasDelimitedFormat(String filename) throws LanguageException {
+	public boolean checkHasDelimitedFormat(String filename, boolean conditional)
+		throws LanguageException 
+	{
 	 
         // if the MTD file exists, check the format is not binary 
-		JSONObject mtdObject = readMetadataFile(filename + ".mtd");
+		JSONObject mtdObject = readMetadataFile(filename + ".mtd", conditional);
         if (mtdObject != null){
         	String formatTypeString = (String)mtdObject.get(FORMAT_TYPE);
             if (formatTypeString != null ) {

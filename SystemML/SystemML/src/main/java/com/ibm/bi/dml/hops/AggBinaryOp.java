@@ -21,6 +21,7 @@ import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.MMCJ;
 import com.ibm.bi.dml.lops.MMRJ;
 import com.ibm.bi.dml.lops.MMTSJ;
+import com.ibm.bi.dml.lops.MMCJ.MMCJType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
@@ -37,6 +38,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
+import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRReducerWithAggregator;
 
 
 /* Aggregate binary (cell operations): Sum (aij + bij)
@@ -1063,17 +1065,20 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		} 
 		else //general case
 		{
-			MMCJ mmcj = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-					             getDataType(), getValueType(), ExecType.MR);
-			mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+			Hop X = getInput().get(0);
+			Hop Y = getInput().get(1);
+			
+			MMCJType type = getMMCJAggregationType(X, Y);
+			MMCJ mmcj = new MMCJ(X.constructLops(), Y.constructLops(), getDataType(), getValueType(), type, ExecType.MR);
+			setOutputDimensions(mmcj);
 			setLineNumbers(mmcj);
 			
 			Group grp = new Group(mmcj, Group.OperationTypes.Sort, getDataType(), getValueType());
-			grp.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+			setOutputDimensions(grp);
 			setLineNumbers(grp);
 			
 			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
-			agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+			setOutputDimensions(agg1);
 			setLineNumbers(agg1);
 			
 			// aggregation uses kahanSum but the inputs do not have correction values
@@ -1101,16 +1106,17 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		setLineNumbers(tY);
 		
 		//matrix multiply
-		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType(), ExecType.MR);
-		mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		MMCJType type = getMMCJAggregationType(X, Y);
+		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType(), type, ExecType.MR);
+		setOutputDimensions(mmcj);
 		setLineNumbers(mmcj);
 		
 		Group grp = new Group(mmcj, Group.OperationTypes.Sort, getDataType(), getValueType());
-		grp.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setOutputDimensions(grp);
 		setLineNumbers(grp);
 		
 		Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
-		agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setOutputDimensions(agg1);
 		setLineNumbers(agg1);
 		
 		// aggregation uses kahanSum but the inputs do not have correction values
@@ -1322,6 +1328,24 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param X
+	 * @param Y
+	 * @return
+	 */
+	private MMCJType getMMCJAggregationType(Hop X, Hop Y)
+	{
+		//choose quickpath (no aggregation) if the aggregation buffer likely has to spill and the smaller block fits
+		//into the minimal cache size and hence is guaranteed not to require spilling
+		double sizeX = OptimizerUtils.estimateSize(X.getDim1(), Math.min(X.getDim2(), X.getColsInBlock()));
+		double sizeY = OptimizerUtils.estimateSize(Math.min(Y.getDim1(), Y.getRowsInBlock()), Y.getDim2());
+		
+		return (dimsKnown() && 2*OptimizerUtils.estimateSize(getDim1(), getDim2())>OptimizerUtils.getRemoteMemBudgetReduce()
+			&& (  sizeX < MMCJMRReducerWithAggregator.MIN_CACHE_SIZE 
+			   || sizeY < MMCJMRReducerWithAggregator.MIN_CACHE_SIZE) ) 
+			   ? MMCJType.NO_AGG : MMCJType.AGG ;
+	}
 
 	/**
 	 * 

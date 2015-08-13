@@ -9,6 +9,7 @@ package com.ibm.bi.dml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.lops.MMCJ.MMCJType;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMult.CacheType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -37,6 +38,10 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 	
 	private String _opcode = null;
 	
+	//optional argument for cpmm
+	private MMCJType _aggType = MMCJType.AGG;
+	
+	//optional argument for mapmm
 	private CacheType _cacheType = null;
 	private boolean _outputEmptyBlocks = true;
 	
@@ -72,6 +77,16 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 		return _outputEmptyBlocks;
 	}
 	
+	public void setMMCJType( MMCJType type )
+	{
+		_aggType = type;
+	}
+	
+	public MMCJType getMMCJType()
+	{
+		return _aggType;
+	}
+	
 	/**
 	 * 
 	 * @param str
@@ -96,7 +111,10 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 			AggregateBinaryInstruction inst = new AggregateBinaryInstruction(aggbin, opcode, in1, in2, out, str);
-			if( parts.length==6 ) {
+			if( parts.length==5 ){
+				inst.setMMCJType(MMCJType.valueOf(parts[4]));
+			}
+			else if( parts.length==6 ) { //mapmm
 				inst.setCacheTypeMapMult( CacheType.valueOf(parts[4]) );
 				inst.setOutputEmptyBlocksMapMult( Boolean.parseBoolean(parts[5]) );
 			}

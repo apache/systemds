@@ -9,8 +9,8 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
+
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -18,6 +18,7 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.lops.MMCJ.MMCJType;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
@@ -124,8 +125,14 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 								                               (AggregateBinaryOperator)aggBinInstruction.getOperator());		
 					}
 					
-					//aggregate block to output buffer
-					aggregator.aggregateToBuffer(indexesbuffer, valueBuffer, tagForLeft==0);
+					//aggregate block to output buffer or direct output
+					if( aggBinInstruction.getMMCJType() == MMCJType.AGG ) {
+						aggregator.aggregateToBuffer(indexesbuffer, valueBuffer, tagForLeft==0);
+					}
+					else { //MMCJType.NO_AGG
+						collectFinalMultipleOutputs.collectOutput(indexesbuffer, valueBuffer, 0, cachedReporter);
+						resultsNonZeros[0]+=valueBuffer.getNonZeros();
+					}
 				}
 			}
 		}
@@ -137,8 +144,10 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 
 	@Override
 	public void configure(JobConf job)
-	{		
+	{	
+		//basic configure (incl inst parsing)
 		super.configure(job);
+		
 		if(resultIndexes.length>1)
 			throw new RuntimeException("MMCJMR only outputs one result");
 		
@@ -177,9 +186,11 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 			}
 		
 			//instantiate cached output
-			aggregator=new PartialAggregator(job, outBufferSize, dim1.getRows(), dim2.getCols(), 
-					dim1.getRowsPerBlock(), dim2.getColsPerBlock(), (tagForLeft!=0), 
-					(AggregateBinaryOperator) aggBinInstruction.getOperator(), valueClass);
+			if( aggBinInstruction.getMMCJType() == MMCJType.AGG ) {
+				aggregator = new PartialAggregator(job, outBufferSize, dim1.getRows(), dim2.getCols(), 
+						dim1.getRowsPerBlock(), dim2.getColsPerBlock(), (tagForLeft!=0), 
+						(AggregateBinaryOperator) aggBinInstruction.getOperator(), valueClass);
+			}
 		} 
 		catch (Exception e) {
 			throw new RuntimeException(e);
@@ -195,7 +206,8 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 		if(cachedReporter!=null)
 		{
 			long start=System.currentTimeMillis(); //incl aggregator.close (delete files)
-			resultsNonZeros[0]+=aggregator.outputToHadoop(collectFinalMultipleOutputs, 0, cachedReporter);
+			if( aggBinInstruction.getMMCJType()==MMCJType.AGG )
+				resultsNonZeros[0]+=aggregator.outputToHadoop(collectFinalMultipleOutputs, 0, cachedReporter);
 			cachedReporter.incrCounter(Counters.COMBINE_OR_REDUCE_TIME, System.currentTimeMillis()-start);
 		}
 	    //aggregator.close();
@@ -203,7 +215,6 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 		//handle empty block output (on first reduce task only)
 		if( outputDummyRecords ) //required for rejecting empty blocks in mappers
 		{
-			HashMap<MatrixIndexes,Integer> bufferMap = aggregator.getBufferMap();
 			long rlen = dim1.getRows();
 			long clen = dim2.getCols();
 			int brlen = dim1.getRowsPerBlock();
@@ -217,7 +228,8 @@ public class MMCJMRReducerWithAggregator extends MMCJMRCombinerReducerBase
 					int realBclen=(int)Math.min((long)bclen, clen-(c-1)*bclen);
 					tmpIx.setIndexes(r, c);
 					//output empty blocks if necessary
-					if( !bufferMap.containsKey(tmpIx) )
+					if(    aggBinInstruction.getMMCJType()==MMCJType.NO_AGG 
+						|| !aggregator.getBufferMap().containsKey(tmpIx)   )
 					{
 						tmpVal.reset(realBrlen,realBclen);
 						collectFinalMultipleOutputs.collectOutput(tmpIx, tmpVal, 0, cachedReporter);

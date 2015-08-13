@@ -23,6 +23,14 @@ public class MMCJ extends Lop
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 		
+	public enum MMCJType {
+		AGG,
+		NO_AGG,
+	}
+	
+	//optional attribute for mr exec type
+	private MMCJType _type = MMCJType.AGG;
+	
 	//optional attribute for spark exec type
 	private SparkAggType _aggtype = SparkAggType.MULTI_BLOCK;
 		
@@ -33,13 +41,15 @@ public class MMCJ extends Lop
 	 * @param op
 	 */
 
-	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
+	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, MMCJType type, ExecType et) 
 	{
 		super(Lop.Type.MMCJ, dt, vt);		
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
+		
+		_type = type;
 		
 		if( et == ExecType.MR )
 		{
@@ -71,7 +81,7 @@ public class MMCJ extends Lop
 	 */
 	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et) 
 	{
-		this(input1, input2, dt, vt, et);
+		this(input1, input2, dt, vt, MMCJType.NO_AGG, et);
 		
 		_aggtype = aggtype;
 	}
@@ -98,6 +108,10 @@ public class MMCJ extends Lop
 		sb.append( getInputs().get(1).prepInputOperand(input_index2));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output_index));
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _type );
+		
 		
 		return sb.toString();
 	}

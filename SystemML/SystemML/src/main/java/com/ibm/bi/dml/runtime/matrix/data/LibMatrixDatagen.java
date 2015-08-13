@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
+import org.apache.spark.util.random.SamplingUtils;
 
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -25,6 +26,7 @@ import com.ibm.bi.dml.runtime.util.NormalPRNGenerator;
 import com.ibm.bi.dml.runtime.util.PRNGenerator;
 import com.ibm.bi.dml.runtime.util.PoissonPRNGenerator;
 import com.ibm.bi.dml.runtime.util.UniformPRNGenerator;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 /**
  *  
@@ -530,6 +532,7 @@ public class LibMatrixDatagen
 				out.setValueDenseUnsafe(idx, 0, out.getValueDenseUnsafe(i, 0));
 				out.setValueDenseUnsafe(i, 0, tmp);
 			}
+	
 		}
 		else 
 		{

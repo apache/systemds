@@ -184,7 +184,8 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "galignedappend", SPINSTRUCTION_TYPE.GAlignedAppend);
 		
 		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPINSTRUCTION_TYPE.Rand);
-		String2SPInstructionType.put( DataGen.SEQ_OPCODE  , SPINSTRUCTION_TYPE.Rand);
+		String2SPInstructionType.put( DataGen.SEQ_OPCODE   , SPINSTRUCTION_TYPE.Rand);
+		String2SPInstructionType.put( DataGen.SAMPLE_OPCODE, SPINSTRUCTION_TYPE.Rand);
 		
 		//ternary instruction opcodes
 		String2SPInstructionType.put( "ctable", SPINSTRUCTION_TYPE.Ternary);

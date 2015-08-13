@@ -16,6 +16,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.api.DMLException;
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -87,61 +88,67 @@ public class SampleTest extends AutomatedTestBase
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			 	String HOME = SCRIPT_DIR + TEST_DIR;
-			boolean exceptionExpected = false;
-			
-			if ( test_type == TEST_TYPE.ERROR )
-				exceptionExpected = true;
-			
-			switch(test_type)
-			{
-			case TWO_INPUTS:
-				if ( _range < _size )
-					exceptionExpected = true;
-				fullDMLScriptName = HOME + TEST_NAME + "2" + ".dml";
-				programArgs = new String[]{"-args", Long.toString(_range),
-						Long.toString(_size),
-                        HOME + OUTPUT_DIR + "A" };
-				break;
-				
-			case THREE_INPUTS1:
-				fullDMLScriptName = HOME + TEST_NAME + "3" + ".dml";
-				programArgs = new String[]{"-args", Long.toString(_range),
-						Long.toString(_size),
-                        (_replace ? "TRUE" : "FALSE"),
-                        HOME + OUTPUT_DIR + "A" };
-				break;
-			case THREE_INPUTS2:
-				if ( _range < _size )
-					exceptionExpected = true;
-				fullDMLScriptName = HOME + TEST_NAME + "3" + ".dml";
-				programArgs = new String[]{"-args", Long.toString(_range),
-                        Long.toString(_size),
-                        Long.toString(_seed),
-                        HOME + OUTPUT_DIR + "A" };
-				break;
-			
-			case FOUR_INPUTS:
-			case ERROR:
-				fullDMLScriptName = HOME + TEST_NAME + "4" + ".dml";
-				programArgs = new String[]{"-args", Long.toString(_range),
-                        Long.toString(_size),
-                        (_replace ? "TRUE" : "FALSE"),
-                        Long.toString(_seed),
-                        HOME + OUTPUT_DIR + "A" };
-				break;
-			}
-			
-			loadTestConfiguration(config);
-
-			runTest(true, exceptionExpected, (exceptionExpected ? DMLException.class : null), -1);
-
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			runSampleTest();
+			rtplatform = RUNTIME_PLATFORM.SPARK;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+			runSampleTest();
+			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			runSampleTest();
+			DMLScript.USE_LOCAL_SPARK_CONFIG = false;
 		}
 		finally
 		{
 			rtplatform = platformOld;
 		}
+	}
+	
+	private void runSampleTest() {
+		TestConfiguration config = getTestConfiguration(TEST_NAME);
+	 	String HOME = SCRIPT_DIR + TEST_DIR;
+		boolean exceptionExpected = false;
+
+		if (test_type == TEST_TYPE.ERROR)
+			exceptionExpected = true;
+
+		switch (test_type) {
+		case TWO_INPUTS:
+			if (_range < _size)
+				exceptionExpected = true;
+			fullDMLScriptName = HOME + TEST_NAME + "2" + ".dml";
+			programArgs = new String[] { "-args", Long.toString(_range),
+					Long.toString(_size), HOME + OUTPUT_DIR + "A" };
+			break;
+
+		case THREE_INPUTS1:
+			fullDMLScriptName = HOME + TEST_NAME + "3" + ".dml";
+			programArgs = new String[] { "-args", Long.toString(_range),
+					Long.toString(_size), (_replace ? "TRUE" : "FALSE"),
+					HOME + OUTPUT_DIR + "A" };
+			break;
+		case THREE_INPUTS2:
+			if (_range < _size)
+				exceptionExpected = true;
+			fullDMLScriptName = HOME + TEST_NAME + "3" + ".dml";
+			programArgs = new String[] { "-args", Long.toString(_range),
+					Long.toString(_size), Long.toString(_seed),
+					HOME + OUTPUT_DIR + "A" };
+			break;
+
+		case FOUR_INPUTS:
+		case ERROR:
+			fullDMLScriptName = HOME + TEST_NAME + "4" + ".dml";
+			programArgs = new String[] { "-args", Long.toString(_range),
+					Long.toString(_size), (_replace ? "TRUE" : "FALSE"),
+					Long.toString(_seed), HOME + OUTPUT_DIR + "A" };
+			break;
+		}
+
+		loadTestConfiguration(config);
+
+		runTest(true, exceptionExpected,
+				(exceptionExpected ? DMLException.class : null), -1);
+
 	}
 	
 }

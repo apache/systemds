@@ -1,11 +1,16 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+import java.util.Random;
 
+import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.util.random.SamplingUtils;
 
 import scala.Tuple2;
 
@@ -23,6 +28,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixDatagen;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.RandomMatrixGenerator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -53,6 +59,9 @@ public class RandSPInstruction extends UnarySPInstruction
 	private double seq_to; 
 	private double seq_incr;
 	
+	//sample specific attributes
+	private boolean replace;
+
 	public RandSPInstruction (Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols, 
 			int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed,
 			String probabilityDensityFunction, String pdfParams, String opcode, String istr) 
@@ -86,6 +95,22 @@ public class RandSPInstruction extends UnarySPInstruction
 		this.seq_from = seqFrom;
 		this.seq_to = seqTo;
 		this.seq_incr = seqIncr;
+	}
+
+	public RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in,
+			CPOperand out, long rows, long cols, int rpb, int cpb,
+			double maxValue, boolean replace, long seed, String opcode,
+			String istr) {
+		super(op, in, out, opcode, istr);
+
+		this.method = mthd;
+		this.rows = rows;
+		this.cols = cols;
+		this.rowsInBlock = rpb;
+		this.colsInBlock = cpb;
+		this.maxValue = maxValue;
+		this.replace = replace;
+		this.seed = seed;
 	}
 
 	public long getRows() {
@@ -164,6 +189,11 @@ public class RandSPInstruction extends UnarySPInstruction
 			// 8 operands: rows, cols, rpb, cpb, from, to, incr, outvar
 			InstructionUtils.checkNumFields ( str, 8 ); 
 		}
+		else if ( opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE) ) {
+			method = DataGenMethod.SAMPLE;
+			// 7 operands: range, size, replace, seed, rpb, cpb, outvar
+			InstructionUtils.checkNumFields ( str, 7 ); 
+		}
 		
 		Operator op = null;
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
@@ -218,6 +248,28 @@ public class RandSPInstruction extends UnarySPInstruction
 			
 			CPOperand in = null;
 			return new RandSPInstruction(op, method, in, out, rows, cols, rpb, cpb, from, to, incr, opcode, str);
+		}
+		else if ( method == DataGenMethod.SAMPLE) 
+		{
+			// Example Instruction: SPARK:sample:10:100:false:1000:1000:_mVar2·MATRIX·DOUBLE
+			double max = 0;
+			long rows = 0, cols;
+			boolean replace = false;
+			
+			if (!s[1].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) 
+				max = Double.valueOf(s[1]);
+			if (!s[2].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) 
+				rows = Double.valueOf(s[2]).longValue();
+			cols = 1;
+			
+			if (!s[3].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) 
+				replace = Boolean.valueOf(s[3]);
+			
+			long seed = Long.parseLong(s[4]);
+			int rpb = Integer.parseInt(s[5]);
+			int cpb = Integer.parseInt(s[6]);
+			
+			return new RandSPInstruction(op, method, null, out, rows, cols, rpb, cpb, max, replace, seed, opcode, str);
 		}
 		else 
 			throw new DMLRuntimeException("Unrecognized data generation method: " + method);
@@ -319,6 +371,7 @@ public class RandSPInstruction extends UnarySPInstruction
 				
 				//combine seeds partitions to seed rdd
 				JavaRDD<Double> offsetsRDD2 = sec.getSparkContext().parallelize(offsets, numPartitions);
+				
 				offsetsRDD = ( offsetsRDD != null )? offsetsRDD.union(offsetsRDD2) : offsetsRDD2;		
 			}
 			
@@ -337,6 +390,177 @@ public class RandSPInstruction extends UnarySPInstruction
 			}
 			sec.setRDDHandleForVariable(output.getName(), out);
 		}
+		else if (this.method == DataGenMethod.SAMPLE)
+		{
+			generateSample(sec);
+		}
+	}
+	
+	private void generateSample(SparkExecutionContext sec) throws DMLRuntimeException 
+	{
+		if ( maxValue < rows && replace == false)
+			throw new DMLRuntimeException("Sample (size=" + rows + ") larger than population (size=" + maxValue + ") can only be generated with replacement.");
+
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Process RandCPInstruction sample with range="+ maxValue +", size="+ rows +", replace="+ replace + ", seed=" + seed);
+		
+		double fraction = SamplingUtils.computeFractionForSampleSize((int)rows, UtilFunctions.toLong(maxValue), replace);
+		
+		/*int numBlocks = (int) Math.ceil(((double)rows)/rowsInBlock);
+		int blockSize = rowsInBlock*8 + 16; 	// dense column block size
+		int tmp = (int) hdfsBlockSize/blockSize; 	// #matrix blocks per HDFS block */
+		
+		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+		long outputSize = rows*MatrixBlock.estimateSizeDenseInMemory(rows,1);
+		int numPartitions = (int) Math.ceil((double)outputSize/hdfsBlockSize);
+
+		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
+
+		// divide the population range across numPartitions
+		long partitionSize = (long) Math.ceil(maxValue/numPartitions);
+		
+		ArrayList<SampleTask> offsets = new ArrayList<SampleTask>();
+		long st = 1;
+		while ( st <= maxValue ) {
+			SampleTask s = new SampleTask();
+			s.range_start = st;
+			s.seed = bigrand.nextLong();
+			
+			offsets.add(s);
+			st = st + partitionSize;
+		}
+		JavaRDD<SampleTask> offsetRDD = sec.getSparkContext().parallelize(offsets, numPartitions);
+		
+		// Construct the sample in a distributed manner
+		JavaRDD<Double> rdd = offsetRDD.flatMap( (new GenerateSampleBlock(replace, fraction, (long)maxValue, partitionSize)) );
+		
+		// Randomize the selected elements
+		//JavaRDD<Double> rdd = rdd.zipWithIndex()
+		
+		
+		System.out.println("Count before filter: " + rdd.count());
+		JavaPairRDD<MatrixIndexes, MatrixCell> miRDD 
+			= rdd
+				.zipWithIndex()
+			  	.filter( new TrimSample(rows) )
+			  	.mapToPair( new Double2MatrixCell(rowsInBlock) );
+		
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, 1, -1, -1);
+		MatrixCharacteristics mcOut = new MatrixCharacteristics(rows, 1, rowsInBlock, colsInBlock, rows);
+		
+		JavaPairRDD<MatrixIndexes, MatrixBlock> mbRDD = ReblockSPInstruction.processBinaryCellReblock(sec, miRDD, mc, mcOut, true, rowsInBlock, colsInBlock);
+		//List<Tuple2<MatrixIndexes, MatrixBlock>> list = mbRDD.collect();
+		
+		MatrixCharacteristics retDims = sec.getMatrixCharacteristics(output.getName());
+		retDims.setNonZeros(rows);
+
+		sec.setRDDHandleForVariable(output.getName(), mbRDD);
+	}
+	
+	/*public static JavaRDD<Double> randomize(JavaRDD<Double> in) 
+	{
+		long count = in.count();
+		
+		if ( count < INMEM_RANDOMIZE_)
+		return in;
+	}*/
+	
+	
+	private static class SampleTask implements java.io.Serializable 
+	{
+		private static final long serialVersionUID = -725284524434342939L;
+		long seed;
+		long range_start;
+	}
+	
+	public static class TrimSample implements Function<Tuple2<Double,Long>, Boolean> {
+		private static final long serialVersionUID = 6773370625013346530L;
+		long _max;
+		
+		TrimSample(long max) {
+			_max = max;
+		}
+		
+		@Override
+		public Boolean call(Tuple2<Double, Long> v1) throws Exception {
+			return ( v1._2 < _max );
+		}
+		
+	}
+	
+	public static class Double2MatrixCell implements PairFunction<Tuple2<Double, Long>, MatrixIndexes, MatrixCell>
+	{
+		private static final long serialVersionUID = -2125669746624320536L;
+		private int _brlen;
+		
+		public Double2MatrixCell(int brlen) {
+			_brlen = brlen;
+		}
+		
+		@Override
+		public Tuple2<MatrixIndexes, MatrixCell> call(Tuple2<Double, Long> t)
+				throws Exception {
+			long rowID = t._2()+1;
+			
+			long brid = UtilFunctions.blockIndexCalculation(rowID, _brlen);
+			long bcid = 1;
+			int rid = UtilFunctions.cellInBlockCalculation(rowID, _brlen);
+			int cid = 0;
+			
+			MatrixIndexes mi = new MatrixIndexes(brid, bcid);
+			MatrixCell mc = new MatrixCell(rid, cid, t._1());
+			
+			return new Tuple2<MatrixIndexes, MatrixCell>(mi, mc);
+		}
+	}
+	
+	public static class GenerateSampleBlock implements FlatMapFunction<SampleTask, Double> 
+	{
+		private static final long serialVersionUID = -8211490954143527232L;
+		private double _frac;
+		private boolean _replace;
+		private long _maxValue, _partitionSize; 
+
+		GenerateSampleBlock(boolean replace, double frac, long max, long psize)
+		{
+			_replace = replace;
+			_frac = frac;
+			_maxValue = max;
+			_partitionSize = psize;
+		}
+		
+		@Override
+		public Iterable<Double> call(SampleTask t)
+				throws Exception {
+
+			long st = t.range_start;
+			long end = Math.min(t.range_start+_partitionSize, _maxValue);
+			ArrayList<Double> retList = new ArrayList<Double>();
+			if(_replace) 
+			{
+				PoissonDistribution pdist = new PoissonDistribution( (_frac > 0.0 ? _frac :1.0) );
+				
+				for(long i=st; i <= end; i++)
+				{
+					int count = pdist.sample();
+					while(count > 0) {
+						retList.add((double)i);
+						count--;
+					}
+				}
+				return retList;
+			}
+			else 
+			{
+				Random rnd = new Random(t.seed);
+				for(long i=st; i <=end; i++) 
+					if ( rnd.nextDouble() < _frac )
+						retList.add((double) i);
+				
+				return retList;
+			}
+		}
+		
 	}
 	
 	/**

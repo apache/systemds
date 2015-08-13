@@ -703,4 +703,11 @@ public abstract class Lop
 		return new int[]{-1};
 	}
 
+	
+	public boolean hasNonBlockedInputs() {
+		for(Lop in : getInputs())
+			if(in.getDataType() == DataType.MATRIX && !in.getOutputParameters().isBlocked())
+				return true;
+		return false;
+	}
 }

@@ -172,6 +172,7 @@ public class RunMRJobs
 			switch(inst.getJobType()) {
 			
 			case GMR: 
+			case GMRCELL:
 				ret = GMR.runJob(inst, inst.getInputs(), inst.getInputInfos(), 
 						inst.getRlens(), inst.getClens(), inst.getBrlens(), inst.getBclens(),
 						inst.getPartitioned(), inst.getPformats(), inst.getPsizes(),

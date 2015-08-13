@@ -58,7 +58,8 @@ public enum JobType
 	DATA_PARTITION	(11, "DATAPARTITION", 	false, 			false, 								true),
 	CSV_REBLOCK		(12, "CSV_REBLOCK", 	false, 			false, 								false),
 	CSV_WRITE		(13, "CSV_WRITE", 		false, 			false, 								true),
-	TRANSFORM		(14, "TRANSFORM", 		false, 			true, 								false);
+	TRANSFORM		(14, "TRANSFORM", 		false, 			true, 								false),
+	GMRCELL			(15, "GMRCELL", 		false, 			false, 								false);
 
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +

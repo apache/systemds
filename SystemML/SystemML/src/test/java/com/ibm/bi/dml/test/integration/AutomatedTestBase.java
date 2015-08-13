@@ -783,7 +783,6 @@ public abstract class AutomatedTestBase
 	/**
 	 * Runs an R script in the old or the new way
 	 */
-	@SuppressWarnings("unused")
 	protected void runRScript(boolean newWay) {
 	
 		String executionFile = baseDirectory + selectedTest + ".R"; 

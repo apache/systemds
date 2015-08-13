@@ -538,6 +538,8 @@ public class Dag<N extends Lop>
 	 * @return
 	 */
 	private boolean isCompatible(N node, JobType jt) {
+		if ( jt == JobType.GMRCELL )
+			jt = JobType.GMR;
 		return ((node.getCompatibleJobs() & jt.getBase()) > 0);
 	}
 
@@ -561,20 +563,30 @@ public class Dag<N extends Lop>
 				// Add "node" to corresponding job vector
 				
 				if ( jt == JobType.GMR ) {
-					// if "node" (in this case, a group lop) has any inputs from RAND 
-					// then add it to RAND job. Otherwise, create a GMR job
-					if (hasChildNode(node, arr.get(JobType.DATAGEN.getId()) )) {
-						arr.get(JobType.DATAGEN.getId()).add(node);
-						// we should NOT call 'addChildren' because appropriate
-						// child nodes would have got added to RAND job already
-					} else {
-						int gmr_index = JobType.GMR.getId();
-						arr.get(gmr_index).add(node);
-						int from = arr.get(gmr_index).size();
-						addChildren(node, arr.get(gmr_index), execNodes);
-						int to = arr.get(gmr_index).size();
-						if (!isCompatible(arr.get(gmr_index),JobType.GMR, from, to)) {
+					if ( node.hasNonBlockedInputs() ) {
+						int gmrcell_index = JobType.GMRCELL.getId();
+						arr.get(gmrcell_index).add(node);
+						int from = arr.get(gmrcell_index).size();
+						addChildren(node, arr.get(gmrcell_index), execNodes);
+						int to = arr.get(gmrcell_index).size();
+						if (!isCompatible(arr.get(gmrcell_index),JobType.GMR, from, to))  // check against GMR only, not against GMRCELL
 							throw new LopsException(node.printErrorLocation() + "Error during compatibility check \n");
+					}
+					else {
+						// if "node" (in this case, a group lop) has any inputs from RAND 
+						// then add it to RAND job. Otherwise, create a GMR job
+						if (hasChildNode(node, arr.get(JobType.DATAGEN.getId()) )) {
+							arr.get(JobType.DATAGEN.getId()).add(node);
+							// we should NOT call 'addChildren' because appropriate
+							// child nodes would have got added to RAND job already
+						} else {
+							int gmr_index = JobType.GMR.getId();
+							arr.get(gmr_index).add(node);
+							int from = arr.get(gmr_index).size();
+							addChildren(node, arr.get(gmr_index), execNodes);
+							int to = arr.get(gmr_index).size();
+							if (!isCompatible(arr.get(gmr_index),JobType.GMR, from, to)) 
+								throw new LopsException(node.printErrorLocation() + "Error during compatibility check \n");
 						}
 					}
 				}
@@ -597,7 +609,10 @@ public class Dag<N extends Lop>
 		if ( eliminate ) {
 			// Eliminated lops are directly added to GMR queue. 
 			// Note that eliminate flag is set only for 'group' lops
-			arr.get(JobType.GMR.getId()).add(node);
+			if ( node.hasNonBlockedInputs() )
+				arr.get(JobType.GMRCELL.getId()).add(node);
+			else
+				arr.get(JobType.GMR.getId()).add(node);
 			return;
 		}
 		
@@ -1347,8 +1362,14 @@ public class Dag<N extends Lop>
 					N node = execNodes.get(i);
 					if (jobType(node, jobNodes) == -1) {
 						if ( isCompatible(node,  JobType.GMR) ) {
-							jobNodes.get(JobType.GMR.getId()).add(node);
-							addChildren(node, jobNodes.get(JobType.GMR.getId()), execNodes);
+							if ( node.hasNonBlockedInputs() ) {
+								jobNodes.get(JobType.GMRCELL.getId()).add(node);
+								addChildren(node, jobNodes.get(JobType.GMRCELL.getId()), execNodes);
+							}
+							else {
+								jobNodes.get(JobType.GMR.getId()).add(node);
+								addChildren(node, jobNodes.get(JobType.GMR.getId()), execNodes);
+							}
 						}
 						else {
 							if( LOG.isTraceEnabled() )
@@ -3301,7 +3322,7 @@ public class Dag<N extends Lop>
 		
 		
 		/* Remove transient writes that are simple copy of transient reads */
-		if (jt == JobType.GMR) {
+		if (jt == JobType.GMR || jt == JobType.GMRCELL) {
 			ArrayList<N> markedNodes = new ArrayList<N>();
 			// only keep data nodes that are results of some computation.
 			for (int i = 0; i < rootNodes.size(); i++) {
@@ -3348,7 +3369,7 @@ public class Dag<N extends Lop>
 		/* Get RecordReader Instructions */
 		
 		// currently, recordreader instructions are allowed only in GMR jobs
-		if (jt == JobType.GMR) {
+		if (jt == JobType.GMR || jt == JobType.GMRCELL) {
 			for (int i = 0; i < rootNodes.size(); i++) {
 				getRecordReaderInstructions(rootNodes.get(i), execNodes,
 						inputs, recordReaderInstructions, nodeIndexMapping,

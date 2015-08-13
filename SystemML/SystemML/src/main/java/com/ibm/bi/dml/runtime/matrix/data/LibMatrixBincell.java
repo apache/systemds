@@ -778,7 +778,7 @@ public class LibMatrixBincell
 		if( m1.sparse != ret.sparse )
 			throw new DMLRuntimeException("Unsupported safe binary scalar operations over different input/output representation: "+m1.sparse+" "+ret.sparse);
 		
-		boolean copyOnes = (op.fn == NotEquals.getNotEqualsFnObject() && op.getConstant()==0);
+		boolean copyOnes = (op.fn instanceof NotEquals && op.getConstant()==0);
 		
 		if( m1.sparse ) //SPARSE <- SPARSE
 		{	

@@ -3380,7 +3380,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		boolean sps;
 		if(reducedDim)
 			sps = false;
-		else if(op.fn.equals(DiagIndex.getDiagIndexFnObject()))
+		else if(op.fn instanceof DiagIndex)
 			sps = true;
 		else
 			sps = this.evalSparseFormatInMemory(true);

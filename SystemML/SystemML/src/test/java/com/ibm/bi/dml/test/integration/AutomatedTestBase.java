@@ -646,7 +646,7 @@ public abstract class AutomatedTestBase
 		try
 		{
 			String fname = baseDirectory + OUTPUT_DIR + fileName +".mtd";
-			JSONObject meta = new DataExpression().readMetadataFile(fname);
+			JSONObject meta = new DataExpression().readMetadataFile(fname, false);
 			long rlen = Long.parseLong(meta.get(DataExpression.READROWPARAM).toString());
 			long clen = Long.parseLong(meta.get(DataExpression.READCOLPARAM).toString());
 			

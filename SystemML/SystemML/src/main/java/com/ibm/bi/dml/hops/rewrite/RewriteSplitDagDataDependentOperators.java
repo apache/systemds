@@ -10,8 +10,6 @@ package com.ibm.bi.dml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
@@ -23,6 +21,7 @@ import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.ReorgOp;
 import com.ibm.bi.dml.hops.TernaryOp;
@@ -263,7 +262,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				//configure rmEmpty to directly output selection vector
 				//(only applied if dynamic recompilation enabled)
 				
-				if( DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP && DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK  )	
+				if( OptimizerUtils.ALLOW_DYN_RECOMPILATION  )	
 					pbhop.setOutputPermutationMatrix(true);
 				for( Hop p : hop.getParent() )
 					((AggBinaryOp)p).setHasLeftPMInput(true);		
@@ -278,6 +277,15 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		{
 			cand.add(hop);
 			investigateChilds = false;
+			
+			//keep interesting consumer information, flag hops accordingly 
+			boolean onlyPMM = true;
+			for( Hop p : hop.getParent() ) {
+				onlyPMM &= (p instanceof AggBinaryOp && hop == p.getInput().get(0));
+			}
+			
+			if( onlyPMM && HopRewriteUtils.isBasic1NSequence(hop.getInput().get(0)) )
+				hop.setOutputEmptyBlocks(false);
 		}
 	    
 	    //#3 orderby childs computed in same DAG

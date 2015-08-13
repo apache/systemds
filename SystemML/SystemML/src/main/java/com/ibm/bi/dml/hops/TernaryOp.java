@@ -575,7 +575,7 @@ public class TernaryOp extends Hop
 
 			// output dimensions are not known at compilation time
 			tertiary.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? getRowsInBlock() : -1), ( _dimInputsPresent ? getColsInBlock() : -1), -1);
-			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			setLineNumbers(tertiary);
 			
 			Lop lctable = tertiary;
 			

@@ -710,6 +710,37 @@ public class HopRewriteUtils
 		return (hop instanceof ReorgOp && ((ReorgOp)hop).getOp()==ReOrgOp.TRANSPOSE);
 	}
 	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	public static boolean isBasic1NSequence(Hop hop)
+	{
+		boolean ret = false;
+		
+		if( hop instanceof DataGenOp )
+		{
+			DataGenOp dgop = (DataGenOp) hop;
+			if( dgop.getOp() == DataGenMethod.SEQ ){
+				Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
+				Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
+				ret = (from instanceof LiteralOp && getDoubleValueSafe((LiteralOp)from)==1)
+					&&(incr instanceof LiteralOp && getDoubleValueSafe((LiteralOp)incr)==1);
+			}
+		}
+		
+		return ret;
+	}
+	
+	
+	/**
+	 * 
+	 * @param hop
+	 * @param inclTransient
+	 * @param inclPersistent
+	 * @return
+	 */
 	public static boolean hasOnlyWriteParents( Hop hop, boolean inclTransient, boolean inclPersistent )
 	{
 		boolean ret = true;

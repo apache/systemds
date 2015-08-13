@@ -396,6 +396,12 @@ public class RandSPInstruction extends UnarySPInstruction
 		}
 	}
 	
+	/**
+	 * Helper function to construct a sample.
+	 * 
+	 * @param sec
+	 * @throws DMLRuntimeException
+	 */
 	private void generateSample(SparkExecutionContext sec) throws DMLRuntimeException 
 	{
 		if ( maxValue < rows && replace == false)
@@ -404,21 +410,17 @@ public class RandSPInstruction extends UnarySPInstruction
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Process RandCPInstruction sample with range="+ maxValue +", size="+ rows +", replace="+ replace + ", seed=" + seed);
 		
+		// sampling rate that guarantees a sample of size >= sampleSizeLowerBound 99.99% of the time.
 		double fraction = SamplingUtils.computeFractionForSampleSize((int)rows, UtilFunctions.toLong(maxValue), replace);
 		
-		/*int numBlocks = (int) Math.ceil(((double)rows)/rowsInBlock);
-		int blockSize = rowsInBlock*8 + 16; 	// dense column block size
-		int tmp = (int) hdfsBlockSize/blockSize; 	// #matrix blocks per HDFS block */
-		
-		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-		long outputSize = rows*MatrixBlock.estimateSizeDenseInMemory(rows,1);
-		int numPartitions = (int) Math.ceil((double)outputSize/hdfsBlockSize);
-
 		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
 
-		// divide the population range across numPartitions
+		// divide the population range across numPartitions by creating SampleTasks
+		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+		long outputSize = MatrixBlock.estimateSizeDenseInMemory(rows,1);
+		int numPartitions = (int) Math.ceil((double)outputSize/hdfsBlockSize);
 		long partitionSize = (long) Math.ceil(maxValue/numPartitions);
-		
+
 		ArrayList<SampleTask> offsets = new ArrayList<SampleTask>();
 		long st = 1;
 		while ( st <= maxValue ) {
@@ -434,13 +436,13 @@ public class RandSPInstruction extends UnarySPInstruction
 		// Construct the sample in a distributed manner
 		JavaRDD<Double> rdd = offsetRDD.flatMap( (new GenerateSampleBlock(replace, fraction, (long)maxValue, partitionSize)) );
 		
-		// Randomize the selected elements
-		//JavaRDD<Double> rdd = rdd.zipWithIndex()
+		// Randomize the sampled elements
+		JavaRDD<Double> randomizedRDD = rdd.mapToPair(new AttachRandom()).sortByKey().values();
+		//System.out.println("Count before filter: " + randomizedRDD.count());
 		
-		
-		System.out.println("Count before filter: " + rdd.count());
+		// Trim the sampled list to required size & attach matrix indexes to randomized elements
 		JavaPairRDD<MatrixIndexes, MatrixCell> miRDD 
-			= rdd
+			= randomizedRDD
 				.zipWithIndex()
 			  	.filter( new TrimSample(rows) )
 			  	.mapToPair( new Double2MatrixCell(rowsInBlock) );
@@ -448,8 +450,8 @@ public class RandSPInstruction extends UnarySPInstruction
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, 1, -1, -1);
 		MatrixCharacteristics mcOut = new MatrixCharacteristics(rows, 1, rowsInBlock, colsInBlock, rows);
 		
+		// Construct BinaryBlock representation
 		JavaPairRDD<MatrixIndexes, MatrixBlock> mbRDD = ReblockSPInstruction.processBinaryCellReblock(sec, miRDD, mc, mcOut, true, rowsInBlock, colsInBlock);
-		//List<Tuple2<MatrixIndexes, MatrixBlock>> list = mbRDD.collect();
 		
 		MatrixCharacteristics retDims = sec.getMatrixCharacteristics(output.getName());
 		retDims.setNonZeros(rows);
@@ -457,22 +459,98 @@ public class RandSPInstruction extends UnarySPInstruction
 		sec.setRDDHandleForVariable(output.getName(), mbRDD);
 	}
 	
-	/*public static JavaRDD<Double> randomize(JavaRDD<Double> in) 
-	{
-		long count = in.count();
-		
-		if ( count < INMEM_RANDOMIZE_)
-		return in;
-	}*/
-	
-	
+	/**
+	 * Private class that defines a sampling task. 
+	 * The task produces a portion of sample from range [range_start, range_start+partitionSize].
+	 *
+	 */
 	private static class SampleTask implements java.io.Serializable 
 	{
 		private static final long serialVersionUID = -725284524434342939L;
 		long seed;
 		long range_start;
+		
+		public String toString() { return "(" + seed + "," + range_start +")"; } 
 	}
 	
+	/** 
+	 * Main class to perform distributed sampling.
+	 * 
+	 * Each invocation of this FlatMapFunction produces a portion of sample 
+	 * to be included in the final output. 
+	 * 
+	 * The input range from which the sample is constructed is given by 
+	 * [range_start, range_start+partitionSize].
+	 * 
+	 * When replace=TRUE, the sample is produced by generating Poisson 
+	 * distributed counts (denoting the number of occurrences) for each 
+	 * element in the input range. 
+	 * 
+	 * When replace=FALSE, the sample is produced by comparing a generated 
+	 * random number against the required sample fraction.
+	 * 
+	 * In the special case of fraction=1.0, the permutation of the input 
+	 * range is computed, simply by creating RDD of elements from input range.
+	 *
+	 */
+	public static class GenerateSampleBlock implements FlatMapFunction<SampleTask, Double> 
+	{
+		private static final long serialVersionUID = -8211490954143527232L;
+		private double _frac;
+		private boolean _replace;
+		private long _maxValue, _partitionSize; 
+
+		GenerateSampleBlock(boolean replace, double frac, long max, long psize)
+		{
+			_replace = replace;
+			_frac = frac;
+			_maxValue = max;
+			_partitionSize = psize;
+		}
+		
+		@Override
+		public Iterable<Double> call(SampleTask t)
+				throws Exception {
+
+			long st = t.range_start;
+			long end = Math.min(t.range_start+_partitionSize, _maxValue);
+			ArrayList<Double> retList = new ArrayList<Double>();
+			
+			if ( _frac == 1.0 ) 
+			{
+				for(long i=st; i <= end; i++) 
+					retList.add((double)i);
+			}
+			else 
+			{
+				if(_replace) 
+				{
+					PoissonDistribution pdist = new PoissonDistribution( (_frac > 0.0 ? _frac :1.0) );
+					for(long i=st; i <= end; i++)
+					{
+						int count = pdist.sample();
+						while(count > 0) {
+							retList.add((double)i);
+							count--;
+						}
+					}
+				}
+				else 
+				{
+					Random rnd = new Random(t.seed);
+					for(long i=st; i <=end; i++) 
+						if ( rnd.nextDouble() < _frac )
+							retList.add((double) i);
+				}
+			}
+			return retList;
+		}
+	}
+	
+	/**
+	 * Function that filters the constructed sample contain to required number of elements.
+	 *
+	 */
 	public static class TrimSample implements Function<Tuple2<Double,Long>, Boolean> {
 		private static final long serialVersionUID = 6773370625013346530L;
 		long _max;
@@ -488,6 +566,10 @@ public class RandSPInstruction extends UnarySPInstruction
 		
 	}
 	
+	/**
+	 * Function to convert JavaRDD of Doubles to JavaPairRDD<MatrixIndexes, MatrixCell>
+	 *
+	 */
 	public static class Double2MatrixCell implements PairFunction<Tuple2<Double, Long>, MatrixIndexes, MatrixCell>
 	{
 		private static final long serialVersionUID = -2125669746624320536L;
@@ -514,53 +596,21 @@ public class RandSPInstruction extends UnarySPInstruction
 		}
 	}
 	
-	public static class GenerateSampleBlock implements FlatMapFunction<SampleTask, Double> 
-	{
-		private static final long serialVersionUID = -8211490954143527232L;
-		private double _frac;
-		private boolean _replace;
-		private long _maxValue, _partitionSize; 
-
-		GenerateSampleBlock(boolean replace, double frac, long max, long psize)
-		{
-			_replace = replace;
-			_frac = frac;
-			_maxValue = max;
-			_partitionSize = psize;
+	/**
+	 * Pair function to attach a random number as a key to input JavaRDD.
+	 * The produced JavaPairRDD is subsequently used to randomize the sampled elements. 
+	 *
+	 */
+	private static class AttachRandom implements PairFunction<Double, Double, Double> {
+		private static final long serialVersionUID = -7508858192367406554L;
+		Random r = null;
+		AttachRandom() {
+			r = new Random();
 		}
-		
 		@Override
-		public Iterable<Double> call(SampleTask t)
-				throws Exception {
-
-			long st = t.range_start;
-			long end = Math.min(t.range_start+_partitionSize, _maxValue);
-			ArrayList<Double> retList = new ArrayList<Double>();
-			if(_replace) 
-			{
-				PoissonDistribution pdist = new PoissonDistribution( (_frac > 0.0 ? _frac :1.0) );
-				
-				for(long i=st; i <= end; i++)
-				{
-					int count = pdist.sample();
-					while(count > 0) {
-						retList.add((double)i);
-						count--;
-					}
-				}
-				return retList;
-			}
-			else 
-			{
-				Random rnd = new Random(t.seed);
-				for(long i=st; i <=end; i++) 
-					if ( rnd.nextDouble() < _frac )
-						retList.add((double) i);
-				
-				return retList;
-			}
+		public Tuple2<Double, Double> call(Double t) throws Exception {
+			return new Tuple2<Double,Double>( r.nextDouble(), t );
 		}
-		
 	}
 	
 	/**

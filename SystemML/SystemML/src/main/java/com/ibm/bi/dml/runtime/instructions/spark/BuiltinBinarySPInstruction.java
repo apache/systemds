@@ -42,20 +42,27 @@ public abstract class BuiltinBinarySPInstruction extends BinarySPInstruction
 		String opcode = null;
 		boolean isBroadcast = false;
 		
-		if(str.startsWith("SPARK"+Lop.OPERAND_DELIMITOR+"map")) {
+		ValueFunction func = null;
+		if(str.startsWith("SPARK"+Lop.OPERAND_DELIMITOR+"map")) //map builtin function
+		{
 			InstructionUtils.checkNumFields ( str, 5 );
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 			opcode = parts[0];
 			in1.split(parts[1]);
 			in2.split(parts[2]);
 			out.split(parts[3]);
+			func = Builtin.getBuiltinFnObject(opcode.substring(3));
 			isBroadcast = true;
 		}
-		else {
+		else //default builtin function
+		{
 			parseBinaryInstruction(str, in1, in2, out);	
+			func = Builtin.getBuiltinFnObject(opcode);
 		}
-
-		ValueFunction func = Builtin.getBuiltinFnObject(opcode);
+		
+		//sanity check value function
+		if( func == null )
+			throw new DMLRuntimeException("Failed to create builtin value function for opcode: "+opcode);
 		
 		// Determine appropriate Function Object based on opcode			
 		if (in1.getDataType() != in2.getDataType()) //MATRIX-SCALAR

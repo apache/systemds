@@ -32,10 +32,12 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
+import com.ibm.bi.dml.runtime.matrix.data.IJV;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
+import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
@@ -129,7 +131,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		
 		JavaPairRDD<MatrixIndexes, ArrayList<MatrixBlock>> inputMBs = null;
 		JavaPairRDD<MatrixIndexes, CTableMap> ctables = null;
-		
+		JavaPairRDD<MatrixIndexes, Double> bincellsNoFilter = null;
 		boolean setLineage2 = false;
 		boolean setLineage3 = false;
 		switch(ctableOp) {
@@ -146,11 +148,19 @@ public class TernarySPInstruction extends ComputationSPInstruction
 				ctables = inputMBs.mapToPair(new PerformCTableMapSideOperation(ctableOp, scalar_input2, 
 							scalar_input3, this.instString, (SimpleOperator)_optr, _ignoreZeros));
 				break;
+			
 				
-			case CTABLE_TRANSFORM_SCALAR_WEIGHT: //(VECTOR/MATRIX)
-				// F = ctable(A,B) or F = ctable(A,B,1)
 			case CTABLE_EXPAND_SCALAR_WEIGHT: //(VECTOR)
 				// F = ctable(seq,A) or F = ctable(seq,B,1)
+				scalar_input3 = sec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
+				if(scalar_input3 == 1) {
+					in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+					setLineage2 = true;
+					bincellsNoFilter = in2.flatMapToPair(new ExpandScalarCtableOperation(brlen));
+					break;
+				}
+			case CTABLE_TRANSFORM_SCALAR_WEIGHT: //(VECTOR/MATRIX)
+				// F = ctable(A,B) or F = ctable(A,B,1)
 				in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 				setLineage2 = true;
 
@@ -188,10 +198,15 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		}
 		
 		// Now perform aggregation on ctables to get binaryCells 
-		JavaPairRDD<MatrixIndexes, Double> bincellsNoFilter =  
-				ctables.values()
-				.flatMapToPair(new ExtractBinaryCellsFromCTable());
-		bincellsNoFilter = RDDAggregateUtils.sumCellsByKeyStable(bincellsNoFilter);
+		if(bincellsNoFilter == null && ctables != null) {
+			bincellsNoFilter =  
+					ctables.values()
+					.flatMapToPair(new ExtractBinaryCellsFromCTable());
+			bincellsNoFilter = RDDAggregateUtils.sumCellsByKeyStable(bincellsNoFilter);
+		}
+		else if(!(bincellsNoFilter != null && ctables == null)) {
+			throw new DMLRuntimeException("Incorrect ctable operation");
+		}
 		
 		// For filtering, we need to know the dimensions
 		// So, compute dimension if necessary
@@ -216,7 +231,9 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		if(!findDimensions) {
 			binaryCellsAfterFilter = bincellsNoFilter.filter(
 					new FilterCells(mcBinaryCells.getRows(), mcBinaryCells.getCols()));
-			bincellsNoFilter = bincellsNoFilter.unpersist();	
+			// TODO: Since the results (binaryCellsAfterFilter, binaryCells) are lazy
+			// We are relying on Spark to unpersist it in LRU fashion
+			// bincellsNoFilter = bincellsNoFilter.unpersist();	
 		}
 		
 		// Convert value 'Double' to 'MatrixCell'
@@ -235,6 +252,44 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		if(setLineage3)
 			sec.addLineageRDD(output.getName(), input3.getName());
 	}	
+	
+	private static class ExpandScalarCtableOperation implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, Double> {
+
+		private static final long serialVersionUID = -8323672586860532331L;
+		
+		int brlen;
+		public ExpandScalarCtableOperation(int brlen) {
+			this.brlen = brlen;
+		}
+
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, Double>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
+			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<Tuple2<MatrixIndexes,Double>>();
+			if(kv._2.isInSparseFormat()) {
+				SparseRowsIterator iter = kv._2.getSparseRowsIterator();
+				while( iter.hasNext() ) {
+					IJV cell = iter.next();
+					long i = UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), brlen, cell.i);
+					long j = (long)cell.v;
+					retVal.add(new Tuple2<MatrixIndexes, Double>(new MatrixIndexes(i, j), 1.0));
+				}
+			}
+			else {
+				double[] arr = kv._2.getDenseArray();
+				long i = UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), brlen, 0);
+				for(int iter = 0; iter < arr.length; iter++ ) {
+					long j = (long)arr[iter];
+					retVal.add(new Tuple2<MatrixIndexes, Double>(new MatrixIndexes(i, j), 1.0));
+					i++;
+				}
+			}
+			
+			return retVal;
+		}
+
+		
+		
+	}
 	
 	private Ternary.OperationTypes findCtableOperation() {
 		DataType dt1 = input1.getDataType();

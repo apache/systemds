@@ -76,7 +76,7 @@ public class GetMLLibBlocks implements PairFunction<Tuple2<MatrixIndexes,MatrixB
 			ArrayList<Integer> colPtrList = new ArrayList<Integer>();
 			int lastCol = -1; int index = 0;
 			while( iter.hasNext() ) {
-				IJV cell = iter.next();
+				IJV cell = iter.next(); // TODO: This might output global
 				// MLLib's sparse rows are stored as Compressed Sparse Column (CSC) format
 				if(lastCol != cell.j) {
 					lastCol = cell.j;

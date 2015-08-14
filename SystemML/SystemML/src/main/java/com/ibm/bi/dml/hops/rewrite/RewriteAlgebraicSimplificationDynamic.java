@@ -155,6 +155,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size 
 			hi = simplifySumMatrixMult(hop, hi, i);           //e.g., sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)), if not dot product
 			hi = simplifyEmptyBinaryOperation(hop, hi, i);    //e.g., X*Y -> matrix(0,nrow(X), ncol(X)) / X+Y->X / X-Y -> X
+			hi = simplifyScalarMVBinaryOperation(hi); 		  //e.g., X*y -> X*as.scalar(y), if y is a 1-1 matrix
 			hi = simplifyNnzComputation(hop, hi, i);          //e.g., sum(ppred(X,0,"!=")) -> literal(nnz(X)), if nnz known
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -1573,6 +1574,38 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				HopRewriteUtils.removeAllChildReferences( hi2 );
 			
 			LOG.debug("Applied simplifySumMatrixMult.");	
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param hi
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyScalarMVBinaryOperation(Hop hi) 
+		throws HopsException
+	{
+		if( hi instanceof BinaryOp && ((BinaryOp)hi).supportsMatrixScalarOperations() //e.g., X * s
+			&& hi.getInput().get(0).getDataType()==DataType.MATRIX 
+			&& hi.getInput().get(1).getDataType()==DataType.MATRIX )	
+		{
+			Hop right = hi.getInput().get(1);
+			
+			//X * s -> X * as.scalar(s)
+			if( HopRewriteUtils.isDimsKnown(right) && right.getDim1()==1 && right.getDim2()==1 ) //scalar right
+			{
+				//remove link to right child and introduce cast
+				HopRewriteUtils.removeChildReference(hi, right);
+				UnaryOp cast = new UnaryOp(right.getName(), DataType.SCALAR, ValueType.DOUBLE, 
+						                   OpOp1.CAST_AS_SCALAR, right);
+				HopRewriteUtils.setOutputParameters(cast, 0, 0, 0, 0, 0);
+				HopRewriteUtils.addChildReference(hi, cast, 1);			
+				
+				LOG.debug("Applied simplifyScalarMVBinaryOperation.");
+			}
 		}
 		
 		return hi;

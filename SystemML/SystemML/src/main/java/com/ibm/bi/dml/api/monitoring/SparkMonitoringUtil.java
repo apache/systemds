@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 
 import scala.collection.Seq;
 import scala.xml.Node;
@@ -29,6 +31,24 @@ import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkListener;
 public class SparkMonitoringUtil {
 	// ----------------------------------------------------
 	// For VLDB Demo:
+	private Multimap<Location, String> instructions = TreeMultimap.create();
+	private Multimap<String, Integer> stageIDs = TreeMultimap.create();  // instruction -> stageIds
+	private Multimap<String, Integer> jobIDs = TreeMultimap.create();  // instruction -> jobIds
+	private HashMap<String, String> lineageInfo = new HashMap<String, String>();	// instruction -> lineageInfo
+	private HashMap<String, Long> instructionCreationTime = new HashMap<String, Long>();
+	
+	private Multimap<Integer, String> rddInstructionMapping = TreeMultimap.create();
+	
+	private HashSet<String> getRelatedInstructions(int stageID) {
+		HashSet<String> retVal = new HashSet<String>();
+		if(_sparkListener != null) {
+			ArrayList<Integer> rdds = _sparkListener.stageRDDMapping.get(stageID);
+			for(Integer rddID : rdds) {
+				retVal.addAll(rddInstructionMapping.get(rddID));
+			}
+		}
+		return retVal;
+	}
 	
 	private SparkListener _sparkListener = null;
 	public SparkListener getSparkListener() {
@@ -53,6 +73,10 @@ public class SparkMonitoringUtil {
 		if(_sparkListener != null) {
 			_sparkListener.addCurrentInstruction(inst);
 		}
+	}
+	
+	public void addRDDForInstruction(SPInstruction inst, Integer rddID) {
+		this.rddInstructionMapping.put(rddID, getInstructionString(inst));
 	}
 	
 	public void removeCurrentInstruction(SPInstruction inst) {
@@ -143,6 +167,173 @@ public class SparkMonitoringUtil {
 		bw.close();
 	}
 	
+	private String getInQuotes(String str) {
+		return "\"" + str + "\"";
+	}
+	private String getEscapedJSON(String json) {
+		if(json == null)
+			return "";
+		else {
+			return json
+					//.replaceAll("\\\\", "\\\\\\")
+					.replaceAll("\\t", "\\\\t")
+					.replaceAll("/", "\\\\/")
+					.replaceAll("\"", "\\\\\"")
+					.replaceAll("\\r?\\n", "\\\\n");
+		}
+	}
+	
+	private long maxExpressionExecutionTime = 0;
+	HashMap<Integer, Long> stageExecutionTimes = new HashMap<Integer, Long>();
+	HashMap<String, Long> expressionExecutionTimes = new HashMap<String, Long>();
+	HashMap<String, Long> instructionExecutionTimes = new HashMap<String, Long>();
+	HashMap<Integer, HashSet<String>> relatedInstructionsPerStage = new HashMap<Integer, HashSet<String>>();
+	private void fillExecutionTimes() {
+		stageExecutionTimes.clear();
+		expressionExecutionTimes.clear();
+		for(Location loc : instructions.keySet()) {
+			List<String> listInst = new ArrayList<String>(instructions.get(loc));
+			long expressionExecutionTime = 0;
+			
+			if(listInst != null && listInst.size() > 0) {
+				for(String inst : listInst) {
+					long instructionExecutionTime = 0;
+					for(Integer stageId : stageIDs.get(inst)) {
+						try {
+							if(getStageExecutionTime(stageId) != null) {
+								long stageExecTime = getStageExecutionTime(stageId);
+								instructionExecutionTime += stageExecTime;
+								expressionExecutionTime += stageExecTime;
+								stageExecutionTimes.put(stageId, stageExecTime);
+							}
+						}
+						catch(Exception e) {}
+						
+						relatedInstructionsPerStage.put(stageId, getRelatedInstructions(stageId));
+					}
+					instructionExecutionTimes.put(inst, instructionExecutionTime);
+				}
+				expressionExecutionTime /= listInst.size(); // average
+			}
+			maxExpressionExecutionTime = Math.max(maxExpressionExecutionTime, expressionExecutionTime);
+			expressionExecutionTimes.put(loc.toString(), expressionExecutionTime);
+		}
+		
+		// Now fill empty instructions
+		for(Entry<String, Long> kv : instructionExecutionTimes.entrySet()) {
+			if(kv.getValue() == 0) {
+				// Find all stages that contain this as related instruction
+				long sumExecutionTime = 0;
+				for(Entry<Integer, HashSet<String>> kv1 : relatedInstructionsPerStage.entrySet()) {
+					if(kv1.getValue().contains(kv.getKey())) {
+						sumExecutionTime += stageExecutionTimes.get(kv1.getKey());
+					}
+				}
+				kv.setValue(sumExecutionTime);
+			}
+		}
+		
+		for(Location loc : instructions.keySet()) {
+			if(expressionExecutionTimes.get(loc.toString()) == 0) {
+				List<String> listInst = new ArrayList<String>(instructions.get(loc));
+				long expressionExecutionTime = 0;
+				if(listInst != null && listInst.size() > 0) {
+					for(String inst : listInst) {
+						expressionExecutionTime += instructionExecutionTimes.get(inst);
+					}
+				}
+				expressionExecutionTime /= listInst.size(); // average
+				maxExpressionExecutionTime = Math.max(maxExpressionExecutionTime, expressionExecutionTime);
+				expressionExecutionTimes.put(loc.toString(), expressionExecutionTime);
+			}
+		}
+		
+	}
+	
+	/**
+	 * Useful to avoid passing large String through Py4J
+	 * @param fileName
+	 * @throws DMLRuntimeException
+	 * @throws IOException
+	 */
+	public void saveRuntimeInfoInJSONFormat(String fileName) throws DMLRuntimeException, IOException {
+		String json = getRuntimeInfoInJSONFormat();
+		BufferedWriter bw = new BufferedWriter(new FileWriter(fileName));
+		bw.write(json);
+		bw.close();
+	}
+	
+	public String getRuntimeInfoInJSONFormat() throws DMLRuntimeException, IOException {
+		StringBuilder retVal = new StringBuilder("{\n");
+		
+		retVal.append(getInQuotes("dml") + ":" + getInQuotes(getEscapedJSON(dmlStrForMonitoring)) + ",\n"); 
+		retVal.append(getInQuotes("expressions") + ":" + "[\n");
+		
+		boolean isFirstExpression = true;
+		fillExecutionTimes();
+		
+		for(Location loc : instructions.keySet()) {
+			String dml = getEscapedJSON(getExpressionInJSON(loc));
+			
+			if(dml != null && dml.trim().length() > 1) {
+				// Sort the instruction with time - so as to separate recompiled instructions
+				List<String> listInst = new ArrayList<String>(instructions.get(loc));
+				Collections.sort(listInst, new InstructionComparator(instructionCreationTime));
+				
+				if(!isFirstExpression) {
+					retVal.append(",\n");
+				}
+				retVal.append("{\n");
+				isFirstExpression = false;
+				
+				retVal.append(getInQuotes("beginLine") + ":" + loc.beginLine + ",\n");
+				retVal.append(getInQuotes("beginCol") + ":" + loc.beginCol + ",\n");
+				retVal.append(getInQuotes("endLine") + ":" + loc.endLine + ",\n");
+				retVal.append(getInQuotes("endCol") + ":" + loc.endCol + ",\n");
+				
+				long expressionExecutionTime = expressionExecutionTimes.get(loc.toString());
+				retVal.append(getInQuotes("expressionExecutionTime") + ":" + expressionExecutionTime + ",\n");
+				retVal.append(getInQuotes("expressionHeavyHitterFactor") + ":" + ((double)expressionExecutionTime / (double)maxExpressionExecutionTime) + ",\n");
+				
+				retVal.append(getInQuotes("expression") + ":" + getInQuotes(dml) + ",\n");
+				
+				retVal.append(getInQuotes("instructions") + ":" + "[\n");
+			
+				boolean firstTime = true;
+				for(String inst : listInst) {
+					
+					if(!firstTime)
+						retVal.append(", {");
+					else
+						retVal.append("{");
+					
+					if(inst.startsWith("SPARK")) {
+						retVal.append(getInQuotes("isSpark") + ":" + "true,\n"); 
+					}
+					else if(isInterestingCP(inst)) {
+						retVal.append(getInQuotes("isInteresting") + ":" + "true,\n");
+					}
+					
+					retVal.append(getStageIDAsJSONString(inst) + "\n");
+					if(lineageInfo.containsKey(inst)) {
+						retVal.append(getInQuotes("lineageInfo") + ":" + getInQuotes(getEscapedJSON(lineageInfo.get(inst))) + ",\n");
+					}
+					
+					retVal.append(getInQuotes("instruction") + ":" + getInQuotes(getEscapedJSON(inst)));
+					retVal.append("}");
+					firstTime = false;
+				}
+				
+				retVal.append("]\n");
+				retVal.append("}\n");
+			}
+			
+		}
+		
+		return retVal.append("]\n}").toString();
+	}
+	
+	
 	private boolean isInterestingCP(String inst) {
 		if(inst.startsWith("CP rmvar") || inst.startsWith("CP cpvar") || inst.startsWith("CP mvvar"))
 			return false;
@@ -180,6 +371,122 @@ public class SparkMonitoringUtil {
 		}
 		return retVal;
 	}
+	
+	private String getStageIDAsJSONString(String instruction) {
+		long instructionExecutionTime = instructionExecutionTimes.get(instruction);
+		
+		StringBuilder retVal = new StringBuilder(getInQuotes("instructionExecutionTime") + ":" + instructionExecutionTime + ",\n");
+		
+		retVal.append(getInQuotes("stages") + ": {");
+		boolean isFirst = true;
+		if(stageIDs.get(instruction).size() == 0) {
+			// Find back references
+			HashSet<Integer> relatedStages = new HashSet<Integer>();
+			for(Entry<Integer, HashSet<String>> kv : relatedInstructionsPerStage.entrySet()) {
+				if(kv.getValue().contains(instruction)) {
+					relatedStages.add(kv.getKey());
+				}
+			}
+			HashSet<String> relatedInstructions = new HashSet<String>();
+			for(Entry<String, Integer> kv : stageIDs.entries()) {
+				if(relatedStages.contains(kv.getValue())) {
+					relatedInstructions.add(kv.getKey());
+				}
+			}
+			
+			retVal.append(getInQuotes("relatedInstructions") + ": [\n"); // If Marcel prefers these can be renamed as back references
+			boolean isFirstRelInst = true;
+			for(String relInst : relatedInstructions) {
+				if(!isFirstRelInst) {
+					retVal.append(",\n");
+				}
+				retVal.append(getInQuotes(relInst));
+				isFirstRelInst = false;
+			}
+			retVal.append("]\n");
+		}
+		else {
+			for(Integer stageId : stageIDs.get(instruction)) {
+				String stageDAG = "";
+				String stageTimeLine = "";
+				
+				if(getStageDAGs(stageId) != null) {
+					stageDAG = getStageDAGs(stageId).toString();
+				}
+				
+				if(getStageTimeLine(stageId) != null) {
+					stageTimeLine = getStageTimeLine(stageId).toString();
+				}
+				
+				long stageExecutionTime = stageExecutionTimes.get(stageId);
+				if(!isFirst) {
+					retVal.append(",\n");
+				}
+				
+				retVal.append(getInQuotes("" + stageId) + ": {");
+				
+				// Now add related instructions
+				HashSet<String> relatedInstructions = relatedInstructionsPerStage.get(stageId);
+				
+				retVal.append(getInQuotes("relatedInstructions") + ": [\n");
+				boolean isFirstRelInst = true;
+				for(String relInst : relatedInstructions) {
+					if(!isFirstRelInst) {
+						retVal.append(",\n");
+					}
+					retVal.append(getInQuotes(relInst));
+					isFirstRelInst = false;
+				}
+				retVal.append("],\n");
+				
+				retVal.append(getInQuotes("DAG") + ":")
+					  .append(
+							getInQuotes(
+							getEscapedJSON(stageDAG.replaceAll("toggleDagViz\\(false\\)", "toggleDagViz(false, this)")) 
+							) + ",\n"
+							)
+					  .append(getInQuotes("stageExecutionTime") + ":" + stageExecutionTime + ",\n")
+					  .append(getInQuotes("timeline") + ":")
+					  .append(
+							getInQuotes(
+								getEscapedJSON(
+								stageTimeLine
+								.replaceAll("drawTaskAssignmentTimeline\\(", "registerTimelineData(" + stageId + ", ")
+								.replaceAll("class=\"expand-task-assignment-timeline\"",  "class=\"expand-task-assignment-timeline\" onclick=\"toggleStageTimeline(this)\""))
+								)
+							 )
+					  .append("}");
+				
+				isFirst = false;
+			}
+		}
+		retVal.append("}, ");
+		
+		retVal.append(getInQuotes("jobs") + ": {");
+		isFirst = true;
+		for(Integer jobId : jobIDs.get(instruction)) {
+			String jobDAG = "";
+			
+			if(getJobDAGs(jobId) != null) {
+				jobDAG = getJobDAGs(jobId).toString();
+			}
+			if(!isFirst) {
+				retVal.append(",\n");
+			}
+			
+			retVal.append(getInQuotes("" + jobId) + ": {")
+					.append(getInQuotes("DAG") + ":" ) 
+					.append(getInQuotes(
+						getEscapedJSON(jobDAG.replaceAll("toggleDagViz\\(true\\)", "toggleDagViz(true, this)")) 
+						) + "}\n");
+			
+			isFirst = false;
+		}
+		retVal.append("}, ");
+		
+		return retVal.toString();
+	}
+	
 	String [] dmlLines = null;
 	private String getExpression(Location loc) {
 		try {
@@ -204,15 +511,47 @@ public class SparkMonitoringUtil {
 	}
 	
 	
-	private Multimap<Location, String> instructions = TreeMultimap.create();
-	private Multimap<String, Integer> stageIDs = TreeMultimap.create();  // instruction -> stageIds
-	private HashMap<String, String> lineageInfo = new HashMap<String, String>();	// instruction -> lineageInfo
-	private HashMap<String, Long> instructionCreationTime = new HashMap<String, Long>();
+	private String getExpressionInJSON(Location loc) {
+		try {
+			if(dmlLines == null) {
+				dmlLines =  dmlStrForMonitoring.split("\\r?\\n");
+			}
+			if(loc.beginLine == loc.endLine) {
+				return dmlLines[loc.beginLine-1].substring(loc.beginCol-1, loc.endCol);
+			}
+			else {
+				String retVal = dmlLines[loc.beginLine-1].substring(loc.beginCol-1);
+				for(int i = loc.beginLine+1; i < loc.endLine; i++) {
+					retVal += "\\n" +  dmlLines[i-1];
+				}
+				retVal += "\\n" + dmlLines[loc.endLine-1].substring(0, loc.endCol);
+				return retVal;
+			}
+		}
+		catch(Exception e) {
+			return null; // "[[" + loc.beginLine + "," + loc.endLine + "," + loc.beginCol + "," + loc.endCol + "]]";
+		}
+	}
+	
 	public Seq<Node> getStageDAGs(int stageIDs) {
 		if(_sparkListener == null || _sparkListener.stageDAGs == null)
 			return null;
 		else
 			return _sparkListener.stageDAGs.get(stageIDs);
+	}
+	
+	public Long getStageExecutionTime(int stageID) {
+		if(_sparkListener == null || _sparkListener.stageDAGs == null)
+			return null;
+		else
+			return _sparkListener.stageExecutionTime.get(stageID);
+	}
+	
+	public Seq<Node> getJobDAGs(int jobID) {
+		if(_sparkListener == null || _sparkListener.jobDAGs == null)
+			return null;
+		else
+			return _sparkListener.jobDAGs.get(jobID);
 	}
 	
 	public Seq<Node> getStageTimeLine(int stageIDs) {
@@ -226,6 +565,9 @@ public class SparkMonitoringUtil {
 	}
 	public void setStageId(Instruction inst, int stageId) {
 		stageIDs.put(getInstructionString(inst), stageId);
+	}
+	public void setJobId(Instruction inst, int jobId) {
+		jobIDs.put(getInstructionString(inst), jobId);
 	}
 	public void setInstructionLocation(Location loc, Instruction inst) {
 		String instStr = getInstructionString(inst);

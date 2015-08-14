@@ -13,6 +13,7 @@ import com.ibm.bi.dml.api.monitoring.Location;
 import com.ibm.bi.dml.parser.Expression;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
+import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 
 /**
  * The purpose of this proxy is to shield systemml internals from direct access to MLContext
@@ -81,6 +82,13 @@ public class MLContextProxy
 		MLContext mlContext = MLContext.getActiveMLContext();
 		if(loc != null && mlContext != null && mlContext.getMonitoringUtil() != null) {
 			mlContext.getMonitoringUtil().setInstructionLocation(loc, inst);
+		}
+	}
+	
+	public static void addRDDForInstructionForMonitoring(SPInstruction inst, Integer rddID) {
+		MLContext mlContext = MLContext.getActiveMLContext();
+		if(mlContext != null && mlContext.getMonitoringUtil() != null) {
+			mlContext.getMonitoringUtil().addRDDForInstruction(inst, rddID);
 		}
 	}
 	

@@ -706,6 +706,8 @@ public class SparkExecutionContext extends ExecutionContext
 		if( parentLineage == null || parentLineage.getRDD() == null )
 			return;
 		
+		MLContextProxy.addRDDForInstructionForMonitoring(inst, parentLineage.getRDD().id());
+		
 		JavaPairRDD<?, ?> out = parentLineage.getRDD();
 		JavaPairRDD<?, ?> in1 = null; 
 		JavaPairRDD<?, ?> in2 = null;

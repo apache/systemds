@@ -134,18 +134,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<!--  
-				<configuration>
-					<excludes>
-						<exclude>**/udf/lib/kMeansWrapper.java</exclude>
-						<exclude>**/udf/lib/LinearSolverWrapperCP.java</exclude>
-						<exclude>**/udf/lib/OutlierWrapper.java</exclude>
-						<exclude>**/udf/lib/SequenceMinerWrapper.java</exclude>
-						<exclude>**/udf/lib/SGDWrapper.java</exclude>
-						<exclude>**/dml/utils/visualize/*.java</exclude>
-					</excludes>
-				</configuration>
-				-->
 			</plugin>
 
 

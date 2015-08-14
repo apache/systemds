@@ -46,9 +46,9 @@ public class OuterVectorBinaryOpFunction implements PairFlatMapFunction<Tuple2<M
 		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
 		int pNumColsBlocks = _pmV.value().getNumColumnBlocks();
 		for(int i = 1; i <= pNumColsBlocks; i++ ) {
-			MatrixBlock in2 = _pmV.value().getMatrixBlock(1, (int)ix.getColumnIndex());
+			MatrixBlock in2 = _pmV.value().getMatrixBlock(1, i);
 			MatrixBlock resultBlk = (MatrixBlock) (in1.binaryOperations (_op, in2, new MatrixBlock()));
-			retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(arg0._1.getRowIndex(), i), resultBlk));
+			retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(ix.getRowIndex(), i), resultBlk));
 		}
 		
 		return retVal;

@@ -297,6 +297,10 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		if( _op == DataGenMethod.SINIT )
 			_etype = ExecType.CP;
 		
+		//workaround until sample supported in MR
+		if( _op == DataGenMethod.SAMPLE && _etype == ExecType.MR )
+			_etype = ExecType.CP;
+		
 		return _etype;
 	}
 	

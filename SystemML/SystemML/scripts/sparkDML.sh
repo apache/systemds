@@ -34,11 +34,11 @@ Usage: $0 [-h] [SPARK-SUBMIT OPTIONS] -f <dml-filename> [SYSTEMML OPTIONS]
    --conf <property>=<value>   Configuration settings:                  
                                  spark.driver.maxResultSize            Default: 0 
                                  spark.akka.frameSize                  Default: 128
-   --driver-memory <num>       Memory for driver (e.g. 512M)]          Default: 5G
+   --driver-memory <num>       Memory for driver (e.g. 512M)]          Default: 20G
    --master <string>           local | yarn-client | yarn-cluster]     Default: yarn-client
-   --num-executors <num>       Number of executors to launch (e.g. 2)  Default: 4
-   --executor-memory <num>     Memory per executor (e.g. 1G)           Default: 5G
-   --executor-cores <num>      Memory per executor (e.g. )             Default: 12
+   --num-executors <num>       Number of executors to launch (e.g. 2)  Default: 5
+   --executor-memory <num>     Memory per executor (e.g. 1G)           Default: 60G
+   --executor-cores <num>      Memory per executor (e.g. )             Default: 24
 
    -f                          DML script file name, e.g. hdfs:/user/biadmin/test.dml
 

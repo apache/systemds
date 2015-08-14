@@ -17,6 +17,14 @@
 			</includes>
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
+		
+		<fileSet>
+			<directory>${basedir}/scripts</directory>
+			<includes>
+				<include>sparkDML.sh</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
 
 		<fileSet>
 			<directory>${basedir}/scripts/algorithms</directory>

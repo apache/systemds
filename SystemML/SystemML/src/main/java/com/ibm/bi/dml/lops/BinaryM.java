@@ -166,17 +166,19 @@ public class BinaryM extends Lop
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
+		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() ); 
-		sb.append( OPERAND_DELIMITOR );
 		
+		sb.append( OPERAND_DELIMITOR );
 		sb.append ( getInputs().get(0).prepInputOperand(input1));
-		sb.append( OPERAND_DELIMITOR );
 		
+		sb.append( OPERAND_DELIMITOR );
 		sb.append ( getInputs().get(1).prepInputOperand(input2));
-		sb.append( OPERAND_DELIMITOR );
 		
-		sb.append( this.prepOutputOperand(output));
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( prepOutputOperand(output));
+		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append(_cacheType);
 		

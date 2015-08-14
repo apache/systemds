@@ -387,7 +387,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				if( right.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( right );
 				
-				LOG.debug("Applied removeUnnecessaryOuterProduct1");
+				LOG.debug("Applied removeUnnecessaryOuterProduct1 (line "+right.getBeginLine()+")");
 			}
 			//check for row replication
 			else if(    right instanceof AggBinaryOp //matrix mult with datagen
@@ -405,7 +405,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				if( right.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( right );
 				
-				LOG.debug("Applied removeUnnecessaryOuterProduct2");
+				LOG.debug("Applied removeUnnecessaryOuterProduct2 (line "+right.getBeginLine()+")");
 			}
 		}
 		

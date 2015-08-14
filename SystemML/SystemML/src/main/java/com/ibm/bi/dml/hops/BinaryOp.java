@@ -608,7 +608,7 @@ public class BinaryOp extends Hop
 				}
 				else if (mbin == MMBinaryMethod.MR_BINARY_M) {
 					boolean partitioned = false;
-					boolean isColVector = (right.getDim2()==1);
+					boolean isColVector = (right.getDim2()==1 && left.getDim1()==right.getDim1());
 					
 					binary = new BinaryM(left.constructLops(), right.constructLops(),
 							HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et, partitioned, isColVector); 
@@ -642,7 +642,7 @@ public class BinaryOp extends Hop
 					}					
 					
 					BinaryM binary = new BinaryM(left.constructLops(), dcInput, HopsOpOp2LopsB.get(op),
-							getDataType(), getValueType(), ExecType.MR, needPart, (right.getDim2()==1));
+							getDataType(), getValueType(), ExecType.MR, needPart, (right.getDim2()==1 && left.getDim1()==right.getDim1()));
 					setOutputDimensions(binary);
 					setLineNumbers(binary);
 					setLops(binary);

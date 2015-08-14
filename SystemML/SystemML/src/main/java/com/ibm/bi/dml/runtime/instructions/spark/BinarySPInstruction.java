@@ -10,6 +10,7 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.broadcast.Broadcast;
 
+import com.ibm.bi.dml.lops.BinaryM.VectorType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -22,6 +23,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixMatrixBinaryOpFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixVectorBinaryOpFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.OuterVectorBinaryOpFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVectorFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -131,10 +133,11 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	/**
 	 * 
 	 * @param ec
+	 * @param type 
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	protected void processMatrixBVectorBinaryInstruction(ExecutionContext ec) 
+	protected void processMatrixBVectorBinaryInstruction(ExecutionContext ec, VectorType vtype) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
@@ -151,12 +154,14 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(bcastVar);
 		
 		BinaryOperator bop = (BinaryOperator) _optr;
-		boolean isColVector = (mc2.getCols() == 1);
-		boolean isOuter = (mc1.getCols() == 1 && mc2.getRows() == 1);
+		boolean isOuter = (mc1.getRows()>1 && mc1.getCols()==1 && mc2.getRows()==1 && mc2.getCols()>1);
 		
 		//execute map binary operation
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-				.flatMapToPair(new MatrixVectorBinaryOpFunction(bop, in2, true, isColVector, isOuter));
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+		if( isOuter )
+			out = in1.flatMapToPair(new OuterVectorBinaryOpFunction(bop, in2));
+		else	
+			out = in1.mapToPair(new MatrixVectorBinaryOpFunction(bop, in2, vtype));
 		
 		//set output RDD
 		updateBinaryOutputMatrixCharacteristics(sec);
@@ -275,6 +280,13 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
 		
+		//check for unknown input dimensions
+		if( !(mc1.dimsKnown() && mc2.dimsKnown()) ){
+			throw new DMLRuntimeException("Unknown dimensions matrix-matrix binary operations: "
+					+ "[" + mc1.getRows() + "x" + mc1.getCols()  + " vs " + mc2.getRows() + "x" + mc2.getCols() + "]");
+		}
+		
+		//check for dimension mismatch
 		if( (mc1.getRows() != mc2.getRows() ||  mc1.getCols() != mc2.getCols())
 			&& !(mc1.getRows() == mc2.getRows() && mc2.getCols()==1 ) //matrix-colvector
 			&& !(mc1.getCols() == mc2.getCols() && mc2.getRows()==1 ) //matrix-rowvector

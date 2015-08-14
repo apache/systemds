@@ -7,6 +7,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
+import com.ibm.bi.dml.lops.BinaryM.VectorType;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -44,6 +45,7 @@ public abstract class ArithmeticBinarySPInstruction extends BinarySPInstruction
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = null;
 		boolean isBroadcast = false;
+		VectorType vtype = null;
 		
 		if(str.startsWith("SPARK"+Lop.OPERAND_DELIMITOR+"map")) {
 			InstructionUtils.checkNumFields ( str, 5 );
@@ -53,6 +55,7 @@ public abstract class ArithmeticBinarySPInstruction extends BinarySPInstruction
 			in1.split(parts[1]);
 			in2.split(parts[2]);
 			out.split(parts[3]);
+			vtype = VectorType.valueOf(parts[5]);
 			isBroadcast = true;
 		}
 		else {
@@ -71,7 +74,7 @@ public abstract class ArithmeticBinarySPInstruction extends BinarySPInstruction
 		{				
 			if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX) {
 				if(isBroadcast)
-					return new MatrixBVectorArithmeticSPInstruction(operator, in1, in2, out, opcode, str);
+					return new MatrixBVectorArithmeticSPInstruction(operator, in1, in2, out, vtype, opcode, str);
 				else
 					return new MatrixMatrixArithmeticSPInstruction(operator, in1, in2, out, opcode, str);
 			}

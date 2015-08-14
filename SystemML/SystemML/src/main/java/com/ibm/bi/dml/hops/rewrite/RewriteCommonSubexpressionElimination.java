@@ -57,7 +57,9 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 				h.resetVisitStatus();		
 			}
 			cseMerged += rule_CommonSubexpressionElimination(h);
-			LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
+				
+			if( cseMerged > 0 )
+				LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
 		}
 		
 		return roots;
@@ -78,7 +80,9 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 			root.resetVisitStatus();
 		}
 		cseMerged += rule_CommonSubexpressionElimination(root);
-		LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
+		
+		if( cseMerged > 0 )
+			LOG.debug("Common Subexpression Elimination - removed "+cseMerged+" operators.");
 		
 		return root;
 	}

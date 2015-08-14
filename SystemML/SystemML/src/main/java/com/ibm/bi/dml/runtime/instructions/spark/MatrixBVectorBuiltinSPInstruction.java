@@ -8,6 +8,7 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 
+import com.ibm.bi.dml.lops.BinaryM.VectorType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -20,10 +21,14 @@ public class MatrixBVectorBuiltinSPInstruction extends BuiltinBinarySPInstructio
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	public MatrixBVectorBuiltinSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) 
+	private VectorType _vtype = null;
+	
+	public MatrixBVectorBuiltinSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, VectorType vtype, String opcode, String istr) 
 		throws DMLRuntimeException 
 	{
 		super(op, in1, in2, out, opcode, istr);
+		
+		_vtype = vtype;
 		
 		//sanity check opcodes
 		if(!( opcode.equalsIgnoreCase("mapmax") || opcode.equalsIgnoreCase("mapmin")) ) 
@@ -37,6 +42,6 @@ public class MatrixBVectorBuiltinSPInstruction extends BuiltinBinarySPInstructio
 			throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//common binary matrix-broadcast vector process instruction
-		super.processMatrixBVectorBinaryInstruction(ec);
+		super.processMatrixBVectorBinaryInstruction(ec, _vtype);
 	}
 }

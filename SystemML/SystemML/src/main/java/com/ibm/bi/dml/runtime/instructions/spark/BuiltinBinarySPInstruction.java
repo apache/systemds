@@ -1,6 +1,7 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import com.ibm.bi.dml.lops.Lop;
+import com.ibm.bi.dml.lops.BinaryM.VectorType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -41,6 +42,7 @@ public abstract class BuiltinBinarySPInstruction extends BinarySPInstruction
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = null;
 		boolean isBroadcast = false;
+		VectorType vtype = null;
 		
 		ValueFunction func = null;
 		if(str.startsWith("SPARK"+Lop.OPERAND_DELIMITOR+"map")) //map builtin function
@@ -52,11 +54,12 @@ public abstract class BuiltinBinarySPInstruction extends BinarySPInstruction
 			in2.split(parts[2]);
 			out.split(parts[3]);
 			func = Builtin.getBuiltinFnObject(opcode.substring(3));
+			vtype = VectorType.valueOf(parts[5]);
 			isBroadcast = true;
 		}
 		else //default builtin function
 		{
-			parseBinaryInstruction(str, in1, in2, out);	
+			opcode = parseBinaryInstruction(str, in1, in2, out);	
 			func = Builtin.getBuiltinFnObject(opcode);
 		}
 		
@@ -72,7 +75,7 @@ public abstract class BuiltinBinarySPInstruction extends BinarySPInstruction
 		else //MATRIX-MATRIX 
 		{ 
 			if( isBroadcast )
-				return new MatrixBVectorBuiltinSPInstruction(new BinaryOperator(func), in1, in2, out, opcode, str);	
+				return new MatrixBVectorBuiltinSPInstruction(new BinaryOperator(func), in1, in2, out, vtype, opcode, str);	
 			else
 				return new MatrixMatrixBuiltinSPInstruction(new BinaryOperator(func), in1, in2, out, opcode, str);	
 		} 

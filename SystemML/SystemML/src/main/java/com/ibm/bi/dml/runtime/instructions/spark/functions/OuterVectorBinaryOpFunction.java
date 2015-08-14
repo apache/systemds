@@ -7,50 +7,50 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
-import org.apache.spark.api.java.function.PairFunction;
+import java.util.ArrayList;
+
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.lops.BinaryM.VectorType;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 
-public class MatrixVectorBinaryOpFunction implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes,MatrixBlock>
+public class OuterVectorBinaryOpFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes,MatrixBlock>
 {
 	@SuppressWarnings("unused")
 	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
                                              "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
-	private static final long serialVersionUID = -7695883019452417300L;
+	private static final long serialVersionUID = 1730704346934726826L;
 	
-	private BinaryOperator _op = null;
-	private Broadcast<PartitionedMatrixBlock> _pmV = null;
-	private VectorType _vtype = null;
+	private BinaryOperator _op;
+	private Broadcast<PartitionedMatrixBlock> _pmV;
 	
-	public MatrixVectorBinaryOpFunction( BinaryOperator op, Broadcast<PartitionedMatrixBlock> binput, VectorType vtype ) 
+	public OuterVectorBinaryOpFunction( BinaryOperator op, Broadcast<PartitionedMatrixBlock> binput ) 
 	{
 		_op = op;
 		_pmV = binput;
-		_vtype = vtype;
 	}
 
 	@Override
-	public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+	public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 		throws Exception 
 	{
 		MatrixIndexes ix = arg0._1();
 		MatrixBlock in1 = arg0._2();
 		
-		//get the rhs block 
-		int rix= (int)((_vtype==VectorType.COL_VECTOR) ? ix.getRowIndex() : 1);
-		int cix= (int)((_vtype==VectorType.COL_VECTOR) ? 1 : ix.getColumnIndex());
-		MatrixBlock in2 = _pmV.value().getMatrixBlock(rix, cix);
-			
-		//execute the binary operation
-		MatrixBlock ret = (MatrixBlock) (in1.binaryOperations (_op, in2, new MatrixBlock()));
-		return new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(ix), ret);
+		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+		int pNumColsBlocks = _pmV.value().getNumColumnBlocks();
+		for(int i = 1; i <= pNumColsBlocks; i++ ) {
+			MatrixBlock in2 = _pmV.value().getMatrixBlock(1, (int)ix.getColumnIndex());
+			MatrixBlock resultBlk = (MatrixBlock) (in1.binaryOperations (_op, in2, new MatrixBlock()));
+			retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(arg0._1.getRowIndex(), i), resultBlk));
+		}
+		
+		return retVal;
 	}
 }

@@ -99,7 +99,7 @@ public class AppendM extends Lop
 
 
 	//called when append executes in SP
-	public String getInstructions(String input_index1, String input_index2, String input_index3, String output_index) 
+	public String getInstructions(String input1, String input2, String input3, String output) 
 		throws LopsException
 	{
 		StringBuilder sb = new StringBuilder();
@@ -109,16 +109,16 @@ public class AppendM extends Lop
 		sb.append( OPCODE );
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1+""));
+		sb.append( getInputs().get(0).prepInputOperand(input1));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2+""));
+		sb.append( getInputs().get(1).prepInputOperand(input2));
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index+"") );
+		sb.append( this.prepOutputOperand(output) );
 
 		//note: for SP: no cache type
 		

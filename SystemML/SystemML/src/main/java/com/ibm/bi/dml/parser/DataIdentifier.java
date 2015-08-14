@@ -78,6 +78,7 @@ public class DataIdentifier extends Identifier
 			this.setValueType(ValueType.OBJECT);
 		else {
 			// provide location for this exception in the parser
+			LOG.error(this.printErrorLocation() + "function parameter has unknown value type " + valueType);
 			throw new ParseException(this.printErrorLocation() + "function parameter has unknown value type " + valueType);
 		}
 		
@@ -89,6 +90,7 @@ public class DataIdentifier extends Identifier
 			this.setDataType(DataType.MATRIX);
 		else {
 			// provide location for this exception in the parser
+			LOG.error(this.printErrorLocation() + "function parameter has unknown data type " + valueType);
 			throw new ParseException(this.printErrorLocation() + "function parameter has unknown data type " + valueType);
 		}
 		

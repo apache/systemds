@@ -41,6 +41,7 @@ public class FunctionStatementBlock extends StatementBlock
 	{
 		
 		if (_statements.size() > 1){
+			LOG.error(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (FunctionStatement)");
 			throw new LanguageException(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (FunctionStatement)");
 		}
 		FunctionStatement fstmt = (FunctionStatement) _statements.get(0);
@@ -185,6 +186,7 @@ public class FunctionStatementBlock extends StatementBlock
 		
 		FunctionStatement fstmt = (FunctionStatement)_statements.get(0);
 		if (_statements.size() > 1){
+			LOG.error(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (while statement)");
 			throw new LanguageException(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (while statement)");
 		}
 		
@@ -248,6 +250,7 @@ public class FunctionStatementBlock extends StatementBlock
 	public ArrayList<Hop> get_hops() throws HopsException {
 		
 		if (_hops != null && _hops.size() > 0){
+			LOG.error(this.printBlockErrorLocation() + "there should be no HOPs associated with the FunctionStatementBlock");
 			throw new HopsException(this.printBlockErrorLocation() + "there should be no HOPs associated with the FunctionStatementBlock");
 		}
 		
@@ -256,6 +259,7 @@ public class FunctionStatementBlock extends StatementBlock
 	
 	
 	public VariableSet analyze(VariableSet loPassed) throws LanguageException{
+		LOG.error(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");
 		throw new LanguageException(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");	
 	}
 	
@@ -285,6 +289,7 @@ public class FunctionStatementBlock extends StatementBlock
 		/*
 		for(String key : _gen.getVariableNames()){
 			if (_liveIn.containsVariable(key) == false){
+				LOG.error(this.getStatement(0).printErrorLocation() + "function " + ((FunctionStatement)this.getStatement(0)).getName() + " requires variable " + key + " to be passed as formal parameter");
 				throw new LanguageException(this.getStatement(0).printErrorLocation() + "function " + ((FunctionStatement)this.getStatement(0)).getName() + " requires variable " + key + " to be passed as formal parameter");
 			}
 		}

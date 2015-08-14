@@ -504,20 +504,6 @@ public class OptimizerUtils
 		return (int) Math.round(dop);
 	}
 	
-	/**
-	 * Returns the degree of parallelism used for parallel matrixMult
-	 * 
-	 * @return
-	 */
-	public static int getParallelMatrixMultParallelism()
-	{
-		if( !PARALLEL_CP_MATRIX_MULTIPLY )
-			return 1; // sequential execution
-
-		//compute degree of parallelism for parallel matrix mult
-		double dop = InfrastructureAnalyzer.getLocalParallelism(); // may need a parallelism multiplier
-		return (int) Math.round(dop);
-	}
 	
 	////////////////////////
 	// Memory Estimates   //

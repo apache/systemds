@@ -581,22 +581,6 @@ public class DMLScript
 			DMLAppMasterUtils.setupConfigRemoteMaxMemory(conf); 
 		}
 		
-		if (conf.getBooleanValue(DMLConfig.MULTITHREADED_CP)) {
-			// enable multi-threading
-			OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY = true;
-		} else {
-			OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY = false;
-		}
-
-		if (conf.getBooleanValue(DMLConfig.MULTITHREADED_CP_RW)) {
-			// enable rd-wr multi-threaded
-			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = true;
-			OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = false; // enable it after JDK-8 (parseDouble fix) integration
-		} else {
-			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = false;
-			OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = false;
-		}
-
 		//Step 3: parse dml script
 		DMLProgram prog = null;
 		if(parsePyDML) {

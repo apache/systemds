@@ -6,15 +6,15 @@
 
 
 	<scm>
-<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-5.1/jazz:${RTC_WORKSPACE}</url>
-<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-5.1/jazz:${RTC_WORKSPACE}</connection>
-<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:systemml-reactor-5.1/jazz:${RTC_WORKSPACE}</developerConnection>
+<url>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</url>
+<connection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</connection>
+<developerConnection>scm:jazz:https://sdijazzccm04.svl.ibm.com:9446/jazz:${RTC_WORKSPACE}</developerConnection>
 	</scm>
 
 	<parent>
 		<groupId>com.ibm.biginsights</groupId>
 		<artifactId>systemml-reactor</artifactId>
-		<version>5.1</version>
+		<version>5.2-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 

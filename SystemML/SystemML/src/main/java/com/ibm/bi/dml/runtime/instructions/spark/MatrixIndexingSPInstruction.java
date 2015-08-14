@@ -185,9 +185,15 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			{
 				MatrixCharacteristics mcLeft = ec.getMatrixCharacteristics(input1.getName());
 				MatrixCharacteristics mcRight = ec.getMatrixCharacteristics(input2.getName());
+				
+				//sanity check matching index range and rhs dimensions
 				if(!mcLeft.dimsKnown() || !mcRight.dimsKnown()) {
 					throw new DMLRuntimeException("The input matrix dimensions are not specified for MatrixIndexingSPInstruction");
 				}
+				if(!(ru-rl+1 == mcRight.getRows() && cu-cl+1 == mcRight.getCols())) {
+					throw new DMLRuntimeException("Invalid index range of leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"] vs ["+mcRight.getRows()+"x"+mcRight.getCols()+"]." );
+				}
+				
 				
 				if(opcode.equalsIgnoreCase("mapLeftIndex")) {
 					broadcastIn2 = sec.getBroadcastForVariable( input2.getName() ); 

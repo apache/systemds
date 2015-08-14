@@ -7,8 +7,6 @@
 
 package com.ibm.bi.dml.parser;
 
-import java.io.File;
-
 
  
 public class ImportStatement extends Statement
@@ -66,29 +64,6 @@ public class ImportStatement extends Statement
 		_completePath = filePath;
 	}
 	
-	/**
-	 * verify: verifies that the module actually exists and sets the complete 
-	 * path for the import statement (package root specified in working directory concatenated 
-	 * with package path 
-	 *  
-	 * @param packagePaths specifies directories to search for DML packages
-	 * 
-	 * @return true if the module exists in one of the specified packagePaths
-	 */
-	public boolean verify(String workingDir){
-		
-		if (!workingDir.endsWith("/"))
-			workingDir += "/";
-			
-		String path = workingDir + this._filePath;
-		File completePathFile = new File(path);
-		if (completePathFile.exists()){
-			_completePath = path;
-			return true;
-		}	
-		_completePath = null;
-		return false;
-	} // end method
 	
 	public Statement rewriteStatement(String prefix) throws LanguageException{
 		throw new LanguageException(this.printErrorLocation() + "rewriting for inlining not supported for ImportStatement");

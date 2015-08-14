@@ -18,7 +18,6 @@
 # V       String   ---      Location to read the input matrix V to be factorized
 # L       String   ---      Location to write the factor matrix L
 # R       String   ---      Location to write the factor matrix R
-# M      String   ---      Location to write the input matrix M with empty rows and columns removed (if there are any)
 # rank    Int      10       Rank of the factorization
 # reg     String   "L2"	    Regularization: 
 #						    "L2" = L2 regularization;
@@ -43,7 +42,6 @@
 fileV      = $V;
 fileL	   = $L;
 fileR      = $R;
-fileM      = $M;
 
 # Default values of some parameters
 r          = ifdef ($rank, 10);	        # $rank=10;
@@ -56,7 +54,6 @@ fmtO       = ifdef ($fmt, "text");      # $fmt="text";
 
 V = read (fileV);
 
-write (V, fileM, format = fmtO);
 
 # check the input matrix V, if some rows or columns contain only zeros remove them from V  
 V_nonzero_ind = ppred (V, 0, "!=");
@@ -159,4 +156,4 @@ if (num_zero_cols > 0) {
 Rt = t (R);
 write (L, fileL, format=fmtO);
 write (Rt, fileR, format=fmtO);
-
+ 

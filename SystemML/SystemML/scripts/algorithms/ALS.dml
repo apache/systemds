@@ -33,11 +33,9 @@
 # OUTPUT: 
 # 1- An m x r matrix L, where r is the factorization rank 
 # 2- An r x n matrix R
-# 3- An m x n input matrix M with empty rows and columns removed (if there are any) 
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f ALS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R M=OUTPUT_DIR/M
-#     				                         rank=10 reg="L2" lambda=0.0001 fmt=csv
+# hadoop jar SystemML.jar -f ALS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R rank=10 reg="L2" lambda=0.0001 fmt=csv
 
 fileV      = $V;
 fileL	   = $L;
@@ -149,7 +147,7 @@ if (!converged) {
 if (num_zero_rows > 0) {
 	L = removeEmpty (target = diag (orig_nonzero_rows_ind), margin = "cols") %*% L;
 }
-# inject 0s in L if original V had empty rows
+# inject 0s in R if original V had empty rows
 if (num_zero_cols > 0) {
 	R = removeEmpty (target = diag (orig_nonzero_cols_ind), margin = "cols") %*% R; 
 }

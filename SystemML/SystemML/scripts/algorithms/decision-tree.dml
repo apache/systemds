@@ -166,7 +166,7 @@ if (num_scale_features > 0) {
 	max_num_bins = max (count_thresholds);
 	total_num_bins = sum (count_thresholds);
 	cum_count_thresholds = t (cumsum (t (count_thresholds)));
-	# print ("min no. bins: " + (min_num_bins + 1) + " max no. bins: " + (max_num_bins + 1) + " total no. bins: " + (total_num_bins + num_scale_features));
+
 	X_scale_ext = matrix (0, rows = num_records, cols = total_num_bins);
 	parfor (i2 in 1:num_scale_features, check = 0) { 
 		Xi2 = X_scale[,i2];
@@ -175,7 +175,7 @@ if (num_scale_features > 0) {
 		if (i2 > 1) {
 			offset_feature = offset_feature + as.integer (as.scalar (cum_count_thresholds[, (i2 - 1)]));
 		}
-		# print ("offset_feature " + offset_feature + " count_threshold " + count_threshold);
+
 		ti2 = t(thresholds[1:count_threshold, i2]);
 		X_scale_ext[,offset_feature:(offset_feature + count_threshold - 1)] = outer (Xi2, ti2, "<");
 	}
@@ -228,7 +228,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		cur_Q_large = matrix (0, rows = 1, cols = 2 * num_cur_nodes_large);
 		cur_NC_large = matrix (0, rows = 4, cols = 2 * num_cur_nodes_large); 
 		cur_F_large = matrix (0, rows = 3, cols = num_cur_nodes_large); 
-		cur_S_large = matrix (0, rows = 1, cols = num_cur_nodes_large * distinct_values_max); # split values of the best feature, worst case for cat. features
+		cur_S_large = matrix (0, rows = 1, cols = num_cur_nodes_large * distinct_values_max); 
 		cur_nodes_small = matrix (0, rows = 2, cols = 2 * num_cur_nodes_large); 
 	}
 
@@ -236,7 +236,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	parfor (i6 in 1:num_cur_nodes_large, check = 0) { 
 	
 		cur_node = as.scalar (cur_nodes_large[,i6]);	
-		# print (" Expanding LARGE node: " + cur_node);
 			
 		# --- find best split ---
 		# samples that reach cur_node 
@@ -249,8 +248,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 
 		if (imp == "entropy") {
 			label_dist_zero = ppred (label_dist_overall, 0, "==");
-			# cur_impurity = - sum (label_dist_overall * log (label_dist_overall + label_dist_zero) / log (2)); # impurity before
-			cur_impurity = - sum (label_dist_overall * log (label_dist_overall + label_dist_zero)); # impurity before
+			cur_impurity = - sum (label_dist_overall * log (label_dist_overall + label_dist_zero)); # / log (2); # impurity before
 		} else { # imp == "Gini"
 			cur_impurity = sum (label_dist_overall * (1 - label_dist_overall)); # impurity before
 		}
@@ -560,7 +558,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				# first row: ids of SMALL internal nodes, second row: no. of samples for these nodes
 				cur_nodes_small[1,(2 * (i6 - 1)+ 1)] = left_child;
 				cur_nodes_small[2,(2 * (i6 - 1)+ 1)] = left_child_size;
-				# print (left_child + " with size " + left_child_size + " added to cur_nodes_small");
 			}
 		}
 		if (!right_pure) {
@@ -569,8 +566,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			} else{
 				# first row: ids of SMALL internal nodes, second row: no. of samples for these nodes
 				cur_nodes_small[1,(2 * i6)] = right_child;
-				cur_nodes_small[2,(2 * i6)] = right_child_size;	
-				# print (right_child + " with size " + right_child_size + " added to cur_nodes_small");				
+				cur_nodes_small[2,(2 * i6)] = right_child_size;				
 			}	
 		}
 	}
@@ -604,7 +600,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		
 	if (num_cur_nodes_small > 0) { # SMALL nodes to process		
 		reserve_len = sum (2 ^ (ceil (log (cur_nodes_small_nonzero[2,]) / log (2)))) + num_cur_nodes_small;
-		# print ("	reserve_len " + reserve_len + " for " + num_cur_nodes_small + " SMALL nodes");
 		cur_Q_small =  matrix (0, rows = 1, cols = reserve_len);
 		cur_NC_small = matrix (0, rows = 4, cols = reserve_len); 
 		cur_F_small = matrix (0, rows = 3, cols = reserve_len); 
@@ -615,7 +610,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	parfor (i7 in 1:num_cur_nodes_small, check = 0) { 
 	
 		cur_node_small = as.scalar (cur_nodes_small_nonzero[1,i7]);		
-		# print ("Expanding SMALL node (root) " + cur_node_small);
 		
 		# build dataset for SMALL node
 		Ix = ppred (L[,1], cur_node_small, "==");	
@@ -659,7 +653,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			parfor (i8 in 1:num_cur_nodes, check = 0) { 
 			
 				cur_node = as.scalar (cur_nodes_[,i8]);	
-				# print ("    ---> Expanding SMALL node: " + cur_node);
 				
 				# --- find best split ---
 				# samples that reach cur_node 
@@ -709,7 +702,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			
 					# determine best feature to split on and the split value
 					best_scale_gain = max (I_gain_scale);
-					max_I_gain_ind_scale = as.scalar (rowIndexMax (t (I_gain_scale))); # max_I_gain_ind -> max_I_gain_ind_scale
+					max_I_gain_ind_scale = as.scalar (rowIndexMax (t (I_gain_scale))); 
 					p = ppred (cum_count_thresholds, max_I_gain_ind_scale, "<");
 					sum_cum_count_thresholds = sum (p);
 					best_scale_feature = sum_cum_count_thresholds + 1;
@@ -732,7 +725,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					best_label_counts_right = matrix (0, rows = num_cat_features, cols = num_classes);
 		
 					# main operation
-					label_counts = t (t (cur_Y_bin) %*% X_cat_small); # X_cat_small 
+					label_counts = t (t (cur_Y_bin) %*% X_cat_small);
 		
 					parfor (i9 in 1:num_cat_features, check = 0){
 			
@@ -899,8 +892,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					cur_S[1,S_start_ind:(S_start_ind + offset_nonzero - 1)] = split_values[1,start_ind:(start_ind + offset_nonzero - 1)];
 					cur_F[3,i8] = offset_nonzero;
 					cur_F[2,i8] = 2;
-
-					# print ("best cat feature selected " + best_cat_feature + " size of subset " + offset_nonzero);
 		
 					left_child = 2 * (cur_node - 1) + 1 + 1;
 					right_child = 2 * (cur_node - 1) + 2 + 1;
@@ -977,14 +968,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			}
 		
 			cur_Q = removeEmpty (target = cur_Q, margin = "cols");
-			# if (as.scalar (cur_Q[1,1]) != 0) Q = append (Q, cur_Q);
-			# cur_NC = removeEmpty (target = cur_NC, margin = "cols");
-			# if (as.scalar (cur_NC[1,1]) != 0) NC = append (NC, cur_NC);
-	
-			# cur_F = removeEmpty (target = cur_F, margin = "cols");
-			# if (as.scalar (cur_F[1,1]) != 0) F = append (F, cur_F);
-			# cur_S = removeEmpty (target = cur_S, margin = "cols");
-			# if (as.scalar (cur_S[1,1]) != 0) S = append (S, cur_S);
 			Q = append (Q, cur_Q);
 			NC = append (NC, cur_NC);
 			F = append (F, cur_F);
@@ -999,10 +982,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			}
 		}
 		
-		# cur_Q_small[,start_ind_global:(start_ind_global + ncol (Q) - 1)] = Q;
-		# cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1 - 1)] = NC[,2:ncol (NC)];
-		# cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1 - 1)] = F[,2:ncol (F)];	
-		# cur_S_small[,start_ind_S_global:(start_ind_S_global + ncol (S) - 1 - 1)] = S[,2:ncol (S)]; 
 		cur_Q_small[,start_ind_global:(start_ind_global + ncol (Q) - 1)] = Q;
 		cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1)] = NC;
 		cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1)] = F;	
@@ -1024,7 +1003,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		num_cur_nodes_small = 0; # reset
 	} 
 		
-	print (" --- end level " + level + ", remaining no. of LARGE nodes to expand " + num_cur_nodes_large + "  remaining no. of SMALL nodes to expand " + num_cur_nodes_small);
+	print (" --- end level " + level + ", remaining no. of LARGE nodes to expand " + num_cur_nodes_large + " --- ");
 }
 
 num_misclassified = sum (NC_large[3,]) + sum (NC_small[3,]);
@@ -1141,8 +1120,6 @@ if (as.scalar (NC_large[1,1]) != 0) {
 	num_large_leaf = ncol (NC_large);
 	M2_large = matrix (0, rows = 5 + max_offset, cols = num_large_leaf);
 	M2_large[1,] = NC_large[1,];
-	# M2_large[4,] = NC_large[2,];
-	# M2_large[5,] = NC_large[3,];
 	M2_large[4:6,] = NC_large[2:4,];	
 } else {
 	print ("No LARGE leaf nodes available");
@@ -1156,8 +1133,6 @@ if (as.scalar (NC_small[1,1]) != 0) {
 	num_small_leaf = ncol (NC_small);
 	M2_small = matrix (0, rows = 5 + max_offset, cols = num_small_leaf);
 	M2_small[1,] = NC_small[1,];
-	# M2_small[4,] = NC_small[2,];
-	# M2_small[5,] = NC_small[3,];
 	M2_small[4:6,] = NC_small[2:4,];
 } else {
 	print ("No SMALL leaf nodes available");
@@ -1232,10 +1207,8 @@ if (ncol (M) > 1) { # if internal nodes exist
 	internal_ids_nonzero = removeEmpty (target = internal_ids, margin = "cols");
 	parfor (it in 1:ncol (internal_ids_nonzero), check = 0) {
 		a1 = as.scalar (internal_ids_nonzero[1,it]);
-		# pos_a1 = sum (ppred (M[1,], a1, "<="));
 		pos_a1 = as.scalar (rowIndexMax (ppred (M[1,], a1, "==")));
 		a2 = 2 * a1;
-		# pos_a2 = sum (ppred (M[1,], a2, "<="));
 		pos_a2 = as.scalar (rowIndexMax (ppred (M[1,], a2, "==")));
 		M[2,pos_a1] = pos_a2 - pos_a1;
 	}

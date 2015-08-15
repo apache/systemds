@@ -16,9 +16,9 @@
 # X       String   ---          Location to read the input matrix X containing the survival data: 
 #								timestamps, whether event occurred (1) or data is censored (0), and a number of factors (categorical features) 
 #								for grouping and/or stratifying 
-# TE	  String   ---          Column indices of X which contain timestamp (first entry) and event information (second entry) in csv format
-# GI	  String   ---          Column indices of X corresponding to the factors to be used for grouping in csv format
-# SI	  String   ---          Column indices of X corresponding to the factors to be used for stratifying in csv format				
+# TE	  String   ---          Column indices of X which contain timestamps (first entry) and event information (second entry) 
+# GI	  String   ---          Column indices of X corresponding to the factors to be used for grouping
+# SI	  String   ---          Column indices of X corresponding to the factors to be used for stratifying				
 # O       String   ---          Location to write the matrix containing the results of the Kaplan-Meier analysis; see below for the description
 # M       String   ---          Location to write Matrix M containing the following statistic: total number of events, median and its confidence intervals; 
 #								if survival data for multiple groups and strata are provided each row of M contains the above statistics per group and stratum

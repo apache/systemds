@@ -13,15 +13,19 @@
 # ---------------------------------------------------------------------------------------------
 # NAME    TYPE     DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
-# X       String   ---      The input user-ids list
-# Y	 	  String   ---	    The output user-id x top-rating
+# X       String   ---      Location to read the input user-ids list
+# Y	 	  String   ---	    Location to write the output of top-K prediction: 
+#							 - top-K item-ids will be stored at Y
+#							 - the corresponding top-K ratings will be stored at Y+".ratings" 
 # L       String   ---      Location of factor matrix L: user-id x feature-id 
 # R       String   ---      Location of factor matrix R: feature-id x item-id
 # V	  	  String   ---      Location of original matrix V: user-id x item-id
-# K	  	  Int      5	    The number of top K items	
+# K	  	  Int      5	    The number of top-K items	
 # fmt     String   "text"   The output format of the factor matrix user-id/item-id/score
 # ---------------------------------------------------------------------------------------------
-# OUTPUT: Matrix Y containing the top-K predicted ratings for users and items specified in input matrix X
+# OUTPUT: 
+# 1- A matrix containing the top-K item-ids with highest predicted ratings for the users specified in the input matrix X  
+# 2- A matrix containing the top-K predicted ratings for the users specified in the input matrix X  
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar system-ml.jar -f ALS-topk-predict.dml -nvargs X=INPUT_DIR/X L=INPUT_DIR/L R=INPUT_DIR/R V=INTPUT_DIR/V.mtx 
@@ -53,10 +57,13 @@ Rcols = ncol(R);
 
 X_user_max = max(X[,1]);
 
-if ( Lrows < Vrows | Rcols <  Vcols |  X_user_max > Vrows ){
-       stop("Predictions can be provided only if the number of rows and columns of the original matrix have been retained after the factorization and the users
-        in test data are also available in the factor matrices");
+if (X_user_max > Vrows) {
+	stop ("Predictions cannot be provided. Maximum user-id exceeds the number of rows of V.");
 }
+if (Lrows != Vrows | Rcols !=  Vcols) {
+	stop ("Predictions cannot be provided. Number of rows of L (columns of R) does not match the number of rows (column) of V.");
+}
+
 
 # creats projection matrix to select users
 s = seq(1, n);

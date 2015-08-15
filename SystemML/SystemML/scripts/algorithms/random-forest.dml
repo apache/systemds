@@ -173,7 +173,6 @@ if (num_scale_features > 0) {
 	max_num_bins = max (count_thresholds);
 	total_num_bins = sum (count_thresholds);
 	cum_count_thresholds = t (cumsum (t (count_thresholds)));
-	# print ("min no. bins: " + (min_num_bins + 1) + " max no. bins: " + (max_num_bins + 1) + " total no. bins: " + (total_num_bins + num_scale_features));
 	X_scale_ext = matrix (0, rows = num_records, cols = total_num_bins);
 	parfor (i2 in 1:num_scale_features, check = 0) { 
 		Xi2 = X_scale[,i2];
@@ -182,7 +181,7 @@ if (num_scale_features > 0) {
 		if (i2 > 1) {
 			offset_feature = offset_feature + as.integer (as.scalar (cum_count_thresholds[, (i2 - 1)]));
 		}
-		# print ("offset_feature " + offset_feature + " count_threshold " + count_threshold);
+
 		ti2 = t(thresholds[1:count_threshold, i2]);
 		X_scale_ext[,offset_feature:(offset_feature + count_threshold - 1)] = outer (Xi2, ti2, "<");
 	}
@@ -258,7 +257,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		cur_Q_large = matrix (0, rows = 2, cols = 2 * num_cur_nodes_large);
 		cur_NC_large = matrix (0, rows = 5, cols = 2 * num_cur_nodes_large); 
 		cur_F_large = matrix (0, rows = 3, cols = num_cur_nodes_large); 
-		cur_S_large = matrix (0, rows = 1, cols = num_cur_nodes_large * distinct_values_max); # split values of the best feature, worst case for cat. features
+		cur_S_large = matrix (0, rows = 1, cols = num_cur_nodes_large * distinct_values_max); 
 		cur_nodes_small = matrix (0, rows = 3, cols = 2 * num_cur_nodes_large); 
 	}
 
@@ -267,19 +266,12 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	
 		cur_node = as.scalar (cur_nodes_large[1,i6]);
 		cur_tree = as.scalar (cur_nodes_large[2,i6]);
-		print (" Expanding LARGE node: " + cur_node + " in tree " + cur_tree);
 			
 		# select sample features WOR
 		feature_samples = sample (num_features_total, num_feature_samples);
 		feature_samples = order (target = feature_samples, by = 1);
 		num_scale_feature_samples = sum (ppred (feature_samples, num_scale_features, "<="));
 		num_cat_feature_samples = num_feature_samples - num_scale_feature_samples;
-		# if (num_scale_feature_samples > 0) {
-			# scale_feature_samples = feature_samples[1:num_scale_feature_samples,];
-		# } 
-		# if (num_cat_feature_samples > 0) {
-			# cat_feature_samples = feature_samples[(num_scale_feature_samples + 1):(num_scale_feature_samples + num_cat_feature_samples),] - num_scale_features;
-		# }
 		
 		# --- find best split ---
 		# samples that reach cur_node 
@@ -292,7 +284,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 
 		if (imp == "entropy") {
 			label_dist_zero = ppred (label_dist_overall, 0, "==");
-			cur_impurity = - sum (label_dist_overall * log (label_dist_overall + label_dist_zero)); # impurity before
+			cur_impurity = - sum (label_dist_overall * log (label_dist_overall + label_dist_zero)); # / log (2); # impurity before
 		} else { # imp == "Gini"
 			cur_impurity = sum (label_dist_overall * (1 - label_dist_overall)); # impurity before
 		}
@@ -341,33 +333,30 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			max_I_gain_found_ind = 0;
 			best_i = 0;
 			
-			# if (num_scale_feature_samples > 0) {	
-			
-				for (i in 1:num_scale_feature_samples) { # assuming feature_samples is 5x1
-					cur_feature_samples_bin = as.scalar (scale_feature_samples[i,]); 
-					cur_start_ind = as.scalar (feature_start_ind[,cur_feature_samples_bin]);
-					cur_end_ind = as.scalar (cum_count_thresholds[,cur_feature_samples_bin]);
-					I_gain_portion = I_gain_scale[cur_start_ind:cur_end_ind,];
-					cur_max_I_gain = max (I_gain_portion);
-					cur_max_I_gain_ind = as.scalar (rowIndexMax (t (I_gain_portion)));
-					if (cur_max_I_gain > max_I_gain_found) {
-						max_I_gain_found = cur_max_I_gain;
-						max_I_gain_found_ind = cur_max_I_gain_ind;
-						best_i = i;
-					}
+			for (i in 1:num_scale_feature_samples) { # assuming feature_samples is 5x1
+				cur_feature_samples_bin = as.scalar (scale_feature_samples[i,]); 
+				cur_start_ind = as.scalar (feature_start_ind[,cur_feature_samples_bin]);
+				cur_end_ind = as.scalar (cum_count_thresholds[,cur_feature_samples_bin]);
+				I_gain_portion = I_gain_scale[cur_start_ind:cur_end_ind,];
+				cur_max_I_gain = max (I_gain_portion);
+				cur_max_I_gain_ind = as.scalar (rowIndexMax (t (I_gain_portion)));
+				if (cur_max_I_gain > max_I_gain_found) {
+					max_I_gain_found = cur_max_I_gain;
+					max_I_gain_found_ind = cur_max_I_gain_ind;
+					best_i = i;
 				}
+			}
 
-				best_scale_gain = max_I_gain_found;
-				max_I_gain_ind_scale = max_I_gain_found_ind;
-				best_scale_feature = 0;
-				if (best_i > 0) {
-					best_scale_feature = as.scalar (scale_feature_samples[best_i,]);
-				}
-				best_scale_split = max_I_gain_ind_scale;
-				if (best_scale_feature > 1) {
-					best_scale_split = best_scale_split + as.scalar(cum_count_thresholds[,(best_scale_feature - 1)]);
-				}				
-			# }		
+			best_scale_gain = max_I_gain_found;
+			max_I_gain_ind_scale = max_I_gain_found_ind;
+			best_scale_feature = 0;
+			if (best_i > 0) {
+				best_scale_feature = as.scalar (scale_feature_samples[best_i,]);
+			}
+			best_scale_split = max_I_gain_ind_scale;
+			if (best_scale_feature > 1) {
+				best_scale_split = best_scale_split + as.scalar(cum_count_thresholds[,(best_scale_feature - 1)]);
+			}					
 		}
 	
 		if (num_cat_features > 0 & num_cat_feature_samples > 0){
@@ -385,104 +374,101 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			best_label_counts_right = matrix (0, rows = num_cat_features, cols = num_classes);
 			
 			# main operation
-			label_counts = t (t (cur_Y_bin) %*% X_cat);  
-
-			# if (num_cat_feature_samples > 0) {			
+			label_counts = t (t (cur_Y_bin) %*% X_cat);  			
 			
-				parfor (i9 in 1:num_cat_feature_samples, check = 0){
+			parfor (i9 in 1:num_cat_feature_samples, check = 0){
 			
-					cur_cat_feature = as.scalar (cat_feature_samples[i9,1]);
-					start_ind = 1;
-					if (cur_cat_feature > 1) {
-						start_ind = start_ind + as.scalar (distinct_values_offset[(cur_cat_feature - 1),]);
-					}
-					offset = as.scalar (distinct_values[1,cur_cat_feature]);
-				
-					cur_label_counts = label_counts[start_ind:(start_ind + offset - 1),];
-								
-					label_sum = rowSums (cur_label_counts);
-					label_dist = cur_label_counts / label_sum;
-					if (imp == "entropy") {
-						label_dist = replace (target = label_dist, pattern = 0, replacement = 1);
-						log_label_dist = log (label_dist); # / log(2)
-						impurity = - rowSums (label_dist * log_label_dist); 
-						impurity = replace (target = impurity, pattern = "NaN", replacement = 1/0); 
-					} else { # imp == "Gini"
-						impurity = rowSums (label_dist * (1 - label_dist)); 				
-					}
-			
-					# sort cur feature by impurity
-					cur_distinct_values = seq (1, nrow (cur_label_counts));
-					cur_distinct_values_impurity = append (cur_distinct_values, impurity);
-					cur_feature_sorted = order (target = cur_distinct_values_impurity, by = 2, decreasing = FALSE);
-					P = table (cur_distinct_values, cur_feature_sorted); # permutation matrix
-					label_counts_sorted = P %*% cur_label_counts;
-
-					# compute left and right label distribution			
-					label_counts_left = cumsum (label_counts_sorted);
-			
-					label_sum_left = rowSums (label_counts_left);
-					label_dist_left = label_counts_left / label_sum_left;
-					label_dist_left = replace (target = label_dist_left, pattern = "NaN", replacement = 1);
-					if (imp == "entropy") {
-						label_dist_left = replace (target = label_dist_left, pattern = 0, replacement = 1);
-						log_label_dist_left = log (label_dist_left); # / log(2)
-						impurity_left = - rowSums (label_dist_left * log_label_dist_left);
-					} else { # imp == "Gini"
-						impurity_left = rowSums (label_dist_left * (1 - label_dist_left));					
-					}
-					#
-					label_counts_right = - label_counts_left + label_counts_overall;
-					label_sum_right = rowSums (label_counts_right);
-					label_dist_right = label_counts_right / label_sum_right;
-					label_dist_right = replace (target = label_dist_right, pattern = "NaN", replacement = 1);
-					if (imp == "entropy") {
-						label_dist_right = replace (target = label_dist_right, pattern = 0, replacement = 1);
-						log_label_dist_right = log (label_dist_right); # / log (2)
-						impurity_right = - rowSums (label_dist_right * log_label_dist_right);			
-					} else { # imp == "Gini"
-						impurity_right = rowSums (label_dist_right * (1 - label_dist_right));					
-					}
-					I_gain = cur_impurity - ( ( label_sum_left / label_sum_overall ) * impurity_left + ( label_sum_right / label_sum_overall ) * impurity_right);
-			
-					Ix_label_sum_left_zero = ppred (label_sum_left, 0, "==");
-					Ix_label_sum_right_zero = ppred (label_sum_right, 0, "==");
-					Ix_label_sum_zero = Ix_label_sum_left_zero * Ix_label_sum_right_zero;
-					I_gain = I_gain * (1 - Ix_label_sum_zero);	
-				
-					I_gain[nrow (I_gain),] = 0; # last entry invalid
-			
-					max_I_gain_ind = as.scalar (rowIndexMax (t (I_gain)));
-
-					split_values[1, start_ind:(start_ind + max_I_gain_ind - 1)] = t (cur_feature_sorted[1:max_I_gain_ind,1]);
-					for (i10 in 1:max_I_gain_ind) {
-						ind = as.scalar (cur_feature_sorted[i10,1]);
-						if (ind == 1) {
-							split_values_bin[1,start_ind] = 1.0; 
-						} else {
-							split_values_bin[1,(start_ind + ind - 1)] = 1.0;
-						}
-					}
-					split_values_offset[1,cur_cat_feature] = max_I_gain_ind;
-			
-					I_gains[1,cur_cat_feature] = max (I_gain);
-			
-					impurities_left[1,cur_cat_feature] = as.scalar (impurity_left[max_I_gain_ind,]);
-					impurities_right[1,cur_cat_feature] = as.scalar (impurity_right[max_I_gain_ind,]);
-					best_label_counts_left[cur_cat_feature,] = label_counts_left[max_I_gain_ind,];
-					best_label_counts_right[cur_cat_feature,] = label_counts_right[max_I_gain_ind,];				
-				}
-			
-				# determine best feature to split on and the split values
-				best_cat_feature = as.scalar (rowIndexMax (I_gains));
-				best_cat_gain = max (I_gains);
+				cur_cat_feature = as.scalar (cat_feature_samples[i9,1]);
 				start_ind = 1;
-				if (best_cat_feature > 1) {
-					start_ind = start_ind + as.scalar (distinct_values_offset[(best_cat_feature - 1),]);
+				if (cur_cat_feature > 1) {
+					start_ind = start_ind + as.scalar (distinct_values_offset[(cur_cat_feature - 1),]);
 				}
-				offset = as.scalar (distinct_values[1,best_cat_feature]);
-				best_split_values_bin = split_values_bin[1, start_ind:(start_ind + offset - 1)];
-			# }			
+				offset = as.scalar (distinct_values[1,cur_cat_feature]);
+				
+				cur_label_counts = label_counts[start_ind:(start_ind + offset - 1),];
+								
+				label_sum = rowSums (cur_label_counts);
+				label_dist = cur_label_counts / label_sum;
+				if (imp == "entropy") {
+					label_dist = replace (target = label_dist, pattern = 0, replacement = 1);
+					log_label_dist = log (label_dist); # / log(2)
+					impurity = - rowSums (label_dist * log_label_dist); 
+					impurity = replace (target = impurity, pattern = "NaN", replacement = 1/0); 
+				} else { # imp == "Gini"
+					impurity = rowSums (label_dist * (1 - label_dist)); 				
+				}
+			
+				# sort cur feature by impurity
+				cur_distinct_values = seq (1, nrow (cur_label_counts));
+				cur_distinct_values_impurity = append (cur_distinct_values, impurity);
+				cur_feature_sorted = order (target = cur_distinct_values_impurity, by = 2, decreasing = FALSE);
+				P = table (cur_distinct_values, cur_feature_sorted); # permutation matrix
+				label_counts_sorted = P %*% cur_label_counts;
+
+				# compute left and right label distribution			
+				label_counts_left = cumsum (label_counts_sorted);
+			
+				label_sum_left = rowSums (label_counts_left);
+				label_dist_left = label_counts_left / label_sum_left;
+				label_dist_left = replace (target = label_dist_left, pattern = "NaN", replacement = 1);
+				if (imp == "entropy") {
+					label_dist_left = replace (target = label_dist_left, pattern = 0, replacement = 1);
+					log_label_dist_left = log (label_dist_left); # / log(2)
+					impurity_left = - rowSums (label_dist_left * log_label_dist_left);
+				} else { # imp == "Gini"
+					impurity_left = rowSums (label_dist_left * (1 - label_dist_left));					
+				}
+				#
+				label_counts_right = - label_counts_left + label_counts_overall;
+				label_sum_right = rowSums (label_counts_right);
+				label_dist_right = label_counts_right / label_sum_right;
+				label_dist_right = replace (target = label_dist_right, pattern = "NaN", replacement = 1);
+				if (imp == "entropy") {
+					label_dist_right = replace (target = label_dist_right, pattern = 0, replacement = 1);
+					log_label_dist_right = log (label_dist_right); # / log (2)
+					impurity_right = - rowSums (label_dist_right * log_label_dist_right);			
+				} else { # imp == "Gini"
+					impurity_right = rowSums (label_dist_right * (1 - label_dist_right));					
+				}
+				I_gain = cur_impurity - ( ( label_sum_left / label_sum_overall ) * impurity_left + ( label_sum_right / label_sum_overall ) * impurity_right);
+			
+				Ix_label_sum_left_zero = ppred (label_sum_left, 0, "==");
+				Ix_label_sum_right_zero = ppred (label_sum_right, 0, "==");
+				Ix_label_sum_zero = Ix_label_sum_left_zero * Ix_label_sum_right_zero;
+				I_gain = I_gain * (1 - Ix_label_sum_zero);	
+				
+				I_gain[nrow (I_gain),] = 0; # last entry invalid
+			
+				max_I_gain_ind = as.scalar (rowIndexMax (t (I_gain)));
+
+				split_values[1, start_ind:(start_ind + max_I_gain_ind - 1)] = t (cur_feature_sorted[1:max_I_gain_ind,1]);
+				for (i10 in 1:max_I_gain_ind) {
+					ind = as.scalar (cur_feature_sorted[i10,1]);
+					if (ind == 1) {
+						split_values_bin[1,start_ind] = 1.0; 
+					} else {
+						split_values_bin[1,(start_ind + ind - 1)] = 1.0;
+					}
+				}
+				split_values_offset[1,cur_cat_feature] = max_I_gain_ind;
+			
+				I_gains[1,cur_cat_feature] = max (I_gain);
+			
+				impurities_left[1,cur_cat_feature] = as.scalar (impurity_left[max_I_gain_ind,]);
+				impurities_right[1,cur_cat_feature] = as.scalar (impurity_right[max_I_gain_ind,]);
+				best_label_counts_left[cur_cat_feature,] = label_counts_left[max_I_gain_ind,];
+				best_label_counts_right[cur_cat_feature,] = label_counts_right[max_I_gain_ind,];				
+			}
+			
+			# determine best feature to split on and the split values
+			best_cat_feature = as.scalar (rowIndexMax (I_gains));
+			best_cat_gain = max (I_gains);
+			start_ind = 1;
+			if (best_cat_feature > 1) {
+				start_ind = start_ind + as.scalar (distinct_values_offset[(best_cat_feature - 1),]);
+			}
+			offset = as.scalar (distinct_values[1,best_cat_feature]);
+			best_split_values_bin = split_values_bin[1, start_ind:(start_ind + offset - 1)];		
 		}		
 	
 		# compare best scale feature to best cat. feature and pick the best one
@@ -498,7 +484,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			right_child = 2 * (cur_node - 1) + 2 + 1;
 					
 			# samples going to the left subtree
-			Ix_left = X_scale_ext[,best_scale_split]; # max_I_gain_ind_scale
+			Ix_left = X_scale_ext[,best_scale_split]; 
 											
 			Ix_left = Ix * Ix_left;		
 			Ix_right = Ix * (1 - Ix_left);
@@ -655,7 +641,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				cur_nodes_small[1,(2 * (i6 - 1)+ 1)] = left_child;
 				cur_nodes_small[2,(2 * (i6 - 1)+ 1)] = left_child_size;
 				cur_nodes_small[3,(2 * (i6 - 1)+ 1)] = cur_tree;				
-				# print (left_child + " with size " + left_child_size + " added to small nodes in tree " + cur_tree);
 			}
 		}
 		if (!right_pure) {
@@ -665,15 +650,14 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			} else{
 				cur_nodes_small[1,(2 * i6)] = right_child;
 				cur_nodes_small[2,(2 * i6)] = right_child_size;
-				cur_nodes_small[3,(2 * i6)] = cur_tree;				
-				# print (right_child + " with size " + right_child_size + " added to small nodes in tree " + cur_tree);				
+				cur_nodes_small[3,(2 * i6)] = cur_tree;								
 			}	
 		}
 	}
 	
 	##### PREPARE MODEL FOR LARGE NODES
 	if (num_cur_nodes_large > 0) {
-		cur_Q_large = removeEmpty (target = cur_Q_large, margin = "cols"); # needed
+		cur_Q_large = removeEmpty (target = cur_Q_large, margin = "cols");
 		if (as.scalar (cur_Q_large[1,1]) != 0) Q_large = append (Q_large, cur_Q_large);
 		cur_NC_large = removeEmpty (target = cur_NC_large, margin = "cols");
 		if (as.scalar (cur_NC_large[1,1]) != 0) NC_large = append (NC_large, cur_NC_large);
@@ -682,10 +666,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		if (as.scalar (cur_F_large[1,1]) != 0) F_large = append (F_large, cur_F_large);
 		cur_S_large = removeEmpty (target = cur_S_large, margin = "cols");
 		if (as.scalar (cur_S_large[1,1]) != 0) S_large = append (S_large, cur_S_large);	
-		# Q_large = append (Q_large, cur_Q_large);
-		# NC_large = append (NC_large, cur_NC_large);
-		# F_large = append (F_large, cur_F_large);
-		# S_large = append (S_large, cur_S_large);
 			
 		num_cur_nodes_large_pre = 2 * num_cur_nodes_large;
 		if (as.scalar (cur_Q_large[1,1]) == 0) {
@@ -715,7 +695,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 	
 		cur_node_small = as.scalar (cur_nodes_small_nonzero[1,i7]);	
 		cur_tree_small = as.scalar (cur_nodes_small_nonzero[3,i7]);
-		print ("Expanding SMALL node (root) " + cur_node_small + " in tree " + cur_tree_small);
 		
 		# build dataset for SMALL node
 		Ix = ppred (L[,cur_tree_small], cur_node_small, "==");			
@@ -759,7 +738,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		while (num_cur_nodes > 0 & level_ < depth) {
 			
 			level_ = level_ + 1;
-			# print (" --- start subtree level " + level_ + " --- ");
 				
 			cur_Q = matrix (0, rows = 2, cols = 2 * num_cur_nodes);
 			cur_F = matrix (0, rows = 3, cols = num_cur_nodes); 
@@ -770,19 +748,12 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			
 				cur_node = as.scalar (cur_nodes_[1,i8]);	
 				cur_tree = as.scalar (cur_nodes_[2,i8]);
-				# print ("    ---> Expanding SMALL node: " + cur_node + " in tree " + cur_tree);
 				
 				# select sample features WOR
 				feature_samples = sample (num_features_total, num_feature_samples);
 				feature_samples = order (target = feature_samples, by = 1);
 				num_scale_feature_samples = sum (ppred (feature_samples, num_scale_features, "<="));
 				num_cat_feature_samples = num_feature_samples - num_scale_feature_samples;
-				# if (num_scale_feature_samples > 0) {
-					# scale_feature_samples = feature_samples[1:num_scale_feature_samples,];
-				# } 
-				# if (num_cat_feature_samples > 0) {
-					# cat_feature_samples = feature_samples[(num_scale_feature_samples + 1):(num_scale_feature_samples + num_cat_feature_samples),] - num_scale_features;
-				# }
 		
 				# --- find best split ---
 				# samples that reach cur_node 
@@ -794,7 +765,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				label_dist_overall = label_counts_overall / label_sum_overall;
 				if (imp == "entropy") {
 					label_dist_zero = ppred (label_dist_overall, 0, "==");
-					cur_impurity = - sum (label_dist_overall * log (label_dist_overall + label_dist_zero)); 
+					cur_impurity = - sum (label_dist_overall * log (label_dist_overall + label_dist_zero)); # / log (2);
 				} else { # imp == "Gini"
 					cur_impurity = sum (label_dist_overall * (1 - label_dist_overall)); 			
 				}
@@ -810,7 +781,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					# compute left and right label distribution
 					label_sum_left = rowSums (label_counts_left_scale);
 					label_dist_left = label_counts_left_scale / label_sum_left;
-					# label_dist_left = replace (target = label_dist_left, pattern = "NaN", replacement = 1);
 					if (imp == "entropy") {
 						label_dist_left = replace (target = label_dist_left, pattern = 0, replacement = 1);
 						log_label_dist_left = log (label_dist_left); # / log (2)
@@ -822,7 +792,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					label_counts_right_scale = - label_counts_left_scale + label_counts_overall; 
 					label_sum_right = rowSums (label_counts_right_scale);
 					label_dist_right = label_counts_right_scale / label_sum_right;
-					# label_dist_right = replace (target = label_dist_right, pattern = "NaN", replacement = 1);
 					if (imp == "entropy") {
 						label_dist_right = replace (target = label_dist_right, pattern = 0, replacement = 1);
 						log_label_dist_right = log (label_dist_right); # log (2)
@@ -830,7 +799,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					} else { # imp == "Gini"
 						impurity_right_scale = rowSums (label_dist_right * (1 - label_dist_right)); 			
 					}
-					I_gain_scale = cur_impurity - ( ( label_sum_left / label_sum_overall ) * impurity_left_scale + ( label_sum_right / label_sum_overall ) * impurity_right_scale); # I_gain -> I_gain_scale
+					I_gain_scale = cur_impurity - ( ( label_sum_left / label_sum_overall ) * impurity_left_scale + ( label_sum_right / label_sum_overall ) * impurity_right_scale); 
 			
 					I_gain_scale = replace (target = I_gain_scale, pattern = "NaN", replacement = 0);		
 			
@@ -842,35 +811,32 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					}
 					max_I_gain_found = 0;
 					max_I_gain_found_ind = 0;
-					best_i = 0;
-					
-					# if (num_scale_feature_samples > 0) {				
+					best_i = 0;			
 						
-						for (i in 1:num_scale_feature_samples) { # assuming feature_samples is 5x1
-							cur_feature_samples_bin = as.scalar (scale_feature_samples[i,]); 
-							cur_start_ind = as.scalar (feature_start_ind[,cur_feature_samples_bin]);
-							cur_end_ind = as.scalar (cum_count_thresholds[,cur_feature_samples_bin]);
-							I_gain_portion = I_gain_scale[cur_start_ind:cur_end_ind,];
-							cur_max_I_gain = max (I_gain_portion);
-							cur_max_I_gain_ind = as.scalar (rowIndexMax (t (I_gain_portion)));
-							if (cur_max_I_gain > max_I_gain_found) {
-								max_I_gain_found = cur_max_I_gain;
-								max_I_gain_found_ind = cur_max_I_gain_ind;
-								best_i = i;
-							}
+					for (i in 1:num_scale_feature_samples) { # assuming feature_samples is 5x1
+						cur_feature_samples_bin = as.scalar (scale_feature_samples[i,]); 
+						cur_start_ind = as.scalar (feature_start_ind[,cur_feature_samples_bin]);
+						cur_end_ind = as.scalar (cum_count_thresholds[,cur_feature_samples_bin]);
+						I_gain_portion = I_gain_scale[cur_start_ind:cur_end_ind,];
+						cur_max_I_gain = max (I_gain_portion);
+						cur_max_I_gain_ind = as.scalar (rowIndexMax (t (I_gain_portion)));
+						if (cur_max_I_gain > max_I_gain_found) {
+							max_I_gain_found = cur_max_I_gain;
+							max_I_gain_found_ind = cur_max_I_gain_ind;
+							best_i = i;
 						}
+					}
 	
-						best_scale_gain = max_I_gain_found;
-						max_I_gain_ind_scale = max_I_gain_found_ind;
-						best_scale_feature = 0;
-						if (best_i > 0) {
-							best_scale_feature = as.scalar (scale_feature_samples[best_i,]);
-						}
-						best_scale_split = max_I_gain_ind_scale;
-						if (best_scale_feature > 1) {
-							best_scale_split = best_scale_split + as.scalar(cum_count_thresholds[,(best_scale_feature - 1)]);
-						}	
-					# }					
+					best_scale_gain = max_I_gain_found;
+					max_I_gain_ind_scale = max_I_gain_found_ind;
+					best_scale_feature = 0;
+					if (best_i > 0) {
+						best_scale_feature = as.scalar (scale_feature_samples[best_i,]);
+					}
+					best_scale_split = max_I_gain_ind_scale;
+					if (best_scale_feature > 1) {
+						best_scale_split = best_scale_split + as.scalar(cum_count_thresholds[,(best_scale_feature - 1)]);
+					}				
 				}
 				
 				if (num_cat_features > 0 & num_cat_feature_samples > 0){
@@ -888,104 +854,101 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					best_label_counts_right = matrix (0, rows = num_cat_features, cols = num_classes);
 			
 					# main operation
-					label_counts = t (t (cur_Y_bin) %*% X_cat_small);  
-
-					# if (num_cat_feature_samples > 0) {			
+					label_counts = t (t (cur_Y_bin) %*% X_cat_small);  		
 					
-						parfor (i9 in 1:num_cat_feature_samples, check = 0){
-					
-							cur_cat_feature = as.scalar (cat_feature_samples[i9,1]);
-							start_ind = 1;
-							if (cur_cat_feature > 1) {
-								start_ind = start_ind + as.scalar (distinct_values_offset[(cur_cat_feature - 1),]);
-							}
-							offset = as.scalar (distinct_values[1,cur_cat_feature]);
+					parfor (i9 in 1:num_cat_feature_samples, check = 0){
 				
-							cur_label_counts = label_counts[start_ind:(start_ind + offset - 1),];
-								
-							label_sum = rowSums (cur_label_counts);
-							label_dist = cur_label_counts / label_sum;
-							if (imp == "entropy") {
-								label_dist = replace (target = label_dist, pattern = 0, replacement = 1);
-								log_label_dist = log (label_dist); # / log(2)
-								impurity = - rowSums (label_dist * log_label_dist); 
-								impurity = replace (target = impurity, pattern = "NaN", replacement = 1/0); 
-							} else { # imp == "Gini"
-								impurity = rowSums (label_dist * (1 - label_dist)); 				
-							}
-				
-							# sort cur feature by impurity
-							cur_distinct_values = seq (1, nrow (cur_label_counts));
-							cur_distinct_values_impurity = append (cur_distinct_values, impurity);
-							cur_feature_sorted = order (target = cur_distinct_values_impurity, by = 2, decreasing = FALSE);
-							P = table (cur_distinct_values, cur_feature_sorted); # permutation matrix
-							label_counts_sorted = P %*% cur_label_counts;
-	
-							# compute left and right label distribution			
-							label_counts_left = cumsum (label_counts_sorted);
-			
-							label_sum_left = rowSums (label_counts_left);
-							label_dist_left = label_counts_left / label_sum_left;
-							label_dist_left = replace (target = label_dist_left, pattern = "NaN", replacement = 1);
-							if (imp == "entropy") {
-								label_dist_left = replace (target = label_dist_left, pattern = 0, replacement = 1);
-								log_label_dist_left = log (label_dist_left); # / log(2)
-								impurity_left = - rowSums (label_dist_left * log_label_dist_left);
-							} else { # imp == "Gini"
-								impurity_left = rowSums (label_dist_left * (1 - label_dist_left));					
-							}
-							#
-							label_counts_right = - label_counts_left + label_counts_overall;
-							label_sum_right = rowSums (label_counts_right);
-							label_dist_right = label_counts_right / label_sum_right;
-							label_dist_right = replace (target = label_dist_right, pattern = "NaN", replacement = 1);
-							if (imp == "entropy") {
-								label_dist_right = replace (target = label_dist_right, pattern = 0, replacement = 1);
-								log_label_dist_right = log (label_dist_right); # / log (2)
-								impurity_right = - rowSums (label_dist_right * log_label_dist_right);			
-							} else { # imp == "Gini"
-								impurity_right = rowSums (label_dist_right * (1 - label_dist_right));					
-							}
-							I_gain = cur_impurity - ( ( label_sum_left / label_sum_overall ) * impurity_left + ( label_sum_right / label_sum_overall ) * impurity_right);
-			
-							Ix_label_sum_left_zero = ppred (label_sum_left, 0, "==");
-							Ix_label_sum_right_zero = ppred (label_sum_right, 0, "==");
-							Ix_label_sum_zero = Ix_label_sum_left_zero * Ix_label_sum_right_zero;
-							I_gain = I_gain * (1 - Ix_label_sum_zero);	
-				
-							I_gain[nrow (I_gain),] = 0; # last entry invalid
-			
-							max_I_gain_ind = as.scalar (rowIndexMax (t (I_gain)));
-
-							split_values[1, start_ind:(start_ind + max_I_gain_ind - 1)] = t (cur_feature_sorted[1:max_I_gain_ind,1]);
-							for (i10 in 1:max_I_gain_ind) {
-								ind = as.scalar (cur_feature_sorted[i10,1]);
-								if (ind == 1) {
-									split_values_bin[1,start_ind] = 1.0; 
-								} else {
-									split_values_bin[1,(start_ind + ind - 1)] = 1.0;
-								}
-							}
-							split_values_offset[1,cur_cat_feature] = max_I_gain_ind;
-			
-							I_gains[1,cur_cat_feature] = max (I_gain);
-			
-							impurities_left[1,cur_cat_feature] = as.scalar (impurity_left[max_I_gain_ind,]);
-							impurities_right[1,cur_cat_feature] = as.scalar (impurity_right[max_I_gain_ind,]);
-							best_label_counts_left[cur_cat_feature,] = label_counts_left[max_I_gain_ind,];
-							best_label_counts_right[cur_cat_feature,] = label_counts_right[max_I_gain_ind,];				
-						}
-			
-						# determine best feature to split on and the split values
-						best_cat_feature = as.scalar (rowIndexMax (I_gains));
-						best_cat_gain = max (I_gains);
+						cur_cat_feature = as.scalar (cat_feature_samples[i9,1]);
 						start_ind = 1;
-						if (best_cat_feature > 1) {
-							start_ind = start_ind + as.scalar (distinct_values_offset[(best_cat_feature - 1),]);
+						if (cur_cat_feature > 1) {
+							start_ind = start_ind + as.scalar (distinct_values_offset[(cur_cat_feature - 1),]);
 						}
-						offset = as.scalar (distinct_values[1,best_cat_feature]);
-						best_split_values_bin = split_values_bin[1, start_ind:(start_ind + offset - 1)];
-					# }				   
+						offset = as.scalar (distinct_values[1,cur_cat_feature]);
+				
+						cur_label_counts = label_counts[start_ind:(start_ind + offset - 1),];
+							
+						label_sum = rowSums (cur_label_counts);
+						label_dist = cur_label_counts / label_sum;
+						if (imp == "entropy") {
+							label_dist = replace (target = label_dist, pattern = 0, replacement = 1);
+							log_label_dist = log (label_dist); # / log(2)
+							impurity = - rowSums (label_dist * log_label_dist); 
+							impurity = replace (target = impurity, pattern = "NaN", replacement = 1/0); 
+						} else { # imp == "Gini"
+							impurity = rowSums (label_dist * (1 - label_dist)); 				
+						}
+				
+						# sort cur feature by impurity
+						cur_distinct_values = seq (1, nrow (cur_label_counts));
+						cur_distinct_values_impurity = append (cur_distinct_values, impurity);
+						cur_feature_sorted = order (target = cur_distinct_values_impurity, by = 2, decreasing = FALSE);
+						P = table (cur_distinct_values, cur_feature_sorted); # permutation matrix
+						label_counts_sorted = P %*% cur_label_counts;
+	
+						# compute left and right label distribution			
+						label_counts_left = cumsum (label_counts_sorted);
+			
+						label_sum_left = rowSums (label_counts_left);
+						label_dist_left = label_counts_left / label_sum_left;
+						label_dist_left = replace (target = label_dist_left, pattern = "NaN", replacement = 1);
+						if (imp == "entropy") {
+							label_dist_left = replace (target = label_dist_left, pattern = 0, replacement = 1);
+							log_label_dist_left = log (label_dist_left); # / log(2)
+							impurity_left = - rowSums (label_dist_left * log_label_dist_left);
+						} else { # imp == "Gini"
+							impurity_left = rowSums (label_dist_left * (1 - label_dist_left));					
+						}
+						#
+						label_counts_right = - label_counts_left + label_counts_overall;
+						label_sum_right = rowSums (label_counts_right);
+						label_dist_right = label_counts_right / label_sum_right;
+						label_dist_right = replace (target = label_dist_right, pattern = "NaN", replacement = 1);
+						if (imp == "entropy") {
+							label_dist_right = replace (target = label_dist_right, pattern = 0, replacement = 1);
+							log_label_dist_right = log (label_dist_right); # / log (2)
+							impurity_right = - rowSums (label_dist_right * log_label_dist_right);			
+						} else { # imp == "Gini"
+							impurity_right = rowSums (label_dist_right * (1 - label_dist_right));					
+						}
+						I_gain = cur_impurity - ( ( label_sum_left / label_sum_overall ) * impurity_left + ( label_sum_right / label_sum_overall ) * impurity_right);
+			
+						Ix_label_sum_left_zero = ppred (label_sum_left, 0, "==");
+						Ix_label_sum_right_zero = ppred (label_sum_right, 0, "==");
+						Ix_label_sum_zero = Ix_label_sum_left_zero * Ix_label_sum_right_zero;
+						I_gain = I_gain * (1 - Ix_label_sum_zero);	
+				
+						I_gain[nrow (I_gain),] = 0; # last entry invalid
+			
+						max_I_gain_ind = as.scalar (rowIndexMax (t (I_gain)));
+
+						split_values[1, start_ind:(start_ind + max_I_gain_ind - 1)] = t (cur_feature_sorted[1:max_I_gain_ind,1]);
+						for (i10 in 1:max_I_gain_ind) {
+							ind = as.scalar (cur_feature_sorted[i10,1]);
+							if (ind == 1) {
+								split_values_bin[1,start_ind] = 1.0; 
+							} else {
+								split_values_bin[1,(start_ind + ind - 1)] = 1.0;
+							}
+						}
+						split_values_offset[1,cur_cat_feature] = max_I_gain_ind;
+			
+						I_gains[1,cur_cat_feature] = max (I_gain);
+		
+						impurities_left[1,cur_cat_feature] = as.scalar (impurity_left[max_I_gain_ind,]);
+						impurities_right[1,cur_cat_feature] = as.scalar (impurity_right[max_I_gain_ind,]);
+						best_label_counts_left[cur_cat_feature,] = label_counts_left[max_I_gain_ind,];
+						best_label_counts_right[cur_cat_feature,] = label_counts_right[max_I_gain_ind,];				
+					}
+			
+					# determine best feature to split on and the split values
+					best_cat_feature = as.scalar (rowIndexMax (I_gains));
+					best_cat_gain = max (I_gains);
+					start_ind = 1;
+					if (best_cat_feature > 1) {
+						start_ind = start_ind + as.scalar (distinct_values_offset[(best_cat_feature - 1),]);
+					}
+					offset = as.scalar (distinct_values[1,best_cat_feature]);
+					best_split_values_bin = split_values_bin[1, start_ind:(start_ind + offset - 1)];
 				}
 				
 				# compare best scale feature to best cat. feature and pick the best one
@@ -1001,7 +964,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					right_child = 2 * (cur_node - 1) + 2 + 1;
 					
 					# samples going to the left subtree
-					Ix_left = X_scale_ext_small[, best_scale_split]; # max_I_gain_ind_scale
+					Ix_left = X_scale_ext_small[, best_scale_split]; 
 											
 					Ix_left = Ix * Ix_left;		
 					Ix_right = Ix * (1 - Ix_left);
@@ -1015,12 +978,12 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					# check if left or right child is a leaf
 					left_pure = FALSE;
 					right_pure = FALSE;
-					cur_impurity_left = as.scalar(impurity_left_scale[best_scale_split,]); # max_I_gain_ind_scale
-					cur_impurity_right = as.scalar(impurity_right_scale[best_scale_split,]); # max_I_gain_ind_scale
+					cur_impurity_left = as.scalar(impurity_left_scale[best_scale_split,]); 
+					cur_impurity_right = as.scalar(impurity_right_scale[best_scale_split,]); 
 					if ( (left_child_size <= num_leaf | cur_impurity_left == 0 | level_ == depth) & 
 					   (right_child_size <= num_leaf | cur_impurity_right == 0 | level_ == depth) ) { # both left and right nodes are leaf	
 						
-						cur_label_counts_left = label_counts_left_scale[best_scale_split,]; # max_I_gain_ind_scale
+						cur_label_counts_left = label_counts_left_scale[best_scale_split,]; 
 						cur_NC[1,(2 * (i8 - 1) + 1)] = left_child; 
 						cur_NC[2,(2 * (i8 - 1) + 1)] = cur_tree;
 						cur_NC[3,(2 * (i8 - 1) + 1)] = as.scalar( rowIndexMax (cur_label_counts_left)); # leaf class label
@@ -1038,7 +1001,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						
 					} else if (left_child_size <= num_leaf | cur_impurity_left == 0 | level_ == depth) {
 						
-						cur_label_counts_left = label_counts_left_scale[best_scale_split,]; # max_I_gain_ind_scale
+						cur_label_counts_left = label_counts_left_scale[best_scale_split,]; 
 						cur_NC[1,(2 * (i8 - 1) + 1)] = left_child;
 						cur_NC[2,(2 * (i8 - 1) + 1)] = cur_tree;						
 						cur_NC[3,(2 * (i8 - 1) + 1)] = as.scalar( rowIndexMax (cur_label_counts_left)); # leaf class label				
@@ -1048,7 +1011,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						
 					} else if (right_child_size <= num_leaf | cur_impurity_right == 0 | level_ == depth) {
 						
-						cur_label_counts_right = label_counts_right_scale[best_scale_split,]; # max_I_gain_ind_scale
+						cur_label_counts_right = label_counts_right_scale[best_scale_split,]; 
 						cur_NC[1,(2 * i8)] = right_child;
 						cur_NC[2,(2 * i8)] = cur_tree;							
 						cur_NC[3,(2 * i8)] = as.scalar( rowIndexMax (cur_label_counts_right)); # leaf class label
@@ -1153,15 +1116,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				}
 			}
 		
-			cur_Q = removeEmpty (target = cur_Q, margin = "cols"); # needed
-			# if (as.scalar (cur_Q[1,1]) != 0) Q = append (Q, cur_Q);
-			# cur_NC = removeEmpty (target = cur_NC, margin = "cols");
-			# if (as.scalar (cur_NC[1,1]) != 0) NC = append (NC, cur_NC);
-	
-			# cur_F = removeEmpty (target = cur_F, margin = "cols");
-			# if (as.scalar (cur_F[1,1]) != 0) F = append (F, cur_F);
-			# cur_S = removeEmpty (target = cur_S, margin = "cols");
-			# if (as.scalar (cur_S[1,1]) != 0) S = append (S, cur_S);
+			cur_Q = removeEmpty (target = cur_Q, margin = "cols"); 
 			Q = append (Q, cur_Q);
 			NC = append (NC, cur_NC);
 			F = append (F, cur_F);
@@ -1176,10 +1131,6 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			}
 		}
 		
-		# cur_Q_small[,start_ind_global:(start_ind_global + ncol (Q) - 1)] = Q;
-		# cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1 - 1)] = NC[,2:ncol (NC)];
-		# cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1 - 1)] = F[,2:ncol (F)];	
-		# cur_S_small[,start_ind_S_global:(start_ind_S_global + ncol (S) - 1 - 1)] = S[,2:ncol (S)]; 
 		cur_Q_small[,start_ind_global:(start_ind_global + ncol (Q) - 1)] = Q;
 		cur_NC_small[,start_ind_global:(start_ind_global + ncol (NC) - 1)] = NC;
 		cur_F_small[,start_ind_global:(start_ind_global + ncol (F) - 1)] = F;	
@@ -1197,15 +1148,11 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 		if (as.scalar (cur_F_small[1,1]) != 0) F_small = append (F_small, cur_F_small);
 		cur_S_small = removeEmpty (target = cur_S_small, margin = "cols"); #		
 		if (as.scalar (cur_S_small[1,1]) != 0) S_small = append (S_small, cur_S_small); 
-		# Q_small = append (Q_small, cur_Q_small);
-		# NC_small = append (NC_small, cur_NC_small);
-		# F_small = append (F_small, cur_F_small);
-		# S_small = append (S_small, cur_S_small); ###NEW
 		
 		num_cur_nodes_small = 0; # reset
 	} 
 		
-	print (" --- end level " + level + ", remaining no. of LARGE nodes to expand " + num_cur_nodes_large + "  remaining no. of SMALL nodes to expand " + num_cur_nodes_small);
+	print (" --- end level " + level + ", remaining no. of LARGE nodes to expand " + num_cur_nodes_large + " --- ");
 }
 
 #### prepare model
@@ -1236,14 +1183,6 @@ if (as.scalar (S_small[1,1]) == 0 & ncol (S_small) > 1) {
 if (as.scalar (F_small[1,1]) == 0 & ncol (F_small) > 1) {
 	F_small = F_small[,2:ncol (F_small)];
 }
-# Q_large = removeEmpty (target = Q_large, margin = "cols");
-# NC_large = removeEmpty (target = NC_large, margin = "cols");
-# S_large = removeEmpty (target = S_large, margin = "cols");
-# F_large = removeEmpty (target = F_large, margin = "cols");
-# Q_small = removeEmpty (target = Q_small, margin = "cols");
-# NC_small = removeEmpty (target = NC_small, margin = "cols");
-# S_small = removeEmpty (target = S_small, margin = "cols");
-# F_small = removeEmpty (target = F_small, margin = "cols");
 
 # check for special leaves and if there are any remove them from Q_large and Q_small 
 special_large_leaves_ind = NC_large[5,];
@@ -1411,10 +1350,8 @@ if (as.scalar (internal_ids_nonzero[1,1]) > 0) { # if internal nodes exist
 	parfor (it in 1:ncol (internal_ids_nonzero), check = 0) {
 		a1 = as.scalar (internal_ids_nonzero[1,it]);
 		cur_tree_id = as.scalar (internal_ids_nonzero[2,it]);
-		# pos_a1 = sum (ppred (M[1,], a1, "<="));
 		pos_a1 = as.scalar (rowIndexMax (ppred (M[1,], a1, "==") * ppred (M[2,], cur_tree_id, "==")));
 		a2 = 2 * a1;
-		# pos_a2 = sum (ppred (M[1,], a2, "<="));
 		pos_a2 = as.scalar (rowIndexMax (ppred (M[1,], a2, "==")* ppred (M[2,], cur_tree_id, "==")));
 		M[3,pos_a1] = pos_a2 - pos_a1;
 	}

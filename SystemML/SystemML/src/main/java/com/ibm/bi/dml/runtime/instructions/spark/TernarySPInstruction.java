@@ -20,24 +20,23 @@ import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
 import com.ibm.bi.dml.lops.Ternary;
-import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
+import com.ibm.bi.dml.runtime.functionobjects.CTable;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
-import com.ibm.bi.dml.runtime.matrix.data.IJV;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
+import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
@@ -69,8 +68,15 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		_ignoreZeros = ignoreZeros;
 	}
 
-	public static TernarySPInstruction parseInstruction(String inst) throws DMLRuntimeException{
-		
+	/**
+	 * 
+	 * @param inst
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static TernarySPInstruction parseInstruction(String inst) 
+		throws DMLRuntimeException
+	{	
 		InstructionUtils.checkNumFields ( inst, 7 );
 		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
@@ -101,29 +107,22 @@ public class TernarySPInstruction extends ComputationSPInstruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
+	
 		//get input rdd handle
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = null;
 		double scalar_input2 = -1, scalar_input3 = -1;
 		
-		Ternary.OperationTypes ctableOp = findCtableOperation();
+		Ternary.OperationTypes ctableOp = Ternary.findCtableOperationByInputDataTypes(
+				input1.getDataType(), input2.getDataType(), input3.getDataType());
 		ctableOp = _isExpand ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
 		
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		if(!mcOut.dimsKnown()) {
-			if(!mc1.dimsKnown()) {
-				throw new DMLRuntimeException("The output dimensions are not specified for TernarySPInstruction");
-			}
-			else {
-				mcOut.set(mc1.getCols(), mc1.getRows(), mc1.getColsPerBlock(), mc1.getRowsPerBlock());
-			}
-		}
 		
 		// First get the block sizes and then set them as -1 to allow for binary cell reblock
 		int brlen = mc1.getRowsPerBlock();
@@ -253,49 +252,43 @@ public class TernarySPInstruction extends ComputationSPInstruction
 			sec.addLineageRDD(output.getName(), input3.getName());
 	}	
 	
-	private static class ExpandScalarCtableOperation implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, Double> {
-
-		private static final long serialVersionUID = -8323672586860532331L;
+	/**
+	 *
+	 */
+	private static class ExpandScalarCtableOperation implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, Double> 
+	{
+		private static final long serialVersionUID = -12552669148928288L;
+	
+		private int _brlen;
 		
-		int brlen;
 		public ExpandScalarCtableOperation(int brlen) {
-			this.brlen = brlen;
+			_brlen = brlen;
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, Double>> call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
+		public Iterable<Tuple2<MatrixIndexes, Double>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+			throws Exception 
+		{
+			MatrixIndexes ix = arg0._1();
+			MatrixBlock mb = arg0._2(); //col-vector
+			
+			//create an output cell per matrix block row (aligned w/ original source position)
 			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<Tuple2<MatrixIndexes,Double>>();
-			if(kv._2.isInSparseFormat()) {
-				SparseRowsIterator iter = kv._2.getSparseRowsIterator();
-				while( iter.hasNext() ) {
-					IJV cell = iter.next();
-					long i = UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), brlen, cell.i);
-					long j = (long)cell.v;
-					retVal.add(new Tuple2<MatrixIndexes, Double>(new MatrixIndexes(i, j), 1.0));
-				}
-			}
-			else {
-				double[] arr = kv._2.getDenseArray();
-				long i = UtilFunctions.cellIndexCalculation(kv._1.getRowIndex(), brlen, 0);
-				for(int iter = 0; iter < arr.length; iter++ ) {
-					long j = (long)arr[iter];
-					retVal.add(new Tuple2<MatrixIndexes, Double>(new MatrixIndexes(i, j), 1.0));
-					i++;
-				}
+			CTable ctab = CTable.getCTableFnObject();
+			for( int i=0; i<mb.getNumRows(); i++ )
+			{
+				//compute global target indexes (via ctable obj for error handling consistency)
+				long row = UtilFunctions.cellIndexCalculation(ix.getRowIndex(), _brlen, i);
+				double v2 = mb.quickGetValue(i, 0);
+				Pair<MatrixIndexes,Double> p = ctab.execute(row, v2, 1.0);
+				
+				//indirect construction over pair to avoid tuple2 dependency in general ctable obj
+				if( p.getKey().getRowIndex() >= 1 ) //filter rejected entries
+					retVal.add(new Tuple2<MatrixIndexes,Double>(p.getKey(), p.getValue()));
 			}
 			
 			return retVal;
 		}
-
-		
-		
-	}
-	
-	private Ternary.OperationTypes findCtableOperation() {
-		DataType dt1 = input1.getDataType();
-		DataType dt2 = input2.getDataType();
-		DataType dt3 = input3.getDataType();
-		return Ternary.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
 	}
 	
 	private static class MapTwoMBIterableIntoAL implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, MatrixIndexes, ArrayList<MatrixBlock>> {

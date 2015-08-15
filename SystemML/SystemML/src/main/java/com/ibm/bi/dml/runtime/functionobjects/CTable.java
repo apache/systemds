@@ -10,6 +10,8 @@ package com.ibm.bi.dml.runtime.functionobjects;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 /**
@@ -146,4 +148,30 @@ public class CTable extends ValueFunction
 		return Math.max(maxCol, (int)col);
 	}
 
+	/**
+	 * 
+	 * @param row
+	 * @param v2
+	 * @param w
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public Pair<MatrixIndexes,Double> execute( long row, double v2, double w ) 
+		throws DMLRuntimeException
+	{
+		// If any of the values are NaN (i.e., missing) then 
+		// we skip this tuple, proceed to the next tuple
+		if ( Double.isNaN(v2) || Double.isNaN(w) ) {
+			return new Pair<MatrixIndexes,Double>(new MatrixIndexes(-1,-1), w);
+		}
+		
+		// safe casts to long for consistent behavior with indexing
+		long col = UtilFunctions.toLong( v2 );
+				
+		if( col <= 0 ) {
+			throw new DMLRuntimeException("Erroneous input while computing the contingency table (value <= zero): "+v2);
+		} 
+		
+		return new Pair<MatrixIndexes,Double>(new MatrixIndexes(row, col), w);
+	}
 }

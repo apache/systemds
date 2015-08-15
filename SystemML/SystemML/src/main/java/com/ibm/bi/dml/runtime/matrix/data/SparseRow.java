@@ -354,7 +354,7 @@ public class SparseRow implements Serializable
 		//overlapping array copy (shift rhs values left)
 		System.arraycopy(values, end, values, start, size-end);
 		System.arraycopy(indexes, end, indexes, start, size-end);
-		size-=(end-start);
+		size -= (end-start);
 	}
 	
 	/**
@@ -396,10 +396,11 @@ public class SparseRow implements Serializable
 		shiftRightByN(end, lnnz-(end-start));
 		
 		//insert values
-		for( int i=vix; i<vix+len; i++ )
+		for( int i=vix, pos=start; i<vix+len; i++ )
 			if( v[i] != 0 ) {
-				values[ start+i-vix ] = v[i];
-				indexes[ start+i-vix ] = lowerCol+i-vix;
+				values[ pos ] = v[i];
+				indexes[ pos ] = lowerCol+i-vix;
+				pos++;
 			}
 	}
 
@@ -460,7 +461,7 @@ public class SparseRow implements Serializable
 		//overlapping array copy (shift rhs values right by 1)
 		System.arraycopy(values, index, values, index+n, size-index);
 		System.arraycopy(indexes, index, indexes, index+n, size-index);
-		size+=n;
+		size += n;
 	}
 	
 	/**

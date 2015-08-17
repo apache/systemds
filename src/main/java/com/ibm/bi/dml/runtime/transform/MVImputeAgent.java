@@ -23,6 +23,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
@@ -33,8 +35,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.json.java.JSONArray;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 public class MVImputeAgent extends TransformationAgent {
 	
@@ -83,8 +84,8 @@ public class MVImputeAgent extends TransformationAgent {
 	private String[] _replacementList = null;		// replacements: for global_mean, mean; and for global_mode, recode id of mode category
 	
 	MVImputeAgent(JSONObject parsedSpec) {
-		JSONObject mvobj = (JSONObject) parsedSpec.get(TX_METHOD.IMPUTE.toString());
-		JSONObject scobj = (JSONObject) parsedSpec.get(TX_METHOD.SCALE.toString());
+		JSONObject mvobj = (JSONObject) JSONHelper.get(parsedSpec, TX_METHOD.IMPUTE.toString());
+		JSONObject scobj = (JSONObject) JSONHelper.get(parsedSpec, TX_METHOD.SCALE.toString());
 		
 		if(mvobj == null) {
 			// MV Impute is not applicable
@@ -95,8 +96,8 @@ public class MVImputeAgent extends TransformationAgent {
 			_replacementList = null;
 		}
 		else {
-			JSONArray mvattrs = (JSONArray) mvobj.get(JSON_ATTRS);
-			JSONArray mvmthds = (JSONArray) mvobj.get(JSON_MTHD);
+			JSONArray mvattrs = (JSONArray) JSONHelper.get(mvobj, JSON_ATTRS);
+			JSONArray mvmthds = (JSONArray) JSONHelper.get(mvobj, JSON_MTHD);
 			int mvLength = mvattrs.size();
 			
 			assert(mvLength == mvmthds.size());
@@ -119,7 +120,7 @@ public class MVImputeAgent extends TransformationAgent {
 			
 			_replacementList = new String[mvLength]; 	// contains replacements for all columns (scale and categorical)
 			
-			JSONArray constants = (JSONArray)mvobj.get(JSON_CONSTS);
+			JSONArray constants = (JSONArray)JSONHelper.get(mvobj,JSON_CONSTS);
 			for(int i=0; i < constants.size(); i++) {
 				if ( constants.get(i) == null )
 					_replacementList[i] = "NaN";
@@ -141,8 +142,8 @@ public class MVImputeAgent extends TransformationAgent {
 			if ( _mvList != null ) 
 				_mvscMethodList = new byte[_mvList.length];
 			
-			JSONArray scattrs = (JSONArray) scobj.get(JSON_ATTRS);
-			JSONArray scmthds = (JSONArray) scobj.get(JSON_MTHD);
+			JSONArray scattrs = (JSONArray) JSONHelper.get(scobj,JSON_ATTRS);
+			JSONArray scmthds = (JSONArray) JSONHelper.get(scobj,JSON_MTHD);
 			int scLength = scattrs.size();
 			
 			int[] _allscaled = new int[scLength];

@@ -41,7 +41,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.ParameterBuilder;
 import com.ibm.bi.dml.utils.Statistics;
-import com.ibm.json.java.JSONObject;
+import org.apache.wink.json4j.JSONObject;
 
 
 /**

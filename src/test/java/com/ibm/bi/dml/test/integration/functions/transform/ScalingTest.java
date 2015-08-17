@@ -31,8 +31,8 @@ import com.ibm.bi.dml.runtime.transform.TransformationAgent.TX_METHOD;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
-import com.ibm.json.java.JSONArray;
-import com.ibm.json.java.JSONObject;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
 /**
  * 
@@ -60,30 +60,30 @@ public class ScalingTest extends AutomatedTestBase
 
 	
 	@Test
-	public void testTransformScalingCPCSV() throws IOException, DMLRuntimeException 
+	public void testTransformScalingCPCSV() throws IOException, DMLRuntimeException, Exception
 	{
 		runScalingTest(rows1, cols1, ExecType.CP, "csv");
 	}
 	
 	@Test
-	public void testTransformScalingMRCSV() throws IOException, DMLRuntimeException 
+	public void testTransformScalingMRCSV() throws IOException, DMLRuntimeException, Exception 
 	{
 		runScalingTest(rows1, cols1, ExecType.MR, "csv");
 	}
 	
 	@Test
-	public void testTransformScalingCPBinary() throws IOException, DMLRuntimeException 
+	public void testTransformScalingCPBinary() throws IOException, DMLRuntimeException, Exception 
 	{
 		runScalingTest(rows1, cols1, ExecType.CP, "binary");
 	}
 	
 	@Test
-	public void testTransformScalingMRBinary() throws IOException, DMLRuntimeException 
+	public void testTransformScalingMRBinary() throws IOException, DMLRuntimeException, Exception 
 	{
 		runScalingTest(rows1, cols1, ExecType.MR, "binary");
 	}
 	
-	private void generateSpecFile(int cols, String specFile) throws IOException 
+	private void generateSpecFile(int cols, String specFile) throws IOException , Exception
 	{
 		final String NAME = "name";
 		final String METHOD = "method";
@@ -112,7 +112,7 @@ public class ScalingTest extends AutomatedTestBase
 
 	}
 	
-	private void generateFrameMTD(String datafile) throws IllegalArgumentException, IOException 
+	private void generateFrameMTD(String datafile) throws IllegalArgumentException, IOException , Exception
 	{
 		JSONObject mtd = new JSONObject();
 		
@@ -134,7 +134,7 @@ public class ScalingTest extends AutomatedTestBase
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	private void runScalingTest( int rows, int cols, ExecType et, String ofmt) throws IOException, DMLRuntimeException
+	private void runScalingTest( int rows, int cols, ExecType et, String ofmt) throws IOException, DMLRuntimeException, Exception
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){

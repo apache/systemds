@@ -25,11 +25,12 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 
 public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, LongWritable> {
@@ -67,7 +68,7 @@ public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, 
 			String specFile = job.get(MRJobConfiguration.TF_SPEC_FILE);
 			FileSystem fs = FileSystem.get(job);
 			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(specFile))));
-			JSONObject spec = JSONObject.parse(br);
+			JSONObject spec = JSONHelper.parse(br);
 			MVImputeAgent mia = new MVImputeAgent(spec);
 			RecodeAgent ra = new RecodeAgent(spec);
 			_agents = new TfAgents(null, mia, ra, null, null);

@@ -24,6 +24,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -46,8 +49,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.transform.TransformationAgent.TX_METHOD;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.json.java.JSONArray;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 public class DataTransform {
 	
@@ -174,7 +176,7 @@ public class DataTransform {
 	private static String processSpecFile(FileSystem fs, String inputPath, String smallestFile, HashMap<String,Integer> colNames, CSVFileFormatProperties prop, String specFileWithNames) throws IllegalArgumentException, IOException {
 		// load input spec file with Names
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(specFileWithNames))));
-		JSONObject inputSpec = JSONObject.parse(br);
+		JSONObject inputSpec = JSONHelper.parse(br);
 		br.close();
 		
 		final String NAME = "name";
@@ -203,13 +205,13 @@ public class DataTransform {
 		Object[] mvConstants = null;
 		
 		boolean byPositions = false;
-		if(inputSpec.get(JSON_BYPOS) != null && ((Boolean)inputSpec.get(JSON_BYPOS)).booleanValue() == true)
+		if(JSONHelper.get(inputSpec,JSON_BYPOS) != null && ((Boolean)JSONHelper.get(inputSpec,JSON_BYPOS)).booleanValue() == true)
 			byPositions = true;
 		
 		// --------------------------------------------------------------------------
 		// Recoding
-		if( inputSpec.get(TX_METHOD.OMIT.toString()) != null ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.OMIT.toString());
+		if( JSONHelper.get(inputSpec,TX_METHOD.OMIT.toString()) != null ) {
+			JSONArray arrtmp = (JSONArray) JSONHelper.get(inputSpec,TX_METHOD.OMIT.toString());
 			omitList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
 				if(byPositions)
@@ -225,8 +227,8 @@ public class DataTransform {
 			omitList = null;
 		// --------------------------------------------------------------------------
 		// Missing value imputation
-		if( inputSpec.get(TX_METHOD.IMPUTE.toString()) != null ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.IMPUTE.toString());
+		if( JSONHelper.get(inputSpec,TX_METHOD.IMPUTE.toString()) != null ) {
+			JSONArray arrtmp = (JSONArray) JSONHelper.get(inputSpec,TX_METHOD.IMPUTE.toString());
 			
 			mvList = new int[arrtmp.size()];
 			mvMethods = new byte[arrtmp.size()];
@@ -235,14 +237,14 @@ public class DataTransform {
 			for(int i=0; i<arrtmp.size(); i++) {
 				entry = (JSONObject)arrtmp.get(i);
 				if (byPositions) {
-					mvList[i] = ((Long) entry.get(ID)).intValue();
+					mvList[i] = ((Long) JSONHelper.get(entry,ID)).intValue();
 				}
 				else {
-					stmp = UtilFunctions.unquote((String) entry.get(NAME));
+					stmp = UtilFunctions.unquote((String) JSONHelper.get(entry,NAME));
 					mvList[i] = colNames.get(stmp);
 				}
 				
-				stmp = UtilFunctions.unquote((String) entry.get(METHOD));
+				stmp = UtilFunctions.unquote((String) JSONHelper.get(entry,METHOD));
 				if(stmp.equals(MV_METHOD_MEAN))
 					btmp = (byte)1;
 				else if ( stmp.equals(MV_METHOD_MODE))
@@ -255,10 +257,10 @@ public class DataTransform {
 				
 				//txMethods.add( btmp );
 				
-				if ( entry.get(VALUE) != null && entry.get(VALUE) instanceof Long )
-					mvConstants[i] = "" + (Long)entry.get(VALUE);
+				if ( JSONHelper.get(entry,VALUE) != null && JSONHelper.get(entry,VALUE) instanceof Long )
+					mvConstants[i] = "" + (Long)JSONHelper.get(entry,VALUE);
 				else
-					mvConstants[i] = entry.get(VALUE);
+					mvConstants[i] = JSONHelper.get(entry,VALUE);
 			}
 			
 			Integer[] idx = new Integer[mvList.length];
@@ -278,8 +280,8 @@ public class DataTransform {
 			mvList = null;
 		// --------------------------------------------------------------------------
 		// Recoding
-		if( inputSpec.get(TX_METHOD.RECODE.toString()) != null ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.RECODE.toString());
+		if( JSONHelper.get(inputSpec,TX_METHOD.RECODE.toString()) != null ) {
+			JSONArray arrtmp = (JSONArray) JSONHelper.get(inputSpec,TX_METHOD.RECODE.toString());
 			rcdList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
 				if (byPositions)
@@ -295,8 +297,8 @@ public class DataTransform {
 			rcdList = null;
 		// --------------------------------------------------------------------------
 		// Binning
-		if( inputSpec.get(TX_METHOD.BIN.toString()) != null ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.BIN.toString());
+		if( JSONHelper.get(inputSpec,TX_METHOD.BIN.toString()) != null ) {
+			JSONArray arrtmp = (JSONArray) JSONHelper.get(inputSpec,TX_METHOD.BIN.toString());
 			
 			binList = new int[arrtmp.size()];
 			binMethods = new byte[arrtmp.size()];
@@ -306,13 +308,13 @@ public class DataTransform {
 				entry = (JSONObject)arrtmp.get(i);
 				
 				if (byPositions) {
-					binList[i] = ((Long) entry.get(ID)).intValue();
+					binList[i] = ((Long) JSONHelper.get(entry,ID)).intValue();
 				}
 				else {
-					stmp = UtilFunctions.unquote((String) entry.get(NAME));
+					stmp = UtilFunctions.unquote((String) JSONHelper.get(entry,NAME));
 					binList[i] = colNames.get(stmp);
 				}
-				stmp = UtilFunctions.unquote((String) entry.get(METHOD));
+				stmp = UtilFunctions.unquote((String) JSONHelper.get(entry,METHOD));
 				if(stmp.equals(BIN_METHOD_WIDTH))
 					btmp = (byte)1;
 				else if ( stmp.equals(BIN_METHOD_HEIGHT))
@@ -321,9 +323,9 @@ public class DataTransform {
 					throw new IOException("Unknown missing value imputation method (" + stmp + ") in transformation specification file: " + specFileWithNames);
 				binMethods[i] = btmp;
 				
-				numBins[i] = entry.get(TransformationAgent.JSON_NBINS);
+				numBins[i] = JSONHelper.get(entry,TransformationAgent.JSON_NBINS);
 				if ( ((Long) numBins[i]) <= 1 ) 
-					throw new IllegalArgumentException("Invalid transformation on column \"" + (String) entry.get(NAME) + "\". Number of bins must be greater than 1.");
+					throw new IllegalArgumentException("Invalid transformation on column \"" + (String) JSONHelper.get(entry,NAME) + "\". Number of bins must be greater than 1.");
 			}
 			
 			Integer[] idx = new Integer[binList.length];
@@ -343,8 +345,8 @@ public class DataTransform {
 			binList = null;
 		// --------------------------------------------------------------------------
 		// Dummycoding
-		if( inputSpec.get(TX_METHOD.DUMMYCODE.toString()) != null ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.DUMMYCODE.toString());
+		if( JSONHelper.get(inputSpec,TX_METHOD.DUMMYCODE.toString()) != null ) {
+			JSONArray arrtmp = (JSONArray) JSONHelper.get(inputSpec,TX_METHOD.DUMMYCODE.toString());
 			dcdList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
 				if (byPositions)
@@ -360,8 +362,8 @@ public class DataTransform {
 			dcdList = null;
 		// --------------------------------------------------------------------------
 		// Scaling
-		if(inputSpec.get(TX_METHOD.SCALE.toString()) !=null) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.SCALE.toString());
+		if(JSONHelper.get(inputSpec,TX_METHOD.SCALE.toString()) !=null) {
+			JSONArray arrtmp = (JSONArray) JSONHelper.get(inputSpec,TX_METHOD.SCALE.toString());
 			
 			scaleList = new int[arrtmp.size()];
 			scaleMethods = new byte[arrtmp.size()];
@@ -370,13 +372,13 @@ public class DataTransform {
 				entry = (JSONObject)arrtmp.get(i);
 				
 				if (byPositions) {
-					scaleList[i] = ((Long) entry.get(ID)).intValue();
+					scaleList[i] = ((Long) JSONHelper.get(entry,ID)).intValue();
 				}
 				else {
-					stmp = UtilFunctions.unquote((String) entry.get(NAME));
+					stmp = UtilFunctions.unquote((String) JSONHelper.get(entry,NAME));
 					scaleList[i] = colNames.get(stmp);
 				}
-				stmp = UtilFunctions.unquote((String) entry.get(METHOD));
+				stmp = UtilFunctions.unquote((String) JSONHelper.get(entry,METHOD));
 				if(stmp.equals(SCALE_METHOD_M))
 					btmp = (byte)1;
 				else if ( stmp.equals(SCALE_METHOD_Z))
@@ -504,58 +506,62 @@ public class DataTransform {
 		// Prepare output spec
 		JSONObject outputSpec = new JSONObject();
 
-		if (omitList != null)
-		{
-			JSONObject rcdSpec = new JSONObject();
-			rcdSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(omitList));
-			outputSpec.put(TX_METHOD.OMIT.toString(), rcdSpec);
-		}
-		
-		if (mvList != null)
-		{
-			JSONObject mvSpec = new JSONObject();
-			mvSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(mvList));
-			mvSpec.put(TransformationAgent.JSON_MTHD, toJSONArray(mvMethods));
-			mvSpec.put(TransformationAgent.JSON_CONSTS, toJSONArray(mvConstants));
-			outputSpec.put(TX_METHOD.IMPUTE.toString(), mvSpec);
-		}
-		
-		if (rcdList != null)
-		{
-			JSONObject rcdSpec = new JSONObject();
-			rcdSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(rcdList));
-			outputSpec.put(TX_METHOD.RECODE.toString(), rcdSpec);
-		}
-		
-		if (binList != null)
-		{
-			JSONObject binSpec = new JSONObject();
-			binSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(binList));
-			binSpec.put(TransformationAgent.JSON_MTHD, toJSONArray(binMethods));
-			binSpec.put(TransformationAgent.JSON_NBINS, toJSONArray(numBins));
-			outputSpec.put(TX_METHOD.BIN.toString(), binSpec);
-		}
-		
-		if (dcdList != null)
-		{
-			JSONObject dcdSpec = new JSONObject();
-			dcdSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(dcdList));
-			outputSpec.put(TX_METHOD.DUMMYCODE.toString(), dcdSpec);
-		}
-		
-		if (scaleList != null)
-		{
-			JSONObject scaleSpec = new JSONObject();
-			scaleSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(scaleList));
-			scaleSpec.put(TransformationAgent.JSON_MTHD, toJSONArray(scaleMethods));
-			outputSpec.put(TX_METHOD.SCALE.toString(), scaleSpec);
-		}
-		
-		if (mvrcdList != null)
-		{
-			JSONObject mvrcd = new JSONObject();
-			mvrcd.put(TransformationAgent.JSON_ATTRS, toJSONArray(mvrcdList));
-			outputSpec.put(TX_METHOD.MVRCD.toString(), mvrcd);
+		try {
+			if (omitList != null)
+			{
+				JSONObject rcdSpec = new JSONObject();
+				rcdSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(omitList));
+				outputSpec.put(TX_METHOD.OMIT.toString(), rcdSpec);
+			}
+			
+			if (mvList != null)
+			{
+				JSONObject mvSpec = new JSONObject();
+				mvSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(mvList));
+				mvSpec.put(TransformationAgent.JSON_MTHD, toJSONArray(mvMethods));
+				mvSpec.put(TransformationAgent.JSON_CONSTS, toJSONArray(mvConstants));
+				outputSpec.put(TX_METHOD.IMPUTE.toString(), mvSpec);
+			}
+			
+			if (rcdList != null)
+			{
+				JSONObject rcdSpec = new JSONObject();
+				rcdSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(rcdList));
+				outputSpec.put(TX_METHOD.RECODE.toString(), rcdSpec);
+			}
+			
+			if (binList != null)
+			{
+				JSONObject binSpec = new JSONObject();
+				binSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(binList));
+				binSpec.put(TransformationAgent.JSON_MTHD, toJSONArray(binMethods));
+				binSpec.put(TransformationAgent.JSON_NBINS, toJSONArray(numBins));
+				outputSpec.put(TX_METHOD.BIN.toString(), binSpec);
+			}
+			
+			if (dcdList != null)
+			{
+				JSONObject dcdSpec = new JSONObject();
+				dcdSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(dcdList));
+				outputSpec.put(TX_METHOD.DUMMYCODE.toString(), dcdSpec);
+			}
+			
+			if (scaleList != null)
+			{
+				JSONObject scaleSpec = new JSONObject();
+				scaleSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(scaleList));
+				scaleSpec.put(TransformationAgent.JSON_MTHD, toJSONArray(scaleMethods));
+				outputSpec.put(TX_METHOD.SCALE.toString(), scaleSpec);
+			}
+			
+			if (mvrcdList != null)
+			{
+				JSONObject mvrcd = new JSONObject();
+				mvrcd.put(TransformationAgent.JSON_ATTRS, toJSONArray(mvrcdList));
+				outputSpec.put(TX_METHOD.MVRCD.toString(), mvrcd);
+			}
+		} catch(JSONException je) {
+			throw new IOException(je);
 		}
 		
 		 // write out the spec with IDs
@@ -667,14 +673,15 @@ public class DataTransform {
 		int ret = columnNames.length;
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(tfMtdPath + "/spec.json"))));
-		JSONObject spec = JSONObject.parse(br);
+		JSONObject spec = JSONHelper.parse(br);
 		br.close();
 		
 		// fetch relevant attribute lists
-		if ( spec.get(TX_METHOD.DUMMYCODE.toString()) == null )
+		if ( JSONHelper.get(spec,TX_METHOD.DUMMYCODE.toString()) == null )
 			return ret;
 		
-		JSONArray dcdList = (JSONArray) ((JSONObject)spec.get(TX_METHOD.DUMMYCODE.toString())).get(TransformationAgent.JSON_ATTRS);
+		JSONObject obj = (JSONObject)JSONHelper.get(spec, TX_METHOD.DUMMYCODE.toString());
+		JSONArray dcdList = (JSONArray) JSONHelper.get(obj, TransformationAgent.JSON_ATTRS);
 
 		// look for numBins among binned columns
 		for(Object o : dcdList) 
@@ -1056,7 +1063,7 @@ public class DataTransform {
 		
 		// Parse input specification and other parameters
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(specFileWithIDs))));
-		JSONObject spec = JSONObject.parse(br);
+		JSONObject spec = JSONHelper.parse(br);
 		br.close();
 		
 		Pattern _delim = Pattern.compile(Pattern.quote(prop.getDelim()));

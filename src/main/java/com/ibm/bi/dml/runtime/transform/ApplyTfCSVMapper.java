@@ -18,7 +18,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.json.java.JSONObject;
+import org.apache.wink.json4j.JSONObject;
 
 public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable, Text> {
 	

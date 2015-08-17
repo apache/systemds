@@ -20,11 +20,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.runtime.transform.MVImputeAgent.MVMethod;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.json.java.JSONArray;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 public class BinAgent extends TransformationAgent {
 	
@@ -47,15 +48,15 @@ public class BinAgent extends TransformationAgent {
 	BinAgent() { }
 	
 	BinAgent(JSONObject parsedSpec) {
-		JSONObject obj = (JSONObject) parsedSpec.get(TX_METHOD.BIN.toString());
+		JSONObject obj = (JSONObject) JSONHelper.get(parsedSpec,TX_METHOD.BIN.toString());
 		
 		if(obj == null) {
 			return;
 		}
 		else {
-			JSONArray attrs = (JSONArray) obj.get(JSON_ATTRS);
-			//JSONArray mthds = (JSONArray) obj.get(JSON_MTHD);
-			JSONArray nbins = (JSONArray) obj.get(JSON_NBINS);
+			JSONArray attrs = (JSONArray) JSONHelper.get(obj,JSON_ATTRS);
+			//JSONArray mthds = (JSONArray) JSONHelper.get(obj,JSON_MTHD);
+			JSONArray nbins = (JSONArray) JSONHelper.get(obj,JSON_NBINS);
 			
 			assert(attrs.size() == nbins.size());
 			

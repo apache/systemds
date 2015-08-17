@@ -19,6 +19,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
@@ -88,7 +89,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.Explain;
 import com.ibm.bi.dml.utils.Explain.ExplainType;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 /**
  * Dynamic recompilation of hop dags to runtime instructions, which includes the 
@@ -1999,7 +2000,7 @@ public class Recompiler
 				try
 				{
 					br = new BufferedReader(new InputStreamReader(fs.open(path)));
-					JSONObject mtd = JSONObject.parse(br);
+					JSONObject mtd = JSONHelper.parse(br);
 					
 					DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
 					dop.setDataType(dt);

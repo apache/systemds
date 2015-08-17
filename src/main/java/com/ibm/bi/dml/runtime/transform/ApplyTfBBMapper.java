@@ -31,7 +31,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockMapper.IndexedBlockRow;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MapperBase;
-import com.ibm.json.java.JSONObject;
+import org.apache.wink.json4j.JSONObject;
 
 @SuppressWarnings("deprecation")
 public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, Text, TaggedFirstSecondIndexes, CSVReblockMR.BlockRow>{

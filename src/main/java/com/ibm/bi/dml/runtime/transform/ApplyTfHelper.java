@@ -16,11 +16,12 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 
 @SuppressWarnings("deprecation")
@@ -73,7 +74,7 @@ public class ApplyTfHelper {
 	{
 		FileSystem fs = FileSystem.get(_rJob);
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(_specFile))));
-		JSONObject obj = JSONObject.parse(br);
+		JSONObject obj = JSONHelper.parse(br);
 		br.close();
 		return obj;
 	}

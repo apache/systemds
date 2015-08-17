@@ -21,12 +21,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
 import com.google.common.base.Functions;
 import com.google.common.collect.Ordering;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.json.java.JSONArray;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 public class DummycodeAgent extends TransformationAgent {	
 	
@@ -53,12 +54,12 @@ public class DummycodeAgent extends TransformationAgent {
 	DummycodeAgent(JSONObject parsedSpec, long ncol) {
 		numCols = ncol;
 		
-		Object obj = parsedSpec.get(TX_METHOD.DUMMYCODE.toString());
+		Object obj = JSONHelper.get(parsedSpec,TX_METHOD.DUMMYCODE.toString());
 		if(obj == null) {
 			return;
 		}
 		else {
-			JSONArray attrs = (JSONArray) ((JSONObject)obj).get(JSON_ATTRS);
+			JSONArray attrs = (JSONArray) JSONHelper.get((JSONObject)obj, JSON_ATTRS);
 			
 			_dcdList = new int[attrs.size()];
 			for(int i=0; i < _dcdList.length; i++) 

@@ -22,12 +22,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
 import com.google.common.collect.Ordering;
 import com.ibm.bi.dml.runtime.transform.MVImputeAgent.MVMethod;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.json.java.JSONArray;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 public class RecodeAgent extends TransformationAgent {
 	
@@ -43,12 +44,12 @@ public class RecodeAgent extends TransformationAgent {
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
 	
 	RecodeAgent(JSONObject parsedSpec) {
-		Object obj = parsedSpec.get(TX_METHOD.RECODE.toString());
+		Object obj = JSONHelper.get(parsedSpec,TX_METHOD.RECODE.toString());
 		int rcdCount = 0;
 		if(obj == null) {
 		}
 		else {
-			JSONArray attrs = (JSONArray) ((JSONObject)obj).get(JSON_ATTRS);
+			JSONArray attrs = (JSONArray) JSONHelper.get((JSONObject)obj,JSON_ATTRS);
 			
 			_rcdList = new int[attrs.size()];
 			for(int i=0; i < _rcdList.length; i++) 
@@ -56,11 +57,11 @@ public class RecodeAgent extends TransformationAgent {
 			rcdCount = _rcdList.length;
 		}
 		
-		obj = parsedSpec.get(TX_METHOD.MVRCD.toString());
+		obj = JSONHelper.get(parsedSpec,TX_METHOD.MVRCD.toString());
 		if(obj == null) {
 		}
 		else {
-			JSONArray attrs = (JSONArray) ((JSONObject)obj).get(JSON_ATTRS);
+			JSONArray attrs = (JSONArray) JSONHelper.get((JSONObject)obj,JSON_ATTRS);
 			_mvrcdList = new int[attrs.size()];
 			for(int i=0; i < _mvrcdList.length; i++) 
 				_mvrcdList[i] = ((Long) attrs.get(i)).intValue();

@@ -17,14 +17,15 @@ import java.util.Map.Entry;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.json.java.JSONArray;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 
 public class DataExpression extends DataIdentifier 
@@ -1968,7 +1969,7 @@ public class DataExpression extends DataIdentifier
 					
 					JSONObject childObj = null;
 					try {
-						childObj = JSONObject.parse(br);
+						childObj = JSONHelper.parse(br);
 					}
 					catch(Exception e){
 						raiseValidateError("for MTD file in directory, error parsing part of MTD file with path " + childPath.toString() + ": " + e.getMessage(), conditional);
@@ -1999,7 +2000,7 @@ public class DataExpression extends DataIdentifier
 			
 			// try parsing MTD file
 			try {
-				retVal =  JSONObject.parse(br);	
+				retVal =  JSONHelper.parse(br);	
 			} catch (Exception e){
 				raiseValidateError("error parsing MTD file with path " + pt.toString() + ": " + e.getMessage(), conditional);
 			}
@@ -2133,7 +2134,7 @@ public class DataExpression extends DataIdentifier
         // if the MTD file exists, check the format is not binary 
 		JSONObject mtdObject = readMetadataFile(filename + ".mtd", conditional);
         if (mtdObject != null){
-        	String formatTypeString = (String)mtdObject.get(FORMAT_TYPE);
+        	String formatTypeString = (String)JSONHelper.get(mtdObject,FORMAT_TYPE);
             if (formatTypeString != null ) {
             	if ( formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV) )
             		return true;

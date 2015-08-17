@@ -16,10 +16,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.json.java.JSONArray;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 public class OmitAgent extends TransformationAgent {
 	
@@ -36,12 +37,12 @@ public class OmitAgent extends TransformationAgent {
 	}
 	
 	OmitAgent(JSONObject parsedSpec) {
-		Object obj = parsedSpec.get(TX_METHOD.OMIT.toString());
+		Object obj = JSONHelper.get(parsedSpec, TX_METHOD.OMIT.toString());
 		if(obj == null) {
 			
 		}
 		else {
-			JSONArray attrs = (JSONArray) ((JSONObject)obj).get(JSON_ATTRS);
+			JSONArray attrs = (JSONArray) JSONHelper.get((JSONObject)obj, JSON_ATTRS);
 			_omitList = new int[attrs.size()];
 			for(int i=0; i < _omitList.length; i++) 
 				_omitList[i] = ((Long) attrs.get(i)).intValue();

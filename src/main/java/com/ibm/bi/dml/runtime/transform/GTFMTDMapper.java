@@ -20,11 +20,12 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.json.java.JSONObject;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 
 public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, DistinctValue>{
@@ -74,7 +75,7 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 	
 		FileSystem fs = FileSystem.get(job);
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(_specFile))));
-		return JSONObject.parse(br);
+		return JSONHelper.parse(br);
 	}
 	
 	@SuppressWarnings("deprecation")

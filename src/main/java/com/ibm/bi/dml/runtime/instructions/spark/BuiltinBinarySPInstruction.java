@@ -17,9 +17,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.RightScalarOperator;
 
 public abstract class BuiltinBinarySPInstruction extends BinarySPInstruction 
 {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public BuiltinBinarySPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr )
 	{

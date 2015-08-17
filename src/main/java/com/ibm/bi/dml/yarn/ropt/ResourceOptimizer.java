@@ -56,9 +56,6 @@ import com.ibm.bi.dml.yarn.ropt.YarnOptimizerUtils.GridEnumType;
  */
 public class ResourceOptimizer 
 {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private static final Log LOG = LogFactory.getLog(ResourceOptimizer.class);
 	

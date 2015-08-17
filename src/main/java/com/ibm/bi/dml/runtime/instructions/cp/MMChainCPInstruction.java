@@ -24,9 +24,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
  */
 public class MMChainCPInstruction extends UnaryCPInstruction
 {	
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private ChainType _type = null;
 	private int _numThreads = -1;

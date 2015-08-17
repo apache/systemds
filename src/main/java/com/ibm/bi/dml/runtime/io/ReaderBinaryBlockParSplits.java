@@ -32,9 +32,6 @@ import com.ibm.bi.dml.runtime.util.BinaryBlockInputFormat;
 
 public class ReaderBinaryBlockParSplits extends MatrixReader {
 
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	private boolean _localFS = false;
 	private static int _numThreads = 1;

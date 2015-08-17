@@ -24,9 +24,6 @@ import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 
 public class GridEnumerationMemory extends GridEnumeration
 {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 	
 	public static final int DEFAULT_NSTEPS = 20; //old config: 15
 	public static final int DEFAULT_MEM_ADD = 1*1024*1024; //1MB

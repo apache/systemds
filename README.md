@@ -52,7 +52,7 @@ To build SystemML, run:
 
 SystemML features a comprehensive set of integration tests. To perform these tests, run:
 
-	cd systemml
+	cd system-ml
     mvn verify -DskipTests=false
 
 Note: these that these tests requires [R](https://www.r-project.org/) to be installed and available as part of the PATH variable on the machine you are running these tests.

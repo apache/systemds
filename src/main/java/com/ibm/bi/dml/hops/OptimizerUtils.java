@@ -19,6 +19,9 @@ package com.ibm.bi.dml.hops;
 
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
@@ -42,6 +45,7 @@ import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 public class OptimizerUtils 
 {
+	private static final Log LOG = LogFactory.getLog(OptimizerUtils.class.getName());
 	
 	////////////////////////////////////////////////////////
 	// Optimizer constants and flags (incl tuning knobs)  //
@@ -171,7 +175,7 @@ public class OptimizerUtils
 	 * Enables parallel read/write of all text formats (textcell, csv, mm). 
 	 * 
 	 */
-	public static boolean PARALLEL_CP_READ_TEXTFORMATS = false;
+	public static boolean PARALLEL_CP_READ_TEXTFORMATS = true;
 	public static boolean PARALLEL_CP_WRITE_TEXTFORMATS = true;
 	
 	
@@ -336,14 +340,25 @@ public class OptimizerUtils
 		}
 		setDefaultSize();
 		
+		//handle parallel text io (incl awareness of thread contention in <jdk8)
 		if (!ConfigurationManager.getConfig().getBooleanValue(DMLConfig.CP_PARALLEL_TEXTIO)) {
 			PARALLEL_CP_READ_TEXTFORMATS = false;
 			PARALLEL_CP_WRITE_TEXTFORMATS = false;
 		}
+		else if(   InfrastructureAnalyzer.isJavaVersionLessThanJDK8() 
+			    && InfrastructureAnalyzer.getLocalParallelism() > 1   )
+		{
+			LOG.warn("Auto-disable multi-threaded text read for 'text' and 'csv' due to thread contention on JRE < 1.8"
+					+ " (java.version="+ System.getProperty("java.version")+").");
+			
+			//disable parallel text read
+			PARALLEL_CP_READ_TEXTFORMATS = false;
+		}
 
-		if (!ConfigurationManager.getConfig().getBooleanValue(DMLConfig.CP_PARALLEL_MATRIXMULT))
+		//handle parallel matrix mult / rand configuration
+		if (!ConfigurationManager.getConfig().getBooleanValue(DMLConfig.CP_PARALLEL_MATRIXMULT)) {
 			PARALLEL_CP_MATRIX_MULTIPLY = false;
-		
+		}	
 	}
 	
 	/**

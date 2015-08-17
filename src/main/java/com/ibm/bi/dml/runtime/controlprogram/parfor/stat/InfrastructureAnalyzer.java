@@ -40,6 +40,7 @@ public class InfrastructureAnalyzer
 	//static local master node properties
 	private static int  _localPar        = -1;
 	private static long _localJVMMaxMem  = -1;
+	private static boolean _isLtJDK8 = false;
 	
 	//static hadoop cluster properties
 	private static int  _remotePar       = -1;
@@ -62,6 +63,14 @@ public class InfrastructureAnalyzer
 		//analyzeHadoopCluster(); //note: due to overhead - analyze on-demand
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public static boolean isJavaVersionLessThanJDK8()
+	{
+		return _isLtJDK8;
+	}
 	
 	///////
 	//methods for obtaining parallelism properties
@@ -446,8 +455,21 @@ public class InfrastructureAnalyzer
 	 */
 	private static void analyzeLocalMachine()
 	{
+		//step 1: basic parallelism and memory
 		_localPar       = Runtime.getRuntime().availableProcessors();
 		_localJVMMaxMem = Runtime.getRuntime().maxMemory();
+		
+		//step 2: analyze if used jdk older than jdk8
+		String version = System.getProperty("java.version");
+		
+		//parse jre version
+		int ix1 = version.indexOf('.');
+		int ix2 = version.indexOf('.', ix1+1);
+		int versionp1 = Integer.parseInt(version.substring(0, ix1));
+		int versionp2 = Integer.parseInt(version.substring(ix1+1, ix2));
+		
+		//check for jdk version less than 8 (and raise warning if multi-threaded)
+		_isLtJDK8 = (versionp1 == 1 && versionp2 < 8);
 	}
 	
 	/**

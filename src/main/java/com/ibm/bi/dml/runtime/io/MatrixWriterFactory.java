@@ -62,10 +62,13 @@ public class MatrixWriterFactory
 				writer = new WriterTextCell();
 		}
 		else if( oinfo == OutputInfo.MatrixMarketOutputInfo ) {
-			if( OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS )
-				writer = new WriterMatrixMarketParallel();
-			else
-				writer = new WriterMatrixMarket();
+			//note: disabled parallel cp write of matrix market in order to ensure the
+			//requirement of writing out a single file
+			
+			//if( OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS )
+			//	writer = new WriterMatrixMarketParallel();
+			
+			writer = new WriterMatrixMarket();
 		}
 		else if( oinfo == OutputInfo.CSVOutputInfo ) {
 			if( props!=null && !(props instanceof CSVFileFormatProperties) )

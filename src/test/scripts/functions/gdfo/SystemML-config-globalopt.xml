@@ -40,5 +40,5 @@ The source code for this program is not published or otherwise divested of its t
    <cp.parallel.matrixmult>true</cp.parallel.matrixmult>
    
    <!-- enables multi-threaded read/write of text formats in singlenode control program -->
-   <cp.parallel.textio>false</cp.parallel.textio>
+   <cp.parallel.textio>true</cp.parallel.textio>
 </root>

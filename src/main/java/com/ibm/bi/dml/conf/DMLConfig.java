@@ -105,7 +105,7 @@ public class DMLConfig
 		//_defaultVals.put(REAPER_WAIT_INTERVAL, "1000" );
 		//_defaultVals.put(NIMBLE_SCRATCH,       "nimbleoutput" );	
 		_defaultVals.put(CP_PARALLEL_MATRIXMULT, "true" );
-		_defaultVals.put(CP_PARALLEL_TEXTIO,     "false" );
+		_defaultVals.put(CP_PARALLEL_TEXTIO,     "true" );
 	}
 	
 	public DMLConfig()

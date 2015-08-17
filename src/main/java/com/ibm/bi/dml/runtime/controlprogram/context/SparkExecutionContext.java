@@ -40,6 +40,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
@@ -532,23 +533,20 @@ public class SparkExecutionContext extends ExecutionContext
 	 */
 	public void checkAndRaiseValidationWarningJDKVersion()
 	{
-		//get the jre version 
-		String version = System.getProperty("java.version");
-		
-		//parse jre version
-		int ix1 = version.indexOf('.');
-		int ix2 = version.indexOf('.', ix1+1);
-		int versionp1 = Integer.parseInt(version.substring(0, ix1));
-		int versionp2 = Integer.parseInt(version.substring(ix1+1, ix2));
-		
+		//check for jdk version less than jdk8
+		boolean isLtJDK8 = InfrastructureAnalyzer.isJavaVersionLessThanJDK8();
+
 		//check multi-threaded executors
 		int numExecutors = getNumExecutors();
 		int numCores = getDefaultParallelism();
 		boolean multiThreaded = (numCores > numExecutors);
 		
 		//check for jdk version less than 8 (and raise warning if multi-threaded)
-		if( versionp1 == 1 && versionp2 < 8 && multiThreaded) 
+		if( isLtJDK8 && multiThreaded) 
 		{
+			//get the jre version 
+			String version = System.getProperty("java.version");
+			
 			LOG.warn("########################################################################################");
 			LOG.warn("### WARNING: Multi-threaded text reblock may lead to thread contention on JRE < 1.8 ####");
 			LOG.warn("### java.version = " + version);

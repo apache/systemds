@@ -334,7 +334,17 @@ public abstract class Hop
 		if( OptimizerUtils.isSparkExecutionMode() 
 			&& getDataType()!=DataType.SCALAR )
 		{
-			et = ExecType.SPARK;
+			//conditional checkpoint based on memory estimate in order to avoid unnecessary 
+			//persist and unpersist calls (4x the memory budget is conservative)
+			if(    OptimizerUtils.isHybridExecutionMode()
+				&& 4*_outputMemEstimate < OptimizerUtils.getLocalMemBudget() )
+			{
+				et = ExecType.CP;
+			}
+			else //default case
+			{
+				et = ExecType.SPARK;
+			}
 		}
 
 		//add reblock lop to output if required

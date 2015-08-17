@@ -1,0 +1,306 @@
+\subsection{Linear Regression}
+
+\noindent{\bf Description}
+\smallskip
+
+Linear Regression scripts are used to model the relationship between one numerical
+response variable and one or more explanatory (feature) variables.
+The scripts are given a dataset $(X, Y) = (x_i, y_i)_{i=1}^n$ where $x_i$ is a
+numerical vector of feature variables and $y_i$ is a numerical response value for
+each training data record.  The feature vectors are provided as a matrix $X$ of size
+$n\,{\times}\,m$, where $n$ is the number of records and $m$ is the number of features.
+The observed response values are provided as a 1-column matrix~$Y$, with a numerical
+value $y_i$ for each~$x_i$ in the corresponding row of matrix~$X$.
+
+In linear regression, we predict the distribution of the response~$y_i$ based on
+a fixed linear combination of the features in~$x_i$.  We assume that
+there exist constant regression coefficients $\beta_0, \beta_1, \ldots, \beta_m$
+and a constant residual variance~$\sigma^2$ such that
+\begin{equation}
+y_i \sim \Normal(\mu_i, \sigma^2) \,\,\,\,\textrm{where}\,\,\,\,
+\mu_i \,=\, \beta_0 + \beta_1 x_{i,1} + \ldots + \beta_m x_{i,m}
+\label{eqn:linregdef}
+\end{equation}
+Distribution $y_i \sim \Normal(\mu_i, \sigma^2)$ models the ``unexplained'' residual
+noise and is assumed independent across different records.
+
+The goal is to estimate the regression coefficients and the residual variance.
+Once they are accurately estimated, we can make predictions about $y_i$ given~$x_i$
+in new records.  We can also use the $\beta_j$'s to analyze the influence of individual
+features on the response value, and assess the quality of this model by comparing
+residual variance in the response, left after prediction, with its total variance.
+
+There are two scripts in our library, both doing the same estimation, but using different
+computational methods.  Depending on the size and the sparsity of the feature matrix~$X$,
+one or the other script may be more efficient.  The ``direct solve'' script
+{\tt LinearRegDS} is more efficient when the number of features $m$ is relatively small
+($m \sim 1000$ or less) and matrix~$X$ is either tall or fairly dense
+(has~${\gg}\:m^2$ nonzeros); otherwise, the ``conjugate gradient'' script {\tt LinearRegCG}
+is more efficient.  If $m > 50000$, use only {\tt LinearRegCG}.
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}LinearRegDS.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} Y=}path/file
+{\tt{} B=}path/file
+{\tt{} O=}path/file
+{\tt{} icpt=}int
+{\tt{} reg=}double
+{\tt{} fmt=}format
+
+}\smallskip
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}LinearRegCG.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} Y=}path/file
+{\tt{} B=}path/file
+{\tt{} O=}path/file
+{\tt{} Log=}path/file
+{\tt{} icpt=}int
+{\tt{} reg=}double
+{\tt{} tol=}double
+{\tt{} maxi=}int
+{\tt{} fmt=}format
+
+}
+
+\smallskip
+\noindent{\bf Arguments}
+\begin{Description}
+\item[{\tt X}:]
+Location (on HDFS) to read the matrix of feature vectors, each row constitutes
+one feature vector
+\item[{\tt Y}:]
+Location to read the 1-column matrix of response values
+\item[{\tt B}:]
+Location to store the estimated regression parameters (the $\beta_j$'s), with the
+intercept parameter~$\beta_0$ at position {\tt B[}$m\,{+}\,1$, {\tt 1]} if available
+\item[{\tt O}:] (default:\mbox{ }{\tt " "})
+Location to store the CSV-file of summary statistics defined in
+Table~\ref{table:linreg:stats}, the default is to print it to the standard output
+\item[{\tt Log}:] (default:\mbox{ }{\tt " "}, {\tt LinearRegCG} only)
+Location to store iteration-specific variables for monitoring and debugging purposes,
+see Table~\ref{table:linreg:log} for details.
+\item[{\tt icpt}:] (default:\mbox{ }{\tt 0})
+Intercept presence and shifting/rescaling the features in~$X$:\\
+{\tt 0} = no intercept (hence no~$\beta_0$), no shifting or rescaling of the features;\\
+{\tt 1} = add intercept, but do not shift/rescale the features in~$X$;\\
+{\tt 2} = add intercept, shift/rescale the features in~$X$ to mean~0, variance~1
+\item[{\tt reg}:] (default:\mbox{ }{\tt 0.000001})
+L2-regularization parameter~\mbox{$\lambda\geq 0$}; set to nonzero for highly dependent,
+sparse, or numerous ($m \gtrsim n/10$) features
+\item[{\tt tol}:] (default:\mbox{ }{\tt 0.000001}, {\tt LinearRegCG} only)
+Tolerance \mbox{$\eps\geq 0$} used in the convergence criterion: we terminate conjugate
+gradient iterations when the $\beta$-residual reduces in L2-norm by this factor
+\item[{\tt maxi}:] (default:\mbox{ }{\tt 0}, {\tt LinearRegCG} only)
+Maximum number of conjugate gradient iterations, or~0 if no maximum
+limit provided
+\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+
+\begin{table}[t]\small\centerline{%
+\begin{tabular}{|ll|}
+\hline
+Name & Meaning \\
+\hline
+{\tt AVG\_TOT\_Y}          & Average of the response value $Y$ \\
+{\tt STDEV\_TOT\_Y}        & Standard Deviation of the response value $Y$ \\
+{\tt AVG\_RES\_Y}          & Average of the residual $Y - \mathop{\mathrm{pred}}(Y|X)$, i.e.\ residual bias \\
+{\tt STDEV\_RES\_Y}        & Standard Deviation of the residual $Y - \mathop{\mathrm{pred}}(Y|X)$ \\
+{\tt DISPERSION}           & GLM-style dispersion, i.e.\ residual sum of squares / \#deg.\ fr. \\
+{\tt PLAIN\_R2}            & Plain $R^2$ of residual with bias included vs.\ total average \\
+{\tt ADJUSTED\_R2}         & Adjusted $R^2$ of residual with bias included vs.\ total average \\
+{\tt PLAIN\_R2\_NOBIAS}    & Plain $R^2$ of residual with bias subtracted vs.\ total average \\
+{\tt ADJUSTED\_R2\_NOBIAS} & Adjusted $R^2$ of residual with bias subtracted vs.\ total average \\
+{\tt PLAIN\_R2\_VS\_0}     & ${}^*$Plain $R^2$ of residual with bias included vs.\ zero constant \\
+{\tt ADJUSTED\_R2\_VS\_0}  & ${}^*$Adjusted $R^2$ of residual with bias included vs.\ zero constant \\
+\hline
+\multicolumn{2}{r}{${}^{*\mathstrut}$ The last two statistics are only printed if there is no intercept ({\tt icpt=0})} \\
+\end{tabular}}
+\caption{Besides~$\beta$, linear regression scripts compute a few summary statistics
+listed above.  The statistics are provided in CSV format, one comma-separated name-value
+pair per each line.}
+\label{table:linreg:stats}
+\end{table}
+
+\begin{table}[t]\small\centerline{%
+\begin{tabular}{|ll|}
+\hline
+Name & Meaning \\
+\hline
+{\tt CG\_RESIDUAL\_NORM}  & L2-norm of conjug.\ grad.\ residual, which is $A \pxp \beta - t(X) \pxp y$ \\
+                          & where $A = t(X) \pxp X + \diag (\lambda)$, or a similar quantity \\
+{\tt CG\_RESIDUAL\_RATIO} & Ratio of current L2-norm of conjug.\ grad.\ residual over the initial \\
+\hline
+\end{tabular}}
+\caption{
+The {\tt Log} file for {\tt{}LinearRegCG} script contains the above \mbox{per-}iteration
+variables in CSV format, each line containing triple (Name, Iteration\#, Value) with
+Iteration\# being~0 for initial values.}
+\label{table:linreg:log}
+\end{table}
+
+
+\noindent{\bf Details}
+\smallskip
+
+To solve a linear regression problem over feature matrix~$X$ and response vector~$Y$,
+we can find coefficients $\beta_0, \beta_1, \ldots, \beta_m$ and $\sigma^2$ that maximize
+the joint likelihood of all $y_i$ for $i=1\ldots n$, defined by the assumed statistical
+model~(\ref{eqn:linregdef}).  Since the joint likelihood of the independent
+$y_i \sim \Normal(\mu_i, \sigma^2)$ is proportional to the product of
+$\exp\big({-}\,(y_i - \mu_i)^2 / (2\sigma^2)\big)$, we can take the logarithm of this
+product, then multiply by $-2\sigma^2 < 0$ to obtain a least squares problem:
+\begin{equation}
+\sum_{i=1}^n \, (y_i - \mu_i)^2 \,\,=\,\, 
+\sum_{i=1}^n \Big(y_i - \beta_0 - \sum_{j=1}^m \beta_j x_{i,j}\Big)^2
+\,\,\to\,\,\min
+\label{eqn:linregls}
+\end{equation}
+This may not be enough, however.  The minimum may sometimes be attained over infinitely many
+$\beta$-vectors, for example if $X$ has an all-0 column, or has linearly dependent columns,
+or has fewer rows than columns~\mbox{($n < m$)}.  Even if~(\ref{eqn:linregls}) has a unique
+solution, other $\beta$-vectors may be just a little suboptimal\footnote{Smaller likelihood
+difference between two models suggests less statistical evidence to pick one model over the
+other.}, yet give significantly different predictions for new feature vectors.  This results
+in \emph{overfitting}: prediction error for the training data ($X$ and~$Y$) is much smaller
+than for the test data (new records).
+
+Overfitting and degeneracy in the data is commonly mitigated by adding a regularization penalty
+term to the least squares function:
+\begin{equation}
+\sum_{i=1}^n \Big(y_i - \beta_0 - \sum_{j=1}^m \beta_j x_{i,j}\Big)^2
+\,+\,\, \lambda \sum_{j=1}^m \beta_j^2
+\,\,\to\,\,\min
+\label{eqn:linreglsreg}
+\end{equation}
+The choice of $\lambda>0$, the regularization constant, typically involves cross-validation
+where the dataset is repeatedly split into a training part (to estimate the~$\beta_j$'s) and
+a test part (to evaluate prediction accuracy), with the goal of maximizing the test accuracy.
+In our scripts, $\lambda$~is provided as input parameter~{\tt reg}.
+
+The solution to least squares problem~(\ref{eqn:linreglsreg}), through taking the derivative
+and setting it to~0, has the matrix linear equation form
+\begin{equation}
+A\left[\textstyle\beta_{1:m}\atop\textstyle\beta_0\right] \,=\, \big[X,\,1\big]^T Y,\,\,\,
+\textrm{where}\,\,\,
+A \,=\, \big[X,\,1\big]^T \big[X,\,1\big]\,+\,\hspace{0.5pt} \diag(\hspace{0.5pt}
+\underbrace{\raisebox{0pt}[0pt][0.5pt]{$\lambda,\ldots, \lambda$}}_{\raisebox{2pt}{$\scriptstyle m$}}
+\hspace{0.5pt}, 0)
+\label{eqn:linregeq}
+\end{equation}
+where $[X,\,1]$ is $X$~with an extra column of~1s appended on the right, and the
+diagonal matrix of $\lambda$'s has a zero to keep the intercept~$\beta_0$ unregularized.
+If the intercept is disabled by setting {\tt icpt=0}, the equation is simply
+\mbox{$X^T X \beta = X^T Y$}.
+
+We implemented two scripts for solving equation~(\ref{eqn:linregeq}): one is a ``direct solver''
+that computes $A$ and then solves $A\beta = [X,\,1]^T Y$ by calling an external package,
+the other performs linear conjugate gradient~(CG) iterations without ever materializing~$A$.
+The CG~algorithm closely follows Algorithm~5.2 in Chapter~5 of~\cite{Nocedal2006:Optimization}.
+Each step in the CG~algorithm computes a matrix-vector multiplication $q = Ap$ by first computing
+$[X,\,1]\, p$ and then $[X,\,1]^T [X,\,1]\, p$.  Usually the number of such multiplications,
+one per CG iteration, is much smaller than~$m$.  The user can put a hard bound on it with input 
+parameter~{\tt maxi}, or use the default maximum of~$m+1$ (or~$m$ if no intercept) by
+having {\tt maxi=0}.  The CG~iterations terminate when the L2-norm of vector
+$r = A\beta - [X,\,1]^T Y$ decreases from its initial value (for~$\beta=0$) by the tolerance
+factor specified in input parameter~{\tt tol}.
+
+The CG algorithm is more efficient if computing
+$[X,\,1]^T \big([X,\,1]\, p\big)$ is much faster than materializing $A$,
+an $(m\,{+}\,1)\times(m\,{+}\,1)$ matrix.  The Direct Solver~(DS) is more efficient if
+$X$ takes up a lot more memory than $A$ (i.e.\ $X$~has a lot more nonzeros than~$m^2$)
+and if $m^2$ is small enough for the external solver ($m \lesssim 50000$).  A more precise
+determination between CG and~DS is subject to further research.
+
+In addition to the $\beta$-vector, the scripts estimate the residual standard
+deviation~$\sigma$ and the~$R^2$, the ratio of ``explained'' variance to the total
+variance of the response variable.  These statistics only make sense if the number
+of degrees of freedom $n\,{-}\,m\,{-}\,1$ is positive and the regularization constant
+$\lambda$ is negligible or zero.  The formulas for $\sigma$ and $R^2$~are:
+\begin{equation*}
+R^2_{\textrm{plain}} = 1 - \frac{\mathrm{RSS}}{\mathrm{TSS}},\quad
+\sigma \,=\, \sqrt{\frac{\mathrm{RSS}}{n - m - 1}},\quad
+R^2_{\textrm{adj.}} = 1 - \frac{\sigma^2 (n-1)}{\mathrm{TSS}}
+\end{equation*}
+where
+\begin{equation*}
+\mathrm{RSS} \,=\, \sum_{i=1}^n \Big(y_i - \hat{\mu}_i - 
+\frac{1}{n} \sum_{i'=1}^n \,(y_{i'} - \hat{\mu}_{i'})\Big)^2; \quad
+\mathrm{TSS} \,=\, \sum_{i=1}^n \Big(y_i - \frac{1}{n} \sum_{i'=1}^n y_{i'}\Big)^2
+\end{equation*}
+Here $\hat{\mu}_i$ are the predicted means for $y_i$ based on the estimated
+regression coefficients and the feature vectors.  They may be biased when no
+intercept is present, hence the RSS formula subtracts the bias.
+
+Lastly, note that by choosing the input option {\tt icpt=2} the user can shift
+and rescale the columns of~$X$ to have zero average and the variance of~1.
+This is particularly important when using regularization over highly disbalanced
+features, because regularization tends to penalize small-variance columns (which
+need large~$\beta_j$'s) more than large-variance columns (with small~$\beta_j$'s).
+At the end, the estimated regression coefficients are shifted and rescaled to
+apply to the original features.
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+The estimated regression coefficients (the $\hat{\beta}_j$'s) are populated into
+a matrix and written to an HDFS file whose path/name was provided as the ``{\tt B}''
+input argument.  What this matrix contains, and its size, depends on the input
+argument {\tt icpt}, which specifies the user's intercept and rescaling choice:
+\begin{Description}
+\item[{\tt icpt=0}:] No intercept, matrix~$B$ has size $m\,{\times}\,1$, with
+$B[j, 1] = \hat{\beta}_j$ for each $j$ from 1 to~$m = {}$ncol$(X)$.
+\item[{\tt icpt=1}:] There is intercept, but no shifting/rescaling of~$X$; matrix~$B$
+has size $(m\,{+}\,1) \times 1$, with $B[j, 1] = \hat{\beta}_j$ for $j$ from 1 to~$m$,
+and $B[m\,{+}\,1, 1] = \hat{\beta}_0$, the estimated intercept coefficient.
+\item[{\tt icpt=2}:] There is intercept, and the features in~$X$ are shifted to
+mean${} = 0$ and rescaled to variance${} = 1$; then there are two versions of
+the~$\hat{\beta}_j$'s, one for the original features and another for the
+shifted/rescaled features.  Now matrix~$B$ has size $(m\,{+}\,1) \times 2$, with
+$B[\cdot, 1]$ for the original features and $B[\cdot, 2]$ for the shifted/rescaled
+features, in the above format.  Note that $B[\cdot, 2]$ are iteratively estimated
+and $B[\cdot, 1]$ are obtained from $B[\cdot, 2]$ by complementary shifting and
+rescaling.
+\end{Description}
+The estimated summary statistics, including residual standard deviation~$\sigma$ and
+the~$R^2$, are printed out or sent into a file (if specified) in CSV format as
+defined in Table~\ref{table:linreg:stats}.  For conjugate gradient iterations,
+a log file with monitoring variables can also be made available, see
+Table~\ref{table:linreg:log}.
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+\hml -f LinearRegCG.dml -nvargs X=/user/biadmin/X.mtx Y=/user/biadmin/Y.mtx
+  B=/user/biadmin/B.mtx fmt=csv O=/user/biadmin/stats.csv
+  icpt=2 reg=1.0 tol=0.00000001 maxi=100 Log=/user/biadmin/log.csv
+
+}
+{\hangindent=\parindent\noindent\tt
+\hml -f LinearRegDS.dml -nvargs X=/user/biadmin/X.mtx Y=/user/biadmin/Y.mtx
+  B=/user/biadmin/B.mtx fmt=csv O=/user/biadmin/stats.csv
+  icpt=2 reg=1.0
+
+}
+
+% \smallskip
+% \noindent{\bf See Also}
+% \smallskip
+% 
+% In case of binary classification problems, please consider using L2-SVM or
+% binary logistic regression; for multiclass classification, use multiclass~SVM
+% or multinomial logistic regression.  For more complex distributions of the
+% response variable use the Generalized Linear Models script.

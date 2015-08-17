@@ -1,0 +1,154 @@
+\subsubsection{Binary-class Support Vector Machines}
+\label{l2svm}
+
+\noindent{\bf Description}
+
+Support Vector Machines are used to model the relationship between a categorical 
+dependent variable y and one or more explanatory variables denoted X. This 
+implementation learns (and predicts with) a binary class support vector machine 
+(y with domain size 2).
+\\
+
+\noindent{\bf Usage}
+
+\begin{tabbing}
+\texttt{-f} \textit{path}/\texttt{l2-svm.dml -nvargs} 
+\=\texttt{X=}\textit{path}/\textit{file} 
+  \texttt{Y=}\textit{path}/\textit{file} 
+  \texttt{icpt=}\textit{int} 
+  \texttt{tol=}\textit{double}\\
+\>\texttt{reg=}\textit{double} 
+  \texttt{maxiter=}\textit{int} 
+  \texttt{model=}\textit{path}/\textit{file}\\
+\>\texttt{Log=}\textit{path}/\textit{file}
+  \texttt{fmt=}\textit{csv}$\vert$\textit{text}
+\end{tabbing}
+
+\begin{tabbing}
+\texttt{-f} \textit{path}/\texttt{l2-svm-predict.dml -nvargs} 
+\=\texttt{X=}\textit{path}/\textit{file} 
+  \texttt{Y=}\textit{path}/\textit{file} 
+  \texttt{icpt=}\textit{int} 
+  \texttt{model=}\textit{path}/\textit{file}\\
+\>\texttt{scores=}\textit{path}/\textit{file}
+  \texttt{accuracy=}\textit{path}/\textit{file}\\
+\>\texttt{confusion=}\textit{path}/\textit{file}
+  \texttt{fmt=}\textit{csv}$\vert$\textit{text}
+\end{tabbing}
+
+%%\begin{verbatim}
+%%-f path/l2-svm.dml -nvargs X=path/file Y=path/file icpt=int tol=double
+%%                      reg=double maxiter=int model=path/file
+%%\end{verbatim}
+
+\noindent{\bf Arguments}
+
+\begin{itemize}
+\item X: Location (on HDFS) to read the matrix of feature vectors; 
+each row constitutes one feature vector.
+\item Y: Location to read the one-column matrix of (categorical) 
+labels that correspond to feature vectors in X. Binary class labels 
+can be expressed in one of two choices: $\pm 1$ or $1/2$. Note that,
+this argument is optional for prediction.
+\item icpt (default: {\tt 0}): If set to 1 then a constant bias column is 
+added to X. 
+\item tol (default: {\tt 0.001}): Procedure terminates early if the reduction
+in objective function value is less than tolerance times the initial objective
+function value.
+\item reg (default: {\tt 1}): Regularization constant. See details to find 
+out where lambda appears in the objective function. If one were interested 
+in drawing an analogy with the C parameter in C-SVM, then C = 2/lambda. 
+Usually, cross validation is employed to determine the optimum value of 
+lambda.
+\item maxiter (default: {\tt 100}): The maximum number of iterations.
+\item model: Location (on HDFS) that contains the learnt weights.
+\item Log: Location (on HDFS) to collect various metrics (e.g., objective 
+function value etc.) that depict progress across iterations while training.
+\item fmt (default: {\tt text}): Specifies the output format. Choice of 
+comma-separated values (csv) or as a sparse-matrix (text).
+\item scores: Location (on HDFS) to store scores for a held-out test set.
+Note that, this is an optional argument.
+\item accuracy: Location (on HDFS) to store the accuracy computed on a
+held-out test set. Note that, this is an optional argument.
+\item confusion: Location (on HDFS) to store the confusion matrix
+computed using a held-out test set. Note that, this is an optional 
+argument.
+\end{itemize}
+
+\noindent{\bf Details}
+
+Support vector machines learn a classification function by solving the
+following optimization problem ($L_2$-SVM):
+\begin{eqnarray*}
+&\textrm{argmin}_w& \frac{\lambda}{2} ||w||_2^2 + \sum_i \xi_i^2\\
+&\textrm{subject to:}& y_i w^{\top} x_i \geq 1 - \xi_i ~ \forall i
+\end{eqnarray*}
+where $x_i$ is an example from the training set with its label given by $y_i$, 
+$w$ is the vector of parameters and $\lambda$ is the regularization constant 
+specified by the user.
+
+To account for the missing bias term, one may augment the data with a column
+of constants which is achieved by setting intercept argument to 1 (C-J Hsieh 
+et al, 2008).
+
+This implementation optimizes the primal directly (Chapelle, 2007). It uses 
+nonlinear conjugate gradient descent to minimize the objective function 
+coupled with choosing step-sizes by performing one-dimensional Newton 
+minimization in the direction of the gradient.
+\\
+
+\noindent{\bf Returns}
+
+The learnt weights produced by l2-svm.dml are populated into a single column matrix 
+and written to file on HDFS (see model in section Arguments). The number of rows in 
+this matrix is ncol(X) if intercept was set to 0 during invocation and ncol(X) + 1 
+otherwise. The bias term, if used, is placed in the last row. Depending on what arguments
+are provided during invocation, l2-svm-predict.dml may compute one or more of scores, 
+accuracy and confusion matrix in the output format specified. 
+\\
+
+%%\noindent{\bf See Also}
+%%
+%%In case of multi-class classification problems (y with domain size greater than 2), 
+%%please consider using a multi-class classifier learning algorithm, e.g., multi-class
+%%support vector machines (see Section \ref{msvm}). To model the relationship between 
+%%a scalar dependent variable y and one or more explanatory variables X, consider 
+%%Linear Regression instead (see Section \ref{linreg-solver} or Section 
+%%\ref{linreg-iterative}).
+%%\\
+%%
+\noindent{\bf Examples}
+
+\begin{verbatim}
+hadoop jar SystemML.jar -f l2-svm.dml -nvargs X=/user/biadmin/X.mtx 
+                                              Y=/user/biadmin/y.mtx 
+                                              icpt=0 tol=0.001 fmt=csv
+                                              reg=1.0 maxiter=100 
+                                              model=/user/biadmin/weights.csv
+                                              Log=/user/biadmin/Log.csv
+\end{verbatim}
+
+\begin{verbatim}
+hadoop jar SystemML.jar -f l2-svm-predict.dml -nvargs X=/user/biadmin/X.mtx 
+                                                      Y=/user/biadmin/y.mtx 
+                                                      icpt=0 fmt=csv
+                                                      model=/user/biadmin/weights.csv
+                                                      scores=/user/biadmin/scores.csv
+                                                      accuracy=/user/biadmin/accuracy.csv
+                                                      confusion=/user/biadmin/confusion.csv
+\end{verbatim}
+
+\noindent{\bf References}
+
+\begin{itemize}
+\item W. T. Vetterling and B. P. Flannery. \newblock{\em Conjugate Gradient Methods in Multidimensions in 
+Numerical Recipes in C - The Art in Scientific Computing}. \newblock W. H. Press and S. A. Teukolsky
+(eds.), Cambridge University Press, 1992.
+\item J. Nocedal and  S. J. Wright. Numerical Optimization, Springer-Verlag, 1999.
+\item C-J Hsieh, K-W Chang, C-J Lin, S. S. Keerthi and S. Sundararajan. \newblock{\em A Dual Coordinate 
+Descent Method for Large-scale Linear SVM.} \newblock International Conference of Machine Learning
+(ICML), 2008.
+\item Olivier Chapelle. \newblock{\em Training a Support Vector Machine in the Primal}. \newblock Neural 
+Computation, 2007.
+\end{itemize}
+

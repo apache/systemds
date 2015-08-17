@@ -1,0 +1,285 @@
+\subsection{Stratified Bivariate Statistics}
+
+\noindent{\bf Description}
+\smallskip
+
+The {\tt stratstats.dml} script computes common bivariate statistics, such
+as correlation, slope, and their p-value, in parallel for many pairs of input
+variables in the presence of a confounding categorical variable.  The values
+of this confounding variable group the records into strata (subpopulations),
+in which all bivariate pairs are assumed free of confounding.  The script
+uses the same data model as in one-way analysis of covariance (ANCOVA), with
+strata representing population samples.  It also outputs univariate stratified
+and bivariate unstratified statistics.
+
+\begin{table}[t]\hfil
+\begin{tabular}{|l|ll|ll|ll||ll|}
+\hline
+Month of the year & \multicolumn{2}{l|}{October} & \multicolumn{2}{l|}{November} &
+    \multicolumn{2}{l||}{December} & \multicolumn{2}{c|}{Oct$\,$--$\,$Dec} \\
+Customers, millions    & 0.6 & 1.4 & 1.4 & 0.6 & 3.0 & 1.0 & 5.0 & 3.0 \\
+\hline
+Promotion (0 or 1)     & 0   & 1   & 0   & 1   & 0   & 1   & 0   & 1   \\
+Avg.\ sales per 1000   & 0.4 & 0.5 & 0.9 & 1.0 & 2.5 & 2.6 & 1.8 & 1.3 \\
+\hline
+\end{tabular}\hfil
+\caption{Stratification example: the effect of the promotion on average sales
+becomes reversed and amplified (from $+0.1$ to $-0.5$) if we ignore the months.}
+\label{table:stratexample}
+\end{table}
+
+To see how data stratification mitigates confounding, consider an (artificial)
+example in Table~\ref{table:stratexample}.  A highly seasonal retail item
+was marketed with and without a promotion over the final 3~months of the year.
+In each month the sale was more likely with the promotion than without it.
+But during the peak holiday season, when shoppers came in greater numbers and
+bought the item more often, the promotion was less frequently used.  As a result,
+if the 4-th quarter data is pooled together, the promotion's effect becomes
+reversed and magnified.  Stratifying by month restores the positive correlation.
+
+The script computes its statistics in parallel over all possible pairs from two
+specified sets of covariates.  The 1-st covariate is a column in input matrix~$X$
+and the 2-nd covariate is a column in input matrix~$Y$; matrices $X$ and~$Y$ may
+be the same or different.  The columns of interest are given by their index numbers
+in special matrices.  The stratum column, specified in its own matrix, is the same
+for all covariate pairs.
+
+Both covariates in each pair must be numerical, with the 2-nd covariate normally
+distributed given the 1-st covariate (see~Details).  Missing covariate values or
+strata are represented by~``NaN''.  Records with NaN's are selectively omitted
+wherever their NaN's are material to the output statistic.
+
+\smallskip
+\pagebreak[3]
+
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}stratstats.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} Xcid=}path/file
+{\tt{} Y=}path/file
+{\tt{} Ycid=}path/file
+{\tt{} S=}path/file
+{\tt{} Scid=}int
+{\tt{} O=}path/file
+{\tt{} fmt=}format
+
+}
+
+
+\smallskip
+\noindent{\bf Arguments}
+\begin{Description}
+\item[{\tt X}:]
+Location (on HDFS) to read matrix $X$ whose columns we want to use as
+the 1-st covariate (i.e.~as the feature variable)
+\item[{\tt Xcid}:] (default:\mbox{ }{\tt " "})
+Location to read the single-row matrix that lists all index numbers
+of the $X$-columns used as the 1-st covariate; the default value means
+``use all $X$-columns''
+\item[{\tt Y}:] (default:\mbox{ }{\tt " "})
+Location to read matrix $Y$ whose columns we want to use as the 2-nd
+covariate (i.e.~as the response variable); the default value means
+``use $X$ in place of~$Y$''
+\item[{\tt Ycid}:] (default:\mbox{ }{\tt " "})
+Location to read the single-row matrix that lists all index numbers
+of the $Y$-columns used as the 2-nd covariate; the default value means
+``use all $Y$-columns''
+\item[{\tt S}:] (default:\mbox{ }{\tt " "})
+Location to read matrix $S$ that has the stratum column.
+Note: the stratum column must contain small positive integers; all fractional
+values are rounded; stratum IDs of value ${\leq}\,0$ or NaN are treated as
+missing.  The default value for {\tt S} means ``use $X$ in place of~$S$''
+\item[{\tt Scid}:] (default:\mbox{ }{\tt 1})
+The index number of the stratum column in~$S$
+\item[{\tt O}:]
+Location to store the output matrix defined in Table~\ref{table:stratoutput}
+\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+
+\begin{table}[t]\small\hfil
+\begin{tabular}{|rcl|rcl|}
+\hline
+& Col.\# & Meaning & & Col.\# & Meaning \\
+\hline
+\multirow{9}{*}{\begin{sideways}1-st covariate\end{sideways}}\hspace{-1em}
+& 01     & $X$-column number                & 
+\multirow{9}{*}{\begin{sideways}2-nd covariate\end{sideways}}\hspace{-1em}
+& 11     & $Y$-column number                \\
+& 02     & presence count for $x$           & 
+& 12     & presence count for $y$           \\
+& 03     & global mean $(x)$                & 
+& 13     & global mean $(y)$                \\
+& 04     & global std.\ dev. $(x)$          & 
+& 14     & global std.\ dev. $(y)$          \\
+& 05     & stratified std.\ dev. $(x)$      & 
+& 15     & stratified std.\ dev. $(y)$      \\
+& 06     & $R^2$ for $x \sim {}$strata      & 
+& 16     & $R^2$ for $y \sim {}$strata      \\
+& 07     & adjusted $R^2$ for $x \sim {}$strata      & 
+& 17     & adjusted $R^2$ for $y \sim {}$strata      \\
+& 08     & p-value, $x \sim {}$strata       & 
+& 18     & p-value, $y \sim {}$strata       \\
+& 09--10 & reserved                         & 
+& 19--20 & reserved                         \\
+\hline
+\multirow{9}{*}{\begin{sideways}$y\sim x$, NO strata\end{sideways}}\hspace{-1.15em}
+& 21     & presence count $(x, y)$          &
+\multirow{10}{*}{\begin{sideways}$y\sim x$ AND strata$\!\!\!\!$\end{sideways}}\hspace{-1.15em}
+& 31     & presence count $(x, y, s)$       \\
+& 22     & regression slope                 &
+& 32     & regression slope                 \\
+& 23     & regres.\ slope std.\ dev.        &
+& 33     & regres.\ slope std.\ dev.        \\
+& 24     & correlation${} = \pm\sqrt{R^2}$  &
+& 34     & correlation${} = \pm\sqrt{R^2}$  \\
+& 25     & residual std.\ dev.              &
+& 35     & residual std.\ dev.              \\
+& 26     & $R^2$ in $y$ due to $x$          &
+& 36     & $R^2$ in $y$ due to $x$          \\
+& 27     & adjusted $R^2$ in $y$ due to $x$ &
+& 37     & adjusted $R^2$ in $y$ due to $x$ \\
+& 28     & p-value for ``slope = 0''        &
+& 38     & p-value for ``slope = 0''        \\
+& 29     & reserved                         &
+& 39     & \# strata with ${\geq}\,2$ count \\
+& 30     & reserved                         &
+& 40     & reserved                         \\
+\hline
+\end{tabular}\hfil
+\caption{The {\tt stratstats.dml} output matrix has one row per each distinct
+pair of 1-st and 2-nd covariates, and 40 columns with the statistics described
+here.}
+\label{table:stratoutput}
+\end{table}
+
+
+
+
+\noindent{\bf Details}
+\smallskip
+
+Suppose we have $n$ records of format $(i, x, y)$, where $i\in\{1,\ldots, k\}$ is
+a stratum number and $(x, y)$ are two numerical covariates.  We want to analyze
+conditional linear relationship between $y$ and $x$ conditioned by~$i$.
+Note that $x$, but not~$y$, may represent a categorical variable if we assign a
+numerical value to each category, for example 0 and 1 for two categories.
+
+We assume a linear regression model for~$y$:
+\begin{equation}
+y_{i,j} \,=\, \alpha_i + \beta x_{i,j} + \eps_{i,j}\,, \quad\textrm{where}\,\,\,\,
+\eps_{i,j} \sim \Normal(0, \sigma^2)
+\label{eqn:stratlinmodel}
+\end{equation}
+Here $i = 1\ldots k$ is a stratum number and $j = 1\ldots n_i$ is a record number
+in stratum~$i$; by $n_i$ we denote the number of records available in stratum~$i$.
+The noise term~$\eps_{i,j}$ is assumed to have the same variance in all strata.
+When $n_i\,{>}\,0$, we can estimate the means of $x_{i, j}$ and $y_{i, j}$ in
+stratum~$i$ as
+\begin{equation*}
+\bar{x}_i \,= \Big(\sum\nolimits_{j=1}^{n_i} \,x_{i, j}\Big) / n_i\,;\quad
+\bar{y}_i \,= \Big(\sum\nolimits_{j=1}^{n_i} \,y_{i, j}\Big) / n_i
+\end{equation*}
+If $\beta$ is known, the best estimate for $\alpha_i$ is $\bar{y}_i - \beta \bar{x}_i$,
+which gives the prediction error sum-of-squares of
+\begin{equation}
+\sum\nolimits_{i=1}^k \sum\nolimits_{j=1}^{n_i} \big(y_{i,j} - \beta x_{i,j} - (\bar{y}_i - \beta \bar{x}_i)\big)^2
+\,\,=\,\, \beta^{2\,}V_x \,-\, 2\beta \,V_{x,y} \,+\, V_y
+\label{eqn:stratsumsq}
+\end{equation}
+where $V_x$, $V_y$, and $V_{x, y}$ are, correspondingly, the ``stratified'' sample
+estimates of variance $\Var(x)$ and $\Var(y)$ and covariance $\Cov(x,y)$ computed as
+\begin{align*}
+V_x     \,&=\, \sum\nolimits_{i=1}^k \sum\nolimits_{j=1}^{n_i} \big(x_{i,j} - \bar{x}_i\big)^2; \quad
+V_y     \,=\, \sum\nolimits_{i=1}^k \sum\nolimits_{j=1}^{n_i} \big(y_{i,j} - \bar{y}_i\big)^2;\\
+V_{x,y} \,&=\, \sum\nolimits_{i=1}^k \sum\nolimits_{j=1}^{n_i} \big(x_{i,j} - \bar{x}_i\big)\big(y_{i,j} - \bar{y}_i\big)
+\end{align*}
+They are stratified because we compute the sample (co-)variances in each stratum~$i$
+separately, then combine by summation.  The stratified estimates for $\Var(X)$ and $\Var(Y)$
+tend to be smaller than the non-stratified ones (with the global mean instead of $\bar{x}_i$
+and~$\bar{y}_i$) since $\bar{x}_i$ and $\bar{y}_i$ fit closer to $x_{i,j}$ and $y_{i,j}$
+than the global means.  The stratified variance estimates the uncertainty in $x_{i,j}$ 
+and~$y_{i,j}$ given their stratum~$i$.
+
+Minimizing over~$\beta$ the error sum-of-squares~(\ref{eqn:stratsumsq})
+gives us the regression slope estimate \mbox{$\hat{\beta} = V_{x,y} / V_x$},
+with~(\ref{eqn:stratsumsq}) becoming the residual sum-of-squares~(RSS):
+\begin{equation*}
+\mathrm{RSS} \,\,=\, \,
+\sum\nolimits_{i=1}^k \sum\nolimits_{j=1}^{n_i} \big(y_{i,j} - 
+\hat{\beta} x_{i,j} - (\bar{y}_i - \hat{\beta} \bar{x}_i)\big)^2
+\,\,=\,\,  V_y \,\big(1 \,-\, V_{x,y}^2 / (V_x V_y)\big)
+\end{equation*}
+The quantity $\hat{R}^2 = V_{x,y}^2 / (V_x V_y)$, called \emph{$R$-squared}, estimates the fraction
+of stratified variance in~$y_{i,j}$ explained by covariate $x_{i, j}$ in the linear 
+regression model~(\ref{eqn:stratlinmodel}).  We define \emph{stratified correlation} as the
+square root of~$\hat{R}^2$ taken with the sign of~$V_{x,y}$.  We also use RSS to estimate
+the residual standard deviation $\sigma$ in~(\ref{eqn:stratlinmodel}) that models the prediction error
+of $y_{i,j}$ given $x_{i,j}$ and the stratum:
+\begin{equation*}
+\hat{\beta}\, =\, \frac{V_{x,y}}{V_x}; \,\,\,\, \hat{R} \,=\, \frac{V_{x,y}}{\sqrt{V_x V_y}};
+\,\,\,\, \hat{R}^2 \,=\, \frac{V_{x,y}^2}{V_x V_y};
+\,\,\,\, \hat{\sigma} \,=\, \sqrt{\frac{\mathrm{RSS}}{n - k - 1}}\,\,\,\,
+\Big(n = \sum_{i=1}^k n_i\Big)
+\end{equation*}
+
+The $t$-test and the $F$-test for the null-hypothesis of ``$\beta = 0$'' are
+obtained by considering the effect of $\hat{\beta}$ on the residual sum-of-squares,
+measured by the decrease from $V_y$ to~RSS.
+The $F$-statistic is the ratio of the ``explained'' sum-of-squares
+to the residual sum-of-squares, divided by their corresponding degrees of freedom.
+There are $n\,{-}\,k$ degrees of freedom for~$V_y$, parameter $\beta$ reduces that
+to $n\,{-}\,k\,{-}\,1$ for~RSS, and their difference $V_y - {}$RSS has just 1 degree
+of freedom:
+\begin{equation*}
+F \,=\, \frac{(V_y - \mathrm{RSS})/1}{\mathrm{RSS}/(n\,{-}\,k\,{-}\,1)}
+\,=\, \frac{\hat{R}^2\,(n\,{-}\,k\,{-}\,1)}{1-\hat{R}^2}; \quad
+t \,=\, \hat{R}\, \sqrt{\frac{n\,{-}\,k\,{-}\,1}{1-\hat{R}^2}}.
+\end{equation*}
+The $t$-statistic is simply the square root of the $F$-statistic with the appropriate
+choice of sign.  If the null hypothesis and the linear model are both true, the $t$-statistic
+has Student $t$-distribution with $n\,{-}\,k\,{-}\,1$ degrees of freedom.  We can
+also compute it if we divide $\hat{\beta}$ by its estimated standard deviation:
+\begin{equation*}
+\stdev(\hat{\beta})_{\mathrm{est}} \,=\, \hat{\sigma}\,/\sqrt{V_x} \quad\Longrightarrow\quad
+t \,=\, \hat{R}\sqrt{V_y} \,/\, \hat{\sigma} \,=\, \beta \,/\, \stdev(\hat{\beta})_{\mathrm{est}}
+\end{equation*}
+The standard deviation estimate for~$\beta$ is included in {\tt stratstats.dml} output.
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+The output matrix format is defined in Table~\ref{table:stratoutput}.
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+\hml -f stratstats.dml -nvargs X=/user/biadmin/X.mtx Xcid=/user/biadmin/Xcid.mtx
+  Y=/user/biadmin/Y.mtx Ycid=/user/biadmin/Ycid.mtx S=/user/biadmin/S.mtx Scid=2
+  O=/user/biadmin/Out.mtx fmt=csv
+
+}
+{\hangindent=\parindent\noindent\tt
+\hml -f stratstats.dml -nvargs X=/user/biadmin/Data.mtx Xcid=/user/biadmin/Xcid.mtx
+  Ycid=/user/biadmin/Ycid.mtx Scid=7 O=/user/biadmin/Out.mtx
+
+}
+
+%\smallskip
+%\noindent{\bf See Also}
+%\smallskip
+%
+%For non-stratified bivariate statistics with a wider variety of input data types
+%and statistical tests, see \ldots.  For general linear regression, see
+%{\tt LinearRegDS.dml} and {\tt LinearRegCG.dml}.  For logistic regression, appropriate
+%when the response variable is categorical, see {\tt MultiLogReg.dml}.
+

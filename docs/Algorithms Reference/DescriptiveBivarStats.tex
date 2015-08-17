@@ -1,0 +1,417 @@
+\subsection{Bivariate Statistics}
+
+\noindent{\bf Description}
+\smallskip
+
+Bivariate statistics are used to quantitatively describe the association between
+two features, such as test their statistical (in-)dependence or measure
+the accuracy of one data feature predicting the other feature, in a sample.
+The \BivarScriptName{} script computes common bivariate statistics,
+such as \NameStatR{} and \NameStatChi{}, in parallel for many pairs
+of data features.  For a given dataset matrix, script \BivarScriptName{} computes
+certain bivariate statistics for the given feature (column) pairs in the
+matrix.  The feature types govern the exact set of statistics computed for that pair.
+For example, \NameStatR{} can only be computed on two quantitative (scale)
+features like `Height' and `Temperature'. 
+It does not make sense to compute the linear correlation of two categorical attributes
+like `Hair Color'. 
+
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%\tolerance=0
+{\tt{}-f }path/\/\BivarScriptName{}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} index1=}path/file
+{\tt{} index2=}path/file
+{\tt{} types1=}path/file
+{\tt{} types2=}path/file
+{\tt{} OUTDIR=}path
+% {\tt{} fmt=}format
+
+}
+
+
+\smallskip
+\noindent{\bf Arguments}
+\begin{Description}
+\item[{\tt X}:]
+Location (on HDFS) to read the data matrix $X$ whose columns are the features
+that we want to compare and correlate with bivariate statistics.
+\item[{\tt index1}:] % (default:\mbox{ }{\tt " "})
+Location (on HDFS) to read the single-row matrix that lists the column indices
+of the \emph{first-argument} features in pairwise statistics.
+Its $i^{\textrm{th}}$ entry (i.e.\ $i^{\textrm{th}}$ column-cell) contains the
+index $k$ of column \texttt{X[,$\,k$]} in the data matrix
+whose bivariate statistics need to be computed.
+% The default value means ``use all $X$-columns from the first to the last.''
+\item[{\tt index2}:] % (default:\mbox{ }{\tt " "})
+Location (on HDFS) to read the single-row matrix that lists the column indices
+of the \emph{second-argument} features in pairwise statistics.
+Its $j^{\textrm{th}}$ entry (i.e.\ $j^{\textrm{th}}$ column-cell) contains the
+index $l$ of column \texttt{X[,$\,l$]} in the data matrix
+whose bivariate statistics need to be computed.
+% The default value means ``use all $X$-columns from the first to the last.''
+\item[{\tt types1}:] % (default:\mbox{ }{\tt " "})
+Location (on HDFS) to read the single-row matrix that lists the \emph{types}
+of the \emph{first-argument} features in pairwise statistics.
+Its $i^{\textrm{th}}$ entry (i.e.\ $i^{\textrm{th}}$ column-cell) contains the type
+of column \texttt{X[,$\,k$]} in the data matrix, where $k$ is the $i^{\textrm{th}}$
+entry in the {\tt index1} matrix.  Feature types must be encoded by
+integer numbers: $1 = {}$scale, $2 = {}$nominal, $3 = {}$ordinal.
+% The default value means ``treat all referenced $X$-columns as scale.''
+\item[{\tt types2}:] % (default:\mbox{ }{\tt " "})
+Location (on HDFS) to read the single-row matrix that lists the \emph{types}
+of the \emph{second-argument} features in pairwise statistics.
+Its $j^{\textrm{th}}$ entry (i.e.\ $j^{\textrm{th}}$ column-cell) contains the type
+of column \texttt{X[,$\,l$]} in the data matrix, where $l$ is the $j^{\textrm{th}}$
+entry in the {\tt index2} matrix.  Feature types must be encoded by
+integer numbers: $1 = {}$scale, $2 = {}$nominal, $3 = {}$ordinal.
+% The default value means ``treat all referenced $X$-columns as scale.''
+\item[{\tt OUTDIR}:]
+Location path (on HDFS) where the output matrices with computed bivariate
+statistics will be stored.  The matrices' file names and format are defined
+in Table~\ref{table:bivars}.
+% \item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+% Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+% see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+\begin{table}[t]\hfil
+\begin{tabular}{|lll|}
+\hline\rule{0pt}{12pt}%
+Ouput File / Matrix         & Row$\,$\# & Name of Statistic   \\[2pt]
+\hline\hline\rule{0pt}{12pt}%
+\emph{All Files}            &     1     & 1-st feature column \\
+\rule{1em}{0pt}"            &     2     & 2-nd feature column \\[2pt]
+\hline\rule{0pt}{12pt}%
+bivar.scale.scale.stats     &     3     & \NameStatR          \\[2pt]
+\hline\rule{0pt}{12pt}%
+bivar.nominal.nominal.stats &     3     & \NameStatChi        \\
+\rule{1em}{0pt}"            &     4     & Degrees of freedom  \\
+\rule{1em}{0pt}"            &     5     & \NameStatPChi       \\
+\rule{1em}{0pt}"            &     6     & \NameStatV          \\[2pt]
+\hline\rule{0pt}{12pt}%
+bivar.nominal.scale.stats   &     3     & \NameStatEta        \\
+\rule{1em}{0pt}"            &     4     & \NameStatF          \\[2pt]
+\hline\rule{0pt}{12pt}%
+bivar.ordinal.ordinal.stats &     3     & \NameStatRho        \\[2pt]
+\hline
+\end{tabular}\hfil
+\caption{%
+The output matrices of \BivarScriptName{} have one row per one bivariate
+statistic and one column per one pair of input features.  This table lists
+the meaning of each matrix and each row.%
+% Signs ``+'' show applicability to scale or/and to categorical features.
+}
+\label{table:bivars}
+\end{table}
+
+
+
+\pagebreak[2]
+
+\noindent{\bf Details}
+\smallskip
+
+Script \BivarScriptName{} takes an input matrix \texttt{X} whose columns represent
+the features and whose rows represent the records of a data sample.
+Given \texttt{X}, the script computes certain relevant bivariate statistics
+for specified pairs of feature columns \texttt{X[,$\,i$]} and \texttt{X[,$\,j$]}.
+Command-line parameters \texttt{index1} and \texttt{index2} specify the files with
+column pairs of interest to the user.  Namely, the file given by \texttt{index1}
+contains the vector of the 1st-attribute column indices and the file given
+by \texttt{index2} has the vector of the 2nd-attribute column indices, with
+``1st'' and ``2nd'' referring to their places in bivariate statistics.
+Note that both \texttt{index1} and \texttt{index2} files should contain a 1-row matrix
+of positive integers.
+
+The bivariate statistics to be computed depend on the \emph{types}, or
+\emph{measurement levels}, of the two columns.
+The types for each pair are provided in the files whose locations are specified by
+\texttt{types1} and \texttt{types2} command-line parameters.
+These files are also 1-row matrices, i.e.\ vectors, that list the 1st-attribute and
+the 2nd-attribute column types in the same order as their indices in the
+\texttt{index1} and \texttt{index2} files.  The types must be provided as per
+the following convention: $1 = {}$scale, $2 = {}$nominal, $3 = {}$ordinal.
+
+The script orgainizes its results into (potentially) four output matrices, one per
+each type combination.  The types of bivariate statistics are defined using the types
+of the columns that were used for their arguments, with ``ordinal'' sometimes
+retrogressing to ``nominal.''  Table~\ref{table:bivars} describes what each column
+in each output matrix contains.  In particular, the script includes the following
+statistics:
+\begin{Itemize}
+\item For a pair of scale (quantitative) columns, \NameStatR;
+\item For a pair of nominal columns (with finite-sized, fixed, unordered domains), 
+the \NameStatChi{} and its p-value;
+\item For a pair of one scale column and one nominal column, \NameStatF{};
+\item For a pair of ordinal columns (ordered domains depicting ranks), \NameStatRho.
+\end{Itemize}
+Note that, as shown in Table~\ref{table:bivars}, the output matrices contain the
+column indices of the features involved in each statistic.
+Moreover, if the output matrix does not contain
+a value in a certain cell then it should be interpreted as a~$0$
+(sparse matrix representation).
+
+Below we list all bivariate statistics computed by script \BivarScriptName.
+The statistics are collected into several groups by the type of their input
+features.  We refer to the two input features as $v_1$ and $v_2$ unless
+specified otherwise; the value pairs are $(v_{1,i}, v_{2,i})$ for $i=1,\ldots,n$,
+where $n$ is the number of rows in \texttt{X}, i.e.\ the sample size.
+
+
+\paragraph{Scale-vs-scale statistics.}
+Sample statistics that describe association between two quantitative (scale) features.
+A scale feature has numerical values, with the natural ordering relation.
+\begin{Description}
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it\NameStatR]:
+A measure of linear dependence between two numerical features:
+\begin{equation*}
+r \,\,=\,\, \frac{\Cov(v_1, v_2)}{\sqrt{\Var v_1 \Var v_2}}
+\,\,=\,\, \frac{\sum_{i=1}^n (v_{1,i} - \bar{v}_1) (v_{2,i} - \bar{v}_2)}%
+{\sqrt{\sum_{i=1}^n (v_{1,i} - \bar{v}_1)^{2\mathstrut} \cdot \sum_{i=1}^n (v_{2,i} - \bar{v}_2)^{2\mathstrut}}}
+\end{equation*}
+Commonly denoted by~$r$, correlation ranges between $-1$ and $+1$, reaching ${\pm}1$ when all value
+pairs $(v_{1,i}, v_{2,i})$ lie on the same line.  Correlation near~0 means that a line is not a good
+way to represent the dependence between the two features; however, this does not imply independence.
+The sign indicates direction of the linear association: $r > 0$ ($r < 0$) if one feature tends to
+linearly increase (decrease) when the other feature increases.  Nonlinear association, if present,
+may disobey this sign.
+\NameStatR{} is symmetric: $r(v_1, v_2) = r(v_2, v_1)$; it does not change if we transform $v_1$ and $v_2$
+to $a + b v_1$ and $c + d v_2$ where $a, b, c, d$ are constants and $b, d > 0$.
+
+Suppose that we use simple linear regression to represent one feature given the other, say
+represent $v_{2,i} \approx \alpha + \beta v_{1,i}$ by selecting $\alpha$ and $\beta$
+to minimize the least-squares error $\sum_{i=1}^n (v_{2,i} - \alpha - \beta v_{1,i})^2$.
+Then the best error equals
+\begin{equation*}
+\min_{\alpha, \beta} \,\,\sum_{i=1}^n \big(v_{2,i} - \alpha - \beta v_{1,i}\big)^2 \,\,=\,\,
+(1 - r^2) \,\sum_{i=1}^n \big(v_{2,i} - \bar{v}_2\big)^2
+\end{equation*}
+In other words, $1\,{-}\,r^2$ is the ratio of the residual sum of squares to
+the total sum of squares.  Hence, $r^2$ is an accuracy measure of the linear regression.
+\end{Description}
+
+
+\paragraph{Nominal-vs-nominal statistics.}
+Sample statistics that describe association between two nominal categorical features.
+Both features' value domains are encoded with positive integers in arbitrary order:
+nominal features do not order their value domains.
+\begin{Description}
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it\NameStatChi]:
+A measure of how much the frequencies of value pairs of two categorical features deviate from
+statistical independence.  Under independence, the probability of every value pair must equal
+the product of probabilities of each value in the pair:
+$\Prob[a, b] - \Prob[a]\,\Prob[b] = 0$.  But we do not know these (hypothesized) probabilities;
+we only know the sample frequency counts.  Let $n_{a,b}$ be the frequency count of pair
+$(a, b)$, let $n_a$ and $n_b$ be the frequency counts of $a$~alone and of $b$~alone.  Under
+independence, difference $n_{a,b}{/}n - (n_a{/}n)(n_b{/}n)$ is unlikely to be exactly~0 due
+to sample randomness, yet it is unlikely to be too far from~0.  For some pairs $(a,b)$ it may
+deviate from~0 farther than for other pairs.  \NameStatChi{}~is an aggregate measure that
+combines squares of these differences across all value pairs:
+\begin{equation*}
+\chi^2 \,\,=\,\, \sum_{a,\,b} \Big(\frac{n_a n_b}{n}\Big)^{-1} \Big(n_{a,b} - \frac{n_a n_b}{n}\Big)^2
+\,=\,\, \sum_{a,\,b} \frac{(O_{a,b} - E_{a,b})^2}{E_{a,b}}
+\end{equation*}
+where $O_{a,b} = n_{a,b}$ are the \emph{observed} frequencies and $E_{a,b} = (n_a n_b){/}n$ are
+the \emph{expected} frequencies for all pairs~$(a,b)$.  Under independence (plus other standard
+assumptions) the sample~$\chi^2$ closely follows a well-known distribution, making it a basis for
+statistical tests for independence, see~\emph{\NameStatPChi} for details.  Note that \NameStatChi{}
+does \emph{not} measure the strength of dependence: even very weak dependence may result in a
+significant deviation from independence if the counts are large enough.  Use~\NameStatV{} instead
+to measure the strength of dependence.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Degrees of freedom]:
+An integer parameter required for the interpretation of~\NameStatChi{} measure.  Under independence
+(plus other standard assumptions) the sample~$\chi^2$ statistic is approximately distributed as the
+sum of $d$~squares of independent normal random variables with mean~0 and variance~1, where $d$ is
+this integer parameter.  For a pair of categorical features such that the $1^{\textrm{st}}$~feature
+has $k_1$ categories and the $2^{\textrm{nd}}$~feature has $k_2$ categories, the number of degrees
+of freedom is $d = (k_1 - 1)(k_2 - 1)$.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it\NameStatPChi]:
+A measure of how likely we would observe the current frequencies of value pairs of two categorical
+features assuming their statistical independence.  More precisely, it computes the probability that
+the sum of $d$~squares of independent normal random variables with mean~0 and variance~1
+(called the $\chi^2$~distribution with $d$ degrees of freedom) generates a value at least as large
+as the current sample \NameStatChi.  The $d$ parameter is \emph{degrees of freedom}, see above.
+Under independence (plus other standard assumptions) the sample \NameStatChi{} closely follows the
+$\chi^2$~distribution and is unlikely to land very far into its tail.  On the other hand, if the
+two features are dependent, their sample \NameStatChi{} becomes arbitrarily large as $n\to\infty$
+and lands extremely far into the tail of the $\chi^2$~distribution given a large enough data sample.
+\NameStatPChi{} returns the tail ``weight'' on the right-hand side of \NameStatChi:
+\begin{equation*}
+P\,\,=\,\, \Prob\big[r \geq \textrm{\NameStatChi} \,\,\big|\,\, r \sim \textrm{the $\chi^2$ distribution}\big]
+\end{equation*}
+As any probability, $P$ ranges between 0 and~1.  If $P\leq 0.05$, the dependence between the two
+features may be considered statistically significant (i.e.\ their independence is considered
+statistically ruled out).  For highly dependent features, it is not unusual to have $P\leq 10^{-20}$
+or less, in which case our script will simply return $P = 0$.  Independent features should have
+their $P\geq 0.05$ in about 95\% cases.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it\NameStatV]:
+A measure for the strength of association, i.e.\ of statistical dependence, between two categorical
+features, conceptually similar to \NameStatR.  It divides the observed~\NameStatChi{} by the maximum
+possible~$\chi^2_{\textrm{max}}$ given $n$ and the number $k_1, k_2$~of categories in each feature,
+then takes the square root.  Thus, \NameStatV{} ranges from 0 to~1,
+where 0 implies no association and 1 implies the maximum possible association (one-to-one
+correspondence) between the two features.  See \emph{\NameStatChi} for the computation of~$\chi^2$;
+its maximum${} = {}$%
+$n\cdot\min\{k_1\,{-}\,1, k_2\,{-}\,1\}$ where the $1^{\textrm{st}}$~feature
+has $k_1$ categories and the $2^{\textrm{nd}}$~feature has $k_2$ categories~\cite{AcockStavig1979:CramersV},
+so
+\begin{equation*}
+\textrm{\NameStatV} \,\,=\,\, \sqrt{\frac{\textrm{\NameStatChi}}{n\cdot\min\{k_1\,{-}\,1, k_2\,{-}\,1\}}}
+\end{equation*}
+As opposed to \NameStatPChi, which goes to~0 (rapidly) as the features' dependence increases,
+\NameStatV{} goes towards~1 (slowly) as the dependence increases.  Both \NameStatChi{} and
+\NameStatPChi{} are very sensitive to~$n$, but in \NameStatV{} this is mitigated by taking the
+ratio.
+\end{Description}
+
+
+\paragraph{Nominal-vs-scale statistics.}
+Sample statistics that describe association between a categorical feature
+(order ignored) and a quantitative (scale) feature.
+The values of the categorical feature must be coded as positive integers.
+\begin{Description}
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it\NameStatEta]:
+A measure for the strength of association (statistical dependence) between a nominal feature
+and a scale feature, conceptually similar to \NameStatR.  Ranges from 0 to~1, approaching 0
+when there is no association and approaching 1 when there is a strong association.  
+The nominal feature, treated as the independent variable, is assumed to have relatively few
+possible values, all with large frequency counts.  The scale feature is treated as the dependent
+variable.  Denoting the nominal feature by~$x$ and the scale feature by~$y$, we have:
+\begin{equation*}
+\eta^2 \,=\, 1 - \frac{\sum_{i=1}^{n} \big(y_i - \hat{y}[x_i]\big)^2}{\sum_{i=1}^{n} (y_i - \bar{y})^2},
+\,\,\,\,\textrm{where}\,\,\,\,
+\hat{y}[x] = \frac{1}{\mathop{\mathrm{freq}}(x)}\sum_{i=1}^n  
+\,\left\{\!\!\begin{array}{rl} y_i & \textrm{if $x_i = x$}\\ 0 & \textrm{otherwise}\end{array}\right.\!\!\!
+\end{equation*}
+and $\bar{y} = (1{/}n)\sum_{i=1}^n y_i$ is the mean.  Value $\hat{y}[x]$ is the average 
+of~$y_i$ among all records where $x_i = x$; it can also be viewed as the ``predictor'' 
+of $y$ given~$x$.  Then $\sum_{i=1}^{n} (y_i - \hat{y}[x_i])^2$ is the residual error
+sum-of-squares and $\sum_{i=1}^{n} (y_i - \bar{y})^2$ is the total sum-of-squares for~$y$. 
+Hence, $\eta^2$ measures the accuracy of predicting $y$ with~$x$, just like the
+``R-squared'' statistic measures the accuracy of linear regression.  Our output $\eta$
+is the square root of~$\eta^2$.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it\NameStatF]:
+A measure of how much the values of the scale feature, denoted here by~$y$,
+deviate from statistical independence on the nominal feature, denoted by~$x$.
+The same measure appears in the one-way analysis of vari\-ance (ANOVA).
+Like \NameStatChi, \NameStatF{} is used to test the hypothesis that
+$y$~is independent from~$x$, given the following assumptions:
+\begin{Itemize}
+\item The scale feature $y$ has approximately normal distribution whose mean
+may depend only on~$x$ and variance is the same for all~$x$;
+\item The nominal feature $x$ has relatively small value domain with large
+frequency counts, the $x_i$-values are treated as fixed (non-random);
+\item All records are sampled independently of each other.
+\end{Itemize}
+To compute \NameStatF{}, we first compute $\hat{y}[x]$ as the average of~$y_i$
+among all records where $x_i = x$.  These $\hat{y}[x]$ can be viewed as
+``predictors'' of $y$ given~$x$; if $y$ is independent on~$x$, they should
+``predict'' only the global mean~$\bar{y}$.  Then we form two sums-of-squares:
+\begin{Itemize}
+\item \emph{Residual} sum-of-squares of the ``predictor'' accuracy: $y_i - \hat{y}[x_i]$;
+\item \emph{Explained} sum-of-squares of the ``predictor'' variability: $\hat{y}[x_i] - \bar{y}$.
+\end{Itemize}
+\NameStatF{} is the ratio of the explained sum-of-squares to
+the residual sum-of-squares, each divided by their corresponding degrees
+of freedom:
+\begin{equation*}
+F \,\,=\,\, 
+\frac{\sum_{x}\, \mathop{\mathrm{freq}}(x) \, \big(\hat{y}[x] - \bar{y}\big)^2 \,\big/\,\, (k\,{-}\,1)}%
+{\sum_{i=1}^{n} \big(y_i - \hat{y}[x_i]\big)^2 \,\big/\,\, (n\,{-}\,k)} \,\,=\,\,
+\frac{n\,{-}\,k}{k\,{-}\,1} \cdot \frac{\eta^2}{1 - \eta^2}
+\end{equation*}
+Here $k$ is the domain size of the nominal feature~$x$.  The $k$ ``predictors''
+lose 1~freedom due to their linear dependence with~$\bar{y}$; similarly,
+the $n$~$y_i$-s lose $k$~freedoms due to the ``predictors''.
+
+The statistic can test if the independence hypothesis of $y$ from $x$ is reasonable;
+more generally (with relaxed normality assumptions) it can test the hypothesis that
+\emph{the mean} of $y$ among records with a given~$x$ is the same for all~$x$.
+Under this hypothesis \NameStatF{} has, or approximates, the $F(k\,{-}\,1, n\,{-}\,k)$-distribution.
+But if the mean of $y$ given $x$ depends on~$x$, \NameStatF{}
+becomes arbitrarily large as $n\to\infty$ (with $k$~fixed) and lands extremely far
+into the tail of the $F(k\,{-}\,1, n\,{-}\,k)$-distribution given a large enough data sample.
+\end{Description}
+
+
+\paragraph{Ordinal-vs-ordinal statistics.}
+Sample statistics that describe association between two ordinal categorical features.
+Both features' value domains are encoded with positive integers, so that the natural
+order of the integers coincides with the order in each value domain.
+\begin{Description}
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it\NameStatRho]:
+A measure for the strength of association (statistical dependence) between
+two ordinal features, conceptually similar to \NameStatR.  Specifically, it is \NameStatR{}
+applied to the feature vectors in which all values are replaced by their ranks, i.e.\ 
+their positions if the vector is sorted.  The ranks of identical (duplicate) values
+are replaced with their average rank.  For example, in vector
+$(15, 11, 26, 15, 8)$ the value ``15'' occurs twice with ranks 3 and~4 per the sorted
+order $(8_1, 11_2, 15_3, 15_4, 26_5)$; so, both values are assigned their average
+rank of $3.5 = (3\,{+}\,4)\,{/}\,2$ and the vector is replaced by~$(3.5,\, 2,\, 5,\, 3.5,\, 1)$.
+
+Our implementation of \NameStatRho{} is geared towards features having small value domains
+and large counts for the values.  Given the two input vectors, we form a contingency table $T$
+of pairwise frequency counts, as well as a vector of frequency counts for each feature: $f_1$
+and~$f_2$.  Here in $T_{i,j}$, $f_{1,i}$, $f_{2,j}$ indices $i$ and~$j$ refer to the
+order-preserving integer encoding of the feature values.
+We use prefix sums over $f_1$ and~$f_2$ to compute the values' average ranks:
+$r_{1,i} = \sum_{j=1}^{i-1} f_{1,j} + (f_{1,i}\,{+}\,1){/}2$, and analogously for~$r_2$.
+Finally, we compute rank variances for $r_1, r_2$ weighted by counts $f_1, f_2$ and their
+covariance weighted by~$T$, before applying the standard formula for \NameStatR:
+\begin{equation*}
+\rho \,\,=\,\, \frac{\Cov_T(r_1, r_2)}{\sqrt{\Var_{f_1}(r_1)\Var_{f_2}(r_2)}}
+\,\,=\,\, \frac{\sum_{i,j} T_{i,j} (r_{1,i} - \bar{r}_1) (r_{2,j} - \bar{r}_2)}%
+{\sqrt{\sum_i f_{1,i} (r_{1,i} - \bar{r}_1)^{2\mathstrut} \cdot \sum_j f_{2,j} (r_{2,j} - \bar{r}_2)^{2\mathstrut}}}
+\end{equation*}
+where $\bar{r}_1 = \sum_i r_{1,i} f_{1,i}{/}n$, analogously for~$\bar{r}_2$.
+The value of $\rho$ lies between $-1$ and $+1$, with sign indicating the prevalent direction
+of the association: $\rho > 0$ ($\rho < 0$) means that one feature tends to increase (decrease)
+when the other feature increases.  The correlation becomes~1 when the two features are
+monotonically related.
+\end{Description}
+
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+A collection of (potentially) 4 matrices.  Each matrix contains bivariate statistics that
+resulted from a different combination of feature types.  There is one matrix for scale-scale
+statistics (which includes \NameStatR), one for nominal-nominal statistics (includes \NameStatChi{}),
+one for nominal-scale statistics (includes \NameStatF) and one for ordinal-ordinal statistics
+(includes \NameStatRho).  If any of these matrices is not produced, then no pair of columns required
+the corresponding type combination.  See Table~\ref{table:bivars} for the matrix naming and
+format details.
+
+
+\smallskip
+\pagebreak[2]
+
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+\hml -f \BivarScriptName{} -nvargs
+X=/user/biadmin/X.mtx 
+index1=/user/biadmin/S1.mtx 
+index2=/user/biadmin/S2.mtx 
+types1=/user/biadmin/K1.mtx 
+types2=/user/biadmin/K2.mtx 
+OUTDIR=/user/biadmin/stats.mtx
+
+}
+

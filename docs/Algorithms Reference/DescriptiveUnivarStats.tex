@@ -1,0 +1,582 @@
+\subsection{Univariate Statistics}
+
+\noindent{\bf Description}
+\smallskip
+
+\emph{Univariate statistics} are the simplest form of descriptive statistics in data
+analysis.  They are used to quantitatively describe the main characteristics of each
+feature in the data.  For a given dataset matrix, script \UnivarScriptName{} computes
+certain univariate statistics for each feature column in the
+matrix.  The feature type governs the exact set of statistics computed for that feature.
+For example, the statistic \emph{mean} can only be computed on a quantitative (scale)
+feature like `Height' and `Temperature'.  It does not make sense to compute the mean
+of a categorical attribute like `Hair Color'.
+
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%\tolerance=0
+{\tt{}-f } \UnivarScriptName{}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} TYPES=}path/file
+{\tt{} STATS=}path/file
+% {\tt{} fmt=}format
+
+}
+
+
+\medskip
+\pagebreak[2]
+\noindent{\bf Arguments}
+\begin{Description}
+\item[{\tt X}:]
+Location (on HDFS) to read the data matrix $X$ whose columns we want to
+analyze as the features.
+\item[{\tt TYPES}:] % (default:\mbox{ }{\tt " "})
+Location (on HDFS) to read the single-row matrix whose $i^{\textrm{th}}$
+column-cell contains the type of the $i^{\textrm{th}}$ feature column
+\texttt{X[,$\,i$]} in the data matrix.  Feature types must be encoded by
+integer numbers: $1 = {}$scale, $2 = {}$nominal, $3 = {}$ordinal.
+% The default value means ``treat all $X$-columns as scale.''
+\item[{\tt STATS}:]
+Location (on HDFS) where the output matrix of computed statistics
+will be stored.  The format of the output matrix is defined by
+Table~\ref{table:univars}.
+% \item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+% Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+% see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+\begin{table}[t]\hfil
+\begin{tabular}{|rl|c|c|}
+\hline
+\multirow{2}{*}{Row}& \multirow{2}{*}{Name of Statistic} & \multicolumn{2}{c|}{Applies to:} \\
+                            &                            & Scale & Categ.\\
+\hline
+\OutputRowIDMinimum         & Minimum                    &   +   &       \\
+\OutputRowIDMaximum         & Maximum                    &   +   &       \\
+\OutputRowIDRange           & Range                      &   +   &       \\
+\OutputRowIDMean            & Mean                       &   +   &       \\
+\OutputRowIDVariance        & Variance                   &   +   &       \\
+\OutputRowIDStDeviation     & Standard deviation         &   +   &       \\
+\OutputRowIDStErrorMean     & Standard error of mean     &   +   &       \\
+\OutputRowIDCoeffVar        & Coefficient of variation   &   +   &       \\
+\OutputRowIDSkewness        & Skewness                   &   +   &       \\
+\OutputRowIDKurtosis        & Kurtosis                   &   +   &       \\
+\OutputRowIDStErrorSkewness & Standard error of skewness &   +   &       \\
+\OutputRowIDStErrorCurtosis & Standard error of kurtosis &   +   &       \\
+\OutputRowIDMedian          & Median                     &   +   &       \\
+\OutputRowIDIQMean          & Inter quartile mean        &   +   &       \\
+\OutputRowIDNumCategories   & Number of categories       &       &   +   \\
+\OutputRowIDMode            & Mode                       &       &   +   \\
+\OutputRowIDNumModes        & Number of modes            &       &   +   \\
+\hline
+\end{tabular}\hfil
+\caption{The output matrix of \UnivarScriptName{} has one row per each
+univariate statistic and one column per input feature.  This table lists
+the meaning of each row.  Signs ``+'' show applicability to scale or/and
+to categorical features.}
+\label{table:univars}
+\end{table}
+
+
+\pagebreak[1]
+
+\smallskip
+\noindent{\bf Details}
+\smallskip
+
+Given an input matrix \texttt{X}, this script computes the set of all
+relevant univariate statistics for each feature column \texttt{X[,$\,i$]}
+in~\texttt{X}.  The list of statistics to be computed depends on the
+\emph{type}, or \emph{measurement level}, of each column.
+The \textrm{TYPES} command-line argument points to a vector containing
+the types of all columns.  The types must be provided as per the following
+convention: $1 = {}$scale, $2 = {}$nominal, $3 = {}$ordinal.
+
+Below we list all univariate statistics computed by script \UnivarScriptName.
+The statistics are collected by relevance into several groups, namely: central
+tendency, dispersion, shape, and categorical measures.  The first three groups
+contain statistics computed for a quantitative (also known as: numerical, scale,
+or continuous) feature; the last group contains the statistics for a categorical
+(either nominal or ordinal) feature.  
+
+Let~$n$ be the number of data records (rows) with feature values.
+In what follows we fix a column index \texttt{idx} and consider
+sample statistics of feature column \texttt{X[}$\,$\texttt{,}$\,$\texttt{idx]}.
+Let $v = (v_1, v_2, \ldots, v_n)$ be the values of \texttt{X[}$\,$\texttt{,}$\,$\texttt{idx]}
+in their original unsorted order: $v_i = \texttt{X[}i\texttt{,}\,\texttt{idx]}$.
+Let $v^s = (v^s_1, v^s_2, \ldots, v^s_n)$ be the same values in the sorted order,
+preserving duplicates: $v^s_1 \leq v^s_2 \leq \ldots \leq v^s_n$.
+
+\paragraph{Central tendency measures.}
+Sample statistics that describe the location of the quantitative (scale) feature distribution,
+represent it with a single value.
+\begin{Description}
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Mean]
+\OutputRowText{\OutputRowIDMean}
+The arithmetic average over a sample of a quantitative feature.
+Computed as the ratio between the sum of values and the number of values:
+$\left(\sum_{i=1}^n v_i\right)\!/n$.
+Example: the mean of sample $\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$
+equals~5.2.
+
+Note that the mean is significantly affected by extreme values in the sample
+and may be misleading as a central tendency measure if the feature varies on
+exponential scale.  For example, the mean of $\{$0.01, 0.1, 1.0, 10.0, 100.0$\}$
+is 22.222, greater than all the sample values except the~largest.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{figure}[t]
+\setlength{\unitlength}{10pt}
+\begin{picture}(33,12)
+\put( 6.2, 0.0){\small 2.2}
+\put(10.2, 0.0){\small 3.2}
+\put(12.2, 0.0){\small 3.7}
+\put(15.0, 0.0){\small 4.4}
+\put(18.6, 0.0){\small 5.3}
+\put(20.2, 0.0){\small 5.7}
+\put(21.75,0.0){\small 6.1}
+\put(23.05,0.0){\small 6.4}
+\put(26.2, 0.0){\small 7.2}
+\put(28.6, 0.0){\small 7.8}
+\put( 0.5, 0.7){\small 0.0}
+\put( 0.1, 3.2){\small 0.25}
+\put( 0.5, 5.7){\small 0.5}
+\put( 0.1, 8.2){\small 0.75}
+\put( 0.5,10.7){\small 1.0}
+\linethickness{1.5pt}
+\put( 2.0, 1.0){\line(1,0){4.8}}
+\put( 6.8, 1.0){\line(0,1){1.0}}
+\put( 6.8, 2.0){\line(1,0){4.0}}
+\put(10.8, 2.0){\line(0,1){1.0}}
+\put(10.8, 3.0){\line(1,0){2.0}}
+\put(12.8, 3.0){\line(0,1){1.0}}
+\put(12.8, 4.0){\line(1,0){2.8}}
+\put(15.6, 4.0){\line(0,1){1.0}}
+\put(15.6, 5.0){\line(1,0){3.6}}
+\put(19.2, 5.0){\line(0,1){1.0}}
+\put(19.2, 6.0){\line(1,0){1.6}}
+\put(20.8, 6.0){\line(0,1){1.0}}
+\put(20.8, 7.0){\line(1,0){1.6}}
+\put(22.4, 7.0){\line(0,1){1.0}}
+\put(22.4, 8.0){\line(1,0){1.2}}
+\put(23.6, 8.0){\line(0,1){1.0}}
+\put(23.6, 9.0){\line(1,0){3.2}}
+\put(26.8, 9.0){\line(0,1){1.0}}
+\put(26.8,10.0){\line(1,0){2.4}}
+\put(29.2,10.0){\line(0,1){1.0}}
+\put(29.2,11.0){\line(1,0){4.8}}
+\linethickness{0.3pt}
+\put( 6.8, 1.0){\circle*{0.3}}
+\put(10.8, 1.0){\circle*{0.3}}
+\put(12.8, 1.0){\circle*{0.3}}
+\put(15.6, 1.0){\circle*{0.3}}
+\put(19.2, 1.0){\circle*{0.3}}
+\put(20.8, 1.0){\circle*{0.3}}
+\put(22.4, 1.0){\circle*{0.3}}
+\put(23.6, 1.0){\circle*{0.3}}
+\put(26.8, 1.0){\circle*{0.3}}
+\put(29.2, 1.0){\circle*{0.3}}
+\put( 6.8, 1.0){\vector(1,0){27.2}}
+\put( 2.0, 1.0){\vector(0,1){10.8}}
+\put( 2.0, 3.5){\line(1,0){10.8}}
+\put( 2.0, 6.0){\line(1,0){17.2}}
+\put( 2.0, 8.5){\line(1,0){21.6}}
+\put( 2.0,11.0){\line(1,0){27.2}}
+\put(12.8, 1.0){\line(0,1){2.0}}
+\put(19.2, 1.0){\line(0,1){5.0}}
+\put(20.0, 1.0){\line(0,1){5.0}}
+\put(23.6, 1.0){\line(0,1){7.0}}
+\put( 9.0, 4.0){\line(1,0){3.8}}
+\put( 9.2, 2.7){\vector(0,1){0.8}}
+\put( 9.2, 4.8){\vector(0,-1){0.8}}
+\put(19.4, 8.0){\line(1,0){3.0}}
+\put(19.6, 7.2){\vector(0,1){0.8}}
+\put(19.6, 9.3){\vector(0,-1){0.8}}
+\put(13.0, 2.2){\small $q_{25\%}$}
+\put(17.3, 2.2){\small $q_{50\%}$}
+\put(23.8, 2.2){\small $q_{75\%}$}
+\put(20.15,3.5){\small $\mu$}
+\put( 8.0, 3.75){\small $\phi_1$}
+\put(18.35,7.8){\small $\phi_2$}
+\end{picture}
+\label{fig:example_quartiles}
+\caption{The computation of quartiles, median, and interquartile mean from the
+empirical distribution function of the 10-point
+sample $\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$.  Each vertical step in
+the graph has height~$1{/}n = 0.1$.  Values $q_{25\%}$, $q_{50\%}$, and $q_{75\%}$ denote
+the $1^{\textrm{st}}$, $2^{\textrm{nd}}$, and $3^{\textrm{rd}}$ quartiles correspondingly;
+value~$\mu$ denotes the median.  Values $\phi_1$ and $\phi_2$ show the partial contribution
+of border points (quartiles) $v_3=3.7$ and $v_8=6.4$ into the interquartile mean.}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Median]
+\OutputRowText{\OutputRowIDMedian}
+The ``middle'' value that separates the higher half of the sample values
+(in a sorted order) from the lower half.
+To compute the median, we sort the sample in the increasing order, preserving
+duplicates: $v^s_1 \leq v^s_2 \leq \ldots \leq v^s_n$.
+If $n$ is odd, the median equals $v^s_i$ where $i = (n\,{+}\,1)\,{/}\,2$,
+same as the $50^{\textrm{th}}$~percentile of the sample.
+If $n$ is even, there are two ``middle'' values $v^s_{n/2}$ and $v^s_{n/2\,+\,1}$,
+so we compute the median as the mean of these two values.
+(For even~$n$ we compute the $50^{\textrm{th}}$~percentile as~$v^s_{n/2}$,
+not as the median.)  Example: the median of sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$
+equals $(5.3\,{+}\,5.7)\,{/}\,2$~${=}$~5.5, see Figure~\ref{fig:example_quartiles}.
+
+Unlike the mean, the median is not sensitive to extreme values in the sample,
+i.e.\ it is robust to outliers.  It works better as a measure of central tendency
+for heavy-tailed distributions and features that vary on exponential scale.
+However, the median is sensitive to small sample size.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Interquartile mean]
+\OutputRowText{\OutputRowIDIQMean}
+For a sample of a quantitative feature, this is
+the mean of the values greater than or equal to the $1^{\textrm{st}}$ quartile
+and less than or equal the $3^{\textrm{rd}}$ quartile.
+In other words, it is a ``truncated mean'' where the lowest 25$\%$ and
+the highest 25$\%$ of the sorted values are omitted in its computation.
+The two ``border values'', i.e.\ the $1^{\textrm{st}}$ and the $3^{\textrm{rd}}$
+quartiles themselves, contribute to this mean only partially.
+This measure is occasionally used as the ``robust'' version of the mean
+that is less sensitive to the extreme values.
+
+To compute the measure, we sort the sample in the increasing order,
+preserving duplicates: $v^s_1 \leq v^s_2 \leq \ldots \leq v^s_n$.
+We set $j = \lceil n{/}4 \rceil$ for the $1^{\textrm{st}}$ quartile index
+and $k = \lceil 3n{/}4 \rceil$ for the $3^{\textrm{rd}}$ quartile index,
+then compute the following weighted mean:
+\begin{equation*}
+\frac{1}{3{/}4 - 1{/}4} \left[
+\left(\frac{j}{n} - \frac{1}{4}\right) v^s_j \,\,+ 
+\sum_{j<i<k} \left(\frac{i}{n} - \frac{i\,{-}\,1}{n}\right) v^s_i 
+\,\,+\,\, \left(\frac{3}{4} - \frac{k\,{-}\,1}{n}\right) v^s_k\right]
+\end{equation*}
+In other words, all sample values between the $1^{\textrm{st}}$ and the $3^{\textrm{rd}}$
+quartile enter the sum with weights $2{/}n$, times their number of duplicates, while the
+two quartiles themselves enter the sum with reduced weights.  The weights are proportional
+to the vertical steps in the empirical distribution function of the sample, see
+Figure~\ref{fig:example_quartiles} for an illustration.
+Example: the interquartile mean of sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$ equals the sum
+$0.1 (3.7\,{+}\,6.4) + 0.2 (4.4\,{+}\,5.3\,{+}\,5.7\,{+}\,6.1)$,
+which equals~5.31.
+\end{Description}
+
+
+\paragraph{Dispersion measures.}
+Statistics that describe the amount of variation or spread in a quantitative
+(scale) data feature.
+\begin{Description}
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Variance]
+\OutputRowText{\OutputRowIDVariance}
+A measure of dispersion, or spread-out, of sample values around their mean,
+expressed in units that are the square of those of the feature itself.
+Computed as the sum of squared differences between the values
+in the sample and their mean, divided by one less than the number of
+values: $\sum_{i=1}^n (v_i - \bar{v})^2\,/\,(n\,{-}\,1)$ where 
+$\bar{v}=\left(\sum_{i=1}^n v_i\right)\!/n$.
+Example: the variance of sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$ equals~3.24.
+Note that at least two values ($n\geq 2$) are required to avoid division
+by zero.  Sample variance is sensitive to outliers, even more than the mean.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Standard deviation]
+\OutputRowText{\OutputRowIDStDeviation}
+A measure of dispersion around the mean, the square root of variance.
+Computed by taking the square root of the sample variance;
+see \emph{Variance} above on computing the variance.
+Example: the standard deviation of sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$ equals~1.8.
+At least two values are required to avoid division by zero.
+Note that standard deviation is sensitive to outliers.  
+
+Standard deviation is used in conjunction with the mean to determine
+an interval containing a given percentage of the feature values,
+assuming the normal distribution.  In a large sample from a normal
+distribution, around 68\% of the cases fall within one standard
+deviation and around 95\% of cases fall within two standard deviations
+of the mean.  For example, if the mean age is 45 with a standard deviation
+of 10, around 95\% of the cases would be between 25 and 65 in a normal
+distribution.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Coefficient of variation]
+\OutputRowText{\OutputRowIDCoeffVar}
+The ratio of the standard deviation to the mean, i.e.\ the
+\emph{relative} standard deviation, of a quantitative feature sample.
+Computed by dividing the sample \emph{standard deviation} by the
+sample \emph{mean}, see above for their computation details.
+Example: the coefficient of variation for sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$
+equals 1.8$\,{/}\,$5.2~${\approx}$~0.346.
+
+This metric is used primarily with non-negative features such as
+financial or population data.  It is sensitive to outliers.
+Note: zero mean causes division by zero, returning infinity or \texttt{NaN}.
+At least two values (records) are required to compute the standard deviation.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Minimum]
+\OutputRowText{\OutputRowIDMinimum}
+The smallest value of a quantitative sample, computed as $\min v = v^s_1$.
+Example: the minimum of sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$
+equals~2.2.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Maximum]
+\OutputRowText{\OutputRowIDMaximum}
+The largest value of a quantitative sample, computed as $\max v = v^s_n$.
+Example: the maximum of sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$
+equals~7.8.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Range]
+\OutputRowText{\OutputRowIDRange}
+The difference between the largest and the smallest value of a quantitative
+sample, computed as $\max v - \min v = v^s_n - v^s_1$.
+It provides information about the overall spread of the sample values.
+Example: the range of sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$
+equals 7.8$\,{-}\,$2.2~${=}$~5.6.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Standard error of the mean]
+\OutputRowText{\OutputRowIDStErrorMean}
+A measure of how much the value of the sample mean may vary from sample
+to sample taken from the same (hypothesized) distribution of the feature.
+It helps to roughly bound the distribution mean, i.e.\
+the limit of the sample mean as the sample size tends to infinity.
+Under certain assumptions (e.g.\ normality and large sample), the difference
+between the distribution mean and the sample mean is unlikely to exceed
+2~standard errors.
+
+The measure is computed by dividing the sample standard deviation
+by the square root of the number of values~$n$; see \emph{standard deviation}
+for its computation details.  Ensure $n\,{\geq}\,2$ to avoid division by~0.
+Example: for sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$
+with the mean of~5.2 the standard error of the mean
+equals 1.8$\,{/}\sqrt{10}$~${\approx}$~0.569.
+
+Note that the standard error itself is subject to sample randomness.
+Its accuracy as an error estimator may be low if the sample size is small
+or \mbox{non-i.i.d.}, if there are outliers, or if the distribution has
+heavy tails.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+% \item[\it Quartiles]
+% \OutputRowText{\OutputRowIDQuartiles}
+% %%% dsDefn %%%%
+% The values of a quantitative feature
+% that divide an ordered/sorted set of data records into four equal-size groups.
+% The $1^{\textrm{st}}$ quartile, or the $25^{\textrm{th}}$ percentile, splits
+% the sorted data into the lowest $25\%$ and the highest~$75\%$.  In other words,
+% it is the middle value between the minimum and the median.  The $2^{\textrm{nd}}$
+% quartile is the median itself, the value that separates the higher half of
+% the data (in the sorted order) from the lower half.  Finally, the $3^{\textrm{rd}}$
+% quartile, or the $75^{\textrm{th}}$ percentile, divides the sorted data into
+% lowest $75\%$ and highest~$25\%$.\par
+% %%% dsComp %%%%
+% To compute the quartiles for a data column \texttt{X[,i]} with $n$ numerical values
+% we sort it in the increasing order, preserving duplicates, then return 
+% \texttt{X}${}^{\textrm{sort}}$\texttt{[}$k$\texttt{,i]}
+% where $k = \lceil pn \rceil$ for $p = 0.25$, $0.5$, and~$0.75$.
+% When $n$ is even, the $2^{\textrm{nd}}$ quartile (the median) is further adjusted
+% to equal the mean of two middle values
+% $\texttt{X}^{\textrm{sort}}\texttt{[}n{/}2\texttt{,i]}$ and
+% $\texttt{X}^{\textrm{sort}}\texttt{[}n{/}2\,{+}\,1\texttt{,i]}$.
+% %%% dsWarn %%%%
+% We assume that the feature column does not contain \texttt{NaN}s or coded non-numeric values.
+% %%% dsExmpl %%%
+% \textbf{Example(s).}
+\end{Description}
+
+
+\paragraph{Shape measures.}
+Statistics that describe the shape and symmetry of the quantitative (scale)
+feature distribution estimated from a sample of its values.
+\begin{Description}
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Skewness]
+\OutputRowText{\OutputRowIDSkewness}
+It measures how symmetrically the values of a feature are spread out
+around the mean.  A significant positive skewness implies a longer (or fatter)
+right tail, i.e. feature values tend to lie farther away from the mean on the
+right side.  A significant negative skewness implies a longer (or fatter) left
+tail.  The normal distribution is symmetric and has a skewness value of~0;
+however, its sample skewness is likely to be nonzero, just close to zero.
+As a guideline, a skewness value more than twice its standard error is taken
+to indicate a departure from symmetry.
+
+Skewness is computed as the $3^{\textrm{rd}}$~central moment divided by the cube
+of the standard deviation.  We estimate the $3^{\textrm{rd}}$~central moment as
+the sum of cubed differences between the values in the feature column and their
+sample mean, divided by the number of values:  
+$\sum_{i=1}^n (v_i - \bar{v})^3 / n$
+where $\bar{v}=\left(\sum_{i=1}^n v_i\right)\!/n$.
+The standard deviation is computed
+as described above in \emph{standard deviation}.  To avoid division by~0,
+at least two different sample values are required.  Example: for sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$
+with the mean of~5.2 and the standard deviation of~1.8
+skewness is estimated as $-1.0728\,{/}\,1.8^3 \approx -0.184$.
+Note: skewness is sensitive to outliers.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Standard error in skewness]
+\OutputRowText{\OutputRowIDStErrorSkewness}
+A measure of how much the sample skewness may vary from sample to sample,
+assuming that the feature is normally distributed, which makes its
+distribution skewness equal~0.  
+Given the number~$n$ of sample values, the standard error is computed as
+\begin{equation*}
+\sqrt{\frac{6n\,(n-1)}{(n-2)(n+1)(n+3)}}
+\end{equation*}
+This measure can tell us, for example:
+\begin{Itemize}
+\item If the sample skewness lands within two standard errors from~0, its
+positive or negative sign is non-significant, may just be accidental.
+\item If the sample skewness lands outside this interval, the feature
+is unlikely to be normally distributed.
+\end{Itemize}
+At least 3~values ($n\geq 3$) are required to avoid arithmetic failure.
+Note that the standard error is inaccurate if the feature distribution is
+far from normal or if the number of samples is small.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Kurtosis]
+\OutputRowText{\OutputRowIDKurtosis}
+As a distribution parameter, kurtosis is a measure of the extent to which
+feature values cluster around a central point.  In other words, it quantifies
+``peakedness'' of the distribution: how tall and sharp the central peak is
+relative to a standard bell curve.
+
+Positive kurtosis (\emph{leptokurtic} distribution) indicates that, relative
+to a normal distribution:
+\begin{Itemize}
+\item observations cluster more about the center (peak-shaped),
+\item the tails are thinner at non-extreme values, 
+\item the tails are thicker at extreme values.
+\end{Itemize}
+Negative kurtosis (\emph{platykurtic} distribution) indicates that, relative
+to a normal distribution:
+\begin{Itemize}
+\item observations cluster less about the center (box-shaped),
+\item the tails are thicker at non-extreme values, 
+\item the tails are thinner at extreme values.
+\end{Itemize}
+Kurtosis of a normal distribution is zero; however, the sample kurtosis
+(computed here) is likely to deviate from zero.
+
+Sample kurtosis is computed as the $4^{\textrm{th}}$~central moment divided
+by the $4^{\textrm{th}}$~power of the standard deviation, minus~3.
+We estimate the $4^{\textrm{th}}$~central moment as the sum of the
+$4^{\textrm{th}}$~powers of differences between the values in the feature column
+and their sample mean, divided by the number of values:
+$\sum_{i=1}^n (v_i - \bar{v})^4 / n$
+where $\bar{v}=\left(\sum_{i=1}^n v_i\right)\!/n$.
+The standard deviation is computed as described above, see \emph{standard deviation}.
+
+Note that kurtosis is sensitive to outliers, and requires at least two different
+sample values.  Example: for sample
+$\{$2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8$\}$
+with the mean of~5.2 and the standard deviation of~1.8,
+sample kurtosis equals $16.6962\,{/}\,1.8^4 - 3 \approx -1.41$.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Standard error in kurtosis]
+\OutputRowText{\OutputRowIDStErrorCurtosis}
+A measure of how much the sample kurtosis may vary from sample to sample,
+assuming that the feature is normally distributed, which makes its
+distribution kurtosis equal~0.
+Given the number~$n$ of sample values, the standard error is computed as
+\begin{equation*}
+\sqrt{\frac{24n\,(n-1)^2}{(n-3)(n-2)(n+3)(n+5)}}
+\end{equation*}
+This measure can tell us, for example:
+\begin{Itemize}
+\item If the sample kurtosis lands within two standard errors from~0, its
+positive or negative sign is non-significant, may just be accidental.
+\item If the sample kurtosis lands outside this interval, the feature
+is unlikely to be normally distributed.
+\end{Itemize}
+At least 4~values ($n\geq 4$) are required to avoid arithmetic failure.
+Note that the standard error is inaccurate if the feature distribution is
+far from normal or if the number of samples is small.
+\end{Description}
+
+
+\paragraph{Categorical measures.}  Statistics that describe the sample of
+a categorical feature, either nominal or ordinal.  We represent all
+categories by integers from~1 to the number of categories; we call
+these integers \emph{category~IDs}.
+\begin{Description}
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Number of categories]
+\OutputRowText{\OutputRowIDNumCategories}
+The maximum category~ID that occurs in the sample.  Note that some
+categories with~IDs \emph{smaller} than this maximum~ID may have
+no~occurrences in the sample, without reducing the number of categories.
+However, any categories with~IDs \emph{larger} than the maximum~ID with
+no occurrences in the sample will not be counted.
+Example: in sample $\{$1, 3, 3, 3, 3, 4, 4, 5, 7, 7, 7, 7, 8, 8, 8$\}$
+the number of categories is reported as~8.  Category~IDs 2 and~6, which have
+zero occurrences, are still counted; but if there is a category with
+ID${}=9$ and zero occurrences, it is not counted.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Mode]
+\OutputRowText{\OutputRowIDMode}
+The most frequently occurring category value.
+If several values share the greatest frequency of occurrence, then each
+of them is a mode; but here we report only the smallest of these modes.
+Example: in sample $\{$1, 3, 3, 3, 3, 4, 4, 5, 7, 7, 7, 7, 8, 8, 8$\}$
+the modes are 3 and~7, with 3 reported.
+
+Computed by counting the number of occurrences for each category,
+then taking the smallest category~ID that has the maximum count.
+Note that the sample modes may be different from the distribution modes,
+i.e.\ the categories whose (hypothesized) underlying probability is the
+maximum over all categories.
+%%%%%%%%%%%%%%%%%%%% DESCRIPTIVE STATISTIC %%%%%%%%%%%%%%%%%%%%
+\item[\it Number of modes]
+\OutputRowText{\OutputRowIDNumModes}
+The number of category values that each have the largest frequency
+count in the sample.  
+Example: in sample $\{$1, 3, 3, 3, 3, 4, 4, 5, 7, 7, 7, 7, 8, 8, 8$\}$
+there are two category IDs (3 and~7) that occur the maximum count of 4~times;
+hence, we return~2.
+
+Computed by counting the number of occurrences for each category,
+then counting how many categories have the maximum count.
+Note that the sample modes may be different from the distribution modes,
+i.e.\ the categories whose (hypothesized) underlying probability is the
+maximum over all categories.
+\end{Description}
+
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+The output matrix containing all computed statistics is of size $17$~rows and
+as many columns as in the input matrix~\texttt{X}.  Each row corresponds to
+a particular statistic, according to the convention specified in
+Table~\ref{table:univars}.  The first $14$~statistics are applicable for
+\emph{scale} columns, and the last $3$~statistics are applicable for categorical,
+i.e.\ nominal and ordinal, columns.
+
+
+\pagebreak[2]
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+\hml -f \UnivarScriptName{} -nvargs X=/user/biadmin/X.mtx
+  TYPES=/user/biadmin/types.mtx
+  STATS=/user/biadmin/stats.mtx
+
+}

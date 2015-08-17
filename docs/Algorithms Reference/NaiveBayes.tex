@@ -1,0 +1,134 @@
+\subsection{Naive Bayes}
+\label{naive_bayes}
+
+\noindent{\bf Description}
+
+Naive Bayes is very simple generative model used for classifying data. 
+This implementation learns a multinomial naive Bayes classifier which
+is applicable when all features are counts of categorical values.
+\\
+
+\noindent{\bf Usage}
+
+\begin{tabbing}
+\texttt{-f} \textit{path}/\texttt{naive-bayes.dml -nvargs} 
+\=\texttt{X=}\textit{path}/\textit{file} 
+  \texttt{Y=}\textit{path}/\textit{file} 
+  \texttt{laplace=}\textit{double}\\
+\>\texttt{prior=}\textit{path}/\textit{file}
+  \texttt{conditionals=}\textit{path}/\textit{file}\\
+\>\texttt{accuracy=}\textit{path}/\textit{file}
+  \texttt{fmt=}\textit{csv}$\vert$\textit{text}
+\end{tabbing}
+
+\begin{tabbing}
+\texttt{-f} \textit{path}/\texttt{naive-bayes-predict.dml -nvargs} 
+\=\texttt{X=}\textit{path}/\textit{file} 
+  \texttt{Y=}\textit{path}/\textit{file} 
+  \texttt{prior=}\textit{path}/\textit{file}\\
+\>\texttt{conditionals=}\textit{path}/\textit{file}
+  \texttt{fmt=}\textit{csv}$\vert$\textit{text}\\
+\>\texttt{accuracy=}\textit{path}/\textit{file}
+  \texttt{confusion=}\textit{path}/\textit{file}\\
+\>\texttt{probabilities=}\textit{path}/\textit{file}
+\end{tabbing}
+
+\noindent{\bf Arguments}
+
+\begin{itemize}
+\item X: Location (on HDFS) to read the matrix of feature vectors; 
+each row constitutes one feature vector.
+\item Y: Location (on HDFS) to read the one-column matrix of (categorical) 
+labels that correspond to feature vectors in X. Classes are assumed to be
+contiguously labeled beginning from 1. Note that, this argument is optional
+for prediction.
+\item laplace (default: {\tt 1}): Laplace smoothing specified by the 
+user to avoid creation of 0 probabilities.
+\item prior: Location (on HDFS) that contains the class prior probabilites.
+\item conditionals: Location (on HDFS) that contains the class conditional
+feature distributions.
+\item fmt (default: {\tt text}): Specifies the output format. Choice of 
+comma-separated values (csv) or as a sparse-matrix (text).
+\item probabilities: Location (on HDFS) to store class membership probabilities
+for a held-out test set. Note that, this is an optional argument.
+\item accuracy: Location (on HDFS) to store the training accuracy during
+learning and testing accuracy from a held-out test set during prediction. 
+Note that, this is an optional argument for prediction.
+\item confusion: Location (on HDFS) to store the confusion matrix
+computed using a held-out test set. Note that, this is an optional 
+argument.
+\end{itemize}
+
+\noindent{\bf Details}
+
+Naive Bayes is a very simple generative classification model. It posits that 
+given the class label, features can be generated independently of each other.
+More precisely, the (multinomial) naive Bayes model uses the following 
+equation to estimate the joint probability of a feature vector $x$ belonging 
+to class $y$:
+\begin{equation*}
+\text{Prob}(y, x) = \pi_y \prod_{i \in x} \theta_{iy}^{n(i,x)}
+\end{equation*}
+where $\pi_y$ denotes the prior probability of class $y$, $i$ denotes a feature
+present in $x$ with $n(i,x)$ denoting its count and $\theta_{iy}$ denotes the 
+class conditional probability of feature $i$ in class $y$. The usual 
+constraints hold on $\pi$ and $\theta$:
+\begin{eqnarray*}
+&& \pi_y \geq 0, ~ \sum_{y \in \mathcal{C}} \pi_y = 1\\
+\forall y \in \mathcal{C}: && \theta_{iy} \geq 0, ~ \sum_i \theta_{iy} = 1
+\end{eqnarray*}
+where $\mathcal{C}$ is the set of classes.
+
+Given a fully labeled training dataset, it is possible to learn a naive Bayes 
+model using simple counting (group-by aggregates). To compute the class conditional
+probabilities, it is usually advisable to avoid setting $\theta_{iy}$ to 0. One way to 
+achieve this is using additive smoothing or Laplace smoothing. Some authors have argued
+that this should in fact be add-one smoothing. This implementation uses add-one smoothing
+by default but lets the user specify her/his own constant, if required.
+
+This implementation is sometimes referred to as \emph{multinomial} naive Bayes. Other
+flavours of naive Bayes are also popular.
+\\
+
+\noindent{\bf Returns}
+
+The learnt model produced by naive-bayes.dml is stored in two separate files. 
+The first file stores the class prior (a single-column matrix). The second file 
+stores the class conditional probabilities organized into a matrix with as many 
+rows as there are class labels and as many columns as there are features. 
+Depending on what arguments are provided during invocation, naive-bayes-predict.dml 
+may compute one or more of probabilities, accuracy and confusion matrix in the 
+output format specified. 
+\\
+
+\noindent{\bf Examples}
+
+\begin{verbatim}
+hadoop jar SystemML.jar -f naive-bayes.dml -nvargs 
+                           X=/user/biadmin/X.mtx 
+                           Y=/user/biadmin/y.mtx 
+                           laplace=1 fmt=csv
+                           prior=/user/biadmin/prior.csv
+                           conditionals=/user/biadmin/conditionals.csv
+                           accuracy=/user/biadmin/accuracy.csv
+\end{verbatim}
+
+\begin{verbatim}
+hadoop jar SystemML.jar -f naive-bayes-predict.dml -nvargs 
+                           X=/user/biadmin/X.mtx 
+                           Y=/user/biadmin/y.mtx 
+                           prior=/user/biadmin/prior.csv
+                           conditionals=/user/biadmin/conditionals.csv
+                           fmt=csv
+                           accuracy=/user/biadmin/accuracy.csv
+                           probabilities=/user/biadmin/probabilities.csv
+                           confusion=/user/biadmin/confusion.csv
+\end{verbatim}
+
+\noindent{\bf References}
+
+\begin{itemize}
+\item S. Russell and P. Norvig. \newblock{\em Artificial Intelligence: A Modern Approach.} Prentice Hall, 2009.
+\item A. McCallum and K. Nigam. \newblock{\em A comparison of event models for naive bayes text classification.} 
+\newblock AAAI-98 workshop on learning for text categorization, 1998.
+\end{itemize}

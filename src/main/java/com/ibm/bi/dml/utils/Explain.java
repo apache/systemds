@@ -90,7 +90,15 @@ public class Explain
 	 * 
 	 * @return
 	 */
-	public static String explainMemoryBudget()
+	public static String explainMemoryBudget() {
+		return explainMemoryBudget(-1);
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static String explainMemoryBudget(int jobCount)
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -100,10 +108,18 @@ public class Explain
 		
 		if( OptimizerUtils.isSparkExecutionMode() )
 		{
-			sb.append( OptimizerUtils.toMB(SparkExecutionContext.getConfiguredTotalDataMemory()) );
-			sb.append( "MB/" );
-			sb.append( OptimizerUtils.toMB(SparkExecutionContext.getBroadcastMemoryBudget()) );
-			sb.append( "MB" );	
+			if( jobCount == 0 )
+			{
+				//avoid unnecessary lazy spark context creation on access to memory configurations
+				sb.append( "?MB/?MB" );
+			}
+			else //default
+			{
+				sb.append( OptimizerUtils.toMB(SparkExecutionContext.getConfiguredTotalDataMemory()) );
+				sb.append( "MB/" );
+				sb.append( OptimizerUtils.toMB(SparkExecutionContext.getBroadcastMemoryBudget()) );
+				sb.append( "MB" );
+			}
 		}
 		else
 		{
@@ -122,6 +138,15 @@ public class Explain
 	 */
 	public static String explainDegreeOfParallelism()
 	{
+		return explainDegreeOfParallelism(-1);
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static String explainDegreeOfParallelism(int jobCount)
+	{
 		int lk = InfrastructureAnalyzer.getLocalParallelism();
 		
 		StringBuilder sb = new StringBuilder();
@@ -131,9 +156,16 @@ public class Explain
 		
 		if( OptimizerUtils.isSparkExecutionMode() ) //SP
 		{
-			int rk = SparkExecutionContext.getDefaultParallelism(); 
-					
-			sb.append( rk );
+			if( jobCount == 0 )
+			{
+				//avoid unnecessary lazy spark context creation on access to memory configurations
+				sb.append( "?" );
+			}
+			else //default
+			{
+				int rk = SparkExecutionContext.getDefaultParallelism(); 
+				sb.append( rk );	
+			}
 		}
 		else //MR
 		{

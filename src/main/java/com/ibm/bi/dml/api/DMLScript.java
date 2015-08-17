@@ -808,8 +808,8 @@ public class DMLScript
 		//explain plan of program (hops or runtime)
 		if( EXPLAIN != ExplainType.NONE ) {
 			LOG.info("EXPLAIN ("+EXPLAIN.toString()+"):\n" 
-					 + Explain.explainMemoryBudget()+"\n"
-					 + Explain.explainDegreeOfParallelism()
+					 + Explain.explainMemoryBudget(jobCount)+"\n"
+					 + Explain.explainDegreeOfParallelism(jobCount)
 					 + Explain.explain(prog, rtprog, EXPLAIN));
 		}
 				

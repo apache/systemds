@@ -57,6 +57,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.utils.Statistics;
 
 
 public class SparkExecutionContext extends ExecutionContext
@@ -64,6 +65,8 @@ public class SparkExecutionContext extends ExecutionContext
 
 	private static final Log LOG = LogFactory.getLog(SparkExecutionContext.class.getName());
 
+	//internal configurations 
+	private static boolean LAZY_SPARKCTX_CREATION = true;
 	private static boolean ASYNCHRONOUS_VAR_DESTROY = true;
 	
 	//executor memory and relative fractions as obtained from the spark configuration
@@ -73,12 +76,9 @@ public class SparkExecutionContext extends ExecutionContext
 	private static int _numExecutors = -1; //total executors
 	private static int _defaultPar = -1; //total vcores  
 	
-	// TODO: This needs to be debugged further. For now getting around the problem with Singleton
 	// Only one SparkContext may be active per JVM. You must stop() the active SparkContext before creating a new one. 
 	// This limitation may eventually be removed; see SPARK-2243 for more details.
-	private static JavaSparkContext _singletonSpctx = null;
-	
-	private JavaSparkContext _spctx = null; 
+	private static JavaSparkContext _spctx = null; 
 	
 	protected SparkExecutionContext(Program prog) 
 	{
@@ -90,59 +90,100 @@ public class SparkExecutionContext extends ExecutionContext
 	{
 		//protected constructor to force use of ExecutionContextFactory
 		super( allocateVars, prog );
+				
+		//spark context creation via internal initializer
+		if( !(LAZY_SPARKCTX_CREATION && OptimizerUtils.isHybridExecutionMode()) ) {
+			initSparkContext();
+		}
+	}
 		
-		synchronized(SparkExecutionContext.class) 
-		{
-			if(_singletonSpctx != null) {
-				// Reuse the context
-				_spctx = _singletonSpctx;
-			}
-			else {
-				//create a default spark context (master, appname, etc refer to system properties
-				//as given in the spark configuration or during spark-submit)
-				MLContext mlCtx = MLContextProxy.getActiveMLContext();
-				if(mlCtx != null) {
-					// This is when DML is called through spark shell
-					// Will clean the passing of static variables later as this involves minimal change to DMLScript
-					_spctx = new JavaSparkContext(mlCtx.getSparkContext());
-				}
-				else {
-					if(DMLScript.USE_LOCAL_SPARK_CONFIG) {
-						// For now set 4 cores for integration testing :)
-						SparkConf conf = new SparkConf().setMaster("local[*]").setAppName("My local integration test app");
-						// This is discouraged in spark but have added only for those testcase that cannot stop the context properly
-						// conf.set("spark.driver.allowMultipleContexts", "true");
-						conf.set("spark.ui.enabled", "false");
-						// conf.set("spark.ui.port", "69389"); // some random port
-						_spctx = new JavaSparkContext(conf);
-					}
-					else {
-						_spctx = new JavaSparkContext();
-					}
-				}
-				
-				//globally add binaryblock serialization framework for all hdfs read/write operations
-				//TODO if spark context passed in from outside (mlcontext), we need to clean this up at the end 
-				if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
-					MRJobConfiguration.addBinaryBlockSerializationFramework( _spctx.hadoopConfiguration() );
-				
-				_singletonSpctx = _spctx;
-			}
-		}
-	}
-
-	public void close() {
-		synchronized(SparkExecutionContext.class) {
-			_spctx.stop();
-			_singletonSpctx = null;
-		}
-	}
-	
+	/**
+	 * Returns the used singleton spark context. In case of lazy spark context
+	 * creation, this methods blocks until the spark context is created.
+	 *  
+	 * @return
+	 */
 	public JavaSparkContext getSparkContext()
 	{
+		//lazy spark context creation on demand (lazy instead of asynchronous 
+		//to avoid wait for uninitialized spark context on close)
+		if( LAZY_SPARKCTX_CREATION ) {
+			initSparkContext();
+		}
+		
+		//return the created spark context
 		return _spctx;
 	}
 	
+	/**
+	 * 
+	 */
+	public void close() 
+	{
+		synchronized( SparkExecutionContext.class ) {
+			if( _spctx != null ) 
+			{
+				//stop the spark context if existing
+				_spctx.stop();
+				
+				//make sure stopped context is never used again
+				_spctx = null; 
+			}
+				
+		}
+	}
+	
+	public static boolean isLazySparkContextCreation(){
+		return LAZY_SPARKCTX_CREATION;
+	}
+	
+	/**
+	 * 
+	 */
+	private synchronized static void initSparkContext()
+	{	
+		//check for redundant spark context init
+		if( _spctx != null )
+			return;
+	
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
+		//create a default spark context (master, appname, etc refer to system properties
+		//as given in the spark configuration or during spark-submit)
+		
+		MLContext mlCtx = MLContextProxy.getActiveMLContext();
+		if(mlCtx != null) 
+		{
+			// This is when DML is called through spark shell
+			// Will clean the passing of static variables later as this involves minimal change to DMLScript
+			_spctx = new JavaSparkContext(mlCtx.getSparkContext());
+		}
+		else 
+		{
+			if(DMLScript.USE_LOCAL_SPARK_CONFIG) {
+				// For now set 4 cores for integration testing :)
+				SparkConf conf = new SparkConf().setMaster("local[*]").setAppName("My local integration test app");
+				// This is discouraged in spark but have added only for those testcase that cannot stop the context properly
+				// conf.set("spark.driver.allowMultipleContexts", "true");
+				conf.set("spark.ui.enabled", "false");
+				// conf.set("spark.ui.port", "69389"); // some random port
+				_spctx = new JavaSparkContext(conf);
+			}
+			else {
+				_spctx = new JavaSparkContext();
+			}
+		}
+			
+		//globally add binaryblock serialization framework for all hdfs read/write operations
+		//TODO if spark context passed in from outside (mlcontext), we need to clean this up at the end 
+		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+			MRJobConfiguration.addBinaryBlockSerializationFramework( _spctx.hadoopConfiguration() );
+		
+		//statistics maintenance
+		if( DMLScript.STATISTICS ){
+			Statistics.setSparkCtxCreateTime(System.nanoTime()-t0);
+		}
+	}	
 	
 	/**
 	 * Spark instructions should call this for all matrix inputs except broadcast
@@ -208,7 +249,7 @@ public class SparkExecutionContext extends ExecutionContext
 		{
 			//get in-memory matrix block and parallelize it
 			MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-			rdd = toJavaPairRDD(_spctx, mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
+			rdd = toJavaPairRDD(getSparkContext(), mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
 			mo.release(); //unpin matrix
 			
 			//keep rdd handle for future operations on it
@@ -221,17 +262,17 @@ public class SparkExecutionContext extends ExecutionContext
 			// parallelize hdfs-resident file
 			// For binary block, these are: SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class
 			if(inputInfo == InputInfo.BinaryBlockInputInfo) {
-				rdd = _spctx.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				rdd = getSparkContext().hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
 				//note: this copy is still required in Spark 1.4 because spark hands out whatever the inputformat
 				//recordreader returns; the javadoc explicitly recommend to copy all key/value pairs
 				rdd = ((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd).mapToPair( new CopyBlockFunction() ); //cp is workaround for read bug
 			}
 			else if(inputInfo == InputInfo.TextCellInputInfo || inputInfo == InputInfo.CSVInputInfo || inputInfo == InputInfo.MatrixMarketInputInfo) {
-				rdd = _spctx.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				rdd = getSparkContext().hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
 				rdd = ((JavaPairRDD<LongWritable, Text>)rdd).mapToPair( new CopyTextInputFunction() ); //cp is workaround for read bug
 			}
 			else if(inputInfo == InputInfo.BinaryCellInputInfo) {
-				rdd = _spctx.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				rdd = getSparkContext().hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
 				rdd = ((JavaPairRDD<MatrixIndexes, MatrixCell>)rdd).mapToPair( new CopyBinaryCellFunction() ); //cp is workaround for read bug
 			}
 			else {
@@ -278,7 +319,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//read data into memory (no matter where it comes from)
 			MatrixBlock mb = mo.acquireRead();
 			PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(mb, brlen, bclen);
-			bret = _spctx.broadcast(pmb);
+			bret = getSparkContext().broadcast(pmb);
 			BroadcastObject bchandle = new BroadcastObject(bret, varname);
 			mo.setBroadcastHandle(bchandle);
 			mo.release();
@@ -522,8 +563,8 @@ public class SparkExecutionContext extends ExecutionContext
 		//note: spark context provides this information while conf does not
 		//(for num executors we need to correct for driver and local mode)
 		SparkExecutionContext sec = new SparkExecutionContext(false, null);
-		_numExecutors = Math.max(sec._spctx.sc().getExecutorMemoryStatus().size() - 1, 1);  
-		_defaultPar = sec._spctx.defaultParallelism(); 
+		_numExecutors = Math.max(sec.getSparkContext().sc().getExecutorMemoryStatus().size() - 1, 1);  
+		_defaultPar = sec.getSparkContext().defaultParallelism(); 
 
 		//note: required time for infrastructure analysis on 5 node cluster: ~5-20ms. 
 	}

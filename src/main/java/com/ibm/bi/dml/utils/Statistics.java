@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
@@ -64,7 +65,10 @@ public class Statistics
 	private static AtomicLong hopRecompileTime = new AtomicLong(0); //in nano sec
 	private static AtomicLong hopRecompilePred = new AtomicLong(0); //count
 	private static AtomicLong hopRecompileSB = new AtomicLong(0);   //count
-	
+
+	//Spark-specific stats
+	private static long sparkCtxCreateTime = 0; 
+
 	//PARFOR optimization stats 
 	private static long parforOptTime = 0; //in milli sec
 	private static long parforOptCount = 0; //count
@@ -281,6 +285,14 @@ public class Statistics
 		_cpInstCounts.clear();
 	}
 	
+	/**
+	 * 
+	 * @param ns
+	 */
+	public static void setSparkCtxCreateTime(long ns) {
+		sparkCtxCreateTime = ns;
+	}
+	
 	public static String getCPHeavyHitterCode( Instruction inst )
 	{
 		String opcode = null;
@@ -465,6 +477,11 @@ public class Statistics
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
 			sb.append("HOP DAGs recompiled (PRED, SB):\t" + getHopRecompiledPredDAGs() + "/" + getHopRecompiledSBDAGs() + ".\n");
 			sb.append("HOP DAGs recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
+			if( OptimizerUtils.isSparkExecutionMode() ){
+				String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";
+				sb.append("Spark ctx create time "+lazy+":\t"+
+						String.format("%.3f", ((double)sparkCtxCreateTime)*1e-9)  + " sec.\n" ); // nanoSec --> sec
+			}
 			if( parforOptCount>0 ){
 				sb.append("ParFor loops optimized:\t\t" + getParforOptCount() + ".\n");
 				sb.append("ParFor optimize time:\t\t" + String.format("%.3f", ((double)getParforOptTime())/1000) + " sec.\n");	

@@ -1,0 +1,350 @@
+\subsection{K-Means Clustering}
+
+\noindent{\bf Description}
+\smallskip
+
+Given a collection of $n$ records with a pairwise similarity measure,
+the goal of clustering is to assign a category label to each record so that
+similar records tend to get the same label.  In contrast to multinomial
+logistic regression, clustering is an \emph{unsupervised}\/ learning problem
+with neither category assignments nor label interpretations given in advance.
+In $k$-means clustering, the records $x_1, x_2, \ldots, x_n$ are numerical
+feature vectors of $\dim x_i = m$ with the squared Euclidean distance 
+$\|x_i - x_{i'}\|_2^2$ as the similarity measure.  We want to partition
+$\{x_1, \ldots, x_n\}$ into $k$ clusters $\{S_1, \ldots, S_k\}$ so that
+the aggregated squared distance from records to their cluster means is
+minimized:
+\begin{equation}
+\textrm{WCSS}\,\,=\,\, \sum_{i=1}^n \,\big\|x_i - \mean(S_j: x_i\in S_j)\big\|_2^2 \,\,\to\,\,\min
+\label{eqn:WCSS}
+\end{equation}
+The aggregated distance measure in~(\ref{eqn:WCSS}) is called the
+\emph{within-cluster sum of squares}~(WCSS).  It can be viewed as a measure
+of residual variance that remains in the data after the clustering assignment,
+conceptually similar to the residual sum of squares~(RSS) in linear regression.
+However, unlike for the RSS, the minimization of~(\ref{eqn:WCSS}) is an NP-hard 
+problem~\cite{AloiseDHP2009:kmeans}.
+
+Rather than searching for the global optimum in~(\ref{eqn:WCSS}), a heuristic algorithm
+called Lloyd's algorithm is typically used.  This iterative algorithm maintains
+and updates a set of $k$~\emph{centroids} $\{c_1, \ldots, c_k\}$, one centroid per cluster.
+It defines each cluster $S_j$ as the set of all records closer to~$c_j$ than
+to any other centroid.  Each iteration of the algorithm reduces the WCSS in two steps:
+\begin{Enumerate}
+\item Assign each record to the closest centroid, making $\mean(S_j)\neq c_j$;
+\label{step:kmeans:recluster}
+\item Reset each centroid to its cluster's mean: $c_j := \mean(S_j)$.
+\label{step:kmeans:recenter}
+\end{Enumerate}
+After Step~\ref{step:kmeans:recluster} the centroids are generally different from the cluster
+means, so we can compute another ``within-cluster sum of squares'' based on the centroids:
+\begin{equation}
+\textrm{WCSS\_C}\,\,=\,\, \sum_{i=1}^n \,\big\|x_i - \mathop{\textrm{centroid}}(S_j: x_i\in S_j)\big\|_2^2
+\label{eqn:WCSS:C}
+\end{equation}
+This WCSS\_C after Step~\ref{step:kmeans:recluster} is less than the means-based WCSS
+before Step~\ref{step:kmeans:recluster} (or equal if convergence achieved), and in
+Step~\ref{step:kmeans:recenter} the WCSS cannot exceed the WCSS\_C for \emph{the same}
+clustering; hence the WCSS reduction.
+
+Exact convergence is reached when each record becomes closer to its
+cluster's mean than to any other cluster's mean, so there are no more re-assignments
+and the centroids coincide with the means.  In practice, iterations may be stopped
+when the reduction in WCSS (or in WCSS\_C) falls below a minimum threshold, or upon
+reaching the maximum number of iterations.  The initialization of the centroids is also
+an important part of the algorithm.  The smallest WCSS obtained by the algorithm is not
+the global minimum and varies depending on the initial centroids.  We implement multiple
+parallel runs with different initial centroids and report the best result.
+
+\Paragraph{Scoring} 
+Our scoring script evaluates the clustering output by comparing it with a known category
+assignment.  Since cluster labels have no prior correspondence to the categories, we
+cannot count ``correct'' and ``wrong'' cluster assignments.  Instead, we quantify them in
+two ways:
+\begin{Enumerate}
+\item Count how many same-category and different-category pairs of records end up in the
+same cluster or in different clusters;
+\item For each category, count the prevalence of its most common cluster; for each
+cluster, count the prevalence of its most common category.
+\end{Enumerate}
+The number of categories and the number of clusters ($k$) do not have to be equal.  
+A same-category pair of records clustered into the same cluster is viewed as a
+``true positive,'' a different-category pair clustered together is a ``false positive,''
+a same-category pair clustered apart is a ``false negative''~etc.
+
+
+\smallskip
+\noindent{\bf Usage: K-means Script}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}Kmeans.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} C=}path/file
+{\tt{} k=}int
+{\tt{} runs=}int
+{\tt{} maxi=}int
+{\tt{} tol=}double
+{\tt{} samp=}int
+{\tt{} isY=}int
+{\tt{} Y=}path/file
+{\tt{} fmt=}format
+{\tt{} verb=}int
+
+}
+
+\smallskip
+\noindent{\bf Usage: K-means Scoring/Prediction}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}Kmeans-predict.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} C=}path/file
+{\tt{} spY=}path/file
+{\tt{} prY=}path/file
+{\tt{} fmt=}format
+{\tt{} O=}path/file
+
+}
+
+\smallskip
+\noindent{\bf Arguments}
+\begin{Description}
+\item[{\tt X}:]
+Location to read matrix $X$ with the input data records as rows
+\item[{\tt C}:] (default:\mbox{ }{\tt "C.mtx"})
+Location to store the output matrix with the best available cluster centroids as rows
+\item[{\tt k}:]
+Number of clusters (and centroids)
+\item[{\tt runs}:] (default:\mbox{ }{\tt 10})
+Number of parallel runs, each run with different initial centroids
+\item[{\tt maxi}:] (default:\mbox{ }{\tt 1000})
+Maximum number of iterations per run
+\item[{\tt tol}:] (default:\mbox{ }{\tt 0.000001})
+Tolerance (epsilon) for single-iteration WCSS\_C change ratio
+\item[{\tt samp}:] (default:\mbox{ }{\tt 50})
+Average number of records per centroid in data samples used in the centroid
+initialization procedure
+\item[{\tt Y}:] (default:\mbox{ }{\tt "Y.mtx"})
+Location to store the one-column matrix $Y$ with the best available mapping of
+records to clusters (defined by the output centroids)
+\item[{\tt isY}:] (default:\mbox{ }{\tt 0})
+{\tt 0} = do not write matrix~$Y$,  {\tt 1} = write~$Y$
+\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+see read/write functions in SystemML Language Reference for details.
+\item[{\tt verb}:] (default:\mbox{ }{\tt 0})
+{\tt 0} = do not print per-iteration statistics for each run, {\tt 1} = print them
+(the ``verbose'' option)
+\end{Description}
+\smallskip
+\noindent{\bf Arguments --- Scoring/Prediction}
+\begin{Description}
+\item[{\tt X}:] (default:\mbox{ }{\tt " "})
+Location to read matrix $X$ with the input data records as rows,
+optional when {\tt prY} input is provided
+\item[{\tt C}:] (default:\mbox{ }{\tt " "})
+Location to read matrix $C$ with cluster centroids as rows, optional
+when {\tt prY} input is provided; NOTE: if both {\tt X} and {\tt C} are
+provided, {\tt prY} is an output, not input
+\item[{\tt spY}:] (default:\mbox{ }{\tt " "})
+Location to read a one-column matrix with the externally specified ``true''
+assignment of records (rows) to categories, optional for prediction without
+scoring
+\item[{\tt prY}:] (default:\mbox{ }{\tt " "})
+Location to read (or write, if {\tt X} and {\tt C} are present) a
+column-vector with the predicted assignment of rows to clusters;
+NOTE: No prior correspondence is assumed between the predicted
+cluster labels and the externally specified categories
+\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+Matrix file output format for {\tt prY}, such as {\tt text}, {\tt mm},
+or {\tt csv}; see read/write functions in SystemML Language Reference
+for details
+\item[{\tt O}:] (default:\mbox{ }{\tt " "})
+Location to write the output statistics defined in 
+Table~\ref{table:kmeans:predict:stats}, by default print them to the
+standard output
+\end{Description}
+
+
+\begin{table}[t]\small\centerline{%
+\begin{tabular}{|lcl|}
+\hline
+Name & CID & Meaning \\
+\hline
+{\tt TSS}             &     & Total Sum of Squares (from the total mean) \\
+{\tt WCSS\_M}         &     & Within-Cluster  Sum of Squares (means as centers) \\
+{\tt WCSS\_M\_PC}     &     & Within-Cluster  Sum of Squares (means), in \% of TSS \\
+{\tt BCSS\_M}         &     & Between-Cluster Sum of Squares (means as centers) \\
+{\tt BCSS\_M\_PC}     &     & Between-Cluster Sum of Squares (means), in \% of TSS \\
+\hline
+{\tt WCSS\_C}         &     & Within-Cluster  Sum of Squares (centroids as centers) \\
+{\tt WCSS\_C\_PC}     &     & Within-Cluster  Sum of Squares (centroids), \% of TSS \\
+{\tt BCSS\_C}         &     & Between-Cluster Sum of Squares (centroids as centers) \\
+{\tt BCSS\_C\_PC}     &     & Between-Cluster Sum of Squares (centroids), \% of TSS \\
+\hline
+{\tt TRUE\_SAME\_CT}  &     & Same-category pairs predicted as Same-cluster, count \\
+{\tt TRUE\_SAME\_PC}  &     & Same-category pairs predicted as Same-cluster, \% \\
+{\tt TRUE\_DIFF\_CT}  &     & Diff-category pairs predicted as Diff-cluster, count \\
+{\tt TRUE\_DIFF\_PC}  &     & Diff-category pairs predicted as Diff-cluster, \% \\
+{\tt FALSE\_SAME\_CT} &     & Diff-category pairs predicted as Same-cluster, count \\
+{\tt FALSE\_SAME\_PC} &     & Diff-category pairs predicted as Same-cluster, \% \\
+{\tt FALSE\_DIFF\_CT} &     & Same-category pairs predicted as Diff-cluster, count \\
+{\tt FALSE\_DIFF\_PC} &     & Same-category pairs predicted as Diff-cluster, \% \\
+\hline
+{\tt SPEC\_TO\_PRED}  & $+$ & For specified category, the best predicted cluster id \\
+{\tt SPEC\_FULL\_CT}  & $+$ & For specified category, its full count \\
+{\tt SPEC\_MATCH\_CT} & $+$ & For specified category, best-cluster matching count \\
+{\tt SPEC\_MATCH\_PC} & $+$ & For specified category, \% of matching to full count \\
+{\tt PRED\_TO\_SPEC}  & $+$ & For predicted cluster, the best specified category id \\
+{\tt PRED\_FULL\_CT}  & $+$ & For predicted cluster, its full count \\
+{\tt PRED\_MATCH\_CT} & $+$ & For predicted cluster, best-category matching count \\
+{\tt PRED\_MATCH\_PC} & $+$ & For predicted cluster, \% of matching to full count \\
+\hline
+\end{tabular}}
+\caption{The {\tt O}-file for {\tt Kmeans-predict} provides the output statistics
+in CSV format, one per line, in the following format: (NAME, [CID], VALUE).  Note:
+the 1st group statistics are given if {\tt X} input is available;
+the 2nd group statistics are given if {\tt X} and {\tt C} inputs are available;
+the 3rd and 4th group statistics are given if {\tt spY} input is available;
+only the 4th group statistics contain a nonempty CID value;
+when present, CID contains either the specified category label or the
+predicted cluster label.}
+\label{table:kmeans:predict:stats}
+\end{table}
+
+
+\noindent{\bf Details}
+\smallskip
+
+Our clustering script proceeds in 3~stages: centroid initialization,
+parallel $k$-means iterations, and the best-available output generation.
+Centroids are initialized at random from the input records (the rows of~$X$),
+biased towards being chosen far apart from each other.  The initialization
+method is based on the {\tt k-means++} heuristic from~\cite{ArthurVassilvitskii2007:kmeans},
+with one important difference: to reduce the number of passes through~$X$,
+we take a small sample of $X$ and run the {\tt k-means++} heuristic over
+this sample.  Here is, conceptually, our centroid initialization algorithm
+for one clustering run:
+\begin{Enumerate}
+\item Sample the rows of~$X$ uniformly at random, picking each row with probability
+$p = ks / n$ where
+\begin{Itemize}
+\item $k$~is the number of centroids, 
+\item $n$~is the number of records, and
+\item $s$~is the {\tt samp} input parameter.
+\end{Itemize}
+If $ks \geq n$, the entire $X$ is used in place of its sample.
+\item Choose the first centroid uniformly at random from the sampled rows.
+\item Choose each subsequent centroid from the sampled rows, at random, with
+probability proportional to the squared Euclidean distance between the row and
+the nearest already-chosen centroid.
+\end{Enumerate}
+The sampling of $X$ and the selection of centroids are performed independently
+and in parallel for each run of the $k$-means algorithm.  When we sample the
+rows of~$X$, rather than tossing a random coin for each row, we compute the
+number of rows to skip until the next sampled row as $\lceil \log(u) / \log(1 - p) \rceil$
+where $u\in (0, 1)$ is uniformly random.  This time-saving trick works because
+\begin{equation*}
+\Prob [k-1 < \log_{1-p}(u) < k] \,\,=\,\, p(1-p)^{k-1} \,\,=\,\,
+\Prob [\textrm{skip $k-1$ rows}]
+\end{equation*}
+However, it requires us to estimate the maximum sample size, which we set
+near~$ks + 10\sqrt{ks}$ to make it generous enough.
+
+Once we selected the initial centroid sets, we start the $k$-means iterations
+independently in parallel for all clustering runs.  The number of clustering runs
+is given as the {\tt runs} input parameter.  Each iteration of each clustering run
+performs the following steps:
+\begin{Itemize}
+\item Compute the centroid-dependent part of squared Euclidean distances from
+all records (rows of~$X$) to each of the $k$~centroids using matrix product;
+\item Take the minimum of the above for each record;
+\item Update the current within-cluster sum of squares (WCSS) value, with centroids
+substituted instead of the means for efficiency;
+\item Check the convergence criterion:\hfil
+$\textrm{WCSS}_{\mathrm{old}} - \textrm{WCSS}_{\mathrm{new}} < \eps\cdot\textrm{WCSS}_{\mathrm{new}}$\linebreak
+as well as the number of iterations limit;
+\item Find the closest centroid for each record, sharing equally any records with multiple
+closest centroids;
+\item Compute the number of records closest to each centroid, checking for ``runaway''
+centroids with no records left (in which case the run fails);
+\item Compute the new centroids by averaging the records in their clusters.
+\end{Itemize}
+When a termination condition is satisfied, we store the centroids and the WCSS value
+and exit this run.  A run has to satisfy the WCSS convergence criterion to be considered
+successful.  Upon the termination of all runs, we select the smallest WCSS value among
+the successful runs, and write out this run's centroids.  If requested, we also compute
+the cluster assignment of all records in~$X$, using integers from 1 to~$k$ as the cluster
+labels.  The scoring script can then be used to compare the cluster assignment with
+an externally specified category assignment.
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+We output the $k$ centroids for the best available clustering, i.~e.\ whose WCSS
+is the smallest of all successful runs.
+The centroids are written as the rows of the $k\,{\times}\,m$-matrix into the output
+file whose path/name was provided as the ``{\tt C}'' input argument.  If the input
+parameter ``{\tt isY}'' was set to~{\tt 1}, we also output the one-column matrix with
+the cluster assignment for all the records.  This assignment is written into the
+file whose path/name was provided as the ``{\tt Y}'' input argument.
+The best WCSS value, as well as some information about the performance of the other
+runs, is printed during the script execution.  The scoring script {\tt Kmeans-predict}
+prints all its results in a self-explanatory manner, as defined in
+Table~\ref{table:kmeans:predict:stats}.
+
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+\hml -f Kmeans.dml -nvargs X=/user/biadmin/X.mtx k=5 C=/user/biadmin/centroids.mtx fmt=csv
+
+}
+
+{\hangindent=\parindent\noindent\tt
+\hml -f Kmeans.dml -nvargs X=/user/biadmin/X.mtx k=5 runs=100 maxi=5000 
+tol=0.00000001 samp=20 C=/user/biadmin/centroids.mtx isY=1 Y=/user/biadmin/Yout.mtx verb=1
+
+}
+\noindent To predict {\tt Y} given {\tt X} and {\tt C}:
+
+{\hangindent=\parindent\noindent\tt
+\hml -f Kmeans-predict.dml -nvargs X=/user/biadmin/X.mtx
+         C=/user/biadmin/C.mtx prY=/user/biadmin/PredY.mtx O=/user/biadmin/stats.csv
+
+}
+\noindent To compare ``actual'' labels {\tt spY} with ``predicted'' labels given {\tt X} and {\tt C}:
+
+{\hangindent=\parindent\noindent\tt
+\hml -f Kmeans-predict.dml -nvargs X=/user/biadmin/X.mtx
+         C=/user/biadmin/C.mtx spY=/user/biadmin/Y.mtx O=/user/biadmin/stats.csv
+
+}
+\noindent To compare ``actual'' labels {\tt spY} with given ``predicted'' labels {\tt prY}:
+
+{\hangindent=\parindent\noindent\tt
+\hml -f Kmeans-predict.dml -nvargs spY=/user/biadmin/Y.mtx prY=/user/biadmin/PredY.mtx O=/user/biadmin/stats.csv
+
+}
+
+\smallskip
+\noindent{\bf References}
+\begin{itemize}
+\item
+D.~Aloise, A.~Deshpande, P.~Hansen, and P.~Popat.
+\newblock {NP}-hardness of {E}uclidean sum-of-squares clustering.
+\newblock {\em Machine Learning}, 75(2):245--248, May 2009.
+\item
+D.~Arthur and S.~Vassilvitskii.
+\newblock {\tt k-means++}: The advantages of careful seeding.
+\newblock In {\em Proceedings of the 18th Annual {ACM-SIAM} Symposium on
+  Discrete Algorithms ({SODA}~2007)}, pages 1027--1035, New Orleans~{LA},
+  {USA}, January 7--9 2007.
+\end{itemize}

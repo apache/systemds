@@ -1,0 +1,453 @@
+\subsection{Regression Scoring and Prediction}
+
+\noindent{\bf Description}
+\smallskip
+
+Script {\tt GLM-predict.dml} is intended to cover all linear model based regressions,
+including linear regression, binomial and multinomial logistic regression, and GLM
+regressions (Poisson, gamma, binomial with probit link~etc.).  Having just one scoring
+script for all these regressions simplifies maintenance and enhancement while ensuring
+compatible interpretations for output statistics.
+
+The script performs two functions, prediction and scoring.  To perform prediction,
+the script takes two matrix inputs: a collection of records $X$ (without the response
+attribute) and the estimated regression parameters~$B$, also known as~$\beta$.  
+To perform scoring, in addition to $X$ and~$B$, the script takes the matrix of actual
+response values~$Y$ that are compared to the predictions made with $X$ and~$B$.  Of course
+there are other, non-matrix, input arguments that specify the model and the output
+format, see below for the full list.
+
+We assume that our test/scoring dataset is given by $n\,{\times}\,m$-matrix $X$ of
+numerical feature vectors, where each row~$x_i$ represents one feature vector of one
+record; we have \mbox{$\dim x_i = m$}.  Each record also includes the response
+variable~$y_i$ that may be numerical, single-label categorical, or multi-label categorical.
+A single-label categorical $y_i$ is an integer category label, one label per record;
+a multi-label $y_i$ is a vector of integer counts, one count for each possible label,
+which represents multiple single-label events (observations) for the same~$x_i$.  Internally
+we convert single-label categoricals into multi-label categoricals by replacing each
+label~$l$ with an indicator vector~$(0,\ldots,0,1_l,0,\ldots,0)$.  In prediction-only
+tasks the actual $y_i$'s are not needed to the script, but they are needed for scoring.
+
+To perform prediction, the script matrix-multiplies $X$ and $B$, adding the intercept
+if available, then applies the inverse of the model's link function.  
+All GLMs assume that the linear combination of the features in~$x_i$ and the betas
+in~$B$ determines the means~$\mu_i$ of the~$y_i$'s (in numerical or multi-label
+categorical form) with $\dim \mu_i = \dim y_i$.  The observed $y_i$ is assumed to follow
+a specified GLM family distribution $\Prob[y\mid \mu_i]$ with mean(s)~$\mu_i$:
+\begin{equation*}
+x_i \,\,\,\,\mapsto\,\,\,\, \eta_i = \beta_0 + \sum\nolimits_{j=1}^m \beta_j x_{i,j} 
+\,\,\,\,\mapsto\,\,\,\, \mu_i \,\,\,\,\mapsto \,\,\,\, y_i \sim \Prob[y\mid \mu_i]
+\end{equation*}
+If $y_i$ is numerical, the predicted mean $\mu_i$ is a real number.  Then our script's
+output matrix $M$ is the $n\,{\times}\,1$-vector of these means~$\mu_i$.
+Note that $\mu_i$ predicts the mean of $y_i$, not the actual~$y_i$.  For example,
+in Poisson distribution, the mean is usually fractional, but the actual~$y_i$ is
+always integer.
+
+If $y_i$ is categorical, i.e.\ a vector of label counts for record~$i$, then $\mu_i$
+is a vector of non-negative real numbers, one number $\mu_{i,l}$ per each label~$l$.
+In this case we divide the $\mu_{i,l}$ by their sum $\sum_l \mu_{i,l}$ to obtain
+predicted label probabilities~\mbox{$p_{i,l}\in [0, 1]$}.  The output matrix $M$ is
+the $n \times (k\,{+}\,1)$-matrix of these probabilities, where $n$ is the number of
+records and $k\,{+}\,1$ is the number of categories\footnote{We use $k+1$ because
+there are $k$ non-baseline categories and one baseline category, with regression
+parameters $B$ having $k$~columns.}.  Note again that we do not predict the labels
+themselves, nor their actual counts per record, but we predict the labels' probabilities. 
+
+Going from predicted probabilities to predicted labels, in the single-label categorical
+case, requires extra information such as the cost of false positive versus
+false negative errors.  For example, if there are 5 categories and we \emph{accurately}
+predicted their probabilities as $(0.1, 0.3, 0.15, 0.2, 0.25)$, just picking the
+highest-probability label would be wrong 70\% of the time, whereas picking the
+lowest-probability label might be right if, say, it represents a diagnosis of cancer
+or another rare and serious outcome.  Hence, we keep this step outside the scope of
+{\tt GLM-predict.dml} for now.
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}GLM-predict.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} Y=}path/file
+{\tt{} B=}path/file
+{\tt{} M=}path/file
+{\tt{} O=}path/file
+{\tt{} dfam=}int
+{\tt{} vpow=}double
+{\tt{} link=}int
+{\tt{} lpow=}double
+{\tt{} disp=}double
+{\tt{} fmt=}format
+
+}
+
+\smallskip
+\noindent{\bf Arguments}
+\begin{Description}
+\item[{\tt X}:]
+Location (on HDFS) to read the $n\,{\times}\,m$-matrix $X$ of feature vectors, each row
+constitutes one feature vector (one record)
+\item[{\tt Y}:] (default:\mbox{ }{\tt " "})
+Location to read the response matrix $Y$ needed for scoring (but optional for prediction),
+with the following dimensions: \\
+    $n \:{\times}\: 1$: acceptable for all distributions ({\tt dfam=1} or {\tt 2} or {\tt 3}) \\
+    $n \:{\times}\: 2$: for binomial ({\tt dfam=2}) if given by (\#pos, \#neg) counts \\
+    $n \:{\times}\: k\,{+}\,1$: for multinomial ({\tt dfam=3}) if given by category counts
+\item[{\tt M}:] (default:\mbox{ }{\tt " "})
+Location to write, if requested, the matrix of predicted response means (for {\tt dfam=1}) or
+probabilities (for {\tt dfam=2} or {\tt 3}):\\
+    $n \:{\times}\: 1$: for power-type distributions ({\tt dfam=1}) \\
+    $n \:{\times}\: 2$: for binomial distribution ({\tt dfam=2}), col\#~2 is the ``No'' probability \\
+    $n \:{\times}\: k\,{+}\,1$: for multinomial logit ({\tt dfam=3}), col\#~$k\,{+}\,1$ is for the baseline
+\item[{\tt B}:]
+Location to read matrix $B$ of the \mbox{betas}, i.e.\ estimated GLM regression parameters,
+with the intercept at row\#~$m\,{+}\,1$ if available:\\
+    $\dim(B) \,=\, m \:{\times}\: k$: do not add intercept \\
+    $\dim(B) \,=\, m\,{+}\,1 \:{\times}\: k$: add intercept as given by the last $B$-row \\
+    if $k > 1$, use only $B${\tt [, 1]} unless it is Multinomial Logit ({\tt dfam=3})
+\item[{\tt O}:] (default:\mbox{ }{\tt " "})
+Location to store the CSV-file with goodness-of-fit statistics defined in
+Table~\ref{table:GLMpred:stats}, the default is to print them to the standard output
+\item[{\tt dfam}:] (default:\mbox{ }{\tt 1})
+GLM distribution family code to specify the type of distribution $\Prob[y\,|\,\mu]$
+that we assume: \\
+{\tt 1} = power distributions with $\Var(y) = \mu^{\alpha}$, see Table~\ref{table:commonGLMs};\\
+{\tt 2} = binomial; 
+{\tt 3} = multinomial logit
+\item[{\tt vpow}:] (default:\mbox{ }{\tt 0.0})
+Power for variance defined as (mean)${}^{\textrm{power}}$ (ignored if {\tt dfam}$\,{\neq}\,1$):
+when {\tt dfam=1}, this provides the~$q$ in $\Var(y) = a\mu^q$, the power
+dependence of the variance of~$y$ on its mean.  In particular, use:\\
+{\tt 0.0} = Gaussian,
+{\tt 1.0} = Poisson,
+{\tt 2.0} = Gamma,
+{\tt 3.0} = inverse Gaussian
+\item[{\tt link}:] (default:\mbox{ }{\tt 0})
+Link function code to determine the link function~$\eta = g(\mu)$, ignored for
+multinomial logit ({\tt dfam=3}):\\
+{\tt 0} = canonical link (depends on the distribution family), see Table~\ref{table:commonGLMs};\\
+{\tt 1} = power functions,
+{\tt 2} = logit,
+{\tt 3} = probit,
+{\tt 4} = cloglog,
+{\tt 5} = cauchit
+\item[{\tt lpow}:] (default:\mbox{ }{\tt 1.0})
+Power for link function defined as (mean)${}^{\textrm{power}}$ (ignored if {\tt link}$\,{\neq}\,1$):
+when {\tt link=1}, this provides the~$s$ in $\eta = \mu^s$, the power link
+function; {\tt lpow=0.0} gives the log link $\eta = \log\mu$.  Common power links:\\
+{\tt -2.0} = $1/\mu^2$,
+{\tt -1.0} = reciprocal,
+{\tt 0.0} = log,
+{\tt 0.5} = sqrt,
+{\tt 1.0} = identity
+\item[{\tt disp}:] (default:\mbox{ }{\tt 1.0})
+Dispersion value, when available; must be positive
+\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+Matrix {\tt M} file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+
+\begin{table}[t]\small\centerline{%
+\begin{tabular}{|lccl|}
+\hline
+Name & \hspace{-0.6em}CID\hspace{-0.5em} & \hspace{-0.3em}Disp?\hspace{-0.6em} & Meaning \\
+\hline
+{\tt LOGLHOOD\_Z}          &   & + & Log-likelihood $Z$-score (in st.\ dev.'s from the mean) \\
+{\tt LOGLHOOD\_Z\_PVAL}    &   & + & Log-likelihood $Z$-score p-value, two-sided \\
+{\tt PEARSON\_X2}          &   & + & Pearson residual $X^2$-statistic \\
+{\tt PEARSON\_X2\_BY\_DF}  &   & + & Pearson $X^2$ divided by degrees of freedom \\
+{\tt PEARSON\_X2\_PVAL}    &   & + & Pearson $X^2$ p-value \\
+{\tt DEVIANCE\_G2}         &   & + & Deviance from the saturated model $G^2$-statistic \\
+{\tt DEVIANCE\_G2\_BY\_DF} &   & + & Deviance $G^2$ divided by degrees of freedom \\
+{\tt DEVIANCE\_G2\_PVAL}   &   & + & Deviance $G^2$ p-value \\
+{\tt AVG\_TOT\_Y}          & + &   & $Y$-column average for an individual response value \\
+{\tt STDEV\_TOT\_Y}        & + &   & $Y$-column st.\ dev.\ for an individual response value \\
+{\tt AVG\_RES\_Y}          & + &   & $Y$-column residual average of $Y - \mathop{\mathrm{pred.}\,\mathrm{mean}}(Y|X)$ \\
+{\tt STDEV\_RES\_Y}        & + &   & $Y$-column residual st.\ dev.\ of $Y - \mathop{\mathrm{pred.}\,\mathrm{mean}}(Y|X)$ \\
+{\tt PRED\_STDEV\_RES}     & + & + & Model-predicted $Y$-column residual st.\ deviation\\
+{\tt PLAIN\_R2}            & + &   & Plain $R^2$ of $Y$-column residual with bias included \\
+{\tt ADJUSTED\_R2}         & + &   & Adjusted $R^2$ of $Y$-column residual w.\ bias included \\
+{\tt PLAIN\_R2\_NOBIAS}    & + &   & Plain $R^2$ of $Y$-column residual, bias subtracted \\
+{\tt ADJUSTED\_R2\_NOBIAS} & + &   & Adjusted $R^2$ of $Y$-column residual, bias subtracted \\
+\hline
+\end{tabular}}
+\caption{The above goodness-of-fit statistics are provided in CSV format, one per each line, with four
+columns: (Name, [CID], [Disp?], Value).  The columns are: 
+``Name'' is the string identifier for the statistic, see the table;
+``CID'' is an optional integer value that specifies the $Y$-column index for \mbox{per-}column statistics
+(note that a bi-/multinomial one-column {\tt Y}-input is converted into multi-column);
+``Disp?'' is an optional Boolean value ({\tt TRUE} or {\tt FALSE}) that tells us
+whether or not scaling by the input dispersion parameter {\tt disp} has been applied to this
+statistic;
+``Value''  is the value of the statistic.}
+\label{table:GLMpred:stats}
+\end{table}
+
+\noindent{\bf Details}
+\smallskip
+
+The output matrix $M$ of predicted means (or probabilities) is computed by matrix-multiplying $X$
+with the first column of~$B$ or with the whole~$B$ in the multinomial case, adding the intercept
+if available (conceptually, appending an extra column of ones to~$X$); then applying the inverse
+of the model's link function.  The difference between ``means'' and ``probabilities'' in the
+categorical case becomes significant when there are ${\geq}\,2$ observations per record
+(with the multi-label records) or when the labels such as $-1$ and~$1$ are viewed and averaged
+as numerical response values (with the single-label records).  To avoid any \mbox{mix-up} or
+information loss, we separately return the predicted probability of each category label for each
+record.
+
+When the ``actual'' response values $Y$ are available, the summary statistics are computed
+and written out as described in Table~\ref{table:GLMpred:stats}.  Below we discuss each of
+these statistics in detail.  Note that in the categorical case (binomial and multinomial)
+$Y$ is internally represented as the matrix of observation counts for each label in each record,
+rather than just the label~ID for each record.  The input~$Y$ may already be a matrix of counts,
+in which case it is used as-is.  But if $Y$ is given as a vector of response labels, each
+response label is converted into an indicator vector $(0,\ldots,0,1_l,0,\ldots,0)$ where~$l$
+is the label~ID for this record.  All negative (e.g.~$-1$) or zero label~IDs are converted to
+the $1 + {}$maximum label~ID.  The largest label~ID is viewed as the ``baseline'' as explained
+in the section on Multinomial Logistic Regression.  We assume that there are $k\geq 1$
+non-baseline categories and one (last) baseline category.
+
+We also estimate residual variances for each response value, although we do not output them,
+but use them only inside the summary statistics, scaled and unscaled by the input dispersion
+parameter {\tt disp}, as described below.
+
+\smallskip
+{\tt LOGLHOOD\_Z} and {\tt LOGLHOOD\_Z\_PVAL} statistics measure how far the log-likelihood
+of~$Y$ deviates from its expected value according to the model.  The script implements them
+only for the binomial and the multinomial distributions, returning NaN for all other distributions.
+Pearson's~$X^2$ and deviance~$G^2$ often perform poorly with bi- and multinomial distributions
+due to low cell counts, hence we need this extra goodness-of-fit measure.  To compute these
+statistics, we use:
+\begin{Itemize}
+\item the $n\times (k\,{+}\,1)$-matrix~$Y$ of multi-label response counts, in which $y_{i,j}$
+is the number of times label~$j$ was observed in record~$i$;
+\item the model-estimated probability matrix~$P$ of the same dimensions that satisfies
+$\sum_{j=1}^{k+1} p_{i,j} = 1$ for all~$i=1,\ldots,n$ and where $p_{i,j}$ is the model
+probability of observing label~$j$ in record~$i$;
+\item the $n\,{\times}\,1$-vector $N$ where $N_i$ is the aggregated count of observations
+in record~$i$ (all $N_i = 1$ if each record has only one response label).
+\end{Itemize}
+We start by computing the multinomial log-likelihood of $Y$ given~$P$ and~$N$, as well as
+the expected log-likelihood given a random~$Y$ and the variance of this log-likelihood if
+$Y$ indeed follows the proposed distribution:
+\begin{align*}
+\ell (Y) \,\,&=\,\, \log \Prob[Y \,|\, P, N] \,\,=\,\, \sum_{i=1}^{n} \,\sum_{j=1}^{k+1}  \,y_{i,j}\log p_{i,j} \\
+\E_Y \ell (Y)  \,\,&=\,\, \sum_{i=1}^{n}\, \sum_{j=1}^{k+1} \,\mu_{i,j} \log p_{i,j} 
+    \,\,=\,\, \sum_{i=1}^{n}\, N_i \,\sum_{j=1}^{k+1} \,p_{i,j} \log p_{i,j} \\
+\Var_Y \ell (Y) \,&=\, \sum_{i=1}^{n} \,N_i \left(\sum_{j=1}^{k+1} \,p_{i,j} \big(\log p_{i,j}\big)^2
+    - \Bigg( \sum_{j=1}^{k+1} \,p_{i,j} \log p_{i,j}\Bigg) ^ {\!\!2\,} \right)
+\end{align*}
+Then we compute the $Z$-score as the difference between the actual and the expected
+log-likelihood $\ell(Y)$ divided by its expected standard deviation, and its two-sided
+p-value in the Normal distribution assumption ($\ell(Y)$ should approach normality due
+to the Central Limit Theorem):
+\begin{equation*}
+Z   \,=\, \frac {\ell(Y) - \E_Y \ell(Y)}{\sqrt{\Var_Y \ell(Y)}};\quad
+\mathop{\textrm{p-value}}(Z) \,=\, \Prob \Big[\,\big|\mathop{\textrm{Normal}}(0,1)\big| \, > \, |Z|\,\Big]
+\end{equation*}
+A low p-value would indicate ``underfitting'' if $Z\ll 0$ or ``overfitting'' if $Z\gg 0$.  Here
+``overfitting'' means that higher-probability labels occur more often than their probabilities
+suggest.
+
+We also apply the dispersion input ({\tt disp}) to compute the ``scaled'' version of the $Z$-score
+and its p-value.  Since $\ell(Y)$ is a linear function of~$Y$, multiplying the GLM-predicted
+variance of~$Y$ by {\tt disp} results in multiplying $\Var_Y \ell(Y)$ by the same {\tt disp}.  This, in turn,
+translates into dividing the $Z$-score by the square root of the dispersion:
+\begin{equation*}
+Z_{\texttt{disp}}  \,=\, \big(\ell(Y) \,-\, \E_Y \ell(Y)\big) \,\big/\, \sqrt{\texttt{disp}\cdot\Var_Y \ell(Y)}
+\,=\, Z / \sqrt{\texttt{disp}}
+\end{equation*}
+Finally, we recalculate the p-value with this new $Z$-score.
+
+\smallskip
+{\tt PEARSON\_X2}, {\tt PEARSON\_X2\_BY\_DF}, and {\tt PEARSON\_X2\_PVAL}:
+Pearson's residual $X^2$-statistic is a commonly used goodness-of-fit measure for linear models~\cite{McCullagh1989:GLM}.
+The idea is to measure how well the model-predicted means and variances match the actual behavior
+of response values.  For each record $i$, we estimate the mean $\mu_i$ and the variance $v_i$
+(or $\texttt{disp}\cdot v_i$) and use them to normalize the residual: 
+$r_i = (y_i - \mu_i) / \sqrt{v_i}$.  These normalized residuals are then squared, aggregated
+by summation, and tested against an appropriate $\chi^2$~distribution.  The computation of~$X^2$
+is slightly different for categorical data (bi- and multinomial) than it is for numerical data,
+since $y_i$ has multiple correlated dimensions~\cite{McCullagh1989:GLM}:
+\begin{equation*}
+X^2\,\textrm{(numer.)} \,=\,  \sum_{i=1}^{n}\, \frac{(y_i - \mu_i)^2}{v_i};\quad
+X^2\,\textrm{(categ.)} \,=\,  \sum_{i=1}^{n}\, \sum_{j=1}^{k+1} \,\frac{(y_{i,j} - N_i 
+\hspace{0.5pt} p_{i,j})^2}{N_i \hspace{0.5pt} p_{i,j}}
+\end{equation*}
+The number of degrees of freedom~\#d.f.\ for the $\chi^2$~distribution is $n - m$ for numerical data and
+$(n - m)k$ for categorical data, where $k = \mathop{\texttt{ncol}}(Y) - 1$.  Given the dispersion
+parameter {\tt disp}, the $X^2$ statistic is scaled by division: \mbox{$X^2_{\texttt{disp}} = X^2 / \texttt{disp}$}.
+If the dispersion is accurate, $X^2 / \texttt{disp}$ should be close to~\#d.f.  In fact, $X^2 / \textrm{\#d.f.}$
+over the \emph{training} data is the dispersion estimator used in our {\tt GLM.dml} script, 
+see~(\ref{eqn:dispersion}).  Here we provide $X^2 / \textrm{\#d.f.}$ and $X^2_{\texttt{disp}} / \textrm{\#d.f.}$
+as {\tt PEARSON\_X2\_BY\_DF} to enable dispersion comparison between the training data and
+the test data.
+
+NOTE: For categorical data, both Pearson's $X^2$ and the deviance $G^2$ are unreliable (i.e.\ do not
+approach the $\chi^2$~distribution) unless the predicted means of multi-label counts
+$\mu_{i,j} = N_i \hspace{0.5pt} p_{i,j}$ are fairly large: all ${\geq}\,1$ and 80\% are
+at least~$5$~\cite{Cochran1954:chisq}.  They should not be used for ``one label per record'' categoricals.
+
+\smallskip
+{\tt DEVIANCE\_G2}, {\tt DEVIANCE\_G2\_BY\_DF}, and {\tt DEVIANCE\_G2\_PVAL}:
+Deviance $G^2$ is the log of the likelihood ratio between the ``saturated'' model and the
+linear model being tested for the given dataset, multiplied by two:
+\begin{equation}
+G^2 \,=\, 2 \,\log \frac{\Prob[Y \mid \textrm{saturated model}\hspace{0.5pt}]}%
+{\Prob[Y \mid \textrm{tested linear model}\hspace{0.5pt}]}
+\label{eqn:GLMpred:deviance}
+\end{equation}
+The ``saturated'' model sets the mean $\mu_i^{\mathrm{sat}}$ to equal~$y_i$ for every record
+(for categorical data, $p^{\mathrm{sat}}_{i,j} = y_{i,j} / N_i$), which represents the ``perfect fit.''
+For records with $y_{i,j} \in \{0, N_i\}$ or otherwise at a boundary, by continuity we set
+$0 \log 0 = 0$.  The GLM~likelihood functions defined in~(\ref{eqn:GLM}) become simplified
+in ratio~(\ref{eqn:GLMpred:deviance}) due to canceling out the term $c(y, a)$ since it is the same
+in both models.
+
+The log of a likelihood ratio between two nested models, times two, is known to approach
+a $\chi^2$ distribution as $n\to\infty$ if both models have fixed parameter spaces.  
+But this is not the case for the ``saturated'' model: it adds more parameters with each record.  
+In practice, however, $\chi^2$ distributions are used to compute the p-value of~$G^2$~\cite{McCullagh1989:GLM}.  
+The number of degrees of freedom~\#d.f.\ and the treatment of dispersion are the same as for
+Pearson's~$X^2$, see above.
+
+\Paragraph{Column-wise statistics.}  The rest of the statistics are computed separately
+for each column of~$Y$.  As explained above, $Y$~has two or more columns in bi- and multinomial case,
+either at input or after conversion.  Moreover, each $y_{i,j}$ in record~$i$ with $N_i \geq 2$ is
+counted as $N_i$ separate observations $y_{i,j,l}$ of 0 or~1 (where $l=1,\ldots,N_i$) with
+$y_{i,j}$~ones and $N_i-y_{i,j}$ zeros.
+For power distributions, including linear regression, $Y$~has only one column and all
+$N_i = 1$, so the statistics are computed for all~$Y$ with each record counted once.
+Below we denote $N = \sum_{i=1}^n N_i \,\geq n$.
+Here is the total average and the residual average (residual bias) of~$y_{i,j,l}$ for each $Y$-column:
+\begin{equation*}
+\texttt{AVG\_TOT\_Y}_j   \,=\, \frac{1}{N} \sum_{i=1}^n  y_{i,j}; \quad
+\texttt{AVG\_RES\_Y}_j   \,=\, \frac{1}{N} \sum_{i=1}^n \, (y_{i,j} - \mu_{i,j})
+\end{equation*}
+Dividing by~$N$ (rather than~$n$) gives the averages for~$y_{i,j,l}$ (rather than~$y_{i,j}$).
+The total variance, and the standard deviation, for individual observations~$y_{i,j,l}$ is
+estimated from the total variance for response values~$y_{i,j}$ using independence assumption:
+$\Var y_{i,j} = \Var \sum_{l=1}^{N_i} y_{i,j,l} = \sum_{l=1}^{N_i} \Var y_{i,j,l}$.
+This allows us to estimate the sum of squares for~$y_{i,j,l}$ via the sum of squares for~$y_{i,j}$:
+\begin{equation*}
+\texttt{STDEV\_TOT\_Y}_j \,=\, 
+\Bigg[\frac{1}{N-1} \sum_{i=1}^n  \Big( y_{i,j} -  \frac{N_i}{N} \sum_{i'=1}^n  y_{i'\!,j}\Big)^2\Bigg]^{1/2}
+\end{equation*}
+Analogously, we estimate the standard deviation of the residual $y_{i,j,l} - \mu_{i,j,l}$:
+\begin{equation*}
+\texttt{STDEV\_RES\_Y}_j \,=\, 
+\Bigg[\frac{1}{N-m'} \,\sum_{i=1}^n  \Big( y_{i,j} - \mu_{i,j} -  \frac{N_i}{N} \sum_{i'=1}^n  (y_{i'\!,j} - \mu_{i'\!,j})\Big)^2\Bigg]^{1/2}
+\end{equation*}
+Here $m'=m$ if $m$ includes the intercept as a feature and $m'=m+1$ if it does not.
+The estimated standard deviations can be compared to the model-predicted residual standard deviation
+computed from the predicted means by the GLM variance formula and scaled by the dispersion:
+\begin{equation*}
+\texttt{PRED\_STDEV\_RES}_j \,=\, \Big[\frac{\texttt{disp}}{N} \, \sum_{i=1}^n \, v(\mu_{i,j})\Big]^{1/2}
+\end{equation*}
+We also compute the $R^2$ statistics for each column of~$Y$, see Table~\ref{table:GLMpred:R2} for details.
+We compute two versions of~$R^2$: in one version the residual sum-of-squares (RSS) includes any bias in
+the residual that might be present (due to the lack of, or inaccuracy in, the intercept); in the other
+version of~RSS the bias is subtracted by ``centering'' the residual.  In both cases we subtract the bias in the total
+sum-of-squares (in the denominator), and $m'$ equals $m$~with the intercept or $m+1$ without the intercept.
+
+\begin{table}[t]\small\centerline{%
+\begin{tabular}{|c|c|}
+\multicolumn{2}{c}{$R^2$ where the residual sum-of-squares includes the bias contribution:} \\
+\hline
+\multicolumn{1}{|l|}{\tt PLAIN\_R2${}_j \,\,= {}$} & \multicolumn{1}{l|}{\tt ADJUSTED\_R2${}_j \,\,= {}$} \\
+$ \displaystyle 1 - 
+\frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}%
+{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}}\!\! \sum\limits_{i'=1}^n  \! y_{i'\!,j} \Big)^{\! 2}} $ & 
+$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m}}  \, 
+\frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}%
+{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}}\!\! \sum\limits_{i'=1}^n  \! y_{i'\!,j} \Big)^{\! 2}} $ \\
+\hline
+\multicolumn{2}{c}{} \\
+\multicolumn{2}{c}{$R^2$ where the residual sum-of-squares is centered so that the bias is subtracted:} \\
+\hline
+\multicolumn{1}{|l|}{\tt PLAIN\_R2\_NOBIAS${}_j \,\,= {}$} & \multicolumn{1}{l|}{\tt ADJUSTED\_R2\_NOBIAS${}_j \,\,= {}$} \\
+$ \displaystyle 1 - 
+\frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}}\!\!
+    \sum\limits_{i'=1}^n  (y_{i'\!,j} \,{-}\, \mu_{i'\!,j}) \Big)^{\! 2}}%
+{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}}\!\! \sum\limits_{i'=1}^n  \! y_{i'\!,j} \Big)^{\! 2}} $ &
+$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m'}} \, 
+\frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}}\!\! 
+    \sum\limits_{i'=1}^n  (y_{i'\!,j} \,{-}\, \mu_{i'\!,j}) \Big)^{\! 2}}%
+{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}}\!\! \sum\limits_{i'=1}^n  \! y_{i'\!,j} \Big)^{\! 2}} $ \\
+\hline
+\end{tabular}}
+\caption{The $R^2$ statistics we compute in {\tt GLM-predict.dml}}
+\label{table:GLMpred:R2}
+\end{table}
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+The matrix of predicted means (if the response is numerical) or probabilities (if the response
+is categorical), see ``Description'' subsection above for more information.  Given {\tt Y}, we
+return some statistics in CSV format as described in Table~\ref{table:GLMpred:stats} and in the
+above text.
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+Note that in the examples below the value for ``{\tt disp}'' input argument
+is set arbitrarily.  The correct dispersion value should be computed from the training
+data during model estimation, or omitted if unknown (which sets it to~{\tt 1.0}).
+
+\smallskip\noindent
+Linear regression example:
+\par\hangindent=\parindent\noindent{\tt
+\hml -f GLM-predict.dml -nvargs dfam=1 vpow=0.0 link=1 lpow=1.0 disp=5.67
+  X=/user/biadmin/X.mtx B=/user/biadmin/B.mtx M=/user/biadmin/Means.mtx fmt=csv
+  Y=/user/biadmin/Y.mtx O=/user/biadmin/stats.csv
+
+}\smallskip\noindent
+Linear regression example, prediction only (no {\tt Y} given):
+\par\hangindent=\parindent\noindent{\tt
+\hml -f GLM-predict.dml -nvargs dfam=1 vpow=0.0 link=1 lpow=1.0
+  X=/user/biadmin/X.mtx B=/user/biadmin/B.mtx M=/user/biadmin/Means.mtx fmt=csv
+
+}\smallskip\noindent
+Binomial logistic regression example:
+\par\hangindent=\parindent\noindent{\tt
+\hml -f GLM-predict.dml -nvargs dfam=2 link=2 disp=3.0004464
+  X=/user/biadmin/X.mtx B=/user/biadmin/B.mtx M=/user/biadmin/Probabilities.mtx fmt=csv
+  Y=/user/biadmin/Y.mtx O=/user/biadmin/stats.csv
+
+}\smallskip\noindent
+Binomial probit regression example:
+\par\hangindent=\parindent\noindent{\tt
+\hml -f GLM-predict.dml -nvargs dfam=2 link=3 disp=3.0004464
+  X=/user/biadmin/X.mtx B=/user/biadmin/B.mtx M=/user/biadmin/Probabilities.mtx fmt=csv
+  Y=/user/biadmin/Y.mtx O=/user/biadmin/stats.csv
+
+}\smallskip\noindent
+Multinomial logistic regression example:
+\par\hangindent=\parindent\noindent{\tt
+\hml -f GLM-predict.dml -nvargs dfam=3 
+  X=/user/biadmin/X.mtx B=/user/biadmin/B.mtx M=/user/biadmin/Probabilities.mtx fmt=csv
+  Y=/user/biadmin/Y.mtx O=/user/biadmin/stats.csv
+
+}\smallskip\noindent
+Poisson regression with the log link example:
+\par\hangindent=\parindent\noindent{\tt
+\hml -f GLM-predict.dml -nvargs dfam=1 vpow=1.0 link=1 lpow=0.0 disp=3.45
+  X=/user/biadmin/X.mtx B=/user/biadmin/B.mtx M=/user/biadmin/Means.mtx fmt=csv
+  Y=/user/biadmin/Y.mtx O=/user/biadmin/stats.csv
+
+}\smallskip\noindent
+Gamma regression with the inverse (reciprocal) link example:
+\par\hangindent=\parindent\noindent{\tt
+\hml -f GLM-predict.dml -nvargs dfam=1 vpow=2.0 link=1 lpow=-1.0 disp=1.99118
+  X=/user/biadmin/X.mtx B=/user/biadmin/B.mtx M=/user/biadmin/Means.mtx fmt=csv
+  Y=/user/biadmin/Y.mtx O=/user/biadmin/stats.csv
+
+}

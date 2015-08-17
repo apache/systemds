@@ -1,0 +1,94 @@
+\newcommand{\UnivarScriptName}{\texttt{\tt Univar-Stats.dml}}
+\newcommand{\BivarScriptName}{\texttt{\tt bivar-stats.dml}}
+
+\newcommand{\OutputRowIDMinimum}{1}
+\newcommand{\OutputRowIDMaximum}{2}
+\newcommand{\OutputRowIDRange}{3}
+\newcommand{\OutputRowIDMean}{4}
+\newcommand{\OutputRowIDVariance}{5}
+\newcommand{\OutputRowIDStDeviation}{6}
+\newcommand{\OutputRowIDStErrorMean}{7}
+\newcommand{\OutputRowIDCoeffVar}{8}
+\newcommand{\OutputRowIDQuartiles}{?, 13, ?}
+\newcommand{\OutputRowIDMedian}{13}
+\newcommand{\OutputRowIDIQMean}{14}
+\newcommand{\OutputRowIDSkewness}{9}
+\newcommand{\OutputRowIDKurtosis}{10}
+\newcommand{\OutputRowIDStErrorSkewness}{11}
+\newcommand{\OutputRowIDStErrorCurtosis}{12}
+\newcommand{\OutputRowIDNumCategories}{15}
+\newcommand{\OutputRowIDMode}{16}
+\newcommand{\OutputRowIDNumModes}{17}
+\newcommand{\OutputRowText}[1]{\mbox{(output row~{#1})\hspace{0.5pt}:}}
+
+\newcommand{\NameStatR}{Pearson's correlation coefficient}
+\newcommand{\NameStatChi}{Pearson's~$\chi^2$}
+\newcommand{\NameStatPChi}{$P\textrm{-}$value of Pearson's~$\chi^2$}
+\newcommand{\NameStatV}{Cram\'er's~$V$}
+\newcommand{\NameStatEta}{Eta statistic}
+\newcommand{\NameStatF}{$F$~statistic}
+\newcommand{\NameStatRho}{Spearman's rank correlation coefficient}
+
+Descriptive statistics are used to quantitatively describe the main characteristics of the data.
+They provide meaningful summaries computed over different observations or data records
+collected in a study.  These summaries typically form the basis of the initial data exploration
+as part of a more extensive statistical analysis.  Such a quantitative analysis assumes that
+every variable (also known as, attribute, feature, or column) in the data has a specific
+\emph{level of measurement}~\cite{Stevens1946:scales}.
+
+The measurement level of a variable, often called as {\bf variable type}, can either be
+\emph{scale} or \emph{categorical}.  A \emph{scale} variable represents the data measured on
+an interval scale or ratio scale.  Examples of scale variables include `Height', `Weight',
+`Salary', and `Temperature'.  Scale variables are also referred to as \emph{quantitative}
+or \emph{continuous} variables.  In contrast, a \emph{categorical} variable has a fixed
+limited number of distinct values or categories.  Examples of categorical variables
+include `Gender', `Region', `Hair color', `Zipcode', and `Level of Satisfaction'.
+Categorical variables can further be classified into two types, \emph{nominal} and
+\emph{ordinal}, depending on whether the categories in the variable can be ordered via an
+intrinsic ranking.  For example, there is no meaningful ranking among distinct values in
+`Hair color' variable, while the categories in `Level of Satisfaction' can be ranked from
+highly dissatisfied to highly satisfied.
+
+The input dataset for descriptive statistics is provided in the form of a matrix, whose
+rows are the records (data points) and whose columns are the features (i.e.~variables).
+Some scripts allow this matrix to be vertically split into two or three matrices.  Descriptive
+statistics are computed over the specified features (columns) in the matrix.  Which
+statistics are computed depends on the types of the features.  It is important to keep
+in mind the following caveats and restrictions:
+\begin{Enumerate}
+\item  Given a finite set of data records, i.e.~a \emph{sample}, we take their feature
+values and compute their \emph{sample statistics}.  These statistics
+will vary from sample to sample even if the underlying distribution of feature values
+remains the same.  Sample statistics are accurate for the given sample only.
+If the goal is to estimate the \emph{distribution statistics} that are parameters of
+the (hypothesized) underlying distribution of the features, the corresponding sample
+statistics may sometimes be used as approximations, but their accuracy will vary.
+\item  In particular, the accuracy of the estimated distribution statistics will be low
+if the number of values in the sample is small.  That is, for small samples, the computed
+statistics may depend on the randomness of the individual sample values more than on
+the underlying distribution of the features.
+\item  The accuracy will also be low if the sample records cannot be assumed mutually
+independent and identically distributed (i.i.d.), that is, sampled at random from the
+same underlying distribution.  In practice, feature values in one record often depend
+on other features and other records, including unknown ones.
+\item  Most of the computed statistics will have low estimation accuracy in the presence of
+extreme values (outliers) or if the underlying distribution has heavy tails, for example
+obeys a power law.  However, a few of the computed statistics, such as the median and
+\NameStatRho{}, are \emph{robust} to outliers.
+\item  Some sample statistics are reported with their \emph{sample standard errors}
+in an attempt to quantify their accuracy as distribution parameter estimators.  But these
+sample standard errors, in turn, only estimate the underlying distribution's standard
+errors and will have low accuracy for small or \mbox{non-i.i.d.} samples, outliers in samples,
+or heavy-tailed distributions.
+\item  We assume that the quantitative (scale) feature columns do not contain missing
+values, infinite values, \texttt{NaN}s, or coded non-numeric values, unless otherwise
+specified.  We assume that each categorical feature column contains positive integers
+from 1 to the number of categories; for ordinal features, the natural order on
+the integers should coincide with the order on the categories.
+\end{Enumerate}
+
+\input{DescriptiveUnivarStats}
+
+\input{DescriptiveBivarStats}
+
+\input{DescriptiveStratStats}

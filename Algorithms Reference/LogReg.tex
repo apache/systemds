@@ -1,0 +1,266 @@
+\subsection{Multinomial Logistic Regression}
+
+\noindent{\bf Description}
+\smallskip
+
+Our logistic regression script performs both binomial and multinomial logistic regression.
+The script is given a dataset $(X, Y)$ where matrix $X$ has $m$~columns and matrix $Y$ has
+one column; both $X$ and~$Y$ have $n$~rows.  The rows of $X$ and~$Y$ are viewed as a collection
+of records: $(X, Y) = (x_i, y_i)_{i=1}^n$ where $x_i$ is a numerical vector of explanatory
+(feature) variables and $y_i$ is a categorical response variable.
+Each row~$x_i$ in~$X$ has size~\mbox{$\dim x_i = m$}, while its corresponding $y_i$ is an
+integer that represents the observed response value for record~$i$.
+
+The goal of logistic regression is to learn a linear model over the feature vector
+$x_i$ that can be used to predict how likely each categorical label is expected to
+be observed as the actual~$y_i$.
+Note that logistic regression predicts more than a label: it predicts the probability
+for every possible label.  The binomial case allows only two possible labels, the
+multinomial case has no such restriction.
+
+Just as linear regression estimates the mean value $\mu_i$ of a numerical response
+variable, logistic regression does the same for category label probabilities.
+In linear regression, the mean of $y_i$ is estimated as a linear combination of the features:
+$\mu_i = \beta_0 + \beta_1 x_{i,1} + \ldots + \beta_m x_{i,m} = \beta_0 + x_i\beta_{1:m}$.
+In logistic regression, the
+label probability has to lie between 0 and~1, so a link function is applied to connect
+it to $\beta_0 + x_i\beta_{1:m}$.  If there are just two possible category labels, for example
+0~and~1, the logistic link looks as follows:
+\begin{equation*}
+\Prob[y_i\,{=}\,1\mid x_i; \beta] \,=\, 
+\frac{e^{\,\beta_0 + x_i\beta_{1:m}}}{1 + e^{\,\beta_0 + x_i\beta_{1:m}}};
+\quad
+\Prob[y_i\,{=}\,0\mid x_i; \beta] \,=\, 
+\frac{1}{1 + e^{\,\beta_0 + x_i\beta_{1:m}}}
+\end{equation*}
+Here category label~0 serves as the \emph{baseline}, and function
+$\exp(\beta_0 + x_i\beta_{1:m})$
+shows how likely we expect to see ``$y_i = 1$'' in comparison to the baseline.
+Like in a loaded coin, the predicted odds of seeing 1~versus~0 are
+$\exp(\beta_0 + x_i\beta_{1:m})$ to~1,
+with each feature $x_{i,j}$ multiplying its own factor $\exp(\beta_j x_{i,j})$ to the odds.
+Given a large collection of pairs $(x_i, y_i)$, $i=1\ldots n$, logistic regression seeks
+to find the $\beta_j$'s that maximize the product of probabilities
+\hbox{$\Prob[y_i\mid x_i; \beta]$}
+for actually observed $y_i$-labels (assuming no regularization).
+
+Multinomial logistic regression~\cite{Agresti2002:CDA} extends this link to $k \geq 3$ possible
+categories.  Again we identify one category as the baseline, for example the $k$-th category.
+Instead of a coin, here we have a loaded multisided die, one side per category.  Each non-baseline
+category $l = 1\ldots k\,{-}\,1$ has its own vector $(\beta_{0,l}, \beta_{1,l}, \ldots, \beta_{m,l})$
+of regression parameters with the intercept, making up a matrix $B$ of size
+$(m\,{+}\,1)\times(k\,{-}\,1)$.  The predicted odds of seeing non-baseline category~$l$ versus
+the baseline~$k$ are $\exp\big(\beta_{0,l} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l}\big)$
+to~1, and the predicted probabilities are:
+\begin{align}
+l < k:\quad\Prob[y_i\,{=}\,\makebox[0.5em][c]{$l$}\mid x_i; B] \,\,\,{=}\,\,\,&
+\frac{\exp\big(\beta_{0,l} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l}\big)}%
+{1 \,+\, \sum_{l'=1}^{k-1}\exp\big(\beta_{0,l'} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l'}\big)};
+\label{eqn:mlogreg:nonbaseprob}\\
+\Prob[y_i\,{=}\,\makebox[0.5em][c]{$k$}\mid x_i; B] \,\,\,{=}\,\,\,& \frac{1}%
+{1 \,+\, \sum_{l'=1}^{k-1}\exp\big(\beta_{0,l'} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l'}\big)}.
+\label{eqn:mlogreg:baseprob}
+\end{align}
+The goal of the regression is to estimate the parameter matrix~$B$ from the provided dataset
+$(X, Y) = (x_i, y_i)_{i=1}^n$ by maximizing the product of \hbox{$\Prob[y_i\mid x_i; B]$}
+over the observed labels~$y_i$.  Taking its logarithm, negating, and adding a regularization term
+gives us a minimization objective:
+\begin{equation}
+f(B; X, Y) \,\,=\,\,
+-\sum_{i=1}^n \,\log \Prob[y_i\mid x_i; B] \,+\,
+\frac{\lambda}{2} \sum_{j=1}^m \sum_{l=1}^{k-1} |\beta_{j,l}|^2
+\,\,\to\,\,\min
+\label{eqn:mlogreg:loss}
+\end{equation}
+The optional regularization term is added to mitigate overfitting and degeneracy in the data;
+to reduce bias, the intercepts $\beta_{0,l}$ are not regularized.  Once the~$\beta_{j,l}$'s
+are accurately estimated, we can make predictions about the category label~$y$ for a new
+feature vector~$x$ using Eqs.~(\ref{eqn:mlogreg:nonbaseprob}) and~(\ref{eqn:mlogreg:baseprob}).
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}MultiLogReg.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} Y=}path/file
+{\tt{} B=}path/file
+{\tt{} Log=}path/file
+{\tt{} icpt=}int
+{\tt{} reg=}double
+{\tt{} tol=}double
+{\tt{} moi=}int
+{\tt{} mii=}int
+{\tt{} fmt=}format
+
+}
+
+
+\smallskip
+\noindent{\bf Arguments}
+\begin{Description}
+\item[{\tt X}:]
+Location (on HDFS) to read the input matrix of feature vectors; each row constitutes
+one feature vector.
+\item[{\tt Y}:]
+Location to read the input one-column matrix of category labels that correspond to
+feature vectors in~{\tt X}.  Note the following:\\
+-- Each non-baseline category label must be a positive integer.\\
+-- If all labels are positive, the largest represents the baseline category.\\
+-- If non-positive labels such as $-1$ or~$0$ are present, then they represent the (same)
+baseline category and are converted to label $\max(\texttt{Y})\,{+}\,1$.
+\item[{\tt B}:]
+Location to store the matrix of estimated regression parameters (the $\beta_{j, l}$'s),
+with the intercept parameters~$\beta_{0, l}$ at position {\tt B[}$m\,{+}\,1$, $l${\tt ]}
+if available.  The size of {\tt B} is $(m\,{+}\,1)\times (k\,{-}\,1)$ with the intercepts
+or $m \times (k\,{-}\,1)$ without the intercepts, one column per non-baseline category
+and one row per feature.
+\item[{\tt Log}:] (default:\mbox{ }{\tt " "})
+Location to store iteration-specific variables for monitoring and debugging purposes,
+see Table~\ref{table:mlogreg:log} for details.
+\item[{\tt icpt}:] (default:\mbox{ }{\tt 0})
+Intercept and shifting/rescaling of the features in~$X$:\\
+{\tt 0} = no intercept (hence no~$\beta_0$), no shifting/rescaling of the features;\\
+{\tt 1} = add intercept, but do not shift/rescale the features in~$X$;\\
+{\tt 2} = add intercept, shift/rescale the features in~$X$ to mean~0, variance~1
+\item[{\tt reg}:] (default:\mbox{ }{\tt 0.0})
+L2-regularization parameter (lambda)
+\item[{\tt tol}:] (default:\mbox{ }{\tt 0.000001})
+Tolerance (epsilon) used in the convergence criterion
+\item[{\tt moi}:] (default:\mbox{ }{\tt 100})
+Maximum number of outer (Fisher scoring) iterations
+\item[{\tt mii}:] (default:\mbox{ }{\tt 0})
+Maximum number of inner (conjugate gradient) iterations, or~0 if no maximum
+limit provided
+\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+
+\begin{table}[t]\small\centerline{%
+\begin{tabular}{|ll|}
+\hline
+Name & Meaning \\
+\hline
+{\tt LINEAR\_TERM\_MIN}  & The minimum value of $X \pxp B$, used to check for overflows \\
+{\tt LINEAR\_TERM\_MAX}  & The maximum value of $X \pxp B$, used to check for overflows \\
+{\tt NUM\_CG\_ITERS}     & Number of inner (Conj.\ Gradient) iterations in this outer iteration \\
+{\tt IS\_TRUST\_REACHED} & $1 = {}$trust region boundary was reached, $0 = {}$otherwise \\
+{\tt POINT\_STEP\_NORM}  & L2-norm of iteration step from old point (matrix $B$) to new point \\
+{\tt OBJECTIVE}          & The loss function we minimize (negative regularized log-likelihood) \\
+{\tt OBJ\_DROP\_REAL}    & Reduction in the objective during this iteration, actual value \\
+{\tt OBJ\_DROP\_PRED}    & Reduction in the objective predicted by a quadratic approximation \\
+{\tt OBJ\_DROP\_RATIO}   & Actual-to-predicted reduction ratio, used to update the trust region \\
+{\tt IS\_POINT\_UPDATED} & $1 = {}$new point accepted; $0 = {}$new point rejected, old point restored \\
+{\tt GRADIENT\_NORM}     & L2-norm of the loss function gradient (omitted if point is rejected) \\
+{\tt TRUST\_DELTA}       & Updated trust region size, the ``delta'' \\
+\hline
+\end{tabular}}
+\caption{
+The {\tt Log} file for multinomial logistic regression contains the above \mbox{per-}iteration
+variables in CSV format, each line containing triple (Name, Iteration\#, Value) with Iteration\#
+being~0 for initial values.}
+\label{table:mlogreg:log}
+\end{table}
+
+
+\noindent{\bf Details}
+\smallskip
+
+We estimate the logistic regression parameters via L2-regularized negative
+log-likelihood minimization~(\ref{eqn:mlogreg:loss}).
+The optimization method used in the script closely follows the trust region
+Newton method for logistic regression described in~\cite{Lin2008:logistic}.
+For convenience, let us make some changes in notation:
+\begin{Itemize}
+\item Convert the input vector of observed category labels into an indicator matrix $Y$
+of size $n \times k$ such that $Y_{i, l} = 1$ if the $i$-th category label is~$l$ and
+$Y_{i, l} = 0$ otherwise;
+\item Append an extra column of all ones, i.e.\ $(1, 1, \ldots, 1)^T$, as the
+$m\,{+}\,1$-st column to the feature matrix $X$ to represent the intercept;
+\item Append an all-zero column as the $k$-th column to $B$, the matrix of regression
+parameters, to represent the baseline category;
+\item Convert the regularization constant $\lambda$ into matrix $\Lambda$ of the same
+size as $B$, placing 0's into the $m\,{+}\,1$-st row to disable intercept regularization,
+and placing $\lambda$'s everywhere else.
+\end{Itemize}
+Now the ($n\,{\times}\,k$)-matrix of predicted probabilities given
+by (\ref{eqn:mlogreg:nonbaseprob}) and~(\ref{eqn:mlogreg:baseprob})
+and the objective function $f$ in~(\ref{eqn:mlogreg:loss}) have the matrix form
+\begin{align*}
+P \,\,&=\,\, \exp(XB) \,\,/\,\, \big(\exp(XB)\,1_{k\times k}\big)\\
+f \,\,&=\,\, - \,\,{\textstyle\sum} \,\,Y \cdot (X B)\, + \,
+{\textstyle\sum}\,\log\big(\exp(XB)\,1_{k\times 1}\big) \,+ \,
+(1/2)\,\, {\textstyle\sum} \,\,\Lambda \cdot B \cdot B
+\end{align*}
+where operations $\cdot\,$, $/$, $\exp$, and $\log$ are applied cellwise,
+and $\textstyle\sum$ denotes the sum of all cells in a matrix.
+The gradient of~$f$ with respect to~$B$ can be represented as a matrix too:
+\begin{equation*}
+\nabla f \,\,=\,\, X^T (P - Y) \,+\, \Lambda \cdot B
+\end{equation*}
+The Hessian $\mathcal{H}$ of~$f$ is a tensor, but, fortunately, the conjugate
+gradient inner loop of the trust region algorithm in~\cite{Lin2008:logistic}
+does not need to instantiate it.  We only need to multiply $\mathcal{H}$ by
+ordinary matrices of the same size as $B$ and $\nabla f$, and this can be done
+in matrix form:
+\begin{equation*}
+\mathcal{H}V \,\,=\,\, X^T \big( Q \,-\, P \cdot (Q\,1_{k\times k}) \big) \,+\,
+\Lambda \cdot V, \,\,\,\,\textrm{where}\,\,\,\,Q \,=\, P \cdot (XV)
+\end{equation*}
+At each Newton iteration (the \emph{outer} iteration) the minimization algorithm
+approximates the difference $\varDelta f(S; B) = f(B + S; X, Y) \,-\, f(B; X, Y)$
+attained in the objective function after a step $B \mapsto B\,{+}\,S$ by a
+second-degree formula
+\begin{equation*}
+\varDelta f(S; B) \,\,\,\approx\,\,\, (1/2)\,\,{\textstyle\sum}\,\,S \cdot \mathcal{H}S
+ \,+\, {\textstyle\sum}\,\,S\cdot \nabla f
+\end{equation*}
+This approximation is then minimized by trust-region conjugate gradient iterations
+(the \emph{inner} iterations) subject to the constraint $\|S\|_2 \leq \delta$.
+The trust region size $\delta$ is initialized as $0.5\sqrt{m}\,/ \max\nolimits_i \|x_i\|_2$
+and updated as described in~\cite{Lin2008:logistic}.
+Users can specify the maximum number of the outer and the inner iterations with
+input parameters {\tt moi} and {\tt mii}, respectively.  The iterative minimizer
+terminates successfully if $\|\nabla f\|_2 < \eps\,\|\nabla f_{B=0}\|_2$,
+where $\eps > 0$ is a tolerance supplied by the user via input parameter~{\tt tol}.
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+The estimated regression parameters (the $\hat{\beta}_{j, l}$) are populated into
+a matrix and written to an HDFS file whose path/name was provided as the ``{\tt B}''
+input argument.  Only the non-baseline categories ($1\leq l \leq k\,{-}\,1$) have
+their $\hat{\beta}_{j, l}$ in the output; to add the baseline category, just append
+a column of zeros.  If {\tt icpt=0} in the input command line, no intercepts are used
+and {\tt B} has size $m\times (k\,{-}\,1)$; otherwise {\tt B} has size 
+$(m\,{+}\,1)\times (k\,{-}\,1)$
+and the intercepts are in the $m\,{+}\,1$-st row.  If {\tt icpt=2}, then initially
+the feature columns in~$X$ are shifted to mean${} = 0$ and rescaled to variance${} = 1$.
+After the iterations converge, the $\hat{\beta}_{j, l}$'s are rescaled and shifted
+to work with the original features.
+
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+\hml -f MultiLogReg.dml -nvargs X=/user/biadmin/X.mtx 
+  Y=/user/biadmin/Y.mtx B=/user/biadmin/B.mtx fmt=csv
+  icpt=2 reg=1.0 tol=0.0001 moi=100 mii=10 Log=/user/biadmin/log.csv
+
+}
+
+
+\smallskip
+\noindent{\bf References}
+\begin{itemize}
+\item A.~Agresti.
+\newblock {\em Categorical Data Analysis}.
+\newblock Wiley Series in Probability and Statistics. Wiley-Interscience,  second edition, 2002.
+\end{itemize}

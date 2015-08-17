@@ -1,0 +1,121 @@
+\subsection{Principle Component Analysis}
+\label{pca}
+
+\noindent{\bf Description}
+
+Principle Component Analysis (PCA) is a simple, non-parametric method to transform the given data set with possibly correlated columns into a set of linearly uncorrelated or orthogonal columns, called {\em principle components}. The principle components are ordered in such a way that the first component accounts for the largest possible variance, followed by remaining principle components in the decreasing order of the amount of variance captured from the data. PCA is often used as a dimensionality reduction technique, where the original data is projected or rotated onto a low-dimensional space with basis vectors defined by top-$K$ (for a given value of $K$) principle components.
+\\
+
+\noindent{\bf Usage}
+
+\begin{tabbing}
+\texttt{-f} \textit{path}/\texttt{PCA.dml -nvargs} 
+\=\texttt{INPUT=}\textit{path}/\textit{file} 
+  \texttt{K=}\textit{int} \\
+\>\texttt{CENTER=}\textit{0/1}
+  \texttt{SCALE=}\textit{0/1}\\
+\>\texttt{PROJDATA=}\textit{0/1}
+  \texttt{OFMT=}\textit{csv}/\textit{text}\\
+\>\texttt{MODEL=}\textit{path}$\vert$\textit{file}
+  \texttt{OUTPUT=}\textit{path}/\textit{file}
+\end{tabbing}
+
+\noindent{\bf Arguments}
+
+\begin{itemize}
+\item INPUT: Location (on HDFS) to read the input matrix.
+\item K: Indicates dimension of the new vector space constructed from $K$ principle components. It must be a value between $1$ and the number of columns in the input data.
+\item CENTER (default: {\tt 0}): Indicates whether or not to {\em center} input data prior to the computation of principle components.
+\item SCALE (default: {\tt 0}): Indicates whether or not to {\em scale} input data prior to the computation of principle components.
+\item PROJDATA: Indicates whether or not the input data must be projected on to new vector space defined over principle components.
+\item OFMT (default: {\tt csv}): Specifies the output format. Choice of comma-separated values (csv) or as a sparse-matrix (text).
+\item MODEL: Either the location (on HDFS) where the computed model is stored; or the location of an existing model.
+\item OUTPUT: Location (on HDFS) to store the data rotated on to the new vector space.
+\end{itemize}
+
+\noindent{\bf Details}
+
+Principle Component Analysis (PCA) is a non-parametric procedure for orthogonal linear transformation of the input data to a new coordinate system, such that the greatest variance by some projection of the data comes to lie on the first coordinate (called the first principal component), the second greatest variance on the second coordinate, and so on. In other words, PCA first selects a normalized direction in $m$-dimensional space ($m$ is the number of columns in the input data) along which the variance in input data is maximized -- this is referred to as the first principle component. It then repeatedly finds other directions (principle components) in which the variance is maximized. At every step, PCA restricts the search for only those directions that are perpendicular to all previously selected directions. By doing so, PCA aims to reduce the redundancy among input variables. To understand the notion of redundancy, consider an extreme scenario with a data set comprising of two variables, where the first one denotes some quantity expressed in meters, and the other variable represents the same quantity but in inches. Both these variables evidently capture redundant information, and hence one of them can be removed. In a general scenario, keeping solely the linear combination of input variables would both express the data more concisely and reduce the number of variables. This is why PCA is often used as a dimensionality reduction technique.
+
+The specific method to compute such a new coordinate system is as follows -- compute a covariance matrix $C$ that measures the strength of correlation among all pairs of variables in the input data; factorize $C$ according to eigen decomposition to calculate its eigenvalues and eigenvectors; and finally, order eigenvectors in the decreasing order of their corresponding eigenvalue. The computed eigenvectors (also known as {\em loadings}) define the new coordinate system and the square root of eigen values provide the amount of variance in the input data explained by each coordinate or eigenvector. 
+\\
+
+%As an example, consider the data in Table~\ref{tab:pca_data}. 
+\begin{comment}
+\begin{table}
+\parbox{.35\linewidth}{
+\centering
+\begin{tabular}{cc}
+  \hline
+  x & y \\
+  \hline
+  2.5 & 2.4  \\
+  0.5 & 0.7  \\
+  2.2 & 2.9  \\
+  1.9 & 2.2  \\
+  3.1 & 3.0  \\
+  2.3 & 2.7  \\
+  2 & 1.6  \\
+  1 & 1.1  \\
+  1.5 & 1.6  \\
+  1.1 & 0.9  \\
+	\hline
+\end{tabular}
+\caption{Input Data}
+\label{tab:pca_data}
+}
+\hfill
+\parbox{.55\linewidth}{
+\centering
+\begin{tabular}{cc}
+  \hline
+  x & y \\
+  \hline
+  .69  & .49  \\
+  -1.31  & -1.21  \\
+  .39  & .99  \\
+  .09  & .29  \\
+  1.29  & 1.09  \\
+  .49  & .79  \\
+  .19  & -.31  \\
+  -.81  & -.81  \\
+  -.31  & -.31  \\
+  -.71  & -1.01  \\
+  \hline
+\end{tabular}
+\caption{Data after centering and scaling}
+\label{tab:pca_scaled_data}
+}
+\end{table}
+\end{comment}
+
+\noindent{\bf Returns}
+When MODEL is not provided, PCA procedure is applied on INPUT data to generate MODEL as well as the rotated data OUTPUT (if PROJDATA is set to $1$) in the new coordinate system. 
+The produced model consists of basis vectors MODEL$/dominant.eigen.vectors$ for the new coordinate system; eigen values MODEL$/dominant.eigen.values$; and the standard deviation MODEL$/dominant.eigen.standard.deviations$ of principle components.
+When MODEL is provided, INPUT data is rotated according to the coordinate system defined by MODEL$/dominant.eigen.vectors$. The resulting data is stored at location OUTPUT.
+\\
+
+\noindent{\bf Examples}
+
+\begin{verbatim}
+hadoop jar SystemML.jar -f PCA.dml -nvargs 
+            INPUT=/user/biuser/input.mtx  K=10
+            CENTER=1  SCALE=1
+            OFMT=csv PROJDATA=1
+				    # location to store model and rotated data
+            OUTPUT=/user/biuser/pca_output/   
+\end{verbatim}
+
+\begin{verbatim}
+hadoop jar SystemML.jar -f PCA.dml -nvargs 
+            INPUT=/user/biuser/test_input.mtx  K=10
+            CENTER=1  SCALE=1
+            OFMT=csv PROJDATA=1
+				    # location of an existing model
+            MODEL=/user/biuser/pca_output/       
+				    # location of rotated data
+            OUTPUT=/user/biuser/test_output.mtx  
+\end{verbatim}
+
+
+

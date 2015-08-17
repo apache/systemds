@@ -1,0 +1,142 @@
+\documentclass[letter]{article}
+\usepackage{graphicx,amsmath,amssymb,amsthm,subfigure,color,url,multirow,rotating,comment}
+%\usepackage{tikz}
+\usepackage[normalem]{ulem}
+\usepackage[np,autolanguage]{numprint}
+
+\usepackage[]{hyperref}
+\hypersetup{
+    unicode=false,          % non-Latin characters in Acrobat&#146;s bookmarks
+    pdftoolbar=true,        % show Acrobat&#146;s toolbar?
+    pdfmenubar=true,        % show Acrobat&#146;s menu?
+    pdffitwindow=true,      % window fit to page when opened
+    pdfstartview={FitV},    % fits the width of the page to the window
+    pdftitle={SystemML Algorithms Reference},    % title
+    pdfauthor={SystemML Team}, % author
+    pdfsubject={Documentation},   % subject of the document
+    pdfkeywords={},         % list of keywords
+    pdfnewwindow=true,      % links in new window
+    bookmarksnumbered=true, % put section numbers in bookmarks
+    bookmarksopen=true,     % open up bookmark tree
+    bookmarksopenlevel=1,   % \maxdimen level to which bookmarks are open
+    colorlinks=true,        % false: boxed links; true: colored links
+    linkcolor=black,        % color of internal links  
+    citecolor=blue,         % color of links to bibliography
+    filecolor=black,        % color of file links
+    urlcolor=black          % color of external links
+}
+
+
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+
+\newcommand{\Paragraph}[1]{\vspace*{1ex} \noindent {\bf #1} \hspace*{1ex}}
+\newenvironment{Itemize}{\vspace{-0.5ex}\begin{itemize}\setlength{\itemsep}{-0.2ex}
+}{\end{itemize}\vspace{-0.5ex}}
+\newenvironment{Enumerate}{\vspace{-0.5ex}\begin{enumerate}\setlength{\itemsep}{-0.2ex}
+}{\end{enumerate}\vspace{-0.5ex}}
+\newenvironment{Description}{\vspace{-0.5ex}\begin{description}\setlength{\itemsep}{-0.2ex}
+}{\end{description}\vspace{-0.5ex}}
+
+
+\newcommand{\SystemML}{\texttt{SystemML} }
+\newcommand{\hml}{\texttt{hadoop jar SystemML.jar} }
+\newcommand{\pxp}{\mathbin{\texttt{\%\textasteriskcentered\%}}}
+\newcommand{\todo}[1]{{{\color{red}TODO: #1}}}
+\newcommand{\Normal}{\ensuremath{\mathop{\mathrm{Normal}}\nolimits}}
+\newcommand{\Prob}{\ensuremath{\mathop{\mathrm{Prob}\hspace{0.5pt}}\nolimits}}
+\newcommand{\E}{\ensuremath{\mathop{\mathrm{E}}\nolimits}}
+\newcommand{\mean}{\ensuremath{\mathop{\mathrm{mean}}\nolimits}}
+\newcommand{\Var}{\ensuremath{\mathop{\mathrm{Var}}\nolimits}}
+\newcommand{\Cov}{\ensuremath{\mathop{\mathrm{Cov}}\nolimits}}
+\newcommand{\stdev}{\ensuremath{\mathop{\mathrm{st.dev}}\nolimits}}
+\newcommand{\atan}{\ensuremath{\mathop{\mathrm{arctan}}\nolimits}}
+\newcommand{\diag}{\ensuremath{\mathop{\mathrm{diag}}\nolimits}}
+\newcommand{\const}{\ensuremath{\mathop{\mathrm{const}}\nolimits}}
+\newcommand{\eps}{\varepsilon}
+
+\sloppy
+
+%%%%%%%%%%%%%%%%%%%%% 
+% header
+%%%%%%%%%%%%%%%%%%%%%
+
+\title{\LARGE{{\SystemML Algorithms Reference}}} 
+\date{\today}
+
+%%%%%%%%%%%%%%%%%%%%%
+% document start
+%%%%%%%%%%%%%%%%%%%%%
+\begin{document}	
+
+%\pagenumbering{roman}
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Descriptive Statistics}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{DescriptiveStats}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Classification}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{LogReg}
+
+\subsection{Support Vector Machines}
+
+\input{BinarySVM}
+
+\input{MultiSVM}
+
+\input{NaiveBayes}
+
+%\input{DecisionTrees}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Clustering}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{Kmeans}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Regression}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{LinReg}
+
+\newpage
+
+\input{GLM}
+
+\newpage
+
+\input{GLMpredict.tex}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Matrix Factorization}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{pca}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%{\color{red}\section{Sequence Mining}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%\section{Matrix Factorization}
+
+%%{\color{red}\subsection{GNMF}}
+
+\bibliographystyle{abbrv}
+
+\bibliography{SystemML_ALgorithms_Reference}
+
+	
+%%%%%%%%%%%%%%%%%%%%%
+% document end
+%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+
+

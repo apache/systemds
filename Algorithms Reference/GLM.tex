@@ -1,0 +1,409 @@
+\subsection{Generalized Linear Models (GLM)}
+
+\noindent{\bf Description}
+\smallskip
+
+Generalized Linear Models~\cite{Gill2000:GLM,McCullagh1989:GLM,Nelder1972:GLM}
+extend the methodology of linear and logistic regression to a variety of
+distributions commonly assumed as noise effects in the response variable.
+As before, we are given a collection
+of records $(x_1, y_1)$, \ldots, $(x_n, y_n)$ where $x_i$ is a numerical vector of
+explanatory (feature) variables of size~\mbox{$\dim x_i = m$}, and $y_i$ is the
+response (dependent) variable observed for this vector.  GLMs assume that some
+linear combination of the features in~$x_i$ determines the \emph{mean}~$\mu_i$
+of~$y_i$, while the observed $y_i$ is a random outcome of a noise distribution
+$\Prob[y\mid \mu_i]\,$\footnote{$\Prob[y\mid \mu_i]$ is given by a density function
+if $y$ is continuous.}
+with that mean~$\mu_i$:
+\begin{equation*}
+x_i \,\,\,\,\mapsto\,\,\,\, \eta_i = \beta_0 + \sum\nolimits_{j=1}^m \beta_j x_{i,j} 
+\,\,\,\,\mapsto\,\,\,\, \mu_i \,\,\,\,\mapsto \,\,\,\, y_i \sim \Prob[y\mid \mu_i]
+\end{equation*}
+
+In linear regression the response mean $\mu_i$ \emph{equals} some linear combination
+over~$x_i$, denoted above by~$\eta_i$.
+In logistic regression with $y\in\{0, 1\}$ (Bernoulli) the mean of~$y$ is the same
+as $\Prob[y=1]$ and equals $1/(1+e^{-\eta_i})$, the logistic function of~$\eta_i$.
+In GLM, $\mu_i$ and $\eta_i$ can be related via any given smooth monotone function
+called the \emph{link function}: $\eta_i = g(\mu_i)$.  The unknown linear combination
+parameters $\beta_j$ are assumed to be the same for all records.
+
+The goal of the regression is to estimate the parameters~$\beta_j$ from the observed
+data.  Once the~$\beta_j$'s are accurately estimated, we can make predictions
+about~$y$ for a new feature vector~$x$.  To do so, compute $\eta$ from~$x$ and use
+the inverted link function $\mu = g^{-1}(\eta)$ to compute the mean $\mu$ of~$y$;
+then use the distribution $\Prob[y\mid \mu]$ to make predictions about~$y$.
+Both $g(\mu)$ and $\Prob[y\mid \mu]$ are user-provided.  Our GLM script supports
+a standard set of distributions and link functions, see below for details.
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}GLM.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} Y=}path/file
+{\tt{} B=}path/file
+{\tt{} fmt=}format
+{\tt{} O=}path/file
+{\tt{} Log=}path/file
+{\tt{} dfam=}int
+{\tt{} vpow=}double
+{\tt{} link=}int
+{\tt{} lpow=}double
+{\tt{} yneg=}double
+{\tt{} icpt=}int
+{\tt{} reg=}double
+{\tt{} tol=}double
+{\tt{} disp=}double
+{\tt{} moi=}int
+{\tt{} mii=}int
+
+}
+
+\smallskip
+\noindent{\bf Arguments}
+\begin{Description}
+\item[{\tt X}:]
+Location (on HDFS) to read the matrix of feature vectors; each row constitutes
+an example.
+\item[{\tt Y}:]
+Location to read the response matrix, which may have 1 or 2 columns
+\item[{\tt B}:]
+Location to store the estimated regression parameters (the $\beta_j$'s), with the
+intercept parameter~$\beta_0$ at position {\tt B[}$m\,{+}\,1$, {\tt 1]} if available
+\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+see read/write functions in SystemML Language Reference for details.
+\item[{\tt O}:] (default:\mbox{ }{\tt " "})
+Location to write certain summary statistics described in Table~\ref{table:GLM:stats},
+by default it is standard output.
+\item[{\tt Log}:] (default:\mbox{ }{\tt " "})
+Location to store iteration-specific variables for monitoring and debugging purposes,
+see Table~\ref{table:GLM:log} for details.
+\item[{\tt dfam}:] (default:\mbox{ }{\tt 1})
+Distribution family code to specify $\Prob[y\mid \mu]$, see Table~\ref{table:commonGLMs}:\\
+{\tt 1} = power distributions with $\Var(y) = \mu^{\alpha}$;
+{\tt 2} = binomial or Bernoulli
+\item[{\tt vpow}:] (default:\mbox{ }{\tt 0.0})
+When {\tt dfam=1}, this provides the~$q$ in $\Var(y) = a\mu^q$, the power
+dependence of the variance of~$y$ on its mean.  In particular, use:\\
+{\tt 0.0} = Gaussian,
+{\tt 1.0} = Poisson,
+{\tt 2.0} = Gamma,
+{\tt 3.0} = inverse Gaussian
+\item[{\tt link}:] (default:\mbox{ }{\tt 0})
+Link function code to determine the link function~$\eta = g(\mu)$:\\
+{\tt 0} = canonical link (depends on the distribution family), see Table~\ref{table:commonGLMs};\\
+{\tt 1} = power functions,
+{\tt 2} = logit,
+{\tt 3} = probit,
+{\tt 4} = cloglog,
+{\tt 5} = cauchit
+\item[{\tt lpow}:] (default:\mbox{ }{\tt 1.0})
+When {\tt link=1}, this provides the~$s$ in $\eta = \mu^s$, the power link
+function; {\tt lpow=0.0} gives the log link $\eta = \log\mu$.  Common power links:\\
+{\tt -2.0} = $1/\mu^2$,
+{\tt -1.0} = reciprocal,
+{\tt 0.0} = log,
+{\tt 0.5} = sqrt,
+{\tt 1.0} = identity
+\item[{\tt yneg}:] (default:\mbox{ }{\tt 0.0})
+When {\tt dfam=2} and the response matrix $Y$ has 1~column,
+this specifies the $y$-value used for Bernoulli ``No'' label.
+All other $y$-values are treated as the ``Yes'' label.
+For example, {\tt yneg=-1.0} may be used when $y\in\{-1, 1\}$;
+either {\tt yneg=1.0} or {\tt yneg=2.0} may be used when $y\in\{1, 2\}$.
+\item[{\tt icpt}:] (default:\mbox{ }{\tt 0})
+Intercept and shifting/rescaling of the features in~$X$:\\
+{\tt 0} = no intercept (hence no~$\beta_0$), no shifting/rescaling of the features;\\
+{\tt 1} = add intercept, but do not shift/rescale the features in~$X$;\\
+{\tt 2} = add intercept, shift/rescale the features in~$X$ to mean~0, variance~1
+\item[{\tt reg}:] (default:\mbox{ }{\tt 0.0})
+L2-regularization parameter (lambda)
+\item[{\tt tol}:] (default:\mbox{ }{\tt 0.000001})
+Tolerance (epsilon) used in the convergence criterion: we terminate the outer iterations
+when the deviance changes by less than this factor; see below for details
+\item[{\tt disp}:] (default:\mbox{ }{\tt 0.0})
+Dispersion parameter, or {\tt 0.0} to estimate it from data
+\item[{\tt moi}:] (default:\mbox{ }{\tt 200})
+Maximum number of outer (Fisher scoring) iterations
+\item[{\tt mii}:] (default:\mbox{ }{\tt 0})
+Maximum number of inner (conjugate gradient) iterations, or~0 if no maximum
+limit provided
+\end{Description}
+
+
+\begin{table}[t]\small\centerline{%
+\begin{tabular}{|ll|}
+\hline
+Name & Meaning \\
+\hline
+{\tt TERMINATION\_CODE}  & A positive integer indicating success/failure as follows: \\
+                         & $1 = {}$Converged successfully;
+                           $2 = {}$Maximum \# of iterations reached; \\
+                         & $3 = {}$Input ({\tt X}, {\tt Y}) out of range;
+                           $4 = {}$Distribution/link not supported \\
+{\tt BETA\_MIN}          & Smallest beta value (regression coefficient), excluding the intercept \\
+{\tt BETA\_MIN\_INDEX}   & Column index for the smallest beta value \\
+{\tt BETA\_MAX}          & Largest beta value (regression coefficient), excluding the intercept \\
+{\tt BETA\_MAX\_INDEX}   & Column index for the largest beta value \\
+{\tt INTERCEPT}          & Intercept value, or NaN if there is no intercept (if {\tt icpt=0}) \\
+{\tt DISPERSION}         & Dispersion used to scale deviance, provided in {\tt disp} input argument \\
+                         & or estimated (same as {\tt DISPERSION\_EST}) if {\tt disp} argument is${} \leq 0$ \\
+{\tt DISPERSION\_EST}    & Dispersion estimated from the dataset \\
+{\tt DEVIANCE\_UNSCALED} & Deviance from the saturated model, assuming dispersion${} = 1.0$ \\
+{\tt DEVIANCE\_SCALED}   & Deviance from the saturated model, scaled by {\tt DISPERSION} value \\
+\hline
+\end{tabular}}
+\caption{Besides~$\beta$, GLM regression script computes a few summary statistics listed above.
+They are provided in CSV format, one comma-separated name-value pair per each line.}
+\label{table:GLM:stats}
+\end{table}
+
+
+
+
+
+
+\begin{table}[t]\small\centerline{%
+\begin{tabular}{|ll|}
+\hline
+Name & Meaning \\
+\hline
+{\tt NUM\_CG\_ITERS}     & Number of inner (Conj.\ Gradient) iterations in this outer iteration \\
+{\tt IS\_TRUST\_REACHED} & $1 = {}$trust region boundary was reached, $0 = {}$otherwise \\
+{\tt POINT\_STEP\_NORM}  & L2-norm of iteration step from old point ($\beta$-vector) to new point \\
+{\tt OBJECTIVE}          & The loss function we minimize (negative partial log-likelihood) \\
+{\tt OBJ\_DROP\_REAL}    & Reduction in the objective during this iteration, actual value \\
+{\tt OBJ\_DROP\_PRED}    & Reduction in the objective predicted by a quadratic approximation \\
+{\tt OBJ\_DROP\_RATIO}   & Actual-to-predicted reduction ratio, used to update the trust region \\
+{\tt GRADIENT\_NORM}     & L2-norm of the loss function gradient (omitted if point is rejected) \\
+{\tt LINEAR\_TERM\_MIN}  & The minimum value of $X \pxp \beta$, used to check for overflows \\
+{\tt LINEAR\_TERM\_MAX}  & The maximum value of $X \pxp \beta$, used to check for overflows \\
+{\tt IS\_POINT\_UPDATED} & $1 = {}$new point accepted; $0 = {}$new point rejected, old point restored \\
+{\tt TRUST\_DELTA}       & Updated trust region size, the ``delta'' \\
+\hline
+\end{tabular}}
+\caption{
+The {\tt Log} file for GLM regression contains the above \mbox{per-}iteration
+variables in CSV format, each line containing triple (Name, Iteration\#, Value) with Iteration\#
+being~0 for initial values.}
+\label{table:GLM:log}
+\end{table}
+
+\begin{table}[t]\hfil
+\begin{tabular}{|ccccccc|}
+\hline
+\multicolumn{4}{|c}{INPUT PARAMETERS}              & Distribution  & Link      & Cano- \\
+{\tt dfam} & {\tt vpow} & {\tt link} & {\tt\ lpow} & family        & function  & nical?\\
+\hline
+{\tt 1}    & {\tt 0.0}  & {\tt 1}    & {\tt -1.0}  & Gaussian      & inverse   &       \\
+{\tt 1}    & {\tt 0.0}  & {\tt 1}    & {\tt\ 0.0}  & Gaussian      & log       &       \\
+{\tt 1}    & {\tt 0.0}  & {\tt 1}    & {\tt\ 1.0}  & Gaussian      & identity  & Yes   \\
+{\tt 1}    & {\tt 1.0}  & {\tt 1}    & {\tt\ 0.0}  & Poisson       & log       & Yes   \\
+{\tt 1}    & {\tt 1.0}  & {\tt 1}    & {\tt\ 0.5}  & Poisson       & sq.root   &       \\
+{\tt 1}    & {\tt 1.0}  & {\tt 1}    & {\tt\ 1.0}  & Poisson       & identity  &       \\
+{\tt 1}    & {\tt 2.0}  & {\tt 1}    & {\tt -1.0}  & Gamma         & inverse   & Yes   \\
+{\tt 1}    & {\tt 2.0}  & {\tt 1}    & {\tt\ 0.0}  & Gamma         & log       &       \\
+{\tt 1}    & {\tt 2.0}  & {\tt 1}    & {\tt\ 1.0}  & Gamma         & identity  &       \\
+{\tt 1}    & {\tt 3.0}  & {\tt 1}    & {\tt -2.0}  & Inverse Gauss & $1/\mu^2$ & Yes   \\
+{\tt 1}    & {\tt 3.0}  & {\tt 1}    & {\tt -1.0}  & Inverse Gauss & inverse   &       \\
+{\tt 1}    & {\tt 3.0}  & {\tt 1}    & {\tt\ 0.0}  & Inverse Gauss & log       &       \\
+{\tt 1}    & {\tt 3.0}  & {\tt 1}    & {\tt\ 1.0}  & Inverse Gauss & identity  &       \\
+\hline
+{\tt 2}    & {\tt  *}   & {\tt 1}    & {\tt\ 0.0}  & Binomial      & log       &       \\
+{\tt 2}    & {\tt  *}   & {\tt 1}    & {\tt\ 0.5}  & Binomial      & sq.root   &       \\
+{\tt 2}    & {\tt  *}   & {\tt 2}    & {\tt\  *}   & Binomial      & logit     & Yes   \\
+{\tt 2}    & {\tt  *}   & {\tt 3}    & {\tt\  *}   & Binomial      & probit    &       \\
+{\tt 2}    & {\tt  *}   & {\tt 4}    & {\tt\  *}   & Binomial      & cloglog   &       \\
+{\tt 2}    & {\tt  *}   & {\tt 5}    & {\tt\  *}   & Binomial      & cauchit   &       \\
+\hline
+\end{tabular}\hfil
+\caption{Common GLM distribution families and link functions.
+(Here ``{\tt *}'' stands for ``any value.'')}
+\label{table:commonGLMs}
+\end{table}
+
+\noindent{\bf Details}
+\smallskip
+
+In GLM, the noise distribution $\Prob[y\mid \mu]$ of the response variable~$y$
+given its mean~$\mu$ is restricted to have the \emph{exponential family} form
+\begin{equation}
+Y \sim\, \Prob[y\mid \mu] \,=\, \exp\left(\frac{y\theta - b(\theta)}{a}
++ c(y, a)\right),\,\,\textrm{where}\,\,\,\mu = \E(Y) = b'(\theta).
+\label{eqn:GLM}
+\end{equation}
+Changing the mean in such a distribution simply multiplies all \mbox{$\Prob[y\mid \mu]$}
+by~$e^{\,y\hspace{0.2pt}\theta/a}$ and rescales them so that they again integrate to~1.
+Parameter $\theta$ is called \emph{canonical}, and the function $\theta = b'^{\,-1}(\mu)$
+that relates it to the mean is called the~\emph{canonical link}; constant~$a$ is called
+\emph{dispersion} and rescales the variance of~$y$.  Many common distributions can be put
+into this form, see Table~\ref{table:commonGLMs}.  The canonical parameter~$\theta$
+is often chosen to coincide with~$\eta$, the linear combination of the regression features;
+other choices for~$\eta$ are possible too.
+
+Rather than specifying the canonical link, GLM distributions are commonly defined
+by their variance $\Var(y)$ as the function of the mean~$\mu$.  It can be shown
+from Eq.~(\ref{eqn:GLM}) that $\Var(y) = a\,b''(\theta) = a\,b''(b'^{\,-1}(\mu))$.
+For example, for the Bernoulli distribution $\Var(y) = \mu(1-\mu)$, for the Poisson
+distribution \mbox{$\Var(y) = \mu$}, and for the Gaussian distribution
+$\Var(y) = a\cdot 1 = \sigma^2$.
+It turns out that for many common distributions $\Var(y) = a\mu^q$, a power function.
+We support all distributions where $\Var(y) = a\mu^q$, as well as the Bernoulli and
+the binomial distributions.
+
+For distributions with $\Var(y) = a\mu^q$ the canonical link is also a power function,
+namely $\theta = \mu^{1-q}/(1-q)$, except for the Poisson ($q = 1$) whose canonical link is
+$\theta = \log\mu$.  We support all power link functions in the form $\eta = \mu^s$,
+dropping any constant factor, with $\eta = \log\mu$ for $s=0$.  The binomial distribution
+has its own family of link functions, which includes logit (the canonical link),
+probit, cloglog, and cauchit (see Table~\ref{table:binomial_links}); we support these
+only for the binomial and Bernoulli distributions.  Links and distributions are specified
+via four input parameters: {\tt dfam}, {\tt vpow}, {\tt link}, and {\tt lpow} (see
+Table~\ref{table:commonGLMs}).
+
+\begin{table}[t]\hfil
+\begin{tabular}{|cc|cc|}
+\hline
+Name & Link function & Name & Link function \\
+\hline
+Logit   & $\displaystyle \eta = 1 / \big(1 + e^{-\mu}\big)^{\mathstrut}$ &
+Cloglog & $\displaystyle \eta = \log \big(\!- \log(1 - \mu)\big)^{\mathstrut}$ \\
+Probit  & $\displaystyle \mu  = \frac{1}{\sqrt{2\pi}}\int\nolimits_{-\infty_{\mathstrut}}^{\,\eta\mathstrut}
+          \!\!\!\!\! e^{-\frac{t^2}{2}} dt$ & 
+Cauchit & $\displaystyle \eta = \tan\pi(\mu - 1/2)$ \\
+\hline
+\end{tabular}\hfil
+\caption{The supported non-power link functions for the Bernoulli and the binomial
+distributions.  (Here $\mu$~is the Bernoulli mean.)}
+\label{table:binomial_links}
+\end{table}
+
+The observed response values are provided to the regression script as matrix~$Y$
+having 1 or 2 columns.  If a power distribution family is selected ({\tt dfam=1}),
+matrix $Y$ must have 1~column that provides $y_i$ for each~$x_i$ in the corresponding
+row of matrix~$X$.  When {\tt dfam=2} and $Y$ has 1~column, we assume the Bernoulli
+distribution for $y_i\in\{y_{\mathrm{neg}}, y_{\mathrm{pos}}\}$ with $y_{\mathrm{neg}}$
+from the input parameter {\tt yneg} and with $y_{\mathrm{pos}} \neq y_{\mathrm{neg}}$.  
+When {\tt dfam=2} and $Y$ has 2~columns, we assume the
+binomial distribution; for each row~$i$ in~$X$, cells $Y[i, 1]$ and $Y[i, 2]$ provide
+the positive and the negative binomial counts respectively.  Internally we convert
+the 1-column Bernoulli into the 2-column binomial with 0-versus-1 counts.
+
+We estimate the regression parameters via L2-regularized negative log-likelihood
+minimization:
+\begin{equation*}
+f(\beta; X, Y) \,\,=\,\, -\sum\nolimits_{i=1}^n \big(y_i\theta_i - b(\theta_i)\big)
+\,+\,(\lambda/2) \sum\nolimits_{j=1}^m \beta_j^2\,\,\to\,\,\min
+\end{equation*}
+where $\theta_i$ and $b(\theta_i)$ are from~(\ref{eqn:GLM}); note that $a$
+and $c(y, a)$ are constant w.r.t.~$\beta$ and can be ignored here.
+The canonical parameter $\theta_i$ depends on both $\beta$ and~$x_i$:
+\begin{equation*}
+\theta_i \,\,=\,\, b'^{\,-1}(\mu_i) \,\,=\,\, b'^{\,-1}\big(g^{-1}(\eta_i)\big) \,\,=\,\,
+\big(b'^{\,-1}\circ g^{-1}\big)\left(\beta_0 + \sum\nolimits_{j=1}^m \beta_j x_{i,j}\right)
+\end{equation*}
+The user-provided (via {\tt reg}) regularization coefficient $\lambda\geq 0$ can be used
+to mitigate overfitting and degeneracy in the data.  Note that the intercept is never
+regularized.
+
+Our iterative minimizer for $f(\beta; X, Y)$ uses the Fisher scoring approximation
+to the difference $\varDelta f(z; \beta) = f(\beta + z; X, Y) \,-\, f(\beta; X, Y)$,
+recomputed at each iteration:
+\begin{gather*}
+\varDelta f(z; \beta) \,\,\,\approx\,\,\, 1/2 \cdot z^T A z \,+\, G^T z,
+\,\,\,\,\textrm{where}\,\,\,\, A \,=\, X^T\!\diag(w) X \,+\, \lambda I\\
+\textrm{and}\,\,\,\,G \,=\, - X^T u \,+\, \lambda\beta,
+\,\,\,\textrm{with $n\,{\times}\,1$ vectors $w$ and $u$ given by}\\
+\forall\,i = 1\ldots n: \,\,\,\,
+w_i = \big[v(\mu_i)\,g'(\mu_i)^2\big]^{-1}
+\!\!\!\!\!\!,\,\,\,\,\,\,\,\,\,
+u_i = (y_i - \mu_i)\big[v(\mu_i)\,g'(\mu_i)\big]^{-1}
+\!\!\!\!\!\!.\,\,\,\,
+\end{gather*}
+Here $v(\mu_i)=\Var(y_i)/a$, the variance of $y_i$ as the function of the mean, and
+$g'(\mu_i) = d \eta_i/d \mu_i$ is the link function derivative.  The Fisher scoring
+approximation is minimized by trust-region conjugate gradient iterations (called the
+\emph{inner} iterations, with the Fisher scoring iterations as the \emph{outer}
+iterations), which approximately solve the following problem:
+\begin{equation*}
+1/2 \cdot z^T A z \,+\, G^T z \,\,\to\,\,\min\,\,\,\,\textrm{subject to}\,\,\,\,
+\|z\|_2 \leq \delta
+\end{equation*}
+The conjugate gradient algorithm closely follows Algorithm~7.2 on page~171
+of~\cite{Nocedal2006:Optimization}.
+The trust region size $\delta$ is initialized as $0.5\sqrt{m}\,/ \max\nolimits_i \|x_i\|_2$
+and updated as described in~\cite{Nocedal2006:Optimization}.
+The user can specify the maximum number of the outer and the inner iterations with
+input parameters {\tt moi} and {\tt mii}, respectively.  The Fisher scoring algorithm
+terminates successfully if $2|\varDelta f(z; \beta)| < (D_1(\beta) + 0.1)\hspace{0.5pt}\eps$
+where $\eps > 0$ is a tolerance supplied by the user via {\tt tol}, and $D_1(\beta)$ is
+the unit-dispersion deviance estimated as
+\begin{equation*}
+D_1(\beta) \,\,=\,\, 2 \cdot \big(\Prob[Y \mid \!
+\begin{smallmatrix}\textrm{saturated}\\\textrm{model}\end{smallmatrix}, a\,{=}\,1]
+\,\,-\,\,\Prob[Y \mid X, \beta, a\,{=}\,1]\,\big)
+\end{equation*}
+The deviance estimate is also produced as part of the output.  Once the Fisher scoring
+algorithm terminates, if requested by the user, we estimate the dispersion~$a$ from
+Eq.~\ref{eqn:GLM} using Pearson residuals
+\begin{equation}
+\hat{a} \,\,=\,\, \frac{1}{n-m}\cdot \sum_{i=1}^n \frac{(y_i - \mu_i)^2}{v(\mu_i)}
+\label{eqn:dispersion}
+\end{equation}
+and use it to adjust our deviance estimate: $D_{\hat{a}}(\beta) = D_1(\beta)/\hat{a}$.
+If input argument {\tt disp} is {\tt 0.0} we estimate $\hat{a}$, otherwise we use its
+value as~$a$.  Note that in~(\ref{eqn:dispersion}) $m$~counts the intercept
+($m \leftarrow m+1$) if it is present.
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+The estimated regression parameters (the $\hat{\beta}_j$'s) are populated into
+a matrix and written to an HDFS file whose path/name was provided as the ``{\tt B}''
+input argument.  What this matrix contains, and its size, depends on the input
+argument {\tt icpt}, which specifies the user's intercept and rescaling choice:
+\begin{Description}
+\item[{\tt icpt=0}:] No intercept, matrix~$B$ has size $m\,{\times}\,1$, with
+$B[j, 1] = \hat{\beta}_j$ for each $j$ from 1 to~$m = {}$ncol$(X)$.
+\item[{\tt icpt=1}:] There is intercept, but no shifting/rescaling of~$X$; matrix~$B$
+has size $(m\,{+}\,1) \times 1$, with $B[j, 1] = \hat{\beta}_j$ for $j$ from 1 to~$m$,
+and $B[m\,{+}\,1, 1] = \hat{\beta}_0$, the estimated intercept coefficient.
+\item[{\tt icpt=2}:] There is intercept, and the features in~$X$ are shifted to
+mean${} = 0$ and rescaled to variance${} = 1$; then there are two versions of
+the~$\hat{\beta}_j$'s, one for the original features and another for the
+shifted/rescaled features.  Now matrix~$B$ has size $(m\,{+}\,1) \times 2$, with
+$B[\cdot, 1]$ for the original features and $B[\cdot, 2]$ for the shifted/rescaled
+features, in the above format.  Note that $B[\cdot, 2]$ are iteratively estimated
+and $B[\cdot, 1]$ are obtained from $B[\cdot, 2]$ by complementary shifting and
+rescaling.
+\end{Description}
+Our script also estimates the dispersion $\hat{a}$ (or takes it from the user's input)
+and the deviances $D_1(\hat{\beta})$ and $D_{\hat{a}}(\hat{\beta})$, see
+Table~\ref{table:GLM:stats} for details.  A log file with variables monitoring
+progress through the iterations can also be made available, see Table~\ref{table:GLM:log}.
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+\hml -f GLM.dml -nvargs X=/user/biadmin/X.mtx Y=/user/biadmin/Y.mtx
+  B=/user/biadmin/B.mtx fmt=csv dfam=2 link=2 yneg=-1.0 icpt=2 reg=0.01 tol=0.00000001
+  disp=1.0 moi=100 mii=10 O=/user/biadmin/stats.csv Log=/user/biadmin/log.csv
+
+}
+
+\smallskip
+\noindent{\bf See Also}
+\smallskip
+
+In case of binary classification problems, consider using L2-SVM or binary logistic
+regression; for multiclass classification, use multiclass~SVM or multinomial logistic
+regression.  For the special cases of linear regression and logistic regression, it
+may be more efficient to use the corresponding specialized scripts instead of~GLM.

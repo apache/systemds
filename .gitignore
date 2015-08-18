@@ -19,3 +19,7 @@ src/main/java/com/ibm/bi/dml/parser/python/PydmlLexer.java
 src/main/java/com/ibm/bi/dml/parser/python/PydmlListener.java
 src/main/java/com/ibm/bi/dml/parser/python/PydmlParser.java
 target/
+/bin/
+src/test/scripts/**/in
+src/test/scripts/**/out
+src/test/scripts/**/expected

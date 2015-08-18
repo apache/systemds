@@ -142,7 +142,7 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 			MatrixBlock resultBlock = null;
 			
 			if( mo.isPartitioned() ) //via data partitioning
-				resultBlock = mo.readMatrixPartition( new IndexRange(rl,ru,cl,cu) );
+				resultBlock = mo.readMatrixPartition( new IndexRange(rl+1,ru+1,cl+1,cu+1) );
 			else //via slicing the in-memory matrix
 			{
 				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());

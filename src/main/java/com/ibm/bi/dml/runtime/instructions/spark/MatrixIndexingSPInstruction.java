@@ -287,10 +287,10 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 					long lhs_cl = Math.max((leftColIndex-1)*bclen+1, start_lhs_globalColIndex);
 					long lhs_cu = Math.min(leftColIndex*bclen, end_lhs_globalColIndex);
 					
-					int lhs_lrl = UtilFunctions.cellInBlockCalculation(lhs_rl, brlen) + 1;
-					int lhs_lru = UtilFunctions.cellInBlockCalculation(lhs_ru, brlen) + 1;
-					int lhs_lcl = UtilFunctions.cellInBlockCalculation(lhs_cl, bclen) + 1;
-					int lhs_lcu = UtilFunctions.cellInBlockCalculation(lhs_cu, bclen) + 1;
+					int lhs_lrl = UtilFunctions.cellInBlockCalculation(lhs_rl, brlen);
+					int lhs_lru = UtilFunctions.cellInBlockCalculation(lhs_ru, brlen);
+					int lhs_lcl = UtilFunctions.cellInBlockCalculation(lhs_cl, bclen);
+					int lhs_lcu = UtilFunctions.cellInBlockCalculation(lhs_cu, bclen);
 					
 					long rhs_rl = lhs_rl - rl + 1;
 					long rhs_ru = rhs_rl + (lhs_ru - lhs_rl);

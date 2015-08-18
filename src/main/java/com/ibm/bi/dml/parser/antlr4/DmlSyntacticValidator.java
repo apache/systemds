@@ -988,17 +988,17 @@ public class DmlSyntacticValidator implements DmlListener {
 				return;
 			}
 			
-			if(DMLScript.PARSER_TREAT_UDF_AS_EXPRESSIONS) {
-				// TODO: Only for Optimizer
-				FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
-				try {
-					functCall.setFunctionName(functionName);
-					functCall.setFunctionNamespace(DMLProgram.DEFAULT_NAMESPACE);
-				} catch (ParseException e1) {
-					helper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
-					return;
-				}
-			}
+//			if(DMLScript.PARSER_TREAT_UDF_AS_EXPRESSIONS) {
+//				// TODO: Only for Optimizer
+//				FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
+//				try {
+//					functCall.setFunctionName(functionName);
+//					functCall.setFunctionNamespace(DMLProgram.DEFAULT_NAMESPACE);
+//				} catch (ParseException e1) {
+//					helper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
+//					return;
+//				}
+//			}
 			
 		} catch(Exception e) {
 			helper.notifyErrorListeners("unable to process builtin function expression " + functionName + ":" + e.getMessage(), ctx.start);

@@ -336,8 +336,9 @@ public abstract class Hop
 		{
 			//conditional checkpoint based on memory estimate in order to avoid unnecessary 
 			//persist and unpersist calls (4x the memory budget is conservative)
-			if(    OptimizerUtils.isHybridExecutionMode()
-				&& 4*_outputMemEstimate < OptimizerUtils.getLocalMemBudget() )
+			if(    OptimizerUtils.isHybridExecutionMode() 
+				&& 4*_outputMemEstimate < OptimizerUtils.getLocalMemBudget()
+				|| _etypeForced == ExecType.CP )
 			{
 				et = ExecType.CP;
 			}

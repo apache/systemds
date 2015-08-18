@@ -42,7 +42,6 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
  */
 public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRule
 {
-
 	private boolean _checkCtx = false;
 	
 	public RewriteInjectSparkLoopCheckpointing(boolean checkParForContext)
@@ -71,7 +70,7 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 		
 		//apply rewrite for while, for, and parfor (the decision for parfor loop bodies is deferred until parfor
 		//optimization because otherwise we would prevent remote parfor)
-		if( sb instanceof WhileStatementBlock || sb instanceof ForStatementBlock  //incl parfor 
+		if( (sb instanceof WhileStatementBlock || sb instanceof ForStatementBlock)  //incl parfor 
 		    && (_checkCtx ? !status.isInParforContext() : true)  )
 		{
 			//step 1: determine checkpointing candidates

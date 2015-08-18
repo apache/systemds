@@ -291,7 +291,7 @@ public class SparkMonitoringUtil {
 		for(Location loc : instructions.keySet()) {
 			String dml = getEscapedJSON(getExpressionInJSON(loc));
 			
-			if(dml != null && dml.trim().length() > 1) {
+			if(dml != null) {
 				// Sort the instruction with time - so as to separate recompiled instructions
 				List<String> listInst = new ArrayList<String>(instructions.get(loc));
 				Collections.sort(listInst, new InstructionComparator(instructionCreationTime));
@@ -393,7 +393,6 @@ public class SparkMonitoringUtil {
 		
 		StringBuilder retVal = new StringBuilder(getInQuotes("instructionExecutionTime") + ":" + instructionExecutionTime + ",\n");
 		
-		retVal.append(getInQuotes("stages") + ": {");
 		boolean isFirst = true;
 		if(stageIDs.get(instruction).size() == 0) {
 			// Find back references
@@ -410,7 +409,7 @@ public class SparkMonitoringUtil {
 				}
 			}
 			
-			retVal.append(getInQuotes("relatedInstructions") + ": [\n"); // If Marcel prefers these can be renamed as back references
+			retVal.append(getInQuotes("backReferences") + ": [\n");
 			boolean isFirstRelInst = true;
 			for(String relInst : relatedInstructions) {
 				if(!isFirstRelInst) {
@@ -419,9 +418,10 @@ public class SparkMonitoringUtil {
 				retVal.append(getInQuotes(relInst));
 				isFirstRelInst = false;
 			}
-			retVal.append("]\n");
+			retVal.append("], \n");
 		}
 		else {
+			retVal.append(getInQuotes("stages") + ": {");
 			for(Integer stageId : stageIDs.get(instruction)) {
 				String stageDAG = "";
 				String stageTimeLine = "";
@@ -475,8 +475,9 @@ public class SparkMonitoringUtil {
 				
 				isFirst = false;
 			}
+			retVal.append("}, ");
 		}
-		retVal.append("}, ");
+		
 		
 		retVal.append(getInQuotes("jobs") + ": {");
 		isFirst = true;
@@ -502,6 +503,7 @@ public class SparkMonitoringUtil {
 		
 		return retVal.toString();
 	}
+
 	
 	String [] dmlLines = null;
 	private String getExpression(Location loc) {

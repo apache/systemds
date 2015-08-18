@@ -70,8 +70,8 @@ public class BinAgent extends TransformationAgent {
 			_binList = new int[attrs.size()];
 			_numBins = new int[attrs.size()];
 			for(int i=0; i < _binList.length; i++) {
-				_binList[i] = ((Long) attrs.get(i)).intValue();
-				_numBins[i] = ((Long) nbins.get(i)).intValue(); 
+				_binList[i] = UtilFunctions.toInt( attrs.get(i) );
+				_numBins[i] = UtilFunctions.toInt( nbins.get(i) ); 
 			}
 			
 			// initialize internal transformation metadata

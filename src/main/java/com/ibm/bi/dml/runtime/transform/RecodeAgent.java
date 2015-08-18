@@ -60,7 +60,7 @@ public class RecodeAgent extends TransformationAgent {
 			
 			_rcdList = new int[attrs.size()];
 			for(int i=0; i < _rcdList.length; i++) 
-				_rcdList[i] = ((Long) attrs.get(i)).intValue();
+				_rcdList[i] = UtilFunctions.toInt( attrs.get(i) );
 			rcdCount = _rcdList.length;
 		}
 		
@@ -71,7 +71,7 @@ public class RecodeAgent extends TransformationAgent {
 			JSONArray attrs = (JSONArray) JSONHelper.get((JSONObject)obj,JSON_ATTRS);
 			_mvrcdList = new int[attrs.size()];
 			for(int i=0; i < _mvrcdList.length; i++) 
-				_mvrcdList[i] = ((Long) attrs.get(i)).intValue();
+				_mvrcdList[i] = UtilFunctions.toInt( attrs.get(i) );
 			rcdCount += attrs.size();
 		}
 		

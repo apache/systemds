@@ -222,7 +222,7 @@ public class DataTransform {
 			omitList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
 				if(byPositions)
-					omitList[i] = ((Long) arrtmp.get(i)).intValue();
+					omitList[i] = UtilFunctions.toInt( arrtmp.get(i) );
 				else {
 					stmp = UtilFunctions.unquote( (String)arrtmp.get(i) );
 					omitList[i] = colNames.get(stmp);
@@ -244,7 +244,7 @@ public class DataTransform {
 			for(int i=0; i<arrtmp.size(); i++) {
 				entry = (JSONObject)arrtmp.get(i);
 				if (byPositions) {
-					mvList[i] = ((Long) JSONHelper.get(entry,ID)).intValue();
+					mvList[i] = UtilFunctions.toInt( JSONHelper.get(entry,ID) );
 				}
 				else {
 					stmp = UtilFunctions.unquote((String) JSONHelper.get(entry,NAME));
@@ -265,7 +265,7 @@ public class DataTransform {
 				//txMethods.add( btmp );
 				
 				if ( JSONHelper.get(entry,VALUE) != null && JSONHelper.get(entry,VALUE) instanceof Long )
-					mvConstants[i] = "" + (Long)JSONHelper.get(entry,VALUE);
+					mvConstants[i] = "" + (Integer)JSONHelper.get(entry,VALUE);
 				else
 					mvConstants[i] = JSONHelper.get(entry,VALUE);
 			}
@@ -292,7 +292,7 @@ public class DataTransform {
 			rcdList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
 				if (byPositions)
-					rcdList[i] = ((Long) arrtmp.get(i)).intValue();
+					rcdList[i] = ((Integer) arrtmp.get(i)).intValue();
 				else {
 					stmp = UtilFunctions.unquote( (String)arrtmp.get(i) );
 					rcdList[i] = colNames.get(stmp);
@@ -315,7 +315,7 @@ public class DataTransform {
 				entry = (JSONObject)arrtmp.get(i);
 				
 				if (byPositions) {
-					binList[i] = ((Long) JSONHelper.get(entry,ID)).intValue();
+					binList[i] = ((Integer) JSONHelper.get(entry,ID)).intValue();
 				}
 				else {
 					stmp = UtilFunctions.unquote((String) JSONHelper.get(entry,NAME));
@@ -331,7 +331,7 @@ public class DataTransform {
 				binMethods[i] = btmp;
 				
 				numBins[i] = JSONHelper.get(entry,TransformationAgent.JSON_NBINS);
-				if ( ((Long) numBins[i]) <= 1 ) 
+				if ( ((Integer) numBins[i]).intValue() <= 1 ) 
 					throw new IllegalArgumentException("Invalid transformation on column \"" + (String) JSONHelper.get(entry,NAME) + "\". Number of bins must be greater than 1.");
 			}
 			
@@ -357,7 +357,7 @@ public class DataTransform {
 			dcdList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
 				if (byPositions)
-					dcdList[i] = ((Long) arrtmp.get(i)).intValue();
+					dcdList[i] = UtilFunctions.toInt( arrtmp.get(i) );
 				else {
 					stmp = UtilFunctions.unquote( (String)arrtmp.get(i) );
 					dcdList[i] = colNames.get(stmp);
@@ -379,7 +379,7 @@ public class DataTransform {
 				entry = (JSONObject)arrtmp.get(i);
 				
 				if (byPositions) {
-					scaleList[i] = ((Long) JSONHelper.get(entry,ID)).intValue();
+					scaleList[i] = UtilFunctions.toInt( JSONHelper.get(entry,ID) );
 				}
 				else {
 					stmp = UtilFunctions.unquote((String) JSONHelper.get(entry,NAME));
@@ -693,7 +693,7 @@ public class DataTransform {
 		// look for numBins among binned columns
 		for(Object o : dcdList) 
 		{
-			int id = ((Long) o).intValue();
+			int id = UtilFunctions.toInt( o );
 			
 			Path binpath = new Path( tfMtdPath + "/Bin/" + UtilFunctions.unquote(columnNames[id-1]) + TransformationAgent.BIN_FILE_SUFFIX);
 			Path rcdpath = new Path( tfMtdPath + "/Recode/" + UtilFunctions.unquote(columnNames[id-1]) + TransformationAgent.NDISTINCT_FILE_SUFFIX);

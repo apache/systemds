@@ -120,8 +120,8 @@ public class MVImputeAgent extends TransformationAgent {
 			_isMVScaled.clear();
 			
 			for(int i=0; i < _mvList.length; i++) {
-				_mvList[i] = ((Long) mvattrs.get(i)).intValue();
-				_mvMethodList[i] = ((Long) mvmthds.get(i)).byteValue(); 
+				_mvList[i] = UtilFunctions.toInt( mvattrs.get(i) );
+				_mvMethodList[i] = (byte) UtilFunctions.toInt( mvmthds.get(i) ); 
 				_meanList[i] = new KahanObject(0, 0);
 			}
 			
@@ -158,8 +158,8 @@ public class MVImputeAgent extends TransformationAgent {
 			byte mthd;
 			for(int i=0; i < scLength; i++)
 			{
-				colID = ((Long) scattrs.get(i)).intValue();
-				mthd = ((Long) scmthds.get(i)).byteValue(); 
+				colID = UtilFunctions.toInt( scattrs.get(i) );
+				mthd = (byte)UtilFunctions.toInt( scmthds.get(i) ); 
 						
 				_allscaled[i] = colID;
 				
@@ -186,8 +186,8 @@ public class MVImputeAgent extends TransformationAgent {
 				
 				for(int i=0, idx=0; i < scLength; i++)
 				{
-					colID = ((Long) scattrs.get(i)).intValue();
-					mthd = ((Long) scmthds.get(i)).byteValue(); 
+					colID = UtilFunctions.toInt( scattrs.get(i) );
+					mthd = (byte)UtilFunctions.toInt( scmthds.get(i) ); 
 							
 					if(isImputed(colID) == -1)
 					{	// scaled but not imputed

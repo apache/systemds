@@ -52,7 +52,7 @@ public class OmitAgent extends TransformationAgent {
 			JSONArray attrs = (JSONArray) JSONHelper.get((JSONObject)obj, JSON_ATTRS);
 			_omitList = new int[attrs.size()];
 			for(int i=0; i < _omitList.length; i++) 
-				_omitList[i] = ((Long) attrs.get(i)).intValue();
+				_omitList[i] = UtilFunctions.toInt( attrs.get(i) );
 		}
 	}
 	

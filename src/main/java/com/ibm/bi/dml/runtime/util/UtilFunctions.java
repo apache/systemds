@@ -214,6 +214,14 @@ public class UtilFunctions
 		return (long) Math.floor( val + DOUBLE_EPS );
 	}
 	
+	public static int toInt(Object obj)
+	{
+		if( obj instanceof Long )
+			return ((Long)obj).intValue();
+		else
+			return ((Integer)obj).intValue();
+	}
+	
 	public static boolean isIntegerNumber( String str )
 	{
 		byte[] c = str.getBytes();

@@ -70,7 +70,7 @@ public class DummycodeAgent extends TransformationAgent {
 			
 			_dcdList = new int[attrs.size()];
 			for(int i=0; i < _dcdList.length; i++) 
-				_dcdList[i] = ((Long) attrs.get(i)).intValue();
+				_dcdList[i] = UtilFunctions.toInt( attrs.get(i) );
 		}
 	}
 	

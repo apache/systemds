@@ -461,7 +461,7 @@ public class LibMatrixReorg
 				{
 					//get single row from source block
 					MatrixBlock src = (MatrixBlock) linData.sliceOperations(
-							  i+1, i+1, 1, clen, new MatrixBlock());
+							  i, i, 0, (int)(clen-1), new MatrixBlock());
 					long brix = (rix-1)/brlen+1;
 					long lbrix = (rix-1)%brlen;
 					tmpIx.setIndexes(brix, data.getIndexes().getColumnIndex());
@@ -489,7 +489,7 @@ public class LibMatrixReorg
 				{
 					//get single row from source block
 					MatrixBlock src = (MatrixBlock) linData.sliceOperations(
-							  1, rlen, i+1, i+1, new MatrixBlock());
+							  0, (int)(rlen-1), i, i, new MatrixBlock());
 					long bcix = (cix-1)/bclen+1;
 					long lbcix = (cix-1)%bclen;
 					tmpIx.setIndexes(data.getIndexes().getRowIndex(), bcix);

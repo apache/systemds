@@ -383,9 +383,8 @@ public class SparkExecutionContext extends ExecutionContext
 					int col_offset = blockCol*bclen;
 	
 					//copy submatrix to block
-					src.sliceOperations( row_offset+1, row_offset+maxRow, 
-							             col_offset+1, col_offset+maxCol, 
-							             block );							
+					src.sliceOperations( row_offset, row_offset+maxRow-1, 
+							             col_offset, col_offset+maxCol-1, block );							
 					
 					//append block to sequence file
 					MatrixIndexes indexes = new MatrixIndexes(blockRow+1, blockCol+1);

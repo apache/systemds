@@ -388,7 +388,7 @@ public class LiteralReplacement
 				if( mo.getNumRows()*mo.getNumColumns() < REPLACE_LITERALS_MAX_MATRIX_SIZE )
 				{
 					MatrixBlock mBlock = mo.acquireRead();
-					MatrixBlock mBlock2 = mBlock.sliceOperations(rlval, ruval, clval, cuval, new MatrixBlock());
+					MatrixBlock mBlock2 = mBlock.sliceOperations((int)(rlval-1), (int)(ruval-1), (int)(clval-1), (int)(cuval-1), new MatrixBlock());
 					double value = replaceUnaryAggregate((AggUnaryOp)c, mBlock2);
 					mo.release();
 						

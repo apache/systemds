@@ -199,9 +199,8 @@ public class GMRCtableBuffer
 								MatrixBlock block = MatrixWriter.getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
 			
 								//copy submatrix to block
-								outBlock.sliceOperations( row_offset+1, row_offset+maxRow, 
-										             col_offset+1, col_offset+maxCol, 
-										             block );
+								outBlock.sliceOperations( row_offset, row_offset+maxRow-1, 
+														  col_offset, col_offset+maxCol-1, block );
 								
 								// TODO: skip empty "block"
 								

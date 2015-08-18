@@ -129,8 +129,8 @@ public class AppendGInstruction extends AppendInstruction
 					ix1.setIndexes( tmpix.getRowIndex(), cix1);
 					tmpvalNew.reset( tmpval.getNumRows(), cols1 );
 					tmpvalNew.copy(0, tmpval.getNumRows()-1, (int)((_offset+1)%bclen)-1, cols1-1, 
-							       tmpval.sliceOperations(1, tmpval.getNumRows(), 1, 
-							    		                     cols1-((_offset)%bclen), new MatrixBlock()), true);
+							       tmpval.sliceOperations(0, tmpval.getNumRows()-1, 0, 
+							    		                     (int)(cols1-((_offset)%bclen)-1), new MatrixBlock()), true);
 					data1.getIndexes().setIndexes(ix1);
 					
 					if( cols1-((_offset)%bclen)<tmpval.getNumColumns() ) 
@@ -144,8 +144,8 @@ public class AppendGInstruction extends AppendInstruction
 						ix2.setIndexes( tmpix.getRowIndex(), cix2);
 						tmpvalNew2.reset( tmpval.getNumRows(), cols2 );
 						tmpvalNew2.copy(0, tmpval.getNumRows()-1, 0, cols2-1, 
-								       tmpval.sliceOperations(1, tmpval.getNumRows(), cols1-((_offset)%bclen)+1, 
-								    		                     tmpval.getNumColumns(), new MatrixBlock()), true);
+								       tmpval.sliceOperations(0, tmpval.getNumRows()-1, (int)(cols1-((_offset)%bclen)), 
+								    		                     tmpval.getNumColumns()-1, new MatrixBlock()), true);
 						data2.getIndexes().setIndexes(ix2);
 					}
 				}

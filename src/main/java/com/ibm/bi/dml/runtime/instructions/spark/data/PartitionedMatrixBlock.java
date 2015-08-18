@@ -84,8 +84,8 @@ public class PartitionedMatrixBlock implements Externalizable
 				for( int j=0; j<ncblks; j++, ix++ )
 				{
 					MatrixBlock tmp = new MatrixBlock();
-					mb.sliceOperations(i*brlen+1, Math.min((i+1)*brlen, rlen), 
-							           j*bclen+1, Math.min((j+1)*bclen, clen), tmp);
+					mb.sliceOperations(i*brlen, Math.min((i+1)*brlen, rlen)-1, 
+							           j*bclen, Math.min((j+1)*bclen, clen)-1, tmp);
 					_partBlocks[ix] = tmp;
 				}
 		}

@@ -531,8 +531,8 @@ public class RDDSortUtils
 				long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 				MatrixIndexes lix = new MatrixIndexes(rix,1);
 				MatrixBlock lmb = new MatrixBlock((int)len, data.getNumColumns(), true);	
-				MatrixBlock tmp = data.sliceOperations(i+1, i+1, 1, data.getNumColumns(), new MatrixBlock());
-				lmb.leftIndexingOperations(tmp, pos+1, pos+1, 1, data.getNumColumns(), lmb, true);
+				MatrixBlock tmp = data.sliceOperations(i, i, 0, data.getNumColumns()-1, new MatrixBlock());
+				lmb.leftIndexingOperations(tmp, pos, pos, 0, data.getNumColumns()-1, lmb, true);
 				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(lix, lmb));
 			}			
 

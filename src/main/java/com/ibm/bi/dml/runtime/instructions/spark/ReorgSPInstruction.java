@@ -277,7 +277,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		public MatrixBlock call(MatrixBlock arg0) 
 			throws Exception 
 		{
-			return arg0.sliceOperations(1, arg0.getNumRows(), _col+1, _col+1, new MatrixBlock());
+			return arg0.sliceOperations(0, arg0.getNumRows()-1, _col, _col, new MatrixBlock());
 		}
 	}
 }

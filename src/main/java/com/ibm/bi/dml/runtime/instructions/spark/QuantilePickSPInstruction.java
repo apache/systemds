@@ -233,8 +233,8 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 		//boundary keys (inclusive)
 		private long _minRowIndex;
 		private long _maxRowIndex;
-		private long _minPos;
-		private long _maxPos;
+		private int _minPos;
+		private int _maxPos;
 		
 		public ExtractAndSumFunction(long key25, long key75, int brlen)
 		{
@@ -252,13 +252,13 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 			MatrixBlock mb = arg0._2();
 			
 			if( _minRowIndex==_maxRowIndex ){
-				mb = mb.sliceOperations(_minPos, _maxPos, 1, 1, new MatrixBlock());
+				mb = mb.sliceOperations(_minPos-1, _maxPos-1, 0, 0, new MatrixBlock());
 			}
 			else if( ix.getRowIndex() == _minRowIndex ) {
-				mb = mb.sliceOperations(_minPos+1, mb.getNumRows(), 1, 1, new MatrixBlock());	
+				mb = mb.sliceOperations(_minPos, mb.getNumRows()-1, 0, 0, new MatrixBlock());	
 			}
 			else if( ix.getRowIndex() == _maxRowIndex ) {
-				mb = mb.sliceOperations(1, _maxPos+1, 1, 1, new MatrixBlock());	
+				mb = mb.sliceOperations(0, _maxPos, 0, 0, new MatrixBlock());	
 			}
 			
 			//create output (with correction)
@@ -280,8 +280,8 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 		public MatrixBlock call(MatrixBlock arg0) 
 			throws Exception 
 		{
-			//slice operation
-			 MatrixBlock mb = arg0.sliceOperations(1, arg0.getNumRows(), 2, 2, new MatrixBlock());
+			//slice operation (2nd column)
+			 MatrixBlock mb = arg0.sliceOperations(0, arg0.getNumRows()-1, 1, 1, new MatrixBlock());
 			
 			//create output (with correction)
 			MatrixBlock ret = new MatrixBlock(1,2,false);

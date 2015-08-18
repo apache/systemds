@@ -297,10 +297,10 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 					long rhs_cl = lhs_cl - cl + 1;
 					long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
 					
-					int rhs_lrl = UtilFunctions.cellInBlockCalculation(rhs_rl, brlen) + 1;
-					int rhs_lru = UtilFunctions.cellInBlockCalculation(rhs_ru, brlen) + 1;
-					int rhs_lcl = UtilFunctions.cellInBlockCalculation(rhs_cl, bclen) + 1;
-					int rhs_lcu = UtilFunctions.cellInBlockCalculation(rhs_cu, bclen) + 1;
+					int rhs_lrl = UtilFunctions.cellInBlockCalculation(rhs_rl, brlen);
+					int rhs_lru = UtilFunctions.cellInBlockCalculation(rhs_ru, brlen);
+					int rhs_lcl = UtilFunctions.cellInBlockCalculation(rhs_cl, bclen);
+					int rhs_lcu = UtilFunctions.cellInBlockCalculation(rhs_cu, bclen);
 					
 					MatrixBlock slicedRHSBlk = rightKV._2.sliceOperations(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new MatrixBlock());
 					
@@ -399,15 +399,15 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			long rhs_cl = lhs_cl - cl + 1;
 			long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
 			
-			// Provide global one-based index to sliceOperations
+			// Provide global zero-based index to sliceOperations
 			PartitionedMatrixBlock rhsMatBlock = binput.getValue();
 			MatrixBlock slicedRHSMatBlock = rhsMatBlock.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
 			
-			// Provide local one-based index to leftIndexingOperations
-			long lhs_lrl = UtilFunctions.cellInBlockCalculation(lhs_rl, brlen) + 1;
-			long lhs_lru = UtilFunctions.cellInBlockCalculation(lhs_ru, brlen) + 1;
-			long lhs_lcl = UtilFunctions.cellInBlockCalculation(lhs_cl, bclen) + 1;
-			long lhs_lcu = UtilFunctions.cellInBlockCalculation(lhs_cu, bclen) + 1;
+			// Provide local zero-based index to leftIndexingOperations
+			int lhs_lrl = UtilFunctions.cellInBlockCalculation(lhs_rl, brlen);
+			int lhs_lru = UtilFunctions.cellInBlockCalculation(lhs_ru, brlen);
+			int lhs_lcl = UtilFunctions.cellInBlockCalculation(lhs_cl, bclen);
+			int lhs_lcu = UtilFunctions.cellInBlockCalculation(lhs_cu, bclen);
 			MatrixBlock ret = kv._2.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new MatrixBlock(), false);
 			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, ret);
 		}
@@ -446,8 +446,8 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			MatrixBlock in = kv._2();
 			
 			DoubleObject scalar = new DoubleObject(_svalue);
-			long rowCellIndex = UtilFunctions.cellInBlockCalculation(_rl, _brlen) + 1; // Since leftIndexingOperations expects 1-based indexing
-			long colCellIndex = UtilFunctions.cellInBlockCalculation(_cl, _bclen) + 1;
+			int rowCellIndex = UtilFunctions.cellInBlockCalculation(_rl, _brlen); // Since leftIndexingOperations expects 1-based indexing
+			int colCellIndex = UtilFunctions.cellInBlockCalculation(_cl, _bclen);
 			MatrixBlock ret = in.leftIndexingOperations(scalar, rowCellIndex, colCellIndex, new MatrixBlock(), false);
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ix, ret);
 		}

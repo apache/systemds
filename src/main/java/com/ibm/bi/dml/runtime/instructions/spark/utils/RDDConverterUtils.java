@@ -67,7 +67,7 @@ public class RDDConverterUtils
 			ArrayList<LabeledPoint> ret = new ArrayList<LabeledPoint>();
 			for( int i=0; i<arg0.getNumRows(); i++ )
 			{
-				MatrixBlock tmp = arg0.sliceOperations(i+1, i+1, 1, arg0.getNumColumns()-1, new MatrixBlock());
+				MatrixBlock tmp = arg0.sliceOperations(i, i, 0, arg0.getNumColumns()-2, new MatrixBlock());
 				double[] data = DataConverter.convertToDoubleVector(tmp);
 				if( tmp.isEmptyBlock(false) ) //EMPTY SPARSE ROW
 				{

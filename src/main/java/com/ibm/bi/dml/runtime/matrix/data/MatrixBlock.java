@@ -3667,24 +3667,24 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, long rowLower, long rowUpper, 
-			long colLower, long colUpper, MatrixBlock ret, boolean inplace) 
+	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, int rl, int ru, 
+			int cl, int cu, MatrixBlock ret, boolean inplace) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
 		// Check the validity of bounds
-		if ( rowLower < 1 || rowLower > getNumRows() || rowUpper < rowLower || rowUpper > getNumRows()
-				|| colLower < 1 || colUpper > getNumColumns() || colUpper < colLower || colUpper > getNumColumns() ) {
-			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
-					"["+rowLower+":"+rowUpper+"," + colLower+":"+colUpper+"] " +
+		if ( rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
+				|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
+			throw new DMLRuntimeException("Invalid values for matrix indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " +
 							"must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+"].");
 		}
 		
-		if ( (rowUpper-rowLower+1) < rhsMatrix.getNumRows() || (colUpper-colLower+1) < rhsMatrix.getNumColumns()) {
+		if ( (ru-rl+1) < rhsMatrix.getNumRows() || (cu-cl+1) < rhsMatrix.getNumColumns()) {
 			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
 					"dimensions of the source matrix ["+rhsMatrix.getNumRows()+"x" + rhsMatrix.getNumColumns() + "] " +
 					"do not match the shape of the matrix specified by indices [" +
-					rowLower +":" + rowUpper + ", " + colLower + ":" + colUpper + "].");
+					(rl+1) +":" + (ru+1) + ", " + (cl+1) + ":" + (cu+1) + "].");
 		}
+		
 		MatrixBlock result = ret;
 		
 		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, 
@@ -3717,10 +3717,6 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		//     improved the performance of zeroout.
 		//result = (MatrixBlockDSM) zeroOutOperations(result, new IndexRange(rowLower,rowUpper, colLower, colUpper ), false);
 		
-		int rl = (int)rowLower-1;
-		int ru = (int)rowUpper-1;
-		int cl = (int)colLower-1;
-		int cu = (int)colUpper-1;
 		MatrixBlock src = (MatrixBlock)rhsMatrix;
 		
 
@@ -3739,7 +3735,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	}
 	
 	/**
-	 * Explicitly allow left indexing for scalars.
+	 * Explicitly allow left indexing for scalars. Note: This operation is now 0-based.
 	 * 
 	 * * Operations to be performed: 
 	 *   1) result=this; 
@@ -3753,7 +3749,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixBlock leftIndexingOperations(ScalarObject scalar, long row, long col, MatrixBlock ret, boolean inplace) 
+	public MatrixBlock leftIndexingOperations(ScalarObject scalar, int rl, int cl, MatrixBlock ret, boolean inplace) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		double inVal = scalar.getDoubleValue();
@@ -3771,35 +3767,27 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		else //update in-place
 			ret = this;
 		
-		int rl = (int)row-1;
-		int cl = (int)col-1;
-		
 		ret.quickSetValue(rl, cl, inVal);
 		return ret;
 	}
 	
 	/**
 	 * Method to perform rangeReIndex operation for a given lower and upper bounds in row and column dimensions.
-	 * Extracted submatrix is returned as "result".
+	 * Extracted submatrix is returned as "result". Note: This operation is now 0-based.
+	 * 
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	public MatrixBlock sliceOperations(long rowLower, long rowUpper, long colLower, long colUpper, MatrixBlock ret) 
+	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, MatrixBlock ret) 
 		throws DMLRuntimeException 
 	{	
 		// check the validity of bounds
-		if ( rowLower < 1 || rowLower > getNumRows() || rowUpper < rowLower || rowUpper > getNumRows()
-				|| colLower < 1 || colUpper > getNumColumns() || colUpper < colLower || colUpper > getNumColumns() ) {
-			throw new DMLRuntimeException("Invalid values for matrix indexing: " +
-					"["+rowLower+":"+rowUpper+"," + colLower+":"+colUpper+"] " +
+		if ( rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
+				|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
+			throw new DMLRuntimeException("Invalid values for matrix indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " +
 							"must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+"]");
 		}
 		
-		int rl = (int)rowLower-1;
-		int ru = (int)rowUpper-1;
-		int cl = (int)colLower-1;
-		int cu = (int)colUpper-1;
-		//System.out.println("  -- performing slide on [" + getNumRows() + "x" + getNumColumns() + "] with ["+rl+":"+ru+","+cl+":"+cu+"].");
 		// Output matrix will have the same sparsity as that of the input matrix.
 		// (assuming a uniform distribution of non-zeros in the input)
 		MatrixBlock result=checkType(ret);
@@ -3811,7 +3799,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			result.reset(ru-rl+1, cu-cl+1, result_sparsity, estnnz);
 		
 		// actual slice operation
-		if( rowLower==1 && rowUpper==rlen && colLower==1 && colUpper==clen ) {
+		if( rl==0 && ru==rlen-1 && cl==0 && cu==clen-1 ) {
 			// copy if entire matrix required
 			result.copy( this );
 		}
@@ -4068,12 +4056,12 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			{
 				//prepare output block 1
 				MatrixBlock ret1 = (MatrixBlock) outlist.get(0).getValue();
-				MatrixBlock tmp1 = m2.sliceOperations(1, rlen, 1, blockColFactor-clen, new MatrixBlock());
+				MatrixBlock tmp1 = m2.sliceOperations(0, rlen-1, 0, blockColFactor-clen-1, new MatrixBlock());
 				appendOperations(tmp1, ret1);
 	
 				//prepare output block 2
 				MatrixBlock ret2 = (MatrixBlock) outlist.get(1).getValue();
-				m2.sliceOperations(1, rlen, blockColFactor-clen+1, m2.clen, ret2);
+				m2.sliceOperations(0, rlen-1, blockColFactor-clen, m2.clen-1, ret2);
 			}
 		}
 	}

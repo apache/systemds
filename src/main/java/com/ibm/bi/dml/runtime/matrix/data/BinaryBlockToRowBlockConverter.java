@@ -88,7 +88,7 @@ public class BinaryBlockToRowBlockConverter implements Converter<MatrixIndexes, 
 		//slice next row
 		try {
 			//rowlow, rowup, collow, colup (1-based specification)
-			_srcBlock.sliceOperations( _pos+1, _pos+1, 1, _srcBlock.getNumColumns(), _destBlock );
+			_srcBlock.sliceOperations( _pos, _pos, 0, _srcBlock.getNumColumns()-1, _destBlock );
 		}
 		catch(DMLException ex)
 		{

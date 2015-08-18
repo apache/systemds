@@ -97,8 +97,8 @@ public class SparkUtils {
 		for( int i=0; i<numBlocks; i++ )
 		{
 			MatrixBlock tmp = new MatrixBlock();
-			mb.sliceOperations(i*blen+1, Math.min((i+1)*blen, lrlen), 
-					1, mb.getNumColumns(), tmp);
+			mb.sliceOperations(i*blen, Math.min((i+1)*blen, lrlen)-1, 
+					0, mb.getNumColumns()-1, tmp);
 			partBlocks[i] = tmp;
 		}			
 		
@@ -123,8 +123,8 @@ public class SparkUtils {
 		for( int i=0; i<numBlocks; i++ )
 		{
 			MatrixBlock tmp = new MatrixBlock();
-			mb.sliceOperations(1, mb.getNumRows(), 
-					i*blen+1, Math.min((i+1)*blen, lclen),  tmp);
+			mb.sliceOperations(0, mb.getNumRows()-1, 
+					i*blen, Math.min((i+1)*blen, lclen)-1,  tmp);
 			partBlocks[i] = tmp;
 		}
 		

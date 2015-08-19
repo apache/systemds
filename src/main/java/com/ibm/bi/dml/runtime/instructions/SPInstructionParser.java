@@ -64,6 +64,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.TsmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.QuantileSortSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.UaggOuterChainSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.WriteSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.ZipmmSPInstruction;
 
 
 public class SPInstructionParser extends InstructionParser {
@@ -101,6 +102,7 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "cpmm"   	   , SPINSTRUCTION_TYPE.CPMM);
 		String2SPInstructionType.put( "rmm"        , SPINSTRUCTION_TYPE.RMM);
 		String2SPInstructionType.put( "pmm"        , SPINSTRUCTION_TYPE.PMM);
+		String2SPInstructionType.put( "zipmm"      , SPINSTRUCTION_TYPE.ZIPMM);
 		
 		String2SPInstructionType.put( "uaggouterchain", SPINSTRUCTION_TYPE.UaggOuterChain);
 		
@@ -247,7 +249,7 @@ public class SPInstructionParser extends InstructionParser {
 		String [] parts = null;
 		switch(sptype) 
 		{
-			// Matrix multiplication
+			// matrix multiplication instructions
 			case CPMM:
 				return CpmmSPInstruction.parseInstruction(str);
 			case RMM:
@@ -260,9 +262,12 @@ public class SPInstructionParser extends InstructionParser {
 				return TsmmSPInstruction.parseInstruction(str);
 			case PMM:
 				return PmmSPInstruction.parseInstruction(str);
+			case ZIPMM:
+				return ZipmmSPInstruction.parseInstruction(str);
+				
+				
 			case UaggOuterChain:
 				return UaggOuterChainSPInstruction.parseInstruction(str);
-				
 				
 			case AggregateUnary:
 				return AggregateUnarySPInstruction.parseInstruction(str);

@@ -17,9 +17,11 @@
 
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,6 +39,7 @@ public class LinearRegressionTest extends AutomatedTestBase
 	
     private final static String TEST_DIR = "applications/linear_regression/";
     private final static String TEST_LINEAR_REGRESSION = "LinearRegression";
+	private final static String LR_HOME = SCRIPT_DIR + TEST_DIR;
 
     private int numRecords, numFeatures;
     private double sparsity;
@@ -54,7 +57,7 @@ public class LinearRegressionTest extends AutomatedTestBase
 			   {100, 50, 0.01}, {1000, 500, 0.01}, {10000, 750, 0.01}, {100000, 1000, 0.01},
 			   //dense tests (sparsity=0.7)
 			   {100, 50, 0.7}, {1000, 500, 0.7}, {10000, 750, 0.7} };
-	   
+//	   Object[][] data = new Object[][] { { 100, 50, 0.01 } };
 	   return Arrays.asList(data);
 	 }
 	 
@@ -65,30 +68,56 @@ public class LinearRegressionTest extends AutomatedTestBase
                 new String[] { "w" }));
     }
     
-    @Test
-    public void testLinearRegression()
-    {
+	@Test
+	public void testLinearRegressionDml() {
+		System.out.println("------------ BEGIN " + TEST_LINEAR_REGRESSION + " DML TEST WITH {" + numRecords + ", " + numFeatures
+				+ ", " + sparsity + "} ------------");
+		testLinearRegression(ScriptType.DML);
+	}
+
+	@Test
+	public void testLinearRegressionPyDml() {
+		System.out.println("------------ BEGIN " + TEST_LINEAR_REGRESSION + " PYDML TEST WITH {" + numRecords + ", " + numFeatures
+				+ ", " + sparsity + "} ------------");
+		testLinearRegression(ScriptType.PYDML);
+	}
+    
+	public void testLinearRegression(ScriptType scriptType) {
+		this.scriptType = scriptType;
+		
     	int rows = numRecords;
         int cols = numFeatures;
-
-        TestConfiguration config = getTestConfiguration(TEST_LINEAR_REGRESSION);
-        config.addVariable("rows", rows);
-        config.addVariable("cols", cols);
-        config.addVariable("eps", Math.pow(10, -8));
         
-        /* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String LR_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = LR_HOME + TEST_LINEAR_REGRESSION + ".dml";
-		programArgs = new String[]{"-stats","-args", LR_HOME + INPUT_DIR + "v", 
-				                        Integer.toString(rows), Integer.toString(cols),
-				                        LR_HOME + INPUT_DIR + "y", 
-				                        Double.toString(Math.pow(10,-8)), 
-				                        LR_HOME + OUTPUT_DIR + "w"};
+		List<String> proArgs = new ArrayList<String>();
+		proArgs.add("-stats");
+		proArgs.add("-args");
+		proArgs.add(LR_HOME + INPUT_DIR + "v");
+		proArgs.add(Integer.toString(rows));
+		proArgs.add(Integer.toString(cols));
+		proArgs.add(LR_HOME + INPUT_DIR + "y");
+		proArgs.add(Double.toString(Math.pow(10, -8)));
+		proArgs.add(LR_HOME + OUTPUT_DIR + "w");
+        
+		switch (scriptType) {
+		case DML:
+			fullDMLScriptName = LR_HOME + TEST_LINEAR_REGRESSION + ".dml";
+			break;
+		case PYDML:
+			fullPYDMLScriptName = LR_HOME + TEST_LINEAR_REGRESSION + ".pydml";
+			proArgs.add(0, "-python");
+			break;
+		}
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
 		fullRScriptName = LR_HOME + TEST_LINEAR_REGRESSION + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		       LR_HOME + INPUT_DIR + " " + Double.toString(Math.pow(10, -8)) + " " + LR_HOME + EXPECTED_DIR;
       
+        TestConfiguration config = getTestConfiguration(TEST_LINEAR_REGRESSION);
+        config.addVariable("rows", rows);
+        config.addVariable("cols", cols);
+        config.addVariable("eps", Math.pow(10, -8));
         loadTestConfiguration(config);
 
         double[][] v = getRandomMatrix(rows, cols, 0, 1, sparsity, -1);
@@ -96,7 +125,6 @@ public class LinearRegressionTest extends AutomatedTestBase
         writeInputMatrix("v", v, true);
         writeInputMatrix("y", y, true);
         
-		boolean exceptionExpected = false;
 		/*
 		 * Expected number of jobs:
 		 * Rand - 1 job 
@@ -105,7 +133,7 @@ public class LinearRegressionTest extends AutomatedTestBase
 		 * Final output write - 1 job
 		 */
 		int expectedNumberOfJobs = 16;
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
         
 		runRScript(true);
         

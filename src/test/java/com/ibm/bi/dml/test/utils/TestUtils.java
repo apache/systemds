@@ -1718,6 +1718,31 @@ public class TestUtils
 
 	/**
 	 * <p>
+	 * Prints out a PYDML script.
+	 * </p>
+	 * 
+	 * @param pydmlScriptfile
+	 *            filename of DML script
+	 */
+	public static void printPYDMLScript(String pydmlScriptFile) {
+		try {
+			System.out.println("Running script: " + pydmlScriptFile + "\n");
+			System.out.println("******************* PYDML script *******************");
+			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(pydmlScriptFile)));
+			String content;
+			while ((content = in.readLine()) != null) {
+				System.out.println(content);
+			}
+			in.close();
+			System.out.println("**************************************************\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("unable to print dml script: " + e.getMessage());
+		}
+	}
+	
+	/**
+	 * <p>
 	 * Prints out an R script.
 	 * </p>
 	 * 

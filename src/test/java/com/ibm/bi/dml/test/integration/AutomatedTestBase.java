@@ -17,7 +17,9 @@
 
 package com.ibm.bi.dml.test.integration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,9 +27,12 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.wink.json4j.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,13 +50,12 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
+import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.utils.TestUtils;
 import com.ibm.bi.dml.utils.ParameterBuilder;
 import com.ibm.bi.dml.utils.Statistics;
-import org.apache.wink.json4j.JSONObject;
 
 
 /**
@@ -69,6 +73,16 @@ import org.apache.wink.json4j.JSONObject;
  */
 public abstract class AutomatedTestBase 
 {
+	
+	public enum ScriptType {
+		DML, PYDML
+	};
+	
+	public static final boolean EXCEPTION_EXPECTED = true;
+	public static final boolean EXCEPTION_NOT_EXPECTED = false;
+	
+	protected ScriptType scriptType;
+	
 	// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 	// Hadoop 2.4.1 doesn't work on Windows unless winutils.exe is available 
 	// under $HADOOP_HOME/bin and hadoop.dll is available in the Java library
@@ -140,7 +154,9 @@ public abstract class AutomatedTestBase
 	protected static final boolean VISUALIZE = false;
 	protected static final boolean RUNNETEZZA = false;
 	
-	protected String fullDMLScriptName, fullRScriptName;
+	protected String fullDMLScriptName;
+	protected String fullPYDMLScriptName;
+	protected String fullRScriptName;
 	
 	protected static String baseDirectory;
 	protected HashMap<String, TestConfiguration> availableTestConfigurations;
@@ -808,10 +824,11 @@ public abstract class AutomatedTestBase
 			cmd = cmd.replace('/', '\\');                        
 			executionFile = executionFile.replace('/', '\\');
 		}
-		if (DEBUG && !newWay);
-			if ( !newWay )	
+		if (DEBUG) {
+			if (!newWay) { // not sure why have this condition
 				TestUtils.printRScript(executionFile);
-		
+			}
+		}
 		if (newWay == false) {
 		ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".R", testVariables);
 		}
@@ -822,16 +839,11 @@ public abstract class AutomatedTestBase
 			System.out.println("starting R script");
 			System.out.println("cmd: " + cmd);           
 			Process child = Runtime.getRuntime().exec(cmd);     
-			String outputR = "";
-			int c = 0;
 
-			while ((c = child.getInputStream().read()) != -1) {
-				System.out.print((char) c);
-				outputR += String.valueOf((char) c);
-			}
-			while ((c = child.getErrorStream().read()) != -1) {
-				System.err.print((char) c);
-			}
+			String outputR = IOUtils.toString(child.getInputStream());
+			System.out.println("Standard Output from R:" + outputR);
+			String errorString = IOUtils.toString(child.getErrorStream());
+			System.err.println("Standard Error from R:" + errorString);
 
 			//
 			// To give any stream enough time to print all data, otherwise there
@@ -976,8 +988,23 @@ public abstract class AutomatedTestBase
 			args.add("-Dsystemml.logging=trace");
 		}
 		
-		
-		if (newWay == true) {
+		if (scriptType != null) { // DML/PYDML tests have newWay==true and a non-null scriptType
+			switch (scriptType) {
+			case DML:
+				// Need a null pointer check because some tests read DML from a string.
+				if (null != fullDMLScriptName) {
+					args.add("-f");
+					args.add(fullDMLScriptName);
+				}
+				break;
+			case PYDML:
+				if (null != fullPYDMLScriptName) {
+					args.add("-f");
+					args.add(fullPYDMLScriptName);
+				}
+				break;
+			}
+		} else if (newWay == true) {
 			// Need a null pointer check because some tests read DML from a string.
 			if (null != fullDMLScriptName) {
 				args.add("-f");
@@ -1020,21 +1047,21 @@ public abstract class AutomatedTestBase
 		if (DEBUG) {
 			if ( newWay == false )
 				TestUtils.printDMLScript(executionFile);
-			else 
-				TestUtils.printDMLScript(fullDMLScriptName);
+			else {
+				if (scriptType == null) {
+					TestUtils.printDMLScript(fullDMLScriptName);
+				} else if (scriptType == ScriptType.DML) {
+					TestUtils.printDMLScript(fullDMLScriptName);
+				} else if (scriptType == ScriptType.PYDML) {
+					TestUtils.printPYDMLScript(fullPYDMLScriptName);
+				}
+			}
 		}
 		
 		try {
-			if (newWay == false) {
-				DMLScript.main(args.toArray(new String[args.size()]));
-			}
-			else {
-				//if (DEBUG)
-				//	DMLScript.main(dmlArgsDebug);
-				//else
-					DMLScript.main(args.toArray(new String[args.size()]));
-			}
-			
+			String [] dmlScriptArgs = args.toArray(new String[args.size()]);
+			System.out.println("arguments to DMLScript: " + Arrays.toString(dmlScriptArgs));
+			DMLScript.main(dmlScriptArgs);
 		
 			/** check number of MR jobs */
 			if (maxMRJobs > -1 && maxMRJobs < Statistics.getNoOfCompiledMRJobs())

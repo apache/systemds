@@ -17,7 +17,10 @@
 
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -29,10 +32,9 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class HITSTest extends AutomatedTestBase 
 {
-
-	
 	private final static String TEST_DIR = "applications/hits/";
 	private final static String TEST_HITS = "HITS";
+	private final static String HITS_HOME = SCRIPT_DIR + TEST_DIR;
 
 	@Override
 	public void setUp() {
@@ -40,38 +42,61 @@ public class HITSTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testHITSWithRDMLAndJava() {
+	public void testHitsDml() {
+		System.out.println("------------ BEGIN " + TEST_HITS + " DML TEST ------------");
+		testHits(ScriptType.DML);
+	}
+
+	@Test
+	public void testHitsPyDml() {
+		System.out.println("------------ BEGIN " + TEST_HITS + " PYDML TEST ------------");
+		testHits(ScriptType.PYDML);
+	}
+	
+	public void testHits(ScriptType scriptType) {
+		this.scriptType = scriptType;
+		
 		int rows = 1000;
 		int cols = 1000;
 		int maxiter = 2;
 
+		/* This is for running the junit test by constructing the arguments directly */
+		List<String> proArgs = new ArrayList<String>();
+		proArgs.add("-args");
+		proArgs.add(HITS_HOME + INPUT_DIR + "G");
+		proArgs.add(Integer.toString(maxiter));
+		proArgs.add(Integer.toString(rows));
+		proArgs.add(Integer.toString(cols));
+		proArgs.add(Double.toString(Math.pow(10, -6)));
+		proArgs.add(HITS_HOME + OUTPUT_DIR + "hubs");
+		proArgs.add(HITS_HOME + OUTPUT_DIR + "authorities");
 		
+		switch (scriptType) {
+		case DML:
+			fullDMLScriptName = HITS_HOME + TEST_HITS + ".dml";
+			break;
+		case PYDML:
+			fullPYDMLScriptName = HITS_HOME + TEST_HITS + ".pydml";
+			proArgs.add(0, "-python");
+			break;
+		}
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
+		
+		fullRScriptName = HITS_HOME + TEST_HITS + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + 
+		       HITS_HOME + INPUT_DIR + " " + Integer.toString(maxiter) + " " + Double.toString(Math.pow(10, -6))+ " " + HITS_HOME + EXPECTED_DIR;
+
 		TestConfiguration config = getTestConfiguration(TEST_HITS);
-		
 		/* This is for running the junit test the old way */
 		config.addVariable("maxiter", maxiter);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
-		
-
-		/* This is for running the junit test by constructing the arguments directly */
-		String HITS_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HITS_HOME + TEST_HITS + ".dml";
-		programArgs = new String[]{"-args",  HITS_HOME + INPUT_DIR + "G" ,
-				                        Integer.toString(maxiter), Integer.toString(rows), Integer.toString(cols),
-				                        Double.toString(Math.pow(10, -6)),
-				                         HITS_HOME + OUTPUT_DIR + "hubs" , 
-				                         HITS_HOME + OUTPUT_DIR + "authorities" };
-		fullRScriptName = HITS_HOME + TEST_HITS + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       HITS_HOME + INPUT_DIR + " " + Integer.toString(maxiter) + " " + Double.toString(Math.pow(10, -6))+ " " + HITS_HOME + EXPECTED_DIR;
-		
 		loadTestConfiguration(config);
-
+		
 		double[][] G = getRandomMatrix(rows, cols, 0, 1, 1.0, -1);
 		writeInputMatrix("G", G, true);
 		
-		boolean exceptionExpected = false;
 		/*
 		 * Expected number of jobs:
 		 * Reblock - 1 job 
@@ -79,7 +104,7 @@ public class HITSTest extends AutomatedTestBase
 		 * Final output write - 1 job
 		 */
 		int expectedNumberOfJobs = 11;
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
 		
 		runRScript(true);
 		disableOutAndExpectedDeletion();

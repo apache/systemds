@@ -17,8 +17,8 @@
 #-------------------------------------------------------------
 
 # Note this script is externalized to customers, please do not change w/o consulting component owner.
-# How to invoke this dml script HITS.dml?
-# Assume HITS_HOME is set to the home of the dml script
+# How to invoke this pydml script HITS.pydml?
+# Assume HITS_HOME is set to the home of the pydml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 1000 and cols = 1000 for G,  rows = 1000 and cols = 1 for authorities, max_iteration = 2
 # hadoop jar SystemML.jar -f $HITS_HOME/HITS.pydml -python -args "$INPUT_DIR/G" 2 1000 1000 0.000001 "$OUPUT_DIR/hubs" "$OUTPUT_DIR/authorities"

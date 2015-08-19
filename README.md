@@ -114,7 +114,7 @@ It generates a matrix of random data with a label column appended to this data m
 	# maxWeight       Int     ---      Maximum weight (absolute value)
 	# addNoise        Boolean ---      Determines whether noise should be added to Y
 	# b               Double  ---      Intercept
-	# sparsity        Double  ---      Controls the sparsity in the generated data
+	# sparsity        Double  ---      Controls the sparsity in the generated data (a value between 0 and 1)
 	# output          String  ---      Location to write the generated data/label matrix
 	# format          String  ---      Matrix output format
 	# --------------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ It generates a matrix of random data with a label column appended to this data m
 	# ---------------------------------------------------------------------------------------------
 	#
 	# Example
-	# ./runStandaloneSystemML.sh algorithms/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=1000 output=linRegData.csv format=csv
+	# ./runStandaloneSystemML.sh algorithms/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv
 	#
 	
 	X = Rand(cols=$numFeatures, max=1, min=-1, pdf="uniform", rows=$numSamples, seed=0, sparsity=$sparsity)
@@ -150,10 +150,10 @@ It generates a matrix of random data with a label column appended to this data m
 ### Run DML Script to Generate Random Data
 
 We can execute the `genLinearRegressionData.dml` script in Standalone mode using either the `runStandaloneSystemML.sh` or `runStandaloneSystemML.bat` file.
-In this eample, we'll generate a matrix of 1000 rows of 50 columns of test data. In addition to this, a 51<sup>st</sup> column consisting of labels will
+In this eample, we'll generate a matrix of 1000 rows of 50 columns of test data, with sparsity 0.7. In addition to this, a 51<sup>st</sup> column consisting of labels will
 be appended to the matrix.
 
-    ./runStandaloneSystemML.sh algorithms/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=1000 output=linRegData.csv format=csv
+    ./runStandaloneSystemML.sh algorithms/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv
 
 This generates the following files:
 
@@ -327,7 +327,7 @@ For convenience, we can encapsulate our DML invocations in a single script:
 
 	#!/bin/bash
 	
-	./runStandaloneSystemML.sh algorithms/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=1000 output=linRegData.csv format=csv
+	./runStandaloneSystemML.sh algorithms/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv
 	
 	./runStandaloneSystemML.sh algorithms/utils/sample.dml -nvargs X=linRegData.csv sv=perc.csv O=linRegDataParts ofmt=csv
 	

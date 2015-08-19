@@ -1,0 +1,59 @@
+#-------------------------------------------------------------
+#
+# (C) Copyright IBM Corp. 2010, 2015
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-------------------------------------------------------------
+
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this pydml script HITS.pydml?
+# Assume HITS_HOME is set to the home of the pydml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 1000 and cols = 1000 for G,  rows = 1000 and cols = 1 for authorities, max_iteration = 2
+# hadoop jar SystemML.jar -f $HITS_HOME/HITS.pydml -python -args "$INPUT_DIR/G" 2 1000 1000 0.000001 "$OUPUT_DIR/hubs" "$OUTPUT_DIR/authorities"
+
+G = load($1,rows=$3, cols=$4, format="text")
+
+authorities=round(G)
+
+maxiter = $2
+tol = $5
+
+hubs  = authorities
+
+# HITS = power iterations to compute leading left/right singular vectors
+
+converge = False
+iter = 0
+
+while(!converge):
+	
+	hubs_old = hubs
+	hubs = dot(G, authorities)
+
+	authorities_old = authorities
+	authorities = dot(G.transpose(), hubs)
+
+	hubs = hubs/max(hubs)
+	authorities = authorities/max(authorities)
+
+	delta_hubs = sum((hubs - hubs_old) ** 2)
+	delta_authorities = sum((authorities - authorities_old) ** 2)
+
+	converge = ((abs(delta_hubs) < tol) & (abs(delta_authorities) < tol) | (iter>maxiter))
+	
+	iter = iter + 1
+
+save(hubs,$6,format="text")
+save(authorities,$7,format="text")

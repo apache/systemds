@@ -83,8 +83,8 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		if( !in.getStorageLevel().equals(_level) ) {
 			//since persist is an in-place marker for a storage level, we 
-			//apply a narrow copy to allow for short-circuit collects 
-			out = in.mapToPair(new CopyBlockFunction())
+			//apply a narrow shallow copy to allow for short-circuit collects 
+			out = in.mapValues(new CopyBlockFunction(false))
 					.persist( _level );
 		}
 		else {

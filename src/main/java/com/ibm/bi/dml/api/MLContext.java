@@ -64,7 +64,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDProperties;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertRowToCSVString;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkListener;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -585,7 +585,7 @@ public class MLContext {
 		if(_inVarnames == null)
 			_inVarnames = new ArrayList<String>();
 		// Bug in Spark is messing up blocks and indexes due to too eager reuse of data structures
-		JavaPairRDD<MatrixIndexes, MatrixBlock> copyRDD = rdd.mapToPair( new CopyBlockFunction() );
+		JavaPairRDD<MatrixIndexes, MatrixBlock> copyRDD = rdd.mapToPair( new CopyBlockPairFunction() );
 		
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, "temp", new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		mo.setRDDHandle(new RDDObject(copyRDD, varName));

@@ -16,35 +16,45 @@
  */
 package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
-import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.PairFunction;
+
+import scala.Tuple2;
+
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * General purpose copy function for binary block rdds. This function can be used in
- * mapValues (copy matrix blocks). It supports both deep and shallow copies of values.
+ * mapToPair (copy matrix indexes and blocks). It supports both deep and shallow copies 
+ * of key/value pairs.
  * 
  */
-public class CopyBlockFunction implements Function<MatrixBlock,MatrixBlock> 
+public class CopyBlockPairFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>,MatrixIndexes, MatrixBlock>
 {
-	private static final long serialVersionUID = 966409324406154236L;
+	private static final long serialVersionUID = -196553327495233360L;
 
 	private boolean _deepCopy = true;
 	
-	public CopyBlockFunction() {
+	public CopyBlockPairFunction() {
 		this(true);
 	}
 	
-	public CopyBlockFunction(boolean deepCopy) {
+	public CopyBlockPairFunction(boolean deepCopy) {
 		_deepCopy = deepCopy;
 	}
 
 	@Override
-	public MatrixBlock call(MatrixBlock arg0)
+	public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 		throws Exception 
-	{
-		if( _deepCopy )
-			return new MatrixBlock(arg0);
-		else
+	{	
+		if( _deepCopy ) {
+			MatrixIndexes ix = new MatrixIndexes(arg0._1());
+			MatrixBlock block = new MatrixBlock();
+			block.copy(arg0._2());
+			return new Tuple2<MatrixIndexes,MatrixBlock>(ix,block);
+		}
+		else {
 			return arg0;
+		}
 	}
 }

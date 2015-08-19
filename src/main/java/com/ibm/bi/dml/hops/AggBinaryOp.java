@@ -33,6 +33,7 @@ import com.ibm.bi.dml.lops.MMRJ;
 import com.ibm.bi.dml.lops.MMTSJ;
 import com.ibm.bi.dml.lops.MMCJ.MMCJType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
+import com.ibm.bi.dml.lops.MMZip;
 import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
@@ -77,6 +78,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		MAPMM_CHAIN, //map-side matrix-matrix-matrix multiplication using distributed cache, for right input (cp/mr/sp)
 		PMM,      //permutation matrix multiplication using distributed cache, for left input (mr/cp)
 		TSMM,     //transpose-self matrix multiplication (cp/mr/sp)
+		ZIPMM,    //zip matrix multiplication (sp)
 		MM        //in-memory matrix multiplication (cp)
 	};
 	
@@ -174,10 +176,11 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			else if( et == ExecType.SPARK ) 
 			{
 				//matrix mult operation selection part 3 (SPARK type)
+				boolean tmmRewrite = input1 instanceof ReorgOp && ((ReorgOp)input1).getOp()==ReOrgOp.TRANSPOSE;
 				MMultMethod method = optFindMMultMethodSpark ( 
 						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
 						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), 
-						mmtsj, chain, _hasLeftPMInput );
+						mmtsj, chain, _hasLeftPMInput, tmmRewrite );
 			
 				//dispatch SPARK lops construction 
 				switch( method )
@@ -201,6 +204,10 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 					case PMM:
 						constructSparkLopsPMM(); 
 						break;
+					case ZIPMM:
+						constructSparkLopsZIPMM(); 
+						break;
+						
 					default:
 						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing SPARK lops.");	
 				}
@@ -859,6 +866,26 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		HopRewriteUtils.removeChildReference(pmInput, nrow);		
 	} 
 
+	/**
+	 * 
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructSparkLopsZIPMM() 
+		throws HopsException, LopsException
+	{
+		//zipmm applies to t(X)%*%y if ncol(X)<=blocksize and it prevents 
+		//unnecessary reshuffling by keeping the original indexes (and partitioning) 
+		//joining the datasets, and internally doing the necessary transpose operations
+		
+		Hop left = getInput().get(0).getInput().get(0); //x out of t(X)
+		Hop right = getInput().get(1); //y
+
+		Lop zipmm = new MMZip(left.constructLops(), right.constructLops(), getDataType(), getValueType(), ExecType.SPARK);
+		setOutputDimensions(zipmm);
+		setLineNumbers( zipmm );
+		setLops(zipmm);
+	}
 	
 	//////////////////////////
 	// MR Lops generation
@@ -1629,7 +1656,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	 * @return
 	 */
 	private static MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
-            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, MMTSJType mmtsj, ChainType chainType, boolean leftPMInput ) 
+            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, MMTSJType mmtsj, ChainType chainType, boolean leftPMInput, boolean tmmRewrite ) 
 	{	
 		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
 		//and needs to fit once in executor broadcast memory. The 2GB broadcast constraint is no longer
@@ -1712,7 +1739,16 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		if ( m1_rows == -1 || m1_cols == -1 || m2_rows == -1 || m2_cols == -1 )
 			return MMultMethod.CPMM;
 
-		// Step 6: Decide CPMM vs RMM based on io costs
+		// Step 6: check for ZIPMM
+		// If t(X)%*%y -> t(t(y)%*%X) rewrite and ncol(X)<blocksize
+		if( tmmRewrite && m1_rows >= 0 && m1_rows <= m1_rpb  //blocksize constraint left
+			&& m2_cols >= 0 && m2_cols <= m2_cpb             //blocksize constraint right	
+			&& m1_rows*m1_cols >= m2_rows*m2_cols )          //left transpose rewrite beneficial
+		{
+			return MMultMethod.ZIPMM;
+		}
+			
+		// Step 7: Decide CPMM vs RMM based on io costs
 		//estimate shuffle costs weighted by parallelism
 		//TODO currently we reuse the mr estimates, these need to be fine-tune for our spark operators
 		double rmm_costs = getRMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);

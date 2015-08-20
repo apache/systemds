@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
@@ -38,9 +39,11 @@ public class ConvertCSVLinesToMatrixBlocks implements Function2<Integer, Iterato
 	private double missingValue;
 	private boolean hasHeader; 
 	
-	private HashMap<Integer, Long> lineMap;
-	public ConvertCSVLinesToMatrixBlocks(HashMap<Integer, Long> offsetsBroadcast, long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double missingValue) {
-		this.lineMap = offsetsBroadcast;
+	private HashMap<Integer, Long> lineMap = null;
+	private Broadcast<HashMap<Integer, Long>> broadcastRowOffset = null;
+	
+	public ConvertCSVLinesToMatrixBlocks(Broadcast<HashMap<Integer, Long>> broadcastRowOffset, long rlen, long clen, int brlen, int bclen, boolean hasHeader, String delim, boolean fill, double missingValue) {
+		this.broadcastRowOffset = broadcastRowOffset;
 		this.brlen = brlen;
 		this.bclen = bclen;
 		this.rlen = rlen;
@@ -53,6 +56,12 @@ public class ConvertCSVLinesToMatrixBlocks implements Function2<Integer, Iterato
 
 	@Override
 	public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(final Integer partNo, final Iterator<String> lines) throws Exception {
+		synchronized(this) {
+			if(lineMap == null) {
+				lineMap = broadcastRowOffset.getValue();
+			}
+		}
+		
 		
 		// Look up the offset of the first line.
 		final long firstLineNum = lineMap.get(partNo);

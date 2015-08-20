@@ -24,6 +24,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
@@ -127,11 +128,6 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		JavaPairRDD<LongWritable, Text> csvLines1 = (JavaPairRDD<LongWritable, Text>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
 		JavaRDD<String> csvLines = csvLines1.values().map(new ConvertStringToText());
 		
-		// Since all instructions should read directly from RDD rather than file,
-		// changed this logic
-		// String fileName = mo.getFileName();
-		// JavaRDD<String> csvLines = sec.getSparkContext().textFile(fileName);
-
 		// Compute (if not already computed) the start offset of each
 		// partition of our input,
 		// RDD, so that we can parse all the partitions in parallel and send
@@ -144,9 +140,12 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		if(!mcOut.dimsKnown()) {
 			mcOut.set(numRows, expectedNumColumns, brlen, bclen);
 		}
+		
+		// When size of offset is large, broadcast is much better than task-serialization. 
+		Broadcast<HashMap<Integer, Long>> broadcastRowOffset = sec.getSparkContext().broadcast(rowOffsets);
 					
 		JavaPairRDD<MatrixIndexes, MatrixBlock> chunks = JavaPairRDD.fromJavaRDD(csvLines.mapPartitionsWithIndex(
-						new ConvertCSVLinesToMatrixBlocks(rowOffsets, 
+						new ConvertCSVLinesToMatrixBlocks(broadcastRowOffset, 
 								mcOut.getRows(), mcOut.getCols(), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), 
 								hasHeader, delim, fill, missingValue), true));
 

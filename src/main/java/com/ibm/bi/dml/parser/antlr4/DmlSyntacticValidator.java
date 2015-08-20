@@ -28,7 +28,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.parser.ConditionalPredicate;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -235,19 +234,27 @@ public class DmlSyntacticValidator implements DmlListener {
 	// --------------------------------------------------------------------
 	private void setFileLineColumn(Expression expr, ParserRuleContext ctx) {
 		// expr.setFilename(helper.getCurrentFileName());
+		String txt = ctx.getText();
 		expr.setFilename(currentPath);
 		expr.setBeginLine(ctx.start.getLine());
 		expr.setBeginColumn(ctx.start.getCharPositionInLine());
 		expr.setEndLine(ctx.stop.getLine());
 		expr.setEndColumn(ctx.stop.getCharPositionInLine());
+		if(expr.getBeginColumn() == expr.getEndColumn() && expr.getBeginLine() == expr.getEndLine() && txt.length() > 1) {
+			expr.setEndColumn(expr.getBeginColumn() + txt.length() - 1);
+		}
 	}
 	
 	private void setFileLineColumn(Statement stmt, ParserRuleContext ctx) {
+		String txt = ctx.getText();
 		stmt.setFilename(helper.getCurrentFileName());
 		stmt.setBeginLine(ctx.start.getLine());
 		stmt.setBeginColumn(ctx.start.getCharPositionInLine());
 		stmt.setEndLine(ctx.stop.getLine());
 		stmt.setEndColumn(ctx.stop.getCharPositionInLine());
+		if(stmt.getBeginColumn() == stmt.getEndColumn() && stmt.getBeginLine() == stmt.getEndLine() && txt.length() > 1) {
+			stmt.setEndColumn(stmt.getBeginColumn() + txt.length() - 1);
+		}
 	}
 	
 	// For now do no type checking, let validation handle it.
@@ -812,6 +819,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			int line = ctx.start.getLine();
 			int col = ctx.start.getCharPositionInLine();
 			ctx.info.stmt = new PrintStatement(functionName, expr, line, col, line, col);
+			setFileLineColumn(ctx.info.stmt, ctx);
 		} catch (LanguageException e) {
 			helper.notifyErrorListeners("cannot process " + functionName + "() function", ctx.start);
 			return;
@@ -971,6 +979,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			if (bife != null){
 				// It is a builtin function
 				ctx.info.expr = bife;
+				setFileLineColumn(ctx.info.expr, ctx);
 				return;
 			}
 			
@@ -978,6 +987,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			if (pbife != null){
 				// It is a parameterized builtin function
 				ctx.info.expr = pbife;
+				setFileLineColumn(ctx.info.expr, ctx);
 				return;
 			}
 			
@@ -985,20 +995,9 @@ public class DmlSyntacticValidator implements DmlListener {
 			DataExpression dbife = DataExpression.getDataExpression(functionName, paramExpression, fileName, line, col, line, col);
 			if (dbife != null){
 				ctx.info.expr = dbife;
+				setFileLineColumn(ctx.info.expr, ctx);
 				return;
 			}
-			
-//			if(DMLScript.PARSER_TREAT_UDF_AS_EXPRESSIONS) {
-//				// TODO: Only for Optimizer
-//				FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
-//				try {
-//					functCall.setFunctionName(functionName);
-//					functCall.setFunctionNamespace(DMLProgram.DEFAULT_NAMESPACE);
-//				} catch (ParseException e1) {
-//					helper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
-//					return;
-//				}
-//			}
 			
 		} catch(Exception e) {
 			helper.notifyErrorListeners("unable to process builtin function expression " + functionName + ":" + e.getMessage(), ctx.start);

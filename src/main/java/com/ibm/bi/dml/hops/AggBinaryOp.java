@@ -178,8 +178,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				//matrix mult operation selection part 3 (SPARK type)
 				boolean tmmRewrite = input1 instanceof ReorgOp && ((ReorgOp)input1).getOp()==ReOrgOp.TRANSPOSE;
 				MMultMethod method = optFindMMultMethodSpark ( 
-						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
-						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), 
+						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(), input1.getNnz(),   
+						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), input2.getNnz(),
 						mmtsj, chain, _hasLeftPMInput, tmmRewrite );
 			
 				//dispatch SPARK lops construction 
@@ -216,8 +216,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			{
 				//matrix mult operation selection part 3 (MR type)
 				MMultMethod method = optFindMMultMethodMR ( 
-							input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(),    
-							input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(),
+							input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(), input1.getNnz(),    
+							input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), input2.getNnz(),
 							mmtsj, chain, _hasLeftPMInput);
 			
 				//dispatch MR lops construction
@@ -1482,12 +1482,14 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	 * This function is called by <code>optFindMMultMethod()</code> to decide the execution strategy, as well as by 
 	 * piggybacking to decide the number of Map-side instructions to put into a single GMR job. 
 	 */
-	public static double getMapmmMemEstimate(long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, int cachedInputIndex, boolean pmm) 
+	public static double getMapmmMemEstimate(long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m1_nnz,
+			long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, long m2_nnz, int cachedInputIndex, boolean pmm) 
 	{
 		// If the size of one input is small, choose a method that uses distributed cache
 		// NOTE: be aware of output size because one input block might generate many output blocks
-		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols);
-		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols);
+		double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz); //m1 partitioned 
+		double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz); //m2 partitioned
+		
 		double m1BlockSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), Math.min(m1_cols, m1_cpb));
 		double m2BlockSize = OptimizerUtils.estimateSize(Math.min(m2_rows, m2_rpb), Math.min(m2_cols, m2_cpb));
 		double m3m1OutSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), m2_cols); //output per m1 block if m2 in cache
@@ -1498,18 +1500,18 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		{
 			//permutation matrix multiply 
 			//(one input block -> at most two output blocks)
-			footprint = m1Size + 3*m2BlockSize; //in+2*out
+			footprint = m1SizeP + 3*m2BlockSize; //in+2*out
 		}
 		else
 		{
 			//generic matrix multiply
 			if ( cachedInputIndex == 1 ) {
 				// left input (m1) is in cache
-				footprint = m1Size+m2BlockSize+m3m2OutSize;
+				footprint = m1SizeP+m2BlockSize+m3m2OutSize;
 			}
 			else {
 				// right input (m2) is in cache
-				footprint = m1BlockSize+m2Size+m3m1OutSize;
+				footprint = m1BlockSize+m2SizeP+m3m1OutSize;
 			}	
 		}
 		
@@ -1521,8 +1523,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	 * 
 	 * More details on the cost-model used: refer ICDE 2011 paper. 
 	 */
-	private static MMultMethod optFindMMultMethodMR ( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
-			                                        long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, 
+	private static MMultMethod optFindMMultMethodMR ( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m1_nnz,
+			                                        long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, long m2_nnz,
 			                                        MMTSJType mmtsj, ChainType chainType, boolean leftPMInput ) 
 	{	
 		double memBudget = MAPMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudgetMap(true);		
@@ -1566,8 +1568,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		
 		// Step 3: check for PMM (permutation matrix needs to fit into mapper memory)
 		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
-		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
-		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, true);
+		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, true);
 		if( (footprintPM1 < memBudget && m1_rows>=0 || footprintPM2 < memBudget && m2_rows>=0 ) 
 			&& leftPMInput ) 
 		{
@@ -1577,18 +1579,20 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		// Step 4: check MapMult
 		// If the size of one input is small, choose a method that uses distributed cache
 		// (with awareness of output size because one input block might generate many output blocks)		
-		// memory footprint if left input is put into cache
-		double footprint1 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
-		// memory footprint if right input is put into cache
-		double footprint2 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2, false);		
-		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols);
-		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols);
+		//memory estimates for local partitioning (mb -> partitioned mb)
+		double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz); //m1 partitioned 
+		double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz); //m2 partitioned
+		
+		//memory estimates for remote execution (broadcast and outputs)
+		double footprint1 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, false);
+		double footprint2 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 2, false);		
+		
 		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0)
 			|| (footprint2 < memBudget && m2_rows>=0 && m2_cols>=0) ) 
 		{
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)
-			if( m1Size < m2Size && m1_rows>=0 && m1_cols>=0)
+			if( m1SizeP < m2SizeP && m1_rows>=0 && m1_cols>=0)
 				return MMultMethod.MAPMM_L;
 			else
 				return MMultMethod.MAPMM_R;
@@ -1655,8 +1659,9 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	 * @param chainType
 	 * @return
 	 */
-	private static MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
-            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, MMTSJType mmtsj, ChainType chainType, boolean leftPMInput, boolean tmmRewrite ) 
+	private static MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m1_nnz, 
+            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, long m2_nnz,
+            MMTSJType mmtsj, ChainType chainType, boolean leftPMInput, boolean tmmRewrite ) 
 	{	
 		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
 		//and needs to fit once in executor broadcast memory. The 2GB broadcast constraint is no longer
@@ -1705,8 +1710,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		
 		// Step 3: check for PMM (permutation matrix needs to fit into mapper memory)
 		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
-		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
-		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, true);
+		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, true);
+		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, true);
 		if( (footprintPM1 < memBudgetExec && m1_rows>=0 || footprintPM2 < memBudgetExec && m2_rows>=0)
 			&& 2*OptimizerUtils.estimateSize(m1_rows, 1) < memBudgetLocal
 			&& leftPMInput ) 
@@ -1715,19 +1720,24 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		}
 		
 		// Step 4: check MapMM
-		// If the size of one input is small, choose a method that uses broadcast variables
-		// (currently we only apply this if a single output block)
-		double footprint1 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 1, false);
-		double footprint2 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb, 2, false);		
-		double m1Size = OptimizerUtils.estimateSize(m1_rows, m1_cols);
-		double m2Size = OptimizerUtils.estimateSize(m2_rows, m2_cols);
+		// If the size of one input is small, choose a method that uses broadcast variables to prevent shuffle
 		
-		if (   (footprint1 < memBudgetExec && 2*m1Size < memBudgetLocal && m1_rows>=0 && m1_cols>=0)
-			|| (footprint2 < memBudgetExec && 2*m2Size < memBudgetLocal && m2_rows>=0 && m2_cols>=0) ) 
+		//memory estimates for local partitioning (mb -> partitioned mb)
+		double m1Size = OptimizerUtils.estimateSizeExactSparsity(m1_rows, m1_cols, m1_nnz); //m1 single block
+		double m2Size = OptimizerUtils.estimateSizeExactSparsity(m2_rows, m2_cols, m2_nnz); //m2 single block
+		double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz); //m1 partitioned 
+		double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz); //m2 partitioned
+		
+		//memory estimates for remote execution (broadcast and outputs)
+		double footprint1 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, false);
+		double footprint2 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 2, false);		
+		
+		if (   (footprint1 < memBudgetExec && m1Size+m1SizeP < memBudgetLocal && m1_rows>=0 && m1_cols>=0)
+			|| (footprint2 < memBudgetExec && m2Size+m2SizeP < memBudgetLocal && m2_rows>=0 && m2_cols>=0) ) 
 		{
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)
-			if( m1Size < m2Size && m1_rows>=0 && m1_cols>=0)
+			if( m1SizeP < m2SizeP && m1_rows>=0 && m1_cols>=0)
 				return MMultMethod.MAPMM_L;
 			else
 				return MMultMethod.MAPMM_R;

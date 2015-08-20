@@ -554,8 +554,9 @@ public class StatementBlock extends LiveVariableAnalysis
 				
 				// validate variable being written by output statement exists
 				DataIdentifier target = (DataIdentifier)os.getIdentifier();
-				if (ids.getVariable(target.getName()) == null){
-					raiseValidateError("Undefined Variable (" + target.getName() + ") used in statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				if (ids.getVariable(target.getName()) == null) {
+					//undefined variables are always treated unconditionally as error in order to prevent common script-level bugs
+					raiseValidateError("Undefined Variable (" + target.getName() + ") used in statement", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 				
 				if ( ids.getVariable(target.getName()).getDataType() == DataType.SCALAR) {
@@ -609,13 +610,14 @@ public class StatementBlock extends LiveVariableAnalysis
 			
 				if (source instanceof BuiltinFunctionExpression){
 					BuiltinFunctionExpression bife = (BuiltinFunctionExpression)source;
-					if ((bife.getOpCode() == Expression.BuiltinFunctionOp.NROW) ||
-							(bife.getOpCode() == Expression.BuiltinFunctionOp.NCOL)){
+					if (   bife.getOpCode() == Expression.BuiltinFunctionOp.NROW 
+						|| bife.getOpCode() == Expression.BuiltinFunctionOp.NCOL )
+					{
 						DataIdentifier id = (DataIdentifier)bife.getFirstExpr();
 						DataIdentifier currVal = ids.getVariable(id.getName());
 						if (currVal == null){
-							//throwUndefinedVar ( id.getName(), bife.toString() );
-							bife.raiseValidateError("Undefined Variable (" + id.getName() + ") used in statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+							//undefined variables are always treated unconditionally as error in order to prevent common script-level bugs
+							bife.raiseValidateError("Undefined Variable (" + id.getName() + ") used in statement", false, LanguageErrorCodes.INVALID_PARAMETERS);
 						}
 						IntIdentifier intid = null;
 						if (bife.getOpCode() == Expression.BuiltinFunctionOp.NROW){

@@ -42,12 +42,17 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 
 public class ZipmmSPInstruction extends BinarySPInstruction 
 {
-	public ZipmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr )
+	//internal flag to apply left-transpose rewrite or not
+	private boolean _tRewrite = true;
+	
+	public ZipmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean tRewrite, String opcode, String istr )
 	{
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.ZIPMM;
+		
+		_tRewrite = tRewrite;
 	}
-
+	
 	/**
 	 * 
 	 * @param str
@@ -64,10 +69,11 @@ public class ZipmmSPInstruction extends BinarySPInstruction
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
+			boolean tRewrite = Boolean.parseBoolean(parts[4]);
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 			
-			return new ZipmmSPInstruction(aggbin, in1, in2, out, opcode, str);
+			return new ZipmmSPInstruction(aggbin, in1, in2, out, tRewrite, opcode, str);
 		} 
 		else {
 			throw new DMLRuntimeException("ZipmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
@@ -88,15 +94,17 @@ public class ZipmmSPInstruction extends BinarySPInstruction
 		//process core zipmm matrix multiply (in contrast to cpmm, the join over original indexes
 		//preserves the original partitioning and with that potentially unnecessary join shuffle)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-				   .join(in2)                              // join over original indexes
-				   .mapValues(new ZipMultiplyFunction());  // compute block multiplications, incl t(y)
+				   .join(in2)                                       // join over original indexes
+				   .mapValues(new ZipMultiplyFunction(_tRewrite));  // compute block multiplications, incl t(y)
 				   
 		//single-block aggregation (guaranteed by zipmm blocksize constraint)
 		MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
 		
-		//final transpose of result (for t(t(y)%*%X)))
-		ReorgOperator rop = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
-		out2 = (MatrixBlock)out2.reorgOperations(rop, new MatrixBlock(), 0, 0, 0);
+		//final transpose of result (for t(t(y)%*%X))), if transpose rewrite
+		if( _tRewrite ) {
+			ReorgOperator rop = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
+			out2 = (MatrixBlock)out2.reorgOperations(rop, new MatrixBlock(), 0, 0, 0);
+		}
 		
 		//put output block into symbol table (no lineage because single block)
 		//this also includes implicit maintenance of matrix characteristics
@@ -113,9 +121,11 @@ public class ZipmmSPInstruction extends BinarySPInstruction
 		
 		private AggregateBinaryOperator _abop = null;
 		private ReorgOperator _rop = null;
+		private boolean _tRewrite = true;
 		
-		public ZipMultiplyFunction()
+		public ZipMultiplyFunction(boolean tRewrite)
 		{
+			_tRewrite = tRewrite;
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			_abop = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 			_rop = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
@@ -125,13 +135,13 @@ public class ZipmmSPInstruction extends BinarySPInstruction
 		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0)
 			throws Exception 
 		{
-			MatrixBlock in1 = arg0._1();
-			MatrixBlock in2 = arg0._2();
+			MatrixBlock in1 = _tRewrite ? arg0._1() : arg0._2();
+			MatrixBlock in2 = _tRewrite ? arg0._2() : arg0._1();
 			
 			//transpose right input (for vectors no-op)
 			MatrixBlock tmp = (MatrixBlock)in2.reorgOperations(_rop, new MatrixBlock(), 0, 0, 0);
-			
-			//core matrix multiplication (for t(y)%*%X)
+				
+			//core matrix multiplication (for t(y)%*%X or t(X)%*%y)
 			return (MatrixBlock)tmp.aggregateBinaryOperations(tmp, in1, new MatrixBlock(), _abop);
 		}
 	}

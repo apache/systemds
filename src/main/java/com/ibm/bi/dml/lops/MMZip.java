@@ -29,15 +29,19 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
  */
 public class MMZip extends Lop 
 {
+	private boolean _tRewrite = true;
+	
 	/**
 	 * 
 	 * @param input
 	 * @param op
 	 */
-	public MMZip(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
+	public MMZip(Lop input1, Lop input2, DataType dt, ValueType vt, boolean tRewrite, ExecType et) 
 	{
 		//handle inputs and outputs
 		super(Lop.Type.MMRJ, dt, vt);		
+		
+		_tRewrite = tRewrite;
 		
 		addInput(input1);
 		addInput(input2);
@@ -71,6 +75,8 @@ public class MMZip extends Lop
 		sb.append( getInputs().get(1).prepInputOperand(input2));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output));
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _tRewrite );
 		
 		return sb.toString();
 	}

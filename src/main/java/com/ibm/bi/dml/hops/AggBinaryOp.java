@@ -881,7 +881,10 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		Hop left = getInput().get(0).getInput().get(0); //x out of t(X)
 		Hop right = getInput().get(1); //y
 
-		Lop zipmm = new MMZip(left.constructLops(), right.constructLops(), getDataType(), getValueType(), ExecType.SPARK);
+		//determine left-transpose rewrite beneficial
+		boolean tRewrite = (left.getDim1()*left.getDim2() >= right.getDim1()*right.getDim2());
+		
+		Lop zipmm = new MMZip(left.constructLops(), right.constructLops(), getDataType(), getValueType(), tRewrite, ExecType.SPARK);
 		setOutputDimensions(zipmm);
 		setLineNumbers( zipmm );
 		setLops(zipmm);
@@ -1752,8 +1755,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		// Step 6: check for ZIPMM
 		// If t(X)%*%y -> t(t(y)%*%X) rewrite and ncol(X)<blocksize
 		if( tmmRewrite && m1_rows >= 0 && m1_rows <= m1_rpb  //blocksize constraint left
-			&& m2_cols >= 0 && m2_cols <= m2_cpb             //blocksize constraint right	
-			&& m1_rows*m1_cols >= m2_rows*m2_cols )          //left transpose rewrite beneficial
+			&& m2_cols >= 0 && m2_cols <= m2_cpb )           //blocksize constraint right	
 		{
 			return MMultMethod.ZIPMM;
 		}

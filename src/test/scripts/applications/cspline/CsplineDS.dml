@@ -1,0 +1,150 @@
+#-------------------------------------------------------------
+#
+# (C) Copyright IBM Corp. 2010, 2015
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-------------------------------------------------------------
+#
+# THIS SCRIPT SOLVES CUBIC SPLINE INTERPOLATION USING THE CONJUGATE GRADIENT ALGORITHM
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# --------------------------------------------------------------------------------------------
+# X     String  ---     Location (on HDFS) to read the 1-column matrix of x values knots
+# Y     String  ---     Location (on HDFS) to read the 1-column matrix of corresponding y values knots
+# K     String  ---     Location to store the $k_{i}$ -file for the calculated k vectors. the default is to print it to the standard output
+# O     String  ---     Location to store the output predicted y the default is to print it to the standard output
+# inp_x Double  ---     the given input x, for which the cspline will find predicted y.
+#
+# fmt   String "text"   Matrix file output format, such as `text`,`mm`, or `csv`
+# --------------------------------------------------------------------------------------------
+# OUTPUT: Matrix of k parameters (the betas)
+#
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f CsplineDS.dml -nvargs X=INPUT_DIR/X Y= INPUT_DIR/Y O=OUTPUT_DIR/Out
+# -inp_x=4.5 -maxi=10 fmt=csv
+
+
+
+
+#Assumptions:
+# - The inputs xs are monotonically increasing,
+# - there is no duplicates points in x
+
+#Algorithms: It implement the https://en.wikipedia.org/wiki/Spline_interpolation#Algorithm_to_find_the_interpolating_cubic_spline
+#it usages natural spline with q1''(x0) == qn''(xn) == 0.0
+
+
+
+##BEGIN Main Func
+fileX = $X;
+fileY = $Y;
+fileK = $K;
+fileO = ifdef($O, " ");
+inp_x = $inp_x
+fmtO = ifdef ($fmt, "text");
+
+print ("BEGIN CUBIC SPLINE SCRIPT");
+
+print ("Reading X and Y ...");
+xs = read (fileX);
+ys = read (fileY);
+
+print("Calculating Ks ...")
+ks = xs
+ks = calcKnotsDerivKs(xs, ys)
+print("Writing Ks ...")
+write (ks, fileK, format=fmtO);
+
+print("Interpolating ...")
+x = inp_x
+y = interpSpline(x, xs, ys, ks)
+
+print("For inp_x = " + $inp_x + " Calculated y = " + y)
+
+y_mat = matrix(y, 1, 1)
+
+if (fileO != " ") {
+   write (y_mat, fileO);
+ } else {
+   print(y_mat)
+}
+
+
+print ("END CUBIC SPLINE REGRESSION SCRIPT");
+
+##END Main Func
+
+
+
+#given X<nx1> and corresponding Y<nx1> values for the function. where each (xi,yi) represents a knot.
+#it calculates the first derivates i.e k of the interpolated polynomial
+calcKnotsDerivKs = function (
+  matrix[double] X, matrix[double] Y
+) return (matrix[double] K) {
+    nx = nrow(X)
+    ny = nrow(Y)
+    if (nx != ny) {
+      stop("X and Y vectors are of different size")
+    }
+    n = nx
+    A = matrix(0.0, n, n)
+    b = matrix(0.0, n, 1)
+
+    for (i in 2:n-1) {
+      A[i,i-1] = 1/(X[i, 1] - X[i-1, 1])
+      A[i,i] = 2 * (1/(X[i, 1] - X[i-1, 1]) + 1/(X[i+1, 1] - X[i, 1]))
+      A[i,i+1] = 1/(X[i+1, 1] - X[i, 1])
+      b[i,1] = 3* ( (Y[i, 1] - Y[i-1, 1])/((X[i, 1] - X[i-1, 1])*(X[i, 1] - X[i-1, 1])) + (Y[i+1, 1] - Y[i, 1])/((X[i+1, 1] - X[i, 1])*(X[i+1, 1] - X[i, 1])) )
+    }
+
+    A[1, 1] = 2/(X[2,1] - X[1,1])
+    A[1, 2] = 1/(X[2,1] - X[1,1])
+    b[1, 1] = 3* (Y[2, 1] - Y[1, 1]) / ((X[2,1] - X[1,1])*(X[2,1] - X[1,1]))
+
+    A[n, n-1] = 1/(X[n,1] - X[n-1,1])
+    A[n, n] = 2/(X[n,1] - X[n-1,1])
+    b[n, 1] = 3*(Y[n, 1] - Y[n-1, 1]) / ((X[n,1] - X[n-1,1])*(X[n,1] - X[n-1,1]))
+
+
+    # solve Ax = b for x vector and assign it to K
+    K = solve(A, b)
+
+}
+
+#given the X<nx1> and Y<nx1> n sample points and K (the first derivative of the interp polynomial), it calculate the
+#  y for the given x using the cubic spline interpolation
+interpSpline = function(
+  double x, matrix[double] X, matrix[double] Y, matrix[double] K
+) return (double q) {
+
+  #first find the right knots for interpolation
+  i = 1
+  while(as.scalar(X[i,1]) < x) { # @NOTE: may be better to do the binary search here
+    i = i+1
+  }
+
+  #calc the y as per the algo docs
+  t = (x - X[i-1,1]) / ( X[i,1] - X[i-1,1])
+
+  a =  K[i-1,1]*(X[i,1]-X[i-1,1]) - (Y[i,1]-Y[i-1,1])
+  b = -K[i,1]*(X[i,1]-X[i-1,1]) + (Y[i,1]-Y[i-1,1])
+
+  qm = (1-t)*Y[i-1,1] + t*Y[i,1] + t*(1-t)*(a*(1-t)+b*t)
+
+  q = as.scalar(qm)
+
+}
+

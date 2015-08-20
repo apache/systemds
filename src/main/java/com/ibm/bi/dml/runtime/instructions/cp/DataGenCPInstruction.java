@@ -310,7 +310,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 			if( LOG.isTraceEnabled() )
 				LOG.trace("Process DataGenCPInstruction sample with range="+range+", size="+rows+", replace"+replace + ", seed=" + seed);
 			
-			if ( range < rows && replace == false)
+			if ( range < rows && !replace )
 				throw new DMLRuntimeException("Sample (size=" + rows + ") larger than population (size=" + range + ") can only be generated with replacement.");
 			
 			soresBlock = MatrixBlock.sampleOperations(range, (int)rows, replace, seed);

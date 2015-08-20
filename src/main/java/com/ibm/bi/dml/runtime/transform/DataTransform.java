@@ -211,9 +211,8 @@ public class DataTransform {
 		Object[] numBins = null;
 		Object[] mvConstants = null;
 		
-		boolean byPositions = false;
-		if(JSONHelper.get(inputSpec,JSON_BYPOS) != null && ((Boolean)JSONHelper.get(inputSpec,JSON_BYPOS)).booleanValue() == true)
-			byPositions = true;
+		boolean byPositions = (JSONHelper.get(inputSpec,JSON_BYPOS) != null && 
+				              ((Boolean)JSONHelper.get(inputSpec,JSON_BYPOS)).booleanValue());
 		
 		// --------------------------------------------------------------------------
 		// Recoding

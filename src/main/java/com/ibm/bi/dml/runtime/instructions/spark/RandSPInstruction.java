@@ -419,7 +419,7 @@ public class RandSPInstruction extends UnarySPInstruction
 	 */
 	private void generateSample(SparkExecutionContext sec) throws DMLRuntimeException 
 	{
-		if ( maxValue < rows && replace == false)
+		if ( maxValue < rows && !replace )
 			throw new DMLRuntimeException("Sample (size=" + rows + ") larger than population (size=" + maxValue + ") can only be generated with replacement.");
 
 		if( LOG.isTraceEnabled() )

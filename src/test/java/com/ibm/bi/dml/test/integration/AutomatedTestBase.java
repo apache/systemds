@@ -812,7 +812,7 @@ public abstract class AutomatedTestBase
 		// *** END HACK ***
 		
 		String cmd;
-		if (newWay == false) {
+		if( !newWay ) {
 			executionFile = executionFile + "t";
 			cmd = "R -f " + executionFile;
 		}
@@ -825,11 +825,11 @@ public abstract class AutomatedTestBase
 			executionFile = executionFile.replace('/', '\\');
 		}
 		if (DEBUG) {
-			if (!newWay) { // not sure why have this condition
+			if( !newWay ) { // not sure why have this condition
 				TestUtils.printRScript(executionFile);
 			}
 		}
-		if (newWay == false) {
+		if( !newWay ) {
 		ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".R", testVariables);
 		}
 	
@@ -973,7 +973,7 @@ public abstract class AutomatedTestBase
 		
 		String executionFile = baseDirectory + selectedTest + ".dml";
 		
-		if (newWay == false) {
+		if( !newWay ) {
 			executionFile = executionFile + "t";
 			ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".dml", testVariables);
 		}
@@ -1004,7 +1004,7 @@ public abstract class AutomatedTestBase
 				}
 				break;
 			}
-		} else if (newWay == true) {
+		} else if (newWay) {
 			// Need a null pointer check because some tests read DML from a string.
 			if (null != fullDMLScriptName) {
 				args.add("-f");
@@ -1038,14 +1038,14 @@ public abstract class AutomatedTestBase
 		
 		
 		// program-specific parameters
-		if ( newWay == true ) {
+		if ( newWay ) {
 			for (int i=0; i < programArgs.length; i++)
 				args.add(programArgs[i]);
 		}
 		
 
 		if (DEBUG) {
-			if ( newWay == false )
+			if ( !newWay )
 				TestUtils.printDMLScript(executionFile);
 			else {
 				if (scriptType == null) {

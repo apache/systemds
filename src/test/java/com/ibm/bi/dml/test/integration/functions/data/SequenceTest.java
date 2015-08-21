@@ -149,7 +149,7 @@ public class SequenceTest extends AutomatedTestBase
 			}
 			 
 			
-			if ( exceptionExpected == false ) {
+			if ( !exceptionExpected ) {
 				runRScript(true);
 				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("A_CP");
 				HashMap<CellIndex, Double> rfile = readRMatrixFromFS("A");

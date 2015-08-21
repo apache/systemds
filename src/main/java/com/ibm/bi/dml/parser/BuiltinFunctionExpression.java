@@ -804,7 +804,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			if ( check && in.length >= 3 
 					&& isConstant(in[2]) 
 					&& in[2].getOutput().getValueType() == ValueType.BOOLEAN  
-					&& ((BooleanIdentifier)in[2]).getValue() != true )
+					&& !((BooleanIdentifier)in[2]).getValue() )
 				throw new LanguageException("Sample (size=" + ((ConstIdentifier)in[0]).getLongValue() 
 						+ ") larger than population (size=" + ((ConstIdentifier)in[1]).getLongValue() 
 						+ ") can only be generated with replacement.");

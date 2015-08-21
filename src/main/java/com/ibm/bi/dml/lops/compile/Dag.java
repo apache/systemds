@@ -848,7 +848,7 @@ public class Dag<N extends Lop>
 	 * value is utilized in limiting the number of instructions piggybacked onto a single GMR mapper.
 	 */
 	private double computeFootprintInMapper(N node) {
-		// Memory limits must be chcked only for nodes that use distributed cache
+		// Memory limits must be checked only for nodes that use distributed cache
 		if ( ! node.usesDistributedCache() )
 			// default behavior
 			return 0.0;
@@ -860,15 +860,15 @@ public class Dag<N extends Lop>
 		if ( node instanceof MapMult ) {
 			int dcInputIndex = node.distributedCacheInputIndex()[0];
 			footprint = AggBinaryOp.getMapmmMemEstimate(
-					in1dims.getNumRows(), in1dims.getNumCols(), in1dims.getRowsInBlock(), in1dims.getColsInBlock(), 
-					in2dims.getNumRows(), in2dims.getNumCols(), in2dims.getRowsInBlock(), in2dims.getColsInBlock(), 
+					in1dims.getNumRows(), in1dims.getNumCols(), in1dims.getRowsInBlock(), in1dims.getColsInBlock(), in1dims.getNnz(),
+					in2dims.getNumRows(), in2dims.getNumCols(), in2dims.getRowsInBlock(), in2dims.getColsInBlock(), in2dims.getNnz(),
 					dcInputIndex, false);
 		}
 		else if ( node instanceof PMMJ ) {
 			int dcInputIndex = node.distributedCacheInputIndex()[0];
 			footprint = AggBinaryOp.getMapmmMemEstimate(
-					in1dims.getNumRows(), 1, in1dims.getRowsInBlock(), in1dims.getColsInBlock(), 
-					in2dims.getNumRows(), in2dims.getNumCols(), in2dims.getRowsInBlock(), in2dims.getColsInBlock(), 
+					in1dims.getNumRows(), 1, in1dims.getRowsInBlock(), in1dims.getColsInBlock(), in1dims.getNnz(),
+					in2dims.getNumRows(), in2dims.getNumCols(), in2dims.getRowsInBlock(), in2dims.getColsInBlock(), in2dims.getNnz(), 
 					dcInputIndex, true);
 		}
 		else if ( node instanceof AppendM ) {

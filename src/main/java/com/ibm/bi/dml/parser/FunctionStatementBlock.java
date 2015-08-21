@@ -293,14 +293,6 @@ public class FunctionStatementBlock extends StatementBlock
 		_liveIn = new VariableSet();
 		_liveIn.addVariables(liPassed);
 		
-		/*
-		for(String key : _gen.getVariableNames()){
-			if (_liveIn.containsVariable(key) == false){
-				LOG.error(this.getStatement(0).printErrorLocation() + "function " + ((FunctionStatement)this.getStatement(0)).getName() + " requires variable " + key + " to be passed as formal parameter");
-				throw new LanguageException(this.getStatement(0).printErrorLocation() + "function " + ((FunctionStatement)this.getStatement(0)).getName() + " requires variable " + key + " to be passed as formal parameter");
-			}
-		}
-		*/
 		VariableSet liveInReturn = new VariableSet();
 		liveInReturn.addVariables(_liveIn);
 		

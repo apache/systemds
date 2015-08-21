@@ -27,7 +27,7 @@
 3) Compiler features
 * Code motion (cse across loops)            2pw
 * Extended inter-procedural analysis        2pw  (e.g., step_glm)
-* Sparsity-aware broadcast op selection     1pw
+* Sparsity-aware broadcast op selection     1pw                       .. done
 * Function calls in expressions             2pw
 
 3) Parfor

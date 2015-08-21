@@ -531,6 +531,20 @@ public class OptimizerUtils
 	// Memory Estimates   //
 	////////////////////////
 	
+	/**
+	 * Estimates the footprint (in bytes) for an in-memory representation of a
+	 * matrix with dimensions=(nrows,ncols) and and number of non-zeros nnz.
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @param sp
+	 * @return
+	 */
+	public static long estimateSizeExactSparsity(long nrows, long ncols, long nnz) 
+	{
+		double sp = getSparsity(nrows, ncols, nnz);
+		return estimateSizeExactSparsity(nrows, ncols, sp);
+	}
 	
 	/**
 	 * Estimates the footprint (in bytes) for an in-memory representation of a
@@ -550,6 +564,68 @@ public class OptimizerUtils
 	public static long estimateSizeExactSparsity(long nrows, long ncols, double sp) 
 	{
 		return MatrixBlock.estimateSizeInMemory(nrows,ncols,sp);
+	}
+	
+	/**
+	 * Estimates the footprint (in bytes) for a partitioned in-memory representation of a
+	 * matrix with dimensions=(nrows,ncols) and number of non-zeros nnz.
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @param sp
+	 * @return
+	 */
+	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long brlen, long bclen, long nnz) 
+	{
+		double sp = getSparsity(rlen, clen, nnz);
+		return estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, sp);
+	}
+	
+	/**
+	 * Estimates the footprint (in bytes) for a partitioned in-memory representation of a
+	 * matrix with dimensions=(nrows,ncols) and sparsity=sp.
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @param sp
+	 * @return
+	 */
+	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long brlen, long bclen, double sp) 
+	{
+		long ret = 0;
+
+		//check for guaranteed existence of empty blocks (less nnz than total number of blocks)
+		long tnrblks = (long)Math.ceil((double)rlen/brlen);
+		long tncblks = (long)Math.ceil((double)clen/bclen);
+		long nnz = (long) Math.ceil(sp * rlen * clen);		
+		if( nnz < tnrblks * tncblks ) {
+			long lrlen = Math.min(rlen, brlen);
+			long lclen = Math.min(clen, bclen);
+			return nnz * estimateSizeExactSparsity(lrlen, lclen, 1)
+				 + (tnrblks * tncblks - nnz) * estimateSizeEmptyBlock(lrlen, lclen);
+		}
+		
+		//estimate size of full brlen x bclen blocks
+		long nrblks = rlen / brlen;
+		long ncblks = clen / bclen;
+		if( nrblks * ncblks > 0 )
+			ret += nrblks * ncblks * estimateSizeExactSparsity(brlen, bclen, sp);
+
+		//estimate size of bottom boundary blocks 
+		long lrlen = rlen % brlen;
+		if( ncblks > 0 && lrlen > 0 )
+			ret += ncblks * estimateSizeExactSparsity(lrlen, bclen, sp);
+		
+		//estimate size of right boundary blocks
+		long lclen = clen % bclen;
+		if( nrblks > 0 && lclen > 0 )
+			ret += nrblks * estimateSizeExactSparsity(brlen, lclen, sp);
+		
+		//estimate size of bottom right boundary block
+		if( lrlen > 0 && lclen > 0  )
+			ret += estimateSizeExactSparsity(lrlen, lclen, sp);
+		
+		return ret;
 	}
 	
 	/**

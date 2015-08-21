@@ -171,15 +171,15 @@ public abstract class Identifier extends Expression
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException 
 	{
-		//Identifier out = this.getOutput();
 		
-		if (this.getOutput() instanceof DataIdentifier){
+		if( getOutput() instanceof DataIdentifier ) {
 			
-			// set properties for Data identifer
+			// set properties for Data identifier
 			String name = ((DataIdentifier)this.getOutput()).getName();
 			Identifier id = ids.get(name);
 			if ( id == null ){
-				raiseValidateError("Undefined Variable (" + name + ") used in statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				//undefined variables are always treated unconditionally as error in order to prevent common script-level bugs
+				raiseValidateError("Undefined Variable (" + name + ") used in statement", false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			this.getOutput().setProperties(id);
 			

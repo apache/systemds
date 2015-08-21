@@ -49,7 +49,7 @@ public class InstallDependencyForIntegrationTests {
 		String executionFile =  "./src/test/scripts/installDependencies.R"; 
 		
 		String cmd;
-		if (newWay == false) {
+		if ( !newWay ) {
 			executionFile = executionFile + "t";
 			cmd = "R -f " + executionFile;
 		}

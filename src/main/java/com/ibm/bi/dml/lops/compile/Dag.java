@@ -3242,10 +3242,15 @@ public class Dag<N extends Lop>
 								&& node.getOutputParameters().isBlocked() ) {
 							// transient read feeding into persistent write in blocked representation
 							// simply, move the file
+							
+							//prepare filename (literal or variable in order to support dynamic write) 
+							String fnameStr = (fname instanceof Data && ((Data)fname).isLiteral()) ? 
+									           fname.getOutputParameters().getLabel() 
+									           : Lop.VARIABLE_NAME_PLACEHOLDER + fname.getOutputParameters().getLabel() + Lop.VARIABLE_NAME_PLACEHOLDER;
+							
 							currInstr = (CPInstruction) VariableCPInstruction.prepareMoveInstruction(
 											inputLop.getOutputParameters().getLabel(), 
-											fname.getOutputParameters().getLabel(),
-											"binaryblock" );
+											fnameStr, "binaryblock" );
 						}
 						else {
 							

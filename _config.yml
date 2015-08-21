@@ -1,0 +1,16 @@
+highlighter: pygments
+markdown: kramdown
+gems:
+  - jekyll-redirect-from
+
+# For some reason kramdown seems to behave differently on different
+# OS/packages wrt encoding. So we hard code this config.
+kramdown:
+  entity_output: numeric
+
+include:
+  - _static
+  - _modules
+
+# These allow the documentation to be updated with newer releases
+SYSTEMML_VERSION: 5.2

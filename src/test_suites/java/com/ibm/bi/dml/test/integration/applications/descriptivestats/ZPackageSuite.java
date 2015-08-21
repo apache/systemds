@@ -30,7 +30,11 @@ import org.junit.runners.Suite;
   BivariateScaleScaleTest.class,
   OrderStatisticsTest.class,
   
-  UnivariateStatsTest.class
+  UnivariateUnweightedScaleDenseTest.class,
+  UnivariateWeightedScaleDenseTest.class,
+  UnivariateUnweightedScaleSparseTest.class,
+  UnivariateWeightedScaleSparseTest.class,
+  UnivariateCategoricalTest.class
  
 })
 

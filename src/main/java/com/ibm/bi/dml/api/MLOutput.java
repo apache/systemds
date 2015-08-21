@@ -19,8 +19,6 @@ package com.ibm.bi.dml.api;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -29,8 +27,6 @@ import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
@@ -40,6 +36,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLBlock;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReblock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -85,7 +82,8 @@ public class MLOutput {
 	public DataFrame getDF(SQLContext sqlContext, String varName) throws DMLRuntimeException {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
 		if(rdd != null) {
-			return getDF(sqlContext, rdd, varName);
+			MatrixCharacteristics mc = _outMetadata.get(varName);
+			return LibMatrixReblock.binaryBlockToDataFrame(rdd, mc, sqlContext);
 		}
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
@@ -123,34 +121,6 @@ public class MLOutput {
 //	public BlockMatrix getMLLibBlockedMatrix(MLContext ml, SQLContext sqlContext, String varName) throws DMLRuntimeException {
 //		return getMLMatrix(ml, sqlContext, varName).toBlockedMatrix();
 //	}
-	
-	private DataFrame getDF(SQLContext sqlContext, JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, String varName) throws DMLRuntimeException {
-		MatrixCharacteristics mc = _outMetadata.get(varName);
-		long rlen = mc.getRows(); long clen = mc.getCols();
-		int brlen = mc.getRowsPerBlock(); int bclen = mc.getColsPerBlock();
-		
-		// Very expensive operation here: groupByKey (where number of keys might be too large)
-		JavaRDD<Row> rowsRDD = binaryBlockRDD.flatMapToPair(new ProjectRows(rlen, clen, brlen, bclen))
-				.groupByKey().map(new ConvertDoubleArrayToRows(clen, bclen));
-		
-		int numColumns = (int) clen;
-		if(numColumns <= 0) {
-			// numColumns = rowsRDD.first().length() - 1; // Ugly, so instead prefer to throw
-			throw new DMLRuntimeException("Output dimensions unknown after executing the script and hence cannot create the dataframe");
-		}
-		
-		List<StructField> fields = new ArrayList<StructField>();
-		// LongTypes throw an error: java.lang.Double incompatible with java.lang.Long
-		fields.add(DataTypes.createStructField("ID", DataTypes.DoubleType, false)); 
-		for(int i = 1; i <= numColumns; i++) {
-			fields.add(DataTypes.createStructField("C" + i, DataTypes.DoubleType, false));
-		}
-		
-		// This will cause infinite recursion due to bug in Spark
-		// https://issues.apache.org/jira/browse/SPARK-6999
-		// return sqlContext.createDataFrame(rowsRDD, colNames); // where ArrayList<String> colNames
-		return sqlContext.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
-	}
 	
 	public static class ProjectRows implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, Long, Tuple2<Long, Double[]>> {
 		private static final long serialVersionUID = -4792573268900472749L;

@@ -17,17 +17,9 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
-import java.util.HashMap;
-import java.util.List;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.broadcast.Broadcast;
-
-import scala.Tuple2;
-
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -38,14 +30,10 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.data.CountLinesInfo;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertCSVLinesToMatrixBlocks;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToText;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.CountLines;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReblock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -126,77 +114,14 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		
 		@SuppressWarnings("unchecked")
 		JavaPairRDD<LongWritable, Text> csvLines1 = (JavaPairRDD<LongWritable, Text>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
-		JavaRDD<String> csvLines = csvLines1.values().map(new ConvertStringToText());
-		
-		// Compute (if not already computed) the start offset of each
-		// partition of our input,
-		// RDD, so that we can parse all the partitions in parallel and send
-		// each chunk of
-		// the matrix to the appropriate block.
-		getRowOffsets(csvLines, delim);
 		
 		// put output RDD handle into symbol table
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		if(!mcOut.dimsKnown()) {
-			mcOut.set(numRows, expectedNumColumns, brlen, bclen);
-		}
 		
-		// When size of offset is large, broadcast is much better than task-serialization. 
-		Broadcast<HashMap<Integer, Long>> broadcastRowOffset = sec.getSparkContext().broadcast(rowOffsets);
-					
-		JavaPairRDD<MatrixIndexes, MatrixBlock> chunks = JavaPairRDD.fromJavaRDD(csvLines.mapPartitionsWithIndex(
-						new ConvertCSVLinesToMatrixBlocks(broadcastRowOffset, 
-								mcOut.getRows(), mcOut.getCols(), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), 
-								hasHeader, delim, fill, missingValue), true));
-
-		// Merge chunks according to their block index
-		JavaPairRDD<MatrixIndexes, MatrixBlock> blocksRDD = RDDAggregateUtils.mergeByKey(chunks);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = LibMatrixReblock.csvRDDToBinaryBlockRDD(csvLines1, mcOut, 
+				sec.getSparkContext(), brlen, bclen, hasHeader, delim, fill, missingValue);
 		
-		// SparkUtils.setLineageInfoForExplain(this, blocksRDD, output.getName());
-		sec.setRDDHandleForVariable(output.getName(), blocksRDD);
+		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-	}
-	
-	private long expectedNumColumns = -1;
-	private long numRows = 0;
-	private HashMap<Integer, Long> rowOffsets = null;
-
-	private void getRowOffsets(JavaRDD<String> csvLines, String delim) throws DMLRuntimeException {
-		if(rowOffsets == null) {
-			// Start by counting the number of lines in each partition.
-			JavaRDD<Tuple2<Integer, CountLinesInfo>> lineCounts = csvLines
-					.mapPartitionsWithIndex(new CountLines(delim), true);
-	
-			// Not sure if the sort here is necessary.
-			List<Tuple2<Integer, CountLinesInfo>> linesPerPartition = JavaPairRDD
-					.fromJavaRDD(lineCounts).sortByKey().collect();
-			// lineCounts.sortBy((p: (Int, Long)) => p._1, true, 1).collect()
-	
-			if(linesPerPartition.size() == 0) {
-				throw new DMLRuntimeException("Expected atleast one partition for the CSV input file");
-			}
-			
-			// Compute the offset of the first line in the each partition.
-			// This code assumes that partitions are numbered in order, but does
-			// not assume that
-			// partition numbers are contiguous
-			this.rowOffsets = new HashMap<Integer, Long>();
-			rowOffsets.put(linesPerPartition.get(0)._1, 0L);
-	
-			int prevPartNo = linesPerPartition.get(0)._1;
-			for (int i = 1; i < linesPerPartition.size(); i++) {
-				Integer partNo = linesPerPartition.get(i)._1;
-				Long prevOffset = rowOffsets.get(prevPartNo);
-				CountLinesInfo info = linesPerPartition.get(i - 1)._2;
-				long curOffset = prevOffset + info.getNumLines();
-				expectedNumColumns = Math.max(expectedNumColumns, info.getExpectedNumColumns());
-				numRows += info.getNumLines();
-				rowOffsets.put(partNo, curOffset);
-				prevPartNo = partNo;
-			}
-			CountLinesInfo lastInfo = linesPerPartition.get(linesPerPartition.size() - 1)._2;
-			expectedNumColumns = Math.max(expectedNumColumns, lastInfo.getExpectedNumColumns());
-			numRows += lastInfo.getNumLines();
-		}
 	}
 }

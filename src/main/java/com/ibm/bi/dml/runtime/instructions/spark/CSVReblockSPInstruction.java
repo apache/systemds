@@ -20,6 +20,7 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
+
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -30,10 +31,10 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReblock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -118,7 +119,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		// put output RDD handle into symbol table
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = LibMatrixReblock.csvRDDToBinaryBlockRDD(csvLines1, mcOut, 
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.csvRDDToBinaryBlockRDD(csvLines1, mcOut, 
 				sec.getSparkContext(), brlen, bclen, hasHeader, delim, fill, missingValue);
 		
 		sec.setRDDHandleForVariable(output.getName(), out);

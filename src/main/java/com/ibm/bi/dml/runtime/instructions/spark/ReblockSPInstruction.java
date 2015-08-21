@@ -36,10 +36,10 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDProperties;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractBlockForBinaryReblock;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReblock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -120,7 +120,7 @@ public class ReblockSPInstruction extends UnarySPInstruction
 			sec.checkAndRaiseValidationWarningJDKVersion();
 			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
 			
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = LibMatrixReblock.textRDDToBinaryBlockRDD(lines, mc, mcOut, sec.getSparkContext(), brlen, bclen, outputEmptyBlocks);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.textRDDToBinaryBlockRDD(lines, mc, mcOut, sec.getSparkContext(), brlen, bclen, outputEmptyBlocks);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -148,7 +148,7 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		else if(iimd.getInputInfo()==InputInfo.BinaryCellInputInfo) 
 		{
 			JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = LibMatrixReblock.binaryCellRDDToBinaryBlockRDD(binaryCells, mc, mcOut, sec.getSparkContext(), brlen, bclen, outputEmptyBlocks);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryCellRDDToBinaryBlockRDD(binaryCells, mc, mcOut, sec.getSparkContext(), brlen, bclen, outputEmptyBlocks);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

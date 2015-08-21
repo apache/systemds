@@ -45,6 +45,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixDatagen;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReblock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -464,7 +465,8 @@ public class RandSPInstruction extends UnarySPInstruction
 		MatrixCharacteristics mcOut = new MatrixCharacteristics(rows, 1, rowsInBlock, colsInBlock, rows);
 		
 		// Construct BinaryBlock representation
-		JavaPairRDD<MatrixIndexes, MatrixBlock> mbRDD = ReblockSPInstruction.processBinaryCellReblock(sec, miRDD, mc, mcOut, true, rowsInBlock, colsInBlock);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> mbRDD = 
+				LibMatrixReblock.binaryCellRDDToBinaryBlockRDD(miRDD, mc, mcOut, sec.getSparkContext(), rowsInBlock, colsInBlock, true);
 		
 		MatrixCharacteristics retDims = sec.getMatrixCharacteristics(output.getName());
 		retDims.setNonZeros(rows);

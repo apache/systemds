@@ -1,0 +1,40 @@
+#-------------------------------------------------------------
+#
+# (C) Copyright IBM Corp. 2010, 2015
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-------------------------------------------------------------
+
+# Note this script is externalized to customers, please do not change w/o consulting component owner.
+# How to invoke this pydml script PageRank.pydml?
+# Assume PAGE_RANK_HOME is set to the home of the pydml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 1000 and cols = 1000 for g,  rows = 1000 and cols = 1 for p, rows = 1000 and cols = 1 for e, rows = 1 and cols = 1000 for u,
+# Assume alpha = 0.85, max_iteration = 3
+# hadoop jar SystemML.jar -f $PAGE_RANK_HOME/PageRank.pydml -python -args "$INPUT_DIR/g" "$INPUT_DIR/p" "$INPUT_DIR/e" "$INPUT_DIR/u" 1000 1000 0.85 3 "$OUPUT_DIR/w" 
+
+G = load($1, rows=$5, cols=$6, format="text")
+# dense
+p = load($2, rows=$5, cols=1, format="text")
+e = load($3, rows=$5, cols=1, format="text")
+u = load($4, rows=1, cols=$6, format="text")
+alpha = $7
+max_iteration = $8
+i = 0
+
+while(i < max_iteration):
+	p = alpha * (dot(G, p)) + (1 - alpha) * (dot(dot(e, u), p))
+	i = i + 1
+
+save(p, $9, format="text")

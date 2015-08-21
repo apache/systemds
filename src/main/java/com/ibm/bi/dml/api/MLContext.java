@@ -62,7 +62,6 @@ import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDProperties;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertRowToCSVString;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
@@ -70,6 +69,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkListener;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReblock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -254,19 +254,7 @@ public class MLContext {
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
-		if(containsID) {
-			// Uncomment this when we move to Spark 1.4.0 or higher 
-			// df = df.sort("ID").drop("ID");
-			throw new DMLRuntimeException("Ignoring ID is not supported yet");
-		}
-		
-		JavaRDD<String> rdd = null;
-		if(df != null && df.javaRDD() != null) {
-			rdd = df.javaRDD().map(new ConvertRowToCSVString());
-		}
-		else {
-			throw new DMLRuntimeException("Unsupported DataFrame as it is not backed by rdd");
-		}
+		JavaRDD<String> rdd = LibMatrixReblock.dataFrameToCSVRDD(df, containsID);
 		registerInput(varName, rdd, "csv", -1, -1);
 	}
 	

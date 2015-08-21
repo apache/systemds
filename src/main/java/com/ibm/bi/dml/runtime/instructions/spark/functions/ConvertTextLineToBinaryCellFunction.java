@@ -17,7 +17,6 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.function.PairFunction;
 
@@ -32,7 +31,7 @@ import com.ibm.bi.dml.runtime.matrix.data.TextToBinaryCellConverter;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
-public class ConvertTextLineToBinaryCellFunction implements PairFunction<Tuple2<LongWritable, Text>, MatrixIndexes, MatrixCell> {
+public class ConvertTextLineToBinaryCellFunction implements PairFunction<String, MatrixIndexes, MatrixCell> {
 	
 	private static final long serialVersionUID = -3672377410407066396L;
 	private int brlen; 
@@ -49,11 +48,11 @@ public class ConvertTextLineToBinaryCellFunction implements PairFunction<Tuple2<
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Tuple2<MatrixIndexes, MatrixCell> call(Tuple2<LongWritable, Text> arg0) throws Exception {
+	public Tuple2<MatrixIndexes, MatrixCell> call(String line) throws Exception {
 		@SuppressWarnings("rawtypes")
 		Converter converter = new TextToBinaryCellConverter();
 		converter.setBlockSize(brlen, bclen);
-		converter.convert(null, arg0._2);
+		converter.convert(null, new Text(line));
 		
 		Pair<MatrixIndexes, MatrixValue> retVal = null;
 		if(converter.hasNext()) {
@@ -61,7 +60,7 @@ public class ConvertTextLineToBinaryCellFunction implements PairFunction<Tuple2<
 			
 			if(retVal.getKey().getRowIndex() > rlen || retVal.getKey().getColumnIndex() > clen) {
 				throw new Exception("Either incorrect metadata provided to text reblock (" + rlen + "," + clen
-						+ ") or incorrect input line:" + arg0._2);
+						+ ") or incorrect input line:" + line);
 			}
 			// ------------------------------------------------------------------------------------------
 			// Get appropriate indexes for blockIndexes and cell
@@ -73,7 +72,7 @@ public class ConvertTextLineToBinaryCellFunction implements PairFunction<Tuple2<
 			long colIndexInBlock = UtilFunctions.cellInBlockCalculation(retVal.getKey().getColumnIndex(), bclen);
 			// Perform sanity check
 			if(blockRowIndex <= 0 || blockColIndex <= 0 || rowIndexInBlock < 0 || colIndexInBlock < 0) {
-				throw new Exception("Error computing indexes for the line:" + arg0._2.toString());
+				throw new Exception("Error computing indexes for the line:" + line);
 			}
 			// ------------------------------------------------------------------------------------------
 			

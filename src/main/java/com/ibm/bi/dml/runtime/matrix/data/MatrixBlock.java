@@ -1137,7 +1137,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		return evalSparseFormatInMemory(lrlen, lclen, lnonZeros);
 	}
 	
-
+	@SuppressWarnings("unused")
 	private boolean evalSparseFormatInMemory(boolean transpose)
 	{
 		int lrlen = (transpose) ? clen : rlen;
@@ -3381,21 +3381,18 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		if ( !( op.fn instanceof SwapIndex || op.fn instanceof DiagIndex || op.fn instanceof SortIndex) )
 			throw new DMLRuntimeException("the current reorgOperations cannot support: "+op.fn.getClass()+".");
 		
-		MatrixBlock result=checkType(ret);
+		MatrixBlock result = checkType(ret);
+
+		//compute output dimensions and sparsity flag
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
-		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
-		boolean sps;
-		if(reducedDim)
-			sps = false;
-		else if(op.fn instanceof DiagIndex)
-			sps = true;
+		op.fn.computeDimension( rlen, clen, tempCellIndex );
+		boolean sps = evalSparseFormatInMemory(tempCellIndex.row, tempCellIndex.column, nonZeros);
+
+		//prepare output matrix block w/ right meta data
+		if( result == null )
+			result = new MatrixBlock(tempCellIndex.row, tempCellIndex.column, sps, nonZeros);
 		else
-			sps = this.evalSparseFormatInMemory(true);
-		
-		if(result==null)
-			result=new MatrixBlock(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
-		else
-			result.reset(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
+			result.reset(tempCellIndex.row, tempCellIndex.column, sps, nonZeros);
 		
 		if( LibMatrixReorg.isSupportedReorgOperator(op) )
 		{

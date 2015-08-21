@@ -17,8 +17,10 @@
 
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,12 +33,11 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 @RunWith(value = Parameterized.class)
-public class PageRankTest extends AutomatedTestBase
-{
-
+public class PageRankTest extends AutomatedTestBase {
 	
     private final static String TEST_DIR = "applications/page_rank/";
     private final static String TEST_PAGE_RANK = "PageRank";
+	private final static String PAGE_RANK_HOME = SCRIPT_DIR + TEST_DIR;
 
     private int numRows, numCols;
 
@@ -57,24 +58,51 @@ public class PageRankTest extends AutomatedTestBase
         addTestConfiguration(TEST_PAGE_RANK, new TestConfiguration(TEST_DIR, "PageRank", new String[] { "p" }));
     }
 
-    @Test
-    public void testPageRank()
+	@Test
+	public void testPageRankDml() {
+		System.out.println("------------ BEGIN " + TEST_PAGE_RANK + " DML TEST {" + numRows + ", " + numCols + "} ------------");
+		testPageRank(ScriptType.DML);
+	}
+
+	@Test
+	public void testPageRankPyDml() {
+		System.out.println("------------ BEGIN " + TEST_PAGE_RANK + " PYDML TEST {" + numRows + ", " + numCols + "} ------------");
+		testPageRank(ScriptType.PYDML);
+	}
+    
+    public void testPageRank(ScriptType scriptType)
     {
+    	this.scriptType = scriptType;
+    	
     	int rows = numRows;
     	int cols = numCols;
     	int maxiter = 2;
     	double alpha = 0.85;
     	
     	/* This is for running the junit test by constructing the arguments directly */
-		String PAGE_RANK_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = PAGE_RANK_HOME + TEST_PAGE_RANK + ".dml";
-		programArgs = new String[]{"-args",  PAGE_RANK_HOME + INPUT_DIR + "g" , 
-				                         PAGE_RANK_HOME + INPUT_DIR + "p" , 
-				                         PAGE_RANK_HOME + INPUT_DIR + "e" ,
-				                         PAGE_RANK_HOME + INPUT_DIR + "u" ,
-				                        Integer.toString(rows), Integer.toString(cols),
-				                        Double.toString(alpha), Integer.toString(maxiter),
-				                         PAGE_RANK_HOME + OUTPUT_DIR + "p" };
+		List<String> proArgs = new ArrayList<String>();
+		proArgs.add("-args");
+		proArgs.add(PAGE_RANK_HOME + INPUT_DIR + "g");
+		proArgs.add(PAGE_RANK_HOME + INPUT_DIR + "p");
+		proArgs.add(PAGE_RANK_HOME + INPUT_DIR + "e");
+		proArgs.add(PAGE_RANK_HOME + INPUT_DIR + "u");
+		proArgs.add(Integer.toString(rows));
+		proArgs.add(Integer.toString(cols));
+		proArgs.add(Double.toString(alpha));
+		proArgs.add(Integer.toString(maxiter));
+		proArgs.add(PAGE_RANK_HOME + OUTPUT_DIR + "p");
+		
+		switch (scriptType) {
+		case DML:
+			fullDMLScriptName = PAGE_RANK_HOME + TEST_PAGE_RANK + ".dml";
+			break;
+		case PYDML:
+			fullPYDMLScriptName = PAGE_RANK_HOME + TEST_PAGE_RANK + ".pydml";
+			proArgs.add(0, "-python");
+			break;
+		}
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
         TestConfiguration config = getTestConfiguration(TEST_PAGE_RANK);
         loadTestConfiguration(config);
@@ -99,7 +127,6 @@ public class PageRankTest extends AutomatedTestBase
         
         writeExpectedMatrix("p", p);
 
-		boolean exceptionExpected = false;
 		/*
 		 * Expected number of jobs:
 		 * Reblock - 1 job 
@@ -107,7 +134,7 @@ public class PageRankTest extends AutomatedTestBase
 		 * Final output write - 1 job
 		 */
 		int expectedNumberOfJobs = 8;
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
         
         compareResults(0.0000001);
     }

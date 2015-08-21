@@ -17,28 +17,29 @@
 
 package com.ibm.bi.dml.test.integration.applications;
 
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-@RunWith(value = Parameterized.class)
-public class WelchTTest extends AutomatedTestBase 
-{
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
+import com.ibm.bi.dml.test.integration.AutomatedTestBase;
+import com.ibm.bi.dml.test.integration.TestConfiguration;
+import com.ibm.bi.dml.test.utils.TestUtils;
 
+@RunWith(value = Parameterized.class)
+public class WelchTTest extends AutomatedTestBase {
 	
 	private final static String TEST_DIR = "applications/welchTTest/";
-	private final static String TEST_WelchTTest = "welchTTest";
+	private final static String TEST_WELCHTTEST = "welchTTest";
+	private final static String WELCHTTEST_HOME = SCRIPT_DIR + TEST_DIR;
 	
 	private int numAttr, numPosSamples, numNegSamples;
 	
@@ -57,30 +58,53 @@ public class WelchTTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		setUpBase();
-    	addTestConfiguration(TEST_WelchTTest, 
+    	addTestConfiguration(TEST_WELCHTTEST, 
     						 new TestConfiguration(TEST_DIR, 
-    								 			   TEST_WelchTTest, 
+    								 TEST_WELCHTTEST, 
     								 			   new String[] { "t_statistics", 
     								 							  "degrees_of_freedom" }));
 	}
 	
 	@Test
-	public void testWelchTTestWithRDMLAndJava() {
-		TestConfiguration config = getTestConfiguration(TEST_WelchTTest);
-		
-		String WelchTTest_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = WelchTTest_HOME + TEST_WelchTTest + ".dml";
-		
-		programArgs = new String[]{"-args", WelchTTest_HOME + INPUT_DIR + "posSamples",
-											WelchTTest_HOME + INPUT_DIR + "negSamples",
-											WelchTTest_HOME + OUTPUT_DIR + "t_statistics",
-											WelchTTest_HOME + OUTPUT_DIR + "degrees_of_freedom"};
-		
-		fullRScriptName = WelchTTest_HOME + TEST_WelchTTest + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " 
-			   + WelchTTest_HOME + INPUT_DIR + " " 
-			   + WelchTTest_HOME + EXPECTED_DIR;
+	public void testWelchTTestDml() {
+		System.out.println("------------ BEGIN " + TEST_WELCHTTEST + " DML TEST {" + numAttr + ", " + numPosSamples + ", " + numNegSamples + "} ------------");
+		testWelchTTest(ScriptType.DML);
+	}
+
+	@Test
+	public void testWelchTTestPyDml() {
+		System.out.println("------------ BEGIN " + TEST_WELCHTTEST + " PYDML TEST {" + numAttr + ", " + numPosSamples + ", " + numNegSamples + "} ------------");
+		testWelchTTest(ScriptType.PYDML);
+	}
 	
+	public void testWelchTTest(ScriptType scriptType) {
+		this.scriptType = scriptType;
+		
+		List<String> proArgs = new ArrayList<String>();
+		proArgs.add("-args");
+		proArgs.add(WELCHTTEST_HOME + INPUT_DIR + "posSamples");
+		proArgs.add(WELCHTTEST_HOME + INPUT_DIR + "negSamples");
+		proArgs.add(WELCHTTEST_HOME + OUTPUT_DIR + "t_statistics");
+		proArgs.add(WELCHTTEST_HOME + OUTPUT_DIR + "degrees_of_freedom");
+		
+		switch (scriptType) {
+		case DML:
+			fullDMLScriptName = WELCHTTEST_HOME + TEST_WELCHTTEST + ".dml";
+			break;
+		case PYDML:
+			fullPYDMLScriptName = WELCHTTEST_HOME + TEST_WELCHTTEST + ".pydml";
+			proArgs.add(0, "-python");
+			break;
+		}
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
+		
+		fullRScriptName = WELCHTTEST_HOME + TEST_WELCHTTEST + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " 
+			   + WELCHTTEST_HOME + INPUT_DIR + " " 
+			   + WELCHTTEST_HOME + EXPECTED_DIR;
+	
+		TestConfiguration config = getTestConfiguration(TEST_WELCHTTEST);
 		loadTestConfiguration(config);
 		
 		double[][] posSamples = getRandomMatrix(numPosSamples, numAttr, 1, 5, 0.2, System.currentTimeMillis());
@@ -91,11 +115,9 @@ public class WelchTTest extends AutomatedTestBase
 		MatrixCharacteristics mc2 = new MatrixCharacteristics(numNegSamples,numAttr,-1,-1);
 		writeInputMatrixWithMTD("negSamples", negSamples, true, mc2);
 		
-		boolean exceptionExpected = false;
-		
 		int expectedNumberOfJobs = 1;
 		
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs); 
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs); 
 		
 		runRScript(true);
 		disableOutAndExpectedDeletion();

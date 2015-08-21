@@ -28,19 +28,5 @@ core.ignore.recursive= \
 	{*.class} 
 
 core.ignore= \
-	{.1318885481390.-797278204.crc} \
-	{.1318897100093.-287828418.crc} \
-	{.1319585826421.-1945863460.crc} \
 	{.classpath} \
-	{.project} \
-	{.settings} \
-	{1318885481390.-797278204} \
-	{1318897100093.-287828418} \
-	{1319585826421.-1945863460} \
-	{42843f7c} \
-	{75ce52cf} \
-	{bin} \
-	{dependency-reduced-pom.xml} \
-	{mvn.out} \
-	{scratch_space} \
-	{target} 
+	{bin} 

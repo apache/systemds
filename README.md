@@ -41,6 +41,7 @@ distributed runtime execution plans and system configurations.
 ## Building SystemML
 
 SystemML is built using [Apache Maven](http://maven.apache.org/).
+SystemML will build on Windows, Linux, or MacOS.
 To build SystemML, run:
 
     mvn clean package
@@ -52,8 +53,8 @@ To build SystemML, run:
 
 SystemML features a comprehensive set of integration tests. To perform these tests, run:
 
-	cd system-ml
-    mvn verify -DskipTests=false
+    cd system-ml
+    mvn verify 
 
 Note: these that these tests requires [R](https://www.r-project.org/) to be installed and available as part of the PATH variable on the machine you are running these tests.
 

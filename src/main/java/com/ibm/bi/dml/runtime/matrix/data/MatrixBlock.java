@@ -2908,6 +2908,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			ret.unaryOperationsInPlace(op);
 		}
 		
+		//ensure empty results sparse representation 
+		//(no additional memory requirements)
+		if( ret.isEmptyBlock(false) )
+			ret.examSparsity();
+		
 		return ret;
 	}
 	

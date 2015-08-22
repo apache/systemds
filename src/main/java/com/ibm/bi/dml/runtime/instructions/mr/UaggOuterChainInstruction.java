@@ -47,8 +47,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
  * 
  */
 public class UaggOuterChainInstruction extends BinaryInstruction 
-{
-	
+{	
 	//operators
 	private AggregateUnaryOperator _uaggOp = null;
 	private AggregateOperator _aggOp = null;
@@ -133,13 +132,16 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 			           IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
-		ArrayList<IndexedMatrixValue> blkList; 
-				
-		if(_uaggOp.indexFn instanceof ReduceCol) 
+		ArrayList<IndexedMatrixValue> blkList = null; 
+		boolean rightCached = (_uaggOp.indexFn instanceof ReduceCol || _uaggOp.indexFn instanceof ReduceAll
+				               || !LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp));
+		
+		//get the main data input
+		if( rightCached ) 
 			blkList = cachedValues.get( input1 );
-		else 
+		else // ReduceRow
 			blkList = cachedValues.get( input2 );
-			
+		
 		if( blkList == null )
 			return;
 
@@ -157,19 +159,17 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 			MatrixValue outVal = iout.getValue();
 			MatrixBlock corr = null;
 			
+			//get the distributed cache input
+			byte dcInputIx = rightCached ? input2 : input1;
+			DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(dcInputIx);
+
 			//process instruction
-			DistributedCacheInput dcInput;
-			if(_uaggOp.indexFn instanceof ReduceCol) 
-				dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
-			else
-				dcInput = MRBaseForCommonInstructions.dcValues.get(input1);
-				
 			if (LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp))
 			{
 				//approach: for each ai, do binary search in B, position gives counts
 				//step 1: prepare sorted rhs input (once per task)
 				if( _bv == null ) {
-					if(_uaggOp.indexFn instanceof ReduceCol)
+					if( rightCached )
 						_bv = dcInput.getRowVectorArray();
 					else
 						_bv = dcInput.getColumnVectorArray();
@@ -219,7 +219,9 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 		byte in1 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
 		byte in2 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
 		AggregateUnaryOperator uaggOp = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
-		if(uaggOp.indexFn instanceof ReduceCol) 
+		BinaryOperator bop = BinaryInstruction.parseBinaryOperator(parts[3]);		
+		if(uaggOp.indexFn instanceof ReduceCol || uaggOp.indexFn instanceof ReduceAll
+				|| !LibMatrixOuterAgg.isSupportedUaggOp(uaggOp, bop)) 
 			ret = (index==in2 && index!=in1);
 		else
 			ret = (index==in1 && index!=in2);
@@ -234,7 +236,9 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 		byte in1 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
 		byte in2 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
 		AggregateUnaryOperator uaggOp = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
-		if(uaggOp.indexFn instanceof ReduceCol) 
+		BinaryOperator bop = BinaryInstruction.parseBinaryOperator(parts[3]);
+		if(uaggOp.indexFn instanceof ReduceCol || uaggOp.indexFn instanceof ReduceAll
+				|| !LibMatrixOuterAgg.isSupportedUaggOp(uaggOp, bop)) 
 			indexes.add(in2);
 		else
 			indexes.add(in1);

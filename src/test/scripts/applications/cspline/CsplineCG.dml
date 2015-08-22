@@ -155,10 +155,7 @@ interpSpline = function(
 ) return (double q) {
 
   #first find the right knots for interpolation
-  i = 1
-  while(as.scalar(X[i,1]) < x) { # @NOTE: may be better to do the binary search here
-    i = i+1
-  }
+  i = as.integer(nrow(X) - sum(ppred(X, x, ">=")) + 1)
 
   #calc the y as per the algo docs
   t = (x - X[i-1,1]) / ( X[i,1] - X[i-1,1])
@@ -208,7 +205,6 @@ CGSolver = function (
 
   while (i < max_iteration & norm_r2 > norm_r2_target) {
     q = t(A) %*% (A %*% p)
-    #/*q = q + lambda * p*/
     a = norm_r2 / sum (p*q)
     x = x + a*p
     r = r + a*q
@@ -275,11 +271,11 @@ resize = function(
    Y = matrix(0.0, rn, cn)
    if (dir == "tr") { # top right
      Y[1+rby:rn, 1:c] = X
-   } else if (dir == "bl") {
+   } else if (dir == "bl") { # bottom left
      Y[1:r, 1+cby:cn] = X
-   } else if (dir == "tl") {
+   } else if (dir == "tl") { # top left
      Y[1+rby:rn, 1+cby:cn ] = X
-   } else if (dir == "br") {
+   } else if (dir == "br") { # bottom right
      Y[1:r, 1:c] = X
    } else {
      stop("Unknown direction dir => " + dir)

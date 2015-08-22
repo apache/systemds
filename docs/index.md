@@ -18,5 +18,6 @@ For more information about SystemML, please consult the following references:
 * [SystemML GitHub README](http://www.github.com/SparkTC/systemml)
 * Quick Start - **Coming Soon**
 * [Algorithms Reference](algorithms-reference.html)
-* R-Like Declarative Machine Learning (DML) Language Reference - **Coming Soon**
-* Python-Like Declarative Machine Learning (DML) Language Reference - **Coming Soon**
+* [DML (Declarative Machine Learning) Language Reference](dml-language-reference.html)
+* PYDML (Python-Like Declarative Machine Learning) Language Reference - **Coming Soon**
+

@@ -783,12 +783,13 @@ public class StatementBlock extends LiveVariableAnalysis
 	public void setStatementFormatType(OutputStatement s, boolean conditionalValidate) 
 		throws LanguageException, ParseException
 	{
-		if (s.getExprParam(DataExpression.FORMAT_TYPE)!= null ){
-		 	
+		//case of specified format parameter
+		if (s.getExprParam(DataExpression.FORMAT_TYPE)!= null )
+		{ 	
 	 		Expression formatTypeExpr = s.getExprParam(DataExpression.FORMAT_TYPE);  
 			if (!(formatTypeExpr instanceof StringIdentifier)){
 				raiseValidateError("IO statement parameter " + DataExpression.FORMAT_TYPE 
-						+ " can only be a string with one of following values: binary, text", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
+						+ " can only be a string with one of following values: binary, text, mm, csv.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			String ft = formatTypeExpr.toString();
 			if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_BINARY)){
@@ -801,12 +802,14 @@ public class StatementBlock extends LiveVariableAnalysis
 				s.getIdentifier().setFormatType(FormatType.CSV);
 			} else{ 
 				raiseValidateError("IO statement parameter " + DataExpression.FORMAT_TYPE 
-						+ " can only be a string with one of following values: binary, text, mm, csv", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
+						+ " can only be a string with one of following values: binary, text, mm, csv; invalid format: '"+ft+"'.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-		} else {
-			s.addExprParam(DataExpression.FORMAT_TYPE, 
-					new StringIdentifier(FormatType.TEXT.toString(), s.getFilename(), s.getBeginLine(), s.getBeginColumn(), s.getEndLine(), s.getEndColumn()),
-					true);
+		} 
+		//case of unspecified format parameter, use default
+		else 
+		{
+			s.addExprParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString(), 
+					s.getFilename(), s.getBeginLine(), s.getBeginColumn(), s.getEndLine(), s.getEndColumn()), true);
 			s.getIdentifier().setFormatType(FormatType.TEXT);
 		}
 	}

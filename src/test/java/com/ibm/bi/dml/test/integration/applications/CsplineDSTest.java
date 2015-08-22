@@ -76,7 +76,6 @@ public class CsplineDSTest  extends AutomatedTestBase {
                 "Y=" + CSPLINE_HOME + INPUT_DIR + "Y",
                 "K=" + CSPLINE_HOME + OUTPUT_DIR + "K",
                 "O=" + CSPLINE_HOME + OUTPUT_DIR + "pred_y",
-                "maxi="+10,
                 "inp_x="+4.5 };
 
         fullRScriptName = CSPLINE_HOME + TEST_CSPLINE + ".R";

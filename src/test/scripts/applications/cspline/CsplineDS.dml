@@ -16,7 +16,7 @@
 #
 #-------------------------------------------------------------
 #
-# THIS SCRIPT SOLVES CUBIC SPLINE INTERPOLATION USING THE CONJUGATE GRADIENT ALGORITHM
+# THIS SCRIPT SOLVES CUBIC SPLINE INTERPOLATION USING THE DIRECT SOLVER
 #
 # INPUT PARAMETERS:
 # --------------------------------------------------------------------------------------------
@@ -34,7 +34,7 @@
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
 # hadoop jar SystemML.jar -f CsplineDS.dml -nvargs X=INPUT_DIR/X Y= INPUT_DIR/Y O=OUTPUT_DIR/Out
-# -inp_x=4.5 -maxi=10 fmt=csv
+# -inp_x=4.5 fmt=csv
 
 
 
@@ -139,10 +139,7 @@ interpSpline = function(
 ) return (double q) {
 
   #first find the right knots for interpolation
-  i = 1
-  while(as.scalar(X[i,1]) < x) { # @NOTE: may be better to do the binary search here
-    i = i+1
-  }
+  i = as.integer(nrow(X) - sum(ppred(X, x, ">=")) + 1)
 
   #calc the y as per the algo docs
   t = (x - X[i-1,1]) / ( X[i,1] - X[i-1,1])

@@ -94,33 +94,41 @@ print ("END CUBIC SPLINE REGRESSION SCRIPT");
 calcKnotsDerivKs = function (
   matrix[double] X, matrix[double] Y
 ) return (matrix[double] K) {
-    nx = nrow(X)
-    ny = nrow(Y)
-    if (nx != ny) {
+  nx = nrow(X)
+  ny = nrow(Y)
+  if (nx != ny) {
       stop("X and Y vectors are of different size")
-    }
-    n = nx
-    A = matrix(0.0, n, n)
-    b = matrix(0.0, n, 1)
+  }
 
-    for (i in 2:n-1) {
-      A[i,i-1] = 1/(X[i, 1] - X[i-1, 1])
-      A[i,i] = 2 * (1/(X[i, 1] - X[i-1, 1]) + 1/(X[i+1, 1] - X[i, 1]))
-      A[i,i+1] = 1/(X[i+1, 1] - X[i, 1])
-      b[i,1] = 3* ( (Y[i, 1] - Y[i-1, 1])/((X[i, 1] - X[i-1, 1])*(X[i, 1] - X[i-1, 1])) + (Y[i+1, 1] - Y[i, 1])/((X[i+1, 1] - X[i, 1])*(X[i+1, 1] - X[i, 1])) )
-    }
+  Xu = trunc(X, 1, "up") # Xu is (X where X[0] is removed)
+  Xd = trunc(X, 1, "down") # Xd is (X where X[n] is removed)
 
-    A[1, 1] = 2/(X[2,1] - X[1,1])
-    A[1, 2] = 1/(X[2,1] - X[1,1])
-    b[1, 1] = 3* (Y[2, 1] - Y[1, 1]) / ((X[2,1] - X[1,1])*(X[2,1] - X[1,1]))
-
-    A[n, n-1] = 1/(X[n,1] - X[n-1,1])
-    A[n, n] = 2/(X[n,1] - X[n-1,1])
-    b[n, 1] = 3*(Y[n, 1] - Y[n-1, 1]) / ((X[n,1] - X[n-1,1])*(X[n,1] - X[n-1,1]))
+  Bx=1/(Xu-Xd) # The expr => 1/Delta(X(i) = 1/(X(i)-X(i-1))
 
 
-    # solve Ax = b for x vector and assign it to K
-    K = solve(A, b)
+  Bxd = resize(Bx, 1, 0, "tr") # Bxd is (0, Bx) vector
+  Bxu = resize(Bx, 1, 0, "br") # Bxu is (Bx, 0) vector
+  Dx = 2*(Bxd + Bxu) # the major diagonal entry 2(1/Delta(X(i) + 1/Delta(X(i+1)))
+
+  MDx = diag(Dx) # convert vector to diagonal matrix
+
+  MBx = diag(Bx) # this is the temp diagonal matrix, which will form the bands of the tri-diagonal matrix
+  MUx = resize(MBx, 1, 1, "bl") # the upper diagonal matrix of the band
+  MLx = resize(MBx, 1, 1, "tr") # the lower diagonal matrix of the band
+
+  A=MUx+MDx+MLx # create the complete tri-diagonal matrix
+
+  #calculate b matrix
+  Yu = trunc(Y, 1, "up") # Yu is (Y where Y[0] is removed)
+  Yd = trunc(Y, 1, "down") # Yd is (Y where Y[n] is removed)
+  By=(Yu-Yd)/(Bx*Bx) # the expr => Delta(Y(i))/Delta(X(i))*Delta(X(i))
+
+  By1=resize(By, 1, 0, "tr") # By1 is (0, By) vector
+  By2=resize(By, 1, 0, "br") # By2 is (By, 0) vector
+  b=3*(By1+By2) # the b entries 3*(Delta(Y(i))/Delta(X(i))*Delta(X(i)) + Delta(Y(i+1))/Delta(X(i+1))*Delta(X(i+1)))
+
+
+  K = solve(A, b)  /* solve Ax = b for x vector and assign it to K*/
 
 }
 
@@ -148,3 +156,53 @@ interpSpline = function(
 
 }
 
+#
+# trunc the matrix by the specified amount in the specified direction.
+# The shifted cells are discarded, the matrix is smaller in size
+#
+trunc = function (
+  matrix[double] X, # nxm matrix
+  int by, # shift amount
+  String dir # currently only 'up' is supported. but should handle 'up', 'down', 'left', 'right'
+) return (matrix[double] Y) # Y is
+{
+    r = nrow(X); c = ncol(X);
+    if (by > r) {
+      stop("can't pop matrix more than number of rows")
+    }
+    Y = matrix(0.0, r-by, c)
+
+    if (r != by ) {
+      if (dir == "up") {
+        Y[1:r-by,] = X[1+by:r,]
+      } else if (dir == "down") {
+        Y[1:r-by,] = X[1:r-by,]
+      } else {
+        stop("trunc unsupported direction " + dir)
+      }
+    }
+}
+
+# resize (only grow and not truncate) the matrix by the specified amount in the specified direction
+resize = function(
+  matrix[double] X, #nxm matrix
+  int rby, # row resize count
+  int cby,  # col resize count
+  String dir
+) return (matrix[double] Y) # Y is
+{
+   r = nrow(X); c = ncol(X);
+   rn = r + rby; cn = c + cby;
+   Y = matrix(0.0, rn, cn)
+   if (dir == "tr") { # top right
+     Y[1+rby:rn, 1:c] = X
+   } else if (dir == "bl") { # bottom left
+     Y[1:r, 1+cby:cn] = X
+   } else if (dir == "tl") { # top left
+     Y[1+rby:rn, 1+cby:cn ] = X
+   } else if (dir == "br") { # bottom right
+     Y[1:r, 1:c] = X
+   } else {
+     stop("Unknown direction dir => " + dir)
+   }
+}

@@ -42,7 +42,6 @@ pred_y = sf(inp_x)
 
 print(paste("For inp_x = ", inp_x, " Calculated y = ", pred_y))
 
-#print (c("Deviance", glmOut$deviance));
 writeMM(as(pred_y, "CsparseMatrix") , pred_y_here);
 
 

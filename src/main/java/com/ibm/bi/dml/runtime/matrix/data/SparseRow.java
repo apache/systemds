@@ -201,8 +201,16 @@ public class SparseRow implements Serializable
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
 		if( index >= 0 ) {
-			values[index] = v;
-			return false; //overwritten
+			//delete/overwrite existing value (on value delete, we shift 
+			//left for (1) correct nnz maintenance, and (2) smaller size)
+			if( v == 0 ) {
+				shiftLeftAndDelete(index);
+				return true; // nnz--
+			}
+			else { 	
+				values[index] = v;
+				return false;
+			} 
 		}
 
 		//early abort on zero (if no overwrite)
@@ -216,7 +224,7 @@ public class SparseRow implements Serializable
 			resizeAndInsert(index, col, v);
 		else
 			shiftRightAndInsert(index, col, v);
-		return true;
+		return true; // nnz++
 	}
 	
 	/**

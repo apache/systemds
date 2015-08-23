@@ -817,7 +817,17 @@ public abstract class AutomatedTestBase
 			cmd = "R -f " + executionFile;
 		}
 		else {
-			cmd = rCmd;
+			// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
+			// Rscript does *not* load the "methods" package by default
+			// to save on start time. The "Matrix" package used in the
+			// tests requires the "methods" package and should still
+			// load and attach it, but in R 3.2 with the latest version
+			// of the "Matrix" package, "methods" is loaded *but not
+			// attached* when run with Rscript.  Therefore, we need to
+			// explicitly load it with Rscript.
+			cmd = rCmd.replaceFirst("Rscript",
+					"Rscript --default-packages=methods,datasets,graphics,grDevices,stats,utils");
+			// *** END HACK ***
 		}
 		
 		if (System.getProperty("os.name").contains("Windows")) {

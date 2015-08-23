@@ -66,10 +66,10 @@ import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToLongTe
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkListener;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReblock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -254,7 +254,7 @@ public class MLContext {
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
-		JavaRDD<String> rdd = LibMatrixReblock.dataFrameToCSVRDD(df, containsID);
+		JavaRDD<String> rdd = RDDConverterUtils.dataFrameToCSVRDD(df, containsID);
 		registerInput(varName, rdd, "csv", -1, -1);
 	}
 	

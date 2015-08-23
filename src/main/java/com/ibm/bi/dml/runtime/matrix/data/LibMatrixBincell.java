@@ -77,10 +77,16 @@ public class LibMatrixBincell
 			throw new DMLRuntimeException("Wrong output representation for safe="+op.sparseSafe+": "+m1.isInSparseFormat()+", "+ret.isInSparseFormat());
 		}
 		
+		//execute binary cell operations
 		if(op.sparseSafe)
 			safeBinaryScalar(m1, ret, op);
 		else
 			unsafeBinaryScalar(m1, ret, op);
+		
+		//ensure empty results sparse representation 
+		//(no additional memory requirements)
+		if( ret.isEmptyBlock(false) )
+			ret.examSparsity();
 	}
 	
 	/**
@@ -94,10 +100,16 @@ public class LibMatrixBincell
 	public static void bincellOp(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException
 	{
+		//execute binary cell operations
 		if(op.sparseSafe || isSparseSafeDivide(op, m2))
 			safeBinary(m1, m2, ret, op);
 		else
 			unsafeBinary(m1, m2, ret, op);
+		
+		//ensure empty results sparse representation 
+		//(no additional memory requirements)
+		if( ret.isEmptyBlock(false) )
+			ret.examSparsity();
 	}
 	
 	/**
@@ -111,10 +123,16 @@ public class LibMatrixBincell
 	public static void bincellOpInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
 		throws DMLRuntimeException
 	{
+		//execute binary cell operations
 		if(op.sparseSafe || isSparseSafeDivide(op, m2))
 			safeBinaryInPlace(m1ret, m2, op);
 		else
 			unsafeBinaryInPlace(m1ret, m2, op);
+		
+		//ensure empty results sparse representation 
+		//(no additional memory requirements)
+		if( m1ret.isEmptyBlock(false) )
+			m1ret.examSparsity();
 	}
 	
 	/**
@@ -196,9 +214,15 @@ public class LibMatrixBincell
 	private static void safeBinary(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
 		throws DMLRuntimeException 
 	{
+		boolean isMultiply = (op.fn instanceof Multiply);
+		boolean skipEmpty = (isMultiply);
+		
 		//skip empty blocks (since sparse-safe)
-		if( m1.isEmptyBlock(false) && m2.isEmptyBlock(false) )
+		if(    m1.isEmptyBlock(false) && m2.isEmptyBlock(false) 
+			|| skipEmpty && (m1.isEmptyBlock(false) || m2.isEmptyBlock(false)) ) 
+		{
 			return;
+		}
 	
 		int rlen = m1.rlen;
 		int clen = m1.clen;

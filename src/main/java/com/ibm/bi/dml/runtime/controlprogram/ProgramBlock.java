@@ -299,7 +299,6 @@ public class ProgramBlock
 			// start time measurement for statistics
 			long t0 = (DMLScript.STATISTICS || LOG.isTraceEnabled()) ? 
 					System.nanoTime() : 0;
-			
 					
 			// pre-process instruction (debug state, inst patching, listeners)
 			Instruction tmp = currInst.preprocessInstruction( ec );
@@ -394,7 +393,7 @@ public class ProgramBlock
 							
 					
 					if( sparse1 != sparse2 )
-						throw new DMLRuntimeException("Matrix was in wrong data representation: ("+varname+", actual="+sparse1+", expected="+sparse2+", inst="+lastInst+")");
+						throw new DMLRuntimeException("Matrix was in wrong data representation: ("+varname+", actual="+sparse1+", expected="+sparse2+", nnz="+nnz1+", inst="+lastInst+")");
 				}
 			}
 		}

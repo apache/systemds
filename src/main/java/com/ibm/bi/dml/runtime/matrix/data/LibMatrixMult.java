@@ -87,8 +87,10 @@ public class LibMatrixMult
 		throws DMLRuntimeException
 	{	
 		//check inputs / outputs
-		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
+		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) ) {
+			ret.examSparsity(); //turn empty dense into sparse
 			return;
+		}
 		
 		//Timing time = new Timing(true);
 		
@@ -132,8 +134,10 @@ public class LibMatrixMult
 		throws DMLRuntimeException
 	{	
 		//check inputs / outputs
-		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
+		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) ) {
+			ret.examSparsity(); //turn empty dense into sparse
 			return;
+		}
 		
 		//check no parallelization benefit (fallback to sequential)
 		if( m1.rlen == 1 ) {
@@ -193,8 +197,10 @@ public class LibMatrixMult
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{		
 		//check inputs / outputs (after that mV and mW guaranteed to be dense)
-		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) )
+		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) ) {
+			ret.examSparsity(); //turn empty dense into sparse
 			return;
+		}
 
 		//Timing time = new Timing(true);
 				
@@ -236,8 +242,10 @@ public class LibMatrixMult
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{		
 		//check inputs / outputs (after that mV and mW guaranteed to be dense)
-		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) )
+		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) ) {
+			ret.examSparsity(); //turn empty dense into sparse
 			return;
+		}
 
 		//check too high additional memory requirements (fallback to sequential)
 		if( mV.rlen * 8 * k > 1024*1024 ) { //1MB
@@ -290,8 +298,10 @@ public class LibMatrixMult
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//check inputs / outputs
-		if( m1.isEmptyBlock(false) )
+		if( m1.isEmptyBlock(false) ) {
+			ret.examSparsity(); //turn empty dense into sparse
 			return;
+		}
 		
 		//Timing time = new Timing(true);
 		
@@ -326,8 +336,10 @@ public class LibMatrixMult
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//check inputs / outputs
-		if( m1.isEmptyBlock(false) )
+		if( m1.isEmptyBlock(false) ) {
+			ret.examSparsity(); //turn empty dense into sparse
 			return;
+		}
 		
 		//check no parallelization benefit (fallback to sequential)
 		if( ret.rlen == 1 ) { 
@@ -480,8 +492,10 @@ public class LibMatrixMult
 		throws DMLRuntimeException 
 	{
 		//check for empty result
-		if( wt==WeightsType.POST && mW.isEmptyBlock(false) )
+		if( wt==WeightsType.POST && mW.isEmptyBlock(false) ) {
+			ret.examSparsity(); //turn empty dense into sparse
 			return; 
+		}
 
 		//Timing time = new Timing(true);
 
@@ -513,8 +527,10 @@ public class LibMatrixMult
 		throws DMLRuntimeException 
 	{
 		//check for empty result
-		if( wt==WeightsType.POST && mW.isEmptyBlock(false) )
+		if( wt==WeightsType.POST && mW.isEmptyBlock(false) ) {
+			ret.examSparsity(); //turn empty dense into sparse
 			return;
+		}
 		
 		//check no parallelization benefit (fallback to sequential)
 		if (mX.rlen == 1) {
@@ -560,8 +576,10 @@ public class LibMatrixMult
 		throws DMLRuntimeException 
 	{
 		//check for empty result
-		if( mW.isEmptyBlock(false) )
+		if( mW.isEmptyBlock(false) ) {
+			ret.examSparsity(); //turn empty dense into sparse
 			return; 
+		}
 
 		//Timing time = new Timing(true);
 
@@ -588,13 +606,24 @@ public class LibMatrixMult
 		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
-	
+	/**
+	 * 
+	 * @param mW
+	 * @param mU
+	 * @param mV
+	 * @param ret
+	 * @param wt
+	 * @param k
+	 * @throws DMLRuntimeException
+	 */
 	public static void matrixMultWSigmoid(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int k) 
 		throws DMLRuntimeException 
 	{
 		//check for empty result
-		if( mW.isEmptyBlock(false) )
+		if( mW.isEmptyBlock(false) ) {
+			ret.examSparsity(); //turn empty dense into sparse
 			return; 
+		}
 
 		//check no parallelization benefit (fallback to sequential)
 		if (mW.rlen == 1) {

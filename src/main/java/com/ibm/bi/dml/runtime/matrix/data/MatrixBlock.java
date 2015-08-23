@@ -814,40 +814,55 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 	}
 	
+	/**
+	 * 
+	 * @param r
+	 * @param c
+	 * @return
+	 */
 	public double quickGetValue(int r, int c) 
 	{
 		if(sparse)
 		{
-			if(sparseRows==null || sparseRows.length<=r || sparseRows[r]==null)
+			if( sparseRows==null || sparseRows.length<=r || sparseRows[r]==null )
 				return 0;
 			return sparseRows[r].get(c);
 		}
 		else
 		{
-			if(denseBlock==null)
+			if( denseBlock==null )
 				return 0;
 			return denseBlock[r*clen+c]; 
 		}
 	}
 	
+	/**
+	 * 
+	 * @param r
+	 * @param c
+	 * @param v
+	 */
 	public void quickSetValue(int r, int c, double v) 
 	{
 		if(sparse)
 		{
-			if( (sparseRows==null || sparseRows.length<=r || sparseRows[r]==null) && v==0.0)
+			//early abort
+			if( (sparseRows==null || sparseRows.length<=r || sparseRows[r]==null) && v==0 )
 				return;
+			
 			//allocation on demand
 			allocateSparseRowsBlock(false);
-			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
+			if( sparseRows[r]==null )
+				sparseRows[r] = new SparseRow(estimatedNNzsPerRow, clen);
 			
-			if(sparseRows[r].set(c, v))
-				nonZeros++;
-			
+			//set value and maintain nnz
+			if( sparseRows[r].set(c, v) )
+				nonZeros += (v!=0) ? 1 : -1;
 		}
 		else
 		{
-			if(denseBlock==null && v==0.0)
+			//early abort
+			if( denseBlock==null && v==0 )
 				return;		
 			
 			//allocate and init dense block (w/o overwriting nnz)
@@ -858,11 +873,12 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				throw new RuntimeException(e);
 			}
 			
+			//set value and maintain nnz
 			int index=r*clen+c;
-			if(denseBlock[index]==0)
+			if( denseBlock[index]==0 )
 				nonZeros++;
-			denseBlock[index]=v;
-			if(v==0)
+			denseBlock[index] = v;
+			if( v==0 )
 				nonZeros--;
 		}
 	}
@@ -1137,7 +1153,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		return evalSparseFormatInMemory(lrlen, lclen, lnonZeros);
 	}
 	
-
+	@SuppressWarnings("unused")
 	private boolean evalSparseFormatInMemory(boolean transpose)
 	{
 		int lrlen = (transpose) ? clen : rlen;
@@ -2908,6 +2924,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			ret.unaryOperationsInPlace(op);
 		}
 		
+		//ensure empty results sparse representation 
+		//(no additional memory requirements)
+		if( ret.isEmptyBlock(false) )
+			ret.examSparsity();
+		
 		return ret;
 	}
 	
@@ -3381,21 +3402,18 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		if ( !( op.fn instanceof SwapIndex || op.fn instanceof DiagIndex || op.fn instanceof SortIndex) )
 			throw new DMLRuntimeException("the current reorgOperations cannot support: "+op.fn.getClass()+".");
 		
-		MatrixBlock result=checkType(ret);
+		MatrixBlock result = checkType(ret);
+
+		//compute output dimensions and sparsity flag
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
-		boolean reducedDim=op.fn.computeDimension(rlen, clen, tempCellIndex);
-		boolean sps;
-		if(reducedDim)
-			sps = false;
-		else if(op.fn instanceof DiagIndex)
-			sps = true;
+		op.fn.computeDimension( rlen, clen, tempCellIndex );
+		boolean sps = evalSparseFormatInMemory(tempCellIndex.row, tempCellIndex.column, nonZeros);
+
+		//prepare output matrix block w/ right meta data
+		if( result == null )
+			result = new MatrixBlock(tempCellIndex.row, tempCellIndex.column, sps, nonZeros);
 		else
-			sps = this.evalSparseFormatInMemory(true);
-		
-		if(result==null)
-			result=new MatrixBlock(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
-		else
-			result.reset(tempCellIndex.row, tempCellIndex.column, sps, this.nonZeros);
+			result.reset(tempCellIndex.row, tempCellIndex.column, sps, nonZeros);
 		
 		if( LibMatrixReorg.isSupportedReorgOperator(op) )
 		{

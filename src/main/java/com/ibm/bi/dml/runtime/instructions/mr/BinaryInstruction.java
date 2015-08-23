@@ -80,7 +80,6 @@ public class BinaryInstruction extends BinaryMRInstructionBase
 	 * @throws DMLRuntimeException
 	 */
 	public static BinaryOperator parseBinaryOperator( String opcode ) 
-		throws DMLRuntimeException 
 	{
 		if ( opcode.equalsIgnoreCase("+") ) {
 			return new BinaryOperator(Plus.getPlusFnObject());
@@ -127,6 +126,7 @@ public class BinaryInstruction extends BinaryMRInstructionBase
 		else if ( opcode.equalsIgnoreCase("!=") ) {
 			return new BinaryOperator(NotEquals.getNotEqualsFnObject());
 		}
+		
 		return null;
 	}
 	

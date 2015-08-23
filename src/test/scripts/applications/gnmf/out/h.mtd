@@ -1,9 +1,0 @@
-{ 
-    "data_type": "matrix"
-    ,"value_type": "double"
-    ,"rows": 50
-    ,"cols": 1500
-    ,"nnz": 75000
-    ,"format": "text"
-    ,"description": { "author": "SystemML" } 
-}

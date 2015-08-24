@@ -20,8 +20,8 @@ grammar Pydml;
 @header
 {
     // package com.ibm.bi.dml.python;
-    import com.ibm.bi.dml.parser.antlr4.StatementInfo;
-    import com.ibm.bi.dml.parser.antlr4.ExpressionInfo;
+    //import com.ibm.bi.dml.parser.antlr4.StatementInfo;
+    //import com.ibm.bi.dml.parser.antlr4.ExpressionInfo;
 }
 
 // This antlr grammar is based on Python 3.3 language reference: https://docs.python.org/3.3/reference/grammar.html

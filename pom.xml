@@ -53,7 +53,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
-				<version>2.4</version>
+				<version>2.4</version><!--$NO-MVN-MAN-VER$-->
 				<executions>
 					<execution>
 						<id>unpack</id>
@@ -148,7 +148,7 @@
 
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.4</version>
+				<version>2.4</version><!--$NO-MVN-MAN-VER$-->
 				<executions>
 					<execution>
 						<id>create-package-assemblies</id>
@@ -202,7 +202,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.4</version>
+				<version>2.4</version><!--$NO-MVN-MAN-VER$-->
 				<configuration>
 					<archive>
 						<index>true</index>
@@ -234,14 +234,11 @@
 				</executions>
 			</plugin>
 
-	<!-- The BigInsights Jenkins server does not allow builds to run for more 
-		than 30 minutes, so there isn't enough time to run the full test suite during 
-		the "test" phase of the Maven lifecycle. So we only run tests during the 
-		"integration-test" phase. To run the tests, run "mvn verify". -->
+			<!-- Currently, all tests are integration tests. -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.17</version>
+				<version>2.18</version><!--$NO-MVN-MAN-VER$-->
 				<configuration>
 					
 					<!-- STDERR/STDOUT to individual .txt files instead of console -->
@@ -275,7 +272,7 @@
 
 				<!-- *** HACK ALERT *** HACK ALERT *** HACK ALERT *** -->
 				<!-- Failsafe 2.18 has a bug in computing # cores, so use 2.17 -->
-				<version>2.17</version>
+				<version>2.17</version><!--$NO-MVN-MAN-VER$-->
 				<!-- *** END HACK *** -->
 
 				<executions>
@@ -313,6 +310,34 @@
 						<exclude>**/slowtest/**</exclude>
 					</excludes>
 
+				</configuration>
+			</plugin>
+
+		<!-- Prevent m2e warnings about the use of maven-remote-resources-plugin 
+		in the Maven archetype that we currently use for this project. -->
+			<plugin>
+				<groupId>org.eclipse.m2e</groupId>
+				<artifactId>lifecycle-mapping</artifactId>
+				<version>1.0.0</version>
+				<configuration>
+					<lifecycleMappingMetadata>
+						<pluginExecutions>
+							<pluginExecution>
+								<pluginExecutionFilter>
+									<groupId>org.apache.maven.plugins</groupId>
+									<artifactId>maven-remote-resources-plugin</artifactId>
+									<versionRange>[1.0,)</versionRange>
+									<goals>
+										<goal>process</goal>
+									</goals>
+								</pluginExecutionFilter>
+								<action>
+									<ignore>
+									</ignore>
+								</action>
+							</pluginExecution>
+						</pluginExecutions>
+					</lifecycleMappingMetadata>
 				</configuration>
 			</plugin>
 

@@ -125,6 +125,11 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
+		else if(   opcode.equalsIgnoreCase("rexpand") ) 
+		{
+			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
+			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
+		}
 		else if(   opcode.equalsIgnoreCase("replace") ) 
 		{
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
@@ -259,6 +264,34 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddVar);
 		}
+		else if ( opcode.equalsIgnoreCase("rexpand") ) 
+		{
+			String rddInVar = params.get("target");
+			
+			//get input rdd handle
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( rddInVar );
+			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(rddInVar);
+			double maxVal = Double.parseDouble( params.get("max") );
+			long lmaxVal = UtilFunctions.toLong(maxVal);
+			boolean dirRows = params.get("dir").equals("rows");
+			boolean cast = Boolean.parseBoolean(params.get("cast"));
+			boolean ignore = Boolean.parseBoolean(params.get("ignore"));
+			long brlen = mcIn.getRowsPerBlock();
+			long bclen = mcIn.getColsPerBlock();
+			
+			//execute remove empty rows/cols operation
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in
+					.flatMapToPair(new RDDRExpandFunction(maxVal, dirRows, cast, ignore, brlen, bclen));		
+			out = RDDAggregateUtils.mergeByKey(out);
+			
+			//store output rdd handle
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), rddInVar);
+			
+			//update output statistics (required for correctness)
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			mcOut.set(dirRows?lmaxVal:mcIn.getRows(), dirRows?mcIn.getRows():lmaxVal, (int)brlen, (int)bclen, -1);
+		}
 	}
 	
 
@@ -292,12 +325,12 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 	public static class RDDRemoveEmptyFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock, MatrixBlock>>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 4906304771183325289L;
-		
+
 		private boolean _rmRows; 
 		private long _len;
 		private long _brlen;
 		private long _bclen;
-		
+				
 		public RDDRemoveEmptyFunction(boolean rmRows, long len, long brlen, long bclen) 
 		{
 			_rmRows = rmRows;
@@ -317,14 +350,57 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//execute remove empty operations
 			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
 			LibMatrixReorg.rmempty(data, offsets, _rmRows, _len, _brlen, _bclen, out);
+
+			//prepare and return outputs
+			return SparkUtils.fromIndexedMatrixBlock(out);
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public static class RDDRExpandFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,MatrixIndexes,MatrixBlock> 
+	{
+		private static final long serialVersionUID = -6153643261956222601L;
+		
+		private double _maxVal;
+		private boolean _dirRows;
+		private boolean _cast;
+		private boolean _ignore;
+		private long _brlen;
+		private long _bclen;
+		
+		public RDDRExpandFunction(double maxVal, boolean dirRows, boolean cast, boolean ignore, long brlen, long bclen) 
+		{
+			_maxVal = maxVal;
+			_dirRows = dirRows;
+			_cast = cast;
+			_ignore = ignore;
+			_brlen = brlen;
+			_bclen = bclen;
+		}
+
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+			throws Exception 
+		{
+			//prepare inputs (for internal api compatibility)
+			IndexedMatrixValue data = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2());
+			
+			//execute rexpand operations
+			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+			LibMatrixReorg.rexpand(data, _maxVal, _dirRows, _cast, _ignore, _brlen, _bclen, out);
 			
 			//prepare and return outputs
 			return SparkUtils.fromIndexedMatrixBlock(out);
 		}
 	}
 	
-	public static class CreateMatrixCell implements PairFunction<Tuple2<Long,WeightedCell>, MatrixIndexes, MatrixCell> {
-
+	/**
+	 * 
+	 */
+	public static class CreateMatrixCell implements PairFunction<Tuple2<Long,WeightedCell>, MatrixIndexes, MatrixCell> 
+	{
 		private static final long serialVersionUID = -5783727852453040737L;
 		
 		int brlen; Operator op;

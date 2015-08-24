@@ -36,7 +36,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 {
-	
 	private int arity;
 	protected HashMap<String,String> params;
 	
@@ -109,7 +108,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, opcode, str);
 		}
 		else if(   opcode.equalsIgnoreCase("rmempty") 
-				|| opcode.equalsIgnoreCase("replace") ) 
+				|| opcode.equalsIgnoreCase("replace") 
+				|| opcode.equalsIgnoreCase("rexpand") ) 
 		{
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
@@ -199,11 +199,23 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
 		}
+		else if ( opcode.equalsIgnoreCase("rexpand") ) {
+			// acquire locks
+			MatrixBlock target = ec.getMatrixInput(params.get("target"));
+			
+			// compute the result
+			double maxVal = Double.parseDouble( params.get("max") );
+			boolean dirVal = params.get("dir").equals("rows");
+			boolean cast = Boolean.parseBoolean(params.get("cast"));
+			boolean ignore = Boolean.parseBoolean(params.get("ignore"));
+			MatrixBlock ret = (MatrixBlock) target.rexpandOperations(new MatrixBlock(), maxVal, dirVal, cast, ignore);
+			
+			//release locks
+			ec.setMatrixOutput(output.getName(), ret);
+			ec.releaseMatrixInput(params.get("target"));
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
-		}
-		
+		}		
 	}
-	
-
 }

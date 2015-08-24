@@ -47,9 +47,13 @@ public class IfStatementBlock extends StatementBlock
 		
 		IfStatement ifstmt = (IfStatement) _statements.get(0);
 		
-		ConditionalPredicate predicate = ifstmt.getConditionalPredicate();
-		predicate.getPredicate().validateExpression(ids.getVariables(), constVars, conditional);
-			
+		//validate conditional predicate (incl constant propagation)
+		Expression pred = ifstmt.getConditionalPredicate().getPredicate();
+		pred.validateExpression(ids.getVariables(), constVars, conditional);
+		if( pred instanceof DataIdentifier && constVars.containsKey( ((DataIdentifier)pred).getName()) ) {
+			ifstmt.getConditionalPredicate().setPredicate(constVars.get(((DataIdentifier)pred).getName()));
+		}
+		
 		HashMap<String,ConstIdentifier> constVarsIfCopy = new HashMap<String,ConstIdentifier>(constVars);
 		HashMap<String,ConstIdentifier> constVarsElseCopy = new HashMap<String,ConstIdentifier> (constVars);
 		

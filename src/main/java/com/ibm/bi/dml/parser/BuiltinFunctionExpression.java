@@ -557,6 +557,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 							+ this.toString(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 				else {
+					// constant propagation
+					if( getThirdExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getThirdExpr()).getName()) )
+						_args[2] = constVars.get(((DataIdentifier)getThirdExpr()).getName());
+					if( _args[3] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[3]).getName()) )
+						_args[3] = constVars.get(((DataIdentifier)_args[3]).getName());
+					
 					if ( getThirdExpr().getOutput() instanceof ConstIdentifier ) 
 						outputDim1 = ((ConstIdentifier) getThirdExpr().getOutput()).getLongValue();
 					if ( _args[3].getOutput() instanceof ConstIdentifier ) 
@@ -578,6 +584,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 							+ this.toString(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 				else {
+					// constant propagation
+					if( _args[3] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[3]).getName()) )
+						_args[3] = constVars.get(((DataIdentifier)_args[3]).getName());
+					if( _args[4] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[4]).getName()) )
+						_args[4] = constVars.get(((DataIdentifier)_args[4]).getName());
+					
 					if ( _args[3].getOutput() instanceof ConstIdentifier ) 
 						outputDim1 = ((ConstIdentifier) _args[3].getOutput()).getLongValue();
 					if ( _args[4].getOutput() instanceof ConstIdentifier ) 
@@ -823,6 +835,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 		case SEQ:
 			
+			//basic parameter validation
 			checkScalarParam(getFirstExpr());
 			checkScalarParam(getSecondExpr());
 			if ( getThirdExpr() != null ) {
@@ -831,6 +844,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			}
 			else
 				checkNumParameters(2);
+			
+			// constant propagation (from, to, incr)
+			if( getFirstExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getFirstExpr()).getName()) )
+				_args[0] = constVars.get(((DataIdentifier)getFirstExpr()).getName());
+			if( getSecondExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getSecondExpr()).getName()) )
+				_args[1] = constVars.get(((DataIdentifier)getSecondExpr()).getName());
+			if( getThirdExpr()!=null && getThirdExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getThirdExpr()).getName()) )
+				_args[2] = constVars.get(((DataIdentifier)getThirdExpr()).getName());
 			
 			// check if dimensions can be inferred
 			long dim1=-1, dim2=1;
@@ -850,7 +871,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 								this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
 								this.getEndLine(), this.getEndColumn());
 					}
-					incr = getDoubleValue(getThirdExpr()); // (getThirdExpr() != null ? getDoubleValue(getThirdExpr()) : (neg? -1:1) );
+					incr = getDoubleValue(getThirdExpr()); 
 					
 				}
 				catch (LanguageException e) {
@@ -944,6 +965,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 		return;
 	}
+	
 	private void expandArguments() {
 	
 		if ( _args == null ) {
@@ -967,12 +989,24 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
+	/**
+	 * 
+	 * @param expr
+	 * @return
+	 */
 	private boolean isConstant(Expression expr) {
-		
 		return ( expr != null && expr instanceof ConstIdentifier );
 	}
 	
-	private double getDoubleValue(Expression expr) throws LanguageException {
+	/**
+	 * 
+	 * @param expr
+	 * @return
+	 * @throws LanguageException
+	 */
+	private double getDoubleValue(Expression expr) 
+		throws LanguageException 
+	{
 		if ( expr instanceof DoubleIdentifier )
 			return ((DoubleIdentifier)expr).getValue();
 		else if ( expr instanceof IntIdentifier)
@@ -980,6 +1014,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		else
 			throw new LanguageException("Expecting a numeric value.");
 	}
+	
 	private boolean isMathFunction() {
 		switch (this.getOpCode()) {
 		case COS:

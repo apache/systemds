@@ -23,30 +23,72 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReorg;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
 /**
- * Supported optcodes: replace.
+ * Supported opcodes: replace.
  * 
  */
 public class ParameterizedBuiltinMRInstruction extends UnaryInstruction
 {	
+	String _opcode = null;
 	
+	//replace-specific attributes
 	private double _pattern;
 	private double _replace;
 	
-	public ParameterizedBuiltinMRInstruction(Operator op, byte in, double pattern, double replace, byte out, String istr)
+	//rexpand-specific attributes
+	private double _max;
+	private boolean _dirRows;
+	private boolean _cast;
+	private boolean _ignore;
+	
+	public ParameterizedBuiltinMRInstruction(Operator op, byte in, double pattern, double replace, byte out, String opcode, String istr)
 	{
 		super(op, in, out, istr);
 		instString = istr;
-		
+		_opcode = opcode;
 		_pattern = pattern;
 		_replace = replace;
+	}
+	
+	public ParameterizedBuiltinMRInstruction(Operator op, byte in, double max, boolean dirRows, boolean cast, boolean ignore, byte out, String opcode, String istr)
+	{
+		super(op, in, out, istr);
+		instString = istr;
+		_opcode = opcode;
+		_max = max;
+		_dirRows = dirRows;
+		_cast = cast;
+		_ignore = ignore;
+	}
+	
+	/**
+	 * 
+	 * @param mcIn
+	 * @param mcOut
+	 */
+	public void computeOutputCharacteristics(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut)
+	{
+		if( _opcode.equalsIgnoreCase("replace") ) {
+			mcOut.set(mcIn);
+		}
+		else if( _opcode.equalsIgnoreCase("rexpand") )
+		{
+			long lmax = UtilFunctions.toLong(_max);
+			if( _dirRows )
+				mcOut.set(lmax, mcIn.getRows(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+			else
+				mcOut.set(mcIn.getRows(), lmax, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());	
+		}
 	}
 	
 	/**
@@ -58,20 +100,36 @@ public class ParameterizedBuiltinMRInstruction extends UnaryInstruction
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		InstructionUtils.checkNumFields ( str, 4 );
-		
 		String[] parts = InstructionUtils.getInstructionParts(str);
 		String opcode = parts[0];
 		
-		if(!opcode.equalsIgnoreCase("replace"))
+		if( opcode.equalsIgnoreCase("replace") )
+		{
+			InstructionUtils.checkNumFields ( str, 4 );
+			
+			byte in = Byte.parseByte(parts[1]);
+			double pattern = Double.parseDouble(parts[2]);
+			double replace = Double.parseDouble(parts[3]);
+			byte out = Byte.parseByte(parts[4]);
+			
+			return new ParameterizedBuiltinMRInstruction(new Operator(true), in, pattern, replace, out, opcode, str);
+		}
+		else if( opcode.equalsIgnoreCase("rexpand") )
+		{
+			InstructionUtils.checkNumFields ( str, 6 );
+			
+			byte in = Byte.parseByte(parts[1]);
+			double max = Double.parseDouble(parts[2]);
+			boolean dirRows = parts[3].equals("rows");
+			boolean cast = Boolean.parseBoolean(parts[4]);
+			boolean ignore = Boolean.parseBoolean(parts[5]);
+			byte out = Byte.parseByte(parts[6]);
+			
+			return new ParameterizedBuiltinMRInstruction(new Operator(true), in, max, dirRows, cast, ignore, out, opcode, str);			
+		}
+		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing an ParameterizedBuiltinMRInstruction: " + str);
-		
-		byte in = Byte.parseByte(parts[1]);
-		double pattern = Double.parseDouble(parts[2]);
-		double replace = Double.parseDouble(parts[3]);
-		byte out = Byte.parseByte(parts[4]);
-		
-		return new ParameterizedBuiltinMRInstruction(new Operator(true), in, pattern, replace, out, str);
+		}
 	}
 	
 	@Override
@@ -86,24 +144,38 @@ public class ParameterizedBuiltinMRInstruction extends UnaryInstruction
 			{
 				if(imv==null)
 					continue;
-				MatrixValue in = imv.getValue();
-				MatrixIndexes inIX = imv.getIndexes();
 				
-				//allocate space for the output value
-				IndexedMatrixValue iout = null;
-				if(output==input)
-					iout=tempValue;
-				else
-					iout=cachedValues.holdPlace(output, valueClass);
-				iout.getIndexes().setIndexes(inIX);
-				MatrixValue out = iout.getValue();
-				
-				//process instruction
-				in.replaceOperations(out, _pattern, _replace);
-				
-				//put the output value in the cache
-				if(iout==tempValue)
-					cachedValues.add(output, iout);
+				if( _opcode.equalsIgnoreCase("replace") )
+				{
+					MatrixValue in = imv.getValue();
+					MatrixIndexes inIX = imv.getIndexes();
+					
+					//allocate space for the output value
+					IndexedMatrixValue iout = null;
+					if(output==input)
+						iout=tempValue;
+					else
+						iout=cachedValues.holdPlace(output, valueClass);
+					iout.getIndexes().setIndexes(inIX);
+					MatrixValue out = iout.getValue();
+					
+					//process instruction
+					in.replaceOperations(out, _pattern, _replace);
+					
+					//put the output value in the cache
+					if(iout==tempValue)
+						cachedValues.add(output, iout);
+				}
+				else if( _opcode.equalsIgnoreCase("rexpand") )
+				{
+					//process instruction
+					ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+					LibMatrixReorg.rexpand(imv, _max, _dirRows, _cast, _ignore, blockRowFactor, blockColFactor, out);
+					
+					//put the output values in the cache
+					for( IndexedMatrixValue lout : out )
+						cachedValues.add(output, lout);
+				}
 			}
 	}
 }

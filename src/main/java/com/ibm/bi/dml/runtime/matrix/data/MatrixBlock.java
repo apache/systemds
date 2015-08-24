@@ -5223,6 +5223,24 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		return LibMatrixReorg.rmempty(this, result, rows);
 	}
 	
+	/**
+	 * 
+	 * @param ret
+	 * @param max
+	 * @param rows
+	 * @param cast
+	 * @param ignore
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixBlock rexpandOperations( MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore )
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{	
+		MatrixBlock result = checkType(ret);
+		return LibMatrixReorg.rexpand(this, result, max, rows, cast, ignore);
+	}
+	
 	
 	@Override
 	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement) 

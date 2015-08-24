@@ -740,6 +740,50 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 * @throws HopsException
+	 */
+	public static double getBasic1NSequenceMax(Hop hop) 
+		throws HopsException
+	{
+		if( hop instanceof DataGenOp )
+		{
+			DataGenOp dgop = (DataGenOp) hop;
+			if( dgop.getOp() == DataGenMethod.SEQ ){
+				Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
+				if( to instanceof LiteralOp )
+					return getDoubleValueSafe((LiteralOp)to);
+			}
+		}
+		
+		throw new HopsException("Failed to retrieve 'to' argument from basic 1-N sequence.");
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 * @throws HopsException
+	 */
+	public static LiteralOp getBasic1NSequenceMaxLiteral(Hop hop) 
+		throws HopsException
+	{
+		if( hop instanceof DataGenOp )
+		{
+			DataGenOp dgop = (DataGenOp) hop;
+			if( dgop.getOp() == DataGenMethod.SEQ ){
+				Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
+				if( to instanceof LiteralOp )
+					return (LiteralOp)to;
+			}
+		}
+		
+		throw new HopsException("Failed to retrieve 'to' argument from basic 1-N sequence.");
+	}
+	
 	
 	/**
 	 * 

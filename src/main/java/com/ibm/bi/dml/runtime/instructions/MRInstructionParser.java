@@ -262,6 +262,7 @@ public class MRInstructionParser extends InstructionParser
 		
 		//parameterized builtins
 		String2MRInstructionType.put( "replace", MRINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2MRInstructionType.put( "rexpand", MRINSTRUCTION_TYPE.ParameterizedBuiltin);
 		
 		//remove empty (special type since binary not unary)
 		String2MRInstructionType.put( "rmempty", MRINSTRUCTION_TYPE.RemoveEmpty);

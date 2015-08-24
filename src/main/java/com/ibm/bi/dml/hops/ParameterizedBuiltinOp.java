@@ -35,6 +35,7 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
 /**
@@ -173,6 +174,12 @@ public class ParameterizedBuiltinOp extends Hop
 			setOutputDimensions(pbilop);
 			setLineNumbers(pbilop);
 			setLops(pbilop);
+		}
+		else if( _op == ParamBuiltinOp.REXPAND ) 
+		{
+			ExecType et = optFindExecType();
+			
+			constructLopsRExpand(inputlops, et);
 		} 
 		else if ( _op == ParamBuiltinOp.TRANSFORM ) 
 		{
@@ -530,7 +537,7 @@ public class ParameterizedBuiltinOp extends Hop
 				group3.getOutputParameters().setDimensions(-1, -1, brlen, bclen, -1);
 				
 				Aggregate finalagg = new Aggregate(group3, Aggregate.OperationTypes.Sum, DataType.MATRIX, getValueType(), ExecType.MR);
-				finalagg.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+				setOutputDimensions(finalagg);
 				setLineNumbers(finalagg);
 				
 				//Step 4: cleanup hops (allow for garbage collection)
@@ -604,7 +611,7 @@ public class ParameterizedBuiltinOp extends Hop
 			inMap.put("margin", inputlops.get("margin"));
 		
 			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( inMap, HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);			
-			pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+			setOutputDimensions(pbilop);
 			setLineNumbers(pbilop);
 		
 			//Step 4: cleanup hops (allow for garbage collection)
@@ -615,6 +622,43 @@ public class ParameterizedBuiltinOp extends Hop
 			//NOTE: in contrast to mr, replication and aggregation handled instruction-local
 		}
 	}
+	
+	/**
+	 * 
+	 * @param inputlops
+	 * @param et
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructLopsRExpand(HashMap<String, Lop> inputlops, ExecType et) 
+		throws HopsException, LopsException 
+	{
+		if( et == ExecType.CP || et == ExecType.SPARK )
+		{
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, 
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
+			setOutputDimensions(pbilop);
+			setLineNumbers(pbilop);
+			setLops(pbilop);
+		}
+		else if( et == ExecType.MR )
+		{
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, 
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
+			setOutputDimensions(pbilop);
+			setLineNumbers(pbilop);
+		
+			Group group1 = new Group( pbilop, Group.OperationTypes.Sort, getDataType(), getValueType());
+			setOutputDimensions(group1);
+			setLineNumbers(group1);
+			
+			Aggregate finalagg = new Aggregate(group1, Aggregate.OperationTypes.Sum, DataType.MATRIX, getValueType(), ExecType.MR);
+			setOutputDimensions(finalagg);
+			setLineNumbers(finalagg);
+			setLops(finalagg);
+		}
+	}
+	
 	
 	@Override
 	public void printMe() throws HopsException {
@@ -663,10 +707,10 @@ public class ParameterizedBuiltinOp extends Hop
 		
 		long[] ret = null;
 	
-		Hop input = getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET));	
+		Hop input = getInput().get(_paramIndexMap.get("target"));	
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 
-		if (   _op == ParamBuiltinOp.GROUPEDAGG ) 
+		if( _op == ParamBuiltinOp.GROUPEDAGG ) 
 		{
 			// Get the number of groups provided as part of aggregate() invocation, whenever available.
 			if ( _paramIndexMap.get(Statement.GAGG_NUM_GROUPS) != null ) {
@@ -686,24 +730,44 @@ public class ParameterizedBuiltinOp extends Hop
 				ret = new long[]{m, 1, m};
 			}
 		}
-		else if (   _op == ParamBuiltinOp.RMEMPTY ) 
+		else if(   _op == ParamBuiltinOp.RMEMPTY ) 
 		{ 
 			// similar to groupedagg because in the worst-case ouputsize eq inputsize
 			// #nnz is exactly the same as in the input but sparsity can be higher if dimensions.
 			// change (denser output).
 			if ( mc.dimsKnown() )
-				ret= new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()}; 
+				ret = new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()}; 
 		}
-		else if (   _op == ParamBuiltinOp.REPLACE ) 
+		else if(   _op == ParamBuiltinOp.REPLACE ) 
 		{ 
 			// the worst-case estimate from the input directly propagates to the output 
 			// #nnz depends on the replacement pattern and value, same as input if non-zero
 			if ( mc.dimsKnown() )
 			{
 				if( isNonZeroReplaceArguments() )
-					ret= new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()};
+					ret = new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()};
 				else
-					ret= new long[]{mc.getRows(), mc.getCols(), -1};
+					ret = new long[]{mc.getRows(), mc.getCols(), -1};
+			}
+		}
+		else if( _op == ParamBuiltinOp.REXPAND )
+		{
+			//dimensions are exactly known from input, sparsity unknown but upper bounded by nrow(v)
+			//note: cannot infer exact sparsity due to missing cast for outer and potential cutoff for table
+			//but very good sparsity estimate possible (number of non-zeros in input)
+			Hop max = getInput().get(_paramIndexMap.get("max"));
+			Hop dir = getInput().get(_paramIndexMap.get("dir"));
+			double maxVal = HopRewriteUtils.getDoubleValueSafe((LiteralOp)max);
+			String dirVal = ((LiteralOp)dir).getStringValue();
+			if( mc.dimsKnown() )
+			{
+				long lnnz = mc.nnzKnown() ? mc.getNonZeros() : mc.getRows();
+				if( "cols".equals(dirVal) ) { //expand horizontally
+					ret = new long[]{mc.getRows(), UtilFunctions.toLong(maxVal), lnnz};
+				}
+				else if( "rows".equals(dirVal) ){ //expand vertically
+					ret = new long[]{UtilFunctions.toLong(maxVal), mc.getRows(), lnnz};
+				}	
 			}
 		}
 		
@@ -771,7 +835,7 @@ public class ParameterizedBuiltinOp extends Hop
 				//do nothing; CDF is a scalar
 				break;
 			
-			case GROUPEDAGG:  
+			case GROUPEDAGG: { 
 				// output dimension dim1 is completely data dependent 
 				long ldim1 = -1;
 				if ( _paramIndexMap.get(Statement.GAGG_NUM_GROUPS) != null ) {
@@ -784,8 +848,8 @@ public class ParameterizedBuiltinOp extends Hop
 				setDim1( ldim1 );
 				setDim2( 1 );
 				break;
-			
-			case RMEMPTY: 
+			}
+			case RMEMPTY: {
 				//one output dimension dim1 or dim2 is completely data dependent 
 				Hop target = getInput().get(_paramIndexMap.get("target"));
 				Hop margin = getInput().get(_paramIndexMap.get("margin"));
@@ -798,17 +862,37 @@ public class ParameterizedBuiltinOp extends Hop
 				}
 				setNnz( target.getNnz() );
 				break;
-			
-			case REPLACE: 
+			}
+			case REPLACE: {
 				//dimensions are exactly known from input, sparsity might increase/decrease if pattern/replacement 0 
-				Hop target2 = getInput().get(_paramIndexMap.get("target"));
-				setDim1( target2.getDim1() );
-				setDim2( target2.getDim2() );
+				Hop target = getInput().get(_paramIndexMap.get("target"));
+				setDim1( target.getDim1() );
+				setDim2( target.getDim2() );
 				if( isNonZeroReplaceArguments() )
-					setNnz( target2.getNnz() );
+					setNnz( target.getNnz() );
 				
 				break;	
+			}
+			case REXPAND: {
+				//dimensions are exactly known from input, sparsity unknown but upper bounded by nrow(v)
+				//note: cannot infer exact sparsity due to missing cast for outer and potential cutoff for table
+				Hop target = getInput().get(_paramIndexMap.get("target"));
+				Hop max = getInput().get(_paramIndexMap.get("max"));
+				Hop dir = getInput().get(_paramIndexMap.get("dir"));
+				double maxVal = HopRewriteUtils.getDoubleValueSafe((LiteralOp)max);
+				String dirVal = ((LiteralOp)dir).getStringValue();
 				
+				if( "cols".equals(dirVal) ) { //expand horizontally
+					setDim1(target.getDim1());
+					setDim2(UtilFunctions.toLong(maxVal));
+				}
+				else if( "rows".equals(dirVal) ){ //expand vertically
+					setDim1(UtilFunctions.toLong(maxVal));
+					setDim2(target.getDim1());
+				}
+				
+				break;	
+			}
 			default:
 				//do nothing
 				break;

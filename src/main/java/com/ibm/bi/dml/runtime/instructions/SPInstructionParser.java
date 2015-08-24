@@ -186,6 +186,7 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "groupedagg"	, SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2SPInstructionType.put( "rmempty"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2SPInstructionType.put( "replace"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "rexpand"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		
 		String2SPInstructionType.put( "mappend", SPINSTRUCTION_TYPE.MAppend);
 		String2SPInstructionType.put( "rappend", SPINSTRUCTION_TYPE.RAppend);

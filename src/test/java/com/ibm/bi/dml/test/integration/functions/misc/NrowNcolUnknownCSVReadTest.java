@@ -24,6 +24,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
@@ -91,14 +92,15 @@ public class NrowNcolUnknownCSVReadTest extends AutomatedTestBase
 			
 			loadTestConfiguration(config);
 			
-			//generate input data w/o mtd file
+			//generate input data w/o mtd file (delete any mtd file from previous runs)
 			int rows = 1034;
 			int cols = 73;
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, 1.0, 7);
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 			DataConverter.writeMatrixToHDFS(mb, HOME + INPUT_DIR + "A", OutputInfo.CSVOutputInfo, 
 					                        new MatrixCharacteristics(rows,cols,-1,-1));
-	        
+	        MapReduceTool.deleteFileIfExistOnHDFS(HOME + INPUT_DIR + "A.mtd");
+			
 			//run tests
 	        runTest(true, false, null, -1);
 		}

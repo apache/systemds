@@ -1347,9 +1347,7 @@ public class DMLTranslator
 						predicate.getFilename(),
 						predicate.getBeginLine(), predicate.getBeginColumn(),
 						predicate.getEndLine(), predicate.getEndColumn()));
-				LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' is converted to boolean true by DML");
-				throw new ParseException(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' is converted to boolean true by DML");
-
+				LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' (!= 0/1) is converted to boolean TRUE by DML");
 			}
 			else if (predicate instanceof StringIdentifier) {
 				LOG.error(predicate.printErrorLocation() + "String value '" + predicate.toString() + "' is not allowed for iterable predicate");

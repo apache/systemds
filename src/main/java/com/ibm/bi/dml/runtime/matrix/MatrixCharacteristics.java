@@ -46,6 +46,7 @@ import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MatrixReshapeMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.ParameterizedBuiltinMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction;
@@ -285,8 +286,8 @@ public class MatrixCharacteristics implements Serializable
 			dimOut.set(mrinst.getNumRows(),mrinst.getNumColunms(),in_dim.getRowsPerBlock(), in_dim.getColsPerBlock(), in_dim.getNonZeros());
 		}
 		else if(ins instanceof RandInstruction
-				|| ins instanceof SeqInstruction
-				) {
+				|| ins instanceof SeqInstruction) 
+		{
 			DataGenMRInstruction dataIns=(DataGenMRInstruction)ins;
 			dimOut.set(dims.get(dataIns.getInput()));
 		}
@@ -294,6 +295,11 @@ public class MatrixCharacteristics implements Serializable
 		{
 			ReplicateInstruction realIns=(ReplicateInstruction)ins;
 			realIns.computeOutputDimension(dims.get(realIns.input), dimOut);
+		}
+		else if( ins instanceof ParameterizedBuiltinMRInstruction ) //before unary
+		{
+			ParameterizedBuiltinMRInstruction realIns = (ParameterizedBuiltinMRInstruction)ins;
+			realIns.computeOutputCharacteristics(dims.get(realIns.input), dimOut);
 		}
 		else if(ins instanceof ScalarInstruction 
 				|| ins instanceof AggregateInstruction

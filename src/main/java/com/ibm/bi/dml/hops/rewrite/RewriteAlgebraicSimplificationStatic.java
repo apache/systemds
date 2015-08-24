@@ -1535,19 +1535,25 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			if(   ( hi.getInput().get(1) instanceof ReorgOp                 //pattern a: outer(v, t(seq(1,m)), "==")
 				    && ((ReorgOp) hi.getInput().get(1)).getOp()==ReOrgOp.TRANSPOSE
 				    && HopRewriteUtils.isBasic1NSequence(hi.getInput().get(1).getInput().get(0))) 
-				|| HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0))) //pattern b: outer(seq(1,m), v "==")
+				|| HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0))) //pattern b: outer(seq(1,m), t(v) "==")
 			{
 				//determine variable parameters for pattern a/b
-				int ixTgt = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? 1 : 0;
-				Hop seq = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ?
-						hi.getInput().get(0) : hi.getInput().get(1).getInput().get(0);
-				String direction = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? "col" : "row";
+				boolean isPatternB = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0));
+				boolean isTransposeRight = (hi.getInput().get(1) instanceof ReorgOp 
+						&& ((ReorgOp) hi.getInput().get(1)).getOp()==ReOrgOp.TRANSPOSE);				
+				Hop trgt = isPatternB ? (isTransposeRight ? 
+						hi.getInput().get(1).getInput().get(0) :                  //get v from t(v)
+						HopRewriteUtils.createTranspose(hi.getInput().get(1)) ) : //create v via t(v')
+						hi.getInput().get(0);                                     //get v directly 
+				Hop seq = isPatternB ?
+						hi.getInput().get(0) : hi.getInput().get(1).getInput().get(0);					
+				String direction = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? "rows" : "cols";
 				
 				//setup input parameter hops
 				HashMap<String,Hop> inputargs = new HashMap<String,Hop>();
-				inputargs.put("target", hi.getInput().get(ixTgt));
+				inputargs.put("target", trgt);
 				inputargs.put("max", HopRewriteUtils.getBasic1NSequenceMaxLiteral(seq));
-				inputargs.put("dir", new LiteralOp("row", direction));
+				inputargs.put("dir", new LiteralOp(direction, direction));
 				inputargs.put("ignore", new LiteralOp("true", true));
 				inputargs.put("cast", new LiteralOp("false", false));
 			
@@ -1583,7 +1589,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		//pattern: table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
 		//note: this rewrite supports both left/right sequence 
 		
-		if( hi instanceof TernaryOp && hi.getInput().size()==5 )
+		if(    hi instanceof TernaryOp && hi.getInput().size()==5 
+			&& hi.getInput().get(3) instanceof LiteralOp && hi.getInput().get(4) instanceof LiteralOp )
 		{
 			if(  (HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) &&
 				   hi.getInput().get(3) instanceof LiteralOp)   //pattern a: table(seq(1,nrow(v)), v, nrow(v), m)
@@ -1593,13 +1600,13 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				//determine variable parameters for pattern a/b
 				int ixTgt = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? 1 : 0;
 				int ixMax = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? 4 : 3;
-				String direction = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? "row" : "col";
+				String direction = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? "cols" : "rows";
 				
 				//setup input parameter hops
 				HashMap<String,Hop> inputargs = new HashMap<String,Hop>();
 				inputargs.put("target", hi.getInput().get(ixTgt));
 				inputargs.put("max", hi.getInput().get(ixMax));
-				inputargs.put("dir", new LiteralOp("row", direction));
+				inputargs.put("dir", new LiteralOp(direction, direction));
 				inputargs.put("ignore", new LiteralOp("true", false));
 				inputargs.put("cast", new LiteralOp("false", true));
 			

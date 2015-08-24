@@ -253,17 +253,15 @@ public class OuterTableExpandTest extends AutomatedTestBase
 				
 				//check meta data
 				checkDMLMetaDataFile("C", new MatrixCharacteristics(left?rows:cols2,left?cols2:rows,1,1));
-			}
 			
-			//check compiled/executed jobs
-			/*
-			if( rtplatform == RUNTIME_PLATFORM.HADOOP ) {
-				int expectedNumCompiled = 2; //reblock+gmr if rexpand; otherwise 3/5 
-				int expectedNumExecuted = expectedNumCompiled; 
-				checkNumCompiledMRJobs(expectedNumCompiled); 
-				checkNumExecutedMRJobs(expectedNumExecuted); 	
+				//check compiled/executed jobs
+				if( rtplatform == RUNTIME_PLATFORM.HADOOP ) {
+					int expectedNumCompiled = 3; //reblock+gmr+gmr if rexpand; otherwise 3/5 
+					int expectedNumExecuted = expectedNumCompiled; 
+					checkNumCompiledMRJobs(expectedNumCompiled); 
+					checkNumExecutedMRJobs(expectedNumExecuted); 	
+				}
 			}
-			*/
 		}
 		finally
 		{

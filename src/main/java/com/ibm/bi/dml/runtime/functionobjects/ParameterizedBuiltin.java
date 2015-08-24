@@ -42,7 +42,7 @@ public class ParameterizedBuiltin extends ValueFunction
 
 	private static final long serialVersionUID = -5966242955816522697L;
 	
-	public enum ParameterizedBuiltinCode { INVALID, CDF, INVCDF, RMEMPTY, REPLACE };
+	public enum ParameterizedBuiltinCode { INVALID, CDF, INVCDF, RMEMPTY, REPLACE, REXPAND };
 	public enum ProbabilityDistributionCode { INVALID, NORMAL, EXP, CHISQ, F, T };
 	
 	public ParameterizedBuiltinCode bFunc;
@@ -56,6 +56,7 @@ public class ParameterizedBuiltin extends ValueFunction
 		String2ParameterizedBuiltinCode.put( "invcdf", ParameterizedBuiltinCode.INVCDF);
 		String2ParameterizedBuiltinCode.put( "rmempty", ParameterizedBuiltinCode.RMEMPTY);
 		String2ParameterizedBuiltinCode.put( "replace", ParameterizedBuiltinCode.REPLACE);
+		String2ParameterizedBuiltinCode.put( "rexpand", ParameterizedBuiltinCode.REXPAND);
 	}
 	
 	static public HashMap<String, ProbabilityDistributionCode> String2DistCode;
@@ -156,6 +157,9 @@ public class ParameterizedBuiltin extends ValueFunction
 				
 			case REPLACE:
 				return new ParameterizedBuiltin(ParameterizedBuiltinCode.REPLACE);
+			
+			case REXPAND:
+				return new ParameterizedBuiltin(ParameterizedBuiltinCode.REXPAND);
 			
 			default:
 				throw new DMLRuntimeException("Invalid parameterized builtin code: " + code);

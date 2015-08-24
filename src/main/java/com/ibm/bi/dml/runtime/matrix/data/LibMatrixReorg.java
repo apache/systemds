@@ -34,6 +34,7 @@ import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.util.SortUtils;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 /**
  * MB:
@@ -46,7 +47,7 @@ import com.ibm.bi.dml.runtime.util.SortUtils;
  *  - rdiag (diagV2M/diagM2V), 
  *  - rsort (sorting data/indexes)
  *  - rmempty (remove empty)
- * 
+ *  - rexpand (outer/table-seq expansion)
  */
 public class LibMatrixReorg 
 {
@@ -222,19 +223,6 @@ public class LibMatrixReorg
 		}
 		
 		//step 3: index vector sorting
-		
-		/* VERSION 1: conclusively too slow 
-		//create index vector
-		Integer[] vix = new Integer[rlen];
-		for( int i=0; i<rlen; i++ )
-			vix[i] = i;
-		
-		//sort index vector on original data
-		if( !desc )
-			Arrays.sort(vix, new AscRowComparator(in, by-1));
-		else
-			Arrays.sort(vix, new DescRowComparator(in, by-1));
-		*/
 		
 		//create index vector and extract values
 		int[] vix = new int[rlen];
@@ -511,6 +499,89 @@ public class LibMatrixReorg
 		for( IndexedMatrixValue imv : out.values() ){
 			((MatrixBlock)imv.getValue()).recomputeNonZeros();
 			outList.add(imv);
+		}
+	}
+
+	/**
+	 * CP rexpand operation (single input, single output)
+	 * 
+	 * @param in
+	 * @param ret
+	 * @param rows
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//prepare parameters
+		int lmax = (int)UtilFunctions.toLong(max);
+		
+		//sanity check for input nnz (incl implicit handling of empty blocks)
+		if( !ignore && in.getNonZeros()<in.getNumRows() )
+			throw new DMLRuntimeException("Invalid input w/ zeros for rexpand ignore=false.");
+		
+		//check for empty inputs (for ignore=true)
+		if( in.isEmptyBlock(false) ) {
+			if( rows )
+				ret.reset(lmax, in.rlen, true);
+			else //cols
+				ret.reset(in.rlen, lmax, true);	
+			return ret;
+		}
+		
+		//execute rexpand operations
+		if( rows )
+			return rexpandRows(in, ret, lmax, cast, ignore);
+		else //cols
+			return rexpandColumns(in, ret, lmax, cast, ignore);
+	}
+
+	/**
+	 * MR/Spark rexpand operation (single input, multiple outputs incl empty blocks)
+	 * 
+	 * @param data
+	 * @param offset
+	 * @param rmRows
+	 * @param len
+	 * @param brlen
+	 * @param bclen
+	 * @param outList
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//prepare parameters
+		MatrixIndexes ix = data.getIndexes();
+		MatrixBlock in = (MatrixBlock)data.getValue();
+		
+		//execute rexpand operations incl sanity checks
+		//TODO more robust (memory efficient) implementation w/o tmp block
+		MatrixBlock tmp = rexpand(in, new MatrixBlock(), max, rows, cast, ignore);
+		
+		//prepare outputs blocks (slice tmp block into output blocks ) 
+		if( rows ) //expanded vertically
+		{
+			for( int rl=0; rl<tmp.getNumRows(); rl+=brlen ) {
+				MatrixBlock mb = tmp.sliceOperations(
+						rl, (int)(Math.min(rl+brlen, tmp.getNumRows())-1), 
+						0, tmp.getNumColumns()-1, new MatrixBlock());
+				outList.add(new IndexedMatrixValue(
+						new MatrixIndexes(rl/brlen+1, ix.getRowIndex()), mb));
+			}
+		}
+		else //expanded horizontally
+		{
+			for( int cl=0; cl<tmp.getNumColumns(); cl+=bclen ) {
+				MatrixBlock mb = tmp.sliceOperations(
+						0, tmp.getNumRows()-1,
+						cl, (int)(Math.min(cl+bclen, tmp.getNumColumns())-1), new MatrixBlock());
+				outList.add(new IndexedMatrixValue(
+						new MatrixIndexes(ix.getRowIndex(), cl/bclen+1), mb));
+			}
 		}
 	}
 
@@ -1731,6 +1802,89 @@ public class LibMatrixReorg
 		//check sparsity
 		ret.nonZeros = in.nonZeros;
 		ret.examSparsity();
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param ret
+	 * @param max
+	 * @param cast
+	 * @param ignore
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	private static MatrixBlock rexpandRows(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore) 
+		throws DMLRuntimeException
+	{
+		//set meta data
+		final int rlen = max;
+		final int clen = in.rlen;
+		final long nnz = in.nonZeros;
+		boolean sp = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz);
+		ret.reset(rlen, clen, sp);
+	
+		//expand input vertically  (input vector likely dense 
+		//but generic implementation for general case)
+		
+		for( int i=0; i<clen; i++ )
+		{
+			//get value and cast if necessary (table)
+			double val = in.quickGetValue(i, 0);
+			if( cast )
+				val = UtilFunctions.toLong(val);
+			
+			//handle invalid values if not to be ignored
+			if( !ignore && val<=0 )
+				throw new DMLRuntimeException("Invalid input value <= 0 for ignore=false: "+val);
+				
+			//set expanded value if matching
+			if( val == Math.floor(val) && val >= 1 && val <= max )
+				ret.appendValue((int)(val-1), i, 1);
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param ret
+	 * @param max
+	 * @param cast
+	 * @param ignore
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	private static MatrixBlock rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore) 
+		throws DMLRuntimeException
+	{
+		//set meta data
+		final int rlen = in.rlen;
+		final int clen = max;
+		final long nnz = in.nonZeros;
+		boolean sp = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz);
+		ret.reset(rlen, clen, sp);
+		
+		//expand input horizontally (input vector likely dense 
+		//but generic implementation for general case)
+		for( int i=0; i<rlen; i++ )
+		{
+			//get value and cast if necessary (table)
+			double val = in.quickGetValue(i, 0);
+			if( cast )
+				val = UtilFunctions.toLong(val);
+			
+			//handle invalid values if not to be ignored
+			if( !ignore && val<=0 )
+				throw new DMLRuntimeException("Invalid input value <= 0 for ignore=false: "+val);
+				
+			//set expanded value if matching
+			if( val == Math.floor(val) && val >= 1 && val <= max )
+				ret.appendValue(i, (int)(val-1), 1);
+		}
 		
 		return ret;
 	}

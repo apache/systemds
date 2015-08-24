@@ -36,7 +36,7 @@ public class ParameterizedBuiltin extends Lop
 {
 	
 	public enum OperationTypes { 
-		INVALID, CDF, INVCDF, RMEMPTY, REPLACE, 
+		INVALID, CDF, INVCDF, RMEMPTY, REPLACE, REXPAND, 
 		PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
 		TRANSFORM
 	};
@@ -103,16 +103,19 @@ public class ParameterizedBuiltin extends Lop
 		if( _operation == OperationTypes.REPLACE && et==ExecType.MR )
 		{
 			eloc = ExecLocation.MapOrReduce;
-			//lps.addCompatibility(JobType.CSV_REBLOCK);
-			//lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.REBLOCK);
 		}
 		else if( _operation == OperationTypes.RMEMPTY && et==ExecType.MR )
 		{
 			eloc = ExecLocation.Reduce;
-			//lps.addCompatibility(JobType.CSV_REBLOCK);
-			//lps.addCompatibility(JobType.DATAGEN);
+			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.REBLOCK);
+			breaksAlignment=true;
+		}
+		else if( _operation == OperationTypes.REXPAND && et==ExecType.MR )
+		{
+			eloc = ExecLocation.MapOrReduce;
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.REBLOCK);
 			breaksAlignment=true;
@@ -214,6 +217,28 @@ public class ParameterizedBuiltin extends Lop
 				}
 				break;
 			
+			case REXPAND:
+				sb.append("rexpand");
+				sb.append(OPERAND_DELIMITOR);
+				
+				for ( String s : _inputParams.keySet() ) {
+					
+					sb.append(s);
+					sb.append(NAME_VALUE_SEPARATOR);
+					
+					// get the value/label of the scalar input associated with name "s"
+					// (offset and maxdim only apply to exec type spark)
+					Lop iLop = _inputParams.get(s);
+					if( s.equals( "target") || getExecType()==ExecType.SPARK )
+						sb.append( iLop.getOutputParameters().getLabel());
+					else
+						sb.append( iLop.prepScalarLabel() );
+					
+					sb.append(OPERAND_DELIMITOR);
+				}
+				
+				break;
+				
 			default:
 				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
 		}
@@ -302,6 +327,61 @@ public class ParameterizedBuiltin extends Lop
 				
 				Lop iLop4 = _inputParams.get("margin");
 				sb.append( iLop4.prepScalarLabel() );
+				
+				sb.append( OPERAND_DELIMITOR );
+				
+				break;
+			}
+				
+			default:
+				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
+		}
+		
+		sb.append( prepOutputOperand(output_index));
+		
+		return sb.toString();
+	}
+	
+	@Override 
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int output_index) 
+		throws LopsException
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+
+		switch(_operation) 
+		{
+			case REXPAND:
+			{
+				sb.append("rexpand");
+				
+				sb.append(OPERAND_DELIMITOR);
+				
+				Lop iLop1 = _inputParams.get("target");
+				int pos1 = getInputs().indexOf(iLop1);
+				int index1 = (pos1==0)? input_index1 : (pos1==1)? input_index2 : (pos1==2)? input_index3 : (pos1==3)? input_index4 : input_index5;
+				sb.append(prepInputOperand(index1));
+				
+				sb.append(OPERAND_DELIMITOR);
+				
+				Lop iLop2 = _inputParams.get("max");
+				sb.append( iLop2.prepScalarLabel() );
+				
+				sb.append(OPERAND_DELIMITOR);
+				
+				Lop iLop3 = _inputParams.get("dir");
+				sb.append( iLop3.prepScalarLabel() );
+				
+				sb.append(OPERAND_DELIMITOR);
+				
+				Lop iLop4 = _inputParams.get("cast");
+				sb.append( iLop4.prepScalarLabel() );
+				
+				sb.append( OPERAND_DELIMITOR );
+				
+				Lop iLop5 = _inputParams.get("ignore");
+				sb.append( iLop5.prepScalarLabel() );
 				
 				sb.append( OPERAND_DELIMITOR );
 				

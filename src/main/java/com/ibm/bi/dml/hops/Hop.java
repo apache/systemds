@@ -1049,7 +1049,7 @@ public abstract class Hop
 	};
 
 	public enum ParamBuiltinOp {
-		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, TRANSFORM
+		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND, TRANSFORM
 	};
 
 	/**
@@ -1281,6 +1281,7 @@ public abstract class Hop
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.INVCDF, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.INVCDF);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REPLACE, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.REPLACE);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REXPAND, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.REXPAND);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORM, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM);
 	}
 

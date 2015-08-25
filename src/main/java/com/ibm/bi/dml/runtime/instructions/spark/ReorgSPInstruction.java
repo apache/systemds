@@ -107,42 +107,27 @@ public class ReorgSPInstruction extends UnarySPInstruction
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		String opcode = getOpcode();
+
+		//get input rdd handle
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
 		
 		if( opcode.equalsIgnoreCase("r'") ) //TRANSPOSE
 		{
-			//get input rdd handle
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-
 			//execute transpose reorg operation
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapToPair(new ReorgMapFunction(opcode));
-			
-			//store output rdd handle
-			updateReorgMatrixCharacteristics(sec);
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
+			out = in1.mapToPair(new ReorgMapFunction(opcode));
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) // DIAG
-		{			
-			//update and get matrix characteristics
-			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			updateReorgMatrixCharacteristics(sec); //update mcOut
-			
-			// get input rdd handle
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-			if(mc1.getCols() == 1) { // diagV2M
-				out = in1.flatMapToPair(new RDDDiagV2MFunction(mcOut));
+		{	
+			if(mcIn.getCols() == 1) { // diagV2M
+				out = in1.flatMapToPair(new RDDDiagV2MFunction(mcIn));
 			}
 			else { // diagM2V
 				//execute diagM2V operation
 				out = in1.filter(new FilterDiagBlocksFunction())
 					     .mapToPair(new ReorgMapFunction(opcode));
 			}
-			
-			//store output rdd handle
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
 		}
 		else if ( opcode.equalsIgnoreCase("rsort") ) //ORDER
 		{
@@ -152,38 +137,34 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			long col = ec.getScalarInput(_col.getName(), _col.getValueType(), _col.isLiteral()).getLongValue();
 			boolean desc = ec.getScalarInput(_desc.getName(), _desc.getValueType(), _desc.isLiteral()).getBooleanValue();
 			boolean ixret = ec.getScalarInput(_ixret.getName(), _ixret.getValueType(), _ixret.isLiteral()).getBooleanValue();
-			
-			// get input rdd handle
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-			boolean singleCol = (mc1.getCols() == 1);
+			boolean singleCol = (mcIn.getCols() == 1);
 			
 			// extract column (if necessary) and sort 
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1;
+			out = in1;
 			if( !singleCol ){
-				out = out.filter(new IsBlockInRange(1, mc1.getRows(), col, col, mc1.getRowsPerBlock(), mc1.getColsPerBlock()))
-						 .mapValues(new ExtractColumn((int)UtilFunctions.cellInBlockCalculation(col, mc1.getColsPerBlock())));
+				out = out.filter(new IsBlockInRange(1, mcIn.getRows(), col, col, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock()))
+						 .mapValues(new ExtractColumn((int)UtilFunctions.cellInBlockCalculation(col, mcIn.getColsPerBlock())));
 			}
 			
 			//actual index/data sort operation
 			if( ixret ) { //sort indexes 
-				out = RDDSortUtils.sortIndexesByVal(out, !desc, mc1.getRows(), mc1.getRowsPerBlock());
+				out = RDDSortUtils.sortIndexesByVal(out, !desc, mcIn.getRows(), mcIn.getRowsPerBlock());
 			}	
 			else if( singleCol && !desc) { //sort single-column matrix
-				out = RDDSortUtils.sortByVal(out, mc1.getRows(), mc1.getRowsPerBlock());
+				out = RDDSortUtils.sortByVal(out, mcIn.getRows(), mcIn.getRowsPerBlock());
 			}
 			else { //sort multi-column matrix
-				out = RDDSortUtils.sortDataByVal(out, in1, !desc, mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				out = RDDSortUtils.sortDataByVal(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 			}
-			
-			//store output rdd handle
-			updateReorgMatrixCharacteristics(sec);
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), input1.getName());
 		}
 		else {
 			throw new DMLRuntimeException("Error: Incorrect opcode in ReorgSPInstruction:" + opcode);
 		}
+		
+		//store output rdd handle
+		updateReorgMatrixCharacteristics(sec);
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), input1.getName());
 	}
 	
 	/**
@@ -197,6 +178,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
+		//infer initially unknown dimensions from inputs
 		if( !mcOut.dimsKnown() ) 
 		{
 			if( !mc1.dimsKnown() )
@@ -211,6 +193,15 @@ public class ReorgSPInstruction extends UnarySPInstruction
 				mcOut.set(mc1.getRows(), ixret?1:mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			}
 		}
+		
+		//infer initially unknown nnz from input
+		if( !mcOut.nnzKnown() && mc1.nnzKnown() ){
+			boolean sortIx = getOpcode().equalsIgnoreCase("rsort") && sec.getScalarInput(_ixret.getName(), _ixret.getValueType(), _ixret.isLiteral()).getBooleanValue();			
+			if( sortIx )
+				mcOut.setNonZeros(mc1.getRows());
+			else //default (r', rdiag, rsort data)
+				mcOut.setNonZeros(mc1.getNonZeros());
+		}
 	}
 	
 	/**
@@ -221,13 +212,13 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		private static final long serialVersionUID = 31065772250744103L;
 		
 		private ReorgOperator _reorgOp = null;
-		private MatrixCharacteristics _mcOut = null;
+		private MatrixCharacteristics _mcIn = null;
 		
-		public RDDDiagV2MFunction(MatrixCharacteristics mcOut) 
+		public RDDDiagV2MFunction(MatrixCharacteristics mcIn) 
 			throws DMLRuntimeException 
 		{
 			_reorgOp = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
-			_mcOut = mcOut;
+			_mcIn = mcIn;
 		}
 		
 		@Override
@@ -246,11 +237,11 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(ixOut,blkOut));
 			
 			// insert newly created empty blocks for entire row
-			int numBlocks = (int) Math.ceil((double)_mcOut.getCols()/_mcOut.getColsPerBlock());
+			int numBlocks = (int) Math.ceil((double)_mcIn.getRows()/_mcIn.getRowsPerBlock());
 			for(int i = 1; i <= numBlocks; i++) {
 				if(i != ixOut.getColumnIndex()) {
-					int lrlen = UtilFunctions.computeBlockSize(_mcOut.getRows(), rix, _mcOut.getRowsPerBlock());
-		    		int lclen = UtilFunctions.computeBlockSize(_mcOut.getCols(), i, _mcOut.getColsPerBlock());
+					int lrlen = UtilFunctions.computeBlockSize(_mcIn.getRows(), rix, _mcIn.getRowsPerBlock());
+		    		int lclen = UtilFunctions.computeBlockSize(_mcIn.getRows(), i, _mcIn.getRowsPerBlock());
 		    		MatrixBlock emptyBlk = new MatrixBlock(lrlen, lclen, true);
 					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(rix, i), emptyBlk));
 				}

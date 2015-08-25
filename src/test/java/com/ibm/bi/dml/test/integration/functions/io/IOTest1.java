@@ -68,8 +68,11 @@ public class IOTest1 extends AutomatedTestBase
 		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
+		
 		writeInputMatrix("a", a);
 		writeExpectedMatrix("a", a);
+		writeInputMatrix("reblockIn", a);		
+		writeInputMatrix("12", a);
 
 		runTest();
 

@@ -1825,24 +1825,39 @@ public class LibMatrixReorg
 		final long nnz = in.nonZeros;
 		boolean sp = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz);
 		ret.reset(rlen, clen, sp);
-	
-		//expand input vertically  (input vector likely dense 
-		//but generic implementation for general case)
+
+		//setup temporary array for 'buffered append w/ sorting' in order
+		//to mitigate performance issues due to random row access for large m
+		final int blksize = 1024*1024; //max 12MB
+		int[] tmpi = new int[Math.min(blksize,clen)];
+		double[] tmp = new double[Math.min(blksize,clen)];
 		
-		for( int i=0; i<clen; i++ )
+		//expand input vertically  (input vector likely dense 
+		//but generic implementation for general case)		
+		for( int i=0; i<clen; i+=blksize )
 		{
-			//get value and cast if necessary (table)
-			double val = in.quickGetValue(i, 0);
-			if( cast )
-				val = UtilFunctions.toLong(val);
-			
-			//handle invalid values if not to be ignored
-			if( !ignore && val<=0 )
-				throw new DMLRuntimeException("Invalid input value <= 0 for ignore=false: "+val);
+			//create sorted block indexes (append buffer)
+			int len = Math.min(blksize, clen-i);
+			copyColVector(in, i, tmp, tmpi, len);
+			SortUtils.sortByValue(0, len, tmp, tmpi);
+		
+			//process current append buffer
+			for( int j=0; j<len; j++ )
+			{
+				//get value and cast if necessary (table)
+				double val = tmp[j];
+				if( cast )
+					val = UtilFunctions.toLong(val);
 				
-			//set expanded value if matching
-			if( val == Math.floor(val) && val >= 1 && val <= max )
-				ret.appendValue((int)(val-1), i, 1);
+				//handle invalid values if not to be ignored
+				if( !ignore && val<=0 )
+					throw new DMLRuntimeException("Invalid input value <= 0 for ignore=false: "+val);
+					
+				//set expanded value if matching
+				if( val == Math.floor(val) && val >= 1 && val <= max )
+					ret.appendValue((int)(val-1), i+tmpi[j], 1);
+			}
+			
 		}
 		
 		return ret;
@@ -1887,6 +1902,32 @@ public class LibMatrixReorg
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param ixin
+	 * @param tmp
+	 * @param len
+	 */
+	private static void copyColVector( MatrixBlock in, int ixin, double[] tmp, int[] tmpi, int len)
+	{
+		//copy value array from input matrix
+		if( in.isEmptyBlock(false) ) {
+			Arrays.fill(tmp, 0, 0, len);
+		}
+		else if( in.sparse ){ //SPARSE
+			for( int i=0; i<len; i++ )
+				tmp[i] = in.quickGetValue(ixin+i, 0);
+		}
+		else { //DENSE
+			System.arraycopy(in.denseBlock, ixin, tmp, 0, len);
+		}
+		
+		//init index array
+		for( int i=0; i<len; i++ )
+			tmpi[i] = ixin + i;
 	}
 	
 

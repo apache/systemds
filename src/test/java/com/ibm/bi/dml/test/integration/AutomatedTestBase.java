@@ -1281,7 +1281,10 @@ public abstract class AutomatedTestBase
 		if (!isOutAndExpectedDeletionDisabled()) {
 			TestUtils.removeHDFSDirectories(inputDirectories.toArray(new String[inputDirectories.size()]));		
 			TestUtils.removeFiles(inputRFiles.toArray(new String[inputRFiles.size()]));
-			TestUtils.removeTemporaryFiles();
+			
+			// The following cleanup code is disabled (see [SYSML-256]) until we can figure out
+			// what test cases are creating temporary directories at the root of the project.
+			//TestUtils.removeTemporaryFiles();
 
 			TestUtils.clearDirectory(baseDirectory + OUTPUT_DIR);
 			TestUtils.removeHDFSFiles(expectedFiles.toArray(new String[expectedFiles.size()]));

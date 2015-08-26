@@ -21,8 +21,8 @@
 	<name>SystemML compiler</name>
 
 	<parent>
-		<groupId>com.ibm.biginsights</groupId>
-		<artifactId>systemml-reactor</artifactId>
+		<groupId>com.ibm.systemml</groupId>
+		<artifactId>systemml-parent</artifactId>
 		<version>5.2-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
@@ -251,8 +251,7 @@
 
 					<!-- Third argument prevents Java from popping up lots of windows on 
 						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m
-						-Djava.awt.headless=true</argLine>
+					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m -Djava.awt.headless=true</argLine>
 
 					<includes>
 						<!--  All tests are integration tests as far as Maven is concerned. -->

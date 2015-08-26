@@ -42,6 +42,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 /**
@@ -1905,25 +1906,29 @@ public class ParForStatementBlock extends ForStatementBlock
 			if( l instanceof BinaryExpression)
 			{
 				ret = rParseBinaryExpression((BinaryExpression) l);		
-				if( r instanceof IntIdentifier )
-					ret.addConstant(((IntIdentifier) r).getValue());
+				Long cvalR = parseLongConstant(r);
+				if( cvalR != null )
+					ret.addConstant(cvalR);
 				else 
 					return null;
 			}
 			else if (r instanceof BinaryExpression)
 			{
 				ret = rParseBinaryExpression((BinaryExpression) r);	
-				if( l instanceof IntIdentifier )
-					ret.addConstant(((IntIdentifier) l).getValue());
+				Long cvalL = parseLongConstant(l);
+				if( cvalL != null )
+					ret.addConstant(cvalL);
 				else
 					return null;
 			}
 			else // atomic case
 			{
-				if( l instanceof IntIdentifier )
-					ret = new LinearFunction(((IntIdentifier) l).getValue(),1,((DataIdentifier)r)._name);	
-				else if(r instanceof IntIdentifier)
-					ret = new LinearFunction(((IntIdentifier) r).getValue(),1,((DataIdentifier)l)._name);
+				Long cvalL = parseLongConstant(l);
+				Long cvalR = parseLongConstant(r);
+				if( cvalL != null )
+					ret = new LinearFunction(cvalL,1,((DataIdentifier)r)._name);	
+				else if( cvalR != null )
+					ret = new LinearFunction(cvalR,1,((DataIdentifier)l)._name);
 				else
 					return null; //let dependency analysis fail
 			}
@@ -1935,7 +1940,8 @@ public class ParForStatementBlock extends ForStatementBlock
 			{
 				ret = rParseBinaryExpression((BinaryExpression) l);		
 				//change to plus
-				ret.addConstant(((IntIdentifier) r).getValue()*(-1));
+				Long cvalR = parseLongConstant(r);
+				ret.addConstant(cvalR*(-1));
 			}
 			else if (r instanceof BinaryExpression)
 			{
@@ -1944,15 +1950,18 @@ public class ParForStatementBlock extends ForStatementBlock
 				ret._a*=(-1);
 				for( int i=0; i<ret._b.length; i++ )
 					ret._b[i]*=(-1);
-				ret.addConstant(((IntIdentifier) l).getValue());
+				Long cvalL = parseLongConstant(l);
+				ret.addConstant(cvalL);
 			}
 			else // atomic case
 			{
 				//change everything to plus
-				if( l instanceof IntIdentifier )
-					ret = new LinearFunction(((IntIdentifier) l).getValue(),-1,((DataIdentifier)r)._name);	
-				else if(r instanceof IntIdentifier)
-					ret = new LinearFunction(((IntIdentifier) r).getValue()*(-1),1,((DataIdentifier)l)._name);
+				Long cvalL = parseLongConstant(l);
+				Long cvalR = parseLongConstant(r);				
+				if( cvalL != null )
+					ret = new LinearFunction(cvalL,-1,((DataIdentifier)r)._name);	
+				else if( cvalR != null )
+					ret = new LinearFunction(cvalR*(-1),1,((DataIdentifier)l)._name);
 				else
 					return null; //let dependency analysis fail
 			}
@@ -1962,10 +1971,13 @@ public class ParForStatementBlock extends ForStatementBlock
 			//NOTE: no recursion for MULT expressions
 			
 			//atomic case
-			if( l instanceof IntIdentifier )
-				ret = new LinearFunction(0, ((IntIdentifier) l).getValue(),((DataIdentifier)r)._name);	
-			else if(r instanceof IntIdentifier)
-				ret = new LinearFunction(0, ((IntIdentifier) r).getValue(),((DataIdentifier)l)._name);
+			Long cvalL = parseLongConstant(l);
+			Long cvalR = parseLongConstant(r);
+			
+			if( cvalL != null )
+				ret = new LinearFunction(0, cvalL,((DataIdentifier)r)._name);	
+			else if( cvalR != null )
+				ret = new LinearFunction(0, cvalR,((DataIdentifier)l)._name);
 			else
 				return null; //let dependency analysis fail
 		}
@@ -1975,6 +1987,28 @@ public class ParForStatementBlock extends ForStatementBlock
 		return ret;
 	}
 
+	/**
+	 * 
+	 * @param expr
+	 * @return
+	 */
+	private Long parseLongConstant(Expression expr)
+	{
+		Long ret = null;
+		
+		if( expr instanceof IntIdentifier ) {
+			ret = ((IntIdentifier) expr).getValue();
+		}
+		else if( expr instanceof DoubleIdentifier ) {
+			double tmp = ((DoubleIdentifier) expr).getValue();
+			//ensure double represent an integer number
+			if( tmp == Math.floor(tmp) ) 
+				ret = UtilFunctions.toLong(tmp);
+		}
+		
+		return ret;
+	}
+	
 	/**
 	 * Helper class for representing a single candidate.
 	 *

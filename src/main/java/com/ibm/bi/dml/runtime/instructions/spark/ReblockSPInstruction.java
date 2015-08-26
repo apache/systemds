@@ -20,9 +20,6 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.PairFunction;
-
-import scala.Tuple2;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -36,6 +33,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDProperties;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractBlockForBinaryReblock;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
@@ -173,14 +171,11 @@ public class ReblockSPInstruction extends UnarySPInstruction
 			else 
 			{
 				//BINARY BLOCK <- BINARY BLOCK (different sizes)
+				JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
 				
-				JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
-				
-				JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1.flatMapToPair(
-						    new ExtractBlockForBinaryReblock(mcOut.getRows(), mcOut.getCols(), mc.getRowsPerBlock(), 
-								mc.getColsPerBlock(),mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()))
-						.groupByKey()
-						.mapToPair(new MergeBinBlocks());
+				JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
+						in1.flatMapToPair(new ExtractBlockForBinaryReblock(mc, mcOut));
+				out = RDDAggregateUtils.mergeByKey( out );
 				
 				//put output RDD handle into symbol table
 				sec.setRDDHandleForVariable(output.getName(), out);
@@ -191,30 +186,4 @@ public class ReblockSPInstruction extends UnarySPInstruction
 			throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:" + iimd.getInputInfo());
 		}		
 	}
-	
-	public static class MergeBinBlocks implements PairFunction<Tuple2<MatrixIndexes,Iterable<MatrixBlock>>, MatrixIndexes, MatrixBlock> {
-		private static final long serialVersionUID = -5071035411478388254L;
-
-		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Iterable<MatrixBlock>> kv) throws Exception {
-			int brlen = -1; int bclen = -1;
-			long nnz = 0;
-			for(MatrixBlock mb : kv._2) {
-				if(brlen == -1) {
-					brlen = mb.getNumRows();
-					bclen = mb.getNumColumns();
-				}
-				mb.recomputeNonZeros();
-				nnz += mb.getNonZeros();
-			}
-			boolean sparse = MatrixBlock.evalSparseFormatInMemory(brlen, bclen, nnz);
-			MatrixBlock retVal = new MatrixBlock(brlen, bclen, sparse, nnz);
-			for(MatrixBlock mb : kv._2) {
-				retVal.merge(mb, false);
-			}
-			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, retVal);
-		}
-		
-	}
-
 }

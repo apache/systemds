@@ -40,6 +40,7 @@ public class UtilFunctions
 	}
 	
 	//return one block index given the index in cell format and block size
+	//TODO to be deleted
 	public static long blockIndexCalculation(long cellIndex, int blockSize)
 	{
 		if(cellIndex>0)
@@ -49,6 +50,7 @@ public class UtilFunctions
 	}
 	
 	//return cell index in the block, for given index in the cell format and block size
+	//TODO to be deleted
 	public static int cellInBlockCalculation(long cellIndex, int blockSize)
 	{
 		if(cellIndex>0)
@@ -59,13 +61,60 @@ public class UtilFunctions
 	}
 	
 	//given block index and block size and cells in block, return the index in cell format
+	//TODO to be deleted
 	public static long cellIndexCalculation(long blockIndex, int blockSize, int cellInBlock)
 	{
 		return (blockIndex-1)*blockSize+1+cellInBlock;
 	}
 	
 	/**
+	 * Computes the 1-based block index based on the global cell index and block size meta
+	 * data. See computeCellIndex for the inverse operation.
 	 * 
+	 * @param cellIndex
+	 * @param blockSize
+	 * @return
+	 */
+	public static long computeBlockIndex(long cellIndex, int blockSize)
+	{
+		return (cellIndex-1)/blockSize + 1;
+	}
+	
+	/**
+	 * Computes the 0-based cell-in-block index based on the global cell index and block
+	 * size meta data. See computeCellIndex for the inverse operation.
+	 * 
+	 * @param cellIndex
+	 * @param blockSize
+	 * @return
+	 */
+	public static int computeCellInBlock(long cellIndex, int blockSize)
+	{
+		return (int) ((cellIndex-1)%blockSize);
+	}
+	
+	/**
+	 * Computes the global 1-based cell index based on the block index, block size meta data,
+	 * and specific 0-based in-block cell index.
+	 * 
+	 * NOTE: this is equivalent to cellIndexCalculation.
+	 * 
+	 * @param blockIndex
+	 * @param blockSize
+	 * @param cellInBlock
+	 * @return
+	 */
+	public static long computeCellIndex( long blockIndex, int blockSize, int cellInBlock )
+	{
+		//
+		return (blockIndex-1)*blockSize + 1 + cellInBlock;
+	}
+	
+	/**
+	 * Computes the actual block size based on matrix dimension, block index, and block size
+	 * meta data. For boundary blocks, the actual block size is less or equal than the block 
+	 * size meta data; otherwise they are identical.  
+	 *  
 	 * @param len
 	 * @param blockIndex
 	 * @param blockSize

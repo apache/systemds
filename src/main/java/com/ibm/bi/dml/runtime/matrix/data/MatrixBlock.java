@@ -2871,6 +2871,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	////////
 	// Core block operations (called from instructions)
 	
+	/**
+	 * 
+	 */
+	@Override
 	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
@@ -2892,7 +2896,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		
 		return ret;
 	}
-		
+	
+	/**
+	 * 
+	 */
+	@Override
 	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
@@ -2917,11 +2925,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 		else
 		{
-			//copy input into target dense/sparse representation
-			ret.copy(this, sp);
-			
-			//compute unary operations in-place of target representation
-			ret.unaryOperationsInPlace(op);
+			//default execute unary operations
+			if(op.sparseSafe)
+				sparseUnaryOperations(op, ret);
+			else
+				denseUnaryOperations(op, ret);
 		}
 		
 		//ensure empty results sparse representation 
@@ -2931,7 +2939,97 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		
 		return ret;
 	}
+
+	/**
+	 * 
+	 * @param op
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	private void sparseUnaryOperations(UnaryOperator op, MatrixBlock ret) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//early abort possible since sparse-safe
+		if( isEmptyBlock(false) )
+			return;
+		
+		final int m = rlen;
+		final int n = clen;
+		
+		if( sparse ) //SPARSE <- SPARSE
+		{
+			SparseRow[] a = sparseRows;
+			
+			for(int i=0; i<m; i++) {
+				if( a[i]!=null && !a[i].isEmpty() )
+				{
+					int alen = a[i].size();
+					int[] aix = a[i].getIndexContainer();
+					double[] avals = a[i].getValueContainer();
+					
+					for( int j=0; j<alen; j++ ) {
+						double val = op.fn.execute(avals[j]);
+						ret.appendValue(i, aix[j], val);
+					}
+				}
+			}
+		}
+		else //DENSE <- DENSE
+		{
+			//allocate dense output block
+			ret.allocateDenseBlock();						
+			double[] a = denseBlock;
+			double[] c = ret.denseBlock;
+			
+			//unary op, incl nnz maintenance
+			for( int i=0, ix=0; i<m; i++ ) {
+				for( int j=0; j<n; j++, ix++ ) {
+					c[ix] = op.fn.execute(a[ix]);
+					if( c[ix] != 0 ) 
+						ret.nonZeros++;
+				}
+			}
+			
+		}
+	}
 	
+	/**
+	 * 
+	 * @param op
+	 * @param ret
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	private void denseUnaryOperations(UnaryOperator op, MatrixBlock ret) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		//prepare 0-value init (determine if unnecessarily sparse-unsafe)
+		double val0 = op.fn.execute(0);
+		
+		final int m = rlen;
+		final int n = clen;
+		
+		//early abort possible if unnecessarily sparse unsafe
+		//(otherwise full init with val0, no need for computation)
+		if( isEmptyBlock(false) ) {
+			if( val0 != 0 )
+				ret.init(val0, m, n);
+			return;
+		}
+		
+		//redirection to sparse safe operation w/ init by val0
+		if( sparse && val0 != 0 )
+			ret.init(val0, m, n);
+		sparseUnaryOperations(op, ret);
+	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	@Override
 	public void unaryOperationsInPlace(UnaryOperator op) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{

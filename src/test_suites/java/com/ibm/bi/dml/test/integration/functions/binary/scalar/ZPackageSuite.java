@@ -24,6 +24,7 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	AdditionTest.class,
 	AndTest.class,
 	DivisionTest.class,
 	EqualTest.class,

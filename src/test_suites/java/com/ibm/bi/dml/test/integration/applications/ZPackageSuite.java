@@ -26,22 +26,23 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
   ApplyTransformTest.class,
   ArimaTest.class,
+  CsplineCGTest.class,
+  CsplineDSTest.class,
+  GLMTest.class, 
   GNMFTest.class,
-  PyDMLGNMFTest.class,
-  PyDMLLinearRegressionTest.class,
   HITSTest.class,
+  ID3Test.class,
   L2SVMTest.class,
   LinearLogRegTest.class,
   LinearRegressionTest.class,
-  MultiClassSVMTest.class,
-  //NMFCVTrainTest.class,
-  PageRankTest.class,
-  WelchTTest.class,
-  
-  GLMTest.class,
-  ID3Test.class,
   MDABivariateStatsTest.class,
-  NaiveBayesTest.class
+  MultiClassSVMTest.class,
+  NaiveBayesTest.class,
+  PageRankTest.class,
+  PyDMLGNMFTest.class,
+  PyDMLLinearRegressionTest.class,
+  WelchTTest.class
+  
 })
 
 

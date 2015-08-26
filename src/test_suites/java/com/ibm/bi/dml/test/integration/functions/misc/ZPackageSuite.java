@@ -34,6 +34,7 @@ import org.junit.runners.Suite;
 	LongOverflowTest.class,
 	NrowNcolStringTest.class,
 	NrowNcolUnknownCSVReadTest.class,
+	OuterTableExpandTest.class,
 	ReadAfterWriteTest.class,
 	ScalarAssignmentTest.class,
 	ValueTypeAutoCastingTest.class,

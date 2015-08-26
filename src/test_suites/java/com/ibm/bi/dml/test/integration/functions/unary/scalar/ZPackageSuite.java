@@ -31,6 +31,7 @@ import org.junit.runners.Suite;
 	BooleanTest.class,
 	CosTest.class,
 	ExponentTest.class,
+	FullDistributionTest.class,
 	NegationTest.class,
 	NotTest.class,
 	PrintTest.class,

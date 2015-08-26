@@ -27,12 +27,7 @@ import org.junit.runners.Suite;
 	DynProjectTest.class,
 	DynReadWriteTest.class,
 	FunctionExpressionsTest.class,
-	OrderTest.class,
-	//kMeans2Test.class,
-	//kMeansTest.class,
-	//OutlierTest.class,
-	//SequenceMinerTest.class,
-	//SGDMFTest.class
+	OrderTest.class
 })
 
 

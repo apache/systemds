@@ -25,6 +25,8 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	LeftIndexingScalarTest.class,
+	LeftIndexingSparseDenseTest.class,
+	LeftIndexingSparseSparseTest.class,
 	LeftIndexingTest.class,
 	RightIndexingMatrixTest.class,
 	RightIndexingVectorTest.class,

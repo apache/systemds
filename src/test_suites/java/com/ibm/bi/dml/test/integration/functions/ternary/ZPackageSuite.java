@@ -24,11 +24,12 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	CentralMomentWeightsTest.class,
+	CovarianceWeightsTest.class,
 	CTableMatrixIgnoreZerosTest.class,
 	CTableSequenceTest.class,
-	TableOutputTest.class,
-	CentralMomentWeightsTest.class,
-	CovarianceWeightsTest.class
+	QuantileWeightsTest.class,
+	TableOutputTest.class
 })
 
 

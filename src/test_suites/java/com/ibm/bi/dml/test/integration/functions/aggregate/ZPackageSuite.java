@@ -24,21 +24,22 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-  ColSumTest.class,
-  LengthTest.class,
-  MaxTest.class,
-  MinTest.class,
-  NColTest.class,
-  NRowTest.class,
-  ProdTest.class,
-  RowSumTest.class,
-  SumTest.class,
-  TraceTest.class,
+	AggregateInfTest.class,
+	ColSumTest.class,
+	LengthTest.class,
+	MaxTest.class,
+	MinTest.class,
+	NColTest.class,
+	NRowTest.class,
+	ProdTest.class,
+	RowSumTest.class,
+	SumTest.class,
+	TraceTest.class,
   
-  FullAggregateTest.class,
-  FullColAggregateTest.class,
-  FullGroupedAggregateTest.class,
-  FullRowAggregateTest.class
+	FullAggregateTest.class,
+	FullColAggregateTest.class,
+	FullGroupedAggregateTest.class,
+	FullRowAggregateTest.class
 })
 
 

@@ -26,6 +26,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 	GDFOLinregCG.class,
 	GDFOLinregDS.class,
+	GDFOLinregDSsimpl.class,
 	GDFOMMChainLoop.class,
 	HashInterestingPropertiesTest.class
 })

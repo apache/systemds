@@ -32,6 +32,7 @@ import org.junit.runners.Suite;
 	CosTest.class,
 	DiagTest.class,
 	IQMTest.class,
+	MatrixInverseTest.class,
 	MinusTest.class,
 	NegationTest.class,
 	PrintTest.class,

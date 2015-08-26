@@ -50,6 +50,8 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
  *    30: no, 31: no, 31b: no, 32: dep, 32b: dep, 32c: dep (no, dep is false positive), 32d: dep, 32e:dep
  * * set indexing
  *    33: dep, 34: dep, 35: no
+ * * indexing w/ double identifiers
+ *    35b: no, 35c: no, 35d: dep (no int)   
  * * multiple matrix references per statement
  *    38: dep, 39: dep, 40: dep, 41: dep, 42: dep, 43: no
  * * scoping (create object in loop, but used afterwards)
@@ -242,6 +244,15 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	
 	@Test
 	public void testDependencyAnalysis35() { runTest("parfor35.dml", false); }
+	
+	@Test
+	public void testDependencyAnalysis35b() { runTest("parfor35b.dml", false); }
+	
+	@Test
+	public void testDependencyAnalysis35c() { runTest("parfor35c.dml", false); }
+	
+	@Test
+	public void testDependencyAnalysis35d() { runTest("parfor35d.dml", true); }
 	
 	@Test
 	public void testDependencyAnalysis36() { runTest("parfor36.dml", true); } 

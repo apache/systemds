@@ -684,7 +684,8 @@ public class ParameterizedBuiltinOp extends Hop
 	{
 		double ret = 0;
 		
-		if( _op == ParamBuiltinOp.RMEMPTY ){ 
+		if( _op == ParamBuiltinOp.RMEMPTY )
+		{ 
 			Hop marginHop = getInput().get(_paramIndexMap.get("margin"));
 			if(    marginHop instanceof LiteralOp 
 				&& "cols".equals(((LiteralOp)marginHop).getStringValue()) )
@@ -692,8 +693,21 @@ public class ParameterizedBuiltinOp extends Hop
 				//removeEmpty(.., margin="cols"), this operation has additional memory
 				//requirements for intermediate data structures in order to make this
 				//a cache-friendly operation.
-				ret = OptimizerUtils.INT_SIZE * dim2;
-				
+				ret = OptimizerUtils.INT_SIZE * dim2;				
+			}
+		}
+		else if( _op == ParamBuiltinOp.REXPAND )
+		{
+			Hop dir = getInput().get(_paramIndexMap.get("dir"));
+			String dirVal = ((LiteralOp)dir).getStringValue();
+			if( "rows".equals(dirVal) )
+			{
+				//rexpand w/ rows direction has additional memory requirements for 
+				//intermediate data structures in order to prevent performance issues
+				//due to random output row access (to make this cache-friendly)
+				//NOTE: bounded by blocksize configuration: at most 12MB
+				ret = (OptimizerUtils.DOUBLE_SIZE + OptimizerUtils.INT_SIZE) 
+						* Math.min(dim1, 1024*1024);
 			}
 		}
 		

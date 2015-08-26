@@ -243,12 +243,19 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		
+		//infer initially unknown dimensions from inputs
 		if(!mcOut.dimsKnown()) { 
 			if( !mc1.dimsKnown() || !mc2.dimsKnown() )
 				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from inputs.");
 			
 			mcOut.set(mc1.getRows(), mc1.getCols()+mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 		}	
+		
+		//infer initially unknown nnz from inputs
+		if( !mcOut.nnzKnown() && mc1.nnzKnown() && mc2.nnzKnown() ) {
+			mcOut.setNonZeros( mc1.getNonZeros() + mc2.getNonZeros() );
+		}
 	}
 
 	/**

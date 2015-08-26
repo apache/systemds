@@ -252,6 +252,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//get input rdd handle
 			String rddVar = params.get("target");
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
+			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(rddVar);
 			
 			//execute replace operation
 			double pattern = Double.parseDouble( params.get("pattern") );
@@ -260,9 +261,12 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 					in1.mapValues(new RDDReplaceFunction(pattern, replacement));
 			
 			//store output rdd handle
-			updateUnaryOutputMatrixCharacteristics(sec, rddVar, output.getName());
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddVar);
+			
+			//update output statistics (required for correctness)
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			mcOut.set(mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), (pattern!=0 && replacement!=0)?mcIn.getNonZeros():-1);
 		}
 		else if ( opcode.equalsIgnoreCase("rexpand") ) 
 		{

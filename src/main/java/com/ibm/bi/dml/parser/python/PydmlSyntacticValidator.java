@@ -552,17 +552,11 @@ public class PydmlSyntacticValidator implements PydmlListener {
 	
 	
 	private Expression incrementByOne(Expression expr, ParserRuleContext ctx) {
-		// Addition and subtraction operator same as DML
-		Expression.BinaryOp bop = Expression.getBinaryOp("+");
-		Expression retVal = new BinaryExpression(bop);
-		((BinaryExpression)retVal).setLeft(expr);
-		int line = ctx.start.getLine();
-		int col = ctx.start.getCharPositionInLine();
-		((BinaryExpression)retVal).setRight(new DoubleIdentifier(1.0, helper.getCurrentFileName(), line, col, line, col));
-		setFileLineColumn(retVal, ctx);
-		return retVal;
-		
+		// For maintaining semantic consistency, we have decided to keep 1-based indexing
+		// If in future, PyDML becomes more popular than DML, this can be switched.
+		return expr;
 	}
+	
 	@Override
 	public void exitIndexedExpression(IndexedExpressionContext ctx) {
 		ctx.dataInfo.expr = new IndexedIdentifier(ctx.name.getText(), false, false);
@@ -611,39 +605,6 @@ public class PydmlSyntacticValidator implements PydmlListener {
 				helper.notifyErrorListeners("incorrect index expression for column", ctx.start);
 				return;
 			}
-			
-			
-//			boolean rowIndexLowerSet = false;
-//			boolean colIndexLowerSet = false;
-//			
-//			if(ctx.rowLower != null && !ctx.rowLower.isEmpty() && (ctx.rowLower.info.expr != null)) {
-//				rowIndices.add(ctx.rowLower.info.expr);
-//				rowIndexLowerSet = true;
-//			}
-//			else {
-//				rowIndices.add(null);
-//			}
-//			if(ctx.rowUpper != null && !ctx.rowUpper.isEmpty() && (ctx.rowUpper.info.expr != null)) {
-//				rowIndices.add(ctx.rowUpper.info.expr);
-//				if(!rowIndexLowerSet) {
-//					helper.notifyErrorListeners("incorrect index expression for row", ctx.start);
-//					return;
-//				}
-//			}
-//			if(ctx.colLower != null && !ctx.colLower.isEmpty() && (ctx.colLower.info.expr != null)) {
-//				colIndices.add(ctx.colLower.info.expr);
-//				colIndexLowerSet = true;
-//			}
-//			else {
-//				colIndices.add(null);
-//			}
-//			if(ctx.colUpper != null && !ctx.colUpper.isEmpty() && (ctx.colUpper.info.expr != null)) {
-//				colIndices.add(ctx.colUpper.info.expr);
-//				if(!colIndexLowerSet) {
-//					helper.notifyErrorListeners("incorrect index expression for column", ctx.start);
-//					return;
-//				}
-//			}
 			exprList.add(rowIndices);
 			exprList.add(colIndices);
 			((IndexedIdentifier) ctx.dataInfo.expr).setIndices(exprList);

@@ -461,12 +461,11 @@ public class RandSPInstruction extends UnarySPInstruction
 			  	.filter( new TrimSample(rows) )
 			  	.mapToPair( new Double2MatrixCell(rowsInBlock) );
 		
-		MatrixCharacteristics mc = new MatrixCharacteristics(rows, 1, -1, -1);
 		MatrixCharacteristics mcOut = new MatrixCharacteristics(rows, 1, rowsInBlock, colsInBlock, rows);
 		
 		// Construct BinaryBlock representation
 		JavaPairRDD<MatrixIndexes, MatrixBlock> mbRDD = 
-				RDDConverterUtils.binaryCellRDDToBinaryBlockRDD(miRDD, mc, mcOut, sec.getSparkContext(), rowsInBlock, colsInBlock, true);
+				RDDConverterUtils.binaryCellRDDToBinaryBlockRDD(sec.getSparkContext(), miRDD, mcOut, true);
 		
 		MatrixCharacteristics retDims = sec.getMatrixCharacteristics(output.getName());
 		retDims.setNonZeros(rows);

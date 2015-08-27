@@ -45,8 +45,8 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public class ReblockSPInstruction extends UnarySPInstruction 
 {
-	
-	private int brlen; private int bclen;
+	private int brlen; 
+	private int bclen;
 	private boolean outputEmptyBlocks;
 	
 	public ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
@@ -87,38 +87,31 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		
+
+		//set the output characteristics
 		MatrixObject mo = sec.getMatrixObject(input1.getName());
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		if(!mcOut.dimsKnown() && mc.dimsKnown()) {
-			int brlen_out = mcOut.getRowsPerBlock();
-			int bclen_out = mcOut.getColsPerBlock();
-			// The number of rows and columns remains the same for input and output
-			// However, the block size may vary: For example: global dataflow optimization
-			mcOut.set(mc.getRows(), mc.getCols(), brlen_out, bclen_out);
-		}
-		if(mcOut.dimsKnown() && !mc.dimsKnown()) {
-			int brlen_in = mc.getRowsPerBlock();
-			int bclen_in = mc.getColsPerBlock();
-			// The number of rows and columns remains the same for input and output
-			// However, the block size may vary: For example: global dataflow optimization
-			mc.set(mcOut.getRows(), mcOut.getCols(), brlen_in, bclen_in);
-			// System.out.println("In Reblock, 2. Setting " + input1.getName() + " to " + mcOut.toString());
-		}
-		
+		mcOut.set(mc.getRows(), mc.getCols(), brlen, bclen, mc.getNonZeros());
+
+		//get the source format form the meta data
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) mo.getMetaData();
-		
 		if(iimd == null) {
 			throw new DMLRuntimeException("Error: Metadata not found");
 		}
 		
-		if(iimd.getInputInfo() == InputInfo.TextCellInputInfo || iimd.getInputInfo() == InputInfo.MatrixMarketInputInfo ) {
+		if(iimd.getInputInfo() == InputInfo.TextCellInputInfo || iimd.getInputInfo() == InputInfo.MatrixMarketInputInfo ) 
+		{
 			//check jdk version (prevent double.parseDouble contention on <jdk8)
 			sec.checkAndRaiseValidationWarningJDKVersion();
-			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
 			
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.textRDDToBinaryBlockRDD(lines, mc, mcOut, sec.getSparkContext(), brlen, bclen, outputEmptyBlocks);
+			//get the input textcell rdd
+			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) 
+					sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
+			
+			//convert textcell to binary block
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
+					RDDConverterUtils.textCellToBinaryBlock(sec.getSparkContext(), lines, mcOut, outputEmptyBlocks);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -146,7 +139,7 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		else if(iimd.getInputInfo()==InputInfo.BinaryCellInputInfo) 
 		{
 			JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryCellRDDToBinaryBlockRDD(binaryCells, mc, mcOut, sec.getSparkContext(), brlen, bclen, outputEmptyBlocks);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryCellRDDToBinaryBlockRDD(sec.getSparkContext(), binaryCells, mcOut, outputEmptyBlocks);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

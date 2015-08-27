@@ -17,8 +17,10 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark.utils;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
@@ -29,6 +31,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.linalg.Vectors;
 import org.apache.spark.mllib.regression.LabeledPoint;
@@ -47,7 +50,6 @@ import com.ibm.bi.dml.runtime.instructions.spark.data.CountLinesInfo;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertALToBinaryBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertCSVLinesToMatrixBlocks;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertRowToCSVString;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertTextLineToBinaryCellFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertTextToString;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CountLines;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -55,10 +57,59 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
+import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
+import com.ibm.bi.dml.runtime.matrix.mapred.ReblockBuffer;
 import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
 
 public class RDDConverterUtils 
 {
+	/**
+	 * 
+	 * @param sc
+	 * @param input
+	 * @param mcOut
+	 * @param outputEmptyBlocks
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> textCellToBinaryBlock(JavaSparkContext sc,
+			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) 
+		throws DMLRuntimeException  
+	{
+		//convert textcell rdd to binary block rdd (w/ partial blocks)
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input.values()
+				.mapPartitionsToPair(new TextToBinaryBlockFunction(mcOut));
+		
+		//inject empty blocks (if necessary) 
+		if( outputEmptyBlocks && mcOut.mightHaveEmptyBlocks() ) {
+			out = out.union( 
+				SparkUtils.getEmptyBlockRDD(sc, mcOut) );
+		}
+		
+		//aggregate partial matrix blocks
+		out = RDDAggregateUtils.mergeByKey( out ); 
+		
+		return out;
+	}
+	
+
+	/**
+	 * Converter from binary block rdd to rdd of labeled points. Note that the input needs to be 
+	 * reblocked to satisfy the 'clen <= bclen' constraint.
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static JavaRDD<LabeledPoint> binaryBlockToLabeledPoints(JavaPairRDD<MatrixIndexes, MatrixBlock> in) 
+	{
+		//convert indexed binary block input to collection of labeled points
+		JavaRDD<LabeledPoint> pointrdd = in
+				.values()
+				.flatMap(new PrepareBinaryBlockFunction());
+		
+		return pointrdd;
+	}
 	
 	public static JavaRDD<String> dataFrameToCSVRDD(DataFrame df, boolean containsID) throws DMLRuntimeException {
 		if(containsID) {
@@ -133,71 +184,11 @@ public class RDDConverterUtils
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDAggregateUtils.mergeByKey(chunks);
 		return out;
 	}
-	
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> textRDDToBinaryBlockRDD(
-			JavaPairRDD<LongWritable, Text> lines,
-			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, JavaSparkContext sc,
-			int brlen, int bclen, boolean outputEmptyBlocks) 
-			throws DMLRuntimeException  {
-		JavaRDD<String> textLines = lines.values().map(new ConvertTextToString());
-		return textRDDToBinaryBlockRDD(textLines, mcIn, mcOut, sc, brlen, bclen, outputEmptyBlocks);
-	}
-	
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> textRDDToBinaryBlockRDD(
-			JavaRDD<String> lines, 
-			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, JavaSparkContext sc,
-			int brlen, int bclen, boolean outputEmptyBlocks) 
-			throws DMLRuntimeException  {
-		long numRows = -1;
-		long numColumns = -1;
-		if(!mcOut.dimsKnown() && !mcIn.dimsKnown()) {
-			throw new DMLRuntimeException("Unknown dimensions in reblock instruction for text format");
-		}
-		else if(mcIn.dimsKnown()) {
-			numRows = mcIn.getRows();
-			numColumns = mcIn.getCols();
-		}
-		else {
-			numRows = mcOut.getRows();
-			numColumns = mcOut.getCols();
-		}
-		
-		if(numRows <= 0 || numColumns <= 0) {
-			throw new DMLRuntimeException("Error: Incorrect input dimensions:" + numRows + "," +  numColumns); 
-		}
-		
-		JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = 
-				lines.mapToPair(new ConvertTextLineToBinaryCellFunction(numRows, numColumns, brlen, bclen))
-				.filter(new DropEmptyBinaryCells());
-		
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = binaryCellRDDToBinaryBlockRDD(binaryCells, mcIn, mcOut, sc, brlen, bclen, outputEmptyBlocks);
-		return out;
-	}
-	
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryCellRDDToBinaryBlockRDD(
-			JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells,
-			MatrixCharacteristics mc, MatrixCharacteristics mcOut, 
-			JavaSparkContext sc, int brlen, int bclen, boolean outputEmptyBlocks) 
+
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryCellRDDToBinaryBlockRDD(JavaSparkContext sc,
+			JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) 
 		throws DMLRuntimeException 
 	{	
-		long numRows = -1;
-		long numColumns = -1;
-		if(!mcOut.dimsKnown() && !mc.dimsKnown()) {
-			throw new DMLRuntimeException("Unknown dimensions while reblock into binary cell format");
-		}
-		else if(mc.dimsKnown()) {
-			numRows = mc.getRows();
-			numColumns = mc.getCols();
-		}
-		else {
-			numRows = mcOut.getRows();
-			numColumns = mcOut.getCols();
-		}
-		
-		if(numRows <= 0 || numColumns <= 0) {
-			throw new DMLRuntimeException("Error: Incorrect input dimensions:" + numRows + "," +  numColumns); 
-		}
-		
 		// TODO: Investigate whether binaryCells.persist() will help here or not
 		
 		// ----------------------------------------------------------------------------
@@ -212,13 +203,13 @@ public class RDDConverterUtils
 						new ConvertCellToALFunction(), 
 						new AddCellToALFunction(), 
 						new MergeALFunction())
-						.mapToPair(new ConvertALToBinaryBlockFunction(brlen, bclen, numRows, numColumns));		
+						.mapToPair(new ConvertALToBinaryBlockFunction(mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), mcOut.getRows(), mcOut.getCols()));		
 		// ----------------------------------------------------------------------------
 		
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithEmptyBlocks = null;
 		if(outputEmptyBlocks) {
 			binaryBlocksWithEmptyBlocks = SparkUtils.getRDDWithEmptyBlocks(sc, 
-					binaryBlocksWithoutEmptyBlocks, numRows, numColumns, brlen, bclen);
+					binaryBlocksWithoutEmptyBlocks, mcOut.getRows(), mcOut.getCols(), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock());
 		}
 		else {
 			binaryBlocksWithEmptyBlocks = binaryBlocksWithoutEmptyBlocks;
@@ -326,23 +317,6 @@ public class RDDConverterUtils
 		}
 		
 	}
-
-	/**
-	 * Converter from binary block rdd to rdd of labeled points. Note that the input needs to be 
-	 * reblocked to satisfy the 'clen <= bclen' constraint.
-	 * 
-	 * @param in
-	 * @return
-	 */
-	public static JavaRDD<LabeledPoint> convert2LabeledPoints(JavaPairRDD<MatrixIndexes, MatrixBlock> in) 
-	{
-		//convert indexed binary block input to collection of labeled points
-		JavaRDD<LabeledPoint> pointrdd = in
-				.values()
-				.flatMap(new PrepareBinaryBlockFunction());
-		
-		return pointrdd;
-	}
 	
 	/**
 	 * This function converts a binary block input (<X,y>) into mllib's labeled points. Note that
@@ -381,6 +355,85 @@ public class RDDConverterUtils
 			}
 			
 			return ret;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class TextToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Text>,MatrixIndexes,MatrixBlock> 
+	{
+		private static final long serialVersionUID = 4907483236186747224L;
+		
+		//internal buffer size (aligned w/ default matrix block size)
+		private static final int BUFFER_SIZE = 4 * 1000 * 1000; //4M elements (32MB)
+		private int _bufflen = -1;
+		
+		private long _rlen = -1;
+		private long _clen = -1;
+		private int _brlen = -1;
+		private int _bclen = -1;
+		
+		public TextToBinaryBlockFunction(MatrixCharacteristics mc)
+		{
+			_rlen = mc.getRows();
+			_clen = mc.getCols();
+			_brlen = mc.getRowsPerBlock();
+			_bclen = mc.getColsPerBlock();
+			
+			//determine upper bounded buffer len
+			_bufflen = (int) Math.min(_rlen*_clen, BUFFER_SIZE);
+		}
+
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Text> arg0) 
+			throws Exception 
+		{
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+			ReblockBuffer rbuff = new ReblockBuffer(_bufflen, _rlen, _clen, _brlen, _bclen);
+			FastStringTokenizer st = new FastStringTokenizer(' ');
+			
+			while( arg0.hasNext() )
+			{
+				//get input string (ignore matrix market comments)
+				String strVal = arg0.next().toString();
+				if( strVal.startsWith("%") ) 
+					continue;
+				
+				//parse input ijv triple
+				st.reset( strVal );
+				long row = st.nextLong();
+				long col = st.nextLong();
+				double val = st.nextDouble();
+				
+				//flush buffer if necessary
+				if( rbuff.getSize() >= rbuff.getCapacity() )
+					flushBufferToList(rbuff, ret);
+				
+				//add value to reblock buffer
+				rbuff.appendCell(row, col, val);
+			}
+			
+			//final flush buffer
+			flushBufferToList(rbuff, ret);
+		
+			return ret;
+		}
+
+		/**
+		 * 
+		 * @param rbuff
+		 * @param ret
+		 * @throws IOException 
+		 * @throws DMLRuntimeException 
+		 */
+		private void flushBufferToList( ReblockBuffer rbuff,  ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
+			throws IOException, DMLRuntimeException
+		{
+			//temporary list of indexed matrix values to prevent library dependencies
+			ArrayList<IndexedMatrixValue> rettmp = new ArrayList<IndexedMatrixValue>();					
+			rbuff.flushBufferToBinaryBlocks(rettmp);
+			ret.addAll(SparkUtils.fromIndexedMatrixBlock(rettmp));
 		}
 	}
 }

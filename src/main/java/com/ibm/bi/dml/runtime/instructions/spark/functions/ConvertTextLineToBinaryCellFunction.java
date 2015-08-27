@@ -22,6 +22,7 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.Converter;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -39,11 +40,11 @@ public class ConvertTextLineToBinaryCellFunction implements PairFunction<String,
 	private long rlen; 
 	private long clen;
 	
-	public ConvertTextLineToBinaryCellFunction(long rlen, long clen, int brlen, int bclen) {
-		this.brlen = brlen;
-		this.bclen = bclen;
-		this.rlen = rlen;
-		this.clen = clen;
+	public ConvertTextLineToBinaryCellFunction(MatrixCharacteristics mcOut) {
+		this.brlen = mcOut.getRowsPerBlock();
+		this.bclen = mcOut.getColsPerBlock();
+		this.rlen = mcOut.getRows();
+		this.clen = mcOut.getCols();
 	}
 
 	@SuppressWarnings("unchecked")

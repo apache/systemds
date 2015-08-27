@@ -189,6 +189,13 @@ public class MatrixCharacteristics implements Serializable
 		return ( nonZero >= 0 );
 	}
 	
+	public boolean mightHaveEmptyBlocks() 
+	{
+		long singleBlk =  Math.min(numRows, numRowsPerBlock) 
+				        * Math.min(numColumns, numColumnsPerBlock);
+		return !nnzKnown() || (nonZero < numRows*numColumns - singleBlk);
+	}
+	
 	public static void reorg(MatrixCharacteristics dim, ReorgOperator op, 
 			MatrixCharacteristics dimOut) throws DMLUnsupportedOperationException, DMLRuntimeException
 	{

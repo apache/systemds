@@ -29,6 +29,7 @@ import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -131,7 +132,6 @@ public class SparkUtils {
 		return partBlocks;
 	}
 	
-	
 	// This returns RDD with identifier as well as location
 	public static String getStartLineFromSparkDebugInfo(String line) throws DMLRuntimeException {
 		// To remove: (2)  -- Assumption: At max, 9 RDDs as input to transformation/action
@@ -231,4 +231,31 @@ public class SparkUtils {
 		
 		return retVal;
 	}
+	
+	/**
+	 * 
+	 * @param sc
+	 * @param mc
+	 * @return
+	 */
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getEmptyBlockRDD( JavaSparkContext sc, MatrixCharacteristics mc )
+	{
+		//create all empty blocks
+		ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> list = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
+		int nrblks = (int)Math.ceil((double)mc.getRows()/mc.getRowsPerBlock());
+		int ncblks = (int)Math.ceil((double)mc.getCols()/mc.getColsPerBlock());
+		for(long r=1; r<=nrblks; r++)
+			for(long c=1; c<=ncblks; c++)
+			{
+				int lrlen = UtilFunctions.computeBlockSize(mc.getRows(), r, mc.getRowsPerBlock());
+				int lclen = UtilFunctions.computeBlockSize(mc.getCols(), c, mc.getColsPerBlock());
+				MatrixIndexes ix = new MatrixIndexes(r, c);
+				MatrixBlock mb = new MatrixBlock(lrlen, lclen, true);
+				list.add(new Tuple2<MatrixIndexes,MatrixBlock>(ix,mb));
+			}
+		
+		//create rdd of in-memory list
+		return sc.parallelizePairs(list);
+	}
+	
 }

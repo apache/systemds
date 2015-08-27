@@ -19,12 +19,14 @@
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputCollector;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.AdaptivePartialBlock;
 import com.ibm.bi.dml.runtime.matrix.data.IJV;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -62,8 +64,6 @@ public class ReblockBuffer
 	
 	public ReblockBuffer( int buffersize, long rlen, long clen, int brlen, int bclen  )
 	{
-		//System.out.println("Creating reblock buffer of size "+buffersize);
-		
 		_bufflen = buffersize;
 		_count = 0;
 		
@@ -251,6 +251,71 @@ public class ReblockBuffer
 	
 	/**
 	 * 
+	 * @param outList
+	 * @throws IOException
+	 * @throws DMLRuntimeException 
+	 */
+	public void flushBufferToBinaryBlocks( ArrayList<IndexedMatrixValue> outList ) 
+		throws IOException, DMLRuntimeException
+	{
+		if( _count == 0 )
+			return;
+		
+		//Step 1) sort reblock buffer (blockwise, no in-block sorting!)
+		Arrays.sort( _buff, 0 ,_count, new ReblockBufferComparator() );
+		
+		//Step 2) scan for number of created blocks
+		long numBlocks = 0; //number of blocks in buffer
+		long cbi = -1, cbj = -1; //current block indexes
+		for( int i=0; i<_count; i++ )
+		{
+			long bi = getBlockIndex(_buff[i][0], _brlen);
+			long bj = getBlockIndex(_buff[i][1], _bclen);
+			
+			//switch to next block
+			if( bi != cbi || bj != cbj ) {
+				cbi = bi;
+				cbj = bj;
+				numBlocks++;
+			}
+		}
+		
+		//Step 3) output blocks 
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(_brlen, _bclen, _count/numBlocks);
+		MatrixIndexes tmpIx = new MatrixIndexes();
+		MatrixBlock tmpBlock = new MatrixBlock();
+		
+		//put values into block and output
+		cbi = -1; cbj = -1; //current block indexes
+		for( int i=0; i<_count; i++ )
+		{
+			long bi = getBlockIndex(_buff[i][0], _brlen);
+			long bj = getBlockIndex(_buff[i][1], _bclen);
+			
+			//output block and switch to next index pair
+			if( bi != cbi || bj != cbj ) {
+				outputBlock(outList, tmpIx, tmpBlock);
+				cbi = bi;
+				cbj = bj;					
+				tmpIx = new MatrixIndexes(bi, bj);
+				tmpBlock = new MatrixBlock(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)),
+						       Math.min(_bclen, (int)(_clen-(bj-1)*_bclen)), sparse);
+			}
+			
+			int ci = getIndexInBlock(_buff[i][0], _brlen);
+			int cj = getIndexInBlock(_buff[i][1], _bclen);
+			double tmp = Double.longBitsToDouble(_buff[i][2]);
+			tmpBlock.appendValue(ci, cj, tmp); 
+		}
+		
+		//output last block 
+		outputBlock(outList, tmpIx, tmpBlock);
+		
+		_count = 0;
+	}
+	
+	/**
+	 * 
 	 * @param ix
 	 * @param blen
 	 * @return
@@ -295,7 +360,31 @@ public class ReblockBuffer
 		out.collect(key, value);
 	}
 	
-	
+	/**
+	 * 
+	 * @param out
+	 * @param key
+	 * @param value
+	 * @throws IOException
+	 * @throws DMLRuntimeException 
+	 */
+	private static void outputBlock( ArrayList<IndexedMatrixValue> out, MatrixIndexes key, MatrixBlock value ) 
+		throws IOException, DMLRuntimeException
+	{
+		//skip output of unassigned blocks
+		if( key.getRowIndex() == -1 || key.getColumnIndex() == -1 )
+			return;
+		
+		//sort sparse rows due to blockwise buffer sort and append  
+		if( value.isInSparseFormat() )
+			value.sortSparseRows();
+		
+		//ensure correct representation (for in-memory blocks)
+		value.examSparsity();
+		
+		//output block
+		out.add(new IndexedMatrixValue(key,value));
+	}
 	
 	/**
 	 * Comparator to sort the reblock buffer by block indexes, where we 

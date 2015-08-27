@@ -1722,7 +1722,7 @@ public class TestUtils
 	 * </p>
 	 * 
 	 * @param pydmlScriptfile
-	 *            filename of DML script
+	 *            filename of PYDML script
 	 */
 	public static void printPYDMLScript(String pydmlScriptFile) {
 		try {
@@ -1737,7 +1737,7 @@ public class TestUtils
 			System.out.println("**************************************************\n\n");
 		} catch (IOException e) {
 			e.printStackTrace();
-			fail("unable to print dml script: " + e.getMessage());
+			fail("unable to print pydml script: " + e.getMessage());
 		}
 	}
 	

@@ -75,7 +75,11 @@ public abstract class AutomatedTestBase
 {
 	
 	public enum ScriptType {
-		DML, PYDML
+		DML, PYDML;
+		
+		public String lowerCase() {
+			return super.toString().toLowerCase();
+		}
 	};
 	
 	public static final boolean EXCEPTION_EXPECTED = true;
@@ -154,8 +158,8 @@ public abstract class AutomatedTestBase
 	protected static final boolean VISUALIZE = false;
 	protected static final boolean RUNNETEZZA = false;
 	
-	protected String fullDMLScriptName;
-	protected String fullPYDMLScriptName;
+	protected String fullDMLScriptName; // utilize for both DML and PyDML, should probably be renamed.
+	// protected String fullPYDMLScriptName;
 	protected String fullRScriptName;
 	
 	protected static String baseDirectory;
@@ -1008,9 +1012,9 @@ public abstract class AutomatedTestBase
 				}
 				break;
 			case PYDML:
-				if (null != fullPYDMLScriptName) {
+				if (null != fullDMLScriptName) { 
 					args.add("-f");
-					args.add(fullPYDMLScriptName);
+					args.add(fullDMLScriptName);
 				}
 				break;
 			}
@@ -1063,7 +1067,7 @@ public abstract class AutomatedTestBase
 				} else if (scriptType == ScriptType.DML) {
 					TestUtils.printDMLScript(fullDMLScriptName);
 				} else if (scriptType == ScriptType.PYDML) {
-					TestUtils.printPYDMLScript(fullPYDMLScriptName);
+					TestUtils.printPYDMLScript(fullDMLScriptName);
 				}
 			}
 		}
@@ -1426,4 +1430,48 @@ public abstract class AutomatedTestBase
 			boolean isOutAndExpectedDeletionDisabled) {
 		this.isOutAndExpectedDeletionDisabled = isOutAndExpectedDeletionDisabled;
 	}
+	
+	protected String input(String input) {
+		return baseDirectory + INPUT_DIR + input;
+	}
+	
+	protected String inputDir() {
+		return baseDirectory + INPUT_DIR;
+	}
+	
+	protected String output(String output) {
+		return baseDirectory + OUTPUT_DIR + output;
+	}
+	
+	protected String outputDir() {
+		return baseDirectory + OUTPUT_DIR;
+	}
+	
+	protected String expected(String expected) {
+		return baseDirectory + EXPECTED_DIR + expected;
+	}
+	
+	protected String expectedDir() {
+		return baseDirectory + EXPECTED_DIR;
+	}
+	
+	protected String getScript() {
+		return baseDirectory + selectedTest + "." + scriptType.lowerCase();
+	}
+	
+	protected String getRScript() {
+		return baseDirectory + selectedTest + ".R";
+	}
+	
+	protected String getRCmd(String ... args) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Rscript ");
+		sb.append(getRScript());
+		for (String arg : args) {
+			sb.append(" ");
+			sb.append(arg);
+		}
+		return sb.toString();
+	}
+	
 }

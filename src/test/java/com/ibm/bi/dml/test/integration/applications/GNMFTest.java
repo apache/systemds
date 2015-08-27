@@ -17,13 +17,12 @@
 
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -31,21 +30,19 @@ import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-
-@RunWith(value = Parameterized.class)
-public class GNMFTest extends AutomatedTestBase 
+public abstract class GNMFTest extends AutomatedTestBase 
 {
 
+	protected final static String TEST_DIR = "applications/gnmf/";
+	protected final static String TEST_GNMF = "GNMF";
+	protected final static String GNMF_HOME = SCRIPT_DIR + TEST_DIR;
 	
-	private final static String TEST_DIR = "applications/gnmf/";
-	private final static String TEST_GNMF = "GNMF";
-	
-	private int M, N, K;
+	protected int m, n, k;
 	
 	public GNMFTest(int m, int n, int k) {
-		M = m; 
-		N = n; 
-		K = k;
+		this.m = m;
+		this.n = n;
+		this.k = k;
 	}
 	
 	@Parameters
@@ -59,38 +56,44 @@ public class GNMFTest extends AutomatedTestBase
 		addTestConfiguration(TEST_GNMF, new TestConfiguration(TEST_DIR, TEST_GNMF, new String[] { "w", "h" }));
 	}
 	
-	@Test
-	public void testGNMFWithRDMLAndJava() {
-		int m = M;
-		int n = N;
-		int k = K;
+	protected void testGNMF(ScriptType scriptType) {
+		System.out.println("------------ BEGIN " + TEST_GNMF + " " + scriptType + " TEST {" + m + ", "
+				+ n + ", " + k + "} ------------");
+		this.scriptType = scriptType;
+		
 		int maxiter = 2;
 		
-		TestConfiguration config = getTestConfiguration(TEST_GNMF);
-		
 		/* This is for running the junit test the old way, i.e., replace $$x$$ in DML script with its value */
+		TestConfiguration config = getTestConfiguration(TEST_GNMF);
 		config.addVariable("m", m);
 		config.addVariable("n", n);
 		config.addVariable("k", k);
 		config.addVariable("maxiter", maxiter);
+		loadTestConfiguration(config);
 		
 		double Eps = Math.pow(10, -8);
 
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String GNMF_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = GNMF_HOME + TEST_GNMF + ".dml";
-		programArgs = new String[]{"-args", GNMF_HOME + INPUT_DIR + "v", 
-                							GNMF_HOME + INPUT_DIR + "w", 
-                							GNMF_HOME + INPUT_DIR + "h", 
-                							Integer.toString(m), Integer.toString(n), Integer.toString(k), Integer.toString(maxiter),
-                							GNMF_HOME + OUTPUT_DIR + "w", 
-                							GNMF_HOME + OUTPUT_DIR + "h"};
+		List<String> proArgs = new ArrayList<String>();
+		if (scriptType == ScriptType.PYDML) {
+			proArgs.add("-python");
+		}
+		proArgs.add("-args");
+		proArgs.add(input("v"));
+		proArgs.add(input("w"));
+		proArgs.add(input("h"));
+		proArgs.add(Integer.toString(m));
+		proArgs.add(Integer.toString(n));
+		proArgs.add(Integer.toString(k));
+		proArgs.add(Integer.toString(maxiter));
+		proArgs.add(output("w"));
+		proArgs.add(output("h"));
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
-		fullRScriptName = GNMF_HOME + TEST_GNMF + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       GNMF_HOME + INPUT_DIR + " " + Integer.toString(maxiter) + " " + GNMF_HOME + EXPECTED_DIR;
+		fullDMLScriptName = getScript();
 		
-		loadTestConfiguration(config);
+		rCmd = getRCmd(inputDir(), Integer.toString(maxiter), expectedDir());
 
 		double[][] v = getRandomMatrix(m, n, 1, 5, 0.2, System.currentTimeMillis());
 		double[][] w = getRandomMatrix(m, k, 0, 1, 1, System.currentTimeMillis());
@@ -122,7 +125,6 @@ public class GNMFTest extends AutomatedTestBase
 			}
 		}
 
-		boolean exceptionExpected = false;
 		/*
 		 * Expected number of jobs:
 		 * Reblock - 1 job 
@@ -132,20 +134,20 @@ public class GNMFTest extends AutomatedTestBase
 		int expectedNumberOfJobs = 12;
 		
 		/* GNMF must be run in the new way as GNMF.dml will be shipped */
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs); 
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs); 
 		
 		runRScript(true);
 		disableOutAndExpectedDeletion();
 
-		HashMap<CellIndex, Double> hmWDML = readDMLMatrixFromHDFS("w");
-		HashMap<CellIndex, Double> hmHDML = readDMLMatrixFromHDFS("h");
+		HashMap<CellIndex, Double> hmWSYSTEMML = readDMLMatrixFromHDFS("w");
+		HashMap<CellIndex, Double> hmHSYSTEMML = readDMLMatrixFromHDFS("h");
 		HashMap<CellIndex, Double> hmWR = readRMatrixFromFS("w");
 		HashMap<CellIndex, Double> hmHR = readRMatrixFromFS("h");
 		//HashMap<CellIndex, Double> hmWJava = TestUtils.convert2DDoubleArrayToHashMap(w);
 		//HashMap<CellIndex, Double> hmHJava = TestUtils.convert2DDoubleArrayToHashMap(h);
 
-		TestUtils.compareMatrices(hmWDML, hmWR, 0.000001, "hmWDML", "hmWR");
-		TestUtils.compareMatrices(hmHDML, hmHR, 0.000001, "hmHDML", "hmHR");
+		TestUtils.compareMatrices(hmWSYSTEMML, hmWR, 0.000001, "hmWSYSTEMML", "hmWR");
+		TestUtils.compareMatrices(hmHSYSTEMML, hmHR, 0.000001, "hmHSYSTEMML", "hmHR");
 		//TestUtils.compareMatrices(hmWDML, hmWJava, 0.000001, "hmWDML", "hmWJava");
 		//TestUtils.compareMatrices(hmWR, hmWJava, 0.000001, "hmRDML", "hmWJava");
 	}

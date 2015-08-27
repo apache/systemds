@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -35,13 +34,12 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 @RunWith(value = Parameterized.class)
-public class WelchTTest extends AutomatedTestBase {
+public abstract class WelchTTest extends AutomatedTestBase {
 	
-	private final static String TEST_DIR = "applications/welchTTest/";
-	private final static String TEST_WELCHTTEST = "welchTTest";
-	private final static String WELCHTTEST_HOME = SCRIPT_DIR + TEST_DIR;
-	
-	private int numAttr, numPosSamples, numNegSamples;
+	protected final static String TEST_DIR = "applications/welchTTest/";
+	protected final static String TEST_WELCHTTEST = "welchTTest";
+
+	protected int numAttr, numPosSamples, numNegSamples;
 	
 	public WelchTTest(int numAttr, int numPosSamples, int numNegSamples){
 		this.numAttr = numAttr;
@@ -65,47 +63,28 @@ public class WelchTTest extends AutomatedTestBase {
     								 							  "degrees_of_freedom" }));
 	}
 	
-	@Test
-	public void testWelchTTestDml() {
-		System.out.println("------------ BEGIN " + TEST_WELCHTTEST + " DML TEST {" + numAttr + ", " + numPosSamples + ", " + numNegSamples + "} ------------");
-		testWelchTTest(ScriptType.DML);
-	}
-
-	@Test
-	public void testWelchTTestPyDml() {
-		System.out.println("------------ BEGIN " + TEST_WELCHTTEST + " PYDML TEST {" + numAttr + ", " + numPosSamples + ", " + numNegSamples + "} ------------");
-		testWelchTTest(ScriptType.PYDML);
-	}
-	
-	public void testWelchTTest(ScriptType scriptType) {
+	protected void testWelchTTest(ScriptType scriptType) {
+		System.out.println("------------ BEGIN " + TEST_WELCHTTEST + " " + scriptType + " TEST {" + numAttr + ", " + numPosSamples + ", " + numNegSamples + "} ------------");
 		this.scriptType = scriptType;
 		
-		List<String> proArgs = new ArrayList<String>();
-		proArgs.add("-args");
-		proArgs.add(WELCHTTEST_HOME + INPUT_DIR + "posSamples");
-		proArgs.add(WELCHTTEST_HOME + INPUT_DIR + "negSamples");
-		proArgs.add(WELCHTTEST_HOME + OUTPUT_DIR + "t_statistics");
-		proArgs.add(WELCHTTEST_HOME + OUTPUT_DIR + "degrees_of_freedom");
+		TestConfiguration config = getTestConfiguration(TEST_WELCHTTEST);
+		loadTestConfiguration(config);
 		
-		switch (scriptType) {
-		case DML:
-			fullDMLScriptName = WELCHTTEST_HOME + TEST_WELCHTTEST + ".dml";
-			break;
-		case PYDML:
-			fullPYDMLScriptName = WELCHTTEST_HOME + TEST_WELCHTTEST + ".pydml";
-			proArgs.add(0, "-python");
-			break;
+		List<String> proArgs = new ArrayList<String>();
+		if (scriptType == ScriptType.PYDML) {
+			proArgs.add("-python");
 		}
+		proArgs.add("-args");
+		proArgs.add(input("posSamples"));
+		proArgs.add(input("negSamples"));
+		proArgs.add(output("t_statistics"));
+		proArgs.add(output("degrees_of_freedom"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
-		fullRScriptName = WELCHTTEST_HOME + TEST_WELCHTTEST + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " 
-			   + WELCHTTEST_HOME + INPUT_DIR + " " 
-			   + WELCHTTEST_HOME + EXPECTED_DIR;
-	
-		TestConfiguration config = getTestConfiguration(TEST_WELCHTTEST);
-		loadTestConfiguration(config);
+		fullDMLScriptName = getScript();
+		
+		rCmd = getRCmd(inputDir(), expectedDir());
 		
 		double[][] posSamples = getRandomMatrix(numPosSamples, numAttr, 1, 5, 0.2, System.currentTimeMillis());
 		double[][] negSamples = getRandomMatrix(numNegSamples, numAttr, 1, 5, 0.2, System.currentTimeMillis());
@@ -124,11 +103,11 @@ public class WelchTTest extends AutomatedTestBase {
 
 		double tol = Math.pow(10, -13);
 		HashMap<CellIndex, Double> t_statistics_R = readRMatrixFromFS("t_statistics");
-        HashMap<CellIndex, Double> t_statistics_DML= readDMLMatrixFromHDFS("t_statistics");
-        TestUtils.compareMatrices(t_statistics_R, t_statistics_DML, tol, "t_statistics_R", "t_statistics_DML");
+        HashMap<CellIndex, Double> t_statistics_systemml= readDMLMatrixFromHDFS("t_statistics");
+        TestUtils.compareMatrices(t_statistics_R, t_statistics_systemml, tol, "t_statistics_R", "t_statistics_systemml");
         
         HashMap<CellIndex, Double> degrees_of_freedom_R = readRMatrixFromFS("degrees_of_freedom");
-        HashMap<CellIndex, Double> degrees_of_freedom_DML= readDMLMatrixFromHDFS("degrees_of_freedom");
-        TestUtils.compareMatrices(degrees_of_freedom_R, degrees_of_freedom_DML, tol, "degrees_of_freedom_R", "degrees_of_freedom_DML");		
+        HashMap<CellIndex, Double> degrees_of_freedom_systemml= readDMLMatrixFromHDFS("degrees_of_freedom");
+        TestUtils.compareMatrices(degrees_of_freedom_R, degrees_of_freedom_systemml, tol, "degrees_of_freedom_R", "degrees_of_freedom_systemml");		
 	}
 }

@@ -22,77 +22,54 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.junit.Test;
-
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 
-public class HITSTest extends AutomatedTestBase 
+public abstract class HITSTest extends AutomatedTestBase 
 {
-	private final static String TEST_DIR = "applications/hits/";
-	private final static String TEST_HITS = "HITS";
-	private final static String HITS_HOME = SCRIPT_DIR + TEST_DIR;
+	protected final static String TEST_DIR = "applications/hits/";
+	protected final static String TEST_HITS = "HITS";
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_HITS, new TestConfiguration(TEST_DIR, "HITS", new String[] { "hubs", "authorities" }));
-	}
-
-	@Test
-	public void testHitsDml() {
-		System.out.println("------------ BEGIN " + TEST_HITS + " DML TEST ------------");
-		testHits(ScriptType.DML);
-	}
-
-	@Test
-	public void testHitsPyDml() {
-		System.out.println("------------ BEGIN " + TEST_HITS + " PYDML TEST ------------");
-		testHits(ScriptType.PYDML);
+		addTestConfiguration(TEST_HITS, new TestConfiguration(TEST_DIR, TEST_HITS, new String[] { "hubs", "authorities" }));
 	}
 	
-	public void testHits(ScriptType scriptType) {
+	protected void testHits(ScriptType scriptType) {
+		System.out.println("------------ BEGIN " + TEST_HITS + " " + scriptType + " TEST ------------");
 		this.scriptType = scriptType;
 		
 		int rows = 1000;
 		int cols = 1000;
 		int maxiter = 2;
 
-		/* This is for running the junit test by constructing the arguments directly */
-		List<String> proArgs = new ArrayList<String>();
-		proArgs.add("-args");
-		proArgs.add(HITS_HOME + INPUT_DIR + "G");
-		proArgs.add(Integer.toString(maxiter));
-		proArgs.add(Integer.toString(rows));
-		proArgs.add(Integer.toString(cols));
-		proArgs.add(Double.toString(Math.pow(10, -6)));
-		proArgs.add(HITS_HOME + OUTPUT_DIR + "hubs");
-		proArgs.add(HITS_HOME + OUTPUT_DIR + "authorities");
-		
-		switch (scriptType) {
-		case DML:
-			fullDMLScriptName = HITS_HOME + TEST_HITS + ".dml";
-			break;
-		case PYDML:
-			fullPYDMLScriptName = HITS_HOME + TEST_HITS + ".pydml";
-			proArgs.add(0, "-python");
-			break;
-		}
-		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
-		
-		fullRScriptName = HITS_HOME + TEST_HITS + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       HITS_HOME + INPUT_DIR + " " + Integer.toString(maxiter) + " " + Double.toString(Math.pow(10, -6))+ " " + HITS_HOME + EXPECTED_DIR;
-
 		TestConfiguration config = getTestConfiguration(TEST_HITS);
-		/* This is for running the junit test the old way */
 		config.addVariable("maxiter", maxiter);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
+		
+		List<String> proArgs = new ArrayList<String>();
+		if (scriptType == ScriptType.PYDML) {
+			proArgs.add("-python");
+		}
+		proArgs.add("-args");
+		proArgs.add(input("G"));
+		proArgs.add(Integer.toString(maxiter));
+		proArgs.add(Integer.toString(rows));
+		proArgs.add(Integer.toString(cols));
+		proArgs.add(Double.toString(Math.pow(10, -6)));
+		proArgs.add(output("hubs"));
+		proArgs.add(output("authorities"));
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
+		
+		fullDMLScriptName = getScript();
+		
+		rCmd = getRCmd(inputDir(), Integer.toString(maxiter), Double.toString(Math.pow(10, -6)), expectedDir());
 		
 		double[][] G = getRandomMatrix(rows, cols, 0, 1, 1.0, -1);
 		writeInputMatrix("G", G, true);
@@ -109,13 +86,13 @@ public class HITSTest extends AutomatedTestBase
 		runRScript(true);
 		disableOutAndExpectedDeletion();
 
-		HashMap<CellIndex, Double> hubsDML = readDMLMatrixFromHDFS("hubs");
-		HashMap<CellIndex, Double> authDML = readDMLMatrixFromHDFS("authorities");
+		HashMap<CellIndex, Double> hubsSYSTEMML = readDMLMatrixFromHDFS("hubs");
+		HashMap<CellIndex, Double> authSYSTEMML = readDMLMatrixFromHDFS("authorities");
 		HashMap<CellIndex, Double> hubsR = readRMatrixFromFS("hubs");
 		HashMap<CellIndex, Double> authR = readRMatrixFromFS("authorities");
 
-		TestUtils.compareMatrices(hubsDML, hubsR, 0.001, "hubsDML", "hubsR");
-		TestUtils.compareMatrices(authDML, authR, 0.001, "authDML", "authR");
+		TestUtils.compareMatrices(hubsSYSTEMML, hubsR, 0.001, "hubsSYSTEMML", "hubsR");
+		TestUtils.compareMatrices(authSYSTEMML, authR, 0.001, "authSYSTEMML", "authR");
 		
 	}
 }

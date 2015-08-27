@@ -27,7 +27,7 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class MatrixInverseTest extends AutomatedTestBase 
 {
 	
-	private final static String TEST_NAME = "inverse";
+	private final static String TEST_NAME = "Inverse";
 	private final static String TEST_DIR = "functions/unary/matrix/";
 
 	private final static int rows = 1001;

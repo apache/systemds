@@ -39,8 +39,6 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class FullReblockTest extends AutomatedTestBase 
 {
-
-	
 	private final static String TEST_NAME1 = "SingleReblockTest";
 	private final static String TEST_NAME2 = "MultipleReblockTest";
 	private final static String TEST_DIR = "functions/data/";
@@ -74,6 +72,7 @@ public class FullReblockTest extends AutomatedTestBase
 				new String[] { "C1", "C2" })   );
 	}
 
+	//textcell
 	
 	@Test
 	public void testTextCellSingleMDenseCP() 
@@ -111,8 +110,6 @@ public class FullReblockTest extends AutomatedTestBase
 		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Multiple, ExecType.CP);
 	}
 	
-	// ------------------------------------
-	
 	@Test
 	public void testTextCellSingleMDenseSP() 
 	{
@@ -148,44 +145,6 @@ public class FullReblockTest extends AutomatedTestBase
 	{
 		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Multiple, ExecType.SPARK);
 	}
-	
-	@Test
-	public void testBinaryBlockSingleMDenseSP() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Single, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testBinaryBlockSingeMSparseSP() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Single, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testBinaryBlockSingleVDenseSP() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Vector, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testBinaryBlockSingeVSparseSP() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Vector, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testBinaryBlockMultipleMDenseSP() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Multiple, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testBinaryBlockMultipleMSparseSP() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Multiple, ExecType.SPARK);
-	}
-	
-	// ------------------------------------
 	
 	@Test
 	public void testTextCellSingleMDenseMR() 
@@ -297,33 +256,161 @@ public class FullReblockTest extends AutomatedTestBase
 	{
 		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Multiple, ExecType.MR);
 	}
-	
-	/*
+
 	@Test
-	public void testBinaryCellSingleDenseCP() 
+	public void testBinaryBlockSingleMDenseSP() 
 	{
-		runReblockTest(OutputInfo.BinaryCellOutputInfo, false, false, ExecType.CP);
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Single, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinaryCellSingeSparseCP() 
+	public void testBinaryBlockSingeMSparseSP() 
 	{
-		runReblockTest(OutputInfo.BinaryCellOutputInfo, true, false, ExecType.CP);
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Single, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinaryCellMultipleDenseCP() 
+	public void testBinaryBlockSingleVDenseSP() 
 	{
-		runReblockTest(OutputInfo.BinaryCellOutputInfo, false, true, ExecType.CP);
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Vector, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinaryCellMultipleSparseCP() 
+	public void testBinaryBlockSingeVSparseSP() 
 	{
-		runReblockTest(OutputInfo.BinaryCellOutputInfo, true, true, ExecType.CP);
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Vector, ExecType.SPARK);
 	}
+	
+	@Test
+	public void testBinaryBlockMultipleMDenseSP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Multiple, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinaryBlockMultipleMSparseSP() 
+	{
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Multiple, ExecType.SPARK);
+	}
+
+	//csv
+	
+	@Test
+	public void testCSVSingleMDenseCP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, false, Type.Single, ExecType.CP);
+	}
+	
+	@Test
+	public void testCSVSingeMSparseCP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, true, Type.Single, ExecType.CP);
+	}
+	
+	@Test
+	public void testCSVSingleVDenseCP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, false, Type.Vector, ExecType.CP);
+	}
+	
+	@Test
+	public void testCSVSingeVSparseCP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, true, Type.Vector, ExecType.CP);
+	}
+	
+	@Test
+	public void testCSVMultipleMDenseCP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, false, Type.Multiple, ExecType.CP);
+	}
+	
+	@Test
+	public void testCSVMultipleMSparseCP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, true, Type.Multiple, ExecType.CP);
+	}
+	
+	@Test
+	public void testCSVSingleMDenseSP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, false, Type.Single, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCSVSingeMSparseSP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, true, Type.Single, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCSVSingleVDenseSP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, false, Type.Vector, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCSVSingeVSparseSP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, true, Type.Vector, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCSVMultipleMDenseSP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, false, Type.Multiple, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCSVMultipleMSparseSP() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, true, Type.Multiple, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCSVSingleMDenseMR() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, false, Type.Single, ExecType.MR);
+	}
+	
+	@Test
+	public void testCSVSingeMSparseMR() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, true, Type.Single, ExecType.MR);
+	}
+	
+	
+	@Test
+	public void testCSVSingleVDenseMR() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, false, Type.Vector, ExecType.MR);
+	}
+	
+	@Test
+	public void testCSVSingeVSparseMR() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, true, Type.Vector, ExecType.MR);
+	}
+	
+	@Test
+	public void testCSVMultipleMDenseMR() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, false, Type.Multiple, ExecType.MR);
+	}
+	
+	@Test
+	public void testCSVMultipleMSparseMR() 
+	{
+		runReblockTest(OutputInfo.CSVOutputInfo, true, Type.Multiple, ExecType.MR);
+	}
+
+	/**
+	 * 
+	 * @param oi
+	 * @param sparse
+	 * @param type
+	 * @param et
 	 */
-	
 	private void runReblockTest( OutputInfo oi, boolean sparse, Type type, ExecType et )
 	{		
 		String TEST_NAME = (type==Type.Multiple) ? TEST_NAME2 : TEST_NAME1;		 

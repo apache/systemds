@@ -950,7 +950,7 @@ public class Dag<N extends Lop>
 		//deleteUnwantedTransientReadVariables(node_v, deleteInst);
 
 		// remove files for transient reads that are updated.
-		deleteUpdatedTransientReadVariables(sb, node_v, deleteInst);
+		deleteUpdatedTransientReadVariables(sb, node_v, writeInst);
 		
 		generateRemoveInstructions(sb, endOfBlockInst);
 

@@ -104,12 +104,14 @@ public class ParameterizedBuiltin extends Lop
 		{
 			eloc = ExecLocation.MapOrReduce;
 			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.REBLOCK);
 		}
 		else if( _operation == OperationTypes.RMEMPTY && et==ExecType.MR )
 		{
 			eloc = ExecLocation.Reduce;
 			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.REBLOCK);
 			breaksAlignment=true;
 		}
@@ -117,6 +119,7 @@ public class ParameterizedBuiltin extends Lop
 		{
 			eloc = ExecLocation.MapOrReduce;
 			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.DATAGEN);
 			lps.addCompatibility(JobType.REBLOCK);
 			breaksAlignment=true;
 		}

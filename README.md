@@ -1,6 +1,6 @@
 # SystemML
 
-SystemML is a flexible, scalable machine learning (ML) library written in Java.
+SystemML is a flexible, scalable machine learning (ML) language written in Java.
 SystemML's distinguishing characteristics are: (1) algorithm customizability,
 (2) multiple execution modes, including Standalone, Hadoop Batch, and Spark Batch,
 and (3) automatic optimization.
@@ -31,7 +31,7 @@ can be operated via Java, Scala, and Python. SystemML also features an embedded 
 
 Algorithms specified in DML are dynamically compiled and optimized based on data and cluster characteristics
 using rule-based and cost-based optimization techniques. The optimizer automatically generates hybrid runtime
-execution plans ranging from in-memory single-node execution to distributed MapReduce computations.
+execution plans ranging from in-memory single-node execution to distributed computations on Spark or Hadoop.
 This ensures both efficiency and scalability. Automatic optimization reduces or eliminates the need to hand-tune
 distributed runtime execution plans and system configurations.
 

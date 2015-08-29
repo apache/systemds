@@ -1343,7 +1343,8 @@ public class MatrixObject extends CacheableData
 			
 			//collect matrix block from RDD
 			mb = SparkExecutionContext.toMatrixBlock(lrdd, (int)mc.getRows(), (int)mc.getCols(),
-					                       (int)mc.getRowsPerBlock(), (int)mc.getColsPerBlock());	
+					                       (int)mc.getRowsPerBlock(), (int)mc.getColsPerBlock(),
+					                       mc.getNonZeros());	
 		}
 		catch(DMLRuntimeException ex) {
 			throw new IOException(ex);

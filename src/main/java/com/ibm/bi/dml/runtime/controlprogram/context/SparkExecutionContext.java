@@ -406,20 +406,17 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("unchecked")
-	public static MatrixBlock toMatrixBlock(Object rdd, int rlen, int clen, int brlen, int bclen) 
+	public static MatrixBlock toMatrixBlock(RDDObject rdd, int rlen, int clen, int brlen, int bclen, long nnz) 
 		throws DMLRuntimeException
-	{
-		RDDObject rddo = (RDDObject)rdd;		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) rddo.getRDD();
-		
-		return toMatrixBlock(lrdd, rlen, clen, brlen, bclen);
+	{	
+		return toMatrixBlock(
+				(JavaPairRDD<MatrixIndexes, MatrixBlock>) rdd.getRDD(), 
+				rlen, clen, brlen, bclen, nnz);
 	}
 	
 	/**
 	 * Utility method for creating a single matrix block out of an RDD. Note that this collect call
-	 * might trigger execution of any pending transformation. 
-	 * 
-	 * TODO add a more efficient path for sparse matrices, see BinaryBlockReader.
+	 * might trigger execution of any pending transformations. 
 	 * 
 	 * @param rdd
 	 * @param numRows
@@ -427,7 +424,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static MatrixBlock toMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen) 
+	public static MatrixBlock toMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen, long nnz) 
 		throws DMLRuntimeException
 	{
 		MatrixBlock out = null;
@@ -443,10 +440,15 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 		else //MULTIPLE BLOCKS
 		{
-			//current assumption always dense
-			out = new MatrixBlock(rlen, clen, false);
+			//determine target sparse/dense representation
+			long lnnz = (nnz >= 0) ? nnz : (long)rlen * clen;
+			boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, lnnz);
+			
+			//create output matrix block (w/ lazy allocation)
+			out = new MatrixBlock(rlen, clen, sparse);
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
 			
+			//copy blocks one-at-a-time into output matrix block
 			for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
 			{
 				MatrixIndexes ix = keyval._1();
@@ -457,11 +459,20 @@ public class SparkExecutionContext extends ExecutionContext
 				int rows = block.getNumRows();
 				int cols = block.getNumColumns();
 				
-				out.copy( row_offset, row_offset+rows-1, 
-						  col_offset, col_offset+cols-1,
-						  block, false );			
+				if( sparse ) { //SPARSE OUTPUT
+					//append block to sparse target in order to avoid shifting
+					//note: this append requires a final sort of sparse rows
+					out.appendToSparse(block, row_offset, col_offset);
+				}
+				else { //DENSE OUTPUT
+					out.copy( row_offset, row_offset+rows-1, 
+							  col_offset, col_offset+cols-1, block, false );	
+				}
 			}
 			
+			//post-processing output matrix
+			if( sparse )
+				out.sortSparseRows();
 			out.recomputeNonZeros();
 			out.examSparsity();
 		}

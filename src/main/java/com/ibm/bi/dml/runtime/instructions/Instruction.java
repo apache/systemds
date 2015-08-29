@@ -30,9 +30,17 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 
 public abstract class Instruction 
 {
+	public enum INSTRUCTION_TYPE { 
+		CONTROL_PROGRAM, 
+		MAPREDUCE, 
+		EXTERNAL_LIBRARY, 
+		MAPREDUCE_JOB, 
+		BREAKPOINT, 
+		SPARK 
+	};
 	
-	public enum INSTRUCTION_TYPE { CONTROL_PROGRAM, MAPREDUCE, EXTERNAL_LIBRARY, MAPREDUCE_JOB, BREAKPOINT, SPARK };
 	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());
+	
 	public static final String OPERAND_DELIM = Lop.OPERAND_DELIMITOR;
 	public static final String DATATYPE_PREFIX = Lop.DATATYPE_PREFIX;
 	public static final String VALUETYPE_PREFIX = Lop.VALUETYPE_PREFIX;
@@ -40,12 +48,17 @@ public abstract class Instruction
 	public static final String INSTRUCTION_DELIM = Lop.INSTRUCTION_DELIMITOR;
 	public static final String NAME_VALUE_SEPARATOR = Lop.NAME_VALUE_SEPARATOR;
 	
+	//basic instruction meta data
 	protected INSTRUCTION_TYPE type = null;
 	protected String instString = null;
 	protected String instOpcode = null;
-	protected int beginLine = -1;
-	protected int endLine = -1;  protected int beginCol = -1; protected int endCol = -1;
 	private long instID = -1;
+	
+	//originating script positions
+	protected int beginLine = -1;
+	protected int endLine = -1;  
+	protected int beginCol = -1; 
+	protected int endCol = -1;
 	
 	public void setType (INSTRUCTION_TYPE tp ) {
 		type = tp;
@@ -139,9 +152,15 @@ public abstract class Instruction
 		return null;
 	}
 
-	public String getOpcode()
-	{
+	public String getOpcode() {
 		return instOpcode;
+	}
+	
+	public String getExtendedOpcode() {
+		if( type == INSTRUCTION_TYPE.SPARK )
+			return "sp_" + getOpcode();
+		else
+			return getOpcode();
 	}
 	
 	/**

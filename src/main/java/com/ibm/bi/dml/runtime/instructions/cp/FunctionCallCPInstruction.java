@@ -283,7 +283,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 		
 		//set attribute
 		_functionName = fname;
-		_opcode = fname;
+		instOpcode = fname;
 	}
 
 	/**

@@ -29,13 +29,11 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public abstract class CPInstruction extends Instruction 
 {
-	
 	public enum CPINSTRUCTION_TYPE { INVALID, AggregateUnary, AggregateBinary, AggregateTernary, ArithmeticBinary, Ternary, Quaternary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, ParameterizedBuiltin, MultiReturnBuiltin, Builtin, Reorg, RelationalBinary, File, Variable, External, Append, Rand, QSort, QPick, MatrixIndexing, MMTSJ, PMMJ, MMChain, MatrixReshape, Partition, StringInit, CentralMoment, Covariance }; 
 	
 	protected CPINSTRUCTION_TYPE _cptype;
 	protected Operator _optr;
 	
-	protected String _opcode = null;
 	protected boolean _requiresLabelUpdate = false;
 	
 	public CPInstruction(String opcode, String istr) {
@@ -43,7 +41,7 @@ public abstract class CPInstruction extends Instruction
 		instString = istr;
 		
 		//prepare opcode and update requirement for repeated usage
-		_opcode = opcode;
+		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
 	
@@ -60,11 +58,6 @@ public abstract class CPInstruction extends Instruction
 	public boolean requiresLabelUpdate()
 	{
 		return _requiresLabelUpdate;
-	}
-	
-	public String getOpcode()
-	{
-		return _opcode;
 	}
 
 	@Override

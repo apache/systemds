@@ -309,11 +309,10 @@ public class ProgramBlock
 			// post-process instruction (debug) 
 			tmp.postprocessInstruction( ec );
 			
-			
 			// maintain aggregate statistics
 			if( DMLScript.STATISTICS) {
-				long t1 = System.nanoTime();
-				Statistics.maintainCPHeavyHitters(tmp.getOpcode(), t1-t0);
+				Statistics.maintainCPHeavyHitters(
+						tmp.getExtendedOpcode(), System.nanoTime()-t0);
 			}
 				
 			// optional trace information (instruction and runtime)

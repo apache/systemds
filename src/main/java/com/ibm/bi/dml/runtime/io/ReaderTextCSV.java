@@ -23,8 +23,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -120,8 +120,6 @@ public class ReaderTextCSV extends MatrixReader
 		int col = -1;
 		double cellValue = 0;
 		
-		String escapedDelim = Pattern.quote(delim);
-		Pattern compiledDelim = Pattern.compile(escapedDelim);
 		String cellStr = null;
 		
 		for(int fileNo=0; fileNo<files.size(); fileNo++)
@@ -140,7 +138,8 @@ public class ReaderTextCSV extends MatrixReader
 						col = 0;
 						cellStr = value.toString().trim();
 						emptyValuesFound = false;
-						for(String part : compiledDelim.split(cellStr, -1)) {
+						String[] parts = IOUtilFunctions.split(cellStr, delim);
+						for(String part : parts) {
 							part = part.trim();
 							if ( part.isEmpty() ) {
 								emptyValuesFound = true;
@@ -153,9 +152,9 @@ public class ReaderTextCSV extends MatrixReader
 								dest.appendValue(row, col, cellValue);
 							col++;
 						}
-						if ( !fill && emptyValuesFound) {
-							throw new IOException("Empty fields found in delimited file (" + path.toString() + "). Use \"fill\" option to read delimited files with empty fields." + cellStr);
-						}
+						
+						//sanity checks for empty values and number of columns
+						IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, fill, emptyValuesFound);
 						if ( col != clen ) {
 							throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + path.toString() + "). Expecting (" + clen + "): " + value);
 						}
@@ -167,7 +166,7 @@ public class ReaderTextCSV extends MatrixReader
 					while( (value=br.readLine())!=null ) //foreach line
 					{
 						cellStr = value.toString().trim();
-						String[] parts = compiledDelim.split(cellStr, -1);
+						String[] parts = IOUtilFunctions.split(cellStr, delim);
 						col = 0;
 						
 						for( String part : parts ) //foreach cell
@@ -220,8 +219,6 @@ public class ReaderTextCSV extends MatrixReader
 		int ncol = -1;
 		String value = null;
 		
-		String escapedDelim = Pattern.quote(delim);
-		Pattern compiledDelim = Pattern.compile(escapedDelim);
 		String cellStr = null;
 		for(int fileNo=0; fileNo<files.size(); fileNo++)
 		{
@@ -235,7 +232,7 @@ public class ReaderTextCSV extends MatrixReader
 						br.readLine(); //ignore header
 					if( (value = br.readLine()) != null ) {
 						cellStr = value.toString().trim();
-						ncol = compiledDelim.split(cellStr,-1).length;
+						ncol = StringUtils.countMatches(cellStr, delim) + 1;
 						nrow = 1;
 					}
 				}

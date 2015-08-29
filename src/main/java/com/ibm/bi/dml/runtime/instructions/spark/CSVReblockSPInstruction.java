@@ -97,6 +97,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public void processInstruction(ExecutionContext ec)
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
@@ -106,22 +107,27 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		MatrixObject mo = sec.getMatrixObject(input1.getName());
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) mo.getMetaData();
 		if (iimd.getInputInfo() != InputInfo.CSVInputInfo) {
-			throw new DMLRuntimeException("The given InputInfo is not implemented for ReblockSPInstruction:"
-							+ iimd.getInputInfo());
+			throw new DMLRuntimeException("The given InputInfo is not implemented for "
+					+ "CSVReblockSPInstruction:" + iimd.getInputInfo());
 		}
 		
+		//set output characteristics
+		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		mcOut.set(mcIn.getRows(), mcIn.getCols(), brlen, bclen);
+	
 		//check jdk version (prevent double.parseDouble contention on <jdk8)
 		sec.checkAndRaiseValidationWarningJDKVersion();
+	
+		//check input rdd
+		JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) 
+				sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
 		
-		@SuppressWarnings("unchecked")
-		JavaPairRDD<LongWritable, Text> csvLines1 = (JavaPairRDD<LongWritable, Text>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
+		//reblock csv to binary block
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
+				lines, mcOut, hasHeader, delim, fill, missingValue);
 		
 		// put output RDD handle into symbol table
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.csvRDDToBinaryBlockRDD(csvLines1, mcOut, 
-				sec.getSparkContext(), brlen, bclen, hasHeader, delim, fill, missingValue);
-		
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}

@@ -20,7 +20,6 @@ package com.ibm.bi.dml.runtime.matrix.mapred;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -35,6 +34,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
+import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.BlockRow;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
@@ -44,17 +44,13 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable, Text, TaggedFirstSecondIndexes, BlockRow>
 {
-	
 	private long rowOffset=0;
 	private boolean first=true;
 	private long num=0;
 	private HashMap<Long, Long> offsetMap=new HashMap<Long, Long>();
-	//private TaggedFirstSecondIndexes outIndexes=new TaggedFirstSecondIndexes();
-	//private BlockRow row;
-	private String delim=" ";
+	private String _delim=" ";
 	private boolean ignoreFirstLine=false;
 	private boolean headerFile=false;
-	private Pattern _compiledDelim = null;
 
 	private IndexedBlockRow idxRow = null;
 	
@@ -90,8 +86,7 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 			{
 				if(cells[k+start] == null || cells[k+start].isEmpty())
 				{
-					if(!fill)
-						throw new RuntimeException("Empty fields found in the input delimited file. Use \"fill\" option to read delimited files with empty fields.");
+					IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(null, fill, true);
 					row.getRow().data.appendValue(0, k, fillValue);
 				}
 				else
@@ -134,8 +129,7 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 		if(key.get()==0 && headerFile && ignoreFirstLine)
 			return;
 		
-		String[] cells = _compiledDelim.split( value.toString() );
-		
+		String[] cells = IOUtilFunctions.split( value.toString(), _delim );
 		
 		for(int i=0; i<representativeMatrixes.size(); i++)
 			for(CSVReblockInstruction ins: csv_reblock_instructions.get(i))
@@ -179,7 +173,7 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 		}
 		
 		CSVReblockInstruction ins=csv_reblock_instructions.get(0).get(0);
-		delim = Pattern.quote(ins.delim);
+		_delim = ins.delim;
 		ignoreFirstLine=ins.hasHeader;
 		
 		idxRow = new IndexedBlockRow();
@@ -194,9 +188,6 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 		
 		//always dense since common csv usecase
 		idxRow.getRow().data.reset(1, maxBclen, false);		
-	
-		//precompile regex pattern for better efficiency
-		_compiledDelim = Pattern.compile(delim);
 	}
 
 	@Override

@@ -177,6 +177,10 @@ public class MatrixCharacteristics implements Serializable
 		return ( numRows > 0 && numColumns > 0 );
 	}
 	
+	public boolean dimsKnown(boolean includeNnz) {
+		return ( numRows > 0 && numColumns > 0 && (!includeNnz || nonZero>=0));
+	}
+	
 	public boolean rowsKnown() {
 		return ( numRows > 0 );
 	}

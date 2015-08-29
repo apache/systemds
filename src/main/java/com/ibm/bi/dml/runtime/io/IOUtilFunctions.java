@@ -19,9 +19,11 @@ package com.ibm.bi.dml.runtime.io;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.SequenceFile;
@@ -139,4 +141,37 @@ public class IOUtilFunctions
 		return Double.parseDouble(str);
 	}
 
+	/**
+	 * 
+	 * @param row
+	 * @param fill
+	 * @param emptyFound
+	 * @throws IOException
+	 */
+	public static void checkAndRaiseErrorCSVEmptyField(String row, boolean fill, boolean emptyFound) 
+		throws IOException
+	{
+		if ( !fill && emptyFound) {
+			throw new IOException("Empty fields found in delimited file. "
+			+ "Use \"fill\" option to read delimited files with empty fields:" + ((row!=null)?row:""));
+		}
+	}
+	
+	/**
+	 * Splits a string by a specified delimiter into all tokens, including empty.
+	 * NOTE: This method is meant as a faster drop-in replacement of the regular 
+	 * string split.
+	 * 
+	 * @param str
+	 * @param delim
+	 * @return
+	 */
+	public static String[] split(String str, String delim)
+	{
+		//note: split via stringutils faster than precompiled pattern / guava splitter
+		
+		//split by whole separator required for multi-character delimiters, preserve
+		//all tokens required for empty cells and in order to keep cell alignment
+		return StringUtils.splitByWholeSeparatorPreserveAllTokens(str, delim);
+	}
 }

@@ -24,8 +24,8 @@ import java.util.Comparator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -72,7 +72,8 @@ public class ReaderTextCSVParallel extends MatrixReader {
 	@Override
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen,
 			int brlen, int bclen, long estnnz) throws IOException,
-			DMLRuntimeException {
+			DMLRuntimeException 
+	{
 		// prepare file access
 		JobConf job = new JobConf();
 		FileSystem fs = FileSystem.get(job);
@@ -101,8 +102,6 @@ public class ReaderTextCSVParallel extends MatrixReader {
 
 			});
 		}
-
-		//System.err.printf("Splits are:\n%s\n", StringUtils.join(splits, "\n"));
 
 		// check existence and non-empty file
 		checkValidInputFile(fs, path);
@@ -204,12 +203,11 @@ public class ReaderTextCSVParallel extends MatrixReader {
 	 */
 	private MatrixBlock computeCSVSizeAndCreateOutputMatrixBlock(
 			InputSplit[] splits, Path path, JobConf job, boolean hasHeader,
-			String delim, long estnnz) throws IOException {
+			String delim, long estnnz) throws IOException 
+	{
 		int nrow = 0;
 		int ncol = 0;
 
-		String escapedDelim = Pattern.quote(delim);
-		Pattern compiledDelim = Pattern.compile(escapedDelim);
 		MatrixBlock dest = null;
 		String cellStr = null;
 
@@ -227,7 +225,7 @@ public class ReaderTextCSVParallel extends MatrixReader {
 		try {
 			if (reader.next(key, oneLine)) {
 				cellStr = oneLine.toString().trim();
-				ncol = compiledDelim.split(cellStr, -1).length;
+				ncol = StringUtils.countMatches(cellStr, delim) + 1;
 			}
 		} finally {
 			if (reader != null)
@@ -435,8 +433,6 @@ public class ReaderTextCSVParallel extends MatrixReader {
 			int col = 0;
 			double cellValue = 0;
 
-			String escapedDelim = Pattern.quote(_delim);
-			Pattern compiledDelim = Pattern.compile(escapedDelim);
 			String cellStr = null;
 
 			try {
@@ -457,7 +453,7 @@ public class ReaderTextCSVParallel extends MatrixReader {
 						while (reader.next(key, value)) // foreach line
 						{
 							cellStr = value.toString().trim();
-							String[] parts = compiledDelim.split(cellStr, -1);
+							String[] parts = IOUtilFunctions.split(cellStr, _delim);
 							col = 0;
 
 							for (String part : parts) // foreach cell
@@ -477,30 +473,21 @@ public class ReaderTextCSVParallel extends MatrixReader {
 							}
 
 							// sanity checks (number of columns, fill values)
+							IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, _fill, noFillEmpty);
 							if (parts.length != _clen) {
 								throw new IOException(
-										"Invalid number of columns (" + col
-												+ ") found in delimited file ("
-												+ _split.toString()
-												+ "). Expecting (" + _clen
-												+ "): " + value);
+										"Invalid number of columns (" + col + ") found in delimited file "
+										+ "(" + _split.toString() + "). Expecting (" + _clen + "): " + value);
 							}
-							if (noFillEmpty) {
-								throw new IOException(
-										"Empty fields found in delimited file ("
-												+ _split.toString()
-												+ "). Use \"fill\" option to read delimited files with empty fields."
-												+ cellStr);
-							}
-
 							row++;
 						}
-					} else // DENSE<-value
+					} 
+					else // DENSE<-value
 					{
 						while (reader.next(key, value)) // foreach line
 						{
 							cellStr = value.toString().trim();
-							String[] parts = compiledDelim.split(cellStr, -1);
+							String[] parts = IOUtilFunctions.split(cellStr, _delim);
 							col = 0;
 
 							for (String part : parts) // foreach cell
@@ -518,22 +505,12 @@ public class ReaderTextCSVParallel extends MatrixReader {
 							}
 
 							// sanity checks (number of columns, fill values)
+							IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, _fill, noFillEmpty);
 							if (parts.length != _clen) {
 								throw new IOException(
-										"Invalid number of columns (" + col
-												+ ") found in delimited file ("
-												+ _split.toString()
-												+ "). Expecting (" + _clen
-												+ "): " + value);
+										"Invalid number of columns (" + col + ") found in delimited file "
+										+ "(" + _split.toString() + "). Expecting (" + _clen + "): " + value);
 							}
-							if (noFillEmpty) {
-								throw new IOException(
-										"Empty fields found in delimited file ("
-												+ _split.toString()
-												+ "). Use \"fill\" option to read delimited files with empty fields."
-												+ cellStr);
-							}
-
 							row++;
 						}
 					}

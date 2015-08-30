@@ -888,8 +888,9 @@ public class MatrixObject extends CacheableData
 		
 		try
 		{
-			//ensure input file is persistent on hdfs
-			if( getRDDHandle() != null ) { //pending RDD operations
+			//ensure input file is persistent on hdfs (pending RDD operations), 
+			//file might have been written during export or collect via write/read
+			if( getRDDHandle() != null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { 
 				writeMatrixFromRDDtoHDFS(getRDDHandle(), _hdfsFileName, outputFormat);
 			}
 			

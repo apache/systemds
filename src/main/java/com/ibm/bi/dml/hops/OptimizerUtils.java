@@ -442,6 +442,31 @@ public class OptimizerUtils
 	 * @param nnz
 	 * @return
 	 */
+	public static boolean checkSparkBroadcastMemoryBudget( long rlen, long clen, long brlen, long bclen, long nnz )
+	{
+		double memBudgetExec = SparkExecutionContext.getBroadcastMemoryBudget();
+		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
+
+		double sp = getSparsity(rlen, clen, nnz);
+		double size = estimateSizeExactSparsity(rlen, clen, sp);
+		double sizeP = estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, sp);
+		
+		//basic requirement: the broadcast needs to to fit once in the remote broadcast memory 
+		//and twice into the local memory budget because we have to create a partitioned broadcast
+		//memory and hand it over to the spark context as in-memory object
+		return (   OptimizerUtils.isValidCPDimensions(rlen, clen)
+				&& sizeP < memBudgetExec && size+sizeP < memBudgetLocal );
+	}
+	
+	/**
+	 * 
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param nnz
+	 * @return
+	 */
 	public static boolean checkSparkCollectMemoryBudget( long rlen, long clen, int brlen, int bclen, long nnz )
 	{
 		//compute size of output matrix and its blocked representation

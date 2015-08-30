@@ -1088,15 +1088,9 @@ public class BinaryOp extends Hop
 	{
 		Lop ret = null;
 		
-		long m1_dim1 = left.getDim1();
-		long m1_dim2 = left.getDim2();		
-		long m2_dim1 = right.getDim1();
-		long m2_dim2 = right.getDim2();
-		long brlen = left.getRowsInBlock();
-		long bclen = left.getColsInBlock();
-		
 		Lop offset = createOffsetLop( left, true ); //offset 1st input
-		AppendMethod am = optFindAppendSPMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
+		AppendMethod am = optFindAppendSPMethod(left.getDim1(), left.getDim2(), right.getDim1(), right.getDim2(), 
+				right.getRowsInBlock(), right.getColsInBlock(), right.getNnz());
 	
 		switch( am )
 		{
@@ -1245,31 +1239,30 @@ public class BinaryOp extends Hop
 		return AppendMethod.MR_GAPPEND; 	
 	}
 	
-	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb )
+	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m2_rpb, long m2_cpb, long m2_nnz )
 	{
 		if(FORCED_APPEND_METHOD != null) {
 			return FORCED_APPEND_METHOD;
 		}
 		
-		//check for best case (map-only)		
+		//check for best case (map-only w/o shuffle)		
 		if(    m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 				
-			&& m2_dim2 <= m1_cpb  ) //rhs is smaller than column block 
+			&& m2_dim2 <= m2_cpb  ) //rhs is smaller than column block 
 		{
-			double size = OptimizerUtils.estimateSize(m2_dim1, m2_dim2);
-			if( OptimizerUtils.checkSparkBroadcastMemoryBudget(size) ) {
+			if( OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m2_rpb, m2_cpb, m2_nnz) ) {
 				return AppendMethod.MR_MAPPEND;
 			}
 		}
 		
 		//check for in-block append (reduce-only)
 		if( m1_dim2 >= 1 && m2_dim2 >= 0 //column dims known
-			&& m1_dim2+m2_dim2 <= m1_cpb ) //output has one column block
+			&& m1_dim2+m2_dim2 <= m2_cpb ) //output has one column block
 		{
 			return AppendMethod.MR_RAPPEND;
 		}
 		
 		// if(mc1.getCols() % mc1.getColsPerBlock() == 0) {
-		if(m1_dim2 % m1_cpb == 0) {
+		if(m1_dim2 % m2_cpb == 0) {
 			return AppendMethod.SP_GAlignedAppend;
 		}
 		

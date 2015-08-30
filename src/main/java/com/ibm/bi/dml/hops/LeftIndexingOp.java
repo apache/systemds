@@ -33,8 +33,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 
 public class LeftIndexingOp  extends Hop 
-{
-	
+{	
 	public static LeftIndexingMethod FORCED_LEFT_INDEXING = null;
 	
 	public enum LeftIndexingMethod { 
@@ -44,37 +43,9 @@ public class LeftIndexingOp  extends Hop
 	
 	public static String OPSTRING = "lix"; //"LeftIndexing";
 	
-	private boolean _rowLowerEqualsUpper = false, _colLowerEqualsUpper = false;
-	
-	public boolean getRowLowerEqualsUpper(){
-		return _rowLowerEqualsUpper;
-	}
-	
-	public boolean getColLowerEqualsUpper() {
-		return _colLowerEqualsUpper;
-	}
-	
-	public void setRowLowerEqualsUpper(boolean passed){
-		_rowLowerEqualsUpper  = passed;
-	}
-	
-	public void setColLowerEqualsUpper(boolean passed) {
-		_colLowerEqualsUpper = passed;
-	}
-	
-	private LeftIndexingMethod getOptMethodLeftIndexingMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb ) {
-		if(FORCED_LEFT_INDEXING != null) {
-			return FORCED_LEFT_INDEXING;
-		}
-		// Broadcast based left index behaves like a map binary op in worst case where we fit entire rhs broadcast in memory
-		// and only one block from lhs and output
-		double size = OptimizerUtils.estimateSize(m2_dim1, m2_dim2);
-		if( OptimizerUtils.checkSparkBroadcastMemoryBudget(size) ) {
-			return LeftIndexingMethod.SP_MLEFTINDEX;
-		}
-		return LeftIndexingMethod.SP_GLEFTINDEX;
-	}
-	
+	private boolean _rowLowerEqualsUpper = false;
+	private boolean _colLowerEqualsUpper = false;
+		
 	private LeftIndexingOp() {
 		//default constructor for clone
 	}
@@ -102,6 +73,22 @@ public class LeftIndexingOp  extends Hop
 		setColLowerEqualsUpper(passedColsLEU);
 	}
 
+	
+	public boolean getRowLowerEqualsUpper(){
+		return _rowLowerEqualsUpper;
+	}
+	
+	public boolean getColLowerEqualsUpper() {
+		return _colLowerEqualsUpper;
+	}
+	
+	public void setRowLowerEqualsUpper(boolean passed){
+		_rowLowerEqualsUpper  = passed;
+	}
+	
+	public void setColLowerEqualsUpper(boolean passed) {
+		_colLowerEqualsUpper = passed;
+	}
 	
 	@Override
 	public Lop constructLops()
@@ -192,24 +179,19 @@ public class LeftIndexingOp  extends Hop
 				
 				setLops(binary);
 			}
-			else if(et == ExecType.SPARK)  {				
-				boolean isBroadcast = false;
+			else if(et == ExecType.SPARK)  
+			{				
 				Hop left = getInput().get(0);
 				Hop right = getInput().get(0);
-				long m1_dim1 = left.getDim1();
-				long m1_dim2 = left.getDim2();		
-				long m2_dim1 = right.getDim1();
-				long m2_dim2 = right.getDim2();
-				long brlen = left.getRowsInBlock();
-				long bclen = left.getColsInBlock();
-				LeftIndexingMethod method = getOptMethodLeftIndexingMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
-				if(method == LeftIndexingMethod.SP_MLEFTINDEX) {
-					isBroadcast = true;
-				}
+				
+				LeftIndexingMethod method = getOptMethodLeftIndexingMethod( right.getDim1(), right.getDim2(), 
+						right.getRowsInBlock(), right.getColsInBlock(), right.getNnz() );				
+				boolean isBroadcast = (method == LeftIndexingMethod.SP_MLEFTINDEX);
 				
 				LeftIndex leftIndexLop = new LeftIndex(
-						getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 
-						getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
+						left.constructLops(), right.constructLops(), 
+						getInput().get(2).constructLops(), getInput().get(3).constructLops(), 
+						getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
 						getDataType(), getValueType(), et, isBroadcast);
 				
 				setOutputDimensions(leftIndexLop);
@@ -405,6 +387,35 @@ public class LeftIndexingOp  extends Hop
 		return _etype;
 	}
 
+	
+	/**
+	 * 
+	 * @param m1_dim1
+	 * @param m1_dim2
+	 * @param m1_rpb
+	 * @param m1_cpb
+	 * @param m2_dim1
+	 * @param m2_dim2
+	 * @return
+	 */
+	private LeftIndexingMethod getOptMethodLeftIndexingMethod( long m2_dim1, long m2_dim2, 
+			long m2_rpb, long m2_cpb, long m2_nnz) 
+	{
+		if(FORCED_LEFT_INDEXING != null) {
+			return FORCED_LEFT_INDEXING;
+		}
+		
+		// broadcast-based left indexing has memory constraints but is more efficient  
+		// since it does not require shuffle 
+		if( OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m2_rpb, m2_cpb, m2_nnz) )  {
+			return LeftIndexingMethod.SP_MLEFTINDEX;
+		}
+		
+		// default general case
+		return LeftIndexingMethod.SP_GLEFTINDEX;
+	}
+
+	
 	@Override
 	public void refreshSizeInformation()
 	{

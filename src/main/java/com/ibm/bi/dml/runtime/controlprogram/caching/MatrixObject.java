@@ -1329,22 +1329,35 @@ public class MatrixObject extends CacheableData
 	{
 		//note: the read of a matrix block from an RDD might trigger
 		//lazy evaluation of pending transformations.
-		
 		RDDObject lrdd = rdd;
 		
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		MatrixBlock mb = null;
-		try {
+		try 
+		{
 			//prevent unnecessary collect through rdd checkpoint
 			if( rdd.allowsShortCircuitCollect() ) {
 				lrdd = (RDDObject)rdd.getLineageChilds().get(0);
 			}
 			
-			//collect matrix block from RDD
-			mb = SparkExecutionContext.toMatrixBlock(lrdd, (int)mc.getRows(), (int)mc.getCols(),
-					                       (int)mc.getRowsPerBlock(), (int)mc.getColsPerBlock(),
-					                       mc.getNonZeros());	
+			//obtain matrix block from RDD
+			int rlen = (int)mc.getRows();
+			int clen = (int)mc.getCols();
+			int brlen = (int)mc.getRowsPerBlock();
+			int bclen = (int)mc.getColsPerBlock();
+			long nnz = mc.getNonZeros();
+			
+			if( !OptimizerUtils.checkSparkCollectMemoryBudget(rlen, clen, brlen, bclen, nnz) ) {
+				//write RDD to hdfs and read to prevent invalid collect mem consumption 
+				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
+				SparkExecutionContext.writeRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
+				mb = readMatrixFromHDFS(_hdfsFileName);
+			}
+			else {
+				//collect matrix block from RDD
+				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, brlen, bclen, nnz);	
+			}
 		}
 		catch(DMLRuntimeException ex) {
 			throw new IOException(ex);

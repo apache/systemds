@@ -408,7 +408,7 @@ public class SparkExecutionContext extends ExecutionContext
 	@SuppressWarnings("unchecked")
 	public static MatrixBlock toMatrixBlock(RDDObject rdd, int rlen, int clen, int brlen, int bclen, long nnz) 
 		throws DMLRuntimeException
-	{	
+	{			
 		return toMatrixBlock(
 				(JavaPairRDD<MatrixIndexes, MatrixBlock>) rdd.getRDD(), 
 				rlen, clen, brlen, bclen, nnz);
@@ -417,6 +417,9 @@ public class SparkExecutionContext extends ExecutionContext
 	/**
 	 * Utility method for creating a single matrix block out of an RDD. Note that this collect call
 	 * might trigger execution of any pending transformations. 
+	 * 
+	 * NOTE: This is an unguarded utility function, which requires memory for both the output matrix
+	 * and its collected, blocked representation.
 	 * 
 	 * @param rdd
 	 * @param numRows
@@ -451,9 +454,11 @@ public class SparkExecutionContext extends ExecutionContext
 			//copy blocks one-at-a-time into output matrix block
 			for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
 			{
+				//unpack index-block pair
 				MatrixIndexes ix = keyval._1();
 				MatrixBlock block = keyval._2();
 				
+				//compute row/column block offsets
 				int row_offset = (int)(ix.getRowIndex()-1)*brlen;
 				int col_offset = (int)(ix.getColumnIndex()-1)*bclen;
 				int rows = block.getNumRows();
@@ -486,10 +491,9 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param oinfo
 	 */
 	@SuppressWarnings("unchecked")
-	public static void writeRDDtoHDFS( Object rdd, String path, OutputInfo oinfo )
+	public static void writeRDDtoHDFS( RDDObject rdd, String path, OutputInfo oinfo )
 	{
-		RDDObject rddo = (RDDObject) rdd;
-		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) rddo.getRDD();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) rdd.getRDD();
 		
 		lrdd.saveAsHadoopFile(path, 
 				oinfo.outputKeyClass, 

@@ -434,6 +434,26 @@ public class OptimizerUtils
 	}
 	
 	/**
+	 * 
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param nnz
+	 * @return
+	 */
+	public static boolean checkSparkCollectMemoryBudget( long rlen, long clen, int brlen, int bclen, long nnz )
+	{
+		//compute size of output matrix and its blocked representation
+		double sp = getSparsity(rlen, clen, nnz);
+		double memMatrix = estimateSizeExactSparsity(rlen, clen, sp);
+		double memPMatrix = estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, sp);
+		
+		//check if both output matrix and partitioned matrix fit into local mem budget
+		return (memMatrix + memPMatrix < getLocalMemBudget());
+	}
+	
+	/**
 	 * Returns the number of reducers that potentially run in parallel.
 	 * This is either just the configured value (SystemML config) or
 	 * the minimum of configured value and available reduce slots. 

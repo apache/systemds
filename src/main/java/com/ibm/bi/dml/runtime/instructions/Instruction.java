@@ -47,6 +47,7 @@ public abstract class Instruction
 	public static final String LITERAL_PREFIX = Lop.LITERAL_PREFIX;
 	public static final String INSTRUCTION_DELIM = Lop.INSTRUCTION_DELIMITOR;
 	public static final String NAME_VALUE_SEPARATOR = Lop.NAME_VALUE_SEPARATOR;
+	public static final String SP_INST_PREFIX = "sp_";
 	
 	//basic instruction meta data
 	protected INSTRUCTION_TYPE type = null;
@@ -158,7 +159,7 @@ public abstract class Instruction
 	
 	public String getExtendedOpcode() {
 		if( type == INSTRUCTION_TYPE.SPARK )
-			return "sp_" + getOpcode();
+			return SP_INST_PREFIX + getOpcode();
 		else
 			return getOpcode();
 	}

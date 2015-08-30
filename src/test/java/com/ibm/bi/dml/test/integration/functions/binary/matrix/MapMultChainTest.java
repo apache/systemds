@@ -274,7 +274,7 @@ public class MapMultChainTest extends AutomatedTestBase
 			
 			//check compiled mmchain instructions (cp/spark)
 			if( instType != ExecType.MR ){
-				String opcode = (instType==ExecType.CP)?MapMultChain.OPCODE_CP:MapMultChain.OPCODE;
+				String opcode = (instType==ExecType.CP)?MapMultChain.OPCODE_CP:"sp_"+MapMultChain.OPCODE;
 				Assert.assertEquals(sumProductRewrites, Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}
 		}

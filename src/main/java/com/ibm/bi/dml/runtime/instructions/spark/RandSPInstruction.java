@@ -351,8 +351,11 @@ public class RandSPInstruction extends UnarySPInstruction
 			
 			//output handling
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			if(!mcOut.dimsKnown()) {
-				mcOut.set(rows, cols, rowsInBlock, colsInBlock, (long) (sparsity*rows*cols));
+			if(!mcOut.dimsKnown(true)) {
+				//note: we cannot compute the nnz from sparsity because this would not reflect the 
+				//actual number of non-zeros, except for extreme values of sparsity equals 0 or 1.
+				long lnnz = (sparsity==0 || sparsity==1) ? (long) (sparsity*rows*cols) : -1;
+				mcOut.set(rows, cols, rowsInBlock, colsInBlock, lnnz);
 			}
 			sec.setRDDHandleForVariable(output.getName(), out);
 		}

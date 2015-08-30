@@ -182,7 +182,7 @@ public class LeftIndexingOp  extends Hop
 			else if(et == ExecType.SPARK)  
 			{				
 				Hop left = getInput().get(0);
-				Hop right = getInput().get(0);
+				Hop right = getInput().get(1);
 				
 				LeftIndexingMethod method = getOptMethodLeftIndexingMethod( right.getDim1(), right.getDim2(), 
 						right.getRowsInBlock(), right.getColsInBlock(), right.getNnz() );				
@@ -407,7 +407,8 @@ public class LeftIndexingOp  extends Hop
 		
 		// broadcast-based left indexing has memory constraints but is more efficient  
 		// since it does not require shuffle 
-		if( OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m2_rpb, m2_cpb, m2_nnz) )  {
+		if( m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 	
+			&& OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m2_rpb, m2_cpb, m2_nnz) )  {
 			return LeftIndexingMethod.SP_MLEFTINDEX;
 		}
 		

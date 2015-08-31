@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.spark.Accumulator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -46,6 +47,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ComputeNonZerosBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
@@ -57,6 +59,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.Statistics;
 
 
@@ -112,6 +115,16 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 		
 		//return the created spark context
+		return _spctx;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static JavaSparkContext getSparkContextStatic()
+	{
+		initSparkContext();
 		return _spctx;
 	}
 	
@@ -491,15 +504,24 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param oinfo
 	 */
 	@SuppressWarnings("unchecked")
-	public static void writeRDDtoHDFS( RDDObject rdd, String path, OutputInfo oinfo )
+	public static long writeRDDtoHDFS( RDDObject rdd, String path, OutputInfo oinfo )
 	{
 		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) rdd.getRDD();
 		
+		//recompute nnz via accumulator 
+		Accumulator<Double> aNnz = getSparkContextStatic().accumulator(0L);
+		lrdd = lrdd.mapValues(new ComputeNonZerosBlockFunction(aNnz));
+		
+		//save file is an action which also triggers nnz maintenance
 		lrdd.saveAsHadoopFile(path, 
 				oinfo.outputKeyClass, 
 				oinfo.outputValueClass, 
 				oinfo.outputFormatClass);
+		
+		//return nnz aggregate of all blocks
+		return UtilFunctions.toLong(aNnz.value());
 	}
+	
 	
 	/**
 	 * Returns the available memory budget for broadcast variables in bytes.

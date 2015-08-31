@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -34,6 +35,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ComputeNonZerosBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
@@ -136,6 +138,10 @@ public class WriteSPInstruction extends SPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 			MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 			
+			//recompute nnz via accumulator (save file will also trigger nnz maintenance)
+			Accumulator<Double> aNnz = sec.getSparkContext().accumulator(0L);
+			in1 = in1.mapValues(new ComputeNonZerosBlockFunction(aNnz));
+			
 			if(    oi == OutputInfo.MatrixMarketOutputInfo
 				|| oi == OutputInfo.TextCellOutputInfo     ) 
 			{
@@ -194,7 +200,8 @@ public class WriteSPInstruction extends SPInstruction
 				throw new DMLRuntimeException("Unexpected data format: " + outFmt);
 			}
 			
-			// write Metadata file
+			//update nnz and write meta data file
+			mc.setNonZeros( UtilFunctions.toLong(aNnz.value()) );
 			MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);	
 		}
 		catch(IOException ex)

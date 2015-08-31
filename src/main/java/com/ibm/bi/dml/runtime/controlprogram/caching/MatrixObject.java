@@ -851,11 +851,11 @@ public class MatrixObject extends CacheableData
 			{
 				MapReduceTool.deleteFileIfExistOnHDFS(fName);
 				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
-				writeMetaData( fName, outputFormat, formatProperties );
 				if( getRDDHandle()==null )
 					MapReduceTool.copyFileOnHDFS( _hdfsFileName, fName );
-				else //write might 
+				else //write might trigger rdd operations and nnz maintenance
 					writeMatrixFromRDDtoHDFS(getRDDHandle(), fName, outputFormat);
+				writeMetaData( fName, outputFormat, formatProperties );
 			}
 			catch (Exception e)
 			{
@@ -904,8 +904,8 @@ public class MatrixObject extends CacheableData
 			{
 				MapReduceTool.deleteFileIfExistOnHDFS(fName);
 				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
-				writeMetaData( fName, outputFormat, null );
 				MapReduceTool.renameFileOnHDFS( _hdfsFileName, fName );
+				writeMetaData( fName, outputFormat, null );
 				ret = true;
 			}				
 		}
@@ -1352,7 +1352,8 @@ public class MatrixObject extends CacheableData
 			if( !OptimizerUtils.checkSparkCollectMemoryBudget(rlen, clen, brlen, bclen, nnz) ) {
 				//write RDD to hdfs and read to prevent invalid collect mem consumption 
 				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
-				SparkExecutionContext.writeRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
+				long newnnz = SparkExecutionContext.writeRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
+				((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics().setNonZeros(newnnz);
 				mb = readMatrixFromHDFS(_hdfsFileName);
 			}
 			else {
@@ -1379,8 +1380,8 @@ public class MatrixObject extends CacheableData
 		//lazy evaluation of pending transformations.
 				
 		OutputInfo oinfo = OutputInfo.stringToOutputInfo (outputFormat);
-		SparkExecutionContext.writeRDDtoHDFS(rdd, fname, oinfo);	
-
+		long newnnz = SparkExecutionContext.writeRDDtoHDFS(rdd, fname, oinfo);	
+		((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics().setNonZeros(newnnz);
 	}
 	
 	/**

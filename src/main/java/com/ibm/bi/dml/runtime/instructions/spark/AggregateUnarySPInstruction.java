@@ -18,6 +18,7 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
@@ -91,7 +92,6 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
-		boolean aggregate = (_aggtype != SparkAggType.NONE);
 		
 		//get input
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
@@ -104,7 +104,16 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		//execute unary aggregate operation
 		AggregateUnaryOperator auop = (AggregateUnaryOperator)_optr;
 		AggregateOperator aggop = _aop;
-		out = out.mapToPair(new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock(), !aggregate));		
+		if( _aggtype == SparkAggType.NONE ) {
+			//in case of no block aggregation, we always drop the correction as well as
+			//use a partitioning-preserving mapvalues 
+			out = out.mapValues(new RDDUAggValueFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));
+		}
+		else {
+			//in case of single/multi-block aggregation, we always keep the correction
+			out = out.mapToPair(new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));			
+		}
+		
 		
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
@@ -123,9 +132,10 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 			if( _aggtype == SparkAggType.MULTI_BLOCK ) {
 				out = RDDAggregateUtils.aggByKeyStable(out, aggop);
 	
-				//drop correction after aggregation
+				//drop correction after aggregation if required (aggbykey creates 
+				//partitioning, drop correction via partitioning-preserving mapvalues)
 				if( auop.aggOp.correctionExists )
-					out = out.mapToPair( new AggregateDropCorrectionFunction(aggop) );
+					out = out.mapValues( new AggregateDropCorrectionFunction(aggop) );
 			}
 			
 			//put output RDD handle into symbol table
@@ -174,14 +184,12 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 		private AggregateUnaryOperator _op = null;
 		private int _brlen = -1;
 		private int _bclen = -1;
-		private boolean _dropCorr = false;
 		
-		public RDDUAggFunction( AggregateUnaryOperator op, int brlen, int bclen, boolean dropCorr )
+		public RDDUAggFunction( AggregateUnaryOperator op, int brlen, int bclen )
 		{
 			_op = op;
 			_brlen = brlen;
 			_bclen = bclen;
-			_dropCorr = dropCorr;
 		}
 		
 		@Override
@@ -194,17 +202,50 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 			MatrixIndexes ixOut = new MatrixIndexes();
 			MatrixBlock blkOut = new MatrixBlock();
 			
-			//unary aggregate operation
+			//unary aggregate operation (always keep the correction)
 			OperationsOnMatrixValues.performAggregateUnary( ixIn, blkIn, 
 					  ixOut, blkOut, _op, _brlen, _bclen);
 			
-			//drop correction if necessary
-			if( _dropCorr ) {
-				blkOut.dropLastRowsOrColums(_op.aggOp.correctionLocation);
-			}
-			
 			//output new tuple
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class RDDUAggValueFunction implements Function<MatrixBlock, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 5352374590399929673L;
+		
+		private AggregateUnaryOperator _op = null;
+		private int _brlen = -1;
+		private int _bclen = -1;
+		private MatrixIndexes _ix = null;
+		
+		public RDDUAggValueFunction( AggregateUnaryOperator op, int brlen, int bclen )
+		{
+			_op = op;
+			_brlen = brlen;
+			_bclen = bclen;
+			
+			_ix = new MatrixIndexes(1,1);
+		}
+		
+		@Override
+		public MatrixBlock call( MatrixBlock arg0 ) 
+			throws Exception 
+		{
+			MatrixBlock blkOut = new MatrixBlock();
+			
+			//unary aggregate operation
+			arg0.aggregateUnaryOperations(_op, blkOut, _brlen, _bclen, _ix);
+			
+			//always drop correction since no aggregation
+			blkOut.dropLastRowsOrColums(_op.aggOp.correctionLocation);
+			
+			//output new tuple
+			return blkOut;
 		}
 	}
 }

@@ -17,15 +17,12 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
-import org.apache.spark.api.java.function.PairFunction;
-
-import scala.Tuple2;
+import org.apache.spark.api.java.function.Function;
 
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 
-public class AggregateDropCorrectionFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+public class AggregateDropCorrectionFunction implements Function<MatrixBlock, MatrixBlock> 
 {
 	
 	private static final long serialVersionUID = -5573656897943638857L;
@@ -38,21 +35,16 @@ public class AggregateDropCorrectionFunction implements PairFunction<Tuple2<Matr
 	}
 
 	@Override
-	public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+	public MatrixBlock call(MatrixBlock arg0) 
 		throws Exception 
 	{
-		MatrixIndexes ixIn = arg0._1();
-		MatrixBlock blkIn = arg0._2();
-
-		//copy inputs
-		MatrixIndexes ixOut = new MatrixIndexes(ixIn);
-		MatrixBlock blkOut = new MatrixBlock(blkIn);
+		//create output block copy
+		MatrixBlock blkOut = new MatrixBlock(arg0);
 		
 		//drop correction
 		blkOut.dropLastRowsOrColums(_op.correctionLocation);
 		
-		//output new tuple
-		return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);
+		return blkOut;
 	}	
 }
 

@@ -41,7 +41,7 @@ distributed runtime execution plans and system configurations.
 ## Building SystemML
 
 SystemML is built using [Apache Maven](http://maven.apache.org/).
-SystemML will build on Windows, Linux, or MacOS.
+SystemML will build on Windows, Linux, or MacOS and requires Maven 3 and Java 7 (or higher).
 To build SystemML, run:
 
     mvn clean package
@@ -56,7 +56,12 @@ SystemML features a comprehensive set of integration tests. To perform these tes
     cd system-ml
     mvn verify 
 
-Note: these that these tests requires [R](https://www.r-project.org/) to be installed and available as part of the PATH variable on the machine you are running these tests.
+Note: these that these tests requires [R](https://www.r-project.org/) to be installed and available as part of the PATH variable on the machine you are running these tests. 
+
+To install required packages for running integration tests, execute following command in R:
+    install.packages(c("batch", "bitops", "boot", "caTools", "data.table", "doMC", "doSNOW", "ggplot2", "glmnet", "lda", "Matrix", "matrixStats", "moments", "plotrix", "psych", "reshape", "topicmodels", "wordcloud", "methods"), dependencies=TRUE) 
+
+Known issue: package 'methods' is not available for R version 3.2.1. In which case, please downgrade R to version 3.1.1. 
 
 * * *
 

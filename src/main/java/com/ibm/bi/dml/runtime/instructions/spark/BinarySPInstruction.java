@@ -32,7 +32,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixMatrixBinaryOpFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixVectorBinaryOpFunction;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixVectorBinaryOpPartitionFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.OuterVectorBinaryOpFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVectorFunction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -165,10 +165,17 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		
 		//execute map binary operation
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-		if( isOuter )
+		if( isOuter ) {
 			out = in1.flatMapToPair(new OuterVectorBinaryOpFunction(bop, in2));
-		else	
-			out = in1.mapToPair(new MatrixVectorBinaryOpFunction(bop, in2, vtype));
+		}
+		else { //default
+			//note: we use mappartition in order to preserve partitioning information for
+			//binary mv operations where the keys are guaranteed not to change, the reason
+			//why we cannot use mapValues is the need for broadcast key lookups.
+			//alternative: out = in1.mapToPair(new MatrixVectorBinaryOpFunction(bop, in2, vtype));
+			out = in1.mapPartitionsToPair(
+					new MatrixVectorBinaryOpPartitionFunction(bop, in2, vtype), true);
+		}
 		
 		//set output RDD
 		updateBinaryOutputMatrixCharacteristics(sec);

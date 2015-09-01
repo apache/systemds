@@ -33,13 +33,15 @@ SCRIPT_FILE=$1
 shift
 
 # Build up a classpath with all included libraries
+CURRENT_PATH=$( cd $(dirname $0) ; pwd -P )
+
 CLASSPATH=""
-for f in ./lib/*.jar; do
+for f in $CURRENT_PATH"/lib/*.jar"; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
 # invoke the jar with options and arguments
 java -Xmx4g -Xms4g -Xmn400m -cp ${CLASSPATH} com.ibm.bi.dml.api.DMLScript \
-     -f ${SCRIPT_FILE} -exec singlenode -config=SystemML-config.xml \
+     -f ${SCRIPT_FILE} -exec singlenode -config=$CURRENT_PATH"/SystemML-config.xml" \
      $@
 

@@ -29,7 +29,7 @@
 #    ofmt    : (output, default "binary") format of O: "csv", "binary" 
 #
 # Example:
-#   hadoop jar SystemML.jar -f algorithms/utils/sample.dml -nvargs X="/tmp/X.mtx" sv="/tmp/sv.mtx" O=/tmp/Out
+#   hadoop jar SystemML.jar -f algorithms/utils/sample.dml -nvargs X="/tmp/X.mtx" sv="/tmp/sv.mtx" O=/tmp/Out ofmt=csv
 
 # set defaults
 ofmt = ifdef($ofmt, "binary")

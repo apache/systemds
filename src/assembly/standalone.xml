@@ -50,6 +50,14 @@
 			</includes>
 			<outputDirectory>./algorithms</outputDirectory>
 		</fileSet>
+		
+		<fileSet>
+			<directory>${basedir}/scripts/datagen</directory>
+			<includes>
+				<include>genLinearRegressionData.dml</include>
+			</includes>
+			<outputDirectory>./algorithms/datagen</outputDirectory>
+		</fileSet>	
     
     <fileSet>
 			<directory>${basedir}/scripts/utils</directory>

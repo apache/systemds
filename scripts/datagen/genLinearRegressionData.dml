@@ -1,0 +1,41 @@
+#
+# This script generates random data for linear regression. A matrix is generated
+# consisting of a data matrix with a label column appended to it.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT  MEANING
+# --------------------------------------------------------------------------------------------
+# numSamples      Int     ---      Number of samples
+# numFeatures     Int     ---      Number of features (independent variables)
+# maxFeatureValue Int     ---      Maximum feature value (absolute value)
+# maxWeight       Int     ---      Maximum weight (absolute value)
+# addNoise        Boolean ---      Determines whether noise should be added to Y
+# b               Double  ---      Intercept
+# sparsity        Double  ---      Controls the sparsity in the generated data (a value between 0 and 1)
+# output          String  ---      Location to write the generated data/label matrix
+# format          String  ---      Matrix output format
+# --------------------------------------------------------------------------------------------
+# OUTPUT: Matrix of random data with appended label column
+# ---------------------------------------------------------------------------------------------
+#
+# Example
+# ./runStandaloneSystemML.sh algorithms/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv
+#
+
+X = Rand(cols=$numFeatures, max=1, min=-1, pdf="uniform", rows=$numSamples, seed=0, sparsity=$sparsity)
+X = X * $maxFeatureValue
+
+w = Rand(cols=1, max=1, min=-1, pdf="uniform", rows=$numFeatures, seed=0)
+w = w * $maxWeight
+
+Y = X %*% w
+Y = Y + $b
+
+if ($addNoise == TRUE) {
+    noise = Rand(cols=1, pdf="normal", rows=$numSamples, seed=0)
+    Y = Y + noise
+}
+
+Z = append(X,Y)
+write(Z, $output, format=$format)

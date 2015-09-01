@@ -17,7 +17,11 @@
 
 package com.ibm.bi.dml.runtime.matrix.data;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -164,15 +168,91 @@ public class LibMatrixAgg
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop) 
 		throws DMLRuntimeException
 	{
+		//prepare meta data 
+		AggType aggtype = getAggType(uaop);
+		final int m = in.rlen;
+		final int m2 = out.rlen;
+		final int n2 = out.clen;
+		
+		//filter empty input blocks (incl special handling for sparse-unsafe operations)
+		if( in.isEmptyBlock(false) ){
+			aggregateUnaryMatrixEmpty(in, out, aggtype, uaop.indexFn);
+			return;
+		}	
+		
 		//Timing time = new Timing(true);
 		
-		AggType aggtype = getAggType(uaop);
+		//allocate output arrays (if required)
+		out.reset(m2, n2, false); //always dense
+		out.allocateDenseBlock();
+		
 		if( !in.sparse )
-			aggregateUnaryMatrixDense(in, out, aggtype, uaop.aggOp.increOp.fn, uaop.indexFn);
+			aggregateUnaryMatrixDense(in, out, aggtype, uaop.aggOp.increOp.fn, uaop.indexFn, 0, m);
 		else
-			aggregateUnaryMatrixSparse(in, out, aggtype, uaop.aggOp.increOp.fn, uaop.indexFn);
+			aggregateUnaryMatrixSparse(in, out, aggtype, uaop.aggOp.increOp.fn, uaop.indexFn, 0, m);
+				
+		//cleanup output and change representation (if necessary)
+		out.recomputeNonZeros();
+		out.examSparsity();
 		
 		//System.out.println("uagg ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @param uaop
+	 * @param k
+	 * @throws DMLRuntimeException
+	 */
+	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop, int k) 
+		throws DMLRuntimeException
+	{
+		//fall back to sequential version if necessary
+		if( k <= 1 || !(uaop.indexFn instanceof ReduceCol) ){
+			aggregateUnaryMatrix(in, out, uaop);
+			return;
+		}
+		
+		//prepare meta data 
+		AggType aggtype = getAggType(uaop);
+		final int m = in.rlen;
+		final int m2 = out.rlen;
+		final int n2 = out.clen;
+		
+		//filter empty input blocks (incl special handling for sparse-unsafe operations)
+		if( in.isEmptyBlock(false) ){
+			aggregateUnaryMatrixEmpty(in, out, aggtype, uaop.indexFn);
+			return;
+		}	
+		
+		//Timing time = new Timing(true);
+		
+		//allocate output arrays (if required)
+		out.reset(m2, n2, false); //always dense
+		out.allocateDenseBlock();
+		
+		//core multi-threaded unary aggregate computation
+		//(currently: always parallelization over number of rows)
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ArrayList<RowAggTask> tasks = new ArrayList<RowAggTask>();
+			int blklen = (int)(Math.ceil((double)m/k));
+			for( int i=0; i<k & i*blklen<m; i++ )
+				tasks.add(new RowAggTask(in, out, aggtype, uaop, i*blklen, Math.min((i+1)*blklen, m)));
+			pool.invokeAll(tasks);	
+			pool.shutdown();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+				
+		//cleanup output and change representation (if necessary)
+		out.recomputeNonZeros();
+		out.examSparsity();
+		
+		//System.out.println("uagg k="+k+" ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
 	}
 	
 	/**
@@ -185,13 +265,32 @@ public class LibMatrixAgg
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop) 
 		throws DMLRuntimeException
 	{
+		//prepare meta data 
+		AggType aggtype = getAggType(uop);
+		final int m = in.rlen;
+		final int m2 = out.rlen;
+		final int n2 = out.clen;
+		
+		//filter empty input blocks (incl special handling for sparse-unsafe operations)
+		if( in.isEmptyBlock(false) ){
+			aggregateUnaryMatrixEmpty(in, out, aggtype, null);
+			return;
+		}	
+		
+		//allocate output arrays (if required)
+		out.reset(m2, n2, false); //always dense
+		out.allocateDenseBlock();
+		
 		//Timing time = new Timing(true);
 		
-		AggType aggtype = getAggType(uop);
 		if( !in.sparse )
-			aggregateUnaryMatrixDense(in, out, aggtype, uop.fn, null);
+			aggregateUnaryMatrixDense(in, out, aggtype, uop.fn, null, 0, m);
 		else
-			aggregateUnaryMatrixSparse(in, out, aggtype, uop.fn, null);
+			aggregateUnaryMatrixSparse(in, out, aggtype, uop.fn, null, 0, m);
+		
+		//cleanup output and change representation (if necessary)
+		out.recomputeNonZeros();
+		out.examSparsity();
 		
 		//System.out.println("uop ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
 	}
@@ -669,22 +768,11 @@ public class LibMatrixAgg
 	 * @param ixFn
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateUnaryMatrixDense(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, IndexFunction ixFn) 
+	private static void aggregateUnaryMatrixDense(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, IndexFunction ixFn, int rl, int ru) 
 			throws DMLRuntimeException
 	{
-		if( in.denseBlock==null || in.isEmptyBlock(false) ){
-			aggregateUnaryMatrixEmpty(in, out, optype, ixFn);
-			return;
-		}	
-		
 		final int m = in.rlen;
 		final int n = in.clen;
-		final int m2 = out.rlen;
-		final int n2 = out.clen;
-		
-		//allocate output arrays (if required)
-		out.reset(m2, n2, false); //always dense
-		out.allocateDenseBlock();
 		
 		double[] a = in.getDenseArray();
 		double[] c = out.getDenseArray();		
@@ -698,11 +786,11 @@ public class LibMatrixAgg
 				if( ixFn instanceof ReduceAll ) // SUM
 					d_uakp(a, c, m, n, kbuff, (KahanPlus)vFn);
 				else if( ixFn instanceof ReduceCol ) //ROWSUM
-					d_uarkp(a, c, m, n, kbuff, (KahanPlus)vFn);
+					d_uarkp(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLSUM
 					d_uackp(a, c, m, n, kbuff, (KahanPlus)vFn);
 				else if( ixFn instanceof ReduceDiag ) //TRACE
-					d_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn);
+					d_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				break;
 			}
 			case CUM_KAHAN_SUM: //CUMSUM
@@ -732,7 +820,7 @@ public class LibMatrixAgg
 				if( ixFn instanceof ReduceAll ) // MIN/MAX
 					d_uamxx(a, c, m, n, init, (Builtin)vFn);
 				else if( ixFn instanceof ReduceCol ) //ROWMIN/ROWMAX
-					d_uarmxx(a, c, m, n, init, (Builtin)vFn);
+					d_uarmxx(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLMIN/COLMAX
 					d_uacmxx(a, c, m, n, init, (Builtin)vFn);
 				
@@ -743,7 +831,7 @@ public class LibMatrixAgg
 				double init = -Double.MAX_VALUE;
 				
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
-					d_uarimxx(a, c, m, n, init, (Builtin)vFn);
+					d_uarimxx(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MIN_INDEX:
@@ -751,7 +839,7 @@ public class LibMatrixAgg
 				double init = Double.MAX_VALUE;
 				
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMIN
-					d_uarimin(a, c, m, n, init, (Builtin)vFn);
+					d_uarimin(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MEAN: //MEAN
@@ -761,7 +849,7 @@ public class LibMatrixAgg
 				if( ixFn instanceof ReduceAll ) // MEAN
 					d_uamean(a, c, m, n, kbuff, (Mean)vFn);
 				else if( ixFn instanceof ReduceCol ) //ROWMEAN
-					d_uarmean(a, c, m, n, kbuff, (Mean)vFn);
+					d_uarmean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLMEAN
 					d_uacmean(a, c, m, n, kbuff, (Mean)vFn);
 				
@@ -777,10 +865,6 @@ public class LibMatrixAgg
 			default:
 				throw new DMLRuntimeException("Unsupported aggregation type: "+optype);
 		}
-		
-		//cleanup output and change representation (if necessary)
-		out.recomputeNonZeros();
-		out.examSparsity();
 	}
 	
 	/**
@@ -791,23 +875,11 @@ public class LibMatrixAgg
 	 * @param ixFn
 	 * @throws DMLRuntimeException
 	 */
-	private static void aggregateUnaryMatrixSparse(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, IndexFunction ixFn) 
+	private static void aggregateUnaryMatrixSparse(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, IndexFunction ixFn, int rl, int ru) 
 			throws DMLRuntimeException
 	{
-		//filter empty input blocks (incl special handling for sparse-unsafe operations)
-		if( in.sparseRows==null || in.isEmptyBlock(false) ){
-			aggregateUnaryMatrixEmpty(in, out, optype, ixFn);
-			return;
-		}
-		
 		final int m = in.rlen;
 		final int n = in.clen;
-		final int m2 = out.rlen;
-		final int n2 = out.clen;
-		
-		//allocate output arrays (if required)
-		out.reset(m2, n2, false); //always dense
-		out.allocateDenseBlock();
 		
 		SparseRow[] a = in.getSparseRows();
 		double[] c = out.getDenseArray();
@@ -821,11 +893,11 @@ public class LibMatrixAgg
 				if( ixFn instanceof ReduceAll ) // SUM
 					s_uakp(a, c, m, n, kbuff, (KahanPlus)vFn);
 				else if( ixFn instanceof ReduceCol ) //ROWSUM
-					s_uarkp(a, c, m, n, kbuff, (KahanPlus)vFn);
+					s_uarkp(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLSUM
 					s_uackp(a, c, m, n, kbuff, (KahanPlus)vFn);
 				else if( ixFn instanceof ReduceDiag ) //TRACE
-					s_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn);
+					s_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 					
 				break;
 			}
@@ -856,7 +928,7 @@ public class LibMatrixAgg
 				if( ixFn instanceof ReduceAll ) // MIN/MAX
 					s_uamxx(a, c, m, n, init, (Builtin)vFn);
 				else if( ixFn instanceof ReduceCol ) //ROWMIN/ROWMAX
-					s_uarmxx(a, c, m, n, init, (Builtin)vFn);
+					s_uarmxx(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLMIN/COLMAX
 					s_uacmxx(a, c, m, n, init, (Builtin)vFn);
 				break;
@@ -866,7 +938,7 @@ public class LibMatrixAgg
 				double init = -Double.MAX_VALUE;
 				
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
-					s_uarimxx(a, c, m, n, init, (Builtin)vFn);
+					s_uarimxx(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MIN_INDEX:
@@ -874,7 +946,7 @@ public class LibMatrixAgg
 				double init = Double.MAX_VALUE;
 				
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
-					s_uarimin(a, c, m, n, init, (Builtin)vFn);
+					s_uarimin(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MEAN:
@@ -884,7 +956,7 @@ public class LibMatrixAgg
 				if( ixFn instanceof ReduceAll ) // MEAN
 					s_uamean(a, c, m, n, kbuff, (Mean)vFn);
 				else if( ixFn instanceof ReduceCol ) //ROWMEAN
-					s_uarmean(a, c, m, n, kbuff, (Mean)vFn);
+					s_uarmean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLMEAN
 					s_uacmean(a, c, m, n, kbuff, (Mean)vFn);
 				
@@ -900,10 +972,6 @@ public class LibMatrixAgg
 			default:
 				throw new DMLRuntimeException("Unsupported aggregation type: "+optype);
 		}
-		
-		//cleanup output and change representation (if necessary)
-		out.recomputeNonZeros();
-		out.examSparsity();
 	}
 
 	/**
@@ -996,9 +1064,9 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void d_uarkp( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
+	private static void d_uarkp( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) 
 	{
-		for( int i=0, aix=0, cix=0; i<m; i++, aix+=n, cix+=2 )
+		for( int i=rl, aix=rl*n, cix=rl*2; i<ru; i++, aix+=n, cix+=2 )
 		{
 			kbuff.set(0, 0); //reset buffer
 			sum( a, aix, n, kbuff, kplus );
@@ -1100,10 +1168,10 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void d_uakptrace( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
+	private static void d_uakptrace( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) 
 	{
 		//aggregate diag (via ix=n+1)
-		for( int i=0, aix=0; i<m; i++, aix+=(n+1) )
+		for( int i=rl, aix=rl*n+rl; i<ru; i++, aix+=(n+1) )
 			kplus.execute2(kbuff, a[ aix ]);			
 		c[0] = kbuff._sum;
 		c[1] = kbuff._correction;	
@@ -1134,9 +1202,9 @@ public class LibMatrixAgg
 	 * @param n
 	 * @param builtin
 	 */
-	private static void d_uarmxx( double[] a, double[] c, int m, int n, double init, Builtin builtin )
+	private static void d_uarmxx( double[] a, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru )
 	{
-		for( int i=0, aix=0; i<m; i++, aix+=n )
+		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n )
 			c[i] = builtin(a, aix, init, n, builtin);
 	}
 	
@@ -1169,9 +1237,9 @@ public class LibMatrixAgg
 	 * @param init
 	 * @param builtin
 	 */
-	private static void d_uarimxx( double[] a, double[] c, int m, int n, double init, Builtin builtin )
+	private static void d_uarimxx( double[] a, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru )
 	{
-		for( int i=0, aix=0, cix=0; i<m; i++, aix+=n, cix+=2 )
+		for( int i=rl, aix=rl*n, cix=rl*2; i<ru; i++, aix+=n, cix+=2 )
 		{
 			int maxindex = indexmax(a, aix, init, n, builtin);
 			c[cix+0] = (double)maxindex + 1;
@@ -1189,9 +1257,9 @@ public class LibMatrixAgg
 	 * @param init
 	 * @param builtin
 	 */
-	private static void d_uarimin( double[] a, double[] c, int m, int n, double init, Builtin builtin )
+	private static void d_uarimin( double[] a, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru )
 	{
-		for( int i=0, aix=0, cix=0; i<m; i++, aix+=n, cix+=2 )
+		for( int i=rl, aix=rl*n, cix=rl*2; i<ru; i++, aix+=n, cix+=2 )
 		{
 			int minindex = indexmin(a, aix, init, n, builtin);
 			c[cix+0] = (double)minindex + 1;
@@ -1228,9 +1296,9 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void d_uarmean( double[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean )
+	private static void d_uarmean( double[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean, int rl, int ru )
 	{
-		for( int i=0, aix=0, cix=0; i<m; i++, aix+=n, cix+=3 )
+		for( int i=rl, aix=rl*n, cix=rl*3; i<ru; i++, aix+=n, cix+=3 )
 		{
 			kbuff.set(0, 0); //reset buffer
 			mean(a, aix, n, 0, kbuff, kmean);
@@ -1311,13 +1379,10 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void s_uarkp( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
+	private static void s_uarkp( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) 
 	{
-		//init result (for empty rows)
-		Arrays.fill(c, 0); 
-		
 		//compute row aggregates
-		for( int i=0, cix=0; i<m; i++, cix+=2 )
+		for( int i=rl, cix=rl*2; i<ru; i++, cix+=2 )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1490,9 +1555,9 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void s_uakptrace( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
+	private static void s_uakptrace( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) 
 	{
-		for( int i=0; i<m; i++ ) {
+		for( int i=rl; i<ru; i++ ) {
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() ) 
 			{
@@ -1545,12 +1610,12 @@ public class LibMatrixAgg
 	 * @param init
 	 * @param builtin
 	 */
-	private static void s_uarmxx( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin ) 
+	private static void s_uarmxx( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru ) 
 	{
 		//init result (for empty rows)
-		Arrays.fill(c, init); //not sparse-safe
+		Arrays.fill(c, rl, ru, init); //not sparse-safe
 		
-		for( int i=0; i<m; i++ )
+		for( int i=rl; i<ru; i++ )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1617,9 +1682,9 @@ public class LibMatrixAgg
 	 * @param init
 	 * @param builtin
 	 */
-	private static void s_uarimxx( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin ) 
+	private static void s_uarimxx( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru ) 
 	{
-		for( int i=0, cix=0; i<m; i++, cix+=2 )
+		for( int i=rl, cix=rl*2; i<ru; i++, cix+=2 )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1661,9 +1726,9 @@ public class LibMatrixAgg
 	 * @param init
 	 * @param builtin
 	 */
-	private static void s_uarimin( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin ) 
+	private static void s_uarimin( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru ) 
 	{
-		for( int i=0, cix=0; i<m; i++, cix+=2 )
+		for( int i=rl, cix=rl*2; i<ru; i++, cix+=2 )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1747,9 +1812,9 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void s_uarmean( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean ) 
+	private static void s_uarmean( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean, int rl, int ru ) 
 	{
-		for( int i=0, cix=0; i<m; i++, cix+=3 )
+		for( int i=rl, cix=rl*3; i<ru; i++, cix+=3 )
 		{
 			//correction remaining tuples (not sparse-safe)
 			//note: before aggregate computation in order to
@@ -2192,5 +2257,45 @@ public class LibMatrixAgg
 			c[ ci+ai[ i+7 ] ] --;
 		}
 	}
+	
+	/////////////////////////////////////////////////////////
+	// Task Implementations for Multi-Threaded Operations  //
+	/////////////////////////////////////////////////////////
+	
+	/**
+	 * 
+	 * 
+	 */
+	private static class RowAggTask implements Callable<Object> 
+	{
+		private MatrixBlock _in  = null;
+		private MatrixBlock _ret = null;
+		private AggType _aggtype = null;
+		private AggregateUnaryOperator _uaop = null;		
+		private int _rl = -1;
+		private int _ru = -1;
+
+		protected RowAggTask( MatrixBlock in, MatrixBlock ret, AggType aggtype, AggregateUnaryOperator uaop, int rl, int ru )
+		{
+			_in = in;
+			_ret = ret;
+			_aggtype = aggtype;
+			_uaop = uaop;
+			_rl = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public Object call() throws DMLRuntimeException
+		{
+			if( !_in.sparse )
+				aggregateUnaryMatrixDense(_in, _ret, _aggtype, _uaop.aggOp.increOp.fn, _uaop.indexFn, _rl, _ru);
+			else
+				aggregateUnaryMatrixSparse(_in, _ret, _aggtype, _uaop.aggOp.increOp.fn, _uaop.indexFn, _rl, _ru);
+			
+			return null;
+		}
+	}
+
 }
 

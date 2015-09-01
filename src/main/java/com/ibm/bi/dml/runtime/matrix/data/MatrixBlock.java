@@ -4333,7 +4333,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		
 		MatrixBlock ret = (MatrixBlock) result;
 		if( LibMatrixAgg.isSupportedUnaryAggregateOperator(op) ) {
-			LibMatrixAgg.aggregateUnaryMatrix(this, ret, op);
+			if( op.getNumThreads() > 1 )
+				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op, op.getNumThreads());
+			else
+				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op);
 			LibMatrixAgg.recomputeIndexes(ret, op, blockingFactorRow, blockingFactorCol, indexesIn);
 		}
 		else if(op.sparseSafe)

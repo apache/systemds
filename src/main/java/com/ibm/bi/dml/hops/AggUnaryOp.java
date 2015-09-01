@@ -18,6 +18,7 @@
 package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
+import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Aggregate.OperationTypes;
 import com.ibm.bi.dml.lops.Binary;
@@ -32,6 +33,7 @@ import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 
 
@@ -43,7 +45,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
  * 		Semantic: generate indices, align, aggregate
  */
 
-public class AggUnaryOp extends Hop 
+public class AggUnaryOp extends Hop implements MultiThreadedHop
 {
 	
 	private static final boolean ALLOW_UNARYAGG_WO_FINAL_AGG = true;
@@ -51,6 +53,8 @@ public class AggUnaryOp extends Hop
 	private AggOp _op;
 	private Direction _direction;
 
+	private int _maxNumThreads = -1; //-1 for unlimited
+	
 	private AggUnaryOp() {
 		//default constructor for clone
 	}
@@ -85,6 +89,11 @@ public class AggUnaryOp extends Hop
 	}
 
 	@Override
+	public void setMaxNumThreads( int k ) {
+		_maxNumThreads = k;
+	}
+	
+	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{	
@@ -104,8 +113,9 @@ public class AggUnaryOp extends Hop
 					agg1 = constructLopsTernaryAggregateRewrite(et);
 				}
 				else { //general case
+					int k = getConstrainedNumThreads();
 					agg1 = new PartialAggregate(input.constructLops(), 
-							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et);
+							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et, k);
 				}
 				
 				setOutputDimensions(agg1);
@@ -550,6 +560,26 @@ public class AggUnaryOp extends Hop
 		//create new ternary aggregate operator 
 		ret = new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE, et);
 		
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public int getConstrainedNumThreads()
+	{
+		//by default max local parallelism (vcores) 
+		int ret = InfrastructureAnalyzer.getLocalParallelism();
+		
+		//apply external max constraint (e.g., set by parfor or other rewrites)
+		if( _maxNumThreads > 0 )
+			ret = Math.min(ret, _maxNumThreads);
+		
+		//apply global multi-threading constraint
+		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
+			ret = 1;
+			
 		return ret;
 	}
 	

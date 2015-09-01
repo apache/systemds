@@ -27,16 +27,24 @@ import com.ibm.bi.dml.runtime.functionobjects.Plus;
 
 public class AggregateUnaryOperator  extends Operator 
 {
-
 	private static final long serialVersionUID = 6690553323120787735L;
 
 	public AggregateOperator aggOp;
 	public IndexFunction indexFn;
-	
+	private int k; //num threads
+
 	public AggregateUnaryOperator(AggregateOperator aop, IndexFunction iop)
 	{
-		aggOp=aop;
-		indexFn=iop;
+		//default degree of parallelism is 1 
+		//(for example in MR/Spark because we parallelize over the number of blocks)
+		this( aop, iop, 1 );
+	}
+
+	public AggregateUnaryOperator(AggregateOperator aop, IndexFunction iop, int numThreads)
+	{
+		aggOp = aop;
+		indexFn = iop;
+		k = numThreads;
 		
 		//decide on sparse safe
 		if( aggOp.increOp.fn instanceof Plus || 
@@ -48,5 +56,13 @@ public class AggregateUnaryOperator  extends Operator
 		}
 		else
 			sparseSafe=false;
+	}
+	
+	public void setNumThreads(int numThreads) {
+		k = numThreads;
+	}
+	
+	public int getNumThreads(){
+		return k;
 	}
 }

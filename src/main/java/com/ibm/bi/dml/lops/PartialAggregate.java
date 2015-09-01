@@ -53,6 +53,9 @@ public class PartialAggregate extends Lop
 	private DirectionTypes direction;
 	private boolean _dropCorr = false;
 	
+	//optional attribute for CP num threads
+	private int _numThreads = -1;
+	
 	//optional attribute for spark exec type
 	private SparkAggType _aggtype = SparkAggType.MULTI_BLOCK;
 	
@@ -70,6 +73,15 @@ public class PartialAggregate extends Lop
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
 		init(input, op, direct, dt, vt, et);
+	}
+	
+	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
+			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et, int k)
+		throws LopsException 
+	{
+		super(Lop.Type.PartialAggregate, dt, vt);
+		init(input, op, direct, dt, vt, et);
+		_numThreads = k;
 	}
 	
 	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
@@ -261,6 +273,12 @@ public class PartialAggregate extends Lop
 		if( getExecType() == ExecType.SPARK ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _aggtype );	
+		}
+		
+		//in case of cp, we also compile the number of threads into the instruction
+		if( getExecType() == ExecType.CP ){
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );	
 		}
 		
 		return sb.toString();

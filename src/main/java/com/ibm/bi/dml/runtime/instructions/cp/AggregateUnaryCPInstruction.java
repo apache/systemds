@@ -20,7 +20,6 @@ package com.ibm.bi.dml.runtime.instructions.cp;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -52,22 +51,21 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 	}
 	
 	public static Instruction parseInstruction(String str)
-		throws DMLRuntimeException {
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		
-		String opcode = InstructionUtils.getOpCode(str); 
-		parseUnaryInstruction(str, in1, out);
+		throws DMLRuntimeException 
+	{
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];		
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand out = new CPOperand(parts[2]);
 		
 		if(opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") || opcode.equalsIgnoreCase("length")){
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
-												   in1, 
-												   out, 
-												   opcode, str);
+												   in1,  out, opcode, str);
 		}
 		else //DEFAULT BEHAVIOR
 		{
 			AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
+			aggun.setNumThreads( Integer.parseInt(parts[3]) );
 			return new AggregateUnaryCPInstruction(aggun, in1, out, opcode, str);				
 		}
 	}

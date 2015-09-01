@@ -18,6 +18,7 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -85,6 +86,8 @@ public class AppendMSPInstruction extends BinarySPInstruction
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		int brlen = mc1.getRowsPerBlock();
+		int bclen = mc1.getColsPerBlock();
 		
 		if(!mc1.dimsKnown() || !mc2.dimsKnown()) {
 			throw new DMLRuntimeException("The dimensions unknown for inputs");
@@ -92,7 +95,7 @@ public class AppendMSPInstruction extends BinarySPInstruction
 		else if(mc1.getRows() != mc2.getRows()) {
 			throw new DMLRuntimeException("The number of rows of inputs should match for append instruction");
 		}
-		else if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
+		else if(brlen != mc2.getRowsPerBlock() || bclen != mc2.getColsPerBlock()) {
 			throw new DMLRuntimeException("The block sizes do not match for input matrices");
 		}
 		
@@ -100,8 +103,16 @@ public class AppendMSPInstruction extends BinarySPInstruction
 		Broadcast<PartitionedMatrixBlock> in2 = sec.getBroadcastForVariable( input2.getName() );
 		long off = sec.getScalarInput( _offset.getName(), _offset.getValueType(), _offset.isLiteral()).getLongValue();
 		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.flatMapToPair(
-				new MapSideAppend(in2, off, mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
+		//execute map-append operations (partitioning preserving if #in-blocks = #out-blocks)
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+		if( preservesPartitioning(mc1, mc2) ){
+			out = in1.mapPartitionsToPair(
+					new MapSideAppendPartitionFunction(in2, off, bclen), true);
+		}
+		else {
+			out = in1.flatMapToPair(
+					new MapSideAppendFunction(in2, off, brlen, bclen));
+		}
 		
 		//put output RDD handle into symbol table
 		updateBinaryAppendOutputMatrixCharacteristics(sec);
@@ -112,21 +123,36 @@ public class AppendMSPInstruction extends BinarySPInstruction
 	
 	/**
 	 * 
+	 * @param mcIn1
+	 * @param mcIn2
+	 * @return
 	 */
-	public static class MapSideAppend implements  PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	private boolean preservesPartitioning( MatrixCharacteristics mcIn1, MatrixCharacteristics mcIn2 )
+	{
+		long ncblksIn1 = (long)Math.ceil((double)mcIn1.getCols()/mcIn1.getColsPerBlock());
+		long ncblksOut = (long)Math.ceil(((double)mcIn1.getCols()+mcIn2.getCols())/mcIn1.getColsPerBlock());
+		
+		//mappend is partitioning-preserving if in-block append (e.g., common case of colvector append)
+		return (ncblksIn1 == ncblksOut);
+	}
+	
+	/**
+	 * 
+	 */
+	private static class MapSideAppendFunction implements  PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 2738541014432173450L;
 		
-		private Broadcast<PartitionedMatrixBlock> pm = null;
+		private Broadcast<PartitionedMatrixBlock> _pm = null;
 		
 		private long _offset; 
 		private int _brlen; 
 		private int _bclen;
 		private long _lastBlockColIndex;
 		
-		public MapSideAppend(Broadcast<PartitionedMatrixBlock> binput, long offset, int brlen, int bclen)  
+		public MapSideAppendFunction(Broadcast<PartitionedMatrixBlock> binput, long offset, int brlen, int bclen)  
 		{
-			pm = binput;
+			_pm = binput;
 			
 			_offset = offset;
 			_brlen = brlen;
@@ -157,12 +183,12 @@ public class AppendMSPInstruction extends BinarySPInstruction
 				//output shallow copy of rhs block
 				ret.add( new Tuple2<MatrixIndexes, MatrixBlock>(
 						new MatrixIndexes(in1.getIndexes().getRowIndex(), in1.getIndexes().getColumnIndex()+1),
-						pm.getValue().getMatrixBlock((int)in1.getIndexes().getRowIndex(), 1)) );
+						_pm.getValue().getMatrixBlock((int)in1.getIndexes().getRowIndex(), 1)) );
 			}
 			//case 3: append operation on boundary block
 			else 
 			{
-				MatrixBlock value_in2 = pm.getValue().getMatrixBlock((int)in1.getIndexes().getRowIndex(), 1);
+				MatrixBlock value_in2 = _pm.getValue().getMatrixBlock((int)in1.getIndexes().getRowIndex(), 1);
 				
 				//allocate space for the output value
 				ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(2);
@@ -178,6 +204,56 @@ public class AppendMSPInstruction extends BinarySPInstruction
 	
 				OperationsOnMatrixValues.performAppend(in1.getValue(), value_in2, outlist, _brlen, _bclen, true, 0);	
 				ret.addAll(SparkUtils.fromIndexedMatrixBlock(outlist));
+			}
+			
+			return ret;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class MapSideAppendPartitionFunction implements  PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,MatrixBlock>>, MatrixIndexes, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 5767240739761027220L;
+
+		private Broadcast<PartitionedMatrixBlock> _pm = null;
+		private long _lastBlockColIndex;
+		
+		public MapSideAppendPartitionFunction(Broadcast<PartitionedMatrixBlock> binput, long offset, int bclen)  
+		{
+			_pm = binput;
+			
+			//check for boundary block
+			_lastBlockColIndex = (long)Math.ceil((double)offset/bclen);			
+		}
+
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
+			throws Exception 
+		{
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+			
+			//get the broadcast once
+			PartitionedMatrixBlock pm = _pm.getValue();
+			
+			//process all blocks append operations
+			while( arg0.hasNext() )
+			{
+				Tuple2<MatrixIndexes,MatrixBlock> tmp = arg0.next();
+				MatrixIndexes ix = tmp._1();
+				MatrixBlock in1 = tmp._2();
+				
+				//case 1: pass through of non-boundary blocks
+				if( ix.getColumnIndex()!=_lastBlockColIndex ) {
+					ret.add( tmp );
+				}
+				//case 3: append operation on boundary block
+				else {
+					MatrixBlock in2 = pm.getMatrixBlock((int)ix.getRowIndex(), 1);
+					MatrixBlock out = in1.appendOperations(in2, new MatrixBlock());
+					ret.add( new Tuple2<MatrixIndexes,MatrixBlock>(ix, out) );
+				}	
 			}
 			
 			return ret;

@@ -18,7 +18,7 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.api.java.function.Function;
 
 import scala.Tuple2;
 
@@ -90,9 +90,10 @@ public class AppendRSPInstruction extends BinarySPInstruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 		
+		//execute reduce-append operations (partitioning preserving)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
 				.join(in2)
-				.mapToPair(new ReduceSideAppend());
+				.mapValues(new ReduceSideAppendFunction());
 
 		//put output RDD handle into symbol table
 		updateBinaryAppendOutputMatrixCharacteristics(sec);
@@ -104,19 +105,18 @@ public class AppendRSPInstruction extends BinarySPInstruction
 	/**
 	 * 
 	 */
-	public static class ReduceSideAppend implements PairFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock, MatrixBlock>>, MatrixIndexes, MatrixBlock> 
+	private static class ReduceSideAppendFunction implements Function<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -6763904972560309095L;
 
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg0)
+		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0)
 			throws Exception 
 		{
-			MatrixIndexes ix = arg0._1();
-			MatrixBlock left = arg0._2()._1();
-			MatrixBlock right = arg0._2()._2();
+			MatrixBlock left = arg0._1();
+			MatrixBlock right = arg0._2();
 			
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ix, left.appendOperations(right, new MatrixBlock()));
+			return left.appendOperations(right, new MatrixBlock());
 		}
 	}
 }

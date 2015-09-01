@@ -65,7 +65,7 @@ public class MLOutput {
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
 	
-	MatrixCharacteristics getMatrixCharacteristics(String varName) throws DMLRuntimeException {
+	public MatrixCharacteristics getMatrixCharacteristics(String varName) throws DMLRuntimeException {
 		if(_outputs.containsKey(varName)) {
 			return _outMetadata.get(varName);
 		}

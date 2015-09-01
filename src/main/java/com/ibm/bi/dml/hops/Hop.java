@@ -64,6 +64,7 @@ public abstract class Hop
 	 */
 	public interface MultiThreadedHop {
 		public abstract void setMaxNumThreads( int k );
+		public abstract int getMaxNumThreads();
 	}
 
 	// static variable to assign an unique ID to every hop that is created

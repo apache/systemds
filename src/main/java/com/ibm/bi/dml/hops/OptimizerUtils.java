@@ -810,6 +810,28 @@ public class OptimizerUtils
 		return ret;	
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public static int getConstrainedNumThreads(int maxNumThreads)
+	{
+		//by default max local parallelism (vcores) 
+		int ret = InfrastructureAnalyzer.getLocalParallelism();
+		
+		//apply external max constraint (e.g., set by parfor or other rewrites)
+		if( maxNumThreads > 0 ) {
+			ret = Math.min(ret, maxNumThreads);
+		}
+		
+		//apply global multi-threading constraint
+		if( !PARALLEL_CP_MATRIX_MULTIPLY ) {
+			ret = 1;
+		}
+			
+		return ret;
+	}
+	
 	////////////////////////
 	// Sparsity Estimates //
 	////////////////////////

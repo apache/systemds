@@ -22,10 +22,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.VisitStatus;
@@ -611,9 +611,9 @@ public class OptTreeConverter
 			}
 			
 			//handle degree of parallelism
-			if( et == LopProperties.ExecType.CP && hop instanceof AggBinaryOp ){
-				AggBinaryOp abop = (AggBinaryOp) hop;
-				node.setK(abop.getConstrainedNumThreads() );
+			if( et == LopProperties.ExecType.CP && hop instanceof MultiThreadedHop ){
+				MultiThreadedHop mtop = (MultiThreadedHop) hop;
+				node.setK( OptimizerUtils.getConstrainedNumThreads(mtop.getMaxNumThreads()) );
 			}
 			
 			//assign node to return

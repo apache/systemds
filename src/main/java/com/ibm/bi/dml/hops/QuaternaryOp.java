@@ -38,7 +38,6 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
 
@@ -131,6 +130,11 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	@Override
 	public void setMaxNumThreads( int k ) {
 		_maxNumThreads = k;
+	}
+	
+	@Override
+	public int getMaxNumThreads() {
+		return _maxNumThreads;
 	}
 	
 	@Override
@@ -231,7 +235,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				getDataType(), getValueType(), wtype, ExecType.CP);
 		
 		//set degree of parallelism
-		int k = getConstrainedNumThreads();
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		wsloss.setNumThreads(k);
 		
 		setOutputDimensions( wsloss );
@@ -469,7 +473,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				getDataType(), getValueType(), wtype, ExecType.CP);
 		
 		//set degree of parallelism
-		int k = getConstrainedNumThreads();
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		wsig.setNumThreads(k);
 		
 		setOutputDimensions( wsig );
@@ -692,26 +696,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 			return WSigmoidType.MINUS;
 		else
 			return WSigmoidType.BASIC;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public int getConstrainedNumThreads()
-	{
-		//by default max local parallelism (vcores) 
-		int ret = InfrastructureAnalyzer.getLocalParallelism();
-		
-		//apply external max constraint (e.g., set by parfor or other rewrites)
-		if( _maxNumThreads > 0 )
-			ret = Math.min(ret, _maxNumThreads);
-		
-		//apply global multi-threading constraint
-		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
-			ret = 1;
-			
-		return ret;
 	}
 	
 	@Override

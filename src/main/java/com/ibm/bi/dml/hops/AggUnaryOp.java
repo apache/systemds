@@ -33,7 +33,6 @@ import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 
 
@@ -94,6 +93,11 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	}
 	
 	@Override
+	public int getMaxNumThreads() {
+		return _maxNumThreads;
+	}
+	
+	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
 	{	
@@ -113,7 +117,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					agg1 = constructLopsTernaryAggregateRewrite(et);
 				}
 				else { //general case
-					int k = getConstrainedNumThreads();
+					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 					agg1 = new PartialAggregate(input.constructLops(), 
 							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et, k);
 				}
@@ -560,26 +564,6 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		//create new ternary aggregate operator 
 		ret = new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE, et);
 		
-		return ret;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public int getConstrainedNumThreads()
-	{
-		//by default max local parallelism (vcores) 
-		int ret = InfrastructureAnalyzer.getLocalParallelism();
-		
-		//apply external max constraint (e.g., set by parfor or other rewrites)
-		if( _maxNumThreads > 0 )
-			ret = Math.min(ret, _maxNumThreads);
-		
-		//apply global multi-threading constraint
-		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
-			ret = 1;
-			
 		return ret;
 	}
 	

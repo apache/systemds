@@ -45,7 +45,6 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
@@ -121,6 +120,11 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	@Override
 	public void setMaxNumThreads( int k ) {
 		_maxNumThreads = k;
+	}
+	
+	@Override
+	public int getMaxNumThreads() {
+		return _maxNumThreads;
 	}
 	
 	/**
@@ -490,7 +494,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	private void constructCPLopsTSMM( MMTSJType mmtsj ) 
 		throws HopsException, LopsException
 	{
-		int k = getConstrainedNumThreads();
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		Lop matmultCP = new MMTSJ(getInput().get((mmtsj==MMTSJType.LEFT)?1:0).constructLops(),
 				                 getDataType(), getValueType(), ExecType.CP, mmtsj, k);
 	
@@ -522,7 +526,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		}
 		
 		//set degree of parallelism
-		int k = getConstrainedNumThreads();
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		mapmmchain.setNumThreads( k );
 		
 		//set basic lop properties
@@ -554,7 +558,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		PMMJ pmm = new PMMJ(pmInput.constructLops(), rightInput.constructLops(), lnrow, getDataType(), getValueType(), false, false, ExecType.CP);
 		
 		//set degree of parallelism
-		int k = getConstrainedNumThreads();
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		pmm.setNumThreads(k);
 		
 		pmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
@@ -578,7 +582,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			matmultCP = constructCPLopsMMWithLeftTransposeRewrite();
 		}
 		else { 
-			int k = getConstrainedNumThreads();
+			int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 			matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
 									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);
 		}
@@ -606,7 +610,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		setLineNumbers(tY);
 		
 		//matrix mult
-		int k = getConstrainedNumThreads();
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		Lop mult = new Binary(tY, X.constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);	
 		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(mult);
@@ -1458,27 +1462,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
         
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public int getConstrainedNumThreads()
-	{
-		//by default max local parallelism (vcores) 
-		int ret = InfrastructureAnalyzer.getLocalParallelism();
-		
-		//apply external max constraint (e.g., set by parfor or other rewrites)
-		if( _maxNumThreads > 0 )
-			ret = Math.min(ret, _maxNumThreads);
-		
-		//apply global multi-threading constraint
-		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
-			ret = 1;
-			
-		return ret;
-	}
-	
 	
 	/**
 	 * Estimates the memory footprint of MapMult operation depending on which input is put into distributed cache.

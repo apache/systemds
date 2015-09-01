@@ -37,7 +37,6 @@ import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 /**
  * 
@@ -131,6 +130,11 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	}
 	
 	@Override
+	public int getMaxNumThreads() {
+		return _maxNumThreads;
+	}
+	
+	@Override
 	public Lop constructLops() 
 		throws HopsException, LopsException
 	{
@@ -153,7 +157,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		DataGen rnd = new DataGen(_op, _id, inputLops,_baseDir,
 								getDataType(), getValueType(), et);
 		
-		int k = getConstrainedNumThreads();
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		rnd.setNumThreads(k);
 		
 		rnd.getOutputParameters().setDimensions(
@@ -450,27 +454,6 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	public static long generateRandomSeed()
 	{
 		return System.nanoTime();
-	}
-
-
-	/**
-	 * 
-	 * @return
-	 */
-	public int getConstrainedNumThreads()
-	{
-		//by default max local parallelism (vcores) 
-		int ret = InfrastructureAnalyzer.getLocalParallelism();
-
-		//apply external max constraint (e.g., set by parfor or other rewrites)
-		if( _maxNumThreads > 0 )
-			ret = Math.min(ret, _maxNumThreads);
-
-		//apply global multi-threading constraint
-		if( !OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY )
-			ret = 1;
-
-		return ret;
 	}
 
 	@Override

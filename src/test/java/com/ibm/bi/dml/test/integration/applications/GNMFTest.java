@@ -35,7 +35,6 @@ public abstract class GNMFTest extends AutomatedTestBase
 
 	protected final static String TEST_DIR = "applications/gnmf/";
 	protected final static String TEST_GNMF = "GNMF";
-	protected final static String GNMF_HOME = SCRIPT_DIR + TEST_DIR;
 	
 	protected int m, n, k;
 	

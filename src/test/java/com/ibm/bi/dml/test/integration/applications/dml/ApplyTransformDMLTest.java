@@ -15,23 +15,25 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.pydml;
+package com.ibm.bi.dml.test.integration.applications.dml;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ibm.bi.dml.test.integration.applications.GNMFTest;
+import com.ibm.bi.dml.test.integration.applications.ApplyTransformTest;
 
 @RunWith(value = Parameterized.class)
-public class GNMFPyDMLTest extends GNMFTest {
+public class ApplyTransformDMLTest extends ApplyTransformTest {
 
-	public GNMFPyDMLTest(int m, int n, int k) {
-		super(m, n, k);
+	public ApplyTransformDMLTest(String X, String missing_value_maps, String binning_maps, String dummy_coding_maps,
+			String normalization_maps) {
+		super(X, missing_value_maps, binning_maps, dummy_coding_maps, normalization_maps);
 	}
 
 	@Test
-	public void testGNMFPyDml() {
-		testGNMF(ScriptType.PYDML);
+	public void testApplyTransformDml() {
+		testApplyTransform(ScriptType.DML);
 	}
+
 }

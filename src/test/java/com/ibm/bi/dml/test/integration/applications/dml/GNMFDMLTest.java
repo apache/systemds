@@ -31,7 +31,7 @@ public class GNMFDMLTest extends GNMFTest {
 	}
 
 	@Test
-	public void testGNMFDML() {
+	public void testGNMFDml() {
 		testGNMF(ScriptType.DML);
 	}
 }

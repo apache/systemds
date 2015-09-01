@@ -15,23 +15,24 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.pydml;
+package com.ibm.bi.dml.test.integration.applications.dml;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ibm.bi.dml.test.integration.applications.GNMFTest;
+import com.ibm.bi.dml.test.integration.applications.NaiveBayesTest;
 
 @RunWith(value = Parameterized.class)
-public class GNMFPyDMLTest extends GNMFTest {
+public class NaiveBayesDMLTest extends NaiveBayesTest {
 
-	public GNMFPyDMLTest(int m, int n, int k) {
-		super(m, n, k);
+	public NaiveBayesDMLTest(int rows, int cols, int nc, double sp) {
+		super(rows, cols, nc, sp);
 	}
 
 	@Test
-	public void testGNMFPyDml() {
-		testGNMF(ScriptType.PYDML);
+	public void testNaiveBayesDml() {
+		testNaiveBayes(ScriptType.DML);
 	}
+
 }

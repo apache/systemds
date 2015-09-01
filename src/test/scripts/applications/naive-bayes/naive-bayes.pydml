@@ -19,7 +19,7 @@
 # Implements multinomial naive Bayes classifier with Laplace correction
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f naive-bayes.dml -nvargs X=<Data> Y=<labels> classes=<Num Classes> laplace=<Laplace Correction> prior=<Model file1> conditionals=<Model file2> accuracy=<accuracy file> fmt="text"
+# hadoop jar SystemML.jar -f naive-bayes.pydml -python -nvargs X=<Data> Y=<labels> classes=<Num Classes> laplace=<Laplace Correction> prior=<Model file1> conditionals=<Model file2> accuracy=<accuracy file> fmt="text"
 #
 
 # defaults
@@ -28,8 +28,8 @@ fmt = ifdef($fmt, "text")
 
 # reading input args
 numClasses = $classes
-D = read($X)
-C = read($Y)
+D = load($X)
+C = load($Y)
 laplace_correction = ifdef($laplace, 1)
 
 numRows = nrow(D)
@@ -38,11 +38,10 @@ numFeatures = ncol(D)
 # Compute conditionals
 
 # Compute the feature counts for each class
-classFeatureCounts = matrix(0, rows=numClasses, cols=numFeatures)
-parfor (i in 1:numFeatures) {
+classFeatureCounts = full(0, rows=numClasses, cols=numFeatures)
+parfor (i in 1:numFeatures):
   Col = D[,i]
-  classFeatureCounts[,i] = aggregate(target=Col, groups=C, fn="sum", ngroups=as.integer(numClasses))
-}
+  classFeatureCounts[,i] = aggregate(target=Col, groups=C, fn="sum", ngroups=numClasses)
 
 # Compute the total feature count for each class 
 # and add the number of features to this sum
@@ -50,26 +49,29 @@ parfor (i in 1:numFeatures) {
 classSums = rowSums(classFeatureCounts) + numFeatures*laplace_correction
 
 # Compute class conditional probabilities
-ones = matrix(1, rows=1, cols=numFeatures)
-repClassSums = classSums %*% ones
+ones = full(1, rows=1, cols=numFeatures)
+repClassSums = dot(classSums, ones)
 class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums
 
 # Compute class priors
-class_counts = aggregate(target=C, groups=C, fn="count", ngroups=as.integer(numClasses))
-class_prior = class_counts / numRows;
+class_counts = aggregate(target=C, groups=C, fn="count", ngroups=numClasses)
+class_prior = class_counts / numRows
 
 # Compute accuracy on training set
-ones = matrix(1, rows=numRows, cols=1)
+ones = full(1, rows=numRows, cols=1)
 D_w_ones = append(D, ones)
 model = append(class_conditionals, class_prior)
-log_probs = D_w_ones %*% t(log(model))
+log_model = log(model)
+transpose_log_model = log_model.transpose()
+log_probs = dot(D_w_ones, transpose_log_model)
 pred = rowIndexMax(log_probs)
 acc = sum(ppred(pred, C, "==")) / numRows * 100
 
 acc_str = "Training Accuracy (%): " + acc
 print(acc_str)
-write(acc_str, $accuracy)
+save(acc_str, $accuracy)
 
 # write out the model
-write(class_prior, $prior, format=fmt);
-write(class_conditionals, $conditionals, format=fmt);
+save(class_prior, $prior, format=fmt)
+save(class_conditionals, $conditionals, format=fmt)
+  

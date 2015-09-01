@@ -15,23 +15,24 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.pydml;
+package com.ibm.bi.dml.test.integration.applications.dml;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ibm.bi.dml.test.integration.applications.GNMFTest;
+import com.ibm.bi.dml.test.integration.applications.ID3Test;
 
 @RunWith(value = Parameterized.class)
-public class GNMFPyDMLTest extends GNMFTest {
+public class ID3DMLTest extends ID3Test {
 
-	public GNMFPyDMLTest(int m, int n, int k) {
-		super(m, n, k);
+	public ID3DMLTest(int numRecords, int numFeatures) {
+		super(numRecords, numFeatures);
 	}
 
 	@Test
-	public void testGNMFPyDml() {
-		testGNMF(ScriptType.PYDML);
+	public void testID3Dml() {
+		testID3(ScriptType.DML);
 	}
+
 }

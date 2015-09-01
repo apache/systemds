@@ -27,31 +27,34 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 	
   // .applications.dml package
+  com.ibm.bi.dml.test.integration.applications.dml.ApplyTransformDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.GNMFDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.HITSDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.dml.ID3DMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.LinearRegressionDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.dml.NaiveBayesDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.PageRankDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.WelchTDMLTest.class,
 
   // .applications.pydml package
+  com.ibm.bi.dml.test.integration.applications.pydml.ApplyTransformPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.GNMFPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.HITSPyDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.pydml.ID3PyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.LinearRegressionPyDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.pydml.NaiveBayesPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.PageRankPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.WelchTPyDMLTest.class,
   
   // .applications package
-  ApplyTransformTest.class,
   ArimaTest.class,
   CsplineCGTest.class,
   CsplineDSTest.class,
-  GLMTest.class,
-  ID3Test.class,  
+  GLMTest.class, 
   L2SVMTest.class,
   LinearLogRegTest.class,
   MDABivariateStatsTest.class,
-  MultiClassSVMTest.class,
-  NaiveBayesTest.class
+  MultiClassSVMTest.class
 })
 
 

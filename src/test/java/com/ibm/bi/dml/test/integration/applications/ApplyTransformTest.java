@@ -17,28 +17,26 @@
 
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
-@RunWith(value = Parameterized.class)
-public class ApplyTransformTest extends AutomatedTestBase{
+public abstract class ApplyTransformTest extends AutomatedTestBase{
 	
-	private final static String TEST_DIR = "applications/apply-transform/";
-	private final static String TEST_APPLY_TRANSFORM = "apply-transform";
+	protected final static String TEST_DIR = "applications/apply-transform/";
+	protected final static String TEST_APPLY_TRANSFORM = "apply-transform";
 	
-	private String X, missing_value_maps, binning_maps, dummy_coding_maps, normalization_maps;
+	protected String X, missing_value_maps, binning_maps, dummy_coding_maps, normalization_maps;
     
 	public ApplyTransformTest(String X,
 							  String missing_value_maps, 
@@ -55,43 +53,52 @@ public class ApplyTransformTest extends AutomatedTestBase{
 	@Parameters
 	 public static Collection<Object[]> data() {
 	   Object[][] data = new Object[][] { 
-			   {"newX.mtx", "missing_value_map.mtx", "bindefns.mtx", "dummy_code_maps.mtx", "normalization_maps.mtx"}
-			   ,{"newX.mtx", "missing_value_map.mtx", " ", " ", " "},
+			   {"newX.mtx", "missing_value_map.mtx", "bindefns.mtx", "dummy_code_maps.mtx", "normalization_maps.mtx"},
+			   {"newX.mtx", "missing_value_map.mtx", " ", " ", " "},
 			   {"newX.mtx", "missing_value_map.mtx", " ", " ", "normalization_maps.mtx"},
-			   {"newX.mtx", "missing_value_map.mtx", "bindefns.mtx", " ", "normalization_maps.mtx"}
-			   ,{"newX_nomissing.mtx", " ", "bindefns.mtx", " ", " "}
-			   ,{"newX_nomissing.mtx", " ", "bindefns.mtx", "dummy_code_maps.mtx", " "}
-			   ,{"newX_nomissing.mtx", " ", " ", " ", "normalization_maps.mtx"}
-			   };
-	   
+			   {"newX.mtx", "missing_value_map.mtx", "bindefns.mtx", " ", "normalization_maps.mtx"},
+			   {"newX_nomissing.mtx", " ", "bindefns.mtx", " ", " "},
+			   {"newX_nomissing.mtx", " ", "bindefns.mtx", "dummy_code_maps.mtx", " "},
+			   {"newX_nomissing.mtx", " ", " ", " ", "normalization_maps.mtx"}
+		};
+//	   Object[][] data = new Object[][] { 
+//			   {"newX.mtx", "missing_value_map.mtx", "bindefns.mtx", "dummy_code_maps.mtx", "normalization_maps.mtx"}
+//		};
 	   return Arrays.asList(data);
 	 }
 
 	 @Override
 		public void setUp() {
-			setUpBase();
-	    	addTestConfiguration(TEST_APPLY_TRANSFORM, new TestConfiguration(TEST_DIR, "apply-transform",
+	    	addTestConfiguration(TEST_APPLY_TRANSFORM, new TestConfiguration(TEST_DIR, TEST_APPLY_TRANSFORM,
 	                new String[] {"transformed_X.mtx"}));
 		}
 
-	 @Test
-	    public void testApplyTransform() {
-		 String APPLY_TRANSFORM_HOME = SCRIPT_DIR + TEST_DIR;
+	    protected void testApplyTransform(ScriptType scriptType) {
+		 System.out.println("------------ BEGIN " + TEST_APPLY_TRANSFORM + " " + scriptType + " TEST WITH {" + X + ", " + missing_value_maps
+					+ ", " + binning_maps + ", " + dummy_coding_maps + ", " + normalization_maps + "} ------------");
+		 this.scriptType = scriptType;
 		 
 		 TestConfiguration config = getTestConfiguration(TEST_APPLY_TRANSFORM);
-		 
-		 /* This is for running the junit test by constructing the arguments directly */
-		 fullDMLScriptName = APPLY_TRANSFORM_HOME + TEST_APPLY_TRANSFORM + ".dml";
-		 programArgs = new String[]{"-stats", "-nvargs", 
-				 					"X=" + APPLY_TRANSFORM_HOME + X,
-		               				"missing_value_maps=" + (missing_value_maps.equals(" ") ? " " : APPLY_TRANSFORM_HOME + missing_value_maps),
-		               				"bin_defns=" + (binning_maps.equals(" ") ? " " : APPLY_TRANSFORM_HOME + binning_maps),
-		               				"dummy_code_maps=" + (dummy_coding_maps.equals(" ") ? " " : APPLY_TRANSFORM_HOME + dummy_coding_maps),
-		               				"normalization_maps=" + (normalization_maps.equals(" ") ? " " : APPLY_TRANSFORM_HOME + normalization_maps),
-		               				"transformed_X=" + APPLY_TRANSFORM_HOME + OUTPUT_DIR + "transformed_X.mtx",
-		               				"Log=" + APPLY_TRANSFORM_HOME + OUTPUT_DIR + "log.csv"};
-		 
 		 loadTestConfiguration(config);
+		 
+		 List<String> proArgs = new ArrayList<String>();
+		 if (scriptType == ScriptType.PYDML) {
+			proArgs.add("-python");
+		 }
+		 proArgs.add("-stats");
+		 proArgs.add("-nvargs");
+		 proArgs.add("X=" + baseDirectory + X);
+		 proArgs.add("missing_value_maps=" + (missing_value_maps.equals(" ") ? " " : baseDirectory + missing_value_maps));
+		 proArgs.add("bin_defns=" + (binning_maps.equals(" ") ? " " : baseDirectory + binning_maps));
+		 proArgs.add("dummy_code_maps=" + (dummy_coding_maps.equals(" ") ? " " : baseDirectory + dummy_coding_maps));
+		 proArgs.add("normalization_maps=" + (normalization_maps.equals(" ") ? " " : baseDirectory + normalization_maps));
+		 proArgs.add("transformed_X=" + output("transformed_X.mtx"));
+		 proArgs.add("Log=" + output("log.csv"));
+		 programArgs = proArgs.toArray(new String[proArgs.size()]);
+		 System.out.println("arguments from test case: " + Arrays.toString(programArgs));
+
+		 fullDMLScriptName = getScript();
+		 
 		 runTest(true, false, null, -1);
 		 
 		 HashMap<CellIndex, Double> XDML= readDMLMatrixFromHDFS("transformed_X.mtx");

@@ -17,7 +17,6 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -26,6 +25,7 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import com.ibm.bi.dml.lops.BinaryM.VectorType;
+import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -50,28 +50,36 @@ public class MatrixVectorBinaryOpPartitionFunction implements PairFlatMapFunctio
 	public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0) 
 		throws Exception 
 	{
-		//get the broadcast input
-		PartitionedMatrixBlock pmV = _pmV.value();
-		
-		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retList = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
-		
-		while( arg0.hasNext() ) 
+		return new MapBinaryPartitionIterator( arg0 );
+	}
+	
+	/**
+	 * Lazy mbinary iterator to prevent materialization of entire partition output in-memory.
+	 * The implementation via mapPartitions is required to preserve partitioning information,
+	 * which is important for performance. 
+	 */
+	private class MapBinaryPartitionIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>>
+	{
+		public MapBinaryPartitionIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
+			super(in);
+		}
+
+		@Override
+		protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg)
+			throws Exception
 		{
 			//unpack partition key-value pairs
-			Tuple2<MatrixIndexes, MatrixBlock> tmp = arg0.next();
-			MatrixIndexes ix = tmp._1();
-			MatrixBlock in1 = tmp._2();
+			MatrixIndexes ix = arg._1();
+			MatrixBlock in1 = arg._2();
 			
 			//get the rhs block 
 			int rix= (int)((_vtype==VectorType.COL_VECTOR) ? ix.getRowIndex() : 1);
 			int cix= (int)((_vtype==VectorType.COL_VECTOR) ? 1 : ix.getColumnIndex());
-			MatrixBlock in2 = pmV.getMatrixBlock(rix, cix);
+			MatrixBlock in2 = _pmV.value().getMatrixBlock(rix, cix);
 				
 			//execute the binary operation
 			MatrixBlock ret = (MatrixBlock) (in1.binaryOperations (_op, in2, new MatrixBlock()));
-			retList.add( new Tuple2<MatrixIndexes, MatrixBlock>(ix, ret) );
-		}
-		
-		return retList;
+			return new Tuple2<MatrixIndexes, MatrixBlock>(ix, ret);	
+		}			
 	}
 }

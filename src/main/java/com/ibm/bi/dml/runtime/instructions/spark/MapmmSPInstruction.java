@@ -39,6 +39,7 @@ import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
@@ -270,27 +271,36 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 		}
 		
-
 		@Override
 		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retList = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
-			
-			//get the broadcast once
-			PartitionedMatrixBlock pm = _pbc.value();
-			
-			while( arg0.hasNext() )
+			return new MapMMPartitionIterator(arg0);
+		}
+		
+		/**
+		 * Lazy mapmm iterator to prevent materialization of entire partition output in-memory.
+		 * The implementation via mapPartitions is required to preserve partitioning information,
+		 * which is important for performance. 
+		 */
+		private class MapMMPartitionIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>>
+		{
+			public MapMMPartitionIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
+				super(in);
+			}
+
+			@Override
+			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg)
+				throws Exception
 			{
-				Tuple2<MatrixIndexes,MatrixBlock> tmp = arg0.next();
-				MatrixIndexes ixIn = tmp._1();
-				MatrixBlock blkIn = tmp._2();
+				MatrixIndexes ixIn = arg._1();
+				MatrixBlock blkIn = arg._2();
 				MatrixBlock blkOut = new MatrixBlock();
-				
+		
 				if( _type == CacheType.LEFT )
 				{
 					//get the right hand side matrix
-					MatrixBlock left = pm.getMatrixBlock(1, (int)ixIn.getRowIndex());
+					MatrixBlock left = _pbc.value().getMatrixBlock(1, (int)ixIn.getRowIndex());
 					
 					//execute index preserving matrix multiplication
 					left.aggregateBinaryOperations(left, blkIn, blkOut, _op);						
@@ -298,17 +308,14 @@ public class MapmmSPInstruction extends BinarySPInstruction
 				else //if( _type == CacheType.RIGHT )
 				{
 					//get the right hand side matrix
-					MatrixBlock right = pm.getMatrixBlock((int)ixIn.getColumnIndex(), 1);
+					MatrixBlock right = _pbc.value().getMatrixBlock((int)ixIn.getColumnIndex(), 1);
 
 					//execute index preserving matrix multiplication
 					blkIn.aggregateBinaryOperations(blkIn, right, blkOut, _op);					
 				}
-				
-				//create new output tuple
-				retList.add( new Tuple2<MatrixIndexes, MatrixBlock>(ixIn, blkOut) );
-			}
-				
-			return retList;
+			
+				return new Tuple2<MatrixIndexes,MatrixBlock>(ixIn, blkOut);
+			}			
 		}
 	}
 	

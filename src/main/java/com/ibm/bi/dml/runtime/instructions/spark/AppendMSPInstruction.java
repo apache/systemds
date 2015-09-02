@@ -34,6 +34,7 @@ import com.ibm.bi.dml.runtime.functionobjects.OffsetColumnIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -232,31 +233,41 @@ public class AppendMSPInstruction extends BinarySPInstruction
 		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
-			
-			//get the broadcast once
-			PartitionedMatrixBlock pm = _pm.getValue();
-			
-			//process all blocks append operations
-			while( arg0.hasNext() )
+			return new MapAppendPartitionIterator(arg0);
+		}
+		
+		/**
+		 * Lazy mappend iterator to prevent materialization of entire partition output in-memory.
+		 * The implementation via mapPartitions is required to preserve partitioning information,
+		 * which is important for performance. 
+		 */
+		private class MapAppendPartitionIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>>
+		{
+			public MapAppendPartitionIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
+				super(in);
+			}
+
+			@Override
+			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg)
+				throws Exception
 			{
-				Tuple2<MatrixIndexes,MatrixBlock> tmp = arg0.next();
-				MatrixIndexes ix = tmp._1();
-				MatrixBlock in1 = tmp._2();
+				//get the broadcast once
+				PartitionedMatrixBlock pm = _pm.value();
+				
+				MatrixIndexes ix = arg._1();
+				MatrixBlock in1 = arg._2();
 				
 				//case 1: pass through of non-boundary blocks
 				if( ix.getColumnIndex()!=_lastBlockColIndex ) {
-					ret.add( tmp );
+					return arg;
 				}
 				//case 3: append operation on boundary block
 				else {
 					MatrixBlock in2 = pm.getMatrixBlock((int)ix.getRowIndex(), 1);
 					MatrixBlock out = in1.appendOperations(in2, new MatrixBlock());
-					ret.add( new Tuple2<MatrixIndexes,MatrixBlock>(ix, out) );
+					return new Tuple2<MatrixIndexes,MatrixBlock>(ix, out);
 				}	
-			}
-			
-			return ret;
+			}			
 		}
 	}
 }

@@ -3,7 +3,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
 
-	<!-- Assembly file for the "standalone" SystemML release for unning on a 
+	<!-- Assembly file for the "standalone" SystemML release for running on a
 		standalone machine. -->
 
 	<id>standalone</id>
@@ -12,8 +12,6 @@
 	</formats>
 
 	<includeBaseDirectory>false</includeBaseDirectory>
-
-
 
 	<fileSets>
 		<fileSet>
@@ -47,6 +45,18 @@
 				<include>apply-transform.dml</include>
 				<include>decision-tree.dml</include>
 				<include>decision-tree-predict.dml</include>
+				<!-- -->
+				<include>ALS.dml</include>
+				<include>ALS_predict.dml</include>
+				<include>ALS_topk_predict.dml</include>
+				<include>Cox.dml</include>
+				<include>Cox-predict.dml</include>
+				<include>KM.dml</include>
+				<include>PCA.dml</include>
+				<include>random-forest.dml</include>
+				<include>random-forest-predict.dml</include>
+				<include>StepGLM.dml</include>
+				<include>StepLinearRegDS.dml</include>
 			</includes>
 			<outputDirectory>./algorithms</outputDirectory>
 		</fileSet>

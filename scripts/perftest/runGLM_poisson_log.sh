@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 #-------------------------------------------------------------
+set -e
 
 if [ "$4" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$4" == "MR" ]; then CMD="hadoop jar SystemML.jar " ; else CMD="echo " ; fi
 

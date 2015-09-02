@@ -19,6 +19,12 @@
 
 if [ "$1" == "" -o "$2" == "" ]; then  echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
 
+FILENAME=$0
+err_report() {
+  echo "Error in $FILENAME on line $1"
+}
+trap 'err_report $LINENO' ERR
+
 BASE2=$1/bivar
 BASE3=$1/stratstats
 

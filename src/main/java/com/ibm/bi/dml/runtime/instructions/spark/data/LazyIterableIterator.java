@@ -80,4 +80,9 @@ public abstract class LazyIterableIterator<T> implements Iterable<T>, Iterator<T
 			throw new RuntimeException(ex);
 		}
 	}
+
+	@Override
+	public void remove() {
+		throw new RuntimeException("Unsupported remove operation.");
+	}
 }

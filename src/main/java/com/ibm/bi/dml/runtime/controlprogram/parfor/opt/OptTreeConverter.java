@@ -545,9 +545,6 @@ public class OptTreeConverter
 		
 		return node;
 	}
-	
-	//TODO predicate hops e.g., at whilestatementblock
-
 
 	/**
 	 * 
@@ -566,8 +563,9 @@ public class OptTreeConverter
 		Hop.resetVisitStatus(hops);
 		
 		//created and add actual opt nodes
-		for( Hop hop : hops )
-			ret.addAll(rCreateAbstractOptNodes(hop, vars, memo));
+		if( hops != null )
+			for( Hop hop : hops )
+				ret.addAll(rCreateAbstractOptNodes(hop, vars, memo));
 		
 		return ret;
 	}

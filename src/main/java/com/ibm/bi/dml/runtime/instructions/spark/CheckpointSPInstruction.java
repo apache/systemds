@@ -20,6 +20,7 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -27,12 +28,14 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -73,9 +76,11 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		//early abort on non-existing inputs (checkpoints are generated for all read only variables
-		//in loops; due to unbounded scoping and conditional control flow they to not necessarily 
-		//exist in the symbol table during runtime - this is valid if relevant branches are never entered)
+		// Step 1: early abort on non-existing inputs 
+		// -------
+		// (checkpoints are generated for all read only variables in loops; due to unbounded scoping and 
+		// conditional control flow they to not necessarily exist in the symbol table during runtime - 
+		// this is valid if relevant branches are never entered)
 		if( sec.getVariable( input1.getName() ) == null ) {
 			//add a dummy entry to the input, which will be immediately overwritten by the null output.
 			sec.setVariable( input1.getName(), new BooleanObject(false));
@@ -84,24 +89,44 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		
 		//get input rdd handle
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-
-		// Step 1: Checkpoint given rdd (only if currently in different storage level to prevent redundancy)
+		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics( input1.getName() );
+		
+		// Step 2: Checkpoint given rdd (only if currently in different storage level to prevent redundancy)
 		// -------
 		// Note that persist is an transformation which will be triggered on-demand with the next rdd operations
 		// This prevents unnecessary overhead if the dataset is only consumed by cp operations.
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-		if( !in.getStorageLevel().equals(_level) ) {
+		if( !in.getStorageLevel().equals(_level) ) 
+		{
+			//handle issue of unnecessarily large number of partitions
+			boolean coalesce = false;
+			if( mcIn.dimsKnown(true) ) {
+				double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+				double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(
+						mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), mcIn.getNonZeros());
+				int numPartitions = (int) Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1);
+				//merge partitions without shuffle if too many partitions
+				if( numPartitions < in.partitions().size() ) {
+					in = in.coalesce( numPartitions );
+					coalesce = true;
+				}
+			}
+
 			//since persist is an in-place marker for a storage level, we 
 			//apply a narrow shallow copy to allow for short-circuit collects 
-			out = in.mapValues(new CopyBlockFunction(false))
-					.persist( _level );
+			if( !coalesce ) {
+				in = in.mapValues(new CopyBlockFunction(false));
+			}
+			
+			//actual checkpoint into given storage level
+			out = in.persist( _level );
 		}
 		else {
 			out = in;
 		}
 			
-		// Step 2: In-place update of input matrix rdd handle and set as output
+		// Step 3: In-place update of input matrix rdd handle and set as output
 		// -------
 		// We use this in-place approach for two reasons. First, it is correct because our checkpoint 
 		// injection rewrites guarantee that after checkpoint instructions there are no consumers on the 

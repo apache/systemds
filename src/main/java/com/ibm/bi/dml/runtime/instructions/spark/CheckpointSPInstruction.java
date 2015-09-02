@@ -29,6 +29,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
@@ -71,6 +72,15 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
+		
+		//early abort on non-existing inputs (checkpoints are generated for all read only variables
+		//in loops; due to unbounded scoping and conditional control flow they to not necessarily 
+		//exist in the symbol table during runtime - this is valid if relevant branches are never entered)
+		if( sec.getVariable( input1.getName() ) == null ) {
+			//add a dummy entry to the input, which will be immediately overwritten by the null output.
+			sec.setVariable( input1.getName(), new BooleanObject(false));
+			return;
+		}
 		
 		//get input rdd handle
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );

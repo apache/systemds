@@ -951,14 +951,14 @@ public class MLContext {
 	}
 	
 	/**
-	 * This is kept as package level for now.
+	 * Experimental API. Not supported in Python MLContext API.
 	 * @param dmlScript
 	 * @return
 	 * @throws IOException
 	 * @throws DMLException
 	 * @throws ParseException
 	 */
-	MLOutput executeScript(String dmlScript) throws IOException, DMLException, ParseException {
+	public MLOutput executeScript(String dmlScript) throws IOException, DMLException, ParseException {
 		return compileAndExecuteScript(dmlScript, null, false, false);
 	}
 	

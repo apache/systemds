@@ -24,6 +24,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.mllib.linalg.DenseVector;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -87,6 +88,29 @@ public class MLOutput {
 			return RDDConverterUtils.binaryBlockToDataFrame(rdd, mc, sqlContext);
 		}
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+	}
+	
+	/**
+	 * 
+	 * @param sqlContext
+	 * @param varName
+	 * @param outputVector if true, returns DataFrame with two column: ID and org.apache.spark.mllib.linalg.Vector
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public DataFrame getDF(SQLContext sqlContext, String varName, boolean outputVector) throws DMLRuntimeException {
+		if(outputVector) {
+			JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
+			if(rdd != null) {
+				MatrixCharacteristics mc = _outMetadata.get(varName);
+				return RDDConverterUtils.binaryBlockToVectorDataFrame(rdd, mc, sqlContext);
+			}
+			throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+		}
+		else {
+			return getDF(sqlContext, varName);
+		}
+		
 	}
 	
 	public JavaRDD<String> getStringRDD(String varName, String format) throws DMLRuntimeException {
@@ -164,14 +188,17 @@ public class MLOutput {
 		private static final long serialVersionUID = 4441184411670316972L;
 		
 		int bclen; long clen;
-		public ConvertDoubleArrayToRows(long clen, int bclen) {
+		boolean outputVector;
+		public ConvertDoubleArrayToRows(long clen, int bclen, boolean outputVector) {
 			this.bclen = bclen;
 			this.clen = clen;
+			this.outputVector = outputVector;
 		}
 
 		@Override
 		public Row call(Tuple2<Long, Iterable<Tuple2<Long, Double[]>>> arg0)
 				throws Exception {
+			
 			HashMap<Long, Double[]> partialRows = new HashMap<Long, Double[]>();
 			int sizeOfPartialRows = 0;
 			for(Tuple2<Long, Double[]> kv : arg0._2) {
@@ -180,28 +207,57 @@ public class MLOutput {
 			}
 			
 			// Insert first row as row index
-			Double[] row = new Double[sizeOfPartialRows + 1];
-			long rowIndex = arg0._1;
-			row[0] = new Double(rowIndex);
-			for(long columnBlockIndex = 1; columnBlockIndex <= partialRows.size(); columnBlockIndex++) {
-				if(partialRows.containsKey(columnBlockIndex)) {
-					Double [] array = partialRows.get(columnBlockIndex);
-					// ------------------------------------------------------------------
-					//	Compute local block size: 
-					int lclen = UtilFunctions.computeBlockSize(clen, columnBlockIndex, bclen);
-					// ------------------------------------------------------------------
-					if(array.length != lclen) {
-						throw new Exception("Incorrect double array provided by ProjectRows");
+			Object[] row = null;
+			if(outputVector) {
+				row = new Object[2];
+				double [] vecVals = new double[sizeOfPartialRows];
+				
+				for(long columnBlockIndex = 1; columnBlockIndex <= partialRows.size(); columnBlockIndex++) {
+					if(partialRows.containsKey(columnBlockIndex)) {
+						Double [] array = partialRows.get(columnBlockIndex);
+						// ------------------------------------------------------------------
+						//	Compute local block size: 
+						int lclen = UtilFunctions.computeBlockSize(clen, columnBlockIndex, bclen);
+						// ------------------------------------------------------------------
+						if(array.length != lclen) {
+							throw new Exception("Incorrect double array provided by ProjectRows");
+						}
+						for(int i = 0; i < lclen; i++) {
+							vecVals[(int) ((columnBlockIndex-1)*bclen + i)] = array[i];
+						}
 					}
-					for(int i = 0; i < lclen; i++) {
-						row[(int) ((columnBlockIndex-1)*bclen + i) + 1] = array[i];
+					else {
+						throw new Exception("The block for column index " + columnBlockIndex + " is missing. Make sure the last instruction is not returning empty blocks");
 					}
 				}
-				else {
-					throw new Exception("The block for column index " + columnBlockIndex + " is missing. Make sure the last instruction is not returning empty blocks");
+				
+				long rowIndex = arg0._1;
+				row[0] = new Double(rowIndex);
+				row[1] = new DenseVector(vecVals); // breeze.util.JavaArrayOps.arrayDToDv(vecVals);
+			}
+			else {
+				row = new Double[sizeOfPartialRows + 1];
+				long rowIndex = arg0._1;
+				row[0] = new Double(rowIndex);
+				for(long columnBlockIndex = 1; columnBlockIndex <= partialRows.size(); columnBlockIndex++) {
+					if(partialRows.containsKey(columnBlockIndex)) {
+						Double [] array = partialRows.get(columnBlockIndex);
+						// ------------------------------------------------------------------
+						//	Compute local block size: 
+						int lclen = UtilFunctions.computeBlockSize(clen, columnBlockIndex, bclen);
+						// ------------------------------------------------------------------
+						if(array.length != lclen) {
+							throw new Exception("Incorrect double array provided by ProjectRows");
+						}
+						for(int i = 0; i < lclen; i++) {
+							row[(int) ((columnBlockIndex-1)*bclen + i) + 1] = array[i];
+						}
+					}
+					else {
+						throw new Exception("The block for column index " + columnBlockIndex + " is missing. Make sure the last instruction is not returning empty blocks");
+					}
 				}
 			}
-			
 			Object[] row_fields = row;
 			return RowFactory.create(row_fields);
 		}

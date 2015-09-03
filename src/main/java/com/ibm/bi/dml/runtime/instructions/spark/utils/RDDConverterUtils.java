@@ -32,6 +32,7 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.mllib.linalg.VectorUDT;
 import org.apache.spark.mllib.linalg.Vectors;
 import org.apache.spark.mllib.regression.LabeledPoint;
 import org.apache.spark.sql.DataFrame;
@@ -168,6 +169,31 @@ public class RDDConverterUtils
 		return rdd;
 	}
 	
+	public static DataFrame binaryBlockToVectorDataFrame(JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, 
+			MatrixCharacteristics mc, SQLContext sqlContext) throws DMLRuntimeException {
+		long rlen = mc.getRows(); long clen = mc.getCols();
+		int brlen = mc.getRowsPerBlock(); int bclen = mc.getColsPerBlock();
+		// Very expensive operation here: groupByKey (where number of keys might be too large)
+		JavaRDD<Row> rowsRDD = binaryBlockRDD.flatMapToPair(new ProjectRows(rlen, clen, brlen, bclen))
+				.groupByKey().map(new ConvertDoubleArrayToRows(clen, bclen, true));
+		
+		int numColumns = (int) clen;
+		if(numColumns <= 0) {
+			throw new DMLRuntimeException("Output dimensions unknown after executing the script and hence cannot create the dataframe");
+		}
+		
+		List<StructField> fields = new ArrayList<StructField>();
+		// LongTypes throw an error: java.lang.Double incompatible with java.lang.Long
+		fields.add(DataTypes.createStructField("ID", DataTypes.DoubleType, false));
+		fields.add(DataTypes.createStructField("C1", new VectorUDT(), false));
+		// fields.add(DataTypes.createStructField("C1", DataTypes.createArrayType(DataTypes.DoubleType), false));
+		
+		// This will cause infinite recursion due to bug in Spark
+		// https://issues.apache.org/jira/browse/SPARK-6999
+		// return sqlContext.createDataFrame(rowsRDD, colNames); // where ArrayList<String> colNames
+		return sqlContext.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
+	}
+	
 	public static DataFrame binaryBlockToDataFrame(JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, 
 			MatrixCharacteristics mc, SQLContext sqlContext) throws DMLRuntimeException {
 		long rlen = mc.getRows(); long clen = mc.getCols();
@@ -175,7 +201,7 @@ public class RDDConverterUtils
 		
 		// Very expensive operation here: groupByKey (where number of keys might be too large)
 		JavaRDD<Row> rowsRDD = binaryBlockRDD.flatMapToPair(new ProjectRows(rlen, clen, brlen, bclen))
-				.groupByKey().map(new ConvertDoubleArrayToRows(clen, bclen));
+				.groupByKey().map(new ConvertDoubleArrayToRows(clen, bclen, false));
 		
 		int numColumns = (int) clen;
 		if(numColumns <= 0) {

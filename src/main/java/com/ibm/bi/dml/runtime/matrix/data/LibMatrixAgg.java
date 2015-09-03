@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
 import com.ibm.bi.dml.runtime.functionobjects.IndexFunction;
@@ -61,10 +62,11 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
  */
 public class LibMatrixAgg 
 {
-
 	//internal configuration parameters
 	private static final boolean NAN_AWARENESS = false;
-
+	private static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
+	private static final long PAR_INTERMEDIATE_SIZE_THRESHOLD = 2*1024*1024; //Max 2MB
+	
 	////////////////////////////////
 	// public matrix agg interface
 	////////////////////////////////
@@ -210,7 +212,8 @@ public class LibMatrixAgg
 		throws DMLRuntimeException
 	{
 		//fall back to sequential version if necessary
-		if( k <= 1 || !(uaop.indexFn instanceof ReduceCol) ){
+		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD || in.rlen <= k
+			|| (!(uaop.indexFn instanceof ReduceCol) &&  out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD ) ) {
 			aggregateUnaryMatrix(in, out, uaop);
 			return;
 		}
@@ -237,12 +240,19 @@ public class LibMatrixAgg
 		//(currently: always parallelization over number of rows)
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
-			ArrayList<RowAggTask> tasks = new ArrayList<RowAggTask>();
+			ArrayList<AggTask> tasks = new ArrayList<AggTask>();
 			int blklen = (int)(Math.ceil((double)m/k));
-			for( int i=0; i<k & i*blklen<m; i++ )
-				tasks.add(new RowAggTask(in, out, aggtype, uaop, i*blklen, Math.min((i+1)*blklen, m)));
+			for( int i=0; i<k & i*blklen<m; i++ ) {
+				tasks.add( (uaop.indexFn instanceof ReduceCol) ? 
+						new RowAggTask(in, out, aggtype, uaop, i*blklen, Math.min((i+1)*blklen, m)) :
+						new PartialAggTask(in, out, aggtype, uaop, i*blklen, Math.min((i+1)*blklen, m)) );
+			}
 			pool.invokeAll(tasks);	
 			pool.shutdown();
+			//aggregate partial results
+			if( !(uaop.indexFn instanceof ReduceCol) )
+				for( AggTask task : tasks )
+					aggregateFinalResult(uaop.aggOp, out, ((PartialAggTask)task).getResult());
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -406,6 +416,31 @@ public class LibMatrixAgg
 		}
 		
 		return AggType.INVALID;
+	}
+	
+	/**
+	 * 
+	 * @param aop
+	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	private static void aggregateFinalResult( AggregateOperator aop, MatrixBlock out, MatrixBlock partout ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
+	{
+		AggregateOperator laop = aop;
+		
+		//special handling for mean where the final aggregate operator (kahan plus)
+		//is not equals to the partial aggregate operator
+		if( aop.increOp.fn instanceof Mean ){
+			laop = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), aop.correctionExists, aop.correctionLocation);
+		}
+
+		//incremental aggregation of final results
+		if( laop.correctionExists )
+			out.incrementalAggregate(laop, partout);
+		else
+			out.binaryOperationsInPlace(laop.increOp, partout);
 	}
 
 	/**
@@ -784,11 +819,11 @@ public class LibMatrixAgg
 				KahanObject kbuff = new KahanObject(0, 0);
 				
 				if( ixFn instanceof ReduceAll ) // SUM
-					d_uakp(a, c, m, n, kbuff, (KahanPlus)vFn);
+					d_uakp(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWSUM
 					d_uarkp(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLSUM
-					d_uackp(a, c, m, n, kbuff, (KahanPlus)vFn);
+					d_uackp(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				else if( ixFn instanceof ReduceDiag ) //TRACE
 					d_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				break;
@@ -818,11 +853,11 @@ public class LibMatrixAgg
 				double init = Double.MAX_VALUE * ((optype==AggType.MAX)?-1:1);
 				
 				if( ixFn instanceof ReduceAll ) // MIN/MAX
-					d_uamxx(a, c, m, n, init, (Builtin)vFn);
+					d_uamxx(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWMIN/ROWMAX
 					d_uarmxx(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLMIN/COLMAX
-					d_uacmxx(a, c, m, n, init, (Builtin)vFn);
+					d_uacmxx(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				
 				break;
 			}
@@ -847,18 +882,18 @@ public class LibMatrixAgg
 				KahanObject kbuff = new KahanObject(0, 0);
 				
 				if( ixFn instanceof ReduceAll ) // MEAN
-					d_uamean(a, c, m, n, kbuff, (Mean)vFn);
+					d_uamean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWMEAN
 					d_uarmean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLMEAN
-					d_uacmean(a, c, m, n, kbuff, (Mean)vFn);
+					d_uacmean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				
 				break;
 			}
 			case PROD: //PROD 
 			{
 				if( ixFn instanceof ReduceAll ) // PROD
-					d_uam(a, c, m, n );
+					d_uam(a, c, m, n, rl, ru );
 				break;
 			}
 			
@@ -891,11 +926,11 @@ public class LibMatrixAgg
 				KahanObject kbuff = new KahanObject(0, 0);
 				
 				if( ixFn instanceof ReduceAll ) // SUM
-					s_uakp(a, c, m, n, kbuff, (KahanPlus)vFn);
+					s_uakp(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWSUM
 					s_uarkp(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLSUM
-					s_uackp(a, c, m, n, kbuff, (KahanPlus)vFn);
+					s_uackp(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				else if( ixFn instanceof ReduceDiag ) //TRACE
 					s_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 					
@@ -926,11 +961,11 @@ public class LibMatrixAgg
 				double init = Double.MAX_VALUE * ((optype==AggType.MAX)?-1:1);
 				
 				if( ixFn instanceof ReduceAll ) // MIN/MAX
-					s_uamxx(a, c, m, n, init, (Builtin)vFn);
+					s_uamxx(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWMIN/ROWMAX
 					s_uarmxx(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLMIN/COLMAX
-					s_uacmxx(a, c, m, n, init, (Builtin)vFn);
+					s_uacmxx(a, c, m, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MAX_INDEX:
@@ -954,18 +989,18 @@ public class LibMatrixAgg
 				KahanObject kbuff = new KahanObject(0, 0);
 				
 				if( ixFn instanceof ReduceAll ) // MEAN
-					s_uamean(a, c, m, n, kbuff, (Mean)vFn);
+					s_uamean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWMEAN
 					s_uarmean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLMEAN
-					s_uacmean(a, c, m, n, kbuff, (Mean)vFn);
+					s_uacmean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				
 				break;
 			}
 			case PROD: //PROD 
 			{
 				if( ixFn instanceof ReduceAll ) // PROD
-					s_uam(a, c, m, n );
+					s_uam(a, c, m, n, rl, ru );
 				break;
 			}
 
@@ -1046,10 +1081,10 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void d_uakp( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus )
+	private static void d_uakp( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru )
 	{
-		int len = Math.min(m*n, a.length);
-		sum( a, 0, len, kbuff, kplus );		
+		int len = Math.min((ru-rl)*n, a.length);
+		sum( a, rl*n, len, kbuff, kplus );		
 		c[0] = kbuff._sum;
 		c[1] = kbuff._correction;	
 	}
@@ -1085,9 +1120,9 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void d_uackp( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
+	private static void d_uackp( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) 
 	{
-		for( int i=0, aix=0; i<m; i++, aix+=n )
+		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n )
 			sumAgg( a, c, aix, 0, n, kbuff, kplus );
 	}
 	
@@ -1187,10 +1222,10 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void d_uamxx( double[] a, double[] c, int m, int n, double init, Builtin builtin )
+	private static void d_uamxx( double[] a, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru )
 	{
-		int len = Math.min(m*n, a.length);
-		c[0] = builtin(a, 0, init, len, builtin);
+		int len = Math.min((ru-rl)*n, a.length);
+		c[0] = builtin(a, rl*n, init, len, builtin);
 	}
 	
 	/**
@@ -1217,13 +1252,13 @@ public class LibMatrixAgg
 	 * @param n
 	 * @param builtin
 	 */
-	private static void d_uacmxx( double[] a, double[] c, int m, int n, double init, Builtin builtin )
+	private static void d_uacmxx( double[] a, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru )
 	{
 		//init output (base for incremental agg)
 		Arrays.fill(c, init);
 		
 		//execute builtin aggregate
-		for( int i=0, aix=0; i<m; i++, aix+=n )
+		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n )
 			builtinAgg( a, c, aix, n, builtin );
 	}
 
@@ -1277,10 +1312,10 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void d_uamean( double[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean )
+	private static void d_uamean( double[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean, int rl, int ru )
 	{
-		int len = Math.min(m*n, a.length);
-		mean(a, 0, len, 0, kbuff, kmean);
+		int len = Math.min((ru-rl)*n, a.length);
+		mean(a, rl*n, len, 0, kbuff, kmean);
 		c[0] = kbuff._sum;
 		c[1] = len;
 		c[2] = kbuff._correction;
@@ -1317,13 +1352,13 @@ public class LibMatrixAgg
 	 * @param n
 	 * @param builtin
 	 */
-	private static void d_uacmean( double[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean )
+	private static void d_uacmean( double[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean, int rl, int ru )
 	{
 		//init output (base for incremental agg)
 		Arrays.fill(c, 0); //including counts
 		
 		//execute builtin aggregate
-		for( int i=0, aix=0; i<m; i++, aix+=n )
+		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n )
 			meanAgg( a, c, aix, 0, n, kbuff, kmean );
 	}
 	
@@ -1336,10 +1371,10 @@ public class LibMatrixAgg
 	 * @param m
 	 * @param n
 	 */
-	private static void d_uam( double[] a, double[] c, int m, int n )
+	private static void d_uam( double[] a, double[] c, int m, int n, int rl, int ru )
 	{
-		int len = Math.min(m*n, a.length);
-		c[0] = product( a, len );	
+		int len = Math.min((ru-rl)*n, a.length);
+		c[0] = product( a, rl*n, len );	
 	}
 	
 	
@@ -1353,9 +1388,9 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void s_uakp( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus )
+	private static void s_uakp( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru )
 	{
-		for( int i=0; i<m; i++ )
+		for( int i=rl; i<ru; i++ )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1407,13 +1442,13 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void s_uackp( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
+	private static void s_uackp( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) 
 	{
 		//init result (for empty columns)
 		Arrays.fill(c, 0); 
 				
 		//compute column aggregates
-		for( int i=0; i<m; i++ )
+		for( int i=rl; i<ru; i++ )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1579,10 +1614,10 @@ public class LibMatrixAgg
 	 * @param init
 	 * @param builtin
 	 */
-	private static void s_uamxx( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin )
+	private static void s_uamxx( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru )
 	{
 		double ret = init; //keep init val
-		for( int i=0; i<m; i++ )
+		for( int i=rl; i<ru; i++ )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1640,7 +1675,7 @@ public class LibMatrixAgg
 	 * @param init
 	 * @param builtin
 	 */
-	private static void s_uacmxx( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin ) 
+	private static void s_uacmxx( SparseRow[] a, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru ) 
 	{
 		//init output (base for incremental agg)
 		Arrays.fill(c, init);
@@ -1650,7 +1685,7 @@ public class LibMatrixAgg
 		Arrays.fill(cnt, 0); //init count array
 		
 		//compute column aggregates min/max
-		for( int i=0; i<m; i++ )
+		for( int i=rl; i<ru; i++ )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1770,19 +1805,19 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void s_uamean( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean )
+	private static void s_uamean( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean, int rl, int ru )
 	{
-		int len = m * n;
+		int len = (ru-rl) * n;
 		int count = 0;
 		
 		//correction remaining tuples (not sparse-safe)
 		//note: before aggregate computation in order to
 		//exploit 0 sum (noop) and better numerical stability
-		for( int i=0; i<m; i++ )
+		for( int i=rl; i<ru; i++ )
 			count += (a[i]==null)? n : n-a[i].size();
 		
 		//compute aggregate mean
-		for( int i=0; i<m; i++ )
+		for( int i=rl; i<ru; i++ )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1851,7 +1886,7 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void s_uacmean( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean ) 
+	private static void s_uacmean( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean, int rl, int ru ) 
 	{
 		//init output (base for incremental agg)
 		Arrays.fill(c, 0);
@@ -1859,8 +1894,8 @@ public class LibMatrixAgg
 		//correction remaining tuples (not sparse-safe)
 		//note: before aggregate computation in order to
 		//exploit 0 sum (noop) and better numerical stability
-		Arrays.fill(c, n, n*2, m);
-		for( int i=0; i<m; i++ ) 
+		Arrays.fill(c, n, n*2, ru-rl);
+		for( int i=rl; i<ru; i++ ) 
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1873,7 +1908,7 @@ public class LibMatrixAgg
 		} 
 		
 		//compute column aggregate means
-		for( int i=0; i<m; i++ )
+		for( int i=rl; i<ru; i++ )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
@@ -1894,17 +1929,17 @@ public class LibMatrixAgg
 	 * @param m
 	 * @param n
 	 */
-	private static void s_uam( SparseRow[] a, double[] c, int m, int n )
+	private static void s_uam( SparseRow[] a, double[] c, int m, int n, int rl, int ru )
 	{
 		double ret = 1;
-		for( int i=0; i<m; i++ )
+		for( int i=rl; i<ru; i++ )
 		{
 			SparseRow arow = a[i];
 			if( arow!=null && !arow.isEmpty() )
 			{
 				int alen = arow.size();
 				double[] avals = arow.getValueContainer();
-				ret *= product(avals, alen);
+				ret *= product(avals, 0, alen);
 				ret *= (alen<n) ? 0 : 1;
 			}
 			
@@ -1984,7 +2019,7 @@ public class LibMatrixAgg
 	 * @param len
 	 * @return
 	 */
-	private static double product( double[] a, final int len )
+	private static double product( double[] a, int ai, final int len )
 	{
 		double val = 1;
 		
@@ -1992,15 +2027,15 @@ public class LibMatrixAgg
 		{
 			//product without early abort
 			//even if val is 0, it might turn into NaN.
-			for( int i=0; i<len; i++ )
-				val *= a[ i ];	
+			for( int i=0; i<len; i++, ai++ )
+				val *= a[ ai ];	
 		}
 		else
 		{
 			//product with early abort (if 0)
 			//note: this will not work with NaNs (invalid optimization)
-			for( int i=0; i<len && val!=0; i++ )
-				val *= a[ i ];
+			for( int i=0; i<len && val!=0; i++, ai++ )
+				val *= a[ ai ];
 		}
 		
 		return val;
@@ -2262,11 +2297,13 @@ public class LibMatrixAgg
 	// Task Implementations for Multi-Threaded Operations  //
 	/////////////////////////////////////////////////////////
 	
+	private static abstract class AggTask implements Callable<Object> {}
+	
 	/**
 	 * 
 	 * 
 	 */
-	private static class RowAggTask implements Callable<Object> 
+	private static class RowAggTask extends AggTask 
 	{
 		private MatrixBlock _in  = null;
 		private MatrixBlock _ret = null;
@@ -2297,5 +2334,50 @@ public class LibMatrixAgg
 		}
 	}
 
+	/**
+	 * 
+	 * 
+	 */
+	private static class PartialAggTask extends AggTask 
+	{
+		private MatrixBlock _in  = null;
+		private MatrixBlock _ret = null;
+		private AggType _aggtype = null;
+		private AggregateUnaryOperator _uaop = null;		
+		private int _rl = -1;
+		private int _ru = -1;
+
+		protected PartialAggTask( MatrixBlock in, MatrixBlock ret, AggType aggtype, AggregateUnaryOperator uaop, int rl, int ru ) 
+			throws DMLRuntimeException
+		{
+			_in = in;			
+			_aggtype = aggtype;
+			_uaop = uaop;
+			_rl = rl;
+			_ru = ru;
+			
+			//allocate local result for partial aggregation
+			_ret = new MatrixBlock(ret.rlen, ret.clen, false);
+			_ret.allocateDenseBlock();
+		}
+		
+		@Override
+		public Object call() throws DMLRuntimeException
+		{
+			if( !_in.sparse )
+				aggregateUnaryMatrixDense(_in, _ret, _aggtype, _uaop.aggOp.increOp.fn, _uaop.indexFn, _rl, _ru);
+			else
+				aggregateUnaryMatrixSparse(_in, _ret, _aggtype, _uaop.aggOp.increOp.fn, _uaop.indexFn, _rl, _ru);
+			
+			//recompute non-zeros of partial result
+			_ret.recomputeNonZeros();
+			
+			return null;
+		}
+		
+		public MatrixBlock getResult() {
+			return _ret;
+		}
+	}
 }
 

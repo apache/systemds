@@ -87,7 +87,6 @@
 # learnt decision tree may have spurious nodes where no samples
 # reach).
 
-#id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset, Matrix[Double] attributes, Double minsplit) return (Matrix[Double] nodes, Matrix[Double] edges){
 def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attributes:matrix[float], minsplit:float) -> (nodes:matrix[float], edges:matrix[float]):
 	hist_labels = aggregate(target=X_subset, groups=y, fn="sum")
 	

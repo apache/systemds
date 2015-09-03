@@ -212,6 +212,22 @@ public abstract class AutomatedTestBase
 		availableTestConfigurations.put(testName, config);
 	}
 
+	/**
+	 * <p>
+	 * Adds a test configuration to the list of available test configurations based
+	 * on the test directory and the test name.
+	 * </p>
+	 * 
+	 * @param testDirectory
+	 *            test directory
+	 * @param testName
+	 *            test name
+	 */
+	protected void addTestConfiguration(String testDirectory, String testName) {
+		TestConfiguration config = new TestConfiguration(testDirectory, testName);
+		availableTestConfigurations.put(testName, config);
+	}
+	
 	
 	@Before
 	public final void setUpBase() {
@@ -242,6 +258,24 @@ public abstract class AutomatedTestBase
 			fail("unable to load test configuration");
 
 		return availableTestConfigurations.get(testName);
+	}
+	
+	/**
+	 * <p>
+	 * Gets a test configuration from the list of available configurations
+	 * and loads it if it's available. It is then returned. 
+	 * If no configuration exists for the specified name, the test will fail.
+	 * 
+	 * </p>
+	 * 
+	 * @param testName
+	 *            test name
+	 * @return test configuration
+	 */
+	protected TestConfiguration getAndLoadTestConfiguration(String testName) {
+		TestConfiguration testConfiguration = getTestConfiguration(testName);
+		loadTestConfiguration(testConfiguration);
+		return testConfiguration;
 	}
 	
 	/**
@@ -707,11 +741,13 @@ public abstract class AutomatedTestBase
 		selectedTest = config.getTestScript();
 
 		String[] outputFiles = config.getOutputFiles();
-		outputDirectories = new String[outputFiles.length];
-		comparisonFiles = new String[outputFiles.length];
-		for (int i = 0; i < outputFiles.length; i++) {
-			outputDirectories[i] = baseDirectory + OUTPUT_DIR + outputFiles[i];
-			comparisonFiles[i] = baseDirectory + EXPECTED_DIR + outputFiles[i];
+		if (outputFiles != null) {
+			outputDirectories = new String[outputFiles.length];
+			comparisonFiles = new String[outputFiles.length];
+			for (int i = 0; i < outputFiles.length; i++) {
+				outputDirectories[i] = baseDirectory + OUTPUT_DIR + outputFiles[i];
+				comparisonFiles[i] = baseDirectory + EXPECTED_DIR + outputFiles[i];
+			}
 		}
 
 		testVariables = config.getVariables();

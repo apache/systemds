@@ -49,7 +49,6 @@ public class TestConfiguration
     /** list of variables which can be replaced in the script */
     private HashMap<String, String> variables = new HashMap<String, String>();
     
-    
     /**
      * <p>
      *  Creates a new test configuration with the name of the test script and the output files which are produced by
@@ -80,6 +79,20 @@ public class TestConfiguration
         this.testDirectory = testDirectory;
         this.testScript = testScript;
         this.outputFiles = outputFiles;
+    }
+    
+    /**
+     * <p>
+     *  Creates a new test configuration with the directory where the test data can be found and the name of the test
+     *  script.
+     * </p>
+     * 
+     * @param testDirectory test directory
+     * @param testScript test script
+     */
+    public TestConfiguration(String testDirectory, String testScript) {
+    	this.testDirectory = testDirectory;
+    	this.testScript = testScript;
     }
     
     /**

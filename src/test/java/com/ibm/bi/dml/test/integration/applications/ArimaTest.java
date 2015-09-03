@@ -17,29 +17,25 @@
 
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-@RunWith(value = Parameterized.class)
-public class ArimaTest extends AutomatedTestBase 
-{
+public abstract class ArimaTest extends AutomatedTestBase {
 	
-	private final static String TEST_DIR = "applications/arima_box-jenkins/";
-	private final static String TEST_ArimaTest = "arima";
+	protected final static String TEST_DIR = "applications/arima_box-jenkins/";
+	protected final static String TEST_NAME = "arima";
 	
-	private int max_func_invoc, p, d, q, P, D, Q, s, include_mean, useJacobi;
+	protected int max_func_invoc, p, d, q, P, D, Q, s, include_mean, useJacobi;
 	
 	public ArimaTest(int m, int p, int d, int q, int P, int D, int Q, int s, int include_mean, int useJacobi){
 		this.max_func_invoc = m;
@@ -63,35 +59,49 @@ public class ArimaTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		setUpBase();
-    	addTestConfiguration(TEST_ArimaTest, 
-    						 new TestConfiguration(TEST_DIR, 
-    								 			   TEST_ArimaTest, 
-    								 			   new String[] { "learnt.model"}));
+    	addTestConfiguration(TEST_DIR, TEST_NAME);
 	}
 	
-	@Test
-	public void testArimaWithRDMLAndJava() {
-		TestConfiguration config = getTestConfiguration(TEST_ArimaTest);
+	protected void testArima(ScriptType scriptType) {
+		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" +
+			max_func_invoc + ", " + 
+			p + ", " + 
+			d + ", " + 
+			q + ", " + 
+			P + ", " + 
+			D + ", " + 
+			Q + ", " + 
+			s + ", " + 
+			include_mean + ", " + 
+			useJacobi+ "} ------------");
+		this.scriptType = scriptType;
 		
-		String ArimaTest_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = ArimaTest_HOME + TEST_ArimaTest + ".dml";
-		
-		programArgs = new String[]{"-args", ArimaTest_HOME + INPUT_DIR + "col.mtx",
-											""+max_func_invoc, ""+p, ""+d, ""+q, 
-											""+P, ""+D, ""+Q, ""+s, 
-											""+include_mean, ""+useJacobi,
-											ArimaTest_HOME + OUTPUT_DIR + "learnt.model"};
-		
-		fullRScriptName = ArimaTest_HOME + TEST_ArimaTest + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " 
-			   + ArimaTest_HOME + INPUT_DIR 
-			   + " " + max_func_invoc + " " + p + " " + d + " " + q
-			   + " " + P + " " + D + " " + Q + " " + s 
-			   + " " + include_mean + " " + useJacobi
-			   + " " + ArimaTest_HOME + EXPECTED_DIR;
+		getAndLoadTestConfiguration(TEST_NAME);
 	
-		loadTestConfiguration(config);
+		List<String> proArgs = new ArrayList<String>();
+		if (scriptType == ScriptType.PYDML) {
+			proArgs.add("-python");
+		}
+		proArgs.add("-args");
+		proArgs.add(input("col.mtx"));
+		proArgs.add(Integer.toString(max_func_invoc));
+		proArgs.add(Integer.toString(p));
+		proArgs.add(Integer.toString(d));
+		proArgs.add(Integer.toString(q));
+		proArgs.add(Integer.toString(P));
+		proArgs.add(Integer.toString(D));
+		proArgs.add(Integer.toString(Q));
+		proArgs.add(Integer.toString(s));
+		proArgs.add(Integer.toString(include_mean));
+		proArgs.add(Integer.toString(useJacobi));
+		proArgs.add(output("learnt.model"));
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
+		
+		fullDMLScriptName = getScript();
+
+		rCmd = getRCmd(inputDir(), Integer.toString(max_func_invoc), Integer.toString(p), Integer.toString(d), Integer.toString(q), Integer.toString(P), 
+				Integer.toString(D), Integer.toString(Q), Integer.toString(s), Integer.toString(include_mean), Integer.toString(useJacobi), expectedDir());
 		
 		int timeSeriesLength = 5000;
 		double[][] timeSeries = getRandomMatrix(timeSeriesLength, 1, 1, 5, 0.9, System.currentTimeMillis());
@@ -99,16 +109,13 @@ public class ArimaTest extends AutomatedTestBase
 		MatrixCharacteristics mc = new MatrixCharacteristics(timeSeriesLength,1,-1,-1);
 		writeInputMatrixWithMTD("col", timeSeries, true, mc);
 		
-		boolean exceptionExpected = false;
-		
-		runTest(true, exceptionExpected, null, -1);
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		
 		runRScript(true);
-		disableOutAndExpectedDeletion();
 
 		double tol = Math.pow(10, -14);
 		HashMap<CellIndex, Double> arima_model_R = readRMatrixFromFS("learnt.model");
-        HashMap<CellIndex, Double> arima_model_DML= readDMLMatrixFromHDFS("learnt.model");
-        TestUtils.compareMatrices(arima_model_R, arima_model_DML, tol, "arima_model_R", "arima_model_DML");
+        HashMap<CellIndex, Double> arima_model_SYSTEMML= readDMLMatrixFromHDFS("learnt.model");
+        TestUtils.compareMatrices(arima_model_R, arima_model_SYSTEMML, tol, "arima_model_R", "arima_model_SYSTEMML");
 	}   
 }

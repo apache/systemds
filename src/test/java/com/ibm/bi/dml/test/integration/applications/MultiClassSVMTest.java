@@ -17,36 +17,33 @@
 
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-@RunWith(value = Parameterized.class)
-public class MultiClassSVMTest  extends AutomatedTestBase{
+public abstract class MultiClassSVMTest  extends AutomatedTestBase{
 	
-	private final static String TEST_DIR = "applications/m-svm/";
-	private final static String TEST_MULTICLASSSVM = "m-svm";
+	protected final static String TEST_DIR = "applications/m-svm/";
+	protected final static String TEST_NAME = "m-svm";
 
-	private int numRecords, numFeatures, numClasses;
-    private double sparsity;
-    boolean intercept;
+	protected int numRecords, numFeatures, numClasses;
+	protected double sparsity;
+	protected boolean intercept;
     
     public MultiClassSVMTest(int rows, int cols, int nc, boolean intercept, double sp) {
 		numRecords = rows;
 		numFeatures = cols;
 		numClasses = nc;
-		sparsity = sp;
 		this.intercept = intercept;
+		sparsity = sp;
 	}
     
     @Parameters
@@ -64,20 +61,23 @@ public class MultiClassSVMTest  extends AutomatedTestBase{
 			   {1000, 500, 10, true, 0.7}, 
 			   {10000, 750, 10, false, 0.7} 
 			   };
-	   
 	   return Arrays.asList(data);
 	 }
 	 
 	 @Override
 	 public void setUp() {
-		 setUpBase();
-		 addTestConfiguration(TEST_MULTICLASSSVM, new TestConfiguration(TEST_DIR, "m-svm",
-	                new String[] { "w" }));
+		 addTestConfiguration(TEST_DIR, TEST_NAME);
 	 }
 	 
-	 @Test
-	 public void testMULTICLASSSVM()
-	 {
+	 protected void testMultiClassSVM(ScriptType scriptType) {
+		 System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" +
+				 numRecords + ", " + 
+				 numFeatures + ", " + 
+				 numClasses + ", " + 
+				 intercept + ", " + 
+				 sparsity + "} ------------");
+		 this.scriptType = scriptType;
+		 
 		 int rows = numRecords;
 		 int cols = numFeatures;
 		 int classes = numClasses;
@@ -85,34 +85,30 @@ public class MultiClassSVMTest  extends AutomatedTestBase{
 		 double tol = 0.001;
 		 double reg = 1;
 		 int maxiter = 100;
-	        
-		 TestConfiguration config = getTestConfiguration(TEST_MULTICLASSSVM);
-	        
-		 String MULTICLASSSVM_HOME = SCRIPT_DIR + TEST_DIR;
-		 fullDMLScriptName = MULTICLASSSVM_HOME + TEST_MULTICLASSSVM + ".dml";
-		 programArgs = new String[]{"-stats", "-nvargs", 
-				 "X=" + MULTICLASSSVM_HOME + INPUT_DIR + "X", 
-				 "Y=" + MULTICLASSSVM_HOME + INPUT_DIR + "Y",
-				 "classes=" + Integer.toString(classes),
-				 "tol=" + Double.toString(tol),
-				 "reg=" + Double.toString(reg),
-				 "maxiter=" + Integer.toString(maxiter),
-				 "icpt=" + ((intercept) ? "1" : "0"),
-				 "model=" + MULTICLASSSVM_HOME + OUTPUT_DIR + "w",
-				 "Log=" + MULTICLASSSVM_HOME + OUTPUT_DIR + "Log"};
+	     
+		 getAndLoadTestConfiguration(TEST_NAME);
 			
-		 fullRScriptName = MULTICLASSSVM_HOME + TEST_MULTICLASSSVM + ".R";
-		 rCmd = "Rscript" + " " + 
-				 fullRScriptName + " " + 
-				 MULTICLASSSVM_HOME + INPUT_DIR + " " + 
-				 Integer.toString(classes) + " " + 
-				 Double.toString(tol) + " " +
-				 Double.toString(reg) + " " +
-				 Integer.toString(maxiter) + " " +
-				 ((intercept) ? "1" : "0") + " " +
-				 MULTICLASSSVM_HOME + EXPECTED_DIR;
-				
-		 loadTestConfiguration(config);
+		 List<String> proArgs = new ArrayList<String>();
+		 if (scriptType == ScriptType.PYDML) {
+			 proArgs.add("-python");
+		 }
+		 proArgs.add("-stats");
+		 proArgs.add("-nvargs");
+		 proArgs.add("X=" + input("X"));
+		 proArgs.add("Y=" + input("Y"));
+		 proArgs.add("classes=" + Integer.toString(classes));
+		 proArgs.add("tol=" + Double.toString(tol));
+		 proArgs.add("reg=" + Double.toString(reg));
+		 proArgs.add("maxiter=" + Integer.toString(maxiter));
+		 proArgs.add("icpt=" + ((intercept) ? "1" : "0"));
+		 proArgs.add("model=" + output("w"));
+		 proArgs.add("Log=" + output("Log"));
+		 programArgs = proArgs.toArray(new String[proArgs.size()]);
+		 System.out.println("arguments from test case: " + Arrays.toString(programArgs));
+		
+		 fullDMLScriptName = getScript();
+
+		 rCmd = getRCmd(inputDir(), Integer.toString(classes), Double.toString(tol), Double.toString(reg), Integer.toString(maxiter), ((intercept) ? "1" : "0"), expectedDir());
 
 		 double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, -1);
 		 double[][] Y = getRandomMatrix(rows, 1, 0, 1, 1, -1);
@@ -124,14 +120,13 @@ public class MultiClassSVMTest  extends AutomatedTestBase{
 		 writeInputMatrixWithMTD("X", X, true);
 		 writeInputMatrixWithMTD("Y", Y, true);
 	        
-		 runTest(true, false, null, -1);
+		 runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 	        
 		 runRScript(true);
-		 disableOutAndExpectedDeletion();
 	        
 		 HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
-		 HashMap<CellIndex, Double> wDML= readDMLMatrixFromHDFS("w");
-		 boolean success = TestUtils.compareMatrices(wR, wDML, Math.pow(10, -10), "w", "w");
-		 System.out.println(success+"");
+		 HashMap<CellIndex, Double> wSYSTEMML= readDMLMatrixFromHDFS("w");
+		 boolean success = TestUtils.compareMatrices(wR, wSYSTEMML, Math.pow(10, -10), "wR", "wSYSTEMML");
+		 System.out.println(success);
 	 }
 }

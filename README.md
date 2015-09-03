@@ -66,6 +66,28 @@ Known issue: package 'methods' is not available for R version 3.2.1. In which ca
 
 * * *
 
+## Running SystemML in Stand-alone Mode
+
+SystemML is distributed in several packages, including a standalone package. We'll operate in Standalone mode in this guide. If you built SystemML from source (```mvn clean package```) the standalone package got created under the `system-ml/target` folder. In order to follow the examples below, extract it to your working directory, i.e. `~/systemml-examples`:
+
+    tar -xzf system-ml/target/system-ml*standalone.tar.gz -C ~/systemml-examples
+    cd ~/systemml-examples
+
+The extracted package should have these contents:
+
+    algorithms/
+    docs/
+    lib/
+    log4j.properties
+    readme.txt
+    runStandaloneSystemML.bat*
+    runStandaloneSystemML.sh*
+    SystemML-config.xml
+
+Standalone mode can be executed either on Mac/Unix using the ```runStandaloneSystemML.sh``` script or on Windows using the ```runStandaloneSystemML.bat``` batch file.
+
+* * *
+
 ## Algorithms
 
 SystemML features a suite of algorithms that can be grouped into five broad categories:
@@ -92,12 +114,7 @@ This example consists of the following parts:
   * [Train Model on First Sample](#train-model-on-first-sample)
   * [Test Model on Second Sample](#test-model-on-second-sample)
 
-SystemML is distributed in several packages, including a standalone package.
-We'll operate in Standalone mode in this example.
-If you unpack the ```.tar.gz``` file, Standalone mode
-can be executed either on Mac/Unix using the ```runStandaloneSystemML.sh``` script or on Windows using the
-```runStandaloneSystemML.bat``` file.
-
+SystemML is distributed in several packages, including a standalone package. We'll operate in Standalone mode in this example.
 
 <a name="run-dml-script-to-generate-random-data" />
 

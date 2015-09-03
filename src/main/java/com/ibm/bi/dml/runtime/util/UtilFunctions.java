@@ -166,6 +166,21 @@ public class UtilFunctions
 		}
 	}
 	
+	/**
+	 * 
+	 * @param ix
+	 * @param brlen
+	 * @param bclen
+	 * @param ixrange
+	 * @return
+	 */
+	public static boolean isInBlockRange( MatrixIndexes ix, int brlen, int bclen, IndexRange ixrange )
+	{
+		return isInBlockRange(ix, brlen, bclen, 
+				ixrange.rowStart, ixrange.rowEnd, 
+				ixrange.colStart, ixrange.colEnd);
+	}
+	
 	// Reused by both MR and Spark for performing zero out
 	public static IndexRange getSelectedRangeForZeroOut(IndexedMatrixValue in, int blockRowFactor, int blockColFactor, IndexRange indexRange) 
 	{

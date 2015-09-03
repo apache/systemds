@@ -18,6 +18,7 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -38,6 +39,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
@@ -201,10 +203,13 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 					throw new DMLRuntimeException("Invalid index range of leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"] vs ["+mcRight.getRows()+"x"+mcRight.getCols()+"]." );
 				}
 				
-				
-				if(opcode.equalsIgnoreCase("mapLeftIndex")) {
-					broadcastIn2 = sec.getBroadcastForVariable( input2.getName() ); 
-					out = in1.mapToPair(new LeftIndexBroadcastMatrix(broadcastIn2, rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()));
+				if(opcode.equalsIgnoreCase("mapLeftIndex")) 
+				{
+					broadcastIn2 = sec.getBroadcastForVariable( input2.getName() );
+					
+					//partitioning-preserving mappartitions (key access required for broadcast loopkup)
+					out = in1.mapPartitionsToPair(new LeftIndexPartitionFunction(broadcastIn2, 
+								new IndexRange(rl, ru, cl, cu), mcOut), true);
 				}
 				else {
 					// Zero-out LHS
@@ -361,55 +366,72 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 	/**
 	 * 
 	 */
-	private static class LeftIndexBroadcastMatrix implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	private static class LeftIndexPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 1757075506076838258L;
 		
-		private long rl; long ru; long cl; long cu;
-		private int brlen; int bclen;
-		private Broadcast<PartitionedMatrixBlock> binput;
+		private Broadcast<PartitionedMatrixBlock> _binput;
+		private IndexRange _ixrange;
+		private int _brlen;
+		private int _bclen;
 		
-		public LeftIndexBroadcastMatrix(Broadcast<PartitionedMatrixBlock> binput, long rl, long ru, long cl, long cu, int brlen, int bclen) {
-			this.rl = rl;
-			this.ru = ru;
-			this.cl = cl;
-			this.cu = cu;
-			this.brlen = brlen;
-			this.bclen = bclen;
-			this.binput = binput;
+		
+		public LeftIndexPartitionFunction(Broadcast<PartitionedMatrixBlock> binput, IndexRange ixrange, MatrixCharacteristics mc) 
+		{
+			_binput = binput;
+			_ixrange = ixrange;
+			_brlen = mc.getRowsPerBlock();
+			_bclen = mc.getColsPerBlock();
 		}
 
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
 			throws Exception 
 		{
-			if(!UtilFunctions.isInBlockRange(kv._1(), brlen, bclen, rl, ru, cl, cu)) {
-				return kv;
+			return new LeftIndexPartitionIterator(arg0);
+		}
+		
+		/**
+		 * 
+		 */
+		private class LeftIndexPartitionIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>>
+		{
+			public LeftIndexPartitionIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
+				super(in);
 			}
 			
-			// Calculate global index of left hand side block
-			long lhs_rl = Math.max(rl, (kv._1.getRowIndex()-1)*brlen + 1);
-			long lhs_ru = Math.min(ru, kv._1.getRowIndex()*brlen);
-			long lhs_cl = Math.max(cl, (kv._1.getColumnIndex()-1)*bclen + 1);
-			long lhs_cu = Math.min(cu, kv._1.getColumnIndex()*bclen);
-			
-			// Calculate global index of right hand side block
-			long rhs_rl = lhs_rl - rl + 1;
-			long rhs_ru = rhs_rl + (lhs_ru - lhs_rl);
-			long rhs_cl = lhs_cl - cl + 1;
-			long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
-			
-			// Provide global zero-based index to sliceOperations
-			PartitionedMatrixBlock rhsMatBlock = binput.getValue();
-			MatrixBlock slicedRHSMatBlock = rhsMatBlock.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
-			
-			// Provide local zero-based index to leftIndexingOperations
-			int lhs_lrl = UtilFunctions.cellInBlockCalculation(lhs_rl, brlen);
-			int lhs_lru = UtilFunctions.cellInBlockCalculation(lhs_ru, brlen);
-			int lhs_lcl = UtilFunctions.cellInBlockCalculation(lhs_cl, bclen);
-			int lhs_lcu = UtilFunctions.cellInBlockCalculation(lhs_cu, bclen);
-			MatrixBlock ret = kv._2.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new MatrixBlock(), false);
-			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, ret);
+			@Override
+			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg) 
+				throws Exception 
+			{
+				if(!UtilFunctions.isInBlockRange(arg._1(), _brlen, _bclen, _ixrange)) {
+					return arg;
+				}
+				
+				// Calculate global index of left hand side block
+				long lhs_rl = Math.max(_ixrange.rowStart, (arg._1.getRowIndex()-1)*_brlen + 1);
+				long lhs_ru = Math.min(_ixrange.rowEnd, arg._1.getRowIndex()*_brlen);
+				long lhs_cl = Math.max(_ixrange.colStart, (arg._1.getColumnIndex()-1)*_bclen + 1);
+				long lhs_cu = Math.min(_ixrange.colEnd, arg._1.getColumnIndex()*_bclen);
+				
+				// Calculate global index of right hand side block
+				long rhs_rl = lhs_rl - _ixrange.rowStart + 1;
+				long rhs_ru = rhs_rl + (lhs_ru - lhs_rl);
+				long rhs_cl = lhs_cl - _ixrange.colStart + 1;
+				long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
+				
+				// Provide global zero-based index to sliceOperations
+				PartitionedMatrixBlock rhsMatBlock = _binput.getValue();
+				MatrixBlock slicedRHSMatBlock = rhsMatBlock.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
+				
+				// Provide local zero-based index to leftIndexingOperations
+				int lhs_lrl = UtilFunctions.cellInBlockCalculation(lhs_rl, _brlen);
+				int lhs_lru = UtilFunctions.cellInBlockCalculation(lhs_ru, _brlen);
+				int lhs_lcl = UtilFunctions.cellInBlockCalculation(lhs_cl, _bclen);
+				int lhs_lcu = UtilFunctions.cellInBlockCalculation(lhs_cu, _bclen);
+				MatrixBlock ret = arg._2.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new MatrixBlock(), false);
+				return new Tuple2<MatrixIndexes, MatrixBlock>(arg._1, ret);
+			}
 		}
 	}
 	

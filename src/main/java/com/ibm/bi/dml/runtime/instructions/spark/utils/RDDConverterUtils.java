@@ -37,9 +37,11 @@ import org.apache.spark.mllib.linalg.Vectors;
 import org.apache.spark.mllib.regression.LabeledPoint;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
@@ -192,6 +194,33 @@ public class RDDConverterUtils
 		// https://issues.apache.org/jira/browse/SPARK-6999
 		// return sqlContext.createDataFrame(rowsRDD, colNames); // where ArrayList<String> colNames
 		return sqlContext.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
+	}
+	
+	public static class AddRowID implements Function<Tuple2<Row,Long>, Row> {
+		private static final long serialVersionUID = -3733816995375745659L;
+
+		@Override
+		public Row call(Tuple2<Row, Long> arg0) throws Exception {
+			int oldNumCols = arg0._1.length();
+			Object [] fields = new Object[oldNumCols + 1];
+			for(int i = 0; i < oldNumCols; i++) {
+				fields[i] = arg0._1.get(i);
+			}
+			fields[oldNumCols] = new Double(arg0._2);
+			return RowFactory.create(fields);
+		}
+		
+	}
+	public static DataFrame addIDToDataFrame(DataFrame df, SQLContext sqlContext, String nameOfCol) {
+		StructField[] oldSchema = df.schema().fields();
+		StructField[] newSchema = new StructField[oldSchema.length + 1];
+		for(int i = 0; i < oldSchema.length; i++) {
+			newSchema[i] = oldSchema[i];
+		}
+		newSchema[oldSchema.length] = new StructField(nameOfCol, DataTypes.DoubleType, false, null);
+		// JavaRDD<Row> newRows = df.rdd().toJavaRDD().map(new AddRowID());
+		JavaRDD<Row> newRows = df.rdd().toJavaRDD().zipWithIndex().map(new AddRowID());
+		return sqlContext.createDataFrame(newRows, new StructType(newSchema));
 	}
 	
 	public static DataFrame binaryBlockToDataFrame(JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockRDD, 

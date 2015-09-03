@@ -1,13 +1,26 @@
+# Mac
 .DS_Store
+
+# Eclipse
 .classpath
 .project
-.settings
+.settings/
+
+# Intellij
 .idea/
 .idea_modules/
+*.iml
+*.iws
+
+# Build artifacts
 target/
 /bin/
+
+# Documentation artifacts
 docs/_site
 docs/api
+
+# Excluded sources
 src/main/java/Dml.tokens
 src/main/java/DmlLexer.tokens
 src/main/java/Pydml.tokens
@@ -23,3 +36,5 @@ src/main/java/com/ibm/bi/dml/parser/python/PydmlParser.java
 src/test/scripts/**/in
 src/test/scripts/**/out
 src/test/scripts/**/expected
+
+

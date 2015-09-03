@@ -626,6 +626,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		//copy specific attributes
 		ret._op = _op;
 		ret._direction = _direction;
+		ret._maxNumThreads = _maxNumThreads;
 		
 		return ret;
 	}
@@ -639,6 +640,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		AggUnaryOp that2 = (AggUnaryOp)that;		
 		return (   _op == that2._op
 				&& _direction == that2._direction
+				&& _maxNumThreads == that2._maxNumThreads
 				&& getInput().get(0) == that2.getInput().get(0));
 	}
 }

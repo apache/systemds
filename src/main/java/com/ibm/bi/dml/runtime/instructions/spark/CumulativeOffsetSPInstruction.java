@@ -20,8 +20,8 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 import java.util.ArrayList;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
@@ -122,7 +122,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 		//execute cumulative offset (apply cumulative op w/ offsets)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
 				inData.join( inAgg )
-				      .mapToPair(new RDDCumOffsetFunction(_uop, _bop));
+				      .mapValues(new RDDCumOffsetFunction(_uop, _bop));
 		
 		//put output handle in symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);	
@@ -191,7 +191,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 	/**
 	 * 
 	 */
-	private static class RDDCumOffsetFunction implements PairFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock, MatrixBlock>>, MatrixIndexes, MatrixBlock> 
+	private static class RDDCumOffsetFunction implements Function<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -5804080263258064743L;
 
@@ -205,13 +205,12 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 		}
 
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg0)
+		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0)
 			throws Exception 
 		{
 			//prepare inputs and outputs
-			MatrixIndexes ixIn = arg0._1();
-			MatrixBlock dblkIn = arg0._2()._1(); //original data 
-			MatrixBlock oblkIn = arg0._2()._2(); //offset row vector
+			MatrixBlock dblkIn = arg0._1(); //original data 
+			MatrixBlock oblkIn = arg0._2(); //offset row vector
 			MatrixBlock blkOut = new MatrixBlock(dblkIn.getNumRows(), dblkIn.getNumColumns(), dblkIn.isInSparseFormat());
 			
 			//blockwise offset aggregation and prefix sum computation
@@ -221,9 +220,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 			data2.copy(0, 0, 0, data2.getNumColumns()-1, fdata2, true); //0-based
 			data2.unaryOperations(_uop, blkOut); //compute columnwise prefix sums/prod/min/max
 
-			//set output indexes
-			MatrixIndexes ixOut = new MatrixIndexes(ixIn);
-			return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
+			return blkOut;
 		}
 	}
 }

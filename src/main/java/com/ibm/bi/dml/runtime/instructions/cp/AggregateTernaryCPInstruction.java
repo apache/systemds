@@ -30,7 +30,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 {
-	
 	public AggregateTernaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, 
                                          CPOperand out, String opcode, String istr  )
 	{
@@ -38,6 +37,12 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 		_cptype = CPINSTRUCTION_TYPE.AggregateTernary;
 	}
 
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public static AggregateTernaryCPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
@@ -45,15 +50,16 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase("tak+*")) {
-			InstructionUtils.checkNumFields ( str, 4 );
+			InstructionUtils.checkNumFields ( str, 5 );
 			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
-		
+			int numThreads = Integer.parseInt(parts[5]);
+				
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject());
-			AggregateBinaryOperator op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+			AggregateBinaryOperator op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, numThreads);
 			
 			return new AggregateTernaryCPInstruction(op, in1, in2, in3, out, opcode, str);
 		} 

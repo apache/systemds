@@ -5075,44 +5075,16 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			throw new DMLRuntimeException("Invalid dimensions for aggregate tertiary ("+m1.rlen+"x"+m1.clen+", "+m2.rlen+"x"+m2.clen+", "+m3.rlen+"x"+m3.clen+").");
 		if( !( op.aggOp.increOp.fn instanceof KahanPlus && op.binaryFn instanceof Multiply) )
 			throw new DMLRuntimeException("Unsupported operator for aggregate tertiary operations.");
-			
-		//early abort if any block is empty
-		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) || m3.isEmptyBlock(false) )
-			return new DoubleObject(0);
 		
-		//setup meta data (dimensions, sparsity)
-		int rlen = m1.rlen;
-		
-		//compute block operations
-		KahanObject kbuff = new KahanObject(0, 0);
-		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
-		
-		if( !m1.sparse && !m2.sparse && !m3.sparse ) //DENSE
-		{
-			double[] a = m1.denseBlock;
-			double[] b = m2.denseBlock;
-			double[] c = m3.denseBlock;
-			
-			for( int i=0; i<rlen; i++ ) {
-				double val = a[i] * b[i] * c[i];
-				kplus.execute2( kbuff, val );
-			}
-		}
-		else //GENERAL CASE
-		{
-			for( int i=0; i<rlen; i++ ) {
-				double val1 = m1.quickGetValue(i, 0);
-				double val2 = m2.quickGetValue(i, 0);
-				double val3 = m3.quickGetValue(i, 0);
-				double val = val1 * val2 * val3;
-				kplus.execute2( kbuff, val );
-			}
-		}
+		//execute ternary aggregate function
+		double val = -1;
+		if( op.getNumThreads() > 1 )
+			val = LibMatrixAgg.aggregateTernary(m1, m2, m3, op.getNumThreads());
+		else
+			val = LibMatrixAgg.aggregateTernary(m1, m2, m3);
 		
 		//create output
-		DoubleObject ret = new DoubleObject(kbuff._sum);
-		
-		return ret;	
+		return new DoubleObject(val);
 	}
 	
 	/**

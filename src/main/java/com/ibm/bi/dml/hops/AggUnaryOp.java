@@ -577,7 +577,9 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		}
 
 		//create new ternary aggregate operator 
-		ret = new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE, et);
+		int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
+		ret = new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, 
+				Binary.OperationTypes.MULTIPLY, DataType.SCALAR, ValueType.DOUBLE, et, k);
 		
 		return ret;
 	}

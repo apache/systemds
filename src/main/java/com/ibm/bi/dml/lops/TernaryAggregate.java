@@ -36,12 +36,19 @@ public class TernaryAggregate extends Lop
 	//private Aggregate.OperationTypes _aggOp = null;
 	//private Binary.OperationTypes _binOp = null;
 	
+	//optional attribute for cp
+	private int _numThreads = -1;
+	
+	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt, ExecType et ) {
+		this(input1, input2, input3, aggOp, binOp, dt, vt, et, 1);
+	}
+	
 	/**
 	 * @param et 
 	 * @param input - input lop
 	 * @param op - operation type
 	 */
-	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt, ExecType et ) 
+	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DataType dt, ValueType vt, ExecType et, int k ) 
 	{
 		super(Lop.Type.TernaryAggregate, dt, vt);
 		
@@ -54,6 +61,8 @@ public class TernaryAggregate extends Lop
 		input1.addOutput(this);
 		input2.addOutput(this);
 		input3.addOutput(this);
+		
+		_numThreads = k;
 		
 		boolean breaksAlignment = false;
 		boolean aligner = false;
@@ -84,6 +93,11 @@ public class TernaryAggregate extends Lop
 		sb.append( getInputs().get(2).prepInputOperand(input3));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output));
+		
+		if( getExecType() == ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );	
+		}
 		
 		return sb.toString();
 	}

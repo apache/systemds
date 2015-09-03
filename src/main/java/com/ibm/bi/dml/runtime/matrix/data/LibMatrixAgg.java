@@ -56,9 +56,9 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
  * This library currently covers the following opcodes:
  * ak+, uak+, uark+, uack+, uamin, uarmin, uacmin, uamax, uarmax, uacmax,
  * ua*, uamean, uarmean, uacmean, uarimax, uaktrace.
+ * cumk+, cummin, cummax, cum*, tak+
  * 
  * TODO next opcode extensions: a+, colindexmax
- * TODO low level optimization (potential 3x, sum non-conclusive yet)
  */
 public class LibMatrixAgg 
 {
@@ -233,8 +233,10 @@ public class LibMatrixAgg
 		//Timing time = new Timing(true);
 		
 		//allocate output arrays (if required)
-		out.reset(m2, n2, false); //always dense
-		out.allocateDenseBlock();
+		if( uaop.indexFn instanceof ReduceCol ) {
+			out.reset(m2, n2, false); //always dense
+			out.allocateDenseBlock();
+		}
 		
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)
@@ -250,9 +252,11 @@ public class LibMatrixAgg
 			pool.invokeAll(tasks);	
 			pool.shutdown();
 			//aggregate partial results
-			if( !(uaop.indexFn instanceof ReduceCol) )
-				for( AggTask task : tasks )
-					aggregateFinalResult(uaop.aggOp, out, ((PartialAggTask)task).getResult());
+			if( !(uaop.indexFn instanceof ReduceCol) ) {
+				out.copy(((PartialAggTask)tasks.get(0)).getResult()); //for init
+				for( int i=1; i<tasks.size(); i++ )
+					aggregateFinalResult(uaop.aggOp, out, ((PartialAggTask)tasks.get(i)).getResult());
+			}
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -303,6 +307,78 @@ public class LibMatrixAgg
 		out.examSparsity();
 		
 		//System.out.println("uop ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
+	}
+	
+	/**
+	 * 
+	 * @param in1
+	 * @param in2
+	 * @param in3
+	 * @param ret
+	 * @return
+	 */
+	public static double aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3)
+	{
+		//early abort if any block is empty
+		if( in1.isEmptyBlock(false) || in2.isEmptyBlock(false) || in3.isEmptyBlock(false) ) {
+			return 0;
+		}
+				
+		//Timing time = new Timing(true);
+		
+		double val = -1;
+		if( !in1.sparse && !in2.sparse && !in3.sparse ) //DENSE
+			val = aggregateTernaryDense(in1, in2, in3, 0, in1.rlen);
+		else //GENERAL CASE
+			val = aggregateTernaryGeneric(in1, in2, in3, 0, in1.rlen);
+		
+		//System.out.println("tak+ ("+in1.rlen+","+in1.sparse+","+in2.sparse+","+in3.sparse+") in "+time.stop()+"ms.");
+		
+		return val;			
+	}
+	
+	/**
+	 * @throws DMLRuntimeException 
+	 * 
+	 */
+	public static double aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, int k) 
+		throws DMLRuntimeException
+	{		
+		//fall back to sequential version if necessary
+		if( k <= 1 || in1.rlen/3 < PAR_NUMCELL_THRESHOLD ) {
+			return aggregateTernary(in1, in2, in3);
+		}
+		
+		//early abort if any block is empty
+		if( in1.isEmptyBlock(false) || in2.isEmptyBlock(false) || in3.isEmptyBlock(false) ) {
+			return 0;
+		}
+			
+		//Timing time = new Timing(true);
+		
+		double val = -1;
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ArrayList<AggTernaryTask> tasks = new ArrayList<AggTernaryTask>();
+			int blklen = (int)(Math.ceil((double)in1.rlen/k));
+			for( int i=0; i<k & i*blklen<in1.rlen; i++ )
+				tasks.add( new AggTernaryTask(in1, in2, in3, i*blklen, Math.min((i+1)*blklen, in1.rlen)));
+			pool.invokeAll(tasks);	
+			pool.shutdown();
+			//aggregate partial results
+			KahanObject kbuff = new KahanObject(0, 0);
+			KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+			for( AggTernaryTask task : tasks )
+				kplus.execute2(kbuff, task.getResult());
+			val = kbuff._sum;
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		
+		//System.out.println("tak+ k="+k+" ("+in1.rlen+","+in1.sparse+","+in2.sparse+","+in3.sparse+") in "+time.stop()+"ms.");
+		
+		return val;			
 	}
 	
 	/**
@@ -443,6 +519,59 @@ public class LibMatrixAgg
 			out.binaryOperationsInPlace(laop.increOp, partout);
 	}
 
+	/**
+	 * 
+	 * @param in1
+	 * @param in2
+	 * @param in3
+	 * @param rl
+	 * @param ru
+	 * @return
+	 */
+	private static double aggregateTernaryDense(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, int rl, int ru)
+	{
+		//compute block operations
+		KahanObject kbuff = new KahanObject(0, 0);
+		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+		
+		double[] a = in1.denseBlock;
+		double[] b = in2.denseBlock;
+		double[] c = in3.denseBlock;
+			
+		for( int i=rl; i<ru; i++ ) {
+			double val = a[i] * b[i] * c[i];
+			kplus.execute2( kbuff, val );
+		}
+		
+		return kbuff._sum;
+	}
+	
+	/**
+	 * 
+	 * @param in1
+	 * @param in2
+	 * @param in3
+	 * @param rl
+	 * @param ru
+	 * @return
+	 */
+	private static double aggregateTernaryGeneric(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, int rl, int ru)
+	{		
+		//compute block operations
+		KahanObject kbuff = new KahanObject(0, 0);
+		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				
+		for( int i=rl; i<ru; i++ ) {
+			double val1 = in1.quickGetValue(i, 0);
+				double val2 = in2.quickGetValue(i, 0);
+				double val3 = in3.quickGetValue(i, 0);
+				double val = val1 * val2 * val3;
+				kplus.execute2( kbuff, val );
+		}
+	
+		return kbuff._sum;
+	}
+	
 	/**
 	 * 
 	 * @param in
@@ -2376,6 +2505,44 @@ public class LibMatrixAgg
 		}
 		
 		public MatrixBlock getResult() {
+			return _ret;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class AggTernaryTask extends AggTask 
+	{
+		private MatrixBlock _in1  = null;
+		private MatrixBlock _in2  = null;
+		private MatrixBlock _in3  = null;
+		private double _ret = -1;
+		private int _rl = -1;
+		private int _ru = -1;
+
+		protected AggTernaryTask( MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, int rl, int ru ) 
+			throws DMLRuntimeException
+		{
+			_in1 = in1;	
+			_in2 = in2;	
+			_in3 = in3;				
+			_rl = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public Object call() throws DMLRuntimeException
+		{
+			if( !_in1.sparse && !_in2.sparse && !_in3.sparse ) //DENSE
+				_ret = aggregateTernaryDense(_in1, _in2, _in3, _rl, _ru);
+			else //GENERAL CASE
+				_ret = aggregateTernaryGeneric(_in1, _in2, _in3, _rl, _ru);
+			
+			return null;
+		}
+		
+		public double getResult() {
 			return _ret;
 		}
 	}

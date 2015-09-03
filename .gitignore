@@ -1,9 +1,11 @@
-.classpath
 .DS_Store
-.idea/
-.idea_modules/
+.classpath
 .project
 .settings
+.idea/
+.idea_modules/
+target/
+/bin/
 docs/_site
 docs/api
 src/main/java/Dml.tokens
@@ -18,8 +20,6 @@ src/main/java/com/ibm/bi/dml/parser/python/PydmlBaseListener.java
 src/main/java/com/ibm/bi/dml/parser/python/PydmlLexer.java
 src/main/java/com/ibm/bi/dml/parser/python/PydmlListener.java
 src/main/java/com/ibm/bi/dml/parser/python/PydmlParser.java
-target/
-/bin/
 src/test/scripts/**/in
 src/test/scripts/**/out
 src/test/scripts/**/expected

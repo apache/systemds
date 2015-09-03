@@ -1365,6 +1365,11 @@ public class MatrixObject extends CacheableData
 			throw new IOException(ex);
 		}
 		
+		//sanity check correct output
+		if( mb == null ) {
+			throw new IOException("Unable to load matrix from rdd: "+lrdd.getVarName());
+		}
+		
 		return mb;
 	}
 	
@@ -1410,9 +1415,9 @@ public class MatrixObject extends CacheableData
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, iimd.getInputInfo(),
 				                           rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), sparsity, _formatProperties);
 		
-		if( newData == null )
-		{
-			throw new IOException("Unable to load matrix from file "+filePathAndName);
+		//sanity check correct output
+		if( newData == null ) {
+			throw new IOException("Unable to load matrix from file: "+filePathAndName);
 		}
 		
 		if( LOG.isTraceEnabled() )

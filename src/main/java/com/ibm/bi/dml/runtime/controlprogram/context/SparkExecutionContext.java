@@ -453,6 +453,8 @@ public class SparkExecutionContext extends ExecutionContext
 				throw new DMLRuntimeException("Expecting no more than one result block.");
 			else if( list.size()==1 )
 				out = list.get(0)._2();
+			else //empty (e.g., after ops w/ outputEmpty=false)
+				out = new MatrixBlock(rlen, clen, true);
 		}
 		else //MULTIPLE BLOCKS
 		{

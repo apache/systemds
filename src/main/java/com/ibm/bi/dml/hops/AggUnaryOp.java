@@ -176,7 +176,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				}
 				
 				setLops(aggregate);
-
+				
 				//cast if required
 				if (getDataType() == DataType.SCALAR) {
 
@@ -198,7 +198,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 					setLineNumbers(unary1);
 					setLops(unary1);
-				}
+				} 
 			}
 			else if( et == ExecType.SPARK )
 			{
@@ -222,6 +222,21 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					PartialAggregate.setDimensionsBasedOnDirection(transform1, getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), dir);
 					setLineNumbers(transform1);
 					setLops(transform1);
+				
+					if (getDataType() == DataType.SCALAR) {
+						boolean needAgg = requiresAggregation(input, _direction);
+						SparkAggType aggtype = getSparkUnaryAggregationType(needAgg);
+
+						PartialAggregate aggregate = new PartialAggregate(input.constructLops(), 
+								HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType(), aggtype, et);
+						
+						UnaryCP unary1 = new UnaryCP(aggregate, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
+								                    getDataType(), getValueType());
+						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+						setLineNumbers(unary1);
+						setLops(unary1);
+					}
+				
 				}				
 				else //default
 				{

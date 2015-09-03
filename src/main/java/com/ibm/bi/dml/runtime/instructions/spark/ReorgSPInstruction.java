@@ -55,18 +55,20 @@ public class ReorgSPInstruction extends UnarySPInstruction
  	private CPOperand _col = null;
  	private CPOperand _desc = null;
  	private CPOperand _ixret = null;
+ 	private boolean _bSortIndInMem = false;
 	 	
 	public ReorgSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr){
 		super(op, in, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.Reorg;
 	}
 	
-	public ReorgSPInstruction(Operator op, CPOperand in, CPOperand col, CPOperand desc, CPOperand ixret, CPOperand out, String opcode, String istr){
+	public ReorgSPInstruction(Operator op, CPOperand in, CPOperand col, CPOperand desc, CPOperand ixret, CPOperand out, String opcode, boolean bSortIndInMem, String istr){
 		this(op, in, out, opcode, istr);
 		_col = col;
 		_desc = desc;
 		_ixret = ixret;
 		_sptype = SPINSTRUCTION_TYPE.Reorg;
+		_bSortIndInMem = bSortIndInMem;
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
@@ -85,16 +87,20 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			return new ReorgSPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("rsort") ) {
-			InstructionUtils.checkNumFields(str, 5);
+			InstructionUtils.checkNumFields(str, 5, 6);
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 			in.split(parts[1]);
 			out.split(parts[5]);
 			CPOperand col = new CPOperand(parts[2]);
 			CPOperand desc = new CPOperand(parts[3]);
 			CPOperand ixret = new CPOperand(parts[4]);
+			boolean bSortIndInMem = false;		
 			
+			if(parts.length > 5)
+				bSortIndInMem = (parts[6].compareTo("true") == 0)?true:false;
+						
 			return new ReorgSPInstruction(new ReorgOperator(SortIndex.getSortIndexFnObject(1,false,false)), 
-					                      in, col, desc, ixret, out, opcode, str);
+					                      in, col, desc, ixret, out, opcode, bSortIndInMem, str);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ReorgInstruction: " + str);
@@ -154,7 +160,10 @@ public class ReorgSPInstruction extends UnarySPInstruction
 				out = RDDSortUtils.sortByVal(out, mcIn.getRows(), mcIn.getRowsPerBlock());
 			}
 			else { //sort multi-column matrix
-				out = RDDSortUtils.sortDataByVal(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+				if (! _bSortIndInMem)
+				        out = RDDSortUtils.sortDataByVal(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+				else					
+					out = RDDSortUtils.sortDataByValMemSort(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), sec, (ReorgOperator) _optr);
 			}
 		}
 		else {

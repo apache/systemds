@@ -43,6 +43,7 @@ public class ParameterizedBuiltin extends Lop
 	
 	private OperationTypes _operation;
 	private HashMap<String, Lop> _inputParams;
+	private boolean _bRmEmptyBC;
 
 	/**
 	 * Creates a new builtin function LOP.
@@ -136,6 +137,13 @@ public class ParameterizedBuiltin extends Lop
 		lps.setProperties(inputs, et, eloc, breaksAlignment, aligner, definesMRJob);
 	}
 
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bRmEmptyBC) 
+			throws HopsException 
+	{
+		this(paramLops, op, dt, vt, et);
+		_bRmEmptyBC = bRmEmptyBC;
+	}
+	
 	public OperationTypes getOp() { 
 		return _operation; 
 	}
@@ -246,6 +254,13 @@ public class ParameterizedBuiltin extends Lop
 				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
 		}
 		
+		if (_operation == OperationTypes.RMEMPTY) {			
+			sb.append("bRmEmptyBC");
+			sb.append(NAME_VALUE_SEPARATOR);
+			sb.append( _bRmEmptyBC );
+			sb.append(OPERAND_DELIMITOR);
+		}
+
 		sb.append(this.prepOutputOperand(output));
 		
 		return sb.toString();

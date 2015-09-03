@@ -47,8 +47,9 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 public class ReorgOp extends Hop 
 {
 	
-	public static boolean FORCE_MR_SORT_INDEXES = false;
+	public static boolean FORCE_DIST_SORT_INDEXES = false;
 	
+	public boolean bSortSPRewriteApplicable = false;
 	
 	private ReOrgOp op;
 
@@ -197,7 +198,7 @@ public class ReorgOp extends Hop
 					Hop voutput = null;
 					if( 2*OptimizerUtils.estimateSize(vinput.getDim1(), vinput.getDim2())
 						> OptimizerUtils.getLocalMemBudget() 
-						|| FORCE_MR_SORT_INDEXES ) 
+						|| FORCE_DIST_SORT_INDEXES ) 
 					{ 
 						//large vector, fallback to MR sort
 						//sort indexes according to given values
@@ -229,7 +230,7 @@ public class ReorgOp extends Hop
 						voutput = new ReorgOp("tmp3", getDataType(), getValueType(), ReOrgOp.SORT, sinputs); 
 						HopRewriteUtils.copyLineNumbers(this, voutput);	
 						//explicitly construct CP lop; otherwise there is danger of infinite recursion if forced runtime platform.
-						voutput.setLops( constructCPOrSparkSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3), ExecType.CP) );
+						voutput.setLops( constructCPOrSparkSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3), ExecType.CP, false) );
 						voutput.getLops().getOutputParameters().setDimensions(vinput.getDim1(), vinput.getDim2(), vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
 						setLops( voutput.constructLops() );								
 					}
@@ -266,7 +267,10 @@ public class ReorgOp extends Hop
 				}
 				else //CP or Spark
 				{
-					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et);
+					if( et==ExecType.SPARK && !FORCE_DIST_SORT_INDEXES)
+						bSortSPRewriteApplicable = isSortSPRewriteApplicable();
+					
+					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et, bSortSPRewriteApplicable);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
 					
@@ -285,11 +289,11 @@ public class ReorgOp extends Hop
 		return getLops();
 	}
 
-	private static Lop constructCPOrSparkSortLop( Hop input, Hop by, Hop desc, Hop ixret, ExecType et ) 
+	private static Lop constructCPOrSparkSortLop( Hop input, Hop by, Hop desc, Hop ixret, ExecType et, boolean bSortIndInMem ) 
 		throws HopsException, LopsException
 	{
 		Transform transform1 = new Transform( input.constructLops(), HopsTransf2Lops.get(ReOrgOp.SORT), 
-				     input.getDataType(), input.getValueType(), et);
+				     input.getDataType(), input.getValueType(), et, bSortIndInMem);
 		
 		for( Hop c : new Hop[]{by,desc,ixret} ) {
 			Lop ltmp = c.constructLops();
@@ -576,5 +580,29 @@ public class ReorgOp extends Hop
 			setVisited(VisitStatus.DONE);
 		}
 	}
-	
+
+	/**
+	 * This will check if there is sufficient memory locally (twice the size of second matrix, for original and sort data), and remotely (size of second matrix (sorted data)).  
+	 * @return
+	 */
+	private boolean isSortSPRewriteApplicable() 
+	{
+		boolean ret = false;
+		Hop input = getInput().get(0);
+		
+		//note: both cases (partitioned matrix, and sorted double array), require to
+		//fit the broadcast twice into the local memory budget. Also, the memory 
+		//constraint only needs to take the rhs into account because the output is 
+		//guaranteed to be an aggregate of <=16KB
+		
+		double size = input.dimsKnown() ? 
+				OptimizerUtils.estimateSize(input.getDim1(), 1) : //dims known and estimate fits
+					input.getOutputMemEstimate();                 //dims unknown but worst-case estimate fits
+		
+		if( OptimizerUtils.checkSparkBroadcastMemoryBudget(size) ) {
+			ret = true;
+		}
+		
+		return ret;
+	}	
 }

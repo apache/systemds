@@ -36,8 +36,10 @@ public class Transform extends Lop
 		Transpose,
 		Diag,
 		Reshape,
-		Sort,
+		Sort
 	};
+	
+	private boolean _bSortIndInMem = false;
 	
 	private OperationTypes operation = null;
 	
@@ -59,6 +61,13 @@ public class Transform extends Lop
 		init(input, op, dt, vt, ExecType.MR);
 	}
 
+	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) 
+	{
+		super(Lop.Type.Transform, dt, vt);		
+		_bSortIndInMem = bSortIndInMem;
+		init(input, op, dt, vt, et);
+	}
+	
 	private void init (Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 	{
 		operation = op;
@@ -179,6 +188,11 @@ public class Transform extends Lop
 		//output
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
+		
+		if( getExecType()==ExecType.SPARK && operation == OperationTypes.Sort ){
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _bSortIndInMem);
+		}
 		
 		return sb.toString();
 	}

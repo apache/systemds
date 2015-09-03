@@ -46,13 +46,16 @@ public class ParameterizedBuiltinOp extends Hop
 {
 	
 	private static boolean COMPILE_PARALLEL_REMOVEEMPTY = true;
-	
+	public static boolean FORCE_DIST_RM_EMPTY = false;
+
 	//operator type
 	private ParamBuiltinOp _op;
 	
 	//removeEmpty hints
 	private boolean _outputEmptyBlocks = true;
 	private boolean _outputPermutationMatrix = false;
+
+	private boolean _bRmEmptyBC = false;
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -610,7 +613,10 @@ public class ParameterizedBuiltinOp extends Hop
 			inMap.put("maxdim", lmaxdim);
 			inMap.put("margin", inputlops.get("margin"));
 		
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( inMap, HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);			
+			if ( !FORCE_DIST_RM_EMPTY && isRemoveEmptyBcSP())
+				_bRmEmptyBC = true;
+			
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( inMap, HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et, _bRmEmptyBC);			
 			setOutputDimensions(pbilop);
 			setLineNumbers(pbilop);
 		
@@ -1048,5 +1054,30 @@ public class ParameterizedBuiltinOp extends Hop
 				&& ((ReorgOp)targetHop).getOp()==ReOrgOp.DIAG 
 				&& targetHop.getInput().get(0).getDim2() == 1 ); 
 	}
+
+	/**
+	 * This will check if there is sufficient memory locally (twice the size of second matrix, for original and sort data), and remotely (size of second matrix (sorted data)).  
+	 * @return
+	 */
+	private boolean isRemoveEmptyBcSP()	// TODO find if 2 x size needed. 
+	{
+		boolean ret = false;
+		Hop input = getInput().get(0);
+		
+		//note: both cases (partitioned matrix, and sorted double array), require to
+		//fit the broadcast twice into the local memory budget. Also, the memory 
+		//constraint only needs to take the rhs into account because the output is 
+		//guaranteed to be an aggregate of <=16KB
+		
+		double size = input.dimsKnown() ? 
+				OptimizerUtils.estimateSize(input.getDim1(), 1) : //dims known and estimate fits
+					input.getOutputMemEstimate();                 //dims unknown but worst-case estimate fits
+		
+		if( OptimizerUtils.checkSparkBroadcastMemoryBudget(size) ) {
+			ret = true;
+		}
+		
+		return ret;
+	}	
 	
 }

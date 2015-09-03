@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -274,6 +275,62 @@ public class RemoveEmptyTest extends AutomatedTestBase
 		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.SPARK, true );
 	}
 	
+	// ------------------------------
+	// Remove Empty with Broadcast option
+	@Test
+	public void testRemoveEmptyRowsDenseBcSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.SPARK, false, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsSparseBcSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.SPARK, true, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsDenseBcSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.SPARK, false, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsSparseBcSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.SPARK, true, false );
+	}
+
+	@Test
+	public void testRemoveEmptyRowsMultipleDenseBcSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.SPARK, false, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsMultipleSparseBcSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.SPARK, true, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsMultipleDenseBcSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.SPARK, false, false );
+	}
+	
+	@Test
+	public void testRemoveEmptyColsMultipleSparseBcSP() 
+	{
+		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.SPARK, true, false );
+	}
+	
+	
+	
+	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse )
+	{
+		runTestRemoveEmpty(testname, margin, et, sparse, true);
+	}
 	/**
 	 * 
 	 * @param testname
@@ -281,7 +338,7 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	 * @param mr
 	 * @param sparse
 	 */
-	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse )
+	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse, boolean bForceDistRmEmpty )
 	{		
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -294,6 +351,8 @@ public class RemoveEmptyTest extends AutomatedTestBase
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
+		ParameterizedBuiltinOp.FORCE_DIST_RM_EMPTY = bForceDistRmEmpty;
 		
 		try
 		{

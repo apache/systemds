@@ -28,13 +28,20 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.functionobjects.SortIndex;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVectorFunction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -178,6 +185,111 @@ public class RDDSortUtils
 				.flatMapToPair(new ShuffleMatrixBlockRowsFunction(rlen, brlen));
 		ret = RDDAggregateUtils.mergeByKey(ret);
 		
+		return ret;	
+	}
+	
+	/**
+	 * 
+	 * @param val
+	 * @param data
+	 * @param asc
+	 * @param rlen
+	 * @param brlen
+	 * @param bclen
+	 * @param ec
+	 * @param r_op
+	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	/* This function collects and sorts value column through cluster distribution and then broadcasts it. 
+	 * 
+	 * For now, its commented out until it gets evaluated completely through experiments.
+	 */
+//	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByValDistSort( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
+//			JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int brlen, int bclen, 
+//				ExecutionContext ec, ReorgOperator r_op) 
+//					throws DMLRuntimeException, DMLUnsupportedOperationException
+//	{
+//		SparkExecutionContext sec = (SparkExecutionContext)ec;
+//		MatrixBlock sortedBlock;
+//		
+//		//create value-index rdd from inputs
+//		JavaPairRDD<ValueIndexPair, Double> dvals = val
+//				.flatMapToPair(new ExtractDoubleValuesWithIndexFunction(brlen));
+//	
+//		//sort (creates sorted range per partition)
+//		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
+//		int numPartitions = (int)Math.ceil(((double)rlen*16)/hdfsBlocksize);
+//		JavaRDD<ValueIndexPair> sdvals = dvals
+//				.sortByKey(new IndexComparator(asc), true, numPartitions)
+//				.keys(); //workaround for index comparator
+//	 
+//		//create target indexes by original index
+//		JavaPairRDD<Long, Long> ixmap = sdvals
+//				.zipWithIndex()
+//				.mapToPair(new ExtractIndexFunction())			// Original Index sorted by values
+//				.sortByKey();									// Original Index sorted to original order, with target index associaed with them.
+//		
+//		JavaPairRDD<MatrixIndexes, MatrixBlock> ixmap2 = ixmap 
+//        		.mapPartitions(new ConvertToBinaryBlockFunction4(rlen, brlen))
+//        		.mapToPair(new UnfoldBinaryBlockFunction());
+//		
+//		sortedBlock = SparkExecutionContext.toMatrixBlock(ixmap2, (int)rlen, 1, brlen, bclen, -1);
+//
+//		PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(sortedBlock, brlen, bclen);		
+//		Broadcast<PartitionedMatrixBlock> _pmb = sec.getSparkContext().broadcast(pmb);	
+//
+//		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = data
+//					.flatMapToPair(new ShuffleMatrixBlockRowsInMemFunction(rlen, brlen, _pmb));
+//		ret = RDDAggregateUtils.mergeByKey(ret);
+//
+//		return ret;	
+//	}
+	
+	/**
+	 * 
+	 * @param val
+	 * @param data
+	 * @param asc
+	 * @param rlen
+	 * @param brlen
+	 * @param bclen
+	 * @param ec
+	 * @param r_op
+	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	/* This function collects and sorts value column in memory and then broadcasts it. 
+	 * 
+	 */
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByValMemSort( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
+			JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int brlen, int bclen, 
+			SparkExecutionContext sec, ReorgOperator r_op) 
+					throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		MatrixBlock inMatBlock = SparkExecutionContext.toMatrixBlock(val, (int)rlen, 1, brlen, bclen, -1);
+
+		// Define operator for reorgOperation
+		ReorgOperator r_opLocal = new ReorgOperator(SortIndex.getSortIndexFnObject(1, !asc, true));	
+		
+		//Get the vector containing target index sorted based on values in column to be sorted. 
+		MatrixBlock sortedBlock = (MatrixBlock) (inMatBlock.reorgOperations(r_opLocal, new MatrixBlock(), -1, -1, -1));
+		
+		// Flipping the sort index, as original sort contains vector sorted based on value, we need target index in the vector.
+		MatrixBlock sortedBlockFlipInd = new MatrixBlock(sortedBlock.getNumRows(), 1, sortedBlock.isInSparseFormat()); 
+		for (int i=0; i < sortedBlock.getNumRows(); ++i) 
+			sortedBlockFlipInd.quickSetValue((int)sortedBlock.quickGetValue(i, 0)-1, 0, i+1);			
+
+		PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(sortedBlockFlipInd, brlen, bclen);		
+		Broadcast<PartitionedMatrixBlock> _pmb = sec.getSparkContext().broadcast(pmb);	
+
+		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = data
+					.flatMapToPair(new ShuffleMatrixBlockRowsInMemFunction(rlen, brlen, _pmb));
+		ret = RDDAggregateUtils.mergeByKey(ret);
+
 		return ret;	
 	}
 	
@@ -521,6 +633,7 @@ public class RDDSortUtils
 		{
 			MatrixBlock data = arg0._2()._1();
 			MatrixBlock ixmap = arg0._2()._2();
+			MatrixIndexes ixmap2 = arg0._1();
 			
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();			
 			for( int i=0; i<data.getNumRows(); i++) 
@@ -529,7 +642,51 @@ public class RDDSortUtils
 				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
 				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
 				long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
-				MatrixIndexes lix = new MatrixIndexes(rix,1);
+				MatrixIndexes lix = new MatrixIndexes(rix,ixmap2.getColumnIndex());
+				MatrixBlock lmb = new MatrixBlock((int)len, data.getNumColumns(), true);	
+				MatrixBlock tmp = data.sliceOperations(i, i, 0, data.getNumColumns()-1, new MatrixBlock());
+				lmb.leftIndexingOperations(tmp, pos, pos, 0, data.getNumColumns()-1, lmb, true);
+				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(lix, lmb));
+			}			
+
+			return ret;
+		}
+	}
+	
+	private static class ShuffleMatrixBlockRowsInMemFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,MatrixIndexes,MatrixBlock> 
+	{	
+		private static final long serialVersionUID = 6885207719329119646L;   //TODO
+		
+		private long _rlen = -1;
+		private int _brlen = -1;
+
+		private Broadcast<PartitionedMatrixBlock> _pmb = null;
+		
+		public ShuffleMatrixBlockRowsInMemFunction(long rlen, int brlen, Broadcast<PartitionedMatrixBlock> pmb)
+		{
+			_rlen = rlen;
+			_brlen = brlen;
+			_pmb = pmb;
+		}
+
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+			throws Exception 
+		{
+			MatrixIndexes ixmap = arg0._1();
+			MatrixBlock data = arg0._2();
+
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();			
+
+			MatrixBlock mbTargetIndex = _pmb.value().getMatrixBlock((int)ixmap.getRowIndex(), 1);
+			
+			for( int i=0; i<data.getNumRows(); i++) 
+			{
+				long valix = (long) mbTargetIndex.getValue(i, 0);
+				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
+				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
+				long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);		
+				MatrixIndexes lix = new MatrixIndexes(rix,ixmap.getColumnIndex());
 				MatrixBlock lmb = new MatrixBlock((int)len, data.getNumColumns(), true);	
 				MatrixBlock tmp = data.sliceOperations(i, i, 0, data.getNumColumns()-1, new MatrixBlock());
 				lmb.leftIndexingOperations(tmp, pos, pos, 0, data.getNumColumns()-1, lmb, true);

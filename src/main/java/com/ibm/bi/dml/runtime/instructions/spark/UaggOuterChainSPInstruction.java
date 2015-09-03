@@ -153,8 +153,12 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		if(_uaggOp.indexFn instanceof ReduceAll ) //RC AGG (output is scalar)
 		{
 			MatrixBlock tmp = RDDAggregateUtils.aggStable(out, _aggOp);
-			DoubleObject val = new DoubleObject(tmp.quickGetValue(0, 0));
-			sec.setScalarOutput(output.getName(), val);
+			
+			//drop correction after aggregation
+			tmp.dropLastRowsOrColums(_aggOp.correctionLocation);
+
+			//put output block into symbol table (no lineage because single block)
+			sec.setMatrixOutput(output.getName(), tmp);
 		}
 		else //R/C AGG (output is rdd)
 		{			

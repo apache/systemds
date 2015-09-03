@@ -24,6 +24,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
@@ -41,6 +42,8 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractGroup;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractGroupNWeights;
@@ -67,12 +70,14 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 	
 	private int arity;
 	protected HashMap<String,String> params;
+	private boolean _bRmEmptyBC = false;
 	
-	public ParameterizedBuiltinSPInstruction(Operator op, HashMap<String,String> paramsMap, CPOperand out, String opcode, String istr )
+	public ParameterizedBuiltinSPInstruction(Operator op, HashMap<String,String> paramsMap, CPOperand out, String opcode, String istr, boolean bRmEmptyBC )
 	{
 		super(op, null, null, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.ParameterizedBuiltin;
 		params = paramsMap;
+		_bRmEmptyBC = bRmEmptyBC;
 	}
 
 	public int getArity() {
@@ -118,22 +123,26 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			}
 			
 			Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
-			return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str);
+			return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
 		}
 		else if(   opcode.equalsIgnoreCase("rmempty") ) 
 		{
+			boolean bRmEmptyBC = false; 
+			if(parts.length > 6)
+				bRmEmptyBC = (parts[5].compareTo("true") == 0)?true:false;
+								
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
+			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, bRmEmptyBC);
 		}
 		else if(   opcode.equalsIgnoreCase("rexpand") ) 
 		{
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
+			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
 		}
 		else if(   opcode.equalsIgnoreCase("replace") ) 
 		{
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
+			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
@@ -224,7 +233,8 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			
 			//get input rdd handle
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( rddInVar );
-			JavaPairRDD<MatrixIndexes,MatrixBlock> off = sec.getBinaryBlockRDDHandleForVariable( rddOffVar );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> off;
+			Broadcast<PartitionedMatrixBlock> broadcastOff;
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(rddInVar);
 			boolean rows = sec.getScalarInput(params.get("margin"), ValueType.STRING, true).getStringValue().equals("rows");
 			long maxDim = sec.getScalarInput(params.get("maxdim"), ValueType.DOUBLE, false).getLongValue();
@@ -233,15 +243,30 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			long numRep = (long)Math.ceil( rows ? (double)mcIn.getCols()/bclen : (double)mcIn.getRows()/brlen);
 			
 			//execute remove empty rows/cols operation
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out;
+
+			if(_bRmEmptyBC){
+				broadcastOff = sec.getBroadcastForVariable(rddOffVar );
+				// Broadcast offset vector
+				out = in
+					.flatMapToPair(new RDDRemoveEmptyFunctionInMem(rows, maxDim, brlen, bclen, broadcastOff));		
+			}
+			else {
+				off = sec.getBinaryBlockRDDHandleForVariable( rddOffVar );
+				out = in
 					.join( off.flatMapToPair(new ReplicateVectorFunction(!rows,numRep)) )
 					.flatMapToPair(new RDDRemoveEmptyFunction(rows, maxDim, brlen, bclen));		
+			}				
+
 			out = RDDAggregateUtils.mergeByKey(out);
 			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddInVar);
-			sec.addLineageRDD(output.getName(), rddOffVar);
+			if(!_bRmEmptyBC)
+				sec.addLineageRDD(output.getName(), rddOffVar);
+			else
+				sec.addLineageBroadcast(output.getName(), rddOffVar);		// TODO
 			
 			//update output statistics (required for correctness)
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
@@ -350,6 +375,51 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//prepare inputs (for internal api compatibility)
 			IndexedMatrixValue data = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2()._1());
 			IndexedMatrixValue offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2()._2());
+			
+			//execute remove empty operations
+			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+			LibMatrixReorg.rmempty(data, offsets, _rmRows, _len, _brlen, _bclen, out);
+
+			//prepare and return outputs
+			return SparkUtils.fromIndexedMatrixBlock(out);
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public static class RDDRemoveEmptyFunctionInMem implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,MatrixIndexes,MatrixBlock> 
+	{
+		private static final long serialVersionUID = 4906304771183325289L;
+
+		private boolean _rmRows; 
+		private long _len;
+		private long _brlen;
+		private long _bclen;
+		
+		Broadcast<PartitionedMatrixBlock> _off = null;
+				
+		public RDDRemoveEmptyFunctionInMem(boolean rmRows, long len, long brlen, long bclen,Broadcast<PartitionedMatrixBlock> off) 
+		{
+			_rmRows = rmRows;
+			_len = len;
+			_brlen = brlen;
+			_bclen = bclen;
+			_off = off;
+		}
+
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+			throws Exception 
+		{
+			//prepare inputs (for internal api compatibility)
+			IndexedMatrixValue data = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2());
+			//IndexedMatrixValue offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2()._2());
+			IndexedMatrixValue offsets = null;
+			if(_rmRows)
+				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.value().getMatrixBlock((int)arg0._1().getRowIndex(), 1));
+			else
+				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.value().getMatrixBlock(1, (int)arg0._1().getColumnIndex()));
 			
 			//execute remove empty operations
 			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();

@@ -319,7 +319,7 @@ public class FullOrderTest extends AutomatedTestBase
 	@Test
 	public void testOrderMatrixDataDescDenseSP() 
 	{
-		runOrderTest(true, InputType.DENSE, true, false, true, ExecType.SPARK);
+		runOrderTest(true, InputType.DENSE, true, false, true, ExecType.SPARK, true);
 	}
 	
 	@Test
@@ -868,7 +868,26 @@ public class FullOrderTest extends AutomatedTestBase
 		runOrderTest(TEST_NAME2, true, InputType.DENSE, false, false, true, ExecType.CP);
 	}
 	
+	//-----------------------------
+	@Test
+	public void testOrderMatrixIndexAscDenseSP_ForceDist() 
+	{
+		runOrderTest(true, InputType.DENSE, false, true, true, ExecType.SPARK, true);
+	}
+
+	@Test
+	public void testOrderMatrixDataDescSparseSP_ForceDist() 
+	{
+		runOrderTest(true, InputType.SPARSE, true, false, true, ExecType.SPARK, true);
+	}
+
+	@Test
+	public void testOrderVectorDataDescDenseSP_ForceDist() 
+	{
+		runOrderTest(false, InputType.DENSE, true, false, true, ExecType.SPARK, true);
+	}
 	
+
 	/**
 	 * 
 	 * @param matrix
@@ -903,7 +922,7 @@ public class FullOrderTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		boolean rewriteOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		boolean forceOpOld = ReorgOp.FORCE_MR_SORT_INDEXES;
+		boolean forceOpOld = ReorgOp.FORCE_DIST_SORT_INDEXES;
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
@@ -922,7 +941,7 @@ public class FullOrderTest extends AutomatedTestBase
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;
-			ReorgOp.FORCE_MR_SORT_INDEXES = forceDistSort;
+			ReorgOp.FORCE_DIST_SORT_INDEXES = forceDistSort;
 			
 			int rows = matrix ? rows1 : rows2;
 			int cols = matrix ? cols1 : 1;
@@ -969,7 +988,7 @@ public class FullOrderTest extends AutomatedTestBase
 			//reset flags
 			rtplatform = platformOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewriteOld;
-			ReorgOp.FORCE_MR_SORT_INDEXES = forceOpOld;
+			ReorgOp.FORCE_DIST_SORT_INDEXES = forceOpOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}

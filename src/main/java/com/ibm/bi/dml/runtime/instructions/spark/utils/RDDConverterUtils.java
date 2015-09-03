@@ -217,7 +217,7 @@ public class RDDConverterUtils
 		for(int i = 0; i < oldSchema.length; i++) {
 			newSchema[i] = oldSchema[i];
 		}
-		newSchema[oldSchema.length] = new StructField(nameOfCol, DataTypes.DoubleType, false, null);
+		newSchema[oldSchema.length] = DataTypes.createStructField(nameOfCol, DataTypes.DoubleType, false);
 		// JavaRDD<Row> newRows = df.rdd().toJavaRDD().map(new AddRowID());
 		JavaRDD<Row> newRows = df.rdd().toJavaRDD().zipWithIndex().map(new AddRowID());
 		return sqlContext.createDataFrame(newRows, new StructType(newSchema));

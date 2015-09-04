@@ -154,14 +154,11 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		//right indexing
 		if( opcode.equalsIgnoreCase("rangeReIndex") )
 		{
-			//check and set output dimensions
+			//update and check output dimensions
+			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
-			if(!mcOut.dimsKnown()) {
-				if(!mc.dimsKnown())
-					throw new DMLRuntimeException("The output dimensions are not specified for MatrixIndexingSPInstruction");
-				mcOut.set(ru-rl+1, cu-cl+1, mc.getRowsPerBlock(), mc.getColsPerBlock());
-			}
+			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+			checkValidOutputDimensions(mcOut);
 			
 			//execute right indexing operation
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
@@ -184,20 +181,20 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			Broadcast<PartitionedMatrixBlock> broadcastIn2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+			
+			//update and check output dimensions
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-
-			if(!mcOut.dimsKnown()) {
-				throw new DMLRuntimeException("The output dimensions are not specified for MatrixIndexingSPInstruction");
-			}
+			MatrixCharacteristics mcLeft = ec.getMatrixCharacteristics(input1.getName());
+			mcOut.set(mcLeft.getRows(), mcLeft.getCols(), mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock());
+			checkValidOutputDimensions(mcOut);
 			
 			if(input2.getDataType() == DataType.MATRIX) //MATRIX<-MATRIX
 			{
-				MatrixCharacteristics mcLeft = ec.getMatrixCharacteristics(input1.getName());
 				MatrixCharacteristics mcRight = ec.getMatrixCharacteristics(input2.getName());
 				
 				//sanity check matching index range and rhs dimensions
-				if(!mcLeft.dimsKnown() || !mcRight.dimsKnown()) {
-					throw new DMLRuntimeException("The input matrix dimensions are not specified for MatrixIndexingSPInstruction");
+				if(!mcRight.dimsKnown()) {
+					throw new DMLRuntimeException("The right input matrix dimensions are not specified for MatrixIndexingSPInstruction");
 				}
 				if(!(ru-rl+1 == mcRight.getRows() && cu-cl+1 == mcRight.getCols())) {
 					throw new DMLRuntimeException("Invalid index range of leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"] vs ["+mcRight.getRows()+"x"+mcRight.getCols()+"]." );
@@ -227,6 +224,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			{
 				if(!(rl==ru && cl==cu))
 					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"]." );
+				
 				ScalarObject scalar = sec.getScalarInput(input2.getName(), ValueType.DOUBLE, input2.isLiteral());
 				double scalarValue = scalar.getDoubleValue();
 				
@@ -244,6 +242,19 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingSPInstruction.");		
 	}
 		
+	/**
+	 * 
+	 * @param mcOut
+	 * @throws DMLRuntimeException
+	 */
+	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) 
+		throws DMLRuntimeException
+	{
+		if(!mcOut.dimsKnown()) {
+			throw new DMLRuntimeException("MatrixIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
+		}
+	}
+	
 	/**
 	 * 
 	 */

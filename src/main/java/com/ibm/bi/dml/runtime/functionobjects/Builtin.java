@@ -48,7 +48,7 @@ public class Builtin extends ValueFunction
 
 	private static final long serialVersionUID = 3836744687789840574L;
 	
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID };
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
 	public BuiltinFunctionCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -88,6 +88,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinFunctionCode.put( "inverse", BuiltinFunctionCode.INVERSE);
 		String2BuiltinFunctionCode.put( "sprop",   BuiltinFunctionCode.SPROP);
 		String2BuiltinFunctionCode.put( "sigmoid",   BuiltinFunctionCode.SIGMOID);
+		String2BuiltinFunctionCode.put( "sel+",   BuiltinFunctionCode.SELP);
 	}
 	
 	// We should create one object for every builtin function that we support
@@ -96,7 +97,7 @@ public class Builtin extends ValueFunction
 	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
 	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null;
-	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null;
+	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null, selpObj = null;
 	
 	private Builtin(BuiltinFunctionCode bf) {
 		bFunc = bf;
@@ -256,6 +257,11 @@ public class Builtin extends ValueFunction
 			if ( sigmoidObj == null )
 				sigmoidObj = new Builtin(BuiltinFunctionCode.SIGMOID);
 			return sigmoidObj;
+		
+		case SELP:
+			if ( selpObj == null )
+				selpObj = new Builtin(BuiltinFunctionCode.SELP);
+			return selpObj;
 			
 		default:
 			// Unknown code --> return null
@@ -294,6 +300,7 @@ public class Builtin extends ValueFunction
 		case INVERSE:
 		case SPROP:	
 		case SIGMOID:
+		case SELP:
 			return (_arity == 1);
 		
 		case LOG:
@@ -354,7 +361,12 @@ public class Builtin extends ValueFunction
 
 		case SIGMOID:
 			//sigmoid: 1/(1+exp(-x))
-			return FASTMATH ? 1 / (1 + FastMath.exp(-in))  : 1 / (1 + Math.exp(-in)) ; 
+			return FASTMATH ? 1 / (1 + FastMath.exp(-in))  : 1 / (1 + Math.exp(-in));
+		
+		case SELP:
+			//select positive: x*(x>0)
+			return (in > 0) ? in : 0;
+			
 		default:
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}

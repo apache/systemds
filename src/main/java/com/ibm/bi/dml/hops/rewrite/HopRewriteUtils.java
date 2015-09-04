@@ -486,6 +486,24 @@ public class HopRewriteUtils
 	/**
 	 * 
 	 * @param input
+	 * @param type
+	 * @return
+	 * @throws HopsException 
+	 */
+	public static UnaryOp createUnary(Hop input, OpOp1 type) 
+		throws HopsException
+	{
+		UnaryOp unary = new UnaryOp(input.getName(), input.getDataType(), input.getValueType(), type, input);
+		HopRewriteUtils.setOutputBlocksizes(unary, input.getRowsInBlock(), input.getColsInBlock());
+		HopRewriteUtils.copyLineNumbers(input, unary);
+		unary.refreshSizeInformation();	
+		
+		return unary;
+	}
+	
+	/**
+	 * 
+	 * @param input
 	 * @return
 	 */
 	public static BinaryOp createMinus(Hop input)

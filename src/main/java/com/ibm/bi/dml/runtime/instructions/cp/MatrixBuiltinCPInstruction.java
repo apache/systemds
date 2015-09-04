@@ -29,12 +29,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
 
 public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 {
-	
-	public MatrixBuiltinCPInstruction(Operator op,
-									  CPOperand in,
-									  CPOperand out,
-									  String opcode,
-									  String instr){
+	public MatrixBuiltinCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr){
 		super(op, in, out, 1, opcode, instr);
 	}
 
@@ -57,7 +52,6 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 			
 			ec.setMatrixOutput(output_name, resultBlock);
 			ec.releaseMatrixInput(input1.getName());
-		}
-		
+		}		
 	}
 }

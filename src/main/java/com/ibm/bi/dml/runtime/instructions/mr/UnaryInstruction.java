@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
@@ -54,7 +55,7 @@ public class UnaryInstruction extends UnaryMRInstructionBase
 		
 		// Currently, UnaryInstructions are used primarily for executing Builtins like SIN(A), LOG(A,2)
 		if ( InstructionUtils.isBuiltinFunction(opcode) ) {
-			UnaryOperator unary = new UnaryOperator(com.ibm.bi.dml.runtime.functionobjects.Builtin.getBuiltinFnObject(opcode));
+			UnaryOperator unary = new UnaryOperator(Builtin.getBuiltinFnObject(opcode));
 			return new UnaryInstruction(unary, in, out, str);
 		}
 		else 

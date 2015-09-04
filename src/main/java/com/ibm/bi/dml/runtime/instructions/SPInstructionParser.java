@@ -181,6 +181,7 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "floor" , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sprop", SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sigmoid", SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "sel+", SPINSTRUCTION_TYPE.BuiltinUnary);
 		
 		// Parameterized Builtin Functions
 		String2SPInstructionType.put( "groupedagg"	, SPINSTRUCTION_TYPE.ParameterizedBuiltin);

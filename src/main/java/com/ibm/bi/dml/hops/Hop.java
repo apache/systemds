@@ -1008,6 +1008,7 @@ public abstract class Hop
 		//fused ML-specific operators for performance 
 		SPROP, //sample proportion: P * (1 - P)
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X)) 
+		SELP, //select positive: X * (X>0)
 	}
 
 	// Operations that require two operands
@@ -1215,6 +1216,7 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.SPROP, com.ibm.bi.dml.lops.Unary.OperationTypes.SPROP);
 		HopsOpOp1LopsU.put(OpOp1.SIGMOID, com.ibm.bi.dml.lops.Unary.OperationTypes.SIGMOID);
+		HopsOpOp1LopsU.put(OpOp1.SELP, com.ibm.bi.dml.lops.Unary.OperationTypes.SELP);
 	}
 
 	protected static final HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;

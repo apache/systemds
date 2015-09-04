@@ -47,7 +47,8 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException {
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		

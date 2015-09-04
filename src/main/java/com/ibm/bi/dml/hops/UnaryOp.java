@@ -568,7 +568,8 @@ public class UnaryOp extends Hop
 		if( mc.dimsKnown() ) {
 			if( _op==OpOp1.ABS || _op==OpOp1.COS || _op==OpOp1.SIN || _op==OpOp1.TAN 
 				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN  
-				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND ) //sparsity preserving
+				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND  
+				|| _op==OpOp1.SPROP || _op==OpOp1.SELP ) //sparsity preserving
 			{
 				ret = new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()};
 			}
@@ -672,7 +673,7 @@ public class UnaryOp extends Hop
 			setDim2( input.getDim2() );
 			if( _op==OpOp1.ABS || _op==OpOp1.COS || _op==OpOp1.SIN || _op==OpOp1.TAN  
 				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN
-				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND ) //sparsity preserving
+				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND || _op==OpOp1.SPROP ) //sparsity preserving
 			{
 				setNnz( input.getNnz() );
 			}

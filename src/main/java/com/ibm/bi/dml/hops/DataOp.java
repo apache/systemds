@@ -452,15 +452,19 @@ public class DataOp extends Hop
 			}
 			
 			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE ) {
 				setRequiresRecompile();
+			}
 		}
 	    else //READ
 		{
 	    	//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && letype==REMOTE && _recompileRead )
+			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && letype==REMOTE 
+				&& (_recompileRead || _requiresCheckpoint) ) 
+			{
 				setRequiresRecompile();
-	    	
+			}
+			
 			_etype = letype;
 		}
 		

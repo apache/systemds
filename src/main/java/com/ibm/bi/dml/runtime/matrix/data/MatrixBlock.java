@@ -2190,15 +2190,29 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		allocateSparseRowsBlock(false); //adjust to size
 		resetSparse(); //reset all sparse rows
 		
-		for(long i=0; i<nonZeros; i++)
-		{
-			int r = in.readInt();
-			int c = in.readInt();
-			double val = in.readDouble();			
-			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow(1,clen);
-			sparseRows[r].append(c, val);
+		if( clen > 1 ) //ULTRA-SPARSE BLOCK
+		{ 
+			//block: read ijv-triples
+			for(long i=0; i<nonZeros; i++) {
+				int r = in.readInt();
+				int c = in.readInt();
+				double val = in.readDouble();			
+				if(sparseRows[r]==null)
+					sparseRows[r]=new SparseRow(1,clen);
+				sparseRows[r].append(c, val);
+			}
 		}
+		else //ULTRA-SPARSE COL
+		{
+			//col: read iv-pairs (should never happen since always dense)
+			for(long i=0; i<nonZeros; i++) {
+				int r = in.readInt();
+				double val = in.readDouble();			
+				if(sparseRows[r]==null)
+					sparseRows[r]=new SparseRow(1,1);
+				sparseRows[r].append(0, val);
+			}
+		}	
 	}
 	
 	/**
@@ -2213,12 +2227,24 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		allocateDenseBlock(false); //allocate block
 		Arrays.fill(denseBlock, 0);
 		
-		for(long i=0; i<nonZeros; i++)
+		if( clen > 1 ) //ULTRA-SPARSE BLOCK
+		{ 
+			//block: read ijv-triples
+			for(long i=0; i<nonZeros; i++) {
+				int r = in.readInt();
+				int c = in.readInt();
+				double val = in.readDouble();			
+				denseBlock[r*clen+c] = val;
+			}
+		}
+		else //ULTRA-SPARSE COL
 		{
-			int r = in.readInt();
-			int c = in.readInt();
-			double val = in.readDouble();			
-			denseBlock[r*clen+c] = val;
+			//col: read iv-pairs
+			for(long i=0; i<nonZeros; i++) {
+				int r = in.readInt();
+				double val = in.readDouble();			
+				denseBlock[r] = val;
+			}
 		}
 	}
 	
@@ -2341,20 +2367,35 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		writeNnzInfo( out, true );
 		
 		long wnnz = 0;
-		for(int r=0;r<Math.min(rlen, sparseRows.length); r++)
-			if(sparseRows[r]!=null && !sparseRows[r].isEmpty() )
-			{
-				int alen = sparseRows[r].size();
-				int[] aix = sparseRows[r].getIndexContainer();
-				double[] avals = sparseRows[r].getValueContainer();
-				for(int j=0; j<alen; j++) {
+		if( clen > 1 ) //ULTRA-SPARSE BLOCK
+		{
+			//block: write ijv-triples
+			for(int r=0;r<Math.min(rlen, sparseRows.length); r++)
+				if(sparseRows[r]!=null && !sparseRows[r].isEmpty() )
+				{
+					int alen = sparseRows[r].size();
+					int[] aix = sparseRows[r].getIndexContainer();
+					double[] avals = sparseRows[r].getValueContainer();
+					for(int j=0; j<alen; j++) {
+						//ultra-sparse block: write ijv-triples
+						out.writeInt(r);
+						out.writeInt(aix[j]);
+						out.writeDouble(avals[j]);
+						wnnz++;
+					}
+				}	
+		}
+		else //ULTRA-SPARSE COL
+		{
+			//block: write iv-pairs (should never happen since always dense)
+			for(int r=0;r<Math.min(rlen, sparseRows.length); r++)
+				if(sparseRows[r]!=null && !sparseRows[r].isEmpty() ) {
 					out.writeInt(r);
-					out.writeInt(aix[j]);
-					out.writeDouble(avals[j]);
+					out.writeDouble(sparseRows[r].getValueContainer()[0]);
 					wnnz++;
 				}
-			}	
-		
+		}
+				
 		//validity check (nnz must exactly match written nnz)
 		if( nonZeros != wnnz ) {
 			throw new IOException("Invalid number of serialized non-zeros: "+wnnz+" (expected: "+nonZeros+")");
@@ -2414,15 +2455,29 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		writeNnzInfo( out, true );
 
 		long wnnz = 0;
-		for(int r=0, ix=0; r<rlen; r++)
-			for(int c=0; c<clen; c++, ix++)
-				if( denseBlock[ix]!=0 )
-				{
+		
+		if( clen > 1 ) //ULTRA-SPARSE BLOCK
+		{
+			//block: write ijv-triples
+			for(int r=0, ix=0; r<rlen; r++)
+				for(int c=0; c<clen; c++, ix++)
+					if( denseBlock[ix]!=0 ) {
+						out.writeInt(r);
+						out.writeInt(c);
+						out.writeDouble(denseBlock[ix]);
+						wnnz++;
+					}
+		}
+		else //ULTRA-SPARSE COL
+		{
+			//col: write iv-pairs
+			for(int r=0; r<rlen; r++)
+				if( denseBlock[r]!=0 ) {
 					out.writeInt(r);
-					out.writeInt(c);
-					out.writeDouble(denseBlock[ix]);
+					out.writeDouble(denseBlock[r]);
 					wnnz++;
 				}
+		}
 		
 		//validity check (nnz must exactly match written nnz)
 		if( nonZeros != wnnz ) {
@@ -2765,7 +2820,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		//extended header (int nnz, guaranteed by rlen<nnz)
 		size += 4;
 		//data (int-int-double triples per non-zero value)
-		size += nnz * 16;	
+		if( ncols > 1 ) //block: ijv-triples 
+			size += nnz * 16; 	
+		else //column: iv-pairs
+			size += nnz * 12; 
 		
 		return size;
 	}

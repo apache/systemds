@@ -1018,7 +1018,8 @@ public abstract class Hop
 		CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, SOLVE, MEDIAN, INVALID,
 		//fused ML-specific operators for performance
 		MINUS_NZ, //sparse-safe minus: X-(mean*ppred(X,0,!=))
-		LOG_NZ //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
+		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
+		MINUS1_MULT, //1-X*Y
 	};
 
 	// Operations that require 3 operands
@@ -1125,6 +1126,7 @@ public abstract class Hop
 		HopsOpOp2LopsB.put(OpOp2.DIV, com.ibm.bi.dml.lops.Binary.OperationTypes.DIVIDE);
 		HopsOpOp2LopsB.put(OpOp2.MODULUS, com.ibm.bi.dml.lops.Binary.OperationTypes.MODULUS);
 		HopsOpOp2LopsB.put(OpOp2.INTDIV, com.ibm.bi.dml.lops.Binary.OperationTypes.INTDIV);
+		HopsOpOp2LopsB.put(OpOp2.MINUS1_MULT, com.ibm.bi.dml.lops.Binary.OperationTypes.MINUS1_MULTIPLY);
 		HopsOpOp2LopsB.put(OpOp2.LESS, com.ibm.bi.dml.lops.Binary.OperationTypes.LESS_THAN);
 		HopsOpOp2LopsB.put(OpOp2.LESSEQUAL, com.ibm.bi.dml.lops.Binary.OperationTypes.LESS_THAN_OR_EQUALS);
 		HopsOpOp2LopsB.put(OpOp2.GREATER, com.ibm.bi.dml.lops.Binary.OperationTypes.GREATER_THAN);
@@ -1174,6 +1176,7 @@ public abstract class Hop
 		HopsOpOp2LopsU.put(OpOp2.DIV, com.ibm.bi.dml.lops.Unary.OperationTypes.DIVIDE);
 		HopsOpOp2LopsU.put(OpOp2.MODULUS, com.ibm.bi.dml.lops.Unary.OperationTypes.MODULUS);
 		HopsOpOp2LopsU.put(OpOp2.INTDIV, com.ibm.bi.dml.lops.Unary.OperationTypes.INTDIV);
+		HopsOpOp2LopsU.put(OpOp2.MINUS1_MULT, com.ibm.bi.dml.lops.Unary.OperationTypes.MINUS1_MULTIPLY);
 		HopsOpOp2LopsU.put(OpOp2.LESSEQUAL, com.ibm.bi.dml.lops.Unary.OperationTypes.LESS_THAN_OR_EQUALS);
 		HopsOpOp2LopsU.put(OpOp2.LESS, com.ibm.bi.dml.lops.Unary.OperationTypes.LESS_THAN);
 		HopsOpOp2LopsU.put(OpOp2.GREATEREQUAL, com.ibm.bi.dml.lops.Unary.OperationTypes.GREATER_THAN_OR_EQUALS);

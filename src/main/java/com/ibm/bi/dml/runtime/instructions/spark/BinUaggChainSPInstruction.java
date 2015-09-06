@@ -20,8 +20,6 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -29,7 +27,6 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.mr.BinaryInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -56,9 +53,6 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		
 		//check number of fields (2/3 inputs, output, type)
 		InstructionUtils.checkNumFields ( str, 4 );
 		
@@ -66,10 +60,10 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );		
 		
 		String opcode = parts[0];
-		BinaryOperator bop = BinaryInstruction.parseBinaryOperator(parts[1]);
+		BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[1]);
 		AggregateUnaryOperator uaggop = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
-		in.split(parts[3]);
-		out.split(parts[4]);
+		CPOperand in = new CPOperand(parts[3]);
+		CPOperand out = new CPOperand(parts[4]);
 		
 		return new BinUaggChainSPInstruction(in, out, bop, uaggop, opcode, str);
 	}

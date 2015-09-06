@@ -39,7 +39,7 @@ public class MatrixBVectorArithmeticSPInstruction extends ArithmeticBinarySPInst
 		//sanity check opcodes
 		if (!( opcode.equalsIgnoreCase("map+") || opcode.equalsIgnoreCase("map-") || opcode.equalsIgnoreCase("map*")
 			 ||opcode.equalsIgnoreCase("map/") || opcode.equalsIgnoreCase("map%%") || opcode.equalsIgnoreCase("map%/%")
-			 ||opcode.equalsIgnoreCase("map^")) )
+			 ||opcode.equalsIgnoreCase("map^") || opcode.equalsIgnoreCase("map1-*")) )
 		{
 			throw new DMLRuntimeException("Unknown opcode in MatrixBVectorArithmeticSPInstruction: " + toString());		
 		}

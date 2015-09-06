@@ -34,7 +34,7 @@ public class MatrixMatrixArithmeticSPInstruction extends ArithmeticBinarySPInstr
 		//sanity check opcodes
 		if ( !(  opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("*")
 			  || opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("%%") || opcode.equalsIgnoreCase("%/%")
-			  || opcode.equalsIgnoreCase("^")) ) 
+			  || opcode.equalsIgnoreCase("^") || opcode.equalsIgnoreCase("1-*") ) ) 
 		{
 			throw new DMLRuntimeException("Unknown opcode in MatrixMatrixArithmeticSPInstruction: " + toString());
 		}		

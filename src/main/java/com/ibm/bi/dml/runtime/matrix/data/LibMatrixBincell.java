@@ -779,14 +779,32 @@ public class LibMatrixBincell
 		}
 		else // MATRIX - MATRIX
 		{
-			for(int r=0; r<rlen; r++)
-				for(int c=0; c<clen; c++)
-				{
-					double v1 = m1.quickGetValue(r, c);
-					double v2 = m2.quickGetValue(r, c);
-					double v = op.fn.execute( v1, v2 );
-					ret.appendValue(r, c, v);
+			//dense non-empty vectors
+			if( m1.clen==1 && !m1.sparse && !m1.isEmptyBlock(false)   
+				&& !m2.sparse && !m2.isEmptyBlock(false)  )
+			{
+				ret.allocateDenseBlock();
+				double[] a = m1.denseBlock;
+				double[] b = m2.denseBlock;
+				double[] c = ret.denseBlock;
+				for( int i=0; i<rlen; i++ ) {
+					c[i] = op.fn.execute( a[i], b[i] );
+					if( c[i] != 0 ) 
+						ret.nonZeros++;
 				}
+			}
+			//general case
+			else 
+			{
+				for(int r=0; r<rlen; r++)
+					for(int c=0; c<clen; c++)
+					{
+						double v1 = m1.quickGetValue(r, c);
+						double v2 = m2.quickGetValue(r, c);
+						double v = op.fn.execute( v1, v2 );
+						ret.appendValue(r, c, v);
+					}
+			}
 		}
 	}
 	

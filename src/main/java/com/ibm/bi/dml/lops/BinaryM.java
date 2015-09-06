@@ -118,7 +118,9 @@ public class BinaryM extends Lop
 		case MODULUS:
 			return "map%%";	
 		case INTDIV:
-			return "map%/%";		
+			return "map%/%";
+		case MINUS1_MULTIPLY:
+			return "map1-*";	
 		
 		/* Relational */
 		case LESS_THAN:
@@ -164,7 +166,7 @@ public class BinaryM extends Lop
 			   opcode.equals("map==") || opcode.equals("map!=") ||	
 			   opcode.equals("map&&") || opcode.equals("map||") ||	
 			   opcode.equals("mapmin") || opcode.equals("mapmax") ||	
-			   opcode.equals("map^");
+			   opcode.equals("map^") || opcode.equals("map1-*");
 	}
 	
 	@Override

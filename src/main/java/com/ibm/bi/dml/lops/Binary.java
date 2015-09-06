@@ -32,7 +32,7 @@ public class Binary extends Lop
 {
 	
 	public enum OperationTypes {
-		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV, MATMULT, 
+		ADD, SUBTRACT, MULTIPLY, DIVIDE, MINUS1_MULTIPLY, MODULUS, INTDIV, MATMULT, 
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, 
 		MAX, MIN, POW, SOLVE, NOTSUPPORTED
@@ -119,6 +119,8 @@ public class Binary extends Lop
 			return "%/%";		
 		case MATMULT:
 			return "ba+*";
+		case MINUS1_MULTIPLY:
+			return "1-*";
 		
 		/* Relational */
 		case LESS_THAN:

@@ -84,7 +84,7 @@ public class BinUaggChainInstruction extends UnaryInstruction
 		//parse instruction parts (without exec type)
 		String[] parts = InstructionUtils.getInstructionParts( str );		
 		
-		BinaryOperator bop = BinaryInstruction.parseBinaryOperator(parts[1]);
+		BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[1]);
 		AggregateUnaryOperator uaggop = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
 		byte in1 = Byte.parseByte(parts[3]);
 		byte out = Byte.parseByte(parts[4]);

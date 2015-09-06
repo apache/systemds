@@ -49,6 +49,7 @@ import org.junit.runners.Suite;
 	FullCummaxTest.class,
 	FullCumprodTest.class,
 	FullCumsumTest.class,
+	FullSelectPosTest.class,
 	LUFactorizeTest.class,
 	RemoveEmptyTest.class,
 	MLUnaryBuiltinTest.class

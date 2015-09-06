@@ -27,7 +27,8 @@ import org.junit.runners.Suite;
 	FullMatrixMatrixCellwiseOperationTest.class,
 	FullMatrixVectorColCellwiseOperationTest.class,
 	FullMatrixVectorRowCellwiseOperationTest.class,
-	FullVectorVectorCellwiseOperationTest.class
+	FullVectorVectorCellwiseOperationTest.class,
+	FullMinus1MultTest.class,
 })
 
 

@@ -44,6 +44,7 @@ import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Mean;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
+import com.ibm.bi.dml.runtime.functionobjects.Minus1Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.MinusNz;
 import com.ibm.bi.dml.runtime.functionobjects.Modulus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
@@ -482,6 +483,8 @@ public class InstructionUtils
 			return new BinaryOperator(Minus.getMinusFnObject());
 		else if(opcode.equalsIgnoreCase("*"))
 			return new BinaryOperator(Multiply.getMultiplyFnObject());
+		else if(opcode.equalsIgnoreCase("1-*"))
+			return new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject());
 		else if ( opcode.equalsIgnoreCase("*2") ) 
 			return new BinaryOperator(Multiply2.getMultiply2FnObject());
 		else if(opcode.equalsIgnoreCase("/"))
@@ -503,101 +506,130 @@ public class InstructionUtils
 	}
 	
 	/**
-	 * scalar-matrix operator 
+	 * scalar-matrix operator
+	 * 
 	 * @param opcode
 	 * @param arg1IsScalar
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar)
+	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar) 
 		throws DMLRuntimeException
 	{
+		//for all runtimes that set constant dynamically (cp/spark)
 		double default_constant = 0;
 		
+		return parseScalarBinaryOperator(opcode, arg1IsScalar, default_constant);
+	}
+	
+	/**
+	 * scalar-matrix operator
+	 * 
+	 * @param opcode
+	 * @param arg1IsScalar
+	 * @param constant
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar, double constant)
+		throws DMLRuntimeException
+	{
 		//commutative operators
 		if ( opcode.equalsIgnoreCase("+") ){ 
-			return new RightScalarOperator(Plus.getPlusFnObject(), default_constant); 
+			return new RightScalarOperator(Plus.getPlusFnObject(), constant); 
 		}
 		else if ( opcode.equalsIgnoreCase("*") ) {
-			return new RightScalarOperator(Multiply.getMultiplyFnObject(), default_constant);
+			return new RightScalarOperator(Multiply.getMultiplyFnObject(), constant);
 		} 
-		//non-commutative operators but both scalar-matrix and matrix-scalar makes sense
+		//non-commutative operators
 		else if ( opcode.equalsIgnoreCase("-") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(Minus.getMinusFnObject(), default_constant);
-			else return new RightScalarOperator(Minus.getMinusFnObject(), default_constant);
+				return new LeftScalarOperator(Minus.getMinusFnObject(), constant);
+			else return new RightScalarOperator(Minus.getMinusFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("-nz") ) {
 			//no support for left scalar yet
-			return new RightScalarOperator(MinusNz.getMinusNzFnObject(), default_constant);
+			return new RightScalarOperator(MinusNz.getMinusNzFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("/") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(Divide.getDivideFnObject(), default_constant);
-			else return new RightScalarOperator(Divide.getDivideFnObject(), default_constant);
+				return new LeftScalarOperator(Divide.getDivideFnObject(), constant);
+			else return new RightScalarOperator(Divide.getDivideFnObject(), constant);
 		}  
 		else if ( opcode.equalsIgnoreCase("%%") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(Modulus.getModulusFnObject(), default_constant);
-			else return new RightScalarOperator(Modulus.getModulusFnObject(), default_constant);
+				return new LeftScalarOperator(Modulus.getModulusFnObject(), constant);
+			else return new RightScalarOperator(Modulus.getModulusFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("%/%") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(IntegerDivide.getIntegerDivideFnObject(), default_constant);
-			else return new RightScalarOperator(IntegerDivide.getIntegerDivideFnObject(), default_constant);
+				return new LeftScalarOperator(IntegerDivide.getIntegerDivideFnObject(), constant);
+			else return new RightScalarOperator(IntegerDivide.getIntegerDivideFnObject(), constant);
 		}
-		//operations for which only matrix-scalar makes sense
 		else if ( opcode.equalsIgnoreCase("^") ){
 			if(arg1IsScalar)
-				return new LeftScalarOperator(Power.getPowerFnObject(), default_constant);
-			else return new RightScalarOperator(Power.getPowerFnObject(), default_constant);
+				return new LeftScalarOperator(Power.getPowerFnObject(), constant);
+			else return new RightScalarOperator(Power.getPowerFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("max") ) {
-			return new RightScalarOperator(Builtin.getBuiltinFnObject("max"), default_constant);
+			return new RightScalarOperator(Builtin.getBuiltinFnObject("max"), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("min") ) {
-			return new RightScalarOperator(Builtin.getBuiltinFnObject("min"), default_constant);
+			return new RightScalarOperator(Builtin.getBuiltinFnObject("min"), constant);
 		}
-		else if ( opcode.equalsIgnoreCase("log") ){
-			return new RightScalarOperator(Builtin.getBuiltinFnObject("log"), default_constant);
+		else if ( opcode.equalsIgnoreCase("log") || opcode.equalsIgnoreCase("log_nz") ){
+			if( arg1IsScalar )
+				return new LeftScalarOperator(Builtin.getBuiltinFnObject(opcode), constant);
+			return new RightScalarOperator(Builtin.getBuiltinFnObject(opcode), constant);
 		}
 		else if ( opcode.equalsIgnoreCase(">") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(GreaterThan.getGreaterThanFnObject(), default_constant);
-			return new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), default_constant);
+				return new LeftScalarOperator(GreaterThan.getGreaterThanFnObject(), constant);
+			return new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase(">=") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), default_constant);
-			return new RightScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), default_constant);
+				return new LeftScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), constant);
+			return new RightScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("<") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(LessThan.getLessThanFnObject(), default_constant);
-			return new RightScalarOperator(LessThan.getLessThanFnObject(), default_constant);
+				return new LeftScalarOperator(LessThan.getLessThanFnObject(), constant);
+			return new RightScalarOperator(LessThan.getLessThanFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("<=") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), default_constant);
-			return new RightScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), default_constant);
+				return new LeftScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), constant);
+			return new RightScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("==") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(Equals.getEqualsFnObject(), default_constant);
-			return new RightScalarOperator(Equals.getEqualsFnObject(), default_constant);
+				return new LeftScalarOperator(Equals.getEqualsFnObject(), constant);
+			return new RightScalarOperator(Equals.getEqualsFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("!=") ) {
 			if(arg1IsScalar)
-				return new LeftScalarOperator(NotEquals.getNotEqualsFnObject(), default_constant);
-			return new RightScalarOperator(NotEquals.getNotEqualsFnObject(), default_constant);
+				return new LeftScalarOperator(NotEquals.getNotEqualsFnObject(), constant);
+			return new RightScalarOperator(NotEquals.getNotEqualsFnObject(), constant);
 		}
 		
-		//operation that only exist for performance purposes
+		//operations that only exist for performance purposes (all unary or commutative operators)
 		else if ( opcode.equalsIgnoreCase("*2") ) {
-			return new RightScalarOperator(Multiply2.getMultiply2FnObject(), default_constant);
+			return new RightScalarOperator(Multiply2.getMultiply2FnObject(), constant);
 		} 
 		else if ( opcode.equalsIgnoreCase("^2") ){
-			return new RightScalarOperator(Power2.getPower2FnObject(), default_constant);
+			return new RightScalarOperator(Power2.getPower2FnObject(), constant);
+		}
+		else if ( opcode.equalsIgnoreCase("1-*") ) {
+			return new RightScalarOperator(Minus1Multiply.getMinus1MultiplyFnObject(), constant);
+		}
+		
+		//operations that only exist in mr
+		else if ( opcode.equalsIgnoreCase("s-r") ) {
+			return new LeftScalarOperator(Minus.getMinusFnObject(), constant);
+		} 
+		else if ( opcode.equalsIgnoreCase("so") ) {
+			return new LeftScalarOperator(Divide.getDivideFnObject(), constant);
 		}
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
@@ -635,6 +667,8 @@ public class InstructionUtils
 			return new BinaryOperator(Minus.getMinusFnObject());
 		else if(opcode.equalsIgnoreCase("*") || opcode.equalsIgnoreCase("map*"))
 			return new BinaryOperator(Multiply.getMultiplyFnObject());
+		else if(opcode.equalsIgnoreCase("1-*") || opcode.equalsIgnoreCase("map1-*"))
+			return new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject());
 		else if ( opcode.equalsIgnoreCase("*2") ) 
 			return new BinaryOperator(Multiply2.getMultiply2FnObject());
 		else if(opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("map/"))
@@ -647,9 +681,9 @@ public class InstructionUtils
 			return new BinaryOperator(Power.getPowerFnObject());
 		else if ( opcode.equalsIgnoreCase("^2") )
 			return new BinaryOperator(Power2.getPower2FnObject());
-		else if ( opcode.equalsIgnoreCase("max") ) 
+		else if ( opcode.equalsIgnoreCase("max") || opcode.equalsIgnoreCase("mapmax") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
-		else if ( opcode.equalsIgnoreCase("min") ) 
+		else if ( opcode.equalsIgnoreCase("min") || opcode.equalsIgnoreCase("mapmin") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);

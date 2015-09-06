@@ -39,7 +39,7 @@ public class MatrixScalarArithmeticSPInstruction extends ArithmeticBinarySPInstr
 		if ( !(opcode.equalsIgnoreCase("+") || opcode.equalsIgnoreCase("-") || opcode.equalsIgnoreCase("*")
 			 || opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("%%") || opcode.equalsIgnoreCase("%/%")
 			 || opcode.equalsIgnoreCase("^") || opcode.equalsIgnoreCase("^2")
-			 || opcode.equalsIgnoreCase("*2")) ) 
+			 || opcode.equalsIgnoreCase("*2") || opcode.equalsIgnoreCase("1-*")) ) 
 		{
 			throw new DMLRuntimeException("Unknown opcode in instruction: " + opcode);
 		}

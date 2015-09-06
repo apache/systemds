@@ -136,6 +136,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = fuseDatagenAndBinaryOperation(hop, hi, i);      //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
 			hi = fuseDatagenAndMinusOperation(hop, hi, i);       //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
  			hi = simplifyBinaryToUnaryOperation(hi);             //e.g., X*X -> X^2 (pow2)
+ 			hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
  			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
@@ -503,6 +504,38 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					LOG.debug("Applied simplifyBinaryToUnaryOperation2");
 				}
 			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param hi
+	 * @return
+	 */
+	private Hop simplifyMultiBinaryToBinaryOperation( Hop hi )
+	{
+		//pattern: 1-(X*Y) --> X 1-* Y (avoid intermediate)
+		if( hi instanceof BinaryOp && ((BinaryOp)hi).getOp()==OpOp2.MINUS
+			&& hi.getDataType() == DataType.MATRIX	
+			&& hi.getInput().get(0) instanceof LiteralOp
+			&& HopRewriteUtils.getDoubleValueSafe((LiteralOp)hi.getInput().get(0))==1
+			&& hi.getInput().get(1) instanceof BinaryOp
+			&& ((BinaryOp)hi.getInput().get(1)).getOp()==OpOp2.MULT
+			&& hi.getInput().get(1).getParent().size() == 1 ) //single consumer
+		{
+			BinaryOp bop = (BinaryOp)hi;
+			Hop left = hi.getInput().get(1).getInput().get(0);
+			Hop right = hi.getInput().get(1).getInput().get(1);
+			
+			//set new binaryop type and rewire inputs
+			bop.setOp(OpOp2.MINUS1_MULT);
+			HopRewriteUtils.removeAllChildReferences(hi);
+			HopRewriteUtils.addChildReference(bop, left);
+			HopRewriteUtils.addChildReference(bop, right);
+			
+			LOG.debug("Applied simplifyMultiBinaryToBinaryOperation.");
 		}
 		
 		return hi;

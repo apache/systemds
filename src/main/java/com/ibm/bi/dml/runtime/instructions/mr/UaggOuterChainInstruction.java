@@ -98,7 +98,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 		String[] parts = InstructionUtils.getInstructionParts( str );		
 		
 		AggregateUnaryOperator uaggop = InstructionUtils.parseBasicAggregateUnaryOperator(parts[1]);
-		BinaryOperator bop = BinaryInstruction.parseBinaryOperator(parts[2]);
+		BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[2]);
 		byte in1 = Byte.parseByte(parts[3]);
 		byte in2 = Byte.parseByte(parts[4]);
 		byte out = Byte.parseByte(parts[5]);
@@ -214,33 +214,45 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 	{
 		boolean ret = false;
 		
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		byte in1 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in2 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
-		AggregateUnaryOperator uaggOp = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
-		BinaryOperator bop = BinaryInstruction.parseBinaryOperator(parts[3]);		
-		if(uaggOp.indexFn instanceof ReduceCol || uaggOp.indexFn instanceof ReduceAll
-				|| !LibMatrixOuterAgg.isSupportedUaggOp(uaggOp, bop)) 
-			ret = (index==in2 && index!=in1);
-		else
-			ret = (index==in1 && index!=in2);
-		
+		try
+		{
+			//parse instruction parts (with exec type)
+			String[] parts = inst.split(Instruction.OPERAND_DELIM);
+			byte in1 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
+			byte in2 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
+			AggregateUnaryOperator uaggOp = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
+			BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[3]);		
+			if(uaggOp.indexFn instanceof ReduceCol || uaggOp.indexFn instanceof ReduceAll
+					|| !LibMatrixOuterAgg.isSupportedUaggOp(uaggOp, bop)) 
+				ret = (index==in2 && index!=in1);
+			else
+				ret = (index==in1 && index!=in2);
+		}
+		catch(DMLRuntimeException ex){
+			throw new RuntimeException(ex);
+		}
+			
 		return ret;
 	}
 	
 	public static void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		byte in1 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in2 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
-		AggregateUnaryOperator uaggOp = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
-		BinaryOperator bop = BinaryInstruction.parseBinaryOperator(parts[3]);
-		if(uaggOp.indexFn instanceof ReduceCol || uaggOp.indexFn instanceof ReduceAll
-				|| !LibMatrixOuterAgg.isSupportedUaggOp(uaggOp, bop)) 
-			indexes.add(in2);
-		else
-			indexes.add(in1);
+		try
+		{
+			//parse instruction parts (with exec type)
+			String[] parts = inst.split(Instruction.OPERAND_DELIM);
+			byte in1 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
+			byte in2 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
+			AggregateUnaryOperator uaggOp = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
+			BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[3]);
+			if(uaggOp.indexFn instanceof ReduceCol || uaggOp.indexFn instanceof ReduceAll
+					|| !LibMatrixOuterAgg.isSupportedUaggOp(uaggOp, bop)) 
+				indexes.add(in2);
+			else
+				indexes.add(in1);
+		}
+		catch(DMLRuntimeException ex){
+			throw new RuntimeException(ex);
+		}
 	}
 }

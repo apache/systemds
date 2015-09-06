@@ -23,20 +23,6 @@ import com.ibm.bi.dml.lops.AppendM.CacheType;
 import com.ibm.bi.dml.lops.BinaryM.VectorType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.Divide;
-import com.ibm.bi.dml.runtime.functionobjects.Equals;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
-import com.ibm.bi.dml.runtime.functionobjects.LessThan;
-import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.Minus;
-import com.ibm.bi.dml.runtime.functionobjects.Modulus;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
-import com.ibm.bi.dml.runtime.functionobjects.Plus;
-import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
@@ -63,8 +49,15 @@ public class BinaryMInstruction extends BinaryMRInstructionBase
 		_vectorType = vtype;
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
-		
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{	
 		InstructionUtils.checkNumFields ( str, 5 );
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
@@ -77,52 +70,8 @@ public class BinaryMInstruction extends BinaryMRInstructionBase
 		CacheType ctype = CacheType.valueOf(parts[4]);
 		VectorType vtype = VectorType.valueOf(parts[5]);
 		
-		if ( opcode.equalsIgnoreCase("map+") ) {
-			return new BinaryMInstruction(new BinaryOperator(Plus.getPlusFnObject()), in1, in2, ctype, vtype, out, str);
-		} 
-		else if ( opcode.equalsIgnoreCase("map-") ) {
-			return new BinaryMInstruction(new BinaryOperator(Minus.getMinusFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map*") ) {
-			return new BinaryMInstruction(new BinaryOperator(Multiply.getMultiplyFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map/") ) {
-			return new BinaryMInstruction(new BinaryOperator(Divide.getDivideFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map^") ) {
-			return new BinaryMInstruction(new BinaryOperator(Power.getPowerFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map%%") ) {
-			return new BinaryMInstruction(new BinaryOperator(Modulus.getModulusFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map%/%") ) {
-			return new BinaryMInstruction(new BinaryOperator(IntegerDivide.getIntegerDivideFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("mapmin") ) {
-			return new BinaryMInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("min")), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("mapmax") ) {
-			return new BinaryMInstruction(new BinaryOperator(Builtin.getBuiltinFnObject("max")), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map>") ) {
-			return new BinaryMInstruction(new BinaryOperator(GreaterThan.getGreaterThanFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map>=") ) {
-			return new BinaryMInstruction(new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map<") ) {
-			return new BinaryMInstruction(new BinaryOperator(LessThan.getLessThanFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map<=") ) {
-			return new BinaryMInstruction(new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map==") ) {
-			return new BinaryMInstruction(new BinaryOperator(Equals.getEqualsFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		else if ( opcode.equalsIgnoreCase("map!=") ) {
-			return new BinaryMInstruction(new BinaryOperator(NotEquals.getNotEqualsFnObject()), in1, in2, ctype, vtype, out, str);
-		}
-		return null;
+		BinaryOperator bop = InstructionUtils.parseExtendedBinaryOperator(opcode);
+		return new BinaryMInstruction(bop, in1, in2, ctype, vtype, out, str);
 	}
 	
 	@Override

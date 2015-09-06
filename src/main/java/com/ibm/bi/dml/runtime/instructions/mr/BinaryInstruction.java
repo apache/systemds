@@ -19,20 +19,6 @@ package com.ibm.bi.dml.runtime.instructions.mr;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.Divide;
-import com.ibm.bi.dml.runtime.functionobjects.Equals;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
-import com.ibm.bi.dml.runtime.functionobjects.LessThan;
-import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.Minus;
-import com.ibm.bi.dml.runtime.functionobjects.Modulus;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
-import com.ibm.bi.dml.runtime.functionobjects.Plus;
-import com.ibm.bi.dml.runtime.functionobjects.Power;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -66,68 +52,11 @@ public class BinaryInstruction extends BinaryMRInstructionBase
 		in2 = Byte.parseByte(parts[2]);
 		out = Byte.parseByte(parts[3]);
 		
-		BinaryOperator bop = parseBinaryOperator(opcode);
+		BinaryOperator bop = InstructionUtils.parseBinaryOperator(opcode);
 		if( bop != null )
 			return new BinaryInstruction(bop, in1, in2, out, str);
 		else
 			return null;
-	}
-
-	/**
-	 * 
-	 * @param opcode
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static BinaryOperator parseBinaryOperator( String opcode ) 
-	{
-		if ( opcode.equalsIgnoreCase("+") ) {
-			return new BinaryOperator(Plus.getPlusFnObject());
-		} 
-		else if ( opcode.equalsIgnoreCase("-") ) {
-			return new BinaryOperator(Minus.getMinusFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase("*") ) {
-			return new BinaryOperator(Multiply.getMultiplyFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase("/") ) {
-			return new BinaryOperator(Divide.getDivideFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase("^") ) {
-			return new BinaryOperator(Power.getPowerFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase("%%") ) {
-			return new BinaryOperator(Modulus.getModulusFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase("%/%") ) {
-			return new BinaryOperator(IntegerDivide.getIntegerDivideFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase("min") ) {
-			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-		}
-		else if ( opcode.equalsIgnoreCase("max") ) {
-			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
-		}
-		else if ( opcode.equalsIgnoreCase(">") ) {
-			return new BinaryOperator(GreaterThan.getGreaterThanFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase(">=") ) {
-			return new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase("<") ) {
-			return new BinaryOperator(LessThan.getLessThanFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase("<=") ) {
-			return new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase("==") ) {
-			return new BinaryOperator(Equals.getEqualsFnObject());
-		}
-		else if ( opcode.equalsIgnoreCase("!=") ) {
-			return new BinaryOperator(NotEquals.getNotEqualsFnObject());
-		}
-		
-		return null;
 	}
 	
 	@Override

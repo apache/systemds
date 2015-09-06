@@ -37,7 +37,6 @@ import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.mr.BinaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -92,7 +91,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 
 			AggregateUnaryOperator uaggop = InstructionUtils.parseBasicAggregateUnaryOperator(parts[1]);
-			BinaryOperator bop = BinaryInstruction.parseBinaryOperator(parts[2]);
+			BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[2]);
 
 			CPOperand in1 = new CPOperand(parts[3]);
 			CPOperand in2 = new CPOperand(parts[4]);

@@ -373,7 +373,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * 
 	 */
 	public void allocateDenseBlock() 
-		throws DMLRuntimeException 
+		throws RuntimeException 
 	{
 		allocateDenseBlock( true );
 	}
@@ -384,14 +384,14 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException
 	 */
 	public void allocateDenseBlock(boolean clearNNZ) 
-		throws DMLRuntimeException 
+		throws RuntimeException 
 	{
 		long limit = (long)rlen * clen;
 		
 		//check max size constraint (16GB dense), since java arrays are limited to 2^(32-1) elements)
 		if( limit > Integer.MAX_VALUE ) {
-			throw new DMLRuntimeException("Dense in-memory matrix block ("+rlen+"x"+clen+") exceeds supported size of "+Integer.MAX_VALUE+" elements (16GB). " +
-					                      "Please, reduce the JVM heapsize to execute this in MR.");
+			throw new RuntimeException("Dense in-memory matrix block ("+rlen+"x"+clen+") exceeds supported size of "+Integer.MAX_VALUE+" elements (16GB). " +
+					                   "Please, reduce the JVM heapsize to execute this in MR.");
 		}
 		
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
@@ -756,12 +756,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				return;
 
 			//allocate and init dense block (w/o overwriting nnz)
-			try {
-				allocateDenseBlock(false);
-			}
-			catch(DMLRuntimeException e){
-				throw new RuntimeException(e);
-			}
+			allocateDenseBlock(false);
 				
 			int index=r*clen+c;
 			if(denseBlock[index]==0)
@@ -802,12 +797,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		else
 		{
 			//allocate and init dense block (w/o overwriting nnz)
-			try {
-				allocateDenseBlock(false);
-			}
-			catch(DMLRuntimeException e){
-				throw new RuntimeException(e);
-			}
+			allocateDenseBlock(false);
 			
 			int index=r*clen+c;
 			denseBlock[index]+=v;
@@ -866,12 +856,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				return;		
 			
 			//allocate and init dense block (w/o overwriting nnz)
-			try {
-				allocateDenseBlock(false);
-			}
-			catch(DMLRuntimeException e){
-				throw new RuntimeException(e);
-			}
+			allocateDenseBlock(false);
 			
 			//set value and maintain nnz
 			int index=r*clen+c;
@@ -911,22 +896,34 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	/**
 	 * Append value is only used when values are appended at the end of each row for the sparse representation
 	 * This can only be called, when the caller knows the access pattern of the block
-	 
+	 * 	 
 	 * @param r
 	 * @param c
 	 * @param v
 	 */
 	public void appendValue(int r, int c, double v)
 	{
-		if(v==0) return;
-		if(!sparse) 
-			quickSetValue(r, c, v);
-		else
+		//early abort (append guarantees no overwrite)
+		if( v == 0 ) 
+			return;
+		
+		if( !sparse ) //DENSE 
 		{
-			//allocation on demand
+			//allocate on demand (w/o overwriting nnz)
+			allocateDenseBlock(false);
+			
+			//set value and maintain nnz
+			denseBlock[r*clen+c] = v;
+			nonZeros++;
+		}
+		else //SPARSE
+		{
+			//allocation on demand (w/o overwriting nnz)
 			allocateSparseRowsBlock(false);
 			if(sparseRows[r]==null)
 				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
+			
+			//set value and maintain nnz
 			sparseRows[r].append(c, v);
 			nonZeros++;
 		}
@@ -1506,12 +1503,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 		
 		//allocate and init dense block (w/o overwriting nnz)
-		try {
-			allocateDenseBlock(false);
-		}
-		catch(DMLRuntimeException e){
-			throw new RuntimeException(e);
-		}
+		allocateDenseBlock(false);
 		
 		//actual copy 
 		System.arraycopy(that.denseBlock, 0, denseBlock, 0, limit);
@@ -1528,12 +1520,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 		
 		//allocate and init dense block (w/o overwriting nnz)
-		try {
-			allocateDenseBlock(false);
-		}
-		catch(DMLRuntimeException e){
-			throw new RuntimeException(e);
-		}
+		allocateDenseBlock(false);
 		
 		int start=0;
 		for(int r=0; r<Math.min(that.sparseRows.length, rlen); r++, start+=clen)

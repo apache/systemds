@@ -29,21 +29,23 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-public abstract class MultiClassSVMTest  extends AutomatedTestBase{
-	
+public abstract class MultiClassSVMTest  extends AutomatedTestBase
+{	
 	protected final static String TEST_DIR = "applications/m-svm/";
 	protected final static String TEST_NAME = "m-svm";
 
-	protected int numRecords, numFeatures, numClasses;
-	protected double sparsity;
-	protected boolean intercept;
+	protected int _numRecords;
+	protected int _numFeatures;
+	protected int _numClasses;
+	protected double _sparsity;
+	protected boolean _intercept;
     
     public MultiClassSVMTest(int rows, int cols, int nc, boolean intercept, double sp) {
-		numRecords = rows;
-		numFeatures = cols;
-		numClasses = nc;
-		this.intercept = intercept;
-		sparsity = sp;
+		_numRecords = rows;
+		_numFeatures = cols;
+		_numClasses = nc;
+		_intercept = intercept;
+		_sparsity = sp;
 	}
     
     @Parameters
@@ -54,7 +56,7 @@ public abstract class MultiClassSVMTest  extends AutomatedTestBase{
 			   {1000, 500, 10, false, 0.01}, 
 			   {1000, 500, 10, true, 0.01}, 
 			   {10000, 750, 10, false, 0.01}, 
-			   {100000, 1000, 10, false, 0.01},
+			   {10000, 750, 10, true, 0.01},
 			   //dense tests (sparsity=0.7)
 			   {100, 50, 10, false, 0.7}, 
 			   {1000, 500, 10, false, 0.7}, 
@@ -69,19 +71,21 @@ public abstract class MultiClassSVMTest  extends AutomatedTestBase{
 		 addTestConfiguration(TEST_DIR, TEST_NAME);
 	 }
 	 
-	 protected void testMultiClassSVM(ScriptType scriptType) {
+	 protected void testMultiClassSVM( ScriptType scriptType ) 
+	 {
 		 System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" +
-				 numRecords + ", " + 
-				 numFeatures + ", " + 
-				 numClasses + ", " + 
-				 intercept + ", " + 
-				 sparsity + "} ------------");
+				 _numRecords + ", " + 
+				 _numFeatures + ", " + 
+				 _numClasses + ", " + 
+				 _intercept + ", " + 
+				 _sparsity + "} ------------");
 		 this.scriptType = scriptType;
 		 
-		 int rows = numRecords;
-		 int cols = numFeatures;
-		 int classes = numClasses;
-		 double sparsity = this.sparsity;
+		 int rows = _numRecords;
+		 int cols = _numFeatures;
+		 int classes = _numClasses;
+		 boolean intercept = _intercept;
+		 double sparsity = _sparsity;
 		 double tol = 0.001;
 		 double reg = 1;
 		 int maxiter = 100;
@@ -104,12 +108,13 @@ public abstract class MultiClassSVMTest  extends AutomatedTestBase{
 		 proArgs.add("model=" + output("w"));
 		 proArgs.add("Log=" + output("Log"));
 		 programArgs = proArgs.toArray(new String[proArgs.size()]);
-		 System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
+		 //setup dml and R input arguments
 		 fullDMLScriptName = getScript();
+		 rCmd = getRCmd(inputDir(), Integer.toString(classes), Double.toString(tol), Double.toString(reg), 
+				 Integer.toString(maxiter), ((intercept) ? "1" : "0"), expectedDir());
 
-		 rCmd = getRCmd(inputDir(), Integer.toString(classes), Double.toString(tol), Double.toString(reg), Integer.toString(maxiter), ((intercept) ? "1" : "0"), expectedDir());
-
+		 //generate input data
 		 double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, -1);
 		 double[][] Y = getRandomMatrix(rows, 1, 0, 1, 1, -1);
 		 for(int i=0; i<rows; i++){
@@ -117,16 +122,17 @@ public abstract class MultiClassSVMTest  extends AutomatedTestBase{
 			 Y[i][0] = (Y[i][0] > classes) ? classes : Y[i][0];
 	     }	
 	        
+		 //write input data and meta data files
 		 writeInputMatrixWithMTD("X", X, true);
 		 writeInputMatrixWithMTD("Y", Y, true);
 	        
+		 //run dml and R scripts
 		 runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+	     runRScript(true);
 	        
-		 runRScript(true);
-	        
+	     //compare outputs (assert on tear down)
 		 HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
-		 HashMap<CellIndex, Double> wSYSTEMML= readDMLMatrixFromHDFS("w");
-		 boolean success = TestUtils.compareMatrices(wR, wSYSTEMML, Math.pow(10, -10), "wR", "wSYSTEMML");
-		 System.out.println(success);
+		 HashMap<CellIndex, Double> wDML = readDMLMatrixFromHDFS("w");
+		 TestUtils.compareMatrices(wR, wDML, Math.pow(10, -10), "wR", "wDML");
 	 }
 }

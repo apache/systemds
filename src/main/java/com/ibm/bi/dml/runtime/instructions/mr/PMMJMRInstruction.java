@@ -39,7 +39,7 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
  * 
  * 
  */
-public class PMMJMRInstruction extends BinaryMRInstructionBase
+public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer
 {	
 	
 	private long _rlen = -1;
@@ -142,34 +142,15 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase
 		}
 	}
 	
-	/**
-	 * Determines if the given index is only used via distributed cache in
-	 * the given instruction string (used during setup of distributed cache
-	 * to detect redundant job inputs).
-	 * 
-	 * @param inst
-	 * @param index
-	 * @return
-	 */
-	public static boolean isDistCacheOnlyIndex( String inst, byte index )
+	@Override //IDistributedCacheConsumer
+	public boolean isDistCacheOnlyIndex( String inst, byte index )
 	{
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-		return (index==in1 && index!=in2);
+		return (index==input1 && index!=input2);
 	}
 	
-	/**
-	 * 
-	 * @param inst
-	 * @param indexes
-	 */
-	public static void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
+	@Override //IDistributedCacheConsumer
+	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-		indexes.add(in1);
+		indexes.add(input1);
 	}
 }

@@ -44,9 +44,8 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 /**
  * 
  */
-public class QuaternaryInstruction extends MRInstruction 
-{
-	
+public class QuaternaryInstruction extends MRInstruction implements IDistributedCacheConsumer
+{	
 	private byte _input1 = -1;
 	private byte _input2 = -1;
 	private byte _input3 = -1;	
@@ -169,68 +168,28 @@ public class QuaternaryInstruction extends MRInstruction
 		}	
 	}
 	
-	/**
-	 * 
-	 * @param inst
-	 * @param index
-	 * @return
-	 */
-	public static boolean isDistCacheOnlyIndex( String inst, byte index )
+	@Override //IDistributedCacheConsumer
+	public boolean isDistCacheOnlyIndex( String inst, byte index )
 	{
-		boolean ret = false;
-		
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		String opcode = parts[1];
-		byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in3 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in4 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
-		
-		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode) 
-			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode) ) 
+		if( _cacheU && _cacheV ) 
 		{
-			ret = (index==in2 && index!=in1 && index!=in4) 
-				|| (index==in3 && index!=in1 && index!=in4);
+			return (index==_input2 && index!=_input1 && index!=_input4) 
+				|| (index==_input3 && index!=_input1 && index!=_input4);
 		}
 		else 
 		{
-			int off = WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode) ? 8 : 7;
-			boolean cacheU = Boolean.parseBoolean(parts[off]);
-			boolean cacheV = Boolean.parseBoolean(parts[off+1]);
-			ret = (cacheU && index==in2 && index!=in1 && index!=in4) 
-				|| (cacheV && index==in3 && index!=in1 && index!=in4);
+			return (_cacheU && index==_input2 && index!=_input1 && index!=_input4) 
+				|| (_cacheV && index==_input3 && index!=_input1 && index!=_input4);
 		}
-		
-		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param inst
-	 * @param indexes
-	 */
-	public static void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
+	@Override //IDistributedCacheConsumer
+	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		String opcode = parts[1];
-		byte in1 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in2 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
-		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode) 
-			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode) ) 
-		{
-			indexes.add(in1);
-			indexes.add(in2);
-		}
-		else
-		{
-			int off = WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode) ? 8 : 7;
-			if( Boolean.parseBoolean(parts[off]) )
-				indexes.add(in1);
-			if( Boolean.parseBoolean(parts[off+1]) )
-				indexes.add(in2);
-		}
+		if( _cacheU )
+			indexes.add(_input2);
+		if( _cacheV )
+			indexes.add(_input3);
 	}
 	
 	@Override

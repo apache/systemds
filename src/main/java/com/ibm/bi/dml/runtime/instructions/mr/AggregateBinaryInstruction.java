@@ -40,9 +40,8 @@ import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 
-public class AggregateBinaryInstruction extends BinaryMRInstructionBase 
-{
-	
+public class AggregateBinaryInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer
+{	
 	private String _opcode = null;
 	
 	//optional argument for cpmm
@@ -131,42 +130,18 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase
 		throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
 	}
 	
-	/**
-	 * Determines if the given index is only used via distributed cache in
-	 * the given instruction string (used during setup of distributed cache
-	 * to detect redundant job inputs).
-	 * 
-	 * @param inst
-	 * @param index
-	 * @return
-	 */
-	public static boolean isDistCacheOnlyIndex( String inst, byte index )
+	@Override //IDistributedCacheConsumer
+	public boolean isDistCacheOnlyIndex( String inst, byte index )
 	{
-		boolean ret = false;
-		
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-		boolean rightCache = CacheType.valueOf(parts[5]).isRightCache(); //4 is out
-		ret = rightCache ? (index==in2 && index!=in1) : (index==in1&& index!=in2);
-	
-		return ret;
+		return _cacheType.isRightCache() ? 
+				(index==input2 && index!=input1) : 
+				(index==input1 && index!=input2);
 	}
 
-	/**
-	 * 
-	 * @param inst
-	 * @param indexes
-	 */
-	public static void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
+	@Override //IDistributedCacheConsumer
+	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-		boolean rightCache = CacheType.valueOf(parts[5]).isRightCache(); //4 is out
-		indexes.add( rightCache ? in2 : in1 );
+		indexes.add( _cacheType.isRightCache() ? input2 : input1 );
 	}
 	
 	@Override

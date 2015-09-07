@@ -35,9 +35,8 @@ import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 
-public class BinaryMInstruction extends BinaryMRInstructionBase 
-{
-	
+public class BinaryMInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer
+{	
 	private VectorType _vectorType = null;
 	
 	public BinaryMInstruction(Operator op, byte in1, byte in2, CacheType ctype, VectorType vtype, byte out, String istr)
@@ -113,24 +112,15 @@ public class BinaryMInstruction extends BinaryMRInstructionBase
 		}
 	}
 
-	public static boolean isDistCacheOnlyIndex( String inst, byte index )
+	@Override //IDistributedCacheConsumer
+	public boolean isDistCacheOnlyIndex( String inst, byte index )
 	{
-		boolean ret = false;
-		
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-		ret = (index==in2 && index!=in1);
-		
-		return ret;
+		return (index==input2 && index!=input1);
 	}
 	
-	public static void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
+	@Override //IDistributedCacheConsumer
+	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-		indexes.add(in2);
+		indexes.add(input2);
 	}
 }

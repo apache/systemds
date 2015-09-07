@@ -22,20 +22,11 @@ import java.util.HashSet;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.AppendM;
-import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.MapMult;
-import com.ibm.bi.dml.lops.MapMultChain;
-import com.ibm.bi.dml.lops.PMMJ;
-import com.ibm.bi.dml.lops.UAggOuterChain;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
-import com.ibm.bi.dml.lops.WeightedSigmoid;
-import com.ibm.bi.dml.lops.WeightedSigmoidR;
-import com.ibm.bi.dml.lops.WeightedSquaredLoss;
-import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -51,22 +42,17 @@ import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.BinaryMInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.BinaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.CM_N_COVInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.IDistributedCacheConsumer;
 import com.ibm.bi.dml.runtime.instructions.mr.MMTSJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.RemoveEmptyMRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.TernaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.UaggOuterChainInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
 import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -653,31 +639,20 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * 
 	 * @param inst
 	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
 	 */
-	private int getDistcacheIndex(String inst)
+	private int getDistcacheIndex(String inst) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		ArrayList<Byte> indexes = new ArrayList<Byte>();
 		
-		if( inst.contains(MapMultChain.OPCODE) )
-			MapMultChainInstruction.addDistCacheIndex(inst, indexes);
-		else if( inst.contains(MapMult.OPCODE) )
-			AggregateBinaryInstruction.addDistCacheIndex(inst, indexes);
-		else if( inst.contains(PMMJ.OPCODE) )
-			PMMJMRInstruction.addDistCacheIndex(inst, indexes);
-		else if( inst.contains(AppendM.OPCODE) )
-			AppendMInstruction.addDistCacheIndex(inst, indexes);	
-		else if( BinaryM.isOpcode(InstructionUtils.getOpCode(inst)) )
-			BinaryMInstruction.addDistCacheIndex(inst, indexes);	
-		else if( inst.contains(WeightedSquaredLoss.OPCODE) )
-			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
-		else if( inst.contains(WeightedSquaredLossR.OPCODE) )
-			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
-		else if( inst.contains(WeightedSigmoid.OPCODE) )
-			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
-		else if( inst.contains(WeightedSigmoidR.OPCODE) )
-			QuaternaryInstruction.addDistCacheIndex(inst, indexes);
-		else if( inst.contains(UAggOuterChain.OPCODE) )
-			UaggOuterChainInstruction.addDistCacheIndex(inst, indexes);
+		if( InstructionUtils.isDistributedCacheUsed(inst) ) {
+			MRInstruction mrinst = MRInstructionParser.parseSingleInstruction(inst);
+			if( mrinst instanceof IDistributedCacheConsumer )
+				((IDistributedCacheConsumer)mrinst).addDistCacheIndex(inst, indexes);
+		}
+		
 		if( !indexes.isEmpty() )
 			return indexes.get(0);
 		else

@@ -46,7 +46,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 /**
  * 
  */
-public class UaggOuterChainInstruction extends BinaryInstruction 
+public class UaggOuterChainInstruction extends BinaryInstruction implements IDistributedCacheConsumer
 {	
 	//operators
 	private AggregateUnaryOperator _uaggOp = null;
@@ -210,49 +210,23 @@ public class UaggOuterChainInstruction extends BinaryInstruction
 		}
 	}
 	
-	public static boolean isDistCacheOnlyIndex( String inst, byte index )
+	@Override //IDistributedCacheConsumer
+	public boolean isDistCacheOnlyIndex( String inst, byte index )
 	{
-		boolean ret = false;
-		
-		try
-		{
-			//parse instruction parts (with exec type)
-			String[] parts = inst.split(Instruction.OPERAND_DELIM);
-			byte in1 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
-			byte in2 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
-			AggregateUnaryOperator uaggOp = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
-			BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[3]);		
-			if(uaggOp.indexFn instanceof ReduceCol || uaggOp.indexFn instanceof ReduceAll
-					|| !LibMatrixOuterAgg.isSupportedUaggOp(uaggOp, bop)) 
-				ret = (index==in2 && index!=in1);
-			else
-				ret = (index==in1 && index!=in2);
-		}
-		catch(DMLRuntimeException ex){
-			throw new RuntimeException(ex);
-		}
-			
-		return ret;
+		if(_uaggOp.indexFn instanceof ReduceCol || _uaggOp.indexFn instanceof ReduceAll
+			|| !LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp)) 
+			return (index==input2 && index!=input1);
+		else
+			return (index==input1 && index!=input2);
 	}
 	
-	public static void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
+	@Override //IDistributedCacheConsumer
+	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
-		try
-		{
-			//parse instruction parts (with exec type)
-			String[] parts = inst.split(Instruction.OPERAND_DELIM);
-			byte in1 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
-			byte in2 = Byte.parseByte(parts[5].split(Instruction.DATATYPE_PREFIX)[0]);
-			AggregateUnaryOperator uaggOp = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
-			BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[3]);
-			if(uaggOp.indexFn instanceof ReduceCol || uaggOp.indexFn instanceof ReduceAll
-					|| !LibMatrixOuterAgg.isSupportedUaggOp(uaggOp, bop)) 
-				indexes.add(in2);
-			else
-				indexes.add(in1);
-		}
-		catch(DMLRuntimeException ex){
-			throw new RuntimeException(ex);
-		}
+		if(_uaggOp.indexFn instanceof ReduceCol || _uaggOp.indexFn instanceof ReduceAll
+			|| !LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp)) 
+			indexes.add(input2);
+		else
+			indexes.add(input1);
 	}
 }

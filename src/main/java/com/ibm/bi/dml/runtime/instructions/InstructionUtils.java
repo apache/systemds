@@ -253,7 +253,8 @@ public class InstructionUtils
 	
 	/**
 	 * Evaluates if at least one instruction of the given instruction set
-	 * used the distributed cache.
+	 * used the distributed cache; this call can also be used for individual
+	 * instructions. 
 	 * 
 	 * @param str
 	 * @return
@@ -266,8 +267,8 @@ public class InstructionUtils
 			String opcode = getOpCode(inst);
 			if(  opcode.equalsIgnoreCase(AppendM.OPCODE)  
 			   || opcode.equalsIgnoreCase(MapMult.OPCODE)
-			   || opcode.equalsIgnoreCase(PMMJ.OPCODE)
 			   || opcode.equalsIgnoreCase(MapMultChain.OPCODE)
+			   || opcode.equalsIgnoreCase(PMMJ.OPCODE)
 			   || opcode.equalsIgnoreCase(WeightedSquaredLoss.OPCODE)
 			   || opcode.equalsIgnoreCase(WeightedSquaredLossR.OPCODE)
 			   || opcode.equalsIgnoreCase(WeightedSigmoid.OPCODE)

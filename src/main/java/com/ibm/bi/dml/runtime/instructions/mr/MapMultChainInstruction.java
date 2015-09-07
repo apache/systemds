@@ -35,9 +35,8 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 /**
  * 
  */
-public class MapMultChainInstruction extends MRInstruction 
+public class MapMultChainInstruction extends MRInstruction implements IDistributedCacheConsumer
 {
-	
 	private ChainType _chainType = null;
 	
 	private byte _input1 = -1;
@@ -142,49 +141,23 @@ public class MapMultChainInstruction extends MRInstruction
 		}	
 	}
 	
-	/**
-	 * Determines if the given index is only used via distributed cache in
-	 * the given instruction string (used during setup of distributed cache
-	 * to detect redundant job inputs).
-	 * 
-	 * @param inst
-	 * @param index
-	 * @return
-	 */
-	public static boolean isDistCacheOnlyIndex( String inst, byte index )
+	@Override //IDistributedCacheConsumer
+	public boolean isDistCacheOnlyIndex( String inst, byte index )
 	{
-		boolean ret = false;
-		
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		if( parts.length==6 ){
-			byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-			byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-			ret = (index==in2 && index!=in1);
-		}
-		else if( parts.length==7 ){
-			byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-			byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-			byte in3 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
-			ret = (index==in2 && index!=in1) || (index==in3 && index!=in1);
-		}
-		
-		return ret;
+		return (_chainType == ChainType.XtXv) ?
+			(index==_input2 && index!=_input1) :
+			(index==_input2 && index!=_input1) || (index==_input3 && index!=_input1);
 	}
 	
-	public static void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
+	@Override //IDistributedCacheConsumer
+	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		if( parts.length==6 ){
-			byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-			indexes.add(in2);
+		if( _chainType == ChainType.XtXv ){
+			indexes.add(_input2);
 		}
-		else if( parts.length==7 ){
-			byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-			byte in3 = Byte.parseByte(parts[4].split(Instruction.DATATYPE_PREFIX)[0]);
-			indexes.add(in2);
-			indexes.add(in3);
+		else if( _chainType == ChainType.XtwXv ){
+			indexes.add(_input2);
+			indexes.add(_input3);	
 		}
 	}
 	

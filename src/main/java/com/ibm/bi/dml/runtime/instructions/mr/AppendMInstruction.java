@@ -34,9 +34,8 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 
-public class AppendMInstruction extends AppendInstruction 
-{
-	
+public class AppendMInstruction extends AppendInstruction implements IDistributedCacheConsumer
+{	
 	private long _offset = -1; 
 	
 	public AppendMInstruction(Operator op, byte in1, byte in2, long offset, CacheType type, byte out, String istr)
@@ -61,34 +60,16 @@ public class AppendMInstruction extends AppendInstruction
 		return new AppendMInstruction(null, in1, in2, offset, type, out, str);
 	}
 	
-	/**
-	 * Determines if the given index is only used via distributed cache in
-	 * the given instruction string (used during setup of distributed cache
-	 * to detect redundant job inputs).
-	 * 
-	 * @param inst
-	 * @param index
-	 * @return
-	 */
-	public static boolean isDistCacheOnlyIndex( String inst, byte index )
+	@Override //IDistributedCacheConsumer
+	public boolean isDistCacheOnlyIndex( String inst, byte index )
 	{
-		boolean ret = false;
-		
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		byte in1 = Byte.parseByte(parts[2].split(Instruction.DATATYPE_PREFIX)[0]);
-		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-		ret = (index==in2 && index!=in1);
-		
-		return ret;
+		return (index==input2 && index!=input1);
 	}
 	
-	public static void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
+	@Override //IDistributedCacheConsumer
+	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
 	{
-		//parse instruction parts (with exec type)
-		String[] parts = inst.split(Instruction.OPERAND_DELIM);
-		byte in2 = Byte.parseByte(parts[3].split(Instruction.DATATYPE_PREFIX)[0]);
-		indexes.add(in2);
+		indexes.add(input2);
 	}
 	
 	@Override

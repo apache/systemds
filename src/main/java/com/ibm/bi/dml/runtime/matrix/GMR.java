@@ -32,31 +32,19 @@ import org.apache.hadoop.mapred.Counters.Group;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.AppendM;
-import com.ibm.bi.dml.lops.BinaryM;
 import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.MapMult;
-import com.ibm.bi.dml.lops.MapMultChain;
-import com.ibm.bi.dml.lops.PMMJ;
-import com.ibm.bi.dml.lops.UAggOuterChain;
-import com.ibm.bi.dml.lops.WeightedSigmoid;
-import com.ibm.bi.dml.lops.WeightedSigmoidR;
-import com.ibm.bi.dml.lops.WeightedSquaredLoss;
-import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.BinaryMInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.MapMultChainInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.PMMJMRInstruction;
+import com.ibm.bi.dml.runtime.instructions.mr.IDistributedCacheConsumer;
+import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.PickByCountInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.QuaternaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.UaggOuterChainInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
@@ -325,8 +313,11 @@ public class GMR
 	 * @param inputs
 	 * @param rlens
 	 * @param clens
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
 	 */
 	private static void setupDistributedCache(JobConf job, String instMap, String instRed, String[] inputs, long[] rlens, long[] clens) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		//concatenate mapper and reducer instructions
 		String allInsts = (instMap!=null && !instMap.trim().isEmpty() ) ? instMap : null;
@@ -342,34 +333,20 @@ public class GMR
 			//get all indexes of distributed cache inputs
 			ArrayList<Byte> indexList = new ArrayList<Byte>();
 			String[] inst = allInsts.split(Instruction.INSTRUCTION_DELIM);
-			for( String tmp : inst ){
-				ArrayList<Byte> tmpindexList = new ArrayList<Byte>();
-				
-				if( tmp.contains(MapMultChain.OPCODE) )
-					MapMultChainInstruction.addDistCacheIndex(tmp, tmpindexList);
-				else if( tmp.contains(MapMult.OPCODE) )
-					AggregateBinaryInstruction.addDistCacheIndex(tmp, tmpindexList);
-				else if( tmp.contains(PMMJ.OPCODE) )
-					PMMJMRInstruction.addDistCacheIndex(tmp, tmpindexList);
-				else if( tmp.contains(AppendM.OPCODE) )
-					AppendMInstruction.addDistCacheIndex(tmp, tmpindexList);		
-				else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
-					BinaryMInstruction.addDistCacheIndex(tmp, tmpindexList);	
-				else if( tmp.contains(WeightedSquaredLoss.OPCODE) )
-					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
-				else if( tmp.contains(WeightedSquaredLossR.OPCODE) )
-					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
-				else if( tmp.contains(WeightedSigmoid.OPCODE) )
-					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
-				else if( tmp.contains(WeightedSigmoidR.OPCODE) )
-					QuaternaryInstruction.addDistCacheIndex(tmp, tmpindexList);	
-				else if( tmp.contains(UAggOuterChain.OPCODE) )
-					UaggOuterChainInstruction.addDistCacheIndex(tmp, tmpindexList);	
-				
-				//copy distinct indexes only (prevent redundant add to distcache)
-				for( Byte tmpix : tmpindexList )
-					if( !indexList.contains(tmpix) )
-						indexList.add(tmpix);
+			for( String tmp : inst ) {
+				if( InstructionUtils.isDistributedCacheUsed(tmp) )
+				{
+					ArrayList<Byte> tmpindexList = new ArrayList<Byte>();
+					
+					MRInstruction mrinst = MRInstructionParser.parseSingleInstruction(tmp);
+					if( mrinst instanceof IDistributedCacheConsumer )
+						((IDistributedCacheConsumer)mrinst).addDistCacheIndex(tmp, tmpindexList);
+					
+					//copy distinct indexes only (prevent redundant add to distcache)
+					for( Byte tmpix : tmpindexList )
+						if( !indexList.contains(tmpix) )
+							indexList.add(tmpix);
+				}
 			}
 
 			//construct index and path strings
@@ -407,8 +384,11 @@ public class GMR
 	 * @param inst3
 	 * @param inst4
 	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
 	 */
-	private static boolean[] getDistCacheOnlyInputs(byte[] realIndexes, String inst1, String inst2, String inst3, String inst4)
+	private static boolean[] getDistCacheOnlyInputs(byte[] realIndexes, String inst1, String inst2, String inst3, String inst4) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		boolean[] ret = new boolean[realIndexes.length];
 		String[] inst = new String[]{inst1, inst2, inst3, inst4};
@@ -427,27 +407,13 @@ public class GMR
 					for( String tmp : alinst ) //for each individual instruction
 					{
 						boolean lcache = false;
-						if( tmp.contains(MapMultChain.OPCODE) )
-							lcache = MapMultChainInstruction.isDistCacheOnlyIndex(tmp, index);
-						else if( tmp.contains(MapMult.OPCODE) )
-							lcache = AggregateBinaryInstruction.isDistCacheOnlyIndex(tmp, index);
-						else if( tmp.contains(PMMJ.OPCODE) )
-							lcache = PMMJMRInstruction.isDistCacheOnlyIndex(tmp, index);
-						else if( tmp.contains(AppendM.OPCODE) )
-							lcache = AppendMInstruction.isDistCacheOnlyIndex(tmp, index);	
-						else if( BinaryM.isOpcode(InstructionUtils.getOpCode(tmp)) )
-							lcache = BinaryMInstruction.isDistCacheOnlyIndex(tmp, index);	
-						else if( tmp.contains(WeightedSquaredLoss.OPCODE) )
-							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
-						else if( tmp.contains(WeightedSquaredLossR.OPCODE) )
-							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
-						else if( tmp.contains(WeightedSigmoid.OPCODE) )
-							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
-						else if( tmp.contains(WeightedSigmoidR.OPCODE) )
-							lcache = QuaternaryInstruction.isDistCacheOnlyIndex(tmp, index);
-						else if( tmp.contains(UAggOuterChain.OPCODE) )
-							lcache = UaggOuterChainInstruction.isDistCacheOnlyIndex(tmp, index);
 						
+						if( InstructionUtils.isDistributedCacheUsed(tmp) ) {
+							MRInstruction mrinst = MRInstructionParser.parseSingleInstruction(tmp);
+							if( mrinst instanceof IDistributedCacheConsumer )
+								lcache = ((IDistributedCacheConsumer)mrinst).isDistCacheOnlyIndex(tmp, index);
+						}
+					
 						distCacheOnly &= (lcache || !tmp.contains(indexStr));
 						use |= tmp.contains(indexStr);
 					}

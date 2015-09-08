@@ -108,7 +108,7 @@ public class WeightedSigmoidR extends Lop
 		sb.append( getInputs().get(2).prepInputOperand(input_index3));
 	
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
+		sb.append( prepOutputOperand(output_index));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_wsType);
@@ -142,7 +142,7 @@ public class WeightedSigmoidR extends Lop
 		sb.append( getInputs().get(2).prepInputOperand(input3));
 	
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output));
+		sb.append( prepOutputOperand(output));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_wsType);

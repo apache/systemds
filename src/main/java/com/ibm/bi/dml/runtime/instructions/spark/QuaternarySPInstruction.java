@@ -18,8 +18,8 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -31,14 +31,15 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.lops.WeightedDivMM;
+import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
+import com.ibm.bi.dml.lops.WeightedDivMMR;
 import com.ibm.bi.dml.lops.WeightedSigmoid;
 import com.ibm.bi.dml.lops.WeightedSigmoidR;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -89,19 +90,14 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		//validity check
 		if (   !WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)   //mapwsloss
 			&& !WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode)  //redwsloss
-			&& !WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)    //mapwsigmoid
-			&& !WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode) ) //redwsigmoid
+			&& !WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)   //mapwsigmoid
+			&& !WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode)  //redwsigmoid
+			&& !WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)   //mapwdivmm
+			&& !WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode)) //redwdivmm
 		{
 			throw new DMLRuntimeException("Quaternary.parseInstruction():: Unknown opcode " + opcode);
 		}
-		
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in4 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 
-		
 		//instruction parsing
 		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)    //wsloss
 			|| WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode) )
@@ -117,11 +113,11 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			//parse instruction parts (without exec type)
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 			
-			in1.split(parts[1]);
-			in2.split(parts[2]);
-			in3.split(parts[3]);
-			in4.split(parts[4]);
-			out.split(parts[5]);
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand in4 = new CPOperand(parts[4]);
+			CPOperand out = new CPOperand(parts[5]);
 			WeightsType wtype = WeightsType.valueOf(parts[6]);
 			
 			//in mappers always through distcache, in reducers through distcache/shuffle
@@ -130,7 +126,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 			return new QuaternarySPInstruction(new QuaternaryOperator(wtype), in1, in2, in3, in4, out, cacheU, cacheV, opcode, str);	
 		}
-		else //wsigmoid
+		if(   WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)    //wsigmoid
+		   || WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode) )
 		{
 			boolean isRed = WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode);
 			
@@ -143,11 +140,36 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			//parse instruction parts (without exec type)
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 			
-			in1.split(parts[1]);
-			in2.split(parts[2]);
-			in3.split(parts[3]);
-			out.split(parts[4]);
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand out = new CPOperand(parts[4]);
 			WSigmoidType wtype = WSigmoidType.valueOf(parts[5]);
+			
+			//in mappers always through distcache, in reducers through distcache/shuffle
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			
+			return new QuaternarySPInstruction(new QuaternaryOperator(wtype), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
+		}
+		else //wdivmm
+		{
+			boolean isRed = WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode);
+			
+			//check number of fields (3 inputs, output, type)
+			if( isRed )
+				InstructionUtils.checkNumFields ( str, 7 );
+			else
+				InstructionUtils.checkNumFields ( str, 5 );
+				
+			//parse instruction parts (without exec type)
+			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+			
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand out = new CPOperand(parts[4]);
+			WDivMMType wtype = WDivMMType.valueOf(parts[5]);
 			
 			//in mappers always through distcache, in reducers through distcache/shuffle
 			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
@@ -179,13 +201,15 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		
 		//map-side only operation (one rdd input, two broadcasts)
 		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(getOpcode())  
-			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(getOpcode())     ) 
+			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(getOpcode())
+			|| WeightedDivMM.OPCODE.equalsIgnoreCase(getOpcode()) ) 
 		{
 			Broadcast<PartitionedMatrixBlock> bc1 = sec.getBroadcastForVariable( input2.getName() );
 			Broadcast<PartitionedMatrixBlock> bc2 = sec.getBroadcastForVariable( input3.getName() );
 			
 			//partitioning-preserving mappartitions (key access required for broadcast loopkup)
-			out = in.mapPartitionsToPair(new RDDQuaternaryFunction1(qop, bc1, bc2),true);
+			boolean noKeyChange = (qop.wtype3 == null); //only wsdivmm changes keys
+			out = in.mapPartitionsToPair(new RDDQuaternaryFunction1(qop, bc1, bc2), noKeyChange);
 			
 			rddVars.add( input1.getName() );
 			bcVars.add( input2.getName() );
@@ -213,23 +237,23 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			//functions calls w/ two rdd inputs		
 			if( inU != null && inV == null && inW == null )
 				out = in.join(inU)
-				        .flatMapToPair(new RDDQuaternaryFunction2(qop, bc1, bc2));
+				        .mapToPair(new RDDQuaternaryFunction2(qop, bc1, bc2));
 			else if( inU == null && inV != null && inW == null )
 				out = in.join(inV)
-				        .flatMapToPair(new RDDQuaternaryFunction2(qop, bc1, bc2));
+				        .mapToPair(new RDDQuaternaryFunction2(qop, bc1, bc2));
 			else if( inU == null && inV == null && inW != null )
 				out = in.join(inW)
-				        .flatMapToPair(new RDDQuaternaryFunction2(qop, bc1, bc2));
+				        .mapToPair(new RDDQuaternaryFunction2(qop, bc1, bc2));
 			//function calls w/ three rdd inputs
 			else if( inU != null && inV != null && inW == null )
 				out = in.join(inU).join(inV)
-				        .flatMapToPair(new RDDQuaternaryFunction3(qop, bc1, bc2));
+				        .mapToPair(new RDDQuaternaryFunction3(qop, bc1, bc2));
 			else if( inU != null && inV == null && inW != null )
 				out = in.join(inU).join(inW)
-				        .flatMapToPair(new RDDQuaternaryFunction3(qop, bc1, bc2));
+				        .mapToPair(new RDDQuaternaryFunction3(qop, bc1, bc2));
 			else if( inU == null && inV != null && inW != null )
 				out = in.join(inV).join(inW)
-				        .flatMapToPair(new RDDQuaternaryFunction3(qop, bc1, bc2));
+				        .mapToPair(new RDDQuaternaryFunction3(qop, bc1, bc2));
 			//function call w/ four rdd inputs
 			else 
 				out = in.join(inU).join(inV).join(inW)
@@ -241,7 +265,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			if( inW != null ) rddVars.add(_input4.getName());
 		}
 		
-		//output handling
+		//output handling, incl aggregation
 		if( qop.wtype1 != null ) //mapwsloss, redwsloss
 		{
 			//full aggregate and cast to scalar
@@ -249,8 +273,12 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			DoubleObject ret = new DoubleObject(tmp.getValue(0, 0));
 			sec.setVariable(output.getName(), ret);
 		}
-		else //mapwsigmoid, redwsigmoid
+		else //mapwsigmoid, redwsigmoid, mapwdivmm, redwdivmm 
 		{
+			//aggregation if required (mapwdivmm, redwdivmm)
+			if( qop.wtype3 != null )
+				out = RDDAggregateUtils.sumByKeyStable( out );
+				
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			//maintain lineage information for output rdd
@@ -258,26 +286,77 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 				sec.addLineageRDD(output.getName(), rddVar);
 			for( String bcVar : bcVars )
 				sec.addLineageBroadcast(output.getName(), bcVar);
+			
+			//update matrix characteristics
+			updateOutputMatrixCharacteristics(sec, qop);
 		}
 	}
 	
-	private static class RDDQuaternaryFunction1 //one rdd input
+	/**
+	 * 
+	 * @param sec
+	 * @param qop
+	 * @throws DMLRuntimeException 
+	 */
+	private void updateOutputMatrixCharacteristics(SparkExecutionContext sec, QuaternaryOperator qop) 
+		throws DMLRuntimeException
+	{
+		MatrixCharacteristics mcIn1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mcIn2 = sec.getMatrixCharacteristics(input2.getName());
+		MatrixCharacteristics mcIn3 = sec.getMatrixCharacteristics(input3.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		
+		if( qop.wtype2 != null ) { //wsigmoid
+			//output size determined by main input
+			mcOut.set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
+		}
+		else if(qop.wtype3 != null ) { //wdivmm
+			if( qop.wtype3 == WDivMMType.LEFT )
+				mcOut.set(mcIn3.getRows(), mcIn3.getCols(), mcIn3.getRowsPerBlock(), mcIn3.getColsPerBlock());
+			else
+				mcOut.set(mcIn2.getRows(), mcIn2.getCols(), mcIn3.getRowsPerBlock(), mcIn3.getColsPerBlock());	
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private abstract static class RDDQuaternaryBaseFunction implements Serializable
+	{
+		private static final long serialVersionUID = -3175397651350954930L;
+		
+		protected QuaternaryOperator _qop = null;
+		protected Broadcast<PartitionedMatrixBlock> _pmU = null;
+		protected Broadcast<PartitionedMatrixBlock> _pmV = null;
+		
+		public RDDQuaternaryBaseFunction( QuaternaryOperator qop, Broadcast<PartitionedMatrixBlock> bcU, Broadcast<PartitionedMatrixBlock> bcV ) {
+			_qop = qop;		
+			_pmU = bcU;
+			_pmV = bcV;
+		}
+
+		protected MatrixIndexes createOutputIndexes(MatrixIndexes in) 
+		{
+			if( _qop.wtype3 != null ){ //key change 
+				boolean left = ( _qop.wtype3 == WDivMMType.LEFT );
+				return new MatrixIndexes(left?in.getColumnIndex():in.getRowIndex(), 1);
+			}				
+			return in;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class RDDQuaternaryFunction1 extends RDDQuaternaryBaseFunction //one rdd input
 		implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock>
 	{
 		private static final long serialVersionUID = -8209188316939435099L;
 		
-		private QuaternaryOperator _qop = null;
-		private Broadcast<PartitionedMatrixBlock> _pmU = null;
-		private Broadcast<PartitionedMatrixBlock> _pmV = null;
-		
 		public RDDQuaternaryFunction1( QuaternaryOperator qop, Broadcast<PartitionedMatrixBlock> bcU, Broadcast<PartitionedMatrixBlock> bcV ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
 		{
-			_qop = qop;		
-			
-			//get the broadcast matrices and partition on demand
-			_pmU = bcU;
-			_pmV = bcV;
+			super(qop, bcU, bcV);
 		}
 	
 		@Override
@@ -308,33 +387,29 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 				blkIn.quaternaryOperations(_qop, mbU, mbV, null, blkOut);
 				
 				//create return tuple
-				return new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(ixIn), blkOut);
+				MatrixIndexes ixOut = createOutputIndexes(ixIn);
+				return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
 			}			
+			
 		}
 	}
 	
-	private static class RDDQuaternaryFunction2 //two rdd input
-		implements PairFlatMapFunction<Tuple2<MatrixIndexes, Tuple2<MatrixBlock,MatrixBlock>>, MatrixIndexes, MatrixBlock>
+	/**
+	 * 
+	 */
+	private static class RDDQuaternaryFunction2 extends RDDQuaternaryBaseFunction //two rdd input
+		implements PairFunction<Tuple2<MatrixIndexes, Tuple2<MatrixBlock,MatrixBlock>>, MatrixIndexes, MatrixBlock>
 	{
 		private static final long serialVersionUID = 7493974462943080693L;
-		
-		private QuaternaryOperator _qop = null;
-		private Broadcast<PartitionedMatrixBlock> _pmU = null;
-		private Broadcast<PartitionedMatrixBlock> _pmV = null;
 		
 		public RDDQuaternaryFunction2( QuaternaryOperator qop, Broadcast<PartitionedMatrixBlock> bcU, Broadcast<PartitionedMatrixBlock> bcV ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
 		{
-			_qop = qop;		
-			
-			//get the broadcast matrices and partition on demand
-			_pmU = bcU;
-			_pmV = bcV;
+			super(qop, bcU, bcV);
 		}
 
 		@Override
-		@SuppressWarnings("unchecked")
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg0)
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg0)
 			throws Exception 
 		{
 			MatrixIndexes ixIn = arg0._1();
@@ -350,32 +425,27 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			blkIn1.quaternaryOperations(_qop, mbU, mbV, mbW, blkOut);
 			
 			//create return tuple
-			return Arrays.asList(new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(ixIn), blkOut));
+			MatrixIndexes ixOut = createOutputIndexes(ixIn);
+			return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
 		}
 	}
 	
-	private static class RDDQuaternaryFunction3 //three rdd input
-		implements PairFlatMapFunction<Tuple2<MatrixIndexes, Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>>, MatrixIndexes, MatrixBlock>
+	/**
+	 * 
+	 */
+	private static class RDDQuaternaryFunction3 extends RDDQuaternaryBaseFunction //three rdd input
+		implements PairFunction<Tuple2<MatrixIndexes, Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>>, MatrixIndexes, MatrixBlock>
 	{
 		private static final long serialVersionUID = -2294086455843773095L;
-		
-		private QuaternaryOperator _qop = null;
-		private Broadcast<PartitionedMatrixBlock> _pmU = null;
-		private Broadcast<PartitionedMatrixBlock> _pmV = null;
 		
 		public RDDQuaternaryFunction3( QuaternaryOperator qop, Broadcast<PartitionedMatrixBlock> bcU, Broadcast<PartitionedMatrixBlock> bcV ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
 		{
-			_qop = qop;		
-			
-			//get the broadcast matrices and partition on demand
-			_pmU = bcU;
-			_pmV = bcV;
+			super(qop, bcU, bcV);
 		}
 
 		@Override
-		@SuppressWarnings("unchecked")
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, Tuple2<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock>> arg0)
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock>> arg0)
 			throws Exception 
 		{
 			MatrixIndexes ixIn = arg0._1();
@@ -394,21 +464,23 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			blkIn1.quaternaryOperations(_qop, mbU, mbV, mbW, blkOut);
 			
 			//create return tuple
-			return Arrays.asList(new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(ixIn), blkOut));
+			MatrixIndexes ixOut = createOutputIndexes(ixIn);
+			return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
 		}
 	}
 	
-	private static class RDDQuaternaryFunction4 //four rdd input
+	/**
+	 * Note: never called for wsigmoid/wdivmm (only wsloss)
+	 */
+	private static class RDDQuaternaryFunction4 extends RDDQuaternaryBaseFunction //four rdd input
 		implements Function<Tuple2<Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>,MatrixBlock>, MatrixBlock>
 	{
 		private static final long serialVersionUID = 7328911771600289250L;
 		
-		private QuaternaryOperator _qop = null;
-		
 		public RDDQuaternaryFunction4( QuaternaryOperator qop ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
 		{
-			_qop = qop;			
+			super(qop, null, null);		
 		}
 	
 		@Override

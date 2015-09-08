@@ -57,9 +57,9 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 	public void computeOutputDimension(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut)
 	{
 		if( _repCols )
-			mcOut.set(mcIn.getRows(), _lenM, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+			mcOut.set(mcIn.getRows(), _lenM, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), mcIn.getCols());
 		else
-			mcOut.set(_lenM, mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+			mcOut.set(_lenM, mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), mcIn.getRows());
 	}
 	
 	/**

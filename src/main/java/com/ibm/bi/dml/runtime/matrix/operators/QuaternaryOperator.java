@@ -18,6 +18,7 @@
 
 package com.ibm.bi.dml.runtime.matrix.operators;
 
+import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
@@ -30,14 +31,34 @@ public class QuaternaryOperator extends Operator
 
 	public WeightsType wtype1 = null;
 	public WSigmoidType wtype2 = null;
+	public WDivMMType wtype3 = null;
 	public FunctionObject fn;
 	
+	/**
+	 * wsloss
+	 * 
+	 * @param wt
+	 */
 	public QuaternaryOperator( WeightsType wt ) {
 		wtype1 = wt;
 	}
 	
+	/**
+	 * wsigmoid 
+	 * 
+	 * @param wt
+	 */
 	public QuaternaryOperator( WSigmoidType wt ) {
 		wtype2 = wt;
 		fn = Builtin.getBuiltinFnObject("sigmoid");
+	}
+	
+	/**
+	 * wdivmm
+	 * 
+	 * @param wt
+	 */
+	public QuaternaryOperator( WDivMMType wt ) {
+		wtype3 = wt;
 	}
 }

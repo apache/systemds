@@ -26,26 +26,23 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 /**
  * 
  */
-public class WeightedSigmoid extends Lop 
+public class WeightedDivMM extends Lop 
 {
-
-	public static final String OPCODE = "mapwsigmoid";
-	public static final String OPCODE_CP = "wsigmoid";
+	public static final String OPCODE = "mapwdivmm";
+	public static final String OPCODE_CP = "wdivmm";
 	private int _numThreads = 1;
 
-	public enum WSigmoidType {
-		BASIC, 
-		LOG, 
-		MINUS,
-		LOG_MINUS,
+	public enum WDivMMType {
+		LEFT,
+		RIGHT,
 	}
 	
-	private WSigmoidType _wsigmoidType = null;
+	private WDivMMType _weightsType = null;
 	
-	public WeightedSigmoid(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WSigmoidType wt, ExecType et) 
+	public WeightedDivMM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WDivMMType wt, ExecType et) 
 		throws LopsException 
 	{
-		super(Lop.Type.WeightedSigmoid, dt, vt);		
+		super(Lop.Type.WeightedSquaredLoss, dt, vt);		
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
@@ -53,8 +50,7 @@ public class WeightedSigmoid extends Lop
 		input2.addOutput(this);
 		input3.addOutput(this);
 		
-		//setup mapmult parameters
-		_wsigmoidType = wt;
+		_weightsType = wt;
 		setupLopProperties(et);
 	}
 	
@@ -86,7 +82,7 @@ public class WeightedSigmoid extends Lop
 	}
 
 	public String toString() {
-		return "Operation = WeightedSigmoid";
+		return "Operation = WeightedDivMM";
 	}
 	
 	@Override
@@ -112,7 +108,7 @@ public class WeightedSigmoid extends Lop
 		sb.append( prepOutputOperand(output_index));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_wsigmoidType);
+		sb.append(_weightsType);
 		
 		return sb.toString();
 	}
@@ -143,7 +139,7 @@ public class WeightedSigmoid extends Lop
 		sb.append( prepOutputOperand(output));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_wsigmoidType);
+		sb.append(_weightsType);
 		
 		//append degree of parallelism
 		if( getExecType()==ExecType.CP ) {

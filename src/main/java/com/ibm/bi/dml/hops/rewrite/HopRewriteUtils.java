@@ -737,6 +737,18 @@ public class HopRewriteUtils
 	
 	/**
 	 * 
+	 * @param hop1
+	 * @param hop2
+	 * @return
+	 */
+	public static boolean isTransposeOfItself(Hop hop1, Hop hop2)
+	{
+		return hop1 instanceof ReorgOp && ((ReorgOp)hop1).getOp()==ReOrgOp.TRANSPOSE && hop1.getInput().get(0) == hop2
+			|| hop2 instanceof ReorgOp && ((ReorgOp)hop2).getOp()==ReOrgOp.TRANSPOSE && hop2.getInput().get(0) == hop1;	
+	}
+	
+	/**
+	 * 
 	 * @param hop
 	 * @return
 	 */

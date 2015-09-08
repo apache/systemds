@@ -113,7 +113,7 @@ public class WeightedSquaredLoss extends Lop
 		sb.append( getInputs().get(3).prepInputOperand(input_index4));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output_index));
+		sb.append( prepOutputOperand(output_index));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_weightsType);
@@ -147,7 +147,7 @@ public class WeightedSquaredLoss extends Lop
 		sb.append( getInputs().get(3).prepInputOperand(input4));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output));
+		sb.append( prepOutputOperand(output));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(_weightsType);

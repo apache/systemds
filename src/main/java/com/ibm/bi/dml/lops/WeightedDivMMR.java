@@ -19,6 +19,7 @@ package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -26,26 +27,18 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 /**
  * 
  */
-public class WeightedSigmoid extends Lop 
+public class WeightedDivMMR extends Lop 
 {
-
-	public static final String OPCODE = "mapwsigmoid";
-	public static final String OPCODE_CP = "wsigmoid";
-	private int _numThreads = 1;
-
-	public enum WSigmoidType {
-		BASIC, 
-		LOG, 
-		MINUS,
-		LOG_MINUS,
-	}
+	public static final String OPCODE = "redwdivmm";
 	
-	private WSigmoidType _wsigmoidType = null;
+	private WDivMMType _weightsType = null;
+	private boolean _cacheU = false;
+	private boolean _cacheV = false;
 	
-	public WeightedSigmoid(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WSigmoidType wt, ExecType et) 
+	public WeightedDivMMR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WDivMMType wt, boolean cacheU, boolean cacheV, ExecType et) 
 		throws LopsException 
 	{
-		super(Lop.Type.WeightedSigmoid, dt, vt);		
+		super(Lop.Type.WeightedSquaredLoss, dt, vt);		
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
@@ -53,16 +46,19 @@ public class WeightedSigmoid extends Lop
 		input2.addOutput(this);
 		input3.addOutput(this);
 		
-		//setup mapmult parameters
-		_wsigmoidType = wt;
+		_weightsType = wt;
+		_cacheU = cacheU;
+		_cacheV = cacheV;
 		setupLopProperties(et);
 	}
 	
 	/**
 	 * 
 	 * @param et
+	 * @throws LopsException 
 	 */
-	private void setupLopProperties( ExecType et )
+	private void setupLopProperties( ExecType et ) 
+		throws LopsException
 	{
 		if( et == ExecType.MR )
 		{
@@ -72,7 +68,7 @@ public class WeightedSigmoid extends Lop
 			boolean definesMRJob = false;
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.DATAGEN);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+			lps.setProperties( inputs, ExecType.MR, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
 		else //Spark/CP
 		{
@@ -86,7 +82,7 @@ public class WeightedSigmoid extends Lop
 	}
 
 	public String toString() {
-		return "Operation = WeightedSigmoid";
+		return "Operation = WeightedSquaredLossR";
 	}
 	
 	@Override
@@ -112,7 +108,13 @@ public class WeightedSigmoid extends Lop
 		sb.append( prepOutputOperand(output_index));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_wsigmoidType);
+		sb.append(_weightsType);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheU);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheV);
 		
 		return sb.toString();
 	}
@@ -125,10 +127,7 @@ public class WeightedSigmoid extends Lop
 		sb.append(getExecType());
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		if( getExecType() == ExecType.CP )
-			sb.append(OPCODE_CP);
-		else
-			sb.append(OPCODE);
+		sb.append(OPCODE);
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(0).prepInputOperand(input1));
@@ -143,13 +142,13 @@ public class WeightedSigmoid extends Lop
 		sb.append( prepOutputOperand(output));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_wsigmoidType);
+		sb.append(_weightsType);
 		
-		//append degree of parallelism
-		if( getExecType()==ExecType.CP ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _numThreads );
-		}
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheU);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheV);
 		
 		return sb.toString();
 	}
@@ -157,7 +156,7 @@ public class WeightedSigmoid extends Lop
 	@Override
 	public boolean usesDistributedCache() 
 	{
-		if( getExecType()==ExecType.MR )
+		if( _cacheU || _cacheV )
 			return true;
 		else
 			return false;
@@ -166,13 +165,13 @@ public class WeightedSigmoid extends Lop
 	@Override
 	public int[] distributedCacheInputIndex() 
 	{
-		if( getExecType()==ExecType.MR )
-			return new int[]{2,3};
-		else
+		if( !_cacheU && !_cacheV )
 			return new int[]{-1};
-	}
-	
-	public void setNumThreads(int k) {
-		_numThreads = k;
+		else if( _cacheU && !_cacheV )
+			return new int[]{2};
+		else if( !_cacheU && _cacheV )
+			return new int[]{3};
+		else
+			return new int[]{2,3};
 	}
 }

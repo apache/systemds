@@ -1030,7 +1030,8 @@ public abstract class Hop
 	// Operations that require 4 operands
 	public enum OpOp4 {
 		WSLOSS, //weighted sloss mm
-		WSIGMOID, //wweighted sigmoid mm
+		WSIGMOID, //weighted sigmoid mm
+		WDIVMM, //weighted divide mm
 		INVALID 
 	};
 	

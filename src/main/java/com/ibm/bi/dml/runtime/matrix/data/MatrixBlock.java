@@ -41,6 +41,7 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
+import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -376,6 +377,17 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		throws RuntimeException 
 	{
 		allocateDenseBlock( true );
+	}
+	
+	/**
+	 * 
+	 */
+	public void allocateDenseOrSparseBlock()
+	{
+		if( sparse )
+			allocateSparseRowsBlock();
+		else
+			allocateDenseBlock();
 	}
 	
 	/**
@@ -5765,8 +5777,12 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		//prepare intermediates and output
 		if( qop.wtype1 != null )
 			R.reset(1, 1, false);
-		else
+		else if( qop.wtype2 != null )
 			R.reset(rlen, clen, sparse);
+		else if( qop.wtype3 != null ) {
+			boolean left = (qop.wtype3==WDivMMType.LEFT);
+			R.reset( left?V.rlen:U.rlen, left?V.clen:U.clen, false);
+		}
 		
 		//core block operation
 		if( qop.wtype1 != null ) //wsloss
@@ -5777,13 +5793,20 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			else
 				LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, qop.wtype1);
 		}
-		else //wsigmoid
+		else if( qop.wtype2 != null ) //wsigmoid
 		{
 			if( k > 1 )
 				LibMatrixMult.matrixMultWSigmoid(X, U, V, R, qop.wtype2, k);
 			else
 				LibMatrixMult.matrixMultWSigmoid(X, U, V, R, qop.wtype2);
 		}	
+		else if( qop.wtype3 != null ) //wdivmm
+		{
+			if( k > 1 )
+				LibMatrixMult.matrixMultWDivMM(X, U, V, R, qop.wtype3, k);
+			else
+				LibMatrixMult.matrixMultWDivMM(X, U, V, R, qop.wtype3);	
+		}
 		
 		return R;
 	}

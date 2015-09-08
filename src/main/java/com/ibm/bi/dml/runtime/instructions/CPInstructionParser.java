@@ -191,7 +191,11 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "rdiag"       , CPINSTRUCTION_TYPE.Reorg);
 		String2CPInstructionType.put( "rshape"      , CPINSTRUCTION_TYPE.MatrixReshape);
 		String2CPInstructionType.put( "rsort"      , CPINSTRUCTION_TYPE.Reorg);
-		
+	
+		// Quaternary instruction opcodes
+		String2CPInstructionType.put( "wsloss"  , CPINSTRUCTION_TYPE.Quaternary);
+		String2CPInstructionType.put( "wsigmoid", CPINSTRUCTION_TYPE.Quaternary);
+		String2CPInstructionType.put( "wdivmm"  , CPINSTRUCTION_TYPE.Quaternary);
 		
 		// User-defined function Opcodes
 		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);
@@ -226,10 +230,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "eigen", CPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		
 		String2CPInstructionType.put( "partition", CPINSTRUCTION_TYPE.Partition);
-	
-		String2CPInstructionType.put( "wsloss"  , CPINSTRUCTION_TYPE.Quaternary);
-		String2CPInstructionType.put( "wsigmoid", CPINSTRUCTION_TYPE.Quaternary);
-			
+		
+		
 		//CP FILE instruction
 		String2CPFileInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
 

@@ -19,6 +19,9 @@ package com.ibm.bi.dml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.lops.WeightedDivMM;
+import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
+import com.ibm.bi.dml.lops.WeightedDivMMR;
 import com.ibm.bi.dml.lops.WeightedSigmoid;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSigmoidR;
@@ -30,6 +33,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReorg;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -95,6 +99,37 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 
 	/**
 	 * 
+	 * @param mc1
+	 * @param mc2
+	 * @param mc3
+	 * @param dimOut
+	 */
+	public void computeMatrixCharacteristics(MatrixCharacteristics mc1, MatrixCharacteristics mc2, 
+			MatrixCharacteristics mc3, MatrixCharacteristics dimOut) 
+	{
+		QuaternaryOperator qop = (QuaternaryOperator)optr;
+		
+		if( qop.wtype1 != null ) { //wsloss
+			//output size independent of chain type (scalar)
+			dimOut.set(1, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+		}
+		else if( qop.wtype2 != null ) { //wsigmoid
+			//output size determined by main input
+			dimOut.set(mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+		}
+		else if(qop.wtype3 != null ) { //wdivmm
+			//note: cannot directly consume mc2 or mc3 for redwdivmm because rep instruction changed
+			//the relevant dimensions; as a workaround the original dims are passed via nnz
+			boolean mapwdivmm = _cacheU && _cacheV;
+			if( qop.wtype3 == WDivMMType.LEFT )
+				dimOut.set(mc1.getCols(), mapwdivmm?mc3.getCols():mc3.getNonZeros(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+			else
+				dimOut.set(mc1.getRows(), mapwdivmm?mc2.getCols():mc2.getNonZeros(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());	
+		}
+	}
+	
+	/**
+	 * 
 	 * @param str
 	 * @return
 	 * @throws DMLRuntimeException
@@ -108,7 +143,9 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 		if (   !WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)   //mapwsloss
 			&& !WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode)  //redwsloss
 			&& !WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)    //mapwsigmoid
-			&& !WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode) ) //redwsigmoid
+			&& !WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode)   //redwsigmoid
+			&& !WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)    //mapwdivmm
+			&& !WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode) ) //redwdivmm
 		{
 			throw new DMLRuntimeException("Unexpected opcode in QuaternaryInstruction: " + str);
 		}
@@ -141,7 +178,8 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			
 			return new QuaternaryInstruction(new QuaternaryOperator(wtype), in1, in2, in3, in4, out, cacheU, cacheV, str);	
 		}
-		else //wsigmoid
+		else if(   WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)    //wsigmoid
+				|| WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode) )
 		{
 			boolean isRed = WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode);
 			
@@ -165,7 +203,32 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
 			
 			return new QuaternaryInstruction(new QuaternaryOperator(wtype), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
-		}	
+		}
+		else //wdivmm
+		{
+			boolean isRed = WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode);
+			
+			//check number of fields (3 inputs, output, type)
+			if( isRed )
+				InstructionUtils.checkNumFields ( str, 7 );
+			else
+				InstructionUtils.checkNumFields ( str, 5 );
+				
+			//parse instruction parts (without exec type)
+			String[] parts = InstructionUtils.getInstructionParts(str);
+			
+			byte in1 = Byte.parseByte(parts[1]);
+			byte in2 = Byte.parseByte(parts[2]);
+			byte in3 = Byte.parseByte(parts[3]);
+			byte out = Byte.parseByte(parts[4]);
+			WDivMMType wtype = WDivMMType.valueOf(parts[5]);
+			
+			//in mappers always through distcache, in reducers through distcache/shuffle
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			
+			return new QuaternaryInstruction(new QuaternaryOperator(wtype), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
+		}
 	}
 	
 	@Override //IDistributedCacheConsumer
@@ -211,7 +274,6 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 		else
 			return new byte[]{_input1, _input2, _input3, _input4, output};
 	}
-	
 
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
@@ -259,10 +321,16 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 				
 				//Step 3: process instruction
 				Xij.quaternaryOperations((QuaternaryOperator)optr, Ui, Vj, Wij, outVal);
+				
+				//set output indexes
 				if( ((QuaternaryOperator)optr).wtype1 != null ) 
 					outIx.setIndexes(1, 1); //wsloss
-				else
+				else if ( ((QuaternaryOperator)optr).wtype2 != null ) 
 					outIx.setIndexes(inIx); //wsigmoid
+				else { //wdivmm
+					boolean left = (((QuaternaryOperator)optr).wtype3 == WDivMMType.LEFT);
+					outIx.setIndexes(left?inIx.getColumnIndex():inIx.getRowIndex(), 1);
+				}
 				
 				//put the output value in the cache
 				if(iout==tempValue)

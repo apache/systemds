@@ -1,0 +1,105 @@
+#####################################################################
+# TITLE: An Overview of Matrix Multiplication Operators in SystemML #
+# DATE MODIFIED: 09/07/2015                                         #
+#####################################################################
+
+In the following, we give an overview of backend-specific physical matrix multiplication operators in SystemML as well as their internally used matrix multiplication block operations.
+
+A) BASIC MATRIX MULT OPERATORS 
+-------------------------------
+
+An AggBinaryOp hop can be compiled into the following physical operators.
+
+* 1) Physical Operators in CP (single node, control program)
+  - MM (basic matrix multiplication)                     --> mm
+  - MMChain (matrix multiplication chain)                --> mmchain
+  - TSMM (transpose-self matrix multiplication)          --> tsmm
+  - PMM (permutation matrix multiplication)              --> pmm
+
+* 2) Physical Operator in MR (distributed, mapreduce)
+  - MapMM (map-side matrix multiplication, w/|w/o agg)   --> mm
+  - MapMMChain (map-side matrix chain multiplication)    --> mmchain
+  - TSMM (map-side transpose-self matrix multiplication) --> tsmm
+  - PMM (map-side permutation matrix multiplication)     --> pmm
+  - CPMM (cross-product matrix multiplication, 2 jobs)   --> mm
+  - RMM (replication-based matrix multiplication, 1 job) --> mm
+
+* 3) Physical Operators in SPARK (distributed, spark)
+  - MapMM (see MR, flatmap/mappartitions/maptopair +     --> mm
+    reduce/reducebykey/no_aggregation)                   
+  - MapMMChain (see MR, mapvalues/maptopair + reduce)    --> mmchain
+  - TSMM (see MR, mapvalues + reduce)                    --> tsmm
+  - PMM (see MR, flatmaptopair + reducebykey)            --> pmm
+  - CPMM (see MR, 2 x maptopair + join + maptopair +     --> mm
+    reduce/reducebykey) 
+  - RMM (see MR, 2 x flatmap + join + maptopair +        --> mm
+    reducebykey) 
+  - ZIPMM (partitioning-preserving 1-1 zipping mm,       --> mm
+    join + mapvalues + reduce) 
+
+
+B) COMPLEX MATRIX MULT OPERATORS
+-------------------------------  
+
+A QuaternaryOp hop can be compiled into the following physical operators. Note that wsloss, wsigmoid, wdivmm have different semantics though. The main goal of these operators is to prevent the creation of dense "outer" products via selective computation over a sparse driver (sparse matrix and sparse-safe operation).
+ 
+* 1) Physical Operators in CP (single node, control program)
+  - WSLoss (weighted squared loss)                       --> wsloss
+  - WSigmoid (weighted sigmoid)                          --> wsigmoid
+  - WDivMM (weighted divide matrix multiplication)       --> wdivmm
+
+* 2) Physical Operator in MR (distributed, mapreduce)
+  - MapWSLoss (map-side weighted squared loss)           --> wsloss
+  - RedWSLoss (reduce-side weighted squared loss)        --> wsloss
+  - MapWSigmoid (map-side weighted sigmoid)              --> wsigmoid
+  - RedWSigmoid (reduce-side weighted sigmoid)           --> wsigmoid
+  - MapWDivMM (map-side weighted divide matrix mult)     --> wdivmm
+  - RedWDivMM (reduce-side weighted divide matrix mult)  --> wdivmm
+
+* 3) Physical Operators in SPARK (distributed, spark)
+  - MapWSLoss (see MR, mappartitions + reduce)           --> wsloss           
+  - RedWSLoss (see MR, 1/2x flatmaptopair + 1-3x join +  --> wsloss
+    maptopair + reduce)
+  - MapWSigmoid (see MR, mappartitions)                  --> wsigmoid
+  - RedWSigmoid (see MR, 1/2x flatmaptopair +            --> wsigmoid
+    1/2x join + maptopair)          
+  - MapWDivMM (see MR, mappartitions + reducebykey )     --> wdivmm
+  - RedWDivMM (see MR, 1/2x flatmaptopair + 1/2x join +  --> wdivmm 
+    maptopair + reducebykey)  
+
+
+C) CORE MATRIX MULT PRIMITIVES LibMatrixMult (incl related script patterns)
+-------------------------------  
+* 1) mm       (general A %*% B)
+  - sequential / multi-threaded (same block ops, par over rows in A)
+  - dense-dense, dense-sparse, sparse-dense, sparse-sparse, ultra-sparse*
+  - ~20 special cases for matrix-vector, vector-vector, etc
+  
+* 2) mmchain  ((a) t(X) %*% (X %*% v), (b) t(X) %*% (w * (X %*% v)))
+  - sequential / multi-threaded (same block ops, par over rows in X)
+  - dense / sparse x 2 patterns
+
+* 3) tsmm     ((a) t(X) %*% X, (b) X %*% t(X)
+  - sequential / multi-threaded (same block ops, par over rows in R, 2x tasks)
+  - dense / sparse x 2 patterns; special cases for dot products
+
+* 4) pmm      (removeEmpty(diag(v), "rows") %*% X)
+  - sequential / multi-threaded (same block ops, par over rows in X)
+  - sparse-sparse, dense-dense, sparse-dense
+
+* 5) wsloss   ((a) sum(W*(X-U%*%t(V))^2), (b) sum((X-W*(U%*%t(V)))^2), 
+               (c) sum((X -(U%*%t(V)))^2))
+  - sequential / multi-threaded (same block ops, par over rows in W/X)                 
+  - all dense, sparse-dense factors, sparse/dense-* x 3 patterns            
+
+* 6) wsigmoid ((a) W*sigmoid(Y%*%t(X))), (b) W*sigmoid(-(Y%*%t(X))), 
+               (c) W*log(sigmoid(Y%*%t(X))), (d) W*log(sigmoid(-(Y%*%t(X))))) 
+  - sequential / multi-threaded (same block ops, par over rows in W)                 
+  - all dense, sparse-dense factors, sparse/dense-* x 4 patterns                   
+
+* 7) wdivmm   ((a) t(t(U)%*%(X/(U%*%t(V)))), (b) (X/(U%*%t(V)))%*%V  
+  - sequential / multi-threaded (same block ops, par over rows in X)                 
+  - all dense, sparse-dense factors, sparse/dense-* x 2 patterns
+
+
+  

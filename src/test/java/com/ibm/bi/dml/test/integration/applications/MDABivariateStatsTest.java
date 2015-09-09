@@ -17,30 +17,26 @@
 
 package com.ibm.bi.dml.test.integration.applications;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
-
-@RunWith(value = Parameterized.class)
-public class MDABivariateStatsTest extends AutomatedTestBase 
+public abstract class MDABivariateStatsTest extends AutomatedTestBase 
 {
 
-	private final static String TEST_DIR = "applications/mdabivar/";
-	private final static String TEST_MDABivar = "MDABivariateStats";
+	protected final static String TEST_DIR = "applications/mdabivar/";
+	protected final static String TEST_NAME = "MDABivariateStats";
 	
-	private int n, m, label_index, label_measurement_level;
+	protected int n, m, label_index, label_measurement_level;
 	
 	public MDABivariateStatsTest(int n, int m, int li, int lml) {
 		this.n = n; 
@@ -59,41 +55,43 @@ public class MDABivariateStatsTest extends AutomatedTestBase
 	 
 	@Override
 	public void setUp() {
-	    setUpBase();
-		addTestConfiguration(TEST_MDABivar, 
-							 new TestConfiguration(TEST_DIR, TEST_MDABivar, new String[] { "stats" }));
+		addTestConfiguration(TEST_DIR, TEST_NAME);
 	}
 	
-	@Test
-	public void testMDABivarWithRDMLAndJava() {
-		TestConfiguration config = getTestConfiguration(TEST_MDABivar);
+	protected void testMDABivariateStats(ScriptType scriptType) {
+		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + n + ", " + m
+				+ ", " + label_index + ", " + label_measurement_level + "} ------------");
+		this.scriptType = scriptType;
 		
-		String MDABivar_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = MDABivar_HOME + TEST_MDABivar + ".dml";
-
-		programArgs = new String[]{"-args", MDABivar_HOME + INPUT_DIR + "X", 
-											Integer.toString(label_index), 
-											MDABivar_HOME + INPUT_DIR + "feature_indices", 
-											Integer.toString(label_measurement_level), 
-											MDABivar_HOME + INPUT_DIR + "feature_measurement_levels",
-											MDABivar_HOME + OUTPUT_DIR + "stats", 
-                							MDABivar_HOME + OUTPUT_DIR + "tests", 
-                							MDABivar_HOME + OUTPUT_DIR + "covariances",
-                							MDABivar_HOME + OUTPUT_DIR + "standard_deviations",
-                							MDABivar_HOME + OUTPUT_DIR + "contingency_tables_counts",
-                							MDABivar_HOME + OUTPUT_DIR + "contingency_tables_label_values",
-                							MDABivar_HOME + OUTPUT_DIR + "contingency_tables_feature_values",
-                							MDABivar_HOME + OUTPUT_DIR + "feature_values",
-                							MDABivar_HOME + OUTPUT_DIR + "feature_counts",
-                							MDABivar_HOME + OUTPUT_DIR + "feature_means",
-                							MDABivar_HOME + OUTPUT_DIR + "feature_standard_deviations"};
+		getAndLoadTestConfiguration(TEST_NAME);
 		
-		fullRScriptName = MDABivar_HOME + TEST_MDABivar + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       MDABivar_HOME + INPUT_DIR + " " + Integer.toString(label_index) + " " 
-		       + Integer.toString(label_measurement_level) + " " + MDABivar_HOME + EXPECTED_DIR;
+		List<String> proArgs = new ArrayList<String>();
+		if (scriptType == ScriptType.PYDML) {
+			proArgs.add("-python");
+		}
+		proArgs.add("-args");
+		proArgs.add(input("X"));
+		proArgs.add(Integer.toString(label_index));
+		proArgs.add(input("feature_indices"));
+		proArgs.add(Integer.toString(label_measurement_level));
+		proArgs.add(input("feature_measurement_levels"));
+		proArgs.add(output("stats"));
+		proArgs.add(output("tests"));
+		proArgs.add(output("covariances"));
+		proArgs.add(output("standard_deviations"));
+		proArgs.add(output("contingency_tables_counts"));
+		proArgs.add(output("contingency_tables_label_values"));
+		proArgs.add(output("contingency_tables_feature_values"));
+		proArgs.add(output("feature_values"));
+		proArgs.add(output("feature_counts"));
+		proArgs.add(output("feature_means"));
+		proArgs.add(output("feature_standard_deviations"));
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
+        
+		fullDMLScriptName = getScript();
 		
-		loadTestConfiguration(config);
+		rCmd = getRCmd(inputDir(), Integer.toString(label_index), Integer.toString(label_measurement_level), expectedDir());
 
 		double[][] X = getRandomMatrix(n, m, 0, 1, 1, System.currentTimeMillis());
 		for(int i=0; i<X.length; i++)
@@ -123,17 +121,15 @@ public class MDABivariateStatsTest extends AutomatedTestBase
 		writeInputMatrixWithMTD("feature_indices", feature_indices, true, mc_features);
 		writeInputMatrixWithMTD("feature_measurement_levels", feature_measurement_levels, true, mc_features);
 		
-		boolean exceptionExpected = false;
 		int expectedNumberOfJobs = -1;
-		
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs); 
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs); 
 		
 		runRScript(true);
-		disableOutAndExpectedDeletion();
+//		disableOutAndExpectedDeletion();
 
-		HashMap<CellIndex, Double> statsDML = readDMLMatrixFromHDFS("stats");
+		HashMap<CellIndex, Double> statsSYSTEMML = readDMLMatrixFromHDFS("stats");
 		HashMap<CellIndex, Double> statsR = readRMatrixFromFS("stats");
 		
-		TestUtils.compareMatrices(statsDML, statsR, 0.000001, "statsDML", "statsR");
+		TestUtils.compareMatrices(statsSYSTEMML, statsR, 0.000001, "statsSYSTEMML", "statsR");
 	}
 }

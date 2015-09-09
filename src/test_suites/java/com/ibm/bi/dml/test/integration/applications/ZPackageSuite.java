@@ -32,8 +32,10 @@ import org.junit.runners.Suite;
   com.ibm.bi.dml.test.integration.applications.dml.GNMFDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.HITSDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.ID3DMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.dml.L2SVMDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.LinearLogRegDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.LinearRegressionDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.dml.MDABivariateStatsDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.MultiClassSVMDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.NaiveBayesDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.PageRankDMLTest.class,
@@ -45,8 +47,10 @@ import org.junit.runners.Suite;
   com.ibm.bi.dml.test.integration.applications.pydml.GNMFPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.HITSPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.ID3PyDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.pydml.L2SVMPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.LinearLogRegPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.LinearRegressionPyDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.pydml.MDABivariateStatsPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.MultiClassSVMPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.NaiveBayesPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.PageRankPyDMLTest.class,
@@ -55,9 +59,7 @@ import org.junit.runners.Suite;
   // .applications package
   CsplineCGTest.class,
   CsplineDSTest.class,
-  GLMTest.class, 
-  L2SVMTest.class,
-  MDABivariateStatsTest.class
+  GLMTest.class
 })
 
 

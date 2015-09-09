@@ -36,7 +36,7 @@ shift
 CURRENT_PATH=$( cd $(dirname $0) ; pwd -P )
 
 CLASSPATH=""
-for f in $CURRENT_PATH"/lib/*.jar"; do
+for f in ${CURRENT_PATH}/lib/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 

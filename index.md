@@ -16,8 +16,7 @@ and (3) automatic optimization.
 For more information about SystemML, please consult the following references:
 
 * [SystemML GitHub README](http://www.github.com/SparkTC/systemml)
-* Quick Start - **Coming Soon**
+* [Quick Start Guide](quick-start-guide.html)
 * [Algorithms Reference](algorithms-reference.html)
 * [DML (Declarative Machine Learning) Language Reference](dml-language-reference.html)
 * PYDML (Python-Like Declarative Machine Learning) Language Reference - **Coming Soon**
-

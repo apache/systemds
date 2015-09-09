@@ -32,8 +32,11 @@ import org.apache.spark.util.random.SamplingUtils;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -52,6 +55,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.RandomMatrixGenerator;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import com.ibm.bi.dml.utils.Statistics;
 
 public class RandSPInstruction extends UnarySPInstruction
 {
@@ -297,7 +301,7 @@ public class RandSPInstruction extends UnarySPInstruction
 	{
 		//check valid for integer dimensions (we cannot even represent empty blocks with larger dimensions)
 		if( rows > Integer.MAX_VALUE || cols > Integer.MAX_VALUE )
-			throw new DMLRuntimeException("RandCPInstruction does not support dimensions larger than integer: rows="+rows+", cols="+cols+".");
+			throw new DMLRuntimeException("RandSPInstruction does not support dimensions larger than integer: rows="+rows+", cols="+cols+".");
 		
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
@@ -314,7 +318,23 @@ public class RandSPInstruction extends UnarySPInstruction
 				lSeed = DataGenOp.generateRandomSeed();
 			
 			if( LOG.isTraceEnabled() )
-				LOG.trace("Process RandCPInstruction rand with seed = "+lSeed+".");
+				LOG.trace("Process RandSPInstruction rand with seed = "+lSeed+".");
+
+			//Check if there is sufficient memory for matrix to be created and execution platform is not forced Spark
+			if( isMemAvail(rows, cols, sparsity, minValue, maxValue) &&  DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK)
+			{
+				RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
+						pdf, 
+						(int)rows, (int)cols, 
+						rowsInBlock, colsInBlock, 
+						sparsity, minValue, maxValue, 
+						pdfParams);
+				MatrixBlock mb = MatrixBlock.randOperations(rgen, lSeed);
+				
+				sec.setMatrixOutput(output.getName(), mb);
+				Statistics.decrementNoOfExecutedSPInst();
+				return;
+			}
 			
 			// seed generation (partitioned to bound memory requirements)
 			JavaPairRDD<MatrixIndexes, Tuple2<Long, Long>> seedsRDD = null;
@@ -367,7 +387,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			}
 			
 			if( LOG.isTraceEnabled() )
-				LOG.trace("Process RandCPInstruction seq with seqFrom="+seq_from+", seqTo="+seq_to+", seqIncr"+seq_incr);
+				LOG.trace("Process RandSPInstruction seq with seqFrom="+seq_from+", seqTo="+seq_to+", seqIncr"+seq_incr);
 			
 			// offset generation (partitioned to bound memory requirements)
 			JavaRDD<Double> offsetsRDD = null;
@@ -427,7 +447,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			throw new DMLRuntimeException("Sample (size=" + rows + ") larger than population (size=" + maxValue + ") can only be generated with replacement.");
 
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Process RandCPInstruction sample with range="+ maxValue +", size="+ rows +", replace="+ replace + ", seed=" + seed);
+			LOG.trace("Process RandSPInstruction sample with range="+ maxValue +", size="+ rows +", replace="+ replace + ", seed=" + seed);
 		
 		// sampling rate that guarantees a sample of size >= sampleSizeLowerBound 99.99% of the time.
 		double fraction = SamplingUtils.computeFractionForSampleSize((int)rows, UtilFunctions.toLong(maxValue), replace);
@@ -724,4 +744,19 @@ public class RandSPInstruction extends UnarySPInstruction
 			return new Tuple2<MatrixIndexes, MatrixBlock>(indx, blk);
 		}	
 	}
+	
+	/**
+	 * This will check if there is sufficient memory locally.  
+	 * @return
+	 */
+	private boolean isMemAvail(long lRows, long lCols, double sparsity, double min, double max) 
+	{
+		double size = (min == 0 && max == 0) ? OptimizerUtils.estimateSizeEmptyBlock(rows, cols):
+												OptimizerUtils.estimateSizeExactSparsity(rows, cols, sparsity);
+		
+		return ( OptimizerUtils.isValidCPDimensions(rows, cols)
+				 && OptimizerUtils.isValidCPMatrixSize(rows, cols, sparsity) 
+				 && size < OptimizerUtils.getLocalMemBudget() );
+	}	
+
 }

@@ -119,6 +119,10 @@ public class Statistics
 		iNoOfExecutedSPInst ++;
 	}
 	
+	public static synchronized void decrementNoOfExecutedSPInst() {
+		iNoOfExecutedSPInst --;
+	}
+	
 	public static synchronized void setNoOfCompiledSPInst(int numJobs) {
 		iNoOfCompiledSPInst = numJobs;
 	}

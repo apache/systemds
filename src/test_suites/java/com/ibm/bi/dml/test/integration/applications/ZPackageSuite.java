@@ -29,6 +29,8 @@ import org.junit.runners.Suite;
   // .applications.dml package
   com.ibm.bi.dml.test.integration.applications.dml.ApplyTransformDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.ArimaDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.dml.CsplineCGDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.dml.CsplineDSDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.GNMFDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.HITSDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.dml.ID3DMLTest.class,
@@ -44,6 +46,8 @@ import org.junit.runners.Suite;
   // .applications.pydml package
   com.ibm.bi.dml.test.integration.applications.pydml.ApplyTransformPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.ArimaPyDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.pydml.CsplineCGPyDMLTest.class,
+  com.ibm.bi.dml.test.integration.applications.pydml.CsplineDSPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.GNMFPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.HITSPyDMLTest.class,
   com.ibm.bi.dml.test.integration.applications.pydml.ID3PyDMLTest.class,
@@ -57,8 +61,6 @@ import org.junit.runners.Suite;
   com.ibm.bi.dml.test.integration.applications.pydml.WelchTPyDMLTest.class,
   
   // .applications package
-  CsplineCGTest.class,
-  CsplineDSTest.class,
   GLMTest.class
 })
 

@@ -17,33 +17,29 @@
 
 package com.ibm.bi.dml.test.integration.applications;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 
-@RunWith(value = Parameterized.class)
-public class GLMTest extends AutomatedTestBase
+public abstract class GLMTest extends AutomatedTestBase
 {
 	
-    private final static String TEST_DIR = "applications/glm/";
-    private final static String TEST_GLM = "GLM";
+    protected final static String TEST_DIR = "applications/glm/";
+    protected final static String TEST_NAME = "GLM";
 
-    private int numRecords, numFeatures, distFamilyType, linkType;
-    private double distParam, linkPower, intercept, logFeatureVarianceDisbalance, avgLinearForm, stdevLinearForm, dispersion;
+    protected int numRecords, numFeatures, distFamilyType, linkType;
+    protected double distParam, linkPower, intercept, logFeatureVarianceDisbalance, avgLinearForm, stdevLinearForm, dispersion;
     
 	public GLMTest (int numRecords_, int numFeatures_, int distFamilyType_, double distParam_,
 		int linkType_, double linkPower_, double intercept_, double logFeatureVarianceDisbalance_, 
@@ -188,37 +184,42 @@ public class GLMTest extends AutomatedTestBase
 		
 		
 		};
+		
+//		Object[][] data = new Object[][] {{10000,  100,  1,  0.0,  1,  1.0,  0.01, 3.0,   0.0,  2.0,  2.5 }};   // Gaussian.id
+		
 		return Arrays.asList(data);
 	}
 
     @Override
     public void setUp()
     {
-    	setUpBase();
-    	addTestConfiguration(TEST_GLM, new TestConfiguration(TEST_DIR, TEST_GLM,
-                new String[] { "w" }));
+    	addTestConfiguration(TEST_DIR, TEST_NAME);
     }
     
-    @Test
-    public void testGLM() throws ClassNotFoundException, IOException
+    protected void testGLM(ScriptType scriptType)
     {
+		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + 
+				numRecords + ", " +
+				numFeatures + ", " +
+				distFamilyType + ", " +
+				distParam + ", " +
+				linkType + ", " +
+				linkPower + ", " +
+				intercept + ", " +
+				logFeatureVarianceDisbalance + ", " +
+				avgLinearForm + ", " +
+				stdevLinearForm + ", " +
+				dispersion +
+				"} ------------");
+		this.scriptType = scriptType;
+    	
     	int rows = numRecords;			    // # of rows in the training data 
         int cols = numFeatures;			    // # of features in the training data 
         
         GLMDist glmdist = new GLMDist (distFamilyType, distParam, linkType, linkPower);
         glmdist.set_dispersion (dispersion);
         
-        TestConfiguration config = getTestConfiguration (TEST_GLM);
-        config.addVariable ("rows", rows);
-        config.addVariable ("cols", cols);
-        config.addVariable ("glmDistFamilyType", distFamilyType);
-        config.addVariable ("glmDistParameter", distParam);
-        config.addVariable ("glmLinkFunctionType", linkType);
-        config.addVariable ("glmLinkFunctionPower", linkPower);
-        config.addVariable ("glmIntercept", intercept);
-        config.addVariable ("glmDispersion", dispersion);
-        
-        loadTestConfiguration(config);
+        getAndLoadTestConfiguration(TEST_NAME);
 
         // prepare training data set
                                
@@ -296,47 +297,40 @@ public class GLMTest extends AutomatedTestBase
         MatrixCharacteristics mc_y = new MatrixCharacteristics (rows, y[0].length, defaultBlockSize, defaultBlockSize, nnz_in_y);
         writeInputMatrixWithMTD ("Y", y, true, mc_y);
         
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String GLMR_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = GLMR_HOME + TEST_GLM + ".dml";
-		programArgs = new String[] {"-nvargs",
-				"dfam=" + String.format ("%d", distFamilyType),
-				((distFamilyType == 2 && distParam != 1.0) ? "yneg=" : "vpow=") + String.format ("%f", distParam),
-				((distFamilyType == 2 && distParam != 1.0) ? "vpow=0.0" : "yneg=0.0"),
-				"link=" + String.format ("%d", linkType),
-				"lpow=" + String.format ("%f", linkPower),
-				"icpt=2",  // "icpt=0",  // INTERCEPT - CHANGE THIS AS NEEDED
-				"disp=0.0",    // DISPERSION (0.0: ESTIMATE)
-				"reg=0.0",            // LAMBDA REGULARIZER
-				"tol=0.000000000001", // TOLERANCE (EPSILON)
-				"moi=300",
-				"mii=0",
-				"X=" + GLMR_HOME + INPUT_DIR + "X", 
-				"Y=" + GLMR_HOME + INPUT_DIR + "Y",
-				"B=" + GLMR_HOME + OUTPUT_DIR + "betas_DML" };
-
-		fullRScriptName = GLMR_HOME + "GLM.R";
-		rCmd =  "Rscript" + " " + fullRScriptName     + " "
-             +  GLMR_HOME + INPUT_DIR + "X.mtx"       + " "
-             +  GLMR_HOME + INPUT_DIR + "Y.mtx"       + " "
-             +  String.format ("%d", distFamilyType)  + " "
-	         +  String.format ("%f", distParam)       + " "
-	         +  String.format ("%d", linkType)        + " "
-	         +  String.format ("%f", linkPower)       + " "
-	         +  "1" + " " // "0" + " "  // INTERCEPT - CHANGE THIS AS NEEDED
-	         +  "0.000000000001" + " "  // TOLERANCE (EPSILON)
-	         +  GLMR_HOME + EXPECTED_DIR + "betas_R";
-
+		List<String> proArgs = new ArrayList<String>();
+		if (scriptType == ScriptType.PYDML) {
+			proArgs.add("-python");
+		}
+		proArgs.add("-nvargs");
+		proArgs.add("dfam=" + String.format ("%d", distFamilyType));
+		proArgs.add(((distFamilyType == 2 && distParam != 1.0) ? "yneg=" : "vpow=") + String.format ("%f", distParam));
+		proArgs.add((distFamilyType == 2 && distParam != 1.0) ? "vpow=0.0" : "yneg=0.0");
+		proArgs.add("link=" + String.format ("%d", linkType));
+		proArgs.add("lpow=" + String.format ("%f", linkPower));
+		proArgs.add("icpt=2"); // INTERCEPT - CHANGE THIS AS NEEDED
+		proArgs.add("disp=0.0"); // DISPERSION (0.0: ESTIMATE)
+		proArgs.add("reg=0.0"); // LAMBDA REGULARIZER
+		proArgs.add("tol=0.000000000001"); // TOLERANCE (EPSILON)
+		proArgs.add("moi=300");
+		proArgs.add("mii=0");
+		proArgs.add("X=" + input("X"));
+		proArgs.add("Y=" + input("Y"));
+		proArgs.add("B=" + output("betas_SYSTEMML"));
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
+		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
-		boolean exceptionExpected = false;
+		fullDMLScriptName = getScript();
+		
+		rCmd = getRCmd(input("X.mtx"), input("Y.mtx"), String.format ("%d", distFamilyType), String.format ("%f", distParam),
+				String.format ("%d", linkType), String.format ("%f", linkPower), "1" /*intercept*/, "0.000000000001" /*tolerance (espilon)*/,
+				expected("betas_R"));
+		
 		int expectedNumberOfJobs = -1; // 31;
 
 		System.out.println ("About to run the DML script...");
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs);
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
 		System.out.println ("Completed the DML script run.");
 
-		
-        
 		double max_abs_beta = 0.0;
 		HashMap<CellIndex, Double> wTRUE = new HashMap <CellIndex, Double> ();
 		for (int j = 0; j < cols; j ++)
@@ -345,14 +339,14 @@ public class GLMTest extends AutomatedTestBase
 			max_abs_beta = (max_abs_beta >= Math.abs (beta[j]) ? max_abs_beta : Math.abs (beta[j]));
 		}
 
-        HashMap<CellIndex, Double> wDML_raw = readDMLMatrixFromHDFS ("betas_DML");
-		HashMap<CellIndex, Double> wDML = new HashMap <CellIndex, Double> ();
-		for (CellIndex key : wDML_raw.keySet())
+        HashMap<CellIndex, Double> wSYSTEMML_raw = readDMLMatrixFromHDFS ("betas_SYSTEMML");
+		HashMap<CellIndex, Double> wSYSTEMML = new HashMap <CellIndex, Double> ();
+		for (CellIndex key : wSYSTEMML_raw.keySet())
 			if (key.column == 1)
-				wDML.put (key, wDML_raw.get (key));
+				wSYSTEMML.put (key, wSYSTEMML_raw.get (key));
         
 //        System.out.println ("Comparing TRUE and DML weight vectors...");
-//        TestUtils.compareMatrices (wTRUE, wDML, 0.001 * max_abs_beta, "wTRUE", "wDML");
+//        TestUtils.compareMatrices (wTRUE, wSYSTEMML, 0.001 * max_abs_beta, "wTRUE", "wSYSTEMML");
 		
 
         System.out.println ("About to run the R script...");
@@ -375,7 +369,7 @@ public class GLMTest extends AutomatedTestBase
         	//(at least for the final aggregation of partial results from individual threads).
         	eps = 0.0000016; //1.6x the error threshold
         }		
-        TestUtils.compareMatrices (wR, wDML, eps * max_abs_beta, "wR", "wDML");
+        TestUtils.compareMatrices (wR, wSYSTEMML, eps * max_abs_beta, "wR", "wSYSTEMML");
 
         // System.out.println ("Comparing TRUE and R weight vectors...");
         // TestUtils.compareMatrices (wTRUE, wR, 0.001 * max_abs_beta, "wTRUE", "wR");

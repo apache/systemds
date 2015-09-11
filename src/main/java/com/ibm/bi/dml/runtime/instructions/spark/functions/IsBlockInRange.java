@@ -21,6 +21,7 @@ import org.apache.spark.api.java.function.Function;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -33,13 +34,13 @@ public class IsBlockInRange implements Function<Tuple2<MatrixIndexes,MatrixBlock
 	private long _rl; long _ru; long _cl; long _cu;
 	private int _brlen; int _bclen;
 	
-	public IsBlockInRange(long rl, long ru, long cl, long cu, int brlen, int bclen) {
+	public IsBlockInRange(long rl, long ru, long cl, long cu, MatrixCharacteristics mc) {
 		_rl = rl;
 		_ru = ru;
 		_cl = cl;
 		_cu = cu;
-		_brlen = brlen;
-		_bclen = bclen;
+		_brlen = mc.getRowsPerBlock();
+		_bclen = mc.getColsPerBlock();
 	}
 
 	@Override

@@ -150,6 +150,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		long ru = ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral()).getLongValue();
 		long cl = ec.getScalarInput(colLower.getName(), colLower.getValueType(), colLower.isLiteral()).getLongValue();
 		long cu = ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue();
+		IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
 		
 		//right indexing
 		if( opcode.equalsIgnoreCase("rangeReIndex") )
@@ -160,15 +161,21 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 			checkValidOutputDimensions(mcOut);
 			
-			//execute right indexing operation
+			//execute right indexing operation (partitioning-preserving if possible)
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			JavaPairRDD<MatrixIndexes,MatrixBlock> out =
-					in1.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()))
-				       .flatMapToPair(new SliceBlock(rl, ru, cl, cu, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()));
-			
-			//aggregation if required 
-			if( _aggType != SparkAggType.NONE )
-				out = RDDAggregateUtils.mergeByKey(out);
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+			if( isPartitioningPreservingRightIndexing(mcIn, ixrange) ) {
+				out = in1.mapPartitionsToPair(
+						new SliceBlockPartitionFunction(ixrange, mcOut), true);
+			}
+			else{
+				out = in1.filter(new IsBlockInRange(rl, ru, cl, cu, mcOut))
+			             .flatMapToPair(new SliceBlock(ixrange, mcOut));
+				
+				//aggregation if required 
+				if( _aggType != SparkAggType.NONE )
+					out = RDDAggregateUtils.mergeByKey(out);
+			}
 				
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -205,8 +212,8 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 					broadcastIn2 = sec.getBroadcastForVariable( input2.getName() );
 					
 					//partitioning-preserving mappartitions (key access required for broadcast loopkup)
-					out = in1.mapPartitionsToPair(new LeftIndexPartitionFunction(broadcastIn2, 
-								new IndexRange(rl, ru, cl, cu), mcOut), true);
+					out = in1.mapPartitionsToPair(
+							new LeftIndexPartitionFunction(broadcastIn2, ixrange, mcOut), true);
 				}
 				else {
 					// Zero-out LHS
@@ -254,6 +261,20 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			throw new DMLRuntimeException("MatrixIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
 		}
 	}
+	
+	/**
+	 * 
+	 * @param mcIn
+	 * @param ixrange
+	 * @return
+	 */
+	private boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange)
+	{
+		return ( mcIn.dimsKnown() &&
+				(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() && mcIn.getCols()<=mcIn.getColsPerBlock() )   //1-1 column block indexing
+			  ||(ixrange.colStart==1 && ixrange.colEnd==mcIn.getCols() && mcIn.getRows()<=mcIn.getRowsPerBlock() )); //1-1 row block indexing
+	}
+	
 	
 	/**
 	 * 
@@ -493,20 +514,14 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 	{
 		private static final long serialVersionUID = 5733886476413136826L;
 		
-		private long _rl; 
-		private long _ru; 
-		private long _cl; 
-		private long _cu;
+		private IndexRange _ixrange;
 		private int _brlen; 
 		private int _bclen;
 		
-		public SliceBlock(long rl, long ru, long cl, long cu, int brlen, int bclen) {
-			_rl = rl;
-			_ru = ru;
-			_cl = cl;
-			_cu = cu;
-			_brlen = brlen;
-			_bclen = bclen;
+		public SliceBlock(IndexRange ixrange, MatrixCharacteristics mcOut) {
+			_ixrange = ixrange;
+			_brlen = mcOut.getRowsPerBlock();
+			_bclen = mcOut.getColsPerBlock();
 		}
 
 		@Override
@@ -516,10 +531,54 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(kv);
 			
 			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
-			IndexRange ixrange = new IndexRange(_rl, _ru, _cl, _cu);
-			OperationsOnMatrixValues.performSlice(in, ixrange, _brlen, _bclen, outlist);
+			OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
 			
 			return SparkUtils.fromIndexedMatrixBlock(outlist);
 		}		
+	}
+	
+	/**
+	 * 
+	 */
+	private static class SliceBlockPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,MatrixBlock>>, MatrixIndexes, MatrixBlock> 
+	{
+		private static final long serialVersionUID = -8111291718258309968L;
+		
+		private IndexRange _ixrange;
+		private int _brlen; 
+		private int _bclen;
+		
+		public SliceBlockPartitionFunction(IndexRange ixrange, MatrixCharacteristics mcOut) {
+			_ixrange = ixrange;
+			_brlen = mcOut.getRowsPerBlock();
+			_bclen = mcOut.getColsPerBlock();
+		}
+
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
+			throws Exception 
+		{
+			return new SliceBlockPartitionIterator(arg0);
+		}	
+		
+		private class SliceBlockPartitionIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>>
+		{
+			public SliceBlockPartitionIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
+				super(in);
+			}
+
+			@Override
+			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg)
+				throws Exception
+			{
+				IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(arg);
+				
+				ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+				OperationsOnMatrixValues.performSlice(in, _ixrange, _brlen, _bclen, outlist);
+				
+				assert(outlist.size() == 1); //1-1 row/column block indexing
+				return SparkUtils.fromIndexedMatrixBlock(outlist.get(0));
+			}			
+		}
 	}
 }

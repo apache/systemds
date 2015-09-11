@@ -148,8 +148,8 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			// extract column (if necessary) and sort 
 			out = in1;
 			if( !singleCol ){
-				out = out.filter(new IsBlockInRange(1, mcIn.getRows(), col, col, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock()))
-						 .mapValues(new ExtractColumn((int)UtilFunctions.cellInBlockCalculation(col, mcIn.getColsPerBlock())));
+				out = out.filter(new IsBlockInRange(1, mcIn.getRows(), col, col, mcIn))
+						 .mapValues(new ExtractColumn((int)UtilFunctions.computeCellInBlock(col, mcIn.getColsPerBlock())));
 			}
 			
 			//actual index/data sort operation

@@ -744,21 +744,29 @@ public class LibMatrixMult
 			pool.invokeAll(tasks);
 			pool.shutdown();
 			//aggregate partial results
-			if( wt == WDivMMType.LEFT )
-				for(MatrixMultWDivTask rt : tasks)
-					vectAdd(rt.getPartialResult(), ret.denseBlock, 0, 0, ret.denseBlock.length);
+			if( wt == WDivMMType.LEFT ){
+				double[][] tmp = new double[k][];
+				for(int i=0; i<tasks.size(); i++)
+					tmp[i] = tasks.get(i).getPartialResult();
+				sumDenseResults(tmp, ret.denseBlock);
+			}
+			//aggregate partial nnz
+			else{ //WDivMMType.RIGHT
+				for( MatrixMultWDivTask task : tasks )
+					ret.nonZeros += task.getPartialNnz();
+			}
 		} 
 		catch (InterruptedException e) {
 			throw new DMLRuntimeException(e);
 		}
 
-		
 		//post-processing
-		ret.recomputeNonZeros();
+		if( wt == WDivMMType.LEFT )
+			ret.recomputeNonZeros();
 		ret.examSparsity();
 		
 		//System.out.println("MMWDiv "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
-		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//                "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}	
 
 	/**
@@ -2937,6 +2945,42 @@ public class LibMatrixMult
 		}
 	}
 	
+	/**
+	 * 
+	 * @param a1
+	 * @param a2
+	 * @param a3
+	 * @param a4
+	 * @param c
+	 * @param ai
+	 * @param ci
+	 * @param len
+	 */
+	private static void vectAdd4( double[] a1, double[] a2, double[] a3, double[] a4, double[] c, int ai, int ci, final int len )
+	{
+		final int bn = len%8;
+		
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++, ai++, ci++)
+			c[ ci ] += a1[ ai ] + a2[ ai ] + a3[ ai ] + a4[ ai ];
+		
+		//unrolled 8-block  (for better instruction-level parallelism)
+		for( int j = bn; j < len; j+=8, ai+=8, ci+=8) 
+		{
+			//read 64B cachelines of a (4x) and c
+			//compute c' = c + a1 + a2 + a3 + a4
+			//write back 64B cacheline of c = c'
+			c[ ci+0 ] += a1[ ai+0 ] + a2[ ai+0 ] + a3[ ai+0 ] + a4[ ai+0 ];
+			c[ ci+1 ] += a1[ ai+1 ] + a2[ ai+1 ] + a3[ ai+1 ] + a4[ ai+1 ];
+			c[ ci+2 ] += a1[ ai+2 ] + a2[ ai+2 ] + a3[ ai+2 ] + a4[ ai+2 ];
+			c[ ci+3 ] += a1[ ai+3 ] + a2[ ai+3 ] + a3[ ai+3 ] + a4[ ai+3 ];
+			c[ ci+4 ] += a1[ ai+4 ] + a2[ ai+4 ] + a3[ ai+4 ] + a4[ ai+4 ];
+			c[ ci+5 ] += a1[ ai+5 ] + a2[ ai+5 ] + a3[ ai+5 ] + a4[ ai+5 ];
+			c[ ci+6 ] += a1[ ai+6 ] + a2[ ai+6 ] + a3[ ai+6 ] + a4[ ai+6 ];
+			c[ ci+7 ] += a1[ ai+7 ] + a2[ ai+7 ] + a3[ ai+7 ] + a4[ ai+7 ];
+		}
+	}
+	
 
 	/**
 	 * 
@@ -3156,6 +3200,31 @@ public class LibMatrixMult
 		for(ScalarResultTask task : tasks)
 			val += task.getScalarResult();
 		ret.quickSetValue(0, 0, val);
+	}
+	
+	/**
+	 * 
+	 * @param partret
+	 * @param ret
+	 */
+	private static void sumDenseResults( double[][] partret, double[] ret )
+	{
+		final int len = ret.length;
+		final int k = partret.length;
+		final int bk = k % 4;
+		final int blocksize = 2 * 1024; //16KB (half of common L1 data)
+		
+		//cache-conscious aggregation to prevent repreated scans/writes of ret
+		for( int bi=0; bi<len; bi+=blocksize ) {
+			int llen = Math.min(len-bi, blocksize);
+			
+			//aggregate next block from all partial results
+			for( int j=0; j<bk; j++ ) //rest (not aligned to 4)
+				vectAdd(partret[j], ret, bi, bi, llen);
+			for( int j=bk; j<k; j+=4 ) //4 partial results at a time
+				vectAdd4(partret[j], partret[j+1], partret[j+2], partret[j+3], ret, bi, bi, llen);
+		}
+		
 	}
 	
 	/////////////////////////////////////////////////////////
@@ -3431,7 +3500,8 @@ public class LibMatrixMult
 		private WDivMMType _wt = null;
 		private int _rl = -1;
 		private int _ru = -1;
-
+		private long _nnz = -1;
+		
 		protected MatrixMultWDivTask(MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WDivMMType wt, int rl, int ru) 
 			throws DMLRuntimeException
 		{
@@ -3462,12 +3532,29 @@ public class LibMatrixMult
 				matrixMultWDivMMSparseDense(_mX, _mU, _mV, _ret, _wt, _rl, _ru);
 			else
 				matrixMultWDivMMGeneric(_mX, _mU, _mV, _ret, _wt, _rl, _ru);
-			
+		
+			//maintain partial nnz for 
+			if( _wt == WDivMMType.RIGHT )
+				_nnz = _ret.recomputeNonZeros(_rl, _ru, 0, _ret.getNumColumns());
+				
 			return null;
 		}
 		
+		/**
+		 * For wdivmm left.
+		 * 
+		 * @return
+		 */
 		public double[] getPartialResult() {
 			return _ret.denseBlock;
+		}
+		
+		/**
+		 * For wdivmm right.
+		 * @return
+		 */
+		public long getPartialNnz(){
+			return _nnz;
 		}
 	}
 	

@@ -1376,7 +1376,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 	}
 	
-	private long recomputeNonZeros(int rl, int ru, int cl, int cu)
+	protected long recomputeNonZeros(int rl, int ru, int cl, int cu)
 	{
 		long nnz = 0;
 		if(sparse)

@@ -33,7 +33,7 @@ Just as linear regression estimates the mean value $\mu_i$ of a
 numerical response variable, logistic regression does the same for
 category label probabilities. In linear regression, the mean of $y_i$ is
 estimated as a linear combination of the features:
-$\mu_i = \beta_0 + \beta_1 x_{i,1} + \ldots + \beta_m x_{i,m} = \beta_0 + x_i\beta_{1:m}$.
+$$\mu_i = \beta_0 + \beta_1 x_{i,1} + \ldots + \beta_m x_{i,m} = \beta_0 + x_i\beta_{1:m}$$.
 In logistic regression, the label probability has to lie between 0
 and 1, so a link function is applied to connect it to
 $\beta_0 + x_i\beta_{1:m}$. If there are just two possible category
@@ -46,10 +46,10 @@ Prob[y_i\,{=}\,0\mid x_i; \beta] \,=\,
 \frac{1}{1 + e^{\,\beta_0 + x_i\beta_{1:m}}}$$
 
 Here category label 0
-serves as the *baseline*, and function $\exp(\beta_0 + x_i\beta_{1:m})$
+serves as the *baseline*, and function $$\exp(\beta_0 + x_i\beta_{1:m})$$
 shows how likely we expect to see “$y_i = 1$” in comparison to the
 baseline. Like in a loaded coin, the predicted odds of seeing 1 versus 0
-are $\exp(\beta_0 + x_i\beta_{1:m})$ to 1, with each feature $x_{i,j}$
+are $$\exp(\beta_0 + x_i\beta_{1:m})$$ to 1, with each feature $$x_{i,j}$$
 multiplying its own factor $\exp(\beta_j x_{i,j})$ to the odds. Given a
 large collection of pairs $(x_i, y_i)$, $i=1\ldots n$, logistic
 regression seeks to find the $\beta_j$’s that maximize the product of
@@ -63,11 +63,11 @@ $k \geq 3$ possible categories. Again we identify one category as the
 baseline, for example the $k$-th category. Instead of a coin, here we
 have a loaded multisided die, one side per category. Each non-baseline
 category $l = 1\ldots k\,{-}\,1$ has its own vector
-$(\beta_{0,l}, \beta_{1,l}, \ldots, \beta_{m,l})$ of regression
+$$(\beta_{0,l}, \beta_{1,l}, \ldots, \beta_{m,l})$$ of regression
 parameters with the intercept, making up a matrix $B$ of size
 $(m\,{+}\,1)\times(k\,{-}\,1)$. The predicted odds of seeing
 non-baseline category $l$ versus the baseline $k$ are
-$\exp\big(\beta_{0,l} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l}\big)$
+$$\exp\big(\beta_{0,l} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l}\big)$$
 to 1, and the predicted probabilities are: 
 
 $$
@@ -101,7 +101,7 @@ $$
 
 The optional regularization term is added to
 mitigate overfitting and degeneracy in the data; to reduce bias, the
-intercepts $\beta_{0,l}$ are not regularized. Once the $\beta_{j,l}$’s
+intercepts $$\beta_{0,l}$$ are not regularized. Once the $\beta_{j,l}$’s
 are accurately estimated, we can make predictions about the category
 label $y$ for a new feature vector $x$ using
 Eqs. (1) and (2).
@@ -137,7 +137,7 @@ represent the (same) baseline category and are converted to label
 $\max(\texttt{Y})\,{+}\,1$.
 
 **B**: Location to store the matrix of estimated regression parameters (the
-$\beta_{j, l}$’s), with the intercept parameters $\beta_{0, l}$ at
+$$\beta_{j, l}$$’s), with the intercept parameters $\beta_{0, l}$ at
 position B\[$m\,{+}\,1$, $l$\] if available.
 The size of B is $(m\,{+}\,1)\times (k\,{-}\,1)$ with the
 intercepts or $m \times (k\,{-}\,1)$ without the intercepts, one column
@@ -221,7 +221,7 @@ Newton method for logistic regression described in [[Lin2008]](algorithms-biblio
 For convenience, let us make some changes in notation:
 
   * Convert the input vector of observed category labels into an indicator
-matrix $Y$ of size $n \times k$ such that $Y_{i, l} = 1$ if the $i$-th
+matrix $Y$ of size $n \times k$ such that $$Y_{i, l} = 1$$ if the $i$-th
 category label is $l$ and $Y_{i, l} = 0$ otherwise.
   * Append an extra column of all ones, i.e. $(1, 1, \ldots, 1)^T$, as the
 $m\,{+}\,1$-st column to the feature matrix $X$ to represent the

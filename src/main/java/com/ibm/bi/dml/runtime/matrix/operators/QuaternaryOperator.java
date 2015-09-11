@@ -21,6 +21,7 @@ package com.ibm.bi.dml.runtime.matrix.operators;
 import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
+import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.FunctionObject;
 
@@ -32,6 +33,8 @@ public class QuaternaryOperator extends Operator
 	public WeightsType wtype1 = null;
 	public WSigmoidType wtype2 = null;
 	public WDivMMType wtype3 = null;
+	public WCeMMType wtype4 = null;
+	
 	public FunctionObject fn;
 	
 	/**
@@ -60,5 +63,14 @@ public class QuaternaryOperator extends Operator
 	 */
 	public QuaternaryOperator( WDivMMType wt ) {
 		wtype3 = wt;
+	}
+	
+	/**
+	 * wcemm
+	 * 
+	 * @param wt
+	 */
+	public QuaternaryOperator( WCeMMType wt ) {
+		wtype4 = wt;
 	}
 }

@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
 import org.apache.commons.math3.util.FastMath;
 
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
+import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
 import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
@@ -544,17 +545,14 @@ public class LibMatrixMult
 		try 
 		{			
 			ExecutorService pool = Executors.newFixedThreadPool(k);
-			ArrayList<MatrixMultWSLossTask> tasks = new ArrayList<MatrixMultWSLossTask>();
+			ArrayList<ScalarResultTask> tasks = new ArrayList<ScalarResultTask>();
 			int blklen = (int)(Math.ceil((double)mX.rlen/k));
 			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
 				tasks.add(new MatrixMultWSLossTask(mX, mU, mV, mW, wt, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
 			pool.invokeAll(tasks);
 			pool.shutdown();
 			//aggregate partial results
-			double wsloss = 0;
-			for(MatrixMultWSLossTask rt : tasks)
-				wsloss += rt.getWSLoss();
-			ret.quickSetValue(0, 0, wsloss);
+			sumScalarResults(tasks, ret);
 		} 
 		catch (InterruptedException e) {
 			throw new DMLRuntimeException(e);
@@ -762,6 +760,87 @@ public class LibMatrixMult
 		//System.out.println("MMWDiv "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
 		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}	
+
+	/**
+	 * 
+	 * @param mW
+	 * @param mU
+	 * @param mV
+	 * @param ret
+	 * @param wt
+	 * @throws DMLRuntimeException
+	 */
+	public static void matrixMultWCeMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt) 
+		throws DMLRuntimeException 
+	{
+		//check for empty result 
+		if( mW.isEmptyBlock(false) )  {
+			ret.examSparsity(); //turn empty dense into sparse
+			return; 
+		}
+
+		//Timing time = new Timing(true);
+
+		//pre-processing
+		ret.sparse = false;
+		ret.allocateDenseBlock();
+		
+		//core weighted div mm computation
+		if( !mW.sparse && !mU.sparse && !mV.sparse && !mU.isEmptyBlock() && !mV.isEmptyBlock() )
+			matrixMultWCeMMDense(mW, mU, mV, ret, wt, 0, mW.rlen);
+		else if( mW.sparse && !mU.sparse && !mV.sparse && !mU.isEmptyBlock() && !mV.isEmptyBlock())
+			matrixMultWCeMMSparseDense(mW, mU, mV, ret, wt, 0, mW.rlen);
+		else
+			matrixMultWCeMMGeneric(mW, mU, mV, ret, wt, 0, mW.rlen);
+		
+		//System.out.println("MMWCe "+wt.toString()+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
+		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+	}
+	
+	/**
+	 * 
+	 * @param mX
+	 * @param mU
+	 * @param mV
+	 * @param ret
+	 * @param wt
+	 * @param k
+	 * @throws DMLRuntimeException
+	 */
+	public static void matrixMultWCeMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt, int k) 
+		throws DMLRuntimeException 
+	{
+		//check for empty result 
+		if( mW.isEmptyBlock(false) )  {
+			ret.examSparsity(); //turn empty dense into sparse
+			return; 
+		}
+
+		//Timing time = new Timing(true);
+
+		//pre-processing
+		ret.sparse = false;
+		ret.allocateDenseBlock();
+		
+		try 
+		{			
+			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ArrayList<ScalarResultTask> tasks = new ArrayList<ScalarResultTask>();
+			int blklen = (int)(Math.ceil((double)mW.rlen/k));
+			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
+				tasks.add(new MatrixMultWCeTask(mW, mU, mV, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
+			pool.invokeAll(tasks);
+			pool.shutdown();
+			//aggregate partial results
+			sumScalarResults(tasks, ret);
+		} 
+		catch (InterruptedException e) {
+			throw new DMLRuntimeException(e);
+		}
+		
+		//System.out.println("MMWCe "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
+		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+	}
 	
 	//////////////////////////////////////////
 	// optimized matrix mult implementation //
@@ -2270,6 +2349,138 @@ public class LibMatrixMult
 		}
 	}
 	
+	/**
+	 * 
+	 * @param mW
+	 * @param mU
+	 * @param mV
+	 * @param ret
+	 * @param wt
+	 * @param rl
+	 * @param ru
+	 */
+	private static void matrixMultWCeMMDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt, int rl, int ru)
+	{
+		double[] w = mW.denseBlock;
+		double[] u = mU.denseBlock;
+		double[] v = mV.denseBlock;
+		final int n = mW.clen;
+		final int cd = mU.clen;
+		double wceval = 0;
+		
+		// approach: iterate over all cells of X 
+		//cache-conscious blocking: due to blocksize constraint (default 1000),
+		//a blocksize of 16 allows to fit blocks of UV into L2 cache (256KB) 
+		final int blocksizeIJ = 16; //u/v block (max at typical L2 size) 
+
+		//blocked execution
+		for( int bi = rl; bi < ru; bi+=blocksizeIJ )
+			for( int bj = 0, bimin = Math.min(ru, bi+blocksizeIJ); bj < n; bj+=blocksizeIJ ) 
+			{
+				int bjmin = Math.min(n, bj+blocksizeIJ);
+								
+				for( int i=bi, ix=bi*n, uix=bi*cd; i<bimin; i++, ix+=n, uix+=cd )
+					for( int j=bj, vix=bj*cd; j<bjmin; j++, vix+=cd) {
+						double wij = w[ix+j];
+						if( wij != 0 ) {
+							double uvij = dotProduct(u, v, uix, vix, cd);
+							wceval += wij * FastMath.log(uvij);
+						}
+					}
+		}
+		
+		ret.quickSetValue(0, 0, wceval);
+	}
+	
+	/**
+	 * 
+	 * @param mW
+	 * @param mU
+	 * @param mV
+	 * @param ret
+	 * @param wt
+	 * @param rl
+	 * @param ru
+	 */
+	private static void matrixMultWCeMMSparseDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt, int rl, int ru)
+	{
+		SparseRow[] w = mW.sparseRows;
+		double[] u = mU.denseBlock;
+		double[] v = mV.denseBlock;
+		final int cd = mU.clen;
+		double wceval = 0; 
+		
+		// approach: iterate over all cells of X and 
+		for( int i=rl, uix=rl*cd; i<ru; i++, uix+=cd ) {
+			if( w[i]!=null && !w[i].isEmpty() ) { 
+				int wlen = w[i].size();
+				int[] wix = w[i].getIndexContainer();
+				double[] wval = w[i].getValueContainer();
+				for( int k=0; k<wlen; k++ ) {
+					double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
+					wceval += wval[k] * FastMath.log(uvij);					
+				}
+			}
+		}
+		
+		ret.quickSetValue(0, 0, wceval);
+	}
+
+	/**
+	 * 
+	 * @param mX
+	 * @param mU
+	 * @param mV
+	 * @param mW
+	 * @param ret
+	 * @param wt
+	 * @param rl
+	 * @param ru
+	 */
+	private static void matrixMultWCeMMGeneric(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt, int rl, int ru)
+	{
+		final int n = mW.clen; 
+		final int cd = mU.clen;
+		double wceval = 0; 
+		
+		//approach: iterate over non-zeros of w, selective mm computation
+		if( mW.sparse ) //SPARSE
+		{
+			SparseRow[] w = mW.sparseRows;
+			
+			for( int i=rl; i<ru; i++ )
+				if( w[i] != null && !w[i].isEmpty() ) {
+					int wlen = w[i].size();
+					int[] wix = w[i].getIndexContainer();
+					double[] wval = w[i].getValueContainer();
+					for( int k=0; k<wlen; k++ ) {
+						double uvij = 0;
+						for( int k2=0, vix=wix[k]; k2<cd; k2++ )
+							uvij += mU.quickGetValue(i, k2) * mV.quickGetValue(vix, k2);
+						wceval += wval[k] * FastMath.log(uvij);	
+					}
+				}	
+		}
+		else //DENSE
+		{
+			double[] w = mW.denseBlock;
+		
+			for( int i=rl, ix=rl*n; i<ru; i++ )
+				for( int j=0; j<n; j++, ix++) {
+					double wij = w[ix];
+					if( wij != 0 ) {
+						double uvij = 0;
+						for( int k2=0; k2<cd; k2++ )
+							uvij += mU.quickGetValue(i, k2) * mV.quickGetValue(j, k2);
+						wceval += wij * FastMath.log(uvij);	
+					}
+				}
+		}
+		
+
+		ret.quickSetValue(0, 0, wceval);
+	}
+	
 	
 	////////////////////////////////////////////
 	// performance-relevant utility functions //
@@ -2933,6 +3144,19 @@ public class LibMatrixMult
 		return knnz;
 	}
 
+	/**
+	 * 
+	 * @param tasks
+	 * @param ret
+	 */
+	private static void sumScalarResults(ArrayList<ScalarResultTask> tasks, MatrixBlock ret)
+	{
+		//aggregate partial results
+		double val = 0;
+		for(ScalarResultTask task : tasks)
+			val += task.getScalarResult();
+		ret.quickSetValue(0, 0, val);
+	}
 	
 	/////////////////////////////////////////////////////////
 	// Task Implementations for Multi-Threaded Operations  //
@@ -3094,9 +3318,16 @@ public class LibMatrixMult
 
 	/**
 	 * 
+	 */
+	private static interface ScalarResultTask extends Callable<Object>{
+		public double getScalarResult();
+	}
+	
+	/**
+	 * 
 	 * 
 	 */
-	private static class MatrixMultWSLossTask implements Callable<Object> 
+	private static class MatrixMultWSLossTask implements ScalarResultTask
 	{
 		private MatrixBlock _mX = null;
 		private MatrixBlock _mU = null;
@@ -3140,8 +3371,8 @@ public class LibMatrixMult
 			return null;
 		}
 		
-		public double getWSLoss()
-		{
+		@Override
+		public double getScalarResult() {
 			return _ret.quickGetValue(0, 0);
 		}
 	}
@@ -3237,6 +3468,52 @@ public class LibMatrixMult
 		
 		public double[] getPartialResult() {
 			return _ret.denseBlock;
+		}
+	}
+	
+	private static class MatrixMultWCeTask implements ScalarResultTask
+	{
+		private MatrixBlock _mW = null;
+		private MatrixBlock _mU = null;
+		private MatrixBlock _mV = null;
+		private MatrixBlock _ret = null;
+		private WCeMMType _wt = null;
+		private int _rl = -1;
+		private int _ru = -1;
+
+		protected MatrixMultWCeTask(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, WCeMMType wt, int rl, int ru) 
+			throws DMLRuntimeException
+		{
+			_mW = mW;
+			_mU = mU;
+			_mV = mV;
+			_wt = wt;
+			_rl = rl;
+			_ru = ru;
+			
+			//allocate local result for partial aggregation
+			_ret = new MatrixBlock(1, 1, false);
+			_ret.allocateDenseBlock();
+		}
+		
+		@Override
+		public Object call() throws DMLRuntimeException
+		{
+			//core weighted div mm computation
+			if( !_mW.sparse && !_mU.sparse && !_mV.sparse && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() )
+				matrixMultWCeMMDense(_mW, _mU, _mV, _ret, _wt, _rl, _ru);
+			else if( _mW.sparse && !_mU.sparse && !_mV.sparse && !_mU.isEmptyBlock() && !_mV.isEmptyBlock())
+				matrixMultWCeMMSparseDense(_mW, _mU, _mV, _ret, _wt, _rl, _ru);
+			else
+				matrixMultWCeMMGeneric(_mW, _mU, _mV, _ret, _wt, _rl, _ru);
+			
+			
+			return null;
+		}
+		
+		@Override
+		public double getScalarResult() {
+			return _ret.quickGetValue(0, 0);
 		}
 	}
 }

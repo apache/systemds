@@ -5775,7 +5775,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		MatrixBlock R = checkType(out);
 		
 		//prepare intermediates and output
-		if( qop.wtype1 != null )
+		if( qop.wtype1 != null || qop.wtype4 != null )
 			R.reset(1, 1, false);
 		else if( qop.wtype2 != null )
 			R.reset(rlen, clen, sparse);
@@ -5785,27 +5785,30 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 		
 		//core block operation
-		if( qop.wtype1 != null ) //wsloss
-		{
+		if( qop.wtype1 != null ){ //wsloss
 			MatrixBlock W = (qop.wtype1!=WeightsType.NONE) ? checkType(wm) : null;
 			if( k > 1 )
 				LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, qop.wtype1, k);
 			else
 				LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, qop.wtype1);
 		}
-		else if( qop.wtype2 != null ) //wsigmoid
-		{
+		else if( qop.wtype2 != null ){ //wsigmoid
 			if( k > 1 )
 				LibMatrixMult.matrixMultWSigmoid(X, U, V, R, qop.wtype2, k);
 			else
 				LibMatrixMult.matrixMultWSigmoid(X, U, V, R, qop.wtype2);
 		}	
-		else if( qop.wtype3 != null ) //wdivmm
-		{
+		else if( qop.wtype3 != null ){ //wdivmm
 			if( k > 1 )
 				LibMatrixMult.matrixMultWDivMM(X, U, V, R, qop.wtype3, k);
 			else
 				LibMatrixMult.matrixMultWDivMM(X, U, V, R, qop.wtype3);	
+		}
+		else if( qop.wtype4 != null ){ //wcemm
+			if( k > 1 )
+				LibMatrixMult.matrixMultWCeMM(X, U, V, R, qop.wtype4, k);
+			else
+				LibMatrixMult.matrixMultWCeMM(X, U, V, R, qop.wtype4);	
 		}
 		
 		return R;

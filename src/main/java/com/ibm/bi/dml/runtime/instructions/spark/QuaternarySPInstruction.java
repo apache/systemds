@@ -31,15 +31,15 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
+import com.ibm.bi.dml.lops.WeightedCrossEntropy;
 import com.ibm.bi.dml.lops.WeightedDivMM;
 import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
-import com.ibm.bi.dml.lops.WeightedDivMMR;
 import com.ibm.bi.dml.lops.WeightedSigmoid;
-import com.ibm.bi.dml.lops.WeightedSigmoidR;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
+import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -88,16 +88,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		String opcode = InstructionUtils.getOpCode(str);
 		
 		//validity check
-		if (   !WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)   //mapwsloss
-			&& !WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode)  //redwsloss
-			&& !WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)   //mapwsigmoid
-			&& !WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode)  //redwsigmoid
-			&& !WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)   //mapwdivmm
-			&& !WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode)) //redwdivmm
-		{
+		if( !InstructionUtils.isDistQuaternaryOpcode(opcode) ) {
 			throw new DMLRuntimeException("Quaternary.parseInstruction():: Unknown opcode " + opcode);
 		}
-
+		
 		//instruction parsing
 		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)    //wsloss
 			|| WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode) )
@@ -126,10 +120,9 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 			return new QuaternarySPInstruction(new QuaternaryOperator(wtype), in1, in2, in3, in4, out, cacheU, cacheV, opcode, str);	
 		}
-		if(   WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)    //wsigmoid
-		   || WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode) )
+		else //map/redwsigmoid, map/redwdivmm, map/redwcemm
 		{
-			boolean isRed = WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode);
+			boolean isRed = opcode.startsWith("red");
 			
 			//check number of fields (3 inputs, output, type)
 			if( isRed )
@@ -144,39 +137,20 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
-			WSigmoidType wtype = WSigmoidType.valueOf(parts[5]);
 			
 			//in mappers always through distcache, in reducers through distcache/shuffle
 			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
 			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
-			
-			return new QuaternarySPInstruction(new QuaternaryOperator(wtype), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
+		
+			if( opcode.endsWith("wsigmoid") )
+				return new QuaternarySPInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
+			else if( opcode.endsWith("wdivmm") )
+				return new QuaternarySPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[5])), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
+			else if( opcode.endsWith("wcemm") )
+				return new QuaternarySPInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
 		}
-		else //wdivmm
-		{
-			boolean isRed = WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode);
-			
-			//check number of fields (3 inputs, output, type)
-			if( isRed )
-				InstructionUtils.checkNumFields ( str, 7 );
-			else
-				InstructionUtils.checkNumFields ( str, 5 );
-				
-			//parse instruction parts (without exec type)
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-			
-			CPOperand in1 = new CPOperand(parts[1]);
-			CPOperand in2 = new CPOperand(parts[2]);
-			CPOperand in3 = new CPOperand(parts[3]);
-			CPOperand out = new CPOperand(parts[4]);
-			WDivMMType wtype = WDivMMType.valueOf(parts[5]);
-			
-			//in mappers always through distcache, in reducers through distcache/shuffle
-			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
-			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
-			
-			return new QuaternarySPInstruction(new QuaternaryOperator(wtype), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
-		}
+		
+		return null;
 	}
 	
 	@Override
@@ -202,7 +176,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		//map-side only operation (one rdd input, two broadcasts)
 		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(getOpcode())  
 			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(getOpcode())
-			|| WeightedDivMM.OPCODE.equalsIgnoreCase(getOpcode()) ) 
+			|| WeightedDivMM.OPCODE.equalsIgnoreCase(getOpcode()) 
+			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(getOpcode()) ) 
 		{
 			Broadcast<PartitionedMatrixBlock> bc1 = sec.getBroadcastForVariable( input2.getName() );
 			Broadcast<PartitionedMatrixBlock> bc2 = sec.getBroadcastForVariable( input3.getName() );
@@ -266,16 +241,16 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		}
 		
 		//output handling, incl aggregation
-		if( qop.wtype1 != null ) //mapwsloss, redwsloss
+		if( qop.wtype1 != null || qop.wtype4 != null ) //map/redwsloss, map/redwcemm
 		{
 			//full aggregate and cast to scalar
 			MatrixBlock tmp = RDDAggregateUtils.sumStable(out);
 			DoubleObject ret = new DoubleObject(tmp.getValue(0, 0));
 			sec.setVariable(output.getName(), ret);
 		}
-		else //mapwsigmoid, redwsigmoid, mapwdivmm, redwdivmm 
+		else //map/redwsigmoid, map/redwdivmm 
 		{
-			//aggregation if required (mapwdivmm, redwdivmm)
+			//aggregation if required (map/redwdivmm)
 			if( qop.wtype3 != null )
 				out = RDDAggregateUtils.sumByKeyStable( out );
 				

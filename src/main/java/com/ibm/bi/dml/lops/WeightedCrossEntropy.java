@@ -26,23 +26,22 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 /**
  * 
  */
-public class WeightedDivMM extends Lop 
+public class WeightedCrossEntropy extends Lop 
 {
-	public static final String OPCODE = "mapwdivmm";
-	public static final String OPCODE_CP = "wdivmm";
+	public static final String OPCODE = "mapwcemm";
+	public static final String OPCODE_CP = "wcemm";
 	private int _numThreads = 1;
 
-	public enum WDivMMType {
-		LEFT,
-		RIGHT,
+	public enum WCeMMType {
+		BASIC,
 	}
 	
-	private WDivMMType _weightsType = null;
+	private WCeMMType _wcemmType = null;
 	
-	public WeightedDivMM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WDivMMType wt, ExecType et) 
+	public WeightedCrossEntropy(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WCeMMType wt, ExecType et) 
 		throws LopsException 
 	{
-		super(Lop.Type.WeightedDivMM, dt, vt);		
+		super(Lop.Type.WeightedCeMM, dt, vt);		
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
@@ -50,7 +49,8 @@ public class WeightedDivMM extends Lop
 		input2.addOutput(this);
 		input3.addOutput(this);
 		
-		_weightsType = wt;
+		//setup mapmult parameters
+		_wcemmType = wt;
 		setupLopProperties(et);
 	}
 	
@@ -82,7 +82,7 @@ public class WeightedDivMM extends Lop
 	}
 
 	public String toString() {
-		return "Operation = WeightedDivMM";
+		return "Operation = WeightedCrossEntropy";
 	}
 	
 	@Override
@@ -108,7 +108,7 @@ public class WeightedDivMM extends Lop
 		sb.append( prepOutputOperand(output_index));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_weightsType);
+		sb.append(_wcemmType);
 		
 		return sb.toString();
 	}
@@ -139,7 +139,7 @@ public class WeightedDivMM extends Lop
 		sb.append( prepOutputOperand(output));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_weightsType);
+		sb.append(_wcemmType);
 		
 		//append degree of parallelism
 		if( getExecType()==ExecType.CP ) {

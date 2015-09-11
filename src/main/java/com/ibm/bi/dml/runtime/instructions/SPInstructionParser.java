@@ -21,6 +21,8 @@ import java.util.HashMap;
 
 import com.ibm.bi.dml.lops.Checkpoint;
 import com.ibm.bi.dml.lops.DataGen;
+import com.ibm.bi.dml.lops.WeightedCrossEntropy;
+import com.ibm.bi.dml.lops.WeightedCrossEntropyR;
 import com.ibm.bi.dml.lops.WeightedDivMM;
 import com.ibm.bi.dml.lops.WeightedDivMMR;
 import com.ibm.bi.dml.lops.WeightedSigmoid;
@@ -213,6 +215,8 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( WeightedSigmoidR.OPCODE,     SPINSTRUCTION_TYPE.Quaternary);
 		String2SPInstructionType.put( WeightedDivMM.OPCODE,        SPINSTRUCTION_TYPE.Quaternary);
 		String2SPInstructionType.put( WeightedDivMMR.OPCODE,       SPINSTRUCTION_TYPE.Quaternary);
+		String2SPInstructionType.put( WeightedCrossEntropy.OPCODE, SPINSTRUCTION_TYPE.Quaternary);
+		String2SPInstructionType.put( WeightedCrossEntropyR.OPCODE,SPINSTRUCTION_TYPE.Quaternary);
 		
 		//cumsum/cumprod/cummin/cummax
 		String2SPInstructionType.put( "ucumack+"  , SPINSTRUCTION_TYPE.CumsumAggregate);

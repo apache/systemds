@@ -19,6 +19,7 @@ package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -26,23 +27,20 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 /**
  * 
  */
-public class WeightedDivMM extends Lop 
+public class WeightedCrossEntropyR extends Lop 
 {
-	public static final String OPCODE = "mapwdivmm";
-	public static final String OPCODE_CP = "wdivmm";
-	private int _numThreads = 1;
 
-	public enum WDivMMType {
-		LEFT,
-		RIGHT,
-	}
+	public static final String OPCODE = "redwcemm";
 	
-	private WDivMMType _weightsType = null;
+	private WCeMMType _wcemmType = null;
+
+	private boolean _cacheU = false;
+	private boolean _cacheV = false;
 	
-	public WeightedDivMM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WDivMMType wt, ExecType et) 
+	public WeightedCrossEntropyR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WCeMMType wt, boolean cacheU, boolean cacheV, ExecType et) 
 		throws LopsException 
 	{
-		super(Lop.Type.WeightedDivMM, dt, vt);		
+		super(Lop.Type.WeightedCeMM, dt, vt);		
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
@@ -50,15 +48,20 @@ public class WeightedDivMM extends Lop
 		input2.addOutput(this);
 		input3.addOutput(this);
 		
-		_weightsType = wt;
+		//setup mapmult parameters
+		_wcemmType = wt;
+		_cacheU = cacheU;
+		_cacheV = cacheV;
 		setupLopProperties(et);
 	}
 	
 	/**
 	 * 
 	 * @param et
+	 * @throws LopsException 
 	 */
-	private void setupLopProperties( ExecType et )
+	private void setupLopProperties( ExecType et ) 
+		throws LopsException
 	{
 		if( et == ExecType.MR )
 		{
@@ -68,7 +71,7 @@ public class WeightedDivMM extends Lop
 			boolean definesMRJob = false;
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.DATAGEN);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+			lps.setProperties( inputs, ExecType.MR, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
 		else //Spark/CP
 		{
@@ -82,7 +85,7 @@ public class WeightedDivMM extends Lop
 	}
 
 	public String toString() {
-		return "Operation = WeightedDivMM";
+		return "Operation = WeightedCrossEntropyR";
 	}
 	
 	@Override
@@ -103,12 +106,18 @@ public class WeightedDivMM extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(2).prepInputOperand(input_index3));
-		
+	
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output_index));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_weightsType);
+		sb.append(_wcemmType);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheU);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheV);
 		
 		return sb.toString();
 	}
@@ -121,10 +130,7 @@ public class WeightedDivMM extends Lop
 		sb.append(getExecType());
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		if( getExecType() == ExecType.CP )
-			sb.append(OPCODE_CP);
-		else
-			sb.append(OPCODE);
+		sb.append(OPCODE);
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(0).prepInputOperand(input1));
@@ -134,18 +140,18 @@ public class WeightedDivMM extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(2).prepInputOperand(input3));
-		
+	
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_weightsType);
+		sb.append(_wcemmType);
 		
-		//append degree of parallelism
-		if( getExecType()==ExecType.CP ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _numThreads );
-		}
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheU);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheV);
 		
 		return sb.toString();
 	}
@@ -153,7 +159,7 @@ public class WeightedDivMM extends Lop
 	@Override
 	public boolean usesDistributedCache() 
 	{
-		if( getExecType()==ExecType.MR )
+		if( _cacheU || _cacheV )
 			return true;
 		else
 			return false;
@@ -162,13 +168,13 @@ public class WeightedDivMM extends Lop
 	@Override
 	public int[] distributedCacheInputIndex() 
 	{
-		if( getExecType()==ExecType.MR )
-			return new int[]{2,3};
-		else
+		if( !_cacheU && !_cacheV )
 			return new int[]{-1};
-	}
-	
-	public void setNumThreads(int k) {
-		_numThreads = k;
+		else if( _cacheU && !_cacheV )
+			return new int[]{2};
+		else if( !_cacheU && _cacheV )
+			return new int[]{3};
+		else
+			return new int[]{2,3};
 	}
 }

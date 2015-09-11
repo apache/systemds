@@ -38,7 +38,7 @@ public class WeightedDivMMR extends Lop
 	public WeightedDivMMR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WDivMMType wt, boolean cacheU, boolean cacheV, ExecType et) 
 		throws LopsException 
 	{
-		super(Lop.Type.WeightedSquaredLoss, dt, vt);		
+		super(Lop.Type.WeightedDivMM, dt, vt);		
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
@@ -82,7 +82,7 @@ public class WeightedDivMMR extends Lop
 	}
 
 	public String toString() {
-		return "Operation = WeightedSquaredLossR";
+		return "Operation = WeightedDivMMR";
 	}
 	
 	@Override

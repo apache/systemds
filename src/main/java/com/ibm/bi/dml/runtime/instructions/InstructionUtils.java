@@ -26,6 +26,8 @@ import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.PMMJ;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.lops.UAggOuterChain;
+import com.ibm.bi.dml.lops.WeightedCrossEntropy;
+import com.ibm.bi.dml.lops.WeightedCrossEntropyR;
 import com.ibm.bi.dml.lops.WeightedDivMM;
 import com.ibm.bi.dml.lops.WeightedDivMMR;
 import com.ibm.bi.dml.lops.WeightedSigmoid;
@@ -271,14 +273,9 @@ public class InstructionUtils
 			   || opcode.equalsIgnoreCase(MapMult.OPCODE)
 			   || opcode.equalsIgnoreCase(MapMultChain.OPCODE)
 			   || opcode.equalsIgnoreCase(PMMJ.OPCODE)
-			   || opcode.equalsIgnoreCase(WeightedSquaredLoss.OPCODE)
-			   || opcode.equalsIgnoreCase(WeightedSquaredLossR.OPCODE)
-			   || opcode.equalsIgnoreCase(WeightedSigmoid.OPCODE)
-			   || opcode.equalsIgnoreCase(WeightedSigmoidR.OPCODE)
-			   || opcode.equalsIgnoreCase(WeightedDivMM.OPCODE)
-			   || opcode.equalsIgnoreCase(WeightedDivMMR.OPCODE)
 			   || opcode.equalsIgnoreCase(UAggOuterChain.OPCODE)
-			   || BinaryM.isOpcode( opcode ) ) //multiple opcodes	
+			   || isDistQuaternaryOpcode( opcode ) //multiple quaternary opcodes
+			   || BinaryM.isOpcode( opcode ) ) //multiple binary opcodes	
 			{
 				return true;
 			}
@@ -743,5 +740,22 @@ public class InstructionUtils
 			return CorrectionLocationType.LASTCOLUMN;
 		
 		return CorrectionLocationType.NONE;
+	}
+
+	/**
+	 * 
+	 * @param opcode
+	 * @return
+	 */
+	public static boolean isDistQuaternaryOpcode(String opcode) 
+	{
+		return WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)     //mapwsloss
+			|| WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode)    //redwsloss
+			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)   	   //mapwsigmoid
+			|| WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode)        //redwsigmoid
+			|| WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)           //mapwdivmm
+			|| WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode)          //redwdivmm
+			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(opcode)    //mapwdcemm
+			|| WeightedCrossEntropyR.OPCODE.equalsIgnoreCase(opcode);  //redwdcemm
 	}
 }

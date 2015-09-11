@@ -20,6 +20,7 @@ package com.ibm.bi.dml.runtime.instructions.cp;
 import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
+import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -75,7 +76,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 			
 			return new QuaternaryCPInstruction(new QuaternaryOperator(wtype), in1, in2, in3, in4, out, k, opcode, inst);	
 		}
-		else if( opcode.equalsIgnoreCase("wsigmoid") )
+		else if( opcode.equalsIgnoreCase("wsigmoid") || opcode.equalsIgnoreCase("wdivmm") || opcode.equalsIgnoreCase("wcemm") )
 		{
 			InstructionUtils.checkNumFields ( inst, 6 );
 			
@@ -83,29 +84,17 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
-			
-			WSigmoidType wtype = WSigmoidType.valueOf(parts[5]);
 			int k = Integer.parseInt(parts[6]);
 			
-			return new QuaternaryCPInstruction(new QuaternaryOperator(wtype), in1, in2, in3, null, out, k, opcode, inst);
+			if( opcode.equalsIgnoreCase("wsigmoid") )
+				return new QuaternaryCPInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
+			else if( opcode.equalsIgnoreCase("wdivmm") )
+				return new QuaternaryCPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
+			else if( opcode.equalsIgnoreCase("wcemm") ) 		
+				return new QuaternaryCPInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
 		}
-		else if( opcode.equalsIgnoreCase("wdivmm") )
-		{
-			InstructionUtils.checkNumFields ( inst, 6 );
-			
-			CPOperand in1 = new CPOperand(parts[1]);
-			CPOperand in2 = new CPOperand(parts[2]);
-			CPOperand in3 = new CPOperand(parts[3]);
-			CPOperand out = new CPOperand(parts[4]);
-			
-			WDivMMType wtype = WDivMMType.valueOf(parts[5]);
-			int k = Integer.parseInt(parts[6]);
-			
-			return new QuaternaryCPInstruction(new QuaternaryOperator(wtype), in1, in2, in3, null, out, k, opcode, inst);
-		}
-		else {
-			throw new DMLRuntimeException("Unexpected opcode in QuaternaryCPInstruction: " + inst);
-		}
+		
+		throw new DMLRuntimeException("Unexpected opcode in QuaternaryCPInstruction: " + inst);
 	}
 
 	
@@ -129,8 +118,8 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		ec.releaseMatrixInput(input1.getName());
 		ec.releaseMatrixInput(input2.getName());
 		ec.releaseMatrixInput(input3.getName());
-		if( qop.wtype1 != null ) { //wsloss
-			if( qop.wtype1 != WeightsType.NONE )
+		if( qop.wtype1 != null || qop.wtype4 != null ) { //wsloss/wcemm
+			if( qop.wtype1 != null && qop.wtype1 != WeightsType.NONE )
 				ec.releaseMatrixInput(input4.getName());
 			ec.setVariable(output.getName(), new DoubleObject(out.getValue(0, 0)));
 		}

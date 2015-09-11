@@ -150,6 +150,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyWeightedSquaredLoss(hop, hi, i);        //e.g., sum(W * (X - U %*% t(V)) ^ 2) -> wsl(X, U, t(V), W, true)
 			hi = simplifyWeightedSigmoidMMChains(hop, hi, i);    //e.g., W * sigmoid(Y%*%t(X)) -> wsigmoid(W, Y, t(X), type)
 			hi = simplifyWeightedDivMM(hop, hi, i);              //e.g., t(U) %*% (X/(U%*%t(V))) -> wdivmm(X, U, t(V), left)
+			hi = simplifyWeightedCrossEntropy(hop, hi, i);       //e.g., sym(X*log(U%*%t(V))) -> wcemm(X, U, t(V))
 			hi = fuseMinusNzBinaryOperation(hop, hi, i);         //e.g., X-mean*ppred(X,0,!=) -> X -nz mean
 			hi = fuseLogNzBinaryOperation(hop, hi, i);           //e.g., ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
 			hi = simplifyOuterSeqExpand(hop, hi, i);             //e.g., outer(v, seq(1,m), "==") -> rexpand(v, max=m, dir=row, ignore=true, cast=false)
@@ -1568,6 +1569,59 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					appliedPattern = true;
 					LOG.debug("Applied simplifyWeightedDivMM2 (line "+hi.getBeginLine()+")");	
 				}
+			}
+		}
+		
+		//relink new hop into original position
+		if( hnew != null ) {
+			HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+			HopRewriteUtils.addChildReference(parent, hnew, pos);
+			hi = hnew;
+		}
+		
+		return hi;
+	}
+
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyWeightedCrossEntropy(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		Hop hnew = null;
+		
+		//Pattern 1) sum( X * log(U %*% t(V)))
+		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol
+			&& ((AggUnaryOp)hi).getOp() == AggOp.SUM      //pattern rooted by sum()
+			&& hi.getInput().get(0) instanceof BinaryOp ) //pattern subrooted by binary op
+		{
+			BinaryOp bop = (BinaryOp) hi.getInput().get(0);
+			Hop left = bop.getInput().get(0);
+			Hop right = bop.getInput().get(1);
+			
+			if( bop.getOp()==OpOp2.MULT && left.getDataType()==DataType.MATRIX	
+				&& right instanceof UnaryOp	&& ((UnaryOp)right).getOp()==OpOp1.LOG
+				&& right.getInput().get(0) instanceof AggBinaryOp  //ba gurantees matrices
+				&& HopRewriteUtils.isSingleBlock(right.getInput().get(0).getInput().get(0),true)) //BLOCKSIZE CONSTRAINT
+			{
+				Hop X = left; 
+				Hop U = right.getInput().get(0).getInput().get(0);
+				Hop V = right.getInput().get(0).getInput().get(1);
+				
+				if( !HopRewriteUtils.isTransposeOperation(V) )
+					V = HopRewriteUtils.createTranspose(V);
+				else 
+					V = V.getInput().get(0);
+					
+				hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, OpOp4.WCEMM, X, U, V);
+				HopRewriteUtils.setOutputBlocksizes(hnew, X.getRowsInBlock(), X.getColsInBlock());
+					
+				LOG.debug("Applied simplifyWeightedCEMM (line "+hi.getBeginLine()+")");					
 			}
 		}
 		

@@ -192,7 +192,7 @@ public class DMLScript
 	public static void main(String[] args) 
 		throws IOException, DMLException 
 	{
-		Configuration conf = new Configuration();
+		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		
 		try {
@@ -206,7 +206,7 @@ public class DMLScript
 	public static boolean executeScript( String[] args ) 
 		throws DMLException
 	{
-		Configuration conf = new Configuration();
+		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		return executeScript( conf, args );
 	}
 	
@@ -952,7 +952,7 @@ public class DMLScript
 		
 		//2) cleanup hadoop working dirs (only required for LocalJobRunner (local job tracker), because
 		//this implementation does not create job specific sub directories)
-		JobConf job = new JobConf();
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		if( InfrastructureAnalyzer.isLocalMode(job) ) {
 			try 
 			{

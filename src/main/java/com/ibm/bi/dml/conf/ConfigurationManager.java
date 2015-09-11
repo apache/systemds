@@ -67,4 +67,13 @@ public class ConfigurationManager
 	{
 		return _rJob;
 	}
+	
+	/**
+	 * 
+	 * @param job
+	 */
+	public static void setCachedJobConf(JobConf job) 
+	{
+		_rJob = job;
+	}
 }

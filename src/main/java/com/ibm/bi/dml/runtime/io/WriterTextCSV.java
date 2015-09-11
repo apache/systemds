@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
@@ -61,7 +62,7 @@ public class WriterTextCSV extends MatrixWriter
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//prepare file access
-		JobConf job = new JobConf();
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.
@@ -75,7 +76,7 @@ public class WriterTextCSV extends MatrixWriter
 	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
 		throws IOException, DMLRuntimeException 
 	{
-		JobConf job = new JobConf();
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 
 		MatrixBlock src = new MatrixBlock((int)rlen, 1, true);
@@ -262,7 +263,7 @@ public class WriterTextCSV extends MatrixWriter
 	public void mergeCSVPartFiles(String srcFileName, String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
 		throws IOException 
 	{	
-		Configuration conf = new Configuration();
+		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 
 		Path srcFilePath = new Path(srcFileName);
 		Path mergedFilePath = new Path(destFileName);
@@ -342,7 +343,7 @@ public class WriterTextCSV extends MatrixWriter
 	public void addHeaderToCSV(String srcFileName, String destFileName, long rlen, long clen) 
 		throws IOException 
 	{
-		Configuration conf = new Configuration();
+		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 
 		Path srcFilePath = new Path(srcFileName);
 		Path destFilePath = new Path(destFileName);

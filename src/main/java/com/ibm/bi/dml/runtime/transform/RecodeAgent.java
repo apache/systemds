@@ -436,19 +436,5 @@ public class RecodeAgent extends TransformationAgent {
 		}
 		System.out.println();
 	}
-	
-	/*public static void main(String[] args) throws IllegalArgumentException, IOException {
-		RecodeAgent ra = new RecodeAgent( new int[]{2} );
-		
-		FileSystem fs = FileSystem.get(new JobConf());
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path("data/recode/emp.csv"))));
-		
-		String line = br.readLine();
-		while( (line=br.readLine()) != null) {
-			String[] words = line.split(",");
-			ra.prepare(words);
-		}
-		ra.printMaps();
-	}*/
 }
  

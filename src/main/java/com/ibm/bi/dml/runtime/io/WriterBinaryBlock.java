@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -49,7 +50,7 @@ public class WriterBinaryBlock extends MatrixWriter
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//prepare file access
-		JobConf job = new JobConf();
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.
@@ -67,7 +68,7 @@ public class WriterBinaryBlock extends MatrixWriter
 	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
 		throws IOException, DMLRuntimeException 
 	{
-		JobConf job = new JobConf();
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 		FileSystem fs = FileSystem.get(job);
 

@@ -20,6 +20,7 @@ package com.ibm.bi.dml.runtime.instructions.cp;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -97,7 +98,7 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction
 			//write matrix partitions to hdfs
 			WriterBinaryBlock writer = (WriterBinaryBlock) MatrixWriterFactory.createMatrixWriter(OutputInfo.BinaryBlockOutputInfo);
 			writer.writePartitionedBinaryBlockMatrixToHDFS(
-					   new Path(fname), new JobConf(), mb, moIn.getNumRows(), moIn.getNumColumns(), 
+					   new Path(fname), new JobConf(ConfigurationManager.getCachedJobConf()), mb, moIn.getNumRows(), moIn.getNumColumns(), 
 					   (int)moIn.getNumRowsPerBlock(), (int)moIn.getNumColumnsPerBlock(), _pformat);
 			
 			//ensure correctness of output characteristics (required if input unknown during compile and no recompile)

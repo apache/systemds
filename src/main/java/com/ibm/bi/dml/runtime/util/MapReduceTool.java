@@ -37,6 +37,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -62,7 +63,7 @@ public class MapReduceTool
 	private static JobConf _rJob = null; //cached job conf for read-only operations
 	
 	static{
-		_rJob = new JobConf();
+		_rJob = ConfigurationManager.getCachedJobConf();
 	}
 	
 	
@@ -212,7 +213,7 @@ public class MapReduceTool
 		boolean deleteSource = false;
 		boolean overwrite = true;
 		
-		JobConf job = new JobConf();
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		FileSystem fs = FileSystem.get(job);
 		if (fs.exists(originalPath)) {
 			FileUtil.copy(fs, originalPath, fs, newPath, deleteSource, overwrite, job);

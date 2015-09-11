@@ -40,6 +40,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -293,7 +294,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			throws IOException, DMLRuntimeException
 		{	
 			//prepare input
-			JobConf job = new JobConf();	
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
 			FileSystem fs = FileSystem.get(job);
 			if( !fs.exists(path) )	
@@ -356,7 +357,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			throws IOException, DMLRuntimeException
 		{
 			//prepare input
-			JobConf job = new JobConf();	
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
 			FileSystem fs = FileSystem.get(job);
 			if( !fs.exists(path) )	
@@ -415,7 +416,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			throws IOException, DMLRuntimeException
 		{
 			//prepare input
-			JobConf job = new JobConf();	
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
 			FileSystem fs = FileSystem.get(job);
 			if( !fs.exists(path) )	
@@ -716,7 +717,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			throws IOException, DMLRuntimeException
 		{
 			//prepare input
-			JobConf job = new JobConf();	
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameNew);
 			FileSystem fs = FileSystem.get(job);
 			String metaOut = stagingDir+"/meta";
@@ -834,7 +835,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			throws IOException, DMLRuntimeException
 		{
 			//prepare input
-			JobConf job = new JobConf();	
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameNew);
 			FileSystem fs = FileSystem.get(job);
 			String metaOut = stagingDir+"/meta";
@@ -1004,7 +1005,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			throws IOException, DMLRuntimeException
 		{
 			//prepare input
-			JobConf job = new JobConf();	
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameNew);
 			FileSystem fs = FileSystem.get(job);
 			String metaOut = stagingDir+"/meta";

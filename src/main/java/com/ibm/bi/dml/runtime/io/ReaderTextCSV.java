@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
@@ -57,7 +58,7 @@ public class ReaderTextCSV extends MatrixReader
 			ret = createOutputMatrixBlock(rlen, clen, estnnz, true, false);
 		
 		//prepare file access
-		JobConf job = new JobConf();	
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
 		

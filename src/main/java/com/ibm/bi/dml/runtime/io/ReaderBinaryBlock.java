@@ -26,6 +26,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -54,7 +55,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, false, false);
 		
 		//prepare file access
-		JobConf job = new JobConf();	
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 		FileSystem fs = _localFS ? FileSystem.getLocal(job) : FileSystem.get(job);
 		Path path = new Path( (_localFS ? "file:///" : "") + fname); 
 		
@@ -90,7 +91,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		ArrayList<IndexedMatrixValue> ret = new ArrayList<IndexedMatrixValue>();
 		
 		//prepare file access
-		JobConf job = new JobConf();	
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 		FileSystem fs = _localFS ? FileSystem.getLocal(job) : FileSystem.get(job);
 		Path path = new Path( (_localFS ? "file:///" : "") + fname); 
 		

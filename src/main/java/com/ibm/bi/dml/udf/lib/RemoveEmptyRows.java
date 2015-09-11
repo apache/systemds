@@ -33,6 +33,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.udf.FunctionParameter;
 import com.ibm.bi.dml.udf.Matrix;
@@ -76,7 +77,7 @@ public class RemoveEmptyRows extends PackageFunction
 		try
 		{		
 			//prepare input
-			JobConf job = new JobConf();	
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 			Path path = new Path(fnameOld);
 			FileSystem fs = FileSystem.get(job);
 			if( !fs.exists(path) )	

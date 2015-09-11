@@ -37,6 +37,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -154,7 +155,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		{
 			//STEP 1: read matrix from HDFS and write blocks to local staging area			
 			//check and add input path
-			JobConf job = new JobConf();
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			Path path = new Path(fname);
 			FileInputFormat.addInputPath(job, path);
 			TextInputFormat informat = new TextInputFormat();
@@ -258,7 +259,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		{
 			//STEP 1: read matrix from HDFS and write blocks to local staging area
 			//check and add input path
-			JobConf job = new JobConf();
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			Path path = new Path(fname);
 			FileSystem fs = FileSystem.get(job);
 			
@@ -357,7 +358,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			
 			//STEP 1: read matrix from HDFS and write blocks to local staging area	
 			//check and add input path
-			JobConf job = new JobConf();
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			Path path = new Path(fname);
 			FileSystem fs = FileSystem.get(job);
 			
@@ -441,7 +442,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		{		
 			//STEP 1: read matrix from HDFS and write blocks to local staging area	
 			//check and add input path
-			JobConf job = new JobConf();
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			Path path = new Path(fname);
 			FileSystem fs = FileSystem.get(job);
 			

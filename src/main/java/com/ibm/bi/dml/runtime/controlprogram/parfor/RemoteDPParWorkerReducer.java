@@ -29,6 +29,7 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
@@ -184,6 +185,14 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			boolean cpCaching = MRJobConfiguration.getParforCachingConfig( job );
 			if( !cpCaching )
 				CacheableData.disableCaching();
+
+			//use the given job configuration as source for all new job confs 
+			//NOTE: this is required because on HDP 2.3, the classpath of mr tasks contained hadoop-common.jar 
+			//which includes a core-default.xml configuration which hides the actual default cluster configuration
+			//in the context of mr jobs (for example this config points to local fs instead of hdfs by default). 
+			if( !InfrastructureAnalyzer.isLocalMode(job) ) {
+				ConfigurationManager.setCachedJobConf(job);
+			}
 			
 			_numTasks    = 0;
 			_numIters    = 0;			

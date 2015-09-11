@@ -38,6 +38,7 @@ import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -739,7 +740,7 @@ public class DataTransform {
 		// Parse transform instruction (the first instruction) to obtain relevant fields
 		TransformOperands oprnds = new TransformOperands(insts[0], inputMatrices[0]);
 		
-		JobConf job = new JobConf();
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		FileSystem fs = FileSystem.get(job);
 		
 		// find the first file in alphabetical ordering of partfiles in directory inputPath 
@@ -923,7 +924,7 @@ public class DataTransform {
 		// Parse transform instruction (the first instruction) to obtain relevant fields
 		TransformOperands oprnds = new TransformOperands(insts[0], inputMatrices[0]);
 		
-		JobConf job = new JobConf();
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		FileSystem fs = FileSystem.get(job);
 		// find the first file in alphabetical ordering of partfiles in directory inputPath 
 		String smallestFile = CSVReblockMR.findSmallestFile(job, oprnds.inputPath);

@@ -32,6 +32,8 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -64,7 +66,7 @@ public class ReaderBinaryBlockParSplits extends MatrixReader {
 		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, false, false);
 		
 		//prepare file access
-		JobConf job = new JobConf();	
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 		FileSystem fs = _localFS ? FileSystem.getLocal(job) : FileSystem.get(job);
 		Path path = new Path( (_localFS ? "file:///" : "") + fname); 
 		
@@ -100,7 +102,7 @@ public class ReaderBinaryBlockParSplits extends MatrixReader {
 		ArrayList<IndexedMatrixValue> ret = new ArrayList<IndexedMatrixValue>();
 		
 		//prepare file access
-		JobConf job = new JobConf();	
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 		FileSystem fs = _localFS ? FileSystem.getLocal(job) : FileSystem.get(job);
 		Path path = new Path( (_localFS ? "file:///" : "") + fname); 
 		

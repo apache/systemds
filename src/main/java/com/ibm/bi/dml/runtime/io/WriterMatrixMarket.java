@@ -47,7 +47,7 @@ public class WriterMatrixMarket extends MatrixWriter
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//prepare file access
-		JobConf job = new JobConf();
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.
@@ -175,7 +175,7 @@ public class WriterMatrixMarket extends MatrixWriter
 	public void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
 		throws IOException
 	{
-		  Configuration conf = new Configuration();
+		  Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		
 		  Path src = new Path (srcFileName);
 	      Path merge = new Path (fileName);

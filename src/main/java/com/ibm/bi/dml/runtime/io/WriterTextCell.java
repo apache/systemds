@@ -42,7 +42,7 @@ public class WriterTextCell extends MatrixWriter
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//prepare file access
-		JobConf job = new JobConf();
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.

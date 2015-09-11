@@ -34,6 +34,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -78,7 +79,7 @@ public class ReaderTextCellParallel extends MatrixReader
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access
-		JobConf job = new JobConf();	
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
 		

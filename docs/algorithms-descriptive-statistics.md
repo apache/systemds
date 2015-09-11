@@ -184,7 +184,7 @@ order, preserving duplicates: $v^s_1 \leq v^s_2 \leq \ldots \leq v^s_n$.
 **Figure 1**: The computation of quartiles, median, and interquartile mean from the
 empirical distribution function of the 10-point
 sample {2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8}.  Each vertical step in
-the graph has height $1{/}n = 0.1$.  Values $q_{25\%}$, $q_{50\%}$, and $q_{75\%}$ denote
+the graph has height $1{/}n = 0.1$.  Values $$q_{25\%}$$, $$q_{50\%}$$, and $$q_{75\%}$$ denote
 the $1^{\textrm{st}}$, $2^{\textrm{nd}}$, and $3^{\textrm{rd}}$ quartiles correspondingly;
 value $\mu$ denotes the median.  Values $\phi_1$ and $\phi_2$ show the partial contribution
 of border points (quartiles) $v_3=3.7$ and $v_8=6.4$ into the interquartile mean.
@@ -214,7 +214,7 @@ median, we sort the sample in the increasing order, preserving
 duplicates: $v^s_1 \leq v^s_2 \leq \ldots \leq v^s_n$. If $n$ is odd,
 the median equals $v^s_i$ where $i = (n\,{+}\,1)\,{/}\,2$, same as the
 $50^{\textrm{th}}$ percentile of the sample. If $n$ is even, there are
-two “middle” values $v^s_{n/2}$ and $v^s_{n/2\,+\,1}$, so we compute the
+two “middle” values $$v^s_{n/2}$$ and $$v^s_{n/2\,+\,1}$$, so we compute the
 median as the mean of these two values. (For even $n$ we compute the
 $50^{\textrm{th}}$ percentile as $v^s_{n/2}$, not as the median.)
 Example: the median of sample {2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1,
@@ -269,7 +269,7 @@ quantitative (scale) data feature.
 around their mean, expressed in units that are the square of those of
 the feature itself. Computed as the sum of squared differences between
 the values in the sample and their mean, divided by one less than the
-number of values: $\sum_{i=1}^n (v_i - \bar{v})^2\,/\,(n\,{-}\,1)$ where
+number of values: $$\sum_{i=1}^n (v_i - \bar{v})^2\,/\,(n\,{-}\,1)$$ where
 $\bar{v}=\left(\sum_{i=1}^n v_i\right)/n$. Example: the variance of
 sample {2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8}
 equals 3.24. Note that at least two values ($n\geq 2$) are required to
@@ -357,8 +357,8 @@ Skewness is computed as the $3^{\textrm{rd}}$ central moment divided by
 the cube of the standard deviation. We estimate the
 $3^{\textrm{rd}}$ central moment as the sum of cubed differences between
 the values in the feature column and their sample mean, divided by the
-number of values: $\sum_{i=1}^n (v_i - \bar{v})^3 / n$ where
-$\bar{v}=\left(\sum_{i=1}^n v_i\right)/n$. The standard deviation is
+number of values: $$\sum_{i=1}^n (v_i - \bar{v})^3 / n$$ where
+$$\bar{v}=\left(\sum_{i=1}^n v_i\right)/n$$. The standard deviation is
 computed as described above in *standard deviation*. To avoid division
 by 0, at least two different sample values are required. Example: for
 sample {2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1, 6.4, 7.2, 7.8} with the
@@ -411,7 +411,7 @@ divided by the $4^{\textrm{th}}$ power of the standard deviation,
 minus 3. We estimate the $4^{\textrm{th}}$ central moment as the sum of
 the $4^{\textrm{th}}$ powers of differences between the values in the
 feature column and their sample mean, divided by the number of values:
-$\sum_{i=1}^n (v_i - \bar{v})^4 / n$ where
+$$\sum_{i=1}^n (v_i - \bar{v})^4 / n$$ where
 $\bar{v}=\left(\sum_{i=1}^n v_i\right)/n$. The standard deviation is
 computed as described above, see *standard deviation*.
 
@@ -634,7 +634,7 @@ Below we list all bivariate statistics computed by script
 `bivar-stats.dml`. The statistics are collected into
 several groups by the type of their input features. We refer to the two
 input features as $v_1$ and $v_2$ unless specified otherwise; the value
-pairs are $(v_{1,i}, v_{2,i})$ for $i=1,\ldots,n$, where $n$ is the
+pairs are $$(v_{1,i}, v_{2,i})$$ for $i=1,\ldots,n$, where $n$ is the
 number of rows in `X`, i.e. the sample size.
 
 
@@ -653,7 +653,7 @@ $$r
 $$
 
 Commonly denoted by $r$, correlation ranges between $-1$ and $+1$,
-reaching ${\pm}1$ when all value pairs $(v_{1,i}, v_{2,i})$ lie on the
+reaching ${\pm}1$ when all value pairs $$(v_{1,i}, v_{2,i})$$ lie on the
 same line. Correlation near 0 means that a line is not a good way to
 represent the dependence between the two features; however, this does
 not imply independence. The sign indicates direction of the linear
@@ -665,9 +665,9 @@ not change if we transform $v_1$ and $v_2$ to $a + b v_1$ and
 $c + d v_2$ where $a, b, c, d$ are constants and $b, d > 0$.
 
 Suppose that we use simple linear regression to represent one feature
-given the other, say represent $v_{2,i} \approx \alpha + \beta v_{1,i}$
+given the other, say represent $$v_{2,i} \approx \alpha + \beta v_{1,i}$$
 by selecting $\alpha$ and $\beta$ to minimize the least-squares error
-$\sum_{i=1}^n (v_{2,i} - \alpha - \beta v_{1,i})^2$. Then the best error
+$$\sum_{i=1}^n (v_{2,i} - \alpha - \beta v_{1,i})^2$$. Then the best error
 equals
 
 $$\min_{\alpha, \beta} \,\,\sum_{i=1}^n \big(v_{2,i} - \alpha - \beta v_{1,i}\big)^2 \,\,=\,\,
@@ -694,7 +694,7 @@ But we do not know these (hypothesized) probabilities; we only know the
 sample frequency counts. Let $n_{a,b}$ be the frequency count of pair
 $(a, b)$, let $n_a$ and $n_b$ be the frequency counts of $a$ alone and
 of $b$ alone. Under independence, difference
-$n_{a,b}{/}n - (n_a{/}n)(n_b{/}n)$ is unlikely to be exactly 0 due to
+$$n_{a,b}{/}n - (n_a{/}n)(n_b{/}n)$$ is unlikely to be exactly 0 due to
 sample randomness, yet it is unlikely to be too far from 0. For some
 pairs $(a,b)$ it may deviate from 0 farther than for other pairs.
 Pearson’s $\chi^2$ is an aggregate measure that combines
@@ -703,7 +703,7 @@ squares of these differences across all value pairs:
 $$\chi^2 \,\,=\,\, \sum_{a,\,b} \Big(\frac{n_a n_b}{n}\Big)^{-1} \Big(n_{a,b} - \frac{n_a n_b}{n}\Big)^2
 \,=\,\, \sum_{a,\,b} \frac{(O_{a,b} - E_{a,b})^2}{E_{a,b}}$$
 
-where $O_{a,b} = n_{a,b}$ are the *observed* frequencies and
+where $$O_{a,b} = n_{a,b}$$ are the *observed* frequencies and
 $E_{a,b} = (n_a n_b){/}n$ are the *expected* frequencies for all
 pairs $(a,b)$. Under independence (plus other standard assumptions) the
 sample $\chi^2$ closely follows a well-known distribution, making it a
@@ -802,10 +802,10 @@ $$\eta^2 \,=\, 1 - \frac{\sum_{i=1}^{n} \big(y_i - \hat{y}[x_i]\big)^2}{\sum_{i=
 \hat{y}[x] = \frac{1}{\mathop{\mathrm{freq}}(x)}\sum_{i=1}^n  
 \,\left\{\!\!\begin{array}{rl} y_i & \textrm{if $x_i = x$}\\ 0 & \textrm{otherwise}\end{array}\right.\!\!\!$$
 
-and $\bar{y} = (1{/}n)\sum_{i=1}^n y_i$ is the mean. Value $\hat{y}[x]$
+and $$\bar{y} = (1{/}n)\sum_{i=1}^n y_i$$ is the mean. Value $\hat{y}[x]$
 is the average of $y_i$ among all records where $x_i = x$; it can also
 be viewed as the “predictor” of $y$ given $x$. Then
-$\sum_{i=1}^{n} (y_i - \hat{y}[x_i])^2$ is the residual error
+$$\sum_{i=1}^{n} (y_i - \hat{y}[x_i])^2$$ is the residual error
 sum-of-squares and $\sum_{i=1}^{n} (y_i - \bar{y})^2$ is the total
 sum-of-squares for $y$. Hence, $\eta^2$ measures the accuracy of
 predicting $y$ with $x$, just like the “R-squared” statistic measures
@@ -887,10 +887,10 @@ coefficient is geared towards features having small value domains
 and large counts for the values. Given the two input vectors, we form a
 contingency table $T$ of pairwise frequency counts, as well as a vector
 of frequency counts for each feature: $f_1$ and $f_2$. Here in
-$T_{i,j}$, $f_{1,i}$, $f_{2,j}$ indices $i$ and $j$ refer to the
+$$T_{i,j}$$, $$f_{1,i}$$, $$f_{2,j}$$ indices $i$ and $j$ refer to the
 order-preserving integer encoding of the feature values. We use prefix
 sums over $f_1$ and $f_2$ to compute the values’ average ranks:
-$r_{1,i} = \sum_{j=1}^{i-1} f_{1,j} + (f_{1,i}\,{+}\,1){/}2$, and
+$$r_{1,i} = \sum_{j=1}^{i-1} f_{1,j} + (f_{1,i}\,{+}\,1){/}2$$, and
 analogously for $r_2$. Finally, we compute rank variances for $r_1, r_2$
 weighted by counts $f_1, f_2$ and their covariance weighted by $T$,
 before applying the standard formula for Pearson’s correlation
@@ -899,7 +899,7 @@ coefficient:
 $$\rho \,\,=\,\, \frac{Cov_T(r_1, r_2)}{\sqrt{Var_{f_1}(r_1)Var_{f_2}(r_2)}}
 \,\,=\,\, \frac{\sum_{i,j} T_{i,j} (r_{1,i} - \bar{r}_1) (r_{2,j} - \bar{r}_2)}{\sqrt{\sum_i f_{1,i} (r_{1,i} - \bar{r}_1)^{2\mathstrut} \cdot \sum_j f_{2,j} (r_{2,j} - \bar{r}_2)^{2\mathstrut}}}$$
 
-where $\bar{r_1} = \sum_i r_{1,i} f_{1,i}{/}n$, analogously
+where $$\bar{r_1} = \sum_i r_{1,i} f_{1,i}{/}n$$, analogously
 for $\bar{r}_2$. The value of $\rho$ lies between $-1$ and $+1$, with
 sign indicating the prevalent direction of the association: $\rho > 0$
 ($\rho < 0$) means that one feature tends to increase (decrease) when
@@ -1226,9 +1226,9 @@ $$y_{i,j} \,=\, \alpha_i + \beta x_{i,j} + {\varepsilon}_{i,j}\,, \quad\textrm{w
 Here $i = 1\ldots k$ is a stratum number and
 $j = 1\ldots n_i$ is a record number in stratum $i$; by $n_i$ we denote
 the number of records available in stratum $i$. The noise
-term $\varepsilon_{i,j}$ is assumed to have the same variance in all
-strata. When $n_i\,{>}\,0$, we can estimate the means of $x_{i, j}$ and
-$y_{i, j}$ in stratum $i$ as
+term $$\varepsilon_{i,j}$$ is assumed to have the same variance in all
+strata. When $n_i\,{>}\,0$, we can estimate the means of $$x_{i, j}$$ and
+$$y_{i, j}$$ in stratum $i$ as
 
 $$\bar{x}_i \,= \Big(\sum\nolimits_{j=1}^{n_i} \,x_{i, j}\Big) / n_i\,;\quad
 \bar{y}_i \,= \Big(\sum\nolimits_{j=1}^{n_i} \,y_{i, j}\Big) / n_i$$
@@ -1259,8 +1259,8 @@ estimates for $Var(X)$ and
 $Var(Y)$ tend to be smaller
 than the non-stratified ones (with the global mean instead of
 $\bar{x_i}$ and $\bar{y_i}$) since $\bar{x_i}$ and $\bar{y_i}$ fit
-closer to $x_{i,j}$ and $y_{i,j}$ than the global means. The stratified
-variance estimates the uncertainty in $x_{i,j}$ and $y_{i,j}$ given
+closer to $$x_{i,j}$$ and $$y_{i,j}$$ than the global means. The stratified
+variance estimates the uncertainty in $$x_{i,j}$$ and $$y_{i,j}$$ given
 their stratum $i$.
 
 Minimizing over $\beta$ the error sum-of-squares 
@@ -1274,13 +1274,13 @@ $$\mathrm{RSS} \,\,=\, \,
 \,\,=\,\,  V_y \,\big(1 \,-\, V_{x,y}^2 / (V_x V_y)\big)$$
 
 The quantity
-$\hat{R}^2 = V_{x,y}^2 / (V_x V_y)$, called *$R$-squared*, estimates the
-fraction of stratified variance in $y_{i,j}$ explained by covariate
-$x_{i, j}$ in the linear regression model. We
+$$\hat{R}^2 = V_{x,y}^2 / (V_x V_y)$$, called *$R$-squared*, estimates the
+fraction of stratified variance in $$y_{i,j}$$ explained by covariate
+$$x_{i, j}$$ in the linear regression model. We
 define *stratified correlation* as the square root of $\hat{R}^2$ taken
 with the sign of $V_{x,y}$. We also use RSS to estimate the residual
 standard deviation $\sigma$ in the linear regression model that models the
-prediction error of $y_{i,j}$ given $x_{i,j}$ and the stratum:
+prediction error of $$y_{i,j}$$ given $$x_{i,j}$$ and the stratum:
 
 $$\hat{\beta}\, =\, \frac{V_{x,y}}{V_x}; \,\,\,\, \hat{R} \,=\, \frac{V_{x,y}}{\sqrt{V_x V_y}};
 \,\,\,\, \hat{R}^2 \,=\, \frac{V_{x,y}^2}{V_x V_y};

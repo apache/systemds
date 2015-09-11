@@ -618,7 +618,7 @@ binomial distributions. Here $\mu$ is the Bernoulli mean.
 | Name                  | Link Function |
 | --------------------- | ------------- |
 | Logit   | $\displaystyle \eta = 1 / \big(1 + e^{-\mu}\big)^{\mathstrut}$
-| Probit  | $\displaystyle \mu  = \frac{1}{\sqrt{2\pi}}\int\nolimits_{-\infty_{\mathstrut}}^{\,\eta\mathstrut} e^{-\frac{t^2}{2}} dt$
+| Probit  | $$\displaystyle \mu  = \frac{1}{\sqrt{2\pi}}\int\nolimits_{-\infty_{\mathstrut}}^{\,\eta\mathstrut} e^{-\frac{t^2}{2}} dt$$
 | Cloglog | $\displaystyle \eta = \log \big(- \log(1 - \mu)\big)^{\mathstrut}$
 | Cauchit | $\displaystyle \eta = \tan\pi(\mu - 1/2)$
 
@@ -688,7 +688,7 @@ matrix $Y$ having 1 or 2 columns. If a power distribution family is
 selected (`dfam=1`), matrix $Y$ must have 1 column that
 provides $y_i$ for each $x_i$ in the corresponding row of matrix $X$.
 When dfam=2 and $Y$ has 1 column, we assume the Bernoulli
-distribution for $y_i\in\{y_{\mathrm{neg}}, 1\}$ with $y_{\mathrm{neg}}$
+distribution for $$y_i\in\{y_{\mathrm{neg}}, 1\}$$ with $y_{\mathrm{neg}}$
 from the input parameter `yneg`. When `dfam=2` and
 $Y$ has 2 columns, we assume the binomial distribution; for each row $i$
 in $X$, cells $Y[i, 1]$ and $Y[i, 2]$ provide the positive and the
@@ -872,7 +872,7 @@ fractional, but the actual $y_i$ is always integer.
 
 If $y_i$ is categorical, i.e. a vector of label counts for record $i$,
 then $\mu_i$ is a vector of non-negative real numbers, one number
-$\mu_{i,l}$ per each label $l$. In this case we divide the $\mu_{i,l}$
+$$\mu_{i,l}$$ per each label $l$. In this case we divide the $$\mu_{i,l}$$
 by their sum $\sum_l \mu_{i,l}$ to obtain predicted label
 probabilities . The output matrix $M$ is the
 $n \times (k\,{+}\,1)$-matrix of these probabilities, where $n$ is the
@@ -1185,7 +1185,7 @@ extra goodness-of-fit measure. To compute these statistics, we use:
 which $y_{i,j}$ is the number of times label $j$ was observed in
 record $i$
   * the model-estimated probability matrix $P$ of the same dimensions that
-satisfies $\sum_{j=1}^{k+1} p_{i,j} = 1$ for all $i=1,\ldots,n$ and
+satisfies $$\sum_{j=1}^{k+1} p_{i,j} = 1$$ for all $i=1,\ldots,n$ and
 where $p_{i,j}$ is the model probability of observing label $j$ in
 record $i$
   * the $n\,{\times}\,1$-vector $N$ where $N_i$ is the aggregated count of
@@ -1259,7 +1259,7 @@ The number of
 degrees of freedom \#d.f. for the $\chi^2$ distribution is $n - m$ for
 numerical data and $(n - m)k$ for categorical data, where
 $k = \mathop{\texttt{ncol}}(Y) - 1$. Given the dispersion parameter
-`disp` the $X^2$ statistic is scaled by division: $X^2_{\texttt{disp}} = X^2 / \texttt{disp}$. If the
+`disp` the $X^2$ statistic is scaled by division: $$X^2_{\texttt{disp}} = X^2 / \texttt{disp}$$. If the
 dispersion is accurate, $X^2 / \texttt{disp}$ should be close to \#d.f.
 In fact, $X^2 / \textrm{\#d.f.}$ over the *training* data is the
 dispersion estimator used in our `GLM.dml` script,
@@ -1271,7 +1271,7 @@ the training data and the test data.
 NOTE: For categorical data, both Pearson’s $X^2$ and the deviance $G^2$
 are unreliable (i.e. do not approach the $\chi^2$ distribution) unless
 the predicted means of multi-label counts
-$\mu_{i,j} = N_i \hspace{0.5pt} p_{i,j}$ are fairly large: all
+$$\mu_{i,j} = N_i \hspace{0.5pt} p_{i,j}$$ are fairly large: all
 ${\geq}\,1$ and 80% are at least $5$ [[Cochran1954]](algorithms-bibliography.html). They should not
 be used for “one label per record” categoricals.
 
@@ -1288,7 +1288,7 @@ $$
 
 The “saturated” model sets the mean
 $\mu_i^{\mathrm{sat}}$ to equal $y_i$ for every record (for categorical
-data, $p_{i,j}^{sat} = y_{i,j} / N_i$), which represents the
+data, $$p_{i,j}^{sat} = y_{i,j} / N_i$$), which represents the
 “perfect fit.” For records with $y_{i,j} \in \{0, N_i\}$ or otherwise at
 a boundary, by continuity we set $0 \log 0 = 0$. The GLM likelihood
 functions defined in (5) become simplified in
@@ -1310,31 +1310,31 @@ Pearson’s $X^2$, see above.
 The rest of the statistics are computed separately for each column
 of $Y$. As explained above, $Y$ has two or more columns in bi- and
 multinomial case, either at input or after conversion. Moreover, each
-$y_{i,j}$ in record $i$ with $N_i \geq 2$ is counted as $N_i$ separate
-observations $y_{i,j,l}$ of 0 or 1 (where $l=1,\ldots,N_i$) with
-$y_{i,j}$ ones and $N_i-y_{i,j}$ zeros. For power distributions,
+$$y_{i,j}$$ in record $i$ with $N_i \geq 2$ is counted as $N_i$ separate
+observations $$y_{i,j,l}$$ of 0 or 1 (where $l=1,\ldots,N_i$) with
+$$y_{i,j}$$ ones and $$N_i-y_{i,j}$$ zeros. For power distributions,
 including linear regression, $Y$ has only one column and all $N_i = 1$,
 so the statistics are computed for all $Y$ with each record counted
-once. Below we denote $N = \sum_{i=1}^n N_i \,\geq n$. Here is the total
+once. Below we denote $$N = \sum_{i=1}^n N_i \,\geq n$$. Here is the total
 average and the residual average (residual bias) of $y_{i,j,l}$ for each
 $Y$-column:
 
 $$\texttt{AVG_TOT_Y}_j   \,=\, \frac{1}{N} \sum_{i=1}^n  y_{i,j}; \quad
 \texttt{AVG_RES_Y}_j   \,=\, \frac{1}{N} \sum_{i=1}^n \, (y_{i,j} - \mu_{i,j})$$
 
-Dividing by $N$ (rather than $n$) gives the averages for $y_{i,j,l}$
-(rather than $y_{i,j}$). The total variance, and the standard deviation,
-for individual observations $y_{i,j,l}$ is estimated from the total
-variance for response values $y_{i,j}$ using independence assumption:
-$Var \,y_{i,j} = Var \sum_{l=1}^{N_i} y_{i,j,l} = \sum_{l=1}^{N_i} Var y_{i,j,l}$.
+Dividing by $N$ (rather than $n$) gives the averages for $$y_{i,j,l}$$
+(rather than $$y_{i,j}$$). The total variance, and the standard deviation,
+for individual observations $$y_{i,j,l}$$ is estimated from the total
+variance for response values $$y_{i,j}$$ using independence assumption:
+$$Var \,y_{i,j} = Var \sum_{l=1}^{N_i} y_{i,j,l} = \sum_{l=1}^{N_i} Var y_{i,j,l}$$.
 This allows us to estimate the sum of squares for $y_{i,j,l}$ via the
-sum of squares for $y_{i,j}$: 
+sum of squares for $$y_{i,j}$$: 
 
 $$\texttt{STDEV_TOT_Y}_j \,=\, 
 \Bigg[\frac{1}{N-1} \sum_{i=1}^n  \Big( y_{i,j} -  \frac{N_i}{N} \sum_{i'=1}^n  y_{i'\!,j}\Big)^2\Bigg]^{1/2}$$
 
 Analogously, we estimate the standard deviation of the residual
-$y_{i,j,l} - \mu_{i,j,l}$: 
+$$y_{i,j,l} - \mu_{i,j,l}$$: 
 
 $$\texttt{STDEV_RES_Y}_j \,=\, 
 \Bigg[\frac{1}{N-m'} \,\sum_{i=1}^n  \Big( y_{i,j} - \mu_{i,j} -  \frac{N_i}{N} \sum_{i'=1}^n  (y_{i'\!,j} - \mu_{i'\!,j})\Big)^2\Bigg]^{1/2}$$
@@ -1363,8 +1363,8 @@ $m$ with the intercept or $m+1$ without the intercept.
 
 | Statistic             | Formula |
 | --------------------- | ------------- |
-| $\texttt{PLAIN_R2}_j$ | $ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $
-| $\texttt{ADJUSTED_R2}_j$ | $ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m}}  \, \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $
+| $\texttt{PLAIN_R2}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
+| $\texttt{ADJUSTED_R2}_j$ | $$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m}}  \, \frac{\sum\limits_{i=1}^n \,(y_{i,j} - \mu_{i,j})^2}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  y_{i',j} \Big)^{2}} $$
  
 
 * * *
@@ -1374,8 +1374,8 @@ $m$ with the intercept or $m+1$ without the intercept.
 
 | Statistic             | Formula |
 | --------------------- | ------------- |
-| $\texttt{PLAIN_R2_NOBIAS}_j$ | $ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $
-| $\texttt{ADJUSTED_R2_NOBIAS}_j$ | $ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m'}} \, \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $
+| $\texttt{PLAIN_R2_NOBIAS}_j$ | $$ \displaystyle 1 - \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
+| $\texttt{ADJUSTED_R2_NOBIAS}_j$ | $$ \displaystyle 1 - {\textstyle\frac{N_{\mathstrut} - 1}{N^{\mathstrut} - m'}} \, \frac{\sum\limits_{i=1}^n \Big(y_{i,j} \,{-}\, \mu_{i,j} \,{-}\, \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n  (y_{i',j} \,{-}\, \mu_{i',j}) \Big)^{2}}{\sum\limits_{i=1}^n \Big(y_{i,j} - \frac{N_{i\mathstrut}}{N^{\mathstrut}} \sum\limits_{i'=1}^n y_{i',j} \Big)^{2}} $$
 
 
 * * *

@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
@@ -1545,7 +1546,8 @@ public class ProgramConverter
 		
 		//handle DML config (NOTE: set directly in ConfigurationManager)
 		String confStr = st.nextToken();
-		if( !InfrastructureAnalyzer.isLocalMode() ) {
+		JobConf job = ConfigurationManager.getCachedJobConf();
+		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
 			DMLConfig config = DMLConfig.parseDMLConfig(confStr);
 			ConfigurationManager.setConfig(config);
 			ParForProgramBlock.initInternalConfigurations(config);

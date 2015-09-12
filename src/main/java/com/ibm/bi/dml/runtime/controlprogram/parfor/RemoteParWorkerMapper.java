@@ -109,7 +109,8 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		RemoteParForUtils.incrementParForMRCounters(reporter, 1, getExecutedIterations()-numIters);
 		
 		//print heaver hitter per task
-		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode() )
+		JobConf job = ConfigurationManager.getCachedJobConf();
+		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode(job) )
 			LOG.info("\nSystemML Statistics:\nHeavy hitter instructions (name, time, count):\n" + Statistics.getHeavyHitters(10));	
 	}
 
@@ -154,9 +155,16 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 			
 			try
 			{
-				//_stringID = job.get("mapred.task.id"); //task attempt ID
 				_stringID = job.get("mapred.tip.id"); //task ID
 				_workerID = IDHandler.extractIntID(_stringID); //int task ID
+
+				//use the given job configuration as source for all new job confs 
+				//NOTE: this is required because on HDP 2.3, the classpath of mr tasks contained hadoop-common.jar 
+				//which includes a core-default.xml configuration which hides the actual default cluster configuration
+				//in the context of mr jobs (for example this config points to local fs instead of hdfs by default). 
+				if( !InfrastructureAnalyzer.isLocalMode(job) ) {
+					ConfigurationManager.setCachedJobConf(job);
+				}
 				
 				//create local runtime program
 				String in = MRJobConfiguration.getProgramBlocks(job);
@@ -187,14 +195,6 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				if( !cpCaching )
 					CacheableData.disableCaching();
 		
-				//use the given job configuration as source for all new job confs 
-				//NOTE: this is required because on HDP 2.3, the classpath of mr tasks contained hadoop-common.jar 
-				//which includes a core-default.xml configuration which hides the actual default cluster configuration
-				//in the context of mr jobs (for example this config points to local fs instead of hdfs by default). 
-				if( !InfrastructureAnalyzer.isLocalMode(job) ) {
-					ConfigurationManager.setCachedJobConf(job);
-				}
-				
 				_numTasks    = 0;
 				_numIters    = 0;
 				
@@ -219,7 +219,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		}
 		
 		//always reset stats because counters per map task (for case of JVM reuse)
-		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode() )
+		if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode(job) )
 		{
 			CacheStatistics.reset();
 			Statistics.reset();

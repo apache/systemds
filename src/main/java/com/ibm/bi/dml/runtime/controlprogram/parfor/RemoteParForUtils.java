@@ -26,12 +26,14 @@ import org.apache.commons.logging.Log;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
 import scala.Tuple2;
 
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -67,7 +69,8 @@ public class RemoteParForUtils
 		if( deltaIterations>0 )
 			reporter.incrCounter(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_NUMITERS.toString(), deltaIterations);
 		
-		if( DMLScript.STATISTICS  && !InfrastructureAnalyzer.isLocalMode() ) 
+		JobConf job = ConfigurationManager.getCachedJobConf();
+		if( DMLScript.STATISTICS  && !InfrastructureAnalyzer.isLocalMode(job) ) 
 		{
 			//report cache statistics
 			reporter.incrCounter( ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_JITCOMPILE.toString(), Statistics.getJITCompileTime());
@@ -209,7 +212,13 @@ public class RemoteParForUtils
 	 */
 	public static void cleanupWorkingDirectories()
 	{
-		if( !InfrastructureAnalyzer.isLocalMode() )
+		//use the given job configuration for infrastructure analysis (see configure);
+		//this is important for robustness w/ misconfigured classpath which also contains
+		//core-default.xml and hence hides the actual cluster configuration; otherwise
+		//there is missing cleanup of working directories 
+		JobConf job = ConfigurationManager.getCachedJobConf();
+		
+		if( !InfrastructureAnalyzer.isLocalMode(job) )
 		{
 			//delete cache files
 			CacheableData.cleanupCacheDir();

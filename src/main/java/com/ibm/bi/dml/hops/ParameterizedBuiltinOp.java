@@ -693,13 +693,24 @@ public class ParameterizedBuiltinOp extends Hop
 		if( _op == ParamBuiltinOp.RMEMPTY )
 		{ 
 			Hop marginHop = getInput().get(_paramIndexMap.get("margin"));
-			if(    marginHop instanceof LiteralOp 
-				&& "cols".equals(((LiteralOp)marginHop).getStringValue()) )
+			boolean cols =  marginHop instanceof LiteralOp 
+					&& "cols".equals(((LiteralOp)marginHop).getStringValue());
+			
+			//remove empty has additional internal memory requirements for 
+			//computing selection vectors
+			if( cols )
 			{
-				//removeEmpty(.., margin="cols"), this operation has additional memory
-				//requirements for intermediate data structures in order to make this
-				//a cache-friendly operation.
-				ret = OptimizerUtils.INT_SIZE * dim2;				
+				//selection vector: boolean array in the number of columns 
+				ret += OptimizerUtils.BIT_SIZE * dim2;
+				
+				//removeEmpty-cols has additional memory requirements for intermediate 
+				//data structures in order to make this a cache-friendly operation.
+				ret += OptimizerUtils.INT_SIZE * dim2;				
+			}
+			else //rows
+			{
+				//selection vector: boolean array in the number of rows 
+				ret += OptimizerUtils.BIT_SIZE * dim1;
 			}
 		}
 		else if( _op == ParamBuiltinOp.REXPAND )

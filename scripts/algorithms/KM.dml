@@ -225,7 +225,7 @@ if (n_stratum_cols > 0) {
 	S_cols = removeEmpty (target = XS, margin = "rows"); 
 	S_cols = replace (target = S_cols, pattern = "Infinity", replacement = 0);	
 
-	SB = removeEmpty (target = seq (1,num_records) * Idx, margin = "rows"); # indices of stratum boundaries
+	SB = removeEmpty (target = seq (1,num_records), margin = "rows", select = Idx); # indices of stratum boundaries 
 	A = removeEmpty (target = diag (Idx), margin = "cols");
 	if (ncol (A) > 1) {
 		A[,1:(ncol (A) - 1)] = A[,1:(ncol (A) - 1)] - A[,2:ncol (A)];
@@ -370,7 +370,7 @@ parfor (s in 1:num_strata, check = 0) {
 			KM_1 = matrix (0, rows = n_time_all2, cols = 2);
 			KM_1[,1] = n_risk;
 			KM_1[,2] = n_event;
-			KM_1 = removeEmpty (target = KM_1 * Idx1, margin = "rows");
+			KM_1 = removeEmpty (target = KM_1, margin = "rows", select = Idx1);
 			n_risk = KM_1[,1];
 			n_event = KM_1[,2];
 			n_time = nrow (time);

@@ -80,6 +80,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.Explain;
+import com.ibm.bi.dml.utils.Explain.ExplainCounts;
 import com.ibm.bi.dml.utils.Explain.ExplainType;
 import com.ibm.bi.dml.utils.Statistics;
 import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
@@ -799,15 +800,14 @@ public class DMLScript
 		}
 		
 		//count number compiled MR jobs / SP instructions	
-		int jobCount = OptimizerUtils.isSparkExecutionMode() ?
-				Explain.countCompiledSPInst(rtprog) : Explain.countCompiledMRJobs(rtprog);
-		Statistics.resetNoOfCompiledJobs( jobCount );				
+		ExplainCounts counts = Explain.countDistributedOperations(rtprog);
+		Statistics.resetNoOfCompiledJobs( counts.numJobs );				
 		
 		//explain plan of program (hops or runtime)
 		if( EXPLAIN != ExplainType.NONE ) {
 			LOG.info("EXPLAIN ("+EXPLAIN.toString()+"):\n" 
-					 + Explain.explainMemoryBudget(jobCount)+"\n"
-					 + Explain.explainDegreeOfParallelism(jobCount)
+					 + Explain.explainMemoryBudget(counts)+"\n"
+					 + Explain.explainDegreeOfParallelism(counts)
 					 + Explain.explain(prog, rtprog, EXPLAIN));
 		}
 				

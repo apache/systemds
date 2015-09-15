@@ -80,6 +80,7 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -93,6 +94,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.SeqInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -1892,8 +1894,69 @@ public class Recompiler
 	
 		return ret;
 	}
+	
+	/**
+	 * CP Reblock check for spark instructions; in contrast to MR, we can not
+	 * rely on the input file sizes because inputs might be passed via rdds. 
+	 * 
+	 * @param mc
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static boolean checkCPReblock(ExecutionContext ec, String varin) 
+		throws DMLRuntimeException
+	{
+		MatrixObject in = ec.getMatrixObject(varin);
+		MatrixDimensionsMetaData dimmd = (MatrixDimensionsMetaData) in.getMetaData();
+		MatrixCharacteristics mc = dimmd.getMatrixCharacteristics();
+		
+		long rows = mc.getRows();
+		long cols = mc.getCols();
+		long nnz = mc.getNonZeros();
+		
+		//check valid cp reblock recompilation hook
+		if(    !OptimizerUtils.ALLOW_DYN_RECOMPILATION
+			|| !OptimizerUtils.isHybridExecutionMode() )
+		{
+			return false;
+		}
 
-	public static boolean checkCPTransform(MRJobInstruction inst, MatrixObject[] inputs) throws DMLRuntimeException, DMLUnsupportedOperationException, IOException {
+		//robustness for usage through mlcontext (key/values of input rdds are not
+		//serializable for text; also bufferpool rdd read only supported for binaryblock)
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) in.getMetaData();
+		if( in.getRDDHandle() != null && iimd.getInputInfo() != InputInfo.BinaryBlockInputInfo ) {
+			return false;
+		}		
+		
+		//check valid dimensions and memory requirements
+		double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
+		double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);			
+		if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
+			|| !OptimizerUtils.isValidCPMatrixSize(rows, cols, sp)
+			|| mem >= OptimizerUtils.getLocalMemBudget() ) 
+		{
+			return false;
+		}
+		
+		//check in-memory reblock size threshold (preference: distributed)
+		long estFilesize = (long)(3.5 * mem); //conservative estimate
+		long cpThreshold = CP_REBLOCK_THRESHOLD_SIZE * 
+		           OptimizerUtils.getParallelTextReadParallelism();
+		return (estFilesize < cpThreshold);
+	}
+	
+	/**
+	 * 
+	 * @param inst
+	 * @param inputs
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 * @throws IOException
+	 */
+	public static boolean checkCPTransform(MRJobInstruction inst, MatrixObject[] inputs) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException, IOException 
+	{
 		boolean ret = true;
 		
 		MatrixObject input = inputs[0]; // there can only be one input in TRANSFORM job
@@ -1983,6 +2046,28 @@ public class Recompiler
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @throws DMLRuntimeException 
+	 */
+	public static void executeInMemoryReblock(ExecutionContext ec, String varin, String varout) 
+		throws DMLRuntimeException
+	{
+		MatrixObject in = ec.getMatrixObject(varin);
+		MatrixObject out = ec.getMatrixObject(varout);
+
+		//read text input matrix (through buffer pool, matrix object carries all relevant
+		//information including additional arguments for csv reblock)
+		MatrixBlock mb = in.acquireRead(); 
+		
+		//set output (incl update matrix characteristics)
+		out.acquireModify( mb );
+		out.release();
+		in.release();				
 	}
 	
 	/**

@@ -61,12 +61,13 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.CSVReblockSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.ReblockSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
 
 public class Explain 
-{
-	
+{	
 	//internal configuration parameters
 	private static final boolean REPLACE_SPECIAL_CHARACTERS = true;	
 	private static final boolean SHOW_MEM_ABOVE_BUDGET      = true;
@@ -83,6 +84,12 @@ public class Explain
 		RECOMPILE_RUNTIME, // explain runtime program, incl recompile 
 	};
 	
+	public static class ExplainCounts {
+		public int numCPInst = 0;
+		public int numJobs = 0;
+		public int numReblocks = 0;
+	}
+	
 	//////////////
 	// public explain interface
 	
@@ -91,14 +98,14 @@ public class Explain
 	 * @return
 	 */
 	public static String explainMemoryBudget() {
-		return explainMemoryBudget(-1);
+		return explainMemoryBudget(new ExplainCounts());
 	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public static String explainMemoryBudget(int jobCount)
+	public static String explainMemoryBudget(ExplainCounts counts)
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -108,7 +115,7 @@ public class Explain
 		
 		if( OptimizerUtils.isSparkExecutionMode() )
 		{
-			if( jobCount == 0 )
+			if( counts.numJobs-counts.numReblocks == 0 )
 			{
 				//avoid unnecessary lazy spark context creation on access to memory configurations
 				sb.append( "?MB/?MB" );
@@ -138,14 +145,14 @@ public class Explain
 	 */
 	public static String explainDegreeOfParallelism()
 	{
-		return explainDegreeOfParallelism(-1);
+		return explainDegreeOfParallelism(new ExplainCounts());
 	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public static String explainDegreeOfParallelism(int jobCount)
+	public static String explainDegreeOfParallelism(ExplainCounts counts)
 	{
 		int lk = InfrastructureAnalyzer.getLocalParallelism();
 		
@@ -156,7 +163,7 @@ public class Explain
 		
 		if( OptimizerUtils.isSparkExecutionMode() ) //SP
 		{
-			if( jobCount == 0 )
+			if( counts.numJobs-counts.numReblocks == 0 )
 			{
 				//avoid unnecessary lazy spark context creation on access to memory configurations
 				sb.append( "?" );
@@ -282,24 +289,20 @@ public class Explain
 	public static String explain( Program rtprog ) 
 		throws HopsException 
 	{
-		StringBuilder sb = new StringBuilder();		
+		//counts number of instructions
+		boolean sparkExec = OptimizerUtils.isSparkExecutionMode();
+		ExplainCounts counts = new ExplainCounts();
+		countCompiledInstructions(rtprog, counts, !sparkExec, true, sparkExec);
 	
-		//create header
-		if( OptimizerUtils.isSparkExecutionMode() ) {
-			sb.append("\nPROGRAM ( size CP/SP = ");
-			sb.append(countCompiledInstructions(rtprog, false, true, false));
-			sb.append("/");
-			sb.append(countCompiledInstructions(rtprog, false, false, true));
-			sb.append(" )\n");
-		}
-		else {
-			sb.append("\nPROGRAM ( size CP/MR = ");
-			sb.append(countCompiledInstructions(rtprog, false, true, false));
-			sb.append("/");
-			sb.append(countCompiledInstructions(rtprog, true, false, false));
-			sb.append(" )\n");
-		}
+		StringBuilder sb = new StringBuilder();		
 		
+		//create header
+		sb.append("\nPROGRAM ( size CP/"+(sparkExec?"SP":"MR")+" = ");
+		sb.append(counts.numCPInst);
+		sb.append("/");
+		sb.append(counts.numJobs);
+		sb.append(" )\n");
+			
 		//explain functions (if exists)
 		Map<String, FunctionProgramBlock> funcMap = rtprog.getFunctionProgramBlocks();
 		if( funcMap != null && !funcMap.isEmpty() )
@@ -489,25 +492,21 @@ public class Explain
 	}
 	
 	/**
-	 * Counts the number of compiled MRJob instructions in the
+	 * Counts the number of compiled MRJob/Spark instructions in the
 	 * given runtime program.
 	 * 
 	 * @param rtprog
 	 * @return
 	 */
-	public static int countCompiledMRJobs( Program rtprog )
-	{
-		return countCompiledInstructions(rtprog, true, false, false);
-	}
-	
-	/**
-	 * 
-	 * @param rtprog
-	 * @return
-	 */
-	public static int countCompiledSPInst( Program rtprog )
-	{
-		return countCompiledInstructions(rtprog, false, false, true);
+	public static ExplainCounts countDistributedOperations( Program rtprog )
+	{		
+		ExplainCounts counts = new ExplainCounts();
+		if( OptimizerUtils.isSparkExecutionMode() ) 
+			Explain.countCompiledInstructions(rtprog, counts, false, true, true);
+		else
+			Explain.countCompiledInstructions(rtprog, counts, true, true, false);
+				
+		return counts;		
 	}
 	
 	/**
@@ -981,23 +980,20 @@ public class Explain
 	/**
 	 * 
 	 * @param rtprog
+	 * @param counts
 	 * @param MR
 	 * @param CP
-	 * @return
+	 * @param SP
 	 */
-	private static int countCompiledInstructions( Program rtprog, boolean MR, boolean CP, boolean SP )
+	private static void countCompiledInstructions( Program rtprog, ExplainCounts counts, boolean MR, boolean CP, boolean SP )
 	{
-		int ret = 0;
-		
 		//analyze DML-bodied functions
 		for( FunctionProgramBlock fpb : rtprog.getFunctionProgramBlocks().values() )
-			ret += countCompiledInstructions( fpb, MR, CP, SP );
+			countCompiledInstructions( fpb, counts, MR, CP, SP );
 			
 		//analyze main program
 		for( ProgramBlock pb : rtprog.getProgramBlocks() ) 
-			ret += countCompiledInstructions( pb, MR, CP, SP ); 
-		
-		return ret;
+			countCompiledInstructions( pb, counts, MR, CP, SP ); 
 	}
 	
 	/**
@@ -1005,47 +1001,76 @@ public class Explain
 	 * given runtime program block. 
 	 * 
 	 * @param pb
-	 * @return
+	 * @param counts
+	 * @param MR
+	 * @param CP
+	 * @param SP
 	 */
-	private static int countCompiledInstructions(ProgramBlock pb, boolean MR, boolean CP, boolean SP) 
+	private static void countCompiledInstructions(ProgramBlock pb, ExplainCounts counts, boolean MR, boolean CP, boolean SP) 
 	{
-		int ret = 0;
-
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
-			ret += countCompiledInstructions(tmp.getPredicate(), MR, CP, SP);
+			countCompiledInstructions(tmp.getPredicate(), counts, MR, CP, SP);
 			for (ProgramBlock pb2 : tmp.getChildBlocks())
-				ret += countCompiledInstructions(pb2,MR,CP, SP);
+				countCompiledInstructions(pb2, counts, MR, CP, SP);
 		}
 		else if (pb instanceof IfProgramBlock)
 		{
 			IfProgramBlock tmp = (IfProgramBlock)pb;	
-			ret += countCompiledInstructions(tmp.getPredicate(), MR, CP, SP);
+			countCompiledInstructions(tmp.getPredicate(), counts, MR, CP, SP);
 			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
-				ret += countCompiledInstructions(pb2,MR,CP,SP);
+				countCompiledInstructions(pb2, counts, MR, CP, SP);
 			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() )
-				ret += countCompiledInstructions(pb2,MR,CP,SP);
+				countCompiledInstructions(pb2, counts, MR, CP, SP);
 		}
 		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
 		{ 
 			ForProgramBlock tmp = (ForProgramBlock)pb;	
-			ret += countCompiledInstructions(tmp.getFromInstructions(), MR, CP, SP);
-			ret += countCompiledInstructions(tmp.getToInstructions(), MR, CP, SP);
-			ret += countCompiledInstructions(tmp.getIncrementInstructions(), MR, CP, SP);
+			countCompiledInstructions(tmp.getFromInstructions(), counts, MR, CP, SP);
+			countCompiledInstructions(tmp.getToInstructions(), counts, MR, CP, SP);
+			countCompiledInstructions(tmp.getIncrementInstructions(), counts, MR, CP, SP);
 			for( ProgramBlock pb2 : tmp.getChildBlocks() )
-				ret += countCompiledInstructions(pb2,MR,CP,SP);
+				countCompiledInstructions(pb2, counts, MR, CP, SP);
 			//additional parfor jobs counted during runtime
 		}		
 		else if (  pb instanceof FunctionProgramBlock ) //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 		{
 			FunctionProgramBlock fpb = (FunctionProgramBlock)pb;
 			for( ProgramBlock pb2 : fpb.getChildBlocks() )
-				ret += countCompiledInstructions(pb2,MR,CP,SP);
+				countCompiledInstructions(pb2, counts, MR, CP, SP);
 		}
 		else 
 		{
-			ret += countCompiledInstructions(pb.getInstructions(), MR, CP, SP);
+			countCompiledInstructions(pb.getInstructions(), counts, MR, CP, SP);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param instSet
+	 * @param counts
+	 * @param MR
+	 * @param CP
+	 * @param SP
+	 * @return
+	 */
+	private static int countCompiledInstructions( ArrayList<Instruction> instSet, ExplainCounts counts, boolean MR, boolean CP, boolean SP )
+	{
+		int ret = 0;
+		
+		for( Instruction inst : instSet )
+		{
+			if( MR && inst instanceof MRJobInstruction ) 
+				counts.numJobs++;
+			else if( SP && inst instanceof CPInstruction )
+				counts.numCPInst++;
+			else if( SP && inst instanceof SPInstruction )
+				counts.numJobs++;
+			
+			//keep track of reblocks (in order to prevent unnecessary spark context creation)
+			if( SP && (inst instanceof CSVReblockSPInstruction || inst instanceof ReblockSPInstruction) )
+				counts.numReblocks++;
 		}
 		
 		return ret;
@@ -1053,28 +1078,13 @@ public class Explain
 	
 	/**
 	 * 
-	 * @param instSet
-	 * @param MR
-	 * @param CP
+	 * @param sb
+	 * @param fstack
+	 * @param lfset
+	 * @param level
 	 * @return
+	 * @throws HopsException
 	 */
-	private static int countCompiledInstructions( ArrayList<Instruction> instSet, boolean MR, boolean CP, boolean SP )
-	{
-		int ret = 0;
-		
-		for( Instruction inst : instSet )
-		{
-			if( MR && inst instanceof MRJobInstruction ) 
-				ret++;
-			if( CP && inst instanceof CPInstruction )
-				ret++;
-			if( SP && inst instanceof SPInstruction )
-				ret++;
-		}
-		
-		return ret;
-	}
-	
 	private static String explainFunctionCallDag(StatementBlock sb, HashSet<String> fstack, HashSet<String> lfset, int level) 
 		throws HopsException 
 	{

@@ -21,6 +21,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 
+import com.ibm.bi.dml.hops.recompile.Recompiler;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -98,6 +99,12 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) mo.getMetaData();
 		if(iimd == null) {
 			throw new DMLRuntimeException("Error: Metadata not found");
+		}
+		
+		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
+		if( Recompiler.checkCPReblock(sec, input1.getName()) ) {
+			Recompiler.executeInMemoryReblock(sec, input1.getName(), output.getName());
+			return;
 		}
 		
 		if(iimd.getInputInfo() == InputInfo.TextCellInputInfo || iimd.getInputInfo() == InputInfo.MatrixMarketInputInfo ) 

@@ -28,8 +28,6 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -37,8 +35,6 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
@@ -195,47 +191,35 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			mcOut.set(mcLeft.getRows(), mcLeft.getCols(), mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock());
 			checkValidOutputDimensions(mcOut);
 			
-			if(input2.getDataType() == DataType.MATRIX) //MATRIX<-MATRIX
-			{
-				MatrixCharacteristics mcRight = ec.getMatrixCharacteristics(input2.getName());
+			//note: always matrix rhs, scalars are preprocessed via cast to 1x1 matrix
+			MatrixCharacteristics mcRight = ec.getMatrixCharacteristics(input2.getName());
 				
-				//sanity check matching index range and rhs dimensions
-				if(!mcRight.dimsKnown()) {
-					throw new DMLRuntimeException("The right input matrix dimensions are not specified for MatrixIndexingSPInstruction");
-				}
-				if(!(ru-rl+1 == mcRight.getRows() && cu-cl+1 == mcRight.getCols())) {
-					throw new DMLRuntimeException("Invalid index range of leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"] vs ["+mcRight.getRows()+"x"+mcRight.getCols()+"]." );
-				}
-				
-				if(opcode.equalsIgnoreCase("mapLeftIndex")) 
-				{
-					broadcastIn2 = sec.getBroadcastForVariable( input2.getName() );
-					
-					//partitioning-preserving mappartitions (key access required for broadcast loopkup)
-					out = in1.mapPartitionsToPair(
-							new LeftIndexPartitionFunction(broadcastIn2, ixrange, mcOut), true);
-				}
-				else {
-					// Zero-out LHS
-					in1 = in1.mapToPair(new ZeroOutLHS(false, mcLeft.getRowsPerBlock(), 
-									mcLeft.getColsPerBlock(), rl, ru, cl, cu));
-					
-					// Slice RHS to merge for LHS
-					in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() )
-						    .flatMapToPair(new SliceRHSForLeftIndexing(rl, cl, mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock(), mcLeft.getRows(), mcLeft.getCols()));
-					
-					out = RDDAggregateUtils.mergeByKey(in1.union(in2));
-				}
+			//sanity check matching index range and rhs dimensions
+			if(!mcRight.dimsKnown()) {
+				throw new DMLRuntimeException("The right input matrix dimensions are not specified for MatrixIndexingSPInstruction");
 			}
-			else //MATRIX<-SCALAR 
+			if(!(ru-rl+1 == mcRight.getRows() && cu-cl+1 == mcRight.getCols())) {
+				throw new DMLRuntimeException("Invalid index range of leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"] vs ["+mcRight.getRows()+"x"+mcRight.getCols()+"]." );
+			}
+			
+			if(opcode.equalsIgnoreCase("mapLeftIndex")) 
 			{
-				if(!(rl==ru && cl==cu))
-					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"]." );
+				broadcastIn2 = sec.getBroadcastForVariable( input2.getName() );
 				
-				ScalarObject scalar = sec.getScalarInput(input2.getName(), ValueType.DOUBLE, input2.isLiteral());
-				double scalarValue = scalar.getDoubleValue();
+				//partitioning-preserving mappartitions (key access required for broadcast loopkup)
+				out = in1.mapPartitionsToPair(
+						new LeftIndexPartitionFunction(broadcastIn2, ixrange, mcOut), true);
+			}
+			else {
+				// Zero-out LHS
+				in1 = in1.mapToPair(new ZeroOutLHS(false, mcLeft.getRowsPerBlock(), 
+								mcLeft.getColsPerBlock(), rl, ru, cl, cu));
 				
-				out = in1.mapToPair(new LeftIndexScalar(scalarValue, rl, cl, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock()));
+				// Slice RHS to merge for LHS
+				in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() )
+					    .flatMapToPair(new SliceRHSForLeftIndexing(rl, cl, mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock(), mcLeft.getRows(), mcLeft.getCols()));
+				
+				out = RDDAggregateUtils.mergeByKey(in1.union(in2));
 			}
 			
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -466,47 +450,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			}
 		}
 	}
-	
-	/**
-	 * 
-	 */
-	private static class LeftIndexScalar implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes,MatrixBlock> 
-	{
-		private static final long serialVersionUID = -5747038290373295682L;
-		
-		private double _svalue;
-		private long _rl; 
-		private long _cl;
-		private int _brlen; 
-		private int _bclen;
-		
-		public LeftIndexScalar(double scalarValue, long rl, long cl, int brlen, int bclen) {
-			_svalue = scalarValue;
-			_rl = rl;
-			_cl = cl;
-			_brlen = brlen;
-			_bclen = bclen;
-		}
 
-		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
-			throws Exception 
-		{
-			if(!UtilFunctions.isInBlockRange(kv._1(), _brlen, _bclen, _rl, _rl, _cl, _cl)) {
-				return kv;
-			}
-			
-			MatrixIndexes ix = kv._1();
-			MatrixBlock in = kv._2();
-			
-			DoubleObject scalar = new DoubleObject(_svalue);
-			int rowCellIndex = UtilFunctions.cellInBlockCalculation(_rl, _brlen); // Since leftIndexingOperations expects 1-based indexing
-			int colCellIndex = UtilFunctions.cellInBlockCalculation(_cl, _bclen);
-			MatrixBlock ret = in.leftIndexingOperations(scalar, rowCellIndex, colCellIndex, new MatrixBlock(), false);
-			return new Tuple2<MatrixIndexes, MatrixBlock>(ix, ret);
-		}
-	}
-	
 	/**
 	 * 
 	 */

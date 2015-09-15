@@ -185,11 +185,19 @@ public class LeftIndexingOp  extends Hop
 				Hop right = getInput().get(1);
 				
 				LeftIndexingMethod method = getOptMethodLeftIndexingMethod( right.getDim1(), right.getDim2(), 
-						right.getRowsInBlock(), right.getColsInBlock(), right.getNnz() );				
+						right.getRowsInBlock(), right.getColsInBlock(), right.getNnz(), getDataType()==DataType.SCALAR );				
 				boolean isBroadcast = (method == LeftIndexingMethod.SP_MLEFTINDEX);
-				
+
+				//insert cast to matrix if necessary (for reuse broadcast runtime)
+				Lop rightInput = right.constructLops();
+				if (isRightHandSideScalar()) {
+					rightInput = new UnaryCP(rightInput, OperationTypes.CAST_AS_MATRIX, DataType.MATRIX, ValueType.DOUBLE);
+					long bsize = (long)DMLTranslator.DMLBlockSize;
+					rightInput.getOutputParameters().setDimensions( 1, 1, bsize, bsize, -1);
+				} 
+
 				LeftIndex leftIndexLop = new LeftIndex(
-						left.constructLops(), right.constructLops(), 
+						left.constructLops(), rightInput, 
 						getInput().get(2).constructLops(), getInput().get(3).constructLops(), 
 						getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
 						getDataType(), getValueType(), et, isBroadcast);
@@ -399,7 +407,7 @@ public class LeftIndexingOp  extends Hop
 	 * @return
 	 */
 	private LeftIndexingMethod getOptMethodLeftIndexingMethod( long m2_dim1, long m2_dim2, 
-			long m2_rpb, long m2_cpb, long m2_nnz) 
+			long m2_rpb, long m2_cpb, long m2_nnz, boolean isScalar) 
 	{
 		if(FORCED_LEFT_INDEXING != null) {
 			return FORCED_LEFT_INDEXING;
@@ -407,8 +415,9 @@ public class LeftIndexingOp  extends Hop
 		
 		// broadcast-based left indexing has memory constraints but is more efficient  
 		// since it does not require shuffle 
-		if( m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 	
-			&& OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m2_rpb, m2_cpb, m2_nnz) )  {
+		if( isScalar || m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 	
+			&& OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m2_rpb, m2_cpb, m2_nnz) )  
+		{
 			return LeftIndexingMethod.SP_MLEFTINDEX;
 		}
 		

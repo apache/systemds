@@ -5342,15 +5342,30 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * 
 	 * @param ret
 	 * @param rows
+	 * @param select
 	 * @return
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows )
+	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows, MatrixBlock select )
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
 		MatrixBlock result = checkType(ret);
-		return LibMatrixReorg.rmempty(this, result, rows);
+		return LibMatrixReorg.rmempty(this, result, rows, select);
+	}
+	
+	/**
+	 * 
+	 * @param ret
+	 * @param rows
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows)
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		return removeEmptyOperations(ret, rows, null);
 	}
 	
 	/**

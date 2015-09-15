@@ -171,20 +171,23 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		else if ( opcode.equalsIgnoreCase("rmempty") ) {
 			// acquire locks
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
+			MatrixBlock select = params.containsKey("select")? ec.getMatrixInput(params.get("select")):null;
 			
 			// compute the result
 			String margin = params.get("margin");
 			MatrixBlock soresBlock = null;
 			if( margin.equals("rows") )
-				soresBlock = target.removeEmptyOperations(new MatrixBlock(), true);
+				soresBlock = target.removeEmptyOperations(new MatrixBlock(), true, select);
 			else if( margin.equals("cols") ) 
-				soresBlock = target.removeEmptyOperations(new MatrixBlock(), false);
+				soresBlock = target.removeEmptyOperations(new MatrixBlock(), false, select);
 			else
 				throw new DMLRuntimeException("Unspupported margin identifier '"+margin+"'.");
 			
 			//release locks
 			ec.setMatrixOutput(output.getName(), soresBlock);
 			ec.releaseMatrixInput(params.get("target"));
+			if (params.containsKey("select"))
+				ec.releaseMatrixInput(params.get("select"));
 		}
 		else if ( opcode.equalsIgnoreCase("replace") ) {
 			// acquire locks

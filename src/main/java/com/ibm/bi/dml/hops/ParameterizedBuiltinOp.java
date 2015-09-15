@@ -319,7 +319,8 @@ public class ParameterizedBuiltinOp extends Hop
 		throws HopsException, LopsException 
 	{
 		Hop targetHop = getInput().get(_paramIndexMap.get("target"));
-		Hop marginHop = getInput().get(_paramIndexMap.get("margin"));
+		Hop marginHop = getInput().get(_paramIndexMap.get("margin"));		
+		Hop selectHop = (_paramIndexMap.get("select") != null) ? getInput().get(_paramIndexMap.get("select")):null;
 		
 		if( et == ExecType.CP || et == ExecType.CP_FILE )
 		{
@@ -464,16 +465,27 @@ public class ParameterizedBuiltinOp extends Hop
 				//construct lops via new partial hop dag and subsequent lops construction 
 				//in order to reuse of operator selection decisions
 				
-				//Step1: compute row/col non-empty indicators 
-				BinaryOp ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
-				HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
-				ppred0.refreshSizeInformation();
-				ppred0.setForcedExecType(ExecType.MR); //always MR 
-				HopRewriteUtils.copyLineNumbers(this, ppred0);
+				BinaryOp ppred0 = null;
+				Hop emptyInd = null;
 				
-				Hop emptyInd = ppred0;
-				if( !((rmRows && clen == 1) || (!rmRows && rlen==1)) ){
-					emptyInd = new AggUnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, rmRows?Direction.Row:Direction.Col, ppred0);
+				if(selectHop == null) {
+					//Step1: compute row/col non-empty indicators 
+					ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+					HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
+					ppred0.refreshSizeInformation();
+					ppred0.setForcedExecType(ExecType.MR); //always MR 
+					HopRewriteUtils.copyLineNumbers(this, ppred0);
+					
+					emptyInd = ppred0;
+					if( !((rmRows && clen == 1) || (!rmRows && rlen==1)) ){
+						emptyInd = new AggUnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, rmRows?Direction.Row:Direction.Col, ppred0);
+						HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
+						emptyInd.refreshSizeInformation();
+						emptyInd.setForcedExecType(ExecType.MR); //always MR
+						HopRewriteUtils.copyLineNumbers(this, emptyInd);
+					}
+				} else {
+					emptyInd = selectHop;
 					HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
 					emptyInd.refreshSizeInformation();
 					emptyInd.setForcedExecType(ExecType.MR); //always MR
@@ -544,7 +556,8 @@ public class ParameterizedBuiltinOp extends Hop
 				setLineNumbers(finalagg);
 				
 				//Step 4: cleanup hops (allow for garbage collection)
-				HopRewriteUtils.removeChildReference(ppred0, input);
+				if(selectHop == null)
+					HopRewriteUtils.removeChildReference(ppred0, input);
 				
 				setLops(finalagg);
 			}	
@@ -563,17 +576,27 @@ public class ParameterizedBuiltinOp extends Hop
 			
 			//construct lops via new partial hop dag and subsequent lops construction 
 			//in order to reuse of operator selection decisions
+			BinaryOp ppred0 = null;
+			Hop emptyInd = null;
 			
-			//Step1: compute row/col non-empty indicators 
-			BinaryOp ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
-			HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
-			ppred0.refreshSizeInformation();
-			ppred0.setForcedExecType(ExecType.SPARK); //always Spark
-			HopRewriteUtils.copyLineNumbers(this, ppred0);
-			
-			Hop emptyInd = ppred0;
-			if( !((rmRows && clen == 1) || (!rmRows && rlen==1)) ){
-				emptyInd = new AggUnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, rmRows?Direction.Row:Direction.Col, ppred0);
+			if(selectHop == null) {
+				//Step1: compute row/col non-empty indicators 
+				ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+				HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
+				ppred0.refreshSizeInformation();
+				ppred0.setForcedExecType(ExecType.SPARK); //always Spark
+				HopRewriteUtils.copyLineNumbers(this, ppred0);
+				
+				emptyInd = ppred0;
+				if( !((rmRows && clen == 1) || (!rmRows && rlen==1)) ){
+					emptyInd = new AggUnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, AggOp.MAX, rmRows?Direction.Row:Direction.Col, ppred0);
+					HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
+					emptyInd.refreshSizeInformation();
+					emptyInd.setForcedExecType(ExecType.SPARK); //always Spark
+					HopRewriteUtils.copyLineNumbers(this, emptyInd);
+				}
+			} else {
+				emptyInd = selectHop;
 				HopRewriteUtils.setOutputBlocksizes(emptyInd, brlen, bclen);
 				emptyInd.refreshSizeInformation();
 				emptyInd.setForcedExecType(ExecType.SPARK); //always Spark
@@ -589,7 +612,7 @@ public class ParameterizedBuiltinOp extends Hop
 		
 			UnaryOp cumsum = new UnaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, cumsumInput); 
 			HopRewriteUtils.updateHopCharacteristics(cumsum, brlen, bclen, this);
-			
+		
 			Hop cumsumOutput = cumsum;
 			if( !rmRows ){
 				cumsumOutput = HopRewriteUtils.createTranspose(cumsum);
@@ -621,7 +644,8 @@ public class ParameterizedBuiltinOp extends Hop
 			setLineNumbers(pbilop);
 		
 			//Step 4: cleanup hops (allow for garbage collection)
-			HopRewriteUtils.removeChildReference(ppred0, input);
+			if(selectHop == null)
+				HopRewriteUtils.removeChildReference(ppred0, input);
 			
 			setLops(pbilop);	
 			
@@ -766,8 +790,29 @@ public class ParameterizedBuiltinOp extends Hop
 			// similar to groupedagg because in the worst-case ouputsize eq inputsize
 			// #nnz is exactly the same as in the input but sparsity can be higher if dimensions.
 			// change (denser output).
-			if ( mc.dimsKnown() )
-				ret = new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()}; 
+			if ( mc.dimsKnown() ) {
+				String margin = "rows";
+				Hop marginHop = getInput().get(_paramIndexMap.get("margin"));
+				if(    marginHop instanceof LiteralOp 
+						&& "cols".equals(((LiteralOp)marginHop).getStringValue()) )
+					margin = new String("cols");
+				
+				MatrixCharacteristics mcSelect = null;
+				if (_paramIndexMap.get("select") != null) {
+					Hop select = getInput().get(_paramIndexMap.get("select"));	
+					mcSelect = memo.getAllInputStats(select);
+				}
+
+				long lDim1 = 0, lDim2 = 0;
+				if( margin.equals("rows") ) {
+					lDim1 = (mcSelect == null ||  !mcSelect.nnzKnown() ) ? mc.getRows(): mcSelect.getNonZeros(); 
+					lDim2 = mc.getCols();
+				} else {
+					lDim1 = mc.getRows();
+					lDim2 = (mcSelect == null ||  !mcSelect.nnzKnown() ) ? mc.getCols(): mcSelect.getNonZeros(); 
+				}
+				ret = new long[]{lDim1, lDim2, mc.getNonZeros()};
+			}
 		}
 		else if(   _op == ParamBuiltinOp.REPLACE ) 
 		{ 

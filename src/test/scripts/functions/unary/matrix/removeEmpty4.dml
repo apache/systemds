@@ -18,6 +18,6 @@
 
 
 V = read($1);
-V1 = removeEmpty(target=V, margin="rows");
-Vp = removeEmpty(target=V1, margin="cols");
-write(Vp, $3);  
+I = read($2);
+Vp = removeEmpty(target=V, margin=$3, select=I);
+write(Vp, $4);  

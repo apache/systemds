@@ -23,6 +23,7 @@ import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
@@ -32,6 +33,7 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "removeEmpty1";
 	private final static String TEST_NAME2 = "removeEmpty2";
 	private final static String TEST_NAME3 = "removeEmpty3";
+	private final static String TEST_NAME4 = "removeEmpty4";
 	private final static String TEST_DIR = "functions/unary/matrix/";
 
 	private final static int _rows = 3500;
@@ -54,6 +56,10 @@ public class RemoveEmptyTest extends AutomatedTestBase
 		addTestConfiguration(
 				TEST_NAME3, 
 				new TestConfiguration(TEST_DIR, TEST_NAME3, 
+				new String[] { "V" })   ); 
+		addTestConfiguration(
+				TEST_NAME4, 
+				new TestConfiguration(TEST_DIR, TEST_NAME4, 
 				new String[] { "V" })   ); 
 	}
 	
@@ -325,12 +331,85 @@ public class RemoveEmptyTest extends AutomatedTestBase
 		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.SPARK, true, false );
 	}
 	
-	
-	
-	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse )
+//-------------------------------------------------------------------------------------
+//  Testcases to pass index containing non-empty rows.
+	// CP Test cases
+	@Test
+	public void testRemoveEmptyRowsDenseCPwIdx() 
 	{
-		runTestRemoveEmpty(testname, margin, et, sparse, true);
+		runTestRemoveEmpty( TEST_NAME4, "rows", ExecType.CP, false, true, true);
 	}
+	
+	@Test
+	public void testRemoveEmptyColsDenseCPwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "cols", ExecType.CP, false, true, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsSparseCPwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "rows", ExecType.CP, true, true, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyColsSparseCPwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "cols", ExecType.CP, true, true, true);
+	}
+	
+	// Spark Test cases
+	@Test
+	public void testRemoveEmptyRowsDenseSPwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "rows", ExecType.SPARK, false, true, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyColsDenseSPwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "cols", ExecType.SPARK, false, true, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsSparseSPwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "rows", ExecType.SPARK, true, true, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyColsSparseSPwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "cols", ExecType.SPARK, true, true, true);
+	}
+	
+	// MR Test cases
+	@Test
+	public void testRemoveEmptyRowsDenseMRwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "rows", ExecType.MR, false, true, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyColsDenseMRwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "cols", ExecType.MR, false, true, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyRowsSparseMRwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "rows", ExecType.MR, true, true, true);
+	}
+	
+	@Test
+	public void testRemoveEmptyColsSparseMRwIdx() 
+	{
+		runTestRemoveEmpty( TEST_NAME4, "cols", ExecType.MR, true, true, true);
+	}
+	
+
+	//-------------------------------------------------------------------------------------	
 	/**
 	 * 
 	 * @param testname
@@ -338,7 +417,34 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	 * @param mr
 	 * @param sparse
 	 */
-	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse, boolean bForceDistRmEmpty )
+	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse )
+	{
+		runTestRemoveEmpty(testname, margin, et, sparse, true);
+	}
+
+	/**
+	 * 
+	 * @param testname
+	 * @param margin
+	 * @param mr
+	 * @param sparse
+	 * @param bForceDistRmEmpty
+	 */
+	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse, boolean bForceDistRmEmpty)
+	{
+		runTestRemoveEmpty(testname, margin, et, sparse, bForceDistRmEmpty, false);
+	}
+	
+	/**
+	 * 
+	 * @param testname
+	 * @param margin
+	 * @param mr
+	 * @param sparse
+	 * @param bForceDistRmEmpty
+	 * @param bSelectIndex
+	 */
+	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse, boolean bForceDistRmEmpty, boolean bSelectIndex)
 	{		
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -369,17 +475,29 @@ public class RemoveEmptyTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "V" , 
-					                            String.valueOf(rows),
-												String.valueOf(cols),
+			if (!bSelectIndex) {
+				if(!testname.equals(TEST_NAME3))
+					programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "V" , 
+												margin,
+												HOME + OUTPUT_DIR + "V" };
+				else
+					programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "V" ,
+						String.valueOf(rows),
+						String.valueOf(cols),
+						margin,
+						HOME + OUTPUT_DIR + "V" };					
+			}
+			else
+				programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "V" , 
+												HOME + INPUT_DIR + "I" ,
 												margin,
 												HOME + OUTPUT_DIR + "V" };
 			
 			loadTestConfiguration(config);
 			if( cols==1 ) //test3 (removeEmpty-diag)
-				createInputVector(margin, rows, sparsity);
+				createInputVector(margin, rows, sparsity, bSelectIndex);
 			else //test1/test2 (general case)
-				createInputMatrix(margin, rows, cols, sparsity);
+				createInputMatrix(margin, rows, cols, sparsity, bSelectIndex);
 			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1);
@@ -394,7 +512,7 @@ public class RemoveEmptyTest extends AutomatedTestBase
 		}
 	}
 
-	private void createInputMatrix(String margin, int rows, int cols, double sparsity) 
+	private void createInputMatrix(String margin, int rows, int cols, double sparsity, boolean bSelectIndex) 
 	{
 		int rowsp = -1, colsp = -1;
 		if( margin.equals("rows") ){
@@ -409,43 +527,73 @@ public class RemoveEmptyTest extends AutomatedTestBase
 		//long seed = System.nanoTime();
         double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
         double[][] Vp = new double[rowsp][colsp];
+        double[][] Ix = null;
+        int innz = 0, vnnz = 0;
         
         //clear out every other row/column
         if( margin.equals("rows") )
         {
+        	Ix = new double[rows][1];
         	for( int i=0; i<rows; i++ )
         	{
         		boolean clear = i%2!=0;
-        		if( clear )
+        		if( clear ) {
         			for( int j=0; j<cols; j++ )
         				V[i][j] = 0;
-        		else
+        			Ix[i][0] = 0;
+        		}
+        		else {
+        			boolean bNonEmpty = false;
         			for( int j=0; j<cols; j++ )
+        			{
         				Vp[i/2][j] = V[i][j];
+        				bNonEmpty |= (V[i][j] != 0.0)?true:false;
+        				vnnz += (V[i][j] == 0.0)?0:1;
+        			}
+        			Ix[i][0] = (bNonEmpty)?1:0;
+        			innz += Ix[i][0]; 
+        		}
         	}
         }
         else
         {
+        	Ix = new double[1][cols];
         	for( int j=0; j<cols; j++ )
         	{
         		boolean clear = j%2!=0;
-        		if( clear )
+        		if( clear ) {
         			for( int i=0; i<rows; i++ )
         				V[i][j] = 0;
-        		else
-        			for( int i=0; i<rows; i++ )
+    				Ix[0][j] = 0;
+        		}
+        		else {
+        			boolean bNonEmpty = false;
+        			for( int i=0; i<rows; i++ ) 
+        			{
         				Vp[i][j/2] = V[i][j];
+        				bNonEmpty |= (V[i][j] != 0.0)?true:false;
+        				vnnz += (V[i][j] == 0.0)?0:1;
+        			}
+        			Ix[0][j] = (bNonEmpty)?1:0;
+        			innz += Ix[0][j]; 
+        		}
         	}
         }
         
-		writeInputMatrix("V", V, false); //always text
+        MatrixCharacteristics imc = new MatrixCharacteristics(margin.equals("rows")?rows:1, margin.equals("rows")?1:cols, 1000, 1000, innz);
+        MatrixCharacteristics vmc = new MatrixCharacteristics(rows, cols, 1000, 1000, vnnz);
+        
+		writeInputMatrixWithMTD("V", V, false, vmc); //always text
 		writeExpectedMatrix("V", Vp);
+		if(bSelectIndex)
+			writeInputMatrixWithMTD("I", Ix, false, imc);
 	}
 	
-	private void createInputVector(String margin, int rows, double sparsity) 
+	private void createInputVector(String margin, int rows, double sparsity, boolean bSelectIndex) 
 	{
 		double[][] V = getRandomMatrix(rows, 1, 0, 1, sparsity, 7);
 		double[][] Vp = null;
+        double[][] Ix = new double[rows][1];
         
         if( margin.equals("rows") )
         {
@@ -455,18 +603,28 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	        Vp = new double[rowsp][1];
         
 	        for( int i=0, ix=0; i<rows; i++ )
-	    		if( V[i][0]!=0 )
+	    		if( V[i][0]!=0 ) {
 	    			Vp[ix++][0] = V[i][0];
+	    			Ix[i][0] = 1;
+	    		} else
+	    			Ix[i][0] = 0;
         }
         else
         {
         	Vp = new double[rows][1];
-        	for( int i=0; i<rows; i++ )
+        	for( int i=0; i<rows; i++ ) {
         		Vp[i][0] = V[i][0];	
+	    		if( V[i][0]!=0 ) {
+	    			Ix[i][0] = 1;
+	    		} else
+	    			Ix[i][0] = 0;
+        	}
         }
         
 		writeInputMatrix("V", V, false); //always text
 		writeExpectedMatrix("V", Vp);
+		if(bSelectIndex)
+			writeInputMatrix("I", Ix, false);
 	}
 	
 }

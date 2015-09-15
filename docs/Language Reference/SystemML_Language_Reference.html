@@ -4421,8 +4421,9 @@ Manipulation, and Aggregation Built-In Functions<o:p></o:p></span></p>
   mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt;
   mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
   <p class=MsoNormal>Removes all empty rows or columns from the input matrix <i>target</i>
-  X according to the specified <i>margin.</i><span style='mso-fareast-font-family:
-  "Times New Roman";mso-fareast-theme-font:minor-fareast;color:black'><o:p></o:p></span></p>
+  X according to the specified <i>margin.</i>  <br>Optionally vector select can be passed to remove empty rows/columns. 
+  <br>select vector should contain values either 1.0 or 0.0 for rows/columns to be retained or removed respectively. 
+  <span style='mso-fareast-font-family: "Times New Roman";mso-fareast-theme-font:minor-fareast;color:black'><o:p></o:p></span></p>
   </td>
   <td width=162 valign=top style='width:121.75pt;border-top:none;border-left:
   none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
@@ -4430,7 +4431,7 @@ Manipulation, and Aggregation Built-In Functions<o:p></o:p></span></p>
   mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
   <p class=MsoNormal><span class=GramE><b style='mso-bidi-font-weight:normal'>Input</b>
   :</span><b style='mso-bidi-font-weight:normal'> </b>(target= X
-  &lt;matrix&gt;, margin=&quot;...&quot;)</p>
+  &lt;matrix&gt;, margin=&quot;...&quot;[,select=I])</p>
   <p class=MsoNormal><b style='mso-bidi-font-weight:normal'>Output</b> :
   &lt;matrix&gt;</p>
   <p class=MsoNormal>Valid values for margin are &quot;rows&quot; or
@@ -4442,7 +4443,9 @@ Manipulation, and Aggregation Built-In Functions<o:p></o:p></span></p>
   mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt;
   mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
   <p class=MsoNormal>A = <span class=SpellE>removeEmpty</span>(target=X,
-  margin=&quot;rows&quot;)<span style='mso-fareast-font-family:"Times New Roman";
+  margin=&quot;rows&quot;) <br> A = <span class=SpellE>removeEmpty</span>(target=X,
+  margin=&quot;rows&quot;,select=I)
+  <span style='mso-fareast-font-family:"Times New Roman";
   mso-fareast-theme-font:minor-fareast;color:black'><o:p></o:p></span></p>
   </td>
  </tr>

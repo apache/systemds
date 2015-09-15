@@ -199,7 +199,7 @@ public class ParameterizedBuiltin extends Lop
 					// get the value/label of the scalar input associated with name "s"
 					// (offset and maxdim only apply to exec type spark)
 					Lop iLop = _inputParams.get(s);
-					if( s.equals( "target") || getExecType()==ExecType.SPARK )
+					if( s.equals( "target") || s.equals( "select") || getExecType()==ExecType.SPARK )
 						sb.append( iLop.getOutputParameters().getLabel());
 					else
 						sb.append( iLop.prepScalarLabel() );

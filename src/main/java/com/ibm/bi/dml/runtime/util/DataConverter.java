@@ -343,6 +343,43 @@ public class DataConverter
 	 * @param mb
 	 * @return
 	 */
+	public static boolean [] convertToBooleanVector(MatrixBlock mb)
+	{
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		boolean[] ret = new boolean[rows*cols]; //false-initialized 
+		
+		if( mb.getNonZeros() > 0 )
+		{
+			if( mb.isInSparseFormat() )
+			{
+				SparseRowsIterator iter = mb.getSparseRowsIterator();
+				while( iter.hasNext() )
+				{
+					IJV cell = iter.next();
+					ret[cell.i*rows+cell.j] = (cell.v != 0.0);
+				}
+			}
+			else
+			{
+				if( !mb.isEmptyBlock(false) )
+				{
+					for( int i=0; i<rows; i++ )
+						for( int j=0; j<cols; j++ )
+							ret[i*cols+j] = (mb.getValueDenseUnsafe(i, j) != 0.0);
+				}
+			}
+		}
+		
+		return ret;
+	}
+	
+	
+	/**
+	 * 
+	 * @param mb
+	 * @return
+	 */
 	public static double[] convertToDoubleVector( MatrixBlock mb )
 	{
 		int rows = mb.getNumRows();

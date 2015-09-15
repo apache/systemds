@@ -33,6 +33,7 @@ import com.ibm.bi.dml.runtime.functionobjects.SortIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.SortUtils;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
@@ -395,6 +396,21 @@ public class LibMatrixReorg
 	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
+		return rmempty(in, ret, rows, null);
+	}
+		
+	/**
+	 * CP rmempty operation (single input, single output matrix) 
+	 * 
+	 * @param in
+	 * @param out
+	 * @param rows
+	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
+	 */
+	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, MatrixBlock select) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
 		//is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
@@ -407,9 +423,9 @@ public class LibMatrixReorg
 		}
 		
 		if( rows )
-			return removeEmptyRows(in, ret);
+			return removeEmptyRows(in, ret, select);
 		else //cols
-			return removeEmptyColumns(in, ret);
+			return removeEmptyColumns(in, ret, select);
 	}
 
 	/**
@@ -1617,49 +1633,59 @@ public class LibMatrixReorg
 		return ixout;
 	}
 
-
 	/**
 	 * 
+	 * @param in
 	 * @param ret
+	 * @param select
 	 * @return
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret) 
+	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
 		final int m = in.rlen;
 		final int n = in.clen;
-		
-		//Step 1: scan block and determine non-empty rows
-		boolean[] flags = new boolean[ m ]; //false
+		boolean[] flags = null; 
 		int rlen2 = 0; 
-		if( in.sparse ) //SPARSE 
-		{
-			SparseRow[] a = in.sparseRows;
+		
+		if(select == null) {
+		
+			flags = new boolean[ m ]; //false
+			//Step 1: scan block and determine non-empty rows
 			
-			for ( int i=0; i < m; i++ )
-				if ( a[i] != null && !a[i].isEmpty() ) {
-					flags[i] = true;
-					rlen2++;
-				}
-		}
-		else //DENSE
-		{
-			double[] a = in.denseBlock;
-			
-			for(int i=0, aix=0; i<m; i++, aix+=n) {
-				for(int j=0; j<n; j++)
-					if( a[aix+j] != 0 )
-					{
+			if( in.sparse ) //SPARSE 
+			{
+				SparseRow[] a = in.sparseRows;
+				
+				for ( int i=0; i < m; i++ )
+					if ( a[i] != null && !a[i].isEmpty() ) {
 						flags[i] = true;
 						rlen2++;
-						//early abort for current row
-						break; 
 					}
 			}
+			else //DENSE
+			{
+				double[] a = in.denseBlock;
+				
+				for(int i=0, aix=0; i<m; i++, aix+=n) {
+					for(int j=0; j<n; j++)
+						if( a[aix+j] != 0 )
+						{
+							flags[i] = true;
+							rlen2++;
+							//early abort for current row
+							break; 
+						}
+				}
+			}
+		} else {			
+			flags = DataConverter.convertToBooleanVector(select);
+			rlen2 = (int)select.getNonZeros();
 		}
 
+		
 		//Step 2: reset result and copy rows
 		//dense stays dense if correct input representation (but robust for any input), 
 		//sparse might be dense/sparse
@@ -1705,15 +1731,17 @@ public class LibMatrixReorg
 
 		return ret;
 	}
+
 	
 	/**
-	 * 
+	 * @param in
 	 * @param ret
+	 * @param select
 	 * @return
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret) 
+	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		final int m = in.rlen;
@@ -1721,29 +1749,35 @@ public class LibMatrixReorg
 		
 		//Step 1: scan block and determine non-empty columns 
 		//(we optimized for cache-friendly behavior and hence don't do early abort)
-		boolean[] flags = new boolean[ n ]; //false 
+		boolean[] flags = null; 
 		
-		if( in.sparse ) //SPARSE 
-		{
-			SparseRow[] a = in.sparseRows;
-			
-			for( int i=0; i<m; i++ ) 
-				if ( a[i] != null && !a[i].isEmpty() ) {
-					int alen = a[i].size();
-					int[] aix = a[i].getIndexContainer();
-					for( int j=0; j<alen; j++ )
-						flags[ aix[j] ] = true;
-				}
+		if (select == null) {
+			flags = new boolean[ n ]; //false
+			if( in.sparse ) //SPARSE 
+			{
+				SparseRow[] a = in.sparseRows;
+				
+				for( int i=0; i<m; i++ ) 
+					if ( a[i] != null && !a[i].isEmpty() ) {
+						int alen = a[i].size();
+						int[] aix = a[i].getIndexContainer();
+						for( int j=0; j<alen; j++ )
+							flags[ aix[j] ] = true;
+					}
+			}
+			else //DENSE
+			{
+				double[] a = in.denseBlock;
+				
+				for(int i=0, aix=0; i<m; i++)
+					for(int j=0; j<n; j++, aix++)
+						if( a[aix] != 0 )
+							flags[j] = true; 	
+			}
+		} else {			
+			flags = DataConverter.convertToBooleanVector(select);
 		}
-		else //DENSE
-		{
-			double[] a = in.denseBlock;
-			
-			for(int i=0, aix=0; i<m; i++)
-				for(int j=0; j<n; j++, aix++)
-					if( a[aix] != 0 )
-						flags[j] = true; 	
-		}
+
 		
 		//Step 2: determine number of columns
 		int clen2 = 0;

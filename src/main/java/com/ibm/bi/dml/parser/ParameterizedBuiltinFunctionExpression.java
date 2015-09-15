@@ -389,6 +389,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			raiseValidateError("Named parameter 'margin' has an invalid value '"+margin.toString()+"'. Please specify 'rows' or 'cols'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		
+		Expression select = getVarParam("select");
+		if( select!=null && select.getOutput().getDataType() != DataType.MATRIX ){
+			raiseValidateError("Index matrix 'select' is of type '"+select.getOutput().getDataType()+"'. Please specify the select matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		
 		// Output is a matrix with unknown dims
 		output.setDataType(DataType.MATRIX);
 		output.setValueType(ValueType.DOUBLE);

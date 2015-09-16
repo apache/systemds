@@ -167,7 +167,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 	 * @param type
 	 * @return
 	 */
-	private boolean preservesPartitioning( MatrixCharacteristics mcIn, CacheType type )
+	private static boolean preservesPartitioning( MatrixCharacteristics mcIn, CacheType type )
 	{
 		if( type == CacheType.LEFT )
 			return mcIn.dimsKnown() && mcIn.getRows() <= mcIn.getRowsPerBlock();

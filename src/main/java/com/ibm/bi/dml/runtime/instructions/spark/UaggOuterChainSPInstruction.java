@@ -19,9 +19,10 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 
 
 import java.util.Arrays;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
@@ -32,11 +33,13 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
+import com.ibm.bi.dml.runtime.functionobjects.IndexFunction;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -125,7 +128,8 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		//get rdd input
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
 		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(rddVar);
-
+		boolean noKeyChange = preservesPartitioning(mcIn, _uaggOp.indexFn); 
+				
 		//execute UAggOuterChain instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;		
 
@@ -138,13 +142,16 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			double[] vmb = DataConverter.convertToDoubleVector(mb);
 			Arrays.sort(vmb); 			
 			Broadcast<double[]> bv = sec.getSparkContext().broadcast(vmb);
-			
-			out = in1.mapToPair( new RDDMapUAggOuterChainFunction(bv, _bOp, _uaggOp) );
+		
+			//partitioning-preserving map-to-pair (under constraints)
+			out = in1.mapPartitionsToPair( new RDDMapUAggOuterChainFunction(bv, _bOp, _uaggOp), noKeyChange );
 		}
 		else
 		{
 			Broadcast<PartitionedMatrixBlock> bv = sec.getBroadcastForVariable( bcastVar ); 
-			out = in1.mapToPair( new RDDMapGenUAggOuterChainFunction(bv, _uaggOp, _aggOp, _bOp, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock()));	
+			
+			//partitioning-preserving map-to-pair (under constraints)
+			out = in1.mapPartitionsToPair( new RDDMapGenUAggOuterChainFunction(bv, _uaggOp, _aggOp, _bOp, mcIn), noKeyChange );	
 		}
 		
 		//final aggregation if required
@@ -167,6 +174,20 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			if( bcastVar != null )
 				sec.addLineageBroadcast(output.getName(), bcastVar);
 		}
+	}
+
+	/**
+	 * 
+	 * @param mcIn
+	 * @param ixfun
+	 * @return
+	 */
+	protected static boolean preservesPartitioning( MatrixCharacteristics mcIn, IndexFunction ixfun )
+	{
+		if( ixfun instanceof ReduceCol ) //rowSums
+			return mcIn.dimsKnown() && mcIn.getCols() <= mcIn.getColsPerBlock();
+		else // colsSums
+			return mcIn.dimsKnown() && mcIn.getRows() <= mcIn.getRowsPerBlock();
 	}
 	
 	/**
@@ -212,19 +233,13 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 	 * 
 	 * 
 	 */
-	private static class RDDMapUAggOuterChainFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	private static class RDDMapUAggOuterChainFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 8197406787010296291L;
 
 		private Broadcast<double[]> _bv = null;
-		
 		private BinaryOperator _bOp = null;
-		
 		private AggregateUnaryOperator _uaggOp = null;
-
-		//reused intermediates  
-		
-
 		
 		public RDDMapUAggOuterChainFunction(Broadcast<double[]> bv, BinaryOperator bOp, AggregateUnaryOperator uaggOp)
 		{
@@ -240,22 +255,39 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		}
 		
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
 			throws Exception 
 		{
-			MatrixIndexes in1Ix = arg0._1();
-			MatrixBlock in1Val  = arg0._2();
+			return new RDDMapUAggOuterChainIterator(arg0);	
+		}
+		
+		private class RDDMapUAggOuterChainIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>>
+		{
+			public RDDMapUAggOuterChainIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
+				super(in);
+			}
 
-			MatrixIndexes outIx = new MatrixIndexes();
-			MatrixBlock outVal = new MatrixBlock();
-			
-			LibMatrixOuterAgg.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value(), _bOp, _uaggOp);
+			@Override
+			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg)
+				throws Exception
+			{
+				MatrixIndexes in1Ix = arg._1();
+				MatrixBlock in1Val  = arg._2();
 
-			return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);
+				MatrixIndexes outIx = new MatrixIndexes();
+				MatrixBlock outVal = new MatrixBlock();
+				
+				LibMatrixOuterAgg.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value(), _bOp, _uaggOp);
+
+				return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);	
+			}			
 		}
 	}
 	
-	private static class RDDMapGenUAggOuterChainFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	/**
+	 * 
+	 */
+	private static class RDDMapGenUAggOuterChainFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 8197406787010296291L;
 
@@ -271,11 +303,9 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		//reused intermediates  
 		private MatrixValue _tmpVal1 = null;
 		private MatrixValue _tmpVal2 = null;
-		
 
-		
 		public RDDMapGenUAggOuterChainFunction(Broadcast<PartitionedMatrixBlock> binput, AggregateUnaryOperator uaggOp, AggregateOperator aggOp, BinaryOperator bOp, 
-				int brlen, int bclen)
+				MatrixCharacteristics mc)
 		{
 			//partition vector for fast in memory lookup
 			_pbc = binput;
@@ -286,54 +316,66 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			_bOp = bOp;
 			
 			//Matrix dimension (row, column)
-			_brlen = brlen;
-			_bclen = bclen;
+			_brlen = mc.getRowsPerBlock();
+			_bclen = mc.getColsPerBlock();
 			
 			_tmpVal1 = new MatrixBlock();
 			_tmpVal2 = new MatrixBlock();
 		}
 		
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg)
 			throws Exception 
 		{
-			PartitionedMatrixBlock pm = _pbc.value();
-			
-			MatrixIndexes in1Ix = arg0._1();
-			MatrixBlock in1Val  = arg0._2();
+			return new RDDMapGenUAggOuterChainIterator(arg);
+		}	
+		
+		private class RDDMapGenUAggOuterChainIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>>
+		{
+			public RDDMapGenUAggOuterChainIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
+				super(in);
+			}
 
-			MatrixIndexes outIx = new MatrixIndexes();
-			MatrixBlock outVal = new MatrixBlock();
-			
-			MatrixBlock corr = null;
-			
-				
-			long  in2_colBlocks = pm.getNumColumnBlocks();
-			
-			for(int bidx=1; bidx <= in2_colBlocks; bidx++) 
+			@Override
+			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg)
+				throws Exception
 			{
-				MatrixValue in2Val = pm.getMatrixBlock(1, bidx);
+				PartitionedMatrixBlock pm = _pbc.value();
 				
-				//outer block operation
-				OperationsOnMatrixValues.performBinaryIgnoreIndexes(in1Val, in2Val, _tmpVal1, _bOp);
+				MatrixIndexes in1Ix = arg._1();
+				MatrixBlock in1Val  = arg._2();
+
+				MatrixIndexes outIx = new MatrixIndexes();
+				MatrixBlock outVal = new MatrixBlock();
+				MatrixBlock corr = null;
+				
 					
-				//unary aggregate operation
-				OperationsOnMatrixValues.performAggregateUnary( in1Ix, _tmpVal1, outIx, _tmpVal2, _uaggOp, _brlen, _bclen);
+				long  in2_colBlocks = pm.getNumColumnBlocks();
 				
-				//aggregate over all rhs blocks
-				if( corr == null ) {
-					outVal.reset(_tmpVal2.getNumRows(), _tmpVal2.getNumColumns(), false);
-					corr = new MatrixBlock(_tmpVal2.getNumRows(), _tmpVal2.getNumColumns(), false);
+				for(int bidx=1; bidx <= in2_colBlocks; bidx++) 
+				{
+					MatrixValue in2Val = pm.getMatrixBlock(1, bidx);
+					
+					//outer block operation
+					OperationsOnMatrixValues.performBinaryIgnoreIndexes(in1Val, in2Val, _tmpVal1, _bOp);
+						
+					//unary aggregate operation
+					OperationsOnMatrixValues.performAggregateUnary( in1Ix, _tmpVal1, outIx, _tmpVal2, _uaggOp, _brlen, _bclen);
+					
+					//aggregate over all rhs blocks
+					if( corr == null ) {
+						outVal.reset(_tmpVal2.getNumRows(), _tmpVal2.getNumColumns(), false);
+						corr = new MatrixBlock(_tmpVal2.getNumRows(), _tmpVal2.getNumColumns(), false);
+					}
+					
+					if(_aggOp.correctionExists)
+						OperationsOnMatrixValues.incrementalAggregation(outVal, corr, _tmpVal2, _aggOp, true);
+					else 
+						OperationsOnMatrixValues.incrementalAggregation(outVal, null, _tmpVal2, _aggOp, true);
 				}
 				
-				if(_aggOp.correctionExists)
-					OperationsOnMatrixValues.incrementalAggregation(outVal, corr, _tmpVal2, _aggOp, true);
-				else 
-					OperationsOnMatrixValues.incrementalAggregation(outVal, null, _tmpVal2, _aggOp, true);
-			}
-			
-			return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);
-		}
+				return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);
+			}			
+		}	
 	}
-
 }

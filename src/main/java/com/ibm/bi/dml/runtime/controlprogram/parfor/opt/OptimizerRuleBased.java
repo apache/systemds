@@ -1418,10 +1418,11 @@ public class OptimizerRuleBased extends Optimizer
 			else
 				kMax = _lkmaxMR;
 			
-			//ensure local memory constraint
-			kMax = Math.min( kMax, (int)Math.floor( _lm / M ) );
-			if( kMax < 1 )
-				kMax = 1;
+			//ensure local memory constraint (for spark more conservative in order to 
+			//prevent unnecessary guarded collect)
+			double mem = OptimizerUtils.isSparkExecutionMode() ? _lm/2 : _lm;
+			kMax = Math.min( kMax, (int)Math.floor( mem / M ) );
+			kMax = Math.max( kMax, 1);
 			
 			//distribute remaining parallelism 
 			int tmpK = (int)((_N<kMax)? _N : kMax);

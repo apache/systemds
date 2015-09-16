@@ -93,8 +93,8 @@ public abstract class Hop
 	// Estimated size for the entire operation represented by this Hop
 	// It includes the memory required for all inputs as well as the output 
 	protected double _memEstimate = OptimizerUtils.INVALID_SIZE;
-	
 	protected double _processingMemEstimate = 0;
+	protected double _spBroadcastMemEstimate = 0;
 	
 	// indicates if there are unknowns during compilation 
 	// (in that case re-complication ensures robustness and efficiency)
@@ -561,6 +561,11 @@ public abstract class Hop
 	public double getIntermediateMemEstimate()
 	{
 		return getIntermediateSize();
+	}
+	
+	public double getSpBroadcastSize()
+	{
+		return _spBroadcastMemEstimate;
 	}
 	
 	/**

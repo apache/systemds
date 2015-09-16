@@ -73,9 +73,14 @@ public class CostEstimatorHops extends CostEstimator
 		if( value >= DEFAULT_MEM_REMOTE )   	  
 		{
 			//check for CP estimate but MR type
-			if( h.getExecType()==ExecType.MR || h.getExecType()==ExecType.SPARK  ) 
+			if( h.getExecType()==ExecType.MR ) 
 			{
 				value = DEFAULT_MEM_REMOTE;
+			}
+			//check for CP estimate but Spark type (include broadcast requirements)
+			else if( h.getExecType()==ExecType.SPARK )
+			{
+				value = DEFAULT_MEM_REMOTE + h.getSpBroadcastSize();
 			}
 			//check for invalid cp memory estimate
 			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getLocalMemBudget() )

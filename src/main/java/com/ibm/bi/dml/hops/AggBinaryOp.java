@@ -1650,7 +1650,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	 * @param chainType
 	 * @return
 	 */
-	private static MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m1_nnz, 
+	private MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m1_nnz, 
             long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, long m2_nnz,
             MMTSJType mmtsj, ChainType chainType, boolean leftPMInput, boolean tmmRewrite ) 
 	{	
@@ -1659,6 +1659,10 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		//required because the max_int byte buffer constraint has been fixed in Spark 1.4 
 		double memBudgetExec = MAPMULT_MEM_MULTIPLIER * SparkExecutionContext.getBroadcastMemoryBudget();		
 		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
+
+		//reset spark broadcast memory information (for concurrent parfor jobs, awareness of additional 
+		//cp memory requirements on spark rdd operations with broadcasts)
+		_spBroadcastMemEstimate = 0;
 		
 		// Step 0: check for forced mmultmethod
 		if( FORCED_MMULT_METHOD !=null )
@@ -1694,6 +1698,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 					&& 2*(OptimizerUtils.estimateSize(m1_rows, m2_cols) 
 					   + OptimizerUtils.estimateSize(m1_cols, m2_cols)) < memBudgetLocal )
 				{
+					_spBroadcastMemEstimate = 2*(OptimizerUtils.estimateSize(m1_rows, m2_cols) 
+							   				   + OptimizerUtils.estimateSize(m1_cols, m2_cols));
 					return MMultMethod.MAPMM_CHAIN;
 				}
 			}
@@ -1707,6 +1713,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			&& 2*OptimizerUtils.estimateSize(m1_rows, 1) < memBudgetLocal
 			&& leftPMInput ) 
 		{
+			_spBroadcastMemEstimate = 2*OptimizerUtils.estimateSize(m1_rows, 1);
 			return MMultMethod.PMM;
 		}
 		
@@ -1728,10 +1735,14 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		{
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)
-			if( m1SizeP < m2SizeP && m1_rows>=0 && m1_cols>=0)
+			if( m1SizeP < m2SizeP && m1_rows>=0 && m1_cols>=0) {
+				_spBroadcastMemEstimate = m1Size+m1SizeP;
 				return MMultMethod.MAPMM_L;
-			else
+			}
+			else {
+				_spBroadcastMemEstimate = m2Size+m2SizeP;
 				return MMultMethod.MAPMM_R;
+			}
 		}
 		
 		// Step 5: check for unknowns

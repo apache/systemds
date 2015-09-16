@@ -1189,9 +1189,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void handleSparkRepartitioning( ExecutionContext ec ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		SparkExecutionContext sec = (SparkExecutionContext) ec;
-		
 		if( _variablesRP != null && !_variablesRP.isEmpty() ) {
+			SparkExecutionContext sec = (SparkExecutionContext) ec;
+			
 			for( String var : _variablesRP )
 				sec.repartitionAndCacheMatrixObject(var);
 		}

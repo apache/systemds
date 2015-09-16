@@ -50,6 +50,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitioner;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerLocal;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.DataPartitionerRemoteMR;
@@ -268,6 +269,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	//specifics for caching
 	protected boolean          _enableCPCaching     = true;
 	protected boolean          _enableRuntimePiggybacking = false;
+	//specifics for spark 
+	protected Collection<String> _variablesRP = null;
 	
 	// program block meta data
 	protected long                _ID           = -1;
@@ -483,6 +486,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		_recompileMemoryBudget = localMem;
 	}
 	
+	public void setSparkRepartitionVariables(Collection<String> vars) {
+		_variablesRP = vars;
+	}
+	
 	public long getNumIterations()
 	{
 		return _numIterations;
@@ -539,6 +546,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		//partitioning on demand (note: for fused data partitioning and execute the optimizer set 
 		//the data partitioner to NONE in order to prevent any side effects)
 		handleDataPartitioning( ec ); 
+		
+		//repartitioning of variables for spark cpmm/zipmm in order prevent unnecessary shuffle
+		handleSparkRepartitioning( ec );
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_DATA_T, time.stop());
@@ -1105,7 +1115,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	private void handleDataPartitioning( ExecutionContext ec ) throws DMLRuntimeException, DMLUnsupportedOperationException
+	private void handleDataPartitioning( ExecutionContext ec ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		if( _dataPartitioner != PDataPartitioner.NONE )
 		{			
@@ -1166,6 +1177,23 @@ public class ParForProgramBlock extends ForProgramBlock
 					}
 				}
 			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param ec
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	private void handleSparkRepartitioning( ExecutionContext ec ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		SparkExecutionContext sec = (SparkExecutionContext) ec;
+		
+		if( _variablesRP != null && !_variablesRP.isEmpty() ) {
+			for( String var : _variablesRP )
+				sec.repartitionAndCacheMatrixObject(var);
 		}
 	}
 	
@@ -1988,6 +2016,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		_jvmReuse              = true;
 		_recompileMemoryBudget = -1;
 		_enableRuntimePiggybacking = false;
+		_variablesRP           = null;
 	}
 	
 	

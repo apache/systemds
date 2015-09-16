@@ -62,12 +62,8 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRReducerWithAggregator;
 
 public class AggBinaryOp extends Hop implements MultiThreadedHop
 {
-
 	public static final double MAPMULT_MEM_MULTIPLIER = 1.0;
 	public static MMultMethod FORCED_MMULT_METHOD = null;
-	
-	private OpOp2 innerOp;
-	private AggOp outerOp;
 
 	public enum MMultMethod { 
 		CPMM,     //cross-product matrix multiplication (mr)
@@ -86,6 +82,11 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		SINGLE_BLOCK,
 		MULTI_BLOCK,
 	}
+	
+	private OpOp2 innerOp;
+	private AggOp outerOp;
+
+	private MMultMethod _method = null;
 	
 	//hints set by previous to operator selection
 	private boolean _hasLeftPMInput = false; //left input is permutation matrix
@@ -127,6 +128,10 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		return _maxNumThreads;
 	}
 	
+	public MMultMethod getMMultMethod(){
+		return _method;
+	}
+	
 	/**
 	 * NOTE: overestimated mem in case of transpose-identity matmult, but 3/2 at worst
 	 *       and existing mem estimate advantageous in terms of consistency hops/lops,
@@ -156,11 +161,11 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			if( et == ExecType.CP ) 
 			{
 				//matrix mult operation selection part 3 (CP type)
-				MMultMethod method = optFindMMultMethodCP ( input1.getDim1(), input1.getDim2(),   
-						                 input2.getDim1(), input2.getDim2(), mmtsj, chain, _hasLeftPMInput );
+				_method = optFindMMultMethodCP ( input1.getDim1(), input1.getDim2(),   
+						      input2.getDim1(), input2.getDim2(), mmtsj, chain, _hasLeftPMInput );
 				
 				//dispatch CP lops construction 
-				switch( method ){
+				switch( _method ){
 					case TSMM: 
 						constructCPLopsTSMM( mmtsj );
 						break;
@@ -174,27 +179,27 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 						constructCPLopsMM();
 						break;
 					default:
-						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing CP lops.");
+						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + _method + ") while constructing CP lops.");
 				}
 			}
 			else if( et == ExecType.SPARK ) 
 			{
 				//matrix mult operation selection part 3 (SPARK type)
 				boolean tmmRewrite = input1 instanceof ReorgOp && ((ReorgOp)input1).getOp()==ReOrgOp.TRANSPOSE;
-				MMultMethod method = optFindMMultMethodSpark ( 
+				_method = optFindMMultMethodSpark ( 
 						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(), input1.getNnz(),   
 						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), input2.getNnz(),
 						mmtsj, chain, _hasLeftPMInput, tmmRewrite );
 			
 				//dispatch SPARK lops construction 
-				switch( method )
+				switch( _method )
 				{
 					case TSMM:
 						constructSparkLopsTSMM( mmtsj );
 						break;
 					case MAPMM_L:
 					case MAPMM_R:
-						constructSparkLopsMapMM( method );
+						constructSparkLopsMapMM( _method );
 						break;
 					case MAPMM_CHAIN:
 						constructSparkLopsMapMMChain( chain );
@@ -213,22 +218,22 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 						break;
 						
 					default:
-						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing SPARK lops.");	
+						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + _method + ") while constructing SPARK lops.");	
 				}
 			}
 			else if( et == ExecType.MR ) 
 			{
 				//matrix mult operation selection part 3 (MR type)
-				MMultMethod method = optFindMMultMethodMR ( 
+				_method = optFindMMultMethodMR ( 
 							input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(), input1.getNnz(),    
 							input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), input2.getNnz(),
 							mmtsj, chain, _hasLeftPMInput);
 			
 				//dispatch MR lops construction
-				switch( method ) {
+				switch( _method ) {
 					case MAPMM_L:
 					case MAPMM_R: 	
-						constructMRLopsMapMM(method); 
+						constructMRLopsMapMM( _method ); 
 						break;
 					case MAPMM_CHAIN:	
 						constructMRLopsMapMMChain( chain ); 
@@ -246,7 +251,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 						constructMRLopsPMM(); 
 						break;						
 					default:
-						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + method + ") while constructing MR lops.");
+						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + _method + ") while constructing MR lops.");
 				}
 			}
 		} 

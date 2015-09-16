@@ -181,22 +181,25 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			else {
 				//rewrite 17: checkpoint injection for parfor loop body
 				super.rewriteInjectSparkLoopCheckpointing( pn );
+				
+				//rewrite 18: repartition read-only inputs for zipmm 
+				super.rewriteInjectSparkRepartition( pn );
 			}
 		}	
 		
-		//rewrite 18: set result merge
+		//rewrite 19: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		//rewrite 19: set local recompile memory budget
+		//rewrite 20: set local recompile memory budget
 		super.rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 20: parfor (in recursive functions) to for
+		// rewrite 21: parfor (in recursive functions) to for
 		super.rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 21: parfor (par=1) to for 
+		// rewrite 22: parfor (par=1) to for 
 		super.rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result

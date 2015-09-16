@@ -38,11 +38,8 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
  */
 public class Checkpoint extends Lop 
 {
-
 	public static final String OPCODE = "chkpoint"; 
-	
-	private static final StorageLevel DEFAULT_STORAGE_LEVEL = StorageLevel.MEMORY_AND_DISK();
-	
+	public static final StorageLevel DEFAULT_STORAGE_LEVEL = StorageLevel.MEMORY_AND_DISK();
 	public static final String STORAGE_LEVEL = "storage.level"; 
 
 	private StorageLevel _storageLevel;

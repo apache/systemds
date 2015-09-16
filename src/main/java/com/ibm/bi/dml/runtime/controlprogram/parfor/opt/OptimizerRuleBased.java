@@ -30,9 +30,11 @@ import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.hops.AggBinaryOp;
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.FunctionOp;
 import com.ibm.bi.dml.hops.Hop;
+import com.ibm.bi.dml.hops.AggBinaryOp.MMultMethod;
 import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.HopsException;
@@ -108,11 +110,12 @@ import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
  * - 14) rewrite set in-place result indexing
  * - 15) rewrite disable caching (prevent sparse serialization)
  * - 16) rewrite enable runtime piggybacking
- * - 17) rewrite inject spark loop checkpointing
- * - 18) rewrite set result merge 		 		 
- * - 19) rewrite set recompile memory budget
- * - 20) rewrite remove recursive parfor	
- * - 21) rewrite remove unnecessary parfor		
+ * - 17) rewrite inject spark loop checkpointing 
+ * - 18) rewrite inject spark repartition (for zipmm)
+ * - 19) rewrite set result merge 		 		 
+ * - 20) rewrite set recompile memory budget
+ * - 21) rewrite remove recursive parfor	
+ * - 22) rewrite remove unnecessary parfor		
  * 	 
  * TODO fuse also result merge into fused data partitioning and execute
  *      (for writing the result directly from execute we need to partition
@@ -292,22 +295,25 @@ public class OptimizerRuleBased extends Optimizer
 			else {
 				//rewrite 17: checkpoint injection for parfor loop body
 				rewriteInjectSparkLoopCheckpointing( pn );
+				
+				//rewrite 18: repartition read-only inputs for zipmm 
+				rewriteInjectSparkRepartition( pn );
 			}
 		}	
 	
-		// rewrite 18: set result merge
+		// rewrite 19: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		// rewrite 19: set local recompile memory budget
+		// rewrite 20: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 20: parfor (in recursive functions) to for
+		// rewrite 21: parfor (in recursive functions) to for
 		rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 21: parfor (par=1) to for 
+		// rewrite 22: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -2147,6 +2153,77 @@ public class OptimizerRuleBased extends Optimizer
 			
 		LOG.debug(getOptMode()+" OPT: rewrite 'inject spark loop checkpointing' - result="+applied );
 	}
+	
+	///////
+	//REWRITE inject spark repartition for zipmm
+	///
+	
+	/**
+	 * 
+	 * @param n
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	protected void rewriteInjectSparkRepartition(OptNode n) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//get program blocks of root parfor
+		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
+		ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
+		ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
+		
+		ArrayList<String> ret = new ArrayList<String>();
+		
+		if(    OptimizerUtils.isSparkExecutionMode() //spark exec mode
+			&& n.getExecType() == ExecType.CP ) 	 //local parfor 
+		{
+			//collect candidates from zipmm spark instructions
+			HashSet<String> cand = new HashSet<String>();
+			rCollectZipmmPartitioningCandidates(n, cand);
+			
+			//prune updated candidates
+			HashSet<String> probe = new HashSet<String>(pfsb.getReadOnlyParentVars());				
+			for( String var : cand )
+				if( probe.contains( var ) )
+					ret.add( var );
+				
+			//apply rewrite to parfor pb
+			if( !ret.isEmpty() ) {
+				pfpb.setSparkRepartitionVariables(ret);
+			}
+		}
+		
+		_numEvaluatedPlans++;
+		LOG.debug(getOptMode()+" OPT: rewrite 'inject spark input repartition' - result="+ret.size()+
+				" ("+ProgramConverter.serializeStringCollection(ret)+")" );
+	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param cand
+	 */
+	private void rCollectZipmmPartitioningCandidates( OptNode n, HashSet<String> cand )
+	{
+		//collect zipmm inputs
+		if( n.getNodeType()==NodeType.HOP ) {
+			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			if( h instanceof AggBinaryOp && (((AggBinaryOp)h).getMMultMethod()==MMultMethod.ZIPMM 
+				||((AggBinaryOp)h).getMMultMethod()==MMultMethod.CPMM) ){
+				
+				if( h.getInput().get(0) instanceof DataOp ) 
+					cand.add( h.getInput().get(0).getName() );
+				if( h.getInput().get(1) instanceof DataOp ) 
+					cand.add( h.getInput().get(1).getName() );
+			}
+		}
+		
+		//recursively process childs
+		if( !n.isLeaf() )
+			for( OptNode c : n.getChilds() )
+				rCollectZipmmPartitioningCandidates(c, cand);
+	}
+	
 	
 	///////
 	//REWRITE remove compare matrix (for result merge, needs to be invoked before setting result merge)

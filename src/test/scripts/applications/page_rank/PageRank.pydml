@@ -22,19 +22,19 @@
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 1000 and cols = 1000 for g,  rows = 1000 and cols = 1 for p, rows = 1000 and cols = 1 for e, rows = 1 and cols = 1000 for u,
 # Assume alpha = 0.85, max_iteration = 3
-# hadoop jar SystemML.jar -f $PAGE_RANK_HOME/PageRank.pydml -python -args "$INPUT_DIR/g" "$INPUT_DIR/p" "$INPUT_DIR/e" "$INPUT_DIR/u" 1000 1000 0.85 3 "$OUPUT_DIR/w" 
+# hadoop jar SystemML.jar -f $PAGE_RANK_HOME/PageRank.pydml -python -args "$INPUT_DIR/g" "$INPUT_DIR/p" "$INPUT_DIR/e" "$INPUT_DIR/u" 0.85 3 "$OUPUT_DIR/w" 
 
-G = load($1, rows=$5, cols=$6, format="text")
+G = load($1)
 # dense
-p = load($2, rows=$5, cols=1, format="text")
-e = load($3, rows=$5, cols=1, format="text")
-u = load($4, rows=1, cols=$6, format="text")
-alpha = $7
-max_iteration = $8
+p = load($2)
+e = load($3)
+u = load($4)
+alpha = $5
+max_iteration = $6
 i = 0
 
 while(i < max_iteration):
-	p = alpha * (dot(G, p)) + (1 - alpha) * (dot(dot(e, u), p))
-	i = i + 1
+    p = alpha * (dot(G, p)) + (1 - alpha) * (dot(dot(e, u), p))
+    i = i + 1
 
-save(p, $9, format="text")
+save(p, $7, format="text")

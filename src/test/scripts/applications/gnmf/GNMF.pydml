@@ -17,24 +17,30 @@
 #-------------------------------------------------------------
 
 # Note this script is externalized to customers, please do not change w/o consulting component owner.
-# How to invoke this dml script GNMF.dml?
-# Assume GNMF_HOME is set to the home of the dml script
+# How to invoke this dml script GNMF.pydml?
+# Assume GNMF_HOME is set to the home of the pydml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 2000 and cols = 1500 for v,  rows = 2000 and cols = 50 for w, rows = 50 and cols = 1500 for h, max_iteration = 3
-# hadoop jar SystemML.jar -f $GNMF_HOME/GNMF.pydml -python -args "$INPUT_DIR/in/v" "$INPUT_DIR/in/w" "$INPUT_DIR/in/h" 2000 1500 50 3 "$OUPUT_DIR/out/w" "$OUTPUT_DIR/out/h"
+# hadoop jar SystemML.jar -f $GNMF_HOME/GNMF.pydml -python -args "$INPUT_DIR/in/v" "$INPUT_DIR/in/w" "$INPUT_DIR/in/h" 3 "$OUPUT_DIR/out/w" "$OUTPUT_DIR/out/h"
 
-V = load($1, rows=$4, cols=$5, format="text")
-W = load($2, rows=$4, cols=$6, format="text")
-H = load($3, rows=$6, cols=$5, format="text")
-max_iteration = $7
+vFile = ifdef($1, "")
+wFile = ifdef($2, "")
+hFile = ifdef($3, "")
+wOutFile = ifdef($5, "")
+hOutFile = ifdef($6, "")
 
+V = load($1)
+W = load($2)
+H = load($3)
+max_iteration = $4
 i = 0
+
 Eps = 10**-8
 
-while(i < max_iteration) :
-        H = H * (dot(W.transpose(), V) / (dot(dot(W.transpose(), W), H) + Eps))
-        W = W * (dot(V, H.transpose()) / (dot(W, dot(H, H.transpose())) + Eps))
-        i = i + 1
+while(i < max_iteration):
+    H = H * (dot(W.transpose(), V) / (dot(dot(W.transpose(), W), H) + Eps))
+    W = W * (dot(V, H.transpose()) / (dot(W, dot(H, H.transpose())) + Eps))
+    i = i + 1
 
-save(W, $8, format="text")
-save(H, $9, format="text")
+save(W, wOutFile, format="text")
+save(H, hOutFile, format="text")

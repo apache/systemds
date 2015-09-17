@@ -27,13 +27,12 @@ import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 public abstract class NaiveBayesTest  extends AutomatedTestBase{
 	
 	protected final static String TEST_DIR = "applications/naive-bayes/";
-	protected final static String TEST_NAIVEBAYES = "naive-bayes";
+	protected final static String TEST_NAME = "naive-bayes";
 
 	protected int numRecords, numFeatures, numClasses;
     protected double sparsity;
@@ -58,19 +57,17 @@ public abstract class NaiveBayesTest  extends AutomatedTestBase{
 			   {1000, 500, 10, 0.7}, // example running time: 6s (dml: .7s)
 			   {10000, 750, 10, 0.7} // example running time: 61s (dml: 5.6s)
 			   };
-//	   Object[][] data = new Object[][] { {100, 50, 10, 0.01} };
 	   return Arrays.asList(data);
 	 }
 	 
 	 @Override
 	 public void setUp() {
-		 addTestConfiguration(TEST_NAIVEBAYES, new TestConfiguration(TEST_DIR, TEST_NAIVEBAYES,
-	                new String[] { "prior", "conditionals" }));
+		 addTestConfiguration(TEST_DIR, TEST_NAME);
 	 }
 	 
 	 protected void testNaiveBayes(ScriptType scriptType)
 	 {
-		 System.out.println("------------ BEGIN " + TEST_NAIVEBAYES + " " + scriptType + " TEST {" + numRecords + ", "
+		 System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + numRecords + ", "
 					+ numFeatures + ", " + numClasses + ", " + sparsity + "} ------------");
 		 this.scriptType = scriptType;
 		 
@@ -80,8 +77,7 @@ public abstract class NaiveBayesTest  extends AutomatedTestBase{
 		 double sparsity = this.sparsity;
 		 double laplace_correction = 1;
 	        
-		 TestConfiguration config = getTestConfiguration(TEST_NAIVEBAYES);
-		 loadTestConfiguration(config);
+		 getAndLoadTestConfiguration(TEST_NAME);
 	     
 		 List<String> proArgs = new ArrayList<String>();
 		 if (scriptType == ScriptType.PYDML) {
@@ -89,15 +85,14 @@ public abstract class NaiveBayesTest  extends AutomatedTestBase{
 		 }
 		 proArgs.add("-stats");
 		 proArgs.add("-nvargs");
-		 proArgs.add("X=" + inputDir() + "X");
-		 proArgs.add("Y=" + inputDir() + "Y");
-		 proArgs.add("classes=" + Integer.toString(classes));
-		 proArgs.add("laplace=" + Double.toString(laplace_correction));
-		 proArgs.add("prior=" + outputDir() + "prior");
-		 proArgs.add("conditionals=" + outputDir() + "conditionals");
-		 proArgs.add("accuracy=" + outputDir() + "accuracy");
+		 proArgs.add("X=" + input("X"));
+		 proArgs.add("Y=" + input("Y"));
+		 proArgs.add("classes=" + classes);
+		 proArgs.add("laplace=" + laplace_correction);
+		 proArgs.add("prior=" + output("prior"));
+		 proArgs.add("conditionals=" + output("conditionals"));
+		 proArgs.add("accuracy=" + output("accuracy"));
 		 programArgs = proArgs.toArray(new String[proArgs.size()]);
-		 System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
 		 fullDMLScriptName = getScript();
 
@@ -116,15 +111,12 @@ public abstract class NaiveBayesTest  extends AutomatedTestBase{
 		 runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 	        
 		 runRScript(true);
-		 disableOutAndExpectedDeletion();
 	        
 		 HashMap<CellIndex, Double> priorR = readRMatrixFromFS("prior");
 		 HashMap<CellIndex, Double> priorSYSTEMML= readDMLMatrixFromHDFS("prior");
 		 HashMap<CellIndex, Double> conditionalsR = readRMatrixFromFS("conditionals");
-		 HashMap<CellIndex, Double> conditionalsSYSTEMML = readDMLMatrixFromHDFS("conditionals");
-		 boolean success = 
-				 TestUtils.compareMatrices(priorR, priorSYSTEMML, Math.pow(10, -12), "priorR", "priorSYSTEMML")
-				 && TestUtils.compareMatrices(conditionalsR, conditionalsSYSTEMML, Math.pow(10.0, -12.0), "conditionalsR", "conditionalsSYSTEMML");
-		 System.out.println(success);
+		 HashMap<CellIndex, Double> conditionalsSYSTEMML = readDMLMatrixFromHDFS("conditionals"); 
+		 TestUtils.compareMatrices(priorR, priorSYSTEMML, Math.pow(10, -12), "priorR", "priorSYSTEMML");
+		 TestUtils.compareMatrices(conditionalsR, conditionalsSYSTEMML, Math.pow(10.0, -12.0), "conditionalsR", "conditionalsSYSTEMML");
 	 }
 }

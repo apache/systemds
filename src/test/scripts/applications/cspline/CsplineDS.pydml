@@ -72,9 +72,9 @@ print("For inp_x = " + $inp_x + " Calculated y = " + y)
 y_mat = full(y, 1, 1)
 
 if (fileO != " "):
-	save (y_mat, fileO)
+    save (y_mat, fileO)
 else:
-	print(y_mat)
+    print(y_mat)
 
 print ("END CUBIC SPLINE REGRESSION SCRIPT")
 
@@ -83,102 +83,102 @@ print ("END CUBIC SPLINE REGRESSION SCRIPT")
 #given X<nx1> and corresponding Y<nx1> values for the function. where each (xi,yi) represents a knot.
 #it calculates the first derivates i.e k of the interpolated polynomial
 def calcKnotsDerivKs(X: matrix[float], Y: matrix[float]) -> (K: matrix[float]):
-	nx = nrow(X)
-	ny = nrow(Y)
-	if (nx != ny):
-		stop("X and Y vectors are of different size")
-	
-	Xu = trunc(X, 1, "up") # Xu is (X where X[0] is removed)
-	Xd = trunc(X, 1, "down") # Xd is (X where X[n] is removed)
-	
-	Bx=1/(Xu-Xd) # The expr => 1/Delta(X(i) = 1/(X(i)-X(i-1))
-	
-	Bxd = resize(Bx, 1, 0, "tr") # Bxd is (0, Bx) vector
-	Bxu = resize(Bx, 1, 0, "br") # Bxu is (Bx, 0) vector
-	Dx = 2*(Bxd + Bxu) # the major diagonal entry 2(1/Delta(X(i) + 1/Delta(X(i+1)))
-	
-	MDx = diag(Dx) # convert vector to diagonal matrix
-	
-	MBx = diag(Bx) # this is the temp diagonal matrix, which will form the bands of the tri-diagonal matrix
-	MUx = resize(MBx, 1, 1, "bl") # the upper diagonal matrix of the band
-	MLx = resize(MBx, 1, 1, "tr") # the lower diagonal matrix of the band
-	
-	A=MUx+MDx+MLx # create the complete tri-diagonal matrix
-	
-	#calculate b matrix
-	Yu = trunc(Y, 1, "up") # Yu is (Y where Y[0] is removed)
-	Yd = trunc(Y, 1, "down") # Yd is (Y where Y[n] is removed)
-	By=(Yu-Yd)/(Bx*Bx) # the expr => Delta(Y(i))/Delta(X(i))*Delta(X(i))
-	
-	By1=resize(By, 1, 0, "tr") # By1 is (0, By) vector
-	By2=resize(By, 1, 0, "br") # By2 is (By, 0) vector
-	b=3*(By1+By2) # the b entries 3*(Delta(Y(i))/Delta(X(i))*Delta(X(i)) + Delta(Y(i+1))/Delta(X(i+1))*Delta(X(i+1)))
-	
-	K = solve(A, b)  # solve Ax = b for x vector and assign it to K
+    nx = nrow(X)
+    ny = nrow(Y)
+    if (nx != ny):
+        stop("X and Y vectors are of different size")
+    
+    Xu = trunc(X, 1, "up") # Xu is (X where X[0] is removed)
+    Xd = trunc(X, 1, "down") # Xd is (X where X[n] is removed)
+    
+    Bx=1/(Xu-Xd) # The expr => 1/Delta(X(i) = 1/(X(i)-X(i-1))
+    
+    Bxd = resize(Bx, 1, 0, "tr") # Bxd is (0, Bx) vector
+    Bxu = resize(Bx, 1, 0, "br") # Bxu is (Bx, 0) vector
+    Dx = 2*(Bxd + Bxu) # the major diagonal entry 2(1/Delta(X(i) + 1/Delta(X(i+1)))
+    
+    MDx = diag(Dx) # convert vector to diagonal matrix
+    
+    MBx = diag(Bx) # this is the temp diagonal matrix, which will form the bands of the tri-diagonal matrix
+    MUx = resize(MBx, 1, 1, "bl") # the upper diagonal matrix of the band
+    MLx = resize(MBx, 1, 1, "tr") # the lower diagonal matrix of the band
+    
+    A=MUx+MDx+MLx # create the complete tri-diagonal matrix
+    
+    #calculate b matrix
+    Yu = trunc(Y, 1, "up") # Yu is (Y where Y[0] is removed)
+    Yd = trunc(Y, 1, "down") # Yd is (Y where Y[n] is removed)
+    By=(Yu-Yd)/(Bx*Bx) # the expr => Delta(Y(i))/Delta(X(i))*Delta(X(i))
+    
+    By1=resize(By, 1, 0, "tr") # By1 is (0, By) vector
+    By2=resize(By, 1, 0, "br") # By2 is (By, 0) vector
+    b=3*(By1+By2) # the b entries 3*(Delta(Y(i))/Delta(X(i))*Delta(X(i)) + Delta(Y(i+1))/Delta(X(i+1))*Delta(X(i+1)))
+    
+    K = solve(A, b)  # solve Ax = b for x vector and assign it to K
 
 #given the X<nx1> and Y<nx1> n sample points and K (the first derivative of the interp polynomial), it calculate the
 #  y for the given x using the cubic spline interpolation
 def interpSpline(x: float, X: matrix[float], Y: matrix[float], K: matrix[float]) -> (q: float):
-	
-	#first find the right knots for interpolation
-	i = nrow(X) - sum(ppred(X, x, ">=")) + 1
-	
-	#calc the y as per the algo docs
-	t = (x - X[i-1,1]) / ( X[i,1] - X[i-1,1])
-	
-	a =  K[i-1,1]*(X[i,1]-X[i-1,1]) - (Y[i,1]-Y[i-1,1])
-	b = -K[i,1]*(X[i,1]-X[i-1,1]) + (Y[i,1]-Y[i-1,1])
-	
-	qm = (1-t)*Y[i-1,1] + t*Y[i,1] + t*(1-t)*(a*(1-t)+b*t)
-	
-	q = castAsScalar(qm)
+    
+    #first find the right knots for interpolation
+    i = nrow(X) - sum(ppred(X, x, ">=")) + 1
+    
+    #calc the y as per the algo docs
+    t = (x - X[i-1,1]) / ( X[i,1] - X[i-1,1])
+    
+    a =  K[i-1,1]*(X[i,1]-X[i-1,1]) - (Y[i,1]-Y[i-1,1])
+    b = -K[i,1]*(X[i,1]-X[i-1,1]) + (Y[i,1]-Y[i-1,1])
+    
+    qm = (1-t)*Y[i-1,1] + t*Y[i,1] + t*(1-t)*(a*(1-t)+b*t)
+    
+    q = castAsScalar(qm)
 
 #
 # trunc the matrix by the specified amount in the specified direction.
 # The shifted cells are discarded, the matrix is smaller in size
 #
 def trunc(X: matrix[float], # nxm matrix
-	by: int, # shift amount
-	dir: str # currently only 'up' is supported. but should handle 'up', 'down', 'left', 'right'
+    by: int, # shift amount
+    dir: str # currently only 'up' is supported. but should handle 'up', 'down', 'left', 'right'
 ) -> (Y: matrix[float]): # Y is
-	
-	r = nrow(X)
-	c = ncol(X)
-	if (by > r):
-		stop("can't pop matrix more than number of rows")
-	Y = full(0.0, r-by, c)
-	
-	if (r != by ):
-		if (dir == "up"):
-			Y[1:r-by,] = X[1+by:r,]
-		else:
-			if (dir == "down"):
-				Y[1:r-by,] = X[1:r-by,]
-			else:
-				stop("trunc unsupported direction " + dir)
+    
+    r = nrow(X)
+    c = ncol(X)
+    if (by > r):
+        stop("can't pop matrix more than number of rows")
+    Y = full(0.0, r-by, c)
+    
+    if (r != by ):
+        if (dir == "up"):
+            Y[1:r-by,] = X[1+by:r,]
+        else:
+            if (dir == "down"):
+                Y[1:r-by,] = X[1:r-by,]
+            else:
+                stop("trunc unsupported direction " + dir)
 
 # resize (only grow and not truncate) the matrix by the specified amount in the specified direction
 def resize(X: matrix[float], #nxm matrix
-	rby: int, # row resize count
-	cby: int,  # col resize count
-	dir: str
+    rby: int, # row resize count
+    cby: int,  # col resize count
+    dir: str
 ) -> (Y: matrix[float]): # Y is
-	r = nrow(X)
-	c = ncol(X)
-	rn = r + rby
-	cn = c + cby
-	Y = full(0.0, rn, cn)
-	if (dir == "tr"): # top right
-		Y[1+rby:rn, 1:c] = X
-	else:
-		if (dir == "bl"): # bottom left
-			Y[1:r, 1+cby:cn] = X
-		else:
-			if (dir == "tl"): # top left
-				Y[1+rby:rn, 1+cby:cn ] = X
-			else:
-				if (dir == "br"): # bottom right
-					Y[1:r, 1:c] = X
-				else:
-					stop("Unknown direction dir => " + dir)
+    r = nrow(X)
+    c = ncol(X)
+    rn = r + rby
+    cn = c + cby
+    Y = full(0.0, rn, cn)
+    if (dir == "tr"): # top right
+        Y[1+rby:rn, 1:c] = X
+    else:
+        if (dir == "bl"): # bottom left
+            Y[1:r, 1+cby:cn] = X
+        else:
+            if (dir == "tl"): # top left
+                Y[1+rby:rn, 1+cby:cn ] = X
+            else:
+                if (dir == "br"): # bottom right
+                    Y[1:r, 1:c] = X
+                else:
+                    stop("Unknown direction dir => " + dir)
 

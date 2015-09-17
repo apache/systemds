@@ -52,8 +52,7 @@ public abstract class ArimaTest extends AutomatedTestBase {
 	
 	@Parameters
 	public static Collection<Object[]> data() {
-		Object[][] data = new Object[][] { //{ 10, 1, 0, 1, 0, 0, 0, 24, 0, 0}, 
-										   { 10, 1, 1, 1, 1, 1, 1, 24, 1, 1}};
+		Object[][] data = new Object[][] {{ 10, 1, 1, 1, 1, 1, 1, 24, 1, 1}};
 		return Arrays.asList(data);
 	}
 	
@@ -96,7 +95,6 @@ public abstract class ArimaTest extends AutomatedTestBase {
 		proArgs.add(Integer.toString(useJacobi));
 		proArgs.add(output("learnt.model"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
 		fullDMLScriptName = getScript();
 

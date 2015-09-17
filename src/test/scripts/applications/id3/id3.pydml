@@ -22,59 +22,59 @@
 # The representation is explained in detail below.
 #
 # arguments:
-#	1st arg: data matrix (rows are samples)
-#	2nd arg: column vector containing labels
-#	3rd arg: minsplit (min. number of samples
-#			 before we create a split)
-#	4th arg: name of file to write nodes matrix to
-#	5th arg: name of file to write edges matrix to
+#    1st arg: data matrix (rows are samples)
+#    2nd arg: column vector containing labels
+#    3rd arg: minsplit (min. number of samples
+#             before we create a split)
+#    4th arg: name of file to write nodes matrix to
+#    5th arg: name of file to write edges matrix to
 #
 # What does this script do:
-#	Learns a decision tree for data containing
-#	categorical features and categorical label. 
-#	Does not handle scale features as of yet.
-#	Does not perform pruning. Uses information
-#	gain to choose features to split on.
-#	See Wikipedia's ID3 decision tree learning 
-#	algorithm webpage for pseudo code.
+#    Learns a decision tree for data containing
+#    categorical features and categorical label. 
+#    Does not handle scale features as of yet.
+#    Does not perform pruning. Uses information
+#    gain to choose features to split on.
+#    See Wikipedia's ID3 decision tree learning 
+#    algorithm webpage for pseudo code.
 #
 # Representing decision trees:
-#	Since SystemML can only represent matrices,
-#	one question that needs answering is how to 
-#	represent decision trees. One option is to
-#	restrict ourselves to building binary decision
-#	trees (this is what Netezza and Oracle do). 
-#	Binary decision trees are fine except that they
-#	are less compact than trees that can have more
-#	than two children. We avoided that restriction.
+#    Since SystemML can only represent matrices,
+#    one question that needs answering is how to 
+#    represent decision trees. One option is to
+#    restrict ourselves to building binary decision
+#    trees (this is what Netezza and Oracle do). 
+#    Binary decision trees are fine except that they
+#    are less compact than trees that can have more
+#    than two children. We avoided that restriction.
 #
-# 	Our decision trees are represented using two 
-#	matrices. One is called the nodes matrix, which
-#	contains definitions of nodes in the decision tree,
-# 	and the other is called the edges matrix, containing
-#	the edges in the decision tree. This is a standard
-#	way of representing trees (graphs, in fact) in 
-#	databases. 
+#     Our decision trees are represented using two 
+#    matrices. One is called the nodes matrix, which
+#    contains definitions of nodes in the decision tree,
+#     and the other is called the edges matrix, containing
+#    the edges in the decision tree. This is a standard
+#    way of representing trees (graphs, in fact) in 
+#    databases. 
 #
-#	Nodes matrix: Is a 2-column matrix. First column 
-#	contains a column index in the input data indicating
-#	the feature that is being split in this node. The
-#	first column entry can be -1, that is not a valid index.
-#	When the first column denotes -1, that indicates this
-#	node is a leaf, in which case the second column entry 
-#	will denote the class label to be predicted is a sample
-#	reaches this leaf.
+#    Nodes matrix: Is a 2-column matrix. First column 
+#    contains a column index in the input data indicating
+#    the feature that is being split in this node. The
+#    first column entry can be -1, that is not a valid index.
+#    When the first column denotes -1, that indicates this
+#    node is a leaf, in which case the second column entry 
+#    will denote the class label to be predicted is a sample
+#    reaches this leaf.
 #
-#	Edges matrix: Is a 3-colunm matrix. The first column
-#	denotes the row-index of the parent node in the nodes 
-#	matrix (i.e., a pointer into the nodes matrix). The 
-#	third column denotes the row-index of the child node 
-#	in the nodes matrix. The second column contains a
-# 	value in the domain of the feature that is being split
-# 	in the parent node. For instance, let p,v,c denote a 
-#	row in the edges matrix. If the p-th row in the nodes
-#	matrix says feature f is being split in this node, then
-#	v has to be a value in the domain of f.
+#    Edges matrix: Is a 3-colunm matrix. The first column
+#    denotes the row-index of the parent node in the nodes 
+#    matrix (i.e., a pointer into the nodes matrix). The 
+#    third column denotes the row-index of the child node 
+#    in the nodes matrix. The second column contains a
+#     value in the domain of the feature that is being split
+#     in the parent node. For instance, let p,v,c denote a 
+#    row in the edges matrix. If the p-th row in the nodes
+#    matrix says feature f is being split in this node, then
+#    v has to be a value in the domain of f.
 
 # Further notes:
 # Because of the way SystemML's groupedAggregate function
@@ -88,178 +88,177 @@
 # reach).
 
 def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attributes:matrix[float], minsplit:float) -> (nodes:matrix[float], edges:matrix[float]):
-	hist_labels = aggregate(target=X_subset, groups=y, fn="sum")
-	
-	if (1==1):
-	  print(" ")
-
-	#go through the histogram to compute the number of labels
-	#with non-zero samples
-	#and to pull out the most popular label
-	
-	num_non_zero_labels = sum(ppred(hist_labels, 0, ">"))
-	most_popular_label = rowIndexMax(t(hist_labels))
-	num_remaining_attrs = sum(attributes)
-	
-	num_samples = sum(X_subset)
-	
-	print("num non zero labels: " + num_non_zero_labels)
-	mpl = castAsScalar(most_popular_label)
-	print("most popular label: " + mpl)
-	print("num remaining attrs: " + num_remaining_attrs)
-	
-	nodes = full(0, rows=1, cols=1)
-	edges = full(0, rows=1, cols=1)
-	
-	#if all samples have the same label then return a leaf node
-	#if no attributes remain then return a leaf node with the most popular label	
-	if(num_non_zero_labels == 1 | num_remaining_attrs == 0 | num_samples < minsplit):
-		nodes = full(0, rows=1, cols=2)
-		nodes[1,1] = -1
-		nodes[1,2] = most_popular_label
-		edges = full(-1, rows=1, cols=1)
-	else:
-		#computing gains for all available attributes using parfor
-		hist_labels2 = aggregate(target=X_subset, groups=y, fn="sum")
-		num_samples2 = sum(X_subset)
-		print(num_samples2+" #samples")
-		zero_entries_in_hist1 = ppred(hist_labels2, 0, "==")
-		pi1 = hist_labels2/num_samples2
-		log_term1 = zero_entries_in_hist1*1 + (1-zero_entries_in_hist1)*pi1
-		entropy_vector1 = -pi1*log(log_term1)
-		ht = sum(entropy_vector1)
-		
-		sz = nrow(attributes)
-		gains = full(0, rows=sz, cols=1)
-		for(i in 1:nrow(attributes)):
-			if(castAsScalar(attributes[i,1]) == 1):
-				attr_vals = X[,i]
-				attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
-
-				hxt_vector = full(0, rows=nrow(attr_domain), cols=1)
-				
-				for(j in 1:nrow(attr_domain), check=0):
-					if(castAsScalar(attr_domain[j,1]) != 0):
-						val = j
-						Tj = X_subset * ppred(X[,i], val, "==")
-						
-						#entropy = compute_entropy(Tj, y)
-						hist_labels1 = aggregate(target=Tj, groups=y, fn="sum")
-						num_samples1 = sum(Tj)
-						zero_entries_in_hist = ppred(hist_labels1, 0, "==")
-						pi = hist_labels1/num_samples1
-						log_term = zero_entries_in_hist*1 + (1-zero_entries_in_hist)*pi
-						entropy_vector = -pi*log(log_term)
-						entropy = sum(entropy_vector)
-	
-						hxt_vector[j,1] = sum(Tj)/sum(X_subset)*entropy
-				hxt = sum(hxt_vector)
-				gains[i,1] = (ht - hxt)
-		
-		#pick out attr with highest gain
-		best_attr = -1
-		max_gain = 0
-		for(i4 in 1:nrow(gains)):
-			#print("best attr " + best_attr + " max gain " + max_gain)
-			if(castAsScalar(attributes[i4,1]) == 1):
-				g = castAsScalar(gains[i4,1])
-				if(best_attr == -1 | max_gain <= g):
-					max_gain = g
-					best_attr = i4
-		
-		print("best attribute is: " + best_attr)
-		print("gain is: " + max_gain)
-		
-		attr_vals = X[,best_attr]
-		attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
-		if (1==1):
-	  		print(" ")
-
-		new_attributes = attributes
-		new_attributes[best_attr, 1] = 0
-		
-		max_sz_subtree = 2*sum(X_subset)
-		sz1 = 0
-		sz2 = 0
-		if(1==1):
-			sz2 = nrow(attr_domain)
-			sz1 = sz2*max_sz_subtree
-		tempNodeStore = full(0, rows=2, cols=sz1)
-		tempEdgeStore = full(0, rows=3, cols=sz1)
-		numSubtreeNodes = full(0, rows=sz2, cols=1)
-		numSubtreeEdges = full(0, rows=sz2, cols=1)
-		
-		for(i1 in 1:nrow(attr_domain), check=0):
-			
-			Ti = X_subset * ppred(X[,best_attr], i1, "==")
-			num_nodes_Ti = sum(Ti)
-			
-			if(num_nodes_Ti > 0):
-				[nodesi, edgesi] = id3_learn(X, y, Ti, new_attributes, minsplit)
-			
-				start_pt = 1+(i1-1)*max_sz_subtree
-				tempNodeStore[,start_pt:(start_pt+nrow(nodesi)-1)] = t(nodesi)
-				numSubtreeNodes[i1,1] = nrow(nodesi)
-				if(nrow(edgesi)!=1 | ncol(edgesi)!=1 | castAsScalar(edgesi[1,1])!=-1):
-					tempEdgeStore[,start_pt:(start_pt+nrow(edgesi)-1)] = t(edgesi)
-					numSubtreeEdges[i1,1] = nrow(edgesi)
-				else:
-					numSubtreeEdges[i1,1] = 0
-		
-		num_nodes_in_subtrees = sum(numSubtreeNodes)
-		num_edges_in_subtrees = sum(numSubtreeEdges)
-		
-		#creating root node
-		if(1==1):
-			sz = 1+num_nodes_in_subtrees
-
-		nodes = full(0, rows=sz, cols=2)
-		nodes[1,1] = best_attr
-		numNodes = 1
-		
-		#edges from root to children
-		if(1==1):
-			sz = sum(ppred(numSubtreeNodes, 0, ">")) + num_edges_in_subtrees
-
-		edges = full(1, rows=sz, cols=3)
-		numEdges = 0
-		for(i6 in 1:nrow(attr_domain)):
-			num_nodesi = castAsScalar(numSubtreeNodes[i6,1])
-			if(num_nodesi > 0):
-				edges[numEdges+1,2] = i6
-				numEdges = numEdges + 1
-		
-		nonEmptyAttri = 0
-		for(i7 in 1:nrow(attr_domain)):
-			numNodesInSubtree = castAsScalar(numSubtreeNodes[i7,1])
-		
-			if(numNodesInSubtree > 0):
-				start_pt1 = 1 + (i7-1)*max_sz_subtree
-				nodes[numNodes+1:numNodes+numNodesInSubtree,] = transpose(tempNodeStore[,start_pt1:(start_pt1+numNodesInSubtree-1)])
-			
-				numEdgesInSubtree = castAsScalar(numSubtreeEdges[i7,1])
-			
-				if(numEdgesInSubtree!=0):
-					edgesi1 = transpose(tempEdgeStore[,start_pt1:(start_pt1+numEdgesInSubtree-1)])
-					edgesi1[,1] = edgesi1[,1] + numNodes
-					edgesi1[,3] = edgesi1[,3] + numNodes
-					edges[numEdges+1:numEdges+numEdgesInSubtree,] = edgesi1
-					numEdges = numEdges + numEdgesInSubtree
-			
-				edges[nonEmptyAttri+1,3] = numNodes + 1
-				nonEmptyAttri = nonEmptyAttri + 1
-				
-				numNodes = numNodes + numNodesInSubtree
+    hist_labels = aggregate(target=X_subset, groups=y, fn="sum")
+    
+    if (1==1):
+        print(" ")
+    
+    #go through the histogram to compute the number of labels
+    #with non-zero samples
+    #and to pull out the most popular label
+    
+    num_non_zero_labels = sum(ppred(hist_labels, 0, ">"))
+    most_popular_label = rowIndexMax(t(hist_labels))
+    num_remaining_attrs = sum(attributes)
+    
+    num_samples = sum(X_subset)
+    
+    print("num non zero labels: " + num_non_zero_labels)
+    mpl = castAsScalar(most_popular_label)
+    print("most popular label: " + mpl)
+    print("num remaining attrs: " + num_remaining_attrs)
+    
+    nodes = full(0, rows=1, cols=1)
+    edges = full(0, rows=1, cols=1)
+    
+    #if all samples have the same label then return a leaf node
+    #if no attributes remain then return a leaf node with the most popular label    
+    if(num_non_zero_labels == 1 | num_remaining_attrs == 0 | num_samples < minsplit):
+        nodes = full(0, rows=1, cols=2)
+        nodes[1,1] = -1
+        nodes[1,2] = most_popular_label
+        edges = full(-1, rows=1, cols=1)
+    else:
+        #computing gains for all available attributes using parfor
+        hist_labels2 = aggregate(target=X_subset, groups=y, fn="sum")
+        num_samples2 = sum(X_subset)
+        print(num_samples2+" #samples")
+        zero_entries_in_hist1 = ppred(hist_labels2, 0, "==")
+        pi1 = hist_labels2/num_samples2
+        log_term1 = zero_entries_in_hist1*1 + (1-zero_entries_in_hist1)*pi1
+        entropy_vector1 = -pi1*log(log_term1)
+        ht = sum(entropy_vector1)
+        
+        sz = nrow(attributes)
+        gains = full(0, rows=sz, cols=1)
+        for(i in 1:nrow(attributes)):
+            if(castAsScalar(attributes[i,1]) == 1):
+                attr_vals = X[,i]
+                attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
+                
+                hxt_vector = full(0, rows=nrow(attr_domain), cols=1)
+                
+                for(j in 1:nrow(attr_domain), check=0):
+                    if(castAsScalar(attr_domain[j,1]) != 0):
+                        val = j
+                        Tj = X_subset * ppred(X[,i], val, "==")
+                        
+                        #entropy = compute_entropy(Tj, y)
+                        hist_labels1 = aggregate(target=Tj, groups=y, fn="sum")
+                        num_samples1 = sum(Tj)
+                        zero_entries_in_hist = ppred(hist_labels1, 0, "==")
+                        pi = hist_labels1/num_samples1
+                        log_term = zero_entries_in_hist*1 + (1-zero_entries_in_hist)*pi
+                        entropy_vector = -pi*log(log_term)
+                        entropy = sum(entropy_vector)
+                        
+                        hxt_vector[j,1] = sum(Tj)/sum(X_subset)*entropy
+                hxt = sum(hxt_vector)
+                gains[i,1] = (ht - hxt)
+        
+        #pick out attr with highest gain
+        best_attr = -1
+        max_gain = 0
+        for(i4 in 1:nrow(gains)):
+            #print("best attr " + best_attr + " max gain " + max_gain)
+            if(castAsScalar(attributes[i4,1]) == 1):
+                g = castAsScalar(gains[i4,1])
+                if(best_attr == -1 | max_gain <= g):
+                    max_gain = g
+                    best_attr = i4
+        
+        print("best attribute is: " + best_attr)
+        print("gain is: " + max_gain)
+        
+        attr_vals = X[,best_attr]
+        attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
+        if (1==1):
+            print(" ")
+        
+        new_attributes = attributes
+        new_attributes[best_attr, 1] = 0
+        
+        max_sz_subtree = 2*sum(X_subset)
+        sz1 = 0
+        sz2 = 0
+        if(1==1):
+            sz2 = nrow(attr_domain)
+            sz1 = sz2*max_sz_subtree
+        tempNodeStore = full(0, rows=2, cols=sz1)
+        tempEdgeStore = full(0, rows=3, cols=sz1)
+        numSubtreeNodes = full(0, rows=sz2, cols=1)
+        numSubtreeEdges = full(0, rows=sz2, cols=1)
+        
+        for(i1 in 1:nrow(attr_domain), check=0):
+            
+            Ti = X_subset * ppred(X[,best_attr], i1, "==")
+            num_nodes_Ti = sum(Ti)
+            
+            if(num_nodes_Ti > 0):
+                [nodesi, edgesi] = id3_learn(X, y, Ti, new_attributes, minsplit)
+            
+                start_pt = 1+(i1-1)*max_sz_subtree
+                tempNodeStore[,start_pt:(start_pt+nrow(nodesi)-1)] = t(nodesi)
+                numSubtreeNodes[i1,1] = nrow(nodesi)
+                if(nrow(edgesi)!=1 | ncol(edgesi)!=1 | castAsScalar(edgesi[1,1])!=-1):
+                    tempEdgeStore[,start_pt:(start_pt+nrow(edgesi)-1)] = t(edgesi)
+                    numSubtreeEdges[i1,1] = nrow(edgesi)
+                else:
+                    numSubtreeEdges[i1,1] = 0
+        
+        num_nodes_in_subtrees = sum(numSubtreeNodes)
+        num_edges_in_subtrees = sum(numSubtreeEdges)
+        
+        #creating root node
+        if(1==1):
+            sz = 1+num_nodes_in_subtrees
+        
+        nodes = full(0, rows=sz, cols=2)
+        nodes[1,1] = best_attr
+        numNodes = 1
+        
+        #edges from root to children
+        if(1==1):
+            sz = sum(ppred(numSubtreeNodes, 0, ">")) + num_edges_in_subtrees
+        
+        edges = full(1, rows=sz, cols=3)
+        numEdges = 0
+        for(i6 in 1:nrow(attr_domain)):
+            num_nodesi = castAsScalar(numSubtreeNodes[i6,1])
+            if(num_nodesi > 0):
+                edges[numEdges+1,2] = i6
+                numEdges = numEdges + 1
+        
+        nonEmptyAttri = 0
+        for(i7 in 1:nrow(attr_domain)):
+            numNodesInSubtree = castAsScalar(numSubtreeNodes[i7,1])
+            
+            if(numNodesInSubtree > 0):
+                start_pt1 = 1 + (i7-1)*max_sz_subtree
+                nodes[numNodes+1:numNodes+numNodesInSubtree,] = transpose(tempNodeStore[,start_pt1:(start_pt1+numNodesInSubtree-1)])
+                
+                numEdgesInSubtree = castAsScalar(numSubtreeEdges[i7,1])
+                
+                if(numEdgesInSubtree!=0):
+                    edgesi1 = transpose(tempEdgeStore[,start_pt1:(start_pt1+numEdgesInSubtree-1)])
+                    edgesi1[,1] = edgesi1[,1] + numNodes
+                    edgesi1[,3] = edgesi1[,3] + numNodes
+                    edges[numEdges+1:numEdges+numEdgesInSubtree,] = edgesi1
+                    numEdges = numEdges + numEdgesInSubtree
+                
+                edges[nonEmptyAttri+1,3] = numNodes + 1
+                nonEmptyAttri = nonEmptyAttri + 1
+                
+                numNodes = numNodes + numNodesInSubtree
 # end id3_learn function
 
-X = load($1, rows=$3, cols=$4)
-y = load($2, rows=$3, cols=1)
+X = load($1)
+y = load($2)
 
 n = nrow(X)
 m = ncol(X)
 
 minsplit = 2
-
 
 X_subset = full(1, rows=n, cols=1)
 attributes = full(1, rows=m, cols=1)
@@ -277,10 +276,10 @@ y = y + labelCorrection + 0
 nodes[,2] = nodes[,2] - labelCorrection * ppred(nodes[,1], -1, "==")
 for(i3 in 1:nrow(edges)):
 #parfor(i3 in 1:nrow(edges)):
-	e_parent = castAsScalar(edges[i3,1])
-	parent_feature = castAsScalar(nodes[e_parent,1])
-	correction = castAsScalar(featureCorrections[1,parent_feature])
-	edges[i3,2] = edges[i3,2] - correction
+    e_parent = castAsScalar(edges[i3,1])
+    parent_feature = castAsScalar(nodes[e_parent,1])
+    correction = castAsScalar(featureCorrections[1,parent_feature])
+    edges[i3,2] = edges[i3,2] - correction
 
-save(nodes, $5, format="text")
-save(edges, $6, format="text")
+save(nodes, $3, format="text")
+save(edges, $4, format="text")

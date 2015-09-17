@@ -21,14 +21,14 @@
 # Assume HITS_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 1000 and cols = 1000 for G,  rows = 1000 and cols = 1 for authorities, max_iteration = 2
-# hadoop jar SystemML.jar -f $HITS_HOME/HITS.dml -args "$INPUT_DIR/G" 2 1000 1000 0.000001 "$OUPUT_DIR/hubs" "$OUTPUT_DIR/authorities"
+# hadoop jar SystemML.jar -f $HITS_HOME/HITS.dml -args "$INPUT_DIR/G" 2 0.000001 "$OUPUT_DIR/hubs" "$OUTPUT_DIR/authorities"
 
-G = read($1,rows=$3, cols=$4, format="text");
+G = read($1);
 
 authorities=round(G);
 
 maxiter = $2;
-tol = $5;
+tol = $3;
 
 hubs  = authorities;
 
@@ -56,5 +56,5 @@ while(!converge) {
 	iter = iter + 1
 }
 
-write(hubs,$6,format="text")
-write(authorities,$7,format="text")
+write(hubs,$4,format="text")
+write(authorities,$5,format="text")

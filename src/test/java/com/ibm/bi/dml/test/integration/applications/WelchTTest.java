@@ -30,14 +30,13 @@ import org.junit.runners.Parameterized.Parameters;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 @RunWith(value = Parameterized.class)
 public abstract class WelchTTest extends AutomatedTestBase {
 	
 	protected final static String TEST_DIR = "applications/welchTTest/";
-	protected final static String TEST_WELCHTTEST = "welchTTest";
+	protected final static String TEST_NAME = "welchTTest";
 
 	protected int numAttr, numPosSamples, numNegSamples;
 	
@@ -55,20 +54,14 @@ public abstract class WelchTTest extends AutomatedTestBase {
 	 
 	@Override
 	public void setUp() {
-		setUpBase();
-    	addTestConfiguration(TEST_WELCHTTEST, 
-    						 new TestConfiguration(TEST_DIR, 
-    								 TEST_WELCHTTEST, 
-    								 			   new String[] { "t_statistics", 
-    								 							  "degrees_of_freedom" }));
+		addTestConfiguration(TEST_DIR, TEST_NAME);
 	}
 	
 	protected void testWelchTTest(ScriptType scriptType) {
-		System.out.println("------------ BEGIN " + TEST_WELCHTTEST + " " + scriptType + " TEST {" + numAttr + ", " + numPosSamples + ", " + numNegSamples + "} ------------");
+		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + numAttr + ", " + numPosSamples + ", " + numNegSamples + "} ------------");
 		this.scriptType = scriptType;
 		
-		TestConfiguration config = getTestConfiguration(TEST_WELCHTTEST);
-		loadTestConfiguration(config);
+		getAndLoadTestConfiguration(TEST_NAME);
 		
 		List<String> proArgs = new ArrayList<String>();
 		if (scriptType == ScriptType.PYDML) {
@@ -80,7 +73,6 @@ public abstract class WelchTTest extends AutomatedTestBase {
 		proArgs.add(output("t_statistics"));
 		proArgs.add(output("degrees_of_freedom"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
 		fullDMLScriptName = getScript();
 		
@@ -99,15 +91,14 @@ public abstract class WelchTTest extends AutomatedTestBase {
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs); 
 		
 		runRScript(true);
-		disableOutAndExpectedDeletion();
 
 		double tol = Math.pow(10, -13);
 		HashMap<CellIndex, Double> t_statistics_R = readRMatrixFromFS("t_statistics");
-        HashMap<CellIndex, Double> t_statistics_systemml= readDMLMatrixFromHDFS("t_statistics");
-        TestUtils.compareMatrices(t_statistics_R, t_statistics_systemml, tol, "t_statistics_R", "t_statistics_systemml");
+        HashMap<CellIndex, Double> t_statistics_SYSTEMML= readDMLMatrixFromHDFS("t_statistics");
+        TestUtils.compareMatrices(t_statistics_R, t_statistics_SYSTEMML, tol, "t_statistics_R", "t_statistics_SYSTEMML");
         
         HashMap<CellIndex, Double> degrees_of_freedom_R = readRMatrixFromFS("degrees_of_freedom");
-        HashMap<CellIndex, Double> degrees_of_freedom_systemml= readDMLMatrixFromHDFS("degrees_of_freedom");
-        TestUtils.compareMatrices(degrees_of_freedom_R, degrees_of_freedom_systemml, tol, "degrees_of_freedom_R", "degrees_of_freedom_systemml");		
+        HashMap<CellIndex, Double> degrees_of_freedom_SYSTEMML= readDMLMatrixFromHDFS("degrees_of_freedom");
+        TestUtils.compareMatrices(degrees_of_freedom_R, degrees_of_freedom_SYSTEMML, tol, "degrees_of_freedom_R", "degrees_of_freedom_SYSTEMML");		
 	}
 }

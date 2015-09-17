@@ -1,9 +1,11 @@
 package com.ibm.bi.dml.test.integration.functions.mlcontext;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
@@ -14,15 +16,14 @@ import org.junit.runners.Parameterized.Parameters;
 
 import com.ibm.bi.dml.api.DMLException;
 import com.ibm.bi.dml.api.DMLScript;
+import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.api.MLContext;
 import com.ibm.bi.dml.api.MLOutput;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 @RunWith(value = Parameterized.class)
@@ -31,7 +32,7 @@ public class GNMFTest extends AutomatedTestBase
 
 	
 	private final static String TEST_DIR = "applications/gnmf/";
-	private final static String TEST_GNMF = "GNMF";
+	private final static String TEST_NAME = "GNMF";
 	
 	int numRegisteredInputs;
 	int numRegisteredOutputs;
@@ -49,51 +50,43 @@ public class GNMFTest extends AutomatedTestBase
 	 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_GNMF, new TestConfiguration(TEST_DIR, TEST_GNMF, new String[] { "w", "h" }));
+		addTestConfiguration(TEST_DIR, TEST_NAME);
 	}
 	
 	@Test
 	public void testGNMFWithRDMLAndJava() throws IOException, DMLException, ParseException {
+		System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRegisteredInputs + ", "
+				+ numRegisteredOutputs + "} ------------");
+		this.scriptType = ScriptType.DML;
+		
 		int m = 2000;
 		int n = 1500;
 		int k = 50;
 		int maxiter = 2;
-		
-		TestConfiguration config = getTestConfiguration(TEST_GNMF);
-		
-		/* This is for running the junit test the old way, i.e., replace $$x$$ in DML script with its value */
-		config.addVariable("m", m);
-		config.addVariable("n", n);
-		config.addVariable("k", k);
-		config.addVariable("maxiter", maxiter);
-		
 		double Eps = Math.pow(10, -8);
+		
+		getAndLoadTestConfiguration(TEST_NAME);
 
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String GNMF_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = GNMF_HOME + TEST_GNMF + ".dml";
-		programArgs = new String[]{			GNMF_HOME + INPUT_DIR + "v", 
-											GNMF_HOME + INPUT_DIR + "w", 
-                							GNMF_HOME + INPUT_DIR + "h", 
-                							Integer.toString(m), Integer.toString(n), Integer.toString(k), Integer.toString(maxiter),
-                							GNMF_HOME + OUTPUT_DIR + "w", 
-                							GNMF_HOME + OUTPUT_DIR + "h"};
+		List<String> proArgs = new ArrayList<String>();
+		proArgs.add(input("v"));
+		proArgs.add(input("w"));
+		proArgs.add(input("h"));
+		proArgs.add(Integer.toString(maxiter));
+		proArgs.add(output("w"));
+		proArgs.add(output("h"));
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		
+		fullDMLScriptName = getScript();
 		
-		
-		fullRScriptName = GNMF_HOME + TEST_GNMF + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       GNMF_HOME + INPUT_DIR + " " + Integer.toString(maxiter) + " " + GNMF_HOME + EXPECTED_DIR;
-		
-		loadTestConfiguration(config);
+		rCmd = getRCmd(inputDir(), Integer.toString(maxiter), expectedDir());
 
 		double[][] v = getRandomMatrix(m, n, 1, 5, 0.2, System.currentTimeMillis());
 		double[][] w = getRandomMatrix(m, k, 0, 1, 1, System.currentTimeMillis());
 		double[][] h = getRandomMatrix(k, n, 0, 1, 1, System.currentTimeMillis());
 
-		writeInputMatrix("v", v, true);
-		writeInputMatrix("w", w, true);
-		writeInputMatrix("h", h, true);
+		writeInputMatrixWithMTD("v", v, true);
+		writeInputMatrixWithMTD("w", w, true);
+		writeInputMatrixWithMTD("h", h, true);
 
 		for (int i = 0; i < maxiter; i++) {
 			double[][] tW = TestUtils.performTranspose(w);
@@ -129,17 +122,17 @@ public class GNMFTest extends AutomatedTestBase
 			
 			// Read two matrices through RDD and one through HDFS
 			if(numRegisteredInputs >= 1) {
-				JavaRDD<String> vIn = sc.textFile(GNMF_HOME + INPUT_DIR + "v", 2).toJavaRDD();
+				JavaRDD<String> vIn = sc.textFile(input("v"), 2).toJavaRDD();
 				mlCtx.registerInput("V", vIn, "text", m, n);
 			}
 			
 			if(numRegisteredInputs >= 2) {
-				JavaRDD<String> wIn = sc.textFile(GNMF_HOME + INPUT_DIR + "w", 2).toJavaRDD();
+				JavaRDD<String> wIn = sc.textFile(input("w"), 2).toJavaRDD();
 				mlCtx.registerInput("W", wIn, "text", m, k);
 			}
 			
 			if(numRegisteredInputs >= 3) {
-				JavaRDD<String> hIn = sc.textFile(GNMF_HOME + INPUT_DIR + "h", 2).toJavaRDD();
+				JavaRDD<String> hIn = sc.textFile(input("h"), 2).toJavaRDD();
 				mlCtx.registerInput("H", hIn, "text", k, n);
 			}
 			
@@ -156,7 +149,7 @@ public class GNMFTest extends AutomatedTestBase
 			
 			if(numRegisteredOutputs >= 1) {
 				JavaRDD<String> hOut = out.getStringRDD("H", "text");
-				String fName = GNMF_HOME + OUTPUT_DIR + "h";
+				String fName = output("h");
 				try {
 					MapReduceTool.deleteFileIfExistOnHDFS( fName );
 				} catch (IOException e) {
@@ -167,7 +160,7 @@ public class GNMFTest extends AutomatedTestBase
 			
 			if(numRegisteredOutputs >= 2) {
 				JavaRDD<String> wOut = out.getStringRDD("W", "text");
-				String fName = GNMF_HOME + OUTPUT_DIR + "w";
+				String fName = output("w");
 				try {
 					MapReduceTool.deleteFileIfExistOnHDFS( fName );
 				} catch (IOException e) {
@@ -182,18 +175,13 @@ public class GNMFTest extends AutomatedTestBase
 		}
 		
 		runRScript(true);
-		disableOutAndExpectedDeletion();
 
 		HashMap<CellIndex, Double> hmWDML = readDMLMatrixFromHDFS("w");
 		HashMap<CellIndex, Double> hmHDML = readDMLMatrixFromHDFS("h");
 		HashMap<CellIndex, Double> hmWR = readRMatrixFromFS("w");
 		HashMap<CellIndex, Double> hmHR = readRMatrixFromFS("h");
-		//HashMap<CellIndex, Double> hmWJava = TestUtils.convert2DDoubleArrayToHashMap(w);
-		//HashMap<CellIndex, Double> hmHJava = TestUtils.convert2DDoubleArrayToHashMap(h);
 
 		TestUtils.compareMatrices(hmWDML, hmWR, 0.000001, "hmWDML", "hmWR");
 		TestUtils.compareMatrices(hmHDML, hmHR, 0.000001, "hmHDML", "hmHR");
-		//TestUtils.compareMatrices(hmWDML, hmWJava, 0.000001, "hmWDML", "hmWJava");
-		//TestUtils.compareMatrices(hmWR, hmWJava, 0.000001, "hmRDML", "hmWJava");
 	}
 }

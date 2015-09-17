@@ -84,128 +84,128 @@ alpha = dot(transpose(w), w)
 alpha2 = alpha
 
 while(!converge):
-	
-	norm_grad = sqrt(sum(grad*grad))
-	
-	print("-- Outer Iteration = " + iter)
-	objScalar = castAsScalar(obj)
-	print("     Iterations = " + iter + ", Objective = " + objScalar + ", Gradient Norm = " + norm_grad)
-	
-	# SOLVE TRUST REGION SUB-PROBLEM
-	s = zeros_D
-	os = zeros_N
-	r = -grad
-	d = r
-	inneriter = 0
-	innerconverge = ( sqrt(sum(r*r)) <= psi * norm_grad)
-	while (!innerconverge):
-		inneriter = inneriter + 1
-		norm_r2 = sum(r*r)
-		od = dot(X, d)
-		Hd = d + C*(dot(transpose(X), (logisticD*od)))
-		alpha_deno = dot(transpose(d), Hd)
-		alpha = norm_r2 / alpha_deno
-		
-		s = s + castAsScalar(alpha) * d
-		os = os + castAsScalar(alpha) * od
-		
-		sts = dot(transpose(s), s)
-		delta2 = delta*delta 
-		stsScalar = castAsScalar(sts)
-		
-		shouldBreak = False  # to mimic "break" in the following 'if' condition
-		if (stsScalar > delta2):
-			print("      --- cg reaches trust region boundary")
-			s = s - castAsScalar(alpha) * d
-			os = os - castAsScalar(alpha) * od
-			std = dot(transpose(s), d)
-			dtd = dot(transpose(d), d)
-			sts = dot(transpose(s), s)
-			rad = sqrt(std*std + dtd*(delta2 - sts))
-			stdScalar = castAsScalar(std)
-			if(stdScalar >= 0):
-				tau = (delta2 - sts)/(std + rad)
-			else:
-				tau = (rad - std)/dtd
-			
-			s = s + castAsScalar(tau) * d
-			os = os + castAsScalar(tau) * od
-			r = r - castAsScalar(tau) * Hd
-			
-			#break
-			shouldBreak = True
-			innerconverge = True
-		if (!shouldBreak):
-			r = r - castAsScalar(alpha) * Hd
-			old_norm_r2 = norm_r2
-			norm_r2 = sum(r*r)
-			beta = norm_r2/old_norm_r2
-			d = r + beta*d
-			innerconverge = (sqrt(norm_r2) <= psi * norm_grad) | (inneriter > maxinneriter)
-	# end while (!innerconverge)
-	
-	print("      --- Inner CG Iteration =  " + inneriter)
-	# END TRUST REGION SUB-PROBLEM
-	# compute rho, update w, obtain delta
-	gs = dot(transpose(s), grad)
-	qk = -0.5*(gs - (dot(transpose(s), r)))
-	
-	wnew = w + s	
-	onew = o + os
-	logisticnew = 1.0/(1.0 + exp(-y * onew ))
-	objnew = dot((0.5 * transpose(wnew)), wnew) + C * sum(-log(logisticnew))
-	
-	actred = (obj - objnew)
-	actredScalar = castAsScalar(actred)
-	rho = actred / qk
-	qkScalar = castAsScalar(qk)
-	rhoScalar = castAsScalar(rho)
-	snorm = sqrt(sum( s * s ))
-	print("     Actual    = " + actredScalar)
-	print("     Predicted = " + qkScalar)
-	
-	if (iter==0):
-		delta = min(delta, snorm)
-	alpha2 = objnew - obj - gs
-	alpha2Scalar = castAsScalar(alpha2)
-	if (alpha2Scalar <= 0):
-		alpha = sigma3*e
-	else:
-		ascalar = max(sigma1, -0.5*castAsScalar(gs)/alpha2Scalar)
-		alpha = ascalar*e
-	
-	if (rhoScalar > eta0):
-		w = wnew
-		o = onew
-		grad = w + dot(C*transpose(X), ((logisticnew - 1) * y ))
-		norm_grad = sqrt(sum(grad*grad))
-		logisticD = logisticnew * (1 - logisticnew)
-		obj = objnew
-	
-	alphaScalar = castAsScalar(alpha)
-	if (rhoScalar < eta0):
-		delta = min(max( alphaScalar , sigma1) * snorm, sigma2 * delta )
-	else:
-		if (rhoScalar < eta1):
-			delta = max(sigma1 * delta, min( alphaScalar  * snorm, sigma2 * delta))
-		else:
-			if (rhoScalar < eta2):
-				delta = max(sigma1 * delta, min( alphaScalar * snorm, sigma3 * delta))
-			else:
-				delta = max(delta, min( alphaScalar * snorm, sigma3 * delta))
-	
-	ot = dot(Xt, w)
-	ot2 = yt * ot
-	correct = sum(ppred(ot2, 0, ">"))
-	accuracy = correct*100.0/Nt 
-	iter = iter + 1
-	converge = (norm_grad < (tol * norm_grad_initial)) | (iter > maxiter)
-	
-	print("     Delta =  " + delta)
-	print("     Accuracy =  " +  accuracy)
-	print("     Correct =  " + correct)
-	print("     OuterIter =  " + iter)
-	print("     Converge =  " + converge)
+    
+    norm_grad = sqrt(sum(grad*grad))
+    
+    print("-- Outer Iteration = " + iter)
+    objScalar = castAsScalar(obj)
+    print("     Iterations = " + iter + ", Objective = " + objScalar + ", Gradient Norm = " + norm_grad)
+    
+    # SOLVE TRUST REGION SUB-PROBLEM
+    s = zeros_D
+    os = zeros_N
+    r = -grad
+    d = r
+    inneriter = 0
+    innerconverge = ( sqrt(sum(r*r)) <= psi * norm_grad)
+    while (!innerconverge):
+        inneriter = inneriter + 1
+        norm_r2 = sum(r*r)
+        od = dot(X, d)
+        Hd = d + C*(dot(transpose(X), (logisticD*od)))
+        alpha_deno = dot(transpose(d), Hd)
+        alpha = norm_r2 / alpha_deno
+        
+        s = s + castAsScalar(alpha) * d
+        os = os + castAsScalar(alpha) * od
+        
+        sts = dot(transpose(s), s)
+        delta2 = delta*delta 
+        stsScalar = castAsScalar(sts)
+        
+        shouldBreak = False  # to mimic "break" in the following 'if' condition
+        if (stsScalar > delta2):
+            print("      --- cg reaches trust region boundary")
+            s = s - castAsScalar(alpha) * d
+            os = os - castAsScalar(alpha) * od
+            std = dot(transpose(s), d)
+            dtd = dot(transpose(d), d)
+            sts = dot(transpose(s), s)
+            rad = sqrt(std*std + dtd*(delta2 - sts))
+            stdScalar = castAsScalar(std)
+            if(stdScalar >= 0):
+                tau = (delta2 - sts)/(std + rad)
+            else:
+                tau = (rad - std)/dtd
+            
+            s = s + castAsScalar(tau) * d
+            os = os + castAsScalar(tau) * od
+            r = r - castAsScalar(tau) * Hd
+            
+            #break
+            shouldBreak = True
+            innerconverge = True
+        if (!shouldBreak):
+            r = r - castAsScalar(alpha) * Hd
+            old_norm_r2 = norm_r2
+            norm_r2 = sum(r*r)
+            beta = norm_r2/old_norm_r2
+            d = r + beta*d
+            innerconverge = (sqrt(norm_r2) <= psi * norm_grad) | (inneriter > maxinneriter)
+    # end while (!innerconverge)
+    
+    print("      --- Inner CG Iteration =  " + inneriter)
+    # END TRUST REGION SUB-PROBLEM
+    # compute rho, update w, obtain delta
+    gs = dot(transpose(s), grad)
+    qk = -0.5*(gs - (dot(transpose(s), r)))
+    
+    wnew = w + s    
+    onew = o + os
+    logisticnew = 1.0/(1.0 + exp(-y * onew ))
+    objnew = dot((0.5 * transpose(wnew)), wnew) + C * sum(-log(logisticnew))
+    
+    actred = (obj - objnew)
+    actredScalar = castAsScalar(actred)
+    rho = actred / qk
+    qkScalar = castAsScalar(qk)
+    rhoScalar = castAsScalar(rho)
+    snorm = sqrt(sum( s * s ))
+    print("     Actual    = " + actredScalar)
+    print("     Predicted = " + qkScalar)
+    
+    if (iter==0):
+        delta = min(delta, snorm)
+    alpha2 = objnew - obj - gs
+    alpha2Scalar = castAsScalar(alpha2)
+    if (alpha2Scalar <= 0):
+        alpha = sigma3*e
+    else:
+        ascalar = max(sigma1, -0.5*castAsScalar(gs)/alpha2Scalar)
+        alpha = ascalar*e
+    
+    if (rhoScalar > eta0):
+        w = wnew
+        o = onew
+        grad = w + dot(C*transpose(X), ((logisticnew - 1) * y ))
+        norm_grad = sqrt(sum(grad*grad))
+        logisticD = logisticnew * (1 - logisticnew)
+        obj = objnew
+    
+    alphaScalar = castAsScalar(alpha)
+    if (rhoScalar < eta0):
+        delta = min(max( alphaScalar , sigma1) * snorm, sigma2 * delta )
+    else:
+        if (rhoScalar < eta1):
+            delta = max(sigma1 * delta, min( alphaScalar  * snorm, sigma2 * delta))
+        else:
+            if (rhoScalar < eta2):
+                delta = max(sigma1 * delta, min( alphaScalar * snorm, sigma3 * delta))
+            else:
+                delta = max(delta, min( alphaScalar * snorm, sigma3 * delta))
+    
+    ot = dot(Xt, w)
+    ot2 = yt * ot
+    correct = sum(ppred(ot2, 0, ">"))
+    accuracy = correct*100.0/Nt 
+    iter = iter + 1
+    converge = (norm_grad < (tol * norm_grad_initial)) | (iter > maxiter)
+    
+    print("     Delta =  " + delta)
+    print("     Accuracy =  " +  accuracy)
+    print("     Correct =  " + correct)
+    print("     OuterIter =  " + iter)
+    print("     Converge =  " + converge)
 # end while(!converge)
 
 save(w, $5, format="text")

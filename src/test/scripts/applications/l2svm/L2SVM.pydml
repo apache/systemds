@@ -40,10 +40,10 @@ check_max = max(Y)
 num_min = sum(ppred(Y, check_min, "=="))
 num_max = sum(ppred(Y, check_max, "=="))
 if(num_min + num_max != nrow(Y)):
-	print("please check Y, it should contain only 2 labels")
+    print("please check Y, it should contain only 2 labels")
 else:
-	if(check_min != -1 | check_max != +1):
-		Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
+    if(check_min != -1 | check_max != +1):
+        Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
 
 epsilon = cmdLine_tol
 lambda = cmdLine_reg
@@ -54,12 +54,12 @@ num_samples = nrow(X)
 dimensions = ncol(X)
 
 if (intercept == 1):
-	ones  = full(1, rows=num_samples, cols=1)
-	X = append(X, ones)
+    ones  = full(1, rows=num_samples, cols=1)
+    X = append(X, ones)
 
 num_rows_in_w = dimensions
 if(intercept == 1):
-	num_rows_in_w = num_rows_in_w + 1
+    num_rows_in_w = num_rows_in_w + 1
 w = full(0, rows=num_rows_in_w, cols=1)
 
 g_old = dot(transpose(X), Y)
@@ -70,46 +70,46 @@ debug_str = "# Iter, Obj"
 iter = 0
 continue = 1
 while(continue == 1 & iter < maxiterations):
-	# minimizing primal obj along direction s
-	step_sz = 0
-	Xd = dot(X, s)
-	wd = lambda * sum(w * s)
-	dd = lambda * sum(s * s)
-	continue1 = 1
-	while(continue1 == 1):
-		tmp_Xw = Xw + step_sz*Xd
-		out = 1 - Y * (tmp_Xw)
-		sv = ppred(out, 0, ">")
-		out = out * sv
-		g = wd + step_sz*dd - sum(out * Y * Xd)
-		h = dd + sum(Xd * sv * Xd)
-		step_sz = step_sz - g/h
-		if (g*g/h < 0.0000000001):
-			continue1 = 0
-	
-	#update weights
-	w = w + step_sz*s
-	Xw = Xw + step_sz*Xd
-	
-	out = 1 - Y * Xw
-	sv = ppred(out, 0, ">")
-	out = sv * out
-	obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
-	g_new = dot(transpose(X), (out * Y)) - lambda * w
-	
-	print("OBJ = " + obj)
-	debug_str = append(debug_str, iter + "," + obj)
-	
-	tmp = sum(s * g_old)
-	if(step_sz*tmp < epsilon*obj):
-		continue = 0
-	
-	#non-linear CG step
-	be = sum(g_new * g_new)/sum(g_old * g_old)
-	s = be * s + g_new
-	g_old = g_new
-	
-	iter = iter + 1
+    # minimizing primal obj along direction s
+    step_sz = 0
+    Xd = dot(X, s)
+    wd = lambda * sum(w * s)
+    dd = lambda * sum(s * s)
+    continue1 = 1
+    while(continue1 == 1):
+        tmp_Xw = Xw + step_sz*Xd
+        out = 1 - Y * (tmp_Xw)
+        sv = ppred(out, 0, ">")
+        out = out * sv
+        g = wd + step_sz*dd - sum(out * Y * Xd)
+        h = dd + sum(Xd * sv * Xd)
+        step_sz = step_sz - g/h
+        if (g*g/h < 0.0000000001):
+            continue1 = 0
+    
+    #update weights
+    w = w + step_sz*s
+    Xw = Xw + step_sz*Xd
+    
+    out = 1 - Y * Xw
+    sv = ppred(out, 0, ">")
+    out = sv * out
+    obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
+    g_new = dot(transpose(X), (out * Y)) - lambda * w
+    
+    print("OBJ = " + obj)
+    debug_str = append(debug_str, iter + "," + obj)
+    
+    tmp = sum(s * g_old)
+    if(step_sz*tmp < epsilon*obj):
+        continue = 0
+    
+    #non-linear CG step
+    be = sum(g_new * g_new)/sum(g_old * g_old)
+    s = be * s + g_new
+    g_old = g_new
+    
+    iter = iter + 1
 
 
 save(w, $model, format=cmdLine_fmt)

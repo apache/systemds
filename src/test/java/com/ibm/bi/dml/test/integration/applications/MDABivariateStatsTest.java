@@ -87,7 +87,6 @@ public abstract class MDABivariateStatsTest extends AutomatedTestBase
 		proArgs.add(output("feature_means"));
 		proArgs.add(output("feature_standard_deviations"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
         
 		fullDMLScriptName = getScript();
 		
@@ -125,7 +124,6 @@ public abstract class MDABivariateStatsTest extends AutomatedTestBase
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs); 
 		
 		runRScript(true);
-//		disableOutAndExpectedDeletion();
 
 		HashMap<CellIndex, Double> statsSYSTEMML = readDMLMatrixFromHDFS("stats");
 		HashMap<CellIndex, Double> statsR = readRMatrixFromFS("stats");

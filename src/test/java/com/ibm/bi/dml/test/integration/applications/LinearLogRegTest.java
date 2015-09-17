@@ -85,7 +85,6 @@ public abstract class LinearLogRegTest extends AutomatedTestBase
 		proArgs.add(input("yt"));
 		proArgs.add(output("w"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
         
 		fullDMLScriptName = getScript();
 		

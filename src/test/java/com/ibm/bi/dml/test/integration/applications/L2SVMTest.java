@@ -91,7 +91,6 @@ public abstract class L2SVMTest extends AutomatedTestBase
 		proArgs.add("model=" + output("w"));
 		proArgs.add("Log=" + output("Log"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
 		fullDMLScriptName = getScript();
 		
@@ -109,7 +108,6 @@ public abstract class L2SVMTest extends AutomatedTestBase
         runTest(true, EXCEPTION_NOT_EXPECTED, null, maxNumberOfMRJobs);
 		
 		runRScript(true);
-//		disableOutAndExpectedDeletion();
         
 		HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
         HashMap<CellIndex, Double> wSYSTEMML= readDMLMatrixFromHDFS("w");

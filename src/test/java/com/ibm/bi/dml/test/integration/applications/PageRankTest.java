@@ -31,7 +31,7 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public abstract class PageRankTest extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "applications/page_rank/";
-	protected final static String TEST_PAGE_RANK = "PageRank";
+	protected final static String TEST_NAME = "PageRank";
 
 	protected int numRows, numCols;
 
@@ -48,11 +48,11 @@ public abstract class PageRankTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_PAGE_RANK, new TestConfiguration(TEST_DIR, TEST_PAGE_RANK, new String[] { "p" }));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "p" }));
 	}
 
 	protected void testPageRank(ScriptType scriptType) {
-		System.out.println("------------ BEGIN " + TEST_PAGE_RANK + " " + scriptType + " TEST {" + numRows + ", "
+		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + numRows + ", "
 				+ numCols + "} ------------");
 		this.scriptType = scriptType;
 
@@ -61,9 +61,8 @@ public abstract class PageRankTest extends AutomatedTestBase {
 		int maxiter = 2;
 		double alpha = 0.85;
 
-		TestConfiguration config = getTestConfiguration(TEST_PAGE_RANK);
-		loadTestConfiguration(config);
-
+		getAndLoadTestConfiguration(TEST_NAME);
+		
 		List<String> proArgs = new ArrayList<String>();
 		if (scriptType == ScriptType.PYDML) {
 			proArgs.add("-python");
@@ -73,13 +72,10 @@ public abstract class PageRankTest extends AutomatedTestBase {
 		proArgs.add(input("p"));
 		proArgs.add(input("e"));
 		proArgs.add(input("u"));
-		proArgs.add(Integer.toString(rows));
-		proArgs.add(Integer.toString(cols));
 		proArgs.add(Double.toString(alpha));
 		proArgs.add(Integer.toString(maxiter));
 		proArgs.add(output("p"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
 		fullDMLScriptName = getScript();
 
@@ -87,10 +83,10 @@ public abstract class PageRankTest extends AutomatedTestBase {
 		double[][] p = getRandomMatrix(rows, 1, 1, 1, 1, -1);
 		double[][] e = getRandomMatrix(rows, 1, 1, 1, 1, -1);
 		double[][] u = getRandomMatrix(1, cols, 1, 1, 1, -1);
-		writeInputMatrix("g", g);
-		writeInputMatrix("p", p);
-		writeInputMatrix("e", e);
-		writeInputMatrix("u", u);
+		writeInputMatrixWithMTD("g", g, true);
+		writeInputMatrixWithMTD("p", p, true);
+		writeInputMatrixWithMTD("e", e, true);
+		writeInputMatrixWithMTD("u", u, true);
 
 		for (int i = 0; i < maxiter; i++) {
 			double[][] gp = TestUtils.performMatrixMultiplication(g, p);

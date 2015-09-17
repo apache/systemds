@@ -42,7 +42,6 @@ public abstract class CsplineCGTest extends AutomatedTestBase {
                 {100, 1},
                 {1000, 1},
         };
-//        Object[][] data = new Object[][] {{10, 1}};
         return Arrays.asList(data);
     }
     @Override
@@ -73,7 +72,6 @@ public abstract class CsplineCGTest extends AutomatedTestBase {
 		proArgs.add("maxi=" + numIter);
 		proArgs.add("inp_x=" + 4.5);
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
 		fullDMLScriptName = getScript();
 		
@@ -96,13 +94,10 @@ public abstract class CsplineCGTest extends AutomatedTestBase {
         runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
         runRScript(true);
-//        disableOutAndExpectedDeletion();
 
         HashMap<CellIndex, Double> pred_y_R = readRMatrixFromFS("pred_y");
         HashMap<CellIndex, Double> pred_y_SYSTEMML= readDMLMatrixFromHDFS("pred_y");
 
-        boolean success =
-                TestUtils.compareMatrices(pred_y_R, pred_y_SYSTEMML, Math.pow(10, -5), "k_R", "k_SYSTEMML");
-        System.out.println(success);
+        TestUtils.compareMatrices(pred_y_R, pred_y_SYSTEMML, Math.pow(10, -5), "k_R", "k_SYSTEMML");
     }
 }

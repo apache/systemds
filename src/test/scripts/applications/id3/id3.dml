@@ -270,8 +270,8 @@ id3_learn = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] X_subset
 	}
 }
 
-X = read($1, rows=$3, cols=$4);
-y = read($2, rows=$3, cols=1);
+X = read($1);
+y = read($2);
 
 n = nrow(X)
 m = ncol(X)
@@ -301,5 +301,5 @@ for(i3 in 1:nrow(edges)){
 	edges[i3,2] = edges[i3,2] - correction
 }
 
-write(nodes, $5, format="text")
-write(edges, $6, format="text")
+write(nodes, $3, format="text")
+write(edges, $4, format="text")

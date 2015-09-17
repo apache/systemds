@@ -184,9 +184,6 @@ public abstract class GLMTest extends AutomatedTestBase
 		
 		
 		};
-		
-//		Object[][] data = new Object[][] {{10000,  100,  1,  0.0,  1,  1.0,  0.01, 3.0,   0.0,  2.0,  2.5 }};   // Gaussian.id
-		
 		return Arrays.asList(data);
 	}
 
@@ -250,8 +247,6 @@ public abstract class GLMTest extends AutomatedTestBase
        	else
         	y = new double [rows][1];
         
-//double smallest = Double.POSITIVE_INFINITY;
-//int smallest_index = -1;
         
         for (int i = 0; i < rows; i ++)
         {
@@ -280,13 +275,6 @@ public abstract class GLMTest extends AutomatedTestBase
             		nnz_in_y ++;            	
             }
             
-//if (y[i][0] < smallest)
-//{
-//	smallest = y[i][0];
-//	smallest_index = i;
-//	System.out.println (String.format ("i+1 =%6d:  eta = %f;  y = %g", i+1, eta, y [i][0]));
-        	//if (i%20==19) System.out.println ();
-//}
         }
         
         int defaultBlockSize = com.ibm.bi.dml.parser.DMLTranslator.DMLBlockSize;
@@ -317,7 +305,6 @@ public abstract class GLMTest extends AutomatedTestBase
 		proArgs.add("Y=" + input("Y"));
 		proArgs.add("B=" + output("betas_SYSTEMML"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
 		fullDMLScriptName = getScript();
 		
@@ -327,9 +314,7 @@ public abstract class GLMTest extends AutomatedTestBase
 		
 		int expectedNumberOfJobs = -1; // 31;
 
-		System.out.println ("About to run the DML script...");
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
-		System.out.println ("Completed the DML script run.");
 
 		double max_abs_beta = 0.0;
 		HashMap<CellIndex, Double> wTRUE = new HashMap <CellIndex, Double> ();
@@ -344,18 +329,11 @@ public abstract class GLMTest extends AutomatedTestBase
 		for (CellIndex key : wSYSTEMML_raw.keySet())
 			if (key.column == 1)
 				wSYSTEMML.put (key, wSYSTEMML_raw.get (key));
-        
-//        System.out.println ("Comparing TRUE and DML weight vectors...");
-//        TestUtils.compareMatrices (wTRUE, wSYSTEMML, 0.001 * max_abs_beta, "wTRUE", "wSYSTEMML");
-		
 
-        System.out.println ("About to run the R script...");
 		runRScript(true);
-		System.out.println ("Completed the R script run.");
 
 		HashMap<CellIndex, Double> wR   = readRMatrixFromFS ("betas_R");
         
-        System.out.println ("Comparing R and DML weight vectors...");
         double eps = 0.000001;
         if( distParam==0 && linkType==1 ) // Gaussian.log
         {
@@ -370,9 +348,6 @@ public abstract class GLMTest extends AutomatedTestBase
         	eps = 0.0000016; //1.6x the error threshold
         }		
         TestUtils.compareMatrices (wR, wSYSTEMML, eps * max_abs_beta, "wR", "wSYSTEMML");
-
-        // System.out.println ("Comparing TRUE and R weight vectors...");
-        // TestUtils.compareMatrices (wTRUE, wR, 0.001 * max_abs_beta, "wTRUE", "wR");
     }
     
     double[] scaleWeights (double[] w_unscaled, double[][] X, double icept, double meanLF, double sigmaLF)

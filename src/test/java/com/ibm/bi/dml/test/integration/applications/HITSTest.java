@@ -18,39 +18,33 @@
 package com.ibm.bi.dml.test.integration.applications;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 public abstract class HITSTest extends AutomatedTestBase 
 {
 	protected final static String TEST_DIR = "applications/hits/";
-	protected final static String TEST_HITS = "HITS";
+	protected final static String TEST_NAME = "HITS";
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_HITS, new TestConfiguration(TEST_DIR, TEST_HITS, new String[] { "hubs", "authorities" }));
+		addTestConfiguration(TEST_DIR, TEST_NAME);
 	}
 	
 	protected void testHits(ScriptType scriptType) {
-		System.out.println("------------ BEGIN " + TEST_HITS + " " + scriptType + " TEST ------------");
+		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST ------------");
 		this.scriptType = scriptType;
 		
 		int rows = 1000;
 		int cols = 1000;
 		int maxiter = 2;
 
-		TestConfiguration config = getTestConfiguration(TEST_HITS);
-		config.addVariable("maxiter", maxiter);
-		config.addVariable("rows", rows);
-		config.addVariable("cols", cols);
-		loadTestConfiguration(config);
+		getAndLoadTestConfiguration(TEST_NAME);
 		
 		List<String> proArgs = new ArrayList<String>();
 		if (scriptType == ScriptType.PYDML) {
@@ -59,20 +53,17 @@ public abstract class HITSTest extends AutomatedTestBase
 		proArgs.add("-args");
 		proArgs.add(input("G"));
 		proArgs.add(Integer.toString(maxiter));
-		proArgs.add(Integer.toString(rows));
-		proArgs.add(Integer.toString(cols));
 		proArgs.add(Double.toString(Math.pow(10, -6)));
 		proArgs.add(output("hubs"));
 		proArgs.add(output("authorities"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		System.out.println("arguments from test case: " + Arrays.toString(programArgs));
 		
 		fullDMLScriptName = getScript();
 		
 		rCmd = getRCmd(inputDir(), Integer.toString(maxiter), Double.toString(Math.pow(10, -6)), expectedDir());
 		
 		double[][] G = getRandomMatrix(rows, cols, 0, 1, 1.0, -1);
-		writeInputMatrix("G", G, true);
+		writeInputMatrixWithMTD("G", G, true);
 		
 		/*
 		 * Expected number of jobs:
@@ -84,7 +75,6 @@ public abstract class HITSTest extends AutomatedTestBase
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
 		
 		runRScript(true);
-		disableOutAndExpectedDeletion();
 
 		HashMap<CellIndex, Double> hubsSYSTEMML = readDMLMatrixFromHDFS("hubs");
 		HashMap<CellIndex, Double> authSYSTEMML = readDMLMatrixFromHDFS("authorities");

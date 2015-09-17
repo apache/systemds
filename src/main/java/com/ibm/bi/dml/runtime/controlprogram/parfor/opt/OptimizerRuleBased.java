@@ -297,7 +297,7 @@ public class OptimizerRuleBased extends Optimizer
 				rewriteInjectSparkLoopCheckpointing( pn );
 				
 				//rewrite 18: repartition read-only inputs for zipmm 
-				rewriteInjectSparkRepartition( pn );
+				rewriteInjectSparkRepartition( pn, ec.getVariables() );
 			}
 		}	
 	
@@ -2165,7 +2165,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	protected void rewriteInjectSparkRepartition(OptNode n) 
+	protected void rewriteInjectSparkRepartition(OptNode n, LocalVariableMap vars) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//get program blocks of root parfor
@@ -2176,7 +2176,8 @@ public class OptimizerRuleBased extends Optimizer
 		ArrayList<String> ret = new ArrayList<String>();
 		
 		if(    OptimizerUtils.isSparkExecutionMode() //spark exec mode
-			&& n.getExecType() == ExecType.CP ) 	 //local parfor 
+			&& n.getExecType() == ExecType.CP		 //local parfor 
+			&& _N > 1                            )   //at least 2 iterations                             
 		{
 			//collect candidates from zipmm spark instructions
 			HashSet<String> cand = new HashSet<String>();
@@ -2188,6 +2189,19 @@ public class OptimizerRuleBased extends Optimizer
 				if( probe.contains( var ) )
 					ret.add( var );
 				
+			//prune small candidates
+			ArrayList<String> tmp = new ArrayList<String>(ret);
+			ret.clear();
+			for( String var : tmp )
+				if( vars.get(var) instanceof MatrixObject )
+				{
+					MatrixObject mo = (MatrixObject) vars.get(var);
+					double sp = OptimizerUtils.getSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getNnz());
+					double size = OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), sp);
+					if( size > OptimizerUtils.getLocalMemBudget() )
+						ret.add(var);
+				}
+			
 			//apply rewrite to parfor pb
 			if( !ret.isEmpty() ) {
 				pfpb.setSparkRepartitionVariables(ret);

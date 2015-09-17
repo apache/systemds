@@ -183,7 +183,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 				super.rewriteInjectSparkLoopCheckpointing( pn );
 				
 				//rewrite 18: repartition read-only inputs for zipmm 
-				super.rewriteInjectSparkRepartition( pn );
+				super.rewriteInjectSparkRepartition( pn, ec.getVariables() );
 			}
 		}	
 		

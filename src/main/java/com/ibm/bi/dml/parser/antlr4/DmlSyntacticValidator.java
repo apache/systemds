@@ -115,17 +115,19 @@ import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.StringIdentifier;
 import com.ibm.bi.dml.parser.WhileStatement;
 
-public class DmlSyntacticValidator implements DmlListener {
-	
-	
+public class DmlSyntacticValidator implements DmlListener
+{	
 	private DmlSyntacticValidatorHelper helper = null;
-	private String currentPath = null;
+
+	private String _workingDir = ".";   //current working directory 
+	private String _currentPath = null; //current file path
 	private HashMap<String,String> argVals = null;
 	
 	public DmlSyntacticValidator(DmlSyntacticValidatorHelper helper, String currentPath, HashMap<String,String> argVals) {
 		this.helper = helper;
-		this.currentPath = currentPath;
 		this.argVals = argVals;
+		
+		_currentPath = currentPath;
 	}
 	
 	// Functions we have to implement but don't really need it
@@ -235,7 +237,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	private void setFileLineColumn(Expression expr, ParserRuleContext ctx) {
 		// expr.setFilename(helper.getCurrentFileName());
 		String txt = ctx.getText();
-		expr.setFilename(currentPath);
+		expr.setFilename(_currentPath);
 		expr.setBeginLine(ctx.start.getLine());
 		expr.setBeginColumn(ctx.start.getCharPositionInLine());
 		expr.setEndLine(ctx.stop.getLine());
@@ -711,50 +713,42 @@ public class DmlSyntacticValidator implements DmlListener {
 	// --------------------------------------------------------------------
 	
 	@Override
-	public void exitImportStatement(ImportStatementContext ctx) {
+	public void exitImportStatement(ImportStatementContext ctx) 
+	{
+		//prepare import filepath
 		String filePath = ctx.filePath.getText();
 		String namespace = DMLProgram.DEFAULT_NAMESPACE;
 		if(ctx.namespace != null && ctx.namespace.getText() != null && !ctx.namespace.getText().isEmpty()) { 
 			namespace = ctx.namespace.getText();
 		}
-		
 		if((filePath.startsWith("\"") && filePath.endsWith("\"")) || 
 				filePath.startsWith("'") && filePath.endsWith("'")) {	
 			filePath = filePath.substring(1, filePath.length()-1);
 		}
 		
-		if(this.currentPath != null) {
-			filePath = this.currentPath + File.separator + filePath;
+		//concatenate working directory to filepath
+		filePath = _workingDir + File.separator + filePath;
+		
+		DMLProgram prog = null;
+		try {
+			prog = (new DMLParserWrapper()).doParse(filePath, null, argVals);
+		} catch (ParseException e) {
+			helper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
+			return;
 		}
-		
-		
-//		File importedFile = new File(filePath);
-//		if(!importedFile.exists()) {
-//			helper.notifyErrorListeners("cannot open the file " + filePath, ctx.start);
-//			return;
-//		}
-//		else {
-			DMLProgram prog = null;
-			try {
-				prog = (new DMLParserWrapper()).doParse(filePath, null, argVals);
-			} catch (ParseException e) {
-				helper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
-				return;
-			}
-	        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
-			if(prog == null) {
-				helper.notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
-				return;
-			}
-			else {
-				ctx.info.namespaces = new HashMap<String, DMLProgram>();
-				ctx.info.namespaces.put(namespace, prog);
-				ctx.info.stmt = new ImportStatement();
-				((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
-				((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
-				((ImportStatement) ctx.info.stmt).setNamespace(namespace);
-			}
-//		}
+        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
+		if(prog == null) {
+			helper.notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
+			return;
+		}
+		else {
+			ctx.info.namespaces = new HashMap<String, DMLProgram>();
+			ctx.info.namespaces.put(namespace, prog);
+			ctx.info.stmt = new ImportStatement();
+			((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
+			((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
+			((ImportStatement) ctx.info.stmt).setNamespace(namespace);
+		}
 	}
 	
 	@Override
@@ -1384,7 +1378,7 @@ public class DmlSyntacticValidator implements DmlListener {
 			filePath = filePath.substring(1, filePath.length()-1);
 		}
 		
-		this.currentPath = filePath + File.separator;
+		_workingDir = filePath;
 		ctx.info.stmt = stmt;
 	}
 	

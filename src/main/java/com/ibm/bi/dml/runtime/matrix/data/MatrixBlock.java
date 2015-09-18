@@ -519,6 +519,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		return nonZeros;
 	}
 	
+	public void setNonZeros(long nnz) {
+		nonZeros = nnz;
+	}
+	
 	public boolean isVector() 
 	{
 		return (rlen == 1 || clen == 1);

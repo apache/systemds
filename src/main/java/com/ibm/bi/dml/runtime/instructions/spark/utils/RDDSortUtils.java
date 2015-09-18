@@ -38,6 +38,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.functionobjects.SortIndex;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.data.RowMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVectorFunction;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -73,8 +74,7 @@ public class RDDSortUtils
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 				.zipWithIndex()
-		        .mapPartitions(new ConvertToBinaryBlockFunction(rlen, brlen))
-		        .mapToPair(new UnfoldBinaryBlockFunction());
+		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction(rlen, brlen));
 		ret = RDDAggregateUtils.mergeByKey(ret);	
 		
 		return ret;
@@ -104,8 +104,7 @@ public class RDDSortUtils
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 				.zipWithIndex()
-		        .mapPartitions(new ConvertToBinaryBlockFunction2(rlen, brlen))
-		        .mapToPair(new UnfoldBinaryBlockFunction());
+		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction2(rlen, brlen));
 		ret = RDDAggregateUtils.mergeByKey(ret);		
 		
 		return ret;
@@ -135,8 +134,7 @@ public class RDDSortUtils
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 				.zipWithIndex()
-		        .mapPartitions(new ConvertToBinaryBlockFunction3(rlen, brlen))
-		        .mapToPair(new UnfoldBinaryBlockFunction());
+		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction3(rlen, brlen));
 		ret = RDDAggregateUtils.mergeByKey(ret);		
 		
 		return ret;	
@@ -171,8 +169,7 @@ public class RDDSortUtils
 				.zipWithIndex()
 				.mapToPair(new ExtractIndexFunction())
 				.sortByKey()
-		        .mapPartitions(new ConvertToBinaryBlockFunction4(rlen, brlen))
-		        .mapToPair(new UnfoldBinaryBlockFunction());
+		        .mapPartitionsToPair(new ConvertToBinaryBlockFunction4(rlen, brlen));
 		ixmap = RDDAggregateUtils.mergeByKey(ixmap);		
 		
 		//replicate indexes for all column blocks
@@ -180,12 +177,10 @@ public class RDDSortUtils
 				.flatMapToPair(new ReplicateVectorFunction(false, numRep));      
 		
 		//create binary block output
-		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = data
+		JavaPairRDD<MatrixIndexes, RowMatrixBlock> ret = data
 				.join(rixmap)
-				.flatMapToPair(new ShuffleMatrixBlockRowsFunction(rlen, brlen));
-		ret = RDDAggregateUtils.mergeByKey(ret);
-		
-		return ret;	
+				.mapPartitionsToPair(new ShuffleMatrixBlockRowsFunction(rlen, brlen));
+		return RDDAggregateUtils.mergeRowsByKey(ret);
 	}
 	
 	/**
@@ -248,6 +243,7 @@ public class RDDSortUtils
 //	}
 	
 	/**
+	 * This function collects and sorts value column in memory and then broadcasts it. 
 	 * 
 	 * @param val
 	 * @param data
@@ -261,36 +257,33 @@ public class RDDSortUtils
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	/* This function collects and sorts value column in memory and then broadcasts it. 
-	 * 
-	 */
-	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByValMemSort( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
 			JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int brlen, int bclen, 
 			SparkExecutionContext sec, ReorgOperator r_op) 
 					throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		MatrixBlock inMatBlock = SparkExecutionContext.toMatrixBlock(val, (int)rlen, 1, brlen, bclen, -1);
+		//collect orderby column for in-memory sorting
+		MatrixBlock inMatBlock = SparkExecutionContext
+				.toMatrixBlock(val, (int)rlen, 1, brlen, bclen, -1);
 
-		// Define operator for reorgOperation
-		ReorgOperator r_opLocal = new ReorgOperator(SortIndex.getSortIndexFnObject(1, !asc, true));	
+		//in-memory sort operation (w/ index return: source index in target position)
+		ReorgOperator lrop = new ReorgOperator(SortIndex.getSortIndexFnObject(1, !asc, true));	
+		MatrixBlock sortedIx = (MatrixBlock) inMatBlock
+				.reorgOperations(lrop, new MatrixBlock(), -1, -1, -1);
 		
-		//Get the vector containing target index sorted based on values in column to be sorted. 
-		MatrixBlock sortedBlock = (MatrixBlock) (inMatBlock.reorgOperations(r_opLocal, new MatrixBlock(), -1, -1, -1));
-		
-		// Flipping the sort index, as original sort contains vector sorted based on value, we need target index in the vector.
-		MatrixBlock sortedBlockFlipInd = new MatrixBlock(sortedBlock.getNumRows(), 1, sortedBlock.isInSparseFormat()); 
-		for (int i=0; i < sortedBlock.getNumRows(); ++i) 
-			sortedBlockFlipInd.quickSetValue((int)sortedBlock.quickGetValue(i, 0)-1, 0, i+1);			
+		//flip sort indices from <source ix in target pos> to <target ix in source pos>
+		MatrixBlock sortedIxSrc = new MatrixBlock(sortedIx.getNumRows(), 1, false); 
+		for (int i=0; i < sortedIx.getNumRows(); i++) 
+			sortedIxSrc.quickSetValue((int)sortedIx.quickGetValue(i,0)-1, 0, i+1);			
 
-		PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(sortedBlockFlipInd, brlen, bclen);		
+		//broadcast index vector
+		PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(sortedIxSrc, brlen, bclen);		
 		Broadcast<PartitionedMatrixBlock> _pmb = sec.getSparkContext().broadcast(pmb);	
 
-		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = data
-					.flatMapToPair(new ShuffleMatrixBlockRowsInMemFunction(rlen, brlen, _pmb));
-		ret = RDDAggregateUtils.mergeByKey(ret);
-
-		return ret;	
+		//sort data with broadcast index vector
+		JavaPairRDD<MatrixIndexes, RowMatrixBlock> ret = data
+				.mapPartitionsToPair(new ShuffleMatrixBlockRowsInMemFunction(rlen, brlen, _pmb));
+		return RDDAggregateUtils.mergeRowsByKey(ret);
 	}
 	
 	/**
@@ -412,7 +405,7 @@ public class RDDSortUtils
 	/**
 	 * 
 	 */
-	private static class ConvertToBinaryBlockFunction implements FlatMapFunction<Iterator<Tuple2<Double,Long>>,Tuple2<MatrixIndexes,MatrixBlock>> 
+	private static class ConvertToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Double,Long>>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 5000298196472931653L;
 		
@@ -463,7 +456,7 @@ public class RDDSortUtils
 	/**
 	 * 
 	 */
-	private static class ConvertToBinaryBlockFunction2 implements FlatMapFunction<Iterator<Tuple2<DoublePair,Long>>,Tuple2<MatrixIndexes,MatrixBlock>> 
+	private static class ConvertToBinaryBlockFunction2 implements PairFlatMapFunction<Iterator<Tuple2<DoublePair,Long>>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = -8638434373377180192L;
 		
@@ -515,7 +508,7 @@ public class RDDSortUtils
 	/**
 	 * 
 	 */
-	private static class ConvertToBinaryBlockFunction3 implements FlatMapFunction<Iterator<Tuple2<ValueIndexPair,Long>>,Tuple2<MatrixIndexes,MatrixBlock>> 
+	private static class ConvertToBinaryBlockFunction3 implements PairFlatMapFunction<Iterator<Tuple2<ValueIndexPair,Long>>,MatrixIndexes,MatrixBlock> 
 	{		
 		private static final long serialVersionUID = 9113122668214965797L;
 		
@@ -566,7 +559,7 @@ public class RDDSortUtils
 	/**
 	 * 
 	 */
-	private static class ConvertToBinaryBlockFunction4 implements FlatMapFunction<Iterator<Tuple2<Long,Long>>,Tuple2<MatrixIndexes,MatrixBlock>> 
+	private static class ConvertToBinaryBlockFunction4 implements PairFlatMapFunction<Iterator<Tuple2<Long,Long>>,MatrixIndexes,MatrixBlock> 
 	{	
 		private static final long serialVersionUID = 9113122668214965797L;
 		
@@ -614,7 +607,7 @@ public class RDDSortUtils
 		}
 	}
 	
-	private static class ShuffleMatrixBlockRowsFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock,MatrixBlock>>,MatrixIndexes,MatrixBlock> 
+	private static class ShuffleMatrixBlockRowsFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,Tuple2<MatrixBlock,MatrixBlock>>>,MatrixIndexes,RowMatrixBlock> 
 	{	
 		private static final long serialVersionUID = 6885207719329119646L;
 		
@@ -628,34 +621,81 @@ public class RDDSortUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg0)
+		public Iterable<Tuple2<MatrixIndexes, RowMatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>>> arg0)
 			throws Exception 
 		{
-			MatrixBlock data = arg0._2()._1();
-			MatrixBlock ixmap = arg0._2()._2();
-			MatrixIndexes ixmap2 = arg0._1();
+			return new ShuffleMatrixIterator(arg0);
+		}
+		
+		/**
+		 * Lazy iterator to prevent blk output for better resource efficiency; 
+		 * This also lowered garbage collection overhead.
+		 */
+		private class ShuffleMatrixIterator implements Iterable<Tuple2<MatrixIndexes, RowMatrixBlock>>, Iterator<Tuple2<MatrixIndexes, RowMatrixBlock>>
+		{
+			private Iterator<Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>>> _inIter = null;
+			private Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> _currBlk = null;
+			private int _currPos = -1;
 			
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();			
-			for( int i=0; i<data.getNumRows(); i++) 
-			{
-				long valix = (long) ixmap.quickGetValue(i, 0);
-				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
-				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
-				long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
-				MatrixIndexes lix = new MatrixIndexes(rix,ixmap2.getColumnIndex());
-				MatrixBlock lmb = new MatrixBlock((int)len, data.getNumColumns(), true);	
-				MatrixBlock tmp = data.sliceOperations(i, i, 0, data.getNumColumns()-1, new MatrixBlock());
-				lmb.leftIndexingOperations(tmp, pos, pos, 0, data.getNumColumns()-1, lmb, true);
-				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(lix, lmb));
-			}			
+			public ShuffleMatrixIterator(Iterator<Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>>> in) {
+				_inIter = in;
+			}
 
-			return ret;
+			public Iterator<Tuple2<MatrixIndexes, RowMatrixBlock>> iterator() {
+				return this;
+			}
+
+			@Override
+			public boolean hasNext() {
+				return _currBlk != null || _inIter.hasNext();
+			}
+			
+			@Override
+			public Tuple2<MatrixIndexes, RowMatrixBlock> next() 
+			{
+				//pull next input block (if required)
+				if( _currBlk == null ){
+					_currBlk = _inIter.next();
+					_currPos = 0;
+				}
+				
+				try
+				{
+					//produce next output tuple
+					MatrixIndexes ixmap = _currBlk._1();
+					MatrixBlock data = _currBlk._2()._1();
+					MatrixBlock mbTargetIndex = _currBlk._2()._2();
+					
+					long valix = (long) mbTargetIndex.getValue(_currPos, 0);
+					long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
+					int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
+					int len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);		
+					MatrixIndexes lix = new MatrixIndexes(rix,ixmap.getColumnIndex());
+					MatrixBlock tmp = data.sliceOperations(_currPos, _currPos, 0, data.getNumColumns()-1, new MatrixBlock());
+					_currPos++;
+					
+					//handle end of block situations
+					if( _currPos == data.getNumRows() ){
+						_currBlk = null;
+					}
+					
+					return new Tuple2<MatrixIndexes,RowMatrixBlock>(lix, new RowMatrixBlock(len, pos, tmp));
+				}
+				catch(Exception ex) {
+					throw new RuntimeException(ex);
+				}
+			}
+
+			@Override
+			public void remove() {
+				throw new RuntimeException("Unsupported remove operation.");
+			}
 		}
 	}
 	
-	private static class ShuffleMatrixBlockRowsInMemFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,MatrixIndexes,MatrixBlock> 
+	private static class ShuffleMatrixBlockRowsInMemFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,MatrixBlock>>,MatrixIndexes,RowMatrixBlock> 
 	{	
-		private static final long serialVersionUID = 6885207719329119646L;   //TODO
+		private static final long serialVersionUID = 6885207719329119646L; 
 		
 		private long _rlen = -1;
 		private int _brlen = -1;
@@ -670,45 +710,75 @@ public class RDDSortUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+		public Iterable<Tuple2<MatrixIndexes, RowMatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
 			throws Exception 
 		{
-			MatrixIndexes ixmap = arg0._1();
-			MatrixBlock data = arg0._2();
-
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();			
-
-			MatrixBlock mbTargetIndex = _pmb.value().getMatrixBlock((int)ixmap.getRowIndex(), 1);
-			
-			for( int i=0; i<data.getNumRows(); i++) 
-			{
-				long valix = (long) mbTargetIndex.getValue(i, 0);
-				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
-				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
-				long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);		
-				MatrixIndexes lix = new MatrixIndexes(rix,ixmap.getColumnIndex());
-				MatrixBlock lmb = new MatrixBlock((int)len, data.getNumColumns(), true);	
-				MatrixBlock tmp = data.sliceOperations(i, i, 0, data.getNumColumns()-1, new MatrixBlock());
-				lmb.leftIndexingOperations(tmp, pos, pos, 0, data.getNumColumns()-1, lmb, true);
-				ret.add(new Tuple2<MatrixIndexes,MatrixBlock>(lix, lmb));
-			}			
-
-			return ret;
+			return new ShuffleMatrixIterator(arg0);
 		}
-	}
-	
-	/**
-	 * 
-	 */
-	private static class UnfoldBinaryBlockFunction implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>,MatrixIndexes,MatrixBlock> 
-	{
-		private static final long serialVersionUID = -5509821097041916225L;
-
-		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> t) 
-			throws Exception 
+		
+		/**
+		 * Lazy iterator to prevent blk output for better resource efficiency; 
+		 * This also lowered garbage collection overhead.
+		 */
+		private class ShuffleMatrixIterator implements Iterable<Tuple2<MatrixIndexes, RowMatrixBlock>>, Iterator<Tuple2<MatrixIndexes, RowMatrixBlock>>
 		{
-			return t;
+			private Iterator<Tuple2<MatrixIndexes, MatrixBlock>> _inIter = null;
+			private Tuple2<MatrixIndexes, MatrixBlock> _currBlk = null;
+			private int _currPos = -1;
+			
+			public ShuffleMatrixIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
+				_inIter = in;
+			}
+
+			public Iterator<Tuple2<MatrixIndexes, RowMatrixBlock>> iterator() {
+				return this;
+			}
+
+			@Override
+			public boolean hasNext() {
+				return _currBlk != null || _inIter.hasNext();
+			}
+			
+			@Override
+			public Tuple2<MatrixIndexes, RowMatrixBlock> next() 
+			{
+				//pull next input block (if required)
+				if( _currBlk == null ){
+					_currBlk = _inIter.next();
+					_currPos = 0;
+				}
+				
+				try
+				{
+					//produce next output tuple
+					MatrixIndexes ixmap = _currBlk._1();
+					MatrixBlock data = _currBlk._2();
+					MatrixBlock mbTargetIndex = _pmb.value().getMatrixBlock((int)ixmap.getRowIndex(), 1);
+					
+					long valix = (long) mbTargetIndex.getValue(_currPos, 0);
+					long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
+					int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
+					int len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);		
+					MatrixIndexes lix = new MatrixIndexes(rix,ixmap.getColumnIndex());
+					MatrixBlock tmp = data.sliceOperations(_currPos, _currPos, 0, data.getNumColumns()-1, new MatrixBlock());
+					_currPos++;
+					
+					//handle end of block situations
+					if( _currPos == data.getNumRows() ){
+						_currBlk = null;
+					}
+					
+					return new Tuple2<MatrixIndexes,RowMatrixBlock>(lix, new RowMatrixBlock(len, pos, tmp));
+				}
+				catch(Exception ex) {
+					throw new RuntimeException(ex);
+				}
+			}
+
+			@Override
+			public void remove() {
+				throw new RuntimeException("Unsupported remove operation.");
+			}
 		}
 	}
 	

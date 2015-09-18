@@ -26,6 +26,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.CorrMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.data.RowMatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -194,6 +195,22 @@ public class RDDAggregateUtils
 	}
 	
 	/**
+	 * Merges disjoint data of all blocks per key.
+	 * 
+	 * Note: The behavior of this method is undefined for both sparse and dense data if the 
+	 * assumption of disjoint data is violated.
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> mergeRowsByKey( JavaPairRDD<MatrixIndexes, RowMatrixBlock> in )
+	{
+		return in.combineByKey( new CreateRowBlockCombinerFunction(), 
+							    new MergeRowBlockValueFunction(), 
+							    new MergeRowBlockCombinerFunction() );
+	}
+	
+	/**
 	 * 
 	 */
 	private static class CreateBlockCombinerFunction implements Function<MatrixBlock, CorrMatrixBlock> 
@@ -268,6 +285,69 @@ public class RDDAggregateUtils
 		}	
 	}
 
+	/**
+	 *
+	 */
+	private static class CreateRowBlockCombinerFunction implements Function<RowMatrixBlock, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 2866598914232118425L;
+
+		@Override
+		public MatrixBlock call(RowMatrixBlock arg0) 
+			throws Exception 
+		{
+			//create new target block and copy row into it
+			MatrixBlock row = arg0.getValue();
+			MatrixBlock out = new MatrixBlock(arg0.getLen(), row.getNumColumns(), true);
+			out.copy(arg0.getRow(), arg0.getRow(), 0, row.getNumColumns()-1, row, false);
+			out.setNonZeros(row.getNonZeros());
+			out.examSparsity();
+			
+			return out;
+		}	
+	}
+	
+	/**
+	 * 
+	 */
+	private static class MergeRowBlockValueFunction implements Function2<MatrixBlock, RowMatrixBlock, MatrixBlock> 
+	{
+		private static final long serialVersionUID = -803689998683298516L;
+
+		@Override
+		public MatrixBlock call(MatrixBlock arg0, RowMatrixBlock arg1) 
+			throws Exception 
+		{
+			//copy row into existing target block
+			MatrixBlock row = arg1.getValue();
+			MatrixBlock out = arg0; //in-place update
+			out.copy(arg1.getRow(), arg1.getRow(), 0, row.getNumColumns()-1, row, true);
+			out.examSparsity();
+			
+			return out;
+		}	
+	}
+	
+	/**
+	 * 
+	 */
+	private static class MergeRowBlockCombinerFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 5142967296705548000L;
+
+		@Override
+		public MatrixBlock call(MatrixBlock arg0, MatrixBlock arg1) 
+			throws Exception 
+		{
+			//merge second matrix block into first
+			MatrixBlock out = arg0; //in-place update
+			out.merge(arg1, false);
+			out.examSparsity();
+			
+			return out;
+		}	
+	}
+	
 	/**
 	 * 
 	 */
@@ -610,7 +690,8 @@ public class RDDAggregateUtils
 			// execute merge (never pass by reference)
 			MatrixBlock ret = new MatrixBlock(b1);
 			ret.merge(b2, false);
-
+			ret.examSparsity();
+			
 			// sanity check output number of non-zeros
 			if (ret.getNonZeros() != b1.getNonZeros() + b2.getNonZeros()) {
 				throw new DMLRuntimeException("Number of non-zeros does not match: "

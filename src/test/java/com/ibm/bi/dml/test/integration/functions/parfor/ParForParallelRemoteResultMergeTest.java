@@ -21,6 +21,7 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
@@ -69,12 +70,14 @@ public class ParForParallelRemoteResultMergeTest extends AutomatedTestBase
 	}
 	
 	@Test
+	@Ignore
 	public void testMultipleResultMergeManyDense() 
 	{
 		runParallelRemoteResultMerge(TEST_NAME2, false);
 	}
 	
 	@Test
+	@Ignore
 	public void testMultipleResultMergeManySparse() 
 	{
 		runParallelRemoteResultMerge(TEST_NAME2, true);

@@ -1209,19 +1209,18 @@ if (ncol (M) > 1) {
 }
 
 if (ncol (M) > 1) { # if internal nodes exist
-	print ("COMPUTING OFFSETS TO THE LEFT CHILD FOR INTERNAL NODES...");
-	internal_ind = ppred (M[3,], 0, ">");
-	internal_ids = internal_ind * M[1,]; 
-	internal_ids_nonzero = removeEmpty (target = internal_ids, margin = "cols");
-	parfor (it in 1:ncol (internal_ids_nonzero), check = 0) {
-		a1 = as.scalar (internal_ids_nonzero[1,it]);
-		pos_a1 = as.scalar (rowIndexMax (ppred (M[1,], a1, "==")));
-		a2 = 2 * a1;
-		pos_a2 = as.scalar (rowIndexMax (ppred (M[1,], a2, "==")));
-		M[2,pos_a1] = pos_a2 - pos_a1;
-	}
-} else {
-	print ("The tree model contains only one leaf with label " + as.scalar (M[4,]));
+    print ("COMPUTING OFFSETS TO THE LEFT CHILD FOR INTERNAL NODES...");
+    internal_ind = ppred (M[3,], 0, ">");
+    internal_ids = internal_ind * M[1,]; 
+    internal_ids_nonzero = removeEmpty (target = internal_ids, margin = "cols");
+    a1 = internal_ids_nonzero;
+    a2 = internal_ids_nonzero * 2;
+    pos_a1 = rowIndexMax( outer(t(a1), M[1,], "==") );
+    pos_a2 = rowIndexMax( outer(t(a2), M[1,], "==") );
+    M[2,] = t(table(pos_a1, 1, pos_a2 - pos_a1, ncol(M), 1));
+} 
+else {
+    print ("The tree model contains only one leaf with label " + as.scalar (M[4,]));
 }
 
 write (M, fileM, format = fmtO);

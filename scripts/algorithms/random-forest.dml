@@ -1355,16 +1355,15 @@ internal_ind = ppred (M[4,], 0, ">");
 internal_ids = M[1:2,] * internal_ind; 
 internal_ids_nonzero = removeEmpty (target = internal_ids, margin = "cols");
 if (as.scalar (internal_ids_nonzero[1,1]) > 0) { # if internal nodes exist 
-	parfor (it in 1:ncol (internal_ids_nonzero), check = 0) {
-		a1 = as.scalar (internal_ids_nonzero[1,it]);
-		cur_tree_id = as.scalar (internal_ids_nonzero[2,it]);
-		pos_a1 = as.scalar (rowIndexMax (ppred (M[1,], a1, "==") * ppred (M[2,], cur_tree_id, "==")));
-		a2 = 2 * a1;
-		pos_a2 = as.scalar (rowIndexMax (ppred (M[1,], a2, "==")* ppred (M[2,], cur_tree_id, "==")));
-		M[3,pos_a1] = pos_a2 - pos_a1;
-	}
-} else {
-	print ("All trees in the random forest contain only one leaf!");
+    a1 = internal_ids_nonzero[1,];
+    a2 = internal_ids_nonzero[1,] * 2;
+    vcur_tree_id = internal_ids_nonzero[2,];
+    pos_a1 = rowIndexMax( outer(t(a1), M[1,], "==") * outer(t(vcur_tree_id), M[2,], "==") );
+    pos_a2 = rowIndexMax( outer(t(a2), M[1,], "==") * outer(t(vcur_tree_id), M[2,], "==") );
+    M[3,] = t(table(pos_a1, 1, pos_a2 - pos_a1, ncol(M), 1));
+} 
+else {
+    print ("All trees in the random forest contain only one leaf!");
 }
 
 if (fileC != " ") {

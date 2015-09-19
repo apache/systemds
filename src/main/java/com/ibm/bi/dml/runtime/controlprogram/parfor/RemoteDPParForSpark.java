@@ -35,6 +35,8 @@ import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFo
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -79,10 +81,8 @@ public class RemoteDPParForSpark
 		JavaSparkContext sc = sec.getSparkContext();
 		
 		//prepare input parameters
-		int rlen = (int)input.getNumRows();
-		int clen = (int)input.getNumColumns();
-		int brlen = (int)input.getNumRowsPerBlock();
-		int bclen = (int)input.getNumColumnsPerBlock();
+		MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) input.getMetaData();
+		MatrixCharacteristics mc = md.getMatrixCharacteristics();
 		InputInfo ii = InputInfo.BinaryBlockInputInfo;
 				
 		//initialize accumulators for tasks/iterations
@@ -90,14 +90,14 @@ public class RemoteDPParForSpark
 		Accumulator<Integer> aIters = sc.accumulator(0);
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
-		DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(rlen, clen, brlen, bclen, ii, oi, dpf);
+		DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
 		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, matrixvar, itervar, 
-				          enableCPCaching, rlen, clen, brlen, bclen, tSparseCol, dpf, oi, aTasks, aIters);
+				          enableCPCaching, mc, tSparseCol, dpf, oi, aTasks, aIters);
 		List<Tuple2<Long,String>> out = 
-				in.flatMapToPair(dpfun)    //partition the input blocks
-		          .groupByKey(numReducers) //group partition blocks 		          
-		          .flatMapToPair( efun )   //execute parfor tasks 
-		          .collect();              //get output handles
+				in.flatMapToPair(dpfun)         //partition the input blocks
+		          .groupByKey(numReducers)      //group partition blocks 		          
+		          .mapPartitionsToPair( efun )  //execute parfor tasks, incl cleanup
+		          .collect();                   //get output handles
 		
 		//de-serialize results
 		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);

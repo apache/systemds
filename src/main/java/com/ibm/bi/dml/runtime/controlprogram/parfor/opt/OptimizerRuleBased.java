@@ -354,11 +354,11 @@ public class OptimizerRuleBased extends Optimizer
 		//correction of max parallelism and memory if spark runtime enabled because
 		//spark limits the available parallelism by its own executor configuration
 		if( OptimizerUtils.isSparkExecutionMode() ) {
-			_rk = (int) SparkExecutionContext.getDefaultParallelism();
+			_rk = (int) SparkExecutionContext.getDefaultParallelism(true);
 			_rk2 = _rk; //equal map/reduce unless we find counter-examples 
 			_rkmax   = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
 			_rkmax2  = (int) Math.ceil( PAR_K_FACTOR * _rk2 ); 
-			int cores = SparkExecutionContext.getDefaultParallelism()
+			int cores = SparkExecutionContext.getDefaultParallelism(true)
 					/ SparkExecutionContext.getNumExecutors();
 			int ccores = (int) Math.min(cores, _N);
 			_rm = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;

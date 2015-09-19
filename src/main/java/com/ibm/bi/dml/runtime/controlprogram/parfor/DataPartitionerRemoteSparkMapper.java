@@ -28,10 +28,12 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableBlock;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 
 import scala.Tuple2;
 
@@ -56,13 +58,13 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 	//private OutputInfo _oi = null;
 	private PDataPartitionFormat _dpf = null;
 	
-	public DataPartitionerRemoteSparkMapper(long rlen, long clen, long brlen, long bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf) 
+	public DataPartitionerRemoteSparkMapper(MatrixCharacteristics mc, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
-		_rlen = rlen;
-		_clen = clen;
-		_brlen = brlen;
-		_bclen = bclen;
+		_rlen = mc.getRows();
+		_clen = mc.getCols();
+		_brlen = mc.getRowsPerBlock();
+		_bclen = mc.getColsPerBlock();
 		//_ii = ii;
 		//_oi = oi;
 		_dpf = dpf;
@@ -79,12 +81,8 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 		MatrixBlock value2 = arg0._2();
 		long row_offset = (key2.getRowIndex()-1)*_brlen;
 		long col_offset = (key2.getColumnIndex()-1)*_bclen;
-		
-		boolean sparse = value2.isInSparseFormat();
-		long nnz = value2.getNonZeros();
 		long rows = value2.getNumRows();
 		long cols = value2.getNumColumns();
-		double sparsity = ((double)nnz)/(rows*cols);
 		
 		//bound check per block
 		if( row_offset + rows < 1 || row_offset + rows > _rlen || col_offset + cols<1 || col_offset + cols > _clen )
@@ -97,11 +95,11 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 		switch( _dpf )
 		{
 			case ROW_WISE: {
+				MatrixBlock[] blks = DataConverter.convertToMatrixBlockPartitions(value2, false);
 				for( int i=0; i<rows; i++ ) {
 					PairWritableBlock tmp = new PairWritableBlock();
 					tmp.indexes = new MatrixIndexes(1, col_offset/_bclen+1);
-					tmp.block = new MatrixBlock(1, (int)cols, sparse, (int)(cols*sparsity));
-					value2.sliceOperations(i, i, 0, (int)(cols-1), tmp.block);
+					tmp.block = blks[i];
 					ret.add(new Tuple2<Long,Writable>(new Long(row_offset+1+i),tmp));
 				}
 				break;
@@ -121,11 +119,11 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 				break;
 			}
 			case COLUMN_WISE:{
+				MatrixBlock[] blks = DataConverter.convertToMatrixBlockPartitions(value2, true);
 				for( int i=0; i<cols; i++ ) {
 					PairWritableBlock tmp = new PairWritableBlock();
 					tmp.indexes = new MatrixIndexes(row_offset/_brlen+1, 1);
-					tmp.block = new MatrixBlock(1, (int)cols, sparse, (int)(cols*sparsity));
-					value2.sliceOperations(0, (int)(rows-1), i, i, tmp.block);
+					tmp.block = blks[i];
 					ret.add(new Tuple2<Long,Writable>(new Long(col_offset+1+i),tmp));
 				}
 				break;

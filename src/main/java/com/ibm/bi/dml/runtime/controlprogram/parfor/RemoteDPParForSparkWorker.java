@@ -19,6 +19,7 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.spark.Accumulator;
@@ -35,6 +36,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.PairWritableCell;
 import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
@@ -43,14 +45,11 @@ import scala.Tuple2;
 
 /**
  * 
- * 
  */
-public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapFunction<Tuple2<Long, Iterable<Writable>>, Long, String> 
+public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapFunction<Iterator<Tuple2<Long, Iterable<Writable>>>, Long, String> 
 {
-
 	private static final long serialVersionUID = 30223759283155139L;
 	
-	private boolean _initialized = false;
 	private String  _prog = null;
 	private boolean _caching = true;
 	private String _inputVar = null;
@@ -67,14 +66,11 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private Accumulator<Integer> _aTasks = null;
 	private Accumulator<Integer> _aIters = null;
 	
-	private MatrixBlock _partition = null;
-	
-	public RemoteDPParForSparkWorker(String program, String inputVar, String iterVar, boolean cpCaching, int rlen, int clen, int brlen, int bclen, boolean tSparseCol, PDataPartitionFormat dpf, OutputInfo oinfo, Accumulator<Integer> atasks, Accumulator<Integer> aiters) 
+	public RemoteDPParForSparkWorker(String program, String inputVar, String iterVar, boolean cpCaching, MatrixCharacteristics mc, boolean tSparseCol, PDataPartitionFormat dpf, OutputInfo oinfo, Accumulator<Integer> atasks, Accumulator<Integer> aiters) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		//keep inputs (unfortunately, spark does not expose task ids and it would be implementation-dependent
 		//when this constructor is actually called; hence, we do lazy initialization on task execution)
-		_initialized = false;
 		_prog = program;
 		_caching = cpCaching;
 		_inputVar = inputVar;
@@ -86,10 +82,10 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_aIters = aiters;
 		
 		//setup matrixblock partition and meta data
-		_rlen = rlen;
-		_clen = clen;
-		_brlen = brlen;
-		_bclen = bclen;
+		_rlen = (int)mc.getRows();
+		_clen = (int)mc.getCols();
+		_brlen = mc.getRowsPerBlock();
+		_bclen = mc.getColsPerBlock();
 		_tSparseCol = tSparseCol;
 		_dpf = dpf;
 		switch( _dpf ) { //create matrix partition for reuse
@@ -97,50 +93,52 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			case COLUMN_WISE: _clen = 1; break;
 			default:  throw new RuntimeException("Partition format not yet supported in fused partition-execute: "+dpf);
 		}
-		if( _tSparseCol )
-			_partition = new MatrixBlock(_clen, _rlen, true);
-		else
-			_partition = new MatrixBlock(_rlen, _clen, false);
 	}
 	
 	@Override 
-	public Iterable<Tuple2<Long, String>> call(Tuple2<Long, Iterable<Writable>> arg0)
+	public Iterable<Tuple2<Long, String>> call(Iterator<Tuple2<Long, Iterable<Writable>>> arg0)
 		throws Exception 
 	{
-		//lazy parworker initialization
-		if( !_initialized )
-			configureWorker( TaskContext.get().taskAttemptId() ); //requires Spark 1.3
-	
-		//collect input partition (check via equals because oinfo deserialized instance)
-		if( _oinfo.equals(OutputInfo.BinaryBlockOutputInfo) )
-			_partition = collectBinaryBlock( arg0._2() );
-		else
-			_partition = collectBinaryCellInput( arg0._2() );
-				
-		
-		//update in-memory matrix partition
-		MatrixObject mo = (MatrixObject)_ec.getVariable( _inputVar );
-		mo.setInMemoryPartition( _partition );
-				
-		//create tasks for input data
-		Task lTask = new Task(TaskType.SET);
-		lTask.addIteration( new IntObject(_iterVar, arg0._1()) );
-					
-		//execute program
-		long numIter = getExecutedIterations();
-		super.executeTask( lTask );
-				
-		//maintain accumulators
-		_aTasks.add( 1 );
-		_aIters.add( (int)(getExecutedIterations()-numIter) );
-		
-		//write output if required (matrix indexed write) 
-		//note: this copy is necessary for environments without spark libraries
 		ArrayList<Tuple2<Long,String>> ret = new ArrayList<Tuple2<Long,String>>();
-		ArrayList<String> tmp = RemoteParForUtils.exportResultVariables( _workerID, _ec.getVariables(), _resultVars );
-		for( String val : tmp )
-			ret.add(new Tuple2<Long,String>(_workerID, val));
+		
+		//lazy parworker initialization
+		configureWorker( TaskContext.get().taskAttemptId() ); //requires Spark 1.3
+	
+		//process all matrix partitions of this data partition
+		while( arg0.hasNext() )
+		{
+			Tuple2<Long,Iterable<Writable>> larg = arg0.next();
 			
+			//collect input partition (check via equals because oinfo deserialized instance)
+			MatrixBlock partition = null;
+			if( _oinfo.equals(OutputInfo.BinaryBlockOutputInfo) )
+				partition = collectBinaryBlock( larg._2() );
+			else
+				partition = collectBinaryCellInput( larg._2() );
+			
+			//update in-memory matrix partition
+			MatrixObject mo = (MatrixObject)_ec.getVariable( _inputVar );
+			mo.setInMemoryPartition( partition );
+					
+			//create tasks for input data
+			Task lTask = new Task(TaskType.SET);
+			lTask.addIteration( new IntObject(_iterVar, larg._1()) );
+						
+			//execute program
+			long numIter = getExecutedIterations();
+			super.executeTask( lTask );
+					
+			//maintain accumulators
+			_aTasks.add( 1 );
+			_aIters.add( (int)(getExecutedIterations()-numIter) );
+			
+			//write output if required (matrix indexed write) 
+			//note: this copy is necessary for environments without spark libraries
+			ArrayList<String> tmp = RemoteParForUtils.exportResultVariables( _workerID, _ec.getVariables(), _resultVars );
+			for( String val : tmp )
+				ret.add(new Tuple2<Long,String>(_workerID, val));
+		}	
+		
 		return ret;
 	}
 	
@@ -183,9 +181,6 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		//enable/disable caching (if required)
 		if( !_caching )
 			CacheableData.disableCaching();
-		
-		//make as lazily intialized
-		_initialized = true;
 	}
 	
 	/**
@@ -202,10 +197,15 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private MatrixBlock collectBinaryBlock( Iterable<Writable> valueList ) 
 		throws IOException 
 	{
+		MatrixBlock partition = null;
+		
 		try
 		{
 			//reset reuse block, keep configured representation
-			_partition.reset((int)_rlen, (int)_clen);	
+			if( _tSparseCol )
+				partition = new MatrixBlock(_clen, _rlen, true);
+			else
+				partition = new MatrixBlock(_rlen, _clen, false);
 
 			for( Writable val : valueList )
 			{
@@ -213,27 +213,27 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 				int row_offset = (int)(pairValue.indexes.getRowIndex()-1)*_brlen;
 				int col_offset = (int)(pairValue.indexes.getColumnIndex()-1)*_bclen;
 				MatrixBlock block = pairValue.block;
-				if( !_partition.isInSparseFormat() ) //DENSE
+				if( !partition.isInSparseFormat() ) //DENSE
 				{
-					_partition.copy( row_offset, row_offset+block.getNumRows()-1, 
+					partition.copy( row_offset, row_offset+block.getNumRows()-1, 
 							   col_offset, col_offset+block.getNumColumns()-1,
 							   pairValue.block, false ); 
 				}
 				else //SPARSE 
 				{
-					_partition.appendToSparse(pairValue.block, row_offset, col_offset);
+					partition.appendToSparse(pairValue.block, row_offset, col_offset);
 				}
 			}
 
 			//final partition cleanup
-			cleanupCollectedMatrixPartition( _partition.isInSparseFormat() );
+			cleanupCollectedMatrixPartition( partition, partition.isInSparseFormat() );
 		}
 		catch(DMLRuntimeException ex)
 		{
 			throw new IOException(ex);
 		}
 		
-		return _partition;
+		return partition;
 	}
 	
 	
@@ -251,11 +251,13 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private MatrixBlock collectBinaryCellInput( Iterable<Writable> valueList ) 
 		throws IOException 
 	{
+		MatrixBlock partition = null;
+
 		//reset reuse block, keep configured representation
 		if( _tSparseCol )
-			_partition.reset(_clen, _rlen);	
+			partition = new MatrixBlock(_clen, _rlen, true);
 		else
-			_partition.reset(_rlen, _clen);
+			partition = new MatrixBlock(_rlen, _clen, false);
 		
 		switch( _dpf )
 		{
@@ -265,7 +267,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 					PairWritableCell pairValue = (PairWritableCell)valueList.iterator().next();
 					if( pairValue.indexes.getColumnIndex()<0 )
 						continue; //cells used to ensure empty partitions
-					_partition.quickSetValue(0, (int)pairValue.indexes.getColumnIndex()-1, pairValue.cell.getValue());
+					partition.quickSetValue(0, (int)pairValue.indexes.getColumnIndex()-1, pairValue.cell.getValue());
 				}
 				break;
 			case COLUMN_WISE:
@@ -275,9 +277,9 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 					if( pairValue.indexes.getRowIndex()<0 )
 						continue; //cells used to ensure empty partitions
 					if( _tSparseCol )
-						_partition.appendValue(0,(int)pairValue.indexes.getRowIndex()-1, pairValue.cell.getValue());
+						partition.appendValue(0,(int)pairValue.indexes.getRowIndex()-1, pairValue.cell.getValue());
 					else
-						_partition.quickSetValue((int)pairValue.indexes.getRowIndex()-1, 0, pairValue.cell.getValue());
+						partition.quickSetValue((int)pairValue.indexes.getRowIndex()-1, 0, pairValue.cell.getValue());
 				}
 				break;
 			default: 
@@ -285,9 +287,9 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		}
 		
 		//final partition cleanup
-		cleanupCollectedMatrixPartition(_tSparseCol);
+		cleanupCollectedMatrixPartition(partition, _tSparseCol);
 		
-		return _partition;
+		return partition;
 	}
 	
 	/**
@@ -295,20 +297,20 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	 * @param sort
 	 * @throws IOException
 	 */
-	private void cleanupCollectedMatrixPartition(boolean sort) 
+	private void cleanupCollectedMatrixPartition(MatrixBlock partition, boolean sort) 
 		throws IOException
 	{
 		//sort sparse row contents if required
-		if( _partition.isInSparseFormat() && sort )
-			_partition.sortSparseRows();
+		if( partition.isInSparseFormat() && sort )
+			partition.sortSparseRows();
 
 		//ensure right number of nnz
-		if( !_partition.isInSparseFormat() )
-			_partition.recomputeNonZeros();
+		if( !partition.isInSparseFormat() )
+			partition.recomputeNonZeros();
 			
 		//exam and switch dense/sparse representation
 		try {
-			_partition.examSparsity();
+			partition.examSparsity();
 		}
 		catch(Exception ex){
 			throw new IOException(ex);

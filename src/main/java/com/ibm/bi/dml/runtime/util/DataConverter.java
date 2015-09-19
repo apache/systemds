@@ -585,6 +585,63 @@ public class DataConverter
 	}
 	
 	/**
+	 * 
+	 * @param mb
+	 * @param colwise
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static MatrixBlock[] convertToMatrixBlockPartitions( MatrixBlock mb, boolean colwise ) 
+		throws DMLRuntimeException
+	{
+		MatrixBlock[] ret = null;
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		long nnz = mb.getNonZeros();
+		boolean sparse = mb.isInSparseFormat();
+		double sparsity = ((double)nnz)/(rows*cols);
+		
+		if( colwise ) //COL PARTITIONS
+		{
+			//allocate output partitions
+			ret = new MatrixBlock[ cols ];
+			for( int j=0; j<cols; j++ )
+				ret[j] = new MatrixBlock(rows, 1, false);
+
+			//cache-friendly sequential read/append
+			if( !mb.isEmptyBlock(false) ) {
+				if( sparse ){ //SPARSE
+					SparseRowsIterator iter = mb.getSparseRowsIterator();
+					while( iter.hasNext() ) {
+						IJV cell = iter.next();
+						ret[cell.j].appendValue(cell.i, 0, cell.v);
+					}
+				}
+				else { //DENSE
+					for( int i=0; i<rows; i++ )
+						for( int j=0; j<cols; j++ )
+							ret[j].appendValue(i, 0, mb.getValueDenseUnsafe(i, j));
+				}
+			}
+		}
+		else //ROW PARTITIONS
+		{
+			//allocate output partitions
+			ret = new MatrixBlock[ rows ];
+			for( int i=0; i<rows; i++ )
+				ret[i] = new MatrixBlock(1, cols, sparse, (long)(cols*sparsity));
+
+			//cache-friendly sparse/dense row slicing 
+			if( !mb.isEmptyBlock(false) ) {
+				for( int i=0; i<rows; i++ )
+					mb.sliceOperations(i, i, 0, cols-1, ret[i]);
+			}			
+		}
+		
+		return ret;
+	}
+	
+	/**
 	 * Helper method that converts SystemML matrix variable (<code>varname</code>) into a Array2DRowRealMatrix format,
 	 * which is useful in invoking Apache CommonsMath.
 	 * 

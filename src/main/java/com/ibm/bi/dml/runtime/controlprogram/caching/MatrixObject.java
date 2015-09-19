@@ -800,15 +800,14 @@ public class MatrixObject extends CacheableData
 
 		//actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
 		if(  isDirty()  ||      //use dirty for skipping parallel exports
-			 getRDDHandle()!=null || //use RDD handle to determine write requirement
 		    (pWrite && !isEqualOutputFormat(outputFormat)) ) 
-		{
-		  
+		{		  
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
 			// a) get the matrix		
 			if( isEmpty() )
 			{
 			    //read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
+				//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
 				try
 				{
 					if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
@@ -851,20 +850,32 @@ public class MatrixObject extends CacheableData
 			{
 				MapReduceTool.deleteFileIfExistOnHDFS(fName);
 				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
-				if( getRDDHandle()==null )
+				if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
 					MapReduceTool.copyFileOnHDFS( _hdfsFileName, fName );
 				else //write might trigger rdd operations and nnz maintenance
 					writeMatrixFromRDDtoHDFS(getRDDHandle(), fName, outputFormat);
 				writeMetaData( fName, outputFormat, formatProperties );
 			}
-			catch (Exception e)
+			catch (Exception e) {
+				throw new CacheIOException ("Export to " + fName + " failed.", e);
+			}
+		}
+		else if( getRDDHandle()!=null && //pending rdd operation
+				!getRDDHandle().allowsShortCircuitRead() )
+		{
+			//CASE 3: pending rdd operation (other than checkpoints)
+			try
 			{
+				writeMatrixFromRDDtoHDFS(getRDDHandle(), fName, outputFormat);
+				writeMetaData( fName, outputFormat, formatProperties );
+			}
+			catch (Exception e) {
 				throw new CacheIOException ("Export to " + fName + " failed.", e);
 			}
 		}
 		else 
 		{
-			//CASE 3: data already in hdfs (do nothing, no need for export)
+			//CASE 4: data already in hdfs (do nothing, no need for export)
 			LOG.trace(this.getDebugName() + ": Skip export to hdfs since data already exists.");
 		}
 		  

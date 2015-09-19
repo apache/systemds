@@ -17,7 +17,7 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
@@ -47,17 +47,60 @@ public class OuterVectorBinaryOpFunction implements PairFlatMapFunction<Tuple2<M
 	public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
 		throws Exception 
 	{
-		MatrixIndexes ix = arg0._1();
-		MatrixBlock in1 = arg0._2();
+		return new OuterVectorBinaryOpIterator(arg0);
+	}
+
+	/**
+	 * 
+	 */
+	private class OuterVectorBinaryOpIterator implements Iterable<Tuple2<MatrixIndexes, MatrixBlock>>, Iterator<Tuple2<MatrixIndexes, MatrixBlock>>
+	{
+		private Tuple2<MatrixIndexes, MatrixBlock> _currBlk = null;
+		private int _currPos = -1;
 		
-		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-		int pNumColsBlocks = _pmV.value().getNumColumnBlocks();
-		for(int i = 1; i <= pNumColsBlocks; i++ ) {
-			MatrixBlock in2 = _pmV.value().getMatrixBlock(1, i);
-			MatrixBlock resultBlk = (MatrixBlock) (in1.binaryOperations (_op, in2, new MatrixBlock()));
-			retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(ix.getRowIndex(), i), resultBlk));
+		public OuterVectorBinaryOpIterator(Tuple2<MatrixIndexes, MatrixBlock> in) {
+			_currBlk = in;
+			_currPos = 1;
+		}
+
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> iterator() {
+			return this;
+		}
+
+		@Override
+		public boolean hasNext() {
+			return (_currBlk != null 
+				&& _currPos <= _pmV.value().getNumColumnBlocks());
 		}
 		
-		return retVal;
+		@Override
+		public Tuple2<MatrixIndexes, MatrixBlock> next() 
+		{
+			Tuple2<MatrixIndexes,MatrixBlock> ret = null;
+			
+			try
+			{
+				//produce next output tuple
+				MatrixIndexes ix = _currBlk._1();
+				MatrixBlock in1 = _currBlk._2();
+				
+				MatrixBlock in2 = _pmV.value().getMatrixBlock(1, _currPos);
+				MatrixBlock resultBlk = (MatrixBlock)in1.binaryOperations (_op, in2, new MatrixBlock());
+				resultBlk.examSparsity(); 
+				ret = new Tuple2<MatrixIndexes,MatrixBlock>(
+						new MatrixIndexes(ix.getRowIndex(), _currPos), resultBlk);
+				_currPos ++;
+			}
+			catch(Exception ex) {
+				throw new RuntimeException(ex);
+			}
+			
+			return ret;
+		}
+
+		@Override
+		public void remove() {
+			throw new RuntimeException("Unsupported remove operation.");
+		}
 	}
 }

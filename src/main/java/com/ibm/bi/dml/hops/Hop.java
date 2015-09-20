@@ -345,10 +345,11 @@ public abstract class Hop
 		if( OptimizerUtils.isSparkExecutionMode() 
 			&& getDataType()!=DataType.SCALAR )
 		{
-			//conditional checkpoint based on memory estimate in order to avoid unnecessary 
-			//persist and unpersist calls (4x the memory budget is conservative)
+			//conditional checkpoint based on memory estimate in order to 
+			//(1) avoid unnecessary persist and unpersist calls, and 
+			//(2) avoid unnecessary creation of spark context (incl executors)
 			if(    OptimizerUtils.isHybridExecutionMode() 
-				&& 4*_outputMemEstimate < OptimizerUtils.getLocalMemBudget()
+				&& _outputMemEstimate < OptimizerUtils.getLocalMemBudget()
 				|| _etypeForced == ExecType.CP )
 			{
 				et = ExecType.CP;

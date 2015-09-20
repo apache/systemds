@@ -26,7 +26,6 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -74,8 +73,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 			//get input rdd
 			JavaPairRDD<MatrixIndexes, MatrixBlock> inRdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
 					sec.getRDDHandleForMatrixObject(in, InputInfo.BinaryBlockInputInfo);
-			MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) in.getMetaData();
-			MatrixCharacteristics mc = md.getMatrixCharacteristics();
+			MatrixCharacteristics mc = in.getMatrixCharacteristics();
 			
 			//run spark remote data partition job 
 			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, _format);

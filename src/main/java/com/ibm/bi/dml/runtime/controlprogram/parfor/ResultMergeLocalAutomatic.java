@@ -24,7 +24,6 @@ import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 
 /**
  * 
@@ -45,8 +44,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 	{
 		Timing time = new Timing(true);
 		
-		MatrixDimensionsMetaData metadata = (MatrixDimensionsMetaData) _output.getMetaData();
-		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
+		MatrixCharacteristics mc = _output.getMatrixCharacteristics();
 		long rows = mc.getRows();
 		long cols = mc.getCols();
 		
@@ -66,8 +64,7 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 	public MatrixObject executeParallelMerge(int par) 
 		throws DMLRuntimeException 
 	{
-		MatrixDimensionsMetaData metadata = (MatrixDimensionsMetaData) _output.getMetaData();
-		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
+		MatrixCharacteristics mc = _output.getMatrixCharacteristics();
 		long rows = mc.getRows();
 		long cols = mc.getCols();
 		

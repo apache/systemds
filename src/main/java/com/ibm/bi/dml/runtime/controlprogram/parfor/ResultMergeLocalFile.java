@@ -592,8 +592,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		LongWritable key = new LongWritable();
 		Text value = new Text();
 
-		MatrixFormatMetaData metadata = (MatrixFormatMetaData) mo.getMetaData();
-		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
+		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 		int brlen = mc.getRowsPerBlock(); 
 		int bclen = mc.getColsPerBlock();
 		//long row = -1, col = -1; //FIXME needs reconsideration whenever textcell is used actively
@@ -662,8 +661,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		MatrixIndexes key = new MatrixIndexes();
 		MatrixCell value = new MatrixCell();
 	
-		MatrixFormatMetaData metadata = (MatrixFormatMetaData) mo.getMetaData();
-		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
+		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 		int brlen = mc.getRowsPerBlock();
 		int bclen = mc.getColsPerBlock();
 		

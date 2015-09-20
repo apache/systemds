@@ -1092,7 +1092,7 @@ public class MRJobInstruction extends Instruction
 		// populate information
 		for ( int i=0; i < inputMatrices.length; i++ ) {
 			inputs[i] = inputMatrices[i].getFileName();
-			MatrixCharacteristics mc = ((MatrixDimensionsMetaData) inputMatrices[i].getMetaData()).getMatrixCharacteristics();
+			MatrixCharacteristics mc = inputMatrices[i].getMatrixCharacteristics();
 			rlens[i] = mc.getRows();
 			clens[i] = mc.getCols();
 			brlens[i] = mc.getRowsPerBlock();

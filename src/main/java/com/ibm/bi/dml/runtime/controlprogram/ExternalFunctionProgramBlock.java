@@ -50,7 +50,6 @@ import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -838,10 +837,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			if (tokens.get(0).equals("Matrix")) {
 				String varName = tokens.get(1);
 				MatrixObject mobj = (MatrixObject) variableMapping.get(varName);
-				MatrixDimensionsMetaData md = (MatrixDimensionsMetaData) mobj.getMetaData();
+				MatrixCharacteristics mc = mobj.getMatrixCharacteristics();
 				Matrix m = new Matrix(mobj.getFileName(),
-						md.getMatrixCharacteristics().getRows(),
-						md.getMatrixCharacteristics().getCols(),
+						mc.getRows(), mc.getCols(),
 						getMatrixValueType(tokens.get(2)));
 				modifyInputMatrix(m, mobj);
 				inputObjects.add(m);

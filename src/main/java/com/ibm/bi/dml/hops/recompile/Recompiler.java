@@ -94,7 +94,6 @@ import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.SeqInstruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -926,8 +925,8 @@ public class Recompiler
 			{
 				MatrixObject moOld = (MatrixObject) dat1;
 				MatrixObject mo = (MatrixObject) dat2;
-				MatrixCharacteristics mcOld = ((MatrixFormatMetaData)moOld.getMetaData()).getMatrixCharacteristics();
-				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+				MatrixCharacteristics mcOld = moOld.getMatrixCharacteristics();
+				MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 				
 				if( mcOld.getRows() != mc.getRows() 
 					|| mcOld.getCols() != mc.getCols()
@@ -1049,8 +1048,8 @@ public class Recompiler
 				{
 					MatrixObject moOld = (MatrixObject) dat1;
 					MatrixObject mo = (MatrixObject) dat2;
-					MatrixCharacteristics mcOld = ((MatrixFormatMetaData)moOld.getMetaData()).getMatrixCharacteristics();
-					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+					MatrixCharacteristics mcOld = moOld.getMatrixCharacteristics();
+					MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 					
 					if( mcOld.getRows() != mc.getRows() 
 							|| mcOld.getCols() != mc.getCols()
@@ -1535,7 +1534,7 @@ public class Recompiler
 				if( dat instanceof MatrixObject )
 				{
 					MatrixObject mo = (MatrixObject)dat;
-					MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+					MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 					if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>=0)?((double)mc.getNonZeros())/mc.getRows()/mc.getCols():1.0)	
 					    < OptimizerUtils.estimateSize(hop.getDim1(), hop.getDim2()) )
 					{
@@ -1907,8 +1906,7 @@ public class Recompiler
 		throws DMLRuntimeException
 	{
 		MatrixObject in = ec.getMatrixObject(varin);
-		MatrixDimensionsMetaData dimmd = (MatrixDimensionsMetaData) in.getMetaData();
-		MatrixCharacteristics mc = dimmd.getMatrixCharacteristics();
+		MatrixCharacteristics mc = in.getMatrixCharacteristics();
 		
 		long rows = mc.getRows();
 		long cols = mc.getCols();

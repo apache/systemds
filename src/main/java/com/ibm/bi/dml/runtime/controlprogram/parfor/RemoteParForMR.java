@@ -50,7 +50,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.io.MatrixReader;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.utils.Statistics;
@@ -113,7 +112,7 @@ public class RemoteParForMR
 			{
 				job.setInputFormat(RemoteParForColocatedNLineInputFormat.class);
 				MRJobConfiguration.setPartitioningFormat(job, colocatedDPMatrixObj.getPartitionFormat());
-				MatrixCharacteristics mc = ((MatrixFormatMetaData)colocatedDPMatrixObj.getMetaData()).getMatrixCharacteristics();
+				MatrixCharacteristics mc = colocatedDPMatrixObj.getMatrixCharacteristics();
 				MRJobConfiguration.setPartitioningBlockNumRows(job, mc.getRowsPerBlock());
 				MRJobConfiguration.setPartitioningBlockNumCols(job, mc.getColsPerBlock());
 				MRJobConfiguration.setPartitioningFilename(job, colocatedDPMatrixObj.getFileName());

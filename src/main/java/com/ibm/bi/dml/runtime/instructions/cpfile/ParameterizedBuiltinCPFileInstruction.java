@@ -177,7 +177,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			String fnameOld = _src.getFileName();
 			String fnameNew = _out.getFileName();
 			InputInfo ii = ((MatrixFormatMetaData)_src.getMetaData()).getInputInfo();
-			MatrixCharacteristics mc = ((MatrixFormatMetaData)_src.getMetaData()).getMatrixCharacteristics();
+			MatrixCharacteristics mc = _src.getMatrixCharacteristics();
 			
 			String stagingDir = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_WORK);
 			LocalFileUtils.createLocalFileIfNotExist(stagingDir);

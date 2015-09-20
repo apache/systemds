@@ -788,7 +788,7 @@ public class VariableCPInstruction extends CPInstruction
 		}
 		else {
 			OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
-			MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
+			MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 			if(oi == OutputInfo.TextCellOutputInfo) {
 				try {
 					WriterMatrixMarket writer = new WriterMatrixMarket();

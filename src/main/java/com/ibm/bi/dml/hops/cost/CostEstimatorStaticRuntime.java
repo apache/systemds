@@ -31,6 +31,7 @@ import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.caching.LazyWriteBuffer;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
@@ -97,8 +98,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private static final double DEFAULT_MBS_HDFSWRITE_TEXT_DENSE = 40;
 	private static final double DEFAULT_MBS_HDFSWRITE_TEXT_SPARSE = 30;
 	
-	
 	@Override
+	@SuppressWarnings("unused")
 	protected double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
@@ -109,15 +110,21 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		if( !vs[0]._inmem ){
 			ltime += getHDFSReadTime( vs[0]._rlen, vs[0]._clen, vs[0].getSparsity() );
 			//eviction costs
-			if( LazyWriteBuffer.getWriteBufferSize()<MatrixBlock.estimateSizeOnDisk(vs[0]._rlen, vs[0]._clen, (long)((vs[0]._nnz<0)? vs[0]._rlen*vs[0]._clen:vs[0]._nnz)) )
+			if( CacheableData.CACHING_WRITE_CACHE_ON_READ &&
+				LazyWriteBuffer.getWriteBufferSize()<MatrixBlock.estimateSizeOnDisk(vs[0]._rlen, vs[0]._clen, (long)((vs[0]._nnz<0)? vs[0]._rlen*vs[0]._clen:vs[0]._nnz)) )
+			{
 				ltime += Math.abs( getFSWriteTime( vs[0]._rlen, vs[0]._clen, vs[0].getSparsity() ));
+			}
 			vs[0]._inmem = true;
 		}
 		if( !vs[1]._inmem ){
 			ltime += getHDFSReadTime( vs[1]._rlen, vs[1]._clen, vs[1].getSparsity() );
 			//eviction costs
-			if( LazyWriteBuffer.getWriteBufferSize()<MatrixBlock.estimateSizeOnDisk(vs[1]._rlen, vs[1]._clen, (long)((vs[1]._nnz<0)? vs[1]._rlen*vs[1]._clen:vs[1]._nnz)) )
+			if( CacheableData.CACHING_WRITE_CACHE_ON_READ &&
+				LazyWriteBuffer.getWriteBufferSize()<MatrixBlock.estimateSizeOnDisk(vs[1]._rlen, vs[1]._clen, (long)((vs[1]._nnz<0)? vs[1]._rlen*vs[1]._clen:vs[1]._nnz)) )
+			{
 				ltime += Math.abs( getFSWriteTime( vs[1]._rlen, vs[1]._clen, vs[1].getSparsity()) );
+			}
 			vs[1]._inmem = true;
 		}
 		if( LOG.isDebugEnabled() && ltime!=0 ) {

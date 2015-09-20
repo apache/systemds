@@ -24,9 +24,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -35,7 +32,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.LocalFileUtils;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
 /**
@@ -63,6 +59,7 @@ public abstract class CacheableData extends Data
 	public static final double 	CACHING_BUFFER_SIZE = 0.15; 
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO; 
 	public static final boolean CACHING_BUFFER_PAGECACHE = false; 
+	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;
 	
 	public static final String CACHING_COUNTER_GROUP_NAME    = "SystemML Caching Counters";
 	
@@ -70,19 +67,9 @@ public abstract class CacheableData extends Data
 	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)
 	private static boolean _activeFlag = false;
 	
-	protected enum CACHE_EVICTION_STORAGE_TYPE { 
-		LOCAL, 
-		HDFS 
-	};
-    
-    public static final CACHE_EVICTION_STORAGE_TYPE cacheEvictionStorageType = CACHE_EVICTION_STORAGE_TYPE.LOCAL;
-	
     public static String cacheEvictionLocalFilePath = null; //set during init
     public static String cacheEvictionLocalFilePrefix = "cache";
     public static final String cacheEvictionLocalFileExtension = ".dat";
-    public static String cacheEvictionHDFSFilePath = null; //prefix dir is set during runtime
-    public static String cacheEvictionHDFSFilePrefix = "cache";
-    public static final String cacheEvictionHDFSFileExtension = ".dat";
     
 	/**
 	 * Defines all possible cache status types for a data blob.
@@ -103,7 +90,8 @@ public abstract class CacheableData extends Data
     	EMPTY, 
     	READ, 
     	MODIFY, 
-    	CACHED
+    	CACHED,
+    	CACHED_NOWRITE,
     };
 	    
 	private static IDSequence _seq = null;   
@@ -220,6 +208,7 @@ public abstract class CacheableData extends Data
 			case CACHED:
 				if(restore)
 					restoreBlobIntoMemory();
+			case CACHED_NOWRITE:
 			case EMPTY:
 				if (isModify)
 					setModify();
@@ -253,16 +242,17 @@ public abstract class CacheableData extends Data
 	 * 
 	 * @throws CacheException 
 	 */
-	protected void release()
+	protected void release(boolean cacheNoWrite)
 		throws CacheException
 	{
 		switch ( _cacheStatus )
 		{
 			case EMPTY:
 			case CACHED:
+			case CACHED_NOWRITE:	
 				throw new CacheStatusException("Redundant release.");
 			case READ:
-				removeOneRead( isBlobPresent() );
+				removeOneRead( isBlobPresent(), cacheNoWrite );
 				break;
 			case MODIFY:
 				if ( isBlobPresent() )
@@ -290,19 +280,25 @@ public abstract class CacheableData extends Data
 		return _cacheStatus.toString();
 	}
     
-	protected boolean isEmpty()
+	protected boolean isEmpty(boolean inclCachedNoWrite)
 	{
-		return (_cacheStatus == CacheStatus.EMPTY);
+		if( inclCachedNoWrite )
+			return (_cacheStatus == CacheStatus.EMPTY || _cacheStatus == CacheStatus.CACHED_NOWRITE);
+		else
+			return (_cacheStatus == CacheStatus.EMPTY);
+	}
+	
+	protected boolean isCached(boolean inclCachedNoWrite)
+	{
+		if( inclCachedNoWrite )
+			return (_cacheStatus == CacheStatus.CACHED || _cacheStatus == CacheStatus.CACHED_NOWRITE);
+		else
+			return (_cacheStatus == CacheStatus.CACHED);
 	}
 	
 	protected boolean isModify()
 	{
 		return (_cacheStatus == CacheStatus.MODIFY);
-	}
-
-	protected boolean isCached()
-	{
-		return (_cacheStatus == CacheStatus.CACHED);
 	}
 	
 	protected void setEmpty()
@@ -320,30 +316,38 @@ public abstract class CacheableData extends Data
 		_cacheStatus = CacheStatus.CACHED;
 	}
 
-	protected void addOneRead ()
+	protected void addOneRead()
 	{
 		_numReadThreads ++;
 		_cacheStatus = CacheStatus.READ;
 	}
 	
-	protected void removeOneRead (boolean doesBlobExist)
+	protected void removeOneRead(boolean doesBlobExist, boolean cacheNoWrite)
 	{
 		_numReadThreads --;					
-		if (_numReadThreads == 0)
-			_cacheStatus = (doesBlobExist ? CacheStatus.CACHED : CacheStatus.EMPTY);
+		if (_numReadThreads == 0) {
+			if( cacheNoWrite )
+				_cacheStatus = (doesBlobExist ? 
+						CacheStatus.CACHED_NOWRITE : CacheStatus.EMPTY);
+			else
+				_cacheStatus = (doesBlobExist ? 
+						CacheStatus.CACHED : CacheStatus.EMPTY);
+		}
 	}
 	
 	protected boolean isAvailableToRead()
 	{
 		return (   _cacheStatus == CacheStatus.EMPTY 
 				|| _cacheStatus == CacheStatus.CACHED
+				|| _cacheStatus == CacheStatus.CACHED_NOWRITE
 				|| _cacheStatus == CacheStatus.READ);
 	}
 	
 	protected boolean isAvailableToModify()
 	{
 		return (   _cacheStatus == CacheStatus.EMPTY 
-				|| _cacheStatus == CacheStatus.CACHED);
+				|| _cacheStatus == CacheStatus.CACHED
+				|| _cacheStatus == CacheStatus.CACHED_NOWRITE);
 	}
 
 	// --------- STATIC CACHE INIT/CLEANUP OPERATIONS ----------
@@ -369,43 +373,19 @@ public abstract class CacheableData extends Data
 	public synchronized static void cleanupCacheDir(boolean withDir)
 	{
 		//get directory name
-		String dir = null;
-		switch (CacheableData.cacheEvictionStorageType)
-		{
-			case LOCAL:
-				dir = cacheEvictionLocalFilePath;
-				break;
-			case HDFS:
-				dir = cacheEvictionHDFSFilePath;
-				break;
-		}
+		String dir = cacheEvictionLocalFilePath;
 		
 		//clean files with cache prefix
 		if( dir != null ) //if previous init cache
 		{
-			try
-			{
-				switch (CacheableData.cacheEvictionStorageType)
-				{
-					case LOCAL:
-						File fdir = new File(dir);
-						if( fdir.exists()){ //just for robustness
-							File[] files = fdir.listFiles();
-							for( File f : files )
-								if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
-									f.delete();
-							if( withDir )
-								fdir.delete(); //deletes dir only if empty
-						}
-						break;
-					case HDFS:
-						MapReduceTool.deleteFileIfExistOnHDFS( dir );
-						break;
-				}
-			}
-			catch (IOException e)
-			{
-				LOG.error("Failed to cleanup cache directory.", e);
+			File fdir = new File(dir);
+			if( fdir.exists()){ //just for robustness
+				File[] files = fdir.listFiles();
+				for( File f : files )
+					if( f.getName().startsWith(cacheEvictionLocalFilePrefix) )
+						f.delete();
+				if( withDir )
+					fdir.delete(); //deletes dir only if empty
 			}
 		}
 		
@@ -432,27 +412,11 @@ public abstract class CacheableData extends Data
 	public synchronized static void initCaching( String uuid ) 
 		throws IOException
 	{
-		//get directory name
-		String dir = null;
-		DMLConfig conf = ConfigurationManager.getConfig();
-		
 		try
 		{
-			switch (CacheableData.cacheEvictionStorageType)
-			{
-				case LOCAL:
-				    dir = LocalFileUtils.getWorkingDir( LocalFileUtils.CATEGORY_CACHE );
-					LocalFileUtils.createLocalFileIfNotExist(dir);
-					cacheEvictionLocalFilePath = dir;
-					
-					break;
-				case HDFS:
-					//get directory
-					dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE) 
-					      + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + uuid + Lop.FILE_SEPARATOR;
-					cacheEvictionHDFSFilePath = dir;
-					break;
-			}
+			String dir = LocalFileUtils.getWorkingDir( LocalFileUtils.CATEGORY_CACHE );
+			LocalFileUtils.createLocalFileIfNotExist(dir);
+			cacheEvictionLocalFilePath = dir;
 		}
 		catch(DMLRuntimeException e)
 		{

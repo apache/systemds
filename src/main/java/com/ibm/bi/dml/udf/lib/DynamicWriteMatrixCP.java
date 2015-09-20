@@ -19,7 +19,6 @@ package com.ibm.bi.dml.udf.lib;
 
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.DataConverter;
@@ -64,7 +63,7 @@ public class DynamicWriteMatrixCP extends PackageFunction
 			String format = ((Scalar) this.getFunctionInput(2)).getValue();
 			
 			MatrixObject mo = mat.getMatrixObject();
-			MatrixCharacteristics mc = ((MatrixDimensionsMetaData)mo.getMetaData()).getMatrixCharacteristics();
+			MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 			OutputInfo oi = OutputInfo.stringToOutputInfo(format);
 			
 			MatrixBlock mb = mo.acquireRead();

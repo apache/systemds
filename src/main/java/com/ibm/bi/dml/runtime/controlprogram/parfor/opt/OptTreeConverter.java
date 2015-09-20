@@ -814,7 +814,7 @@ public class OptTreeConverter
 					if( dat!=null && dat.getDataType()==DataType.MATRIX )
 					{
 						MatrixObject mdat1 = (MatrixObject) dat;
-						MatrixCharacteristics mc1 = ((MatrixFormatMetaData)mdat1.getMetaData()).getMatrixCharacteristics();
+						MatrixCharacteristics mc1 = mdat1.getMatrixCharacteristics();
 						
 						if( mc1.getRows()*mc1.getCols() > maxSize )
 						{

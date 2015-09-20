@@ -87,7 +87,7 @@ public class DataPartitionMR
 				DataPartitioner dpart = new DataPartitionerRemoteMR(pformat, (int)N, -1, numReducers, replication, 4, false, true);
 				out = dpart.createPartitionedMatrixObject(in, out, true);
 				
-				sts[i] = ((MatrixDimensionsMetaData)out.getMetaData()).getMatrixCharacteristics();
+				sts[i] = out.getMatrixCharacteristics();
 				i++;
 			}
 		}

@@ -25,7 +25,6 @@ import org.apache.commons.logging.LogFactory;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -148,14 +147,12 @@ public abstract class ResultMerge
 
 	protected long computeNonZeros( MatrixObject out, ArrayList<MatrixObject> in )
 	{
-		MatrixFormatMetaData metadata = (MatrixFormatMetaData) out.getMetaData();
-		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
+		MatrixCharacteristics mc = out.getMatrixCharacteristics();
 		long outNNZ = mc.getNonZeros();	
 		long ret = outNNZ;
 		for( MatrixObject tmp : in )
 		{
-			MatrixFormatMetaData tmpmetadata = (MatrixFormatMetaData) tmp.getMetaData();
-			MatrixCharacteristics tmpmc = tmpmetadata.getMatrixCharacteristics();
+			MatrixCharacteristics tmpmc = tmp.getMatrixCharacteristics();
 			long inNNZ = tmpmc.getNonZeros();
 			ret +=  (inNNZ - outNNZ);			
 		}

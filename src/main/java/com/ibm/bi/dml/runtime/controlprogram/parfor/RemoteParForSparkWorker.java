@@ -109,16 +109,13 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		_numIters    = 0;
 
 		//init local cache manager 
-		if( !CacheableData.isCachingActive() ) 
-		{
+		if( !CacheableData.isCachingActive() ) {
 			String uuid = IDHandler.createDistributedUniqueID();
 			LocalFileUtils.createWorkingDirectoryWithUUID( uuid );
 			CacheableData.initCaching( uuid ); //incl activation, cache dir creation (each map task gets its own dir for simplified cleanup)
 		}		
-		if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ) //account for local mode
-		{
+		if( !CacheableData.cacheEvictionLocalFilePrefix.contains("_") ){ //account for local mode
 			CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
-			CacheableData.cacheEvictionHDFSFilePrefix = CacheableData.cacheEvictionHDFSFilePrefix +"_" + _workerID;
 		}
 		
 		//ensure that resultvar files are not removed

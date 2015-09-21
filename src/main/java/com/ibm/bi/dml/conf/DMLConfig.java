@@ -18,13 +18,10 @@
 package com.ibm.bi.dml.conf;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
-
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -43,6 +40,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import com.ibm.bi.dml.parser.ParseException;
+import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.util.LocalFileUtils;
 
 
 public class DMLConfig 
@@ -117,9 +118,10 @@ public class DMLConfig
 	 * 
 	 * @param fileName
 	 * @throws ParseException
+	 * @throws FileNotFoundException 
 	 */
 	public DMLConfig(String fileName) 
-		throws ParseException
+		throws ParseException, FileNotFoundException
 	{
 		this( fileName, false );
 	}
@@ -129,15 +131,18 @@ public class DMLConfig
 	 * @param fileName
 	 * @param silent
 	 * @throws ParseException
+	 * @throws FileNotFoundException 
 	 */
 	public DMLConfig(String fileName, boolean silent) 
-		throws ParseException
+		throws ParseException, FileNotFoundException
 	{
 		config_file_name = fileName;
 		try {
 			parseConfig();
-		}
-		catch (Exception e){
+		} catch (FileNotFoundException fnfe) {
+			LOCAL_MR_MODE_STAGING_DIR = getTextValue(LOCAL_TMP_DIR) + "/hadoop/mapred/staging";
+			throw fnfe;
+		} catch (Exception e){
 		    //log error, since signature of generated ParseException doesn't allow to pass it 
 			if( !silent )
 				LOG.error("Failed to parse DML config file ",e);
@@ -346,9 +351,10 @@ public class DMLConfig
 	 * 
 	 * @return
 	 * @throws ParseException 
+	 * @throws FileNotFoundException 
 	 */
 	public static DMLConfig readAndMergeConfigurationFiles( String optConfig ) 
-		throws ParseException
+		throws ParseException, FileNotFoundException
 	{
 		// optional config specified overwrites/merge into the default config
 		DMLConfig defaultConfig = null;
@@ -357,14 +363,18 @@ public class DMLConfig
 		if( optConfig != null ) { // the optional config is specified
 			try { // try to get the default config first 
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH, true);
-			} catch (Exception e) { // it is ok to not have the default
+			} catch (FileNotFoundException fnfe) { // it is OK to not have the default, but give a warning
+				LOG.warn("No default SystemML config file (" + DEFAULT_SYSTEMML_CONFIG_FILEPATH + ") found");
+			} catch (ParseException e) {
 				defaultConfig = null;
-				LOG.warn("Default config file " + DEFAULT_SYSTEMML_CONFIG_FILEPATH + " not provided ");
+				throw e;
 			}
 			try { // try to get the optional config next
-				optionalConfig = new DMLConfig(optConfig, false);	
-			} 
-			catch (ParseException e) { // it is not ok as the specification is wrong
+				optionalConfig = new DMLConfig(optConfig, false);
+			} catch (FileNotFoundException fnfe) {
+				LOG.error("Config file " + optConfig + " not found");
+				throw fnfe;
+			} catch (ParseException e) {
 				optionalConfig = null;
 				throw e;
 			}
@@ -384,7 +394,12 @@ public class DMLConfig
 		else { // the optional config is not specified
 			try { // try to get the default config 
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH, false);
-			} catch (ParseException e) { // it is not OK to not have the default
+			} catch (FileNotFoundException fnfe) { // it is OK to not have the default, but give a warning
+				LOG.warn("No default SystemML config file (" + DEFAULT_SYSTEMML_CONFIG_FILEPATH + ") found");
+				LOG.warn("Using default settings in DMLConfig");
+				DMLConfig dmlConfig = new DMLConfig();
+				return dmlConfig;
+			} catch (ParseException e) { 
 				defaultConfig = null;
 				throw e;
 			}
@@ -472,4 +487,5 @@ public class DMLConfig
 	{
 		return _defaultVals.get( key );
 	}
+	
 }

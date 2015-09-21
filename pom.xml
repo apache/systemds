@@ -402,12 +402,24 @@
 			<artifactId>hadoop-common</artifactId>
 			<version>2.4.0</version>
 			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>javax.servlet</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-hdfs</artifactId>
 			<version>2.4.0</version>
 			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>javax.servlet</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>commons-logging</groupId>
@@ -503,6 +515,12 @@
 			<artifactId>hadoop-yarn-common</artifactId>
 			<version>2.4.1</version>
 			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>javax.servlet</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>

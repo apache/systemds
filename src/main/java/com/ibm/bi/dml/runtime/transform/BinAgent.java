@@ -22,6 +22,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.charset.CharacterCodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -31,15 +33,18 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
+
+import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.transform.MVImputeAgent.MVMethod;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.JSONHelper;
 
 public class BinAgent extends TransformationAgent {
 	
-	
+	private static final long serialVersionUID = 1917445005206076078L;
+
 	public static final String MIN_PREFIX = "min";
 	public static final String MAX_PREFIX = "max";
 	public static final String NBINS_PREFIX = "nbins";
@@ -54,37 +59,36 @@ public class BinAgent extends TransformationAgent {
 	
 	BinAgent() { }
 	
-	BinAgent(JSONObject parsedSpec) {
-		JSONObject obj = (JSONObject) JSONHelper.get(parsedSpec,TX_METHOD.BIN.toString());
+	BinAgent(JSONObject parsedSpec) throws JSONException {
 		
-		if(obj == null) {
+		if ( !parsedSpec.containsKey(TX_METHOD.BIN.toString()) )
 			return;
+		
+		JSONObject obj = (JSONObject) parsedSpec.get(TX_METHOD.BIN.toString());
+		
+		JSONArray attrs = (JSONArray) obj.get(JSON_ATTRS);
+		//JSONArray mthds = (JSONArray) obj.get(JSON_MTHD);
+		JSONArray nbins = (JSONArray) obj.get(JSON_NBINS);
+			
+		assert(attrs.size() == nbins.size());
+			
+		_binList = new int[attrs.size()];
+		_numBins = new int[attrs.size()];
+		for(int i=0; i < _binList.length; i++) {
+			_binList[i] = UtilFunctions.toInt(attrs.get(i));
+			_numBins[i] = UtilFunctions.toInt(nbins.get(i)); 
 		}
-		else {
-			JSONArray attrs = (JSONArray) JSONHelper.get(obj,JSON_ATTRS);
-			//JSONArray mthds = (JSONArray) JSONHelper.get(obj,JSON_MTHD);
-			JSONArray nbins = (JSONArray) JSONHelper.get(obj,JSON_NBINS);
-			
-			assert(attrs.size() == nbins.size());
-			
-			_binList = new int[attrs.size()];
-			_numBins = new int[attrs.size()];
-			for(int i=0; i < _binList.length; i++) {
-				_binList[i] = UtilFunctions.toInt( attrs.get(i) );
-				_numBins[i] = UtilFunctions.toInt( nbins.get(i) ); 
-			}
-			
-			// initialize internal transformation metadata
-			_min = new double[_binList.length];
-			Arrays.fill(_min, Double.MAX_VALUE);
-			_max = new double[_binList.length];
-			Arrays.fill(_max, Double.MIN_VALUE);
-			
-			_binWidths = new double[_binList.length];
-		}
+		
+		// initialize internal transformation metadata
+		_min = new double[_binList.length];
+		Arrays.fill(_min, Double.MAX_VALUE);
+		_max = new double[_binList.length];
+		Arrays.fill(_max, Double.MIN_VALUE);
+		
+		_binWidths = new double[_binList.length];
 	}
 	
-	public void prepare(String[] words) {
+	public void prepare(String[] words, TfUtils agents) {
 		if ( _binList == null )
 			return;
 		
@@ -96,7 +100,7 @@ public class BinAgent extends TransformationAgent {
 				
 			// equi-width
 			w = UtilFunctions.unquote(words[colID-1].trim());
-			if(!MVImputeAgent.isNA(w, NAstrings)) {
+			if(!agents.isNA(w)) {
 				d = UtilFunctions.parseToDouble(w);
 				if(d < _min[i])
 					_min[i] = d;
@@ -104,6 +108,21 @@ public class BinAgent extends TransformationAgent {
 					_max[i] = d;
 			}
 		}
+	}
+	
+	private DistinctValue prepMinOutput(int idx) throws CharacterCodingException {
+		String s =  MIN_PREFIX + Double.toString(_min[idx]);
+		return  new DistinctValue(s, -1L);
+	}
+	
+	private DistinctValue prepMaxOutput(int idx) throws CharacterCodingException {
+		String s =  MAX_PREFIX + Double.toString(_max[idx]);
+		return  new DistinctValue(s, -1L);
+	}
+	
+	private DistinctValue prepNBinsOutput(int idx) throws CharacterCodingException {
+		String s =  NBINS_PREFIX + Double.toString(_numBins[idx]);
+		return  new DistinctValue(s, -1L);
 	}
 	
 	/**
@@ -114,33 +133,46 @@ public class BinAgent extends TransformationAgent {
 	 * @throws IOException
 	 */
 	@Override
-	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException {
+	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
 		if ( _binList == null )
 			return;
 		
 		try { 
 			for(int i=0; i < _binList.length; i++) {
 				int colID = _binList[i];
-				int nbins = _numBins[i];
-				
 				IntWritable iw = new IntWritable(-colID);
 				
-				String s = null;
-				s = MIN_PREFIX + Double.toString(_min[i]);
-				out.collect(iw, new DistinctValue(s, -1L));
-				s = MAX_PREFIX + Double.toString(_max[i]);
-				out.collect(iw, new DistinctValue(s, -1L));
-				s = NBINS_PREFIX + Long.toString((long)nbins);
-				out.collect(iw, new DistinctValue(s, -1L));
+				out.collect(iw,  prepMinOutput(i));
+				out.collect(iw,  prepMaxOutput(i));
+				out.collect(iw,  prepNBinsOutput(i));
 			}
 		} catch(Exception e) {
 			throw new IOException(e);
 		}
 	}
 	
-	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs) throws IOException 
+	public ArrayList<Tuple2<Integer, DistinctValue>> mapOutputTransformationMetadata(int taskID, ArrayList<Tuple2<Integer, DistinctValue>> list, TfUtils agents) throws IOException {
+		if ( _binList == null )
+			return list;
+		
+		try { 
+			for(int i=0; i < _binList.length; i++) {
+				int colID = _binList[i];
+				Integer iw = -colID;
+				
+				list.add( new Tuple2<Integer,DistinctValue>(iw, prepMinOutput(i)) );
+				list.add( new Tuple2<Integer,DistinctValue>(iw, prepMaxOutput(i)) );
+				list.add( new Tuple2<Integer,DistinctValue>(iw, prepNBinsOutput(i)) );
+			}
+		} catch(Exception e) {
+			throw new IOException(e);
+		}
+		return list;
+	}
+
+	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
-		Path pt = new Path(tfMtdDir+"/Bin/"+ outputColumnNames[colID-1] + BIN_FILE_SUFFIX);
+		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + BIN_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TXMTD_SEP + min + TXMTD_SEP + max + TXMTD_SEP + binwidth + TXMTD_SEP + nbins + "\n");
 		br.close();
@@ -154,7 +186,7 @@ public class BinAgent extends TransformationAgent {
 	 * @throws IOException 
 	 */
 	@Override
-	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, JobConf job, TfAgents agents) throws IOException {
+	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
 		double min = Double.MAX_VALUE;
 		double max = Double.MIN_VALUE;
 		int nbins = 0;
@@ -185,16 +217,16 @@ public class BinAgent extends TransformationAgent {
 		}
 		
 		// write merged metadata
-		FileSystem fs = FileSystem.get(job);
 		double binwidth = (max-min)/nbins;
-		writeTfMtd(colID, Double.toString(min), Double.toString(max), Double.toString(binwidth), Integer.toString(nbins), outputDir, fs);
+		writeTfMtd(colID, Double.toString(min), Double.toString(max), Double.toString(binwidth), Integer.toString(nbins), outputDir, fs, agents);
 	}
 	
 	
-	public void outputTransformationMetadata(String outputDir, FileSystem fs, MVImputeAgent mvagent) throws IOException {
+	public void outputTransformationMetadata(String outputDir, FileSystem fs, TfUtils agents) throws IOException {
 		if(_binList == null)
 			return;
 		
+		MVImputeAgent mvagent = agents.getMVImputeAgent();
 		for(int i=0; i < _binList.length; i++) {
 			int colID = _binList[i];
 			
@@ -209,7 +241,7 @@ public class BinAgent extends TransformationAgent {
 			}
 			
 			double binwidth = (_max[i] - _min[i])/_numBins[i];
-			writeTfMtd(colID, Double.toString(_min[i]), Double.toString(_max[i]), Double.toString(binwidth), Integer.toString(_numBins[i]), outputDir, fs);
+			writeTfMtd(colID, Double.toString(_min[i]), Double.toString(_max[i]), Double.toString(binwidth), Integer.toString(_numBins[i]), outputDir, fs, agents);
 		}
 	}
 	
@@ -217,6 +249,8 @@ public class BinAgent extends TransformationAgent {
 
 	public int[] getBinList() { return _binList; }
 	public int[] getNumBins() { return _numBins; }
+	public double[] getMin()  { return _min; }
+	public double[] getBinWidths() { return _binWidths; }
 	
 	/**
 	 * Method to load transform metadata for all attributes
@@ -225,18 +259,15 @@ public class BinAgent extends TransformationAgent {
 	 * @throws IOException
 	 */
 	@Override
-	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir) throws IOException {
+	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException {
 		if ( _binList == null )
 			return;
-		
-		//Path txMtdDir = (DistributedCache.getLocalCacheFiles(job))[0];
-		//FileSystem fs = FileSystem.getLocal(job);
 		
 		if(fs.isDirectory(txMtdDir)) {
 			for(int i=0; i<_binList.length;i++) {
 				int colID = _binList[i];
 				
-				Path path = new Path( txMtdDir + "/Bin/" + outputColumnNames[colID-1] + BIN_FILE_SUFFIX);
+				Path path = new Path( txMtdDir + "/Bin/" + agents.getName(colID) + BIN_FILE_SUFFIX);
 				TransformationAgent.checkValidInputFile(fs, path, true); 
 					
 				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
@@ -267,7 +298,7 @@ public class BinAgent extends TransformationAgent {
 	 * @return
 	 */
 	@Override
-	public String[] apply(String[] words) {
+	public String[] apply(String[] words, TfUtils agents) {
 		if ( _binList == null )
 			return words;
 	

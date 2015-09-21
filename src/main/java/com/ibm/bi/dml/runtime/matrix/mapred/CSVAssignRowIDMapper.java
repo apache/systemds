@@ -17,7 +17,9 @@
 
 package com.ibm.bi.dml.runtime.matrix.mapred;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -30,12 +32,19 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
+import com.ibm.bi.dml.runtime.transform.DataTransform;
+import com.ibm.bi.dml.runtime.transform.OmitAgent;
+import com.ibm.bi.dml.runtime.transform.TfUtils;
+import com.ibm.bi.dml.runtime.transform.TransformationAgent;
+import com.ibm.bi.dml.utils.JSONHelper;
 
 public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWritable, Text, ByteWritable, OffsetCount>
 {	
@@ -50,6 +59,9 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 	private boolean realFirstLine=false;
 	private String filename="";
 	private boolean headerFile=false;
+	
+	// members relevant to transform
+	TfUtils _agents = null;
 	
 	@Override
 	public void map(LongWritable key, Text value,
@@ -67,7 +79,8 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 			if(!ignoreFirstLine)
 			{
 				report.incrCounter(CSVReblockMR.NUM_COLS_IN_MATRIX, outKey.toString(), value.toString().split(delim, -1).length);
-				num++;
+				if(!omit(value.toString()))
+					num++;
 			}
 			else
 				realFirstLine=true;
@@ -79,7 +92,8 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 				report.incrCounter(CSVReblockMR.NUM_COLS_IN_MATRIX, outKey.toString(), value.toString().split(delim, -1).length);
 				realFirstLine=false;
 			}
-			num++;
+			if(!omit(value.toString()))
+				num++;
 		}
 	}
 	
@@ -119,6 +133,33 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}
+
+		// load properties relevant to transform
+		try {
+			boolean omit = job.getBoolean(MRJobConfiguration.TF_TRANSFORM, false);
+			if ( omit ) 
+			{
+				/*String[] naStrings = DataTransform.parseNAStrings(job);
+				
+				FileSystem fs=FileSystem.get(job);
+				String specFile = job.get(MRJobConfiguration.TF_SPEC_FILE);
+				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(specFile))));
+				JSONObject spec = JSONHelper.parse(br);*/
+				
+				_agents = new TfUtils(job, true);
+			}
+		} 
+		catch(IOException e) {
+			throw new RuntimeException(e);
+		} 
+		catch(JSONException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private boolean omit(String line)
+	{
+		return _agents.omit( line.split(delim, -1) );
 	}
 	
 	@Override

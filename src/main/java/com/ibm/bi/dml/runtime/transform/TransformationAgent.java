@@ -19,6 +19,7 @@ package com.ibm.bi.dml.runtime.transform;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Iterator;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -28,10 +29,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
-public abstract class TransformationAgent {
+public abstract class TransformationAgent implements Serializable {
 	
+	private static final long serialVersionUID = -2995384194257356337L;
 	
 	public static enum TX_METHOD { 
 		IMPUTE ("impute"), 
@@ -56,15 +57,15 @@ public abstract class TransformationAgent {
 	protected static String JSON_CONSTS = "constants"; 
 	protected static String JSON_NBINS 	= "numbins"; 
 	
-	protected static String[] NAstrings = null;
-	protected static String[] outputColumnNames = null;
+	//protected static String[] NAstrings = null;
+	//protected static String[] outputColumnNames = null;
 	
-	public static void init(String[] nastrings, String headerLine, String delim) {
+	/*public static void init(String[] nastrings, String headerLine, Pattern delim) {
 		NAstrings = nastrings;
-		outputColumnNames = headerLine.split(delim);
+		outputColumnNames = delim.split(headerLine, -1);
 		for(int i=0; i < outputColumnNames.length; i++)
 			outputColumnNames[i] = UtilFunctions.unquote(outputColumnNames[i]);
-	}
+	}*/
 	
 	protected static final String MV_FILE_SUFFIX 		= ".impute";
 	protected static final String RCD_MAP_FILE_SUFFIX 	= ".map";
@@ -81,15 +82,15 @@ public abstract class TransformationAgent {
 	protected static final String OUT_HEADER = "column.names";
 	protected static final String OUT_DCD_HEADER = "dummycoded.column.names";
 	
-	protected static long _numRecordsInPartFile = 0;	// Total number of records in the data file
-	protected static long _numValidRecords = 0;			// (_numRecordsInPartFile - #of omitted records)
+	//protected static long _numRecordsInPartFile = 0;	// Total number of records in the data file
+	//protected static long _numValidRecords = 0;			// (_numRecordsInPartFile - #of omitted records)
 
 	abstract public void print();
-	abstract public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException;
-	abstract public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, JobConf job, TfAgents agents) throws IOException;
+	abstract public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException;
+	abstract public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException;
 	
-	abstract public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir) throws IOException;
-	abstract public String[] apply(String[] words);
+	abstract public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException;
+	abstract public String[] apply(String[] words, TfUtils agents);
 	
 	protected static boolean checkValidInputFile(FileSystem fs, Path path, boolean err)
 			throws IOException {

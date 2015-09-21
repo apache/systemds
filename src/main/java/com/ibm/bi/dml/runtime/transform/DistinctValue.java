@@ -20,6 +20,7 @@ package com.ibm.bi.dml.runtime.transform;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -31,9 +32,10 @@ import org.apache.hadoop.io.WritableUtils;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
-public class DistinctValue implements Writable {
+public class DistinctValue implements Writable, Serializable {
 	
-	
+	private static final long serialVersionUID = -8236705946336974836L;
+
 	private static final byte [] EMPTY_BYTES = new byte[0];
 	  
 	// word (distinct value)

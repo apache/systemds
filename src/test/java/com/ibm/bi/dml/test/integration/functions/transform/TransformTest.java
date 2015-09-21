@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
@@ -58,6 +59,8 @@ public class TransformTest extends AutomatedTestBase
 				new String[] { "y" })   ); 
 	}
 	
+	// ---- Iris CSV ----
+	
 	@Test
 	public void testIrisHybridCSV() 
 	{
@@ -65,9 +68,9 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testIrisHybridBB() 
+	public void testIrisSPHybridCSV() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "iris", false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "iris", false);
 	}
 	
 	@Test
@@ -77,21 +80,43 @@ public class TransformTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testIrisSparkCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", "iris", false);
+	}
+
+	// ---- Iris BinaryBlock ----
+	
+	@Test
+	public void testIrisHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "iris", false);
+	}
+	
+	@Test
+	public void testIrisSPHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "binary", "iris", false);
+	}
+	
+	@Test
 	public void testIrisHadoopBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "iris", false);
 	}
 	
 	@Test
+	public void testIrisSparkBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "binary", "iris", false);
+	}
+	
+	// ---- Homes CSV ----
+	
+	@Test
 	public void testHomesHybridCSV() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "homes", false);
-	}
-	
-	@Test
-	public void testHomesHybridBB() 
-	{
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes", false);
 	}
 	
 	@Test
@@ -101,10 +126,44 @@ public class TransformTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testHomesSPHybridCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "homes", false);
+	}
+
+	@Test
+	public void testHomesSparkCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", "homes", false);
+	}
+
+	// ---- Homes BinaryBlock ----
+	
+	@Test
+	public void testHomesHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes", false);
+	}
+	
+	@Test
 	public void testHomesHadoopBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "homes", false);
 	}
+	
+	@Test
+	public void testHomesSPHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "binary", "homes", false);
+	}
+	
+	@Test
+	public void testHomesSparkBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "binary", "homes", false);
+	}
+	
+	// ---- Iris ID CSV ----
 	
 	@Test
 	public void testIrisHybridIDCSV() 
@@ -113,9 +172,9 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testIrisHybridIDBB() 
+	public void testIrisSPHybridIDCSV() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "iris", true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "iris", true);
 	}
 	
 	@Test
@@ -125,10 +184,38 @@ public class TransformTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testIrisSparkIDCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", "iris", true);
+	}
+
+	// ---- Iris ID BinaryBlock ----
+	
+	@Test
+	public void testIrisHybridIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "iris", true);
+	}
+	
+	@Test
+	public void testIrisSPHybridIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "binary", "iris", true);
+	}
+	
+	@Test
 	public void testIrisHadoopIDBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "iris", true);
 	}
+	
+	@Test
+	public void testIrisSparkIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "binary", "iris", true);
+	}
+	
+	// ---- Homes ID CSV ----
 	
 	@Test
 	public void testHomesHybridIDCSV() 
@@ -137,9 +224,9 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testHomesHybridIDBB() 
+	public void testHomesSPHybridIDCSV() 
 	{
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes", true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "homes", true);
 	}
 	
 	@Test
@@ -149,10 +236,38 @@ public class TransformTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testHomesSparkIDCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", "homes", true);
+	}
+
+	// ---- Homes ID BinaryBlock ----
+	
+	@Test
+	public void testHomesHybridIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes", true);
+	}
+	
+	@Test
+	public void testHomesSPHybridIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "binary", "homes", true);
+	}
+	
+	@Test
 	public void testHomesHadoopIDBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "homes", true);
 	}
+	
+	@Test
+	public void testHomesSparkIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "binary", "homes", true);
+	}
+	
+	// ------------------------------
 	
 	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, String dataset, boolean byid )
 	{
@@ -173,6 +288,10 @@ public class TransformTest extends AutomatedTestBase
 
 		RUNTIME_PLATFORM rtold = rtplatform;
 		rtplatform = rt;
+
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try
 		{
@@ -207,8 +326,6 @@ public class TransformTest extends AutomatedTestBase
 	
 			exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
-			
-			
 			
 			try {
 				ReaderTextCSV csvReader=  new ReaderTextCSV(new CSVFileFormatProperties(true, ",", true, 0, null));
@@ -246,6 +363,7 @@ public class TransformTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = rtold;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 	

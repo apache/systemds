@@ -16,11 +16,14 @@
  */
 
 package com.ibm.bi.dml.runtime.transform;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Counters;
@@ -42,9 +45,8 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 @SuppressWarnings("deprecation")
 public class ApplyTfCSVMR {
-
 	
-	public static JobReturn runJob(String inputPath, String specPath, String mapsPath, String tmpPath, String outputPath, CSVFileFormatProperties inputDataProperties, long numCols, int replication, String headerLine) throws IOException, ClassNotFoundException, InterruptedException {
+	public static JobReturn runJob(String inputPath, String specPath, String mapsPath, String tmpPath, String outputPath, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numCols, int replication, String headerLine) throws IOException, ClassNotFoundException, InterruptedException {
 		JobConf job = new JobConf(ApplyTfCSVMR.class);
 		job.setJobName("ApplyTfCSV");
 
@@ -55,8 +57,12 @@ public class ApplyTfCSVMR {
 		job.setMapperClass(ApplyTfCSVMapper.class);
 		job.setNumReduceTasks(0);
 	
-		// Add Maps path to Distributed cache
+		// Add transformation metadata file as well as partOffsetsFile to Distributed cache
 		DistributedCache.addCacheFile((new Path(mapsPath)).toUri(), job);
+		DistributedCache.createSymlink(job);
+		
+		Path cachefile=new Path(new Path(partOffsetsFile), "part-00000");
+		DistributedCache.addCacheFile(cachefile.toUri(), job);
 		DistributedCache.createSymlink(job);
 		
 		// set input and output properties
@@ -89,6 +95,7 @@ public class ApplyTfCSVMR {
 		job.setLong(MRJobConfiguration.TF_NUM_COLS, numCols);
 		job.set(MRJobConfiguration.TF_TXMTD_PATH, mapsPath);
 		job.set(MRJobConfiguration.TF_HEADER, headerLine);
+		job.set(CSVReblockMR.ROWID_FILE_NAME, cachefile.toString());
 		job.set(MRJobConfiguration.TF_TMP_LOC, tmpPath);
 		
 		//turn off adaptivemr
@@ -102,8 +109,24 @@ public class ApplyTfCSVMR {
 		long tx_numCols = c.findCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS).getCounter();
 		MatrixCharacteristics mc = new MatrixCharacteristics(tx_numRows, tx_numCols, -1, -1);
 		
+		// Since transform CSV produces part files w/ prefix transform-part-*,
+		// delete all the "default" part-..... files
+		deletePartFiles(fs, outPath);
+		
 		return new JobReturn(new MatrixCharacteristics[]{mc}, runjob.isSuccessful());
-
+	}
+	
+	private static void deletePartFiles(FileSystem fs, Path path) throws FileNotFoundException, IOException
+	{
+		PathFilter filter=new PathFilter(){
+			public boolean accept(Path file) {
+				return file.getName().startsWith("part-");
+	        }
+		};
+		FileStatus[] list = fs.listStatus(path, filter);
+		for(FileStatus stat : list) {
+			fs.delete(stat.getPath(), false);
+		}
 	}
 	
 }

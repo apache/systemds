@@ -1,4 +1,5 @@
 /**
+ /**
  * (C) Copyright IBM Corp. 2010, 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -54,7 +55,6 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 @SuppressWarnings("deprecation")
 public class ApplyTfBBMR {
-	
 	
 	public static JobReturn runJob(String inputPath, String rblkInst, String otherInst, String specPath, String mapsPath, String tmpPath, String outputPath, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numRows, long numColsBefore, long numColsAfter, int replication, String headerLine) throws Exception {
 		

@@ -86,11 +86,12 @@ public class CSVReBlock extends Lop
 	private String prepCSVProperties() throws LopsException {
 		StringBuilder sb = new StringBuilder();
 
+		boolean isSparkTransformInput = false;
 		Data dataInput = null;
 		if(getInputs().get(0).getType() == Type.Data)
 			dataInput = (Data)getInputs().get(0);
 		else if ( getInputs().get(0).getType() == Type.ParameterizedBuiltin && ((ParameterizedBuiltin)getInputs().get(0)).getOp() == OperationTypes.TRANSFORM) {
-			//Lop x = ((ParameterizedBuiltin)getInputs().get(0)).getNamedInput(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
+			isSparkTransformInput = (getExecType() == ExecType.SPARK);
 			dataInput = (Data) ((ParameterizedBuiltin)getInputs().get(0)).getNamedInput(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
 		}
 		
@@ -116,7 +117,8 @@ public class CSVReBlock extends Lop
 					+ "Parameter " + DataExpression.DELIM_FILL_VALUE
 					+ " must be a literal.");
 
-		sb.append( ((Data)headerLop).getBooleanValue() );
+		// Output from transform() does not have a header
+		sb.append( ((Data)headerLop).getBooleanValue() && !isSparkTransformInput );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( ((Data)delimLop).getStringValue() );
 		sb.append( OPERAND_DELIMITOR );

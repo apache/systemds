@@ -30,6 +30,7 @@ import org.apache.spark.api.java.function.PairFunction;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -37,6 +38,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ComputeNonZerosBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertTextToString;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
@@ -46,6 +48,8 @@ import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 
 import scala.Tuple2;
@@ -57,6 +61,7 @@ public class WriteSPInstruction extends SPInstruction
 	private CPOperand input2 = null;
 	private CPOperand input3 = null;
 	private FileFormatProperties formatProperties;
+	private boolean isInputMatrixBlock = true;
 	
 	public WriteSPInstruction(String opcode, String istr) {
 		super(opcode, istr);
@@ -83,7 +88,7 @@ public class WriteSPInstruction extends SPInstruction
 		
 		// All write instructions have 3 parameters, except in case of delimited/csv file.
 		// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
-		if ( parts.length != 4 && parts.length != 7 ) {
+		if ( parts.length != 4 && parts.length != 8 ) {
 			throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		
@@ -102,6 +107,9 @@ public class WriteSPInstruction extends SPInstruction
 			boolean sparse = Boolean.parseBoolean(parts[6]);
 			FileFormatProperties formatProperties = new CSVFileFormatProperties(hasHeader, delim, sparse);
 			inst.setFormatProperties(formatProperties);
+			
+			boolean isInputMB = Boolean.parseBoolean(parts[7]);
+			inst.setInputMatrixBlock(isInputMB);
 		}
 		return inst;		
 	}
@@ -115,7 +123,14 @@ public class WriteSPInstruction extends SPInstruction
 		formatProperties = prop;
 	}
 	
-
+	public void setInputMatrixBlock(boolean isMB) {
+		isInputMatrixBlock = isMB;
+	}
+	
+	public boolean isInputMatrixBlock() {
+		return isInputMatrixBlock;
+	}
+	
 	@Override
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException, DMLUnsupportedOperationException 
@@ -173,8 +188,18 @@ public class WriteSPInstruction extends SPInstruction
 					sparse = ((CSVFileFormatProperties) formatProperties).isSparse();
 					hasHeader = ((CSVFileFormatProperties) formatProperties).hasHeader();
 				}
-				JavaRDD<String> out = in1.flatMapToPair(new ExtractRows(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), sep, sparse)).groupByKey()
+				
+				JavaRDD<String> out = null;
+				
+				if ( isInputMatrixBlock )
+					out = in1.flatMapToPair(new ExtractRows(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), sep, sparse)).groupByKey()
 										.mapToPair(new ConcatenateColumnsInRow(mc.getCols(), mc.getColsPerBlock(), sep)).sortByKey(true).values();
+				else {
+					@SuppressWarnings("unchecked")
+					JavaPairRDD<LongWritable,Text> rdd = (JavaPairRDD<LongWritable, Text>) ((MatrixObject) sec.getVariable(input1.getName())).getRDDHandle().getRDD();
+					out = rdd.values().map(new ConvertTextToString());
+				}
+				
 				if(hasHeader) {
 					StringBuffer buf = new StringBuffer();
 		    		for(int j = 1; j < mc.getCols(); j++) {
@@ -184,6 +209,7 @@ public class WriteSPInstruction extends SPInstruction
 		    			buf.append("C" + j);
 		    		}
 		    		ArrayList<String> headerContainer = new ArrayList<String>(1);
+		    		headerContainer.add(0, buf.toString());
 		    		JavaRDD<String> header = sec.getSparkContext().parallelize(headerContainer);
 		    		out = header.union(out);
 				}

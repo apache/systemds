@@ -27,14 +27,15 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.JSONHelper;
 
 public class OmitAgent extends TransformationAgent {
 	
-	
+	private static final long serialVersionUID = 1978852120416654195L;
+
 	private int[] _omitList = null;
 
 	OmitAgent() { }
@@ -43,20 +44,18 @@ public class OmitAgent extends TransformationAgent {
 		_omitList = list;
 	}
 	
-	OmitAgent(JSONObject parsedSpec) {
-		Object obj = JSONHelper.get(parsedSpec, TX_METHOD.OMIT.toString());
-		if(obj == null) {
-			
-		}
-		else {
-			JSONArray attrs = (JSONArray) JSONHelper.get((JSONObject)obj, JSON_ATTRS);
-			_omitList = new int[attrs.size()];
-			for(int i=0; i < _omitList.length; i++) 
-				_omitList[i] = UtilFunctions.toInt( attrs.get(i) );
-		}
+	public OmitAgent(JSONObject parsedSpec) throws JSONException {
+		if (!parsedSpec.containsKey(TX_METHOD.OMIT.toString()))
+			return;
+		JSONObject obj = (JSONObject) parsedSpec.get(TX_METHOD.OMIT.toString());
+		JSONArray attrs = (JSONArray) obj.get(JSON_ATTRS);
+		
+		_omitList = new int[attrs.size()];
+		for(int i=0; i < _omitList.length; i++) 
+			_omitList[i] = UtilFunctions.toInt(attrs.get(i));
 	}
 	
-	boolean omit(String[] words) 
+	public boolean omit(String[] words, TfUtils agents) 
 	{
 		if(_omitList == null)
 			return false;
@@ -64,7 +63,7 @@ public class OmitAgent extends TransformationAgent {
 		for(int i=0; i<_omitList.length; i++) 
 		{
 			int colID = _omitList[i];
-			if(MVImputeAgent.isNA(UtilFunctions.unquote(words[colID-1].trim()), TransformationAgent.NAstrings))
+			if(agents.isNA(UtilFunctions.unquote(words[colID-1].trim())))
 				return true;
 		}
 		return false;
@@ -99,22 +98,22 @@ public class OmitAgent extends TransformationAgent {
 	@Override
 	public void mapOutputTransformationMetadata(
 			OutputCollector<IntWritable, DistinctValue> out, int taskID,
-			TransformationAgent agent) throws IOException {
+			TfUtils agents) throws IOException {
 	}
 
 	@Override
 	public void mergeAndOutputTransformationMetadata(
 			Iterator<DistinctValue> values, String outputDir, int colID,
-			JobConf job, TfAgents agents) throws IOException {
+			FileSystem fs, TfUtils agents) throws IOException {
 	}
 
 	@Override
-	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir)
+	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents)
 			throws IOException {
 	}
 
 	@Override
-	public String[] apply(String[] words) {
+	public String[] apply(String[] words, TfUtils agents) {
 		return null;
 	}
 

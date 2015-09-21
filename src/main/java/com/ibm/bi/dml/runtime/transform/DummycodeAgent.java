@@ -32,16 +32,17 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 import com.google.common.base.Functions;
 import com.google.common.collect.Ordering;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.JSONHelper;
 
 public class DummycodeAgent extends TransformationAgent {	
 	
-	
+	private static final long serialVersionUID = 5832130477659116489L;
+
 	private int[] _dcdList = null;
 	private long numCols = 0;
 	
@@ -58,20 +59,18 @@ public class DummycodeAgent extends TransformationAgent {
 		_dcdList = list;
 	}
 	
-	DummycodeAgent(JSONObject parsedSpec, long ncol) {
+	DummycodeAgent(JSONObject parsedSpec, long ncol) throws JSONException {
 		numCols = ncol;
 		
-		Object obj = JSONHelper.get(parsedSpec,TX_METHOD.DUMMYCODE.toString());
-		if(obj == null) {
+		if ( !parsedSpec.containsKey(TX_METHOD.DUMMYCODE.toString()) )
 			return;
-		}
-		else {
-			JSONArray attrs = (JSONArray) JSONHelper.get((JSONObject)obj, JSON_ATTRS);
+		
+		JSONObject obj = (JSONObject) parsedSpec.get(TX_METHOD.DUMMYCODE.toString());
+		JSONArray attrs = (JSONArray) obj.get(JSON_ATTRS);
 			
-			_dcdList = new int[attrs.size()];
-			for(int i=0; i < _dcdList.length; i++) 
-				_dcdList[i] = UtilFunctions.toInt( attrs.get(i) );
-		}
+		_dcdList = new int[attrs.size()];
+		for(int i=0; i < _dcdList.length; i++) 
+			_dcdList[i] = UtilFunctions.toInt(attrs.get(i));
 	}
 	
 	public int[] dcdList() {
@@ -87,16 +86,15 @@ public class DummycodeAgent extends TransformationAgent {
 	 * 
 	 */
 	@Override
-	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException {
+	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
 		// There is no metadata required for dummycode.
 		// Required information is output from RecodeAgent.
-		
 		return;
 	}
 	
 	@Override
 	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values,
-			String outputDir, int colID, JobConf job, TfAgents agents) throws IOException {
+			String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
 		// Nothing to do here
 	}
 
@@ -132,7 +130,7 @@ public class DummycodeAgent extends TransformationAgent {
 	 * @return Number of columns in the transformed data
 	 * @throws IOException
 	 */
-	public int genDcdMapsAndColTypes(FileSystem fs, String txMtdDir, int numCols, RecodeAgent ra, BinAgent ba) throws IOException {
+	public int genDcdMapsAndColTypes(FileSystem fs, String txMtdDir, int numCols, TfUtils agents) throws IOException {
 		
 		// initialize all column types in the transformed data to SCALE
 		ColumnTypes[] ctypes = new ColumnTypes[(int) _dummycodedLength];
@@ -164,10 +162,10 @@ public class DummycodeAgent extends TransformationAgent {
 				br.write(colID + "," + "0" + "," + sum + "," + sum + "\n");
 				_dcdColumnMap[colID-1] = sum-1;
 				
-				if ( ba.isBinned(colID) != -1 )
+				if ( agents.getBinAgent().isBinned(colID) != -1 )
 					ctypes[sum-1] = ColumnTypes.ORDINAL;	// binned variable results in an ordinal column
 				
-				if ( ra.isRecoded(colID) != -1 )
+				if ( agents.getRecodeAgent().isRecoded(colID) != -1 )
 					ctypes[sum-1] = ColumnTypes.NOMINAL;
 				
 				sum += 1;
@@ -207,14 +205,13 @@ public class DummycodeAgent extends TransformationAgent {
 		return -1;
 	}
 	
-	public String constructDummycodedHeader(String header, String delim) {
+	public String constructDummycodedHeader(String header, Pattern delim) {
 		
 		if(_dcdList == null && _binList == null )
 			// none of the columns are dummycoded, simply return the given header
 			return header;
 		
-		Pattern _delim = Pattern.compile(Pattern.quote(delim));
-		String[] names = _delim.split(header, -1);
+		String[] names = delim.split(header, -1);
 		List<String> newNames = null;
 		
 		StringBuilder sb = new StringBuilder();
@@ -317,7 +314,7 @@ public class DummycodeAgent extends TransformationAgent {
 	}
 	
 	@Override
-	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir) throws IOException {
+	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException {
 		if ( _dcdList == null )
 		{
 			_dummycodedLength = numCols;
@@ -371,7 +368,7 @@ public class DummycodeAgent extends TransformationAgent {
 	 * @return
 	 */
 	@Override
-	public String[] apply(String[] words) {
+	public String[] apply(String[] words, TfUtils agents) {
 		
 		if ( _dcdList == null )
 			return words;

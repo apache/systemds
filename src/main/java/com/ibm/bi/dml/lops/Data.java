@@ -470,6 +470,19 @@ public class Data extends Lop
 				sb.append(delimLop.getStringValue());
 				sb.append(OPERAND_DELIMITOR);
 				sb.append(sparseLop.getBooleanValue());
+				
+				if ( this.getExecType() == ExecType.SPARK ) 
+				{
+					boolean isInputMatrixBlock = true;
+					Lop input = getInputs().get(0);
+					if ( input instanceof ParameterizedBuiltin 
+							&& ((ParameterizedBuiltin)input).getOp() == com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM ) {
+						// in the case of transform input, the input will be Text strings insteadof MatrixBlocks 
+						isInputMatrixBlock = false;
+					}
+					sb.append(OPERAND_DELIMITOR);
+					sb.append(isInputMatrixBlock);
+				}
 			}
 			
 		}

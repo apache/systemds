@@ -31,6 +31,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.wink.json4j.JSONException;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
@@ -41,13 +42,12 @@ import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockMapper.IndexedBlockRow;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MapperBase;
-import org.apache.wink.json4j.JSONObject;
 
 @SuppressWarnings("deprecation")
 public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, Text, TaggedFirstSecondIndexes, CSVReblockMR.BlockRow>{
 	
-	
-	ApplyTfHelper tfmapper = null;
+	boolean _partFileWithHeader = false;
+	TfUtils tfmapper = null;
 	Reporter _reporter = null;
 	
 	// variables relevant to CSV Reblock
@@ -61,13 +61,11 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
 	public void configure(JobConf job) {
 		super.configure(job);
 		try {
-			tfmapper = new ApplyTfHelper(job);
-			JSONObject spec = tfmapper.parseSpec();
-			tfmapper.setupTfAgents(spec);
-			tfmapper.loadTfMetadata(spec);
+			_partFileWithHeader = TfUtils.isPartFileWithHeader(job);
+			tfmapper = new TfUtils(job);
+			tfmapper.loadTfMetadata(job, true);
 			
 			// Load relevant information for CSV Reblock
-			
 			ByteWritable key=new ByteWritable();
 			OffsetCount value=new OffsetCount();
 			Path p=new Path(job.get(CSVReblockMR.ROWID_FILE_NAME));
@@ -97,9 +95,9 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
 			//always dense since common csv usecase
 			idxRow.getRow().data.reset(1, maxBclen, false);		
 
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		} catch (IOException e) { throw new RuntimeException(e); }
+ 		 catch(JSONException e)  { throw new RuntimeException(e); }
+
 	}
 	
 	@Override
@@ -112,10 +110,10 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
 		}
 		
 		// output the header line
-		if ( rawKey.get() == 0 && tfmapper._partFileWithHeader ) 
+		if ( rawKey.get() == 0 && _partFileWithHeader ) 
 		{
-			tfmapper.processHeaderLine(rawValue);
-			if ( tfmapper._hasHeader )
+			tfmapper.processHeaderLine();
+			if ( tfmapper.hasHeader() )
 				return;
 		}
 		
@@ -126,7 +124,7 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
 		{
 			words = tfmapper.apply(words);
 			try {
-				ApplyTfHelper.check(words, tfmapper._da);
+				tfmapper.check(words);
 				
 				// Perform CSV Reblock
 				CSVReblockInstruction ins = csv_reblock_instructions.get(0).get(0);

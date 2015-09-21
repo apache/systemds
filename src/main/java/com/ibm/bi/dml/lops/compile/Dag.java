@@ -70,6 +70,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
+import com.ibm.bi.dml.runtime.instructions.InstructionParser;
 import com.ibm.bi.dml.runtime.instructions.SPInstructionParser;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
@@ -1667,15 +1668,7 @@ public class Dag<N extends Lop>
 				try {
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Generating simple instruction - "+ inst_string);
-					Instruction currInstr = null;
-					if(node.getExecType() == ExecType.SPARK) {
-						// This will throw an exception if the exectype of hop is set incorrectly
-						// Note: the exec type and exec location of lops needs to be set to SPARK and ControlProgram respectively
-						currInstr = SPInstructionParser.parseSingleInstruction(inst_string);
-					}
-					else {
-						currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
-					}
+					Instruction currInstr = InstructionParser.parseSingleInstruction(inst_string);
 					if (node._beginLine != 0)
 						currInstr.setLocation(node);
 					else if ( !node.getOutputs().isEmpty() )

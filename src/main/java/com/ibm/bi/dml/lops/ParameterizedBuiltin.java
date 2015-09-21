@@ -250,6 +250,27 @@ public class ParameterizedBuiltin extends Lop
 				
 				break;
 				
+			case TRANSFORM:
+			{
+				sb.append("transform");
+				sb.append(OPERAND_DELIMITOR);
+				
+				for ( String s : _inputParams.keySet() ) {
+					sb.append(s);
+					sb.append(NAME_VALUE_SEPARATOR);
+					
+					Lop iLop = _inputParams.get(s);
+					if( iLop.getDataType() != DataType.SCALAR )
+						sb.append( iLop.getOutputParameters().getLabel());
+					else
+						sb.append( iLop.prepScalarLabel() );
+					
+					sb.append(OPERAND_DELIMITOR);
+				}
+			}
+				//return getTransformInstructions(getInputs().get(getInputIndex("target")).getOutputParameters().getLabel(), output);
+				break;
+				
 			default:
 				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
 		}
@@ -423,58 +444,53 @@ public class ParameterizedBuiltin extends Lop
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
 
-		switch(_operation) 
+		if(_operation== OperationTypes.TRANSFORM) 
 		{
-			case TRANSFORM:
+			// int inputIndex = getInputIndex("target");
+			
+			sb.append( "transform" );
+			sb.append( OPERAND_DELIMITOR );
+			Lop iLop = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
+			sb.append(iLop.prepInputOperand(getInputIndex("target")));
+			sb.append( OPERAND_DELIMITOR );
+			
+			Lop iLop2 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXMTD);
+			sb.append(iLop2.prepScalarLabel());
+			sb.append( OPERAND_DELIMITOR );
+			
+			// either applyTransformPath or transformSpec should be specified
+			boolean isApply = false;
+			Lop iLop3 = null;
+			if ( _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD) != null ) {
+				// apply transform
+				isApply = true;
+				iLop3 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
+			}
+			else {
+				iLop3 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC);
+			}
+			sb.append(iLop3.prepScalarLabel());
+			sb.append( OPERAND_DELIMITOR );
+			
+			sb.append(isApply);
+			sb.append( OPERAND_DELIMITOR );
+			
+			Lop iLop4 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_OUTNAMES);
+			if( iLop4 != null ) 
 			{
-				int inputIndex = getInputIndex("target");
-				
-				sb.append( "transform" );
+				sb.append(iLop4.prepScalarLabel());
 				sb.append( OPERAND_DELIMITOR );
-		
-				Lop iLop = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
-				sb.append(iLop.prepInputOperand(inputIndex));
-				sb.append( OPERAND_DELIMITOR );
-				
-				Lop iLop2 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXMTD);
-				sb.append(iLop2.prepScalarLabel());
-				sb.append( OPERAND_DELIMITOR );
-				
-				// either applyTransformPath or transformSpec should be specified
-				boolean isApply = false;
-				Lop iLop3 = null;
-				if ( _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD) != null ) {
-					// apply transform
-					isApply = true;
-					iLop3 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
-				}
-				else {
-					iLop3 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC);
-				}
-				sb.append(iLop3.prepScalarLabel());
-				sb.append( OPERAND_DELIMITOR );
-				
-				sb.append(isApply);
-				sb.append( OPERAND_DELIMITOR );
-				
-				Lop iLop4 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_OUTNAMES);
-				if( iLop4 != null ) 
-				{
-					sb.append(iLop4.prepScalarLabel());
-					sb.append( OPERAND_DELIMITOR );
-				}
-
-				break;
-			}	
-				
-			default:
-				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
+			}
+			
+			sb.append( prepOutputOperand(output_index));
 		}
-		
-		sb.append( prepOutputOperand(output_index));
-		
+			//return getTransformInstructions(""+getInputIndex("target"), ""+output_index);
+		else
+			throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
+	
 		return sb.toString();
 	}
+	
 
 	@Override
 	public String toString() {

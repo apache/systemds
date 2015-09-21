@@ -25,13 +25,14 @@ import java.io.OutputStreamWriter;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.io.ReaderBinaryBlock;
 import com.ibm.bi.dml.runtime.io.ReaderTextCSV;
@@ -41,8 +42,6 @@ import com.ibm.bi.dml.runtime.transform.TransformationAgent.TX_METHOD;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONObject;
 
 /**
  * 
@@ -65,30 +64,59 @@ public class ScalingTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"R"}));
 	}
 
+	// ---- Scaling CSV ---- 
 	
 	@Test
-	public void testTransformScalingCPCSV() throws IOException, DMLRuntimeException, Exception
+	public void testTransformScalingHybridCSV() throws IOException, DMLRuntimeException, Exception
 	{
-		runScalingTest(rows1, cols1, ExecType.CP, "csv");
+		runScalingTest(rows1, cols1, RUNTIME_PLATFORM.HYBRID, "csv");
 	}
 	
 	@Test
-	public void testTransformScalingMRCSV() throws IOException, DMLRuntimeException, Exception 
+	public void testTransformScalingSPHybridCSV() throws IOException, DMLRuntimeException, Exception
 	{
-		runScalingTest(rows1, cols1, ExecType.MR, "csv");
+		runScalingTest(rows1, cols1, RUNTIME_PLATFORM.HYBRID_SPARK, "csv");
 	}
 	
 	@Test
-	public void testTransformScalingCPBinary() throws IOException, DMLRuntimeException, Exception 
+	public void testTransformScalingHadoopCSV() throws IOException, DMLRuntimeException, Exception 
 	{
-		runScalingTest(rows1, cols1, ExecType.CP, "binary");
+		runScalingTest(rows1, cols1, RUNTIME_PLATFORM.HADOOP, "csv");
 	}
 	
 	@Test
-	public void testTransformScalingMRBinary() throws IOException, DMLRuntimeException, Exception 
+	public void testTransformScalingSparkCSV() throws IOException, DMLRuntimeException, Exception 
 	{
-		runScalingTest(rows1, cols1, ExecType.MR, "binary");
+		runScalingTest(rows1, cols1, RUNTIME_PLATFORM.SPARK, "csv");
 	}
+	
+	// ---- Scaling BinaryBlock ---- 
+	
+	@Test
+	public void testTransformScalingHybridBinary() throws IOException, DMLRuntimeException, Exception 
+	{
+		runScalingTest(rows1, cols1, RUNTIME_PLATFORM.HYBRID, "binary");
+	}
+	
+	@Test
+	public void testTransformScalingSPHybridBinary() throws IOException, DMLRuntimeException, Exception 
+	{
+		runScalingTest(rows1, cols1, RUNTIME_PLATFORM.HYBRID_SPARK, "binary");
+	}
+	
+	@Test
+	public void testTransformScalingHadoopBinary() throws IOException, DMLRuntimeException, Exception 
+	{
+		runScalingTest(rows1, cols1, RUNTIME_PLATFORM.HADOOP, "binary");
+	}
+	
+	@Test
+	public void testTransformScalingSparkBinary() throws IOException, DMLRuntimeException, Exception 
+	{
+		runScalingTest(rows1, cols1, RUNTIME_PLATFORM.SPARK, "binary");
+	}
+	
+	// ----------------------------
 	
 	private void generateSpecFile(int cols, String specFile) throws IOException , Exception
 	{
@@ -141,17 +169,13 @@ public class ScalingTest extends AutomatedTestBase
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	private void runScalingTest( int rows, int cols, ExecType et, String ofmt) throws IOException, DMLRuntimeException, Exception
+	private void runScalingTest( int rows, int cols, RUNTIME_PLATFORM rt, String ofmt) throws IOException, DMLRuntimeException, Exception
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
+		rtplatform = rt;
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try

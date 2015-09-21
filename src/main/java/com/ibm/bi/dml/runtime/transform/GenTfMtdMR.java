@@ -43,10 +43,8 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 public class GenTfMtdMR {
 
-	
 	public static final String DELIM = ",";
 
-	//public static void runJob(String inputPath, String txMtdPath, boolean hasHeader, String delim, String naStrings, String specFile, String smallestFile) throws IOException, ClassNotFoundException, InterruptedException {
 	public static long runJob(String inputPath, String txMtdPath, String specFileWithIDs, String smallestFile, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numCols, int replication, String headerLine) throws IOException, ClassNotFoundException, InterruptedException {
 		JobConf job = new JobConf(GenTfMtdMR.class);
 		job.setJobName("GenTfMTD");
@@ -103,6 +101,5 @@ public class GenTfMtdMR {
 
 		return tx_numRows;
 	}
-	
 	
 }

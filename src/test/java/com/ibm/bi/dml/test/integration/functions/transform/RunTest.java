@@ -23,7 +23,6 @@ import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
@@ -59,46 +58,96 @@ public class RunTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"R"}));
 	}
 	
+	// ---- NAN BinaryBlock ----
+	
 	@Test
 	public void runTestWithNAN_HybridBB() throws DMLRuntimeException, IOException {
-		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, ExecType.CP, "binary");
+		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, RUNTIME_PLATFORM.HYBRID, "binary");
 	}
 
 	@Test
-	public void runTestWithNAN_HybridCSV() throws DMLRuntimeException, IOException {
-		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, ExecType.CP, "csv");
+	public void runTestWithNAN_SPHybridBB() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, RUNTIME_PLATFORM.HYBRID_SPARK, "binary");
 	}
 
 	@Test
 	public void runTestWithNAN_HadoopBB() throws DMLRuntimeException, IOException {
-		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, ExecType.MR, "binary");
+		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, RUNTIME_PLATFORM.HADOOP, "binary");
+	}
+
+	@Test
+	public void runTestWithNAN_SparkBB() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, RUNTIME_PLATFORM.SPARK, "binary");
+	}
+
+	// ---- NAN CSV ----
+	
+	@Test
+	public void runTestWithNAN_HybridCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, RUNTIME_PLATFORM.HYBRID, "csv");
+	}
+
+	@Test
+	public void runTestWithNAN_SPHybridCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, RUNTIME_PLATFORM.HYBRID_SPARK, "csv");
 	}
 
 	@Test
 	public void runTestWithNAN_HadoopCSV() throws DMLRuntimeException, IOException {
-		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, ExecType.MR, "csv");
+		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, RUNTIME_PLATFORM.HADOOP, "csv");
 	}
 
 	@Test
-	public void runTest2_HybridCSV() throws DMLRuntimeException, IOException {
-		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, ExecType.CP, "csv");
+	public void runTestWithNAN_SparkCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_NAN_DATASET, HOMES_NAN_SPEC, HOMES_NAN_COLNAMES, false, RUNTIME_PLATFORM.SPARK, "csv");
 	}
 
+	// ---- Test2 BinaryBlock ----
+	
 	@Test
 	public void runTest2_HybridBB() throws DMLRuntimeException, IOException {
-		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, ExecType.CP, "binary");
+		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, RUNTIME_PLATFORM.HYBRID, "binary");
 	}
 
 	@Test
-	public void runTest2_HadoopCSV() throws DMLRuntimeException, IOException {
-		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, ExecType.MR, "csv");
+	public void runTest2_SPHybridBB() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, RUNTIME_PLATFORM.HYBRID_SPARK, "binary");
 	}
 
 	@Test
 	public void runTest2_HadoopBB() throws DMLRuntimeException, IOException {
-		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, ExecType.MR, "binary");
+		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, RUNTIME_PLATFORM.HADOOP, "binary");
 	}
 
+	@Test
+	public void runTest2_SparkBB() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, RUNTIME_PLATFORM.SPARK, "binary");
+	}
+
+	// ---- Test2 CSV ----
+	
+	@Test
+	public void runTest2_HybridCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, RUNTIME_PLATFORM.HYBRID, "csv");
+	}
+
+	@Test
+	public void runTest2_SPHybridCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, RUNTIME_PLATFORM.HYBRID_SPARK, "csv");
+	}
+
+	@Test
+	public void runTest2_HadoopCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, RUNTIME_PLATFORM.HADOOP, "csv");
+	}
+
+	@Test
+	public void runTest2_SparkCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, RUNTIME_PLATFORM.SPARK, "csv");
+	}
+
+	// ------------------
+	
 	/**
 	 * 
 	 * @param sparseM1
@@ -107,17 +156,13 @@ public class RunTest extends AutomatedTestBase
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	private void runScalingTest( String dataset, String spec, String colnames, boolean exception, ExecType et, String ofmt) throws IOException, DMLRuntimeException
+	private void runScalingTest( String dataset, String spec, String colnames, boolean exception, RUNTIME_PLATFORM rt, String ofmt) throws IOException, DMLRuntimeException
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
+		rtplatform = rt;
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.SPARK  || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try

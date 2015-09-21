@@ -872,7 +872,7 @@ public class ParameterizedBuiltinOp extends Hop
 		{
 			if( _op == ParamBuiltinOp.TRANSFORM )
 			{
-				// force MR execution type here.
+				// force remote execution type here.
 				// At runtime, cp-side transform is triggered for small files.
 				return REMOTE;
 			}

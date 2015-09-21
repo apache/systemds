@@ -360,7 +360,7 @@ public abstract class Hop
 			}
 		}
 
-		//add reblock lop to output if required
+		//add checkpoint lop to output if required
 		if( _requiresCheckpoint && et != ExecType.CP )
 		{
 			Lop input = getLops();			

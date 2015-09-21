@@ -20,6 +20,7 @@ package com.ibm.bi.dml.lops.runtime;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.wink.json4j.JSONException;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -88,6 +89,7 @@ public class RunMRJobs
 	 * @param ec
 	 * @return
 	 */
+
 	public static JobReturn prepareAndSubmitJob( MRJobInstruction inst, ExecutionContext ec )
 		throws DMLRuntimeException 
 	{
@@ -580,10 +582,10 @@ public class RunMRJobs
 		return  new JobReturn( mc, inst.getOutputInfos(), true);
 	}
 	
-	private static JobReturn executeInMemoryTransform( MRJobInstruction inst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices) throws IOException, DMLRuntimeException {
+	private static JobReturn executeInMemoryTransform( MRJobInstruction inst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices) throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException {
 		return DataTransform.cpDataTransform(
-									inst.getIv_shuffleInstructions(), 
-									inputMatrices, 
-									outputMatrices);
+				inst.getIv_shuffleInstructions(), 
+				inputMatrices, 
+				outputMatrices);
 	}
 }

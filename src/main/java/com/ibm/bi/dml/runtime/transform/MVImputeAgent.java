@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.CharacterCodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -34,7 +35,10 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
+
+import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.CM;
@@ -45,11 +49,11 @@ import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.JSONHelper;
 
 public class MVImputeAgent extends TransformationAgent {
 	
-	
+	private static final long serialVersionUID = 9057868620144662194L;
+
 	public static final String MEAN_PREFIX = "mean";
 	public static final String VARIANCE_PREFIX = "var";
 	public static final String CORRECTION_PREFIX = "correction";
@@ -87,14 +91,20 @@ public class MVImputeAgent extends TransformationAgent {
 	private long[] 			_scnomvCountList = null;	// #of non-missing values, for attributes scaled but not imputed
 	private CM_COV_Object[] _scnomvVarList = null;		// column-level variances, computed so far
 	
-	
 	private String[] _replacementList = null;		// replacements: for global_mean, mean; and for global_mode, recode id of mode category
 	
-	MVImputeAgent(JSONObject parsedSpec) {
-		JSONObject mvobj = (JSONObject) JSONHelper.get(parsedSpec, TX_METHOD.IMPUTE.toString());
-		JSONObject scobj = (JSONObject) JSONHelper.get(parsedSpec, TX_METHOD.SCALE.toString());
+	public String[] getReplacements() { return _replacementList; }
+	public KahanObject[] getMeans()   { return _meanList; }
+	public CM_COV_Object[] getVars()  { return _varList; }
+	public KahanObject[] getMeans_scnomv()   { return _scnomvMeanList; }
+	public CM_COV_Object[] getVars_scnomv()  { return _scnomvVarList; }
+	
+	MVImputeAgent(JSONObject parsedSpec) throws JSONException {
+	
+		boolean isMV = parsedSpec.containsKey(TX_METHOD.IMPUTE.toString());
+		boolean isSC = parsedSpec.containsKey(TX_METHOD.SCALE.toString());
 		
-		if(mvobj == null) {
+		if(!isMV) {
 			// MV Impute is not applicable
 			_mvList = null;
 			_mvMethodList = null;
@@ -103,8 +113,9 @@ public class MVImputeAgent extends TransformationAgent {
 			_replacementList = null;
 		}
 		else {
-			JSONArray mvattrs = (JSONArray) JSONHelper.get(mvobj, JSON_ATTRS);
-			JSONArray mvmthds = (JSONArray) JSONHelper.get(mvobj, JSON_MTHD);
+			JSONObject mvobj = (JSONObject) parsedSpec.get(TX_METHOD.IMPUTE.toString());
+			JSONArray mvattrs = (JSONArray) mvobj.get(JSON_ATTRS);
+			JSONArray mvmthds = (JSONArray) mvobj.get(JSON_MTHD);
 			int mvLength = mvattrs.size();
 			
 			assert(mvLength == mvmthds.size());
@@ -120,14 +131,14 @@ public class MVImputeAgent extends TransformationAgent {
 			_isMVScaled.clear();
 			
 			for(int i=0; i < _mvList.length; i++) {
-				_mvList[i] = UtilFunctions.toInt( mvattrs.get(i) );
-				_mvMethodList[i] = (byte) UtilFunctions.toInt( mvmthds.get(i) ); 
+				_mvList[i] = UtilFunctions.toInt(mvattrs.get(i));
+				_mvMethodList[i] = (byte) UtilFunctions.toInt(mvmthds.get(i)); 
 				_meanList[i] = new KahanObject(0, 0);
 			}
 			
 			_replacementList = new String[mvLength]; 	// contains replacements for all columns (scale and categorical)
 			
-			JSONArray constants = (JSONArray)JSONHelper.get(mvobj,JSON_CONSTS);
+			JSONArray constants = (JSONArray)mvobj.get(JSON_CONSTS);
 			for(int i=0; i < constants.size(); i++) {
 				if ( constants.get(i) == null )
 					_replacementList[i] = "NaN";
@@ -137,7 +148,7 @@ public class MVImputeAgent extends TransformationAgent {
 		}
 		
 		// Handle scaled attributes
-		if ( scobj == null )
+		if ( !isSC )
 		{
 			// scaling is not applicable
 			_scnomvCountList = null;
@@ -149,8 +160,9 @@ public class MVImputeAgent extends TransformationAgent {
 			if ( _mvList != null ) 
 				_mvscMethodList = new byte[_mvList.length];
 			
-			JSONArray scattrs = (JSONArray) JSONHelper.get(scobj,JSON_ATTRS);
-			JSONArray scmthds = (JSONArray) JSONHelper.get(scobj,JSON_MTHD);
+			JSONObject scobj = (JSONObject) parsedSpec.get(TX_METHOD.SCALE.toString());
+			JSONArray scattrs = (JSONArray) scobj.get(JSON_ATTRS);
+			JSONArray scmthds = (JSONArray) scobj.get(JSON_MTHD);
 			int scLength = scattrs.size();
 			
 			int[] _allscaled = new int[scLength];
@@ -158,8 +170,8 @@ public class MVImputeAgent extends TransformationAgent {
 			byte mthd;
 			for(int i=0; i < scLength; i++)
 			{
-				colID = UtilFunctions.toInt( scattrs.get(i) );
-				mthd = (byte)UtilFunctions.toInt( scmthds.get(i) ); 
+				colID = UtilFunctions.toInt(scattrs.get(i));
+				mthd = (byte) UtilFunctions.toInt(scmthds.get(i)); 
 						
 				_allscaled[i] = colID;
 				
@@ -186,8 +198,8 @@ public class MVImputeAgent extends TransformationAgent {
 				
 				for(int i=0, idx=0; i < scLength; i++)
 				{
-					colID = UtilFunctions.toInt( scattrs.get(i) );
-					mthd = (byte)UtilFunctions.toInt( scmthds.get(i) ); 
+					colID = UtilFunctions.toInt(scattrs.get(i));
+					mthd = (byte)UtilFunctions.toInt(scmthds.get(i)); 
 							
 					if(isImputed(colID) == -1)
 					{	// scaled but not imputed
@@ -202,22 +214,7 @@ public class MVImputeAgent extends TransformationAgent {
 		}
 	}
 	
-	public static boolean isNA(String w, String[] naStrings) {
-		if(naStrings == null)
-			return false;
-		
-		for(String na : naStrings) {
-			if(w.equals(na))
-				return true;
-		}
-		return false;
-	}
-	
-	public boolean isNA(String w) {
-		return MVImputeAgent.isNA(w, NAstrings);
-	}
-	
-	public void prepare(String[] words) throws IOException {
+	public void prepare(String[] words, TfUtils agents) throws IOException {
 		
 		try {
 			String w = null;
@@ -227,7 +224,7 @@ public class MVImputeAgent extends TransformationAgent {
 				w = UtilFunctions.unquote(words[colID-1].trim());
 				
 				try {
-				if(!isNA(w)) {
+				if(!agents.isNA(w)) {
 					_countList[i]++;
 					
 					boolean computeMean = (_mvMethodList[i] == 1 || _isMVScaled.get(i) );
@@ -267,6 +264,8 @@ public class MVImputeAgent extends TransformationAgent {
 		}
 	}
 	
+	// ----------------------------------------------------------------------------------------------------------
+	
 	private String encodeCMObj(CM_COV_Object obj)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -295,6 +294,118 @@ public class MVImputeAgent extends TransformationAgent {
 		return obj;
 	}
 	
+	private DistinctValue prepMeanOutput(int taskID, int idx, StringBuilder sb, boolean scnomv) throws CharacterCodingException {
+		
+		byte mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
+		
+		if ( scnomv || mthd == 1 || _isMVScaled.get(idx) ) {
+			String suffix = null;
+			if(scnomv)
+				suffix = "scnomv";
+			else if ( mthd ==1 && _isMVScaled.get(idx) )
+				suffix = "scmv"; 	// both scaled and mv imputed
+			else if ( mthd == 1 )
+				suffix = "noscmv";
+			else
+				suffix = "scnomv";
+			
+			sb.setLength(0);
+			sb.append(MEAN_PREFIX);
+			sb.append("_");
+			sb.append(taskID);
+			sb.append("_");
+			double mean = (scnomv ? _scnomvMeanList[idx]._sum : _meanList[idx]._sum);
+			sb.append(Double.toString(mean));
+			sb.append(",");
+			sb.append(suffix);
+			//String s = MEAN_PREFIX + "_" + taskID + "_" + Double.toString(_meanList[idx]._sum) + "," + suffix;
+			return new DistinctValue(sb.toString(), -1L);
+		}
+		
+		return null;
+	}
+	
+	private DistinctValue prepMeanCorrectionOutput(int taskID, int idx, StringBuilder sb, boolean scnomv) throws CharacterCodingException {
+		byte mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
+		if ( scnomv || mthd == 1 || _isMVScaled.get(idx) ) {
+			sb.setLength(0);
+			//CORRECTION_PREFIX + "_" + taskID + "_" + Double.toString(mean._correction);
+			sb.append(CORRECTION_PREFIX);
+			sb.append("_");
+			sb.append(taskID);
+			sb.append("_");
+			double corr = (scnomv ? _scnomvMeanList[idx]._correction : _meanList[idx]._correction);
+			sb.append(Double.toString(corr));
+			return new DistinctValue(sb.toString(), -1L);
+		}
+		return null;
+	}
+	
+	private DistinctValue prepMeanCountOutput(int taskID, int idx, StringBuilder sb, boolean scnomv) throws CharacterCodingException {
+		byte mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
+		if ( scnomv || mthd == 1 || _isMVScaled.get(idx) ) {
+			sb.setLength(0);
+			//s = COUNT_PREFIX + "_" + taskID + "_" + Long.toString(count);
+			sb.append(COUNT_PREFIX);
+			sb.append("_");
+			sb.append(taskID);
+			sb.append("_");
+			long count = (scnomv ? _scnomvCountList[idx] : _countList[idx]);
+			sb.append( Long.toString(count));
+			return new DistinctValue(sb.toString(), -1L);
+		}
+		return null;
+	}
+	
+	private DistinctValue prepTotalCountOutput(int taskID, int idx, StringBuilder sb, boolean scnomv, TfUtils agents) throws CharacterCodingException {
+		byte mthd = (scnomv ? _scnomvMethodList[idx] : _mvMethodList[idx]);
+		if ( scnomv || mthd == 1 || _isMVScaled.get(idx) ) {
+			sb.setLength(0);
+			//TOTAL_COUNT_PREFIX + "_" + taskID + "_" + Long.toString(TransformationAgent._numValidRecords);
+			sb.append(TOTAL_COUNT_PREFIX);
+			sb.append("_");
+			sb.append(taskID);
+			sb.append("_");
+			sb.append( Long.toString(agents.getValid()) );
+			return new DistinctValue(sb.toString(), -1L);
+		}
+		return null;
+	}
+	
+	private DistinctValue prepConstantOutput(int idx, StringBuilder sb) throws CharacterCodingException {
+		if ( _mvMethodList == null )
+			return null;
+		byte mthd = _mvMethodList[idx];
+		if ( mthd == 3 ) {
+			sb.setLength(0);
+			sb.append(CONSTANT_PREFIX);
+			sb.append("_");
+			sb.append(_replacementList[idx]);
+			return new DistinctValue(sb.toString(), -1);
+		}
+		return null;
+	}
+	
+	private DistinctValue prepVarOutput(int taskID, int idx, StringBuilder sb, boolean scnomv) throws CharacterCodingException {
+		if ( scnomv || _isMVScaled.get(idx) && _mvscMethodList[idx] == 2 ) {
+			sb.setLength(0);
+			sb.append(VARIANCE_PREFIX);
+			sb.append("_");
+			sb.append(taskID);
+			sb.append("_");
+			CM_COV_Object cm = (scnomv ? _scnomvVarList[idx] : _varList[idx]);
+			sb.append(encodeCMObj(cm));
+		
+			return new DistinctValue(sb.toString(), -1L);
+		}
+		return null;
+	}
+	
+	private void outDV(IntWritable iw, DistinctValue dv, OutputCollector<IntWritable, DistinctValue> out) throws IOException {
+		if ( dv != null )	
+			out.collect(iw, dv);
+	}
+	
 	/**
 	 * Method to output transformation metadata from the mappers. 
 	 * This information is collected and merged by the reducers.
@@ -303,104 +414,129 @@ public class MVImputeAgent extends TransformationAgent {
 	 * @throws IOException
 	 */
 	@Override
-	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TransformationAgent agent) throws IOException {
+	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
 		try { 
+			StringBuilder sb = new StringBuilder();
+			DistinctValue dv = null;
+			
 			if(_mvList != null)
-			for(int i=0; i < _mvList.length; i++) {
-				int colID = _mvList[i];
-				byte mthd = _mvMethodList[i];
-				
-				IntWritable iw = new IntWritable(-colID);
-				
-				if ( mthd == 1 || _isMVScaled.get(i) ) {
-					String suffix = null;
-					if ( mthd ==1 && _isMVScaled.get(i) )
-						suffix = "scmv"; 	// both scaled and mv imputed
-					else if ( mthd == 1 )
-						suffix = "noscmv";
-					else
-						suffix = "scnomv";
+				for(int i=0; i < _mvList.length; i++) {
+					int colID = _mvList[i];
+					IntWritable iw = new IntWritable(-colID);
 					
-					writeMean(iw, taskID, _meanList[i], suffix, _countList[i], out);
+					dv = prepMeanOutput(taskID, i, sb, false);				outDV(iw, dv, out);
+					dv = prepMeanCorrectionOutput(taskID, i, sb, false);	outDV(iw, dv, out);
+					dv = prepMeanCountOutput(taskID, i, sb, false);			outDV(iw, dv, out);
+					dv = prepTotalCountOutput(taskID, i, sb, false, agents); outDV(iw, dv, out);
+					
+					dv = prepConstantOutput(i, sb);							outDV(iw, dv, out);
+					
+					// output variance information relevant to scaling
+					dv = prepVarOutput(taskID, i, sb, false);				outDV(iw, dv, out);
 				}
-				else if (mthd == 3){
-					String s = CONSTANT_PREFIX + "_" + _replacementList[i];
-					out.collect(iw, new DistinctValue(s, -1L));
-				}
-				
-				// output variance information relevant to scaling
-				if(_isMVScaled.get(i) && _mvscMethodList[i] == 2) 
-					writeVar(iw, taskID, _varList[i], out);
-			}
 			
 			// handle attributes that are scaled but not imputed
 			if(_scnomvList != null)
-			for(int i=0; i < _scnomvList.length; i++)
-			{
-				int colID = _scnomvList[i];
-				IntWritable iw = new IntWritable(-colID);
-				byte mthd = _scnomvMethodList[i];
-				
-				writeMean(iw, taskID, _scnomvMeanList[i], "scnomv", _scnomvCountList[i], out);
-				
-				if(mthd==2)
-					writeVar(iw, taskID, _scnomvVarList[i], out);
-			}
+				for(int i=0; i < _scnomvList.length; i++)
+				{
+					int colID = _scnomvList[i];
+					IntWritable iw = new IntWritable(-colID);
+					
+					dv = prepMeanOutput(taskID, i, sb, true);				outDV(iw, dv, out);
+					dv = prepMeanCorrectionOutput(taskID, i, sb, true);		outDV(iw, dv, out);
+					dv = prepMeanCountOutput(taskID, i, sb, true);			outDV(iw, dv, out);
+					dv = prepTotalCountOutput(taskID, i, sb, true, agents);	outDV(iw, dv, out);
+					
+					dv = prepVarOutput(taskID, i, sb, true);				outDV(iw, dv, out); 
+				}
 		} catch(Exception e) {
 			throw new IOException(e);
 		}
 	}
 	
-	private void writeVar(IntWritable iw, int taskID, CM_COV_Object var, OutputCollector<IntWritable, DistinctValue> out) throws CharacterCodingException, IOException
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append(VARIANCE_PREFIX);
-		sb.append("_");
-		sb.append(taskID);
-		sb.append("_");
-		sb.append(encodeCMObj(var));
-		out.collect(iw, new DistinctValue(sb.toString(), -1L));
-	}
+	/**
+	 * Applicable when running on SPARK.
+	 * Helper function to output transformation metadata into shuffle.
+	 * 
+	 * @param iw
+	 * @param dv
+	 * @param list
+	 * @throws IOException
+	 */
 	
-	private void writeMean(IntWritable iw, int taskID, KahanObject mean, String suffix, long count, OutputCollector<IntWritable, DistinctValue> out) throws CharacterCodingException, IOException
-	{
-		String s = null;
-		s = MEAN_PREFIX + "_" + taskID + "_" + Double.toString(mean._sum) + "," + suffix;
-		out.collect(iw, new DistinctValue(s, -1L));
-		s = CORRECTION_PREFIX + "_" + taskID + "_" + Double.toString(mean._correction);
-		out.collect(iw, new DistinctValue(s, -1L));
-		s = COUNT_PREFIX + "_" + taskID + "_" + Long.toString(count);
-		out.collect(iw, new DistinctValue(s, -1L));
-		s = TOTAL_COUNT_PREFIX + "_" + taskID + "_" + Long.toString(TransformationAgent._numValidRecords);
-		out.collect(iw, new DistinctValue(s, -1L));
+	private void addDV(Integer iw, DistinctValue dv, ArrayList<Tuple2<Integer, DistinctValue>> list) throws IOException {
+		if ( dv != null )	
+			list.add( new Tuple2<Integer, DistinctValue>(iw, dv) );	
+	}
 
+	public ArrayList<Tuple2<Integer, DistinctValue>> mapOutputTransformationMetadata(int taskID, ArrayList<Tuple2<Integer, DistinctValue>> list, TfUtils agents) throws IOException {
+		try { 
+			StringBuilder sb = new StringBuilder();
+			DistinctValue dv = null;
+			
+			if(_mvList != null)
+				for(int i=0; i < _mvList.length; i++) {
+					int colID = _mvList[i];
+					Integer iw = -colID;
+					
+					dv = prepMeanOutput(taskID, i, sb, false);				addDV(iw, dv, list);
+					dv = prepMeanCorrectionOutput(taskID, i, sb, false);	addDV(iw, dv, list);
+					dv = prepMeanCountOutput(taskID, i, sb, false);			addDV(iw, dv, list);
+					dv = prepTotalCountOutput(taskID, i, sb, false, agents); addDV(iw, dv, list);
+					
+					dv = prepConstantOutput(i, sb);							addDV(iw, dv, list);
+					
+					// output variance information relevant to scaling
+					dv = prepVarOutput(taskID, i, sb, false);				addDV(iw, dv, list);
+				}
+			
+			// handle attributes that are scaled but not imputed
+			if(_scnomvList != null)
+				for(int i=0; i < _scnomvList.length; i++)
+				{
+					int colID = _scnomvList[i];
+					Integer iw = -colID;
+					
+					dv = prepMeanOutput(taskID, i, sb, true);				addDV(iw, dv, list);
+					dv = prepMeanCorrectionOutput(taskID, i, sb, true);		addDV(iw, dv, list);
+					dv = prepMeanCountOutput(taskID, i, sb, true);			addDV(iw, dv, list);
+					dv = prepTotalCountOutput(taskID, i, sb, true, agents);	addDV(iw, dv, list);
+					
+					dv = prepVarOutput(taskID, i, sb, true);				addDV(iw, dv, list); 
+				}
+		} catch(Exception e) {
+			throw new IOException(e);
+		}
+		return list;
 	}
 	
-	private void writeTfMtd(int colID, String mean, String tfMtdDir, FileSystem fs) throws IOException 
+	// ----------------------------------------------------------------------------------------------------------
+	
+	private void writeTfMtd(int colID, String mean, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
-		Path pt=new Path(tfMtdDir+"/Impute/"+outputColumnNames[colID-1]+ MV_FILE_SUFFIX);
+		Path pt=new Path(tfMtdDir+"/Impute/"+ agents.getName(colID) + MV_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TXMTD_SEP + mean + "\n");
 		br.close();
 	}
 	
-	private void writeTfMtd(int colID, String mean, String sdev, String tfMtdDir, FileSystem fs) throws IOException 
+	private void writeTfMtd(int colID, String mean, String sdev, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
-		Path pt=new Path(tfMtdDir+"/Scale/"+outputColumnNames[colID-1]+ SCALE_FILE_SUFFIX);
+		Path pt=new Path(tfMtdDir+"/Scale/"+ agents.getName(colID) + SCALE_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TXMTD_SEP + mean + TXMTD_SEP + sdev + "\n");
 		br.close();
 	}
 	
-	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs) throws IOException 
+	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
-		Path pt = new Path(tfMtdDir+"/Bin/"+ outputColumnNames[colID-1] + BIN_FILE_SUFFIX);
+		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + BIN_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TXMTD_SEP + min + TXMTD_SEP + max + TXMTD_SEP + binwidth + TXMTD_SEP + nbins + "\n");
 		br.close();
 	}
 	
-	public void outputTransformationMetadata(String outputDir, FileSystem fs) throws IOException {
+	public void outputTransformationMetadata(String outputDir, FileSystem fs, TfUtils agents) throws IOException {
 		
 		try{
 			if (_mvList != null)
@@ -415,18 +551,18 @@ public class MVImputeAgent extends TransformationAgent {
 						imputedValue = _meanList[i]._sum;
 						
 						double mean = ( _countList[i] == 0 ? 0.0 : _meanList[i]._sum); 
-						writeTfMtd(colID, Double.toString(mean), outputDir, fs);
+						writeTfMtd(colID, Double.toString(mean), outputDir, fs, agents);
 					}
 					else if ( _mvMethodList[i] == 3 ) 
 					{
-						writeTfMtd(colID, _replacementList[i], outputDir, fs);
+						writeTfMtd(colID, _replacementList[i], outputDir, fs, agents);
 						
 						if (_isMVScaled.get(i) )
 						{
 							imputedValue = UtilFunctions.parseToDouble(_replacementList[i]);
 							// adjust the global mean, by combining gmean with "replacement" (weight = #missing values)
 							gmean = new KahanObject(_meanList[i]._sum, _meanList[i]._correction);
-							_meanFn.execute(gmean, imputedValue, TransformationAgent._numValidRecords);
+							_meanFn.execute(gmean, imputedValue, agents.getValid());
 						}
 					}
 						
@@ -435,12 +571,12 @@ public class MVImputeAgent extends TransformationAgent {
 						double sdev = -1.0;
 						if ( _mvscMethodList[i] == 2 ) {
 							// Adjust variance with missing values
-							long totalMissingCount = (TransformationAgent._numValidRecords - _countList[i]);
+							long totalMissingCount = (agents.getValid() - _countList[i]);
 							_varFn.execute(_varList[i], imputedValue, totalMissingCount);
 							double var = _varList[i].getRequiredResult(new CMOperator(_varFn, AggregateOperationTypes.VARIANCE));
 							sdev = Math.sqrt(var);
 						}
-						writeTfMtd(colID, Double.toString(gmean._sum), Double.toString(sdev), outputDir, fs);
+						writeTfMtd(colID, Double.toString(gmean._sum), Double.toString(sdev), outputDir, fs, agents);
 					}
 				}
 		
@@ -455,7 +591,7 @@ public class MVImputeAgent extends TransformationAgent {
 						double var = _scnomvVarList[i].getRequiredResult(new CMOperator(_varFn, AggregateOperationTypes.VARIANCE));
 						sdev = Math.sqrt(var);
 					}
-					writeTfMtd(colID, Double.toString(mean), Double.toString(sdev), outputDir, fs);
+					writeTfMtd(colID, Double.toString(mean), Double.toString(sdev), outputDir, fs, agents);
 				}
 			
 		} catch(DMLRuntimeException e) {
@@ -471,7 +607,7 @@ public class MVImputeAgent extends TransformationAgent {
 	 * @throws IOException 
 	 */
 	@Override
-	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, JobConf job, TfAgents agents) throws IOException {
+	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
 		double min = Double.MAX_VALUE;
 		double max = Double.MIN_VALUE;
 		int nbins = 0;
@@ -533,6 +669,7 @@ public class MVImputeAgent extends TransformationAgent {
 			}
 			else if ( w.startsWith(CONSTANT_PREFIX) )
 			{
+				isImputed = true;
 				String[] parts = w.split("_");
 				mvConstReplacement = parts[1];
 			}
@@ -552,6 +689,7 @@ public class MVImputeAgent extends TransformationAgent {
 				totalRecordCount += UtilFunctions.parseToLong(parts[2]);
 			}
 			else if (w.startsWith(VARIANCE_PREFIX)) {
+				isScaled = true;
 				String[] parts = w.split("_");
 				int taskID = UtilFunctions.parseToInt(parts[1]);
 				CM_COV_Object cm = decodeCMObj(parts[2]);
@@ -610,7 +748,6 @@ public class MVImputeAgent extends TransformationAgent {
 		}
 
 		// write merged metadata
-		FileSystem fs = FileSystem.get(job);
 		if( isImputed ) 
 		{
 			String imputedValue = null;
@@ -619,12 +756,12 @@ public class MVImputeAgent extends TransformationAgent {
 			else 
 				imputedValue = Double.toString(gcount == 0 ? 0.0 : gmean._sum);
 			
-			writeTfMtd(colID, imputedValue, outputDir, fs);
+			writeTfMtd(colID, imputedValue, outputDir, fs, agents);
 		}
 		
 		if ( min != Double.MAX_VALUE && max != Double.MIN_VALUE ) {
 			double binwidth = (max-min)/nbins;
-			writeTfMtd(colID, Double.toString(min), Double.toString(max), Double.toString(binwidth), Integer.toString(nbins), outputDir, fs);
+			writeTfMtd(colID, Double.toString(min), Double.toString(max), Double.toString(binwidth), Integer.toString(nbins), outputDir, fs, agents);
 		}
 		
 		if ( isScaled ) 
@@ -645,7 +782,7 @@ public class MVImputeAgent extends TransformationAgent {
 				double var = gcm.getRequiredResult(new CMOperator(_varFn, AggregateOperationTypes.VARIANCE));
 				double sdev = (mapVars.size() > 0 ? Math.sqrt(var) : -1.0 );
 				
-				writeTfMtd(colID, Double.toString(mean), Double.toString(sdev), outputDir, fs);
+				writeTfMtd(colID, Double.toString(mean), Double.toString(sdev), outputDir, fs, agents);
 				
 				
 			} catch (DMLRuntimeException e) {
@@ -656,9 +793,9 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	// ------------------------------------------------------------------------------------------------
 
-	private String readReplacement(int colID, FileSystem fs, Path  txMtdDir) throws IOException
+	private String readReplacement(int colID, FileSystem fs, Path  txMtdDir, TfUtils agents) throws IOException
 	{
-		Path path = new Path( txMtdDir + "/Impute/" + outputColumnNames[colID-1] + MV_FILE_SUFFIX);
+		Path path = new Path( txMtdDir + "/Impute/" + agents.getName(colID) + MV_FILE_SUFFIX);
 		TransformationAgent.checkValidInputFile(fs, path, true); 
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
@@ -669,9 +806,9 @@ public class MVImputeAgent extends TransformationAgent {
 		return replacement;
 	}
 	
-	public String readScaleLine(int colID, FileSystem fs, Path txMtdDir) throws IOException
+	public String readScaleLine(int colID, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException
 	{
-		Path path = new Path( txMtdDir + "/Scale/" + outputColumnNames[colID-1] + SCALE_FILE_SUFFIX);
+		Path path = new Path( txMtdDir + "/Scale/" + agents.getName(colID) + SCALE_FILE_SUFFIX);
 		TransformationAgent.checkValidInputFile(fs, path, true); 
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
 		String line = br.readLine();
@@ -680,11 +817,11 @@ public class MVImputeAgent extends TransformationAgent {
 		return line;
 	}
 	
-	private void processScalingFile(int i, int[] list, KahanObject[] meanList, CM_COV_Object[] varList, FileSystem fs, Path tfMtdDir ) throws IOException
+	private void processScalingFile(int i, int[] list, KahanObject[] meanList, CM_COV_Object[] varList, FileSystem fs, Path tfMtdDir, TfUtils agents ) throws IOException
 	{
 		int colID = list[i];
 		
-		String line = readScaleLine(colID, fs, tfMtdDir);
+		String line = readScaleLine(colID, fs, tfMtdDir, agents);
 		String[] parts = line.split(",");
 		double mean = UtilFunctions.parseToDouble(parts[1]);
 		double sd = UtilFunctions.parseToDouble(parts[2]);
@@ -702,7 +839,7 @@ public class MVImputeAgent extends TransformationAgent {
 	 * @throws IOException
 	 */
 	@Override
-	public void loadTxMtd(JobConf job, FileSystem fs, Path tfMtdDir) throws IOException {
+	public void loadTxMtd(JobConf job, FileSystem fs, Path tfMtdDir, TfUtils agents) throws IOException {
 		
 		if(fs.isDirectory(tfMtdDir)) {
 			
@@ -713,7 +850,7 @@ public class MVImputeAgent extends TransformationAgent {
 					
 					if ( _mvMethodList[i] == 1 || _mvMethodList[i] == 2 )
 						// global_mean or global_mode
-						_replacementList[i] = readReplacement(colID, fs, tfMtdDir);
+						_replacementList[i] = readReplacement(colID, fs, tfMtdDir, agents);
 					else if ( _mvMethodList[i] == 3 ) {
 						// constant: replace a missing value by a given constant
 						// nothing to do. The constant values are loaded already during configure 
@@ -726,11 +863,11 @@ public class MVImputeAgent extends TransformationAgent {
 			if(_mvList != null)
 				for(int i=0; i < _mvList.length; i++)
 					if ( _isMVScaled.get(i) ) 
-						processScalingFile(i, _mvList, _meanList, _varList, fs, tfMtdDir);
+						processScalingFile(i, _mvList, _meanList, _varList, fs, tfMtdDir, agents);
 			
 			if(_scnomvList != null)
 				for(int i=0; i < _scnomvList.length; i++)
-					processScalingFile(i, _scnomvList, _scnomvMeanList, _scnomvVarList, fs, tfMtdDir);
+					processScalingFile(i, _scnomvList, _scnomvMeanList, _scnomvVarList, fs, tfMtdDir, agents);
 		}
 		else {
 			fs.close();
@@ -745,14 +882,14 @@ public class MVImputeAgent extends TransformationAgent {
 	 * @return
 	 */
 	@Override
-	public String[] apply(String[] words) {
+	public String[] apply(String[] words, TfUtils agents) {
 		
 		if ( _mvList != null)
 		for(int i=0; i < _mvList.length; i++) {
 			int colID = _mvList[i];
 			String w = UtilFunctions.unquote(words[colID-1]);
-			if(isNA(w))
-				words[colID-1] = _replacementList[i];
+			if(agents.isNA(w))
+				w = words[colID-1] = _replacementList[i];
 			
 			if ( _isMVScaled.get(i) )
 				if ( _mvscMethodList[i] == 1 )

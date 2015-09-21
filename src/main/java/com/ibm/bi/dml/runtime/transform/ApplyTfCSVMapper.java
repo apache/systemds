@@ -16,8 +16,12 @@
  */
 
 package com.ibm.bi.dml.runtime.transform;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
@@ -25,51 +29,74 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.wink.json4j.JSONException;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import org.apache.wink.json4j.JSONObject;
 
 public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable, Text> {
 	
+	boolean _firstRecordInSplit = true;
+	boolean _partFileWithHeader = false;
 	
-	ApplyTfHelper tfmapper = null;
+	TfUtils tfmapper = null;
 	Reporter _reporter = null;
+	BufferedWriter br = null;
+	JobConf _rJob = null;
 	
 	@Override
 	public void configure(JobConf job) {
 		try {
-			tfmapper = new ApplyTfHelper(job);
-			JSONObject spec = tfmapper.parseSpec();
-			tfmapper.setupTfAgents(spec);
-			tfmapper.loadTfMetadata(spec);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+			_rJob = job;
+			_partFileWithHeader = TfUtils.isPartFileWithHeader(job);
+			tfmapper = new TfUtils(job);
+			
+			tfmapper.loadTfMetadata(job, true);
+			
+		} catch (IOException e) { throw new RuntimeException(e); }
+		catch(JSONException e)  { throw new RuntimeException(e); }
+
 	}
 	
 	@Override
 	public void map(LongWritable rawKey, Text rawValue, OutputCollector<NullWritable, Text> out, Reporter reporter) throws IOException  {
 		
+		if(_firstRecordInSplit)
+		{
+			_firstRecordInSplit = false;
+			_reporter = reporter;
+			
+			// generate custom output paths so that order of rows in the 
+			// output (across part files) matches w/ that from input data set
+			String partFileSuffix = tfmapper.getPartFileID(_rJob, rawKey.get());
+			Path mapOutputPath = new Path(tfmapper.getOutputPath() + "/transform-part-" + partFileSuffix);
+			
+			// setup the writer for mapper's output
+			// the default part-..... files will be deleted later once the job finishes 
+			br = new BufferedWriter(new OutputStreamWriter(FileSystem.get(_rJob).create( mapOutputPath, true)));
+		}
+		
 		// output the header line
-		if ( rawKey.get() == 0 && tfmapper._partFileWithHeader ) 
+		if ( rawKey.get() == 0 && _partFileWithHeader ) 
 		{
 			_reporter = reporter;
-			tfmapper.processHeaderLine(rawValue);
-			if ( tfmapper._hasHeader )
+			tfmapper.processHeaderLine();
+			if ( tfmapper.hasHeader() )
 				return;
 		}
 		
 		// parse the input line and apply transformation
 		String[] words = tfmapper.getWords(rawValue);
+		
 		if(!tfmapper.omit(words))
 		{
 			try {
 				words = tfmapper.apply(words);
-				String outStr = tfmapper.checkAndPrepOutputString(words, tfmapper._da);
-				out.collect(NullWritable.get(), new Text(outStr));
-			} catch(DMLRuntimeException e)
-			{
+				String outStr = tfmapper.checkAndPrepOutputString(words);
+				//out.collect(NullWritable.get(), new Text(outStr));
+				br.write(outStr + "\n");
+			} 
+			catch(DMLRuntimeException e) {
 				throw new RuntimeException(e.getMessage() + ": " + rawValue.toString());
 			}
 		}
@@ -77,6 +104,7 @@ public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable
 
 	@Override
 	public void close() throws IOException {
+		if ( br != null ) br.close();
 		_reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_ROWS, tfmapper.getNumTransformedRows());
 		_reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS, tfmapper.getNumTransformedColumns());
 	}

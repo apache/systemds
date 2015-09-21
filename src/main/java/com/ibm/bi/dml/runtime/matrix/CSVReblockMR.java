@@ -41,6 +41,7 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -283,6 +284,14 @@ public class CSVReblockMR
 			String reblockInstructions, int replication, String[] smallestFiles) 
 	throws Exception
 	{
+		return runAssignRowIDMRJob(inputs, inputInfos, brlens, bclens, reblockInstructions, replication, smallestFiles, false, null, null);
+	}
+
+		
+	public static AssignRowIDMRReturn runAssignRowIDMRJob(String[] inputs, InputInfo[] inputInfos, int[] brlens, int[] bclens, 
+			String reblockInstructions, int replication, String[] smallestFiles, boolean transform, String naStrings, String specFile) 
+	throws Exception
+	{
 		AssignRowIDMRReturn ret=new AssignRowIDMRReturn();
 		JobConf job;
 		job = new JobConf(CSVReblockMR.class);
@@ -319,16 +328,8 @@ public class CSVReblockMR
 		//configure reducer
 		job.setReducerClass(CSVAssignRowIDReducer.class);
 		
-		/*
-		 	job.setBoolean("adaptivemr.map.enable", true);
-			job.setInt("adaptivemr.map.waves", 1);
-		 */
-		
 		//turn off adaptivemr
 		job.setBoolean("adaptivemr.map.enable", false);
-		
-		// By default, the job executes in "cluster" mode.
-		// Determine if we can optimize and run it in "local" mode.
 		
 		//set unique working dir
 		MRJobConfiguration.setUniqueWorkingDir(job);
@@ -339,6 +340,17 @@ public class CSVReblockMR
 		FileOutputFormat.setOutputPath(job, ret.counterFile);
 		job.setOutputKeyClass(ByteWritable.class);
 		job.setOutputValueClass(OffsetCount.class);
+		
+		// setup properties relevant to transform
+		job.setBoolean(MRJobConfiguration.TF_TRANSFORM, transform);
+		if (transform)
+		{
+			if ( naStrings != null)
+				// Adding "dummy" string to handle the case of na_strings = ""
+				job.set(MRJobConfiguration.TF_NA_STRINGS, naStrings + DataExpression.DELIM_NA_STRING_SEP + "dummy");
+			job.set(MRJobConfiguration.TF_SPEC_FILE, specFile);
+		}
+		
 		RunningJob runjob=JobClient.runJob(job);
 		
 		/* Process different counters */

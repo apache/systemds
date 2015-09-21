@@ -922,7 +922,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		//early abort (append guarantees no overwrite)
 		if( v == 0 ) 
 			return;
-		
+		try{
 		if( !sparse ) //DENSE 
 		{
 			//allocate on demand (w/o overwriting nnz)
@@ -942,6 +942,9 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			//set value and maintain nnz
 			sparseRows[r].append(c, v);
 			nonZeros++;
+		}
+		} catch(ArrayIndexOutOfBoundsException e) {
+			throw e;
 		}
 	}
 	

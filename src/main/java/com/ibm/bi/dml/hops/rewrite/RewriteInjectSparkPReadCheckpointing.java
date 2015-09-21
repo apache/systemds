@@ -21,9 +21,9 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.hops.DataOp;
 import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.Hop.DataOpTypes;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.OptimizerUtils;
 
 /**
  * Rule: BlockSizeAndReblock. For all statement blocks, determine
@@ -70,12 +70,12 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		if(hop.getVisited() == Hop.VisitStatus.DONE)
 			return;
 		
-		if(    (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD)
-			|| (hop.requiresReblock()) )
+		if(    (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD && !HopRewriteUtils.hasTransformParents(hop))
+			|| (hop.requiresReblock())
+			)
 		{
 			//make given hop for checkpointing (w/ default storage level)
 			//note: we do not recursively process childs here in order to prevent unnecessary checkpoints
-			
 			hop.setRequiresCheckpoint(true);
 		}
 		else

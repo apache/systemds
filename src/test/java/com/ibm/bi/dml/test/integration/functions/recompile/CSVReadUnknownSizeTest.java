@@ -34,9 +34,6 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class CSVReadUnknownSizeTest extends AutomatedTestBase {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n"
-			+ "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 	private final static String TEST_NAME = "csv_read_unknown";
 	private final static String TEST_DIR = "functions/recompile/";

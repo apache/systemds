@@ -34,10 +34,6 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
  */
 public class BinaryBlockRecordReader extends SequenceFileRecordReader<MatrixIndexes,MatrixBlock>
 {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
-	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
 	//private long _time = 0;
 	
 	public BinaryBlockRecordReader(Configuration conf, FileSplit split)

@@ -66,10 +66,6 @@ import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
  */
 public class MMCJMR 
 {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-
 	private static final boolean AUTOMATIC_CONFIG_NUM_REDUCERS = true;
 	private static final Log LOG = LogFactory.getLog(MMCJMR.class);
 

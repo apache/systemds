@@ -27,10 +27,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
  */
 public class SortUtils 
 {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2013\n" +
-	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-		
 	/**
 	 * 
 	 * @param start

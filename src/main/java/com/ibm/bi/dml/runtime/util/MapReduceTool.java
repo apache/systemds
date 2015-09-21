@@ -55,10 +55,6 @@ import com.ibm.bi.dml.runtime.matrix.sort.ReadWithZeros;
 
 public class MapReduceTool 
 {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-			
 	private static final Log LOG = LogFactory.getLog(MapReduceTool.class.getName());
 	private static JobConf _rJob = null; //cached job conf for read-only operations
 	

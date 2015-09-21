@@ -36,10 +36,6 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
  */
 public class BinaryBlockInputFormat extends SequenceFileInputFormat<MatrixIndexes,MatrixBlock>
 {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2014\n" +
-	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
     @Override
 	public RecordReader<MatrixIndexes, MatrixBlock> getRecordReader(InputSplit split, JobConf job, Reporter reporter)
 		throws IOException 

@@ -59,10 +59,6 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 @SuppressWarnings("deprecation")
 public class CSVReblockMR 
 {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-	
 	public static final String NUM_ROWS_IN_MATRIX="num.rows.in.matrix.";
 	public static final String NUM_COLS_IN_MATRIX="num.cols.in.matrix.";
 	public static final String ROWID_FILE_NAME="rowid.file.name";

@@ -37,10 +37,6 @@ import com.ibm.bi.dml.runtime.matrix.data.Pair;
 
 public class LocalFileUtils 
 {
-	@SuppressWarnings("unused")
-	private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-	                                         "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
-		
 	public static final int BUFFER_SIZE = 8192;
 	
 	//unique IDs per JVM for tmp files

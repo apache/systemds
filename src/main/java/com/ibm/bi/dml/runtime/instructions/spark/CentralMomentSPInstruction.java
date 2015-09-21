@@ -196,9 +196,6 @@ public class CentralMomentSPInstruction extends UnarySPInstruction
 	
 	private static class RDDCMReduceFunction implements Function2<CM_COV_Object, CM_COV_Object, CM_COV_Object>
 	{
-		@SuppressWarnings("unused")
-		private static final String _COPYRIGHT = "Licensed Materials - Property of IBM\n(C) Copyright IBM Corp. 2010, 2015\n" +
-	                                             "US Government Users Restricted Rights - Use, duplication  disclosure restricted by GSA ADP Schedule Contract with IBM Corp.";
 
 		private static final long serialVersionUID = 3272260751983866544L;
 		

@@ -45,6 +45,17 @@ public class TransformTest extends AutomatedTestBase
 	private final static String HOMES_IDSPEC 	= "homes/homes.tfidspec.json";
 	private final static String HOMES_TFDATA 	= "homes/homes.transformed.csv";
 	
+	private final static String HOMES_OMIT_DATASET 	= "homes/homes.csv";
+	private final static String HOMES_OMIT_SPEC 	= "homes/homesOmit.tfspec.json";
+	private final static String HOMES_OMIT_IDSPEC 	= "homes/homesOmit.tfidspec.json";
+	private final static String HOMES_OMIT_TFDATA 	= "homes/homesOmit.transformed.csv";
+	
+	// Homes data set in two parts
+	private final static String HOMES2_DATASET 	= "homes2/homes.csv";
+	private final static String HOMES2_SPEC 	= "homes2/homes.tfspec.json";
+	private final static String HOMES2_IDSPEC 	= "homes2/homes.tfidspec.json";
+	private final static String HOMES2_TFDATA 	= "homes/homes.transformed.csv"; // same as HOMES_TFDATA
+	
 	private final static String IRIS_DATASET 	= "iris/iris.csv";
 	private final static String IRIS_SPEC 		= "iris/iris.tfspec.json";
 	private final static String IRIS_IDSPEC 	= "iris/iris.tfidspec.json";
@@ -163,6 +174,110 @@ public class TransformTest extends AutomatedTestBase
 		runTransformTest(RUNTIME_PLATFORM.SPARK, "binary", "homes", false);
 	}
 	
+	// ---- OmitHomes CSV ----
+	
+	@Test
+	public void testOmitHomesHybridCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "homesomit", false);
+	}
+	
+	@Test
+	public void testOmitHomesHadoopCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homesomit", false);
+	}
+
+	@Test
+	public void testOmitHomesSPHybridCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "homesomit", false);
+	}
+
+	@Test
+	public void testOmitHomesSparkCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", "homesomit", false);
+	}
+
+	// ---- OmitHomes BinaryBlock ----
+	
+	@Test
+	public void testOmitHomesHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homesomit", false);
+	}
+	
+	@Test
+	public void testOmitHomesHadoopBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "homesomit", false);
+	}
+	
+	@Test
+	public void testOmitHomesSPHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "binary", "homesomit", false);
+	}
+	
+	@Test
+	public void testOmitHomesSparkBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "binary", "homesomit", false);
+	}
+	
+	// ---- Homes2 CSV ----
+	
+	@Test
+	public void testHomes2HybridCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "homes2", false);
+	}
+	
+	@Test
+	public void testHomes2HadoopCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homes2", false);
+	}
+
+	@Test
+	public void testHomes2SPHybridCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "homes2", false);
+	}
+
+	@Test
+	public void testHomes2SparkCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", "homes2", false);
+	}
+
+	// ---- Homes2 BinaryBlock ----
+	
+	@Test
+	public void testHomes2HybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes2", false);
+	}
+	
+	@Test
+	public void testHomes2HadoopBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "homes2", false);
+	}
+	
+	@Test
+	public void testHomes2SPHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "binary", "homes2", false);
+	}
+	
+	@Test
+	public void testHomes2SparkBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "binary", "homes2", false);
+	}
+	
 	// ---- Iris ID CSV ----
 	
 	@Test
@@ -267,6 +382,110 @@ public class TransformTest extends AutomatedTestBase
 		runTransformTest(RUNTIME_PLATFORM.SPARK, "binary", "homes", true);
 	}
 	
+	// ---- OmitHomes CSV ----
+	
+	@Test
+	public void testOmitHomesIDHybridCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "homesomit", true);
+	}
+	
+	@Test
+	public void testOmitHomesIDHadoopCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homesomit", true);
+	}
+
+	@Test
+	public void testOmitHomesIDSPHybridCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "homesomit", true);
+	}
+
+	@Test
+	public void testOmitHomesIDSparkCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", "homesomit", true);
+	}
+
+	// ---- OmitHomes BinaryBlock ----
+	
+	@Test
+	public void testOmitHomesIDHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homesomit", true);
+	}
+	
+	@Test
+	public void testOmitHomesIDHadoopBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "homesomit", true);
+	}
+	
+	@Test
+	public void testOmitHomesIDSPHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "binary", "homesomit", true);
+	}
+	
+	@Test
+	public void testOmitHomesIDSparkBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "binary", "homes2", true);
+	}
+	
+	// ---- Homes2 CSV ----
+	
+	@Test
+	public void testHomes2IDHybridCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", "homes2", true);
+	}
+	
+	@Test
+	public void testHomes2IDHadoopCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homes2", true);
+	}
+
+	@Test
+	public void testHomes2IDSPHybridCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "homes2", true);
+	}
+
+	@Test
+	public void testHomes2IDSparkCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", "homes2", true);
+	}
+
+	// ---- Homes2 BinaryBlock ----
+	
+	@Test
+	public void testHomes2IDHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes2", true);
+	}
+	
+	@Test
+	public void testHomes2IDHadoopBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HADOOP, "binary", "homes2", true);
+	}
+	
+	@Test
+	public void testHomes2IDSPHybridBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "binary", "homes2", true);
+	}
+	
+	@Test
+	public void testHomes2IDSparkBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "binary", "homes2", true);
+	}
+	
 	// ------------------------------
 	
 	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, String dataset, boolean byid )
@@ -278,6 +497,19 @@ public class TransformTest extends AutomatedTestBase
 			DATASET = HOMES_DATASET;
 			SPEC = (byid ? HOMES_IDSPEC : HOMES_SPEC);
 			TFDATA = HOMES_TFDATA;
+		}
+		else if(dataset.equals("homesomit"))
+		{
+			DATASET = HOMES_OMIT_DATASET;
+			SPEC = (byid ? HOMES_OMIT_IDSPEC : HOMES_OMIT_SPEC);
+			TFDATA = HOMES_OMIT_TFDATA;
+		}
+
+		else if(dataset.equals("homes2"))
+		{
+			DATASET = HOMES2_DATASET;
+			SPEC = (byid ? HOMES2_IDSPEC : HOMES2_SPEC);
+			TFDATA = HOMES2_TFDATA;
 		}
 		else if (dataset.equals("iris"))
 		{

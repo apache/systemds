@@ -51,6 +51,10 @@ public class RunTest extends AutomatedTestBase
 	//private final static String HOMES_NAN_IDSPEC 	= "homes/homesNAN.tfidspec.json";
 	private final static String HOMES_NAN_COLNAMES 	= "homes/homesNAN.csv.colnames";
 	
+	private final static String HOMES_MISSING_DATASET 	= "homes/homesAllMissing.csv";
+	private final static String HOMES_MISSING_SPEC 		= "homes/homesAllMissing.tfspec.json";
+	private final static String HOMES_MISSING_IDSPEC 	= "homes/homesAllMissing.tfidspec.json";
+	
 	@Override
 	public void setUp() 
 	{
@@ -144,6 +148,50 @@ public class RunTest extends AutomatedTestBase
 	@Test
 	public void runTest2_SparkCSV() throws DMLRuntimeException, IOException {
 		runScalingTest( HOMES_DATASET, HOMES_SPEC2, null, false, RUNTIME_PLATFORM.SPARK, "csv");
+	}
+
+	// ---- HomesMissing BinaryBlock ----
+	
+	@Test
+	public void runAllMissing_HybridBB() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_MISSING_DATASET, HOMES_MISSING_SPEC, null, true, RUNTIME_PLATFORM.HYBRID, "binary");
+	}
+
+	@Test
+	public void runAllMissing_SPHybridBB() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_MISSING_DATASET, HOMES_MISSING_SPEC, null, true, RUNTIME_PLATFORM.HYBRID_SPARK, "binary");
+	}
+
+	@Test
+	public void runAllMissing_HadoopBB() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_MISSING_DATASET, HOMES_MISSING_SPEC, null, true, RUNTIME_PLATFORM.HADOOP, "binary");
+	}
+
+	@Test
+	public void runAllMissing_SparkBB() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_MISSING_DATASET, HOMES_MISSING_SPEC, null, true, RUNTIME_PLATFORM.SPARK, "binary");
+	}
+
+	// ---- HomesMissing CSV ----
+	
+	@Test
+	public void runAllMissing_HybridCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_MISSING_DATASET, HOMES_MISSING_IDSPEC, null, true, RUNTIME_PLATFORM.HYBRID, "csv");
+	}
+
+	@Test
+	public void runAllMissing_SPHybridCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_MISSING_DATASET, HOMES_MISSING_IDSPEC, null, true, RUNTIME_PLATFORM.HYBRID_SPARK, "csv");
+	}
+
+	@Test
+	public void runAllMissing_HadoopCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_MISSING_DATASET, HOMES_MISSING_IDSPEC, null, true, RUNTIME_PLATFORM.HADOOP, "csv");
+	}
+
+	@Test
+	public void runAllMissing_SparkCSV() throws DMLRuntimeException, IOException {
+		runScalingTest( HOMES_MISSING_DATASET, HOMES_MISSING_IDSPEC, null, true, RUNTIME_PLATFORM.SPARK, "csv");
 	}
 
 	// ------------------

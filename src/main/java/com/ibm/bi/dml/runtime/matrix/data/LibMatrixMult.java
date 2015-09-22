@@ -167,14 +167,15 @@ public class LibMatrixMult
 				tasks.add(new MatrixMultTask(m1, m2, ret, i*blklen, Math.min((i+1)*blklen, m1.rlen)));
 			pool.invokeAll(tasks);	
 			pool.shutdown();
+			ret.nonZeros = 0; //reset after execute
+			for( MatrixMultTask task : tasks )
+				ret.nonZeros += task.getPartialNnz();
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 		
-		//post-processing: nnz/representation (in contrast to single-threaded,
-		//we need to recompute nnz for sparse as well in order to prevent synchronization)
-		ret.recomputeNonZeros();
+		//post-processing (nnz maintained in parallel)
 		ret.examSparsity();
 		
 		//System.out.println("MM k="+k+" ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+")x" +
@@ -642,13 +643,15 @@ public class LibMatrixMult
 				tasks.add(new MatrixMultWSigmoidTask(mW, mU, mV, ret, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
 			pool.invokeAll(tasks);
 			pool.shutdown();
+			ret.nonZeros = 0; //reset after execute
+			for( MatrixMultWSigmoidTask task : tasks )
+				ret.nonZeros += task.getPartialNnz();
 		} 
 		catch (InterruptedException e) {
 			throw new DMLRuntimeException(e);
 		}
 
-		//post-processing
-		ret.recomputeNonZeros();
+		//post-processing (nnz maintained in parallel)
 		ret.examSparsity();
 
 		//System.out.println("MMWSig "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
@@ -3242,6 +3245,7 @@ public class LibMatrixMult
 		private MatrixBlock _ret = null;
 		private int _rl = -1;
 		private int _ru = -1;
+		private long _nnz = -1;
 
 		protected MatrixMultTask( MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru )
 		{
@@ -3255,6 +3259,7 @@ public class LibMatrixMult
 		@Override
 		public Object call() throws DMLRuntimeException
 		{
+			//compute block matrix multiplication
 			if( _m1.isUltraSparse() || _m2.isUltraSparse() )
 				matrixMultUltraSparse(_m1, _m2, _ret, _rl, _ru);
 			else if(!_m1.sparse && !_m2.sparse)
@@ -3266,7 +3271,14 @@ public class LibMatrixMult
 			else
 				matrixMultDenseSparse(_m1, _m2, _ret, _rl, _ru);
 			
+			//maintain block nnz (upper bounds inclusive)
+			_nnz = _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
+			
 			return null;
+		}
+		
+		public long getPartialNnz(){
+			return _nnz;
 		}
 	}
 	
@@ -3459,7 +3471,8 @@ public class LibMatrixMult
 		private WSigmoidType _wt = null;
 		private int _rl = -1;
 		private int _ru = -1;
-
+		private long _nnz = -1;
+		
 		protected MatrixMultWSigmoidTask(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int rl, int ru) 
 			throws DMLRuntimeException
 		{
@@ -3483,7 +3496,14 @@ public class LibMatrixMult
 			else
 				matrixMultWSigmoidGeneric(_mW, _mU, _mV, _ret, _wt, _rl, _ru);
 			
+			//maintain block nnz (upper bounds inclusive)
+			_nnz = _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
+			
 			return null;
+		}
+		
+		public long getPartialNnz(){
+			return _nnz;
 		}
 	}
 	
@@ -3533,9 +3553,9 @@ public class LibMatrixMult
 			else
 				matrixMultWDivMMGeneric(_mX, _mU, _mV, _ret, _wt, _rl, _ru);
 		
-			//maintain partial nnz for 
+			//maintain partial nnz for right (upper bounds inclusive)
 			if( _wt == WDivMMType.RIGHT )
-				_nnz = _ret.recomputeNonZeros(_rl, _ru, 0, _ret.getNumColumns());
+				_nnz = _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
 				
 			return null;
 		}

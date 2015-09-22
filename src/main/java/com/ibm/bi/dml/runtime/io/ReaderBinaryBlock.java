@@ -35,7 +35,6 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 public class ReaderBinaryBlock extends MatrixReader
 {
-	
 	private boolean _localFS = false;
 	
 	public ReaderBinaryBlock( boolean localFS )
@@ -66,7 +65,8 @@ public class ReaderBinaryBlock extends MatrixReader
 		readBinaryBlockMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen);
 		
 		//finally check if change of sparse/dense block representation required
-		ret.recomputeNonZeros();
+		if( !AGGREGATE_BLOCK_NNZ )
+			ret.recomputeNonZeros();
 		ret.examSparsity();
 		
 		return ret;
@@ -136,6 +136,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		boolean sparse = dest.isInSparseFormat();
 		MatrixIndexes key = new MatrixIndexes(); 
 		MatrixBlock value = new MatrixBlock();
+		long lnnz = 0; //aggregate block nnz
 		
 		//set up preferred custom serialization framework for binary block format
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
@@ -171,8 +172,8 @@ public class ReaderBinaryBlock extends MatrixReader
 					//copy block to result
 					if( sparse )
 					{
+						//note: append requires final sort (but prevents repeated shifting)
 						dest.appendToSparse(value, row_offset, col_offset);
-						//note: append requires final sort
 					} 
 					else
 					{
@@ -180,6 +181,9 @@ public class ReaderBinaryBlock extends MatrixReader
 								   col_offset, col_offset+cols-1,
 								   value, false );
 					}
+					
+					//maintain nnz as aggregate of block nnz
+					lnnz += value.getNonZeros();
 				}
 			}
 			finally
@@ -188,6 +192,8 @@ public class ReaderBinaryBlock extends MatrixReader
 			}
 		}
 		
+		//post-processing
+		dest.setNonZeros( lnnz );
 		if( sparse && clen>bclen ){
 			//no need to sort if 1 column block since always sorted
 			dest.sortSparseRows();
@@ -250,6 +256,4 @@ public class ReaderBinaryBlock extends MatrixReader
 			}
 		}
 	}
-	
-	
 }

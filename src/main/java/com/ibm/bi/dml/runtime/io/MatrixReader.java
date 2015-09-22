@@ -40,7 +40,9 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
  */
 public abstract class MatrixReader 
 {
-
+	//internal configuration
+	protected static final boolean AGGREGATE_BLOCK_NNZ = true;
+	
 	
 	/**
 	 * 

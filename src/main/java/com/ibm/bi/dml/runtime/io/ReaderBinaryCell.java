@@ -56,8 +56,7 @@ public class ReaderBinaryCell extends MatrixReader
 		readBinaryCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen);
 		
 		//finally check if change of sparse/dense block representation required
-		if( !ret.isInSparseFormat() )
-			ret.recomputeNonZeros();
+		//(nnz maintained via append during read for both dense/sparse)
 		ret.examSparsity();
 		
 		return ret;
@@ -101,7 +100,6 @@ public class ReaderBinaryCell extends MatrixReader
 							row = (int)key.getRowIndex()-1;
 							col = (int)key.getColumnIndex()-1;
 							double lvalue = value.getValue();
-							//dest.quickSetValue( row, col, lvalue );
 							dest.appendValue(row, col, lvalue);
 						}
 					}
@@ -112,7 +110,7 @@ public class ReaderBinaryCell extends MatrixReader
 							row = (int)key.getRowIndex()-1;
 							col = (int)key.getColumnIndex()-1;
 							double lvalue = value.getValue();
-							dest.setValueDenseUnsafe( row, col, lvalue );
+							dest.appendValue( row, col, lvalue );
 						}
 					}
 				}
@@ -139,5 +137,4 @@ public class ReaderBinaryCell extends MatrixReader
 			}
 		}
 	}
-	
 }

@@ -159,6 +159,9 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 	
 	private boolean omit(String line)
 	{
+		if(_agents == null)
+			return false;
+		
 		return _agents.omit( line.split(delim, -1) );
 	}
 	

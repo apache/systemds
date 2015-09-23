@@ -70,8 +70,7 @@ public class ReaderTextCSV extends MatrixReader
 				   _props.hasHeader(), _props.getDelim(), _props.isFill(), _props.getFillValue() );
 		
 		//finally check if change of sparse/dense block representation required
-		if( !ret.isInSparseFormat() )
-			ret.recomputeNonZeros();
+		//(nnz explicitly maintained during read)
 		ret.examSparsity();
 		
 		return ret;
@@ -100,12 +99,12 @@ public class ReaderTextCSV extends MatrixReader
 		throws IOException
 	{
 		ArrayList<Path> files=new ArrayList<Path>();
-		if(fs.isDirectory(path))
-		{
+		if(fs.isDirectory(path)) {
 			for(FileStatus stat: fs.listStatus(path, CSVReblockMR.hiddenFileFilter))
 				files.add(stat.getPath());
 			Collections.sort(files);
-		}else
+		}
+		else
 			files.add(path);
 		
 		if ( dest == null ) {
@@ -120,8 +119,7 @@ public class ReaderTextCSV extends MatrixReader
 		int row = 0;
 		int col = -1;
 		double cellValue = 0;
-		
-		String cellStr = null;
+		long lnnz = 0;
 		
 		for(int fileNo=0; fileNo<files.size(); fileNo++)
 		{
@@ -131,16 +129,19 @@ public class ReaderTextCSV extends MatrixReader
 			
 			// Read the data
 			boolean emptyValuesFound = false;
-			try{
+			try
+			{
 				if( sparse ) //SPARSE<-value
 				{
-					while( (value=br.readLine())!=null )
+					while( (value=br.readLine())!=null ) //foreach line
 					{
-						col = 0;
-						cellStr = value.toString().trim();
+						String cellStr = value.toString().trim();
 						emptyValuesFound = false;
 						String[] parts = IOUtilFunctions.split(cellStr, delim);
-						for(String part : parts) {
+						col = 0;
+						
+						for(String part : parts) //foreach cell
+						{
 							part = part.trim();
 							if ( part.isEmpty() ) {
 								emptyValuesFound = true;
@@ -149,16 +150,16 @@ public class ReaderTextCSV extends MatrixReader
 							else {
 								cellValue = UtilFunctions.parseToDouble(part);
 							}
-							if ( Double.compare(cellValue, 0.0) != 0 )
+							if ( cellValue != 0 ) {
 								dest.appendValue(row, col, cellValue);
+								lnnz++;
+							}
 							col++;
 						}
 						
 						//sanity checks for empty values and number of columns
 						IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, fill, emptyValuesFound);
-						if ( col != clen ) {
-							throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + path.toString() + "). Expecting (" + clen + "): " + value);
-						}
+						IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(path.toString(), cellStr, parts, clen);
 						row++;
 					}
 				} 
@@ -166,7 +167,8 @@ public class ReaderTextCSV extends MatrixReader
 				{
 					while( (value=br.readLine())!=null ) //foreach line
 					{
-						cellStr = value.toString().trim();
+						String cellStr = value.toString().trim();
+						emptyValuesFound = false;
 						String[] parts = IOUtilFunctions.split(cellStr, delim);
 						col = 0;
 						
@@ -174,30 +176,34 @@ public class ReaderTextCSV extends MatrixReader
 						{
 							part = part.trim();
 							if ( part.isEmpty() ) {
-								if ( !fill )
-									throw new IOException("Empty fields found in delimited file (" + path.toString() + "). Use \"fill\" option to read delimited files with empty fields.");
+								emptyValuesFound = true;
 								cellValue = fillValue;
 							}
 							else {
 								cellValue = UtilFunctions.parseToDouble(part);
 							}
-							dest.setValueDenseUnsafe(row, col, cellValue);
+							if ( cellValue != 0 ) {
+								dest.setValueDenseUnsafe(row, col, cellValue);
+								lnnz++;
+							}
 							col++;
 						}
-						if ( parts.length != clen ) {
-							throw new IOException("Invalid number of columns (" + col + ") found in delimited file (" + path.toString() + "). Expecting (" + clen + "): " + value);
-						}
+						
+						//sanity checks for empty values and number of columns
+						IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, fill, emptyValuesFound);
+						IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(path.toString(), cellStr, parts, clen);
 						row++;
 					}
 				}
 			}
-			finally
-			{
+			finally {
 				IOUtilFunctions.closeSilently(br);
 			}
 		}
 		
-		dest.recomputeNonZeros();
+		//post processing
+		dest.setNonZeros( lnnz );
+		
 		return dest;
 	}
 	
@@ -242,12 +248,12 @@ public class ReaderTextCSV extends MatrixReader
 					nrow++;
 				}
 			}
-			finally
-			{
+			finally {
 				IOUtilFunctions.closeSilently(br);
 			}
 		}
 		
+		//create new matrix block (assume sparse for consistency w/ compiler)
 		return new MatrixBlock(nrow, ncol, true);
 	}
 }

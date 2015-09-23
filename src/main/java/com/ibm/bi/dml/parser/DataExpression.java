@@ -377,6 +377,8 @@ public class DataExpression extends DataIdentifier
 		DataExpression retVal = new DataExpression(_opcode, newVarParams,
 				this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		
+		retVal._strInit = this._strInit;
+		
 		return retVal;
 	}
 

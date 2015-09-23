@@ -195,6 +195,7 @@ public class WriteSPInstruction extends SPInstruction
 					out = in1.flatMapToPair(new ExtractRows(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), sep, sparse)).groupByKey()
 										.mapToPair(new ConcatenateColumnsInRow(mc.getCols(), mc.getColsPerBlock(), sep)).sortByKey(true).values();
 				else {
+					// This case is applicable when the CSV output from transform() is written out
 					@SuppressWarnings("unchecked")
 					JavaPairRDD<LongWritable,Text> rdd = (JavaPairRDD<LongWritable, Text>) ((MatrixObject) sec.getVariable(input1.getName())).getRDDHandle().getRDD();
 					out = rdd.values().map(new ConvertTextToString());

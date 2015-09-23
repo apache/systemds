@@ -150,7 +150,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyWeightedSquaredLoss(hop, hi, i);        //e.g., sum(W * (X - U %*% t(V)) ^ 2) -> wsl(X, U, t(V), W, true)
 			hi = simplifyWeightedSigmoidMMChains(hop, hi, i);    //e.g., W * sigmoid(Y%*%t(X)) -> wsigmoid(W, Y, t(X), type)
 			hi = simplifyWeightedDivMM(hop, hi, i);              //e.g., t(U) %*% (X/(U%*%t(V))) -> wdivmm(X, U, t(V), left)
-			hi = simplifyWeightedCrossEntropy(hop, hi, i);       //e.g., sym(X*log(U%*%t(V))) -> wcemm(X, U, t(V))
+			hi = simplifyWeightedCrossEntropy(hop, hi, i);       //e.g., sum(X*log(U%*%t(V))) -> wcemm(X, U, t(V))
 			hi = fuseMinusNzBinaryOperation(hop, hi, i);         //e.g., X-mean*ppred(X,0,!=) -> X -nz mean
 			hi = fuseLogNzBinaryOperation(hop, hi, i);           //e.g., ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
 			hi = simplifyOuterSeqExpand(hop, hi, i);             //e.g., outer(v, seq(1,m), "==") -> rexpand(v, max=m, dir=row, ignore=true, cast=false)

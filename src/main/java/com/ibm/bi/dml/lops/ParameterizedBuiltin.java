@@ -267,9 +267,8 @@ public class ParameterizedBuiltin extends Lop
 					
 					sb.append(OPERAND_DELIMITOR);
 				}
-			}
-				//return getTransformInstructions(getInputs().get(getInputIndex("target")).getOutputParameters().getLabel(), output);
 				break;
+			}
 				
 			default:
 				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);

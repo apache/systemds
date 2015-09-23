@@ -796,7 +796,7 @@ public class MVImputeAgent extends TransformationAgent {
 	private String readReplacement(int colID, FileSystem fs, Path  txMtdDir, TfUtils agents) throws IOException
 	{
 		Path path = new Path( txMtdDir + "/Impute/" + agents.getName(colID) + MV_FILE_SUFFIX);
-		TransformationAgent.checkValidInputFile(fs, path, true); 
+		TfUtils.checkValidInputFile(fs, path, true); 
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
 		String line = br.readLine();
@@ -809,7 +809,7 @@ public class MVImputeAgent extends TransformationAgent {
 	public String readScaleLine(int colID, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException
 	{
 		Path path = new Path( txMtdDir + "/Scale/" + agents.getName(colID) + SCALE_FILE_SUFFIX);
-		TransformationAgent.checkValidInputFile(fs, path, true); 
+		TfUtils.checkValidInputFile(fs, path, true); 
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
 		String line = br.readLine();
 		br.close();

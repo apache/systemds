@@ -41,15 +41,16 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 
-/**
- * MR Job to Generate Transform Metadata based on a given transformation specification file (JSON format).
- *
- */
-
 public class GenTfMtdSPARK {
 
+	/**
+	 * Spark code to Generate Transform Metadata based on the given transformation
+	 * specification file (JSON format).
+	 * 
+	 */
+
 	public static long runSparkJob(SparkExecutionContext sec, JavaRDD<Tuple2<LongWritable, Text>> inputRDD, 
-									String inputPath, String tfMtdPath, String specFile, 
+									String tfMtdPath, String specFile, 
 									String partOffsetsFile, CSVFileFormatProperties prop, 
 									long numCols, String headerLine
 								) throws IOException, ClassNotFoundException, InterruptedException, IllegalArgumentException, JSONException {
@@ -66,7 +67,7 @@ public class GenTfMtdSPARK {
 									headerLine), 
 					true );
 		
-		// Shuffle
+		// Shuffle to group by DistinctValue
 		JavaPairRDD<Integer,Iterable<DistinctValue>> rdd = JavaPairRDD.fromJavaRDD(tfMapOutput).groupByKey();
 		
 		// Construct transformation metadata (Reduce-side)
@@ -81,6 +82,7 @@ public class GenTfMtdSPARK {
 												specFile, 
 												numCols)  );
 		
+		// Compute the total number of transformed rows
 		long numRows = out.reduce(new Function2<Long,Long,Long>() {
 			private static final long serialVersionUID = 1263336168859959795L;
 
@@ -107,7 +109,7 @@ public class GenTfMtdSPARK {
 			// Setup Transformation Agents
 			JobConf job = new JobConf();
 			FileSystem fs = FileSystem.get(job);
-			String[] nas = DataTransform.parseNAStrings(naStrings);
+			String[] nas = TfUtils.parseNAStrings(naStrings);
 			
 			JSONObject spec = TfUtils.readSpec(fs, specFile);
 			_agents = new TfUtils(headerLine, hasHeader, delim, nas, spec, numCols, null, null, null);
@@ -164,7 +166,7 @@ public class GenTfMtdSPARK {
 		TfUtils _agents = null;
 		
 		GenTfMtdReduce(boolean hasHeader, String delim, String naStrings, String headerLine, String tfMtdDir, String offsetFile, String specFile, long numCols) throws IOException, JSONException {
-			String[] nas = DataTransform.parseNAStrings(naStrings); 
+			String[] nas = TfUtils.parseNAStrings(naStrings); 
 			FileSystem fs = FileSystem.get(new JobConf());
 
 			JSONObject spec = TfUtils.readSpec(fs, specFile);
@@ -213,7 +215,6 @@ public class GenTfMtdSPARK {
 				writer.close();
 				list.clear();
 				
-				//reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_ROWS, lineOffset);
 				numRows.add(lineOffset);
 			}
 			else 

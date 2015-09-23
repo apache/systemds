@@ -17,7 +17,6 @@
 
 package com.ibm.bi.dml.runtime.instructions.spark;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -44,18 +43,16 @@ import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractGroup;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractGroupNWeights;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.PerformGroupByAggInReducer;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVectorFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.UnflattenIterablesAfterCogroup;
-import com.ibm.bi.dml.runtime.matrix.JobReturn;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReorg;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -153,7 +150,6 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		}
 		else if ( opcode.equalsIgnoreCase("transform") ) 
 		{
-			// SPARK°transform°transformPath=data/recode/homes/tf/mtd°target=pREADraw°transformSpec=data/recode/homes/tfspec.json°_mVar1·MATRIX·DOUBLE
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			String specFile = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC);
 			String applyTxPath = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
@@ -346,27 +342,14 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		else if ( opcode.equalsIgnoreCase("transform") ) 
 		{
 			// perform data transform on Spark
-			String rddInVar = params.get("target");
-			Data mo = sec.getVariable(rddInVar);
-			Data mo2 = sec.getVariable(output.getName());
 			try {
 				DataTransform.spDataTransform(
 						this, 
-						new MatrixObject[] { (MatrixObject) sec.getVariable(rddInVar) }, 
+						new MatrixObject[] { (MatrixObject) sec.getVariable(params.get("target")) }, 
 						new MatrixObject[] { (MatrixObject) sec.getVariable(output.getName()) }, ec);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				throw new DMLRuntimeException(e);
 			}
-			System.out.println();
-
-			/*
-			 * 		try {
-		} catch (Exception e) {
-			throw new IOException(e);
-		}
-
-			 */
 		}
 	}
 	

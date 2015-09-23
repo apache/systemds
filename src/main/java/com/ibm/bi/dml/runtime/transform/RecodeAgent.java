@@ -352,7 +352,7 @@ public class RecodeAgent extends TransformationAgent {
 				int colID = _rcdList[i];
 				
 				Path path = new Path( txMtdDir + "/Recode/" + agents.getName(colID) + RCD_MAP_FILE_SUFFIX);
-				TransformationAgent.checkValidInputFile(fs, path, true); 
+				TfUtils.checkValidInputFile(fs, path, true); 
 				
 				HashMap<String,String> map = new HashMap<String,String>();
 				

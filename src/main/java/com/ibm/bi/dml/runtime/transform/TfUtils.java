@@ -18,6 +18,7 @@
 package com.ibm.bi.dml.runtime.transform;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
@@ -36,10 +37,13 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
+import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.io.MatrixReader;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.JSONHelper;
 
@@ -74,6 +78,25 @@ public class TfUtils implements Serializable{
 	private String _tmpDir = null;
 	private String _outputPath = null;
 	
+	protected static boolean checkValidInputFile(FileSystem fs, Path path, boolean err)
+			throws IOException {
+		// check non-existing file
+		if (!fs.exists(path))
+			if ( err )
+				throw new IOException("File " + path.toString() + " does not exist on HDFS/LFS.");
+			else
+				return false;
+
+		// check for empty file
+		if (MapReduceTool.isFileEmpty(fs, path.toString()))
+			if ( err )
+			throw new EOFException("Empty input file " + path.toString() + ".");
+			else
+				return false;
+		
+		return true;
+	}
+	
 	public static String getPartFileName(JobConf job) throws IOException {
 		FileSystem fs = FileSystem.get(job);
 		Path thisPath=new Path(job.get("map.input.file")).makeQualified(fs);
@@ -97,6 +120,30 @@ public class TfUtils implements Serializable{
 		JSONObject obj = JSONHelper.parse(br);
 		br.close();
 		return obj;
+	}
+	
+	/**
+	 * Prepare NA strings so that they can be sent to workers via JobConf.
+	 * A "dummy" string is added at the end to handle the case of empty strings.
+	 * @param na
+	 * @return
+	 */
+	public static String prepNAStrings(String na) {
+		return na  + DataExpression.DELIM_NA_STRING_SEP + "dummy";
+	}
+	
+	public static String[] parseNAStrings(String na) 
+	{
+		if ( na == null )
+			return null;
+		
+		String[] tmp = Pattern.compile(Pattern.quote(DataExpression.DELIM_NA_STRING_SEP)).split(na, -1);
+		return tmp; //Arrays.copyOf(tmp, tmp.length-1);
+	}
+	
+	public static String[] parseNAStrings(JobConf job) 
+	{
+		return parseNAStrings(job.get(MRJobConfiguration.TF_NA_STRINGS));
 	}
 	
 	private void createAgents(JSONObject spec) throws IOException, JSONException {
@@ -143,7 +190,7 @@ public class TfUtils implements Serializable{
 	}
 	
 	public TfUtils(JobConf job, boolean minimal) throws IOException, JSONException {
-		_NAstrings = DataTransform.parseNAStrings(job);
+		_NAstrings = TfUtils.parseNAStrings(job);
 		_specFile = job.get(MRJobConfiguration.TF_SPEC_FILE);
 		
 		FileSystem fs = FileSystem.get(job);
@@ -157,7 +204,7 @@ public class TfUtils implements Serializable{
 	{
 		boolean hasHeader = Boolean.parseBoolean(job.get(MRJobConfiguration.TF_HAS_HEADER));
 		//Pattern delim = Pattern.compile(Pattern.quote(job.get(MRJobConfiguration.TF_DELIM)));
-		String[] naStrings = DataTransform.parseNAStrings(job);
+		String[] naStrings = TfUtils.parseNAStrings(job);
 		
 		long numCols = UtilFunctions.parseToLong( job.get(MRJobConfiguration.TF_NUM_COLS) );		// #of columns in input data
 			
@@ -442,9 +489,13 @@ public class TfUtils implements Serializable{
 
 	private Reader initOffsetsReader(JobConf job) throws IOException 
 	{
-		Path p=new Path(job.get(CSVReblockMR.ROWID_FILE_NAME));
+		Path path=new Path(job.get(CSVReblockMR.ROWID_FILE_NAME));
 		FileSystem fs = FileSystem.get(job);
-		Reader reader = new SequenceFile.Reader(fs, p, job);
+		Path[] files = MatrixReader.getSequenceFilePaths(fs, path);
+		if ( files.length != 1 )
+			throw new IOException("Expecting a single file under counters file: " + path.toString());
+		
+		Reader reader = new SequenceFile.Reader(fs, files[0], job);
 		
 		return reader;
 	}

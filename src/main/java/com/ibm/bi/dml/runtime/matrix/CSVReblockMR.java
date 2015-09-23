@@ -41,7 +41,6 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -54,6 +53,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockReducer;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
+import com.ibm.bi.dml.runtime.transform.TfUtils;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 
@@ -347,7 +347,7 @@ public class CSVReblockMR
 		{
 			if ( naStrings != null)
 				// Adding "dummy" string to handle the case of na_strings = ""
-				job.set(MRJobConfiguration.TF_NA_STRINGS, naStrings + DataExpression.DELIM_NA_STRING_SEP + "dummy");
+				job.set(MRJobConfiguration.TF_NA_STRINGS, TfUtils.prepNAStrings(naStrings) );
 			job.set(MRJobConfiguration.TF_SPEC_FILE, specFile);
 		}
 		

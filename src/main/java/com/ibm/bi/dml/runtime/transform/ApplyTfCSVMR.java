@@ -35,7 +35,6 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 
-import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -61,7 +60,7 @@ public class ApplyTfCSVMR {
 		DistributedCache.addCacheFile((new Path(mapsPath)).toUri(), job);
 		DistributedCache.createSymlink(job);
 		
-		Path cachefile=new Path(new Path(partOffsetsFile), "part-00000");
+		Path cachefile=new Path(partOffsetsFile);
 		DistributedCache.addCacheFile(cachefile.toUri(), job);
 		DistributedCache.createSymlink(job);
 		
@@ -88,7 +87,7 @@ public class ApplyTfCSVMR {
 		job.set(MRJobConfiguration.TF_DELIM, 		inputDataProperties.getDelim());
 		if ( inputDataProperties.getNAStrings() != null)
 			// Adding "dummy" string to handle the case of na_strings = ""
-			job.set(MRJobConfiguration.TF_NA_STRINGS, inputDataProperties.getNAStrings() + DataExpression.DELIM_NA_STRING_SEP + "dummy");
+			job.set(MRJobConfiguration.TF_NA_STRINGS, TfUtils.prepNAStrings(inputDataProperties.getNAStrings()) );
 		job.set(MRJobConfiguration.TF_SPEC_FILE, 	specPath);
 		job.set(MRJobConfiguration.TF_SMALLEST_FILE, CSVReblockMR.findSmallestFile(job, inputPath));
 		job.set(MRJobConfiguration.OUTPUT_MATRICES_DIRS_CONFIG, outputPath);

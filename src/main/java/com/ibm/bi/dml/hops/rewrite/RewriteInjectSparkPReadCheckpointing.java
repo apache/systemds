@@ -70,6 +70,7 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 		if(hop.getVisited() == Hop.VisitStatus.DONE)
 			return;
 		
+		// The reblocking is performed after transform, and hence checkpoint only non-transformed reads.   
 		if(    (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD && !HopRewriteUtils.hasTransformParents(hop))
 			|| (hop.requiresReblock())
 			)

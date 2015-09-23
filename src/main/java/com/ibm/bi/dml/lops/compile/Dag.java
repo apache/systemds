@@ -1667,7 +1667,7 @@ public class Dag<N extends Lop>
 				
 				try {
 					if( LOG.isTraceEnabled() )
-						LOG.trace("Generating simple instruction - "+ inst_string);
+						LOG.trace("Generating instruction - "+ inst_string);
 					Instruction currInstr = InstructionParser.parseSingleInstruction(inst_string);
 					if (node._beginLine != 0)
 						currInstr.setLocation(node);

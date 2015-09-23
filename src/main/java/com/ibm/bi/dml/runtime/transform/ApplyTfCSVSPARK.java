@@ -40,18 +40,24 @@ import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 
 
 public class ApplyTfCSVSPARK {
+	
+	/**
+	 * Apply transformation metadata and generate the result in CSV format, as a
+	 * JavaRDD of Strings.
+	 */
 
-	public static JavaPairRDD<LongWritable, Text> runSparkJob(SparkExecutionContext sec, JavaRDD<Tuple2<LongWritable, Text>> inputRDD, 
-			String inputPath, String tfMtdPath, String specFile, 
+	public static JavaPairRDD<LongWritable, Text> runSparkJob(
+			SparkExecutionContext sec, JavaRDD<Tuple2<LongWritable, Text>> inputRDD, 
+			String tfMtdPath, String specFile, 
 			String tmpPath, CSVFileFormatProperties prop, 
-			int numCols, String headerLine, String outPath
+			int numCols, String headerLine
 		) throws IOException, ClassNotFoundException, InterruptedException, IllegalArgumentException, JSONException {
 
 		// Load transformation metadata and broadcast it
 		JobConf job = new JobConf();
 		FileSystem fs = FileSystem.get(job);
 		
-		String[] naStrings = DataTransform.parseNAStrings(prop.getNAStrings());
+		String[] naStrings = TfUtils.parseNAStrings(prop.getNAStrings());
 		JSONObject spec = TfUtils.readSpec(fs, specFile);
 		TfUtils _tfmapper = new TfUtils(headerLine, prop.hasHeader(), prop.getDelim(), naStrings, spec, numCols, tfMtdPath, null, tmpPath);
 		
@@ -114,7 +120,7 @@ public class ApplyTfCSVSPARK {
 					_tfmapper.processHeaderLine();
 					
 					if (_tfmapper.hasHeader() ) {
-						//outLines.add(dcdHeader);
+						//outLines.add(dcdHeader); // if the header needs to be preserved in the output file
 						continue; 
 					}
 				}

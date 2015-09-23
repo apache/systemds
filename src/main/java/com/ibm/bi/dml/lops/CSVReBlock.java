@@ -118,6 +118,8 @@ public class CSVReBlock extends Lop
 					+ " must be a literal.");
 
 		// Output from transform() does not have a header
+		// On MR, reblock is piggybacked along with transform, and hence 
+		// specific information about header needn't be passed through instruction
 		sb.append( ((Data)headerLop).getBooleanValue() && !isSparkTransformInput );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( ((Data)delimLop).getStringValue() );

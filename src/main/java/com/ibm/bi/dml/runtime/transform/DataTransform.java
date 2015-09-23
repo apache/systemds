@@ -49,7 +49,6 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.lops.CSVReBlock;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression;
@@ -282,10 +281,6 @@ public class DataTransform {
 				mvConstants[i] = null;
 				if ( entry.containsKey(VALUE) )
 					mvConstants[i] = entry.get(VALUE);
-					//if ( entry.get(VALUE) instanceof Long || entry.get(VALUE) instanceof Integer )
-					//	mvConstants[i] = "" + (Integer)entry.get(VALUE);
-					//else
-					//   mvConstants[i] = entry.get(VALUE);
 			}
 			
 			Integer[] idx = new Integer[mvList.length];
@@ -731,14 +726,14 @@ public class DataTransform {
 			Path binpath = new Path( tfMtdPath + "/Bin/" + UtilFunctions.unquote(columnNames[id-1]) + TransformationAgent.BIN_FILE_SUFFIX);
 			Path rcdpath = new Path( tfMtdPath + "/Recode/" + UtilFunctions.unquote(columnNames[id-1]) + TransformationAgent.NDISTINCT_FILE_SUFFIX);
 			
-			if ( TransformationAgent.checkValidInputFile(fs, binpath, false ) )
+			if ( TfUtils.checkValidInputFile(fs, binpath, false ) )
 			{
 				br = new BufferedReader(new InputStreamReader(fs.open(binpath)));
 				int nbins = UtilFunctions.parseToInt(br.readLine().split(TransformationAgent.TXMTD_SEP)[4]);
 				br.close();
 				ret += (nbins-1);
 			}
-			else if ( TransformationAgent.checkValidInputFile(fs, rcdpath, false ) )
+			else if ( TfUtils.checkValidInputFile(fs, rcdpath, false ) )
 			{
 				br = new BufferedReader(new InputStreamReader(fs.open(rcdpath)));
 				int ndistinct = UtilFunctions.parseToInt(br.readLine());
@@ -1179,7 +1174,7 @@ public class DataTransform {
 	 */
 	private static JobReturn performTransform(JobConf job, FileSystem fs, String inputPath, int ncols, CSVFileFormatProperties prop, String specFileWithIDs, String tfMtdPath, boolean isApply, MatrixObject result, String headerLine, boolean isBB, boolean isCSV ) throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException {
 		
-		String[] na = parseNAStrings(prop.getNAStrings());
+		String[] na = TfUtils.parseNAStrings(prop.getNAStrings());
 		
 		JSONObject spec = TfUtils.readSpec(fs, specFileWithIDs);
 		TfUtils agents = new TfUtils(headerLine, prop.hasHeader(), prop.getDelim(), na, spec, ncols, tfMtdPath, null, null );
@@ -1356,20 +1351,6 @@ public class DataTransform {
 		br.close();
 	}
 	
-	public static String[] parseNAStrings(String na) 
-	{
-		if ( na == null )
-			return null;
-		
-		String[] tmp = Pattern.compile(Pattern.quote(DataExpression.DELIM_NA_STRING_SEP)).split(na, -1);
-		return tmp; //Arrays.copyOf(tmp, tmp.length-1);
-	}
-	
-	public static String[] parseNAStrings(JobConf job) 
-	{
-		return parseNAStrings(job.get(MRJobConfiguration.TF_NA_STRINGS));
-	}
-	
 	public static void spDataTransform(ParameterizedBuiltinSPInstruction inst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices, ExecutionContext ec) throws Exception {
 		
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
@@ -1412,9 +1393,8 @@ public class DataTransform {
 			// Build transformation metadata, including recode maps, bin definitions, etc.
 			// Also, generate part offsets file (counters file), which is to be used in csv-reblock (if needed)
 			String partOffsetsFile =  MRJobConfiguration.constructTempOutputFilename();
-			numRowsTf = GenTfMtdSPARK.runSparkJob(sec, csvLines, oprnds.inputPath, 
-													oprnds.txMtdPath, specFileWithIDs, 
-													partOffsetsFile, 
+			numRowsTf = GenTfMtdSPARK.runSparkJob(sec, csvLines, oprnds.txMtdPath,  
+													specFileWithIDs,partOffsetsFile, 
 													oprnds.inputCSVProperties, numColumns, 
 													outHeader);
 			
@@ -1424,9 +1404,8 @@ public class DataTransform {
 			numColumnsTf = getNumColumnsTf(fs, outHeader, oprnds.inputCSVProperties.getDelim(), oprnds.txMtdPath);
 			
 			tfPairRDD = ApplyTfCSVSPARK.runSparkJob(sec, csvLines, 
-													oprnds.inputPath,oprnds.txMtdPath, specFileWithIDs, tmpPath, 
-													oprnds.inputCSVProperties, numColumns, outHeader, 
-													outputMatrices[0].getFileName());
+													oprnds.txMtdPath, specFileWithIDs, tmpPath, 
+													oprnds.inputCSVProperties, numColumns, outHeader);
 
 			
 			MapReduceTool.deleteFileIfExistOnHDFS(new Path(partOffsetsFile), job);
@@ -1446,9 +1425,8 @@ public class DataTransform {
 			
 			// Apply transformation metadata, and perform actual transformation 
 			tfPairRDD = ApplyTfCSVSPARK.runSparkJob(sec, csvLines, 
-													oprnds.inputPath,oprnds.txMtdPath, specFileWithIDs, tmpPath, 
-													oprnds.inputCSVProperties, numColumns, outHeader, 
-													outputMatrices[0].getFileName());
+													oprnds.txMtdPath, specFileWithIDs, tmpPath, 
+													oprnds.inputCSVProperties, numColumns, outHeader);
 			
 		}
 		

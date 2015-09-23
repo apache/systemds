@@ -268,7 +268,7 @@ public class BinAgent extends TransformationAgent {
 				int colID = _binList[i];
 				
 				Path path = new Path( txMtdDir + "/Bin/" + agents.getName(colID) + BIN_FILE_SUFFIX);
-				TransformationAgent.checkValidInputFile(fs, path, true); 
+				TfUtils.checkValidInputFile(fs, path, true); 
 					
 				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
 				// format: colID,min,max,nbins
@@ -318,8 +318,6 @@ public class BinAgent extends TransformationAgent {
 			{
 				throw new RuntimeException("Encountered \"" + words[colID-1] + "\" in column ID \"" + colID + "\", when expecting a numeric value. Consider adding \"" + words[colID-1] + "\" to na.strings, along with an appropriate imputation method.");
 			}
-			//long binid = Math.min(Math.round((val-_min[i])/_binWidths[i] - 0.5) + 1, _numBins[i]);
-			//words[colID-1] = Long.toString(binid);
 		}
 		
 		return words;

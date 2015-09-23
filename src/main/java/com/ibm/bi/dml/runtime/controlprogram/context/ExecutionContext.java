@@ -45,6 +45,7 @@ import com.ibm.bi.dml.runtime.matrix.MatrixDimensionsMetaData;
 import com.ibm.bi.dml.runtime.matrix.MetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
 public class ExecutionContext 
@@ -192,7 +193,7 @@ public class ExecutionContext
 		if ( isLiteral ) {
 			switch (vt) {
 			case INT:
-				long intVal = Long.parseLong(name);
+				long intVal = UtilFunctions.parseToLong(name);				
 				IntObject intObj = new IntObject(intVal);
 				return intObj;
 			case DOUBLE:

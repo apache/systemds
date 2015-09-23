@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.DataIdentifier;
+import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
@@ -37,19 +38,15 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
 /**
  * 
  */
 public class FunctionCallCPInstruction extends CPInstruction 
-{
-	
+{	
 	private String _functionName;
 	private String _namespace;
-	
-	//private CPOperand _output;
 	
 	public String getFunctionName(){
 		return _functionName;
@@ -60,15 +57,17 @@ public class FunctionCallCPInstruction extends CPInstruction
 	}
 	
 	// stores both the bound input and output parameters
+	private ArrayList<CPOperand> _boundInputParamOperands;
 	private ArrayList<String> _boundInputParamNames;
 	private ArrayList<String> _boundOutputParamNames;
 	
-	public FunctionCallCPInstruction(String namespace, String functName, ArrayList<String> boundInParamNames, ArrayList<String> boundOutParamNames, String istr) {
+	public FunctionCallCPInstruction(String namespace, String functName, ArrayList<CPOperand> boundInParamOperands, ArrayList<String> boundInParamNames, ArrayList<String> boundOutParamNames, String istr) {
 		super(null, functName, istr);
 		
 		_cptype = CPINSTRUCTION_TYPE.External;
 		_functionName = functName;
 		_namespace = namespace;
+		_boundInputParamOperands = boundInParamOperands;
 		_boundInputParamNames = boundInParamNames;
 		_boundOutputParamNames = boundOutParamNames;
 		
@@ -87,18 +86,21 @@ public class FunctionCallCPInstruction extends CPInstruction
 		String functionName = parts[2];
 		int numInputs = Integer.valueOf(parts[3]);
 		int numOutputs = Integer.valueOf(parts[4]);
+		ArrayList<CPOperand> boundInParamOperands = new ArrayList<CPOperand>();
 		ArrayList<String> boundInParamNames = new ArrayList<String>();
 		ArrayList<String> boundOutParamNames = new ArrayList<String>();
 		
 		int FIRST_PARAM_INDEX = 5;
 		for (int i = 0; i < numInputs; i++) {
-			boundInParamNames.add(parts[FIRST_PARAM_INDEX + i]);
+			CPOperand operand = new CPOperand(parts[FIRST_PARAM_INDEX + i]);
+			boundInParamOperands.add(operand);
+			boundInParamNames.add(operand.getName());
 		}
 		for (int i = 0; i < numOutputs; i++) {
 			boundOutParamNames.add(parts[FIRST_PARAM_INDEX + numInputs + i]);
 		}
 		
-		return new FunctionCallCPInstruction ( namespace,functionName, boundInParamNames, boundOutParamNames, str );
+		return new FunctionCallCPInstruction ( namespace,functionName, boundInParamOperands, boundInParamNames, boundOutParamNames, str );
 	}
 
 	
@@ -122,65 +124,45 @@ public class FunctionCallCPInstruction extends CPInstruction
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{		
-		LOG.trace("Executing instruction : " + this.toString());
+		if( LOG.isTraceEnabled() ){
+			LOG.trace("Executing instruction : " + this.toString());
+		}
+		
 		// get the function program block (stored in the Program object)
-		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(this._namespace, this._functionName);
+		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(_namespace, _functionName);
 		
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
-		LocalVariableMap functionVariables = new LocalVariableMap();
-		
-		for (int i=0; i<fpb.getInputParams().size();i++) {
-			
-			// for each formal parameter:  create a [formalParamName, variable] binding based on the function call, 
-			// and place each binding into functionVariables. 4 cases for corresponding functionCall param:
-			//  (1) is a variable 
-			//			-- will be DataIdentifier expression (but not FunctionCallIdentifer) 
-			//			-- look in _variables for the Data value 
-			//			-- create [formalParamName, ScalarObject] binding
-			//  (2) is a constant value -- will be ConstIdentifier expression -- create [formalParamName, ScalarObject] binding where ScalarObject is constant value
-			//  (3) is default value -- will be NO expression --  create [formalParamName, ScalarObject] where ScalarObject is default value
-			//	(4) is an expression [NOT SUPPORTED YET]
-			
+		LocalVariableMap functionVariables = new LocalVariableMap();		
+		for( int i=0; i<fpb.getInputParams().size(); i++) 
+		{				
 			DataIdentifier currFormalParam = fpb.getInputParams().get(i);
 			String currFormalParamName = currFormalParam.getName();
 			Data currFormalParamValue = null; 
 			ValueType valType = fpb.getInputParams().get(i).getValueType();
 				
-			// CASE (3): using default value (scalars only)
-			if (i > this._boundInputParamNames.size() || (ec.getVariable(this._boundInputParamNames.get(i)) == null)){
-				
-				if (valType == ValueType.BOOLEAN){
-					boolean defaultVal = (i > this._boundInputParamNames.size()) ? Boolean.valueOf(fpb.getInputParams().get(i).getDefaultValue()).booleanValue() : Boolean.valueOf(this._boundInputParamNames.get(i)).booleanValue();
-					currFormalParamValue = new BooleanObject(defaultVal);
-				}
-				else if (valType == ValueType.DOUBLE){
-					double defaultVal = (i > this._boundInputParamNames.size()) ? Double.valueOf(fpb.getInputParams().get(i).getDefaultValue()).doubleValue() : Double.valueOf(this._boundInputParamNames.get(i)).doubleValue();
-					currFormalParamValue = new DoubleObject(defaultVal);
-				}
-				else if (valType == ValueType.INT){ //via safe case for robustness
-					long defaultVal = (i > this._boundInputParamNames.size()) ? UtilFunctions.parseToInt(fpb.getInputParams().get(i).getDefaultValue()) : UtilFunctions.parseToInt(this._boundInputParamNames.get(i));
-					currFormalParamValue = new IntObject(defaultVal);
-				}
-				else if (valType == ValueType.STRING){
-					String defaultVal = (i > this._boundInputParamNames.size()) ? fpb.getInputParams().get(i).getDefaultValue() : this._boundInputParamNames.get(i);
-					currFormalParamValue = new StringObject(defaultVal);
-				}
-				else{
-					throw new DMLUnsupportedOperationException(currFormalParamValue + " has inapporpriate value type");
-				}
+			// CASE (a): default values, if call w/ less params than signature (scalars only)
+			if (   i > _boundInputParamNames.size() 
+				|| (!_boundInputParamOperands.get(i).isLiteral() && ec.getVariable(_boundInputParamNames.get(i)) == null))
+			{	
+				String defaultVal = fpb.getInputParams().get(i).getDefaultValue();
+				currFormalParamValue = ec.getScalarInput(defaultVal, valType, false);
 			}
+			// CASE (b) literals or symbol table entries
 			else {
-				currFormalParamValue = ec.getVariable(this._boundInputParamNames.get(i));
+				CPOperand operand = _boundInputParamOperands.get(i);
+				if( operand.getDataType()==DataType.SCALAR )
+					currFormalParamValue = ec.getScalarInput(operand.getName(), operand.getValueType(), operand.isLiteral());
+				else
+					currFormalParamValue = ec.getVariable(operand.getName());					
 			}
 				
-			functionVariables.put(currFormalParamName,currFormalParamValue);	
-					
+			functionVariables.put(currFormalParamName,currFormalParamValue);						
 		}
 		
 		// Pin the input variables so that they do not get deleted 
 		// from pb's symbol table at the end of execution of function
-	    HashMap<String,Boolean> pinStatus = ec.pinVariables(this._boundInputParamNames);
+	    HashMap<String,Boolean> pinStatus = ec.pinVariables(_boundInputParamNames);
 		
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 

@@ -34,8 +34,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
  *
  */
 public class FunctionCallCP extends Lop  
-{
-	
+{	
 	private String _fnamespace;
 	private String _fname;
 	private String[] _outputs;
@@ -87,20 +86,20 @@ public class FunctionCallCP extends Lop
 	private String getInstructionsMultipleReturnBuiltins(String[] inputs, String[] outputs) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
+		
 		sb.append(Lop.OPERAND_DELIMITOR); 
 		sb.append(_fname.toLowerCase());
-		sb.append(Lop.OPERAND_DELIMITOR); 
+		
 		for(int i=0; i< inputs.length; i++) {
-			sb.append( getInputs().get(0).prepInputOperand(inputs[i]) );
-			if ( i != inputs.length-1 )
-				sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append( getInputs().get(i).prepInputOperand(inputs[i]) );
 		}
-		sb.append(Lop.OPERAND_DELIMITOR); 
+		
 		for(int i=0; i< _outputs.length; i++) {
+			sb.append(Lop.OPERAND_DELIMITOR);
 			sb.append(_outputs[i]);
-			if ( i != _outputs.length-1 )
-				sb.append(Lop.OPERAND_DELIMITOR);
 		}
+		
 		return sb.toString();
 	}
 	
@@ -116,12 +115,10 @@ public class FunctionCallCP extends Lop
 			return getInstructionsMultipleReturnBuiltins(inputs, outputs);
 		}
 		
-		/**
-		 * Instruction format extFunct:::[FUNCTION NAMESPACE]:::[FUNCTION NAME]:::[num input params]:::[num output params]:::[list of delimited input params ]:::[list of delimited ouput params]
-		 * These are the "bound names" for the inputs / outputs.  For example, out1 = ns::foo(in1, in2) yields
-		 * extFunct:::ns:::foo:::2:::1:::in1:::in2:::out1
-		 * 
-		 */
+		//Instruction format extFunct:::[FUNCTION NAMESPACE]:::[FUNCTION NAME]:::[num input params]:::[num output params]:::[list of delimited input params ]:::[list of delimited ouput params]
+		//These are the "bound names" for the inputs / outputs.  For example, out1 = ns::foo(in1, in2) yields
+		//extFunct:::ns:::foo:::2:::1:::in1:::in2:::out1
+		//NOTE: we have to append full input operand information to distinguish literals from variables w/ equal name
 
 		StringBuilder inst = new StringBuilder();
 		
@@ -135,30 +132,19 @@ public class FunctionCallCP extends Lop
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(inputs.length);
 		inst.append(Lop.OPERAND_DELIMITOR);
-		//inst.append(outputs.length);  TODO function output dataops (phase 3)
 		inst.append(_outputs.length);
-		for( String in : inputs )
-		{
-			inst.append(Lop.OPERAND_DELIMITOR);
-			inst.append(in);
-		}
 		
-		for( String out : _outputs )
-		{
+		for(int i=0; i<inputs.length; i++) {
+			inst.append(Lop.OPERAND_DELIMITOR);
+			inst.append( getInputs().get(i).prepInputOperand(inputs[i]) );
+		}
+
+		// TODO function output dataops (phase 3) - take 'outputs' into account
+		for( String out : _outputs ) {
 			inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append(out);
-		}		
-		/* TODO function output dataops (phase 3)
-		for( String out : outputs )
-		{
-			inst.append(Lops.OPERAND_DELIMITOR);
-			inst.append(out);
 		}
-		*/
-		
+
 		return inst.toString();				
 	}
 }
-
-
-

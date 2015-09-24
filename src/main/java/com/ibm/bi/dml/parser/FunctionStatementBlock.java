@@ -53,9 +53,19 @@ public class FunctionStatementBlock extends StatementBlock
 		}
 		FunctionStatement fstmt = (FunctionStatement) _statements.get(0);
 			
+		// validate all function input parameters
+		ArrayList<DataIdentifier> inputValues = fstmt.getInputParams();
+        for( DataIdentifier inputValue : inputValues ) {
+            //check all input matrices have value type double
+            if( inputValue.getDataType()==DataType.MATRIX && inputValue.getValueType()!=ValueType.DOUBLE ) {
+                raiseValidateError("for function " + fstmt.getName() + ", input variable " + inputValue.getName() 
+                                 + " has an unsupported value type of " + inputValue.getValueType() + ".", false);
+            }
+        }
+		
 		// handle DML-bodied functions
-		if (!(fstmt instanceof ExternalFunctionStatement)){
-					
+		if (!(fstmt instanceof ExternalFunctionStatement))
+		{			
 			// perform validate for function body
 			this._dmlProg = dmlProg;
 			for(StatementBlock sb : fstmt.getBody())
@@ -69,8 +79,8 @@ public class FunctionStatementBlock extends StatementBlock
 			if (fstmt.getBody().size() > 1)
 				_constVarsOut.putAll(fstmt.getBody().get(fstmt.getBody().size()-1).getConstOut());
 			
-//			for each return value, check variable is defined and validate the return type
-			// 	if returnValue type known incorrect, then throw exception
+			// for each return value, check variable is defined and validate the return type
+			// if returnValue type known incorrect, then throw exception
 			ArrayList<DataIdentifier> returnValues = fstmt.getOutputParams();
 			for (DataIdentifier returnValue : returnValues){
 				DataIdentifier curr = ids.getVariable(returnValue.getName());
@@ -146,7 +156,9 @@ public class FunctionStatementBlock extends StatementBlock
 				
 			}
 		}
-		else {
+		// handle external functions
+		else 
+		{
 			//validate specified attributes and attribute values
 			ExternalFunctionStatement efstmt = (ExternalFunctionStatement) fstmt;
 			efstmt.validateParameters(this);

@@ -1,6 +1,6 @@
 #####################################################################
 # TITLE: An Overview of Matrix Multiplication Operators in SystemML #
-# DATE MODIFIED: 09/10/2015                                         #
+# DATE MODIFIED: 09/24/2015                                         #
 #####################################################################
 
 In the following, we give an overview of backend-specific physical matrix multiplication operators in SystemML as well as their internally used matrix multiplication block operations.
@@ -94,7 +94,8 @@ C) CORE MATRIX MULT PRIMITIVES LibMatrixMult (incl related script patterns)
   - sparse-sparse, dense-dense, sparse-dense
 
 * 5) wsloss   ((a) sum(W*(X-U%*%t(V))^2), (b) sum((X-W*(U%*%t(V)))^2), 
-               (c) sum((X -(U%*%t(V)))^2))
+               (c) sum((X-(U%*%t(V)))^2)), (d) sum(W*(U%*%t(V)-X)^2),
+               (e) sum((W*(U%*%t(V))-X)^2), (f) sum(((U%*%t(V))-X)^2))
   - sequential / multi-threaded (same block ops, par over rows in W/X)                 
   - all dense, sparse-dense factors, sparse/dense-* x 3 patterns            
 
@@ -103,7 +104,7 @@ C) CORE MATRIX MULT PRIMITIVES LibMatrixMult (incl related script patterns)
   - sequential / multi-threaded (same block ops, par over rows in W)                 
   - all dense, sparse-dense factors, sparse/dense-* x 4 patterns                   
 
-* 7) wdivmm   ((a) t(t(U)%*%(X/(U%*%t(V)))), (b) (X/(U%*%t(V)))%*%V  
+* 7) wdivmm   ((a) t(t(U)%*%(X/(U%*%t(V)))), (b) (X/(U%*%t(V)))%*%V) 
   - sequential / multi-threaded (same block ops, par over rows in X)                 
   - all dense, sparse-dense factors, sparse/dense-* x 2 patterns
 

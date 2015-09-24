@@ -1373,13 +1373,18 @@ public class MatrixObject extends CacheableData
 	 * @param rdd
 	 * @param fname
 	 * @param outputFormat
+	 * @throws DMLRuntimeException 
 	 */
-	private void writeMatrixFromRDDtoHDFS(RDDObject rdd, String fname, String outputFormat)
+	private void writeMatrixFromRDDtoHDFS(RDDObject rdd, String fname, String outputFormat) 
+	    throws DMLRuntimeException
 	{
+	    //prepare output info
+        MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+	    OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) 
+                : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
+	    
 		//note: the write of an RDD to HDFS might trigger
-		//lazy evaluation of pending transformations.
-				
-		OutputInfo oinfo = OutputInfo.stringToOutputInfo (outputFormat);
+		//lazy evaluation of pending transformations.				
 		long newnnz = SparkExecutionContext.writeRDDtoHDFS(rdd, fname, oinfo);	
 		((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics().setNonZeros(newnnz);
 	}

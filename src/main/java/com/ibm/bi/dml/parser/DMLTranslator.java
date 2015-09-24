@@ -1714,9 +1714,8 @@ public class DMLTranslator
 	 * @throws ParseException
 	 */
 	private Hop processBinaryExpression(BinaryExpression source, DataIdentifier target, HashMap<String, Hop> hops)
-			throws ParseException {
-
-
+		throws ParseException 
+	{
 		Hop left  = processExpression(source.getLeft(),  null, hops);
 		Hop right = processExpression(source.getRight(), null, hops);
 
@@ -1727,9 +1726,12 @@ public class DMLTranslator
 	
 		Hop currBop = null;
 
+		//prepare target identifier and ensure that output type is of inferred type 
+        //(type should not be determined by target (e.g., string for print)
 		if (target == null) {
-			target = createTarget(source);
+		    target = createTarget(source);
 		}
+		target.setValueType(source.getOutput().getValueType());
 		
 		if (source.getOpCode() == Expression.BinaryOp.PLUS) {
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.PLUS, left, right);
@@ -1799,9 +1801,17 @@ public class DMLTranslator
 		return currBop;
 	}
 
+	/**
+	 * 
+	 * @param source
+	 * @param target
+	 * @param hops
+	 * @return
+	 * @throws ParseException
+	 */
 	private Hop processBooleanExpression(BooleanExpression source, DataIdentifier target, HashMap<String, Hop> hops)
-			throws ParseException {
-
+			throws ParseException 
+	{
 		// Boolean Not has a single parameter
 		boolean constLeft = (source.getLeft().getOutput() instanceof ConstIdentifier);
 		boolean constRight = false;
@@ -1820,12 +1830,13 @@ public class DMLTranslator
 			right = processExpression(source.getRight(), null, hops);
 		}
 
-		if (target == null) {
-			target = createTarget(source);
-			// ToDo : Remove this statement
-			target.setValueType(ValueType.BOOLEAN);
-		}
-
+	    //prepare target identifier and ensure that output type is boolean 
+	    //(type should not be determined by target (e.g., string for print)
+	    if (target == null) {
+	        target = createTarget(source);
+	    }
+	    target.setValueType(ValueType.BOOLEAN);
+		
 		if (source.getRight() == null) {
 			Hop currUop = null;
 			try {

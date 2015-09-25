@@ -677,8 +677,8 @@ public class LibMatrixMult
 	{
 		//check for empty result 
 		if(   mW.isEmptyBlock(false) 
-		   || (wt==WDivMMType.LEFT && mU.isEmptyBlock(false))
-		   || (wt==WDivMMType.RIGHT && mV.isEmptyBlock(false)) )  {
+		   || (wt.isLeft() && mU.isEmptyBlock(false))
+		   || (!wt.isLeft() && mV.isEmptyBlock(false)) )  {
 			ret.examSparsity(); //turn empty dense into sparse
 			return; 
 		}
@@ -725,8 +725,8 @@ public class LibMatrixMult
 	{
 		//check for empty result 
 		if(   mW.isEmptyBlock(false) 
-		   || (wt==WDivMMType.LEFT && mU.isEmptyBlock(false))
-		   || (wt==WDivMMType.RIGHT && mV.isEmptyBlock(false)) )  {
+		   || (wt.isLeft() && mU.isEmptyBlock(false))
+		   || (!wt.isLeft() && mV.isEmptyBlock(false)) )  {
 			ret.examSparsity(); //turn empty dense into sparse
 			return; 
 		}
@@ -747,7 +747,7 @@ public class LibMatrixMult
 			pool.invokeAll(tasks);
 			pool.shutdown();
 			//aggregate partial results
-			if( wt == WDivMMType.LEFT ){
+			if( wt.isLeft() ){
 				double[][] tmp = new double[k][];
 				for(int i=0; i<tasks.size(); i++)
 					tmp[i] = tasks.get(i).getPartialResult();
@@ -764,7 +764,7 @@ public class LibMatrixMult
 		}
 
 		//post-processing
-		if( wt == WDivMMType.LEFT )
+		if( wt.isLeft() )
 			ret.recomputeNonZeros();
 		ret.examSparsity();
 		
@@ -2246,10 +2246,11 @@ public class LibMatrixMult
 	private static void matrixMultWDivMMDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WDivMMType wt, int rl, int ru) 
 		throws DMLRuntimeException 
 	{	
-		final boolean left = (wt==WDivMMType.LEFT); 
+		final boolean left = wt.isLeft();
+		final boolean mult = wt.isMult();
 		final int n = mW.clen;
 		final int cd = mU.clen;
-	
+		
 		double[] w = mW.denseBlock;
 		double[] u = mU.denseBlock;
 		double[] v = mV.denseBlock;
@@ -2272,7 +2273,7 @@ public class LibMatrixMult
 					for( int j=bj, vix=bj*cd; j<bjmin; j++, vix+=cd) {
 						double wij = w[ix+j];
 						if( wij != 0 )
-							wdivmm(wij, u, v, c, uix, vix, left, cd);
+							wdivmm(wij, u, v, c, uix, vix, left, mult, cd);
 					}
 			}
 	}
@@ -2293,8 +2294,9 @@ public class LibMatrixMult
 		throws DMLRuntimeException
 	{
 		final int cd = mU.clen;
-		final boolean left = (wt==WDivMMType.LEFT); 
-		
+		final boolean left = wt.isLeft();
+		final boolean mult = wt.isMult();
+
 		SparseRow[] w = mW.sparseRows;
 		double[] u = mU.denseBlock;
 		double[] v = mV.denseBlock;
@@ -2307,7 +2309,7 @@ public class LibMatrixMult
 				int[] wix = w[i].getIndexContainer();
 				double[] wval = w[i].getValueContainer();
 				for( int k=0; k<wlen; k++ ) 
-					wdivmm(wval[k], u, v, c, uix, wix[k]*cd, left, cd);
+					wdivmm(wval[k], u, v, c, uix, wix[k]*cd, left, mult, cd);
 			}
 	}
 
@@ -2326,10 +2328,11 @@ public class LibMatrixMult
 	private static void matrixMultWDivMMGeneric(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WDivMMType wt, int rl, int ru) 
 		throws DMLRuntimeException
 	{
-		final boolean left = (wt==WDivMMType.LEFT); 
+		final boolean left = wt.isLeft(); 
+		final boolean mult = wt.isMult();
 		final int n = mW.clen; 
 		final int cd = mU.clen;
-		
+
 		//output always in dense representation
 		double[] c = ret.denseBlock;
 		
@@ -2344,7 +2347,7 @@ public class LibMatrixMult
 					int[] wix = w[i].getIndexContainer();
 					double[] wval = w[i].getValueContainer();
 					for( int k=0; k<wlen; k++ )
-						wdivmm(wval[k], mU, mV, c, i, wix[k], left, cd);
+						wdivmm(wval[k], mU, mV, c, i, wix[k], left, mult, cd);
 				}	
 		}
 		else //DENSE
@@ -2355,7 +2358,7 @@ public class LibMatrixMult
 				for( int j=0; j<n; j++, ix++) {
 					double wij = w[ix];
 					if( wij != 0 )
-						wdivmm(wij, mU, mV, c, i, j, left, cd);
+						wdivmm(wij, mU, mV, c, i, j, left, mult, cd);
 				}
 		}
 	}
@@ -3050,7 +3053,7 @@ public class LibMatrixMult
 	 * @param flagleft
 	 * @param len
 	 */
-	private static void wdivmm( final double wij, MatrixBlock u, MatrixBlock v, double[] c, final int uix, final int vix, final boolean flagleft, final int len )
+	private static void wdivmm( final double wij, MatrixBlock u, MatrixBlock v, double[] c, final int uix, final int vix, final boolean flagleft, boolean flagmult, final int len )
 	{
 		//compute dot product over ui vj 
 		double uvij = 0;
@@ -3058,7 +3061,7 @@ public class LibMatrixMult
 			uvij += u.quickGetValue(uix, k2) * v.quickGetValue(vix, k2);
 		
 		//compute core wdivmm
-		double wtmp = wij / uvij;
+		double wtmp = flagmult ? wij * uvij : wij / uvij;
 		
 		//prepare inputs for final mm
 		int bix = flagleft ? uix : vix;
@@ -3081,13 +3084,13 @@ public class LibMatrixMult
 	 * @param flagleft
 	 * @param len
 	 */
-	private static void wdivmm( final double wij, double[] u, double[] v, double[] c, final int uix, final int vix, final boolean flagleft, final int len )
+	private static void wdivmm( final double wij, double[] u, double[] v, double[] c, final int uix, final int vix, final boolean flagleft, final boolean flagmult, final int len )
 	{
 		//compute dot product over ui vj 
 		double uvij = dotProduct(u, v, uix, vix, len);
 		
 		//compute core wdivmm  
-		double tmpval = wij / uvij;
+		double tmpval = flagmult ? wij * uvij : wij / uvij;
 		
 		//prepare inputs for final mm
 		int bix = flagleft ? uix : vix;
@@ -3533,7 +3536,7 @@ public class LibMatrixMult
 			_ru = ru;
 			
 			//allocate local result for partial aggregation (to prevent synchonization)
-			if( wt == WDivMMType.LEFT ) {
+			if( wt.isLeft() ) {
 				_ret = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
 				_ret.allocateDenseBlock();
 			}
@@ -3554,7 +3557,7 @@ public class LibMatrixMult
 				matrixMultWDivMMGeneric(_mX, _mU, _mV, _ret, _wt, _rl, _ru);
 		
 			//maintain partial nnz for right (upper bounds inclusive)
-			if( _wt == WDivMMType.RIGHT )
+			if( !_wt.isLeft() )
 				_nnz = _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
 				
 			return null;

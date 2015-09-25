@@ -62,11 +62,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	
 	private static final Log LOG = LogFactory.getLog(RewriteAlgebraicSimplificationDynamic.class.getName());
 	
-	
 	private static OpOp2[] LOOKUP_VALID_DISTRIBUTIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MINUS}; 
-	
 	private static OpOp2[] LOOKUP_VALID_ASSOCIATIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT}; 
-	
+	private static OpOp2[] LOOKUP_VALID_WDIVMM_BINARY = new OpOp2[]{OpOp2.MULT, OpOp2.DIV}; 
 	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
@@ -1247,49 +1245,50 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				Hop W = bop.getInput().get(0);
 				Hop tmp = bop.getInput().get(1).getInput().get(0); //(X - U %*% t(V))
 				
-				if(    tmp instanceof BinaryOp && ((BinaryOp)tmp).getOp()==OpOp2.MINUS
-	                && tmp.getInput().get(0).getDataType() == DataType.MATRIX )
+				if( tmp instanceof BinaryOp && ((BinaryOp)tmp).getOp()==OpOp2.MINUS
+						&& tmp.getInput().get(0).getDataType() == DataType.MATRIX )
 				{
-				    //a) sum (W * (X - U %*% t(V)) ^ 2)
-				    int uvIndex = -1;
-                    if( tmp.getInput().get(1) instanceof AggBinaryOp  //ba gurantees matrices
-	                    && HopRewriteUtils.isSingleBlock(tmp.getInput().get(1).getInput().get(0),true)) //BLOCKSIZE CONSTRAINT
-	                {
-	                   uvIndex = 1;   
-	                }
-				    //b) sum (W * (U %*% t(V) - X) ^ 2)
-	                else if(tmp.getInput().get(0) instanceof AggBinaryOp  //ba gurantees matrices
-	                    && HopRewriteUtils.isSingleBlock(tmp.getInput().get(0).getInput().get(0),true)) //BLOCKSIZE CONSTRAINT
-	                {
-                       uvIndex = 0;
-	                }   
-				    
-				    if( uvIndex >= 0 ) //rewrite match
-				    {
-				        Hop X = tmp.getInput().get((uvIndex==0)?1:0); 
-                        Hop U = tmp.getInput().get(uvIndex).getInput().get(0);
-                        Hop V = tmp.getInput().get(uvIndex).getInput().get(1);
-                        
-                        if( !HopRewriteUtils.isTransposeOperation(V) ) { 
-                            V = HopRewriteUtils.createTranspose(V);
-                        }
-                        else 
-                            V = V.getInput().get(0);
-                        
-                        hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
-                                  OpOp4.WSLOSS, X, U, V, W, true);
-                        HopRewriteUtils.setOutputParametersForScalar(hnew);
-
-                        appliedPattern = true;
-                        LOG.debug("Applied simplifyWeightedSquaredLoss1"+uvIndex+" (line "+hi.getBeginLine()+")");  
-				    }
+					//a) sum (W * (X - U %*% t(V)) ^ 2)
+					int uvIndex = -1;
+					if( tmp.getInput().get(1) instanceof AggBinaryOp  //ba gurantees matrices
+							&& HopRewriteUtils.isSingleBlock(tmp.getInput().get(1).getInput().get(0),true)) //BLOCKSIZE CONSTRAINT
+					{
+						uvIndex = 1;   
+					}
+					//b) sum (W * (U %*% t(V) - X) ^ 2)
+					else if(tmp.getInput().get(0) instanceof AggBinaryOp  //ba gurantees matrices
+						&& HopRewriteUtils.isSingleBlock(tmp.getInput().get(0).getInput().get(0),true)) //BLOCKSIZE CONSTRAINT
+					{
+						uvIndex = 0;
+					}   
+				 
+					if( uvIndex >= 0 ) //rewrite match
+					{
+						Hop X = tmp.getInput().get((uvIndex==0)?1:0); 
+						Hop U = tmp.getInput().get(uvIndex).getInput().get(0);
+						Hop V = tmp.getInput().get(uvIndex).getInput().get(1);
+	                    
+						if( !HopRewriteUtils.isTransposeOperation(V) ) {
+							V = HopRewriteUtils.createTranspose(V);
+						}
+						else{
+							V = V.getInput().get(0);
+						}
+	                    
+						hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
+								OpOp4.WSLOSS, X, U, V, W, true);
+						HopRewriteUtils.setOutputParametersForScalar(hnew);
+	
+						appliedPattern = true;
+						LOG.debug("Applied simplifyWeightedSquaredLoss1"+uvIndex+" (line "+hi.getBeginLine()+")");  
+					}
 				}
 			}
 			
 			//Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
 			//alternative pattern: sum ((W * (U %*% t(V)) - X) ^ 2)
 			if( !appliedPattern
-			    && bop.getOp()==OpOp2.POW && bop.getInput().get(1) instanceof LiteralOp
+				&& bop.getOp()==OpOp2.POW && bop.getInput().get(1) instanceof LiteralOp
 				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1))==2
 				&& bop.getInput().get(0) instanceof BinaryOp	
 				&& bop.getInput().get(0).getDataType()==DataType.MATRIX	
@@ -1301,18 +1300,18 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
                 
 			    //a) sum ((X - W * (U %*% t(V))) ^ 2)
 			    int wuvIndex = -1;
-                if( lright instanceof BinaryOp && lright.getInput().get(1) instanceof AggBinaryOp ){
-                    wuvIndex = 1;
-                }
-                //b) sum ((W * (U %*% t(V)) - X) ^ 2)
-                else if( lleft instanceof BinaryOp && lleft.getInput().get(1) instanceof AggBinaryOp ){
-                    wuvIndex = 0;
-                }
+			    if( lright instanceof BinaryOp && lright.getInput().get(1) instanceof AggBinaryOp ){
+			    	wuvIndex = 1;
+			    }
+			    //b) sum ((W * (U %*% t(V)) - X) ^ 2)
+			    else if( lleft instanceof BinaryOp && lleft.getInput().get(1) instanceof AggBinaryOp ){
+			    	wuvIndex = 0;
+			    }
 			    
-                if( wuvIndex >= 0 ) //rewrite match
-                {
-    				Hop X = bop.getInput().get(0).getInput().get((wuvIndex==0)?1:0);
-    				Hop tmp = bop.getInput().get(0).getInput().get(wuvIndex); //(W * (U %*% t(V)))
+			    if( wuvIndex >= 0 ) //rewrite match
+			    {
+			    	Hop X = bop.getInput().get(0).getInput().get((wuvIndex==0)?1:0);
+			    	Hop tmp = bop.getInput().get(0).getInput().get(wuvIndex); //(W * (U %*% t(V)))
     				
     				if( ((BinaryOp)tmp).getOp()==OpOp2.MULT
     					&& tmp.getInput().get(0).getDataType() == DataType.MATRIX	
@@ -1325,8 +1324,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
     					if( !HopRewriteUtils.isTransposeOperation(V) ) { 
     						V = HopRewriteUtils.createTranspose(V);
     					}
-    					else 
+    					else {
     						V = V.getInput().get(0);
+    					}
     					
     					hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
     							  OpOp4.WSLOSS, X, U, V, W, false);
@@ -1335,7 +1335,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
     					appliedPattern = true;
     					LOG.debug("Applied simplifyWeightedSquaredLoss2"+wuvIndex+" (line "+hi.getBeginLine()+")");	
     				}
-                }
+			    }
 			}
 			
 			//Pattern 3) sum ((X - (U %*% t(V))) ^ 2) (no weighting)
@@ -1348,28 +1348,28 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				&& ((BinaryOp)bop.getInput().get(0)).getOp()==OpOp2.MINUS
 				&& bop.getInput().get(0).getInput().get(0).getDataType()==DataType.MATRIX)
 			{
-			    Hop lleft = bop.getInput().get(0).getInput().get(0);
-			    Hop lright = bop.getInput().get(0).getInput().get(1);
+				Hop lleft = bop.getInput().get(0).getInput().get(0);
+				Hop lright = bop.getInput().get(0).getInput().get(1);
                 
-			    //a) sum ((X - (U %*% t(V))) ^ 2)
-			    int uvIndex = -1;
-			    if( lright instanceof AggBinaryOp //ba gurantees matrices
-	                && HopRewriteUtils.isSingleBlock(lright.getInput().get(0),true) )  //BLOCKSIZE CONSTRAINT
-			    {
-			        uvIndex = 1;
-			    }
-			    //b) sum (((U %*% t(V)) - X) ^ 2)
-			    else if( lleft instanceof AggBinaryOp //ba gurantees matrices
-                    && HopRewriteUtils.isSingleBlock(lleft.getInput().get(0),true) )  //BLOCKSIZE CONSTRAINT
-                {
-                    uvIndex = 0;
-                }
+				//a) sum ((X - (U %*% t(V))) ^ 2)
+				int uvIndex = -1;
+				if( lright instanceof AggBinaryOp //ba gurantees matrices
+					&& HopRewriteUtils.isSingleBlock(lright.getInput().get(0),true) )  //BLOCKSIZE CONSTRAINT
+				{
+					uvIndex = 1;
+				}
+				//b) sum (((U %*% t(V)) - X) ^ 2)
+				else if( lleft instanceof AggBinaryOp //ba gurantees matrices
+						&& HopRewriteUtils.isSingleBlock(lleft.getInput().get(0),true) )  //BLOCKSIZE CONSTRAINT
+				{
+					uvIndex = 0;
+				}
 			    
-			    if( uvIndex >= 0 ) //rewrite match
-                {
-    			    Hop X = bop.getInput().get(0).getInput().get((uvIndex==0)?1:0);
-    				Hop tmp = bop.getInput().get(0).getInput().get(uvIndex); //(U %*% t(V))
-    				Hop W = new LiteralOp("1", 1); //no weighting 
+				if( uvIndex >= 0 ) //rewrite match
+				{
+					Hop X = bop.getInput().get(0).getInput().get((uvIndex==0)?1:0);
+					Hop tmp = bop.getInput().get(0).getInput().get(uvIndex); //(U %*% t(V))
+					Hop W = new LiteralOp("1", 1); //no weighting 
 					Hop U = tmp.getInput().get(0);
 					Hop V = tmp.getInput().get(1);
 	
@@ -1386,7 +1386,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 
 					appliedPattern = true;
 					LOG.debug("Applied simplifyWeightedSquaredLoss3"+uvIndex+" (line "+hi.getBeginLine()+")");	
-                }
+				}
 			}			
 		}
 		
@@ -1557,16 +1557,20 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	{
 		Hop hnew = null;
 		
-		if( hi instanceof AggBinaryOp && ((AggBinaryOp)hi).isMatrixMultiply()  //all patterns rooted by 'ab - b(div)'
-			&& (hi.getInput().get(0) instanceof BinaryOp && ((BinaryOp)hi.getInput().get(0)).getOp()==OpOp2.DIV
-			||  hi.getInput().get(1) instanceof BinaryOp && ((BinaryOp)hi.getInput().get(1)).getOp()==OpOp2.DIV) ) 
+		//all patterns rooted by 'ab - b(div)' or 'ab - b(mult)'
+		if( hi instanceof AggBinaryOp && ((AggBinaryOp)hi).isMatrixMultiply()  
+			&& (hi.getInput().get(0) instanceof BinaryOp 
+			&& HopRewriteUtils.isValidOp(((BinaryOp)hi.getInput().get(0)).getOp(), LOOKUP_VALID_WDIVMM_BINARY)
+			||  hi.getInput().get(1) instanceof BinaryOp 
+			&& HopRewriteUtils.isValidOp(((BinaryOp)hi.getInput().get(1)).getOp(), LOOKUP_VALID_WDIVMM_BINARY)) ) 
 		{
 			Hop left = hi.getInput().get(0);
 			Hop right = hi.getInput().get(1);
 			boolean appliedPattern = false;
 			
 			//Pattern 1) t(U) %*% (X/(U%*%t(V)))
-			if( right instanceof BinaryOp && ((BinaryOp)right).getOp()==OpOp2.DIV	
+			//alternative pattern: t(U) %*% (X*(U%*%t(V)))
+			if( right instanceof BinaryOp && HopRewriteUtils.isValidOp(((BinaryOp)right).getOp(),LOOKUP_VALID_WDIVMM_BINARY)	
 				&& right.getInput().get(1) instanceof AggBinaryOp
 				&& HopRewriteUtils.isSingleBlock(right.getInput().get(1).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 			{
@@ -1581,8 +1585,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					else 
 						V = V.getInput().get(0);
 					
+					boolean mult = ((BinaryOp)right).getOp() == OpOp2.MULT;
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
-							  OpOp4.WDIVMM, X, U, V, true);
+							  OpOp4.WDIVMM, X, U, V, true, mult);
 					HopRewriteUtils.setOutputBlocksizes(hnew, X.getRowsInBlock(), X.getColsInBlock());
 					
 					//add output transpose for efficient target indexing (redundant t() removed by other rewrites)
@@ -1594,8 +1599,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			}	
 			
 			//Pattern 2) (X/(U%*%t(V))) %*% V
+			//alternative pattern: (X*(U%*%t(V))) %*% V
 			if( !appliedPattern
-				&& left instanceof BinaryOp && ((BinaryOp)left).getOp()==OpOp2.DIV	
+				&& left instanceof BinaryOp && HopRewriteUtils.isValidOp(((BinaryOp)left).getOp(), LOOKUP_VALID_WDIVMM_BINARY)	
 				&& left.getInput().get(1) instanceof AggBinaryOp
 				&& HopRewriteUtils.isSingleBlock(left.getInput().get(1).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
 			{
@@ -1610,8 +1616,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					else 
 						V = V.getInput().get(0);
 					
+					boolean mult = ((BinaryOp)left).getOp() == OpOp2.MULT;
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
-							  OpOp4.WDIVMM, X, U, V, false);
+							  OpOp4.WDIVMM, X, U, V, false, mult);
 					HopRewriteUtils.setOutputBlocksizes(hnew, X.getRowsInBlock(), X.getColsInBlock());
 
 					appliedPattern = true;

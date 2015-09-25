@@ -286,7 +286,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			mcOut.set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
 		}
 		else if(qop.wtype3 != null ) { //wdivmm
-			if( qop.wtype3 == WDivMMType.LEFT )
+			if( qop.wtype3.isLeft() )
 				mcOut.set(mcIn3.getRows(), mcIn3.getCols(), mcIn3.getRowsPerBlock(), mcIn3.getColsPerBlock());
 			else
 				mcOut.set(mcIn2.getRows(), mcIn2.getCols(), mcIn3.getRowsPerBlock(), mcIn3.getColsPerBlock());	
@@ -312,8 +312,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 
 		protected MatrixIndexes createOutputIndexes(MatrixIndexes in) 
 		{
-			if( _qop.wtype3 != null ){ //key change 
-				boolean left = ( _qop.wtype3 == WDivMMType.LEFT );
+			if( _qop.wtype3 != null ){ //key change
+				boolean left = _qop.wtype3.isLeft();
 				return new MatrixIndexes(left?in.getColumnIndex():in.getRowIndex(), 1);
 			}				
 			return in;

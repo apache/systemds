@@ -45,7 +45,8 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "WeightedDivMMLeft";
 	private final static String TEST_NAME2 = "WeightedDivMMRight";
-
+	private final static String TEST_NAME4 = "WeightedDivMMMultLeft";
+	private final static String TEST_NAME5 = "WeightedDivMMMultRight";
 	private final static String TEST_DIR = "functions/quaternary/";
 	
 	private final static double eps = 1e-6;
@@ -62,8 +63,11 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_DIR, TEST_NAME2,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_DIR, TEST_NAME4,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME5,new TestConfiguration(TEST_DIR, TEST_NAME5,new String[]{"R"}));
 	}
 
+	//a) testcases for wdivmm w/ DIVIDE
 	
 	@Test
 	public void testWeightedDivMMLeftDenseCP() 
@@ -160,6 +164,104 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	{
 		runWeightedDivMMTest(TEST_NAME2, false, true, true, ExecType.SPARK);
 	}
+
+	//b) testcases for wdivmm w/ MULTIPLY
+	
+	@Test
+	public void testWeightedDivMMMultLeftDenseCP() 
+	{
+		runWeightedDivMMTest(TEST_NAME4, false, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultLeftSparseCP() 
+	{
+		runWeightedDivMMTest(TEST_NAME4, true, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultRightDenseCP() 
+	{
+		runWeightedDivMMTest(TEST_NAME5, false, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultRightSparseCP() 
+	{
+		runWeightedDivMMTest(TEST_NAME5, true, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultLeftDenseMR() 
+	{
+		runWeightedDivMMTest(TEST_NAME4, false, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultLeftSparseMR() 
+	{
+		runWeightedDivMMTest(TEST_NAME4, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultLeftDenseMRRep() 
+	{
+		runWeightedDivMMTest(TEST_NAME4, false, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultRightDenseMR() 
+	{
+		runWeightedDivMMTest(TEST_NAME5, false, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultRightSparseMR() 
+	{
+		runWeightedDivMMTest(TEST_NAME5, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultRightDenseMRRep() 
+	{
+		runWeightedDivMMTest(TEST_NAME5, false, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultLeftDenseSP() 
+	{
+		runWeightedDivMMTest(TEST_NAME4, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultLeftSparseSP() 
+	{
+		runWeightedDivMMTest(TEST_NAME4, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultLeftDenseSPRep() 
+	{
+		runWeightedDivMMTest(TEST_NAME4, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultRightDenseSP() 
+	{
+		runWeightedDivMMTest(TEST_NAME5, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultRightSparseSP() 
+	{
+		runWeightedDivMMTest(TEST_NAME5, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testWeightedDivMMMultRightDenseSPRep() 
+	{
+		runWeightedDivMMTest(TEST_NAME5, false, true, true, ExecType.SPARK);
+	}
 	
 	/**
 	 * 
@@ -188,7 +290,7 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	    
 		try
 		{
-			boolean left = testname.equals(TEST_NAME1);
+			boolean left = testname.equals(TEST_NAME1) || testname.equals(TEST_NAME4);
 			double sparsity = (sparse) ? spSparse : spDense;
 			String TEST_NAME = testname;
 			
@@ -231,9 +333,8 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 				Assert.assertTrue("Missing opcode wdivmm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedDivMM.OPCODE_CP));
 			}
 			else if( instType == ExecType.SPARK && rewrites ) {
-				Assert.assertTrue("Missing opcode sp_wdivmm",
-						!rep && Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+WeightedDivMM.OPCODE)
-					  || rep && Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+WeightedDivMMR.OPCODE) );
+				String opcode = Instruction.SP_INST_PREFIX + (rep?WeightedDivMMR.OPCODE:WeightedDivMM.OPCODE);
+				Assert.assertTrue("Missing opcode sp_wdivmm", Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}
 		finally

@@ -118,7 +118,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			//note: cannot directly consume mc2 or mc3 for redwdivmm because rep instruction changed
 			//the relevant dimensions; as a workaround the original dims are passed via nnz
 			boolean mapwdivmm = _cacheU && _cacheV;
-			if( qop.wtype3 == WDivMMType.LEFT )
+			if( qop.wtype3.isLeft() )
 				dimOut.set(mc1.getCols(), mapwdivmm?mc3.getCols():mc3.getNonZeros(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			else
 				dimOut.set(mc1.getRows(), mapwdivmm?mc2.getCols():mc2.getNonZeros(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());	
@@ -302,7 +302,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 				else if ( qop.wtype2 != null ) 
 					outIx.setIndexes(inIx); //wsigmoid
 				else { //wdivmm
-					boolean left = (qop.wtype3 == WDivMMType.LEFT);
+					boolean left = qop.wtype3.isLeft();
 					outIx.setIndexes(left?inIx.getColumnIndex():inIx.getRowIndex(), 1);
 				}
 				

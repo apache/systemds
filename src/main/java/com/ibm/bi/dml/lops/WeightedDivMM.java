@@ -33,8 +33,18 @@ public class WeightedDivMM extends Lop
 	private int _numThreads = 1;
 
 	public enum WDivMMType {
-		LEFT,
-		RIGHT,
+		DIV_LEFT,
+		DIV_RIGHT,
+		MULT_LEFT,
+		MULT_RIGHT;
+		
+		public boolean isLeft() {
+			return (this == DIV_LEFT || this == MULT_LEFT);
+		}
+		
+		public boolean isMult() {
+			return (this == MULT_LEFT || this == MULT_RIGHT);
+		}
 	}
 	
 	private WDivMMType _weightsType = null;

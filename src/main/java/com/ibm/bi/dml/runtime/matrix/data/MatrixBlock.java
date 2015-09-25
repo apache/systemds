@@ -41,7 +41,6 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -5802,8 +5801,9 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		else if( qop.wtype2 != null )
 			R.reset(rlen, clen, sparse);
 		else if( qop.wtype3 != null ) {
-			boolean left = (qop.wtype3==WDivMMType.LEFT);
+			boolean left = qop.wtype3.isLeft();
 			R.reset( left?V.rlen:U.rlen, left?V.clen:U.clen, false);
+			
 		}
 		
 		//core block operation

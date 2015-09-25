@@ -69,6 +69,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	
 	//wdivmm-specific attributes
 	private boolean _left = false;
+	private boolean _mult = false;
 	
 	private QuaternaryOp() {
 		//default constructor for clone
@@ -98,7 +99,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 	
 	/**
-	 * Constructor for wsigmoid.
+	 * Constructor for wsigmoid/wdivmm.
 	 * 
 	 * @param l
 	 * @param dt
@@ -111,33 +112,18 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	 * @param minusin
 	 */
 	public QuaternaryOp(String l, DataType dt, ValueType vt, Hop.OpOp4 o,
-			Hop inX, Hop inU, Hop inV, boolean logout, boolean minusin) 
+			Hop inX, Hop inU, Hop inV, boolean flag1, boolean flag2) 
 	{
 		this(l, dt, vt, o, inX, inU, inV);
 		
-		_logout = logout;
-		_minusin = minusin;
-	}
-	
-	/**
-	 * Constructor for wdivmm.
-	 * 
-	 * @param l
-	 * @param dt
-	 * @param vt
-	 * @param o
-	 * @param inX
-	 * @param inU
-	 * @param inV
-	 * @param logout
-	 * @param minusin
-	 */
-	public QuaternaryOp(String l, DataType dt, ValueType vt, Hop.OpOp4 o,
-			Hop inX, Hop inU, Hop inV, boolean left) 
-	{
-		this(l, dt, vt, o, inX, inU, inV);
-		
-		_left = left;
+		if( o == OpOp4.WSIGMOID ){
+			_logout = flag1;
+			_minusin = flag2;
+		}
+		else if ( o == OpOp4.WDIVMM ){
+			_left = flag1;
+			_mult = flag2;
+		}
 	}
 	
 	/**
@@ -219,7 +205,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				
 				case WDIVMM:{
 					WDivMMType wtype = checkWDivMMType();
-					
 					if( et == ExecType.CP )
 						constructCPLopsWeightedDivMM(wtype);
 					else if( et == ExecType.MR )
@@ -1217,9 +1202,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	private WDivMMType checkWDivMMType()
 	{
 		if( _left )
-			return WDivMMType.LEFT;
+			return _mult ? WDivMMType.MULT_LEFT : WDivMMType.DIV_LEFT;
 		else
-			return WDivMMType.RIGHT;
+			return _mult ? WDivMMType.MULT_RIGHT : WDivMMType.DIV_RIGHT;
 	}
 	
 	@Override
@@ -1377,6 +1362,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		ret._logout = _logout;
 		ret._minusin = _minusin;
 		ret._left = _left;
+		ret._mult = _mult;
 		ret._maxNumThreads = _maxNumThreads;
 		
 		return ret;
@@ -1406,6 +1392,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		ret &= _logout      == that2._logout;
 		ret &= _minusin 	== that2._minusin;
 		ret &= _left        == that2._left;
+		ret &= _mult        == that2._mult;
 		ret &= _maxNumThreads == that2._maxNumThreads;
 		
 		return ret;

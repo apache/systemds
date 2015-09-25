@@ -1227,19 +1227,8 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	@Override
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz ) 
 	{
-		switch( _op ) {
-			case WDIVMM: 
-				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-				if( _left && k>1 ){ //require entire output to prevent synchronization
-					return OptimizerUtils.estimateSize(dim1, dim2);
-				}
-				else { //intermediate sparse row (dense as worst-case estimate)
-					return Math.max(dim1, dim2) * OptimizerUtils.DOUBLE_SIZE;
-				}
-				
-			default: //no intermediates 
-				return 0;
-		}
+		//no intermediates 
+		return 0;
 	}
 	
 	@Override

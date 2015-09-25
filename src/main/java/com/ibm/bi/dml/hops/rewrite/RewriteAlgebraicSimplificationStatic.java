@@ -43,6 +43,7 @@ import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
 import com.ibm.bi.dml.hops.ReorgOp;
+import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -1558,10 +1559,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		Hop hnew = null;
 		
 		//all patterns rooted by 'ab - b(div)' or 'ab - b(mult)'
+		//note: we do not rewrite t(X)%*%(w*(X%*%v)) where w and v are vectors (see mmchain ops) 
 		if( hi instanceof AggBinaryOp && ((AggBinaryOp)hi).isMatrixMultiply()  
-			&& (hi.getInput().get(0) instanceof BinaryOp 
+			&& (hi.getInput().get(0) instanceof BinaryOp
 			&& HopRewriteUtils.isValidOp(((BinaryOp)hi.getInput().get(0)).getOp(), LOOKUP_VALID_WDIVMM_BINARY)
 			||  hi.getInput().get(1) instanceof BinaryOp 
+			&& (((AggBinaryOp) hi).checkMapMultChain() == ChainType.NONE || hi.getInput().get(1).getDim2() > 1) //no mmchain
 			&& HopRewriteUtils.isValidOp(((BinaryOp)hi.getInput().get(1)).getOp(), LOOKUP_VALID_WDIVMM_BINARY)) ) 
 		{
 			Hop left = hi.getInput().get(0);

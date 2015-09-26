@@ -78,18 +78,20 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		}
 		else if( opcode.equalsIgnoreCase("wsigmoid") || opcode.equalsIgnoreCase("wdivmm") || opcode.equalsIgnoreCase("wcemm") )
 		{
-			InstructionUtils.checkNumFields ( inst, 6 );
+			InstructionUtils.checkNumFields ( inst, 6, 7 );
+			boolean wdivmmMinus = (parts.length==8);
 			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
-			CPOperand out = new CPOperand(parts[4]);
-			int k = Integer.parseInt(parts[6]);
+			CPOperand in4 = wdivmmMinus ? new CPOperand(parts[4]) : null;
+			CPOperand out = new CPOperand(parts[wdivmmMinus?5:4]);
+			int k = Integer.parseInt(parts[wdivmmMinus?7:6]);
 			
 			if( opcode.equalsIgnoreCase("wsigmoid") )
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
 			else if( opcode.equalsIgnoreCase("wdivmm") )
-				return new QuaternaryCPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
+				return new QuaternaryCPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[wdivmmMinus?6:5])), in1, in2, in3, in4, out, k, opcode, inst);
 			else if( opcode.equalsIgnoreCase("wcemm") ) 		
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
 		}
@@ -108,8 +110,10 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 		MatrixBlock matBlock3 = ec.getMatrixInput(input3.getName());
 		MatrixBlock matBlock4 = null;
-		if( qop.wtype1 != null && qop.wtype1 != WeightsType.NONE )
+		if( qop.wtype1 != null && qop.wtype1 != WeightsType.NONE
+			|| qop.wtype3 != null && qop.wtype3.isMinus() ) {
 			matBlock4 = ec.getMatrixInput(input4.getName());
+		}
 		
 		//core execute
 		MatrixValue out = matBlock1.quaternaryOperations(qop, matBlock2, matBlock3, matBlock4, new MatrixBlock(), _numThreads);
@@ -124,6 +128,8 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 			ec.setVariable(output.getName(), new DoubleObject(out.getValue(0, 0)));
 		}
 		else { //wsigmoid / wdivmm
+			if( qop.wtype3 != null && qop.wtype3.isMinus() )
+				ec.releaseMatrixInput(input4.getName());
 			ec.setMatrixOutput(output.getName(), (MatrixBlock)out);
 		}
 	}	

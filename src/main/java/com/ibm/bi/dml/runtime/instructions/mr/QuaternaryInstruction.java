@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
 import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
+import com.ibm.bi.dml.lops.WeightedDivMMR;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
@@ -118,10 +119,9 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			//note: cannot directly consume mc2 or mc3 for redwdivmm because rep instruction changed
 			//the relevant dimensions; as a workaround the original dims are passed via nnz
 			boolean mapwdivmm = _cacheU && _cacheV;
-			if( qop.wtype3.isLeft() )
-				dimOut.set(mc1.getCols(), mapwdivmm?mc3.getCols():mc3.getNonZeros(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-			else
-				dimOut.set(mc1.getRows(), mapwdivmm?mc2.getCols():mc2.getNonZeros(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());	
+			long rank = qop.wtype3.isLeft() ? mapwdivmm?mc3.getCols():mc3.getNonZeros() : mapwdivmm?mc2.getCols():mc2.getNonZeros();
+			MatrixCharacteristics mcTmp = qop.wtype3.computeOutputCharacteristics(mc1.getRows(), mc1.getCols(), rank);
+			dimOut.set(mcTmp.getRows(), mcTmp.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());	
 		}
 	}
 	
@@ -174,27 +174,31 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			boolean isRed = opcode.startsWith("red");
 			
 			//check number of fields (3 inputs, output, type)
-			if( isRed )
+			if( WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode) )
+				InstructionUtils.checkNumFields ( str, 7, 8 );
+			else if( isRed )
 				InstructionUtils.checkNumFields ( str, 7 );
 			else
 				InstructionUtils.checkNumFields ( str, 5 );
 				
 			//parse instruction parts (without exec type)
 			String[] parts = InstructionUtils.getInstructionParts(str);
+			boolean wdivmmMinus = (parts.length==9);
 			
 			byte in1 = Byte.parseByte(parts[1]);
 			byte in2 = Byte.parseByte(parts[2]);
 			byte in3 = Byte.parseByte(parts[3]);
-			byte out = Byte.parseByte(parts[4]);
+			byte in4 = wdivmmMinus?Byte.parseByte(parts[4]):-1;
+			byte out = Byte.parseByte(parts[wdivmmMinus?5:4]);
 			
 			//in mappers always through distcache, in reducers through distcache/shuffle
-			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
-			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[wdivmmMinus?7:6]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[wdivmmMinus?8:7]) : true;
 			
 			if( opcode.endsWith("wsigmoid") )
 				return new QuaternaryInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
 			else if( opcode.endsWith("wdivmm") )
-				return new QuaternaryInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[5])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
+				return new QuaternaryInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[wdivmmMinus?6:5])), in1, in2, in3, in4, out, cacheU, cacheV, str);
 			else if( opcode.endsWith("wcemm") )
 				return new QuaternaryInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
 		}
@@ -240,10 +244,11 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 	public byte[] getAllIndexes() 
 	{
 		QuaternaryOperator qop = (QuaternaryOperator)optr;
-		if( qop.wtype1 == null || qop.wtype1==WeightsType.NONE )
-			return new byte[]{_input1, _input2, _input3, output};
-		else
+		if( qop.wtype1 == WeightsType.POST || qop.wtype1==WeightsType.PRE
+			|| qop.wtype3 != null && qop.wtype3.isMinus() )
 			return new byte[]{_input1, _input2, _input3, _input4, output};
+		else		
+			return new byte[]{_input1, _input2, _input3, output};
 	}
 
 	@Override
@@ -299,8 +304,8 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 				
 				if( qop.wtype1 != null || qop.wtype4 != null) 
 					outIx.setIndexes(1, 1); //wsloss
-				else if ( qop.wtype2 != null ) 
-					outIx.setIndexes(inIx); //wsigmoid
+				else if ( qop.wtype2 != null || qop.wtype3!=null && qop.wtype3.isBasic() ) 
+					outIx.setIndexes(inIx); //wsigmoid/wdivmm-basic
 				else { //wdivmm
 					boolean left = qop.wtype3.isLeft();
 					outIx.setIndexes(left?inIx.getColumnIndex():inIx.getRowIndex(), 1);

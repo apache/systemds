@@ -21,7 +21,8 @@
 W = read($1);
 U = read($2);
 V = read($3);
+X = read($4);
 
-R = t(t(U) %*% (W/(U%*%t(V))));
+R = t(t(U) %*% (W*(U%*%t(V)-X)));
 
 write(R, $5);

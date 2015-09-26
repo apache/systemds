@@ -60,6 +60,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
 import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
 import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
@@ -5801,9 +5802,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		else if( qop.wtype2 != null )
 			R.reset(rlen, clen, sparse);
 		else if( qop.wtype3 != null ) {
-			boolean left = qop.wtype3.isLeft();
-			R.reset( left?V.rlen:U.rlen, left?V.clen:U.clen, false);
-			
+			MatrixCharacteristics mc = qop.wtype3.computeOutputCharacteristics(X.rlen, X.clen, U.clen);
+			R.reset( (int)mc.getRows(), (int)mc.getCols(), qop.wtype3.isBasic()?X.isInSparseFormat():false);
 		}
 		
 		//core block operation
@@ -5821,10 +5821,12 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				LibMatrixMult.matrixMultWSigmoid(X, U, V, R, qop.wtype2);
 		}	
 		else if( qop.wtype3 != null ){ //wdivmm
+			//note: for wdivmm X and W interchanged because W always present 
+			MatrixBlock W = qop.wtype3.isMinus() ? checkType(wm) : null;
 			if( k > 1 )
-				LibMatrixMult.matrixMultWDivMM(X, U, V, R, qop.wtype3, k);
+				LibMatrixMult.matrixMultWDivMM(X, U, V, W, R, qop.wtype3, k);
 			else
-				LibMatrixMult.matrixMultWDivMM(X, U, V, R, qop.wtype3);	
+				LibMatrixMult.matrixMultWDivMM(X, U, V, W, R, qop.wtype3);	
 		}
 		else if( qop.wtype4 != null ){ //wcemm
 			if( k > 1 )

@@ -18,10 +18,10 @@
 
 
 
-X = read($1);
+W = read($1);
 U = read($2);
 V = read($3);
 
-R = t(t(U) %*% (X*(U%*%t(V))));
+R = t(t(U) %*% (W*(U%*%t(V))));
 
-write(R, $4);
+write(R, $5);

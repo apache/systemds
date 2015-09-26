@@ -22,11 +22,11 @@ options(digits=22)
 
 library("Matrix")
 
-X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
+W = as.matrix(readMM(paste(args[1], "W.mtx", sep="")))
 U = as.matrix(readMM(paste(args[1], "U.mtx", sep="")))
 V = as.matrix(readMM(paste(args[1], "V.mtx", sep="")))
 
-R = t(t(U) %*% (X*(U%*%t(V))));
+R = t(t(U) %*% (W*(U%*%t(V))));
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep="")); 
 

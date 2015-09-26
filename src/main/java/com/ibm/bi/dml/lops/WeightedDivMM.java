@@ -22,6 +22,7 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 
 /**
  * 
@@ -33,32 +34,54 @@ public class WeightedDivMM extends Lop
 	private int _numThreads = 1;
 
 	public enum WDivMMType {
-		DIV_LEFT,
-		DIV_RIGHT,
-		MULT_LEFT,
-		MULT_RIGHT;
+		DIV_LEFT,			//t(t(U) %*% (W / U%*%t(V)))
+		DIV_RIGHT,			//(W / U%*%t(V)) %*% V
+		MULT_BASIC,			//(W * U%*%t(V))
+		MULT_LEFT,			//t(t(U) %*% (W * U%*%t(V)))
+		MULT_RIGHT,			//(W * U%*%t(V)) %*% V
+		MULT_MINUS_LEFT,	//t(t(U) %*% (W * (U%*%t(V) - X)))
+		MULT_MINUS_RIGHT;	//(W * (U%*%t(V) - X)) %*% V
 		
-		public boolean isLeft() {
-			return (this == DIV_LEFT || this == MULT_LEFT);
+		public boolean isBasic(){
+			return (this == MULT_BASIC);
 		}
-		
+		public boolean isLeft() {
+			return (this == DIV_LEFT || this == MULT_LEFT || this == MULT_MINUS_LEFT);
+		}
+		public boolean isRight() {
+			return !(isLeft() || isBasic());
+		}
 		public boolean isMult() {
-			return (this == MULT_LEFT || this == MULT_RIGHT);
+			return (this == MULT_LEFT || this == MULT_RIGHT || this == MULT_MINUS_LEFT || this == MULT_MINUS_RIGHT);
+		}		
+		public boolean isMinus(){
+			return (this == MULT_MINUS_LEFT || this == MULT_MINUS_RIGHT);
+		}
+		public MatrixCharacteristics computeOutputCharacteristics(long Xrlen, long Xclen, long rank) {
+			if( isBasic() )
+				return new MatrixCharacteristics( Xrlen, Xclen, -1, -1);
+			else	
+				return new MatrixCharacteristics(isLeft()?Xclen:Xrlen, rank, -1, -1);
 		}
 	}
 	
 	private WDivMMType _weightsType = null;
 	
-	public WeightedDivMM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WDivMMType wt, ExecType et) 
+	public WeightedDivMM(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WDivMMType wt, ExecType et) 
 		throws LopsException 
 	{
 		super(Lop.Type.WeightedDivMM, dt, vt);		
-		addInput(input1); //X
+		addInput(input1); //W
 		addInput(input2); //U
 		addInput(input3); //V
 		input1.addOutput(this); 
 		input2.addOutput(this);
 		input3.addOutput(this);
+
+		if( input4 != null ) {
+			addInput(input4); //X
+			input4.addOutput(this);	
+		}
 		
 		_weightsType = wt;
 		setupLopProperties(et);
@@ -95,34 +118,30 @@ public class WeightedDivMM extends Lop
 		return "Operation = WeightedDivMM";
 	}
 	
+	/* MR instruction generation */
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index)
+	public String getInstructions(int input1, int input2, int input3, int output)
 	{
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(2).prepInputOperand(input_index3));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( prepOutputOperand(output_index));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_weightsType);
-		
-		return sb.toString();
+		return getInstructions(
+				String.valueOf(input1), 
+				String.valueOf(input2), 
+				String.valueOf(input3), 
+				String.valueOf(output));
+	}
+	
+	/* MR instruction generation */
+	@Override
+	public String getInstructions(int input1, int input2, int input3, int input4, int output)
+	{
+		return getInstructions(
+				String.valueOf(input1), 
+				String.valueOf(input2), 
+				String.valueOf(input3),
+				String.valueOf(input4),
+				String.valueOf(output));
 	}
 
+	/* CP/SPARK instruction generation */
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output)
 	{
@@ -144,6 +163,47 @@ public class WeightedDivMM extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(2).prepInputOperand(input3));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( prepOutputOperand(output));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_weightsType);
+		
+		//append degree of parallelism
+		if( getExecType()==ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
+		
+		return sb.toString();
+	}
+	
+	/* CP/SPARK instruction generation */
+	@Override
+	public String getInstructions(String input1, String input2, String input3, String input4, String output)
+	{
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append(getExecType());
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		if( getExecType() == ExecType.CP )
+			sb.append(OPCODE_CP);
+		else
+			sb.append(OPCODE);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(0).prepInputOperand(input1));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(1).prepInputOperand(input2));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(2).prepInputOperand(input3));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(3).prepInputOperand(input4));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output));

@@ -46,8 +46,8 @@ import com.ibm.bi.dml.parser.WhileStatementBlock;
  */
 public class ProgramRewriter 
 {
-	
-	private static final boolean LDEBUG = false; //internal local debug level
+	//internal local debug level
+	private static final boolean LDEBUG = false; 
 	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
 	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;

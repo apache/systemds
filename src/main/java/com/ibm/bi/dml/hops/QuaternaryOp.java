@@ -496,7 +496,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		{
 			//map-side wsloss always with broadcast
 			Lop wsloss = new WeightedSquaredLoss( X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(), 
-					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.SPARK);
+					DataType.SCALAR, ValueType.DOUBLE, wtype, ExecType.SPARK);
 			setOutputDimensions(wsloss);
 			setLineNumbers(wsloss);
 			setLops(wsloss);
@@ -511,7 +511,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 			//reduce-side wsloss w/ or without broadcast
 			Lop wsloss = new WeightedSquaredLossR( 
 					X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(), 
-					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
+					DataType.SCALAR, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wsloss);
 			setLineNumbers(wsloss);
 			setLops(wsloss);

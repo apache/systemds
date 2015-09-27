@@ -41,6 +41,9 @@ import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.parser.DataIdentifier;
 import com.ibm.bi.dml.parser.DoubleIdentifier;
 import com.ibm.bi.dml.parser.Expression;
+import com.ibm.bi.dml.parser.Expression.DataOp;
+import com.ibm.bi.dml.parser.Expression.DataType;
+import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.parser.ExternalFunctionStatement;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.FunctionCallIdentifier;
@@ -64,9 +67,6 @@ import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.parser.StatementBlock;
 import com.ibm.bi.dml.parser.StringIdentifier;
 import com.ibm.bi.dml.parser.WhileStatement;
-import com.ibm.bi.dml.parser.Expression.DataOp;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 //import com.ibm.bi.dml.parser.antlr4.ExpressionInfo;
 //import com.ibm.bi.dml.parser.antlr4.StatementInfo;
 import com.ibm.bi.dml.parser.python.PydmlParser.AddSubExpressionContext;
@@ -118,16 +118,19 @@ import com.ibm.bi.dml.parser.python.PydmlParser.UnaryExpressionContext;
 import com.ibm.bi.dml.parser.python.PydmlParser.ValueDataTypeCheckContext;
 import com.ibm.bi.dml.parser.python.PydmlParser.WhileStatementContext;
 
-public class PydmlSyntacticValidator implements PydmlListener {
-
+public class PydmlSyntacticValidator implements PydmlListener
+{	
 	private PydmlSyntacticValidatorHelper helper = null;
-	private String currentPath = null;
+	
+	private String _workingDir = ".";   //current working directory
+	private String _currentPath = null; //current file path
 	private HashMap<String,String> argVals = null;
 	
 	public PydmlSyntacticValidator(PydmlSyntacticValidatorHelper helper, String currentPath, HashMap<String,String> argVals) {
 		this.helper = helper;
-		this.currentPath = currentPath;
 		this.argVals = argVals;
+		
+		_currentPath = currentPath;
 	}
 	
 	// Functions we have to implement but don't really need it
@@ -237,19 +240,28 @@ public class PydmlSyntacticValidator implements PydmlListener {
 	public void exitEveryRule(ParserRuleContext arg0) {}
 	// --------------------------------------------------------------------
 	private void setFileLineColumn(Expression expr, ParserRuleContext ctx) {
-		expr.setFilename(helper.getCurrentFileName());
+		// expr.setFilename(helper.getCurrentFileName());
+		String txt = ctx.getText();
+		expr.setFilename(_currentPath);
 		expr.setBeginLine(ctx.start.getLine());
 		expr.setBeginColumn(ctx.start.getCharPositionInLine());
 		expr.setEndLine(ctx.stop.getLine());
 		expr.setEndColumn(ctx.stop.getCharPositionInLine());
+		if(expr.getBeginColumn() == expr.getEndColumn() && expr.getBeginLine() == expr.getEndLine() && txt.length() > 1) {
+			expr.setEndColumn(expr.getBeginColumn() + txt.length() - 1);
+		}
 	}
 	
 	private void setFileLineColumn(Statement stmt, ParserRuleContext ctx) {
+		String txt = ctx.getText();
 		stmt.setFilename(helper.getCurrentFileName());
 		stmt.setBeginLine(ctx.start.getLine());
 		stmt.setBeginColumn(ctx.start.getCharPositionInLine());
 		stmt.setEndLine(ctx.stop.getLine());
 		stmt.setEndColumn(ctx.stop.getCharPositionInLine());
+		if(stmt.getBeginColumn() == stmt.getEndColumn() && stmt.getBeginLine() == stmt.getEndLine() && txt.length() > 1) {
+			stmt.setEndColumn(stmt.getBeginColumn() + txt.length() - 1);
+		}
 	}
 	
 	// For now do no type checking, let validation handle it.
@@ -724,49 +736,42 @@ public class PydmlSyntacticValidator implements PydmlListener {
 	// --------------------------------------------------------------------
 	
 	@Override
-	public void exitImportStatement(ImportStatementContext ctx) {
+	public void exitImportStatement(ImportStatementContext ctx)
+	{
+		//prepare import filepath
 		String filePath = ctx.filePath.getText();
 		String namespace = DMLProgram.DEFAULT_NAMESPACE;
 		if(ctx.namespace != null && ctx.namespace.getText() != null && !ctx.namespace.getText().isEmpty()) { 
 			namespace = ctx.namespace.getText();
 		}
-
 		if((filePath.startsWith("\"") && filePath.endsWith("\"")) || 
 				filePath.startsWith("'") && filePath.endsWith("'")) {	
 			filePath = filePath.substring(1, filePath.length()-1);
 		}
 		
-		if(this.currentPath != null) {
-			filePath = this.currentPath + File.separator + filePath;
-		}
+		//concatenate working directory to filepath
+		filePath = _workingDir + File.separator + filePath;
 		
-//		File importedFile = new File(filePath);
-//		if(!importedFile.exists()) {
-//			helper.notifyErrorListeners("cannot open the file " + filePath, ctx.start);
-//			return;
-//		}
-//		else {
-			DMLProgram prog = null;
-			try {
-				prog = (new PyDMLParserWrapper()).doParse(filePath, null, argVals);
-			} catch (ParseException e) {
-				helper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
-				return;
-			}
-	        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
-			if(prog == null) {
-				helper.notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
-				return;
-			}
-			else {
-				ctx.info.namespaces = new HashMap<String, DMLProgram>();
-				ctx.info.namespaces.put(namespace, prog);
-				ctx.info.stmt = new ImportStatement();
-				((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
-				((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
-				((ImportStatement) ctx.info.stmt).setNamespace(namespace);
-			}
-//		}
+		DMLProgram prog = null;
+		try {
+			prog = (new PyDMLParserWrapper()).doParse(filePath, null, argVals);
+		} catch (ParseException e) {
+			helper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
+			return;
+		}
+        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
+		if(prog == null) {
+			helper.notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
+			return;
+		}
+		else {
+			ctx.info.namespaces = new HashMap<String, DMLProgram>();
+			ctx.info.namespaces.put(namespace, prog);
+			ctx.info.stmt = new ImportStatement();
+			((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
+			((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
+			((ImportStatement) ctx.info.stmt).setNamespace(namespace);
+		}
 	}
 	
 	@Override
@@ -1917,7 +1922,8 @@ public class PydmlSyntacticValidator implements PydmlListener {
 				filePath.startsWith("'") && filePath.endsWith("'")) {	
 			filePath = filePath.substring(1, filePath.length()-1);
 		}
-		this.currentPath = filePath + File.separator;
+		
+		_workingDir = filePath;
 		ctx.info.stmt = stmt;
 	}
 	

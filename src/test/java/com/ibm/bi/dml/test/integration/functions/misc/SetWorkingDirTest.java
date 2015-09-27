@@ -45,39 +45,62 @@ public class SetWorkingDirTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDefaultWorkingDir() { 
-		runTest( TEST_NAME1, false ); 
+	public void testDefaultWorkingDirDml() { 
+		runTest( TEST_NAME1, false, ScriptType.DML ); 
 	}
 	
 	@Test
-	public void testSetWorkingDir() { 
-		runTest( TEST_NAME2, false ); 
+	public void testSetWorkingDirDml() { 
+		runTest( TEST_NAME2, false, ScriptType.DML ); 
 	}
 	
 	@Test
-	public void testDefaultWorkingDirFail() { 
-		runTest( TEST_NAME1, true ); 
+	public void testDefaultWorkingDirFailDml() { 
+		runTest( TEST_NAME1, true, ScriptType.DML ); 
 	}
 	
 	@Test
-	public void testSetWorkingDirFail() { 
-		runTest( TEST_NAME2, true ); 
+	public void testSetWorkingDirFailDml() { 
+		runTest( TEST_NAME2, true, ScriptType.DML ); 
+	}
+
+	@Test
+	public void testDefaultWorkingDirPyDml() { 
+		runTest( TEST_NAME1, false, ScriptType.PYDML ); 
+	}
+	
+	@Test
+	public void testSetWorkingDirPyDml() { 
+		runTest( TEST_NAME2, false, ScriptType.PYDML ); 
+	}
+	
+	@Test
+	public void testDefaultWorkingDirFailPyDml() { 
+		runTest( TEST_NAME1, true, ScriptType.PYDML ); 
+	}
+	
+	@Test
+	public void testSetWorkingDirFailPyDml() { 
+		runTest( TEST_NAME2, true, ScriptType.PYDML ); 
 	}
 	
 	/**
 	 * 
 	 * @param testName
+	 * @param exceptionExpected
+	 * @param scriptType
 	 */
-	private void runTest( String testName, boolean exceptionExpected ) 
+	private void runTest( String testName, boolean exceptionExpected, ScriptType scriptType ) 
 	{
+		
 		//construct source filenames of dml scripts 
 		String dir = SCRIPT_DIR + TEST_DIR;
-		String nameCall = testName + ".dml";
-		String nameLib = TEST_NAME0 + ".dml";
+		String nameCall = testName + "." + scriptType.lowerCase();
+		String nameLib = TEST_NAME0 + "." + scriptType.lowerCase();
 		
 		try 
 		{
-			//copy dml scripts to current dir
+			//copy dml/pydml scripts to current dir
 			FileUtils.copyFile(new File(dir+nameCall), new File(nameCall));
 			if( !exceptionExpected )
 				FileUtils.copyFile(new File(dir+nameLib), new File(nameLib));
@@ -85,7 +108,11 @@ public class SetWorkingDirTest extends AutomatedTestBase
 			//setup test configuration
 			TestConfiguration config = getTestConfiguration(testName);
 		    fullDMLScriptName = nameCall;
-		    programArgs = new String[]{};
+		    if (scriptType == ScriptType.PYDML) {
+		    	programArgs = new String[]{ "-python" };
+		    } else {
+		    	programArgs = new String[]{};
+		    }
 		    loadTestConfiguration(config);
 			
 			//run tests
@@ -96,7 +123,7 @@ public class SetWorkingDirTest extends AutomatedTestBase
 		}
 		finally 
 		{
-			//delete dml scripts from current dir (see above)
+			//delete dml/pydml scripts from current dir (see above)
 			LocalFileUtils.deleteFileIfExists(nameCall);
 			if( !exceptionExpected )
 				LocalFileUtils.deleteFileIfExists(nameLib);

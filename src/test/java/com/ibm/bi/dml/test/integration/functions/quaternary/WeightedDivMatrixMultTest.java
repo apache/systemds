@@ -443,7 +443,6 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 		{
 			boolean basic = testname.equals(TEST_NAME3);
 			boolean left = testname.equals(TEST_NAME1) || testname.equals(TEST_NAME4) || testname.equals(TEST_NAME6);
-			boolean minus = testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7);
 			double sparsity = (sparse) ? spSparse : spDense;
 			String TEST_NAME = testname;
 			
@@ -457,7 +456,6 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 					                        HOME + INPUT_DIR + "W",
 					                        HOME + INPUT_DIR + "U",
 					                        HOME + INPUT_DIR + "V",
-					                        HOME + INPUT_DIR + "X",
 					                        HOME + OUTPUT_DIR + "R"    };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
@@ -472,10 +470,6 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("U", U, true);
 			double[][] V = getRandomMatrix(cols, rank, 0, 1, 1.0, 812); 
 			writeInputMatrixWithMTD("V", V, true);
-			if( minus ){
-				double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 3); 
-				writeInputMatrixWithMTD("X", X, true);
-			}
 			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
@@ -491,7 +485,7 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 				Assert.assertTrue("Missing opcode wdivmm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedDivMM.OPCODE_CP));
 			}
 			else if( instType == ExecType.SPARK && rewrites ) {
-				String opcode = Instruction.SP_INST_PREFIX + ((rep||minus)?WeightedDivMMR.OPCODE:WeightedDivMM.OPCODE);
+				String opcode = Instruction.SP_INST_PREFIX + ((rep)?WeightedDivMMR.OPCODE:WeightedDivMM.OPCODE);
 				Assert.assertTrue("Missing opcode sp_wdivmm", Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}

@@ -39,8 +39,8 @@ public class WeightedDivMM extends Lop
 		MULT_BASIC,			//(W * U%*%t(V))
 		MULT_LEFT,			//t(t(U) %*% (W * U%*%t(V)))
 		MULT_RIGHT,			//(W * U%*%t(V)) %*% V
-		MULT_MINUS_LEFT,	//t(t(U) %*% (W * (U%*%t(V) - X)))
-		MULT_MINUS_RIGHT;	//(W * (U%*%t(V) - X)) %*% V
+		MULT_MINUS_LEFT,	//t(t(U) %*% ((X!=0) * (U%*%t(V) - X)))
+		MULT_MINUS_RIGHT;	//((X!=0) * (U%*%t(V) - X)) %*% V
 		
 		public boolean isBasic(){
 			return (this == MULT_BASIC);
@@ -67,7 +67,7 @@ public class WeightedDivMM extends Lop
 	
 	private WDivMMType _weightsType = null;
 	
-	public WeightedDivMM(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WDivMMType wt, ExecType et) 
+	public WeightedDivMM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WDivMMType wt, ExecType et) 
 		throws LopsException 
 	{
 		super(Lop.Type.WeightedDivMM, dt, vt);		
@@ -78,11 +78,6 @@ public class WeightedDivMM extends Lop
 		input2.addOutput(this);
 		input3.addOutput(this);
 
-		if( input4 != null ) {
-			addInput(input4); //X
-			input4.addOutput(this);	
-		}
-		
 		_weightsType = wt;
 		setupLopProperties(et);
 	}
@@ -128,18 +123,6 @@ public class WeightedDivMM extends Lop
 				String.valueOf(input3), 
 				String.valueOf(output));
 	}
-	
-	/* MR instruction generation */
-	@Override
-	public String getInstructions(int input1, int input2, int input3, int input4, int output)
-	{
-		return getInstructions(
-				String.valueOf(input1), 
-				String.valueOf(input2), 
-				String.valueOf(input3),
-				String.valueOf(input4),
-				String.valueOf(output));
-	}
 
 	/* CP/SPARK instruction generation */
 	@Override
@@ -163,47 +146,6 @@ public class WeightedDivMM extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(2).prepInputOperand(input3));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( prepOutputOperand(output));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_weightsType);
-		
-		//append degree of parallelism
-		if( getExecType()==ExecType.CP ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _numThreads );
-		}
-		
-		return sb.toString();
-	}
-	
-	/* CP/SPARK instruction generation */
-	@Override
-	public String getInstructions(String input1, String input2, String input3, String input4, String output)
-	{
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		if( getExecType() == ExecType.CP )
-			sb.append(OPCODE_CP);
-		else
-			sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(2).prepInputOperand(input3));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(3).prepInputOperand(input4));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output));

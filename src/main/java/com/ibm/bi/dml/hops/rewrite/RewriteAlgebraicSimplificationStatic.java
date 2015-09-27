@@ -1590,7 +1590,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					
 					boolean mult = ((BinaryOp)right).getOp() == OpOp2.MULT;
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
-							  OpOp4.WDIVMM, W, U, V, null, 1, mult, false);
+							  OpOp4.WDIVMM, W, U, V, 1, mult, false);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
 					
 					//add output transpose for efficient target indexing (redundant t() removed by other rewrites)
@@ -1621,7 +1621,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					
 					boolean mult = ((BinaryOp)left).getOp() == OpOp2.MULT;
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
-							  OpOp4.WDIVMM, W, U, V, null, 2, mult, false);
+							  OpOp4.WDIVMM, W, U, V, 2, mult, false);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
 
 					appliedPattern = true;
@@ -1629,7 +1629,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			
-			//Pattern 3) t(U) %*% (W*(U%*%t(V)-X))
+			//Pattern 3) t(U) %*% ((X!=0)*(U%*%t(V)-X))
 			if( right instanceof BinaryOp && ((BinaryOp)right).getOp()==LOOKUP_VALID_WDIVMM_BINARY[0] //MULT
 				&& right.getInput().get(1) instanceof BinaryOp && ((BinaryOp)right.getInput().get(1)).getOp()==OpOp2.MINUS	
 				&& right.getInput().get(1).getInput().get(0) instanceof AggBinaryOp
@@ -1641,7 +1641,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				Hop V = right.getInput().get(1).getInput().get(0).getInput().get(1);
 				Hop X = right.getInput().get(1).getInput().get(1);
 				
-				if( HopRewriteUtils.isTransposeOfItself(left, U) ) 
+				if(    HopRewriteUtils.isNonZeroIndicator(W, X)        //W-X constraint
+				    && HopRewriteUtils.isTransposeOfItself(left, U) )  //t(U)-U constraint
 				{
 					if( !HopRewriteUtils.isTransposeOperation(V) )
 						V = HopRewriteUtils.createTranspose(V);
@@ -1649,7 +1650,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						V = V.getInput().get(0);
 					
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
-							  OpOp4.WDIVMM, W, U, V, X, 1, true, true);
+							  OpOp4.WDIVMM, X, U, V, 1, true, true);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
 					
 					//add output transpose for efficient target indexing (redundant t() removed by other rewrites)
@@ -1660,7 +1661,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}	
 			
-			//Pattern 4) (W*(U%*%t(V)-X)) %*% V
+			//Pattern 4) ((X!=0)*(U%*%t(V)-X)) %*% V
 			if( !appliedPattern
 				&& left instanceof BinaryOp && ((BinaryOp)left).getOp()==LOOKUP_VALID_WDIVMM_BINARY[0] //MULT	
 				&& left.getInput().get(1) instanceof BinaryOp && ((BinaryOp)left.getInput().get(1)).getOp()==OpOp2.MINUS	
@@ -1673,7 +1674,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				Hop V = left.getInput().get(1).getInput().get(0).getInput().get(1);
 				Hop X = left.getInput().get(1).getInput().get(1);
 				
-				if( HopRewriteUtils.isTransposeOfItself(right, V) ) 
+				if(    HopRewriteUtils.isNonZeroIndicator(W, X)        //W-X constraint
+					&& HopRewriteUtils.isTransposeOfItself(right, V) )  //V-t(V) constraint
 				{
 					if( !HopRewriteUtils.isTransposeOperation(V) )
 						V = right;
@@ -1681,7 +1683,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						V = V.getInput().get(0);
 					
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
-							  OpOp4.WDIVMM, W, U, V, X, 2, true, true);
+							  OpOp4.WDIVMM, X, U, V, 2, true, true);
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
 
 					appliedPattern = true;
@@ -1709,7 +1711,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				V = V.getInput().get(0);
 				
 			hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
-					  OpOp4.WDIVMM, W, U, V, null, 0, true, false);
+					  OpOp4.WDIVMM, W, U, V, 0, true, false);
 			HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
 
 			appliedPattern = true;

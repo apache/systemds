@@ -749,6 +749,25 @@ public class HopRewriteUtils
 	
 	/**
 	 * 
+	 * @param pred
+	 * @param hop
+	 * @return
+	 */
+	public static boolean isNonZeroIndicator(Hop pred, Hop hop )
+	{
+		if( pred instanceof BinaryOp && ((BinaryOp)pred).getOp()==OpOp2.NOTEQUAL
+			&& pred.getInput().get(0) == hop //depend on common subexpression elimination
+			&& pred.getInput().get(1) instanceof LiteralOp
+			&& HopRewriteUtils.getDoubleValueSafe((LiteralOp)pred.getInput().get(1))==0 )
+		{
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * 
 	 * @param hop
 	 * @return
 	 */

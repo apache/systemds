@@ -25,9 +25,8 @@ library("Matrix")
 W = as.matrix(readMM(paste(args[1], "W.mtx", sep="")))
 U = as.matrix(readMM(paste(args[1], "U.mtx", sep="")))
 V = as.matrix(readMM(paste(args[1], "V.mtx", sep="")))
-X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
 
-R = (W*(U%*%t(V)-X)) %*% V;
+R = ((W!=0)*(U%*%t(V)-W)) %*% V;
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep="")); 
 

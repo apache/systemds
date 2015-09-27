@@ -24,4 +24,4 @@ V = read($3);
 
 R = t(t(U) %*% (W*(U%*%t(V))));
 
-write(R, $5);
+write(R, $4);

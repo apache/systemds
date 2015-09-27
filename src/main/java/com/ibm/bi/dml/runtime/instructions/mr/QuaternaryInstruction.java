@@ -244,11 +244,10 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 	public byte[] getAllIndexes() 
 	{
 		QuaternaryOperator qop = (QuaternaryOperator)optr;
-		if( qop.wtype1 == WeightsType.POST || qop.wtype1==WeightsType.PRE
-			|| qop.wtype3 != null && qop.wtype3.isMinus() )
-			return new byte[]{_input1, _input2, _input3, _input4, output};
-		else		
+		if( qop.wtype1 == null || qop.wtype1==WeightsType.NONE )
 			return new byte[]{_input1, _input2, _input3, output};
+		else
+			return new byte[]{_input1, _input2, _input3, _input4, output};		
 	}
 
 	@Override

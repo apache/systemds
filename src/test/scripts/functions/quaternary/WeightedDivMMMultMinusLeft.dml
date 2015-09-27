@@ -21,8 +21,7 @@
 W = read($1);
 U = read($2);
 V = read($3);
-X = read($4);
 
-R = t(t(U) %*% (W*(U%*%t(V)-X)));
+R = t(t(U) %*% (ppred(W,0,"!=")*(U%*%t(V)-W)));
 
-write(R, $5);
+write(R, $4);

@@ -106,8 +106,8 @@ C) CORE MATRIX MULT PRIMITIVES LibMatrixMult (incl related script patterns)
 
 * 7) wdivmm   ((a) t(t(U)%*%(W/(U%*%t(V)))), (b) (W/(U%*%t(V)))%*%V,
                (c) t(t(U)%*%(W*(U%*%t(V)))), (d) (W*(U%*%t(V)))%*%V, 
-               (e) W*(U%*%t(V)), (f) t(t(U)%*%(W*(U%*%t(V)-X))),
-               (g) (W*(U%*%t(V)-X)%*%V)
+               (e) W*(U%*%t(V)), (f) t(t(U)%*%((X!=0)*(U%*%t(V)-X))),
+               (g) ((X!=0)*(U%*%t(V)-X)%*%V)
   - sequential / multi-threaded (same block ops, par over rows in X)                 
   - all dense, sparse-dense factors, sparse/dense-* x 7 patterns
 

@@ -5821,12 +5821,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				LibMatrixMult.matrixMultWSigmoid(X, U, V, R, qop.wtype2);
 		}	
 		else if( qop.wtype3 != null ){ //wdivmm
-			//note: for wdivmm X and W interchanged because W always present 
-			MatrixBlock W = qop.wtype3.isMinus() ? checkType(wm) : null;
+			//note: for wdivmm-minus X and W interchanged because W always present 
 			if( k > 1 )
-				LibMatrixMult.matrixMultWDivMM(X, U, V, W, R, qop.wtype3, k);
+				LibMatrixMult.matrixMultWDivMM(X, U, V, R, qop.wtype3, k);
 			else
-				LibMatrixMult.matrixMultWDivMM(X, U, V, W, R, qop.wtype3);	
+				LibMatrixMult.matrixMultWDivMM(X, U, V, R, qop.wtype3);	
 		}
 		else if( qop.wtype4 != null ){ //wcemm
 			if( k > 1 )

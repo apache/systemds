@@ -185,7 +185,11 @@ public class SparkExecutionContext extends ExecutionContext
 				_spctx = new JavaSparkContext(conf);
 			}
 			else {
-				_spctx = new JavaSparkContext();
+				SparkConf conf = new SparkConf();
+				//always set unlimited result size (required for cp collect)
+				conf.set("spark.driver.maxResultSize", "0");
+				
+				_spctx = new JavaSparkContext(conf);
 			}
 		}
 			

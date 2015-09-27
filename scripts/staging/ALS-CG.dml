@@ -1,0 +1,163 @@
+#-------------------------------------------------------------
+#
+# (C) Copyright IBM Corp. 2010, 2015
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-------------------------------------------------------------
+
+#  
+# THIS SCRIPT COMPUTES AN APPROXIMATE FACTORIZATIONOF A LOW-RANK MATRIX X INTO TWO MATRICES U AND V 
+# USING ALTERNATING-LEAST-SQUARES (ALS) ALGORITHM WITH CONJUGATE GRADIENT 
+# MATRICES U AND V ARE COMPUTED BY MINIMIZING A LOSS FUNCTION (WITH REGULARIZATION)
+#
+# INPUT   PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    TYPE     DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X       String   ---      Location to read the input matrix X to be factorized
+# U       String   ---      Location to write the factor matrix U
+# V       String   ---      Location to write the factor matrix V
+# rank    Int      10       Rank of the factorization
+# reg     String   "L2"	    Regularization: 
+#						    "L2" = L2 regularization;
+#                           "wL2" = weighted L2 regularization
+# lambda  Double   0.000001 Regularization parameter, no regularization if 0.0
+# maxi    Int      50       Maximum number of iterations
+# check   Boolean  FALSE    Check for convergence after every iteration, i.e., updating U and V once
+# thr     Double   0.0001   Assuming check is set to TRUE, the algorithm stops and convergence is declared 
+# 							if the decrease in loss in any two consecutive iterations falls below this threshold; 
+#							if check is FALSE thr is ignored
+# fmt     String   "text"   The output format of the factor matrices L and R, such as "text" or "csv"
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: 
+# 1- An m x r matrix U, where r is the factorization rank 
+# 2- An r x n matrix V
+#
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f ALS.dml -nvargs X=INPUT_DIR/X U=OUTPUT_DIR/U V=OUTPUT_DIR/V rank=10 reg="L2" lambda=0.0001 fmt=csv
+
+fileX      = $X;
+fileU	     = $U;
+fileV      = $V;
+
+# Default values of some parameters
+r          = ifdef ($rank, 10);	        # $rank=10;
+reg	   	   = ifdef ($reg, "L2")         # $reg="L2";
+lambda	   = ifdef ($lambda, 0.000001); # $lambda=0.000001;
+max_iter   = ifdef ($maxi, 50);         # $maxi=50;
+check      = ifdef ($check, FALSE);	    # $check=FALSE;
+thr        = ifdef ($thr, 0.0001);      # $thr=0.0001;
+fmtO       = ifdef ($fmt, "text");      # $fmt="text";
+
+X = read (fileX);
+
+###### MAIN PART ######
+m = nrow (X);
+n = ncol (X);
+
+# initializing factor matrices
+U = rand (rows = m, cols = r, min = -0.5, max = 0.5);
+V = rand (rows = r, cols = n, min = -0.5, max = 0.5);
+W = ppred (X, 0, "!=");
+  
+# check for regularization
+if( reg == "L2" ) {
+  print ("BEGIN ALS-CG SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH LAMBDA - " + lambda);
+  row_nonzeros = matrix(1, nrow(W), 1);
+  col_nonzeros = matrix(1, 1, ncol(W));
+} 
+else if( reg == "wL2" ) {
+  print ("BEGIN ALS-CG SCRIPT WITH NONZERO SQUARED LOSS + WEIGHTED L2 WITH LAMBDA - " + lambda);
+  row_nonzeros = rowSums(W);
+  col_nonzeros = colSums(W);
+} 
+else {
+  stop ("wrong regularization! " + reg);
+}
+
+# Loss Function with L2:
+# f (U, V) = 0.5 * sum (W * (U %*% V - X) ^ 2)
+#          + 0.5 * lambda * (sum (U ^ 2) + sum (V ^ 2))
+# Loss Function with weighted L2:
+# f (U, V) = 0.5 * sum (W * (U %*% V - X) ^ 2)
+#          + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) + sum (V ^ 2 * col_nonzeros))
+
+is_U = TRUE;  # TRUE = Optimize U, FALSE = Optimize V
+maxinneriter = r ; # min (ncol (U), 15);
+
+if( check ) {
+  loss_init = 0.5 * sum (W * (U %*% V - X) ^ 2);
+	loss_init = loss_init + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) + sum (V ^ 2 * col_nonzeros));
+	print ("-----   Initial train loss: " + loss_init + " -----");
+}
+
+it = 0;
+converged = FALSE;
+while( it < max_iter & ! converged ) 
+{
+  it = it + 1;
+  if( is_U ) {
+    G = (W * (U %*% V - X)) %*% t(V) + lambda * U * row_nonzeros;
+	} 
+  else {
+    G = t(U) %*% (W * (U %*% V - X)) + lambda * V * col_nonzeros;
+	}
+
+  R = -G;
+  S = R;
+  norm_G2 = sum (G ^ 2);
+  norm_R2 = norm_G2;
+  
+  inneriter = 1;
+  tt = 0.000000001;
+  while( norm_R2 > tt * norm_G2 & inneriter <= maxinneriter )
+  {
+    if( is_U ) {
+			HS = (W * (S %*% V)) %*% t(V) + lambda * S * row_nonzeros;
+      alpha = norm_R2 / sum (S * HS);
+      U = U + alpha * S;  # OK since U is not used in HS
+    } 
+    else {
+      HS = t(U) %*% (W * (U %*% S)) + lambda * S * col_nonzeros;
+      alpha = norm_R2 / sum (S * HS);
+      V = V + alpha * S;  # OK since V is not used in HS
+    }
+
+    R = R - alpha * HS;
+    old_norm_R2 = norm_R2;
+    norm_R2 = sum (R ^ 2);
+    S = R + (norm_R2 / old_norm_R2) * S;
+    inneriter = inneriter + 1;
+  }  
+
+  is_U = ! is_U;
+	
+  # check for convergence
+  if( check ) {
+    loss_cur = 0.5 * sum (W * (U %*% V - X) ^ 2);
+		loss_cur = loss_cur + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) + sum (V ^ 2 * col_nonzeros));
+	
+    loss_dec = (loss_init - loss_cur) / loss_init;
+    print ("Train loss at iteration (" + it + "): " + loss_cur + " loss-dec " + loss_dec);
+    if( loss_dec >= 0 & loss_dec < thr | loss_init == 0 ) {
+      print ("----- ALS converged after " + it + " iterations!");
+      converged = TRUE;
+    }
+    loss_init = loss_cur;
+  }
+}
+
+write (U, fileU, format=fmtO);
+write (V, fileV, format=fmtO);
+ 

@@ -37,6 +37,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
@@ -610,6 +611,23 @@ public class OptimizerUtils
 	public static long estimateSizeExactSparsity(long nrows, long ncols, double sp) 
 	{
 		return MatrixBlock.estimateSizeInMemory(nrows,ncols,sp);
+	}
+	
+	/**
+	 * Estimates the footprint (in bytes) for a partitioned in-memory representation of a
+	 * matrix with the given matrix characteristics
+	 * 
+	 * @param mc
+	 * @return
+	 */
+	public static long estimatePartitionedSizeExactSparsity(MatrixCharacteristics mc)
+	{
+		return estimatePartitionedSizeExactSparsity(
+				mc.getRows(), 
+				mc.getCols(), 
+				mc.getRowsPerBlock(), 
+				mc.getColsPerBlock(), 
+				mc.getNonZeros());
 	}
 	
 	/**

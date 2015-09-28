@@ -38,9 +38,11 @@ import com.ibm.bi.dml.lops.LopProperties.ExecType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 
@@ -363,21 +365,34 @@ public abstract class Hop
 		//add checkpoint lop to output if required
 		if( _requiresCheckpoint && et != ExecType.CP )
 		{
-			Lop input = getLops();			
-			Lop chkpoint = null;
-			
 			try
 			{
-				chkpoint = new Checkpoint(input, getDataType(), getValueType(),
-						Checkpoint.getDefaultStorageLevelString(), et);
+				//investigate need for serialized storage of large sparse matrices
+				//(compile- instead of runtime-level for better debugging)
+				boolean serializedStorage = false;
+				if( dimsKnown(true) ) {
+					double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(_dim1, _dim2, _rows_in_block, _cols_in_block, _nnz);
+					double dataCache = SparkExecutionContext.getConfiguredTotalDataMemory(true);
+					serializedStorage = (MatrixBlock.evalSparseFormatInMemory(_dim1, _dim2, _nnz)
+							             && matrixPSize > dataCache ); //sparse in-memory does not fit in agg mem 
+				}
+				else {
+					setRequiresRecompile();
+				}
+			
+				//construct checkpoint w/ right storage level
+				Lop input = getLops();			
+				Lop chkpoint = new Checkpoint(input, getDataType(), getValueType(), 
+						serializedStorage ? Checkpoint.getSerializeStorageLevelString() :
+								            Checkpoint.getDefaultStorageLevelString() );
+				
+				setOutputDimensions( chkpoint );
+				setLineNumbers( chkpoint );
+				setLops( chkpoint );
 			}
 			catch( LopsException ex ) {
 				throw new HopsException(ex);
 			}
-		
-			setOutputDimensions( chkpoint );
-			setLineNumbers( chkpoint );
-			setLops( chkpoint );
 		}
 		
 	}

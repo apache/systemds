@@ -39,7 +39,9 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class Checkpoint extends Lop 
 {
 	public static final String OPCODE = "chkpoint"; 
+	
 	public static final StorageLevel DEFAULT_STORAGE_LEVEL = StorageLevel.MEMORY_AND_DISK();
+	public static final StorageLevel SER_STORAGE_LEVEL = StorageLevel.MEMORY_AND_DISK_SER();
 	public static final String STORAGE_LEVEL = "storage.level"; 
 
 	private StorageLevel _storageLevel;
@@ -56,7 +58,7 @@ public class Checkpoint extends Lop
 	 * @param et
 	 * @throws LopsException
 	 */
-	public Checkpoint(Lop input, DataType dt, ValueType vt, String level, ExecType et) 
+	public Checkpoint(Lop input, DataType dt, ValueType vt, String level) 
 		throws LopsException
 	{
 		super(Lop.Type.Checkpoint, dt, vt);		
@@ -70,7 +72,7 @@ public class Checkpoint extends Lop
 		boolean definesMRJob = false;
 		
 		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 
 	public StorageLevel getStorageLevel()
@@ -104,7 +106,7 @@ public class Checkpoint extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output));
+		sb.append( prepOutputOperand(output));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getStorageLevelString(_storageLevel) );
 		
@@ -151,8 +153,15 @@ public class Checkpoint extends Lop
 	 * 
 	 * @return
 	 */
-	public static String getDefaultStorageLevelString()
-	{
+	public static String getDefaultStorageLevelString() {
 		return getStorageLevelString( DEFAULT_STORAGE_LEVEL );
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static String getSerializeStorageLevelString() {
+		return getStorageLevelString( SER_STORAGE_LEVEL );
 	}
 }

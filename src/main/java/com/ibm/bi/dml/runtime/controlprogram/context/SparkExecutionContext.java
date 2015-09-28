@@ -557,12 +557,29 @@ public class SparkExecutionContext extends ExecutionContext
 	 * 
 	 * @return
 	 */
-	public static double getConfiguredTotalDataMemory()
+	public static double getConfiguredTotalDataMemory() {
+		return getConfiguredTotalDataMemory(false);
+	}
+	
+	/**
+	 * 
+	 * @param refresh
+	 * @return
+	 */
+	public static double getConfiguredTotalDataMemory(boolean refresh)
 	{
 		if( _memExecutors < 0 || _memRatioData < 0 )
 			analyzeSparkConfiguation();
 		
-		return ( _memExecutors * _memRatioData * _numExecutors );
+		//always get the current num executors on refresh because this might 
+		//change if not all executors are initially allocated and it is plan-relevant
+		if( refresh ) {
+			JavaSparkContext jsc = getSparkContextStatic();
+			int numExec = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);
+			return _memExecutors * _memRatioData * numExec; 
+		}
+		else
+			return ( _memExecutors * _memRatioData * _numExecutors );
 	}
 	
 	public static int getNumExecutors()

@@ -43,7 +43,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public class CheckpointSPInstruction extends UnarySPInstruction
 {
-	
+	//default storage level
 	private StorageLevel _level = null;
 	
 	public CheckpointSPInstruction(Operator op, CPOperand in, CPOperand out, StorageLevel level, String opcode, String istr){
@@ -95,35 +95,36 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		// -------
 		// Note that persist is an transformation which will be triggered on-demand with the next rdd operations
 		// This prevents unnecessary overhead if the dataset is only consumed by cp operations.
-		
+
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-		if( !in.getStorageLevel().equals(_level) ) 
+		if( !in.getStorageLevel().equals( _level ) ) 
 		{
-			//handle issue of unnecessarily large number of partitions
+			//investigate issue of unnecessarily large number of partitions
 			boolean coalesce = false;
+			int numPartitions = -1;
 			if( mcIn.dimsKnown(true) ) {
 				double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-				double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(
-						mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), mcIn.getNonZeros());
-				int numPartitions = (int) Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1);
-				//merge partitions without shuffle if too many partitions
-				if( numPartitions < in.partitions().size() ) {
-					in = in.coalesce( numPartitions );
-					coalesce = true;
-				}
-			}
-
-			//since persist is an in-place marker for a storage level, we 
-			//apply a narrow shallow copy to allow for short-circuit collects 
-			if( !coalesce ) {
-				in = in.mapValues(new CopyBlockFunction(false));
+				double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mcIn);
+				numPartitions = (int) Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1);
+				coalesce = ( numPartitions < in.partitions().size() );
 			}
 			
+			//checkpoint pre-processing rdd operations
+			if( coalesce ) {
+				//merge partitions without shuffle if too many partitions
+				out = in.coalesce( numPartitions );
+			}
+			else {
+				//since persist is an in-place marker for a storage level, we 
+				//apply a narrow shallow copy to allow for short-circuit collects 
+				out = in.mapValues(new CopyBlockFunction(false));	
+			}
+				
 			//actual checkpoint into given storage level
-			out = in.persist( _level );
+			out = out.persist( _level );
 		}
 		else {
-			out = in;
+			out = in; //pass-through
 		}
 			
 		// Step 3: In-place update of input matrix rdd handle and set as output

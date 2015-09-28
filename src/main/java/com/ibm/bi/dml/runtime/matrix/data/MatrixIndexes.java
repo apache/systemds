@@ -20,8 +20,10 @@ package com.ibm.bi.dml.runtime.matrix.data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.Externalizable;
 import java.io.IOException;
-import java.io.Serializable;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.WritableComparable;
@@ -33,119 +35,145 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
  * This represent the indexes to the blocks of the matrix.
  * Please note that these indexes are 1-based, whereas the data in the block are zero-based (as they are double arrays).
  */
-public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComparator<MatrixIndexes>, Serializable
-{
-	
+public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComparator<MatrixIndexes>, Externalizable
+{	
 	private static final long serialVersionUID = -1521166657518127789L;
 		
 	public static final int BYTE_SIZE = (Long.SIZE+Long.SIZE)/8;
 	public static final long ADD_PRIME1 = 99991;
 	public static final long ADD_PRIME2 = 853;
-	public static final int DIVIDE_PRIME = 1405695061; 
 	//prime close to max int, because it determines the max hash domain size
-	//public static final int DIVIDE_PRIME = 51473;
+	public static final int DIVIDE_PRIME = 1405695061; 
 	
-	private long row = -1;
-	private long column = -1;
+	private long _row = -1;
+	private long _col = -1;
 	
 	///////////////////////////
 	// constructors
 	
-	public MatrixIndexes(){
+	public MatrixIndexes() {
 		//do nothing
 	}
 	
-	public MatrixIndexes(long r, long c){
+	public MatrixIndexes(long r, long c) {
 		setIndexes(r,c);
 	}
 	
 	public MatrixIndexes(MatrixIndexes indexes) {
-		setIndexes(indexes.row, indexes.column);
+		setIndexes(indexes._row, indexes._col);
 	}
 	
 	///////////////////////////
 	// get/set methods
 
-	
 	public long getRowIndex() {
-		return row;
+		return _row;
 	}
 	
 	public long getColumnIndex() {
-		return column;
+		return _col;
 	}
 	
 	public void setIndexes(long r, long c) {
-		row = r;
-		column = c;
+		_row = r;
+		_col = c;
 	}
 	
 	public void setIndexes(MatrixIndexes that) {
-		
-		this.row=that.row;
-		this.column=that.column;
-	}
-	
-	
-	
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		row=in.readLong();
-		column=in.readLong();
-		
-	}
-
-	@Override
-	public void write(DataOutput out) throws IOException {
-		out.writeLong(row);
-		out.writeLong(column);
-		
+		_row = that._row;
+		_col = that._col;
 	}
 	
 	@Override
-	public int compareTo(MatrixIndexes other)
-	{
-		if(this.row!=other.row)
-			return (this.row>other.row? 1:-1);
-		else if(this.column!=other.column)
-			return (this.column>other.column? 1:-1);
+	public int compareTo(MatrixIndexes other) {
+		if( _row != other._row )
+			return (_row > other._row ? 1 : -1);
+		else if( _col != other._col)
+			return (_col > other._col ? 1 : -1);
 		return 0;
 	}
 
 	@Override
-	public boolean equals(Object other)
-	{
+	public boolean equals(Object other) {
 		if( !(other instanceof MatrixIndexes))
 			return false;
 		
 		MatrixIndexes tother = (MatrixIndexes)other;
-		return (this.row==tother.row && this.column==tother.column);
+		return (_row==tother._row && _col==tother._col);
 	}
 	
-	 public int hashCode() {
-		 return UtilFunctions.longHashFunc((row<<32)+column+ADD_PRIME1)%DIVIDE_PRIME;
-	 }
-
-	public void print() {
-		System.out.println("("+row+", "+column+")");
+	@Override
+	public int hashCode() {
+		return UtilFunctions.longHashFunc((_row<<32)+_col+ADD_PRIME1)%DIVIDE_PRIME;
 	}
 	
-	public String toString()
-	{
-		return "("+row+", "+column+")";
+	@Override
+	public String toString() {
+		return "("+_row+", "+_col+")";
 	}
 	
 	public int compareWithOrder(MatrixIndexes other, boolean leftcached) {
-		if(!leftcached)
+		if( !leftcached )
 			return compareTo(other);
 		
-		if(this.column!=other.column)
-			return (this.column>other.column? 1:-1);
-		else if(this.row!=other.row)
-			return (this.row>other.row? 1:-1);
+		if( _col != other._col)
+			return (_col > other._col ? 1 : -1);
+		else if( _row != other._row)
+			return (_row>other._row ? 1 : -1);
 		return 0;
 	}
 
+	////////////////////////////////////////////////////
+	// implementation of Writable read/write
+
+	@Override
+	public void readFields(DataInput in) 
+		throws IOException 
+	{
+		_row = in.readLong();
+		_col = in.readLong();	
+	}
+
+	@Override
+	public void write(DataOutput out) 
+		throws IOException 
+	{
+		out.writeLong( _row );
+		out.writeLong( _col );	
+	}
+	
+	
+	////////////////////////////////////////////////////
+	// implementation of Externalizable read/write
+
+	/**
+	 * Redirects the default java serialization via externalizable to our default 
+	 * hadoop writable serialization for consistency/maintainability. 
+	 * 
+	 * @param is
+	 * @throws IOException
+	 */
+	public void readExternal(ObjectInput is) 
+		throws IOException
+	{
+		//default deserialize (general case)
+		readFields(is);
+	}
+	
+	/**
+	 * Redirects the default java serialization via externalizable to our default 
+	 * hadoop writable serialization for consistency/maintainability. 
+	 * 
+	 * @param is
+	 * @throws IOException
+	 */
+	public void writeExternal(ObjectOutput os) 
+		throws IOException
+	{
+		//default serialize (general case)
+		write(os);	
+	}
+	
 	////////////////////////////////////////////////////
 	// implementation of RawComparator<MatrixIndexes>
 	

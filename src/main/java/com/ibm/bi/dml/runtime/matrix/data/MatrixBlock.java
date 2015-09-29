@@ -41,7 +41,6 @@ import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -5808,7 +5807,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		
 		//core block operation
 		if( qop.wtype1 != null ){ //wsloss
-			MatrixBlock W = (qop.wtype1!=WeightsType.NONE) ? checkType(wm) : null;
+			MatrixBlock W = qop.wtype1.hasFourInputs() ? checkType(wm) : null;
 			if( k > 1 )
 				LibMatrixMult.matrixMultWSLoss(X, U, V, W, R, qop.wtype1, k);
 			else

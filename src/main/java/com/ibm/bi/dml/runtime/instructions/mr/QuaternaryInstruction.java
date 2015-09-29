@@ -234,7 +234,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 	public byte[] getInputIndexes() 
 	{
 		QuaternaryOperator qop = (QuaternaryOperator)optr;
-		if( qop.wtype1 == null || qop.wtype1==WeightsType.NONE )
+		if( qop.wtype1 == null || !qop.wtype1.hasFourInputs() )
 			return new byte[]{_input1, _input2, _input3};
 		else
 			return new byte[]{_input1, _input2, _input3, _input4};
@@ -244,7 +244,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 	public byte[] getAllIndexes() 
 	{
 		QuaternaryOperator qop = (QuaternaryOperator)optr;
-		if( qop.wtype1 == null || qop.wtype1==WeightsType.NONE )
+		if( qop.wtype1 == null || !qop.wtype1.hasFourInputs() )
 			return new byte[]{_input1, _input2, _input3, output};
 		else
 			return new byte[]{_input1, _input2, _input3, _input4, output};		

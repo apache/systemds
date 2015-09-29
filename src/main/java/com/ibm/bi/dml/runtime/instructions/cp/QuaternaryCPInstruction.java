@@ -108,7 +108,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 		MatrixBlock matBlock3 = ec.getMatrixInput(input3.getName());
 		MatrixBlock matBlock4 = null;
-		if( qop.wtype1 != null && qop.wtype1 != WeightsType.NONE) {
+		if( qop.wtype1 != null && qop.wtype1.hasFourInputs() ) {
 			matBlock4 = ec.getMatrixInput(input4.getName());
 		}
 		
@@ -120,7 +120,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		ec.releaseMatrixInput(input2.getName());
 		ec.releaseMatrixInput(input3.getName());
 		if( qop.wtype1 != null || qop.wtype4 != null ) { //wsloss/wcemm
-			if( qop.wtype1 != null && qop.wtype1 != WeightsType.NONE )
+			if( qop.wtype1 != null && qop.wtype1.hasFourInputs() )
 				ec.releaseMatrixInput(input4.getName());
 			ec.setVariable(output.getName(), new DoubleObject(out.getValue(0, 0)));
 		}

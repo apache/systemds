@@ -495,7 +495,8 @@ public class LibMatrixMult
 		throws DMLRuntimeException 
 	{
 		//check for empty result
-		if( wt==WeightsType.POST && mW.isEmptyBlock(false) ) {
+		if( wt==WeightsType.POST && mW.isEmptyBlock(false) 
+			|| wt==WeightsType.POST_NZ && mX.isEmptyBlock(false) ) {
 			ret.examSparsity(); //turn empty dense into sparse
 			return; 
 		}
@@ -530,7 +531,8 @@ public class LibMatrixMult
 		throws DMLRuntimeException 
 	{
 		//check for empty result
-		if( wt==WeightsType.POST && mW.isEmptyBlock(false) ) {
+		if( wt==WeightsType.POST && mW.isEmptyBlock(false)
+			|| wt==WeightsType.POST_NZ && mX.isEmptyBlock(false) ) {
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
@@ -1877,6 +1879,18 @@ public class LibMatrixMult
 							}
 						}	
 				}
+				// Pattern 1b) sum ((X!=0) * (X - U %*% t(V)) ^ 2) (post_nz weighting)
+				else if( wt==WeightsType.POST_NZ )
+				{
+					for( int i=bi, ix=bi*n, uix=bi*cd; i<bimin; i++, ix+=n, uix+=cd )
+						for( int j=bj, vix=bj*cd; j<bjmin; j++, vix+=cd) {
+							double xij = x[ix+j];
+							if( xij != 0 ) {
+								double uvij = dotProduct(u, v, uix, vix, cd);
+								wsloss += (xij-uvij)*(xij-uvij); //^2
+							}
+						}	
+				}
 				// Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
 				else if( wt==WeightsType.PRE )
 				{
@@ -1937,6 +1951,21 @@ public class LibMatrixMult
 						double xi = mX.quickGetValue(i, wix[k]);
 						double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
 						wsloss += wval[k]*(xi-uvij)*(xi-uvij);
+					}
+				}	
+		}
+		// Pattern 1b) sum ((X!=0) * (X - U %*% t(V)) ^ 2) (post weighting)
+		else if( wt==WeightsType.POST_NZ )
+		{
+			// approach: iterate over W, point-wise in order to exploit sparsity
+			for( int i=rl, uix=rl*cd; i<ru; i++, uix+=cd )
+				if( x[i] != null && !x[i].isEmpty() ) {
+					int xlen = x[i].size();
+					int[] xix = x[i].getIndexContainer();
+					double[] xval = x[i].getValueContainer();
+					for( int k=0; k<xlen; k++ ) {
+						double uvij = dotProduct(u, v, uix, xix[k]*cd, cd);
+						wsloss += (xval[k]-uvij)*(xval[k]-uvij);
 					}
 				}	
 		}
@@ -2027,10 +2056,8 @@ public class LibMatrixMult
 						int[] wix = wrows[i].getIndexContainer();
 						double[] wval = wrows[i].getValueContainer();
 						for( int k=0; k<wlen; k++ ) {
+							double uvij = dotProductGeneric(mU, mV, i, wix[k], cd);
 							double xi = mX.quickGetValue(i, wix[k]);
-							double uvij = 0;
-							for( int k2=0; k2<cd; k2++ )
-								uvij += mU.quickGetValue(i, k2) * mV.quickGetValue(wix[k], k2);
 							wsloss += wval[k]*(xi-uvij)*(xi-uvij);
 						}
 					}	
@@ -2041,16 +2068,42 @@ public class LibMatrixMult
 				
 				for( int i=rl, wix=rl*n; i<ru; i++, wix+=n )
 					for( int j=0; j<n; j++)
-					{
-						double wij = w[wix+j];
-						if( wij != 0 ) {
+						if( w[wix+j] != 0 ) {
+							double uvij = dotProductGeneric(mU, mV, i, j, cd);
 							double xij = mX.quickGetValue(i, j);
-							double uvij = 0;
-							for( int k=0; k<cd; k++ )
-								uvij += mU.quickGetValue(i, k) * mV.quickGetValue(j, k);
-							wsloss += wij*(xij-uvij)*(xij-uvij);
+							wsloss += w[wix+j]*(xij-uvij)*(xij-uvij);
+						}
+			}
+		}
+		// Pattern 1b) sum ((X!=0) * (X - U %*% t(V)) ^ 2) (post weighting)
+		else if( wt==WeightsType.POST_NZ )
+		{
+			// approach: iterate over W, point-wise in order to exploit sparsity
+			if( mW.sparse ) //SPARSE
+			{
+				SparseRow[] xrows = mX.sparseRows;
+				
+				for( int i=rl; i<ru; i++ )
+					if( xrows[i] != null && !xrows[i].isEmpty() ){
+						int xlen = xrows[i].size();
+						int[] xix = xrows[i].getIndexContainer();
+						double[] xval = xrows[i].getValueContainer();
+						for( int k=0; k<xlen; k++ ) {
+							double uvij = dotProductGeneric(mU, mV, i, xix[k], cd);
+							wsloss += (xval[k]-uvij)*(xval[k]-uvij);
 						}
 					}	
+			}
+			else //DENSE
+			{
+				double[] x = mX.denseBlock;
+				
+				for( int i=rl, xix=rl*n; i<ru; i++, xix+=n )
+					for( int j=0; j<n; j++)
+						if( x[xix+j] != 0 ) {
+							double uvij = dotProductGeneric(mU, mV, i, j, cd);
+							wsloss += (x[xix+j]-uvij)*(x[xix+j]-uvij);
+						}
 			}
 		}
 		// Pattern 2) sum ((X - W * (U %*% t(V))) ^ 2) (pre weighting)
@@ -2064,8 +2117,7 @@ public class LibMatrixMult
 					double wij = mW.quickGetValue(i, j);
 					double uvij = 0;
 					if( wij != 0 )
-						for( int k=0; k<cd; k++ )
-							uvij += mU.quickGetValue(i, k) * mV.quickGetValue(j, k);
+						uvij = dotProductGeneric(mU, mV, i, j, cd);
 					wsloss += (xij-wij*uvij)*(xij-wij*uvij);
 				}
 		}
@@ -2077,9 +2129,7 @@ public class LibMatrixMult
 				for( int j=0; j<n; j++)
 				{
 					double xij = mX.quickGetValue(i, j);
-					double uvij = 0;
-					for( int k=0; k<cd; k++ )
-						uvij += mU.quickGetValue(i, k) * mV.quickGetValue(j, k);
+					double uvij = dotProductGeneric(mU, mV, i, j, cd);
 					wsloss += (xij-uvij)*(xij-uvij);
 				}
 		}
@@ -2369,9 +2419,7 @@ public class LibMatrixMult
 					k = (k>=0) ? k : wlen;
 					for( ; k<wlen && wix[k]<cu; k++ ) { 
 						if( basic ) {
-							double uvij = 0;
-							for( int k2=0; k2<cd; k2++ )
-								uvij += mU.quickGetValue(i, k2) * mV.quickGetValue(wix[k], k2);
+							double uvij = dotProductGeneric(mU,mV, i, wix[k], cd);
 							ret.appendValue(i, wix[k], uvij);
 						}
 						else { //left/right minus/default
@@ -2389,8 +2437,7 @@ public class LibMatrixMult
 				for( int j=cl; j<cu; j++)
 					if( w[ix+j] != 0 ) {
 						if( basic ) {
-							for( int k2=0; k2<cd; k2++ )
-								c[ix+j] += mU.quickGetValue(i, k2) * mV.quickGetValue(j, k2);
+							c[ix+j] = dotProductGeneric(mU,mV, i, j, cd);
 						}
 						else { //left/right minus/default
 							wdivmm(w[ix+j], mU, mV, c, i, j, left, mult, minus, cd);
@@ -2504,9 +2551,7 @@ public class LibMatrixMult
 					int[] wix = w[i].getIndexContainer();
 					double[] wval = w[i].getValueContainer();
 					for( int k=0; k<wlen; k++ ) {
-						double uvij = 0;
-						for( int k2=0, vix=wix[k]; k2<cd; k2++ )
-							uvij += mU.quickGetValue(i, k2) * mV.quickGetValue(vix, k2);
+						double uvij = dotProductGeneric(mU, mV, i, wix[k], cd);
 						wceval += wval[k] * FastMath.log(uvij);	
 					}
 				}	
@@ -2519,9 +2564,7 @@ public class LibMatrixMult
 				for( int j=0; j<n; j++, ix++) {
 					double wij = w[ix];
 					if( wij != 0 ) {
-						double uvij = 0;
-						for( int k2=0; k2<cd; k2++ )
-							uvij += mU.quickGetValue(i, k2) * mV.quickGetValue(j, k2);
+						double uvij = dotProductGeneric(mU, mV, i, j, cd);
 						wceval += wij * FastMath.log(uvij);	
 					}
 				}
@@ -3065,9 +3108,7 @@ public class LibMatrixMult
 	private static double wsigmoid( final double wij, MatrixBlock u, MatrixBlock v, final int uix, final int vix, final boolean flagminus, final boolean flaglog, final int len )
 	{
 		//compute dot product over ui vj 
-		double uvij = 0;
-		for( int k2=0; k2<len; k2++ )
-			uvij += u.quickGetValue(uix, k2) * v.quickGetValue(vix, k2);
+		double uvij = dotProductGeneric(u, v, uix, vix, len);
 		
 		//compute core sigmoid function  
 		double cval = flagminus ?
@@ -3076,38 +3117,6 @@ public class LibMatrixMult
 				
 		//compute weighted output
 		return wij * ((flaglog) ? FastMath.log(cval) : cval);
-	}
-
-	/**
-	 * 
-	 * @param wij
-	 * @param u
-	 * @param v
-	 * @param c
-	 * @param uix
-	 * @param vix
-	 * @param flagleft
-	 * @param len
-	 */
-	private static void wdivmm( final double wij, MatrixBlock u, MatrixBlock v, double[] c, final int uix, final int vix, final boolean left, boolean mult, final boolean minus, final int len )
-	{
-		//compute dot product over ui vj 
-		double uvij = 0;
-		for( int k2=0; k2<len; k2++ )
-			uvij += u.quickGetValue(uix, k2) * v.quickGetValue(vix, k2);
-		
-		//compute core wdivmm
-		double wtmp = minus ? uvij - wij :
-					  mult ? wij * uvij : wij / uvij;
-		
-		//prepare inputs for final mm
-		int bix = left ? uix : vix;
-		int cix = left ? vix*len : uix*len;
-		MatrixBlock b = left ? u : v;		
-		
-		//compute final mm
-		for( int k2=0; k2<len; k2++ )
-			c[cix+k2] += b.quickGetValue(bix, k2) * wtmp;
 	}
 	
 	/**
@@ -3137,6 +3146,55 @@ public class LibMatrixMult
 		
 		//compute final mm output
 		vectMultiplyAdd(tmpval, b, c, bix, cix, len);
+	}
+
+
+	/**
+	 * 
+	 * @param wij
+	 * @param u
+	 * @param v
+	 * @param c
+	 * @param uix
+	 * @param vix
+	 * @param flagleft
+	 * @param len
+	 */
+	private static void wdivmm( final double wij, MatrixBlock u, MatrixBlock v, double[] c, final int uix, final int vix, final boolean left, boolean mult, final boolean minus, final int len )
+	{
+		//compute dot product over ui vj 
+		double uvij = dotProductGeneric(u, v, uix, vix, len);
+		
+		//compute core wdivmm
+		double wtmp = minus ? uvij - wij :
+					  mult ? wij * uvij : wij / uvij;
+		
+		//prepare inputs for final mm
+		int bix = left ? uix : vix;
+		int cix = left ? vix*len : uix*len;
+		MatrixBlock b = left ? u : v;		
+		
+		//compute final mm
+		for( int k2=0; k2<len; k2++ )
+			c[cix+k2] += b.quickGetValue(bix, k2) * wtmp;
+	}
+	
+	/**
+	 * 
+	 * @param a
+	 * @param b
+	 * @param ai
+	 * @param bi
+	 * @param len
+	 * @return
+	 */
+	private static double dotProductGeneric(MatrixBlock a, MatrixBlock b, final int ai, final int bi, int len)
+	{
+		double val = 0;
+		for( int k2=0; k2<len; k2++ )
+			val += a.quickGetValue(ai, k2) * b.quickGetValue(bi, k2);
+		
+		return val;
 	}
 	
 	/**

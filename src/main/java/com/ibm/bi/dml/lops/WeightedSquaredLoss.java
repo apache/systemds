@@ -28,15 +28,19 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
  */
 public class WeightedSquaredLoss extends Lop 
 {
-
 	public static final String OPCODE = "mapwsloss";
 	public static final String OPCODE_CP = "wsloss";
 	private int _numThreads = 1;
 
 	public enum WeightsType {
-		POST, 
+		POST,
+		POST_NZ,
 		PRE, 
-		NONE,
+		NONE;
+		
+		public boolean hasFourInputs() {
+			return (this == POST || this == PRE);
+		}
 	}
 	
 	private WeightsType _weightsType = null;
@@ -91,34 +95,14 @@ public class WeightedSquaredLoss extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int output_index)
+	public String getInstructions(int input1, int input2, int input3, int input4, int output)
 	{
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(2).prepInputOperand(input_index3));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(3).prepInputOperand(input_index4));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( prepOutputOperand(output_index));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_weightsType);
-		
-		return sb.toString();
+		return getInstructions(
+				String.valueOf(input1),
+				String.valueOf(input2),
+				String.valueOf(input3),
+				String.valueOf(input4),
+				String.valueOf(output));
 	}
 
 	@Override

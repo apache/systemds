@@ -43,14 +43,13 @@ import com.ibm.bi.dml.utils.Statistics;
  */
 public class WeightedSquaredLossTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "WeightedSquaredLossPost";
 	private final static String TEST_NAME2 = "WeightedSquaredLossPre";
 	private final static String TEST_NAME3 = "WeightedSquaredLossNo";
     private final static String TEST_NAME4 = "WeightedSquaredLossPost2";
     private final static String TEST_NAME5 = "WeightedSquaredLossPre2";
     private final static String TEST_NAME6 = "WeightedSquaredLossNo2";
-
+	private final static String TEST_NAME7 = "WeightedSquaredLossPostNz";
 	
 	private final static String TEST_DIR = "functions/quaternary/";
 	
@@ -65,12 +64,13 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_DIR, TEST_NAME2,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_DIR, TEST_NAME3,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_DIR, TEST_NAME4,new String[]{"R"}));
-        addTestConfiguration(TEST_NAME5,new TestConfiguration(TEST_DIR, TEST_NAME5,new String[]{"R"}));
-        addTestConfiguration(TEST_NAME6,new TestConfiguration(TEST_DIR, TEST_NAME6,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_DIR, TEST_NAME4, new String[]{"R"}));
+        addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_DIR, TEST_NAME5, new String[]{"R"}));
+        addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_DIR, TEST_NAME6, new String[]{"R"}));
+        addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_DIR, TEST_NAME7, new String[]{"R"}));
 	}
 
 	
@@ -256,6 +256,43 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.SPARK);
 	}
 	
+	@Test
+	public void testSquaredLossDensePostNzWeightsRewritesCP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME7, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePostNzWeightsRewritesCP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME7, true, true, ExecType.CP);
+	}
+
+	@Test
+	public void testSquaredLossDensePostNzWeightsRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME7, false, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePostNzWeightsRewritesMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME7, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossDensePostNzWeightsRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME7, false, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePostNzWeightsRewritesSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME7, true, true, ExecType.SPARK);
+	}
+	
+	
 	//the following tests force the replication based mr operator because
 	//otherwise we would always choose broadcasts for this small input data
 	
@@ -331,6 +368,31 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 		runMLUnaryBuiltinTest(TEST_NAME3, false, true, true, ExecType.SPARK);
 	}
 	
+	@Test
+	public void testSquaredLossSparsePostNzWeightsRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME7, true, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossDensePostNzWeightsRewritesRepMR() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME7, false, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testSquaredLossSparsePostNzWeightsRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME7, true, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testSquaredLossDensePostNzWeightsRewritesRepSP() 
+	{
+		runMLUnaryBuiltinTest(TEST_NAME7, false, true, true, ExecType.SPARK);
+	}
+	
+	
 	// the following tests use a sightly different pattern of U%*%t(V)-X
 	// which applies as well due to the subsequent squaring.
 	
@@ -351,7 +413,7 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
     {
         runMLUnaryBuiltinTest(TEST_NAME6, false, true, ExecType.CP);
     }
-	
+    
 	/**
 	 * 
 	 * @param testname
@@ -437,7 +499,7 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 			if( instType == ExecType.CP && rewrites )
 				Assert.assertTrue("Rewrite not applied.",Statistics.getCPHeavyHitterOpCodes().contains(WeightedSquaredLoss.OPCODE_CP));
 			else if( instType == ExecType.SPARK && rewrites ){
-			    boolean noWeights = testname.equals(TEST_NAME3) || testname.equals(TEST_NAME6);
+			    boolean noWeights = testname.equals(TEST_NAME3) || testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7);
  			    String opcode = Instruction.SP_INST_PREFIX+((rep || !noWeights)?WeightedSquaredLossR.OPCODE : WeightedSquaredLoss.OPCODE);	            
 			    Assert.assertTrue("Rewrite not applied.",Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}

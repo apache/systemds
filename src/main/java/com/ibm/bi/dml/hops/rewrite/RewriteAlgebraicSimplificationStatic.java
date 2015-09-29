@@ -1276,6 +1276,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							V = V.getInput().get(0);
 						}
 	                    
+						//handle special case of post_nz
+						if( HopRewriteUtils.isNonZeroIndicator(W, X) ){
+							W = new LiteralOp("1", 1);
+						}
+						
+						//construct quaternary hop
 						hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
 								OpOp4.WSLOSS, X, U, V, W, true);
 						HopRewriteUtils.setOutputParametersForScalar(hnew);

@@ -321,7 +321,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (wtype == WeightsType.NONE && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
+		boolean isMapWsloss = (!wtype.hasFourInputs() && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
 		
 		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
 		{
@@ -485,7 +485,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (wtype == WeightsType.NONE && m1Size+m2Size < memBudgetExec
+		boolean isMapWsloss = (!wtype.hasFourInputs() && m1Size+m2Size < memBudgetExec
 				&& 2*m1Size < memBudgetLocal && 2*m2Size < memBudgetLocal); 
 		
 		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
@@ -1178,6 +1178,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				ret = WeightsType.POST;
 			else
 				ret = WeightsType.PRE;
+		}
+		else if( _postWeights ){
+			ret = WeightsType.POST_NZ;
 		}
 		
 		return ret;

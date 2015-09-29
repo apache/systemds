@@ -97,7 +97,8 @@ C) CORE MATRIX MULT PRIMITIVES LibMatrixMult (incl related script patterns)
                (c) sum((X-(U%*%t(V)))^2)), (d) sum(W*(U%*%t(V)-X)^2),
                (e) sum((W*(U%*%t(V))-X)^2), (f) sum(((U%*%t(V))-X)^2))
   - sequential / multi-threaded (same block ops, par over rows in W/X)                 
-  - all dense, sparse-dense factors, sparse/dense-* x 3 patterns            
+  - all dense, sparse-dense factors, sparse/dense-* x 3 patterns      
+  - special patterns for (a) and (d) if W is X!=0      
 
 * 6) wsigmoid ((a) W*sigmoid(Y%*%t(X))), (b) W*sigmoid(-(Y%*%t(X))), 
                (c) W*log(sigmoid(Y%*%t(X))), (d) W*log(sigmoid(-(Y%*%t(X))))) 

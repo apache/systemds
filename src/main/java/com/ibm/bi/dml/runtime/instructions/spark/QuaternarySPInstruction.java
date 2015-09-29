@@ -197,7 +197,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			Broadcast<PartitionedMatrixBlock> bc2 = _cacheV ? sec.getBroadcastForVariable( input3.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inU = (!_cacheU) ? sec.getBinaryBlockRDDHandleForVariable( input2.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inV = (!_cacheV) ? sec.getBinaryBlockRDDHandleForVariable( input3.getName() ) : null;
-			JavaPairRDD<MatrixIndexes,MatrixBlock> inW = (qop.wtype1!=null && qop.wtype1!=WeightsType.NONE) ? 
+			JavaPairRDD<MatrixIndexes,MatrixBlock> inW = (qop.wtype1!=null && qop.wtype1.hasFourInputs()) ? 
 					sec.getBinaryBlockRDDHandleForVariable( _input4.getName() ) : null;
 
 			//preparation of transposed and replicated U
@@ -393,7 +393,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 			MatrixBlock mbU = (_pmU!=null)?_pmU.value().getMatrixBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
 			MatrixBlock mbV = (_pmV!=null)?_pmV.value().getMatrixBlock((int)ixIn.getColumnIndex(), 1) : blkIn2;
-			MatrixBlock mbW = (_qop.wtype1!=null&&_qop.wtype1!=WeightsType.NONE) ? blkIn2 : null;
+			MatrixBlock mbW = (_qop.wtype1!=null && _qop.wtype1.hasFourInputs()) ? blkIn2 : null;
 			
 			//execute core operation
 			blkIn1.quaternaryOperations(_qop, mbU, mbV, mbW, blkOut);
@@ -432,7 +432,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			MatrixBlock mbU = (_pmU!=null)?_pmU.value().getMatrixBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
 			MatrixBlock mbV = (_pmV!=null)?_pmV.value().getMatrixBlock((int)ixIn.getColumnIndex(), 1) : 
 				              (_pmU!=null)? blkIn2 : blkIn3;
-			MatrixBlock mbW = (_qop.wtype1!=null&&_qop.wtype1!=WeightsType.NONE)? blkIn3 : null;
+			MatrixBlock mbW = (_qop.wtype1!=null && _qop.wtype1.hasFourInputs())? blkIn3 : null;
 			
 			//execute core operation
 			blkIn1.quaternaryOperations(_qop, mbU, mbV, mbW, blkOut);

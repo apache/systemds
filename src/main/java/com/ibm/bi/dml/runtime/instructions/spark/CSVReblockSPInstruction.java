@@ -22,8 +22,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 
 import com.ibm.bi.dml.hops.recompile.Recompiler;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -40,34 +38,33 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
-public class CSVReblockSPInstruction extends UnarySPInstruction {
-
-	private int brlen;
-	private int bclen;
-	private boolean hasHeader;
-	private String delim;
-	private boolean fill;
-	private double missingValue;
-	private boolean isTransformInput;
+public class CSVReblockSPInstruction extends UnarySPInstruction 
+{
+	private int _brlen;
+	private int _bclen;
+	private boolean _hasHeader;
+	private String _delim;
+	private boolean _fill;
+	private double _missingValue;
 
 	public CSVReblockSPInstruction(Operator op, CPOperand in, CPOperand out,
 			int br, int bc, boolean hasHeader, String delim, boolean fill,
-			double missingValue, boolean isTransformInput, String opcode, String instr) {
+			double missingValue, String opcode, String instr) 
+	{
 		super(op, in, out, opcode, instr);
-		brlen = br;
-		bclen = bc;
-		this.hasHeader = hasHeader;
-		this.delim = delim;
-		this.fill = fill;
-		this.missingValue = missingValue;
-		this.isTransformInput = isTransformInput;
+		_brlen = br;
+		_bclen = bc;
+		_hasHeader = hasHeader;
+		_delim = delim;
+		_fill = fill;
+		_missingValue = missingValue;
 	}
 
 	public static Instruction parseInstruction(String str)
 			throws DMLRuntimeException 
 	{
 		String opcode = InstructionUtils.getOpCode(str);
-		if (opcode.compareTo("csvrblk") != 0) {
+		if( !opcode.equals("csvrblk") ) {
 			throw new DMLRuntimeException(
 					"Incorrect opcode for CSVReblockSPInstruction:" + opcode);
 		}
@@ -77,23 +74,17 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		// 1000, 1000, false, ,, true, 0.0]
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 
-		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		in.split(parts[1]);
-		out.split(parts[2]);
-
+		CPOperand in = new CPOperand(parts[1]);
+		CPOperand out = new CPOperand(parts[2]);
 		int brlen = Integer.parseInt(parts[3]);
 		int bclen = Integer.parseInt(parts[4]);
-
 		boolean hasHeader = Boolean.parseBoolean(parts[5]);
 		String delim = parts[6];
 		boolean fill = Boolean.parseBoolean(parts[7]);
 		double missingValue = Double.parseDouble(parts[8]);
-		boolean isTransformInput = Boolean.parseBoolean(parts[9]);
 
-		Operator op = null; // no operator for ReblockSPInstruction
-		return new CSVReblockSPInstruction(op, in, out, brlen, bclen,
-				hasHeader, delim, fill, missingValue, isTransformInput, opcode, str);
+		return new CSVReblockSPInstruction(null, in, out, brlen, bclen,
+				hasHeader, delim, fill, missingValue, opcode, str);
 	}
 
 	@Override
@@ -114,7 +105,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		//set output characteristics
 		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		mcOut.set(mcIn.getRows(), mcIn.getCols(), brlen, bclen);
+		mcOut.set(mcIn.getRows(), mcIn.getCols(), _brlen, _bclen);
 
 		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
 		if( Recompiler.checkCPReblock(sec, input1.getName()) ) {
@@ -125,27 +116,14 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		//check jdk version (prevent double.parseDouble contention on <jdk8)
 		sec.checkAndRaiseValidationWarningJDKVersion();
 		
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
-		if (isTransformInput)
-		{
-			//get input rdd
-			JavaPairRDD<Long, String> lines = (JavaPairRDD<Long, String>) 
-					sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
+		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of
+		//serialization issues create longwritableser/textser as serializable wrappers
+		JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>) 
+				sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
 			
-			//reblock csv to binary block
-			out = RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
-					lines, mcOut, hasHeader, delim, fill, missingValue, isTransformInput);
-		}
-		else 
-		{
-			//get input rdd
-			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) 
-					sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
-			
-			//reblock csv to binary block
-			out = RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
-					lines, mcOut, hasHeader, delim, fill, missingValue);
-		}
+		//reblock csv to binary block
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.csvToBinaryBlock(
+				sec.getSparkContext(), in, mcOut, _hasHeader, _delim, _fill, _missingValue);
 		
 		// put output RDD handle into symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);

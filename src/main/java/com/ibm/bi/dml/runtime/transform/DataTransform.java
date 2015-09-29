@@ -62,6 +62,9 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.SerLongWritable;
+import com.ibm.bi.dml.runtime.instructions.spark.data.SerText;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.AssignRowIDMRReturn;
 import com.ibm.bi.dml.runtime.matrix.JobReturn;
@@ -1442,11 +1445,15 @@ public class DataTransform {
 		// copy auxiliary data (old and new header lines) from temporary location to txMtdPath
 		moveFilesFromTmp(fs, tmpPath, oprnds.txMtdPath);
 
-		if ( tfPairRDD != null ) 
+		// convert to csv output format (serialized longwritable/text)
+		JavaPairRDD<SerLongWritable, SerText> outtfPairRDD = 
+				RDDConverterUtils.stringToSerializableText(tfPairRDD);
+		
+		if ( outtfPairRDD != null ) 
 		{
 			MatrixObject outMO = outputMatrices[0];
 			String outVar = outMO.getVarName();
-			outMO.setRDDHandle(new RDDObject(tfPairRDD, outVar));
+			outMO.setRDDHandle(new RDDObject(outtfPairRDD, outVar));
 			sec.addLineageRDD(outVar, inst.getParams().get("target"));
 			
 			//update output statistics (required for correctness)
@@ -1455,7 +1462,5 @@ public class DataTransform {
 			mcOut.setNonZeros(-1);
 		}
 	}
-	
-
 }
 

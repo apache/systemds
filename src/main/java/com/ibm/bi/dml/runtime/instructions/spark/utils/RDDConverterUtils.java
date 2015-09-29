@@ -49,6 +49,8 @@ import scala.Tuple2;
 import com.ibm.bi.dml.api.MLOutput.ConvertDoubleArrayToRows;
 import com.ibm.bi.dml.api.MLOutput.ProjectRows;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.instructions.spark.data.SerLongWritable;
+import com.ibm.bi.dml.runtime.instructions.spark.data.SerText;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertALToBinaryBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertRowToCSVString;
 import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
@@ -111,28 +113,7 @@ public class RDDConverterUtils
 		
 		return pointrdd;
 	}
-	
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, 
-			boolean hasHeader, String delim, boolean fill, double fillValue) 
-		throws DMLRuntimeException 
-	{
-		
-		// convert from PairRDD<LongWritable,Text> to PairRDD<Long,String>
-		JavaPairRDD<Long,String> rdd = input.mapToPair(new PairFunction<Tuple2<LongWritable,Text>, Long, String>() {
 
-			private static final long serialVersionUID = 1753922541520996996L;
-
-			@Override
-			public Tuple2<Long, String> call(Tuple2<LongWritable, Text> t)
-					throws Exception {
-				return new Tuple2<Long,String>(new Long(t._1().get()), t._2().toString());
-			}
-		});
-		
-		return csvToBinaryBlock(sc, rdd, mcOut, hasHeader, delim, fill, fillValue, false);
-	}
-	
 	/**
 	 * 
 	 * @param sc
@@ -146,8 +127,8 @@ public class RDDConverterUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<Long, String> input, MatrixCharacteristics mcOut, 
-			boolean hasHeader, String delim, boolean fill, double fillValue, boolean flag) 
+			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, 
+			boolean hasHeader, String delim, boolean fill, double fillValue) 
 		throws DMLRuntimeException 
 	{
 		//determine unknown dimensions and sparsity if required
@@ -162,7 +143,7 @@ public class RDDConverterUtils
 		}
 		
 		//prepare csv w/ row indexes (sorted by filenames)
-		JavaPairRDD<String,Long> prepinput = input.values()
+		JavaPairRDD<Text,Long> prepinput = input.values()
 				.zipWithIndex(); //zip row index
 		
 		//convert csv rdd to binary block rdd (w/ partial blocks)
@@ -176,6 +157,19 @@ public class RDDConverterUtils
 		return out;
 	}
 	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static JavaPairRDD<SerLongWritable, SerText> stringToSerializableText(JavaPairRDD<Long,String> in)
+	{
+		return in.mapToPair(new TextToSerTextFunction());
+	}
+	
+	
+	//TODO the other utils below require cleanup and a rework for efficiency 
+		
 	public static JavaRDD<String> dataFrameToCSVRDD(DataFrame df, boolean containsID) throws DMLRuntimeException {
 		if(containsID) {
 			// Uncomment this when we move to Spark 1.4.0 or higher 
@@ -467,13 +461,30 @@ public class RDDConverterUtils
 		}
 	}
 	
+	/**
+	 * 
+	 */
+	private static class TextToSerTextFunction implements PairFunction<Tuple2<Long,String>,SerLongWritable,SerText> 
+	{
+		private static final long serialVersionUID = 2286037080400222528L;
+
+		@Override
+		public Tuple2<SerLongWritable, SerText> call(Tuple2<Long, String> arg0) 
+			throws Exception 
+		{
+			SerLongWritable slarg = new SerLongWritable(arg0._1());
+			SerText starg = new SerText(arg0._2());			
+			return new Tuple2<SerLongWritable,SerText>(slarg, starg);
+		}
+	}
+	
 	/////////////////////////////////
 	// CSV-SPECIFIC FUNCTIONS
 
 	/**
 	 * 
 	 */
-	private static class CSVAnalysisFunction implements Function<String,String> 
+	private static class CSVAnalysisFunction implements Function<Text,String> 
 	{
 		private static final long serialVersionUID = 2310303223289674477L;
 
@@ -487,11 +498,12 @@ public class RDDConverterUtils
 		}
 		
 		@Override
-		public String call(String v1) 
+		public String call(Text v1) 
 			throws Exception 
 		{
 			//parse input line
-			String[] cols = IOUtilFunctions.split(v1, _delim);
+			String line = v1.toString();
+			String[] cols = IOUtilFunctions.split(line, _delim);
 			
 			//determine number of non-zeros of row (w/o string parsing)
 			long lnnz = 0;
@@ -504,7 +516,7 @@ public class RDDConverterUtils
 			//update counters
 			_aNnz.add( (double)lnnz );
 			
-			return v1.toString();
+			return line;
 		}
 		
 	}
@@ -517,7 +529,7 @@ public class RDDConverterUtils
 	 * In terms of memory consumption this is better than creating partial blocks of row segments.
 	 * 
 	 */
-	private static class CSVToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<String,Long>>,MatrixIndexes,MatrixBlock> 
+	private static class CSVToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Text,Long>>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = -4948430402942717043L;
 		
@@ -541,7 +553,7 @@ public class RDDConverterUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<String,Long>> arg0) 
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Text,Long>> arg0) 
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -552,8 +564,8 @@ public class RDDConverterUtils
 			
 			while( arg0.hasNext() )
 			{
-				Tuple2<String,Long> tmp = arg0.next();
-				String row = tmp._1();
+				Tuple2<Text,Long> tmp = arg0.next();
+				String row = tmp._1().toString();
 				long rowix = tmp._2() + 1;
 				
 				long rix = UtilFunctions.computeBlockIndex(rowix, _brlen);

@@ -182,11 +182,6 @@ public class CSVReBlock extends Lop
 			
 			sb.append( prepCSVProperties() );
 
-			boolean isTransformInput = (getInputs().get(0) instanceof ParameterizedBuiltin 
-											&& ((ParameterizedBuiltin)getInputs().get(0)).getOp() == OperationTypes.TRANSFORM);
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( isTransformInput );
-
 			return sb.toString();
 
 		} else {

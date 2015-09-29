@@ -145,12 +145,8 @@ public class ApplyTfBBMR {
 		
 		MapReduceTool.deleteFileIfExistOnHDFS(cachefile, job);
 		
-		long tx_numRows = runjob.getCounters().findCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_ROWS).getCounter();
-		long tx_numCols = runjob.getCounters().findCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS).getCounter();
-		
 		Group group=runjob.getCounters().getGroup(MRJobConfiguration.NUM_NONZERO_CELLS);
 		for(int i=0; i<resultIndexes.length; i++) {
-			ret.stats[i].setDimension(tx_numRows, tx_numCols);
 			ret.stats[i].setNonZeros(group.getCounter(Integer.toString(i)));
 		}
 		return new JobReturn(ret.stats, runjob.isSuccessful());

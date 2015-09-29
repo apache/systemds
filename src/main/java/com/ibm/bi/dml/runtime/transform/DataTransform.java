@@ -253,7 +253,7 @@ public class DataTransform {
 			
 			mvList = new int[arrtmp.size()];
 			mvMethods = new byte[arrtmp.size()];
-			mvConstants = new String[arrtmp.size()];
+			mvConstants = new Object[arrtmp.size()];
 			
 			for(int i=0; i<arrtmp.size(); i++) {
 				entry = (JSONObject)arrtmp.get(i);
@@ -780,6 +780,9 @@ public class DataTransform {
 		String outHeader = getOutputHeader(fs, headerLine, oprnds);
 		int numColumns = colNamesToIds.size();
 		
+		int numColumnsTf = 0;
+		long numRowsTf = 0;
+		
 		ArrayList<Integer> csvoutputs= new ArrayList<Integer>();
 		ArrayList<Integer> bboutputs = new ArrayList<Integer>();
 		
@@ -810,19 +813,19 @@ public class DataTransform {
 			// Also, generate part offsets file (counters file), which is to be used in csv-reblock
 			
 			String partOffsetsFile =  MRJobConfiguration.constructTempOutputFilename();
-			long numRows = GenTfMtdMR.runJob(oprnds.inputPath, 
+			numRowsTf = GenTfMtdMR.runJob(oprnds.inputPath, 
 												oprnds.txMtdPath, specFileWithIDs, 
 												smallestFile, partOffsetsFile, 
 												oprnds.inputCSVProperties, numColumns, 
 												replication, outHeader);
 			
-			if ( numRows == 0 )
+			if ( numRowsTf == 0 )
 				throw new DMLRuntimeException(ERROR_MSG_ZERO_ROWS);
 			
 			// store the specFileWithIDs as transformation metadata
 			MapReduceTool.copyFileOnHDFS(specFileWithIDs, oprnds.txMtdPath + "/" + "spec.json");
 			
-			int numColumnsTf = getNumColumnsTf(fs, outHeader, oprnds.inputCSVProperties.getDelim(), oprnds.txMtdPath);
+			numColumnsTf = getNumColumnsTf(fs, outHeader, oprnds.inputCSVProperties.getDelim(), oprnds.txMtdPath);
 			
 			// Apply transformation metadata, and perform actual transformation 
 			if(isCSV)
@@ -851,7 +854,7 @@ public class DataTransform {
 											specFileWithIDs, oprnds.txMtdPath, 
 											tmpPath, outputMatrices[bboutputs.get(0)].getFileName(), 
 											ret1.counterFile.toString(), oprnds.inputCSVProperties, 
-											numRows, numColumns, numColumnsTf, 
+											numRowsTf, numColumns, numColumnsTf, 
 											replication, outHeader);
 			}
 			
@@ -867,7 +870,7 @@ public class DataTransform {
 			
 			// path to specification file
 			String specFileWithIDs = oprnds.txMtdPath + "/" + "spec.json";
-			int numColumnsTf = getNumColumnsTf(fs, outHeader, 
+			numColumnsTf = getNumColumnsTf(fs, outHeader, 
 												oprnds.inputCSVProperties.getDelim(), 
 												oprnds.txMtdPath);
 			
@@ -882,6 +885,8 @@ public class DataTransform {
 																			new int[]{blockSize}, new int[]{blockSize}, 
 																			rblk.toString(), replication, new String[]{smallestFile},
 																			true, oprnds.inputCSVProperties.getNAStrings(), specFileWithIDs);
+				numRowsTf = ret1.rlens[0];
+				
 				if ( ret1.rlens[0] == 0 )
 					throw new DMLRuntimeException(ERROR_MSG_ZERO_ROWS);
 					
@@ -903,6 +908,8 @@ public class DataTransform {
 																			new int[]{newrblk.brlen}, new int[]{newrblk.bclen}, 
 																			newrblk.toString(), replication, new String[]{smallestFile},
 																			true, oprnds.inputCSVProperties.getNAStrings(), specFileWithIDs);
+				numRowsTf = ret1.rlens[0];
+				
 				if ( ret1.rlens[0] == 0 )
 					throw new DMLRuntimeException(ERROR_MSG_ZERO_ROWS);
 				
@@ -924,6 +931,8 @@ public class DataTransform {
 		// generate matrix metadata file for outputs
 		if ( retCSV != null ) 
 		{
+			retCSV.getMatrixCharacteristics(0).setDimension(numRowsTf, numColumnsTf);
+			
 			CSVFileFormatProperties prop = new CSVFileFormatProperties(
 												false, 
 												oprnds.inputCSVProperties.getDelim(), // use the same header as the input
@@ -937,6 +946,8 @@ public class DataTransform {
 
 		if ( retBB != null )
 		{
+			retBB.getMatrixCharacteristics(0).setDimension(numRowsTf, numColumnsTf);
+			
 			MapReduceTool.writeMetaDataFile (outputMatrices[bboutputs.get(0)].getFileName()+".mtd", 
 					ValueType.DOUBLE, retBB.getMatrixCharacteristics(0), OutputInfo.BinaryBlockOutputInfo);
 			return retBB;
@@ -1378,9 +1389,7 @@ public class DataTransform {
 		JavaRDD<Tuple2<LongWritable,Text>> csvLines = JavaPairRDD.toRDD(inputData).toJavaRDD();
 		
 		long numRowsTf=0, numColumnsTf=0;
-		//JobReturn retCSV = null, retBB = null;
-		JavaPairRDD<LongWritable, Text> tfPairRDD = null;
-		//JavaRDD<String> tfRDD = null;
+		JavaPairRDD<Long, String> tfPairRDD = null;
 		
 		if (!oprnds.isApply) {
 			// build specification file with column IDs insteadof column names
@@ -1443,6 +1452,7 @@ public class DataTransform {
 			//update output statistics (required for correctness)
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(outVar);
 			mcOut.setDimension(numRowsTf, numColumnsTf);
+			mcOut.setNonZeros(-1);
 		}
 	}
 	

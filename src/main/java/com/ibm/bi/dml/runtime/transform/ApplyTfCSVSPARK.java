@@ -27,6 +27,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
@@ -35,7 +36,6 @@ import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 
 
@@ -46,7 +46,7 @@ public class ApplyTfCSVSPARK {
 	 * JavaRDD of Strings.
 	 */
 
-	public static JavaPairRDD<LongWritable, Text> runSparkJob(
+	public static JavaPairRDD<Long, String> runSparkJob(
 			SparkExecutionContext sec, JavaRDD<Tuple2<LongWritable, Text>> inputRDD, 
 			String tfMtdPath, String specFile, 
 			String tmpPath, CSVFileFormatProperties prop, 
@@ -72,10 +72,17 @@ public class ApplyTfCSVSPARK {
 		 * Note: The result of mapPartitionsWithIndex is cached so that the
 		 * transformed data is not redundantly computed multiple times
 		 */
-		JavaPairRDD<LongWritable, Text> applyRDD = inputRDD
+		JavaPairRDD<Long, String> applyRDD = inputRDD
 				.mapPartitionsWithIndex( new ApplyTfCSVMap(bcast_tf),  true)
-				.mapToPair(new ConvertStringToLongTextPair())
-				.cache();
+				.mapToPair(
+						new PairFunction<String,Long,String>(){
+							private static final long serialVersionUID = 3868143093999082931L;
+							@Override
+							public Tuple2<Long, String> call(String t) throws Exception {
+								return new Tuple2<Long, String>(new Long(1), t);
+							}
+						}
+				).cache();
 
 		/*
 		 * An action to force execution of apply()

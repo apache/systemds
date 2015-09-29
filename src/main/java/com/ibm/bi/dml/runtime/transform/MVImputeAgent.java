@@ -609,7 +609,7 @@ public class MVImputeAgent extends TransformationAgent {
 	@Override
 	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
 		double min = Double.MAX_VALUE;
-		double max = Double.MIN_VALUE;
+		double max = -Double.MAX_VALUE;
 		int nbins = 0;
 		double d;
 		long totalRecordCount = 0, totalValidCount=0;
@@ -759,7 +759,7 @@ public class MVImputeAgent extends TransformationAgent {
 			writeTfMtd(colID, imputedValue, outputDir, fs, agents);
 		}
 		
-		if ( min != Double.MAX_VALUE && max != Double.MIN_VALUE ) {
+		if ( isBinned ) {
 			double binwidth = (max-min)/nbins;
 			writeTfMtd(colID, Double.toString(min), Double.toString(max), Double.toString(binwidth), Integer.toString(nbins), outputDir, fs, agents);
 		}

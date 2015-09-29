@@ -83,7 +83,7 @@ public class BinAgent extends TransformationAgent {
 		_min = new double[_binList.length];
 		Arrays.fill(_min, Double.MAX_VALUE);
 		_max = new double[_binList.length];
-		Arrays.fill(_max, Double.MIN_VALUE);
+		Arrays.fill(_max, -Double.MAX_VALUE);
 		
 		_binWidths = new double[_binList.length];
 	}
@@ -188,7 +188,7 @@ public class BinAgent extends TransformationAgent {
 	@Override
 	public void mergeAndOutputTransformationMetadata(Iterator<DistinctValue> values, String outputDir, int colID, FileSystem fs, TfUtils agents) throws IOException {
 		double min = Double.MAX_VALUE;
-		double max = Double.MIN_VALUE;
+		double max = -Double.MAX_VALUE;
 		int nbins = 0;
 		
 		DistinctValue val = new DistinctValue();

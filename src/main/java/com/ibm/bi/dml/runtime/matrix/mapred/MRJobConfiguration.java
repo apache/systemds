@@ -266,8 +266,7 @@ public class MRJobConfiguration
 	}*/
 	
 	public static enum DataTransformCounters { 
-		TRANSFORMED_NUM_ROWS, 
-		TRANSFORMED_NUM_COLS // Number of columns in the transformed data
+		TRANSFORMED_NUM_ROWS
 	};
 	
 	public static final int getMiscMemRequired(JobConf job)

@@ -40,7 +40,6 @@ import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
 import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockMapper;
 import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockMapper.IndexedBlockRow;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.matrix.mapred.MapperBase;
 
 @SuppressWarnings("deprecation")
@@ -139,8 +138,6 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
 
 	@Override
 	public void close() throws IOException {
-		_reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_ROWS, tfmapper.getNumTransformedRows());
-		_reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS, tfmapper.getNumTransformedColumns());
 	}
 
 	@Override

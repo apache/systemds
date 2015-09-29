@@ -32,7 +32,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable, Text> {
 	
@@ -104,9 +103,8 @@ public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable
 
 	@Override
 	public void close() throws IOException {
-		if ( br != null ) br.close();
-		_reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_ROWS, tfmapper.getNumTransformedRows());
-		_reporter.incrCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS, tfmapper.getNumTransformedColumns());
+		if ( br != null ) 
+			br.close();
 	}
 
 }

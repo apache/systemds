@@ -21,11 +21,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+
+import scala.Tuple2;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -38,7 +41,6 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ComputeNonZerosBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertTextToString;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
@@ -47,12 +49,6 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
-
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-
-import scala.Tuple2;
 
 public class WriteSPInstruction extends SPInstruction 
 {
@@ -197,8 +193,9 @@ public class WriteSPInstruction extends SPInstruction
 				else {
 					// This case is applicable when the CSV output from transform() is written out
 					@SuppressWarnings("unchecked")
-					JavaPairRDD<LongWritable,Text> rdd = (JavaPairRDD<LongWritable, Text>) ((MatrixObject) sec.getVariable(input1.getName())).getRDDHandle().getRDD();
-					out = rdd.values().map(new ConvertTextToString());
+					JavaPairRDD<Long,String> rdd = (JavaPairRDD<Long, String>) ((MatrixObject) sec.getVariable(input1.getName())).getRDDHandle().getRDD();
+					out = rdd.values(); 
+					aNnz.setValue(new Double(-1)); // Unknown number of non-zeros
 				}
 				
 				if(hasHeader) {

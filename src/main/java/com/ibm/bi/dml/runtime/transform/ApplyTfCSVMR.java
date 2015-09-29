@@ -26,7 +26,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -103,15 +102,11 @@ public class ApplyTfCSVMR {
 		// Run the job
 		RunningJob runjob = JobClient.runJob(job);
 		
-		Counters c = runjob.getCounters();
-		long tx_numRows = c.findCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_ROWS).getCounter();
-		long tx_numCols = c.findCounter(MRJobConfiguration.DataTransformCounters.TRANSFORMED_NUM_COLS).getCounter();
-		MatrixCharacteristics mc = new MatrixCharacteristics(tx_numRows, tx_numCols, -1, -1);
-		
 		// Since transform CSV produces part files w/ prefix transform-part-*,
 		// delete all the "default" part-..... files
 		deletePartFiles(fs, outPath);
 		
+		MatrixCharacteristics mc = new MatrixCharacteristics();
 		return new JobReturn(new MatrixCharacteristics[]{mc}, runjob.isSuccessful());
 	}
 	

@@ -48,10 +48,11 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 	private String delim;
 	private boolean fill;
 	private double missingValue;
+	private boolean isTransformInput;
 
 	public CSVReblockSPInstruction(Operator op, CPOperand in, CPOperand out,
 			int br, int bc, boolean hasHeader, String delim, boolean fill,
-			double missingValue, String opcode, String instr) {
+			double missingValue, boolean isTransformInput, String opcode, String instr) {
 		super(op, in, out, opcode, instr);
 		brlen = br;
 		bclen = bc;
@@ -59,6 +60,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		this.delim = delim;
 		this.fill = fill;
 		this.missingValue = missingValue;
+		this.isTransformInput = isTransformInput;
 	}
 
 	public static Instruction parseInstruction(String str)
@@ -87,10 +89,11 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		String delim = parts[6];
 		boolean fill = Boolean.parseBoolean(parts[7]);
 		double missingValue = Double.parseDouble(parts[8]);
+		boolean isTransformInput = Boolean.parseBoolean(parts[9]);
 
 		Operator op = null; // no operator for ReblockSPInstruction
 		return new CSVReblockSPInstruction(op, in, out, brlen, bclen,
-				hasHeader, delim, fill, missingValue, opcode, str);
+				hasHeader, delim, fill, missingValue, isTransformInput, opcode, str);
 	}
 
 	@Override
@@ -122,13 +125,27 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		//check jdk version (prevent double.parseDouble contention on <jdk8)
 		sec.checkAndRaiseValidationWarningJDKVersion();
 		
-		//get input rdd
-		JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) 
-				sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
-		
-		//reblock csv to binary block
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
-				lines, mcOut, hasHeader, delim, fill, missingValue);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
+		if (isTransformInput)
+		{
+			//get input rdd
+			JavaPairRDD<Long, String> lines = (JavaPairRDD<Long, String>) 
+					sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
+			
+			//reblock csv to binary block
+			out = RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
+					lines, mcOut, hasHeader, delim, fill, missingValue, isTransformInput);
+		}
+		else 
+		{
+			//get input rdd
+			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) 
+					sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
+			
+			//reblock csv to binary block
+			out = RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
+					lines, mcOut, hasHeader, delim, fill, missingValue);
+		}
 		
 		// put output RDD handle into symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);

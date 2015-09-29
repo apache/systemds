@@ -133,13 +133,15 @@ public class ReblockSPInstruction extends UnarySPInstruction
 			String delim = ",";
 			boolean fill = false;
 			double missingValue = 0;
+			boolean isTransofrmInput = false;
 			if(properties != null) {
 				hasHeader = properties.isHasHeader();
 				delim = properties.getDelim();
 				fill = properties.isFill();
 				missingValue = properties.getMissingValue();
 			}
-			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), hasHeader, delim, fill, missingValue, "csvrblk", instString);
+			
+			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), hasHeader, delim, fill, missingValue, isTransofrmInput, "csvrblk", instString);
 			csvInstruction.processInstruction(sec);
 			return;
 		}

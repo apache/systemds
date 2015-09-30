@@ -39,18 +39,19 @@ function codeTabs() {
       var lang = $(this).data("lang");
       var image = $(this).data("image");
       var notabs = $(this).data("notabs");
-      var capitalizedLang = lang.substr(0, 1).toUpperCase() + lang.substr(1);
-      var id = "tab_" + lang + "_" + counter;
+      var langConv = lang.replace(/\./g, "_");
+      langConv = langConv.replace(/ /g, "_");
+      var id = "tab_" + langConv + "_" + counter;
       $(this).attr("id", id);
       if (image != null && langImages[lang]) {
         var buttonLabel = "<img src='" +langImages[lang] + "' alt='" + capitalizedLang + "' />";
       } else if (notabs == null) {
-        var buttonLabel = "<b>" + capitalizedLang + "</b>";
+          var buttonLabel = "<b>" + lang + "</b>";
       } else {
         var buttonLabel = ""
       }
       tabBar.append(
-        '<li><a class="tab_' + lang + '" href="#' + id + '">' + buttonLabel + '</a></li>'
+          '<li><a class="tab_' + langConv + '" href="#' + id + '">' + buttonLabel + '</a></li>'
       );
     });
 
@@ -59,11 +60,9 @@ function codeTabs() {
     counter++;
   });
   $("ul.nav-tabs a").click(function (e) {
-    // Toggling a tab should switch all tabs corresponding to the same language
-    // while retaining the scroll position
     e.preventDefault();
     var scrollOffset = $(this).offset().top - $(document).scrollTop();
-    $("." + $(this).attr('class')).tab('show');
+    $(this).tab('show'); // only switch current tab - makes comparisons feel slightly better on this page
     $(document).scrollTop($(this).offset().top - scrollOffset);
   });
 }

@@ -83,7 +83,7 @@ public class ColSumTest extends AutomatedTestBase
         }
         writeInputMatrix("matrix", matrix);
         writeExpectedMatrix("matrix_colsum", matrixColSum);
-disableOutAndExpectedDeletion();
+
         runTest();
 
         compareResults(1e-14);

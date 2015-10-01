@@ -97,6 +97,8 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing: output allocation
+		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
+		m2 = prepMatrixMultRightInput(m1, m2);
 		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
 		if( !ret.sparse )
 			ret.allocateDenseBlock();
@@ -105,7 +107,7 @@ public class LibMatrixMult
 		if( m1.isUltraSparse() || m2.isUltraSparse() )
 			matrixMultUltraSparse(m1, m2, ret, 0, m1.rlen);
 		else if(!m1.sparse && !m2.sparse)
-			matrixMultDenseDense(m1, m2, ret, 0, m1.rlen);
+			matrixMultDenseDense(m1, m2, ret, tm2, 0, m1.rlen);
 		else if(m1.sparse && m2.sparse)
 			matrixMultSparseSparse(m1, m2, ret, 0, m1.rlen);
 		else if(m1.sparse)
@@ -151,6 +153,8 @@ public class LibMatrixMult
 		
 		//pre-processing: output allocation (in contrast to single-threaded,
 		//we need to allocate sparse as well in order to prevent synchronization)
+		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
+		m2 = prepMatrixMultRightInput(m1, m2);
 		ret.sparse = (m1.isUltraSparse() || m2.isUltraSparse());
 		if( !ret.sparse )
 			ret.allocateDenseBlock();
@@ -164,7 +168,7 @@ public class LibMatrixMult
 			ArrayList<MatrixMultTask> tasks = new ArrayList<MatrixMultTask>();
 			int blklen = (int)(Math.ceil((double)m1.rlen/k));
 			for( int i=0; i<k & i*blklen<m1.rlen; i++ )
-				tasks.add(new MatrixMultTask(m1, m2, ret, i*blklen, Math.min((i+1)*blklen, m1.rlen)));
+				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, i*blklen, Math.min((i+1)*blklen, m1.rlen)));
 			pool.invokeAll(tasks);	
 			pool.shutdown();
 			ret.nonZeros = 0; //reset after execute
@@ -867,7 +871,7 @@ public class LibMatrixMult
 	 * @param ret
 	 * @throws DMLRuntimeException 
 	 */
-	private static void matrixMultDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
+	private static void matrixMultDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, int rl, int ru) 
 		throws DMLRuntimeException
 	{			
 		double[] a = m1.denseBlock;
@@ -903,7 +907,7 @@ public class LibMatrixMult
 				for( int i=rl, aix=rl*cd; i < ru; i++, aix+=cd) 
 					c[ i ] = dotProduct(a, b, aix, 0, cd);	
 			}
-			else if( m==1 && n < 64) //VECTOR-MATRIX
+			else if( m==1 && n < 64)   //VECTOR-MATRIX
 			{
 				//rest not aligned to blocks of 2 rows
 				if( cd % 2 == 1 )
@@ -912,6 +916,15 @@ public class LibMatrixMult
 				//compute blocks of 2 rows (2 instead of 4 for small n<64) 
 				for( int k=cd%2, bix=(cd%2)*n; k<cd; k+=2, bix+=2*n )
 					vectMultiplyAdd2(a[k], a[k+1], b, c, bix, bix+n, 0, n);    
+			}
+			else if( tm2 )             //MATRIX-MATRIX (skinny rhs)
+			{
+				//note: prepared rhs input via transpose for: m > n && cd > 64 && n < 64
+				//however, explicit flag required since dimension change m2
+				final int n2 = m2.rlen;
+				for( int i=rl, aix=rl*cd, cix=rl*n2; i < ru; i++, aix+=cd, cix+=n2 ) 
+					for( int j=0, bix=0; j<n2; j++, bix+=cd )
+						c[cix+j] = dotProduct(a, b, aix, bix, cd);
 			}
 			else //MATRIX-MATRIX
 			{	
@@ -3238,6 +3251,40 @@ public class LibMatrixMult
 		
 		return ret;
 	}
+	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @return
+	 */
+	private static boolean checkPrepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 )
+	{
+		//transpose if dense-dense, skinny rhs matrix (not vector), and memory guarded by output 
+		return (!m1.sparse && !m2.sparse && m1.rlen>m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64);
+	}
+	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	private static MatrixBlock prepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 ) 
+		throws DMLRuntimeException
+	{
+		MatrixBlock ret = m2;
+		
+		//transpose if dense-dense, skinny rhs matrix (not vector), and memory guarded by output 
+		if( checkPrepMatrixMultRightInput(m1, m2)  ) {
+			MatrixBlock tmpBlock = new MatrixBlock(m2.clen, m2.rlen, m2.sparse);
+			LibMatrixReorg.reorg(m2, tmpBlock, new ReorgOperator(SwapIndex.getSwapIndexFnObject()));
+			ret = tmpBlock;
+		}
+		
+		return ret;
+	}
 
 	/**
 	 * 
@@ -3343,15 +3390,17 @@ public class LibMatrixMult
 		private MatrixBlock _m1  = null;
 		private MatrixBlock _m2  = null;
 		private MatrixBlock _ret = null;
+		private boolean _tm2 = false;
 		private int _rl = -1;
 		private int _ru = -1;
 		private long _nnz = -1;
 
-		protected MatrixMultTask( MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru )
+		protected MatrixMultTask( MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, int rl, int ru )
 		{
 			_m1 = m1;
 			_m2 = m2;
 			_ret = ret;
+			_tm2 = tm2;
 			_rl = rl;
 			_ru = ru;
 		}
@@ -3363,7 +3412,7 @@ public class LibMatrixMult
 			if( _m1.isUltraSparse() || _m2.isUltraSparse() )
 				matrixMultUltraSparse(_m1, _m2, _ret, _rl, _ru);
 			else if(!_m1.sparse && !_m2.sparse)
-				matrixMultDenseDense(_m1, _m2, _ret, _rl, _ru);
+				matrixMultDenseDense(_m1, _m2, _ret, _tm2, _rl, _ru);
 			else if(_m1.sparse && _m2.sparse)
 				matrixMultSparseSparse(_m1, _m2, _ret, _rl, _ru);
 			else if(_m1.sparse)

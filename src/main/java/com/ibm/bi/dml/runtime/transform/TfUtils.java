@@ -40,6 +40,7 @@ import org.apache.wink.json4j.JSONObject;
 import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.parser.DataExpression;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.io.MatrixReader;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
@@ -190,8 +191,13 @@ public class TfUtils implements Serializable{
 		createAgents(spec);
 	}
 	
-	public TfUtils(JobConf job, boolean minimal) throws IOException, JSONException {
-		ConfigurationManager.setCachedJobConf(job);
+	public TfUtils(JobConf job, boolean minimal) 
+		throws IOException, JSONException 
+	{
+		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
+			ConfigurationManager.setCachedJobConf(job);
+		}
+		
 		_NAstrings = TfUtils.parseNAStrings(job);
 		_specFile = job.get(MRJobConfiguration.TF_SPEC_FILE);
 		
@@ -202,9 +208,13 @@ public class TfUtils implements Serializable{
 	}
 	
 	// called from GenTFMtdMapper, ApplyTf (Hadoop)
-	public TfUtils(JobConf job) throws IOException, JSONException 
+	public TfUtils(JobConf job) 
+		throws IOException, JSONException 
 	{
-		ConfigurationManager.setCachedJobConf(job);
+		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
+			ConfigurationManager.setCachedJobConf(job);
+		}
+		
 		boolean hasHeader = Boolean.parseBoolean(job.get(MRJobConfiguration.TF_HAS_HEADER));
 		//Pattern delim = Pattern.compile(Pattern.quote(job.get(MRJobConfiguration.TF_DELIM)));
 		String[] naStrings = TfUtils.parseNAStrings(job);

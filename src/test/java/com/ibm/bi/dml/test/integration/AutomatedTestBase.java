@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import com.ibm.bi.dml.lops.Lop;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.wink.json4j.JSONObject;
@@ -1115,7 +1116,7 @@ public abstract class AutomatedTestBase
 		
 			/** check number of MR jobs */
 			if (maxMRJobs > -1 && maxMRJobs < Statistics.getNoOfCompiledMRJobs())
-				fail("Limit of MR jobs is exceeded: expected: " + maxMRJobs + ", occured: "
+				fail("Limit of MR jobs is exceeded: expected: " + maxMRJobs + ", occurred: "
 						+ Statistics.getNoOfCompiledMRJobs());
 
 			if (exceptionExpected)
@@ -1154,7 +1155,33 @@ public abstract class AutomatedTestBase
 			return; //no effect on tests
 		}
 	}
-		
+
+	/**
+	 * <p>
+	 * Checks if a process-local temporary directory exists
+	 * in the current working directory.
+	 * </p>
+	 *
+	 * @return true if a process-local temp directory is present.
+	 */
+	public boolean checkForProcessLocalTemporaryDir() {
+		try {
+			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
+
+			StringBuilder sb = new StringBuilder();
+			sb.append(conf.getTextValue(DMLConfig.SCRATCH_SPACE));
+			sb.append(Lop.FILE_SEPARATOR);
+			sb.append(Lop.PROCESS_PREFIX);
+			sb.append(DMLScript.getUUID());
+			String pLocalDir = sb.toString();
+
+			return MapReduceTool.existsFileOnHDFS(pLocalDir);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return true;
+		}
+	}
+
 	/**
 	 * <p>
 	 * Compares the results of the computation with the expected ones.

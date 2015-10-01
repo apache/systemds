@@ -17,20 +17,16 @@
 
 package com.ibm.bi.dml.test.integration.functions.blocks;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
-
+import org.junit.Assert;
+import org.junit.Test;
 
 
 /**
  * <p><b>Positive tests:</b></p>
  * <ul>
  * 	<li>inner loop computation</li>
- * 	<li>clean up</li>
  * </ul>
  * <p><b>Negative tests:</b></p>
  * 
@@ -47,8 +43,8 @@ public class WhileTest extends AutomatedTestBase
         addTestConfiguration("ComputationTest", new TestConfiguration(TEST_DIR, "WhileTest",
         		new String[] { "b" }));
         addTestConfiguration("CleanUpTest", new TestConfiguration(TEST_DIR, "WhileTest",
-        		new String[] { "b" }));
-        
+                new String[] { "b" }));
+
         // negative tests
     }
     
@@ -80,26 +76,25 @@ public class WhileTest extends AutomatedTestBase
         
         compareResults(1e-14);
     }
-    
+
     @Test
     public void testCleanUp() {
-    	int rows = 10;
-    	int cols = 10;
+        int rows = 10;
+        int cols = 10;
         int maxIterations = 3;
-        
-    	TestConfiguration config = availableTestConfigurations.get("CleanUpTest");
-    	config.addVariable("rows", rows);
-    	config.addVariable("cols", cols);
-    	config.addVariable("maxiterations", maxIterations);
-    	
-    	loadTestConfiguration(config);
-        
-        TestUtils.removeTemporaryFiles();
-        
+
+        TestConfiguration config = availableTestConfigurations.get("CleanUpTest");
+        config.addVariable("rows", rows);
+        config.addVariable("cols", cols);
+        config.addVariable("maxiterations", maxIterations);
+
+        loadTestConfiguration(config);
+
         createRandomMatrix("a", rows, cols, -1, 1, 1, -1);
-        
+
         runTest();
-        
-        Assert.assertFalse("not all temp directories were removed", TestUtils.checkForTemporaryFiles());
+
+        Assert.assertFalse("This process's temp directory was not removed",
+                checkForProcessLocalTemporaryDir());
     }
 }

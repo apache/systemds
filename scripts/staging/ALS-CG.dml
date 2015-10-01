@@ -30,14 +30,14 @@
 # V       String   ---      Location to write the factor matrix V
 # rank    Int      10       Rank of the factorization
 # reg     String   "L2"	    Regularization: 
-#						    "L2" = L2 regularization;
+#                           "L2" = L2 regularization;
 #                           "wL2" = weighted L2 regularization
 # lambda  Double   0.000001 Regularization parameter, no regularization if 0.0
 # maxi    Int      50       Maximum number of iterations
 # check   Boolean  FALSE    Check for convergence after every iteration, i.e., updating U and V once
 # thr     Double   0.0001   Assuming check is set to TRUE, the algorithm stops and convergence is declared 
-# 							if the decrease in loss in any two consecutive iterations falls below this threshold; 
-#							if check is FALSE thr is ignored
+#                           if the decrease in loss in any two consecutive iterations falls below this threshold; 
+#                           if check is FALSE thr is ignored
 # fmt     String   "text"   The output format of the factor matrices L and R, such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
 # OUTPUT: 
@@ -45,42 +45,43 @@
 # 2- An r x n matrix V
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f ALS.dml -nvargs X=INPUT_DIR/X U=OUTPUT_DIR/U V=OUTPUT_DIR/V rank=10 reg="L2" lambda=0.0001 fmt=csv
+# hadoop jar SystemML.jar -f ALS-CG.dml -nvargs X=INPUT_DIR/X U=OUTPUT_DIR/U V=OUTPUT_DIR/V rank=10 reg="L2" lambda=0.0001 fmt=csv
 
 fileX      = $X;
-fileU	     = $U;
+fileU      = $U;
 fileV      = $V;
 
 # Default values of some parameters
-r          = ifdef ($rank, 10);	        # $rank=10;
-reg	   	   = ifdef ($reg, "L2")         # $reg="L2";
+r          = ifdef ($rank, 10);         # $rank=10;
+reg	       = ifdef ($reg, "L2")         # $reg="L2";
 lambda	   = ifdef ($lambda, 0.000001); # $lambda=0.000001;
 max_iter   = ifdef ($maxi, 50);         # $maxi=50;
-check      = ifdef ($check, FALSE);	    # $check=FALSE;
+check      = ifdef ($check, TRUE);	    # $check=FALSE;
 thr        = ifdef ($thr, 0.0001);      # $thr=0.0001;
 fmtO       = ifdef ($fmt, "text");      # $fmt="text";
-
-X = read (fileX);
-
+ 
+ 
 ###### MAIN PART ######
+X = read (fileX);
 m = nrow (X);
 n = ncol (X);
 
 # initializing factor matrices
-U = rand (rows = m, cols = r, min = -0.5, max = 0.5);
-V = rand (rows = r, cols = n, min = -0.5, max = 0.5);
+U = rand (rows = m, cols = r, min = -0.5, max = 0.5); # mxr
+V = rand (rows = n, cols = r, min = -0.5, max = 0.5); # nxr
+
 W = ppred (X, 0, "!=");
   
 # check for regularization
 if( reg == "L2" ) {
   print ("BEGIN ALS-CG SCRIPT WITH NONZERO SQUARED LOSS + L2 WITH LAMBDA - " + lambda);
   row_nonzeros = matrix(1, nrow(W), 1);
-  col_nonzeros = matrix(1, 1, ncol(W));
+  col_nonzeros = matrix(1, ncol(W), 1);
 } 
 else if( reg == "wL2" ) {
   print ("BEGIN ALS-CG SCRIPT WITH NONZERO SQUARED LOSS + WEIGHTED L2 WITH LAMBDA - " + lambda);
   row_nonzeros = rowSums(W);
-  col_nonzeros = colSums(W);
+  col_nonzeros = t(colSums(W));
 } 
 else {
   stop ("wrong regularization! " + reg);
@@ -97,22 +98,22 @@ is_U = TRUE;  # TRUE = Optimize U, FALSE = Optimize V
 maxinneriter = r ; # min (ncol (U), 15);
 
 if( check ) {
-  loss_init = 0.5 * sum (W * (U %*% V - X) ^ 2);
-	loss_init = loss_init + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) + sum (V ^ 2 * col_nonzeros));
-	print ("-----   Initial train loss: " + loss_init + " -----");
+  loss_init = 0.5 * sum (ppred(X,0, "!=") * (U %*% t(V) - X) ^ 2);
+  loss_init = loss_init + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) + sum (V ^ 2 * col_nonzeros));
+  print ("-----   Initial train loss: " + loss_init + " -----");
 }
 
 it = 0;
 converged = FALSE;
-while( it < max_iter & ! converged ) 
+while( as.integer(it/2) < max_iter & ! converged ) 
 {
   it = it + 1;
   if( is_U ) {
-    G = (W * (U %*% V - X)) %*% t(V) + lambda * U * row_nonzeros;
-	} 
+    G = (ppred(X,0,"!=") * (U %*% t(V) - X)) %*% V + lambda * U * row_nonzeros;
+  } 
   else {
-    G = t(U) %*% (W * (U %*% V - X)) + lambda * V * col_nonzeros;
-	}
+    G = t(t(U) %*% (ppred(X,0,"!=") * (U %*% t(V) - X))) + lambda * V * col_nonzeros;
+  }
 
   R = -G;
   S = R;
@@ -124,12 +125,12 @@ while( it < max_iter & ! converged )
   while( norm_R2 > tt * norm_G2 & inneriter <= maxinneriter )
   {
     if( is_U ) {
-			HS = (W * (S %*% V)) %*% t(V) + lambda * S * row_nonzeros;
+      HS = (W * (S %*% t(V))) %*% V + lambda * S * row_nonzeros;
       alpha = norm_R2 / sum (S * HS);
       U = U + alpha * S;  # OK since U is not used in HS
     } 
     else {
-      HS = t(U) %*% (W * (U %*% S)) + lambda * S * col_nonzeros;
+      HS = t(t(U) %*% (W * (U %*% t(S)))) + lambda * S * col_nonzeros;
       alpha = norm_R2 / sum (S * HS);
       V = V + alpha * S;  # OK since V is not used in HS
     }
@@ -144,20 +145,29 @@ while( it < max_iter & ! converged )
   is_U = ! is_U;
 	
   # check for convergence
-  if( check ) {
-    loss_cur = 0.5 * sum (W * (U %*% V - X) ^ 2);
-		loss_cur = loss_cur + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) + sum (V ^ 2 * col_nonzeros));
+  if( check & (it%%2 == 0) ) {
+    loss_cur = 0.5 * sum (ppred(X,0, "!=") * (U %*% t(V) - X) ^ 2);
+    loss_cur = loss_cur + 0.5 * lambda * (sum (U ^ 2 * row_nonzeros) + sum (V ^ 2 * col_nonzeros));
 	
     loss_dec = (loss_init - loss_cur) / loss_init;
-    print ("Train loss at iteration (" + it + "): " + loss_cur + " loss-dec " + loss_dec);
+    print ("Train loss at iteration (" + as.integer(it/2) + "): " + loss_cur + " loss-dec " + loss_dec);
     if( loss_dec >= 0 & loss_dec < thr | loss_init == 0 ) {
-      print ("----- ALS converged after " + it + " iterations!");
+      print ("----- ALS-CG converged after " + as.integer(it/2) + " iterations!");
       converged = TRUE;
     }
     loss_init = loss_cur;
   }
 }
 
+if( check ) {
+  print ("----- Final train loss: " + loss_init + " -----");
+}
+
+if( !converged ) {
+  print ("Max iteration achieved but not converged!");
+}
+
+V = t(V);
 write (U, fileU, format=fmtO);
 write (V, fileV, format=fmtO);
  

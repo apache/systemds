@@ -1424,11 +1424,17 @@ public class OptimizerRuleBased extends Optimizer
 			kMax = Math.min( kMax, (int)Math.floor( mem / M ) );
 			kMax = Math.max( kMax, 1);
 			
+			//constrain max parfor parallelism by problem size
+			int parforK = (int)((_N<kMax)? _N : kMax);
+			
+			//set parfor degree of parallelism
+			pfpb.setDegreeOfParallelism(parforK);
+			n.setK(parforK);	
+			
 			//distribute remaining parallelism 
-			int tmpK = (int)((_N<kMax)? _N : kMax);
-			pfpb.setDegreeOfParallelism(tmpK);
-			n.setK(tmpK);	
-			rAssignRemainingParallelism( n,(int)Math.ceil(((double)(kMax-tmpK+1))/tmpK) ); //1 if tmpK=kMax, otherwise larger
+			int remainParforK = (int)Math.ceil(((double)(kMax-parforK+1))/parforK);
+			int remainOpsK = Math.max(_lkmaxCP / parforK, 1);
+			rAssignRemainingParallelism( n, remainParforK, remainOpsK ); 
 		}
 		else // ExecType.MR/ExecType.SPARK
 		{
@@ -1461,7 +1467,7 @@ public class OptimizerRuleBased extends Optimizer
 				kMax = 1;
 					
 			//distribute remaining parallelism and recompile parallel instructions
-			rAssignRemainingParallelism( n, kMax ); 
+			rAssignRemainingParallelism( n, kMax, 1 ); 
 		}		
 		
 		_numEvaluatedPlans++;
@@ -1474,7 +1480,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param par
 	 * @throws DMLRuntimeException 
 	 */
-	protected void rAssignRemainingParallelism(OptNode n, int par) 
+	protected void rAssignRemainingParallelism(OptNode n, int parforK, int opsK) 
 		throws DMLRuntimeException
 	{		
 		ArrayList<OptNode> childs = n.getChilds();
@@ -1488,14 +1494,21 @@ public class OptimizerRuleBased extends Optimizer
 				
 				if( c.getNodeType() == NodeType.PARFOR )
 				{
+					//constrain max parfor parallelism by problem size
 					int tmpN = Integer.parseInt(c.getParam(ParamType.NUM_ITERATIONS));
-					int tmpK = (tmpN<par)? tmpN : par;
+					int tmpK = (tmpN<parforK)? tmpN : parforK;
+					
+					//set parfor degree of parallelism
 					long id = c.getID();
 					c.setK(tmpK);
 					ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
                                                   .getAbstractPlanMapping().getMappedProg(id)[1];
 					pfpb.setDegreeOfParallelism(tmpK);
-					rAssignRemainingParallelism(c,(int)Math.ceil(((double)(par-tmpK+1))/tmpK));
+					
+					//distribute remaining parallelism 
+					int remainParforK = (int)Math.ceil(((double)(parforK-tmpK+1))/tmpK);
+					int remainOpsK = Math.max(opsK / tmpK, 1);
+					rAssignRemainingParallelism(c, remainParforK, remainOpsK);
 				}
 				else if( c.getNodeType() == NodeType.HOP )
 				{
@@ -1505,14 +1518,14 @@ public class OptimizerRuleBased extends Optimizer
 						&& h instanceof MultiThreadedHop ) //abop, datagenop, qop
 					{
 						MultiThreadedHop mhop = (MultiThreadedHop) h;
-						mhop.setMaxNumThreads(par); //set max constraint in hop
-						c.setK(par); //set optnode k (for explain)
+						mhop.setMaxNumThreads(opsK); //set max constraint in hop
+						c.setK(opsK); //set optnode k (for explain)
 						//need to recompile SB, if changed constraint
 						recompileSB = true;	
 					}
 				}
 				else
-					rAssignRemainingParallelism(c, par);
+					rAssignRemainingParallelism(c, parforK, opsK);
 			}
 			
 			//recompile statement block if required

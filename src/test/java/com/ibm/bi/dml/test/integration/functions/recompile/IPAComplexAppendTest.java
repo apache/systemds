@@ -38,7 +38,7 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 	private final static String TEST_NAME = "append_nnz";
 	private final static String TEST_DIR = "functions/recompile/";
 	
-	private final static int rows = 200000;
+	private final static int rows = 300000;
 	private final static int cols = 1000;
 	private final static int nnz  = 700; //ultra-sparse
 	

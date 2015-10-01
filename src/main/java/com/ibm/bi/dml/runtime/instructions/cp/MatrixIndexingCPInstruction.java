@@ -145,11 +145,19 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 				resultBlock = mo.readMatrixPartition( new IndexRange(rl+1,ru+1,cl+1,cu+1) );
 			else //via slicing the in-memory matrix
 			{
+				//execute right indexing operation
 				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 				resultBlock = matBlock.sliceOperations(rl, ru, cl, cu, new MatrixBlock());	
+				
+				//unpin rhs input
 				ec.releaseMatrixInput(input1.getName());
+				
+				//ensure correct sparse/dense output representation
+				//(memory guarded by release of input)
+				resultBlock.examSparsity();
 			}	
 			
+			//unpin output
 			ec.setMatrixOutput(output.getName(), resultBlock);
 		}
 		//left indexing
@@ -172,8 +180,15 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 				ScalarObject scalar = ec.getScalarInput(input2.getName(), ValueType.DOUBLE, input2.isLiteral());
 				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, rl, cl, new MatrixBlock(), inplace);
 			}
-			
+
+			//unpin lhs input
 			ec.releaseMatrixInput(input1.getName());
+			
+			//ensure correct sparse/dense output representation
+			//(memory guarded by release of input)
+			resultBlock.examSparsity();
+			
+			//unpin output
 			ec.setMatrixOutput(output.getName(), resultBlock, inplace);
 		}
 		else

@@ -1,0 +1,54 @@
+<!--
+ * (C) Copyright IBM Corp. 2010, 2015
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *     
+-->
+
+<root>
+   <!-- local fs tmp working directory-->
+   <localtmpdir>/tmp/systemml</localtmpdir>
+
+   <!-- hdfs tmp working directory--> 
+   <scratch>scratch_space</scratch> 
+
+   <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
+   <optlevel>2</optlevel>  
+
+   <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
+   <numreducers>10</numreducers> 
+   
+   <!-- override jvm reuse flag for specific MR jobs, valid values: true | false  -->
+   <jvmreuse>false</jvmreuse> 
+
+   <!-- default block dim for binary block files -->
+   <defaultblocksize>1000</defaultblocksize> 
+
+   <!-- run systemml control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
+   <dml.yarn.appmaster>false</dml.yarn.appmaster>
+
+   <!-- maximum jvm heap size of the dml yarn appmaster in MB, the requested memory is 1.5x this parameter -->
+   <dml.yarn.appmaster.mem>2048</dml.yarn.appmaster.mem>
+
+   <!-- maximum jvm heap size of the map/reduce tasks in MB, the requested memory is 1.5x this parameter, negative values ignored  -->
+   <dml.yarn.mapreduce.mem>2048</dml.yarn.mapreduce.mem>
+
+   <!-- yarn application submission queue, relevant for default capacity scheduler -->
+   <dml.yarn.app.queue>default</dml.yarn.app.queue>
+   
+   <!-- enables multi-threaded matrix multiplications in singlenode control program -->
+   <cp.parallel.matrixmult>true</cp.parallel.matrixmult>
+   
+   <!-- enables multi-threaded read/write of text formats in singlenode control program -->
+   <cp.parallel.textio>true</cp.parallel.textio>
+</root>

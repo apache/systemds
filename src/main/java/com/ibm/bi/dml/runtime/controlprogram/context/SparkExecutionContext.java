@@ -256,15 +256,17 @@ public class SparkExecutionContext extends ExecutionContext
 		//matrix object while all the logic is in the SparkExecContext
 		
 		JavaPairRDD<?,?> rdd = null;
-		//CASE 1: rdd already existing 
-		if( mo.getRDDHandle()!=null )
+		//CASE 1: rdd already existing (reuse if checkpoint or trigger
+		//pending rdd operations if not yet cached but prevent to re-evaluate 
+		//rdd operations if already executed and cached
+		if(    mo.getRDDHandle()!=null 
+			&& (mo.getRDDHandle().isCheckpointRDD() || !mo.isCached(false)) )
 		{
-			// TODO: Currently unchecked handling as it ignores inputInfo
-			// This is ok since this method is only supposed to be called only by Reblock which performs appropriate casting
+			//return existing rdd handling (w/o input format change)
 			rdd = mo.getRDDHandle().getRDD();
 		}
-		//CASE 2: dirty in memory data
-		else if( mo.isDirty() )
+		//CASE 2: dirty in memory data or cached result of rdd operations
+		else if( mo.isDirty() || mo.isCached(false) )
 		{
 			//get in-memory matrix block and parallelize it
 			MatrixBlock mb = mo.acquireRead(); //pin matrix in memory

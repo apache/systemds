@@ -280,20 +280,23 @@ public abstract class CacheableData extends Data
 		return _cacheStatus.toString();
 	}
     
+	//TODO isCached is only public for access from SparkExectionContext, once we can assume
+	//the existence of spark libraries, we can move the related code to MatrixObject and
+	//make this method protected again
+	public boolean isCached(boolean inclCachedNoWrite)
+	{
+		if( inclCachedNoWrite )
+			return (_cacheStatus == CacheStatus.CACHED || _cacheStatus == CacheStatus.CACHED_NOWRITE);
+		else
+			return (_cacheStatus == CacheStatus.CACHED);
+	}
+	
 	protected boolean isEmpty(boolean inclCachedNoWrite)
 	{
 		if( inclCachedNoWrite )
 			return (_cacheStatus == CacheStatus.EMPTY || _cacheStatus == CacheStatus.CACHED_NOWRITE);
 		else
 			return (_cacheStatus == CacheStatus.EMPTY);
-	}
-	
-	protected boolean isCached(boolean inclCachedNoWrite)
-	{
-		if( inclCachedNoWrite )
-			return (_cacheStatus == CacheStatus.CACHED || _cacheStatus == CacheStatus.CACHED_NOWRITE);
-		else
-			return (_cacheStatus == CacheStatus.CACHED);
 	}
 	
 	protected boolean isModify()

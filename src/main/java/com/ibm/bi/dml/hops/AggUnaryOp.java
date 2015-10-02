@@ -374,6 +374,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
+		//forced / memory-based / threshold-based decision
 		if( _etypeForced != null ) 			
 		{
 			_etype = _etypeForced;
@@ -398,6 +399,17 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 
+		//spark-specific decision refinement (execute unary aggregate w/ spark input and 
+		//single parent also in spark because it's likely cheap and reduces data transfer)
+		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
+			&& getInput().get(0).optFindExecType() == ExecType.SPARK 
+			&& !(getInput().get(0) instanceof DataOp)    //input is not checkpoint
+			&& getInput().get(0).getParent().size()==1 ) //uagg is only parent
+		{
+			//pull unary aggregate into spark 
+			_etype = ExecType.SPARK;
+		}
+		
 		//mark for recompile (forever)
 		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE ) {
 			setRequiresRecompile();

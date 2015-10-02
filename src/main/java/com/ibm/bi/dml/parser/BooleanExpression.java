@@ -88,7 +88,8 @@ public class BooleanExpression extends Expression
 		
 		BooleanExpression newExpr = new BooleanExpression(this._opcode, this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 		newExpr.setLeft(_left.rewriteExpression(prefix));
-		newExpr.setRight(_right.rewriteExpression(prefix));
+		if (_right != null)
+			newExpr.setRight(_right.rewriteExpression(prefix));
 		return newExpr;
 	}
 	

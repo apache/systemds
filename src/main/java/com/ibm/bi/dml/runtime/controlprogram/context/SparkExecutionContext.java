@@ -73,6 +73,7 @@ public class SparkExecutionContext extends ExecutionContext
 	//internal configurations 
 	private static boolean LAZY_SPARKCTX_CREATION = true;
 	private static boolean ASYNCHRONOUS_VAR_DESTROY = true;
+	private static boolean FAIR_SCHEDULER_MODE = true;
 	
 	//executor memory and relative fractions as obtained from the spark configuration
 	private static long _memExecutors = -1; //mem per executors
@@ -181,13 +182,22 @@ public class SparkExecutionContext extends ExecutionContext
 				// This is discouraged in spark but have added only for those testcase that cannot stop the context properly
 				// conf.set("spark.driver.allowMultipleContexts", "true");
 				conf.set("spark.ui.enabled", "false");
-				// conf.set("spark.ui.port", "69389"); // some random port
 				_spctx = new JavaSparkContext(conf);
 			}
-			else {
+			else //default cluster setup
+			{
+				//setup systemml-preferred spark configuration (w/o user choice)
 				SparkConf conf = new SparkConf();
+				
 				//always set unlimited result size (required for cp collect)
 				conf.set("spark.driver.maxResultSize", "0");
+				
+				//always use the fair scheduler (for single jobs, it's equivalent to fifo
+				//but for concurrent jobs in parfor it ensures better data locality because
+				//round robin assignment mitigates the problem of 'sticky slots')
+				if( FAIR_SCHEDULER_MODE ) {
+					conf.set("spark.scheduler.mode", "FAIR");
+				}
 				
 				_spctx = new JavaSparkContext(conf);
 			}
@@ -827,7 +837,8 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		//repartition and persist rdd (force creation of shuffled rdd via merge)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDAggregateUtils.mergeByKey(in);
-		out.persist( Checkpoint.DEFAULT_STORAGE_LEVEL );
+		out.persist( Checkpoint.DEFAULT_STORAGE_LEVEL )
+		   .count(); //trigger caching to prevent contention
 		
 		//create new rdd handle, in-place of current matrix object
 		RDDObject inro =  mo.getRDDHandle();       //guaranteed to exist (see above)
@@ -835,6 +846,27 @@ public class SparkExecutionContext extends ExecutionContext
 		outro.setCheckpointRDD(true);              //mark as checkpointed
 		outro.addLineageChild(inro);               //keep lineage to prevent cycles on cleanup
 		mo.setRDDHandle(outro);				       
+	}
+	
+	/**
+	 * 
+	 * @param poolName
+	 */
+	public void setThreadLocalSchedulerPool(String poolName) {
+		if( FAIR_SCHEDULER_MODE ) {
+			getSparkContext().sc().setLocalProperty(
+					"spark.scheduler.pool", "pool" + poolName);
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public void cleanupThreadLocalSchedulerPool() {
+		if( FAIR_SCHEDULER_MODE ) {
+			getSparkContext().sc().setLocalProperty(
+					"spark.scheduler.pool", null);
+		}
 	}
 	
 	///////////////////////////////////////////

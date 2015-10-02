@@ -19,6 +19,8 @@ package com.ibm.bi.dml.runtime.controlprogram.parfor;
 
 import java.util.Collection;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
@@ -33,7 +35,6 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
  */
 public class LocalParWorker extends ParWorker implements Runnable
 {
-	
 	protected LocalTaskQueue<Task> _taskQueue   = null;
 	
 	protected Collection<String> _fnNames = null;
@@ -55,18 +56,15 @@ public class LocalParWorker extends ParWorker implements Runnable
 	 * Sets the status to stopped such that execution will be aborted as soon as the
 	 * current task is finished.
 	 */
-	public void setStopped()
-	{
+	public void setStopped() {
 		_stopped = true;
 	}
 	
-	public void setFunctionNames(Collection<String> fnNames)
-	{
+	public void setFunctionNames(Collection<String> fnNames) {
 		_fnNames = fnNames;
 	}
 	
-	public Collection<String> getFunctionNames()
-	{
+	public Collection<String> getFunctionNames() {
 		return _fnNames;
 	}
 	
@@ -75,6 +73,12 @@ public class LocalParWorker extends ParWorker implements Runnable
 	{
 		// monitoring start
 		Timing time1 = ( _monitor ? new Timing(true) : null ); 
+		
+		//setup fair scheduler pool for worker thread
+		if( OptimizerUtils.isSparkExecutionMode() ) {
+			SparkExecutionContext sec = (SparkExecutionContext)_ec;
+			sec.setThreadLocalSchedulerPool("parforPool"+_workerID);
+		}
 		
 		// continuous execution (execute tasks until (1) stopped or (2) no more tasks)
 		Task lTask = null; 
@@ -126,18 +130,19 @@ public class LocalParWorker extends ParWorker implements Runnable
 				}
 			}
 		}	
-		
-		//cleanup symbol table
-		//cleanupCachedVariables();
 
-		if( _monitor )
-		{
+		//setup fair scheduler pool for worker thread
+		if( OptimizerUtils.isSparkExecutionMode() ) {
+			SparkExecutionContext sec = (SparkExecutionContext)_ec;
+			sec.cleanupThreadLocalSchedulerPool();
+		}
+		
+		if( _monitor ) {
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMTASKS, _numTasks);
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_NUMITERS, _numIters);
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_EXEC_T, time1.stop());
 		}
 	}
-
 }
 
 	

@@ -254,8 +254,9 @@ public class MLContext {
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
-		JavaRDD<String> rdd = RDDConverterUtils.dataFrameToCSVRDD(df, containsID);
-		registerInput(varName, rdd, "csv", -1, -1);
+		MatrixCharacteristics mcOut = new MatrixCharacteristics();
+		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = RDDConverterUtils.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID);
+		registerInput(varName, rdd, mcOut);
 	}
 	
 	/**
@@ -567,7 +568,7 @@ public class MLContext {
 	}
 	
 	// All binary blocked method call this.
-	private void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, MatrixCharacteristics mc) throws DMLRuntimeException {
+	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, MatrixCharacteristics mc) throws DMLRuntimeException {
 		if(_variables == null)
 			_variables = new LocalVariableMap();
 		if(_inVarnames == null)

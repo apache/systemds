@@ -32,6 +32,7 @@ import org.junit.runners.Suite;
 	RandTest4.class,
 	RandTest5.class,
 	RandVarMinMaxTest.class,
+	RandVarSeedTest.class,
 	ReadMMTest.class,
 	ReblockTest.class,
 	SampleTest.class,

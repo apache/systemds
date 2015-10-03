@@ -213,9 +213,13 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 	        }
 	        
 	        double sparsity = Double.parseDouble(s[7]);
-			long seed = Long.parseLong(s[8]);
+	        
+			long seed = DataGenOp.UNSPECIFIED_SEED;
+			if( !s[8].contains( Lop.VARIABLE_NAME_PLACEHOLDER)){
+				seed = Long.parseLong(s[8]);				
+			}
+					
 			String pdf = s[9];
-
 			String pdfParams = null;
 	        if (!s[10].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
 	        	pdfParams = s[10];

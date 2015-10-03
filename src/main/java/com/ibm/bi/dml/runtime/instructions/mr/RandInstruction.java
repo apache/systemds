@@ -30,7 +30,6 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public class RandInstruction extends DataGenMRInstruction
 {
-	
 	private double minValue;
 	private double maxValue;
 	private double sparsity;
@@ -104,8 +103,8 @@ public class RandInstruction extends DataGenMRInstruction
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
-		// TODO Auto-generated method stub
-		
+			throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
+		//do nothing (only meta carrier, handled in special job type)
 	}	
 }

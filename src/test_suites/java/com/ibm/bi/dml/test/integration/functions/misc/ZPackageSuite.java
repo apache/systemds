@@ -28,6 +28,7 @@ import org.junit.runners.Suite;
 	DataTypeCastingTest.class,
 	DataTypeChangeTest.class,
 	FunctionInliningTest.class,
+	InvalidFunctionSignatureTest.class,
 	IPALiteralReplacementTest.class,
 	IPAScalarRecursionTest.class,
 	IPAUnknownRecursionTest.class,
@@ -35,8 +36,13 @@ import org.junit.runners.Suite;
 	NrowNcolStringTest.class,
 	NrowNcolUnknownCSVReadTest.class,
 	OuterTableExpandTest.class,
+	PrintExpressionTest.class,
+	PrintMatrixTest.class,
 	ReadAfterWriteTest.class,
+	RewriteSimplifyRowColSumMVMultTest.class,
 	ScalarAssignmentTest.class,
+	ScalarFunctionTest.class,
+	SetWorkingDirTest.class,
 	ValueTypeAutoCastingTest.class,
 	ValueTypeCastingTest.class
 })

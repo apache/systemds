@@ -241,8 +241,13 @@ public class RandSPInstruction extends UnarySPInstruction
 	        }
 	        
 	        double sparsity = Double.parseDouble(s[7]);
-			long seed = Long.parseLong(s[8]);
-			String pdf = s[9];
+			
+	        long seed = DataGenOp.UNSPECIFIED_SEED;
+			if (!s[8].contains( Lop.VARIABLE_NAME_PLACEHOLDER)) {
+				seed = Long.parseLong(s[8]);
+			}
+				
+	        String pdf = s[9];
 			String pdfParams = s[10];
 			
 			return new RandSPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, pdfParams, opcode, str);

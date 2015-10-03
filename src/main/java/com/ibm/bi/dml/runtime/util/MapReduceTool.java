@@ -306,7 +306,7 @@ public class MapReduceTool
 		br.close();
 		if( line == null )
 			throw new IOException("Empty file on hdfs: "+filename);
-		return Integer.parseInt(line);
+		return Long.parseLong(line);
 	}
 	
 	public static boolean readBooleanFromHDFSFile(String filename) 

@@ -1110,13 +1110,11 @@ public class DataExpression extends DataIdentifier
 				this.setRandDefault();
 			}
 			
-				
-				
-			for (String key : _varParams.keySet()){
+			//check valid parameters
+			for( String key : _varParams.keySet() ) {
 				boolean found = false;
 				for (String name : RAND_VALID_PARAM_NAMES){
-					if (name.equals(key))
-					found = true;
+					found |= name.equals(key);
 				}
 				if (!found){
 					raiseValidateError("unexpected parameter \"" + key +
@@ -1126,34 +1124,35 @@ public class DataExpression extends DataIdentifier
 							+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF  + ", " + RAND_LAMBDA, conditional);
 				}
 			}
-			//TODO: Leo Need to check with Doug about the data types
-			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
+			
+			//parameters w/ support for variable inputs
 			if (getVarParam(RAND_ROWS) instanceof StringIdentifier || getVarParam(RAND_ROWS) instanceof BooleanIdentifier){
-				raiseValidateError("for Rand statement " + RAND_ROWS + " has incorrect data type", conditional);
-			}
-				
+				raiseValidateError("for Rand statement " + RAND_ROWS + " has incorrect value type", conditional);
+			}				
+			
 			if (getVarParam(RAND_COLS) instanceof StringIdentifier || getVarParam(RAND_COLS) instanceof BooleanIdentifier){
-				raiseValidateError("for Rand statement " + RAND_COLS + " has incorrect data type", conditional);
+				raiseValidateError("for Rand statement " + RAND_COLS + " has incorrect value type", conditional);
 			}
-				
+			
+			if (getVarParam(RAND_SEED) instanceof StringIdentifier || getVarParam(RAND_SEED) instanceof BooleanIdentifier) {
+				raiseValidateError("for Rand statement " + RAND_SEED + " has incorrect value type", conditional);
+			}
+			
 			if ((getVarParam(RAND_MAX) instanceof StringIdentifier && !_strInit) || getVarParam(RAND_MAX) instanceof BooleanIdentifier) {
-				raiseValidateError("for Rand statement " + RAND_MAX + " has incorrect data type", conditional);
+				raiseValidateError("for Rand statement " + RAND_MAX + " has incorrect value type", conditional);
 			}
 			
 			if ((getVarParam(RAND_MIN) instanceof StringIdentifier && !_strInit) || getVarParam(RAND_MIN) instanceof BooleanIdentifier) {
-				raiseValidateError("for Rand statement " + RAND_MIN + " has incorrect data type", conditional);
+				raiseValidateError("for Rand statement " + RAND_MIN + " has incorrect value type", conditional);
 			}
 			
+			//parameters w/o support for variable inputs (requires double/int or string constants)
 			if (!(getVarParam(RAND_SPARSITY) instanceof DoubleIdentifier || getVarParam(RAND_SPARSITY) instanceof IntIdentifier)) {
-				raiseValidateError("for Rand statement " + RAND_SPARSITY + " has incorrect data type", conditional);
-			}
-			
-			if (!(getVarParam(RAND_SEED) instanceof IntIdentifier)) {
-				raiseValidateError("for Rand statement " + RAND_SEED + " has incorrect data type", conditional);
+				raiseValidateError("for Rand statement " + RAND_SPARSITY + " has incorrect value type", conditional);
 			}
 			
 			if (!(getVarParam(RAND_PDF) instanceof StringIdentifier)) {
-				raiseValidateError("for Rand statement " + RAND_PDF + " has incorrect data type", conditional);
+				raiseValidateError("for Rand statement " + RAND_PDF + " has incorrect value type", conditional);
 			}
 	
 			Expression lambda = getVarParam(RAND_LAMBDA);

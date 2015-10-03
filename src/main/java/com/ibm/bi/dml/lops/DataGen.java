@@ -108,7 +108,7 @@ public class DataGen extends Lop
 	}
 
 	/**
-	 * Function to generate CP instructions for data generation via Rand and Seq.
+	 * Function to generate CP/SP instructions for data generation via Rand and Seq.
 	 * Since DataGen Lop can have many inputs, ONLY the output variable name is 
 	 * passed from piggybacking as the function argument <code>output</code>. 
 	 */
@@ -132,111 +132,106 @@ public class DataGen extends Lop
 		}
 	}
 	
+	@Override
+	public String getInstructions(int inputIndex, int outputIndex) 
+		throws LopsException
+	{
+		switch(method) {
+		case RAND:
+			return getMRInstruction_Rand(inputIndex, outputIndex);
+		case SEQ:
+			return getMRInstruction_Seq(inputIndex, outputIndex);
+			
+		default:
+			throw new LopsException("Unknown data generation method: " + method);
+		}
+	}
+	
 	/**
 	 * Private method that generates CP Instruction for Rand.
 	 * @param output
 	 * @return
 	 * @throws LopsException
 	 */
-	private String getCPInstruction_Rand(String output) throws LopsException {
-		
+	private String getCPInstruction_Rand(String output) 
+		throws LopsException 
+	{	
+		//sanity checks
 		if ( method != DataGenMethod.RAND )
 			throw new LopsException("Invalid instruction generation for data generation method " + method);
-		
-		StringBuilder sb = new StringBuilder( );
-		ExecType et = getExecType();
-		sb.append( et );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		
-		if (this.getInputs().size() == DataExpression.RAND_VALID_PARAM_NAMES.length) {
-
-			Lop iLop = null;
-
-			iLop = _inputParams.get(DataExpression.RAND_ROWS.toString());
-			String rowsString = iLop.prepScalarLabel();
-			
-			iLop = _inputParams.get(DataExpression.RAND_COLS.toString());
-			String colsString = iLop.prepScalarLabel();
-			
-			String rowsInBlockString = String.valueOf(this
-					.getOutputParameters().getRowsInBlock());
-			String colsInBlockString = String.valueOf(this
-					.getOutputParameters().getColsInBlock());
-
-			iLop = _inputParams.get(DataExpression.RAND_MIN.toString());
-			String minString = iLop.prepScalarLabel();
-
-			iLop = _inputParams.get(DataExpression.RAND_MAX.toString());
-			String maxString =  iLop.prepScalarLabel();
-			
-			iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString());
-			String sparsityString = iLop.getOutputParameters().getLabel();
-			if (iLop.isVariable())
-				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + DataExpression.RAND_SPARSITY
-						+ " must be a literal for a Rand operation.");
-
-			iLop = _inputParams.get(DataExpression.RAND_SEED.toString());
-			String seedString = iLop.getOutputParameters().getLabel();
-			if (iLop.isVariable())
-				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + DataExpression.RAND_SEED
-						+ " must be a literal for a Rand operation.");
-
-			iLop = _inputParams.get(DataExpression.RAND_PDF.toString());
-			String pdfString = iLop.getOutputParameters().getLabel();
-			if (iLop.isVariable())
-				throw new LopsException(this.printErrorLocation()
-						+ "Parameter " + DataExpression.RAND_PDF
-						+ " must be a literal for a Rand operation.");
-			
-			iLop = _inputParams.get(DataExpression.RAND_LAMBDA.toString());
-			String pdfParams = (iLop == null ? "" : iLop.prepScalarLabel() );
-
-			sb.append(RAND_OPCODE);
-			sb.append(OPERAND_DELIMITOR);
-			/*sb.append(in1);
-			sb.append(OPERAND_DELIMITOR);
-			sb.append(in2);
-			sb.append(OPERAND_DELIMITOR);*/
-			sb.append(rowsString);
-			sb.append(OPERAND_DELIMITOR);
-			sb.append(colsString);
-			sb.append(OPERAND_DELIMITOR);
-			sb.append(rowsInBlockString);
-			sb.append(OPERAND_DELIMITOR);
-			sb.append(colsInBlockString);
-			sb.append(OPERAND_DELIMITOR);
-			sb.append(minString);
-			sb.append(OPERAND_DELIMITOR);
-			sb.append(maxString);
-			sb.append(OPERAND_DELIMITOR);
-			sb.append(sparsityString);
-			sb.append(OPERAND_DELIMITOR);
-			sb.append(seedString);
-			sb.append(OPERAND_DELIMITOR);
-			if ( et == ExecType.MR ) {
-				sb.append(baseDir);
-				sb.append(OPERAND_DELIMITOR);
-			}
-			sb.append(pdfString);
-			sb.append(OPERAND_DELIMITOR);
-			sb.append(pdfParams);
-			sb.append(OPERAND_DELIMITOR);
-			if( et == ExecType.CP ) {
-				//append degree of parallelism
-				sb.append( _numThreads );
-				sb.append( OPERAND_DELIMITOR );
-			}
-			sb.append( this.prepOutputOperand(output));
-
-			return sb.toString();
-
-		} else {
-			throw new LopsException(this.printErrorLocation()
-					+ "Invalid number of operands (" + this.getInputs().size()
-					+ ") for a Rand operation");
+		if( getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.length ) {
+			throw new LopsException(printErrorLocation() + "Invalid number of operands (" 
+				+ getInputs().size() + ") for a Rand operation");
 		}
+				
+		StringBuilder sb = new StringBuilder( );
+		
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+
+		sb.append(RAND_OPCODE);
+		sb.append(OPERAND_DELIMITOR);
+		
+		Lop iLop = _inputParams.get(DataExpression.RAND_ROWS.toString());
+		sb.append(iLop.prepScalarLabel());
+		sb.append(OPERAND_DELIMITOR);
+
+		iLop = _inputParams.get(DataExpression.RAND_COLS.toString());
+		sb.append(iLop.prepScalarLabel());
+		sb.append(OPERAND_DELIMITOR);
+
+		sb.append(String.valueOf(getOutputParameters().getRowsInBlock()));
+		sb.append(OPERAND_DELIMITOR);
+
+		sb.append(String.valueOf(getOutputParameters().getColsInBlock()));
+		sb.append(OPERAND_DELIMITOR);
+
+		iLop = _inputParams.get(DataExpression.RAND_MIN.toString());
+		sb.append(iLop.prepScalarLabel());
+		sb.append(OPERAND_DELIMITOR);
+		
+		iLop = _inputParams.get(DataExpression.RAND_MAX.toString());
+		sb.append(iLop.prepScalarLabel());
+		sb.append(OPERAND_DELIMITOR);
+		
+		iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString()); //no variable support
+		if (iLop.isVariable())
+			throw new LopsException(printErrorLocation()
+					+ "Parameter " + DataExpression.RAND_SPARSITY
+					+ " must be a literal for a Rand operation.");
+		sb.append(iLop.getOutputParameters().getLabel()); 
+		sb.append(OPERAND_DELIMITOR);
+		
+		iLop = _inputParams.get(DataExpression.RAND_SEED.toString());		
+		sb.append(iLop.prepScalarLabel());
+		sb.append(OPERAND_DELIMITOR);
+
+		if ( getExecType() == ExecType.MR ) {
+			sb.append(baseDir);
+			sb.append(OPERAND_DELIMITOR);
+		}
+		
+		iLop = _inputParams.get(DataExpression.RAND_PDF.toString()); //no variable support
+		if (iLop.isVariable())
+			throw new LopsException(printErrorLocation()
+					+ "Parameter " + DataExpression.RAND_PDF
+					+ " must be a literal for a Rand operation.");
+		sb.append(iLop.getOutputParameters().getLabel()); 
+		sb.append(OPERAND_DELIMITOR);
+		
+		iLop = _inputParams.get(DataExpression.RAND_LAMBDA.toString()); //no variable support
+		sb.append(iLop == null ? "" : iLop.prepScalarLabel()); 
+		sb.append(OPERAND_DELIMITOR);
+		
+		if( getExecType() == ExecType.CP ) {
+			//append degree of parallelism
+			sb.append( _numThreads );
+			sb.append( OPERAND_DELIMITOR );
+		}
+		
+		sb.append( prepOutputOperand(output));
+
+		return sb.toString(); 
 	}
 
 	/**
@@ -399,20 +394,6 @@ public class DataGen extends Lop
 		return sb.toString();
 	}
 	
-	@Override
-	public String getInstructions(int inputIndex, int outputIndex) throws LopsException
-	{
-		switch(method) {
-		case RAND:
-			return getMRInstruction_Rand(inputIndex, outputIndex);
-		case SEQ:
-			return getMRInstruction_Seq(inputIndex, outputIndex);
-			
-		default:
-			throw new LopsException("Unknown data generation method: " + method);
-		}
-	}
-	
 	/**
 	 * Private method to generate MR instruction for Rand.
 	 * 
@@ -421,85 +402,75 @@ public class DataGen extends Lop
 	 * @return
 	 * @throws LopsException
 	 */
-	private String getMRInstruction_Rand(int inputIndex, int outputIndex) throws LopsException {
-		if (this.getInputs().size() == DataExpression.RAND_VALID_PARAM_NAMES.length) {
-
-			StringBuilder sb = new StringBuilder();
-			sb.append( getExecType() );
-			sb.append( Lop.OPERAND_DELIMITOR );
-			Lop iLop = null;
-
-			iLop = _inputParams.get(DataExpression.RAND_ROWS.toString()); 
-			String rowsString = iLop.prepScalarInputOperand(getExecType()); 
-			
-			iLop = _inputParams.get(DataExpression.RAND_COLS.toString()); 
-			String colsString = iLop.prepScalarInputOperand(getExecType());
-			
-			String rowsInBlockString = String.valueOf(this.getOutputParameters().getRowsInBlock());
-			String colsInBlockString = String.valueOf(this.getOutputParameters().getColsInBlock());
-			
-			iLop = _inputParams.get(DataExpression.RAND_MIN.toString()); 
-			String minString = iLop.prepScalarInputOperand(getExecType()); 
-			
-			iLop = _inputParams.get(DataExpression.RAND_MAX.toString()); 
-			String maxString = iLop.prepScalarInputOperand(getExecType()); 
-			
-			iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString()); 
-			String sparsityString = iLop.getOutputParameters().getLabel();
-			if (iLop.isVariable())
-				throw new LopsException(this.printErrorLocation() + "Parameter " 
-						+ DataExpression.RAND_SPARSITY + " must be a literal for a Rand operation.");
-			
-			iLop = _inputParams.get(DataExpression.RAND_SEED.toString()); 
-			String seedString = iLop.getOutputParameters().getLabel();
-			if (iLop.isVariable())
-				throw new LopsException(this.printErrorLocation() + "Parameter " 
-						+ DataExpression.RAND_SEED + " must be a literal for a Rand operation.");
-			
-			iLop = _inputParams.get(DataExpression.RAND_PDF.toString()); 
-			String pdfString = iLop.getOutputParameters().getLabel();
-			if (iLop.isVariable())
-				throw new LopsException(this.printErrorLocation() + "Parameter " 
-						+ DataExpression.RAND_PDF + " must be a literal for a Rand operation.");
-			
-			iLop = _inputParams.get(DataExpression.RAND_LAMBDA.toString());
-			String pdfParams = (iLop == null ? "" : iLop.prepScalarLabel());
-
-			sb.append( RAND_OPCODE );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( inputIndex );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( outputIndex );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( rowsString );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( colsString );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( rowsInBlockString );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( colsInBlockString );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( minString );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( maxString );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( sparsityString );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( seedString );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( baseDir );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( pdfString );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( pdfParams );
-
-			return sb.toString();
-			
+	private String getMRInstruction_Rand(int inputIndex, int outputIndex) 
+		throws LopsException 
+	{
+		//sanity checks
+		if( getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.length) {
+			throw new LopsException(printErrorLocation() + "Invalid number of operands ("
+					+ getInputs().size() + ") for a Rand operation");
 		}
-		 else {
-				throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("
-						+ this.getInputs().size() + ") for a Rand operation");
-			}
+			
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+
+		sb.append( RAND_OPCODE );
+		sb.append( OPERAND_DELIMITOR );
+
+		sb.append( inputIndex );
+		sb.append( OPERAND_DELIMITOR );
+
+		sb.append( outputIndex );
+		sb.append( OPERAND_DELIMITOR );
+		
+		Lop iLop = _inputParams.get(DataExpression.RAND_ROWS.toString()); 
+		sb.append( iLop.prepScalarInputOperand(getExecType()) );
+		sb.append( OPERAND_DELIMITOR );
+
+		iLop = _inputParams.get(DataExpression.RAND_COLS.toString()); 
+		sb.append( iLop.prepScalarInputOperand(getExecType()) );
+		sb.append( OPERAND_DELIMITOR );
+		
+		sb.append( String.valueOf(getOutputParameters().getRowsInBlock()) );
+		sb.append( OPERAND_DELIMITOR );
+		
+		sb.append( String.valueOf(getOutputParameters().getColsInBlock()) );
+		sb.append( OPERAND_DELIMITOR );
+		
+		iLop = _inputParams.get(DataExpression.RAND_MIN.toString()); 
+		sb.append( iLop.prepScalarInputOperand(getExecType()) );
+		sb.append( OPERAND_DELIMITOR );
+		
+		iLop = _inputParams.get(DataExpression.RAND_MAX.toString()); 
+		sb.append( iLop.prepScalarInputOperand(getExecType()) );
+		sb.append( OPERAND_DELIMITOR );
+		
+		iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString()); //no variable support
+		if (iLop.isVariable())
+			throw new LopsException(this.printErrorLocation() + "Parameter " 
+					+ DataExpression.RAND_SPARSITY + " must be a literal for a Rand operation.");
+		sb.append( iLop.getOutputParameters().getLabel() );
+		sb.append( OPERAND_DELIMITOR );
+		
+		iLop = _inputParams.get(DataExpression.RAND_SEED.toString()); 
+		sb.append( iLop.prepScalarLabel() );
+		sb.append( OPERAND_DELIMITOR );
+		
+		sb.append( baseDir );
+		sb.append( OPERAND_DELIMITOR );
+		
+		iLop = _inputParams.get(DataExpression.RAND_PDF.toString()); //no variable support
+		if (iLop.isVariable())
+			throw new LopsException(this.printErrorLocation() + "Parameter " 
+					+ DataExpression.RAND_PDF + " must be a literal for a Rand operation.");
+		sb.append( iLop.getOutputParameters().getLabel() );
+		sb.append( OPERAND_DELIMITOR );
+		
+		iLop = _inputParams.get(DataExpression.RAND_LAMBDA.toString()); //no variable support
+		sb.append( iLop == null ? "" : iLop.prepScalarLabel() );
+
+		return sb.toString();
 	}
 	
 	/**

@@ -608,6 +608,19 @@ public class UnaryOp extends Hop
 				|| _op == OpOp1.CUMMAX  );
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isCastUnaryOperation() 
+	{
+		return (   _op == OpOp1.CAST_AS_MATRIX
+				|| _op == OpOp1.CAST_AS_SCALAR
+				|| _op == OpOp1.CAST_AS_BOOLEAN
+				|| _op == OpOp1.CAST_AS_DOUBLE
+				|| _op == OpOp1.CAST_AS_INT    );
+	}
+	
 	@Override
 	protected ExecType optFindExecType() 
 		throws HopsException 
@@ -641,11 +654,26 @@ public class UnaryOp extends Hop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 	
+		//spark-specific decision refinement (execute unary w/ spark input and 
+		//single parent also in spark because it's likely cheap and reduces intermediates)
+		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
+			&& getInput().get(0).optFindExecType() == ExecType.SPARK 
+			&& getDataType().isMatrix() 
+			&& !isCumulativeUnaryOperation() && !isCastUnaryOperation()
+			&& _op!=OpOp1.MEDIAN && _op!=OpOp1.IQM
+			&& !(getInput().get(0) instanceof DataOp)    //input is not checkpoint
+			&& getInput().get(0).getParent().size()==1 ) //unary is only parent
+		{
+			//pull unary operation into spark 
+			_etype = ExecType.SPARK;
+		}
+		
 		//mark for recompile (forever)
 		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
 			setRequiresRecompile();
 
-		if( _op == OpOp1.PRINT || _op == OpOp1.STOP || _op == OpOp1.INVERSE )
+		//ensure cp exec type for single-node operations
+		if( _op == OpOp1.PRINT || _op == OpOp1.STOP || _op == OpOp1.INVERSE || _op == OpOp1.EIGEN )
 			_etype = ExecType.CP;
 		
 		return _etype;

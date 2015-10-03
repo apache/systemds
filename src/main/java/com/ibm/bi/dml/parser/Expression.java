@@ -143,7 +143,14 @@ public abstract class Expression
 	//};
 
 	public enum DataType {
-		MATRIX, SCALAR, FRAME, OBJECT, UNKNOWN
+		MATRIX, SCALAR, FRAME, OBJECT, UNKNOWN;
+		
+		public boolean isMatrix() {
+			return (this == MATRIX);
+		}
+		public boolean isScalar() {
+			return (this == SCALAR);
+		}
 	};
 
 	public enum ValueType {

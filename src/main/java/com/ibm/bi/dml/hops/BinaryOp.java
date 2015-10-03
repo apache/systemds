@@ -914,6 +914,8 @@ public class BinaryOp extends Hop
 		checkAndSetForcedPlatform();
 		
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		DataType dt1 = getInput().get(0).getDataType();
+		DataType dt2 = getInput().get(1).getDataType();
 		
 		if( _etypeForced != null ) {		
 			_etype = _etypeForced;
@@ -927,8 +929,6 @@ public class BinaryOp extends Hop
 			else
 			{
 				_etype = null;
-				DataType dt1 = getInput().get(0).getDataType();
-				DataType dt2 = getInput().get(1).getDataType();
 				if ( dt1 == DataType.MATRIX && dt2 == DataType.MATRIX ) {
 					// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
 					// OR if both are vectors
@@ -964,6 +964,19 @@ public class BinaryOp extends Hop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 			
+		//spark-specific decision refinement (execute unary scalar w/ spark input and 
+		//single parent also in spark because it's likely cheap and reduces intermediates)
+		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
+			&& getDataType().isMatrix() && (dt1.isScalar() || dt2.isScalar()) 
+			&& getInput().get(dt1.isScalar()?1:0).optFindExecType() == ExecType.SPARK 
+			&& supportsMatrixScalarOperations()                           //scalar operations
+			&& !(getInput().get(dt1.isScalar()?1:0) instanceof DataOp)    //input is not checkpoint
+			&& getInput().get(dt1.isScalar()?1:0).getParent().size()==1 ) //unary scalar is only parent
+		{
+			//pull unary scalar operation into spark 
+			_etype = ExecType.SPARK;
+		}
+		
 		//mark for recompile (forever)
 		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==REMOTE) 
 			|| (op == OpOp2.APPEND && getDataType()!=DataType.SCALAR) ) )
@@ -971,6 +984,7 @@ public class BinaryOp extends Hop
 			setRequiresRecompile();
 		}
 		
+		//ensure cp exec type for single-node operations
 		if ( op == OpOp2.SOLVE ) {
 			_etype = ExecType.CP;
 		}

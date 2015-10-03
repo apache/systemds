@@ -855,7 +855,7 @@ public class SparkExecutionContext extends ExecutionContext
 	public void setThreadLocalSchedulerPool(String poolName) {
 		if( FAIR_SCHEDULER_MODE ) {
 			getSparkContext().sc().setLocalProperty(
-					"spark.scheduler.pool", "pool" + poolName);
+					"spark.scheduler.pool", poolName);
 		}
 	}
 	

@@ -25,7 +25,7 @@ import com.ibm.bi.dml.api.ml.LogisticRegressionModel;
 import com.ibm.bi.dml.api.ml.functions.ConvertSingleColumnToString;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -134,6 +134,7 @@ public class LogisticRegression extends ProbabilisticClassifier<Vector, Logistic
 	private StringArrayParam inputCol = new StringArrayParam(this, "icname", "Feature column name");
 	private StringArrayParam outputCol = new StringArrayParam(this, "ocname", "Label column name");
 	private int intMin = Integer.MIN_VALUE;
+	@SuppressWarnings("unused")
 	private int li = 0;
 	private String[] icname = new String[1];
 	private String[] ocname = new String[1];
@@ -411,7 +412,7 @@ public class LogisticRegression extends ProbabilisticClassifier<Vector, Logistic
 		MatrixCharacteristics mcXin = new MatrixCharacteristics();
 		JavaPairRDD<MatrixIndexes, MatrixBlock> Xin;
 		try {
-			Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(new JavaSparkContext(this.sc), df, mcXin, false, "features");
+			Xin = RDDConverterUtilsExt.vectorDataFrameToBinaryBlock(new JavaSparkContext(this.sc), df, mcXin, false, "features");
 		} catch (DMLRuntimeException e1) {
 			e1.printStackTrace();
 			return null;

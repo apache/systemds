@@ -21,7 +21,7 @@ import com.ibm.bi.dml.api.MLContext;
 import com.ibm.bi.dml.api.MLOutput;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -105,7 +105,7 @@ public class LogisticRegressionModel extends ProbabilisticClassificationModel<Ve
 			MatrixCharacteristics mcXin = new MatrixCharacteristics();
 			JavaPairRDD<MatrixIndexes, MatrixBlock> Xin;
 			try {
-				Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(new JavaSparkContext(this.sc), dataset, mcXin, false, "features");
+				Xin = RDDConverterUtilsExt.vectorDataFrameToBinaryBlock(new JavaSparkContext(this.sc), dataset, mcXin, false, "features");
 			} catch (DMLRuntimeException e1) {
 				e1.printStackTrace();
 				return null;
@@ -154,7 +154,7 @@ public class LogisticRegressionModel extends ProbabilisticClassificationModel<Ve
 			DataFrame rawPred = outNew.getDF(sqlContext, "rawPred", true).withColumnRenamed("C1", "rawPrediction").withColumnRenamed("ID", "ID2");
 			DataFrame predictionsNProb = prob.join(pred, prob.col("ID").equalTo(pred.col("ID1"))).select("ID", "probability", "prediction");
 			predictionsNProb = predictionsNProb.join(rawPred, predictionsNProb.col("ID").equalTo(rawPred.col("ID2"))).select("ID", "probability", "prediction", "rawPrediction");
-			DataFrame dataset1 = RDDConverterUtils.addIDToDataFrame(dataset, sqlContext, "ID");			
+			DataFrame dataset1 = RDDConverterUtilsExt.addIDToDataFrame(dataset, sqlContext, "ID");			
 			return dataset1.join(predictionsNProb, dataset1.col("ID").equalTo(predictionsNProb.col("ID"))).orderBy("id");
 		} catch (IOException e) {
 			throw new RuntimeException(e);

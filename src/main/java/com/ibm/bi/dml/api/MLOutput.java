@@ -37,7 +37,7 @@ import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLBlock;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -85,7 +85,7 @@ public class MLOutput {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
 		if(rdd != null) {
 			MatrixCharacteristics mc = _outMetadata.get(varName);
-			return RDDConverterUtils.binaryBlockToDataFrame(rdd, mc, sqlContext);
+			return RDDConverterUtilsExt.binaryBlockToDataFrame(rdd, mc, sqlContext);
 		}
 		throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 	}
@@ -103,7 +103,7 @@ public class MLOutput {
 			JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
 			if(rdd != null) {
 				MatrixCharacteristics mc = _outMetadata.get(varName);
-				return RDDConverterUtils.binaryBlockToVectorDataFrame(rdd, mc, sqlContext);
+				return RDDConverterUtilsExt.binaryBlockToVectorDataFrame(rdd, mc, sqlContext);
 			}
 			throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
 		}

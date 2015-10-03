@@ -66,7 +66,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToLongTe
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkListener;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
@@ -255,7 +255,7 @@ public class MLContext {
 	 */
 	public void registerInput(String varName, DataFrame df, boolean containsID) throws DMLRuntimeException {
 		MatrixCharacteristics mcOut = new MatrixCharacteristics();
-		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = RDDConverterUtils.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = RDDConverterUtilsExt.dataFrameToBinaryBlock(new JavaSparkContext(_sc), df, mcOut, containsID);
 		registerInput(varName, rdd, mcOut);
 	}
 	

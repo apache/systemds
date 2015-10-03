@@ -62,8 +62,6 @@ import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
-import com.ibm.bi.dml.runtime.instructions.spark.data.SerLongWritable;
-import com.ibm.bi.dml.runtime.instructions.spark.data.SerText;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.AssignRowIDMRReturn;
@@ -1446,7 +1444,7 @@ public class DataTransform {
 		moveFilesFromTmp(fs, tmpPath, oprnds.txMtdPath);
 
 		// convert to csv output format (serialized longwritable/text)
-		JavaPairRDD<SerLongWritable, SerText> outtfPairRDD = 
+		JavaPairRDD<LongWritable, Text> outtfPairRDD = 
 				RDDConverterUtils.stringToSerializableText(tfPairRDD);
 		
 		if ( outtfPairRDD != null ) 

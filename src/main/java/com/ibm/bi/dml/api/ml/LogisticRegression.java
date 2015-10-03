@@ -30,84 +30,91 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 
-/*
- This class shows how SystemML can be integrated into MLPipeline. Note, it has not been optimized for performance and 
- is implemented as a proof of concept. An optimized pipeline can be constructed by usage of DML's 'parfor' construct.
- 
- TODO: Make following parameterized:
- Please note that this class expects 1-based labels. To run below example,
- please set environment variable 'SYSTEMML_HOME' and create folder 'algorithms' 
- and place atleast two scripts in that folder 'MultiLogReg.dml' and 'GLM-predict.dml'
-
-// Code to demonstrate usage of pipeline
-import org.apache.spark.ml.Pipeline
-import com.ibm.bi.dml.api.ml.LogisticRegression
-import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
-import org.apache.spark.mllib.linalg.Vector
-case class LabeledDocument(id: Long, text: String, label: Double)
-case class Document(id: Long, text: String)
-val training = sc.parallelize(Seq(
-      LabeledDocument(0L, "a b c d e spark", 1.0),
-      LabeledDocument(1L, "b d", 2.0),
-      LabeledDocument(2L, "spark f g h", 1.0),
-      LabeledDocument(3L, "hadoop mapreduce", 2.0),
-      LabeledDocument(4L, "b spark who", 1.0),
-      LabeledDocument(5L, "g d a y", 2.0),
-      LabeledDocument(6L, "spark fly", 1.0),
-      LabeledDocument(7L, "was mapreduce", 2.0),
-      LabeledDocument(8L, "e spark program", 1.0),
-      LabeledDocument(9L, "a e c l", 2.0),
-      LabeledDocument(10L, "spark compile", 1.0),
-      LabeledDocument(11L, "hadoop software", 2.0)))     
-val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
-val hashingTF = new HashingTF().setNumFeatures(1000).setInputCol(tokenizer.getOutputCol).setOutputCol("features")
-val lr = new LogisticRegression(sc, sqlContext)
-val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, lr))
-val model = pipeline.fit(training.toDF)
-val test = sc.parallelize(Seq(
-      Document(12L, "spark i j k"),
-      Document(13L, "l m n"),
-      Document(14L, "mapreduce spark"),
-      Document(15L, "apache hadoop")))
-model.transform(test.toDF).show
-
-// Code to demonstrate usage of cross-validation
-import org.apache.spark.ml.Pipeline
-import com.ibm.bi.dml.api.ml.LogisticRegression
-import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
-import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
-import org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}
-import org.apache.spark.mllib.linalg.Vector
-case class LabeledDocument(id: Long, text: String, label: Double)
-case class Document(id: Long, text: String)
-val training = sc.parallelize(Seq(
-      LabeledDocument(0L, "a b c d e spark", 1.0),
-      LabeledDocument(1L, "b d", 2.0),
-      LabeledDocument(2L, "spark f g h", 1.0),
-      LabeledDocument(3L, "hadoop mapreduce", 2.0),
-      LabeledDocument(4L, "b spark who", 1.0),
-      LabeledDocument(5L, "g d a y", 2.0),
-      LabeledDocument(6L, "spark fly", 1.0),
-      LabeledDocument(7L, "was mapreduce", 2.0),
-      LabeledDocument(8L, "e spark program", 1.0),
-      LabeledDocument(9L, "a e c l", 2.0),
-      LabeledDocument(10L, "spark compile", 1.0),
-      LabeledDocument(11L, "hadoop software", 2.0)))     
-val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
-val hashingTF = new HashingTF().setNumFeatures(1000).setInputCol(tokenizer.getOutputCol).setOutputCol("features")
-val lr = new LogisticRegression(sc, sqlContext)
-val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, lr))
-val crossval = new CrossValidator().setEstimator(pipeline).setEvaluator(new BinaryClassificationEvaluator)
-val paramGrid = new ParamGridBuilder().addGrid(hashingTF.numFeatures, Array(10, 100, 1000)).addGrid(lr.regParam, Array(0.1, 0.01)).build()
-crossval.setEstimatorParamMaps(paramGrid)
-crossval.setNumFolds(2)
-val cvModel = crossval.fit(training.toDF)
-val test = sc.parallelize(Seq(
-      Document(12L, "spark i j k"),
-      Document(13L, "l m n"),
-      Document(14L, "mapreduce spark"),
-      Document(15L, "apache hadoop")))
-cvModel.transform(test.toDF).show
+/**
+ * 
+ * This class shows how SystemML can be integrated into MLPipeline. Note, it has not been optimized for performance and 
+ * is implemented as a proof of concept. An optimized pipeline can be constructed by usage of DML's 'parfor' construct.
+ * 
+ * TODO: 
+ * - Please note that this class expects 1-based labels. To run below example,
+ * please set environment variable 'SYSTEMML_HOME' and create folder 'algorithms' 
+ * and place atleast two scripts in that folder 'MultiLogReg.dml' and 'GLM-predict.dml'
+ * - It is not yet optimized for performance. 
+ * - Also, it needs to be extended to surface all the parameters of MultiLogReg.dml
+ * 
+ * Example usage:
+ * <pre><code>
+ * // Code to demonstrate usage of pipeline
+ * import org.apache.spark.ml.Pipeline
+ * import com.ibm.bi.dml.api.ml.LogisticRegression
+ * import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
+ * import org.apache.spark.mllib.linalg.Vector
+ * case class LabeledDocument(id: Long, text: String, label: Double)
+ * case class Document(id: Long, text: String)
+ * val training = sc.parallelize(Seq(
+ *      LabeledDocument(0L, "a b c d e spark", 1.0),
+ *      LabeledDocument(1L, "b d", 2.0),
+ *      LabeledDocument(2L, "spark f g h", 1.0),
+ *      LabeledDocument(3L, "hadoop mapreduce", 2.0),
+ *      LabeledDocument(4L, "b spark who", 1.0),
+ *      LabeledDocument(5L, "g d a y", 2.0),
+ *      LabeledDocument(6L, "spark fly", 1.0),
+ *      LabeledDocument(7L, "was mapreduce", 2.0),
+ *      LabeledDocument(8L, "e spark program", 1.0),
+ *      LabeledDocument(9L, "a e c l", 2.0),
+ *      LabeledDocument(10L, "spark compile", 1.0),
+ *      LabeledDocument(11L, "hadoop software", 2.0)))
+ * val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
+ * val hashingTF = new HashingTF().setNumFeatures(1000).setInputCol(tokenizer.getOutputCol).setOutputCol("features")
+ * val lr = new LogisticRegression(sc, sqlContext)
+ * val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, lr))
+ * val model = pipeline.fit(training.toDF)
+ * val test = sc.parallelize(Seq(
+ *       Document(12L, "spark i j k"),
+ *       Document(13L, "l m n"),
+ *       Document(14L, "mapreduce spark"),
+ *       Document(15L, "apache hadoop")))
+ * model.transform(test.toDF).show
+ * 
+ * // Code to demonstrate usage of cross-validation
+ * import org.apache.spark.ml.Pipeline
+ * import com.ibm.bi.dml.api.ml.LogisticRegression
+ * import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
+ * import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
+ * import org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}
+ * import org.apache.spark.mllib.linalg.Vector
+ * case class LabeledDocument(id: Long, text: String, label: Double)
+ * case class Document(id: Long, text: String)
+ * val training = sc.parallelize(Seq(
+ *      LabeledDocument(0L, "a b c d e spark", 1.0),
+ *      LabeledDocument(1L, "b d", 2.0),
+ *      LabeledDocument(2L, "spark f g h", 1.0),
+ *      LabeledDocument(3L, "hadoop mapreduce", 2.0),
+ *      LabeledDocument(4L, "b spark who", 1.0),
+ *      LabeledDocument(5L, "g d a y", 2.0),
+ *      LabeledDocument(6L, "spark fly", 1.0),
+ *      LabeledDocument(7L, "was mapreduce", 2.0),
+ *      LabeledDocument(8L, "e spark program", 1.0),
+ *      LabeledDocument(9L, "a e c l", 2.0),
+ *      LabeledDocument(10L, "spark compile", 1.0),
+ *      LabeledDocument(11L, "hadoop software", 2.0)))
+ * val tokenizer = new Tokenizer().setInputCol("text").setOutputCol("words")
+ * val hashingTF = new HashingTF().setNumFeatures(1000).setInputCol(tokenizer.getOutputCol).setOutputCol("features")
+ * val lr = new LogisticRegression(sc, sqlContext)
+ * val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, lr))
+ * val crossval = new CrossValidator().setEstimator(pipeline).setEvaluator(new BinaryClassificationEvaluator)
+ * val paramGrid = new ParamGridBuilder().addGrid(hashingTF.numFeatures, Array(10, 100, 1000)).addGrid(lr.regParam, Array(0.1, 0.01)).build()
+ * crossval.setEstimatorParamMaps(paramGrid)
+ * crossval.setNumFolds(2)
+ * val cvModel = crossval.fit(training.toDF)
+ * val test = sc.parallelize(Seq(
+ *       Document(12L, "spark i j k"),
+ *       Document(13L, "l m n"),
+ *       Document(14L, "mapreduce spark"),
+ *       Document(15L, "apache hadoop")))
+ * cvModel.transform(test.toDF).show
+ * </code></pre>
+ * 
  */
 public class LogisticRegression extends ProbabilisticClassifier<Vector, LogisticRegression, LogisticRegressionModel>
 	implements LogisticRegressionParams {

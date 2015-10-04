@@ -1,0 +1,111 @@
+\subsection{Stepwise Generalized Linear Regression}
+
+\noindent{\bf Description}
+\smallskip
+
+Our stepwise generalized linear regression script selects a model based on the Akaike information criterion (AIC): the model that gives rise to the lowest AIC is provided. Note that currently only the Bernoulli distribution family is supported (see below for details). \\
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}StepGLM.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} Y=}path/file
+{\tt{} B=}path/file
+{\tt{} S=}path/file
+{\tt{} O=}path/file
+{\tt{} link=}int
+{\tt{} yneg=}double
+{\tt{} icpt=}int
+{\tt{} tol=}double
+{\tt{} disp=}double
+{\tt{} moi=}int
+{\tt{} mii=}int
+{\tt{} thr=}double
+{\tt{} fmt=}format
+
+}
+
+
+\smallskip
+\noindent{\bf Arguments}
+\begin{Description}
+	\item[{\tt X}:]
+	Location (on HDFS) to read the matrix of feature vectors; each row is
+	an example.
+	\item[{\tt Y}:]
+	Location (on HDFS) to read the response matrix, which may have 1 or 2 columns
+	\item[{\tt B}:]
+	Location (on HDFS) to store the estimated regression parameters (the $\beta_j$'s), with the
+	intercept parameter~$\beta_0$ at position {\tt B[}$m\,{+}\,1$, {\tt 1]} if available
+	\item[{\tt S}:] (default:\mbox{ }{\tt " "})
+	Location (on HDFS) to store the selected feature-ids in the order as computed by the algorithm,
+	by default it is standard output.
+	\item[{\tt O}:] (default:\mbox{ }{\tt " "})
+	Location (on HDFS) to write certain summary statistics described in Table~\ref{table:GLM:stats},
+	by default it is standard output. 
+	\item[{\tt link}:] (default:\mbox{ }{\tt 2})
+	Link function code to determine the link function~$\eta = g(\mu)$, see Table~\ref{table:commonGLMs}; currently the following link functions are supported: \\
+	{\tt 1} = log,
+	{\tt 2} = logit,
+	{\tt 3} = probit,
+	{\tt 4} = cloglog.
+	\item[{\tt yneg}:] (default:\mbox{ }{\tt 0.0})
+	Response value for Bernoulli ``No'' label, usually 0.0 or -1.0
+	\item[{\tt icpt}:] (default:\mbox{ }{\tt 0})
+	Intercept and shifting/rescaling of the features in~$X$:\\
+	{\tt 0} = no intercept (hence no~$\beta_0$), no shifting/rescaling of the features;\\
+	{\tt 1} = add intercept, but do not shift/rescale the features in~$X$;\\
+	{\tt 2} = add intercept, shift/rescale the features in~$X$ to mean~0, variance~1
+	\item[{\tt tol}:] (default:\mbox{ }{\tt 0.000001})
+	Tolerance (epsilon) used in the convergence criterion: we terminate the outer iterations
+	when the deviance changes by less than this factor; see below for details.
+	\item[{\tt disp}:] (default:\mbox{ }{\tt 0.0})
+	Dispersion parameter, or {\tt 0.0} to estimate it from data
+	\item[{\tt moi}:] (default:\mbox{ }{\tt 200})
+	Maximum number of outer (Fisher scoring) iterations
+	\item[{\tt mii}:] (default:\mbox{ }{\tt 0})
+	Maximum number of inner (conjugate gradient) iterations, or~0 if no maximum
+	limit provided
+	\item[{\tt thr}:] (default:\mbox{ }{\tt 0.01})
+	Threshold to stop the algorithm: if the decrease in the value of the AIC falls below {\tt thr}
+	no further features are being checked and the algorithm stops.
+	\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+	Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+	see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+
+\noindent{\bf Details}
+\smallskip
+
+Similar to {\tt StepLinearRegDS.dml} our stepwise GLM script builds a model by iteratively selecting predictive variables 
+using a forward selection strategy based on the AIC (\ref{eq:AIC}).
+Note that currently only the Bernoulli distribution family ({\tt fam=2} in Table~\ref{table:commonGLMs}) together with the following link functions are supported: log, logit, probit, and cloglog ({\tt link $\in\{1,2,3,4\}$ } in Table~\ref{table:commonGLMs}).  
+
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+Similar to the outputs from {\tt GLM.dml} the stepwise GLM script computes the estimated regression coefficients and stores them in matrix $B$ on HDFS; matrix $B$ follows the same format as the one produced by {\tt GLM.dml} (see Section~\ref{sec:GLM}).   
+Additionally, {\tt StepGLM.dml} outputs the variable indices (stored in the 1-column matrix $S$) in the order they have been selected by the algorithm, i.e., $i$th entry in matrix $S$ stores the variable which improves the AIC the most in $i$th iteration.  
+If the model with the lowest AIC includes no variables matrix $S$ will be empty. 
+Moreover, the estimated summary statistics as defined in Table~\ref{table:GLM:stats}
+are printed out or stored in a file on HDFS (if requested);
+these statistics will be provided only if the selected model is nonempty, i.e., contains at least one variable.
+
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+	\hml -f StepGLM.dml -nvargs X=/user/biadmin/X.mtx Y=/user/biadmin/Y.mtx	B=/user/biadmin/B.mtx S=/user/biadmin/selected.csv O=/user/biadmin/stats.csv link=2 yneg=-1.0 icpt=2 tol=0.000001  moi=100 mii=10 thr=0.05 fmt=csv
+	
+}
+
+

@@ -1,0 +1,268 @@
+\subsection{Kaplan-Meier Survival Analysis}
+\label{sec:kaplan-meier}
+
+\noindent{\bf Description}
+\smallskip
+
+
+Survival analysis examines the time needed for a particular event of interest to occur.
+In medical research, for example, the prototypical such event is the death of a patient but the methodology can be applied to other application areas, e.g., completing a task by an individual in a psychological experiment or the failure of electrical components in engineering.   
+Kaplan-Meier or (product limit) method is a simple non-parametric approach for estimating survival probabilities from both censored and uncensored survival times.\\
+
+ 
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}KM.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} TE=}path/file
+{\tt{} GI=}path/file
+{\tt{} SI=}path/file
+{\tt{} O=}path/file
+{\tt{} M=}path/file
+{\tt{} T=}path/file
+{\tt{} alpha=}double
+{\tt{} etype=}greenwood$\mid$peto
+{\tt{} ctype=}plain$\mid$log$\mid$log-log
+{\tt{} ttype=}none$\mid$log-rank$\mid$wilcoxon
+{\tt{} fmt=}format
+
+}
+
+\smallskip
+\noindent{\bf Arguments}
+\begin{Description}
+\item[{\tt X}:]
+Location (on HDFS) to read the input matrix of the survival data containing: 
+\begin{Itemize}
+	\item timestamps,
+	\item whether event occurred (1) or data is censored (0),
+	\item a number of factors (i.e., categorical features) for grouping and/or stratifying
+\end{Itemize}
+\item[{\tt TE}:]
+Location (on HDFS) to read the 1-column matrix $TE$ that contains the column indices of the input matrix $X$ corresponding to timestamps (first entry) and event information (second entry) 
+\item[{\tt GI}:]
+Location (on HDFS) to read the 1-column matrix $GI$ that contains the column indices of the input matrix $X$ corresponding to the factors (i.e., categorical features) to be used for grouping
+\item[{\tt SI}:]
+Location (on HDFS) to read the 1-column matrix $SI$ that contains the column indices of the input matrix $X$ corresponding to the factors (i.e., categorical features) to be used for grouping
+\item[{\tt O}:]
+Location (on HDFS) to write the matrix containing the results of the Kaplan-Meier analysis $KM$
+\item[{\tt M}:]
+Location (on HDFS) to write Matrix $M$ containing the following statistics: total number of events, median and its confidence intervals; if survival data for multiple groups and strata are provided each row of $M$ contains the above statistics per group and stratum.
+\item[{\tt T}:]
+If survival data from multiple groups is available and {\tt ttype=log-rank} or {\tt ttype=wilcoxon}, location (on HDFS) to write the two matrices that contains the result of the (stratified) test for comparing these groups; see below for details.
+\item[{\tt alpha}:](default:\mbox{ }{\tt 0.05})
+Parameter to compute $100(1-\alpha)\%$ confidence intervals for the survivor function and its median 
+\item[{\tt etype}:](default:\mbox{ }{\tt "greenwood"})
+Parameter to specify the error type according to "greenwood" or "peto"
+\item[{\tt ctype}:](default:\mbox{ }{\tt "log"})
+Parameter to modify the confidence interval; "plain" keeps the lower and upper bound of the confidence interval unmodified,	"log" corresponds to logistic transformation and "log-log" corresponds to the complementary log-log transformation
+\item[{\tt ttype}:](default:\mbox{ }{\tt "none"})
+If survival data for multiple groups is available specifies which test to perform for comparing 
+survival data across multiple groups: "none", "log-rank" or "wilcoxon" test
+\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+
+\noindent{\bf Details}
+\smallskip
+
+The Kaplan-Meier estimate is a non-parametric maximum likelihood estimate (MLE) of the survival function $S(t)$, i.e., the probability of survival from the time origin to a given future time. 
+As an illustration suppose that there are $n$ individuals with observed survival times $t_1,t_2,\ldots t_n$ out of which there are $r\leq n$ distinct death times $t_{(1)}\leq t_{(2)}\leq t_{(r)}$---since some of the observations may be censored, in the sense that the end-point of interest has not been observed for those individuals, and there may be more than one individual with the same survival time.
+Let $S(t_j)$ denote the probability of survival until time $t_j$, $d_j$ be the number of events at time $t_j$, and $n_j$ denote the number of individual at risk (i.e., those who die at time $t_j$ or later). 
+Assuming that the events occur independently, in Kaplan-Meier method the probability of surviving from $t_j$ to $t_{j+1}$ is estimated from $S(t_j)$ and given by
+\begin{equation*}
+\hat{S}(t) = \prod_{j=1}^{k} \left( \frac{n_j-d_j}{n_j} \right),
+\end{equation*}   
+for $t_k\leq t<t_{k+1}$, $k=1,2,\ldots r$, $\hat{S}(t)=1$ for $t<t_{(1)}$, and $t_{(r+1)}=\infty$. 
+Note that the value of $\hat{S}(t)$ is constant between times of event and therefore
+the estimate is a step function with jumps at observed event times.
+If there are no censored data this estimator would simply reduce to the empirical survivor function defined as $\frac{n_j}{n}$. Thus, the Kaplan-Meier estimate can be seen as the generalization of the empirical survivor function that handles censored observations.
+
+The methodology used in our {\tt KM.dml} script closely follows~\cite[Sec.~2]{collett2003:kaplanmeier}.
+For completeness we briefly discuss the equations used in our implementation.
+
+% standard error of the survivor function
+\textbf{Standard error of the survivor function.}
+The standard error of the estimated survivor function (controlled by parameter {\tt etype}) can be calculated as  
+\begin{equation*}
+\text{se} \{\hat{S}(t)\} \approx \hat{S}(t) {\bigg\{ \sum_{j=1}^{k} \frac{d_j}{n_j(n_j -   d_j)}\biggr\}}^2,
+\end{equation*}
+for $t_{(k)}\leq t<t_{(k+1)}$.
+This equation is known as the {\it Greenwood's} formula.
+An alternative approach is to apply the {\it Petos's} expression %~\cite{PetoPABCHMMPS1979:kaplanmeier} 
+\begin{equation*}
+\text{se}\{\hat{S}(t)\}=\frac{\hat{S}(t)\sqrt{1-\hat{S}(t)}}{\sqrt{n_k}},
+\end{equation*}
+for $t_{(k)}\leq t<t_{(k+1)}$. 
+%Note that this estimate is known to be conservative producing larger standard errors than they ought to be. The Greenwood estimate is therefore recommended for general use. 
+Once the standard error of $\hat{S}$ has been found we compute the following types of confidence intervals (controlled by parameter {\tt cctype}): 
+The ``plain'' $100(1-\alpha)\%$ confidence interval for $S(t)$ is computed using 
+\begin{equation*}
+\hat{S}(t)\pm z_{\alpha/2} \text{se}\{\hat{S}(t)\}, 
+\end{equation*} 
+where $z_{\alpha/2}$ is the upper $\alpha/2$-point of the standard normal distribution. 
+Alternatively, we can apply the ``log'' transformation using 
+\begin{equation*}
+\hat{S}(t)^{\exp[\pm z_{\alpha/2} \text{se}\{\hat{S}(t)\}/\hat{S}(t)]}
+\end{equation*}
+or the ``log-log'' transformation using 
+\begin{equation*}
+\hat{S}(t)^{\exp [\pm z_{\alpha/2} \text{se} \{\log [-\log \hat{S}(t)]\}]}.
+\end{equation*}
+
+% standard error of the median of survival times
+\textbf{Median, its standard error and confidence interval.}
+Denote by $\hat{t}(50)$ the estimated median of $\hat{S}$, i.e.,
+$\hat{t}(50)=\min \{ t_i \mid \hat{S}(t_i) < 0.5\}$,
+where $t_i$ is the observed survival time for individual $i$.
+The standard error of $\hat{t}(50)$ is given by
+\begin{equation*}
+\text{se}\{ \hat{t}(50) \} = \frac{1}{\hat{f}\{\hat{t}(50)\}} \text{se}[\hat{S}\{ \hat{t}(50) \}],
+\end{equation*}
+where $\hat{f}\{ \hat{t}(50) \}$ can be found from
+\begin{equation*}
+\hat{f}\{ \hat{t}(50) \} = \frac{\hat{S}\{ \hat{u}(50) \} -\hat{S}\{ \hat{l}(50) \} }{\hat{l}(50) - \hat{u}(50)}. 
+\end{equation*}
+Above, $\hat{u}(50)$ is the largest survival time for which $\hat{S}$ exceeds $0.5+\epsilon$, i.e., $\hat{u}(50)=\max \bigl\{ t_{(j)} \mid \hat{S}(t_{(j)}) \geq 0.5+\epsilon \bigr\}$,
+and $\hat{l}(50)$ is the smallest survivor time for which $\hat{S}$ is less than $0.5-\epsilon$,
+i.e., $\hat{l}(50)=\min \bigl\{ t_{(j)} \mid \hat{S}(t_{(j)}) \leq 0.5+\epsilon \bigr\}$,
+for small $\epsilon$.
+
+
+% comparing two or more groups of data
+\textbf{Log-rank test and Wilcoxon test.}
+Our implementation supports comparison of survival data from several groups using two non-parametric procedures (controlled by parameter {\tt ttype}): the {\it log-rank test} and the {\it Wilcoxon test} (also known as the {\it Breslow test}). 
+Assume that the survival times in $g\geq 2$ groups of survival data are to be compared. 
+Consider the {\it null hypothesis} that there is no difference in the survival times of the individuals in different groups. One way to examine the null hypothesis is to consider the difference between the observed number of deaths with the numbers expected under the null hypothesis.  
+In both tests we define the $U$-statistics ($U_{L}$ for the log-rank test and $U_{W}$ for the Wilcoxon test) to compare the observed and the expected number of deaths in $1,2,\ldots,g-1$ groups as follows:
+\begin{align*}
+U_{Lk} &= \sum_{j=1}^{r}\left( d_{kj} - \frac{n_{kj}d_j}{n_j} \right), \\
+U_{Wk} &= \sum_{j=1}^{r}n_j\left( d_{kj} - \frac{n_{kj}d_j}{n_j} \right),
+\end{align*}
+where $d_{kj}$ is the of number deaths at time $t_{(j)}$ in group $k$, 
+$n_{kj}$ is the number of individuals at risk at time $t_{(j)}$ in group $k$, and 
+$k=1,2,\ldots,g-1$ to form the vectors $U_L$ and $U_W$ with $(g-1)$ components.
+The covariance (variance) between $U_{Lk}$ and $U_{Lk'}$ (when $k=k'$) is computed as
+\begin{equation*}
+V_{Lkk'}=\sum_{j=1}^{r} \frac{n_{kj}d_j(n_j-d_j)}{n_j(n_j-1)} \left( \delta_{kk'}-\frac{n_{k'j}}{n_j} \right),
+\end{equation*}
+for $k,k'=1,2,\ldots,g-1$, with
+\begin{equation*}
+\delta_{kk'} = 
+\begin{cases}
+1 & \text{if } k=k'\\
+0 & \text{otherwise.}
+\end{cases}
+\end{equation*}
+These terms are combined in a {\it variance-covariance} matrix $V_L$ (referred to as the $V$-statistic).
+Similarly, the variance-covariance matrix for the Wilcoxon test $V_W$ is a matrix where the entry at position $(k,k')$ is given by
+\begin{equation*}
+V_{Wkk'}=\sum_{j=1}^{r} n_j^2 \frac{n_{kj}d_j(n_j-d_j)}{n_j(n_j-1)} \left( \delta_{kk'}-\frac{n_{k'j}}{n_j} \right).
+\end{equation*}
+
+Under the null hypothesis of no group differences, the test statistics $U_L^\top V_L^{-1} U_L$ for the log-rank test and  $U_W^\top V_W^{-1} U_W$ for the Wilcoxon test have a Chi-squared distribution on $(g-1)$ degrees of freedom.
+Our {\tt KM.dml} script also provides a stratified version of the log-rank or Wilcoxon test if requested.
+In this case, the values of the $U$- and $V$- statistics are computed for each stratum and then combined over all strata.
+
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+  
+Blow we list the results of the survival analysis computed by {\tt KM.dml}. 
+The calculated statistics are stored in matrix $KM$ with the following schema:
+\begin{itemize}
+	\item Column 1: timestamps 
+	\item Column 2: number of individuals at risk
+	\item Column 3: number of events
+	\item Column 4: Kaplan-Meier estimate of the survivor function $\hat{S}$ 
+	\item Column 5: standard error of $\hat{S}$
+	\item Column 6: lower bound of $100(1-\alpha)\%$ confidence interval for $\hat{S}$
+	\item Column 7: upper bound of $100(1-\alpha)\%$ confidence interval for $\hat{S}$
+\end{itemize}
+Note that if survival data for multiple groups and/or strata is available, each collection of 7 columns in $KM$ stores the results per group and/or per stratum. 
+In this case $KM$ has $7g+7s$ columns, where $g\geq 1$ and $s\geq 1$ denote the number of groups and strata, respectively. 
+
+
+Additionally, {\tt KM.dml} stores the following statistics in the 1-row matrix $M$ whose number of columns depends on the number of groups ($g$) and strata ($s$) in the data. Below $k$ denotes the number of factors used for grouping and $l$ denotes the number of factors used for stratifying. 
+\begin{itemize}
+	\item Columns 1 to $k$: unique combination of values in the $k$ factors used for grouping 
+	\item Columns $k+1$ to $k+l$: unique combination of values in the $l$ factors used for stratifying  
+	\item Column $k+l+1$: total number of records 
+	\item Column $k+l+2$: total number of events
+    \item Column $k+l+3$: median of $\hat{S}$
+    \item Column $k+l+4$: lower bound of $100(1-\alpha)\%$ confidence interval for the median of $\hat{S}$
+    \item Column $k+l+5$: upper bound of $100(1-\alpha)\%$ confidence interval for the median of $\hat{S}$. 
+\end{itemize}
+If there is only 1 group and 1 stratum available $M$ will be a 1-row matrix with 5 columns where
+\begin{itemize}
+	\item Column 1: total number of records
+	\item Column 2: total number of events
+	\item Column 3: median of $\hat{S}$
+	\item Column 4: lower bound of $100(1-\alpha)\%$ confidence interval for the median of $\hat{S}$
+	\item Column 5: upper bound of $100(1-\alpha)\%$ confidence interval for the median of $\hat{S}$.
+\end{itemize} 
+
+If a comparison of the survival data across multiple groups needs to be performed, {\tt KM.dml} computes two matrices $T$ and $T\_GROUPS\_OE$ that contain a summary of the test. The 1-row matrix $T$ stores the following statistics: 
+\begin{itemize}
+	\item Column 1: number of groups in the survival data
+ 	\item Column 2: degree of freedom for Chi-squared distributed test statistic
+	\item Column 3: value of test statistic
+	\item Column 4: $P$-value.
+\end{itemize}
+Matrix $T\_GROUPS\_OE$ contains the following statistics for each of $g$ groups:
+\begin{itemize}
+	\item Column 1: number of events
+	\item Column 2: number of observed death times ($O$)
+	\item Column 3: number of expected death times ($E$)
+	\item Column 4: $(O-E)^2/E$
+	\item Column 5: $(O-E)^2/V$.
+\end{itemize}
+
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+	\hml -f KM.dml -nvargs X=/user/biadmin/X.mtx TE=/user/biadmin/TE
+	GI=/user/biadmin/GI SI=/user/biadmin/SI O=/user/biadmin/kaplan-meier.csv
+	M=/user/biadmin/model.csv alpha=0.01 etype=greenwood ctype=plain fmt=csv
+	
+}\smallskip
+
+{\hangindent=\parindent\noindent\tt
+	\hml -f KM.dml -nvargs X=/user/biadmin/X.mtx TE=/user/biadmin/TE
+	GI=/user/biadmin/GI SI=/user/biadmin/SI O=/user/biadmin/kaplan-meier.csv
+	M=/user/biadmin/model.csv T=/user/biadmin/test.csv alpha=0.01 etype=peto 
+	ctype=log ttype=log-rank fmt=csv
+	
+}
+
+%
+%\smallskip
+%\noindent{\bf References}
+%\begin{itemize}
+%	\item
+%	R.~Peto, M.C.~Pike, P.~Armitage, N.E.~Breslow, D.R.~Cox, S.V.~Howard, N.~Mantel, K.~McPherson, J.~Peto, and P.G.~Smith.
+%	\newblock Design and analysis of randomized clinical trials requiring prolonged observation of each patient.
+%	\newblock {\em British Journal of Cancer}, 35:1--39, 1979.
+%\end{itemize}
+
+%@book{collett2003:kaplanmeier,
+%	title={Modelling Survival Data in Medical Research, Second Edition},
+%	author={Collett, D.},
+%	isbn={9781584883258},
+%	lccn={2003040945},
+%	series={Chapman \& Hall/CRC Texts in Statistical Science},
+%	year={2003},
+%	publisher={Taylor \& Francis}
+%}

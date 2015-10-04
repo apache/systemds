@@ -1,0 +1,319 @@
+\subsection{Cox Proportional Hazard Regression Model}
+
+\noindent{\bf Description}
+\smallskip
+
+
+The Cox (proportional hazard or PH) is a semi-parametric statistical approach commonly used for analyzing survival data.
+Unlike non-parametric approaches, e.g., the Kaplan-Meier estimates (Section \ref{sec:kaplan-meier}), which can be used to analyze single sample of survival data or to compare between groups of survival times, the Cox PH models the dependency of the survival times on the values of {\it explanatory variables} (i.e., covariates) recorded for each individual at the time origin. Our focus is on covariates that do not change value over time, i.e., time-independent covariates, and that may be categorical (ordinal or nominal) as well as continuous-valued. \\  
+
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}Cox.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} TE=}path/file
+{\tt{} F=}path/file
+{\tt{} R=}path/file
+{\tt{} M=}path/file
+{\tt{} S=}path/file
+{\tt{} T=}path/file
+{\tt{} COV=}path/file
+{\tt{} RT=}path/file
+{\tt{} XO=}path/file
+{\tt{} MF=}path/file
+{\tt{} alpha=}double
+{\tt{} fmt=}format
+
+}
+
+\smallskip
+\noindent{\bf Arguments --- Model Fitting/Prediction}
+\begin{Description}
+\item[{\tt X}:]
+Location (on HDFS) to read the input matrix of the survival data containing: 
+\begin{Itemize}
+	\item timestamps,
+	\item whether event occurred (1) or data is censored (0),
+	\item feature vectors
+\end{Itemize}
+\item[{\tt Y}:]
+Location (on HDFS) to the read matrix used for prediction 
+\item[{\tt TE}:]
+Location (on HDFS) to read the 1-column matrix $TE$ that contains the column indices of the input matrix $X$ corresponding to timestamps (first entry) and event information (second entry)
+\item[{\tt F}:]
+Location (on HDFS) to read the 1-column matrix $F$ that contains the column indices of the input matrix $X$ corresponding to the features to be used for fitting the Cox model
+\item[{\tt R}:] (default:\mbox{ }{\tt " "})
+If factors (i.e., categorical features) are available in the input matrix $X$, location (on HDFS) to read matrix $R$ containing the start (first column) and end (second column) indices of each factor in $X$;
+alternatively, user can specify the indices of the baseline level of each factor which needs to be removed from $X$. If $R$ is not provided by default all variables are considered to be continuous-valued.
+\item[{\tt M}:]							
+Location (on HDFS) to store the results of Cox regression analysis including regression coefficients $\beta_j$s, their standard errors, confidence intervals, and $P$-values  
+\item[{\tt S}:] (default:\mbox{ }{\tt " "})
+Location (on HDFS) to store a summary of some statistics of the fitted model including number of records, number of events, log-likelihood, AIC, Rsquare (Cox \& Snell), and maximum possible Rsquare 
+\item[{\tt T}:] (default:\mbox{ }{\tt " "})
+Location (on HDFS) to store the results of Likelihood ratio test, Wald test, and Score (log-rank) test of the fitted model
+\item[{\tt COV}:]
+Location (on HDFS) to store the variance-covariance matrix of $\beta_j$s; note that parameter {\tt COV} needs to provided as input to prediction.
+\item[{\tt RT}:]
+Location (on HDFS) to store matrix $RT$ containing the order-preserving recoded timestamps from $X$; note that parameter {\tt RT} needs to provided as input for prediction.
+\item[{\tt XO}:]
+Location (on HDFS) to store the input matrix $X$ ordered by the timestamps; note that parameter {\tt XO} needs to provided as input for prediction.
+\item[{\tt MF}:]
+Location (on HDFS) to store column indices of $X$ excluding the baseline factors if available; note that parameter {\tt MF} needs to provided as input for prediction.
+\item[{\tt P}] 
+Location (on HDFS) to store matrix $P$ containing the results of prediction
+\item[{\tt alpha}](default:\mbox{ }{\tt 0.05})
+Parameter to compute a $100(1-\alpha)\%$ confidence interval for $\beta_j$s 
+\item[{\tt tol}](default:\mbox{ }{\tt 0.000001})
+Tolerance (epsilon) used in the convergence criterion
+\item[{\tt moi}:] (default:\mbox{ }{\tt 100})
+Maximum number of outer (Fisher scoring) iterations
+\item[{\tt mii}:] (default:\mbox{ }{\tt 0})
+Maximum number of inner (conjugate gradient) iterations, or~0 if no maximum
+limit provided
+\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+
+ \smallskip
+ \noindent{\bf Usage: Cox Prediction}
+ \smallskip
+ 
+ {\hangindent=\parindent\noindent\it%
+ 	{\tt{}-f }path/\/{\tt{}Cox-predict.dml}
+ 	{\tt{} -nvargs}
+ 	{\tt{} X=}path/file
+ 	{\tt{} RT=}path/file
+ 	{\tt{} M=}path/file
+ 	{\tt{} Y=}path/file
+ 	{\tt{} COV=}path/file
+ 	{\tt{} MF=}path/file
+ 	{\tt{} P=}path/file
+ 	{\tt{} fmt=}format
+ 	
+ }\smallskip
+ 
+% \noindent{\bf Arguments --- Prediction}
+% \begin{Description}
+% 	\item[{\tt X}:]
+%	Location (on HDFS) to read the input matrix of the survival data sorted by the timestamps including: 
+%	\begin{Itemize}
+%		\item timestamps,
+%		\item whether event occurred (1) or data is censored (0),
+%		\item feature vectors
+%	\end{Itemize}
+% 	\item[{\tt RT}:]
+% 	Location to read column matrix $RT$ containing the (order preserving) recoded timestamps from X (output by {\tt Cox.dml})
+% 	\item[{\tt M}:]
+% 	Location to read matrix $M$ containing the fitted Cox model (see below for the schema) 
+% 	\item[{\tt Y}:]
+%	Location to the read matrix used for prediction    
+% 	\item[{\tt COV}:] 
+% 	Location to read the variance-covariance matrix of the regression coefficients (output by {\tt Cox.dml})
+% 	\item[{\tt MF}] 
+% 	Location to store column indices of $X$ excluding the baseline factors if available (output by {\tt Cox.dml})
+% 	\item[{\tt P}] 
+% 	Location to store matrix $P$ containing the results of prediction
+% 	\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+% 	Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv}
+% \end{Description}
+ 
+
+
+\noindent{\bf Details}
+\smallskip
+
+ 
+In Cox PH regression model the relationship between the hazard function---i.e., the probability of event occurrence at a given time---and the covariates is described as
+\begin{equation}
+h_i(t)=h_0(t)\exp\Bigl\{ \sum_{j=1}^{p} \beta_jx_{ij} \Bigr\}, \label{eq:coxph}
+\end{equation} 
+where the hazard function for the $i$th individual ($i\in\{1,2,\ldots,n\}$) depends on a set of $p$ covariates $x_i=(x_{i1},x_{i2},\ldots,x_{ip})$, whose importance is measured by the magnitude of the corresponding coefficients 
+$\beta=(\beta_1,\beta_2,\ldots,\beta_p)$. The term $h_0(t)$ is the baseline hazard and is related to a hazard value if all covariates equal 0. 
+In the Cox PH model the hazard function for the individuals may vary over time, however the baseline hazard is estimated non-parametrically and can take any form.
+Note that re-writing~(\ref{eq:coxph}) we have 
+\begin{equation*}
+\log\biggl\{ \frac{h_i(t)}{h_0(t)} \biggr\} = \sum_{j=1}^{p} \beta_jx_{ij}.
+\end{equation*}
+Thus, the Cox PH model is essentially a linear model for the logarithm of the hazard ratio and the hazard of event for any individual is a constant multiple of the hazard of any other. 
+%Consequently, the Cox model is a proportional hazard model.
+We follow similar notation and methodology as in~\cite[Sec.~3]{collett2003:kaplanmeier}.
+For completeness we briefly discuss the equations used in our implementation.
+
+
+\textbf{Factors in the model.} 
+Note that if some of the feature variables are factors they need to {\it dummy code} as follows. 
+Let $\alpha$ be such a variable (i.e., a factor) with $a$ levels. 
+We introduce $a-1$ indicator (or dummy coded) variables $X_2,X_3\ldots,X_a$ with $X_j=1$ if $\alpha=j$ and 0 otherwise, for $j\in\{ 2,3,\ldots,a\}$.
+In particular, one of $a$ levels of $\alpha$ will be considered as the baseline and is not included in the model.
+In our implementation, user can specify a baseline level for each of the factor (as selecting the baseline level for each factor is arbitrary). 
+On the other hand, if for a given factor $\alpha$ no baseline is specified by the user, the most frequent level of $\alpha$ will be considered as the baseline.   
+
+
+\textbf{Fitting the model.}
+We estimate the coefficients of the Cox model via negative log-likelihood method.
+In particular the Cox PH model is fitted by using trust region Newton method with conjugate gradient~\cite{Nocedal2006:Optimization}.
+%The likelihood for the PH hazard model is given by
+%\begin{equation*}
+%\prod_{i=1}^{n} {\Bigg\{ \frac{\exp(\vec{\beta}^\top\vec{x_i})}{\sum_{l\in %R(t_i)\exp(\vec{\beta}\vec{x}_l)}} \Biggr\}}^\delta_i,
+%\end{equation*}
+%where $\delta_i$ is an event indicator, which is 0 if the $i$th survival time is censored or 1 otherwise, and $R(t_i)$ is the risk set defined as the set of individuals who die at time $t_i$ or later.
+Define the risk set $R(t_j)$ at time $t_j$ to be the set of individuals who die at time $t_i$ or later. 
+The PH model assumes that survival times are distinct. In order to handle tied observations
+we use the \emph{Breslow} approximation of the likelihood function
+\begin{equation*}
+\mathcal{L}=\prod_{j=1}^{r} \frac{\exp(\beta^\top s_j)}{{\bigg\{ \sum_{l\in R(t_j)} \exp(\beta^\top x_l) \biggr\}}^{d_j}},
+\end{equation*}
+where $d_j$ is number individuals who die at time $t_j$ and $s_j$ denotes the element-wise sum of the covariates for those individuals who die at time $t_j$, $j=1,2,\ldots,r$, i.e.,
+the $h$th element of $s_j$ is given by $s_{hj}=\sum_{k=1}^{d_j}x_{hjk}$, where $x_{hjk}$ is the value of $h$th variable ($h\in \{1,2,\ldots,p\}$) for the $k$th of the $d_j$ individuals ($k\in\{ 1,2,\ldots,d_j \}$) who die at the $j$th death time ($j\in\{ 1,2,\ldots,r \}$).  
+
+\textbf{Standard error and confidence interval for coefficients.}
+Note that the variance-covariance matrix of the estimated coefficients $\hat{\beta}$ can be approximated by the inverse of the Hessian evaluated at $\hat{\beta}$. The square root of the diagonal elements of this matrix are the standard errors of estimated coefficients.  
+Once the standard errors of the coefficients $se(\hat{\beta})$ is obtained we can compute a $100(1-\alpha)\%$ confidence interval using $\hat{\beta}\pm z_{\alpha/2}se(\hat{\beta})$, where $z_{\alpha/2}$ is the upper $\alpha/2$-point of the standard normal distribution.
+In {\tt Cox.dml}, we utilize the build-in function {\tt inv()} to compute the inverse of the Hessian. Note that this build-in function can be used only if the Hessian fits in the main memory of a single machine.   
+
+
+\textbf{Wald test, likelihood ratio test, and log-rank test.}
+In order to test the {\it null hypothesis} that all of the coefficients $\beta_j$s are 0, our implementation provides three statistical test: {\it Wald test}, {\it likelihood ratio test}, the {\it log-rank test} (also known as the {\it score test}). 
+Let $p$ be the number of coefficients.
+The Wald test is based on the test statistic ${\hat{\beta}}^2/{se(\hat{\beta})}^2$, which is compared to percentage points of the Chi-squared distribution to obtain the $P$-value.
+The likelihood ratio test relies on the test statistic $-2\log\{ {L}(\textbf{0})/{L}(\hat{\beta}) \}$ ($\textbf{0}$ denotes a zero vector of size $p$ ) which has an approximate Chi-squared distribution with $p$ degrees of freedom under the null hypothesis that all $\beta_j$s are 0.
+The Log-rank test is based on the test statistic 
+$l=\nabla^\top L(\textbf{0}) {\mathcal{H}}^{-1}(\textbf{0}) \nabla L(\textbf{0})$, 
+where $\nabla L(\textbf{0})$ is the gradient of $L$ and $\mathcal{H}(\textbf{0})$ is the Hessian of $L$ evaluated at \textbf{0}. Under the null hypothesis that $\beta=\textbf{0}$, $l$ has a Chi-squared distribution on $p$ degrees of freedom.
+
+
+% Scoring
+\textbf{Prediction.}
+Once the parameters of the model are fitted, we compute the following predictions together with their standard errors
+\begin{itemize}
+	\item linear predictors,
+	\item risk, and
+	\item estimated cumulative hazard. 
+\end{itemize}
+Given feature vector $X_i$ for individual $i$, we obtain the above predictions at time $t$ as follows.
+The linear predictors (denoted as $\mathcal{LP}$) as well as the risk (denoted as $\mathcal{R}$) are computed relative to a baseline whose feature values are the mean of the values in the corresponding features.
+Let $X_i^\text{rel} = X_i - \mu$, where $\mu$ is a row vector that contains the mean values for each feature.  
+We have  $\mathcal{LP}=X_i^\text{rel} \hat{\beta}$ and $\mathcal{R}=\exp\{ X_i^\text{rel}\hat{\beta} \}$.
+The standard errors of the linear predictors $se\{\mathcal{LP} \}$ are computed as the square root of ${(X_i^\text{rel})}^\top V(\hat{\beta}) X_i^\text{rel}$ and the standard error of the risk $se\{ \mathcal{R} \}$ are given by the square root of 
+${(X_i^\text{rel} \odot \mathcal{R})}^\top V(\hat{\beta}) (X_i^\text{rel} \odot \mathcal{R})$, where $V(\hat{\beta})$ is the variance-covariance matrix of the coefficients and $\odot$ is the element-wise multiplication.     
+
+We estimate the cumulative hazard function for individual $i$ by
+\begin{equation*}
+\hat{H}_i(t) = \exp(\hat{\beta}^\top X_i) \hat{H}_0(t), 
+\end{equation*}
+where $\hat{H}_0(t)$ is the \emph{Breslow estimate} of the cumulative baseline hazard given by
+\begin{equation*}
+\hat{H}_0(t) = \sum_{j=1}^{k} \frac{d_j}{\sum_{l\in R(t_{(j)})} \exp(\hat{\beta}^\top X_l)}.
+\end{equation*}
+In the equation above, as before, $d_j$ is the number of deaths, and $R(t_{(j)})$ is the risk set at time $t_{(j)}$, for $t_{(k)} \leq t \leq t_{(k+1)}$, $k=1,2,\ldots,r-1$.
+The standard error of $\hat{H}_i(t)$ is obtained using the estimation
+\begin{equation*}
+se\{ \hat{H}_i(t) \} = \sum_{j=1}^{k} \frac{d_j}{ {\left[ \sum_{l\in R(t_{(j)})} \exp(X_l\hat{\beta}) \right]}^2 } + J_i^\top(t) V(\hat{\beta}) J_i(t),
+\end{equation*}
+where 
+\begin{equation*}
+J_i(t) = \sum_{j-1}^{k} d_j \frac{\sum_{l\in R(t_{(j)})} (X_l-X_i)\exp \{ (X_l-X_i)\hat{\beta} \}}{ {\left[ \sum_{l\in R(t_{(j)})} \exp\{(X_l-X_i)\hat{\beta}\} \right]}^2  },
+\end{equation*}
+for $t_{(k)} \leq t \leq t_{(k+1)}$, $k=1,2,\ldots,r-1$. 
+
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+  
+Blow we list the results of fitting a Cox regression model stored in matrix {\tt M} with the following schema:
+\begin{itemize}
+	\item Column 1: estimated regression coefficients $\hat{\beta}$
+	\item Column 2: $\exp(\hat{\beta})$
+	\item Column 3: standard error of the estimated coefficients $se\{\hat{\beta}\}$
+	\item Column 4: ratio of $\hat{\beta}$ to $se\{\hat{\beta}\}$ denoted by $Z$  
+	\item Column 5: $P$-value of $Z$ 
+	\item Column 6: lower bound of $100(1-\alpha)\%$ confidence interval for $\hat{\beta}$
+	\item Column 7: upper bound of $100(1-\alpha)\%$ confidence interval for $\hat{\beta}$.
+\end{itemize}
+Note that above $Z$ is the Wald test statistic which is asymptotically standard normal under the hypothesis that $\beta=\textbf{0}$.
+
+Moreover, {\tt Cox.dml} outputs two log files {\tt S} and {\tt T} containing a summary statistics of the fitted model as follows.
+File {\tt S} stores the following information 
+\begin{itemize}
+	\item Line 1: total number of observations
+	\item Line 2: total number of events
+	\item Line 3: log-likelihood (of the fitted model)
+	\item Line 4: AIC
+	\item Line 5: Cox \& Snell Rsquare
+	\item Line 6: maximum possible Rsquare. 
+\end{itemize}
+Above, the AIC is computed as in (\ref{eq:AIC}),
+the Cox \& Snell Rsquare is equal to $1-\exp\{ -l/n \}$, where $l$ is the log-rank test statistic as discussed above and $n$ is total number of observations,
+and the maximum possible Rsquare computed as $1-\exp\{ -2 L(\textbf{0})/n \}$ , where $L(\textbf{0})$ denotes the initial likelihood. 
+
+
+File {\tt T} contains the following information
+\begin{itemize}
+	\item Line 1: Likelihood ratio test statistic, degree of freedom of the corresponding Chi-squared distribution, $P$-value
+	\item Line 2: Wald test statistic, degree of freedom of the corresponding Chi-squared distribution, $P$-value
+	\item Line 3: Score (log-rank) test statistic, degree of freedom of the corresponding Chi-squared distribution, $P$-value.
+\end{itemize}
+
+Additionally, the following matrices will be stored. Note that these matrices are required for prediction.
+\begin{itemize}
+	 \item Order-preserving recoded timestamps $RT$, i.e., contiguously numbered from 1 $\ldots$ \#timestamps
+	 \item Feature matrix ordered by the timestamps $XO$
+	 \item Variance-covariance matrix of the coefficients $COV$
+	 \item Column indices of the feature matrix with baseline factors removed (if available) $MF$.  
+\end{itemize}
+
+
+\textbf{Prediction}
+Finally, the results of prediction is stored in Matrix $P$ with the following schema
+\begin{itemize}
+	\item Column 1: linear predictors
+	\item Column 2: standard error of the linear predictors
+	\item Column 3: risk
+	\item Column 4: standard error of the risk
+	\item Column 5: estimated cumulative hazard
+	\item Column 6: standard error of the estimated cumulative hazard.
+\end{itemize}
+
+
+
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+	\hml -f Cox.dml -nvargs X=/user/biadmin/X.mtx TE=/user/biadmin/TE
+	F=/user/biadmin/F R=/user/biadmin/R M=/user/biadmin/model.csv
+	T=/user/biadmin/test.csv COV=/user/biadmin/var-covar.csv XO=/user/biadmin/X-sorted.mtx fmt=csv
+	
+}\smallskip
+
+{\hangindent=\parindent\noindent\tt
+	\hml -f Cox.dml -nvargs X=/user/biadmin/X.mtx TE=/user/biadmin/TE
+	F=/user/biadmin/F R=/user/biadmin/R M=/user/biadmin/model.csv
+	T=/user/biadmin/test.csv COV=/user/biadmin/var-covar.csv 
+	RT=/user/biadmin/recoded-timestamps.csv XO=/user/biadmin/X-sorted.csv 
+	MF=/user/biadmin/baseline.csv alpha=0.01 tol=0.000001 moi=100 mii=20 fmt=csv
+	
+}\smallskip
+
+\noindent To compute predictions:
+
+{\hangindent=\parindent\noindent\tt
+	\hml -f Cox-predict.dml -nvargs X=/user/biadmin/X-sorted.mtx 
+	RT=/user/biadmin/recoded-timestamps.csv
+	M=/user/biadmin/model.csv Y=/user/biadmin/Y.mtx COV=/user/biadmin/var-covar.csv 
+	MF=/user/biadmin/baseline.csv P=/user/biadmin/predictions.csv fmt=csv
+	
+}
+
+

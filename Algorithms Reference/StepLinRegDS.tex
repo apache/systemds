@@ -1,0 +1,101 @@
+\subsection{Stepwise Linear Regression}
+
+\noindent{\bf Description}
+\smallskip
+
+Our stepwise linear regression script selects a linear model based on the Akaike information criterion (AIC): 
+the model that gives rise to the lowest AIC is computed. \\
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+{\tt{}-f }path/\/{\tt{}StepLinearRegDS.dml}
+{\tt{} -nvargs}
+{\tt{} X=}path/file
+{\tt{} Y=}path/file
+{\tt{} B=}path/file
+{\tt{} S=}path/file
+{\tt{} O=}path/file
+{\tt{} icpt=}int
+{\tt{} thr=}double
+{\tt{} fmt=}format
+
+}
+
+\smallskip
+\noindent{\bf Arguments}
+\begin{Description}
+\item[{\tt X}:]
+Location (on HDFS) to read the matrix of feature vectors, each row contains
+one feature vector.
+\item[{\tt Y}:]
+Location (on HDFS) to read the 1-column matrix of response values
+\item[{\tt B}:]
+Location (on HDFS) to store the estimated regression parameters (the $\beta_j$'s), with the
+intercept parameter~$\beta_0$ at position {\tt B[}$m\,{+}\,1$, {\tt 1]} if available
+\item[{\tt S}:] (default:\mbox{ }{\tt " "})
+Location (on HDFS) to store the selected feature-ids in the order as computed by the algorithm;
+by default the selected feature-ids are forwarded to the standard output.
+\item[{\tt O}:] (default:\mbox{ }{\tt " "})
+Location (on HDFS) to store the CSV-file of summary statistics defined in
+Table~\ref{table:linreg:stats}; by default the summary statistics are forwarded to the standard output.
+\item[{\tt icpt}:] (default:\mbox{ }{\tt 0})
+Intercept presence and shifting/rescaling the features in~$X$:\\
+{\tt 0} = no intercept (hence no~$\beta_0$), no shifting or rescaling of the features;\\
+{\tt 1} = add intercept, but do not shift/rescale the features in~$X$;\\
+{\tt 2} = add intercept, shift/rescale the features in~$X$ to mean~0, variance~1
+\item[{\tt thr}:] (default:\mbox{ }{\tt 0.01})
+Threshold to stop the algorithm: if the decrease in the value of the AIC falls below {\tt thr}
+no further features are being checked and the algorithm stops.
+\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+
+\noindent{\bf Details}
+\smallskip
+
+Stepwise linear regression iteratively selects predictive variables in an automated procedure.
+Currently, our implementation supports forward selection: starting from an empty model (without any variable) 
+the algorithm examines the addition of each variable based on the AIC as a model comparison criterion. The AIC is defined as  
+\begin{equation}
+AIC = -2 \log{L} + 2 edf,\label{eq:AIC}
+\end{equation}    
+where $L$ denotes the likelihood of the fitted model and $edf$ is the equivalent degrees of freedom, i.e., the number of estimated parameters. 
+This procedure is repeated until including no additional variable improves the model by a certain threshold 
+specified in the input parameter {\tt thr}. 
+
+For fitting a model in each iteration we use the ``direct solve'' method as in the script {\tt LinearRegDS.dml} discussed in Section~\ref{sec:LinReg}.  
+
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+Similar to the outputs from {\tt LinearRegDS.dml} the stepwise linear regression script computes 
+the estimated regression coefficients and stores them in matrix $B$ on HDFS. 
+The format of matrix $B$ is identical to the one produced by the scripts for linear regression (see Section~\ref{sec:LinReg}).   
+Additionally, {\tt StepLinearRegDS.dml} outputs the variable indices (stored in the 1-column matrix $S$) 
+in the order they have been selected by the algorithm, i.e., $i$th entry in matrix $S$ corresponds to 
+the variable which improves the AIC the most in $i$th iteration.  
+If the model with the lowest AIC includes no variables matrix $S$ will be empty (contains one 0). 
+Moreover, the estimated summary statistics as defined in Table~\ref{table:linreg:stats}
+are printed out or stored in a file (if requested). 
+In the case where an empty model achieves the best AIC these statistics will not be produced. 
+
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+	\hml -f StepLinearRegDS.dml -nvargs X=/user/biadmin/X.mtx Y=/user/biadmin/Y.mtx
+	B=/user/biadmin/B.mtx S=/user/biadmin/selected.csv O=/user/biadmin/stats.csv
+	icpt=2 thr=0.05 fmt=csv
+	
+}
+
+

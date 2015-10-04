@@ -1,0 +1,194 @@
+\subsection{Random Forests}
+\label{random_forests}
+
+\noindent{\bf Description}
+\smallskip
+
+
+Random forest is one of the most successful machine learning methods for classification and regression. 
+It is an ensemble learning method that creates a model composed of a set of tree models.
+This implementation is well-suited to handle large-scale data and builds a random forest model for classification in parallel.\\
+
+
+\smallskip
+\noindent{\bf Usage}
+\smallskip
+
+{\hangindent=\parindent\noindent\it%
+	{\tt{}-f }path/\/{\tt{}random-forest.dml}
+	{\tt{} -nvargs}
+	{\tt{} X=}path/file
+	{\tt{} Y=}path/file
+	{\tt{} R=}path/file
+	{\tt{} bins=}integer
+	{\tt{} depth=}integer
+	{\tt{} num\_leaf=}integer
+	{\tt{} num\_samples=}integer
+	{\tt{} num\_trees=}integer
+	{\tt{} subsamp\_rate=}double
+	{\tt{} feature\_subset=}double
+	{\tt{} impurity=}Gini$\mid$entropy
+	{\tt{} M=}path/file
+	{\tt{} C=}path/file
+	{\tt{} S\_map=}path/file
+	{\tt{} C\_map=}path/file
+	{\tt{} fmt=}format
+	
+}
+
+ \smallskip
+ \noindent{\bf Usage: Prediction}
+ \smallskip
+ 
+ {\hangindent=\parindent\noindent\it%
+ 	{\tt{}-f }path/\/{\tt{}random-forest-predict.dml}
+ 	{\tt{} -nvargs}
+ 	{\tt{} X=}path/file
+ 	{\tt{} Y=}path/file
+ 	{\tt{} R=}path/file
+ 	{\tt{} M=}path/file
+ 	{\tt{} C=}path/file
+ 	{\tt{} P=}path/file
+ 	{\tt{} A=}path/file
+ 	{\tt{} OOB=}path/file
+ 	{\tt{} CM=}path/file
+ 	{\tt{} fmt=}format
+ 	
+ }\smallskip
+ 
+ 
+\noindent{\bf Arguments}
+\begin{Description}
+	\item[{\tt X}:]
+	Location (on HDFS) to read the matrix of feature vectors; 
+	each row constitutes one feature vector. Note that categorical features in $X$ need to be both recoded and dummy coded.
+	\item[{\tt Y}:]
+	Location (on HDFS) to read the matrix of (categorical) 
+	labels that correspond to feature vectors in $X$. Note that classes are assumed to be both recoded and dummy coded. 
+	This argument is optional for prediction. 
+	\item[{\tt R}:] (default:\mbox{ }{\tt " "})
+	Location (on HDFS) to read matrix $R$ which for each feature in $X$ contains column-ids (first column), start indices (second column), and end indices (third column).
+	If $R$ is not provided by default all features are assumed to be continuous-valued.   
+	\item[{\tt bins}:] (default:\mbox{ }{\tt 20})
+	Number of thresholds to choose for each continuous-valued feature (determined by equi-height binning). 
+	\item[{\tt depth}:] (default:\mbox{ }{\tt 25})
+	Maximum depth of the learned trees in the random forest model
+	\item[{\tt num\_leaf}:] (default:\mbox{ }{\tt 10})
+	Parameter that controls pruning. The tree
+	is not expanded if a node receives less than {\tt num\_leaf} training examples.
+	\item[{\tt num\_samples}:] (default:\mbox{ }{\tt 3000})
+	Parameter that decides when to switch to in-memory building of the subtrees in each tree of the random forest model. 
+	If a node $v$ receives less than {\tt num\_samples}
+	training examples then this implementation switches to an in-memory subtree
+	building procedure to build the subtree under $v$ in its entirety.
+	\item[{\tt num\_trees}:] (default:\mbox{ }{\tt 10})
+	Number of trees to be learned in the random forest model
+	\item[{\tt subsamp\_rate}:] (default:\mbox{ }{\tt 1.0})
+	Parameter controlling the size of each tree in the random forest model; samples are selected from a Poisson distribution with parameter {\tt subsamp\_rate}.
+	\item[{\tt feature\_subset}:] (default:\mbox{ }{\tt 0.5})
+	Parameter that controls the number of feature used as candidates for splitting at each tree node as a power of the number of features in the data, i.e., assuming the training set has $D$ features $D^{\tt feature\_subset}$ are used at each tree node.
+	\item[{\tt impurity}:] (default:\mbox{ }{\tt "Gini"})
+	Impurity measure used at internal nodes of the trees in the random forest model for selecting which features to split on. Possible value are entropy or Gini.
+	\item[{\tt M}:] 
+	Location (on HDFS) to write matrix $M$ containing the learned random forest (see Section~\ref{sec:decision_trees} and below for the schema) 
+	\item[{\tt C}:] (default:\mbox{ }{\tt " "})
+	Location (on HDFS) to store the number of counts (generated according to a Poisson distribution with parameter {\tt subsamp\_rate}) for each feature vector. Note that this argument is optional. If Out-Of-Bag (OOB) error estimate needs to be computed this parameter is passed as input to {\tt random-forest-predict.dml}. 
+	\item[{\tt A}:] (default:\mbox{ }{\tt " "})
+	Location (on HDFS) to store the testing accuracy (\%) from a 
+	held-out test set during prediction. Note that this argument is optional.
+	\item[{\tt OOB}:] (default:\mbox{ }{\tt " "})
+	Location (on HDFS) to store the Out-Of-Bag (OOB) error estimate of the training set. Note that the matrix of sample counts (stored at {\tt C}) needs to be provided for computing OOB error estimate. Note that this argument is optional.
+	\item[{\tt P}:] 
+	Location (on HDFS) to store predictions for a held-out test set
+	\item[{\tt CM}:] (default:\mbox{ }{\tt " "})
+	Location (on HDFS) to store the confusion matrix computed using a held-out test set. Note that this argument is optional.
+	\item[{\tt S\_map}:] (default:\mbox{ }{\tt " "})
+	Location (on HDFS) to write the mappings from the continuous-valued feature-ids to the global feature-ids in $X$ (see below for details). Note that this argument is optional.
+	\item[{\tt C\_map}:] (default:\mbox{ }{\tt " "})
+	Location (on HDFS) to write the mappings from the categorical feature-ids to the global feature-ids in $X$ (see below for details). Note that this argument is optional.
+	\item[{\tt fmt}:] (default:\mbox{ }{\tt "text"})
+	Matrix file output format, such as {\tt text}, {\tt mm}, or {\tt csv};
+	see read/write functions in SystemML Language Reference for details.
+\end{Description}
+
+
+ \noindent{\bf Details}
+ \smallskip
+
+Random forests~\cite{Breiman01:rforest} are learning algorithms for ensembles of decision trees. 
+The main idea is to build a number of decision trees on bootstrapped training samples, i.e., by taking repeatedly samples from a (single) training set. 
+Moreover, instead of considering all the features when building the trees only a random subset of the features---typically $\approx \sqrt{D}$, where $D$ is the number of features---is chosen each time a split test at a tree node is performed. 
+This procedure {\it decorrelates} the trees and makes it less prone to overfitting. 
+To build decision trees we utilize the techniques discussed in Section~\ref{sec:decision_trees} proposed in~\cite{PandaHBB09:dtree}; 
+the implementation details are similar to those of the decision trees script.
+Below we review some features of our implementation which differ from {\tt decision-tree.dml}.
+
+
+\textbf{Bootstrapped sampling.} 
+Each decision tree is fitted to a bootstrapped training set sampled with replacement (WR).  
+To improve efficiency, we generate $N$ sample counts according to a Poisson distribution with parameter {\tt subsamp\_rate},
+where $N$ denotes the total number of training points.
+These sample counts approximate WR sampling when $N$ is large enough and are generated upfront for each decision tree.
+
+
+\textbf{Bagging.}
+Decision trees suffer from {\it high variance} resulting in different models whenever trained on a random subsets of the data points.  
+{\it Bagging} is a general-purpose method to reduce the variance of a statistical learning method like decision trees.
+In the context of decision trees (for classification), for a given test feature vector 
+the prediction is computed by taking a {\it majority vote}: the overall prediction is the most commonly occurring class among all the tree predictions.
+
+ 
+\textbf{Out-Of-Bag error estimation.} 
+Note that each bagged tree in a random forest model is trained on a subset (around $\frac{2}{3}$) of the observations (i.e., feature vectors).
+The remaining ($\frac{1}{3}$ of the) observations not used for training is called the {\it Out-Of-Bag} (OOB) observations. 
+This gives us a straightforward way to estimate the test error: to predict the class label of each test observation $i$ we use the trees in which $i$ was OOB.
+Our {\tt random-forest-predict.dml} script provides the OOB error estimate for a given training set if requested.  
+
+
+\textbf{Description of the model.} 
+Similar to decision trees, the learned random forest model is presented in a matrix $M$  with at least 7 rows.
+The information stored in the model is similar to that of decision trees with the difference that the tree-ids are stored
+in the second row and rows $2,3,\ldots$ from the decision tree model are shifted by one. See Section~\ref{sec:decision_trees} for a description of the model.
+
+
+\smallskip
+\noindent{\bf Returns}
+\smallskip
+
+
+The matrix corresponding to the learned model is written to a file in the format specified. See Section~\ref{sec:decision_trees} where the details about the structure of the model matrix is described.
+Similar to {\tt decision-tree.dml}, $X$ is split into $X_\text{cont}$ and $X_\text{cat}$. 
+If requested, the mappings of the continuous feature-ids in $X_\text{cont}$ (stored at {\tt S\_map}) as well as the categorical feature-ids in $X_\text{cat}$ (stored at {\tt C\_map}) to the global feature-ids in $X$ will be provided. 
+The {\tt random-forest-predict.dml} script may compute one or more of
+predictions, accuracy, confusion matrix, and OOB error estimate in the requested output format depending on the input arguments used. 
+ 
+
+
+\smallskip
+\noindent{\bf Examples}
+\smallskip
+
+{\hangindent=\parindent\noindent\tt
+	\hml -f random-forest.dml -nvargs X=/user/biadmin/X.mtx Y=/user/biadmin/Y.mtx
+	R=/user/biadmin/R.csv M=/user/biadmin/model.csv
+	bins=20 depth=25 num\_leaf=10 num\_samples=3000 num\_trees=10 impurity=Gini fmt=csv
+	
+}\smallskip
+
+
+\noindent To compute predictions:
+
+{\hangindent=\parindent\noindent\tt
+	\hml -f random-forest-predict.dml -nvargs X=/user/biadmin/X.mtx Y=/user/biadmin/Y.mtx R=/user/biadmin/R.csv
+	M=/user/biadmin/model.csv P=/user/biadmin/predictions.csv
+	A=/user/biadmin/accuracy.csv CM=/user/biadmin/confusion.csv fmt=csv
+	
+}\smallskip
+
+
+%\noindent{\bf References}
+%
+%\begin{itemize}
+%\item B. Panda, J. Herbach, S. Basu, and R. Bayardo. \newblock{PLANET: massively parallel learning of tree ensembles with MapReduce}. In Proceedings of the VLDB Endowment, 2009.
+%\item L. Breiman. \newblock{Random Forests}. Machine Learning, 45(1), 5--32, 2001.
+%\end{itemize}

@@ -19,16 +19,20 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix;
 
 import java.util.HashMap;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import com.ibm.bi.dml.lops.UAggOuterChain;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
+import com.ibm.bi.dml.utils.Statistics;
 
 /**
  * TODO: extend test by various binary operator - unary aggregate operator combinations.
@@ -57,7 +61,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 		LESS_EQUALS,
 	}
 	
-	public enum SumType{ROW_SUM, COL_SUM, SUM_ALL}
+	public enum SumType{ROW_SUM, COL_SUM, SUM_ALL, ROW_INDEX_MAX, ROW_INDEX_MIN}
 		
 	@Override
 	public void setUp() 
@@ -1050,6 +1054,123 @@ public class UaggOuterChainTest extends AutomatedTestBase
 		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, SumType.SUM_ALL, true, ExecType.SPARK);
 	}
 	
+	// Uagg RowIndexMax -- SP
+
+	@Test
+	public void testEqualsUaggOuterChainRowIndexMaxSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, SumType.ROW_INDEX_MAX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainRowIndexMaxSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, false, SumType.ROW_INDEX_MAX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessUaggOuterChainRowIndexMaxSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.LESS, true, false, SumType.ROW_INDEX_MAX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainRowIndexMaxSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, false, SumType.ROW_INDEX_MAX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainRowIndexMaxSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER, true, false, SumType.ROW_INDEX_MAX, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainRowIndexMaxSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, SumType.ROW_INDEX_MAX, false, ExecType.SPARK);
+	}
+	
+
+	// Uagg RowIndexMax -- MR
+
+	@Test
+	public void testEqualsUaggOuterChainRowIndexMaxMultiSparseMR() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, SumType.ROW_INDEX_MAX, false, ExecType.MR);
+	}
+
+	
+	@Test
+	public void testNotEqualsUaggOuterChainRowIndexMaxMultiSparseMR() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, false, true, SumType.ROW_INDEX_MAX, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testLessUaggOuterChainRowIndexMaxMultiSparseMR() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.LESS, false, true, SumType.ROW_INDEX_MAX, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainRowIndexMaxMultiSparseMR() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, false, true, SumType.ROW_INDEX_MAX, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainRowIndexMaxMultiSparseMR() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER, false, true, SumType.ROW_INDEX_MAX, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainRowIndexMaxMultiSparseMR() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, SumType.ROW_INDEX_MAX, false, ExecType.MR);
+	}
+	
+
+	// Uagg RowIndexMin -- SP
+
+	@Test
+	public void TESTEQUALSUAGGOUTERCHAINROWINDEXMINSINGLEDENSESP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, SumType.ROW_INDEX_MIN, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNotEqualsUaggOuterChainRowIndexMinSingleDenseMR() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.NOT_EQUALS, true, false, SumType.ROW_INDEX_MIN, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testLessUaggOuterChainRowIndexMinSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.LESS, true, false, SumType.ROW_INDEX_MIN, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLessEqualsUaggOuterChainRowIndexMinSingleDenseMR() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.LESS_EQUALS, true, false, SumType.ROW_INDEX_MIN, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterUaggOuterChainRowIndexMinSingleDenseMR() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER, true, false, SumType.ROW_INDEX_MIN, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainRowIndexMinSingleDenseSP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, SumType.ROW_INDEX_MIN, false, ExecType.SPARK);
+	}
+	
 
 	/**
 	 * 
@@ -1112,11 +1233,17 @@ public class UaggOuterChainTest extends AutomatedTestBase
 				case SUM_ALL:
 					strSumTypeSuffix = new String("Sums");
 					break;
+				case ROW_INDEX_MAX:
+					strSumTypeSuffix = new String("RowIndexMax");
+					break;
+				case ROW_INDEX_MIN:
+					strSumTypeSuffix = new String("RowIndexMin");
+					break;
 			}
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;			
 			fullDMLScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix + ".dml";
-			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
+			programArgs = new String[]{"-stats", "-explain","-args", HOME + INPUT_DIR + "A",
 					                            HOME + INPUT_DIR + "B",
 					                            HOME + OUTPUT_DIR + "C"};
 			fullRScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix +".R";
@@ -1166,6 +1293,15 @@ public class UaggOuterChainTest extends AutomatedTestBase
 				int expectedNumExecuted = expectedNumCompiled; 
 				checkNumCompiledMRJobs(expectedNumCompiled); 
 				checkNumExecutedMRJobs(expectedNumExecuted); 	
+			}
+			
+			//check statistics for right operator in cp and spark
+			if( instType == ExecType.CP ) {
+				Assert.assertTrue("Missing opcode sp_uaggouerchain", Statistics.getCPHeavyHitterOpCodes().contains(UAggOuterChain.OPCODE));
+			}
+			else if( instType == ExecType.SPARK ) {
+				Assert.assertTrue("Missing opcode sp_uaggouerchain",
+						Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+UAggOuterChain.OPCODE));
 			}
 		}
 		finally

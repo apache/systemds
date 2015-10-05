@@ -33,6 +33,7 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
+import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.IndexFunction;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
@@ -140,11 +141,18 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			sec.releaseMatrixInput(bcastVar);
 			bcastVar = null; //prevent lineage tracking
 			double[] vmb = DataConverter.convertToDoubleVector(mb);
-			Arrays.sort(vmb); 			
+			Broadcast<int[]> bvi = null;
+			
+			if(_uaggOp.aggOp.increOp.fn instanceof Builtin) {
+				int[] vix = LibMatrixOuterAgg.prepareRowIndices(mb.getNumColumns(), vmb, _bOp, _uaggOp);
+				bvi = sec.getSparkContext().broadcast(vix);
+			} else
+				Arrays.sort(vmb);
+			
 			Broadcast<double[]> bv = sec.getSparkContext().broadcast(vmb);
-		
+			
 			//partitioning-preserving map-to-pair (under constraints)
-			out = in1.mapPartitionsToPair( new RDDMapUAggOuterChainFunction(bv, _bOp, _uaggOp), noKeyChange );
+			out = in1.mapPartitionsToPair( new RDDMapUAggOuterChainFunction(bv, bvi, _bOp, _uaggOp), noKeyChange );
 		}
 		else
 		{
@@ -238,10 +246,11 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		private static final long serialVersionUID = 8197406787010296291L;
 
 		private Broadcast<double[]> _bv = null;
+		private Broadcast<int[]> _bvi = null;
 		private BinaryOperator _bOp = null;
 		private AggregateUnaryOperator _uaggOp = null;
 		
-		public RDDMapUAggOuterChainFunction(Broadcast<double[]> bv, BinaryOperator bOp, AggregateUnaryOperator uaggOp)
+		public RDDMapUAggOuterChainFunction(Broadcast<double[]> bv, Broadcast<int[]> bvi, BinaryOperator bOp, AggregateUnaryOperator uaggOp)
 		{
 			// Do not get data from BroadCast variables here, as it will try to deserialize the data whenever it gets instantiated through driver class. This will cause unnecessary delay in iinstantiating class
 			// through driver, and overall process.
@@ -249,6 +258,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 
 			//Sorted array
 			_bv = bv;
+			_bvi = bvi;
 			_bOp = bOp;
 			_uaggOp = uaggOp;
 			
@@ -277,7 +287,13 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 				MatrixIndexes outIx = new MatrixIndexes();
 				MatrixBlock outVal = new MatrixBlock();
 				
-				LibMatrixOuterAgg.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value(), _bOp, _uaggOp);
+				int [] bvi = null;
+				if((LibMatrixOuterAgg.isRowIndexMax(_uaggOp)) || (LibMatrixOuterAgg.isRowIndexMin(_uaggOp)))
+				{
+					bvi = _bvi.getValue();
+				}
+
+				LibMatrixOuterAgg.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value(), bvi, _bOp, _uaggOp);
 
 				return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);	
 			}			

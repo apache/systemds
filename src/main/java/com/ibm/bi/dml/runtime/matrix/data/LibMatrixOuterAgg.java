@@ -20,6 +20,8 @@ package com.ibm.bi.dml.runtime.matrix.data;
 import java.util.Arrays;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.Equals;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
@@ -32,6 +34,9 @@ import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
+import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
+import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.SortUtils;
 
 /**
  * ACS:
@@ -47,25 +52,231 @@ public class LibMatrixOuterAgg
 	private LibMatrixOuterAgg() {
 		//prevent instantiation via private constructor
 	}
+
 	
 	/**
+	 * This will return if uaggOp is of type RowIndexMax
 	 * 
-	 * @param op
+	 * @param uaggOp
+	 * @return
+	 */
+	public static boolean isRowIndexMax(AggregateUnaryOperator uaggOp)
+	{
+		return 	(uaggOp.aggOp.increOp.fn instanceof Builtin														
+			    && (((Builtin)(uaggOp.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MAXINDEX));						
+	}
+	
+	/**
+	 * This will return if uaggOp is of type RowIndexMin
+	 * 
+	 * @param uaggOp
+	 * @return
+	 */
+	public static boolean isRowIndexMin(AggregateUnaryOperator uaggOp)
+	{
+		return 	(uaggOp.aggOp.increOp.fn instanceof Builtin									
+			    && (((Builtin)(uaggOp.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX));						
+	}
+	
+	/**
+	 * @param uaggOp
+	 * @param bOp
 	 * @return
 	 */
 	public static boolean isSupportedUaggOp( AggregateUnaryOperator uaggOp, BinaryOperator bOp )
 	{
 		boolean bSupported = false;
 		
-		if( (bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals || bOp.fn instanceof GreaterThanEquals
-				|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals)				
-				&& uaggOp.aggOp.increOp.fn instanceof KahanPlus
-				&& (uaggOp.indexFn instanceof ReduceCol || uaggOp.indexFn instanceof ReduceRow || uaggOp.indexFn instanceof ReduceAll)) //special case: rowsSums(outer(A,B,<))
+		if( 	(  bOp.fn instanceof LessThan || bOp.fn instanceof LessThanEquals		// For operators <, <=,  
+				|| bOp.fn instanceof GreaterThan || bOp.fn instanceof GreaterThanEquals //				 >, >=
+				|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals)				//				==, !=
+				&& 
+					(uaggOp.aggOp.increOp.fn instanceof KahanPlus					// Kahanplus
+				    ||		
+					(isRowIndexMin(uaggOp) || isRowIndexMax(uaggOp)))				// RowIndexMin or RowIndexMax 						
+				&&			
+					(uaggOp.indexFn instanceof ReduceCol							// ReduceCol 
+						|| uaggOp.indexFn instanceof ReduceRow 						// ReduceRow
+						|| uaggOp.indexFn instanceof ReduceAll))					// ReduceAll
+			
 			bSupported = true;
 		
 		return bSupported;
 			
 	}
+
+	/*
+	 * 
+	 * @param iCols
+	 * @param vmb
+	 * @param bOp
+	 * @param uaggOp
+	 * 
+	 */
+	public static int[] prepareRowIndices(int iCols, double vmb[], BinaryOperator bOp, AggregateUnaryOperator uaggOp) throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		return (isRowIndexMax(uaggOp)?prepareRowIndicesMax(iCols, vmb, bOp):prepareRowIndicesMin(iCols, vmb, bOp));
+	}
+	
+	/**
+	 * This function will return max indices, based on column vector data. 
+	 * This indices will be computed based on operator. 
+	 * These indices can be used to compute max index for a given input value in subsequent operation.
+	 * 
+	 *  e.g. Right Vector has data (V1)    :                6   3   9   7   2   4   4   3
+	 *       Original indices for this data will be (I1):   1   2   3   4   5   6   7   8		
+	 * 
+	 *  Sorting this data based on value will be (V2):      2   3   3   4   4   6   7   9	
+	 *      Then indices will be ordered as (I2):           5   2   8   6   7   1   4   3
+	 * 
+	 * CumMax of I2 will be A:  (CumMin(I2))                5   5   8   8   8   8   8   8
+	 * CumMax of I2 in reverse order be B:                  8   8   8   7   7   4   4   3
+	 * 
+	 * Values from vector A is used to compute RowIndexMax for > & >= operators
+	 * Values from vector B is used to compute RowIndexMax for < & <= operators
+	 * Values from I2 is used to compute RowIndexMax for == operator.
+	 * Original values are directly used to compute RowIndexMax for != operator
+	 * 
+	 * Shifting values from vector A or B is required to compute final indices.
+	 * Once indices are shifted from vector A or B, their cell value corresponding to input data will be used. 
+	 *  
+	 * 
+	 * @param iCols
+	 * @param vmb
+	 * @param bOp
+	 * @return vixCumSum
+	 */
+	public static int[] prepareRowIndicesMax(int iCols, double vmb[], BinaryOperator bOp) throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		int[] vixCumSum = null;
+		int[] vix = new int[iCols];
+		
+		//sort index vector on extracted data (unstable)
+		if(!(bOp.fn instanceof NotEquals)){
+			for( int i=0; i<iCols; i++ )
+				vix[i] = i;
+
+			SortUtils.sortByValueStable(0, iCols, vmb, vix);
+		} 
+	
+		if(bOp.fn instanceof LessThan || bOp.fn instanceof LessThanEquals 
+				|| bOp.fn instanceof GreaterThan || bOp.fn instanceof GreaterThanEquals) {
+	
+			boolean bPrimeCumSum = false;
+			if(bOp.fn instanceof LessThan || bOp.fn instanceof LessThanEquals )
+				bPrimeCumSum = true;
+			
+			double dvix[] = new double[vix.length];
+			if (bPrimeCumSum)
+				for (int i = 0; i< vix.length; ++i)
+					dvix[vix.length-1-i] = vix[i];
+			else
+				for (int i = 0; i< vix.length; ++i)
+					dvix[i] = vix[i];
+			
+			MatrixBlock mbix = DataConverter.convertToMatrixBlock(dvix, true);
+			
+			UnaryOperator u_op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinFunctionCode.CUMMAX));
+			MatrixBlock mbResult = (MatrixBlock) mbix.unaryOperations(u_op, new MatrixBlock());
+			
+			vixCumSum = DataConverter.convertToIntVector(mbResult);  
+			if (bPrimeCumSum)
+				for (int i = 0; i< (vixCumSum.length+1)/2; ++i) {
+					int iTemp = vixCumSum[vixCumSum.length-1-i];
+					vixCumSum[vixCumSum.length-1-i] = vixCumSum[i];
+					vixCumSum[i] = iTemp;
+				}
+							
+			adjustRowIndicesMax(vixCumSum, vmb, bOp);
+			
+		} else if(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals) {
+			adjustRowIndicesMax(vix, vmb, bOp);
+			vixCumSum = vix;
+		}
+		
+		return vixCumSum;
+	}
+	
+
+	/**
+	 * This function will return min indices, based on column vector data. 
+	 * This indices will be computed based on operator. 
+	 * These indices can be used to compute min index for a given input value in subsequent operation.
+	 * 
+	 *  e.g. Right Vector has data (V1)    :                6   3   9   7   2   4   4   3
+	 *       Original indices for this data will be (I1):   1   2   3   4   5   6   7   8		
+	 * 
+	 *  Sorting this data based on value will be (V2):      2   3   3   4   4   6   7   9	
+	 *      Then indices will be ordered as (I2):           5   2   8   6   7   1   4   3
+	 * 
+	 * CumMin of I2 will be A:  (CumMin(I2))                5   2   2   2   2   1   1   1
+	 * CumMin of I2 in reverse order be B:                  1   1   1   1   1   1   3   3
+	 * 
+	 * Values from vector A is used to compute RowIndexMin for > operator
+	 * Values from vector B is used to compute RowIndexMin for <, <= and >= operators
+	 * Values from I2 is used to compute RowIndexMax for == operator.
+	 * Original values are directly used to compute RowIndexMax for != operator
+	 * 
+	 * Shifting values from vector A or B is required to compute final indices.
+	 * Once indices are shifted from vector A or B, their cell value corresponding to input data will be used. 
+	 *  
+	 * 
+	 * @param iCols
+	 * @param vmb
+	 * @param bOp
+	 * @return vixCumSum
+	 */
+	public static int[] prepareRowIndicesMin(int iCols, double vmb[], BinaryOperator bOp) throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		int[] vixCumSum = null;
+		int[] vix = new int[iCols];
+		
+		//sort index vector on extracted data (unstable)
+		if(!(bOp.fn instanceof NotEquals || bOp.fn instanceof Equals )){
+			for( int i=0; i<iCols; i++ )
+				vix[i] = i;
+	
+			SortUtils.sortByValueStable(0, iCols, vmb, vix);
+		} 
+	
+		if(bOp.fn instanceof LessThan || bOp.fn instanceof LessThanEquals 
+				|| bOp.fn instanceof GreaterThan || bOp.fn instanceof GreaterThanEquals) {
+	
+			boolean bPrimeCumSum = false;
+			if(bOp.fn instanceof GreaterThan || bOp.fn instanceof GreaterThanEquals )
+				bPrimeCumSum = true;
+			
+			double dvix[] = new double[vix.length];
+			if (bPrimeCumSum)
+				for (int i = 0; i< vix.length; ++i)
+					dvix[vix.length-1-i] = vix[i];
+			else
+				for (int i = 0; i< vix.length; ++i)
+					dvix[i] = vix[i];
+			
+			MatrixBlock mbix = DataConverter.convertToMatrixBlock(dvix, true);
+			
+			UnaryOperator u_op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinFunctionCode.CUMMIN));
+			MatrixBlock mbResult = (MatrixBlock) mbix.unaryOperations(u_op, new MatrixBlock());
+			
+			vixCumSum = DataConverter.convertToIntVector(mbResult);  
+			if (bPrimeCumSum)
+				for (int i = 0; i< (vixCumSum.length+1)/2; ++i) {
+					int iTemp = vixCumSum[vixCumSum.length-1-i];
+					vixCumSum[vixCumSum.length-1-i] = vixCumSum[i];
+					vixCumSum[i] = iTemp;
+				}
+							
+			adjustRowIndicesMin(vixCumSum, vmb, bOp);
+			
+		} else if(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals) {
+			adjustRowIndicesMin(vix, vmb, bOp);
+			vixCumSum = vix;
+		}
+		
+		return vixCumSum;
+	}
+	
 	
 	/**
 	 * 
@@ -77,7 +288,7 @@ public class LibMatrixOuterAgg
 	 * @param bOp
 	 * @throws DMLRuntimeException
 	 */
-	public static void aggregateMatrix(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, double[] bv, 
+	public static void aggregateMatrix(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, double[] bv, int[] bvi, 
 			BinaryOperator bOp, AggregateUnaryOperator uaggOp) 
 			throws DMLRuntimeException
 	{		
@@ -94,7 +305,37 @@ public class LibMatrixOuterAgg
 		}
 		
 		//step2: compute unary aggregate outer chain
-		if(uaggOp.indexFn instanceof ReduceCol) {
+		if(isRowIndexMax(uaggOp)) 
+		{
+			if(bOp.fn instanceof LessThan) {
+				uaRIMLt(in1Val, outVal, bv, bvi, bOp);
+			} else if(bOp.fn instanceof LessThanEquals) {
+				uaRIMLe(in1Val, outVal, bv, bvi, bOp);
+			} else if(bOp.fn instanceof GreaterThan) { 
+				uaRIMGt(in1Val, outVal, bv, bvi, bOp);
+			} else if(bOp.fn instanceof GreaterThanEquals) {
+				uaRIMGe(in1Val, outVal, bv, bvi, bOp);
+			} else if(bOp.fn instanceof Equals){ 
+				uaRIMEq(in1Val, outVal, bv, bvi, bOp);	
+			} else if (bOp.fn instanceof NotEquals) {
+				uaRIMNe(in1Val, outVal, bv, bvi, bOp);
+			}
+		} else if(isRowIndexMin(uaggOp)) 
+		{
+				if(bOp.fn instanceof LessThan) {
+					uaRIMinLt(in1Val, outVal, bv, bvi, bOp);
+				} else if(bOp.fn instanceof LessThanEquals) {
+					uaRIMinLe(in1Val, outVal, bv, bvi, bOp);
+				} else if(bOp.fn instanceof GreaterThan) { 
+					uaRIMinGt(in1Val, outVal, bv, bvi, bOp);
+				} else if(bOp.fn instanceof GreaterThanEquals) {
+					uaRIMinGe(in1Val, outVal, bv, bvi, bOp);
+				} else if(bOp.fn instanceof Equals){ 
+					uaRIMinEq(in1Val, outVal, bv, bvi, bOp);	
+				} else if (bOp.fn instanceof NotEquals) {
+					uaRIMinNe(in1Val, outVal, bv, bvi, bOp);
+				}
+		} else if(uaggOp.indexFn instanceof ReduceCol) {
 			if(bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThanEquals) {
 				uaRowSumLtGe(in1Val, outVal, bv, bOp);
 			} else if(bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals) {
@@ -315,6 +556,280 @@ public class LibMatrixOuterAgg
 	}
 
 	
+	/**
+	 * UAgg rowIndexMax for LessThan operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMLt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uarimaxLt(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uarimaxLt(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+	
+	/**
+	 * UAgg rowIndexMax for LessThanEquals operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMLe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uarimaxLe(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uarimaxLe(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+	
+	/**
+	 * UAgg rowIndexMax for GreaterThan operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMGt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uarimaxGt(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uarimaxGt(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+	
+	
+	/**
+	 * UAgg rowIndexMax for GreaterThanEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMGe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uarimaxGe(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uarimaxGe(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+	
+	
+	/**
+	 * UAgg rowIndexMax for Equal operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMEq(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uarimaxEq(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uarimaxEq(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+
+
+	
+	/**
+	 * UAgg rowIndexMax for NotEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMNe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uarimaxNe(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uarimaxNe(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+
+
+	/**
+	 * UAgg rowIndexMin for LessThan operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMinLt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uariminLt(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uariminLt(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+	
+	/**
+	 * UAgg rowIndexMin for LessThanEquals operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMinLe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uariminLe(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uariminLe(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+	
+	/**
+	 * UAgg rowIndexMin for GreaterThan operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMinGt(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uariminGt(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uariminGt(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+	
+	
+	/**
+	 * UAgg rowIndexMin for GreaterThanEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMinGe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uariminGe(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uariminGe(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+	
+	
+	/**
+	 * UAgg rowIndexMin for Equal operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMinEq(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uariminEq(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uariminEq(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+
+
+	
+	/**
+	 * UAgg rowIndexMin for NotEqual operator
+	 * 
+	 * @param in
+	 * @param out
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void uaRIMinNe(MatrixBlock in, MatrixBlock out, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{		
+		int ind0 = uariminNe(0.0, bv, bvi, bOp);
+		int m = in.rlen;
+		
+		for( int i=0; i<m; i++ ) {
+			double ai = in.quickGetValue(i, 0);
+			int ind = (ai == 0) ? ind0: uariminNe(ai, bv, bvi, bOp);
+			out.quickSetValue(i, 0, ind);
+		}
+	}
+
+
 	/**
 	 * UAgg colSums Dense Matrix for LessThan and GreaterThanEqual operator
 	 * 
@@ -576,4 +1091,480 @@ public class LibMatrixOuterAgg
 
 		return cnt;
 	}
+	
+	/**
+	 * Find out rowIndexMax for Equal operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uarimaxEq(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ix = Arrays.binarySearch(bv, value);
+		int ixMax = bv.length;
+		
+		if( ix >= 0 ) 
+			ixMax = bvi[ix]+1;
+		return ixMax;
+	}
+
+	
+	/**
+	 * Find out rowIndexMax for NotEqual operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uarimaxNe(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMax = bv.length;
+		
+		if( bv[bv.length-1] == value ) 
+			ixMax = bvi[0]+1;
+		return ixMax;
+	}
+
+	
+	/**
+	 * Find out rowIndexMax for GreaterThan operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uarimaxGt(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMax = bv.length;
+		
+		if(value <= bv[0] || value > bv[bv.length-1]) 
+			return ixMax;
+		
+		int ix = Arrays.binarySearch(bv, value);
+		ix = Math.abs(ix)-1;
+		ixMax = bvi[ix-1]+1; 
+		
+		return ixMax;
+	}
+
+	
+	/**
+	 * Find out rowIndexMax for GreaterThanEqual operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uarimaxGe(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMax = bv.length;
+		
+		if(value < bv[0] || value >= bv[bv.length-1]) 
+			return ixMax;
+		
+		int ix = Arrays.binarySearch(bv, value);
+		ix = Math.abs(ix)-1;
+		ixMax = bvi[ix-1]+1; 
+		
+		return ixMax;
+	}
+
+	
+	/**
+	 * Find out rowIndexMax for LessThan operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uarimaxLt(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMax = bv.length;
+		
+		if(value < bv[0] || value >= bv[bv.length-1]) 
+			return ixMax;
+		
+		int ix = Arrays.binarySearch(bv, value);
+		if (ix < 0) 
+			ix = Math.abs(ix)-1;
+		ixMax = bvi[ix-1]+1; 
+		
+		return ixMax;
+	}
+
+	/**
+	 * Find out rowIndexMax for LessThanEquals operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uarimaxLe(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMax = bv.length;
+		
+		if(value < bv[0] || value > bv[bv.length-1]) 
+			return ixMax;
+		
+		int ix = Arrays.binarySearch(bv, value);
+		ix = Math.abs(ix);
+		ixMax = bvi[ix-1]+1; 
+		
+		return ixMax;
+	}
+	
+
+	/**
+	 * Find out rowIndexMin for Equal operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uariminEq(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMin = 1;
+		
+		if(value == bv[0])
+			ixMin = bvi[0]+1;
+		return ixMin;
+	}
+
+	
+	/**
+	 * Find out rowIndexMin for NotEqual operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uariminNe(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMin = 1;
+		
+		if( bv[0] != value ) 
+			ixMin = bvi[0]+1;
+		return ixMin;
+	}
+
+	
+	/**
+	 * Find out rowIndexMin for GreaterThan operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uariminGt(double value, double[] bv, int bvi[], BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMin = 1;
+		
+		if(value <= bv[0] || value > bv[bv.length-1]) 
+			return ixMin;
+		
+		int ix = Arrays.binarySearch(bv, value);
+		ix = Math.abs(ix)-1;
+		ixMin = bvi[ix]+1; 
+		
+		return ixMin;
+	}
+
+	
+	/**
+	 * Find out rowIndexMin for GreaterThanEqual operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uariminGe(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMin = 1;
+		
+		if(value <= bv[0] || value > bv[bv.length-1]) 
+			return ixMin;
+		
+		int ix = Arrays.binarySearch(bv, value);
+		if(ix < 0)
+			ix = Math.abs(ix)-1;
+		ixMin = bvi[ix-1]+1; 
+		
+		return ixMin;
+	}
+
+	
+	/**
+	 * Find out rowIndexMin for LessThan operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uariminLt(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMin = 1;
+		
+		if(value < bv[0] || value >= bv[bv.length-1]) 
+			return ixMin;
+		
+		int ix = Arrays.binarySearch(bv, value);
+		if (ix < 0) 
+			ix = Math.abs(ix)-1;
+		ixMin = bvi[ix-1]+1; 
+		
+		return ixMin;
+	}
+
+	/**
+	 * Find out rowIndexMin for LessThanEquals operator. 
+	 * 
+	 * @param value
+	 * @param bv
+	 * @param bOp
+	 * @throws DMLRuntimeException
+	 */
+	private static int uariminLe(double value, double[] bv, int[] bvi, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int ixMin = 1;
+		
+		if(value < bv[0] || value > bv[bv.length-1]) 
+			return ixMin;
+		
+		int ix = Arrays.binarySearch(bv, value);
+		if (ix < 0) 
+			ix = Math.abs(ix)-1;
+		ixMin = bvi[ix]+1; 
+		
+		return ixMin;
+	}
+	
+	
+	/**
+	 * This function adjusts indices to be leveraged in uarimaxXX functions.
+	 * Initially vector containing indices are sorted based on value and then CumMax/CumMin 
+	 * per need for <, <=, >, >= operator, where as just sorted indices based on value for ==, and != operators.
+	 * There is need to shift these indices for different operators, which is handled through this function. 
+	 * 
+	 * @param vix
+	 * @param vmb
+	 * @param bOp
+	 */
+	public static void adjustRowIndicesMax(int[] vix, double[] vmb,BinaryOperator bOp)
+    {
+    	if (bOp.fn instanceof LessThan) {
+        	shiftLeft(vix, vmb);
+    	} else if ((bOp.fn instanceof GreaterThanEquals) || (bOp.fn instanceof Equals)) {
+    		setMaxIndexInPartition(vix,vmb);
+    	} else if(bOp.fn instanceof NotEquals) {
+    		double dLastValue = vmb[vmb.length-1];
+    		int i=vmb.length-1;
+    		while(i>0 && dLastValue == vmb[i-1]) --i;
+    		if (i > 0) 
+    			vix[0] = i-1;
+    		else	
+    			vix[0] = vix.length-1;
+    	}
+    }
+
+	/**
+	 * This function adjusts indices to be leveraged in uariminXX functions.
+	 * Initially vector containing indices are sorted based on value and then CumMin 
+	 * per need for <, <=, >, >= operator, where as just sorted indices based on value for ==, and != operators.
+	 * There is need to shift these indices for different operators, which is handled through this function. 
+	 * 
+	 * @param vix
+	 * @param vmb
+	 * @param bOp
+	 */
+	public static void adjustRowIndicesMin(int[] vix, double[] vmb,BinaryOperator bOp)
+    {
+		if (bOp.fn instanceof GreaterThan) {
+			setMinIndexInPartition(vix, vmb);
+		}
+		else if (bOp.fn instanceof GreaterThanEquals) {
+        	shiftLeft(vix, vmb);
+    	}
+        else if (bOp.fn instanceof LessThanEquals) {
+        	shiftRight(vix, vmb);
+    	} else if(bOp.fn instanceof Equals) {
+    		double dFirstValue = vmb[0];
+    		int i=0;
+    		while(i<vmb.length-1 && dFirstValue == vmb[i+1]) ++i;
+    		if (i < vmb.length-1) 
+    			vix[0] = i+1;
+    		else	
+    			vix[0] = 0;
+    	} else if(bOp.fn instanceof NotEquals) {
+    		double dFirstValue = vmb[0];
+    		int i=0;
+    		while(i<vmb.length-1 && dFirstValue == vmb[i+1]) ++i;
+    		if (i < vmb.length-1) 
+    			vix[0] = i-1;
+    		else	
+    			vix[0] = 0;
+    	}
+    }
+	
+
+	/**
+	 * This function will shift indices from one partition to next in right direction.
+	 * 
+	 *  For an example, if there are two sorted vector based on value like following, where
+	 *   V2 is sorted data, and I2 are its corresponding indices.
+	 *   
+	 *   Then this function will shift indices to right by one partition I2". 
+	 *     Left most partition remained untouched.
+	 *   
+	 *  Sorting this data based on value will be (V2):      2   3   3   4   4   6   7   9	
+	 *      Then indices will be ordered as (I2):           5   2   8   6   7   1   4   3
+	 * 
+	 *    Shift Right by one partition (I2")                5   5   2   8   6   7   1   4
+	 * 
+	 * @param vix
+	 * @param vmb
+	 */
+	
+	public static void shiftRight(int[] vix, double[] vmb)
+	{
+    	for (int i = vix.length-1; i>0;)
+    	{
+    		int iPrevInd = i;
+    		double dPrevVal = vmb[iPrevInd];
+			while(i>=0 && dPrevVal == vmb[i]) --i;
+			
+			if(i >= 0) {
+				for (int j = i+1; j<= iPrevInd; ++j)
+					vix[j] = vix[i];
+			}
+    	}
+	}
+
+	
+	/**
+	 * This function will shift indices from one partition to next in left direction.
+	 * 
+	 *  For an example, if there are two sorted vector based on value like following, where
+	 *   V2 is sorted data, and I2 are its corresponding indices.
+	 *   
+	 *   Then this function will shift indices to right by one partition I2". 
+	 *     Right most partition remained untouched.
+	 *   
+	 *  Sorting this data based on value will be (V2):      2   3   3   4   4   6   7   9	
+	 *      Then indices will be ordered as (I2):           5   2   8   6   7   1   4   3
+	 * 
+	 *    Shift Left by one partition (I2")                 2   8   6   7   1   4   3   3
+	 * 
+	 * @param vix
+	 * @param vmb
+	 */
+	
+	public static void shiftLeft(int[] vix, double[] vmb)
+	{
+    	int iCurInd = 0;
+		
+    	for (int i = 0; i < vix.length;++i)
+    	{
+    		double dPrevVal = vmb[iCurInd];
+			while(i<vix.length && dPrevVal == vmb[i]) ++i;
+			
+			if(i < vix.length) {
+				for(int j=iCurInd; j<i; ++j) vix[j] = vix[i];
+				iCurInd = i;
+			}
+    	}
+	}
+
+	
+	/**
+	 * This function will set minimum index in the partition to all cells in partition.
+	 * 
+	 *  For an example, if there are two sorted vector based on value like following, where
+	 *   V2 is sorted data, and I2 are its corresponding indices.
+	 *   
+	 *   In this case, for partition with value = 4, has two different indices -- 6, and 7.
+	 *   This function will set indices to both cells to minimum value of 6.
+	 *   
+	 *  Sorting this data based on value will be (V2):      2   3   3   4   4   6   7   9	
+	 *      Then indices will be ordered as (I2):           5   2   8   6   7   1   4   3
+	 * 
+	 *    Minimum indices set in the partition (I2")        5   2   8   6   6   1   4   3
+	 * 
+	 * @param vix
+	 * @param vmb
+	 */
+	public static void setMinIndexInPartition(int[] vix, double[] vmb)
+	{
+		int iLastIndex = 0;
+		double dLastVal = vix[iLastIndex];
+
+    	for (int i = 0; i < vix.length-1; ++i)
+    	{
+    		while(i<vmb.length-1 && dLastVal == vmb[i+1]) ++i;
+    		for (int j=iLastIndex+1; j<=i; ++j) 
+    			vix[j] = vix[iLastIndex];
+    		if (i < vix.length-1) {
+        		iLastIndex = i+1;
+        		dLastVal = vmb[i+1];
+    		}
+    	}
+	}
+
+	/**
+	 * This function will set maximum index in the partition to all cells in partition.
+	 * 
+	 *  For an example, if there are two sorted vector based on value like following, where
+	 *   V2 is sorted data, and I2 are its corresponding indices.
+	 *   
+	 *   In this case, for partition with value = 4, has two different indices -- 6, and 7.
+	 *   This function will set indices to both cells to maximum value of 7.
+	 *   
+	 *  Sorting this data based on value will be (V2):      2   3   3   4   4   6   7   9	
+	 *      Then indices will be ordered as (I2):           5   2   8   6   7   1   4   3
+	 * 
+	 *    Maximum indices set in the partition (I2")        5   2   8   7   7   1   4   3
+	 * 
+	 * @param vix
+	 * @param vmb
+	 */
+	public static void setMaxIndexInPartition(int[] vix, double[] vmb)
+	{
+		int iLastIndex = vix.length-1;
+		double dLastVal = vix[iLastIndex];
+
+    	for (int i = vix.length-1; i > 0;)
+    	{
+    		while(i>0 && dLastVal == vmb[i]) --i;
+    		for (int j=i+1; j<iLastIndex; ++j) 
+    			vix[j] = vix[iLastIndex];
+    		if (i > 0) {
+        		iLastIndex = i;
+        		dLastVal = vmb[i];
+    		}
+    	}
+	}
+
 }

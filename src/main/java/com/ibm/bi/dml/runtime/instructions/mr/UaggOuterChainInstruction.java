@@ -58,6 +58,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 	private MatrixValue _tmpVal2 = null;
 	
 	private double[] _bv = null;
+	private int[] _bvi = null;
 	
 	/**
 	 * 
@@ -166,17 +167,30 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 			//process instruction
 			if (LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp))
 			{
-				//approach: for each ai, do binary search in B, position gives counts
-				//step 1: prepare sorted rhs input (once per task)
-				if( _bv == null ) {
-					if( rightCached )
-						_bv = dcInput.getRowVectorArray();
-					else
-						_bv = dcInput.getColumnVectorArray();
-					Arrays.sort(_bv);
+				
+				if((LibMatrixOuterAgg.isRowIndexMax(_uaggOp)) || (LibMatrixOuterAgg.isRowIndexMin(_uaggOp))) 
+				{
+					if( _bv == null ) {
+						if( rightCached )
+							_bv = dcInput.getRowVectorArray();
+						else
+							_bv = dcInput.getColumnVectorArray();
+
+						_bvi = LibMatrixOuterAgg.prepareRowIndices(_bv.length, _bv, _bOp, _uaggOp);
+					}
+				} else {
+					//approach: for each ai, do binary search in B, position gives counts
+					//step 1: prepare sorted rhs input (once per task)
+					if( _bv == null ) {
+						if( rightCached )
+							_bv = dcInput.getRowVectorArray();
+						else
+							_bv = dcInput.getColumnVectorArray();
+						Arrays.sort(_bv);
+					}
 				}
 		
-				LibMatrixOuterAgg.aggregateMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _bv, _bOp, _uaggOp);
+				LibMatrixOuterAgg.aggregateMatrix(in1Ix, (MatrixBlock)in1Val, outIx, (MatrixBlock)outVal, _bv, _bvi, _bOp, _uaggOp);
 				
 			}
 			else //default case 

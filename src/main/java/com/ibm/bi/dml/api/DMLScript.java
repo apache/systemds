@@ -850,7 +850,7 @@ public class DMLScript
 	 * @throws DMLRuntimeException 
 	 * 
 	 */
-	private static void initHadoopExecution( DMLConfig config ) 
+	static void initHadoopExecution( DMLConfig config ) 
 		throws IOException, ParseException, DMLRuntimeException
 	{
 		//check security aspects

@@ -76,7 +76,7 @@ public class RDDConverterUtilsExt
 	/**
 	 * Example usage:
 	 * <pre><code>
-	 * import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils
+	 * import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt
 	 * import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics
 	 * import org.apache.spark.api.java.JavaSparkContext
 	 * import org.apache.spark.mllib.linalg.distributed.MatrixEntry
@@ -88,7 +88,7 @@ public class RDDConverterUtilsExt
 	 * val numCols = matRDD.map(_.j).max
 	 * val coordinateMatrix = new CoordinateMatrix(matRDD, numRows, numCols)
 	 * val mc = new MatrixCharacteristics(numRows, numCols, 1000, 1000, nnz)
-	 * val binBlocks = RDDConverterUtils.coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), coordinateMatrix, mc, true)
+	 * val binBlocks = RDDConverterUtilsExt.coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), coordinateMatrix, mc, true)
 	 * </code></pre>
 	 * 
 	 * @param sc

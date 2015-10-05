@@ -413,7 +413,7 @@ public class RDDConverterUtilsExt
 			Vector vec = (Vector) row.get(0); // assumption: 1 column DF
 			long lnnz = 0;
 			for(int i = 0; i < vec.size(); i++) {
-				if(vec.apply(i) == 0) { //TODO MB: shouldnt it be !=0?
+				if(vec.apply(i) != 0) { 
 					lnnz++;
 				}
 			}

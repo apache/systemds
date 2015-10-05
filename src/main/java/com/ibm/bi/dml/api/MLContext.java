@@ -53,6 +53,7 @@ import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
+import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
@@ -728,7 +729,14 @@ public class MLContext {
 	 * This is required if ml.execute(..) has been called earlier and you want to call a new DML script. 
 	 * @throws DMLRuntimeException 
 	 */
-	public void reset() throws DMLRuntimeException {
+	public void reset() 
+		throws DMLRuntimeException 
+	{
+		//cleanup variables from bufferpool, incl evicted files 
+		//(otherwise memory leak because bufferpool holds references)
+		CacheableData.cleanupCacheDir();
+		
+		//clear mlcontext state
 		_inVarnames = null;
 		_outVarnames = null;
 		_variables = null;

@@ -29,8 +29,6 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 @RunWith(value = Parameterized.class)
 public class GNMFTest extends AutomatedTestBase 
 {
-
-	
 	private final static String TEST_DIR = "applications/gnmf/";
 	private final static String TEST_NAME = "GNMF";
 	
@@ -113,9 +111,11 @@ public class GNMFTest extends AutomatedTestBase
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		RUNTIME_PLATFORM oldRT = DMLScript.rtplatform;
-		try {
+		
+		try 
+		{
 			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
-			
+		
 			MLContext mlCtx = getMLContextForTesting();
 			SparkContext sc = mlCtx.getSparkContext();
 			mlCtx.reset();
@@ -168,20 +168,23 @@ public class GNMFTest extends AutomatedTestBase
 				}
 				wOut.saveAsTextFile(fName);
 			}
+			
+			runRScript(true);
+
+			//compare matrices
+			HashMap<CellIndex, Double> hmWDML = readDMLMatrixFromHDFS("w");
+			HashMap<CellIndex, Double> hmHDML = readDMLMatrixFromHDFS("h");
+			HashMap<CellIndex, Double> hmWR = readRMatrixFromFS("w");
+			HashMap<CellIndex, Double> hmHR = readRMatrixFromFS("h");
+			TestUtils.compareMatrices(hmWDML, hmWR, 0.000001, "hmWDML", "hmWR");
+			TestUtils.compareMatrices(hmHDML, hmHR, 0.000001, "hmHDML", "hmHR");
+			
+			//cleanup mlcontext (prevent test memory leaks)
+			mlCtx.reset();
 		}
 		finally {
 			DMLScript.rtplatform = oldRT;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
 		}
-		
-		runRScript(true);
-
-		HashMap<CellIndex, Double> hmWDML = readDMLMatrixFromHDFS("w");
-		HashMap<CellIndex, Double> hmHDML = readDMLMatrixFromHDFS("h");
-		HashMap<CellIndex, Double> hmWR = readRMatrixFromFS("w");
-		HashMap<CellIndex, Double> hmHR = readRMatrixFromFS("h");
-
-		TestUtils.compareMatrices(hmWDML, hmWR, 0.000001, "hmWDML", "hmWR");
-		TestUtils.compareMatrices(hmHDML, hmHR, 0.000001, "hmHDML", "hmHR");
 	}
 }

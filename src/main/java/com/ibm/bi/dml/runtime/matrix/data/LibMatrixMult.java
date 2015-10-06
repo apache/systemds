@@ -103,17 +103,21 @@ public class LibMatrixMult
 		if( !ret.sparse )
 			ret.allocateDenseBlock();
 		
+		//prepare row-upper for special cases of vector-matrix
+		int ru = (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && m2.clen>1
+				&& !(m1.isUltraSparse()||m2.isUltraSparse())) ? m2.rlen : m1.rlen; 
+		
 		//core matrix mult computation
 		if( m1.isUltraSparse() || m2.isUltraSparse() )
-			matrixMultUltraSparse(m1, m2, ret, 0, m1.rlen);
+			matrixMultUltraSparse(m1, m2, ret, 0, ru);
 		else if(!m1.sparse && !m2.sparse)
-			matrixMultDenseDense(m1, m2, ret, tm2, 0, m1.rlen);
+			matrixMultDenseDense(m1, m2, ret, tm2, 0, ru);
 		else if(m1.sparse && m2.sparse)
-			matrixMultSparseSparse(m1, m2, ret, 0, m1.rlen);
+			matrixMultSparseSparse(m1, m2, ret, 0, ru);
 		else if(m1.sparse)
-			matrixMultSparseDense(m1, m2, ret, 0, m1.rlen);
+			matrixMultSparseDense(m1, m2, ret, 0, ru);
 		else
-			matrixMultDenseSparse(m1, m2, ret, 0, m1.rlen);
+			matrixMultDenseSparse(m1, m2, ret, 0, ru);
 		
 		//post-processing: nnz/representation
 		if( !ret.sparse )
@@ -143,8 +147,9 @@ public class LibMatrixMult
 			return;
 		}
 		
-		//check no parallelization benefit (fallback to sequential)
-		if( m1.rlen == 1 ) {
+		//check too high additional memory requirements (fallback to sequential)
+		if( m1.rlen == 1 && (m2.clen * 8 * k > 1024*1024  //1MB
+			|| !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) ) { 
 			matrixMult(m1, m2, ret);
 			return;
 		}
@@ -161,19 +166,30 @@ public class LibMatrixMult
 		else
 			ret.allocateSparseRowsBlock();
 		
+		//prepare row-upper for special cases of vector-matrix
+		int ru = (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && m2.clen>1
+				&& !(m1.isUltraSparse()||m2.isUltraSparse())) ? m2.rlen : m1.rlen; 
+		
 		//core multi-threaded matrix mult computation
 		//(currently: always parallelization over number of rows)
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
 			ArrayList<MatrixMultTask> tasks = new ArrayList<MatrixMultTask>();
-			int blklen = (int)(Math.ceil((double)m1.rlen/k));
-			for( int i=0; i<k & i*blklen<m1.rlen; i++ )
-				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, i*blklen, Math.min((i+1)*blklen, m1.rlen)));
+			int blklen = (int)(Math.ceil((double)ru/k));
+			for( int i=0; i<k & i*blklen<ru; i++ )
+				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, i*blklen, Math.min((i+1)*blklen, ru)));
 			pool.invokeAll(tasks);	
 			pool.shutdown();
+			//aggregate partial results (nnz, ret for vector/matrix)
 			ret.nonZeros = 0; //reset after execute
-			for( MatrixMultTask task : tasks )
-				ret.nonZeros += task.getPartialNnz();
+			for( MatrixMultTask task : tasks ) {
+				if( m1.rlen == 1 )
+					vectAdd(task.getResult().denseBlock, ret.denseBlock, 0, 0, m2.clen);
+				else
+					ret.nonZeros += task.getPartialNnz();
+			}
+			if( m1.rlen == 1 )
+				ret.recomputeNonZeros();
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -907,15 +923,23 @@ public class LibMatrixMult
 				for( int i=rl, aix=rl*cd; i < ru; i++, aix+=cd) 
 					c[ i ] = dotProduct(a, b, aix, 0, cd);	
 			}
-			else if( m==1 && n < 64)   //VECTOR-MATRIX
+			else if( m==1 )            //VECTOR-MATRIX
 			{
+				//parallelization over rows in rhs matrix
 				//rest not aligned to blocks of 2 rows
-				if( cd % 2 == 1 )
-					vectMultiplyAdd(a[0], b, c, 0, 0, n);
+				final int kn = (ru-rl)%2;
+				if( kn == 1 && a[rl] != 0 )
+					vectMultiplyAdd(a[rl], b, c, rl*n, 0, n);
 				
 				//compute blocks of 2 rows (2 instead of 4 for small n<64) 
-				for( int k=cd%2, bix=(cd%2)*n; k<cd; k+=2, bix+=2*n )
-					vectMultiplyAdd2(a[k], a[k+1], b, c, bix, bix+n, 0, n);    
+				for( int k=rl+kn, bix=(rl+kn)*n; k<ru; k+=2, bix+=2*n ){
+					if( a[k] != 0 && a[k+1] != 0  )
+						vectMultiplyAdd2(a[k], a[k+1], b, c, bix, bix+n, 0, n);
+					else if( a[k] != 0 )
+						vectMultiplyAdd(a[k], b, c, bix, 0, n);
+					else if( a[k+1] != 0 )	
+						vectMultiplyAdd(a[k+1], b, c, bix+n, 0, n);
+				}
 			}
 			else if( tm2 )             //MATRIX-MATRIX (skinny rhs)
 			{
@@ -926,7 +950,7 @@ public class LibMatrixMult
 					for( int j=0, bix=0; j<n2; j++, bix+=cd )
 						c[cix+j] = dotProduct(a, b, aix, bix, cd);
 			}
-			else //MATRIX-MATRIX
+			else                       //MATRIX-MATRIX
 			{	
 				//1) Unrolled inner loop (for better instruction-level parallelism)
 				//2) Blocked execution (for less cache trashing in parallel exec) 	
@@ -1002,9 +1026,10 @@ public class LibMatrixMult
 	{	
 		double[] a = m1.denseBlock;
 		double[] c = ret.denseBlock;
-		int n = m2.clen;
+		int m = m1.rlen;
 		int cd = m1.clen;
-	
+		int n = m2.clen;
+		
 		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
 		if( LOW_LEVEL_OPTIMIZATION )
 		{
@@ -1014,31 +1039,44 @@ public class LibMatrixMult
 			
 			SparseRow[] b = m2.sparseRows;
 			
-			//blocked execution
-			for( int bi = rl; bi < ru; bi+=blocksizeI )
-				for( int bk = 0, bimin = Math.min(ru, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
-				{
-					int bklen = Math.min(cd, bk+blocksizeK)-bk;
-					
-					//core sub block matrix multiplication
-		    		for( int i = bi; i < bimin; i++) 
-		    		{
-		    			int aixi = i * cd + bk; //start index on a
-		    			int cixj = i * n + 0; //scan index on c
-		    			
-		    			for( int k = 0; k < bklen; k++ )
-						{
-							double val = a[aixi+k];
-							SparseRow brow = b[ bk+k ];
-							if( val != 0 && brow != null && !brow.isEmpty() ) {
-								int blen = brow.size();
-								int[] bix = brow.getIndexContainer();
-								double[] bvals = brow.getValueContainer();								
-								vectMultiplyAdd(val, bvals, c, bix, cixj, blen);
+			if( m==1 )                 //VECTOR-MATRIX
+			{
+				//parallelization over rows in rhs matrix
+				for( int k=rl; k<ru; k++ )
+					if( a[k] != 0 && b[k] != null && !b[k].isEmpty() ) {
+						int[] bix = b[k].getIndexContainer();
+						double[] bvals = b[k].getValueContainer();								
+						vectMultiplyAdd(a[k], bvals, c, bix, 0, b[k].size());
+					}
+			}
+			else                       //MATRIX-MATRIX
+			{
+				//blocked execution
+				for( int bi = rl; bi < ru; bi+=blocksizeI )
+					for( int bk = 0, bimin = Math.min(ru, bi+blocksizeI); bk < cd; bk+=blocksizeK ) 
+					{
+						int bklen = Math.min(cd, bk+blocksizeK)-bk;
+						
+						//core sub block matrix multiplication
+			    		for( int i = bi; i < bimin; i++) 
+			    		{
+			    			int aixi = i * cd + bk; //start index on a
+			    			int cixj = i * n + 0; //scan index on c
+			    			
+			    			for( int k = 0; k < bklen; k++ )
+							{
+								double val = a[aixi+k];
+								SparseRow brow = b[ bk+k ];
+								if( val != 0 && brow != null && !brow.isEmpty() ) {
+									int blen = brow.size();
+									int[] bix = brow.getIndexContainer();
+									double[] bvals = brow.getValueContainer();								
+									vectMultiplyAdd(val, bvals, c, bix, cixj, blen);
+								}
 							}
-						}
-		    		}
-				}	
+			    		}
+					}
+			}
 		}
 		else
 		{
@@ -1079,8 +1117,7 @@ public class LibMatrixMult
 
 		if( LOW_LEVEL_OPTIMIZATION )
 		{
-		
-			if( m==1 && n==1 ) //DOT PRODUCT
+			if( m==1 && n==1 )         //DOT PRODUCT
 			{
 				SparseRow arow = m1.sparseRows[0];
 				if( arow != null && !arow.isEmpty() )
@@ -1092,7 +1129,7 @@ public class LibMatrixMult
 					c[0] = dotProduct(avals, b, aix, 0, alen);
 				}
 			}
-			else if( n==1 ) //MATRIX-VECTOR
+			else if( n==1 )            //MATRIX-VECTOR
 			{
 				for( int i=rl; i<Math.min(ru, m1.sparseRows.length); i++ )
 				{
@@ -1107,7 +1144,27 @@ public class LibMatrixMult
 					}
 				}
 			}
-			else //MATRIX-MATRIX
+			else if( m==1 )            //VECTOR-MATRIX
+			{
+				//parallelization over rows in rhs matrix
+				SparseRow arow = m1.sparseRows[0];
+				if( arow != null && !arow.isEmpty() ) 
+				{
+					int alen = arow.size();
+					int[] aix = arow.getIndexContainer();
+					double[] avals = arow.getValueContainer();					
+					int rlix = (rl==0) ? 0 : arow.searchIndexesFirstGTE(rl);
+					rlix = (rlix>=0) ? rlix : alen;
+					
+					for( int k=rlix; k<alen && aix[k]<ru; k++ ) {
+						if( k+1<alen && aix[k+1]<ru )
+							vectMultiplyAdd2(avals[k], avals[k+1], b, c, aix[k]*n, aix[++k]*n, 0, n);
+						else
+							vectMultiplyAdd(avals[k], b, c, aix[k]*n, 0, n);
+					}
+				}
+			}
+			else                       //MATRIX-MATRIX
 			{
 				for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseRows.length); i++, cix+=n )
 				{
@@ -1175,34 +1232,61 @@ public class LibMatrixMult
 	private static void matrixMultSparseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
 		throws DMLRuntimeException
 	{	
+		SparseRow[] b = m2.sparseRows;
 		double[] c = ret.denseBlock;
+		int m = m1.rlen;
 		int n = m2.clen;
 		
 		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
 		if(LOW_LEVEL_OPTIMIZATION)
 		{
-			for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseRows.length); i++, cix+=n )
+			if( m==1 )                 //VECTOR-MATRIX
 			{
-				SparseRow arow = m1.sparseRows[i];
+				//parallelization over rows in rhs matrix
+				SparseRow arow = m1.sparseRows[0];
 				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
 					int[] aix = arow.getIndexContainer();
 					double[] avals = arow.getValueContainer();					
+					int rlix = (rl==0) ? 0 : arow.searchIndexesFirstGTE(rl);
+					rlix = (rlix>=0) ? rlix : alen;
 					
-					for(int k = 0; k < alen; k++) 
-					{
-						double val = avals[k];
-						SparseRow brow = m2.sparseRows[ aix[k] ];
-						if( brow != null && !brow.isEmpty() ) 
-						{
+					for( int k=rlix; k<alen && aix[k]<ru; k++ )
+						if( b[aix[k]] != null && !b[aix[k]].isEmpty() ) {
+							SparseRow brow = b[aix[k]];		
 							int blen = brow.size();
 							int[] bix = brow.getIndexContainer();
-							double[] bvals = brow.getValueContainer();	
-							
-							vectMultiplyAdd(val, bvals, c, bix, cix, blen);
-						}
-					}						
+							double[] bvals = brow.getValueContainer();								
+							vectMultiplyAdd(avals[k], bvals, c, bix, 0, blen);
+						}			
+				}
+			}	
+			else                       //MATRIX-MATRIX
+			{
+				for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseRows.length); i++, cix+=n )
+				{
+					SparseRow arow = m1.sparseRows[i];
+					if( arow != null && !arow.isEmpty() ) 
+					{
+						int alen = arow.size();
+						int[] aix = arow.getIndexContainer();
+						double[] avals = arow.getValueContainer();					
+						
+						for(int k = 0; k < alen; k++) 
+						{
+							double val = avals[k];
+							SparseRow brow = b[ aix[k] ];
+							if( brow != null && !brow.isEmpty() ) 
+							{
+								int blen = brow.size();
+								int[] bix = brow.getIndexContainer();
+								double[] bvals = brow.getValueContainer();	
+								
+								vectMultiplyAdd(val, bvals, c, bix, cix, blen);
+							}
+						}						
+					}
 				}
 			}
 		}
@@ -3399,10 +3483,18 @@ public class LibMatrixMult
 		{
 			_m1 = m1;
 			_m2 = m2;
-			_ret = ret;
 			_tm2 = tm2;
 			_rl = rl;
 			_ru = ru;
+			
+			if( _m1.rlen == 1 ) { //vector-matrix
+				//allocate local result for partial aggregation
+				_ret = new MatrixBlock(ret.rlen, ret.clen, false);
+				_ret.allocateDenseBlock();
+			}
+			else { //default case
+				_ret = ret;
+			}
 		}
 		
 		@Override
@@ -3421,13 +3513,18 @@ public class LibMatrixMult
 				matrixMultDenseSparse(_m1, _m2, _ret, _rl, _ru);
 			
 			//maintain block nnz (upper bounds inclusive)
-			_nnz = _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
+			if( _m1.rlen > 1 )
+				_nnz = _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
 			
 			return null;
 		}
 		
 		public long getPartialNnz(){
 			return _nnz;
+		}
+		
+		public MatrixBlock getResult(){
+			return _ret;
 		}
 	}
 	

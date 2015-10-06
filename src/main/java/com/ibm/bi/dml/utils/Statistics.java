@@ -42,11 +42,14 @@ import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
  * This class captures all statistics.
  */
 public class Statistics 
-{
+{	
+	private static long compileStartTime = 0;
+	private static long compileEndTime = 0;
+	public static long compileTime = 0;
 	
-	private static long lStartTime = 0;
-	private static long lEndTime = 0;
-	public static long execTime=0;
+	private static long execStartTime = 0;
+	private static long execEndTime = 0;
+	public static long execTime = 0;
 
 	// number of compiled/executed MR jobs
 	private static int iNoOfExecutedMRJobs = 0;
@@ -223,13 +226,27 @@ public class Statistics
 	public static synchronized void incrementParForMergeTime( long time ) {
 		parforMergeTime += time;
 	}
+
+	public static void startCompileTimer() {
+		if( DMLScript.STATISTICS )
+			compileStartTime = System.nanoTime();
+	}
+
+	public static void stopCompileTimer() {
+		if( DMLScript.STATISTICS )
+			compileEndTime = System.nanoTime();
+	}
+
+	public static long getCompileTime() {
+		return compileEndTime - compileStartTime;
+	}
 	
 	/**
 	 * Starts the timer, should be invoked immediately before invoking
 	 * Program.execute()
 	 */
 	public static void startRunTimer() {
-		lStartTime = System.nanoTime();
+		execStartTime = System.nanoTime();
 	}
 
 	/**
@@ -237,7 +254,7 @@ public class Statistics
 	 * Program.execute()
 	 */
 	public static void stopRunTimer() {
-		lEndTime = System.nanoTime();
+		execEndTime = System.nanoTime();
 	}
 
 	/**
@@ -246,7 +263,7 @@ public class Statistics
 	 * @return
 	 */
 	public static long getRunTime() {
-		return lEndTime - lStartTime;
+		return execEndTime - execStartTime;
 	}
 	
 	public static void reset()
@@ -460,8 +477,9 @@ public class Statistics
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append("SystemML Statistics:\n");
-		double totalT = getRunTime()*1e-9; // nanoSec --> sec
-		sb.append("Total execution time:\t\t" + String.format("%.3f", totalT) + " sec.\n");
+		if( DMLScript.STATISTICS )
+			sb.append("Total compilation time:\t\t" + String.format("%.3f", getCompileTime()*1e-9) + " sec.\n"); // nanoSec --> sec
+		sb.append("Total execution time:\t\t" + String.format("%.3f", getRunTime()*1e-9) + " sec.\n"); // nanoSec --> sec
 		if( OptimizerUtils.isSparkExecutionMode() ) {
 			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
 				sb.append("Number of compiled Spark inst:\t" + getNoOfCompiledSPInst() + ".\n");

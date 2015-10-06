@@ -573,7 +573,7 @@ public class DMLScript
 	 */
 	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
-	{				
+	{	
 		//print basic time and environment info
 		printStartExecInfo( dmlScriptStr );
 		
@@ -588,6 +588,7 @@ public class DMLScript
 		}
 		
 		//Step 3: parse dml script
+		Statistics.startCompileTimer();
 		DMLProgram prog = null;
 		if(parsePyDML) {
 			PyDMLParserWrapper parser = new PyDMLParserWrapper();
@@ -810,7 +811,9 @@ public class DMLScript
 					 + Explain.explainDegreeOfParallelism(counts)
 					 + Explain.explain(prog, rtprog, EXPLAIN));
 		}
-				
+		
+		Statistics.stopCompileTimer();
+		
 		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
 		//System.out.println("Estimated costs: "+costs);
 		

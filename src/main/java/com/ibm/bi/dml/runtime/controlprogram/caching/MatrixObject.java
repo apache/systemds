@@ -20,6 +20,8 @@ package com.ibm.bi.dml.runtime.controlprogram.caching;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 
+import org.apache.commons.lang.mutable.MutableBoolean;
+
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
 import com.ibm.bi.dml.hops.OptimizerUtils;
@@ -494,10 +496,14 @@ public class MatrixObject extends CacheableData
 				else
 				{
 					//read matrix from rdd (incl execute pending rdd operations)
-					_data = readMatrixFromRDD( getRDDHandle() );
+					MutableBoolean writeStatus = new MutableBoolean();
+					_data = readMatrixFromRDD( getRDDHandle(), writeStatus );
 					
 					//mark for initial local write (prevent repeated execution of rdd operations)
-					_requiresLocalWrite = true;
+					if( writeStatus.booleanValue() )
+						_requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
+					else		
+						_requiresLocalWrite = true;
 				}
 				
 				_dirtyFlag = false;
@@ -834,7 +840,7 @@ public class MatrixObject extends CacheableData
 					if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
 						_data = readMatrixFromHDFS( _hdfsFileName );
 					else
-						_data = readMatrixFromRDD( getRDDHandle() );
+						_data = readMatrixFromRDD( getRDDHandle(), new MutableBoolean() );
 					_dirtyFlag = false;
 				}
 				catch (IOException e)
@@ -1317,12 +1323,15 @@ public class MatrixObject extends CacheableData
 	 * @return
 	 * @throws IOException 
 	 */
-	private MatrixBlock readMatrixFromRDD(RDDObject rdd) 
+	private MatrixBlock readMatrixFromRDD(RDDObject rdd, MutableBoolean writeStatus) 
 		throws IOException
 	{
 		//note: the read of a matrix block from an RDD might trigger
 		//lazy evaluation of pending transformations.
 		RDDObject lrdd = rdd;
+
+		//prepare return status (by default only collect)
+		writeStatus.setValue(false);
 		
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
@@ -1348,6 +1357,8 @@ public class MatrixObject extends CacheableData
 				if( !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
 					long newnnz = SparkExecutionContext.writeRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
 					((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics().setNonZeros(newnnz);
+					((RDDObject)rdd).setHDFSFile(true); //mark rdd as hdfs file (for restore)
+					writeStatus.setValue(true);         //mark for no cache-write on read
 				}
 				mb = readMatrixFromHDFS(_hdfsFileName);
 			}

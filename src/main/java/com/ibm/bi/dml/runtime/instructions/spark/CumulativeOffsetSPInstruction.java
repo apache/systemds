@@ -124,6 +124,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction
 				inData.join( inAgg )
 				      .mapValues(new RDDCumOffsetFunction(_uop, _bop));
 		
+		updateUnaryOutputMatrixCharacteristics(sec);
 		//put output handle in symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);	
 		sec.addLineageRDD(output.getName(), input1.getName());

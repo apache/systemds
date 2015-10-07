@@ -34,6 +34,7 @@ import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
 import com.ibm.bi.dml.hops.Hop.OpOp2;
 import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
+import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.MemoTable;
@@ -893,6 +894,77 @@ public class HopRewriteUtils
 		return (    hop instanceof DataOp 
 				 && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD
 				 && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.BINARY);
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param var
+	 * @return
+	 */
+	public static boolean rHasSimpleReadChain(Hop root, String var)
+	{
+		if( root.getVisited()==VisitStatus.DONE )
+			return false;
+
+		boolean ret = false;
+		
+		//handle leaf node for variable
+		if( root instanceof DataOp && ((DataOp)root).isRead()
+			&& root.getName().equals(var) )
+		{
+			ret = (root.getParent().size()<=1);
+		}
+		
+		//recursively process childs (on the entire path to var, all
+		//intermediates are supposed to have at most one consumer, but
+		//side-ways inputs can have arbitrary dag structures)
+		for( Hop c : root.getInput() ) {
+			if( rHasSimpleReadChain(c, var) )
+				ret |= root.getParent().size()<=1;
+		}
+		
+		root.setVisited(Hop.VisitStatus.DONE);
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param root
+	 * @param var
+	 * @param includeMetaOp
+	 * @return
+	 */
+	public static boolean rContainsRead(Hop root, String var, boolean includeMetaOp)
+	{
+		if( root.getVisited()==VisitStatus.DONE )
+			return false;
+
+		boolean ret = false;
+		
+		//handle leaf node for variable
+		if( root instanceof DataOp && ((DataOp)root).isRead()
+			&& root.getName().equals(var) )
+		{
+			boolean onlyMetaOp = true;
+			if( !includeMetaOp ){
+				for( Hop p : root.getParent() ) {
+					onlyMetaOp &= (p instanceof UnaryOp 
+							&& (((UnaryOp)p).getOp()==OpOp1.NROW 
+							|| ((UnaryOp)p).getOp()==OpOp1.NCOL) ); 
+				}
+				ret = !onlyMetaOp;
+			}
+			else
+				ret = true;
+		}
+		
+		//recursively process childs
+		for( Hop c : root.getInput() )
+			ret |= rContainsRead(c, var, includeMetaOp);
+		
+		root.setVisited(Hop.VisitStatus.DONE);
+		return ret;
 	}
 	
 	//////////////////////////////////////

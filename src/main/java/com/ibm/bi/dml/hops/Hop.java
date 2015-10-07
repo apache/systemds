@@ -1320,6 +1320,7 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.PLUS, "+");
 		HopsOpOp2String.put(OpOp2.MINUS, "-");
 		HopsOpOp2String.put(OpOp2.MINUS_NZ, "-nz");
+		HopsOpOp2String.put(OpOp2.MINUS1_MULT, "-1*");
 		HopsOpOp2String.put(OpOp2.MULT, "*");
 		HopsOpOp2String.put(OpOp2.DIV, "/");
 		HopsOpOp2String.put(OpOp2.MODULUS, "%%");

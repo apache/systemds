@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.DefaultErrorStrategy;
 import org.antlr.v4.runtime.atn.PredictionMode;
@@ -38,6 +39,7 @@ import org.apache.hadoop.fs.Path;
 
 import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.conf.ConfigurationManager;
+import com.ibm.bi.dml.parser.AParserWrapper;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
@@ -83,10 +85,10 @@ import com.ibm.bi.dml.runtime.util.LocalFileUtils;
  * If in future we intend to make it multi-threaded, look at cleanUpState method and resolve the dependency accordingly.    
  *
  */
-public class DMLParserWrapper {
-
+public class DMLParserWrapper extends AParserWrapper
+{
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
-	
+
 	/**
 	 * Custom wrapper to convert statement into statement blocks. Called by doParse and in DmlSyntacticValidator for for, parfor, while, ...
 	 * @param current a statement
@@ -126,10 +128,13 @@ public class DMLParserWrapper {
 	 * @return
 	 * @throws ParseException
 	 */
-	public DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
+	@Override
+	public DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) 
+		throws ParseException 
+	{
 		DMLProgram prog = null;
 		
-		if(dmlScript == null || dmlScript.trim().compareTo("") == 0) {
+		if(dmlScript == null || dmlScript.trim().isEmpty()) {
 			throw new ParseException("Incorrect usage of parse. Please pass dmlScript not just filename");
 		}
 		

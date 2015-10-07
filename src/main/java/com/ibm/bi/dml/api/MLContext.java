@@ -42,6 +42,7 @@ import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
 import com.ibm.bi.dml.hops.globalopt.GlobalOptimizerWrapper;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.hops.rewrite.RewriteRemovePersistentReadWrite;
+import com.ibm.bi.dml.parser.AParserWrapper;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
@@ -50,8 +51,6 @@ import com.ibm.bi.dml.parser.IntIdentifier;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.StringIdentifier;
 import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
-import com.ibm.bi.dml.parser.python.PyDMLParserWrapper;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
@@ -1191,16 +1190,8 @@ public class MLContext {
 		_rtprog = null;
 		
 		//parsing
-		DMLProgram prog = null;
-		if(parsePyDML) {
-			PyDMLParserWrapper parser = new PyDMLParserWrapper();
-			prog = parser.parse(dmlScriptFilePath, dmlScriptStr, argVals);
-		}
-		else {
-			DMLParserWrapper parser = new DMLParserWrapper();
-			prog = parser.parse(dmlScriptFilePath, dmlScriptStr, argVals);
-		}
-		
+		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+		DMLProgram prog = parser.parse(dmlScriptFilePath, dmlScriptStr, argVals);
 		if(prog == null) {
 			throw new ParseException("Couldnot parse the file:" + dmlScriptFilePath);
 		}

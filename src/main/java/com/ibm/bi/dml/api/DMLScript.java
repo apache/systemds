@@ -56,12 +56,11 @@ import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
 import com.ibm.bi.dml.hops.globalopt.GlobalOptimizerWrapper;
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
+import com.ibm.bi.dml.parser.AParserWrapper;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.LanguageException;
 import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
-import com.ibm.bi.dml.parser.python.PyDMLParserWrapper;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
@@ -89,8 +88,7 @@ import com.ibm.bi.dml.yarn.DMLYarnClientProxy;
 
 
 public class DMLScript 
-{
-	
+{	
 	public enum RUNTIME_PLATFORM { 
 		HADOOP, 	    // execute all matrix operations in MR
 		SINGLE_NODE,    // execute all matrix operations in CP
@@ -100,7 +98,6 @@ public class DMLScript
 	};
 	
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
-	public static boolean VISUALIZE = false; //default visualize
 	public static boolean STATISTICS = false; //default statistics
 	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
 	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing
@@ -129,8 +126,6 @@ public class DMLScript
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
-			//undocumented feature in beta 08/2014 release
-			//+ "   [-v | -visualize]: (optional) use visualization of DAGs \n"
 			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
 			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
@@ -275,7 +270,6 @@ public class DMLScript
 		
 		//parse arguments and set execution properties
 		RUNTIME_PLATFORM oldrtplatform = rtplatform; //keep old rtplatform
-		boolean oldvisualize = VISUALIZE; //keep old visualize	
 		ExplainType oldexplain = EXPLAIN; //keep old explain	
 		
 		// Reset global flags to avoid errors in test suite
@@ -290,9 +284,7 @@ public class DMLScript
 			
 			for( int i=2; i<args.length; i++ )
 			{
-				if (args[i].equalsIgnoreCase("-v") || args[i].equalsIgnoreCase("-visualize"))
-					VISUALIZE = true;
-				else if( args[i].equalsIgnoreCase("-explain") ) { 
+				if( args[i].equalsIgnoreCase("-explain") ) { 
 					EXPLAIN = ExplainType.RUNTIME;
 					if( args.length > (i+1) && !args[i+1].startsWith("-") )
 						EXPLAIN = Explain.parseExplainType(args[++i]);
@@ -359,7 +351,6 @@ public class DMLScript
 		{
 			//reset runtime platform and visualize flag
 			rtplatform = oldrtplatform;
-			VISUALIZE = oldvisualize;
 			EXPLAIN = oldexplain;
 		}
 		
@@ -376,7 +367,7 @@ public class DMLScript
 	 * @param scriptArguments
 	 * @throws LanguageException
 	 */
-	public static HashMap<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args) 
+	protected static HashMap<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args) 
 		throws LanguageException
 	{			
 		HashMap<String, String> argMap = new HashMap<String,String>();
@@ -512,7 +503,7 @@ public class DMLScript
 	 * @param platform
 	 * @return
 	 */
-	public static RUNTIME_PLATFORM parseRuntimePlatform( String platform )
+	private static RUNTIME_PLATFORM parseRuntimePlatform( String platform )
 	{
 		RUNTIME_PLATFORM lrtplatform = null;
 		
@@ -589,15 +580,8 @@ public class DMLScript
 		
 		//Step 3: parse dml script
 		Statistics.startCompileTimer();
-		DMLProgram prog = null;
-		if(parsePyDML) {
-			PyDMLParserWrapper parser = new PyDMLParserWrapper();
-			prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-		}
-		else {
-			DMLParserWrapper parser = new DMLParserWrapper();
-			prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-		}
+		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		
 		//Step 4: construct HOP DAGs (incl LVA and validate)
 		DMLTranslator dmlt = new DMLTranslator(prog);
@@ -618,28 +602,92 @@ public class DMLScript
 			LOG.debug("\n********************** HOPS DAG (After Rewrite) *******************");
 			dmlt.printHops(prog);
 			DMLTranslator.resetHopsDAGVisitStatus(prog);
+		
+			LOG.debug("\n********************** OPTIMIZER *******************\n" + 
+			          "Level = " + OptimizerUtils.getOptLevel() + "\n"
+					 +"Available Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB" + "\n"
+					 +"Memory Budget = " + ((double)OptimizerUtils.getLocalMemBudget()/1024/1024) + " MB" + "\n");
+		}
+
+		//Step 6: construct lops (incl exec type and op selection)
+		dmlt.constructLops(prog);
+
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("\n********************** LOPS DAG *******************");
+			dmlt.printLops(prog);
+			dmlt.resetLopsDAGVisitStatus(prog);
 		}
 		
-		if( VISUALIZE ) { // HOPs before rewrite
-//			DotGraph gt = new DotGraph();
-//			gt.drawHopsDAG(prog, "HopsDAG After Rewrite", 100, 100, PATH_TO_SRC, VISUALIZE);
-//			dmlt.resetHopsDAGVisitStatus(prog);
+		//Step 7: generate runtime program
+		Program rtprog = prog.getRuntimeProgram(conf);
+
+		if (LOG.isDebugEnabled()) {
+			LOG.info("********************** Instructions *******************");
+			rtprog.printMe();
+			LOG.info("*******************************************************");
 		}
-	
-		//Step 6: backend-specific compile and execute
-		switch( rtplatform )
+
+		//Step 8: [optional global data flow optimization]
+		if(OptimizerUtils.isOptLevel(OptimizationLevel.O4_GLOBAL_TIME_MEMORY) ) 
 		{
-			case HADOOP:
-			case SINGLE_NODE:
-			case HYBRID:
-			case SPARK:
-			case HYBRID_SPARK:
-				executeHadoop(dmlt, prog, conf, dmlScriptStr, allArgs);
-				break;
-				
-			default:
-				throw new DMLRuntimeException("Unsupported runtime platform: "+rtplatform);
+			LOG.warn("Optimization level '" + OptimizationLevel.O4_GLOBAL_TIME_MEMORY + "' " +
+					"is still in experimental state and not intended for production use.");
+			rtprog = GlobalOptimizerWrapper.optimizeProgram(prog, rtprog);
 		}
+		
+		//launch SystemML appmaster (if requested and not already in launched AM)
+		if( conf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
+			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, conf, allArgs, rtprog) )
+				return; //if AM launch unsuccessful, fall back to normal execute
+			if( isActiveAM() ) //in AM context (not failed AM launch)
+				DMLAppMasterUtils.setupProgramMappingRemoteMaxMemory(rtprog);
+		}
+		
+		//Step 9: prepare statistics [and optional explain output]
+		//count number compiled MR jobs / SP instructions	
+		ExplainCounts counts = Explain.countDistributedOperations(rtprog);
+		Statistics.resetNoOfCompiledJobs( counts.numJobs );				
+		
+		//explain plan of program (hops or runtime)
+		if( EXPLAIN != ExplainType.NONE ) {
+			LOG.info("EXPLAIN ("+EXPLAIN.toString()+"):\n" 
+					 + Explain.explainMemoryBudget(counts)+"\n"
+					 + Explain.explainDegreeOfParallelism(counts)
+					 + Explain.explain(prog, rtprog, EXPLAIN));
+		}
+		
+		Statistics.stopCompileTimer();
+		
+		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
+		//System.out.println("Estimated costs: "+costs);
+		
+		
+		//Step 10: execute runtime program
+		Statistics.startRunTimer();
+		ExecutionContext ec = null;
+		try 
+		{  
+			initHadoopExecution( conf );
+			
+			//run execute (w/ exception handling to ensure proper shutdown)
+			ec = ExecutionContextFactory.createContext(rtprog);
+			rtprog.execute( ec );  
+			
+		}
+		finally //ensure cleanup/shutdown
+		{	
+			if(ec != null && ec instanceof SparkExecutionContext) {
+				((SparkExecutionContext) ec).close();
+			}
+			
+			//display statistics (incl caching stats if enabled)
+			Statistics.stopRunTimer();
+			LOG.info(Statistics.display());
+			LOG.info("END DML run " + getDateTime() );
+			
+			//cleanup scratch_space and all working dirs
+			cleanupHadoopExecution( conf );		
+		}	
 	}		
 	
 	/**
@@ -708,15 +756,9 @@ public class DMLScript
 		ConfigurationManager.setConfig(dbprog.conf);
 	
 		//Step 2: parse dml script
-		if(parsePyDML) {
-			PyDMLParserWrapper parser = new PyDMLParserWrapper();
-			dbprog.prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-		}
-		else {
-			DMLParserWrapper parser = new DMLParserWrapper();
-			dbprog.prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-		}
-
+		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+		dbprog.prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+		
 		//Step 3: construct HOP DAGs (incl LVA and validate)
 		dbprog.dmlt = new DMLTranslator(dbprog.prog);
 		dbprog.dmlt.liveVariableAnalysis(dbprog.prog);
@@ -733,119 +775,7 @@ public class DMLScript
 		dbprog.rtprog = dbprog.prog.getRuntimeProgram(dbprog.conf);
 		
 		return dbprog;
-	}
-	
-	/**
-	 * executeHadoop: Handles execution on the Hadoop Map-reduce runtime
-	 * 
-	 * @param dmlt DML Translator 
-	 * @param prog DML Program object from parsed DML script
-	 * @param config read from provided configuration file (e.g., config.xml)
-	 * @param out writer for log output 
-	 * @throws ParseException 
-	 * @throws IOException 
-	 * @throws LopsException 
-	 * @throws HopsException 
-	 * @throws LanguageException 
-	 * @throws DMLUnsupportedOperationException 
-	 * @throws DMLRuntimeException 
-	 * @throws DMLException 
-	 */
-	private static void executeHadoop(DMLTranslator dmlt, DMLProgram prog, DMLConfig conf, String dmlScriptStr, String[] allArgs) 
-		throws ParseException, IOException, LanguageException, HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException 
-	{	
-		LOG.debug("\n********************** OPTIMIZER *******************\n" + 
-		          "Level = " + OptimizerUtils.getOptLevel() + "\n"
-				 +"Available Memory = " + ((double)InfrastructureAnalyzer.getLocalMaxMemory()/1024/1024) + " MB" + "\n"
-				 +"Memory Budget = " + ((double)OptimizerUtils.getLocalMemBudget()/1024/1024) + " MB" + "\n");
-		
-		/////////////////////// construct the lops ///////////////////////////////////
-		dmlt.constructLops(prog);
-
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("\n********************** LOPS DAG *******************");
-			dmlt.printLops(prog);
-			dmlt.resetLopsDAGVisitStatus(prog);
-		}
-
-		// lops plan visualization 
-		if(VISUALIZE){
-//			DotGraph gt = new DotGraph();
-//			gt.drawLopsDAG(prog, "LopsDAG", 150, 150, PATH_TO_SRC, VISUALIZE);
-//			dmlt.resetLopsDAGVisitStatus(prog);
-		}
-		
-		////////////////////// generate runtime program ///////////////////////////////
-		Program rtprog = prog.getRuntimeProgram(conf);
-
-		if (LOG.isDebugEnabled()) {
-			LOG.info("********************** Instructions *******************");
-			rtprog.printMe();
-			LOG.info("*******************************************************");
-		}
-
-		//optional global data flow optimization
-		if(OptimizerUtils.isOptLevel(OptimizationLevel.O4_GLOBAL_TIME_MEMORY) ) 
-		{
-			LOG.warn("Optimization level '" + OptimizationLevel.O4_GLOBAL_TIME_MEMORY + "' " +
-					"is still in experimental state and not intended for production use.");
-			rtprog = GlobalOptimizerWrapper.optimizeProgram(prog, rtprog);
-		}
-		
-		//launch SystemML appmaster (if requested and not already in launched AM)
-		if( conf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
-			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, conf, allArgs, rtprog) )
-				return; //if AM launch unsuccessful, fall back to normal execute
-			if( isActiveAM() ) //in AM context (not failed AM launch)
-				DMLAppMasterUtils.setupProgramMappingRemoteMaxMemory(rtprog);
-		}
-		
-		//count number compiled MR jobs / SP instructions	
-		ExplainCounts counts = Explain.countDistributedOperations(rtprog);
-		Statistics.resetNoOfCompiledJobs( counts.numJobs );				
-		
-		//explain plan of program (hops or runtime)
-		if( EXPLAIN != ExplainType.NONE ) {
-			LOG.info("EXPLAIN ("+EXPLAIN.toString()+"):\n" 
-					 + Explain.explainMemoryBudget(counts)+"\n"
-					 + Explain.explainDegreeOfParallelism(counts)
-					 + Explain.explain(prog, rtprog, EXPLAIN));
-		}
-		
-		Statistics.stopCompileTimer();
-		
-		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
-		//System.out.println("Estimated costs: "+costs);
-		
-		
-		/////////////////////////// execute program //////////////////////////////////////
-		Statistics.startRunTimer();
-		ExecutionContext ec = null;
-		try 
-		{  
-			initHadoopExecution( conf );
-			
-			//run execute (w/ exception handling to ensure proper shutdown)
-			ec = ExecutionContextFactory.createContext(rtprog);
-			rtprog.execute( ec );  
-			
-		}
-		finally //ensure cleanup/shutdown
-		{	
-			if(ec != null && ec instanceof SparkExecutionContext) {
-				((SparkExecutionContext) ec).close();
-			}
-			
-			//display statistics (incl caching stats if enabled)
-			Statistics.stopRunTimer();
-			LOG.info(Statistics.display());
-			LOG.info("END DML run " + getDateTime() );
-			
-			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution( conf );		
-		}
-	} 
-	
+	}	
 
 	/**
 	 * @throws ParseException 
@@ -995,7 +925,6 @@ public class DMLScript
 	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, HashMap<String,String> argVals)
 	{		
 		LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + fnameScript + "\n" 
-	                + "VISUALIZE: "  + VISUALIZE + "\n" 
 	                + "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
 	                + "OPTIONAL CONFIG: " + fnameOptConfig + "\n");
 

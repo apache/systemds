@@ -36,11 +36,10 @@ import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
 import com.ibm.bi.dml.hops.rewrite.RewriteRemovePersistentReadWrite;
+import com.ibm.bi.dml.parser.AParserWrapper;
 import com.ibm.bi.dml.parser.DMLProgram;
 import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
-import com.ibm.bi.dml.parser.python.PyDMLParserWrapper;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
@@ -112,15 +111,8 @@ public class Connection
 		try
 		{
 			//parsing
-			DMLProgram prog = null;
-			if(parsePyDML) {
-				PyDMLParserWrapper parser = new PyDMLParserWrapper();
-				prog = parser.parse(null, script, args);
-			}
-			else {
-				DMLParserWrapper parser = new DMLParserWrapper();
-				prog = parser.parse(null, script, args);
-			}
+			AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+			DMLProgram prog = parser.parse(null, script, args);
 			
 			//language validate
 			DMLTranslator dmlt = new DMLTranslator(prog);

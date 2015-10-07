@@ -184,22 +184,25 @@ public class OptimizerConstrained extends OptimizerRuleBased
 				
 				//rewrite 18: repartition read-only inputs for zipmm 
 				super.rewriteInjectSparkRepartition( pn, ec.getVariables() );
+				
+				//rewrite 19: eager caching for checkpoint rdds
+				super.rewriteSetSparkEagerRDDCaching(pn, ec.getVariables() );
 			}
 		}	
 		
-		//rewrite 19: set result merge
+		//rewrite 20: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		//rewrite 20: set local recompile memory budget
+		//rewrite 21: set local recompile memory budget
 		super.rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 21: parfor (in recursive functions) to for
+		// rewrite 22: parfor (in recursive functions) to for
 		super.rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 22: parfor (par=1) to for 
+		// rewrite 23: parfor (par=1) to for 
 		super.rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result

@@ -84,6 +84,8 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
@@ -112,10 +114,11 @@ import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
  * - 16) rewrite enable runtime piggybacking
  * - 17) rewrite inject spark loop checkpointing 
  * - 18) rewrite inject spark repartition (for zipmm)
- * - 19) rewrite set result merge 		 		 
- * - 20) rewrite set recompile memory budget
- * - 21) rewrite remove recursive parfor	
- * - 22) rewrite remove unnecessary parfor		
+ * - 19) rewrite set spark eager rdd caching 
+ * - 20) rewrite set result merge 		 		 
+ * - 21) rewrite set recompile memory budget
+ * - 22) rewrite remove recursive parfor	
+ * - 23) rewrite remove unnecessary parfor		
  * 	 
  * TODO fuse also result merge into fused data partitioning and execute
  *      (for writing the result directly from execute we need to partition
@@ -298,22 +301,25 @@ public class OptimizerRuleBased extends Optimizer
 				
 				//rewrite 18: repartition read-only inputs for zipmm 
 				rewriteInjectSparkRepartition( pn, ec.getVariables() );
+				
+				//rewrite 19: eager caching for checkpoint rdds
+				rewriteSetSparkEagerRDDCaching( pn, ec.getVariables() );
 			}
 		}	
 	
-		// rewrite 19: set result merge
+		// rewrite 20: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
 		
-		// rewrite 20: set local recompile memory budget
+		// rewrite 21: set local recompile memory budget
 		rewriteSetRecompileMemoryBudget( pn );
 		
 		///////
 		//Final rewrites for cleanup / minor improvements
 		
-		// rewrite 21: parfor (in recursive functions) to for
+		// rewrite 22: parfor (in recursive functions) to for
 		rewriteRemoveRecursiveParFor( pn, ec.getVariables() );
 		
-		// rewrite 22: parfor (par=1) to for 
+		// rewrite 23: parfor (par=1) to for 
 		rewriteRemoveUnnecessaryParFor( pn );
 		
 		//info optimization result
@@ -2252,6 +2258,62 @@ public class OptimizerRuleBased extends Optimizer
 				rCollectZipmmPartitioningCandidates(c, cand);
 	}
 	
+	///////
+	//REWRITE set spark eager rdd caching
+	///
+	
+	/**
+	 * 
+	 * @param n
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	protected void rewriteSetSparkEagerRDDCaching(OptNode n, LocalVariableMap vars) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		//get program blocks of root parfor
+		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
+		ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
+		ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
+		
+		ArrayList<String> ret = new ArrayList<String>();
+		
+		if(    OptimizerUtils.isSparkExecutionMode() //spark exec mode
+			&& n.getExecType() == ExecType.CP		 //local parfor 
+			&& _N > 1                            )   //at least 2 iterations                             
+		{
+			Set<String> cand = pfsb.variablesRead().getVariableNames();
+			Collection<String> rpVars = pfpb.getSparkRepartitionVariables();
+			for( String var : cand)
+			{
+				Data dat = vars.get(var);
+				
+				if( dat!=null && dat instanceof MatrixObject
+					&& ((MatrixObject)dat).getRDDHandle()!=null )
+				{
+					MatrixObject mo = (MatrixObject)dat;
+					MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+					RDDObject rdd = mo.getRDDHandle();
+					if( (rpVars==null || !rpVars.contains(var)) //not a repartition var
+						&& rdd.rHasCheckpointRDDChilds()        //is cached rdd 
+						&& _lm / n.getK() <                     //is out-of-core dataset
+						OptimizerUtils.estimateSizeExactSparsity(mc))
+					{
+						ret.add(var);
+					}
+				}
+			}
+			
+			//apply rewrite to parfor pb
+			if( !ret.isEmpty() ) {
+				pfpb.setSparkEagerCacheVariables(ret);
+			}
+		}
+		
+		_numEvaluatedPlans++;
+		LOG.debug(getOptMode()+" OPT: rewrite 'set spark eager rdd caching' - result="+ret.size()+
+				" ("+ProgramConverter.serializeStringCollection(ret)+")" );
+	}
 	
 	///////
 	//REWRITE remove compare matrix (for result merge, needs to be invoked before setting result merge)

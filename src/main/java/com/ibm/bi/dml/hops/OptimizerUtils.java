@@ -579,6 +579,19 @@ public class OptimizerUtils
 	////////////////////////
 	
 	/**
+	 * 
+	 * @param mc
+	 * @return
+	 */
+	public static long estimateSizeExactSparsity(MatrixCharacteristics mc)
+	{
+		return estimateSizeExactSparsity(
+				mc.getRows(),
+				mc.getCols(),
+				mc.getNonZeros());
+	}
+	
+	/**
 	 * Estimates the footprint (in bytes) for an in-memory representation of a
 	 * matrix with dimensions=(nrows,ncols) and and number of non-zeros nnz.
 	 * 

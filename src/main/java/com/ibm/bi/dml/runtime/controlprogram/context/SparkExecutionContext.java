@@ -850,6 +850,25 @@ public class SparkExecutionContext extends ExecutionContext
 	
 	/**
 	 * 
+	 * @param var
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	@SuppressWarnings("unchecked")
+	public void cacheMatrixObject( String var ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//get input rdd and default storage level
+		MatrixObject mo = getMatrixObject(var);
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
+				getRDDHandleForMatrixObject(mo, InputInfo.BinaryBlockInputInfo);
+		
+		//persist rdd (force rdd caching)
+		in.count(); //trigger caching to prevent contention			       
+	}
+	
+	/**
+	 * 
 	 * @param poolName
 	 */
 	public void setThreadLocalSchedulerPool(String poolName) {

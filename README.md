@@ -5,6 +5,9 @@ SystemML's distinguishing characteristics are: (1) algorithm customizability,
 (2) multiple execution modes, including Standalone, Hadoop Batch, and Spark Batch,
 and (3) automatic optimization.
 
+The latest documentation can be found at the 
+[SystemML Documentation](http://sparktc.github.io/systemml/) web site.
+
 
 ### Algorithm Customizability
 
@@ -56,13 +59,12 @@ SystemML features a comprehensive set of integration tests. To perform these tes
     cd system-ml
     mvn verify 
 
-Note: these that these tests requires [R](https://www.r-project.org/) to be installed and available as part of the PATH variable on the machine you are running these tests. 
+Note: these tests require [R](https://www.r-project.org/) to be installed and available as part of the PATH variable on the machine on which you are running these tests. 
 
-To install required packages for running integration tests, execute following command in R:
+If required, please install the following packages in R:
 
-    install.packages(c("batch", "bitops", "boot", "caTools", "data.table", "doMC", "doSNOW", "ggplot2", "glmnet", "lda", "Matrix", "matrixStats", "moments", "plotrix", "psych", "reshape", "topicmodels", "wordcloud", "methods"), dependencies=TRUE) 
+    install.packages(c("batch", "bitops", "boot", "caTools", "data.table", "doMC", "doSNOW", "ggplot2", "glmnet", "lda", "Matrix", "matrixStats", "moments", "plotrix", "psych", "reshape", "topicmodels", "wordcloud"), dependencies=TRUE) 
 
-Known issue: package 'methods' is not available for R version 3.2.1. In which case, please downgrade R to version 3.1.1. 
 
 * * *
 

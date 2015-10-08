@@ -117,7 +117,27 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				if( isTernaryAggregateRewriteApplicable() ) {
 					agg1 = constructLopsTernaryAggregateRewrite(et);
 				}
-				else { //general case
+				else if( isUnaryAggregateOuterCPRewriteApplicable() )
+				{
+					OperationTypes op = HopsAgg2Lops.get(_op);
+					DirectionTypes dir = HopsDirection2Lops.get(_direction);
+
+					BinaryOp binput = (BinaryOp)getInput().get(0);
+					agg1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
+							binput.getInput().get(1).constructLops(), op, dir, 
+							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.CP);
+					PartialAggregate.setDimensionsBasedOnDirection(agg1, getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), dir);
+				
+					if (getDataType() == DataType.SCALAR) {
+						UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
+								                    getDataType(), getValueType());
+						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+						setLineNumbers(unary1);
+						setLops(unary1);
+					}
+				
+				}				
+				else { //general case		
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 					agg1 = new PartialAggregate(input.constructLops(), 
 							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et, k);
@@ -335,8 +355,12 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				break;
 			case MAXINDEX:
 			case MININDEX:
-				//worst-case correction LASTCOLUMN 
-				val = OptimizerUtils.estimateSizeExactSparsity(dim1, 1, 1.0);
+				Hop hop = getInput().get(0);
+				if(isUnaryAggregateOuterCPRewriteApplicable())
+					val = 3 * OptimizerUtils.estimateSizeExactSparsity(1, hop._dim2, 1.0);
+				else
+					//worst-case correction LASTCOLUMN 
+					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 1, 1.0);
 				break;
 			default:
 				//no intermediate memory consumption
@@ -573,6 +597,27 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		return ret;
 	}
 	
+	
+	
+	/**
+	 * This will check if this is one of the operator from supported LibMatrixOuterAgg library.
+	 * It needs to be Outer, aggregator type SUM, RowIndexMin, RowIndexMax and 6 operators <, <=, >, >=, == and !=
+	 *   
+	 *   
+	 * @return
+	 */
+	private boolean isUnaryAggregateOuterCPRewriteApplicable() 
+	{
+		boolean ret = false;
+		Hop input = getInput().get(0);
+		
+		if(( input instanceof BinaryOp && ((BinaryOp)input).isOuterVectorOperator() )
+			&& (_op == AggOp.MAXINDEX || _op == AggOp.MININDEX || _op == AggOp.SUM)
+			&& (isCompareOperator(((BinaryOp)input).getOp())))
+			ret = true;
+
+		return ret;
+	}
 	
 	
 	/**

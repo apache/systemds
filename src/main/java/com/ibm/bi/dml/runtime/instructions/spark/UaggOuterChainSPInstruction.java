@@ -293,7 +293,8 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 					bvi = _bvi.getValue();
 				}
 
-				LibMatrixOuterAgg.aggregateMatrix(in1Ix, in1Val, outIx, outVal, _bv.value(), bvi, _bOp, _uaggOp);
+				LibMatrixOuterAgg.resetOutputMatix(in1Ix, in1Val, outIx, outVal, _uaggOp);
+				LibMatrixOuterAgg.aggregateMatrix(in1Val, outVal, _bv.value(), bvi, _bOp, _uaggOp);
 
 				return new Tuple2<MatrixIndexes, MatrixBlock>(outIx, outVal);	
 			}			

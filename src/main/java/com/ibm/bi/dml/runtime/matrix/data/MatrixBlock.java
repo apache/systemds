@@ -53,6 +53,8 @@ import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
+import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.functionobjects.SortIndex;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
 import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
@@ -74,6 +76,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.QuaternaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
+import com.ibm.bi.dml.runtime.util.DataConverter;
 import com.ibm.bi.dml.runtime.util.FastBufferedDataInputStream;
 import com.ibm.bi.dml.runtime.util.FastBufferedDataOutputStream;
 import com.ibm.bi.dml.runtime.util.IndexRange;
@@ -5150,6 +5153,49 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		return new DoubleObject(val);
 	}
 	
+	
+	/**
+	 * 
+	 * @param mbLeft
+	 * @param mbRight
+	 * @param mbOut
+	 * @param bOp
+	 * @oaram uaggOp
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixBlock  uaggouterchainOperations(MatrixBlock mbLeft, MatrixBlock mbRight, MatrixBlock mbOut, BinaryOperator bOp, AggregateUnaryOperator uaggOp) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		double bv[] = DataConverter.convertToDoubleVector(mbRight);
+		int bvi[] = null;
+		
+		//process instruction
+		if (LibMatrixOuterAgg.isSupportedUaggOp(uaggOp, bOp))
+		{
+			if((LibMatrixOuterAgg.isRowIndexMax(uaggOp)) || (LibMatrixOuterAgg.isRowIndexMin(uaggOp))) 
+			{
+				bvi = LibMatrixOuterAgg.prepareRowIndices(bv.length, bv, bOp, uaggOp);
+			} else {
+				Arrays.sort(bv);
+			}
+
+			int iRows = (uaggOp.indexFn instanceof ReduceCol ? mbLeft.getNumRows(): 1); 
+			int iCols = (uaggOp.indexFn instanceof ReduceRow ? mbLeft.getNumColumns(): 1); 
+			if(mbOut==null)
+				mbOut=new MatrixBlock(iRows, iCols, false);  // Output matrix will be dense matrix most of the time.
+			else
+				mbOut.reset(iRows, iCols, false);
+
+			LibMatrixOuterAgg.aggregateMatrix(mbLeft, mbOut, bv, bvi, bOp, uaggOp);
+		} else
+			throw new DMLRuntimeException("Unsupported operator for unary aggregate operations.");
+		
+		return mbOut;
+	}
+	
+		
 	/**
 	 * Invocation from CP instructions. The aggregate is computed on the groups object
 	 * against target and weights. 

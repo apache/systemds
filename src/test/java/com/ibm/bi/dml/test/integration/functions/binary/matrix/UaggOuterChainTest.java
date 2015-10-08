@@ -1171,6 +1171,41 @@ public class UaggOuterChainTest extends AutomatedTestBase
 		 runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, SumType.ROW_INDEX_MIN, false, ExecType.SPARK);
 	}
 	
+	
+	// CP Test cases.
+
+	@Test
+	public void testLessUaggOuterChainRowSumsMultiDenseCP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.LESS, false, false, SumType.ROW_SUM, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainColSumsSingleSparseCP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, true, SumType.COL_SUM, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainRowIndexMaxSingleDenseCP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, SumType.ROW_INDEX_MAX, false, ExecType.CP);
+	}
+	
+
+	@Test
+	public void testGreaterEqualsUaggOuterChainRowIndexMinSingleDenseCP() 
+	{
+		 runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, true, false, SumType.ROW_INDEX_MIN, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testGreaterEqualsUaggOuterChainSumsEmptyMultiSparseCP() 
+	{
+		runBinUaggTest(TEST_NAME1, Type.GREATER_EQUALS, false, true, SumType.SUM_ALL, true, ExecType.CP);
+	}
+	
+
 
 	/**
 	 * 
@@ -1286,7 +1321,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 				checkDMLMetaDataFile("C", new MatrixCharacteristics(1,1,1,1)); //sums
 			
 			//check compiled/executed jobs
-			if( rtplatform != RUNTIME_PLATFORM.SPARK ) {
+			if( rtplatform != RUNTIME_PLATFORM.SPARK && instType != ExecType.CP) {
 				int expectedNumCompiled = 2; //reblock+gmr if uaggouterchain; otherwise 3
 				if(sumType == SumType.SUM_ALL)
 					expectedNumCompiled = 3;  // scaler to matrix conversion.

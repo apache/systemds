@@ -279,20 +279,16 @@ public class LibMatrixOuterAgg
 	
 	
 	/**
+	 * ReSet output matrix
 	 * 
 	 * @param in1Ix
 	 * @param in1Val
 	 * @param outIx
 	 * @param outVal
-	 * @param bv
-	 * @param bOp
-	 * @throws DMLRuntimeException
+	 * @param uaggOp
 	 */
-	public static void aggregateMatrix(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, double[] bv, int[] bvi, 
-			BinaryOperator bOp, AggregateUnaryOperator uaggOp) 
-			throws DMLRuntimeException
+	public static void resetOutputMatix(MatrixIndexes in1Ix, MatrixBlock in1Val, MatrixIndexes outIx, MatrixBlock outVal, AggregateUnaryOperator uaggOp) 
 	{		
-		//step1: prepare output (last col corr)
 		if(uaggOp.indexFn instanceof ReduceCol) {
 			outIx.setIndexes(in1Ix.getRowIndex(), 1); 
 			outVal.reset(in1Val.getNumRows(), 2, false);
@@ -303,8 +299,22 @@ public class LibMatrixOuterAgg
 			outIx.setIndexes(1,1); 
 			outVal.reset(1, 2, false);
 		}
-		
-		//step2: compute unary aggregate outer chain
+	}
+	
+	
+	/**
+	 * 
+	 * @param in1Val
+	 * @param outVal
+	 * @param bv
+	 * @param bOp
+	 * @param uaggOp
+	 * @throws DMLRuntimeException
+	 */
+	public static void aggregateMatrix(MatrixBlock in1Val, MatrixBlock outVal, double[] bv, int[] bvi, BinaryOperator bOp, AggregateUnaryOperator uaggOp) 
+			throws DMLRuntimeException
+	{		
+		// compute unary aggregate outer chain
 		if(isRowIndexMax(uaggOp)) 
 		{
 			if(bOp.fn instanceof LessThan) {
@@ -870,6 +880,8 @@ public class LibMatrixOuterAgg
 		//allocate and initialize output values (not indices) 
 		out.allocateDenseBlock(true);
 		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
+		if(agg0 != 0.0)
+			out.setNonZeros(out.getNumColumns());
 		
 		if( in.isEmptyBlock(false) )
 			return;
@@ -928,6 +940,8 @@ public class LibMatrixOuterAgg
 		//allocate and initialize output values (not indices) 
 		out.allocateDenseBlock(true);
 		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
+		if(agg0 != 0.0)
+			out.setNonZeros(out.getNumColumns());
 		
 		if( in.isEmptyBlock(false) )
 			return;
@@ -986,6 +1000,8 @@ public class LibMatrixOuterAgg
 		//allocate and initialize output values (not indices) 
 		out.allocateDenseBlock(true);
 		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
+		if(agg0 != 0.0)
+			out.setNonZeros(out.getNumColumns());
 		
 		if( in.isEmptyBlock(false) )
 			return;

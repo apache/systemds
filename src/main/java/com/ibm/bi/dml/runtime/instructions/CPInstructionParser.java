@@ -54,6 +54,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.RelationalBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ReorgCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.StringInitCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.TernaryCPInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.UaggOuterChainCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import com.ibm.bi.dml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
@@ -95,6 +96,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "ncol"    ,CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "length"  ,CPINSTRUCTION_TYPE.AggregateUnary);
 
+		String2CPInstructionType.put( "uaggouterchain", CPINSTRUCTION_TYPE.UaggOuterChain);
+		
 		// Arithmetic Instruction Opcodes 
 		String2CPInstructionType.put( "+"    , CPINSTRUCTION_TYPE.ArithmeticBinary);
 		String2CPInstructionType.put( "-"    , CPINSTRUCTION_TYPE.ArithmeticBinary);
@@ -290,6 +293,9 @@ public class CPInstructionParser extends InstructionParser
 			
 		case Reorg:
 			return (CPInstruction) ReorgCPInstruction.parseInstruction(str);
+			
+		case UaggOuterChain:
+			return (CPInstruction) UaggOuterChainCPInstruction.parseInstruction(str);
 			
 		case MatrixReshape:
 			return (CPInstruction) MatrixReshapeCPInstruction.parseInstruction(str);	

@@ -30,6 +30,7 @@ import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop;
 import com.ibm.bi.dml.hops.Hop.OpOp1;
 import com.ibm.bi.dml.hops.Hop.OpOp4;
+import com.ibm.bi.dml.hops.IndexingOp;
 import com.ibm.bi.dml.hops.QuaternaryOp;
 import com.ibm.bi.dml.hops.TernaryOp;
 import com.ibm.bi.dml.hops.UnaryOp;
@@ -140,7 +141,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
  			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
 			hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
-			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));    
+			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));  
+			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq; 
 			hi = removeUnnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
@@ -988,6 +990,56 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				LOG.debug("Applied simplifyTraceMatrixMult");
 			}	
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException 
+	 */
+	private Hop simplifySlicedMatrixMult(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1] 
+		if( hi instanceof IndexingOp 
+			&& ((IndexingOp)hi).getRowLowerEqualsUpper()
+			&& ((IndexingOp)hi).getColLowerEqualsUpper()  
+			&& hi.getInput().get(0).getParent().size()==1 //rix is single mm consumer
+			&& hi.getInput().get(0) instanceof AggBinaryOp 
+			&& ((AggBinaryOp)hi.getInput().get(0)).isMatrixMultiply() )
+		{
+			Hop mm = hi.getInput().get(0);
+			Hop X = mm.getInput().get(0);
+			Hop Y = mm.getInput().get(1);
+			Hop rowExpr = hi.getInput().get(1); //rl==ru
+			Hop colExpr = hi.getInput().get(3); //cl==cu
+			
+			HopRewriteUtils.removeAllChildReferences(mm);
+			
+			//create new indexing operations
+			IndexingOp ix1 = new IndexingOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, X, 
+					rowExpr, rowExpr, new LiteralOp("1",1), HopRewriteUtils.createValueHop(X, false), true, false);
+			HopRewriteUtils.setOutputBlocksizes(ix1, X.getRowsInBlock(), X.getColsInBlock());
+			ix1.refreshSizeInformation();
+			IndexingOp ix2 = new IndexingOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, Y, 
+					new LiteralOp("1",1), HopRewriteUtils.createValueHop(Y, true), colExpr, colExpr, false, true);
+			HopRewriteUtils.setOutputBlocksizes(ix2, Y.getRowsInBlock(), Y.getColsInBlock());
+			ix2.refreshSizeInformation();
+			
+			//rewire matrix mult over ix1 and ix2
+			HopRewriteUtils.addChildReference(mm, ix1, 0);
+			HopRewriteUtils.addChildReference(mm, ix2, 1);
+			mm.refreshSizeInformation();
+			
+			hi = mm;
+				
+			LOG.debug("Applied simplifySlicedMatrixMult");	
 		}
 		
 		return hi;

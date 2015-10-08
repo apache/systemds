@@ -310,8 +310,8 @@ public class MatrixCharacteristics implements Serializable
 			MMTSJMRInstruction mmtsj = (MMTSJMRInstruction)ins;
 			MMTSJType tstype = mmtsj.getMMTSJType();
 			MatrixCharacteristics mc = dims.get(mmtsj.input);
-			dimOut.set( (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
-					     (tstype==MMTSJType.LEFT)? mc.numColumns : mc.numRows,
+			dimOut.set( tstype.isLeft() ? mc.numColumns : mc.numRows,
+					    tstype.isLeft() ? mc.numColumns : mc.numRows,
 					     mc.numRowsPerBlock, mc.numColumnsPerBlock );
 		}
 		else if( ins instanceof PMMJMRInstruction )

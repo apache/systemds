@@ -1148,7 +1148,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					//diff to ba+* only upper triangular matrix
 					//reduction by factor 2 because matrix mult better than
 					//average flop count
-					if( MMTSJType.valueOf(args[0])==MMTSJType.LEFT ) { //lefttranspose
+					if( MMTSJType.valueOf(args[0]).isLeft() ) { //lefttranspose
 						if( !rightSparse ) //dense						
 							return d1m * d1n * d1s * d1n /2;
 						else //sparse

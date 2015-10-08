@@ -35,7 +35,11 @@ public class MMTSJ extends Lop
 	public enum MMTSJType {
 		NONE,
 		LEFT,
-		RIGHT
+		RIGHT;
+		
+		public boolean isLeft(){
+			return (this == LEFT);
+		}
 	}
 	
 	private MMTSJType _type = null;

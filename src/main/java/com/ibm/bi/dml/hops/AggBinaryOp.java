@@ -288,6 +288,23 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		}
 	}
 
+	
+	
+	@Override
+	public void computeMemEstimate(MemoTable memo) 
+	{
+		//extension of default compute memory estimate in order to 
+		//account for smaller tsmm memory requirements.
+		super.computeMemEstimate(memo);
+		
+		//tsmm left is guaranteed to require only X but not t(X), while
+		//tsmm right might have additional requirements to transpose X if sparse
+		MMTSJType mmtsj = checkTransposeSelf();
+		if( mmtsj.isLeft() && getInput().get(0).dimsKnown() ){
+			_memEstimate = _memEstimate - getInput().get(0)._memEstimate;
+		}
+	}
+
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
@@ -500,7 +517,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		throws HopsException, LopsException
 	{
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-		Lop matmultCP = new MMTSJ(getInput().get((mmtsj==MMTSJType.LEFT)?1:0).constructLops(),
+		Lop matmultCP = new MMTSJ(getInput().get(mmtsj.isLeft()?1:0).constructLops(),
 				                 getDataType(), getValueType(), ExecType.CP, mmtsj, k);
 	
 		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
@@ -639,7 +656,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	private void constructSparkLopsTSMM(MMTSJType mmtsj) 
 		throws HopsException, LopsException
 	{
-		Hop input = getInput().get((mmtsj==MMTSJType.LEFT)?1:0);
+		Hop input = getInput().get(mmtsj.isLeft()?1:0);
 		MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), getValueType(), ExecType.SPARK, mmtsj);
 		setOutputDimensions(tsmm);
 		setLineNumbers(tsmm);
@@ -1201,7 +1218,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	private void constructMRLopsTSMM(MMTSJType mmtsj) 
 		throws HopsException, LopsException
 	{
-		Hop input = getInput().get((mmtsj==MMTSJType.LEFT)?1:0);
+		Hop input = getInput().get(mmtsj.isLeft()?1:0);
 		
 		MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), getValueType(), ExecType.MR, mmtsj);
 		tsmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());

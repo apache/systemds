@@ -24,13 +24,18 @@ import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
 
 import scala.Tuple2;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.LastCellInMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.MaxMatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
@@ -257,5 +262,90 @@ public class SparkUtils {
 		//create rdd of in-memory list
 		return sc.parallelizePairs(list);
 	}
+	
+	/**
+	 * Utility to compute number of non-zeros from the given RDD of MatrixCells
+	 * @param rdd
+	 * @return
+	 */
+	public static long computeNNZFromCells(JavaPairRDD<MatrixIndexes, MatrixCell> rdd) {
+		long nnz = rdd.values().filter(
+						new Function<MatrixCell,Boolean>() {
+							private static final long serialVersionUID = -6550193680630537857L;
+							@Override
+							public Boolean call(MatrixCell v1) throws Exception {
+								return (v1.getValue() != 0);
+							}
+						}).count();
+		return nnz;
+	}
+	
+	/**
+	 * Utility to compute dimensions and non-zeros in a given RDD of binary cells.
+	 * 
+	 * @param rdd
+	 * @param computeNNZ
+	 * @return
+	 */
+	public static MatrixCharacteristics computeMatrixCharacteristics(JavaPairRDD<MatrixIndexes, MatrixCell> rdd) 
+	{
+		MatrixCharacteristics mc = new MatrixCharacteristics();
+		
+		// Compute dimensions by computing the max indexes
+		MatrixIndexes dims = rdd.keys().reduce(new MaxMatrixIndexes());
+		mc.setDimension(dims.getRowIndex(), dims.getColumnIndex());
+		
+		// Compute non-zeros by filtering out values that are not equal to 0
+		mc.setNonZeros(computeNNZFromCells(rdd));
+		
+		return mc;
+	}
+	
+	/**
+	 * Utility to compute number of non-zeros from the given RDD of MatrixBlocks
+	 * @param rdd
+	 * @return
+	 */
+	public static long computeNNZFromBlocks(JavaPairRDD<MatrixIndexes, MatrixBlock> rdd) {
+		long nnz = rdd.values().aggregate(	0L, 
+						new Function2<Long,MatrixBlock,Long>() {
+							private static final long serialVersionUID = 4907645080949985267L;
+							@Override
+							public Long call(Long v1, MatrixBlock v2) throws Exception {
+								return (v1 + v2.getNonZeros());
+							} 
+						}, 
+						new Function2<Long,Long,Long>() {
+							private static final long serialVersionUID = 333028431986883739L;
+							@Override
+							public Long call(Long v1, Long v2) throws Exception {
+								return v1+v2;
+							}
+						} );
+		return nnz;
+	}
+	
+	
+	/**
+	 * Utility to compute dimensions and non-zeros in the given RDD of matrix blocks.
+	 * 
+	 * @param rdd
+	 * @param rpb
+	 * @param cpb
+	 * @param computeNNZ
+	 * @return
+	 */
+	public static MatrixCharacteristics computeMatrixCharacteristics(JavaPairRDD<MatrixIndexes, MatrixBlock> rdd, int rpb, int cpb) 
+	{
+		MatrixCharacteristics mc = new MatrixCharacteristics();
+		
+		MatrixIndexes dims = rdd.map(new LastCellInMatrixBlock(rpb, cpb)).reduce(new MaxMatrixIndexes());
+		mc.setDimension(dims.getRowIndex(), dims.getColumnIndex());
+		
+		mc.setNonZeros(computeNNZFromBlocks(rdd));
+		
+		return mc;
+	}
+	
 	
 }

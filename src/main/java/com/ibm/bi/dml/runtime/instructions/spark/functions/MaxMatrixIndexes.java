@@ -16,31 +16,16 @@
  */
 package com.ibm.bi.dml.runtime.instructions.spark.functions;
 
-import org.apache.spark.Accumulator;
-import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 
-/**
- * 
- */
-public class ComputeNonZerosBlockFunction implements Function<MatrixBlock,MatrixBlock> 
-{
-	private static final long serialVersionUID = 966409324406154236L;
-
-	private Accumulator<Double> _aNnz = null;
-	
-	public ComputeNonZerosBlockFunction(Accumulator<Double> aNnz) {
-		_aNnz = aNnz;
-	}
+public class MaxMatrixIndexes implements Function2<MatrixIndexes, MatrixIndexes, MatrixIndexes> {
+	private static final long serialVersionUID = -8421979264801112485L;
 
 	@Override
-	public MatrixBlock call(MatrixBlock arg0)
-		throws Exception 
-	{
-		//aggregate non-zeros (w/o recompute since maintained by every operation)
-		_aNnz.add( (double)arg0.getNonZeros() ); 
-		
-		return arg0;
+	public MatrixIndexes call(MatrixIndexes left, MatrixIndexes right) throws Exception {
+		return new MatrixIndexes(Math.max(left.getRowIndex(), right.getRowIndex()), Math.max(left.getColumnIndex(), right.getColumnIndex()));
 	}
+	
 }

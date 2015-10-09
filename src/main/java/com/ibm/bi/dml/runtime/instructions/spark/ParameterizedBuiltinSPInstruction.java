@@ -515,10 +515,6 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 
 		@Override
 		public Tuple2<MatrixIndexes, MatrixCell> call(Tuple2<Long, WeightedCell> kv) throws Exception {
-			long blockRowIndex = UtilFunctions.blockIndexCalculation(kv._1, (int) brlen);
-			long rowIndexInBlock = UtilFunctions.cellInBlockCalculation(kv._1, brlen);
-			
-			MatrixIndexes indx = new MatrixIndexes(blockRowIndex, 1);
 
 			double val = -1;
 			if(op instanceof CMOperator)
@@ -553,13 +549,10 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			{
 				//avoid division by 0
 				val = kv._2.getValue()/kv._2.getWeight();
-//				if(kv._2.getWeight()==1.0)
-//					val = 0;
-//				else
-//					val = kv._2.getValue()/(kv._2.getWeight() - 1.0);
 			}
 			
-			MatrixCell cell = new MatrixCell(rowIndexInBlock, 0, val);
+			MatrixIndexes indx = new MatrixIndexes(kv._1, 1);
+			MatrixCell cell = new MatrixCell(0, 0, val);
 			
 			return new Tuple2<MatrixIndexes, MatrixCell>(indx, cell);
 		}
@@ -572,15 +565,15 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 				throw new DMLRuntimeException("The output dimensions are not specified for grouped aggregate");
 			}
 			else {
-				int ngroups = -1;
 				if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
-					ngroups = (int) Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS));
+					int ngroups = (int) Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS));
+					mcOut.set(ngroups, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 				}
 				else {
 					out.persist(StorageLevel.MEMORY_AND_DISK());
-					ngroups = (int) out.count();
+					MatrixCharacteristics mc = SparkUtils.computeMatrixCharacteristics(out);
+					mcOut.set(mc.getRows(), mc.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), mc.getNonZeros());
 				}
-				mcOut.set(ngroups, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			}
 		}
 	}

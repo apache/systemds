@@ -68,10 +68,10 @@ public class RDDConverterUtils
 			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) 
 		throws DMLRuntimeException  
 	{
-		//convert textcell rdd to binary block rdd (w/ partial blocks)
+ 		//convert textcell rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input.values()
 				.mapPartitionsToPair(new TextToBinaryBlockFunction(mcOut));
-		
+
 		//inject empty blocks (if necessary) 
 		if( outputEmptyBlocks && mcOut.mightHaveEmptyBlocks() ) {
 			out = out.union( 
@@ -206,11 +206,13 @@ public class RDDConverterUtils
 		// 3. (AL, AL) -> AL
 		// Then you convert the final AL -> binary blocks (here you take into account the sparsity).
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithoutEmptyBlocks =
-				binaryCells.combineByKey(
-						new ConvertCellToALFunction(), 
-						new AddCellToALFunction(), 
-						new MergeALFunction())
-						.mapToPair(new ConvertALToBinaryBlockFunction(mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), mcOut.getRows(), mcOut.getCols()));		
+				binaryCells.mapToPair(new ComputeBlockIndexes(mcOut.getRowsPerBlock(),  mcOut.getColsPerBlock()))
+						.combineByKey(
+							new ConvertCellToALFunction(), 
+							new AddCellToALFunction(), 
+							new MergeALFunction())
+						.mapToPair(new ConvertALToBinaryBlockFunction(mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), mcOut.getRows(), mcOut.getCols()));
+		
 		// ----------------------------------------------------------------------------
 		
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocksWithEmptyBlocks = null;
@@ -225,7 +227,38 @@ public class RDDConverterUtils
 		return binaryBlocksWithEmptyBlocks;
 	}
 		
-	
+	public static class ComputeBlockIndexes implements PairFunction<Tuple2<MatrixIndexes, MatrixCell>, MatrixIndexes, MatrixCell> {
+
+		private static final long serialVersionUID = 7709908904123704702L;
+
+		int _rpb, _cpb;
+		
+		ComputeBlockIndexes(int rpb, int cpb) {
+			_rpb = rpb;
+			_cpb = cpb;
+		}
+		
+		@Override
+		public Tuple2<MatrixIndexes, MatrixCell> call(
+				Tuple2<MatrixIndexes, MatrixCell> t)
+				throws Exception {
+			
+			long r = t._1().getRowIndex();
+			long c = t._1().getColumnIndex();
+			
+			long bi = UtilFunctions.blockIndexCalculation(r, _rpb);
+			int i = UtilFunctions.cellInBlockCalculation(r, _rpb);
+			
+			long bj = UtilFunctions.blockIndexCalculation(c, _cpb);
+			int j = UtilFunctions.cellInBlockCalculation(c, _cpb);
+			
+			MatrixIndexes idx = new MatrixIndexes(bi,bj);
+			MatrixCell cell = new MatrixCell(i, j, t._2().getValue());
+			
+			return new Tuple2<MatrixIndexes, MatrixCell>(idx, cell);
+		}
+		
+	}
 	
 	// ====================================================================================================
 	// Three functions passed to combineByKey

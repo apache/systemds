@@ -487,7 +487,7 @@ public class RandSPInstruction extends UnarySPInstruction
 		JavaPairRDD<MatrixIndexes, MatrixCell> miRDD = randomizedRDD
 				.zipWithIndex()
 			  	.filter( new TrimSample(rows) )
-			  	.mapToPair( new Double2MatrixCell(rowsInBlock) );
+			  	.mapToPair( new Double2MatrixCell() );
 		
 		MatrixCharacteristics mcOut = new MatrixCharacteristics(rows, 1, rowsInBlock, colsInBlock, rows);
 		
@@ -615,24 +615,13 @@ public class RandSPInstruction extends UnarySPInstruction
 	private static class Double2MatrixCell implements PairFunction<Tuple2<Double, Long>, MatrixIndexes, MatrixCell>
 	{
 		private static final long serialVersionUID = -2125669746624320536L;
-		private int _brlen;
-		
-		public Double2MatrixCell(int brlen) {
-			_brlen = brlen;
-		}
 		
 		@Override
 		public Tuple2<MatrixIndexes, MatrixCell> call(Tuple2<Double, Long> t)
 				throws Exception {
 			long rowID = t._2()+1;
-			
-			long brid = UtilFunctions.blockIndexCalculation(rowID, _brlen);
-			long bcid = 1;
-			int rid = UtilFunctions.cellInBlockCalculation(rowID, _brlen);
-			int cid = 0;
-			
-			MatrixIndexes mi = new MatrixIndexes(brid, bcid);
-			MatrixCell mc = new MatrixCell(rid, cid, t._1());
+			MatrixIndexes mi = new MatrixIndexes(rowID, 1);
+			MatrixCell mc = new MatrixCell(0, 0, t._1());
 			
 			return new Tuple2<MatrixIndexes, MatrixCell>(mi, mc);
 		}

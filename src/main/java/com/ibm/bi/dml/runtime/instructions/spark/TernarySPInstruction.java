@@ -22,7 +22,6 @@ import java.util.Map.Entry;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.storage.StorageLevel;
@@ -39,6 +38,7 @@ import com.ibm.bi.dml.runtime.functionobjects.CTable;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.MaxMatrixIndexes;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
@@ -223,7 +223,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		
 		if(findDimensions) {			
 			bincellsNoFilter = bincellsNoFilter.persist(StorageLevel.MEMORY_AND_DISK());
-			MatrixIndexes dims = bincellsNoFilter.keys().reduce(new FindOutputDimensions());
+			MatrixIndexes dims = bincellsNoFilter.keys().reduce(new MaxMatrixIndexes());
 			mcBinaryCells = new MatrixCharacteristics(dims.getRowIndex(), dims.getColumnIndex(), brlen, bclen);
 		}
 		else if((outputDim1 == -1 && outputDim2 != -1) || (outputDim1 != -1 && outputDim2 == -1)) {
@@ -245,7 +245,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		// Convert value 'Double' to 'MatrixCell'
 		JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = 
 				binaryCellsAfterFilter
-				.mapToPair(new ConvertToBinaryCell(brlen, bclen, mcBinaryCells.getRows(), mcBinaryCells.getCols()));
+				.mapToPair(new ConvertToBinaryCell());
 		
 		//store output rdd handle
 		sec.setRDDHandleForVariable(output.getName(), binaryCells);
@@ -492,58 +492,16 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		
 	}
 	
-	private static class FindOutputDimensions implements Function2<MatrixIndexes, MatrixIndexes, MatrixIndexes> {
-		private static final long serialVersionUID = -8421979264801112485L;
-
-		@Override
-		public MatrixIndexes call(MatrixIndexes left, MatrixIndexes right) throws Exception {
-			return new MatrixIndexes(Math.max(left.getRowIndex(), right.getRowIndex()), Math.max(left.getColumnIndex(), right.getColumnIndex()));
-		}
-		
-	}
-	
 	private static class ConvertToBinaryCell implements PairFunction<Tuple2<MatrixIndexes,Double>, MatrixIndexes, MatrixCell> {
 
 		private static final long serialVersionUID = 7481186480851982800L;
 		
-		int brlen; int bclen;
-		long rlen; long clen;
-		public ConvertToBinaryCell(int brlen, int bclen, long rlen, long clen) throws DMLRuntimeException {
-			this.brlen = brlen;
-			this.bclen = bclen;
-			this.rlen = rlen;
-			this.clen = clen;
-			if(brlen == -1 || bclen == -1) {
-				throw new DMLRuntimeException("The block sizes cannot be -1");
-			}
-		}
-
 		@Override
 		public Tuple2<MatrixIndexes, MatrixCell> call(
 				Tuple2<MatrixIndexes, Double> kv) throws Exception {
-			long i = kv._1.getRowIndex();
-			long j = kv._1.getColumnIndex();
-			double v = kv._2;
-			if(i > rlen || j > clen) {
-				throw new Exception("Incorrect input in ConvertToBinaryCell: (" + i + " " + j + " " + v + ")");
-			}
-			// ------------------------------------------------------------------------------------------
-			// Get appropriate indexes for blockIndexes and cell
-			// For line: 1020 704 2.362153706180234 (assuming default block size: 1000 X 1000),
-			// blockRowIndex = 2, blockColIndex = 1, rowIndexInBlock = 19, colIndexInBlock = 703 
-			long blockRowIndex = UtilFunctions.blockIndexCalculation(i, (int) brlen);
-			long blockColIndex = UtilFunctions.blockIndexCalculation(j, (int) bclen);
-			long rowIndexInBlock = UtilFunctions.cellInBlockCalculation(i, brlen);
-			long colIndexInBlock = UtilFunctions.cellInBlockCalculation(j, bclen);
-			// Perform sanity check
-			if(blockRowIndex <= 0 || blockColIndex <= 0 || rowIndexInBlock < 0 || colIndexInBlock < 0) {
-				throw new Exception("Error computing indexes for (" + i + ", " + j + "," + v + "): " + blockRowIndex + " " + blockColIndex + " " + rowIndexInBlock + " " + colIndexInBlock + " where brlen=" + brlen + " and bclen=" + bclen);
-			}
-			// ------------------------------------------------------------------------------------------
 			
-			MatrixIndexes blockIndexes = new MatrixIndexes(blockRowIndex, blockColIndex);
-			MatrixCell cell = new MatrixCell(rowIndexInBlock, colIndexInBlock, v);
-			return new Tuple2<MatrixIndexes, MatrixCell>(blockIndexes, cell);
+			MatrixCell cell = new MatrixCell(0,0,kv._2().doubleValue());
+			return new Tuple2<MatrixIndexes, MatrixCell>(kv._1(), cell);
 		}
 		
 	}

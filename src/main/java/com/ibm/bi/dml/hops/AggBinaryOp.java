@@ -38,6 +38,7 @@ import com.ibm.bi.dml.lops.MapMult;
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
 import com.ibm.bi.dml.lops.PMMJ;
+import com.ibm.bi.dml.lops.PMapMult;
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.lops.Transform;
 import com.ibm.bi.dml.lops.Transform.OperationTypes;
@@ -71,6 +72,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		MAPMM_L,  //map-side matrix-matrix multiplication using distributed cache (mr/sp)
 		MAPMM_R,  //map-side matrix-matrix multiplication using distributed cache (mr/sp)
 		MAPMM_CHAIN, //map-side matrix-matrix-matrix multiplication using distributed cache, for right input (cp/mr/sp)
+		PMAPMM,   //partitioned map-side matrix-matrix multiplication (sp)
 		PMM,      //permutation matrix multiplication using distributed cache, for left input (mr/cp)
 		TSMM,     //transpose-self matrix multiplication (cp/mr/sp)
 		ZIPMM,    //zip matrix multiplication (sp)
@@ -203,6 +205,9 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 						break;
 					case MAPMM_CHAIN:
 						constructSparkLopsMapMMChain( chain );
+						break;
+					case PMAPMM:
+						constructSparkLopsPMapMM();
 						break;
 					case CPMM:	
 						constructSparkLopsCPMM();
@@ -752,6 +757,23 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		setOutputDimensions(mapmmchain);
 		setLineNumbers(mapmmchain);
 		setLops(mapmmchain);
+	}
+	
+	/**
+	 * 
+	 * @throws LopsException
+	 * @throws HopsException
+	 */
+	private void constructSparkLopsPMapMM() 
+		throws LopsException, HopsException
+	{
+		PMapMult pmapmult = new PMapMult( 
+				getInput().get(0).constructLops(),
+				getInput().get(1).constructLops(), 
+				getDataType(), getValueType() );
+		setOutputDimensions(pmapmult);
+		setLineNumbers(pmapmult);
+		setLops(pmapmult);
 	}
 	
 	/**

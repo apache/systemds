@@ -52,6 +52,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.MapmmChainSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixIndexingSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.MatrixReshapeSPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.PMapmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.PmmSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.QuantilePickSPInstruction;
@@ -107,6 +108,8 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "rmm"        , SPINSTRUCTION_TYPE.RMM);
 		String2SPInstructionType.put( "pmm"        , SPINSTRUCTION_TYPE.PMM);
 		String2SPInstructionType.put( "zipmm"      , SPINSTRUCTION_TYPE.ZIPMM);
+		String2SPInstructionType.put( "pmapmm"     , SPINSTRUCTION_TYPE.PMAPMM);
+		
 		
 		String2SPInstructionType.put( "uaggouterchain", SPINSTRUCTION_TYPE.UaggOuterChain);
 		
@@ -277,6 +280,8 @@ public class SPInstructionParser extends InstructionParser {
 				return PmmSPInstruction.parseInstruction(str);
 			case ZIPMM:
 				return ZipmmSPInstruction.parseInstruction(str);
+			case PMAPMM:
+				return PMapmmSPInstruction.parseInstruction(str);
 				
 				
 			case UaggOuterChain:

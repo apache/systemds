@@ -518,6 +518,36 @@ public class SparkExecutionContext extends ExecutionContext
 	/**
 	 * 
 	 * @param rdd
+	 * @param rlen
+	 * @param clen
+	 * @param brlen
+	 * @param bclen
+	 * @param nnz
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static PartitionedMatrixBlock toPartitionedMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen, long nnz) 
+		throws DMLRuntimeException
+	{
+		PartitionedMatrixBlock out = new PartitionedMatrixBlock(rlen, clen, brlen, bclen);
+		
+		List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
+		
+		//copy blocks one-at-a-time into output matrix block
+		for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
+		{
+			//unpack index-block pair
+			MatrixIndexes ix = keyval._1();
+			MatrixBlock block = keyval._2();
+			out.setMatrixBlock((int)ix.getRowIndex(), (int)ix.getColumnIndex(), block);
+		}
+				
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @param rdd
 	 * @param oinfo
 	 */
 	@SuppressWarnings("unchecked")

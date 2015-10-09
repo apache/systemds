@@ -91,7 +91,20 @@ public class PartitionedMatrixBlock implements Externalizable
 		}
 		catch(Exception ex) {
 			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
-		}		
+		}
+	}
+	
+	public PartitionedMatrixBlock(int rlen, int clen, int brlen, int bclen) 
+	{
+		//partitioning input broadcast
+		_rlen = rlen;
+		_clen = clen;
+		_brlen = brlen;
+		_bclen = bclen;
+		
+		int nrblks = getNumRowBlocks();
+		int ncblks = getNumColumnBlocks();
+		_partBlocks = new MatrixBlock[nrblks * ncblks];		
 	}
 	
 	/**
@@ -141,6 +154,30 @@ public class PartitionedMatrixBlock implements Externalizable
 		int rix = rowIndex - 1;
 		int cix = colIndex - 1;
 		return _partBlocks[rix*ncblks + cix];
+	}
+	
+	/**
+	 * 
+	 * @param rowIndex
+	 * @param colIndex
+	 * @param mb
+	 * @throws DMLRuntimeException
+	 */
+	public void setMatrixBlock(int rowIndex, int colIndex, MatrixBlock mb) 
+		throws DMLRuntimeException
+	{
+		//check for valid block index
+		int nrblks = getNumRowBlocks();
+		int ncblks = getNumColumnBlocks();
+		if( rowIndex <= 0 || rowIndex > nrblks || colIndex <= 0 || colIndex > ncblks ) {
+			throw new DMLRuntimeException("Block indexes ["+rowIndex+","+colIndex+"] out of range ["+nrblks+","+ncblks+"]");
+		}
+		
+		//get the requested matrix block
+		int rix = rowIndex - 1;
+		int cix = colIndex - 1;
+		_partBlocks[rix*ncblks + cix] = mb;
+		
 	}
 	
 	/**

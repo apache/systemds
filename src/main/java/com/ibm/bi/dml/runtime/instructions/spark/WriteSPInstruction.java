@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -39,8 +38,8 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ComputeNonZerosBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
@@ -149,9 +148,10 @@ public class WriteSPInstruction extends SPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 			MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 			
-			//recompute nnz via accumulator (save file will also trigger nnz maintenance)
-			Accumulator<Double> aNnz = sec.getSparkContext().accumulator(0L);
-			in1 = in1.mapValues(new ComputeNonZerosBlockFunction(aNnz));
+			//recompute nnz via accumulator 
+			long nnz = -1;
+			if ( isInputMatrixBlock )
+				nnz = SparkUtils.computeNNZFromBlocks(in1);
 			
 			if(    oi == OutputInfo.MatrixMarketOutputInfo
 				|| oi == OutputInfo.TextCellOutputInfo     ) 
@@ -195,7 +195,6 @@ public class WriteSPInstruction extends SPInstruction
 					@SuppressWarnings("unchecked")
 					JavaPairRDD<Long,String> rdd = (JavaPairRDD<Long, String>) ((MatrixObject) sec.getVariable(input1.getName())).getRDDHandle().getRDD();
 					out = rdd.values(); 
-					aNnz.setValue(new Double(-1)); // Unknown number of non-zeros
 				}
 				
 				if(hasHeader) {
@@ -225,7 +224,7 @@ public class WriteSPInstruction extends SPInstruction
 			}
 			
 			//update nnz and write meta data file
-			mc.setNonZeros( UtilFunctions.toLong(aNnz.value()) );
+			mc.setNonZeros( nnz );
 			MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);	
 		}
 		catch(IOException ex)

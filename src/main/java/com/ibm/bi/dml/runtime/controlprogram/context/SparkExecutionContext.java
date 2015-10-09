@@ -24,7 +24,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.spark.Accumulator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -48,7 +47,6 @@ import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ComputeNonZerosBlockFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
@@ -56,12 +54,11 @@ import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
 import com.ibm.bi.dml.utils.Statistics;
 
 
@@ -528,9 +525,8 @@ public class SparkExecutionContext extends ExecutionContext
 	{
 		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) rdd.getRDD();
 		
-		//recompute nnz via accumulator 
-		Accumulator<Double> aNnz = getSparkContextStatic().accumulator(0L);
-		lrdd = lrdd.mapValues(new ComputeNonZerosBlockFunction(aNnz));
+		//recompute nnz 
+		long nnz = SparkUtils.computeNNZFromBlocks(lrdd);
 		
 		//save file is an action which also triggers nnz maintenance
 		lrdd.saveAsHadoopFile(path, 
@@ -539,7 +535,7 @@ public class SparkExecutionContext extends ExecutionContext
 				oinfo.outputFormatClass);
 		
 		//return nnz aggregate of all blocks
-		return UtilFunctions.toLong(aNnz.value());
+		return nnz;
 	}
 	
 	

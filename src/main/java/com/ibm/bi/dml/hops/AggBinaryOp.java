@@ -306,7 +306,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		//tsmm right might have additional requirements to transpose X if sparse
 		MMTSJType mmtsj = checkTransposeSelf();
 		if( mmtsj.isLeft() && getInput().get(0).dimsKnown() ){
-			_memEstimate = _memEstimate - getInput().get(0)._memEstimate;
+			_memEstimate = _memEstimate - getInput().get(1)._memEstimate;
 		}
 	}
 

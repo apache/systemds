@@ -21,6 +21,11 @@ import java.util.Arrays;
 
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.Divide;
+import com.ibm.bi.dml.runtime.functionobjects.Equals;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
+import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
+import com.ibm.bi.dml.runtime.functionobjects.LessThan;
+import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
@@ -28,6 +33,8 @@ import com.ibm.bi.dml.runtime.functionobjects.Or;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
+import com.ibm.bi.dml.runtime.util.DataConverter;
+import com.ibm.bi.dml.runtime.util.SortUtils;
 
 /**
  * MB:
@@ -703,21 +710,94 @@ public class LibMatrixBincell
 		if( ret.sparse )
 			ret.allocateSparseRowsBlock();
 		
-		//TODO performance improvement for relational operations like ">"
-		//sort rhs by val, compute cutoff and memset 1/0 for halfs
-
-		for(int r=0; r<rlen; r++) {
-			double v1 = m1.quickGetValue(r, 0);		
-			for(int c=0; c<clen; c++)
-			{
-				double v2 = m2.quickGetValue(0, c);
-				double v = op.fn.execute( v1, v2 );
-				ret.appendValue(r, c, v);	
-			}
+		if(LibMatrixOuterAgg.isCompareOperator(op) && SortUtils.isSorted(0, m2.getMaxColumn(), DataConverter.convertToDoubleVector(m2))) {
+			performBinOuterOperation(m1, m2, ret, op);
+		} else {
+			for(int r=0; r<rlen; r++) {
+				double v1 = m1.quickGetValue(r, 0);		
+				for(int c=0; c<clen; c++)
+				{
+					double v2 = m2.quickGetValue(0, c);
+					double v = op.fn.execute( v1, v2 );
+					ret.appendValue(r, c, v);	
+				}
+			}	
 		}	
 			
 		//no need to recomputeNonZeros since maintained in append value
 	}
+	
+	/**
+	 * 
+	 * This will do cell wise operation for <,<=, >, >=, == and != operators. 
+	 * 
+	 * @param mbLeft
+	 * @param mbRight
+	 * @param mbOut
+	 * @param bOp
+	 * 
+	 */
+	private static void performBinOuterOperation(MatrixBlock mbLeft, MatrixBlock mbRight, MatrixBlock mbOut, BinaryOperator bOp) 
+			throws DMLRuntimeException
+	{
+		int rlen = mbLeft.rlen;
+		double bv[] = DataConverter.convertToDoubleVector(mbRight); 
+		
+		if(!mbOut.isAllocated())
+			mbOut.allocateDenseBlock();
+		
+		long lNNZ = 0;
+		for(int r=0; r<rlen; r++) {
+			double value = mbLeft.quickGetValue(r, 0);		
+			int ixPos1 = Arrays.binarySearch(bv, value);
+			int ixPos2 = ixPos1;
+
+			if( ixPos1 >= 0 ){ //match, scan to next val
+				if(bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThanEquals 
+						|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals)
+					while( ixPos1<bv.length && value==bv[ixPos1]  ) ++ixPos1;
+				if(bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals 
+						|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals)
+					while(  ixPos2 > 0 && value==bv[ixPos2-1]) --ixPos2;
+			} else {
+				ixPos2 = ixPos1 = Math.abs(ixPos1) - 1;
+			}
+
+			int iStartPos = 0, iEndPos = bv.length;
+
+			if(bOp.fn instanceof LessThan)
+				iStartPos = ixPos1;
+			else  if(bOp.fn instanceof LessThanEquals)
+				iStartPos = ixPos2;  
+			else if(bOp.fn instanceof GreaterThan)
+				iEndPos = ixPos2;
+			else if(bOp.fn instanceof GreaterThanEquals)
+				iEndPos = ixPos1;
+			else if(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals) {
+				iStartPos = ixPos2;
+				iEndPos = ixPos1;
+			}
+			if(iStartPos < iEndPos || bOp.fn instanceof NotEquals) {
+				int iOffSet = r*mbRight.getNumColumns();
+				if(bOp.fn instanceof LessThan || bOp.fn instanceof GreaterThanEquals 
+						|| bOp.fn instanceof GreaterThan || bOp.fn instanceof LessThanEquals 
+						|| bOp.fn instanceof Equals)	{
+					Arrays.fill(mbOut.getDenseArray(), iOffSet+iStartPos, iOffSet+iEndPos, 1.0);
+					lNNZ += (iEndPos-iStartPos);
+				}
+				else if (bOp.fn instanceof NotEquals) {
+					Arrays.fill(mbOut.getDenseArray(), iOffSet, iOffSet+iStartPos, 1.0);
+					Arrays.fill(mbOut.getDenseArray(), iOffSet+iEndPos, iOffSet+bv.length, 1.0);
+					lNNZ += (iStartPos+(bv.length-iEndPos));
+				}
+			}
+		}
+		mbOut.setNonZeros(lNNZ);		
+		mbOut.examSparsity();
+	}
+			
+
+	
 	
 	/**
 	 * 
@@ -767,13 +847,17 @@ public class LibMatrixBincell
 			//TODO performance improvement for relational operations like ">"
 			//sort rhs by val, compute cutoff and memset 1/0 for halfs
 	
-			for(int r=0; r<rlen; r++) {
-				double v1 = m1.quickGetValue(r, 0);		
-				for(int c=0; c<clen2; c++)
-				{
-					double v2 = m2.quickGetValue(0, c);
-					double v = op.fn.execute( v1, v2 );
-					ret.appendValue(r, c, v);	
+			if(LibMatrixOuterAgg.isCompareOperator(op) && SortUtils.isSorted(0, m2.getMaxColumn(), DataConverter.convertToDoubleVector(m2))) {
+				performBinOuterOperation(m1, m2, ret, op);
+			} else {
+				for(int r=0; r<rlen; r++) {
+					double v1 = m1.quickGetValue(r, 0);		
+					for(int c=0; c<clen2; c++)
+					{
+						double v2 = m2.quickGetValue(0, c);
+						double v = op.fn.execute( v1, v2 );
+						ret.appendValue(r, c, v);	
+					}
 				}
 			}
 		}

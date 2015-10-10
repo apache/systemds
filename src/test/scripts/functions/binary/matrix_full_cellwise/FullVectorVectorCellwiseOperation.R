@@ -27,6 +27,11 @@ B <- as.vector(readMM(paste(args[1], "B.mtx", sep="")))
 
 opcode = args[2];
 if( opcode == "lt" ) { opcode = "<" }
+if( opcode == "le" ) { opcode = "<=" }
+if( opcode == "gt" ) { opcode = ">" }
+if( opcode == "ge" ) { opcode = ">=" }
+if( opcode == "eq" ) { opcode = "==" }
+if( opcode == "ne" ) { opcode = "!=" }
 if( opcode == "mult" ) { opcode = "*" }
 
 C <- outer(A, B, opcode)

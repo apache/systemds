@@ -47,6 +47,25 @@ public class SortUtils
 	}
 	
 	/**
+	 * 
+	 * @param iStart
+	 * @param iEnd
+	 * @param dVals
+	 * 
+	 * @return true/false, if its sorted or not.
+	 */
+	public static boolean isSorted(int iStart, int iEnd, double[] dVals)
+	{
+		boolean ret = true;
+		for( int i=iStart+1; i<iEnd; i++ )
+    		if( dVals[i]<dVals[i-1] ){
+    			ret = false;
+    			break;
+    		}
+		return ret;
+	}
+	
+	/**
 	 * In-place sort of two arrays, only indexes is used for comparison and values
 	 * of same position are sorted accordingly. 
 	 * 

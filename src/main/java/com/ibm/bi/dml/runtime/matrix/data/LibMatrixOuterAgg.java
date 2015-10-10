@@ -78,7 +78,22 @@ public class LibMatrixOuterAgg
 			    && (((Builtin)(uaggOp.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX));						
 	}
 	
+	
 	/**
+	 * This will return if uaggOp is of type RowIndexMin
+	 * 
+	 * @param bOp
+	 * @return true/false, based on if its one of the six operators (<, <=, >, >=, == and !=)
+	 */
+	public static boolean isCompareOperator(BinaryOperator bOp)
+	{
+		return ( bOp.fn instanceof LessThan || bOp.fn instanceof LessThanEquals		// For operators <, <=,  
+			|| bOp.fn instanceof GreaterThan || bOp.fn instanceof GreaterThanEquals //				 >, >=
+			|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals);				//				==, !=
+	}
+		
+		
+			/**
 	 * @param uaggOp
 	 * @param bOp
 	 * @return
@@ -87,17 +102,15 @@ public class LibMatrixOuterAgg
 	{
 		boolean bSupported = false;
 		
-		if( 	(  bOp.fn instanceof LessThan || bOp.fn instanceof LessThanEquals		// For operators <, <=,  
-				|| bOp.fn instanceof GreaterThan || bOp.fn instanceof GreaterThanEquals //				 >, >=
-				|| bOp.fn instanceof Equals || bOp.fn instanceof NotEquals)				//				==, !=
-				&& 
-					(uaggOp.aggOp.increOp.fn instanceof KahanPlus					// Kahanplus
-				    ||		
-					(isRowIndexMin(uaggOp) || isRowIndexMax(uaggOp)))				// RowIndexMin or RowIndexMax 						
-				&&			
-					(uaggOp.indexFn instanceof ReduceCol							// ReduceCol 
-						|| uaggOp.indexFn instanceof ReduceRow 						// ReduceRow
-						|| uaggOp.indexFn instanceof ReduceAll))					// ReduceAll
+		if(isCompareOperator(bOp)
+			&& 
+				(uaggOp.aggOp.increOp.fn instanceof KahanPlus					// Kahanplus
+			    ||		
+				(isRowIndexMin(uaggOp) || isRowIndexMax(uaggOp)))				// RowIndexMin or RowIndexMax 						
+			&&			
+				(uaggOp.indexFn instanceof ReduceCol							// ReduceCol 
+					|| uaggOp.indexFn instanceof ReduceRow 						// ReduceRow
+					|| uaggOp.indexFn instanceof ReduceAll))					// ReduceAll
 			
 			bSupported = true;
 		

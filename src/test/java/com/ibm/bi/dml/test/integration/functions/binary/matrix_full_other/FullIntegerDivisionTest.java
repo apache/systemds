@@ -41,6 +41,7 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "IntegerDivision_div";
 	
 	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullIntegerDivisionTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 1100;
@@ -61,8 +62,8 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"C"})); 
-		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_DIR, TEST_NAME2,new String[]{"C"})); 
+		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"C"})); 
+		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"C"})); 
 	}
 
 	//MOD
@@ -292,13 +293,16 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
+			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
+			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
-					                        HOME + INPUT_DIR + "B",
-					                        HOME + OUTPUT_DIR + "C"    };
+			programArgs = new String[]{"-args", TARGET_IN + "A",
+                                            TARGET_IN + "B",
+                                            TARGET_OUT + "C"    };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			       TARGET_IN + " " + TARGET_EXPECTED;
 			
 			loadTestConfiguration(config);
 	

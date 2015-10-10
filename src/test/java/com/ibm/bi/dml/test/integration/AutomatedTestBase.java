@@ -125,7 +125,10 @@ public abstract class AutomatedTestBase
 	}
 	// *** END HACK ***
 	
-	
+	/**
+	 * Script source directory for .dml and .r files only
+	 * (SCRIPT_TARGET_DIR for generated test data artifacts).
+	 */
 	protected static final String SCRIPT_DIR = "./src/test/scripts/";
 	protected static final String INPUT_DIR = "in/";
 	protected static final String OUTPUT_DIR = "out/";
@@ -144,7 +147,11 @@ public abstract class AutomatedTestBase
 	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemML-config.xml");
 	
 	/** Location under which we create local temporary directories for test cases. */
-	private static final File LOCAL_TEMP_ROOT = new File("target/testTemp");
+	private static final String LOCAL_TEMP_ROOT_DIR = "target/testTemp";
+	private static final File LOCAL_TEMP_ROOT = new File(LOCAL_TEMP_ROOT_DIR);
+	
+	/** Base directory for generated IN, OUT, EXPECTED test data artifacts instead of SCRIPT_DIR. */
+	protected static final String TEST_DATA_DIR = LOCAL_TEMP_ROOT_DIR + "/";
 
 	/**
 	 * Runtime backend to use for all integration tests. Some individual tests
@@ -736,8 +743,14 @@ public abstract class AutomatedTestBase
 		if (!availableTestConfigurations.containsValue(config))
 			fail("test configuration not available: " + config.getTestScript());
 		String testDirectory = config.getTestDirectory();
-		if (testDirectory != null)
-			baseDirectory = SCRIPT_DIR + testDirectory;
+		if (testDirectory != null) {
+			if (isTargetTestDirectory(testDirectory)) {
+				baseDirectory = TEST_DATA_DIR + testDirectory;				
+			}
+			else {
+				baseDirectory = SCRIPT_DIR + testDirectory;				
+			}
+		}
 
 		selectedTest = config.getTestScript();
 
@@ -1535,6 +1548,10 @@ public abstract class AutomatedTestBase
 			sb.append(arg);
 		}
 		return sb.toString();
+	}
+	
+	private boolean isTargetTestDirectory(String path) {
+		return (path != null && path.contains(getClass().getSimpleName()));
 	}
 	
 }

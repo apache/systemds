@@ -340,9 +340,14 @@
 
 					<includes>
 						<include>**/integration/**/*Suite.java</include>
+						
+						<include>**/integration/functions/binary/matrix_full_other/*Test.java</include>
+						<include>**/integration/functions/binary/matrix_full_cellwise/*Test.java</include>
 					</includes>
 
 					<excludes>
+						<exclude>**/integration/functions/binary/matrix_full_other/*Suite.java</exclude>
+						<exclude>**/integration/functions/binary/matrix_full_cellwise/*Suite.java</exclude>
 						<exclude>**/slowtest/**</exclude>
 					</excludes>
 

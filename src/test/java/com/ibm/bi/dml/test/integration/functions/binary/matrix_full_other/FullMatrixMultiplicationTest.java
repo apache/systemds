@@ -32,6 +32,7 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 {	
 	private final static String TEST_NAME = "FullMatrixMultiplication";
 	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullMatrixMultiplicationTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rowsA = 1501;
@@ -49,7 +50,7 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(
 				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
 				new String[] { "C" })   ); 
 	}
 
@@ -245,17 +246,20 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
+			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
+			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
-					                        Integer.toString(rowsA),
-					                        Integer.toString(colsA),
-					                        HOME + INPUT_DIR + "B",
-					                        Integer.toString(rowsB),
-					                        Integer.toString(colsB),
-					                        HOME + OUTPUT_DIR + "C"    };
+			programArgs = new String[]{"-args", TARGET_IN + "A",
+                                            Integer.toString(rowsA),
+                                            Integer.toString(colsA),
+                                            TARGET_IN + "B",
+                                            Integer.toString(rowsB),
+                                            Integer.toString(colsB),
+                                            TARGET_OUT + "C"    };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			       TARGET_IN + " " + TARGET_EXPECTED;
 			
 			loadTestConfiguration(config);
 	
@@ -300,17 +304,20 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
+			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
+			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
+			programArgs = new String[]{"-args", TARGET_IN + "A",
 					                        Integer.toString(rowsA),
 					                        Integer.toString(colsA),
-					                        HOME + INPUT_DIR + "B",
+					                        TARGET_IN + "B",
 					                        Integer.toString(rowsB),
 					                        Integer.toString(1),
-					                        HOME + OUTPUT_DIR + "C"    };
+					                        TARGET_OUT + "C"    };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			       TARGET_IN + " " + TARGET_EXPECTED;
 			
 			loadTestConfiguration(config);
 	
@@ -409,17 +416,20 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
+			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
+			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
+			programArgs = new String[]{"-args", TARGET_IN + "A",
 					                        Integer.toString(rows1),
 					                        Integer.toString(cols1),
-					                        HOME + INPUT_DIR + "B",
+					                        TARGET_IN + "B",
 					                        Integer.toString(rows2),
 					                        Integer.toString(cols2),
-					                        HOME + OUTPUT_DIR + "C"    };
+					                        TARGET_OUT + "C"    };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			       TARGET_IN + " " + TARGET_EXPECTED;
 			
 			loadTestConfiguration(config);
 	

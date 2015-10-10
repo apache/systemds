@@ -39,6 +39,7 @@ public class FullVectorVectorCellwiseOperationTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "FullVectorVectorCellwiseOperation";
 	private final static String TEST_DIR = "functions/binary/matrix_full_cellwise/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullVectorVectorCellwiseOperationTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1001;
@@ -62,7 +63,7 @@ public class FullVectorVectorCellwiseOperationTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"C"}));
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"C"}));
 	}
 	
 	@Test
@@ -750,15 +751,18 @@ public class FullVectorVectorCellwiseOperationTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
+			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
+			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-explain","recompile_runtime","-args", 
-											HOME + INPUT_DIR + "A",
-					                        HOME + INPUT_DIR + "B",
+											TARGET_IN + "A",
+					                        TARGET_IN + "B",
 					                        opcode,
-					                        HOME + OUTPUT_DIR + "C"    };
+					                        TARGET_OUT + "C"    };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + opcoder + " " + HOME + EXPECTED_DIR;
+			       TARGET_IN + " " + opcoder + " " + TARGET_EXPECTED;
 			
 			loadTestConfiguration(config);
 	

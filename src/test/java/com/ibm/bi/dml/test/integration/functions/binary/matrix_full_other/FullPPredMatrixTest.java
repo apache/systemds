@@ -39,6 +39,7 @@ public class FullPPredMatrixTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "PPredMatrixTest";
 	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullPPredMatrixTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1383;
@@ -59,7 +60,7 @@ public class FullPPredMatrixTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "C" }) ); 
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) ); 
 		TestUtils.clearAssertionInformation();
 	}
 	
@@ -531,14 +532,17 @@ public class FullPPredMatrixTest extends AutomatedTestBase
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
+			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
+			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
-					                            HOME + INPUT_DIR + "B",
-					                            Integer.toString(type.ordinal()),
-					                            HOME + OUTPUT_DIR + "C"    };
+			programArgs = new String[]{"-args", TARGET_IN + "A",
+                                                TARGET_IN + "B",
+                                                Integer.toString(type.ordinal()),
+                                                TARGET_OUT + "C"    };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + type.ordinal() + " " + HOME + EXPECTED_DIR;
+			       TARGET_IN + " " + type.ordinal() + " " + TARGET_EXPECTED;
 			
 			loadTestConfiguration(config);
 	

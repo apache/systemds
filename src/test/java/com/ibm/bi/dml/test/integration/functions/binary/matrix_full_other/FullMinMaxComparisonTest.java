@@ -44,6 +44,7 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 	private final static String TEST_NAME4 = "FullMinMaxComparison4";
 	
 	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullMinMaxComparisonTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 1782;
@@ -60,10 +61,10 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"C"})); 
-		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_DIR, TEST_NAME2,new String[]{"C"})); 
-		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_DIR, TEST_NAME3,new String[]{"C"})); 
-		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_DIR, TEST_NAME4,new String[]{"C"})); 
+		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"C"})); 
+		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"C"})); 
+		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[]{"C"})); 
+		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4,new String[]{"C"})); 
 	}
 
 	@Test
@@ -317,14 +318,17 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;
+			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
+			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
-					                            HOME + INPUT_DIR + "B",
-					                            Integer.toString(minFlag),
-					                            HOME + OUTPUT_DIR + "C"    };
+			programArgs = new String[]{"-explain","-args", TARGET_IN + "A",
+                                                TARGET_IN + "B",
+                                                Integer.toString(minFlag),
+                                                TARGET_OUT + "C"    };
 			fullRScriptName = HOME + TEST_NAME_R + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + minFlag + " " + HOME + EXPECTED_DIR;
+				       TARGET_IN + " " + minFlag + " " + TARGET_EXPECTED;
 			
 			loadTestConfiguration(config);
 	
@@ -336,12 +340,12 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(mrows1, mcols1, -1, 1, sparseM1?sparsity2:sparsity1, 7); 
 			writeInputMatrix("A", A, true);
 			MatrixCharacteristics mc1 = new MatrixCharacteristics(mrows1,mcols1,1000,1000);
-			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "A.mtd", ValueType.DOUBLE, mc1, OutputInfo.TextCellOutputInfo);
+			MapReduceTool.writeMetaDataFile(TARGET_IN + "A.mtd", ValueType.DOUBLE, mc1, OutputInfo.TextCellOutputInfo);
 			
 			double[][] B = getRandomMatrix(mrows2, mcols2, -1, 1, sparseM2?sparsity2:sparsity1, 3); 
 			writeInputMatrix("B", B, true);
 			MatrixCharacteristics mc2 = new MatrixCharacteristics(mrows2,mcols2,1000,1000);
-			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "B.mtd", ValueType.DOUBLE, mc2, OutputInfo.TextCellOutputInfo);
+			MapReduceTool.writeMetaDataFile(TARGET_IN + "B.mtd", ValueType.DOUBLE, mc2, OutputInfo.TextCellOutputInfo);
 			
 			//run test
 			runTest(true, false, null, -1); 

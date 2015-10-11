@@ -502,7 +502,7 @@ public class VariableCPInstruction extends CPInstruction
 		case CastAsScalarVariable: //castAsScalarVariable
 			MatrixBlock mBlock = ec.getMatrixInput(input1.getName());
 			if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
-				throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
+				throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+input1.getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
 			double value = mBlock.getValue(0,0);
 			ec.releaseMatrixInput(input1.getName());
 			ec.setScalarOutput(output.getName(), new DoubleObject(value));

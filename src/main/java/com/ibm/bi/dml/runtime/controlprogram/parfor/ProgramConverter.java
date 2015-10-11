@@ -411,7 +411,7 @@ public class ProgramConverter
 
 		//NOTE: Normally, no recursive copy because (1) copied on each execution in this PB anyway 
 		//and (2) leave placeholders as they are. However, if plain, an explicit deep copy is requested.
-		if( plain )
+		if( plain || forceDeepCopy )
 			tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(pfpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy) ); 
 		else
 			tmpPB.setChildBlocks( pfpb.getChildBlocks() );
@@ -473,6 +473,7 @@ public class ProgramConverter
 				copy = new FunctionProgramBlock(prog, tmp1, tmp2);
 				copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, fpb.isRecompileOnce()) );
 				copy.setRecompileOnce( fpb.isRecompileOnce() );
+				copy.setThreadID(pid);
 				fnStack.remove(fnameNewKey);
 			}
 			else //stop deep copy for recursive function calls

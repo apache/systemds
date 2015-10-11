@@ -173,6 +173,10 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			
 			// rewrite 11: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
+
+			// rewrite 14: set in-place result indexing
+			HashSet<String> inplaceResultVars = new HashSet<String>();
+			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
 			
 			if( !OptimizerUtils.isSparkExecutionMode() ) {
 				// rewrite 16: runtime piggybacking

@@ -924,7 +924,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		//early abort (append guarantees no overwrite)
 		if( v == 0 ) 
 			return;
-		try{
+
 		if( !sparse ) //DENSE 
 		{
 			//allocate on demand (w/o overwriting nnz)
@@ -944,9 +944,6 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			//set value and maintain nnz
 			sparseRows[r].append(c, v);
 			nonZeros++;
-		}
-		} catch(ArrayIndexOutOfBoundsException e) {
-			throw e;
 		}
 	}
 	
@@ -1816,13 +1813,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			System.arraycopy(src.denseBlock, 0, denseBlock, rl*clen+cl, src.rlen*src.clen);
 		else
 			for( int i=0, ix1=0, ix2=rl*clen+cl; i<src.rlen; i++, ix1+=src.clen, ix2+=clen ) {
-				try {
-					System.arraycopy(src.denseBlock, ix1, denseBlock, ix2, rowLen);
-				}
-				catch(Exception e) {
-					throw new DMLRuntimeException(e.getMessage() + " " + src.denseBlock.length + " " + denseBlock.length + " " + ix1 + " " + ix2);
-				}
-				
+				System.arraycopy(src.denseBlock, ix1, denseBlock, ix2, rowLen);
 			}
 	}
 	

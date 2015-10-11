@@ -79,6 +79,11 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		
 		if( opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") || opcode.equalsIgnoreCase("length")  )
 		{
+			//check existence of input variable
+			if( !ec.getVariables().keySet().contains(input1.getName()) ){
+				throw new DMLRuntimeException("Variable '"+input1.getName()+"' does not exist.");
+			}
+			
 			//get meta data information
 			MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.getName());
 			long rval = -1;

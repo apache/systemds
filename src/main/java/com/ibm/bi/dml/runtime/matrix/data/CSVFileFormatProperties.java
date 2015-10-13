@@ -17,10 +17,13 @@
 
 package com.ibm.bi.dml.runtime.matrix.data;
 
+import java.io.Serializable;
+
 import com.ibm.bi.dml.parser.DataExpression;
 
-public class CSVFileFormatProperties extends FileFormatProperties 
+public class CSVFileFormatProperties extends FileFormatProperties implements Serializable
 {
+	private static final long serialVersionUID = -2870393360885401604L;
 	
 	private boolean header;
 	private String delim;

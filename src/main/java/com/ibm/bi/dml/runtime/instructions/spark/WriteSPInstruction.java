@@ -24,10 +24,6 @@ import java.util.Random;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.api.java.function.PairFunction;
-
-import scala.Tuple2;
 
 import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
@@ -39,6 +35,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
@@ -47,7 +44,6 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class WriteSPInstruction extends SPInstruction 
 {
@@ -176,39 +172,39 @@ public class WriteSPInstruction extends SPInstruction
 			}
 			else if( oi == OutputInfo.CSVOutputInfo ) 
 			{
-				String sep = ",";
-				boolean sparse = false;
-				boolean hasHeader = false;
-				if(formatProperties != null) {
-					sep = ((CSVFileFormatProperties) formatProperties).getDelim();
-					sparse = ((CSVFileFormatProperties) formatProperties).isSparse();
-					hasHeader = ((CSVFileFormatProperties) formatProperties).hasHeader();
-				}
-				
 				JavaRDD<String> out = null;
 				
-				if ( isInputMatrixBlock )
-					out = in1.flatMapToPair(new ExtractRows(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), sep, sparse)).groupByKey()
-										.mapToPair(new ConcatenateColumnsInRow(mc.getCols(), mc.getColsPerBlock(), sep)).sortByKey(true).values();
-				else {
+				if ( isInputMatrixBlock ) {
+					out = RDDConverterUtils.binaryBlockToCsv(in1, mc, 
+							(CSVFileFormatProperties) formatProperties, true);
+				}
+				else 
+				{
 					// This case is applicable when the CSV output from transform() is written out
 					@SuppressWarnings("unchecked")
 					JavaPairRDD<Long,String> rdd = (JavaPairRDD<Long, String>) ((MatrixObject) sec.getVariable(input1.getName())).getRDDHandle().getRDD();
 					out = rdd.values(); 
-				}
-				
-				if(hasHeader) {
-					StringBuffer buf = new StringBuffer();
-		    		for(int j = 1; j < mc.getCols(); j++) {
-		    			if(j != 1) {
-		    				buf.append(sep);
-		    			}
-		    			buf.append("C" + j);
-		    		}
-		    		ArrayList<String> headerContainer = new ArrayList<String>(1);
-		    		headerContainer.add(0, buf.toString());
-		    		JavaRDD<String> header = sec.getSparkContext().parallelize(headerContainer);
-		    		out = header.union(out);
+
+					String sep = ",";
+					boolean hasHeader = false;
+					if(formatProperties != null) {
+						sep = ((CSVFileFormatProperties) formatProperties).getDelim();
+						hasHeader = ((CSVFileFormatProperties) formatProperties).hasHeader();
+					}
+					
+					if(hasHeader) {
+						StringBuffer buf = new StringBuffer();
+			    		for(int j = 1; j < mc.getCols(); j++) {
+			    			if(j != 1) {
+			    				buf.append(sep);
+			    			}
+			    			buf.append("C" + j);
+			    		}
+			    		ArrayList<String> headerContainer = new ArrayList<String>(1);
+			    		headerContainer.add(0, buf.toString());
+			    		JavaRDD<String> header = sec.getSparkContext().parallelize(headerContainer);
+			    		out = header.union(out);
+					}
 				}
 				
 				customSaveTextFile(out, fname, false);
@@ -233,6 +229,13 @@ public class WriteSPInstruction extends SPInstruction
 		}
 	}
 	
+	/**
+	 * 
+	 * @param rdd
+	 * @param fname
+	 * @param inSingleFile
+	 * @throws DMLRuntimeException
+	 */
 	private void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) 
 		throws DMLRuntimeException 
 	{
@@ -264,88 +267,5 @@ public class WriteSPInstruction extends SPInstruction
 		else {
 			rdd.saveAsTextFile(fname);
 		}
-	}
-	
-	// Returns rowCellIndex, <columnBlockIndex, csv string>
-	public static class ExtractRows implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, Long, Tuple2<Long, String>> {
-
-		private static final long serialVersionUID = 5185943302519860487L;
-		
-		long rlen; int brlen;
-		long clen; int bclen;
-		String sep; boolean sparse;
-		public ExtractRows(long rlen, long clen, int brlen, int bclen, String sep, boolean sparse) {
-			this.rlen = rlen;
-			this.brlen = brlen;
-			this.clen = clen;
-			this.bclen = bclen;
-			this.sep = sep;
-			this.sparse = sparse;
-		}
-
-		@Override
-		public Iterable<Tuple2<Long, Tuple2<Long, String>>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
-			throws Exception 
-		{
-			MatrixIndexes ix = arg0._1();
-			MatrixBlock mb = arg0._2();
-			
-			long columnBlockIndex = ix.getColumnIndex();
-			long cellIndexTopRow = UtilFunctions.cellIndexCalculation(ix.getRowIndex(), brlen, 0);
-    		
-    		ArrayList<Tuple2<Long, Tuple2<Long, String>>> retVal = new ArrayList<Tuple2<Long,Tuple2<Long,String>>>(mb.getNumRows());
-    		for(int i = 0; i < mb.getNumRows(); i++) {
-    			StringBuffer buf = new StringBuffer();
-	    		for(int j = 0; j < mb.getNumColumns(); j++) {
-	    			if(j != 0) {
-	    				buf.append(sep);
-	    			}
-	    			double val = mb.quickGetValue(i, j);
-	    			if(!(sparse && val == 0))
-	    				buf.append(val);
-				}
-	    		retVal.add(new Tuple2<Long, Tuple2<Long,String>>(cellIndexTopRow, new Tuple2<Long,String>(columnBlockIndex, buf.toString())));
-	    		cellIndexTopRow++;
-    		}
-    		
-			return retVal;
-		}
-		
-	}
-	
-	// Returns rowCellIndex, csv string
-	public static class ConcatenateColumnsInRow implements PairFunction<Tuple2<Long,Iterable<Tuple2<Long,String>>>, Long, String> {
-
-		private static final long serialVersionUID = -8529245417692255289L;
-		
-		long numColBlocks = -1;
-		String sep;
-		
-		public ConcatenateColumnsInRow(long clen, int bclen, String sep) {
-			numColBlocks = (long) Math.ceil((double)clen / (double)bclen);
-			this.sep = sep;
-		}
-		
-		public String getValue(Iterable<Tuple2<Long, String>> collection, Long key) throws Exception {
-			for(Tuple2<Long, String> entry : collection) {
-				if(entry._1.equals(key)) {
-					return entry._2;
-				}
-			}
-			throw new Exception("No value found for the key:" + key);
-		}
-
-		@Override
-		public Tuple2<Long, String> call(Tuple2<Long, Iterable<Tuple2<Long, String>>> kv) throws Exception {
-			StringBuffer buf = new StringBuffer();
-			for(long i = 1; i <= numColBlocks; i++) {
-				if(i != 1) {
-					buf.append(sep);
-				}
-				buf.append(getValue(kv._2, i));
-			}
-			return new Tuple2<Long, String>(kv._1, buf.toString());
-		}
-		
 	}
 }

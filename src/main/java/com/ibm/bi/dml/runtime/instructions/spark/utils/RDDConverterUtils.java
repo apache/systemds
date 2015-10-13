@@ -43,6 +43,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.data.SerText;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertALToBinaryBlockFunction;
 import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -102,6 +103,41 @@ public class RDDConverterUtils
 		return pointrdd;
 	}
 
+	/**
+	 * 
+	 * @param in
+	 * @param mcIn
+	 * @param props
+	 * @param strict
+	 * @return
+	 */
+	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<MatrixIndexes,MatrixBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
+	{
+		//sort if required
+		JavaPairRDD<MatrixIndexes,MatrixBlock> input = in;
+		if( strict ) {
+			input = in.sortByKey(true);
+		}
+		
+		//fast path without shuffle
+		JavaRDD<String> out = null;
+		if( mcIn.getCols()<=mcIn.getColsPerBlock() )
+		{
+			out = input.flatMap( 
+					new BinaryBlockToCSVFunction(props) );
+		}
+		//general case with shuffle
+		else
+		{
+			out = input.flatMapToPair(new SliceBinaryBlockToRowsFunction(mcIn.getRowsPerBlock()))
+					.groupByKey()
+					.mapToPair(new ConcatenateBlocksFunction(mcIn.getCols(), mcIn.getColsPerBlock()))
+					.flatMap(new BinaryBlockToCSVFunction(props));
+		}
+		
+		return out;
+	}
+	
 	/**
 	 * 
 	 * @param sc
@@ -605,5 +641,134 @@ public class RDDConverterUtils
 					mb[i].examSparsity(); //ensure right representation
 				}	
 		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class BinaryBlockToCSVFunction implements FlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,String> 
+	{
+		private static final long serialVersionUID = 1891768410987528573L;
+
+		private CSVFileFormatProperties _props = null;
+		
+		public BinaryBlockToCSVFunction(CSVFileFormatProperties props) {
+			_props = props;
+		}
+
+		@Override
+		public Iterable<String> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+			throws Exception 
+		{
+			MatrixIndexes ix = arg0._1();
+			MatrixBlock blk = arg0._2();
+			
+			ArrayList<String> ret = new ArrayList<String>();
+			
+			//handle header information
+			if(_props.hasHeader() && ix.getRowIndex()==1 ) {
+				StringBuilder sb = new StringBuilder();
+	    		for(int j = 1; j < blk.getNumColumns(); j++) {
+	    			if(j != 1)
+	    				sb.append(_props.getDelim());
+	    			sb.append("C" + j);
+	    		}
+    			ret.add(sb.toString());
+	    	}
+		
+			//handle matrix block data
+			StringBuilder sb = new StringBuilder();
+    		for(int i=0; i<blk.getNumRows(); i++) {
+    			for(int j=0; j<blk.getNumColumns(); j++) {
+	    			if(j != 0)
+	    				sb.append(_props.getDelim());
+	    			double val = blk.quickGetValue(i, j);
+	    			if(!(_props.isSparse() && val == 0))
+	    				sb.append(val);
+				}
+	    		ret.add(sb.toString());
+	    		sb.setLength(0); //reset
+    		}
+			
+			return ret;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class SliceBinaryBlockToRowsFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,Long,Tuple2<Long,MatrixBlock>> 
+	{
+		private static final long serialVersionUID = 7192024840710093114L;
+		
+		private int _brlen = -1;
+		
+		public SliceBinaryBlockToRowsFunction(int brlen) {
+			_brlen = brlen;
+		}
+		
+		@Override
+		public Iterable<Tuple2<Long,Tuple2<Long,MatrixBlock>>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
+			throws Exception 
+		{
+			ArrayList<Tuple2<Long,Tuple2<Long,MatrixBlock>>> ret = 
+					new ArrayList<Tuple2<Long,Tuple2<Long,MatrixBlock>>>();
+			
+			MatrixIndexes ix = arg0._1();
+			MatrixBlock blk = arg0._2();
+			
+			for( int i=0; i<blk.getNumRows(); i++ ) {
+				MatrixBlock tmpBlk = blk.sliceOperations(i, i, 0, blk.getNumColumns()-1, new MatrixBlock());
+				long rix = UtilFunctions.computeCellIndex(ix.getRowIndex(), _brlen, i);
+				ret.add(new Tuple2<Long,Tuple2<Long,MatrixBlock>>(rix, 
+						new Tuple2<Long,MatrixBlock>(ix.getColumnIndex(),tmpBlk)));
+			}
+			
+			return ret;
+		}
+		
+	}
+	
+	/**
+	 * 
+	 */
+	private static class ConcatenateBlocksFunction implements PairFunction<Tuple2<Long, Iterable<Tuple2<Long,MatrixBlock>>>,MatrixIndexes,MatrixBlock>
+	{
+		private static final long serialVersionUID = -7879603125149650097L;
+		
+		private long _clen = -1;
+		private int _bclen = -1;
+		private int _ncblks = -1;
+		
+		public ConcatenateBlocksFunction(long clen, int bclen) {
+			_clen = clen;
+			_bclen = bclen;
+			_ncblks = (int)Math.ceil((double)clen/bclen);
+		}
+		
+		@Override
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<Long,Iterable<Tuple2<Long, MatrixBlock>>> arg0)
+			throws Exception 
+		{
+			long rowIndex = arg0._1();
+			MatrixBlock[] tmpBlks = new MatrixBlock[_ncblks];
+			
+			//collect and sort input blocks
+			Iterator<Tuple2<Long, MatrixBlock>> iter = arg0._2().iterator();
+			while( iter.hasNext() ) {
+				Tuple2<Long, MatrixBlock> entry = iter.next();
+				tmpBlks[entry._1().intValue()] = entry._2();
+			}
+		
+			//concatenate blocks
+			MatrixBlock out = new MatrixBlock(1,(int)_clen, tmpBlks[0].isInSparseFormat());
+			for( int i=0; i<_ncblks; i++ ) {
+				out.copy(0, 0, i*_bclen, (i+1)*_bclen-1, tmpBlks[i], false);				
+			}
+			out.recomputeNonZeros();
+			
+			//output row block
+			return new Tuple2<MatrixIndexes,MatrixBlock>(new MatrixIndexes(rowIndex, 1),out);
+		}		
 	}
 }

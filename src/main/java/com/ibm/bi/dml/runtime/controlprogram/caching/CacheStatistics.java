@@ -17,7 +17,6 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.caching;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -50,16 +49,16 @@ public class CacheStatistics
 	}
 	
 	//hit statistics (for acquire read)
-	private static AtomicInteger _numHitsTotal  = null;
-	private static AtomicInteger _numHitsMem    = null;
-	private static AtomicInteger _numHitsFSBuff = null;
-	private static AtomicInteger _numHitsFS     = null;
-	private static AtomicInteger _numHitsHDFS   = null;
+	private static AtomicLong _numHitsTotal  = null;
+	private static AtomicLong _numHitsMem    = null;
+	private static AtomicLong _numHitsFSBuff = null;
+	private static AtomicLong _numHitsFS     = null;
+	private static AtomicLong _numHitsHDFS   = null;
 	
 	//write statistics caching
-	private static AtomicInteger _numWritesFSBuff = null;
-	private static AtomicInteger _numWritesFS     = null;
-	private static AtomicInteger _numWritesHDFS   = null;
+	private static AtomicLong _numWritesFSBuff = null;
+	private static AtomicLong _numWritesFS     = null;
+	private static AtomicLong _numWritesHDFS   = null;
 	
 	//time statistics caching
 	private static AtomicLong _ctimeAcquireR   = null; //in nano sec
@@ -74,15 +73,15 @@ public class CacheStatistics
 	
 	public static void reset()
 	{
-		_numHitsTotal = new AtomicInteger(0);
-		_numHitsMem = new AtomicInteger(0);
-		_numHitsFSBuff = new AtomicInteger(0);
-		_numHitsFS = new AtomicInteger(0);
-		_numHitsHDFS = new AtomicInteger(0);
+		_numHitsTotal = new AtomicLong(0);
+		_numHitsMem = new AtomicLong(0);
+		_numHitsFSBuff = new AtomicLong(0);
+		_numHitsFS = new AtomicLong(0);
+		_numHitsHDFS = new AtomicLong(0);
 		
-		_numWritesFSBuff = new AtomicInteger(0);
-		_numWritesFS = new AtomicInteger(0);
-		_numWritesHDFS = new AtomicInteger(0);
+		_numWritesFSBuff = new AtomicLong(0);
+		_numWritesFS = new AtomicLong(0);
+		_numWritesHDFS = new AtomicLong(0);
 		
 		_ctimeAcquireR = new AtomicLong(0);
 		_ctimeAcquireM = new AtomicLong(0);
@@ -100,7 +99,7 @@ public class CacheStatistics
 		_numHitsTotal.addAndGet(delta);
 	}
 	
-	public static int getTotalHits()
+	public static long getTotalHits()
 	{
 		return _numHitsTotal.get();
 	}
@@ -115,7 +114,7 @@ public class CacheStatistics
 		_numHitsMem.addAndGet(delta);
 	}
 	
-	public static int getMemHits()
+	public static long getMemHits()
 	{
 		return _numHitsMem.get();
 	}
@@ -130,7 +129,7 @@ public class CacheStatistics
 		_numHitsFSBuff.addAndGet(delta);
 	}
 	
-	public static int getFSBuffHits()
+	public static long getFSBuffHits()
 	{
 		return _numHitsFSBuff.get();
 	}
@@ -145,7 +144,7 @@ public class CacheStatistics
 		_numHitsFS.addAndGet(delta);
 	}
 	
-	public static int getFSHits()
+	public static long getFSHits()
 	{
 		return _numHitsFS.get();
 	}
@@ -160,7 +159,7 @@ public class CacheStatistics
 		_numHitsHDFS.addAndGet(delta);
 	}
 	
-	public static int getHDFSHits()
+	public static long getHDFSHits()
 	{
 		return _numHitsHDFS.get();
 	}
@@ -175,7 +174,7 @@ public class CacheStatistics
 		_numWritesFSBuff.addAndGet(delta);
 	}
 	
-	public static int getFSBuffWrites()
+	public static long getFSBuffWrites()
 	{
 		return _numWritesFSBuff.get();
 	}
@@ -190,7 +189,7 @@ public class CacheStatistics
 		_numWritesFS.addAndGet(delta);
 	}
 	
-	public static int getFSWrites()
+	public static long getFSWrites()
 	{
 		return _numWritesFS.get();
 	}
@@ -205,7 +204,7 @@ public class CacheStatistics
 		_numWritesHDFS.addAndGet(delta);
 	}
 	
-	public static int getHDFSWrites()
+	public static long getHDFSWrites()
 	{
 		return _numWritesHDFS.get();
 	}

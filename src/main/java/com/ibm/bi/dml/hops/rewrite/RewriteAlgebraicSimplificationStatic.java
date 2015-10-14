@@ -62,7 +62,7 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 {
 	
-	private static final Log LOG = LogFactory.getLog(RewriteAlgebraicSimplificationDynamic.class.getName());
+	private static final Log LOG = LogFactory.getLog(RewriteAlgebraicSimplificationStatic.class.getName());
 	
 	private static OpOp2[] LOOKUP_VALID_DISTRIBUTIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MINUS}; 
 	private static OpOp2[] LOOKUP_VALID_ASSOCIATIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT}; 

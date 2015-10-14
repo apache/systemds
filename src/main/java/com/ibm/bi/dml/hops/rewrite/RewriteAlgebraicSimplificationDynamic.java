@@ -142,7 +142,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryCumulativeOp(hop, hi, i);   //e.g., cumsum(X) -> X, if nrow(X)==1;
 			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if output == input dims
 			hi = removeUnnecessaryOuterProduct(hop, hi, i);   //e.g., X*(Y%*%matrix(1,...) -> X*Y, if Y col vector
-			hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,max=1)) -> rand(rows=1,max=10), if one dim=1
+			hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,cols=1)) -> rand(rows=1,cols=10), if one dim=1
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
 			hi = simplifyRowwiseAggregate(hop, hi, i);        //e.g., rowsums(X) -> sum(X) or X, if row/col vector
 			hi = simplifyColSumsMVMult(hop, hi, i);           //e.g., colSums(X*Y) -> t(Y) %*% X, if Y col vector

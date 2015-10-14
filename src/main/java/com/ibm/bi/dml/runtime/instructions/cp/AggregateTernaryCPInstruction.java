@@ -75,7 +75,8 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 	{		
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
         MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
-        MatrixBlock matBlock3 = ec.getMatrixInput(input3.getName());
+        MatrixBlock matBlock3 = input3.isLiteral() ? null : //matrix or literal 1
+        						ec.getMatrixInput(input3.getName());
 			
 		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
 		ScalarObject ret = matBlock1.aggregateTernaryOperations(matBlock1, matBlock2, matBlock3, ab_op);
@@ -83,7 +84,8 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 		//release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());
 		ec.releaseMatrixInput(input2.getName());
-		ec.releaseMatrixInput(input3.getName());
+		if( !input3.isLiteral() )
+			ec.releaseMatrixInput(input3.getName());
 		ec.setScalarOutput(output.getName(), ret);
 	}
 }

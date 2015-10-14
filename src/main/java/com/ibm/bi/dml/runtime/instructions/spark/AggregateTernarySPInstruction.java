@@ -85,14 +85,21 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction
 		//get input
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = sec.getBinaryBlockRDDHandleForVariable( input3.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = input3.isLiteral() ? null : //matrix or literal 1
+													 sec.getBinaryBlockRDDHandleForVariable( input3.getName() );
 		
 		//execute aggregate ternary operation
 		AggregateBinaryOperator aggop = (AggregateBinaryOperator) _optr;
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
-				in1.join( in2 ).join( in3 )
-				   .mapValues(new RDDAggregateTernaryFunction(aggop));
-		
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
+		if( in3 != null ) { //3 inputs
+			out = in1.join( in2 ).join( in3 )
+				     .mapValues(new RDDAggregateTernaryFunction(aggop));
+		}
+		else { //2 inputs (third is literal 1)
+			out = in1.join( in2 )
+					 .mapValues(new RDDAggregateTernaryFunction2(aggop));				
+		}
+				
 		//aggregate and create output (no lineage because scalar)	   
 		MatrixBlock tmp = RDDAggregateUtils.sumStable(out);
 		DoubleObject ret = new DoubleObject(tmp.getValue(0, 0));
@@ -125,6 +132,39 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction
 			
 			//execute aggregate ternary operation
 			ScalarObject ret = in1.aggregateTernaryOperations(in1, in2, in3, _aggop);
+			
+			//create output matrix block (w/ correction)
+			MatrixBlock out = new MatrixBlock(2,1,false);
+			out.setValue(0, 0, ret.getDoubleValue());
+			return out;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class RDDAggregateTernaryFunction2 
+		implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock>
+	{
+		private static final long serialVersionUID = -6615412819746331700L;
+		
+		private AggregateBinaryOperator _aggop = null;
+		
+		public RDDAggregateTernaryFunction2( AggregateBinaryOperator aggop ) 
+		{
+			_aggop = aggop;		
+		}
+	
+		@Override
+		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0)
+			throws Exception 
+		{
+			//get inputs
+			MatrixBlock in1 = arg0._1();
+			MatrixBlock in2 = arg0._2();
+			
+			//execute aggregate ternary operation
+			ScalarObject ret = in1.aggregateTernaryOperations(in1, in2, null, _aggop);
 			
 			//create output matrix block (w/ correction)
 			MatrixBlock out = new MatrixBlock(2,1,false);

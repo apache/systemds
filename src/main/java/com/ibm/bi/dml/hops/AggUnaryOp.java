@@ -19,6 +19,7 @@ package com.ibm.bi.dml.hops;
 
 import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
 import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.Aggregate.OperationTypes;
 import com.ibm.bi.dml.lops.Binary;
@@ -487,23 +488,29 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			&& _op == AggOp.SUM ) 
 		{
 			Hop input1 = getInput().get(0);
-			if( input1 instanceof BinaryOp && ((BinaryOp)input1).getOp()==OpOp2.MULT 
-				&& input1.getDataType()==DataType.MATRIX&& input1.getDim2()==1 ) //all column vectors
+			if( input1 instanceof BinaryOp && ((BinaryOp)input1).getOp()==OpOp2.MULT )
 			{
 				Hop input11 = input1.getInput().get(0);
 				Hop input12 = input1.getInput().get(1);
 				
 				if( input11 instanceof BinaryOp && ((BinaryOp)input11).getOp()==OpOp2.MULT )
 				{
-					ret = (input11.getInput().get(0).getDim1()==input1.getDim1() 
-						&& input11.getInput().get(1).getDim1()==input1.getDim1()
-						&& input12.getDim1()==input1.getDim1());
+					//ternary, arbitrary matrices but no mv/outer operations.
+					ret = HopRewriteUtils.isEqualSize(input11.getInput().get(0), input1)
+						&& HopRewriteUtils.isEqualSize(input11.getInput().get(1), input1)	
+						&& HopRewriteUtils.isEqualSize(input12, input1);
 				}
 				else if( input12 instanceof BinaryOp && ((BinaryOp)input12).getOp()==OpOp2.MULT )
 				{
-					ret = (input12.getInput().get(0).getDim1()==input1.getDim1() 
-							&& input12.getInput().get(1).getDim1()==input1.getDim1()
-							&& input11.getDim1()==input1.getDim1());
+					//ternary, arbitrary matrices but no mv/outer operations.
+					ret = HopRewriteUtils.isEqualSize(input12.getInput().get(0), input1)
+							&& HopRewriteUtils.isEqualSize(input12.getInput().get(1), input1)	
+							&& HopRewriteUtils.isEqualSize(input11, input1);
+				}
+				else
+				{
+					//binary, arbitrary matrices but no mv/outer operations.
+					ret = HopRewriteUtils.isEqualSize(input11, input12);
 				}
 			}
 		}
@@ -650,9 +657,11 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 			in2 = input12.getInput().get(0).constructLops();
 			in3 = input12.getInput().get(1).constructLops();
 		}
-		else 
+		else
 		{
-			throw new HopsException("Failed to apply ternary-aggregate hop-lop rewrite - missing binaryop.");
+			in1 = input11.constructLops();
+			in2 = input12.constructLops();
+			in3 = new LiteralOp("1",1).constructLops();
 		}
 
 		//create new ternary aggregate operator 

@@ -5128,7 +5128,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
 		//check input dimensions and operators
-		if( m1.rlen!=m2.rlen || m2.rlen!=m3.rlen || m1.clen!=1 || m2.clen!=1 || m3.clen!=1 )
+		if( m1.rlen!=m2.rlen || m1.clen!=m2.clen || (m3!=null && (m2.rlen!=m3.rlen || m2.clen!=m3.clen)) )
 			throw new DMLRuntimeException("Invalid dimensions for aggregate tertiary ("+m1.rlen+"x"+m1.clen+", "+m2.rlen+"x"+m2.clen+", "+m3.rlen+"x"+m3.clen+").");
 		if( !( op.aggOp.increOp.fn instanceof KahanPlus && op.binaryFn instanceof Multiply) )
 			throw new DMLRuntimeException("Unsupported operator for aggregate tertiary operations.");

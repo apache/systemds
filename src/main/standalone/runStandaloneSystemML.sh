@@ -40,8 +40,10 @@ for f in ${CURRENT_PATH}/lib/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
+LOG4JPROP=log4j.properties
+
 # invoke the jar with options and arguments
-java -Xmx4g -Xms4g -Xmn400m -cp ${CLASSPATH} com.ibm.bi.dml.api.DMLScript \
+java -Xmx4g -Xms4g -Xmn400m -cp ${CLASSPATH} -Dlog4j.configuration=file:${LOG4JPROP} com.ibm.bi.dml.api.DMLScript \
      -f ${SCRIPT_FILE} -exec singlenode -config=$CURRENT_PATH"/SystemML-config.xml" \
      $@
 

@@ -218,9 +218,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		if( hi instanceof IndexingOp  ) //indexing op
 		{
 			Hop input = hi.getInput().get(0);
-			if(   HopRewriteUtils.isDimsKnown(hi)  //dims output known
-			   && HopRewriteUtils.isDimsKnown(input)  //dims input known
-		       && HopRewriteUtils.isEqualSize(hi, input)) //equal dims
+			if( HopRewriteUtils.isEqualSize(hi, input) ) //equal dims
 			{
 				//equal dims of right indexing input and output -> no need for indexing
 				
@@ -283,9 +281,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		{
 			Hop input = hi.getInput().get(1); //rhs matrix
 			
-			if(   HopRewriteUtils.isDimsKnown(hi)  //dims output known
-			   && HopRewriteUtils.isDimsKnown(input)  //dims input known
-		       && HopRewriteUtils.isEqualSize(hi, input)) //equal dims
+			if( HopRewriteUtils.isEqualSize(hi, input) ) //equal dims
 			{
 				//equal dims of left indexing input and output -> no need for indexing
 				
@@ -346,9 +342,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		{
 			Hop input = hi.getInput().get(0); 
 
-			if(   HopRewriteUtils.isDimsKnown(hi)  //dims output known
-			   && HopRewriteUtils.isDimsKnown(input)  //dims input known
-		       && HopRewriteUtils.isEqualSize(hi, input)) //equal dims
+			if( HopRewriteUtils.isEqualSize(hi, input) ) //equal dims
 			{
 				//equal dims of reshape input and output -> no need for reshape because 
 				//byrow always refers to both input/output and hence gives the same result

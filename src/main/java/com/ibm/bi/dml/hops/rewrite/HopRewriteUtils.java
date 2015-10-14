@@ -668,7 +668,8 @@ public class HopRewriteUtils
 	
 	public static boolean isEqualSize( Hop hop1, Hop hop2 )
 	{
-		return (   hop1.getDim1() == hop2.getDim1()
+		return (hop1.dimsKnown() && hop2.dimsKnown()
+				&& hop1.getDim1() == hop2.getDim1()
 				&& hop1.getDim2() == hop2.getDim2());
 	}
 	

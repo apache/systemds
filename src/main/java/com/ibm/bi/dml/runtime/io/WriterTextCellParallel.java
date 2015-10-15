@@ -21,19 +21,18 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.data.IJV;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -43,27 +42,6 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 public class WriterTextCellParallel extends WriterTextCell
 {
-
-	@Override
-	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
-	{
-		//validity check block dimensions
-		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {
-			throw new IOException("Matrix block dimensions mismatch with metadata: "+src.getNumRows()+"x"+src.getNumColumns()+" vs "+rlen+"x"+clen+".");
-		}
-		
-		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		Path path = new Path( fname );
-
-		//if the file already exists on HDFS, remove it.
-		MapReduceTool.deleteFileIfExistOnHDFS( fname );
-			
-		//core write
-		writeTextCellMatrixToHDFS(path, job, src, rlen, clen);
-	}
-	
 	/**
 	 * 
 	 * @param path
@@ -85,54 +63,33 @@ public class WriterTextCellParallel extends WriterTextCell
 		numPartFiles = Math.max(numPartFiles, 1);
 		
 		//determine degree of parallelism
-		int _numThreads = OptimizerUtils.getParallelTextWriteParallelism();
-		_numThreads = Math.min(_numThreads, numPartFiles);
+		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();
+		numThreads = Math.min(numThreads, numPartFiles);
 		
-		//create thread pool
-		ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
+		//create directory for concurrent tasks
+		MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 
+		//create and execute tasks
 		try 
 		{
-			if (_numThreads > 1) {
-				MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
+			ArrayList<WriteTextTask> tasks = new ArrayList<WriteTextTask>();
+			int blklen = (int)Math.ceil((double)rlen / numThreads);
+			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
+				Path newPath = new Path(path, String.format("0-m-%05d",i));
+				tasks.add(new WriteTextTask(newPath, job, src, i*blklen, (int)Math.min((i+1)*blklen, rlen)));
 			}
-			
-			//create write tasks for all splits
-			ArrayList<WriteTask> tasks = new ArrayList<WriteTask>();
-			long offset = rlen/_numThreads;
-			long rowStart = 0;
-			WriteTask t = null;
 
-			for( int i=0; i < _numThreads; i++ ){
-				if (i == (_numThreads-1)) {
-					offset = rlen;
-				}
-				if (_numThreads > 1) {
-					Path newPath = new Path(path, String.format("0-m-%05d",i));
-					t = new WriteTask(newPath, job, src, rowStart, offset);
-				}
-				else {
-					t = new WriteTask(path, job, src, rowStart, offset);
-				}
-				
-				tasks.add(t);
-				rowStart = rowStart + offset;
-				rlen = rlen - offset;
-			}
-			
 			//wait until all tasks have been executed
-			pool.invokeAll(tasks);	
+			List<Future<Object>> rt = pool.invokeAll(tasks);	
 			pool.shutdown();
 			
-			//early error notify in case not all tasks successful
-			for(WriteTask rt : tasks) {
-				if( !rt.getReturnCode() ) {
-					throw new IOException("Parallel write task failed: " + rt.getErrMsg());
-				}
-			}
+			//check for exceptions 
+			for( Future<Object> task : rt )
+				task.get();
 		} 
 		catch (Exception e) {
-			throw new IOException("Parallel write of text output failed.", e);
+			throw new IOException("Failed parallel write of text output.", e);
 		}
 	}
 
@@ -141,32 +98,21 @@ public class WriterTextCellParallel extends WriterTextCell
 	 * 
 	 * 
 	 */
-	private static class WriteTask implements Callable<Object> 
+	private static class WriteTextTask implements Callable<Object> 
 	{
 		private JobConf _job = null;
 		private MatrixBlock _src = null;
 		private Path _path =null;
-		private long _rowStart = -1;
-		private long _rowNum = -1;
-
-		private boolean _rc = true;
-		private String _errMsg = null;
+		private int _rl = -1;
+		private int _ru = -1;
 		
-		public WriteTask(Path path, JobConf job, MatrixBlock src, long rowStart, long rowNum)
+		public WriteTextTask(Path path, JobConf job, MatrixBlock src, int rl, int ru)
 		{
 			_path = path;
 			_job = job;
 			_src = src;
-			_rowStart = rowStart;
-			_rowNum = rowNum;
-		}
-
-		public boolean getReturnCode() {
-			return _rc;
-		}
-
-		public String getErrMsg() {
-			return _errMsg;
+			_rl = rl;
+			_ru = ru;
 		}
 
 		@Override
@@ -174,8 +120,7 @@ public class WriterTextCellParallel extends WriterTextCell
 		{
 			boolean entriesWritten = false;
 			FileSystem fs = FileSystem.get(_job);
-			BufferedWriter bw = null;
-			
+			BufferedWriter bw = null;			
 			int cols = _src.getNumColumns();
 
 			try
@@ -186,7 +131,7 @@ public class WriterTextCellParallel extends WriterTextCell
 				
 				if( _src.isInSparseFormat() ) //SPARSE
 				{			   
-					SparseRowsIterator iter = _src.getSparseRowsIterator((int)_rowStart, (int)_rowNum);
+					SparseRowsIterator iter = _src.getSparseRowsIterator(_rl, _ru);
 					
 					while( iter.hasNext() )
 					{
@@ -205,7 +150,7 @@ public class WriterTextCellParallel extends WriterTextCell
 				}
 				else //DENSE
 				{
-					for( int i=(int)_rowStart; i<(_rowStart+_rowNum); i++ )
+					for( int i=_rl; i<_ru; i++ )
 					{
 						String rowIndex = Integer.toString(i+1);					
 						for( int j=0; j<cols; j++ )
@@ -232,13 +177,6 @@ public class WriterTextCellParallel extends WriterTextCell
 				if ( !entriesWritten ) {
 			        bw.write("1 1 0\n");
 				}
-			}
-			catch(Exception ex)
-			{
-				//central error handling (return code, message) 
-				_rc = false;
-				_errMsg = ex.getMessage();
-				throw new RuntimeException(_errMsg, ex );
 			}
 			finally
 			{

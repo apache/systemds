@@ -631,13 +631,13 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		return new SparseRowsIterator(rlen, sparseRows);
 	}
 	
-	public SparseRowsIterator getSparseRowsIterator(int rowStart, int rowNum)
+	public SparseRowsIterator getSparseRowsIterator(int rl, int ru)
 	{
 		//check for valid format, should have been checked from outside
 		if( !sparse )
 			throw new RuntimeException("getSparseCellInterator should not be called for dense format");
 		
-		return new SparseRowsIterator(rowStart, rowStart+rowNum, sparseRows);
+		return new SparseRowsIterator(rl, ru, sparseRows);
 	}
 	
 	@Override

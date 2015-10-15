@@ -36,11 +36,15 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 public class WriterTextCell extends MatrixWriter
 {
-
 	@Override
 	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		//validity check matrix dimensions
+		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {
+			throw new IOException("Matrix dimensions mismatch with metadata: "+src.getNumRows()+"x"+src.getNumColumns()+" vs "+rlen+"x"+clen+".");
+		}
+				
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
@@ -150,7 +154,5 @@ public class WriterTextCell extends MatrixWriter
 		{
 			IOUtilFunctions.closeSilently(br);
 		}
-	}
-
-	
+	}	
 }

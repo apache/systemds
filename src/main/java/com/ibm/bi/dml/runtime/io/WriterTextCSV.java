@@ -38,22 +38,22 @@ import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
+/**
+ * 
+ */
 public class WriterTextCSV extends MatrixWriter
 {
-
 	//blocksize for string concatenation in order to prevent write OOM 
 	//(can be set to very large value to disable blocking)
 	public static final int BLOCKSIZE_J = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)
 	
 	protected CSVFileFormatProperties _props = null;
 	
-	public WriterTextCSV( CSVFileFormatProperties props )
-	{
+	public WriterTextCSV( CSVFileFormatProperties props ) {
 		_props = props;
 	}
 	
@@ -61,6 +61,11 @@ public class WriterTextCSV extends MatrixWriter
 	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
+		//validity check matrix dimensions
+		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {
+			throw new IOException("Matrix dimensions mismatch with metadata: "+src.getNumRows()+"x"+src.getNumColumns()+" vs "+rlen+"x"+clen+".");
+		}
+		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
@@ -92,38 +97,24 @@ public class WriterTextCSV extends MatrixWriter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	protected void writeCSVMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, FileFormatProperties formatProperties )
+	protected void writeCSVMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, CSVFileFormatProperties props )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
 		FileSystem fs = FileSystem.get(job);
         BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
-        
-    	int rows = src.getNumRows();
-		int cols = src.getNumColumns();
-
-		//bound check per block
-		if( rows > rlen || cols > clen ) {
-			throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
-					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
-		}
-		//file format property check
-		if( formatProperties!=null &&  !(formatProperties instanceof CSVFileFormatProperties) ) {
-			throw new IOException("Wrong type of file format properties for CSV writer.");
-		}
 		
 		try
 		{
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
 			
-			CSVFileFormatProperties csvProperties = (CSVFileFormatProperties)formatProperties;
-			csvProperties = (csvProperties==null)? new CSVFileFormatProperties() : csvProperties;
-			String delim = csvProperties.getDelim(); //Pattern.quote(csvProperties.getDelim());
-			boolean csvsparse = csvProperties.isSparse();
+			props = (props==null)? new CSVFileFormatProperties() : props;
+			String delim = props.getDelim();
+			boolean csvsparse = props.isSparse();
 			
 			// Write header line, if needed
-			if( csvProperties.hasHeader() ) 
+			if( props.hasHeader() ) 
 			{
 				//write row chunk-wise to prevent OOM on large number of columns
 				for( int bj=0; bj<clen; bj+=BLOCKSIZE_J )

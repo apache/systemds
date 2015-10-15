@@ -21,19 +21,18 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.data.IJV;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -41,29 +40,11 @@ import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
+/**
+ * 
+ */
 public class WriterMatrixMarketParallel extends WriterMatrixMarket
 {
-
-	@Override
-	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
-	{
-		//validity check block dimensions
-		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {
-			throw new IOException("Matrix block dimensions mismatch with metadata: "+src.getNumRows()+"x"+src.getNumColumns()+" vs "+rlen+"x"+clen+".");
-		}
-		
-		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		Path path = new Path( fname );
-
-		//if the file already exists on HDFS, remove it.
-		MapReduceTool.deleteFileIfExistOnHDFS( fname );
-			
-		//core write
-		writeMatrixMarketMatrixToHDFS(path, job, src, rlen, clen, nnz);
-	}
-
 	/**
 	 * 
 	 * @param fileName
@@ -83,54 +64,33 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 		numPartFiles = Math.max(numPartFiles, 1);
 		
 		//determine degree of parallelism
-		int _numThreads = OptimizerUtils.getParallelTextWriteParallelism();
-		_numThreads = Math.min(_numThreads, numPartFiles);
+		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();
+		numThreads = Math.min(numThreads, numPartFiles);
 		
-		//create thread pool
-		ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
-		
+		//create directory for concurrent tasks
+		MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+
+		//create and execute tasks
 		try 
 		{
-			if (_numThreads > 1) {
-				MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
-			}
-			
-			//create write tasks for all splits
+			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
 			ArrayList<WriteMMTask> tasks = new ArrayList<WriteMMTask>();
-			long offset = rlen/_numThreads;
-			long rowStart = 0;
-			WriteMMTask t = null;
-
-			for( int i=0; i < _numThreads; i++ ){
-				if (i == (_numThreads-1)) {
-					offset = rlen;
-				}
-				if (_numThreads > 1) {
-					Path newPath = new Path(path, String.format("0-m-%05d",i));
-					t = new WriteMMTask(newPath, job, src, rowStart, offset);
-				}
-				else {
-					t = new WriteMMTask(path, job, src, rowStart, offset);
-				}
-				
-				tasks.add(t);
-				rowStart = rowStart + offset;
-				rlen = rlen - offset;
+			int blklen = (int)Math.ceil((double)rlen / numThreads);
+			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
+				Path newPath = new Path(path, String.format("0-m-%05d",i));
+				tasks.add(new WriteMMTask(newPath, job, src, i*blklen, (int)Math.min((i+1)*blklen, rlen)));
 			}
-			
+
 			//wait until all tasks have been executed
-			pool.invokeAll(tasks);	
+			List<Future<Object>> rt = pool.invokeAll(tasks);	
 			pool.shutdown();
 			
-			//early error notify in case not all tasks successful
-			for(WriteMMTask rt : tasks) {
-				if( !rt.getReturnCode() ) {
-					throw new IOException("Parallel write task failed: " + rt.getErrMsg());
-				}
-			}
+			//check for exceptions 
+			for( Future<Object> task : rt )
+				task.get();
 		} 
 		catch (Exception e) {
-			throw new IOException("Parallel write of matrixmarket output failed.", e);
+			throw new IOException("Failed parallel write of text output.", e);
 		}
 	}
 	
@@ -143,27 +103,16 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 		private JobConf _job = null;
 		private MatrixBlock _src = null;
 		private Path _path =null;
-		private long _rowStart = -1;
-		private long _rowNum = -1;
+		private int _rl = -1;
+		private int _ru = -1;
 
-		private boolean _rc = true;
-		private String _errMsg = null;
-		
-		public WriteMMTask(Path path, JobConf job, MatrixBlock src, long rowStart, long rowNum)
+		public WriteMMTask(Path path, JobConf job, MatrixBlock src, int rl, int ru)
 		{
 			_path = path;
 			_job = job;
 			_src = src;
-			_rowStart = rowStart;
-			_rowNum = rowNum;
-		}
-
-		public boolean getReturnCode() {
-			return _rc;
-		}
-
-		public String getErrMsg() {
-			return _errMsg;
+			_rl = rl;
+			_ru = ru;
 		}
 
 		@Override
@@ -183,7 +132,7 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 				StringBuilder sb = new StringBuilder();
 		        bw = new BufferedWriter(new OutputStreamWriter(fs.create(_path,true)));
 				
-		        if (_rowStart == 0) {
+		        if( _rl == 0 ) {
 					// First output MM header
 					sb.append ("%%MatrixMarket matrix coordinate real general\n");
 				
@@ -195,7 +144,7 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 		        
 				if( _src.isInSparseFormat() ) //SPARSE
 				{			   
-					SparseRowsIterator iter = _src.getSparseRowsIterator((int)_rowStart, (int)_rowNum);
+					SparseRowsIterator iter = _src.getSparseRowsIterator(_rl, _ru);
 
 					while( iter.hasNext() )
 					{
@@ -214,7 +163,7 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 				}
 				else //DENSE
 				{
-					for( int i=(int)_rowStart; i<(_rowStart+_rowNum); i++ )
+					for( int i=_rl; i<_ru; i++ )
 					{
 						String rowIndex = Integer.toString(i+1);					
 						for( int j=0; j<cols; j++ )
@@ -240,13 +189,6 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 				if ( !entriesWritten ) {
 			        bw.write("1 1 0\n");
 				}
-			}
-			catch(Exception ex)
-			{
-				//central error handling (return code, message) 
-				_rc = false;
-				_errMsg = ex.getMessage();
-				throw new RuntimeException(_errMsg, ex );
 			}
 			finally
 			{

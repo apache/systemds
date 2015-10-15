@@ -21,59 +21,32 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
 import com.ibm.bi.dml.conf.DMLConfig;
 import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
+/**
+ * 
+ */
 public class WriterTextCSVParallel extends WriterTextCSV
 {
-
-	public WriterTextCSVParallel( CSVFileFormatProperties props )
-	{
+	public WriterTextCSVParallel( CSVFileFormatProperties props ) {
 		super( props );
-	}
-	
-	@Override
-	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
-	{
-		//validity check block dimensions
-		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {
-			throw new IOException("Matrix block dimensions mismatch with metadata: "+src.getNumRows()+"x"+src.getNumColumns()+" vs "+rlen+"x"+clen+".");
-		}
-		
-		//file format property check
-		if( _props!=null &&  !(_props instanceof CSVFileFormatProperties) ) {
-			throw new IOException("Wrong type of file format properties for CSV writer.");
-		}
-		
-		
-		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		Path path = new Path( fname );
-
-		//if the file already exists on HDFS, remove it.
-		MapReduceTool.deleteFileIfExistOnHDFS( fname );
-			
-		//core write
-		writeCSVMatrixToHDFS(path, job, src, rlen, clen, nnz, _props);
 	}
 
 	/**
@@ -86,7 +59,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 	 * @throws IOException
 	 */
 	@Override
-	protected void writeCSVMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, FileFormatProperties formatProperties )
+	protected void writeCSVMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, CSVFileFormatProperties props )
 		throws IOException
 	{
 		//estimate output size and number of output blocks (min 1)
@@ -95,54 +68,33 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		numPartFiles = Math.max(numPartFiles, 1);
 		
 		//determine degree of parallelism
-		int _numThreads = OptimizerUtils.getParallelTextWriteParallelism();
-		_numThreads = Math.min(_numThreads, numPartFiles);
+		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();
+		numThreads = Math.min(numThreads, numPartFiles);
 		
-		//create thread pool
-		ExecutorService pool = Executors.newFixedThreadPool(_numThreads);
-
+		//create directory for concurrent tasks
+		MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		
+		//create and execute tasks
 		try 
 		{
-			if (_numThreads > 1) {
-				MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
-			}
-			
-			//create write tasks for all splits
+			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
 			ArrayList<WriteCSVTask> tasks = new ArrayList<WriteCSVTask>();
-			long offset = rlen/_numThreads;
-			long rowStart = 0;
-			WriteCSVTask t = null;
-
-			for( int i=0; i < _numThreads; i++ ){
-				if (i == (_numThreads-1)) {
-					offset = rlen;
-				}
-				if (_numThreads > 1) {
-					Path newPath = new Path(path, String.format("0-m-%05d",i));
-					t = new WriteCSVTask(newPath, job, src, rowStart, offset, formatProperties);
-				}
-				else {
-					t = new WriteCSVTask(path, job, src, rowStart, offset, formatProperties);
-				}
-				
-				tasks.add(t);
-				rowStart = rowStart + offset;
-				rlen = rlen - offset;
+			int blklen = (int)Math.ceil((double)rlen / numThreads);
+			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
+				Path newPath = new Path(path, String.format("0-m-%05d",i));
+				tasks.add(new WriteCSVTask(newPath, job, src, i*blklen, (int)Math.min((i+1)*blklen, rlen), props));
 			}
-			
+
 			//wait until all tasks have been executed
-			pool.invokeAll(tasks);	
+			List<Future<Object>> rt = pool.invokeAll(tasks);	
 			pool.shutdown();
 			
-			//early error notify in case not all tasks successful
-			for(WriteCSVTask rt : tasks) {
-				if( !rt.getReturnCode() ) {
-					throw new IOException("Parallel write task failed: " + rt.getErrMsg());
-				}
-			}
+			//check for exceptions 
+			for( Future<Object> task : rt )
+				task.get();
 		} 
 		catch (Exception e) {
-			throw new IOException("Parallel write of csv output failed.", e);
+			throw new IOException("Failed parallel write of csv output.", e);
 		}
 	}
 
@@ -156,29 +108,18 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		private JobConf _job = null;
 		private MatrixBlock _src = null;
 		private Path _path =null;
-		private long _rowStart = -1;
-		private long _rowNum = -1;
-		private FileFormatProperties _formatProperties = null;
+		private int _rl = -1;
+		private int _ru = -1;
+		private CSVFileFormatProperties _props = null;
 		
-		private boolean _rc = true;
-		private String _errMsg = null;
-		
-		public WriteCSVTask(Path path, JobConf job, MatrixBlock src, long rowStart, long rowNum, FileFormatProperties formatProperties)
+		public WriteCSVTask(Path path, JobConf job, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props)
 		{
 			_path = path;
 			_job = job;
 			_src = src;
-			_rowStart = rowStart;
-			_rowNum = rowNum;
-			_formatProperties = formatProperties;
-		}
-
-		public boolean getReturnCode() {
-			return _rc;
-		}
-
-		public String getErrMsg() {
-			return _errMsg;
+			_rl = rl;
+			_ru = ru;
+			_props = props;
 		}
 
 		@Override
@@ -196,13 +137,12 @@ public class WriterTextCSVParallel extends WriterTextCSV
 				StringBuilder sb = new StringBuilder();
 				bw = new BufferedWriter(new OutputStreamWriter(_fs.create(_path,true)));
 				
-				CSVFileFormatProperties csvProperties = (CSVFileFormatProperties)_formatProperties;
-				csvProperties = (csvProperties==null)? new CSVFileFormatProperties() : csvProperties;
-				String delim = csvProperties.getDelim(); //Pattern.quote(csvProperties.getDelim());
-				boolean csvsparse = csvProperties.isSparse();
+				_props = (_props==null)? new CSVFileFormatProperties() : _props;
+				String delim = _props.getDelim(); //Pattern.quote(csvProperties.getDelim());
+				boolean csvsparse = _props.isSparse();
 				
 				// Write header line, if needed
-				if( csvProperties.hasHeader() && _rowStart == 0 ) 
+				if( _props.hasHeader() && _rl == 0 ) 
 				{
 					//write row chunk-wise to prevent OOM on large number of columns
 					for( int bj=0; bj<cols; bj+=WriterTextCSV.BLOCKSIZE_J )
@@ -225,7 +165,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 				if( sparse ) //SPARSE
 				{	
 					SparseRow[] sparseRows = _src.getSparseRows();
-					for( int i=(int)_rowStart; i<(_rowStart+_rowNum); i++ )
+					for( int i=_rl; i<_ru; i++ )
 					{
 						//write row chunk-wise to prevent OOM on large number of columns
 						int prev_jix = -1;
@@ -292,7 +232,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 				}
 				else //DENSE
 				{
-					for( int i=(int)_rowStart; i<(_rowStart+_rowNum); i++ )
+					for( int i=_rl; i<_ru; i++ )
 					{
 						//write row chunk-wise to prevent OOM on large number of columns
 						for( int bj=0; bj<cols; bj+=WriterTextCSV.BLOCKSIZE_J )

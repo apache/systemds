@@ -28,7 +28,6 @@ import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
  */
 public class MatrixReaderFactory 
 {
-
 	/**
 	 * 
 	 * @param iinfo
@@ -56,8 +55,12 @@ public class MatrixReaderFactory
 		}
 		else if( iinfo == InputInfo.BinaryCellInputInfo ) 
 			reader = new ReaderBinaryCell();
-		else if( iinfo == InputInfo.BinaryBlockInputInfo )
-			reader = new ReaderBinaryBlock( false );
+		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
+			if( OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS )
+				reader = new ReaderBinaryBlockParallel( false );
+			else
+				reader = new ReaderBinaryBlock( false );
+		}
 		else {
 			throw new DMLRuntimeException("Failed to create matrix reader for unknown input info: "
 		                                   + InputInfo.inputInfoToString(iinfo));
@@ -96,8 +99,12 @@ public class MatrixReaderFactory
 		}
 		else if( iinfo == InputInfo.BinaryCellInputInfo ) 
 			reader = new ReaderBinaryCell();
-		else if( iinfo == InputInfo.BinaryBlockInputInfo )
-			reader = new ReaderBinaryBlock( props.localFS );
+		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
+			if( OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS )
+				reader = new ReaderBinaryBlockParallel( props.localFS );
+			else
+				reader = new ReaderBinaryBlock( props.localFS );
+		}
 		else {
 			throw new DMLRuntimeException("Failed to create matrix reader for unknown input info: "
 		                                   + InputInfo.inputInfoToString(iinfo));

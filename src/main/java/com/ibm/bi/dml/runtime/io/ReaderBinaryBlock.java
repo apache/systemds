@@ -35,7 +35,7 @@ import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
 
 public class ReaderBinaryBlock extends MatrixReader
 {
-	private boolean _localFS = false;
+	protected boolean _localFS = false;
 	
 	public ReaderBinaryBlock( boolean localFS )
 	{

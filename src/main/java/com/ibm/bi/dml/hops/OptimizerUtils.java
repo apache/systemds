@@ -174,11 +174,15 @@ public class OptimizerUtils
 	
 	
 	/**
-	 * Enables parallel read/write of all text formats (textcell, csv, mm). 
+	 * Enables parallel read/write of all text formats (textcell, csv, mm)
+	 * and binary formats (binary block). 
 	 * 
 	 */
 	public static boolean PARALLEL_CP_READ_TEXTFORMATS = true;
 	public static boolean PARALLEL_CP_WRITE_TEXTFORMATS = true;
+	public static boolean PARALLEL_CP_READ_BINARYFORMATS = true;
+	public static boolean PARALLEL_CP_WRITE_BINARYFORMATS = true;
+	
 	
 	
 	/**
@@ -346,6 +350,8 @@ public class OptimizerUtils
 		if (!ConfigurationManager.getConfig().getBooleanValue(DMLConfig.CP_PARALLEL_TEXTIO)) {
 			PARALLEL_CP_READ_TEXTFORMATS = false;
 			PARALLEL_CP_WRITE_TEXTFORMATS = false;
+			PARALLEL_CP_READ_BINARYFORMATS = false;
+			PARALLEL_CP_WRITE_BINARYFORMATS = false;
 		}
 		else if(   InfrastructureAnalyzer.isJavaVersionLessThanJDK8() 
 			    && InfrastructureAnalyzer.getLocalParallelism() > 1   )
@@ -546,6 +552,21 @@ public class OptimizerUtils
 	public static int getParallelTextReadParallelism()
 	{
 		if( !PARALLEL_CP_READ_TEXTFORMATS )
+			return 1; // sequential execution
+			
+		//compute degree of parallelism for parallel text read
+		double dop = InfrastructureAnalyzer.getLocalParallelism()
+				     * PARALLEL_CP_READ_PARALLELISM_MULTIPLIER;
+		return (int) Math.round(dop);
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public static int getParallelBinaryReadParallelism()
+	{
+		if( !PARALLEL_CP_READ_BINARYFORMATS )
 			return 1; // sequential execution
 			
 		//compute degree of parallelism for parallel text read

@@ -1062,49 +1062,46 @@ public class DataExpression extends DataIdentifier
 			
 			Expression dataParam = getVarParam(RAND_DATA);
 			
-			if (dataParam != null){
+			if( dataParam != null ) 
+			{
+				// handle input variable (matrix/scalar) 
 				if( dataParam instanceof DataIdentifier )
 				{		
-					//MB disabled validate error since we now support expressions in min/max
-					//raiseValidateError("for matrix statement, parameter " 
-					//		        + RAND_DATA + " must be a matrix or a scalar literal.", conditional);
 					addVarParam(RAND_MIN, dataParam);
 					addVarParam(RAND_MAX, dataParam);
 				}
-				else if (dataParam instanceof IntIdentifier){
-					
-					// update min expr with new IntIdentifier 
+				// handle integer constant 
+				else if (dataParam instanceof IntIdentifier) {
 					long roundedValue = ((IntIdentifier)dataParam).getValue();
-					Expression minExpr = new DoubleIdentifier(roundedValue, this.getFilename(), 
-							this.getBeginLine(), this.getBeginColumn(), 
-							this.getEndLine(), this.getEndColumn());
+					Expression minExpr = new DoubleIdentifier(roundedValue, getFilename(), 
+							getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn());
 					addVarParam(RAND_MIN, minExpr);
 					addVarParam(RAND_MAX, minExpr);
 				}
 				// handle double constant 
-				else if (dataParam instanceof DoubleIdentifier){
-	
-					// update col expr with new IntIdentifier (rounded down)
+				else if (dataParam instanceof DoubleIdentifier) {
 					double roundedValue = ((DoubleIdentifier)dataParam).getValue();
-					Expression minExpr = new DoubleIdentifier(roundedValue, this.getFilename(), 
-							this.getBeginLine(), this.getBeginColumn(), 
-							this.getEndLine(), this.getEndColumn());
+					Expression minExpr = new DoubleIdentifier(roundedValue, getFilename(), 
+							getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn());
 					addVarParam(RAND_MIN, minExpr);
 					addVarParam(RAND_MAX, minExpr);				
 				}
-				else if (dataParam instanceof StringIdentifier){
+				// handle string constant (string init) 
+				else if (dataParam instanceof StringIdentifier) {
 					String data = ((StringIdentifier)dataParam).getValue();
-					Expression minExpr = new StringIdentifier(data, this.getFilename(), 
-							this.getBeginLine(), this.getBeginColumn(), 
-							this.getEndLine(), this.getEndColumn());
+					Expression minExpr = new StringIdentifier(data, getFilename(), 
+							getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn());
 					addVarParam(RAND_MIN, minExpr);
 					addVarParam(RAND_MAX, minExpr);	
 					_strInit = true;
 				}
 				else {
-					raiseValidateError("for matrix statement, parameter " 
-							+ RAND_DATA + " cannot have value type String or Boolean. ", conditional);
+					// handle general expression
+					dataParam.validateExpression(ids, currConstVars, conditional);
+					addVarParam(RAND_MIN, dataParam);
+					addVarParam(RAND_MAX, dataParam);
 				}
+				
 				removeVarParam(RAND_DATA);
 				removeVarParam(RAND_BY_ROW);
 				this.setRandDefault();
@@ -1447,40 +1444,39 @@ public class DataExpression extends DataIdentifier
 			
 			break;
 			
-			case MATRIX: 
+		case MATRIX: 
 			
-			this.setMatrixDefault();
-				
-			for (String key : _varParams.keySet()){
+			//handle default and input arguments
+			setMatrixDefault();
+			for( String key : _varParams.keySet() ) 
+			{
 				boolean found = false;
-				for (String name : MATRIX_VALID_PARAM_NAMES){
-					if (name.equals(key))
-					found = true;
+				for (String name : MATRIX_VALID_PARAM_NAMES) {
+					found |= name.equals(key);
 				}
-				if (!found){
-					raiseValidateError("unexpected parameter \"" + key +
-							"\". Legal parameters for matrix statement are " 
-							+ "(capitalization-sensitive): " 	+ RAND_DATA 	
-							+ ", " + RAND_ROWS		+ ", " + RAND_COLS
-							+ ", " + RAND_BY_ROW, conditional);
+				if( !found ) {
+					raiseValidateError("unexpected parameter \"" + key + "\". "
+							+ "Legal parameters for matrix statement are (case-sensitive): " 	
+							+ RAND_DATA + ", " + RAND_ROWS	+ ", " + RAND_COLS + ", " + RAND_BY_ROW, conditional);
 				}
 			}
-			//TODO: Leo Need to check with Doug about the data types
-			// DoubleIdentifiers for RAND_ROWS and RAND_COLS have already been converted into IntIdentifier in RandStatment.addExprParam()  
-			if (!(getVarParam(RAND_DATA) instanceof DataIdentifier)){
-				raiseValidateError("for matrix statement " + RAND_DATA + " has incorrect data type", conditional);
+			
+			//validate correct value types
+			if (getVarParam(RAND_DATA) != null && (getVarParam(RAND_DATA) instanceof BooleanIdentifier)){
+				raiseValidateError("for matrix statement " + RAND_DATA + " has incorrect value type", conditional);
 			}
 			if (getVarParam(RAND_ROWS) != null && (getVarParam(RAND_ROWS) instanceof StringIdentifier || getVarParam(RAND_ROWS) instanceof BooleanIdentifier)){
-				raiseValidateError("for matrix statement " + RAND_ROWS + " has incorrect data type", conditional);
-			}
-				
+				raiseValidateError("for matrix statement " + RAND_ROWS + " has incorrect value type", conditional);
+			}				
 			if (getVarParam(RAND_COLS) != null && (getVarParam(RAND_COLS) instanceof StringIdentifier || getVarParam(RAND_COLS) instanceof BooleanIdentifier)){
-				raiseValidateError("for matrix statement " + RAND_COLS + " has incorrect data type", conditional);
-			}
-				
+				raiseValidateError("for matrix statement " + RAND_COLS + " has incorrect value type", conditional);
+			}				
 			if ( !(getVarParam(RAND_BY_ROW) instanceof BooleanIdentifier)) {
-				raiseValidateError("for matrix statement " + RAND_BY_ROW + " has incorrect data type", conditional);
+				raiseValidateError("for matrix statement " + RAND_BY_ROW + " has incorrect value type", conditional);
 			}
+			
+			//validate general data expression
+			getVarParam(RAND_DATA).validateExpression(ids, currConstVars, conditional);
 			
 			rowsLong = -1L; 
 			colsLong = -1L;

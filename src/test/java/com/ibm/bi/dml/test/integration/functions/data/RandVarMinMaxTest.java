@@ -33,18 +33,18 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 
 
 /**
- * TODO: forcing this script to MR currently creates 3 jobs per iteration because
- * the indexing zeroout/leftindex are split by the datagen job into two GMRs.		
+ * 
  */
 public class RandVarMinMaxTest extends AutomatedTestBase 
 {
 	
 	private final static String TEST_NAME_DML1 = "RandVarMinMax1";
 	private final static String TEST_NAME_DML2 = "RandVarMinMax2";
+	private final static String TEST_NAME_DML3 = "RandVarMinMax3";
 	private final static String TEST_NAME_R = "RandVarMinMax";
 	private final static String TEST_DIR = "functions/data/";
 	
-	private final static int rows = 3;
+	private final static int rows = 2;
 	private final static int cols = 100;
 	
 		
@@ -54,46 +54,52 @@ public class RandVarMinMaxTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME_DML1, new TestConfiguration(TEST_DIR, TEST_NAME_DML1, new String[] { "R" }) ); 
 		addTestConfiguration( TEST_NAME_DML2, new TestConfiguration(TEST_DIR, TEST_NAME_DML2, new String[] { "R" }) ); 
+		addTestConfiguration( TEST_NAME_DML3, new TestConfiguration(TEST_DIR, TEST_NAME_DML3, new String[] { "R" }) ); 
 	}
 
 	@Test
-	public void testMatrixVarMinMaxCP() 
-	{
+	public void testMatrixVarMinMaxCP() {
 		runRandVarMinMaxTest(TEST_NAME_DML1, ExecType.CP);
 	}
 	
-	// ------------------------------------------
 	@Test
-	public void testMatrixVarMinMaxSP() 
-	{
-		runRandVarMinMaxTest(TEST_NAME_DML1, ExecType.SPARK);
-	}
-	@Test
-	public void testRandVarMinMaxSP() 
-	{
-		runRandVarMinMaxTest(TEST_NAME_DML2, ExecType.SPARK);
-	}
-	
-	// ------------------------------------------
-	
-	@Test
-	public void testMatrixVarMinMaxMR() 
-	{
-		
-		runRandVarMinMaxTest(TEST_NAME_DML1, ExecType.MR);
-	}
-	
-	@Test
-	public void testRandVarMinMaxCP() 
-	{
+	public void testRandVarMinMaxCP() {
 		runRandVarMinMaxTest(TEST_NAME_DML2, ExecType.CP);
 	}
 	
 	@Test
-	public void testRandVarMinMaxMR() 
-	{
-		
+	public void testMatrixVarExpressionCP() {
+		runRandVarMinMaxTest(TEST_NAME_DML3, ExecType.CP);
+	}
+	
+	@Test
+	public void testMatrixVarMinMaxSP() {
+		runRandVarMinMaxTest(TEST_NAME_DML1, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testRandVarMinMaxSP() {
+		runRandVarMinMaxTest(TEST_NAME_DML2, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMatrixVarExpressionSP() {
+		runRandVarMinMaxTest(TEST_NAME_DML3, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMatrixVarMinMaxMR() {
+		runRandVarMinMaxTest(TEST_NAME_DML1, ExecType.MR);
+	}
+	
+	@Test
+	public void testRandVarMinMaxMR() {		
 		runRandVarMinMaxTest(TEST_NAME_DML2, ExecType.MR);
+	}
+	
+	@Test
+	public void testMatrixVarExpressionMR() {		
+		runRandVarMinMaxTest(TEST_NAME_DML3, ExecType.MR);
 	}
 
 	/**

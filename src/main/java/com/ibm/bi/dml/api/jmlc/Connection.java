@@ -71,6 +71,9 @@ public class Connection
 		DataExpression.REJECT_READ_UNKNOWN_SIZE = false;
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = false;
+		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = false;
+		OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS = false;
+		OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS = false;
 		CacheableData.disableCaching();
 		
 		//create default configuration

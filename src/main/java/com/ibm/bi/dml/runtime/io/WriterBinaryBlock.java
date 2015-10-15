@@ -37,8 +37,7 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 public class WriterBinaryBlock extends MatrixWriter
 {
-
-	private int _replication = -1;
+	protected int _replication = -1;
 	
 	public WriterBinaryBlock( int replication )
 	{

@@ -82,7 +82,10 @@ public class MatrixWriterFactory
 			writer = new WriterBinaryCell();
 		}
 		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
-			writer = new WriterBinaryBlock(replication);
+			if( OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS )
+				writer = new WriterBinaryBlockParallel(replication);
+			else
+				writer = new WriterBinaryBlock(replication);
 		}
 		else {
 			throw new DMLRuntimeException("Failed to create matrix writer for unknown output info: "

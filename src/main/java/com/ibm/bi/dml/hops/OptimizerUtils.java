@@ -593,7 +593,21 @@ public class OptimizerUtils
 				     * PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER;
 		return (int) Math.round(dop);
 	}
-	
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static int getParallelBinaryWriteParallelism()
+	{
+		if( !PARALLEL_CP_WRITE_BINARYFORMATS )
+			return 1; // sequential execution
+
+		//compute degree of parallelism for parallel text read
+		double dop = InfrastructureAnalyzer.getLocalParallelism()
+				     * PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER;
+		return (int) Math.round(dop);
+	}
 	
 	////////////////////////
 	// Memory Estimates   //

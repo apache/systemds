@@ -62,9 +62,10 @@ import com.ibm.bi.dml.runtime.util.UtilFunctions;
  */
 public class LibMatrixMult 
 {
-	
+	//internal configuration
 	public static final boolean LOW_LEVEL_OPTIMIZATION = true;
-
+	public static final long MEM_OVERHEAD_THRESHOLD = 2*1024*1024; 
+	
 	private LibMatrixMult() {
 		//prevent instantiation via private constructor
 	}
@@ -104,20 +105,20 @@ public class LibMatrixMult
 			ret.allocateDenseBlock();
 		
 		//prepare row-upper for special cases of vector-matrix
-		int ru = (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && m2.clen>1
-				&& !(m1.isUltraSparse()||m2.isUltraSparse())) ? m2.rlen : m1.rlen; 
+		boolean pm2 = checkParMatrixMultRightInput(m1, m2, Integer.MAX_VALUE);
+		int ru = pm2 ? m2.rlen : m1.rlen; 
 		
 		//core matrix mult computation
 		if( m1.isUltraSparse() || m2.isUltraSparse() )
 			matrixMultUltraSparse(m1, m2, ret, 0, ru);
 		else if(!m1.sparse && !m2.sparse)
-			matrixMultDenseDense(m1, m2, ret, tm2, 0, ru);
+			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru);
 		else if(m1.sparse && m2.sparse)
-			matrixMultSparseSparse(m1, m2, ret, 0, ru);
+			matrixMultSparseSparse(m1, m2, ret, pm2, 0, ru);
 		else if(m1.sparse)
-			matrixMultSparseDense(m1, m2, ret, 0, ru);
+			matrixMultSparseDense(m1, m2, ret, pm2, 0, ru);
 		else
-			matrixMultDenseSparse(m1, m2, ret, 0, ru);
+			matrixMultDenseSparse(m1, m2, ret, pm2, 0, ru);
 		
 		//post-processing: nnz/representation
 		if( !ret.sparse )
@@ -147,8 +148,8 @@ public class LibMatrixMult
 			return;
 		}
 		
-		//check too high additional memory requirements (fallback to sequential)
-		if( m1.rlen == 1 && (m2.clen * 8 * k > 1024*1024  //1MB
+		//check too high additional vector-matrix memory requirements (fallback to sequential)
+		if( m1.rlen == 1 && (m2.clen * 8 * k > MEM_OVERHEAD_THRESHOLD
 			|| !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) ) { 
 			matrixMult(m1, m2, ret);
 			return;
@@ -166,9 +167,9 @@ public class LibMatrixMult
 		else
 			ret.allocateSparseRowsBlock();
 		
-		//prepare row-upper for special cases of vector-matrix
-		int ru = (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && m2.clen>1
-				&& !(m1.isUltraSparse()||m2.isUltraSparse())) ? m2.rlen : m1.rlen; 
+		//prepare row-upper for special cases of vector-matrix / matrix-matrix
+		boolean pm2 = checkParMatrixMultRightInput(m1, m2, k);
+		int ru = pm2 ? m2.rlen : m1.rlen; 
 		
 		//core multi-threaded matrix mult computation
 		//(currently: always parallelization over number of rows)
@@ -177,18 +178,18 @@ public class LibMatrixMult
 			ArrayList<MatrixMultTask> tasks = new ArrayList<MatrixMultTask>();
 			int blklen = (int)(Math.ceil((double)ru/k));
 			for( int i=0; i<k & i*blklen<ru; i++ )
-				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, i*blklen, Math.min((i+1)*blklen, ru)));
+				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2, i*blklen, Math.min((i+1)*blklen, ru)));
 			pool.invokeAll(tasks);	
 			pool.shutdown();
 			//aggregate partial results (nnz, ret for vector/matrix)
 			ret.nonZeros = 0; //reset after execute
 			for( MatrixMultTask task : tasks ) {
-				if( m1.rlen == 1 )
-					vectAdd(task.getResult().denseBlock, ret.denseBlock, 0, 0, m2.clen);
+				if( pm2 )
+					vectAdd(task.getResult().denseBlock, ret.denseBlock, 0, 0, ret.rlen*ret.clen);
 				else
 					ret.nonZeros += task.getPartialNnz();
 			}
-			if( m1.rlen == 1 )
+			if( pm2 )
 				ret.recomputeNonZeros();
 		}
 		catch(Exception ex) {
@@ -887,7 +888,7 @@ public class LibMatrixMult
 	 * @param ret
 	 * @throws DMLRuntimeException 
 	 */
-	private static void matrixMultDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, int rl, int ru) 
+	private static void matrixMultDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, boolean pm2, int rl, int ru) 
 		throws DMLRuntimeException
 	{			
 		double[] a = m1.denseBlock;
@@ -923,7 +924,7 @@ public class LibMatrixMult
 				for( int i=rl, aix=rl*cd; i < ru; i++, aix+=cd) 
 					c[ i ] = dotProduct(a, b, aix, 0, cd);	
 			}
-			else if( m==1 )            //VECTOR-MATRIX
+			else if( pm2 && m==1 )     //VECTOR-MATRIX
 			{
 				//parallelization over rows in rhs matrix
 				//rest not aligned to blocks of 2 rows
@@ -940,6 +941,28 @@ public class LibMatrixMult
 					else if( a[k+1] != 0 )	
 						vectMultiplyAdd(a[k+1], b, c, bix+n, 0, n);
 				}
+			}
+			else if( pm2 && m<=16 )    //MATRIX-MATRIX (short lhs) 
+			{
+				//parallelization over rows in rhs matrix
+				final int kn = (ru-rl)%2;				
+				
+				//rest not aligned to blocks of 2 rows
+				if( kn == 1 )
+					for( int i=0, aix=0, cix=0; i<m; i++, aix+=cd, cix+=n )
+						if( a[aix+rl] != 0 )
+							vectMultiplyAdd(a[aix+rl], b, c, rl*n, cix, n);
+				
+				//compute blocks of 2 rows (w/ repeated scan for each row in lhs) 
+				for( int k=rl+kn, bix=(rl+kn)*n; k<ru; k+=2, bix+=2*n )
+					for( int i=0, aix=0, cix=0; i<m; i++, aix+=cd, cix+=n ){
+						if( a[aix+k] != 0 && a[aix+k+1] != 0  )
+							vectMultiplyAdd2(a[aix+k], a[aix+k+1], b, c, bix, bix+n, cix, n);
+						else if( a[aix+k] != 0 )
+							vectMultiplyAdd(a[aix+k], b, c, bix, cix, n);
+						else if( a[aix+k+1] != 0 )	
+							vectMultiplyAdd(a[aix+k+1], b, c, bix+n, cix, n);
+					}				
 			}
 			else if( tm2 )             //MATRIX-MATRIX (skinny rhs)
 			{
@@ -1021,7 +1044,7 @@ public class LibMatrixMult
 	 * @param ret
 	 * @throws DMLRuntimeException 
 	 */
-	private static void matrixMultDenseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
+	private static void matrixMultDenseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) 
 		throws DMLRuntimeException 
 	{	
 		double[] a = m1.denseBlock;
@@ -1039,7 +1062,7 @@ public class LibMatrixMult
 			
 			SparseRow[] b = m2.sparseRows;
 			
-			if( m==1 )                 //VECTOR-MATRIX
+			if( pm2 && m==1 )          //VECTOR-MATRIX
 			{
 				//parallelization over rows in rhs matrix
 				for( int k=rl; k<ru; k++ )
@@ -1107,7 +1130,7 @@ public class LibMatrixMult
 	 * @param ret
 	 * @throws DMLRuntimeException 
 	 */
-	private static void matrixMultSparseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
+	private static void matrixMultSparseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) 
 		throws DMLRuntimeException
 	{	
 		double[] b = m2.denseBlock;
@@ -1144,7 +1167,7 @@ public class LibMatrixMult
 					}
 				}
 			}
-			else if( m==1 )            //VECTOR-MATRIX
+			else if( pm2 && m==1 )     //VECTOR-MATRIX
 			{
 				//parallelization over rows in rhs matrix
 				SparseRow arow = m1.sparseRows[0];
@@ -1229,7 +1252,7 @@ public class LibMatrixMult
 	 * @param ret
 	 * @throws DMLRuntimeException 
 	 */
-	private static void matrixMultSparseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) 
+	private static void matrixMultSparseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) 
 		throws DMLRuntimeException
 	{	
 		SparseRow[] b = m2.sparseRows;
@@ -1240,7 +1263,7 @@ public class LibMatrixMult
 		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
 		if(LOW_LEVEL_OPTIMIZATION)
 		{
-			if( m==1 )                 //VECTOR-MATRIX
+			if( pm2 && m==1 )          //VECTOR-MATRIX
 			{
 				//parallelization over rows in rhs matrix
 				SparseRow arow = m1.sparseRows[0];
@@ -3353,6 +3376,20 @@ public class LibMatrixMult
 	 * @param m1
 	 * @param m2
 	 * @return
+	 */
+	private static boolean checkParMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2, int k )
+	{
+		//parallelize over rows in rhs matrix if number of rows in lhs/output is very small
+		return (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && !(m1.isUltraSparse()||m2.isUltraSparse()))
+			|| (m1.rlen<=16 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && m2.rlen > m1.rlen && !m1.sparse && !m2.sparse
+			   && (long)k * 8 * m1.rlen * m2.clen < MEM_OVERHEAD_THRESHOLD ); 
+	}
+	
+	/**
+	 * 
+	 * @param m1
+	 * @param m2
+	 * @return
 	 * @throws DMLRuntimeException
 	 */
 	private static MatrixBlock prepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 ) 
@@ -3474,20 +3511,22 @@ public class LibMatrixMult
 		private MatrixBlock _m1  = null;
 		private MatrixBlock _m2  = null;
 		private MatrixBlock _ret = null;
-		private boolean _tm2 = false;
+		private boolean _tm2 = false; //transposed m2
+		private boolean _pm2 = false; //par over m2
 		private int _rl = -1;
 		private int _ru = -1;
 		private long _nnz = -1;
 
-		protected MatrixMultTask( MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, int rl, int ru )
+		protected MatrixMultTask( MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, boolean pm2, int rl, int ru )
 		{
 			_m1 = m1;
 			_m2 = m2;
 			_tm2 = tm2;
+			_pm2 = pm2;
 			_rl = rl;
 			_ru = ru;
 			
-			if( _m1.rlen == 1 ) { //vector-matrix
+			if( pm2 ) { //vector-matrix / matrix-matrix
 				//allocate local result for partial aggregation
 				_ret = new MatrixBlock(ret.rlen, ret.clen, false);
 				_ret.allocateDenseBlock();
@@ -3504,16 +3543,16 @@ public class LibMatrixMult
 			if( _m1.isUltraSparse() || _m2.isUltraSparse() )
 				matrixMultUltraSparse(_m1, _m2, _ret, _rl, _ru);
 			else if(!_m1.sparse && !_m2.sparse)
-				matrixMultDenseDense(_m1, _m2, _ret, _tm2, _rl, _ru);
+				matrixMultDenseDense(_m1, _m2, _ret, _tm2, _pm2, _rl, _ru);
 			else if(_m1.sparse && _m2.sparse)
-				matrixMultSparseSparse(_m1, _m2, _ret, _rl, _ru);
+				matrixMultSparseSparse(_m1, _m2, _ret, _pm2, _rl, _ru);
 			else if(_m1.sparse)
-				matrixMultSparseDense(_m1, _m2, _ret, _rl, _ru);
+				matrixMultSparseDense(_m1, _m2, _ret, _pm2, _rl, _ru);
 			else
-				matrixMultDenseSparse(_m1, _m2, _ret, _rl, _ru);
+				matrixMultDenseSparse(_m1, _m2, _ret, _pm2, _rl, _ru);
 			
 			//maintain block nnz (upper bounds inclusive)
-			if( _m1.rlen > 1 )
+			if( !_pm2 )
 				_nnz = _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
 			
 			return null;

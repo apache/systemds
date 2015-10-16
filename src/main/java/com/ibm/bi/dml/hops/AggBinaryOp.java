@@ -397,6 +397,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	protected ExecType optFindExecType() 
+		throws HopsException 
 	{	
 		checkAndSetForcedPlatform();
 
@@ -426,6 +427,20 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
+		}
+		
+		//spark-specific decision refinement (execute binary aggregate w/ left spark input and 
+		//single parent also in spark because it's likely cheap and reduces data transfer)
+		if( _etype == ExecType.CP && _etypeForced != ExecType.CP	
+			&& getInput().get(0).optFindExecType() == ExecType.SPARK
+			&& !(getInput().get(0) instanceof ReorgOp && ((ReorgOp)getInput().get(0)).getOp()==ReOrgOp.TRANSPOSE)
+			&& !(getInput().get(0) instanceof DataOp)  //input is not checkpoint
+			&& getInput().get(0).getParent().size()==1 //bagg is only parent	
+			&& !getInput().get(0).areDimsBelowThreshold() 
+			&& getInput().get(0).getOutputMemEstimate()>getOutputMemEstimate() )    
+		{
+			//pull unary aggregate into spark 
+			_etype = ExecType.SPARK;
 		}
 		
 		//mark for recompile (forever)

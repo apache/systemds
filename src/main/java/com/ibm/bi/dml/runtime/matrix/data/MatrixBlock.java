@@ -5172,8 +5172,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				Arrays.sort(bv);
 			}
 
-			int iRows = (uaggOp.indexFn instanceof ReduceCol ? mbLeft.getNumRows(): 1); 
-			int iCols = (uaggOp.indexFn instanceof ReduceRow ? mbLeft.getNumColumns(): 1); 
+			int iRows = (uaggOp.indexFn instanceof ReduceCol ? mbLeft.getNumRows(): 2); 
+			int iCols = (uaggOp.indexFn instanceof ReduceRow ? mbLeft.getNumColumns(): 2); 
 			if(mbOut==null)
 				mbOut=new MatrixBlock(iRows, iCols, false);  // Output matrix will be dense matrix most of the time.
 			else

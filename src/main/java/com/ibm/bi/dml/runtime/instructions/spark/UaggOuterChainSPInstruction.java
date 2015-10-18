@@ -42,6 +42,7 @@ import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateDropCorrectionFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.LibMatrixOuterAgg;
@@ -177,6 +178,10 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		{			
 			//put output RDD handle into symbol table
 			updateUnaryAggOutputMatrixCharacteristics(sec);
+			
+			if( _uaggOp.aggOp.correctionExists )
+				out = out.mapValues( new AggregateDropCorrectionFunction(_uaggOp.aggOp) );
+			
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), rddVar);
 			if( bcastVar != null )

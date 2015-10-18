@@ -103,6 +103,9 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction
 		ec.releaseMatrixInput(input1.getName());
 		ec.releaseMatrixInput(input2.getName());
 		
+		if( _uaggOp.aggOp.correctionExists )
+			mbOut.dropLastRowsOrColums(_uaggOp.aggOp.correctionLocation);
+		
 		String output_name = output.getName();
 		//final aggregation if required
 		if(_uaggOp.indexFn instanceof ReduceAll ) //RC AGG (output is scalar)

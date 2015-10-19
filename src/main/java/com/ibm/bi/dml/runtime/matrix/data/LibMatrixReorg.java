@@ -747,6 +747,24 @@ public class LibMatrixReorg
 		
 		SparseRow[] a = in.getSparseRows();
 		SparseRow[] c = out.getSparseRows();
+
+		//initial pass to determine capacity (this helps to prevent
+		//sparse row reallocations and mem inefficiency w/ skew
+		int[] cnt = null;
+		if( n <= 4096 ) { //16KB
+			cnt = new int[n];
+			for( int i=0; i<m; i++ ) {
+				if( a[i] !=null && !a[i].isEmpty() )
+					countAgg(cnt, a[i].getIndexContainer(), a[i].size());
+			}
+		}
+		
+		//allocate output sparse rows
+		if( cnt != null ) {
+			for( int i=0; i<m2; i++ )
+				if( cnt[i] > 0 )
+					c[i] = new SparseRow(cnt[i]);
+		}
 		
 		//blocking according to typical L2 cache sizes 
 		final int blocksizeI = 128;
@@ -2011,6 +2029,34 @@ public class LibMatrixReorg
 			double tmp = a[i];
 			a[i] = a[rlen - i -1];
 			a[rlen - i - 1] = tmp;
+		}
+	}
+
+	/**
+	 * 
+	 * @param c
+	 * @param ai
+	 * @param len
+	 */
+	private static void countAgg( int[] c, int[] ai, final int len ) 
+	{
+		final int bn = len%8;
+		
+		//compute rest, not aligned to 8-block
+		for( int i=0; i<bn; i++ )
+			c[ ai[i] ]++;
+		
+		//unrolled 8-block (for better instruction level parallelism)
+		for( int i=bn; i<len; i+=8 )
+		{
+			c[ ai[ i+0 ] ] ++;
+			c[ ai[ i+1 ] ] ++;
+			c[ ai[ i+2 ] ] ++;
+			c[ ai[ i+3 ] ] ++;
+			c[ ai[ i+4 ] ] ++;
+			c[ ai[ i+5 ] ] ++;
+			c[ ai[ i+6 ] ] ++;
+			c[ ai[ i+7 ] ] ++;
 		}
 	}
 	

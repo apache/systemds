@@ -612,8 +612,12 @@ public class SparkExecutionContext extends ExecutionContext
 		//always get the current num executors on refresh because this might 
 		//change if not all executors are initially allocated and it is plan-relevant
 		if( refresh ) {
-			JavaSparkContext jsc = getSparkContextStatic();
-			int numExec = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);
+			SparkConf sconf = new SparkConf();
+			int numExec = sconf.getInt("spark.executor.instances", -1);
+			if(numExec == -1) {
+				JavaSparkContext jsc = getSparkContextStatic();
+				numExec = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);
+			}
 			return _memExecutors * _memRatioData * numExec; 
 		}
 		else
@@ -643,8 +647,23 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		//always get the current default parallelism on refresh because this might 
 		//change if not all executors are initially allocated and it is plan-relevant
-		if( refresh )
-			return getSparkContextStatic().defaultParallelism();
+		if( refresh ) {
+			SparkConf sconf = new SparkConf();
+			int numExecutors = sconf.getInt("spark.executor.instances", -1);
+			int numCoresPerExecutor = sconf.getInt("spark.executor.cores", -1);
+			int defaultParallelism = sconf.getInt("spark.default.parallelism", -1);
+			
+			if(defaultParallelism != -1) {
+				return defaultParallelism;
+			}
+			else if(numExecutors != -1 && numCoresPerExecutor != -1) {
+				return numCoresPerExecutor * numExecutors;
+			}
+			else {
+				JavaSparkContext jsc = getSparkContextStatic();
+				return jsc.defaultParallelism();
+			}
+		}
 		else
 			return _defaultPar;
 	}
@@ -671,13 +690,26 @@ public class SparkExecutionContext extends ExecutionContext
 		_memRatioData = sconf.getDouble("spark.storage.memoryFraction", 0.6); //default 60%
 		_memRatioShuffle = sconf.getDouble("spark.shuffle.memoryFraction", 0.2); //default 20%
 		
-		//get default parallelism (total number of executors and cores)
-		//note: spark context provides this information while conf does not
-		//(for num executors we need to correct for driver and local mode)
-		JavaSparkContext jsc = getSparkContextStatic();
-		_numExecutors = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);  
-		_defaultPar = jsc.defaultParallelism(); 
-
+		int numExecutors = sconf.getInt("spark.executor.instances", -1);
+		int numCoresPerExecutor = sconf.getInt("spark.executor.cores", -1);
+		int defaultParallelism = sconf.getInt("spark.default.parallelism", -1);
+		
+		if(numExecutors != -1 && defaultParallelism != -1) {
+			_numExecutors = numExecutors;
+			_defaultPar = defaultParallelism;
+		}
+		else if(numExecutors != -1 && numCoresPerExecutor != -1) {
+			_numExecutors = numExecutors;
+			_defaultPar = numCoresPerExecutor * numExecutors;
+		}
+		else {
+			//get default parallelism (total number of executors and cores)
+			//note: spark context provides this information while conf does not
+			//(for num executors we need to correct for driver and local mode)
+			JavaSparkContext jsc = getSparkContextStatic();
+			_numExecutors = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);  
+			_defaultPar = jsc.defaultParallelism();
+		}
 		//note: required time for infrastructure analysis on 5 node cluster: ~5-20ms. 
 	}
 

@@ -422,9 +422,9 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		//spark-specific decision refinement (execute unary aggregate w/ spark input and 
 		//single parent also in spark because it's likely cheap and reduces data transfer)
 		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
-			&& getInput().get(0).optFindExecType() == ExecType.SPARK 
-			&& !(getInput().get(0) instanceof DataOp)    //input is not checkpoint
-			&& getInput().get(0).getParent().size()==1 ) //uagg is only parent
+			&& !(getInput().get(0) instanceof DataOp)  //input is not checkpoint
+			&& getInput().get(0).getParent().size()==1 //uagg is only parent
+			&& getInput().get(0).optFindExecType() == ExecType.SPARK )					
 		{
 			//pull unary aggregate into spark 
 			_etype = ExecType.SPARK;

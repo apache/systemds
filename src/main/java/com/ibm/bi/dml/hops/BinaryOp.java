@@ -968,10 +968,10 @@ public class BinaryOp extends Hop
 		//single parent also in spark because it's likely cheap and reduces intermediates)
 		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
 			&& getDataType().isMatrix() && (dt1.isScalar() || dt2.isScalar()) 
-			&& getInput().get(dt1.isScalar()?1:0).optFindExecType() == ExecType.SPARK 
-			&& supportsMatrixScalarOperations()                           //scalar operations
-			&& !(getInput().get(dt1.isScalar()?1:0) instanceof DataOp)    //input is not checkpoint
-			&& getInput().get(dt1.isScalar()?1:0).getParent().size()==1 ) //unary scalar is only parent
+			&& supportsMatrixScalarOperations()                          //scalar operations
+			&& !(getInput().get(dt1.isScalar()?1:0) instanceof DataOp)   //input is not checkpoint
+			&& getInput().get(dt1.isScalar()?1:0).getParent().size()==1  //unary scalar is only parent
+			&& getInput().get(dt1.isScalar()?1:0).optFindExecType() == ExecType.SPARK )					
 		{
 			//pull unary scalar operation into spark 
 			_etype = ExecType.SPARK;

@@ -69,6 +69,10 @@ public class Statistics
 	private static AtomicLong hopRecompilePred = new AtomicLong(0); //count
 	private static AtomicLong hopRecompileSB = new AtomicLong(0);   //count
 
+	//Function recompile stats 
+	private static AtomicLong funRecompileTime = new AtomicLong(0); //in nano sec
+	private static AtomicLong funRecompiles = new AtomicLong(0); //count
+	
 	//Spark-specific stats
 	private static long sparkCtxCreateTime = 0; 
 
@@ -211,6 +215,16 @@ public class Statistics
 		hopRecompileSB.addAndGet(delta);
 	}
 
+	public static void incrementFunRecompileTime( long delta ) {
+		//note: not synchronized due to use of atomics
+		funRecompileTime.addAndGet(delta);
+	}
+	
+	public static void incrementFunRecompiles() {
+		//note: not synchronized due to use of atomics
+		funRecompiles.incrementAndGet();
+	}
+	
 	public static synchronized void incrementParForOptimCount(){
 		parforOptCount ++;
 	}
@@ -451,6 +465,14 @@ public class Statistics
 		return hopRecompileSB.get();
 	}
 	
+	public static long getFunRecompileTime(){
+		return funRecompileTime.get();
+	}
+	
+	public static long getFunRecompiles(){
+		return funRecompiles.get();
+	}
+		
 	public static long getParforOptCount(){
 		return parforOptCount;
 	}
@@ -499,6 +521,10 @@ public class Statistics
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
 			sb.append("HOP DAGs recompiled (PRED, SB):\t" + getHopRecompiledPredDAGs() + "/" + getHopRecompiledSBDAGs() + ".\n");
 			sb.append("HOP DAGs recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
+			if( getFunRecompiles()>0 ) {
+				sb.append("Functions recompiled:\t\t" + getFunRecompiles() + ".\n");
+				sb.append("Functions recompile time:\t" + String.format("%.3f", ((double)getFunRecompileTime())/1000000000) + " sec.\n");	
+			}
 			if( OptimizerUtils.isSparkExecutionMode() ){
 				String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";
 				sb.append("Spark ctx create time "+lazy+":\t"+

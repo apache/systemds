@@ -35,8 +35,7 @@ import java.util.Set;
  * 
  */
 public class LocalVariableMap implements Cloneable
-{
-	
+{	
 	private static String eol = System.getProperty ("line.separator");
 	private static String ELEMENT_DELIM = com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter.ELEMENT_DELIM;
 	private static IDSequence _seq = new IDSequence();
@@ -47,6 +46,12 @@ public class LocalVariableMap implements Cloneable
 	public LocalVariableMap()
 	{
 		localMap = new HashMap <String, Data>();
+		localID = _seq.getNextID();
+	}
+	
+	public LocalVariableMap(LocalVariableMap vars)
+	{
+		localMap = new HashMap <String, Data>(vars.localMap);
 		localID = _seq.getNextID();
 	}
 	
@@ -221,8 +226,6 @@ public class LocalVariableMap implements Cloneable
 	@Override
 	public Object clone()
 	{
-		LocalVariableMap newMap = new LocalVariableMap ();
-		newMap.putAll (this);
-		return newMap;
+		return new LocalVariableMap( this );
 	}
 }

@@ -19,6 +19,7 @@ package com.ibm.bi.dml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
+import com.ibm.bi.dml.api.DMLScript;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.hops.recompile.Recompiler;
 import com.ibm.bi.dml.parser.DataIdentifier;
@@ -27,6 +28,7 @@ import com.ibm.bi.dml.runtime.DMLScriptException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.utils.Statistics;
 
 
 public class FunctionProgramBlock extends ProgramBlock 
@@ -84,12 +86,20 @@ public class FunctionProgramBlock extends ProgramBlock
 				&& isRecompileOnce() 
 				&& ParForProgramBlock.RESET_RECOMPILATION_FLAGs )
 			{
+				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+				
 				//note: it is important to reset the recompilation flags here
 				// (1) it is safe to reset recompilation flags because a 'recompile_once'
 				//     function will be recompiled for every execution.
 				// (2) without reset, there would be no benefit in recompiling the entire function
 				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
 				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, true);
+				
+				if( DMLScript.STATISTICS ){
+					long t1 = System.nanoTime();
+					Statistics.incrementFunRecompileTime(t1-t0);
+					Statistics.incrementFunRecompiles();
+				}
 			}
 		}
 		catch(Exception ex) {

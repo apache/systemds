@@ -116,8 +116,7 @@ import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
  *
  */
 public class ParForProgramBlock extends ForProgramBlock 
-{
-	
+{	
 	// execution modes
 	public enum PExecMode {
 		LOCAL,      //local (master) multi-core execution mode
@@ -280,6 +279,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected IDSequence         _resultVarsIDSeq = null;
 	protected IDSequence         _dpVarsIDSeq     = null;
 	protected boolean            _monitorReport   = false;
+	protected boolean            _hasFunctions    = true;
 	
 	// local parworker data
 	protected long[] 		   	                    _pwIDs   = null;
@@ -357,6 +357,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//created profiling report after parfor exec
 		_monitorReport = _monitor;
+		
+		//materialized meta data (reused for all invocations)
+		_hasFunctions = ProgramRecompiler.containsAtLeastOneFunction(this);
 		
 		LOG.trace("PARFOR: ParForProgramBlock created with mode = "+_execMode+", optmode = "+_optMode+", numThreads = "+_numThreads);
 	}
@@ -502,6 +505,10 @@ public class ParForProgramBlock extends ForProgramBlock
 	public long getNumIterations()
 	{
 		return _numIterations;
+	}
+	
+	public boolean hasFunctions() {
+		return _hasFunctions;
 	}
 
 	public static void initInternalConfigurations( DMLConfig conf )

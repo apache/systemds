@@ -274,6 +274,23 @@ public class OptNode
 	
 	/**
 	 * 
+	 * @param type
+	 * @return
+	 */
+	public boolean containsNode( NodeType type )
+	{
+		boolean ret = (_ntype == type);
+		if( !ret && !isLeaf() )
+			for( OptNode n : _childs ) {
+				ret |= n.containsNode(type);
+				if( ret ) break; //early abort
+			}
+		
+		return ret;
+	}
+	
+	/**
+	 * 
 	 * @return
 	 */
 	public boolean isLeaf()
@@ -577,7 +594,7 @@ public class OptNode
 		if( !isLeaf() )
 			for( OptNode n : _childs )
 				n.checkAndCleanupRecursiveFunc( stack );
-		
+	
 		//collect and update func info
 		if(_ntype == NodeType.FUNCCALL)
 		{

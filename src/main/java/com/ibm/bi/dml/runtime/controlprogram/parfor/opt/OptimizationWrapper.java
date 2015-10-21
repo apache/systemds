@@ -280,21 +280,22 @@ public class OptimizationWrapper
 				Recompiler.recompileProgramBlockHierarchy(pb.getChildBlocks(), tmp, 0, true);
 				
 				//inter-procedural optimization (based on previous recompilation)
-				InterProceduralAnalysis ipa = new InterProceduralAnalysis();
-				Set<String> fcand = ipa.analyzeSubProgram(sb);		
-				
-				if( !fcand.isEmpty() ) {
-					//regenerate runtime program of modified functions
-					for( String func : fcand )
-					{
-						String[] funcparts = DMLProgram.splitFunctionKey(func);
-						FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(funcparts[0], funcparts[1]);
-						//reset recompilation flags according to recompileOnce because it is only safe if function is recompileOnce 
-						//because then recompiled for every execution (otherwise potential issues if func also called outside parfor)
-						Recompiler.recompileProgramBlockHierarchy(fpb.getChildBlocks(), new LocalVariableMap(), 0, fpb.isRecompileOnce());
-					}		
+				if( pb.hasFunctions() ) {
+					InterProceduralAnalysis ipa = new InterProceduralAnalysis();
+					Set<String> fcand = ipa.analyzeSubProgram(sb);		
+					
+					if( !fcand.isEmpty() ) {
+						//regenerate runtime program of modified functions
+						for( String func : fcand )
+						{
+							String[] funcparts = DMLProgram.splitFunctionKey(func);
+							FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(funcparts[0], funcparts[1]);
+							//reset recompilation flags according to recompileOnce because it is only safe if function is recompileOnce 
+							//because then recompiled for every execution (otherwise potential issues if func also called outside parfor)
+							Recompiler.recompileProgramBlockHierarchy(fpb.getChildBlocks(), new LocalVariableMap(), 0, fpb.isRecompileOnce());
+						}		
+					}
 				}
-				
 			}
 			catch(Exception ex){
 				throw new DMLRuntimeException(ex);

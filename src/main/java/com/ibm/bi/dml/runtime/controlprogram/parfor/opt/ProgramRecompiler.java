@@ -55,6 +55,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ArithmeticBinaryCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.Data;
+import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
 
 /**
@@ -356,6 +357,48 @@ public class ProgramRecompiler
 		}
 		
 		return  ret && !sb.variablesUpdated().containsVariable(var);	
+	}
+	
+	/**
+	 * 
+	 * @param pb
+	 * @return
+	 */
+	public static boolean containsAtLeastOneFunction( ProgramBlock pb )
+	{
+		if( pb instanceof IfProgramBlock )
+		{
+			IfProgramBlock ipb = (IfProgramBlock) pb;
+			for( ProgramBlock lpb : ipb.getChildBlocksIfBody() )
+				if( containsAtLeastOneFunction(lpb) )
+					return true;
+			for( ProgramBlock lpb : ipb.getChildBlocksElseBody() )
+				if( containsAtLeastOneFunction(lpb) )
+					return true;
+		}
+		else if( pb instanceof WhileProgramBlock )
+		{
+			WhileProgramBlock wpb = (WhileProgramBlock) pb;
+			for( ProgramBlock lpb : wpb.getChildBlocks() )
+				if( containsAtLeastOneFunction(lpb) )
+					return true;
+		}
+		else if( pb instanceof ForProgramBlock ) //incl parfor
+		{
+			ForProgramBlock fpb = (ForProgramBlock) pb;
+			for( ProgramBlock lpb : fpb.getChildBlocks() )
+				if( containsAtLeastOneFunction(lpb) )
+					return true;
+		}
+		else
+		{
+			if( pb.getInstructions() != null )
+				for( Instruction inst : pb.getInstructions() )
+					if( inst instanceof FunctionCallCPInstruction )
+						return true;
+		}
+		
+		return false;	
 	}
 	
 	/**

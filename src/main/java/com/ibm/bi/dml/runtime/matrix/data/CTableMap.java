@@ -17,9 +17,10 @@
 
 package com.ibm.bi.dml.runtime.matrix.data;
 
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.ArrayList;
+
+import com.ibm.bi.dml.runtime.util.LongLongDoubleHashMap;
+import com.ibm.bi.dml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
 
 /**
  * Ctable map is an abstraction for the hashmap used for ctable's hash group-by
@@ -30,13 +31,12 @@ import java.util.Set;
  */
 public class CTableMap 
 {
-	
-	private HashMap<MatrixIndexes, Double> _map = null;
+	private LongLongDoubleHashMap _map = null;
 	private long _maxRow = -1;
 	private long _maxCol = -1;
 	
 	public CTableMap() {
-		_map = new HashMap<MatrixIndexes, Double>();
+		_map = new LongLongDoubleHashMap();
 		_maxRow = -1;
 		_maxCol = -1;
 	}
@@ -55,9 +55,9 @@ public class CTableMap
 	 * @return
 	 */
 	@Deprecated
-	public Set<Entry<MatrixIndexes, Double>> entrySet()
+	public ArrayList<LLDoubleEntry> entrySet()
 	{
-		return _map.entrySet();
+		return _map.extractValues();
 	}
 	
 	/**
@@ -75,18 +75,6 @@ public class CTableMap
 	public long getMaxColumn() {
 		return _maxCol;
 	}
-
-	/**
-	 * 
-	 * @param row
-	 * @param key
-	 * @return
-	 */
-	public double get( long row, long col )
-	{
-		MatrixIndexes key = new MatrixIndexes(row, col);		
-		return _map.get(key);
-	}
 	
 	/**
 	 * 
@@ -97,12 +85,7 @@ public class CTableMap
 	public void aggregate(long row, long col, double w) 
 	{
 		//hash group-by for core ctable computation
-		MatrixIndexes key = new MatrixIndexes(row, col);		
-		Double oldval = _map.get(key);
-		if( oldval != null ) //existing group
-			_map.put(key, oldval+w);
-		else             //non-existing group 
-			_map.put(key, w);
+		_map.addValue(row, col, w);
 		
 		//maintain internal summaries 
 		_maxRow = Math.max(_maxRow, row);
@@ -126,12 +109,11 @@ public class CTableMap
 		if( sparse ) //SPARSE <- cells
 		{
 			//append cells to sparse target (prevent shifting)
-			for( Entry<MatrixIndexes,Double> e : _map.entrySet() ) 
+			for( LLDoubleEntry e : _map.extractValues() ) 
 			{
-				MatrixIndexes index = e.getKey();
-				double value = e.getValue();
-				int rix = (int)index.getRowIndex();
-				int cix = (int)index.getColumnIndex();
+				double value = e.value;
+				int rix = (int)e.key1;
+				int cix = (int)e.key2;
 				if( value != 0 && rix<=rlen && cix<=clen )
 					mb.appendValue( rix-1, cix-1, value );
 			}
@@ -142,12 +124,11 @@ public class CTableMap
 		else  //DENSE <- cells
 		{
 			//directly insert cells into dense target 
-			for( Entry<MatrixIndexes,Double> e : _map.entrySet() ) 
+			for( LLDoubleEntry e : _map.extractValues() ) 
 			{
-				MatrixIndexes index = e.getKey();
-				double value = e.getValue();
-				int rix = (int)index.getRowIndex();
-				int cix = (int)index.getColumnIndex();
+				double value = e.value;
+				int rix = (int)e.key1;
+				int cix = (int)e.key2;
 				if( value != 0 && rix<=rlen && cix<=clen )
 					mb.quickSetValue( rix-1, cix-1, value );
 			}

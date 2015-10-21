@@ -18,7 +18,6 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import java.util.ArrayList;
-import java.util.Map.Entry;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -50,6 +49,7 @@ import com.ibm.bi.dml.runtime.matrix.data.Pair;
 import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
+import com.ibm.bi.dml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
 public class TernarySPInstruction extends ComputationSPInstruction
@@ -479,10 +479,10 @@ public class TernarySPInstruction extends ComputationSPInstruction
 				throws Exception {
 			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<Tuple2<MatrixIndexes, Double>>();
 			
-			for(Entry<MatrixIndexes, Double> ijv : ctableMap.entrySet()) {
-				long i = ijv.getKey().getRowIndex();
-				long j =  ijv.getKey().getColumnIndex();
-				double v =  ijv.getValue();
+			for(LLDoubleEntry ijv : ctableMap.entrySet()) {
+				long i = ijv.key1;
+				long j =  ijv.key2;
+				double v =  ijv.value;
 				
 				// retVal.add(new Tuple2<MatrixIndexes, MatrixCell>(blockIndexes, cell));
 				retVal.add(new Tuple2<MatrixIndexes, Double>(new MatrixIndexes(i, j), v));

@@ -30,6 +30,7 @@ import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import com.ibm.bi.dml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
 
 
 public class GMRCtableBuffer 
@@ -147,9 +148,9 @@ public class GMRCtableBuffer
 					}
 					
 					//output result data 
-					for(Entry<MatrixIndexes, Double> e: resultMap.entrySet()) {
-						key = e.getKey();
-						value.setValue(e.getValue());
+					for(LLDoubleEntry e: resultMap.entrySet()) {
+						key = new MatrixIndexes(e.key1, e.key2);
+						value.setValue(e.value);
 						for(Integer i: resultIDs) {
 							_collector.collectOutput(key, value, i, reporter);
 						}

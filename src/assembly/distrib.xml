@@ -106,6 +106,16 @@
 			<outputDirectory>.</outputDirectory>
 			<destName>SystemML.jar</destName>
 		</file>
+		<file>
+			<source>../LICENSE</source>
+			<outputDirectory>.</outputDirectory>
+			<destName>LICENSE</destName>
+		</file>
+		<file>
+			<source>../NOTICE</source>
+			<outputDirectory>.</outputDirectory>
+			<destName>NOTICE</destName>
+		</file>
 	</files>
 	
 	<!-- <dependencySets> <dependencySet> <includes> <include>com.ibm.biginsights:system-ml:jar:*</include> 

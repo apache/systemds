@@ -2700,12 +2700,13 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public static long estimateSizeDenseInMemory(long nrows, long ncols)
 	{
 		// basic variables and references sizes
-		long size = 44;
+		double size = 44;
 		
 		// core dense matrix block (double array)
-		size += nrows * ncols * 8;
+		size += 8d * nrows * ncols;
 		
-		return size;
+		// robustness for long overflows
+		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 	
 	/**
@@ -2718,7 +2719,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public static long estimateSizeSparseInMemory(long nrows, long ncols, double sparsity)
 	{
 		// basic variables and references sizes
-		long size = 44;
+		double size = 44;
 		
 		//NOTES:
 		// * Each sparse row has a fixed overhead of 8B (reference) + 32B (object) +
@@ -2727,17 +2728,14 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		// * Overheads for arrays, objects, and references refer to 64bit JVMs
 		// * If nnz < than rows we have only also empty rows.
 		
-		//account for sparsity and initial capacity
-		long cnnz = Math.max(SparseRow.initialCapacity, (long)Math.ceil(sparsity*ncols));
-		long rlen = Math.min(nrows, (long) Math.ceil(sparsity*nrows*ncols));
+		// account for sparsity and initial capacity
+		double cnnz = Math.max(SparseRow.initialCapacity, Math.ceil(sparsity*ncols));
+		double rlen = Math.min(nrows, Math.ceil(sparsity*nrows*ncols));
 		size += rlen * ( 116 + 12 * cnnz ); //sparse row
-		size += nrows * 8; //empty rows
+		size += nrows * 8d; //empty rows
 		
-		//OLD ESTIMATE: 
-		//int len = Math.max(SparseRow.initialCapacity, (int)Math.ceil(sparsity*ncols));
-		//size += nrows * (28 + 12 * len );
-		
-		return size;
+		// robustness for long overflows
+		return (long) Math.min(size, Long.MAX_VALUE);
 	}
 	
 	/**

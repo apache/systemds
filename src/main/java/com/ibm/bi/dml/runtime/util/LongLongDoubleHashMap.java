@@ -131,7 +131,7 @@ public class LongLongDoubleHashMap
 	private static int hash(long key1, long key2) {
 		//basic hash mixing of two longs hashes (w/o object creation)
 		int h = (int)(key1 ^ (key1 >>> 32));
-		h = h*31 + (int)(key1 ^ (key1 >>> 32));
+		h = h*31 + (int)(key2 ^ (key2 >>> 32));
 		
 		// This function ensures that hashCodes that differ only by
 		// constant multiples at each bit position have a bounded

@@ -304,10 +304,6 @@ public class RandSPInstruction extends UnarySPInstruction
 	public void processInstruction( ExecutionContext ec )
 		throws DMLRuntimeException
 	{
-		//check valid for integer dimensions (we cannot even represent empty blocks with larger dimensions)
-		if( rows > Integer.MAX_VALUE || cols > Integer.MAX_VALUE )
-			throw new DMLRuntimeException("RandSPInstruction does not support dimensions larger than integer: rows="+rows+", cols="+cols+".");
-		
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//process specific datagen operator

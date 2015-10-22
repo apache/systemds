@@ -23,7 +23,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
 
@@ -37,8 +36,8 @@ import com.ibm.bi.dml.runtime.functionobjects.CTable;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.MaxMatrixIndexes;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.CTableMap;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -214,38 +213,32 @@ public class TernarySPInstruction extends ComputationSPInstruction
 			throw new DMLRuntimeException("Incorrect ctable operation");
 		}
 		
-		// For filtering, we need to know the dimensions
-		// So, compute dimension if necessary
+		// handle known/unknown dimensions
 		long outputDim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) : (sec.getScalarInput(_outDim1, ValueType.DOUBLE, false)).getLongValue());
 		long outputDim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) : (sec.getScalarInput(_outDim2, ValueType.DOUBLE, false)).getLongValue());
 		MatrixCharacteristics mcBinaryCells = null;
 		boolean findDimensions = (outputDim1 == -1 && outputDim2 == -1); 
 		
-		if(findDimensions) {			
-			bincellsNoFilter = bincellsNoFilter.persist(StorageLevel.MEMORY_AND_DISK());
-			MatrixIndexes dims = bincellsNoFilter.keys().reduce(new MaxMatrixIndexes());
-			mcBinaryCells = new MatrixCharacteristics(dims.getRowIndex(), dims.getColumnIndex(), brlen, bclen);
-		}
-		else if((outputDim1 == -1 && outputDim2 != -1) || (outputDim1 != -1 && outputDim2 == -1)) {
-			throw new DMLRuntimeException("Incorrect output dimensions passed to TernarySPInstruction:" + outputDim1 + " " + outputDim2);
-		}
-		else 
-			mcBinaryCells = new MatrixCharacteristics(outputDim1, outputDim2, brlen, bclen);
-		
-		// Now that dimensions are computed, do filtering
-		JavaPairRDD<MatrixIndexes, Double> binaryCellsAfterFilter = bincellsNoFilter;
-		if(!findDimensions) {
-			binaryCellsAfterFilter = bincellsNoFilter.filter(
-					new FilterCells(mcBinaryCells.getRows(), mcBinaryCells.getCols()));
-			// TODO: Since the results (binaryCellsAfterFilter, binaryCells) are lazy
-			// We are relying on Spark to unpersist it in LRU fashion
-			// bincellsNoFilter = bincellsNoFilter.unpersist();	
+		if( !findDimensions ) {
+			if((outputDim1 == -1 && outputDim2 != -1) || (outputDim1 != -1 && outputDim2 == -1))
+				throw new DMLRuntimeException("Incorrect output dimensions passed to TernarySPInstruction:" + outputDim1 + " " + outputDim2);
+			else 
+				mcBinaryCells = new MatrixCharacteristics(outputDim1, outputDim2, brlen, bclen);	
+			
+			// filtering according to given dimensions
+			bincellsNoFilter = bincellsNoFilter
+					.filter(new FilterCells(mcBinaryCells.getRows(), mcBinaryCells.getCols()));
 		}
 		
-		// Convert value 'Double' to 'MatrixCell'
-		JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = 
-				binaryCellsAfterFilter
+		// convert double values to matrix cell
+		JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = bincellsNoFilter
 				.mapToPair(new ConvertToBinaryCell());
+		
+		// find dimensions if necessary (w/ cache for reblock)
+		if( findDimensions ) {						
+			binaryCells = SparkUtils.cacheBinaryCellRDD(binaryCells);
+			mcBinaryCells = SparkUtils.computeMatrixCharacteristics(binaryCells);
+		}
 		
 		//store output rdd handle
 		sec.setRDDHandleForVariable(output.getName(), binaryCells);

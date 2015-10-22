@@ -25,7 +25,6 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
 
@@ -559,21 +558,29 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		
 	}
 	
-	public void setOutputCharacteristicsForGroupedAgg(MatrixCharacteristics mc1, MatrixCharacteristics mcOut, JavaPairRDD<MatrixIndexes, MatrixCell> out) throws DMLRuntimeException {
+	/**
+	 * 
+	 * @param mc1
+	 * @param mcOut
+	 * @param out
+	 * @throws DMLRuntimeException
+	 */
+	public void setOutputCharacteristicsForGroupedAgg(MatrixCharacteristics mc1, MatrixCharacteristics mcOut, JavaPairRDD<MatrixIndexes, MatrixCell> out) 
+		throws DMLRuntimeException 
+	{
 		if(!mcOut.dimsKnown()) {
 			if(!mc1.dimsKnown()) {
 				throw new DMLRuntimeException("The output dimensions are not specified for grouped aggregate");
 			}
+			
+			if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
+				int ngroups = (int) Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS));
+				mcOut.set(ngroups, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+			}
 			else {
-				if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
-					int ngroups = (int) Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS));
-					mcOut.set(ngroups, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
-				}
-				else {
-					out.persist(StorageLevel.MEMORY_AND_DISK());
-					MatrixCharacteristics mc = SparkUtils.computeMatrixCharacteristics(out);
-					mcOut.set(mc.getRows(), mc.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), mc.getNonZeros());
-				}
+				out = SparkUtils.cacheBinaryCellRDD(out);
+				mcOut.set(SparkUtils.computeMatrixCharacteristics(out));
+				mcOut.setBlockSize(mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			}
 		}
 	}

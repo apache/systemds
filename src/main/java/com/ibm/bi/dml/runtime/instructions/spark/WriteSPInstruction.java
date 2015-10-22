@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
+import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 
@@ -34,6 +35,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
+import com.ibm.bi.dml.runtime.instructions.spark.functions.ComputeBinaryBlockNnzFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
@@ -46,13 +48,14 @@ import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 
 public class WriteSPInstruction extends SPInstruction 
-{
-	
+{	
 	private CPOperand input1 = null; 
 	private CPOperand input2 = null;
 	private CPOperand input3 = null;
 	private FileFormatProperties formatProperties;
-	private boolean isInputMatrixBlock = true;
+	
+	//scalars might occur for transform
+	private boolean isInputMatrixBlock = true; 
 	
 	public WriteSPInstruction(String opcode, String istr) {
 		super(opcode, istr);
@@ -144,22 +147,20 @@ public class WriteSPInstruction extends SPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 			MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 			
-			//recompute nnz via accumulator 
-			long nnz = -1;
-			if ( isInputMatrixBlock )
-				nnz = SparkUtils.computeNNZFromBlocks(in1);
-			
 			if(    oi == OutputInfo.MatrixMarketOutputInfo
 				|| oi == OutputInfo.TextCellOutputInfo     ) 
 			{
-				JavaRDD<String> header = null;
+				//recompute nnz if necessary (required for header if matrix market)
+				if ( isInputMatrixBlock && !mc.nnzKnown() )
+					mc.setNonZeros( SparkUtils.computeNNZFromBlocks(in1) );
 				
+				JavaRDD<String> header = null;				
 				if(outFmt.equalsIgnoreCase("matrixmarket")) {
 					ArrayList<String> headerContainer = new ArrayList<String>(1);
 					// First output MM header
 					String headerStr = "%%MatrixMarket matrix coordinate real general\n" +
 							// output number of rows, number of columns and number of nnz
-							mc.getRows() + " " + mc.getCols() + " " + mc.getNonZeros() ;
+							mc.getRows() + " " + mc.getCols() + " " + mc.getNonZeros();
 					headerContainer.add(headerStr);
 					header = sec.getSparkContext().parallelize(headerContainer);
 				}
@@ -173,8 +174,15 @@ public class WriteSPInstruction extends SPInstruction
 			else if( oi == OutputInfo.CSVOutputInfo ) 
 			{
 				JavaRDD<String> out = null;
+				Accumulator<Double> aNnz = null;
 				
 				if ( isInputMatrixBlock ) {
+					//piggyback nnz computation on actual write
+					if( !mc.nnzKnown() ) {
+						aNnz = sec.getSparkContext().accumulator(0L);
+						in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+					}	
+					
 					out = RDDConverterUtils.binaryBlockToCsv(in1, mc, 
 							(CSVFileFormatProperties) formatProperties, true);
 				}
@@ -208,19 +216,30 @@ public class WriteSPInstruction extends SPInstruction
 				}
 				
 				customSaveTextFile(out, fname, false);
+				
+				if( isInputMatrixBlock && !mc.nnzKnown() )
+					mc.setNonZeros((long)aNnz.value().longValue());
 			}
 			else if( oi == OutputInfo.BinaryBlockOutputInfo ) {
+				//piggyback nnz computation on actual write
+				Accumulator<Double> aNnz = null;
+				if( !mc.nnzKnown() ) {
+					aNnz = sec.getSparkContext().accumulator(0L);
+					in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+				}
+				
+				//save binary block rdd on hdfs
 				in1.saveAsHadoopFile(fname, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
-			}
-			else if( oi == OutputInfo.BinaryCellOutputInfo ) {
-				throw new DMLRuntimeException("Writing using binary cell format is not implemented in WriteSPInstruction");
+				
+				if( !mc.nnzKnown() )
+					mc.setNonZeros((long)aNnz.value().longValue());
 			}
 			else {
+				//unsupported formats: binarycell (not externalized)
 				throw new DMLRuntimeException("Unexpected data format: " + outFmt);
 			}
 			
-			//update nnz and write meta data file
-			mc.setNonZeros( nnz );
+			// write meta data file
 			MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);	
 		}
 		catch(IOException ex)

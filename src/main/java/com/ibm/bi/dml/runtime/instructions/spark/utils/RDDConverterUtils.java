@@ -251,43 +251,7 @@ public class RDDConverterUtils
 	{
 		return in.mapToPair(new TextToSerTextFunction());
 	}
-	
-	
-	//TODO the other utils below require cleanup and a rework for efficiency 
 
-		
-	public static class ComputeBlockIndexes implements PairFunction<Tuple2<MatrixIndexes, MatrixCell>, MatrixIndexes, MatrixCell> {
-
-		private static final long serialVersionUID = 7709908904123704702L;
-
-		int _rpb, _cpb;
-		
-		ComputeBlockIndexes(int rpb, int cpb) {
-			_rpb = rpb;
-			_cpb = cpb;
-		}
-		
-		@Override
-		public Tuple2<MatrixIndexes, MatrixCell> call(
-				Tuple2<MatrixIndexes, MatrixCell> t)
-				throws Exception {
-			
-			long r = t._1().getRowIndex();
-			long c = t._1().getColumnIndex();
-			
-			long bi = UtilFunctions.blockIndexCalculation(r, _rpb);
-			int i = UtilFunctions.cellInBlockCalculation(r, _rpb);
-			
-			long bj = UtilFunctions.blockIndexCalculation(c, _cpb);
-			int j = UtilFunctions.cellInBlockCalculation(c, _cpb);
-			
-			MatrixIndexes idx = new MatrixIndexes(bi,bj);
-			MatrixCell cell = new MatrixCell(i, j, t._2().getValue());
-			
-			return new Tuple2<MatrixIndexes, MatrixCell>(idx, cell);
-		}
-		
-	}
 	
 	/////////////////////////////////
 	// BINARYBLOCK-SPECIFIC FUNCTIONS

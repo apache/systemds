@@ -551,7 +551,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			}
 			
 			MatrixIndexes indx = new MatrixIndexes(kv._1, 1);
-			MatrixCell cell = new MatrixCell(0, 0, val);
+			MatrixCell cell = new MatrixCell(val);
 			
 			return new Tuple2<MatrixIndexes, MatrixCell>(indx, cell);
 		}

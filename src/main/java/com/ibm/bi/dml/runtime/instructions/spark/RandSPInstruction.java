@@ -617,7 +617,7 @@ public class RandSPInstruction extends UnarySPInstruction
 				throws Exception {
 			long rowID = t._2()+1;
 			MatrixIndexes mi = new MatrixIndexes(rowID, 1);
-			MatrixCell mc = new MatrixCell(0, 0, t._1());
+			MatrixCell mc = new MatrixCell(t._1());
 			
 			return new Tuple2<MatrixIndexes, MatrixCell>(mi, mc);
 		}

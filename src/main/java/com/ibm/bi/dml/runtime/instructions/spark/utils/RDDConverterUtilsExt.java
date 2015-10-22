@@ -461,17 +461,19 @@ public class RDDConverterUtilsExt
 			
 			//parse input ijv triple
 			st.reset( strVal );
-			long row = st.nextLong();
-			long col = st.nextLong();
+			//FIXME
+			//long row = st.nextLong();
+			//long col = st.nextLong();
 			double val = st.nextDouble();
-			return new MatrixCell(row, col, val);
+			return new MatrixCell(val);
 		}
 		
 		public MatrixCell matrixEntryToMatrixCell(MatrixEntry entry) {
-			long row = entry.i();
-			long col = entry.j();
+			//FIXME
+			//long row = entry.i();
+			//long col = entry.j();
 			double val = entry.value();
-			return new MatrixCell(row, col, val);
+			return new MatrixCell(val);
 		}
 		
 		// ----------------------------------------------------
@@ -505,7 +507,7 @@ public class RDDConverterUtilsExt
 					flushBufferToList(rbuff, ret);
 				
 				//add value to reblock buffer
-				rbuff.appendCell(cell.getRowIndex(), cell.getColIndex(), cell.getValue());
+				rbuff.appendCell(-1, -1, cell.getValue());
 			}
 			
 			//final flush buffer

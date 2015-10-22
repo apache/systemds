@@ -48,67 +48,17 @@ import com.ibm.bi.dml.runtime.util.IndexRange;
 public class MatrixCell extends MatrixValue implements WritableComparable, Serializable
 {
 	private static final long serialVersionUID = -7755996717411912578L;
-
 	
 	protected double value;
-	
-	public MatrixCell(MatrixCell that)
-	{
-		this.value=that.value;
-		this.rowIndex = that.rowIndex;
-		this.colIndex = that.colIndex;
-	}
-	
-	// ---------------------------------------
-	// Added for Reblock 
-	protected long rowIndex;
-	protected long colIndex;
-	public MatrixCell(long row, long col, double value) {
-		rowIndex = row;
-		colIndex = col;
-		this.value = value;
-	}
-	public long getRowIndex() {
-		return rowIndex;
-	}
-
-	public void setRowIndex(long rowIndex) {
-		this.rowIndex = rowIndex;
-	}
-
-	public long getColIndex() {
-		return colIndex;
-	}
-
-	public void setColIndex(long colIndex) {
-		this.colIndex = colIndex;
-	}
-	public void writeObject(java.io.ObjectOutputStream out) throws IOException {
-		// default deserialization
-		out.defaultWriteObject();
-		out.writeLong(rowIndex);
-		out.writeLong(colIndex);
-		out.writeDouble(getValue());
-	}
-	
-	public String toString() {
-		return "{" + rowIndex +  "," + colIndex + "," + Double.toString(getValue()) + "}";
-	}
-	
-	public void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		// default deserialization
-	    in.defaultReadObject();
-		rowIndex = in.readLong();
-		colIndex = in.readLong();
-		setValue(in.readDouble());
-	}
-	// ---------------------------------------
-	
-	
 
 	public MatrixCell()
 	{
 		value=0;
+	}
+
+	public MatrixCell(MatrixCell that)
+	{
+		this.value=that.value;
 	}
 	
 	public MatrixCell(MatrixValue that) {
@@ -229,11 +179,6 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 		out.writeDouble(value);
 	}
 
-//	public String toString()
-//	{
-//		return Double.toString(value);
-//	}
-
 	@Override
 	public MatrixValue aggregateBinaryOperations(MatrixValue value1,
 			MatrixValue value2, MatrixValue result, AggregateBinaryOperator op) 
@@ -290,8 +235,6 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 		
 	}
 
-	
-	//TODO: how to handle -minus left vs. minus right
 	public void denseScalarOperationsInPlace(ScalarOperator op)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		value=op.executeScalar(value);

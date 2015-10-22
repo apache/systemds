@@ -78,7 +78,7 @@ public class ConvertTextLineToBinaryCellFunction implements PairFunction<String,
 			// ------------------------------------------------------------------------------------------
 			
 			MatrixIndexes blockIndexes = new MatrixIndexes(blockRowIndex, blockColIndex);
-			MatrixCell cell = new MatrixCell(rowIndexInBlock, colIndexInBlock, ((MatrixCell)retVal.getValue()).getValue());
+			MatrixCell cell = new MatrixCell(((MatrixCell)retVal.getValue()).getValue());
 			
 			return new Tuple2<MatrixIndexes, MatrixCell>(blockIndexes, cell);
 		}

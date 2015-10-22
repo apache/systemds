@@ -493,7 +493,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 		public Tuple2<MatrixIndexes, MatrixCell> call(
 				Tuple2<MatrixIndexes, Double> kv) throws Exception {
 			
-			MatrixCell cell = new MatrixCell(0,0,kv._2().doubleValue());
+			MatrixCell cell = new MatrixCell(kv._2().doubleValue());
 			return new Tuple2<MatrixIndexes, MatrixCell>(kv._1(), cell);
 		}
 		

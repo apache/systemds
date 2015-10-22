@@ -64,8 +64,8 @@ public class LibMatrixMult
 {
 	//internal configuration
 	public static final boolean LOW_LEVEL_OPTIMIZATION = true;
-	public static final long MEM_OVERHEAD_THRESHOLD = 2*1024*1024; //MAX 2 MB
-	private static final long PAR_MINFLOP_THRESHOLD = 2*1024*1024; //MIN 2 MFLOP
+	public static final long MEM_OVERHEAD_THRESHOLD = 2L*1024*1024; //MAX 2 MB
+	private static final long PAR_MINFLOP_THRESHOLD = 2L*1024*1024; //MIN 2 MFLOP
 	
 	private LibMatrixMult() {
 		//prevent instantiation via private constructor
@@ -151,7 +151,7 @@ public class LibMatrixMult
 		
 		//check too high additional vector-matrix memory requirements (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
-		if( m1.rlen == 1 && (m2.clen * 8 * k > MEM_OVERHEAD_THRESHOLD || !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) 
+		if( m1.rlen == 1 && (8L * m2.clen * k > MEM_OVERHEAD_THRESHOLD || !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) 
 			|| 2L * m1.rlen * m1.clen * m2.clen < PAR_MINFLOP_THRESHOLD ) 
 		{ 
 			matrixMult(m1, m2, ret);
@@ -277,7 +277,7 @@ public class LibMatrixMult
 
 		//check too high additional memory requirements (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
-		if( mV.rlen * 8 * k > MEM_OVERHEAD_THRESHOLD 
+		if( 8L * mV.rlen * k > MEM_OVERHEAD_THRESHOLD 
 			|| 4L * mX.rlen * mX.clen < PAR_MINFLOP_THRESHOLD ) 
 		{ 
 			matrixMultChain(mX, mV, mW, ret, ct);
@@ -375,8 +375,8 @@ public class LibMatrixMult
 		//check no parallelization benefit (fallback to sequential)
 		//check too small workload in terms of flops (fallback to sequential too)
 		if( ret.rlen == 1 
-			|| leftTranspose && m1.rlen * m1.clen * m1.clen < PAR_MINFLOP_THRESHOLD
-			|| !leftTranspose && m1.clen * m1.rlen * m1.rlen < PAR_MINFLOP_THRESHOLD ) 
+			|| leftTranspose && 1L * m1.rlen * m1.clen * m1.clen < PAR_MINFLOP_THRESHOLD
+			|| !leftTranspose && 1L * m1.clen * m1.rlen * m1.rlen < PAR_MINFLOP_THRESHOLD ) 
 		{ 
 			matrixMultTransposeSelf(m1, ret, leftTranspose);
 			return;

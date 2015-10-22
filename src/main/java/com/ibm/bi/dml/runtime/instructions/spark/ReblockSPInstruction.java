@@ -147,7 +147,7 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		else if(iimd.getInputInfo()==InputInfo.BinaryCellInputInfo) 
 		{
 			JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec.getRDDHandleForVariable(input1.getName(), iimd.getInputInfo());
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryCellRDDToBinaryBlockRDD(sec.getSparkContext(), binaryCells, mcOut, outputEmptyBlocks);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryCellToBinaryBlock(sec.getSparkContext(), binaryCells, mcOut, outputEmptyBlocks);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);

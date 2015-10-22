@@ -28,7 +28,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.util.UtilFunctions;
 
-
+@Deprecated
 public class ConvertALToBinaryBlockFunction implements PairFunction<Tuple2<MatrixIndexes, ArrayList<MatrixCell>>, MatrixIndexes, MatrixBlock> {
 	
 	

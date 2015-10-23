@@ -172,14 +172,20 @@ public class ProgramConverter
 			Data dat = cpec.getVariables().get(var);
 			if( dat instanceof MatrixObject && ((MatrixObject)dat).isUpdateInPlaceEnabled() ) {
 				MatrixObject mo = (MatrixObject)dat;
-				if( mo.getNnz() != 0 )
-					throw new DMLRuntimeException("Unsupported copy of update-inplace matrix w/ nnz!=0: "+var);
-				
-				//create empty matrix block w/ dense representation (preferred for update in-place)
 				MatrixObject moNew = new MatrixObject(mo); 
-				moNew.acquireModify(new MatrixBlock((int)mo.getNumRows(), (int)mo.getNumColumns(), false));
+				if( mo.getNnz() != 0 ){
+					// If output matrix is not empty (NNZ != 0), then local copy is created so that 
+					// update in place operation can be applied.
+					MatrixBlock mbVar = mo.acquireRead();
+					moNew.acquireModify (new MatrixBlock(mbVar));
+					mo.release();
+				} else {
+					//create empty matrix block w/ dense representation (preferred for update in-place)
+					//Creating a dense matrix block is valid because empty block not allocated and transfer 
+					// to sparse representation happens in left indexing in place operation.
+					moNew.acquireModify(new MatrixBlock((int)mo.getNumRows(), (int)mo.getNumColumns(), false));
+				}
 				moNew.release();			
-				
 				cpec.setVariable(var, moNew);
 			}
 		}

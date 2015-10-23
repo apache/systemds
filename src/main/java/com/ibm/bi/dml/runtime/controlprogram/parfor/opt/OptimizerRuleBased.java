@@ -1863,7 +1863,7 @@ public class OptimizerRuleBased extends Optimizer
 		ArrayList<String> retVars = pfpb.getResultVariables();
 		
 		//compute total sum of pinned result variable memory
-		double sum = computeTotalSizeResultVariables(retVars, vars);
+		double sum = computeTotalSizeResultVariables(retVars, vars, pfpb.getDegreeOfParallelism());
 		
 		//NOTE: currently this rule is too conservative (the result variable is assumed to be dense and
 		//most importantly counted twice if this is part of the maximum operation)
@@ -1885,13 +1885,6 @@ public class OptimizerRuleBased extends Optimizer
 					&& pn.isCPOnly() ) //no forced mr/spark execution  
 			{ 
 				apply = true;
-				
-				//ensure that all result variables are initially empty
-				for( String var : retVars ) {
-					Data dat = vars.get(var);
-					if( dat instanceof MatrixObject )
-						apply &= (((MatrixObject)dat).getNnz() == 0);
-				}	
 			}
 		}
 		
@@ -1949,7 +1942,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param vars
 	 * @return
 	 */
-	private double computeTotalSizeResultVariables(ArrayList<String> retVars, LocalVariableMap vars)
+	private double computeTotalSizeResultVariables(ArrayList<String> retVars, LocalVariableMap vars, int k)
 	{
 		double sum = 1;
 		for( String var : retVars ){
@@ -1957,7 +1950,16 @@ public class OptimizerRuleBased extends Optimizer
 			if( dat instanceof MatrixObject )
 			{
 				MatrixObject mo = (MatrixObject)dat;
-				sum += OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), 1.0);	
+				double nnz = mo.getNnz();
+
+				if(nnz == 0.0) 
+					sum += OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), 1.0);
+				else {
+					double sp = mo.getSparsity();
+					sum += (k+1) * (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(),
+							Math.min((1.0/k)+sp, 1.0)));	// Every worker will consume memory for (MatrixSize/k + nnz) data.
+														// This is applicable only when there is non-zerp nnz. 
+				}
 			} 
 		}
 		

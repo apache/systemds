@@ -13,4 +13,4 @@ include:
   - _modules
 
 # These allow the documentation to be updated with newer releases
-SYSTEMML_VERSION: 5.2
+SYSTEMML_VERSION: 0.8.0

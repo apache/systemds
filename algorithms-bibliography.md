@@ -4,6 +4,8 @@ title: SystemML Algorithms Reference - Bibliography
 displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
 ---
 
+# 7. Bibliography
+
 AcockStavig1979, Alan C. Acock and Gordon
 R. Stavig, A Measure of Association for Nonparametric
 Statistics, Social Forces, Oxford University
@@ -35,12 +37,18 @@ Annual ACM-SIAM Symposium on Discrete Algorithms (SODA 2007),
 January 7--9, 2007, New Orleans, LA,
 USA, 1027--1035.
 
+Breiman2001, L. Breiman. Random forests. Machine Learning, 45(1):5–32, 2001.
+
+BreimanFOS1984, L. Breiman, J. H. Friedman, R. A. Olshen, and C. J. Stone. Classification and Regression Trees. Wadsworth, 1984.
+
 Chapelle2007, Olivier Chapelle, Training a Support Vector Machine in the Primal, Neural Computation, 2007.
 
 Cochran1954, William G. Cochran,
 Some Methods for Strengthening the Common $\chi^2$ Tests, 
 Biometrics, Volume 10, Number 4, December
 1954, 417--451.
+
+Collett2003, D. Collett. Modelling Survival Data in Medical Research, Second Edition. Chapman & Hall/CRC Texts in Statistical Science. Taylor & Francis, 2003.
 
 Gill2000, Jeff Gill, Generalized Linear
 Models: A Unified Approach, Sage University Papers Series on
@@ -79,6 +87,8 @@ Jorge Nocedal and Stephen Wright, Springer Series
 in Operations Research and Financial Engineering, 664,
 Second Edition, Springer, 2006.
 
+PandaHBB2009, B. Panda, J. Herbach, S. Basu, and R. J. Bayardo. PLANET: massively parallel learning of tree ensembles with mapreduce. PVLDB, 2(2):1426– 1437, 2009.
+
 Russell2009, S. Russell and P. Norvig, Artificial Intelligence: A Modern Approach, Prentice Hall, 2009.
 
 Scholkopf1995, B. Scholkopf, C. Burges and V. Vapnik, Extracting Support Data for a Given Task, International Conference on Knowledge Discovery and Data Mining (ICDM), 1995.
@@ -91,3 +101,9 @@ June 7, 1946, Volume 103, Number 2684,
 Vetterling1992,
 W. T. Vetterling and B. P. Flannery,
 Multidimensions in Numerical Recipes in C - The Art in Scientific Computing, W. H. Press and S. A. Teukolsky (eds.), Cambridge University Press, 1992.
+
+ZhouWSP08,
+Y. Zhou, D. M. Wilkinson, R. Schreiber, and R. Pan. Large-scale parallel collaborative filtering for the Netflix prize.
+In Algorithmic Aspects in Information and Management, 4th International Conference, AAIM 2008, Shanghai, China, June 23-25, 2008. Proceedings, pages 337–348, 2008.
+
+

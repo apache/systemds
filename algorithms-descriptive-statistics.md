@@ -4,8 +4,8 @@ title: SystemML Algorithms Reference - Descriptive Statistics
 displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
 ---
 
-
 # 1. Descriptive Statistics
+
 
 Descriptive statistics are used to quantitatively describe the main
 characteristics of the data. They provide meaningful summaries computed
@@ -99,7 +99,10 @@ to compute the mean of a categorical attribute like ‘Hair Color’.
 
 ### Usage
 
-    hadoop jar SystemML.jar -f Univar-Stats.dml -nvargs X=file TYPES=file STATS=file
+    hadoop jar SystemML.jar -f Univar-Stats.dml
+                            -nvargs X=<file> 
+                                    TYPES=<file>
+                                    STATS=<file>
 
 
 ### Arguments
@@ -119,7 +122,10 @@ be stored. The format of the output matrix is defined by
 
 ### Examples
 
-    hadoop jar SystemML.jar -f Univar-Stats.dml -nvargs X=/user/ml/X.mtx TYPES=/user/ml/types.mtx STATS=/user/ml/stats.mtx
+    hadoop jar SystemML.jar -f Univar-Stats.dml
+                            -nvargs X=/user/ml/X.mtx
+                                    TYPES=/user/ml/types.mtx
+                                    STATS=/user/ml/stats.mtx
 
 
 * * *
@@ -180,6 +186,8 @@ $v_i = \texttt{X[}i\texttt{,}\,\texttt{idx]}$. Let
 $v^s = (v^s_1, v^s_2, \ldots, v^s_n)$ be the same values in the sorted
 order, preserving duplicates: $v^s_1 \leq v^s_2 \leq \ldots \leq v^s_n$.
 
+* * *
+
 <a name="figure1" />
 **Figure 1**: The computation of quartiles, median, and interquartile mean from the
 empirical distribution function of the 10-point
@@ -188,8 +196,9 @@ the graph has height $1{/}n = 0.1$.  Values $$q_{25\%}$$, $$q_{50\%}$$, and $$q_
 the $1^{\textrm{st}}$, $2^{\textrm{nd}}$, and $3^{\textrm{rd}}$ quartiles correspondingly;
 value $\mu$ denotes the median.  Values $\phi_1$ and $\phi_2$ show the partial contribution
 of border points (quartiles) $v_3=3.7$ and $v_8=6.4$ into the interquartile mean.
-![Figure 1](img/algorithms-reference-figure-1-computation-of-quartiles-median-and-interquartile-mean.png "Figure 1")
+![Figure 1](img/algorithms-reference/computation-of-quartiles-median-and-interquartile-mean.png "Figure 1")
 
+* * *
 
 #### Central Tendency Measures
 
@@ -485,7 +494,7 @@ over all categories.
 The output matrix containing all computed statistics is of size
 $17$ rows and as many columns as in the input matrix `X`. Each row
 corresponds to a particular statistic, according to the convention
-specified in Table \[table:univars\]. The first $14$ statistics are
+specified in [**Table 1**](algorithms-descriptive-statistics.html#table1). The first $14$ statistics are
 applicable for *scale* columns, and the last $3$ statistics are
 applicable for categorical, i.e. nominal and ordinal, columns.
 
@@ -515,7 +524,13 @@ attributes like ‘Hair Color’.
 
 ### Usage
 
-    hadoop jar SystemML.jar -f bivar-stats.dml -nvargs X=file index1=file index2=file types1=file types2=file OUTDIR=directory
+    hadoop jar SystemML.jar -f bivar-stats.dml
+                            -nvargs X=<file>
+                                    index1=<file>
+                                    index2=<file>
+                                    types1=<file>
+                                    types2=<file>
+                                    OUTDIR=<directory>
 
 
 ### Arguments
@@ -559,7 +574,13 @@ are defined in [**Table 2**](algorithms-descriptive-statistics.html#table2).
 
 ### Examples
 
-    hadoop jar SystemML.jar -f bivar-stats.dml -nvargs X=/user/ml/X.mtx index1=/user/ml/S1.mtx index2=/user/ml/S2.mtx types1=/user/ml/K1.mtx types2=/user/ml/K2.mtx OUTDIR=/user/ml/stats.mtx
+    hadoop jar SystemML.jar -f bivar-stats.dml
+                            -nvargs X=/user/ml/X.mtx
+                                    index1=/user/ml/S1.mtx
+                                    index2=/user/ml/S2.mtx
+                                    types1=/user/ml/K1.mtx
+                                    types2=/user/ml/K2.mtx
+                                    OUTDIR=/user/ml/stats.mtx
     
 
 * * *
@@ -609,7 +630,7 @@ types in the same order as their indices in the `index1` and `index2`
 files. The types must be provided as per the following convention:
 1 = scale, 2 = nominal, 3 = ordinal.
 
-The script orgainizes its results into (potentially) four output
+The script organizes its results into (potentially) four output
 matrices, one per each type combination. The types of bivariate
 statistics are defined using the types of the columns that were used for
 their arguments, with “ordinal” sometimes retrogressing to “nominal.”
@@ -1025,7 +1046,15 @@ becomes reversed and amplified (from $+0.1$ to $-0.5$) if we ignore the months.
 
 ### Usage
 
-    hadoop jar SystemML.jar -f stratstats.dml -nvargs X=file Xcid=file Y=file Ycid=file S=file Scid=int O=file fmt=format
+    hadoop jar SystemML.jar -f stratstats.dml
+                            -nvargs X=<file>
+                                    Xcid=[file]
+                                    Y=[file]
+                                    Ycid=[file]
+                                    S=[file]
+                                    Scid=[int]
+                                    O=<file>
+                                    fmt=[format]
 
 
 ### Arguments
@@ -1033,25 +1062,25 @@ becomes reversed and amplified (from $+0.1$ to $-0.5$) if we ignore the months.
 **X**: Location (on HDFS) to read matrix $X$ whose columns we want to use as
 the 1-st covariate (i.e. as the feature variable)
 
-**Xcid**: (default: " ") Location to read the single-row matrix that lists all index
+**Xcid**: (default: `" "`) Location to read the single-row matrix that lists all index
 numbers of the $X$-columns used as the 1-st covariate; the default value
 means “use all $X$-columns”
 
-**Y**: (default: " ") Location to read matrix $Y$ whose columns we want to use as
+**Y**: (default: `" "`) Location to read matrix $Y$ whose columns we want to use as
 the 2-nd covariate (i.e. as the response variable); the default value
 means “use $X$ in place of $Y$”
 
-**Ycid**: (default: " ") Location to read the single-row matrix that lists all index
+**Ycid**: (default: `" "`) Location to read the single-row matrix that lists all index
 numbers of the $Y$-columns used as the 2-nd covariate; the default value
 means “use all $Y$-columns”
 
-**S**: (default: " ") Location to read matrix $S$ that has the stratum column.
+**S**: (default: `" "`) Location to read matrix $S$ that has the stratum column.
 Note: the stratum column must contain small positive integers; all
 fractional values are rounded; stratum IDs of value ${\leq}\,0$ or NaN
 are treated as missing. The default value for S means “use
 $X$ in place of $S$”
 
-**Scid**: (default: 1) The index number of the stratum column in $S$
+**Scid**: (default: `1`) The index number of the stratum column in $S$
 
 **O**: Location to store the output matrix defined in
 [**Table 4**](algorithms-descriptive-statistics.html#table4).
@@ -1204,15 +1233,27 @@ SystemML Language Reference for details.
 
 ### Examples
 
-    hadoop jar SystemML.jar -f stratstats.dml -nvargs X=/user/ml/X.mtx Xcid=/user/ml/Xcid.mtx Y=/user/ml/Y.mtx Ycid=/user/ml/Ycid.mtx S=/user/ml/S.mtx Scid=2 O=/user/ml/Out.mtx fmt=csv
+    hadoop jar SystemML.jar -f stratstats.dml
+                            -nvargs X=/user/ml/X.mtx
+                                    Xcid=/user/ml/Xcid.mtx
+                                    Y=/user/ml/Y.mtx
+                                    Ycid=/user/ml/Ycid.mtx
+                                    S=/user/ml/S.mtx Scid=2
+                                    O=/user/ml/Out.mtx
+                                    fmt=csv
 
-    hadoop jar SystemML.jar -f stratstats.dml -nvargs X=/user/ml/Data.mtx Xcid=/user/ml/Xcid.mtx Ycid=/user/ml/Ycid.mtx Scid=7 O=/user/ml/Out.mtx
+    hadoop jar SystemML.jar -f stratstats.dml
+                            -nvargs X=/user/ml/Data.mtx
+                                    Xcid=/user/ml/Xcid.mtx
+                                    Ycid=/user/ml/Ycid.mtx
+                                    Scid=7
+                                    O=/user/ml/Out.mtx
 
 
 ### Details
 
 Suppose we have $n$ records of format $(i, x, y)$, where
-$i\in\{1,\ldots, k\}$ is a stratum number and $(x, y)$ are two numerical
+$$i\in\{1,\ldots, k\}$$ is a stratum number and $(x, y)$ are two numerical
 covariates. We want to analyze conditional linear relationship between
 $y$ and $x$ conditioned by $i$. Note that $x$, but not $y$, may
 represent a categorical variable if we assign a numerical value to each
@@ -1220,8 +1261,12 @@ category, for example 0 and 1 for two categories.
 
 We assume a linear regression model for $y$:
 
-$$y_{i,j} \,=\, \alpha_i + \beta x_{i,j} + {\varepsilon}_{i,j}\,, \quad\textrm{where}\,\,\,\,
-{\varepsilon}_{i,j} \sim Normal(0, \sigma^2)$$
+$$
+\begin{equation}
+y_{i,j} \,=\, \alpha_i + \beta x_{i,j} + {\varepsilon}_{i,j}\,, \quad\textrm{where}\,\,\,\,
+{\varepsilon}_{i,j} \sim Normal(0, \sigma^2)
+\end{equation}
+$$
 
 Here $i = 1\ldots k$ is a stratum number and
 $j = 1\ldots n_i$ is a record number in stratum $i$; by $n_i$ we denote
@@ -1238,9 +1283,13 @@ $\beta$ is known, the best estimate for $\alpha_i$ is
 $\bar{y}_i - \beta \bar{x}_i$, which gives the prediction error
 sum-of-squares of
 
-$$\sum\nolimits_{i=1}^k \sum\nolimits_{j=1}^{n_i} \big(y_{i,j} - \beta x_{i,j} - (\bar{y}_i - \beta \bar{x}_i)\big)^2
+$$
+\begin{equation}
+\sum\nolimits_{i=1}^k \sum\nolimits_{j=1}^{n_i} \big(y_{i,j} - \beta x_{i,j} - (\bar{y}_i - \beta \bar{x}_i)\big)^2
 \,\,=\,\, \beta^{2\,}V_x \,-\, 2\beta \,V_{x,y} \,+\, V_y
-\label{eqn:stratsumsq}$$
+\label{eqn:stratsumsq}
+\end{equation}
+$$
 
 where $V_x$, $V_y$, and $V_{x, y}$ are,
 correspondingly, the “stratified” sample estimates of variance
@@ -1263,10 +1312,9 @@ closer to $$x_{i,j}$$ and $$y_{i,j}$$ than the global means. The stratified
 variance estimates the uncertainty in $$x_{i,j}$$ and $$y_{i,j}$$ given
 their stratum $i$.
 
-Minimizing over $\beta$ the error sum-of-squares 
+Minimizing over $\beta$ the error sum-of-squares (2)
 gives us the regression slope estimate $\hat{\beta} = V_{x,y} / V_x$,
-with the error sum-of-squares
-becoming the residual sum-of-squares (RSS):
+with (2) becoming the residual sum-of-squares (RSS):
 
 $$\mathrm{RSS} \,\,=\, \,
 \sum\nolimits_{i=1}^k \sum\nolimits_{j=1}^{n_i} \big(y_{i,j} - 
@@ -1276,10 +1324,10 @@ $$\mathrm{RSS} \,\,=\, \,
 The quantity
 $$\hat{R}^2 = V_{x,y}^2 / (V_x V_y)$$, called *$R$-squared*, estimates the
 fraction of stratified variance in $$y_{i,j}$$ explained by covariate
-$$x_{i, j}$$ in the linear regression model. We
+$$x_{i, j}$$ in the linear regression model (1). We
 define *stratified correlation* as the square root of $\hat{R}^2$ taken
 with the sign of $V_{x,y}$. We also use RSS to estimate the residual
-standard deviation $\sigma$ in the linear regression model that models the
+standard deviation $\sigma$ in (1) that models the
 prediction error of $$y_{i,j}$$ given $$x_{i,j}$$ and the stratum:
 
 $$\hat{\beta}\, =\, \frac{V_{x,y}}{V_x}; \,\,\,\, \hat{R} \,=\, \frac{V_{x,y}}{\sqrt{V_x V_y}};

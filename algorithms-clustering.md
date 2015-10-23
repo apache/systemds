@@ -4,7 +4,6 @@ title: SystemML Algorithms Reference - Clustering
 displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
 ---
 
-
 # 3. Clustering
 
 
@@ -75,9 +74,7 @@ not the global minimum and varies depending on the initial centroids. We
 implement multiple parallel runs with different initial centroids and
 report the best result.
 
-### Scoring
-
-Our scoring script evaluates the clustering output by comparing it with
+**Scoring.** Our scoring script evaluates the clustering output by comparing it with
 a known category assignment. Since cluster labels have no prior
 correspondence to the categories, we cannot count “correct” and “wrong”
 cluster assignments. Instead, we quantify them in two ways:
@@ -96,30 +93,34 @@ apart is a “false negative” etc.
 
 ### Usage
 
+**K-Means**:
+
     hadoop jar SystemML.jar -f Kmeans.dml
-                            -nvargs X=file 
-                                    C=file 
-                                    k=int 
-                                    runs=int 
-                                    maxi=int 
-                                    tol=double 
-                                    samp=int 
-                                    isY=int 
-                                    Y=file 
-                                    fmt=format 
-                                    verb=int
+                            -nvargs X=<file>
+                                    C=[file]
+                                    k=<int>
+                                    runs=[int]
+                                    maxi=[int]
+                                    tol=[double]
+                                    samp=[int]
+                                    isY=[int]
+                                    Y=[file]
+                                    fmt=[format]
+                                    verb=[int]
+
+**K-Means Prediction**:
 
     hadoop jar SystemML.jar -f Kmeans-predict.dml
-                            -nvargs X=file 
-                                    C=file 
-                                    spY=file 
-                                    prY=file 
-                                    fmt=format 
-                                    O=file
+                            -nvargs X=[file]
+                                    C=[file]
+                                    spY=[file]
+                                    prY=[file]
+                                    fmt=[format]
+                                    O=[file]
 
 
 
-### Arguments - K-means
+### Arguments - K-Means
 
 **X**: Location to read matrix $X$ with the input data records as rows
 
@@ -128,31 +129,31 @@ cluster centroids as rows
 
 **k**: Number of clusters (and centroids)
 
-**runs**: (default: 10) Number of parallel runs, each run with different initial
+**runs**: (default: `10`) Number of parallel runs, each run with different initial
 centroids
 
-**maxi**: (default: 1000) Maximum number of iterations per run
+**maxi**: (default: `1000`) Maximum number of iterations per run
 
-**tol**: (default: 0.000001) Tolerance (epsilon) for single-iteration WCSS\_C change ratio
+**tol**: (default: `0.000001`) Tolerance (epsilon) for single-iteration WCSS\_C change ratio
 
-**samp**: (default: 50) Average number of records per centroid in data samples used
+**samp**: (default: `50`) Average number of records per centroid in data samples used
 in the centroid initialization procedure
 
 **Y**: (default: `"Y.mtx"`) Location to store the one-column matrix $Y$ with the best
 available mapping of records to clusters (defined by the output
 centroids)
 
-**isY**: (default: 0) 0 = do not write matrix $Y$, 1 = write $Y$
+**isY**: (default: `0`) `0` = do not write matrix $Y$, `1` = write $Y$
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
 SystemML Language Reference for details.
 
-**verb**: (default: 0) 0 = do not print per-iteration statistics for
-each run, 1 = print them (the “verbose” option)
+**verb**: (default: `0`) `0` = do not print per-iteration statistics for
+each run, `1` = print them (the “verbose” option)
 
 
-### Arguments - K-means Scoring/Prediction
+### Arguments - K-Means Prediction
 
 **X**: (default: `" "`) Location to read matrix $X$ with the input data records as
 rows, optional when `prY` input is provided
@@ -174,7 +175,7 @@ categories
 
 **fmt**: (default: `"text"`) Matrix file output format for `prY`, such as
 `text`, `mm`, or `csv`; see read/write
-functions in SystemML Language Reference for details
+functions in SystemML Language Reference for details.
 
 **0**: (default: `" "`) Location to write the output statistics defined in
 [**Table 6**](algorithms-clustering.html#table6), by default print them to the
@@ -182,6 +183,8 @@ standard output
 
 
 ### Examples
+
+**K-Means**:
 
     hadoop jar SystemML.jar -f Kmeans.dml
                             -nvargs X=/user/ml/X.mtx
@@ -200,6 +203,8 @@ standard output
                                     isY=1
                                     Y=/user/ml/Yout.mtx
                                     verb=1
+
+**K-Means Prediction**:
 
 To predict Y given X and C:
 
@@ -465,11 +470,11 @@ assignment.
 We output the $k$ centroids for the best available clustering,
 i. e. whose WCSS is the smallest of all successful runs. The centroids
 are written as the rows of the $k\,{\times}\,m$-matrix into the output
-file whose path/name was provided as the “C” input
-argument. If the input parameter “isY” was set
-to 1, we also output the one-column matrix with the cluster
+file whose path/name was provided as the `C` input
+argument. If the input parameter `isY` was set
+to `1`, we also output the one-column matrix with the cluster
 assignment for all the records. This assignment is written into the file
-whose path/name was provided as the “Y” input argument. The
+whose path/name was provided as the `Y` input argument. The
 best WCSS value, as well as some information about the performance of
 the other runs, is printed during the script execution. The scoring
 script `Kmeans-predict.dml` prints all its results in a

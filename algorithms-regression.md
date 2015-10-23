@@ -3,7 +3,6 @@ layout: global
 title: SystemML Algorithms Reference - Regression
 displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
 ---
-      
 
 # 4. Regression
 
@@ -60,31 +59,31 @@ efficient when the number of features $m$ is relatively small
 
 ### Usage
 
-Linear Regression - Direct Solve
+**Linear Regression - Direct Solve**:
 
     hadoop jar SystemML.jar -f LinearRegDS.dml
-                            -nvargs X=file
-                                    Y=file
-                                    B=file
-                                    O=file
-                                    icpt=int
-                                    reg=double
-                                    fmt=format
+                            -nvargs X=<file>
+                                    Y=<file>
+                                    B=<file>
+                                    O=[file]
+                                    icpt=[int]
+                                    reg=[double]
+                                    fmt=[format]
 
 
-Linear Regression - Conjugate Gradient
+**Linear Regression - Conjugate Gradient**:
 
     hadoop jar SystemML.jar -f LinearRegCG.dml
-                            -nvargs X=file
-                                    Y=file
-                                    B=file
-                                    O=file
-                                    Log=file
-                                    icpt=int
-                                    reg=double
-                                    tol=double
-                                    maxi=int
-                                    fmt=format
+                            -nvargs X=<file>
+                                    Y=<file>
+                                    B=<file>
+                                    O=[file]
+                                    Log=[file]
+                                    icpt=[int]
+                                    reg=[double]
+                                    tol=[double]
+                                    maxi=[int]
+                                    fmt=[format]
 
 
 ### Arguments
@@ -107,26 +106,25 @@ iteration-specific variables for monitoring and debugging purposes, see
 [**Table 8**](algorithms-regression.html#table8)
 for details.
 
-**icpt**: (default: 0) Intercept presence and shifting/rescaling the features
+**icpt**: (default: `0`) Intercept presence and shifting/rescaling the features
 in $X$:
-<ul>
-<li>0 = no intercept (hence no $\beta_0$), no shifting or
-rescaling of the features</li>
-<li>1 = add intercept, but do not shift/rescale the features
-in $X$</li>
-<li>2 = add intercept, shift/rescale the features in $X$ to
-mean 0, variance 1</li>
-</ul>
 
-**reg**: (default: 0.000001) L2-regularization parameter $\lambda\geq 0$; set to nonzero for highly
+  * 0 = no intercept (hence no $\beta_0$), no shifting or
+rescaling of the features
+  * 1 = add intercept, but do not shift/rescale the features
+in $X$
+  * 2 = add intercept, shift/rescale the features in $X$ to
+mean 0, variance 1
+
+**reg**: (default: `0.000001`) L2-regularization parameter $\lambda\geq 0$; set to nonzero for highly
 dependent, sparse, or numerous ($m \gtrsim n/10$) features
 
-**tol**: (default: 0.000001, `LinearRegCG.dml` only) Tolerance $\varepsilon\geq 0$ used in the
+**tol**: (default: `0.000001`, `LinearRegCG.dml` only) Tolerance $\varepsilon\geq 0$ used in the
 convergence criterion: we terminate conjugate gradient iterations when
 the $\beta$-residual reduces in L2-norm by this factor
 
-**maxi**: (default: 0, `LinearRegCG.dml` only) Maximum number of conjugate
-gradient iterations, or 0 if no maximum limit provided
+**maxi**: (default: `0`, `LinearRegCG.dml` only) Maximum number of conjugate
+gradient iterations, or `0` if no maximum limit provided
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
@@ -135,7 +133,7 @@ SystemML Language Reference for details.
 
 ### Examples
 
-Linear Regression - Direct Solve
+**Linear Regression - Direct Solve**:
 
     hadoop jar SystemML.jar -f LinearRegDS.dml
                             -nvargs X=/user/ml/X.mtx 
@@ -147,7 +145,7 @@ Linear Regression - Direct Solve
                                     reg=1.0
 
 
-Linear Regression - Conjugate Gradient
+**Linear Regression - Conjugate Gradient**:
 
     hadoop jar SystemML.jar -f LinearRegCG.dml
                             -nvargs X=/user/ml/X.mtx 
@@ -359,7 +357,124 @@ can also be made available, see [**Table 8**](algorithms-regression.html#table
 
 * * *
 
-## 4.2. Generalized Linear Models
+## 4.2. Stepwise Linear Regression
+
+### Description
+
+Our stepwise linear regression script selects a linear model based on
+the Akaike information criterion (AIC): the model that gives rise to the
+lowest AIC is computed.
+
+
+### Usage
+
+    hadoop jar SystemML.jar -f StepLinearRegDS.dml
+                            -nvargs X=<file>
+                                    Y=<file>
+                                    B=<file>
+                                    S=[file]
+                                    O=[file]
+                                    icpt=[int]
+                                    thr=[double]
+                                    fmt=[format]
+
+
+### Arguments
+
+**X**: Location (on HDFS) to read the matrix of feature vectors, each row
+contains one feature vector.
+
+**Y**: Location (on HDFS) to read the 1-column matrix of response values
+
+**B**: Location (on HDFS) to store the estimated regression parameters (the
+$\beta_j$’s), with the intercept parameter $\beta_0$ at position
+B\[$m\,{+}\,1$, 1\] if available
+
+**S**: (default: `" "`) Location (on HDFS) to store the selected feature-ids in the
+order as computed by the algorithm; by default the selected feature-ids
+are forwarded to the standard output.
+
+**O**: (default: `" "`) Location (on HDFS) to store the CSV-file of summary
+statistics defined in [**Table 7**](algorithms-regression.html#table7); by default the
+summary statistics are forwarded to the standard output.
+
+**icpt**: (default: `0`) Intercept presence and shifting/rescaling the features
+in $X$:
+
+  * 0 = no intercept (hence no $\beta_0$), no shifting or
+rescaling of the features;
+  * 1 = add intercept, but do not shift/rescale the features
+in $X$;
+  * 2 = add intercept, shift/rescale the features in $X$ to
+mean 0, variance 1
+
+**thr**: (default: `0.01`) Threshold to stop the algorithm: if the decrease in the value
+of the AIC falls below `thr` no further features are being
+checked and the algorithm stops.
+
+**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
+`mm`, or `csv`; see read/write functions in
+SystemML Language Reference for details.
+
+
+### Examples
+
+    hadoop jar SystemML.jar -f StepLinearRegDS.dml
+                            -nvargs X=/user/ml/X.mtx
+                                    Y=/user/ml/Y.mtx
+                                    B=/user/ml/B.mtx
+                                    S=/user/ml/selected.csv
+                                    O=/user/ml/stats.csv
+                                    icpt=2
+                                    thr=0.05
+                                    fmt=csv
+
+
+### Details
+
+Stepwise linear regression iteratively selects predictive variables in
+an automated procedure. Currently, our implementation supports forward
+selection: starting from an empty model (without any variable) the
+algorithm examines the addition of each variable based on the AIC as a
+model comparison criterion. The AIC is defined as
+
+$$
+\begin{equation}
+AIC = -2 \log{L} + 2 edf,\label{eq:AIC}
+\end{equation}
+$$
+
+where $L$ denotes the
+likelihood of the fitted model and $edf$ is the equivalent degrees of
+freedom, i.e., the number of estimated parameters. This procedure is
+repeated until including no additional variable improves the model by a
+certain threshold specified in the input parameter `thr`.
+
+For fitting a model in each iteration we use the `direct solve` method
+as in the script `LinearRegDS.dml` discussed in
+[Linear Regression](algorithms-regression.html#linear-regression).
+
+
+### Returns
+
+Similar to the outputs from `LinearRegDS.dml` the stepwise
+linear regression script computes the estimated regression coefficients
+and stores them in matrix $B$ on HDFS. The format of matrix $B$ is
+identical to the one produced by the scripts for linear regression (see
+[Linear Regression](algorithms-regression.html#linear-regression)). Additionally, `StepLinearRegDS.dml`
+outputs the variable indices (stored in the 1-column matrix $S$) in the
+order they have been selected by the algorithm, i.e., $i$th entry in
+matrix $S$ corresponds to the variable which improves the AIC the most
+in $i$th iteration. If the model with the lowest AIC includes no
+variables matrix $S$ will be empty (contains one 0). Moreover, the
+estimated summary statistics as defined in [**Table 7**](algorithms-regression.html#table7)
+are printed out or stored in a file (if requested). In the case where an
+empty model achieves the best AIC these statistics will not be produced.
+
+
+* * *
+
+## 4.3. Generalized Linear Models
 
 ### Description
 
@@ -384,7 +499,7 @@ $$x_i \,\,\,\,\mapsto\,\,\,\, \eta_i = \beta_0 + \sum\nolimits_{j=1}^m \beta_j x
 
 In linear regression the response mean $\mu_i$ *equals* some linear
 combination over $x_i$, denoted above by $\eta_i$. In logistic
-regression with $y\in\{0, 1\}$ (Bernoulli) the mean of $y$ is the same
+regression with $$y\in\{0, 1\}$$ (Bernoulli) the mean of $y$ is the same
 as $Prob[y=1]$
 and equals $1/(1+e^{-\eta_i})$, the logistic function of $\eta_i$. In
 GLM, $\mu_i$ and $\eta_i$ can be related via any given smooth monotone
@@ -407,23 +522,23 @@ distributions and link functions, see below for details.
 ### Usage
 
     hadoop jar SystemML.jar -f GLM.dml
-                            -nvargs X=file 
-                                    Y=file 
-                                    B=file 
-                                    fmt=format 
-                                    O=file 
-                                    Log=file 
-                                    dfam=int 
-                                    vpow=double 
-                                    link=int 
-                                    lpow=double 
-                                    yneg=double 
-                                    icpt=int 
-                                    reg=double 
-                                    tol=double 
-                                    disp=double 
-                                    moi=int 
-                                    mii=int
+                            -nvargs X=<file>
+                                    Y=<file>
+                                    B=<file>
+                                    fmt=[format]
+                                    O=[file]
+                                    Log=[file]
+                                    dfam=[int]
+                                    vpow=[double]
+                                    link=[int]
+                                    lpow=[double]
+                                    yneg=[double]
+                                    icpt=[int]
+                                    reg=[double]
+                                    tol=[double]
+                                    disp=[double]
+                                    moi=[int]
+                                    mii=[int]
 
 
 ### Arguments
@@ -448,14 +563,14 @@ by default it is standard output.
 **Log**: (default: `" "`) Location to store iteration-specific variables for monitoring
 and debugging purposes, see [**Table 10**](algorithms-regression.html#table10) for details.
 
-**dfam**: (default: 1) Distribution family code to specify
+**dfam**: (default: `1`) Distribution family code to specify
 $Prob[y\mid \mu]$,
 see [**Table 11**](algorithms-regression.html#table11):
 
   * 1 = power distributions with $Var(y) = \mu^{\alpha}$
   * 2 = binomial or Bernoulli
 
-**vpow**: (default: 0.0) When `dfam=1`, this provides the $q$ in
+**vpow**: (default: `0.0`) When `dfam=1`, this provides the $q$ in
 $Var(y) = a\mu^q$, the power
 dependence of the variance of $y$ on its mean. In particular, use:
 
@@ -464,7 +579,7 @@ dependence of the variance of $y$ on its mean. In particular, use:
   * 2.0 = Gamma
   * 3.0 = inverse Gaussian
 
-**link**: (default: 0) Link function code to determine the link
+**link**: (default: `0`) Link function code to determine the link
 function $\eta = g(\mu)$:
 
   * 0 = canonical link (depends on the distribution family),
@@ -475,7 +590,7 @@ see [**Table 11**](algorithms-regression.html#table11)
   * 4 = cloglog
   * 5 = cauchit
 
-**lpow**: (default: 1.0) When link=1, this provides the $s$ in
+**lpow**: (default: `1.0`) When link=1, this provides the $s$ in
 $\eta = \mu^s$, the power link function; `lpow=0.0` gives the
 log link $\eta = \log\mu$. Common power links:
 
@@ -485,13 +600,13 @@ log link $\eta = \log\mu$. Common power links:
   * 0.5 = sqrt 
   * 1.0 = identity
 
-**yneg**: (default: 0.0) When `dfam=2` and the response matrix $Y$ has
+**yneg**: (default: `0.0`) When `dfam=2` and the response matrix $Y$ has
 1 column, this specifies the $y$-value used for Bernoulli “No” label
 (“Yes” is $1$):
 0.0 when $y\in\\{0, 1\\}$; -1.0 when
 $y\in\\{-1, 1\\}$
 
-**icpt**: (default: 0) Intercept and shifting/rescaling of the features in $X$:
+**icpt**: (default: `0`) Intercept and shifting/rescaling of the features in $X$:
 
   * 0 = no intercept (hence no $\beta_0$), no
 shifting/rescaling of the features
@@ -500,18 +615,18 @@ in $X$
   * 2 = add intercept, shift/rescale the features in $X$ to
 mean 0, variance 1
 
-**reg**: (default: 0.0) L2-regularization parameter ($\lambda$)
+**reg**: (default: `0.0`) L2-regularization parameter ($\lambda$)
 
-**tol**: (default: 0.000001) Tolerance ($\varepsilon$) used in the convergence criterion: we
+**tol**: (default: `0.000001`) Tolerance ($\varepsilon$) used in the convergence criterion: we
 terminate the outer iterations when the deviance changes by less than
 this factor; see below for details
 
-**disp**: (default: 0.0) Dispersion parameter, or 0.0 to estimate it from
+**disp**: (default: `0.0`) Dispersion parameter, or 0.0 to estimate it from
 data
 
-**moi**: (default: 200) Maximum number of outer (Fisher scoring) iterations
+**moi**: (default: `200`) Maximum number of outer (Fisher scoring) iterations
 
-**mii**: (default: 0) Maximum number of inner (conjugate gradient) iterations, or 0
+**mii**: (default: `0`) Maximum number of inner (conjugate gradient) iterations, or 0
 if no maximum limit provided
 
 * * *
@@ -702,7 +817,7 @@ $$f(\beta; X, Y) \,\,=\,\, -\sum\nolimits_{i=1}^n \big(y_i\theta_i - b(\theta_i)
 \,+\,(\lambda/2) \sum\nolimits_{j=1}^m \beta_j^2\,\,\to\,\,\min$$ 
 
 where
-$\theta_i$ and $b(\theta_i)$ are from (5); note that $a$ and
+$\theta_i$ and $b(\theta_i)$ are from (6); note that $a$ and
 $c(y, a)$ are constant w.r.t. $\beta$ and can be ignored here. The
 canonical parameter $\theta_i$ depends on both $\beta$ and $x_i$:
 
@@ -748,7 +863,7 @@ $0.5\sqrt{m}\,/ \max\nolimits_i \|x_i\|_2$ and updated as described
 in [[Nocedal2006]](algorithms-bibliography.html). 
 The user can specify the maximum number of
 the outer and the inner iterations with input parameters
-moi and mii, respectively. The Fisher scoring
+`moi` and `mii`, respectively. The Fisher scoring
 algorithm terminates successfully if
 $2|\varDelta f(z; \beta)| < (D_1(\beta) + 0.1)\hspace{0.5pt}{\varepsilon}$
 where ${\varepsilon}> 0$ is a tolerance supplied by the user via
@@ -761,7 +876,7 @@ $$D_1(\beta) \,\,=\,\, 2 \cdot \big(Prob[Y \mid \!
 
 The deviance estimate is also produced as part of the output. Once the
 Fisher scoring algorithm terminates, if requested by the user, we
-estimate the dispersion $a$ from Eq. 5 using Pearson residuals
+estimate the dispersion $a$ from (6) using Pearson residuals
 
 $$
 \begin{equation}
@@ -772,7 +887,7 @@ $$
 and use it to adjust our deviance estimate:
 $D_{\hat{a}}(\beta) = D_1(\beta)/\hat{a}$. If input argument
 disp is 0.0 we estimate $\hat{a}$, otherwise
-we use its value as $a$. Note that in (6) $m$ counts
+we use its value as $a$. Note that in (7) $m$ counts
 the intercept ($m \leftarrow m+1$) if it is present.
 
 
@@ -817,7 +932,144 @@ to use the corresponding specialized scripts instead of GLM.
 
 * * *
 
-## 4.3. Regression Scoring and Prediction
+## 4.4. Stepwise Generalized Linear Regression
+
+### Description
+
+Our stepwise generalized linear regression script selects a model based
+on the Akaike information criterion (AIC): the model that gives rise to
+the lowest AIC is provided. Note that currently only the Bernoulli
+distribution family is supported (see below for details).
+
+
+### Usage
+
+    hadoop jar SystemML.jar -f StepGLM.dml
+                            -nvargs X=<file>
+                                    Y=<file>
+                                    B=<file>
+                                    S=[file]
+                                    O=[file]
+                                    link=[int]
+                                    yneg=[double]
+                                    icpt=[int]
+                                    tol=[double]
+                                    disp=[double]
+                                    moi=[int]
+                                    mii=[int]
+                                    thr=[double]
+                                    fmt=[format]
+
+
+### Arguments
+
+**X**: Location (on HDFS) to read the matrix of feature vectors; each row is an
+example.
+
+**Y**: Location (on HDFS) to read the response matrix, which may have 1 or 2
+columns
+
+**B**: Location (on HDFS) to store the estimated regression parameters (the
+$\beta_j$’s), with the intercept parameter $\beta_0$ at position
+B\[$m\,{+}\,1$, 1\] if available
+
+**S**: (default: `" "`) Location (on HDFS) to store the selected feature-ids in the
+order as computed by the algorithm, by default it is standard output.
+
+**O**: (default: `" "`) Location (on HDFS) to write certain summary statistics
+described in [**Table 9**](algorithms-regression.html#table9), by default it is standard
+output.
+
+**link**: (default: `2`) Link function code to determine the link
+function $\eta = g(\mu)$, see [**Table 11**](algorithms-regression.html#table11); currently the
+following link functions are supported:
+
+  * 1 = log
+  * 2 = logit
+  * 3 = probit
+  * 4 = cloglog
+
+**yneg**: (default: `0.0`) Response value for Bernoulli “No” label, usually 0.0 or -1.0
+
+**icpt**: (default: `0`) Intercept and shifting/rescaling of the features in $X$:
+
+  * 0 = no intercept (hence no $\beta_0$), no
+shifting/rescaling of the features
+  * 1 = add intercept, but do not shift/rescale the features
+in $X$
+  * 2 = add intercept, shift/rescale the features in $X$ to
+mean 0, variance 1
+
+**tol**: (default: `0.000001`) Tolerance ($\epsilon$) used in the convergence criterion: we
+terminate the outer iterations when the deviance changes by less than
+this factor; see below for details.
+
+**disp**: (default: `0.0`) Dispersion parameter, or `0.0` to estimate it from
+data
+
+**moi**: (default: `200`) Maximum number of outer (Fisher scoring) iterations
+
+**mii**: (default: `0`) Maximum number of inner (conjugate gradient) iterations, or 0
+if no maximum limit provided
+
+**thr**: (default: `0.01`) Threshold to stop the algorithm: if the decrease in the value
+of the AIC falls below `thr` no further features are being
+checked and the algorithm stops.
+
+**fmt**: (default: `"text"`) Matrix file output format, such as `text`,
+`mm`, or `csv`; see read/write functions in
+SystemML Language Reference for details.
+
+
+### Examples
+
+    hadoop jar SystemML.jar -f StepGLM.dml
+                            -nvargs X=/user/ml/X.mtx
+                                    Y=/user/ml/Y.mtx
+                                    B=/user/ml/B.mtx
+                                    S=/user/ml/selected.csv
+                                    O=/user/ml/stats.csv
+                                    link=2
+                                    yneg=-1.0
+                                    icpt=2
+                                    tol=0.000001
+                                    moi=100
+                                    mii=10
+                                    thr=0.05
+                                    fmt=csv
+
+
+### Details
+
+Similar to `StepLinearRegDS.dml` our stepwise GLM script
+builds a model by iteratively selecting predictive variables using a
+forward selection strategy based on the AIC (5). Note that
+currently only the Bernoulli distribution family (`fam=2` in
+[**Table 11**](algorithms-regression.html#table11)) together with the following link functions
+are supported: `log`, `logit`, `probit`, and `cloglog` (link
+$$\in\{1,2,3,4\}$$ in [**Table 11**](algorithms-regression.html#table11)).
+
+
+### Returns
+
+Similar to the outputs from `GLM.dml` the stepwise GLM script
+computes the estimated regression coefficients and stores them in matrix
+$B$ on HDFS; matrix $B$ follows the same format as the one produced by
+`GLM.dml` (see [Generalized Linear Models](algorithms-regression.html#generalized-linear-models)). Additionally,
+`StepGLM.dml` outputs the variable indices (stored in the
+1-column matrix $S$) in the order they have been selected by the
+algorithm, i.e., $i$th entry in matrix $S$ stores the variable which
+improves the AIC the most in $i$th iteration. If the model with the
+lowest AIC includes no variables matrix $S$ will be empty. Moreover, the
+estimated summary statistics as defined in [**Table 9**](algorithms-regression.html#table9) are
+printed out or stored in a file on HDFS (if requested); these statistics
+will be provided only if the selected model is nonempty, i.e., contains
+at least one variable.
+
+
+* * *
+
+## 4.5. Regression Scoring and Prediction
 
 ### Description
 
@@ -874,7 +1126,7 @@ If $y_i$ is categorical, i.e. a vector of label counts for record $i$,
 then $\mu_i$ is a vector of non-negative real numbers, one number
 $$\mu_{i,l}$$ per each label $l$. In this case we divide the $$\mu_{i,l}$$
 by their sum $\sum_l \mu_{i,l}$ to obtain predicted label
-probabilities . The output matrix $M$ is the
+probabilities $$p_{i,l}\in [0, 1]$$. The output matrix $M$ is the
 $n \times (k\,{+}\,1)$-matrix of these probabilities, where $n$ is the
 number of records and $k\,{+}\,1$ is the number of categories[^3]. Note
 again that we do not predict the labels themselves, nor their actual
@@ -894,17 +1146,17 @@ this step outside the scope of `GLM-predict.dml` for now.
 ### Usage
 
     hadoop jar SystemML.jar -f GLM-predict.dml
-                            -nvargs X=file 
-                                    Y=file 
-                                    B=file 
-                                    M=file 
-                                    O=file 
-                                    dfam=int 
-                                    vpow=double 
-                                    link=int 
-                                    lpow=double 
-                                    disp=double  
-                                    fmt=format
+                            -nvargs X=<file>
+                                    Y=[file]
+                                    B=<file>
+                                    M=[file]
+                                    O=[file]
+                                    dfam=[int]
+                                    vpow=[double]
+                                    link=[int]
+                                    lpow=[double]
+                                    disp=[double]
+                                    fmt=[format]
 
 
 ### Arguments
@@ -946,7 +1198,7 @@ statistics defined in [**Table 13**](algorithms-regression.html#table13),
 the default is to
 print them to the standard output
 
-**dfam**: (default: 1) GLM distribution family code to specify the type of
+**dfam**: (default: `1`) GLM distribution family code to specify the type of
 distribution
 $Prob[y\,|\,\mu]$
 that we assume:
@@ -957,7 +1209,7 @@ $Var(y) = \mu^{\alpha}$, see
   * 2 = binomial
   * 3 = multinomial logit
 
-**vpow**: (default: 0.0) Power for variance defined as (mean)$^{\textrm{power}}$
+**vpow**: (default: `0.0`) Power for variance defined as (mean)$^{\textrm{power}}$
 (ignored if `dfam`$\,{\neq}\,1$): when `dfam=1`,
 this provides the $q$ in
 $Var(y) = a\mu^q$, the power
@@ -968,7 +1220,7 @@ dependence of the variance of $y$ on its mean. In particular, use:
   * 2.0 = Gamma
   * 3.0 = inverse Gaussian
 
-**link**: (default: 0) Link function code to determine the link
+**link**: (default: `0`) Link function code to determine the link
 function $\eta = g(\mu)$, ignored for multinomial logit
 (`dfam=3`):
 
@@ -980,7 +1232,7 @@ see [**Table 11**](algorithms-regression.html#table11)
   * 4 = cloglog
   * 5 = cauchit
 
-**lpow**: (default: 1.0) Power for link function defined as
+**lpow**: (default: `1.0`) Power for link function defined as
 (mean)$^{\textrm{power}}$ (ignored if `link`$\,{\neq}\,1$):
 when `link=1`, this provides the $s$ in $\eta = \mu^s$, the
 power link function; `lpow=0.0` gives the log link
@@ -992,7 +1244,7 @@ $\eta = \log\mu$. Common power links:
   * 0.5 = sqrt 
   * 1.0 = identity
 
-**disp**: (default: 1.0) Dispersion value, when available; must be positive
+**disp**: (default: `1.0`) Dispersion value, when available; must be positive
 
 **fmt**: (default: `"text"`) Matrix M file output format, such as
 `text`, `mm`, or `csv`; see read/write
@@ -1004,7 +1256,7 @@ functions in SystemML Language Reference for details.
 Note that in the examples below the value for the `disp` input
 argument is set arbitrarily. The correct dispersion value should be
 computed from the training data during model estimation, or omitted if
-unknown (which sets it to 1.0).
+unknown (which sets it to `1.0`).
 
 Linear regression example:
 
@@ -1263,7 +1515,7 @@ $k = \mathop{\texttt{ncol}}(Y) - 1$. Given the dispersion parameter
 dispersion is accurate, $X^2 / \texttt{disp}$ should be close to \#d.f.
 In fact, $X^2 / \textrm{\#d.f.}$ over the *training* data is the
 dispersion estimator used in our `GLM.dml` script,
-see (6). Here we provide $X^2 / \textrm{\#d.f.}$ and
+see (7). Here we provide $X^2 / \textrm{\#d.f.}$ and
 $X^2_{\texttt{disp}} / \textrm{\#d.f.}$ as
 `PEARSON_X2_BY_DF` to enable dispersion comparison between
 the training data and the test data.
@@ -1291,8 +1543,8 @@ $\mu_i^{\mathrm{sat}}$ to equal $y_i$ for every record (for categorical
 data, $$p_{i,j}^{sat} = y_{i,j} / N_i$$), which represents the
 “perfect fit.” For records with $y_{i,j} \in \{0, N_i\}$ or otherwise at
 a boundary, by continuity we set $0 \log 0 = 0$. The GLM likelihood
-functions defined in (5) become simplified in
-ratio (7) due to canceling out the term $c(y, a)$
+functions defined in (6) become simplified in
+ratio (8) due to canceling out the term $c(y, a)$
 since it is the same in both models.
 
 The log of a likelihood ratio between two nested models, times two, is
@@ -1384,8 +1636,8 @@ $m$ with the intercept or $m+1$ without the intercept.
 ### Returns
 
 The matrix of predicted means (if the response is numerical) or
-probabilities (if the response is categorical), see “Description”
-subsection above for more information. Given Y, we return
+probabilities (if the response is categorical), see Description
+subsection above for more information. Given `Y`, we return
 some statistics in CSV format as described in
 [**Table 13**](algorithms-regression.html#table13) and in the above text.
 

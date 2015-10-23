@@ -20,6 +20,7 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 import java.io.IOException;
 import java.util.HashMap;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -64,7 +65,16 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"C"})); 
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"C"})); 
 		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[]{"C"})); 
-		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4,new String[]{"C"})); 
+		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4,new String[]{"C"}));
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
+	}
+
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
 	@Test
@@ -310,7 +320,19 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 			TEST_NAME = TEST_NAME3;
 		else 
 			TEST_NAME = TEST_NAME1;
-		
+
+		String TEST_CACHE_DIR = "";
+		if (TEST_CACHE_ENABLED)
+		{
+			int mrows1 = (dtM1==DataType.MATRIX)? rows:1;
+			int mrows2 = (dtM2==DataType.MATRIX)? rows:1;
+			
+			double sparsityLeft = sparseM1?sparsity2:sparsity1;
+			double sparsityRight = sparseM2?sparsity2:sparsity1;
+
+			TEST_CACHE_DIR = minFlag + "_" + mrows1 + "_" + mrows2 + "_" + sparsityLeft + "_" + sparsityRight + "/";
+		}
+
 		try
 		{
 			
@@ -320,7 +342,7 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
 			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-explain","-args", TARGET_IN + "A",
                                                 TARGET_IN + "B",
@@ -330,7 +352,7 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 				       TARGET_IN + " " + minFlag + " " + TARGET_EXPECTED;
 			
-			loadTestConfiguration(config);
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 	
 			//generate actual dataset
 			int mrows1 = (dtM1==DataType.MATRIX)? rows:1;

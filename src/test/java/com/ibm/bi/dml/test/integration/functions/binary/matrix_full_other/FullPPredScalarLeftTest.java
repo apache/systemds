@@ -19,6 +19,7 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 
 import java.util.HashMap;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -60,11 +61,19 @@ public class FullPPredScalarLeftTest extends AutomatedTestBase
 		LESS_EQUALS,
 	}
 	
-	
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" })   ); 
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" })   );
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
 	}
 
 	
@@ -371,6 +380,11 @@ public class FullPPredScalarLeftTest extends AutomatedTestBase
 		double sparsity = sparse ? sparsity2 : sparsity1;
 		double constant = zero ? 0 : 0.5;
 		
+		String TEST_CACHE_DIR = "";
+		if (TEST_CACHE_ENABLED) {
+			TEST_CACHE_DIR = type.ordinal() + "_" + constant + "_" + sparsity + "/";
+		}
+		
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
@@ -383,7 +397,7 @@ public class FullPPredScalarLeftTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
 			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-explain","-args", TARGET_IN + "A" ,
                                             Integer.toString(type.ordinal()),
@@ -393,7 +407,7 @@ public class FullPPredScalarLeftTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 			       TARGET_IN + " " + type.ordinal() + " " + constant + " " + TARGET_EXPECTED;
 			
-			loadTestConfiguration(config);
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, sparsity, 7); 

@@ -19,6 +19,7 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 
 import java.util.HashMap;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript;
@@ -62,6 +63,15 @@ public class FullPPredMatrixTest extends AutomatedTestBase
 	{
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) ); 
 		TestUtils.clearAssertionInformation();
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
+	}
+
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 	
 	@Test
@@ -526,6 +536,11 @@ public class FullPPredMatrixTest extends AutomatedTestBase
 		double sparsityLeft = sp1 ? sparsity2 : sparsity1;
 		double sparsityRight = sp2 ? sparsity2 : sparsity1;
 		
+		String TEST_CACHE_DIR = "";
+		if (TEST_CACHE_ENABLED) {
+			TEST_CACHE_DIR = type.ordinal() + "_" + rows + "_" + cols + "_" + sparsityLeft + "_" + sparsityRight + "/";
+		}
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -534,7 +549,7 @@ public class FullPPredMatrixTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
 			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", TARGET_IN + "A",
                                                 TARGET_IN + "B",
@@ -544,7 +559,7 @@ public class FullPPredMatrixTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 			       TARGET_IN + " " + type.ordinal() + " " + TARGET_EXPECTED;
 			
-			loadTestConfiguration(config);
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsityLeft, 7); 

@@ -19,6 +19,7 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 
 import java.util.HashMap;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
@@ -63,9 +64,17 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 				TEST_NAME2, 
 				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, 
 				new String[] { "B" })   ); 
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
 	}
 
-	
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
 	@Test
 	public void testMMLeftDenseCP() 
 	{
@@ -196,6 +205,13 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			TEST_NAME = TEST_NAME2;
 		}
 
+		double sparsity = sparse ? sparsity2 : sparsity1;
+
+		String TEST_CACHE_DIR = "";
+		if (TEST_CACHE_ENABLED) {
+			TEST_CACHE_DIR = rows + "_" + cols + "_" + sparsity + "/";
+		}
+
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
@@ -208,7 +224,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
 			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", TARGET_IN + "A" ,
                                             Integer.toString(rows),
@@ -218,10 +234,10 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 			       TARGET_IN + " " + TARGET_EXPECTED;
 			
-			loadTestConfiguration(config);
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 	
 			//generate actual dataset
-			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 7); 
+			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 			
 	
@@ -274,6 +290,13 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			TEST_NAME = TEST_NAME2;
 		}
 
+		double sparsity = sparse ? sparsity2 : sparsity1;
+
+		String TEST_CACHE_DIR = "";
+		if (TEST_CACHE_ENABLED) {
+			TEST_CACHE_DIR = rows + "_" + cols + "_" + sparsity + "/";
+		}
+
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
@@ -286,7 +309,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
 			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
+			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", TARGET_IN + "A" ,
                                             Integer.toString(rows),
@@ -296,10 +319,10 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
 			       TARGET_IN + " " + TARGET_EXPECTED;
 			
-			loadTestConfiguration(config);
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 	
 			//generate actual dataset
-			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 7); 
+			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 			
 	

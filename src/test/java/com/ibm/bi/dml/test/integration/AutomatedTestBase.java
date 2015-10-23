@@ -152,6 +152,9 @@ public abstract class AutomatedTestBase
 	
 	/** Base directory for generated IN, OUT, EXPECTED test data artifacts instead of SCRIPT_DIR. */
 	protected static final String TEST_DATA_DIR = LOCAL_TEMP_ROOT_DIR + "/";
+	protected static final boolean TEST_CACHE_ENABLED = true;
+	/** Optional sub-directory under EXPECTED_DIR for reusing R script test results */
+	private String cacheDir = "";
 
 	/**
 	 * Runtime backend to use for all integration tests. Some individual tests
@@ -609,8 +612,8 @@ public abstract class AutomatedTestBase
 	 *            two dimensional matrix
 	 */
 	protected void writeExpectedMatrix(String name, double[][] matrix) {
-		TestUtils.writeTestMatrix(baseDirectory + EXPECTED_DIR + name, matrix);
-		expectedFiles.add(baseDirectory + EXPECTED_DIR + name);
+		TestUtils.writeTestMatrix(baseDirectory + EXPECTED_DIR + cacheDir + name, matrix);
+		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
 
 	/**
@@ -624,8 +627,8 @@ public abstract class AutomatedTestBase
 	 *            two dimensional matrix
 	 */
 	protected void writeExpectedMatrixMarket(String name, double[][] matrix) {
-		TestUtils.writeTestMatrix(baseDirectory + EXPECTED_DIR + name, matrix, true);
-		expectedFiles.add(baseDirectory + EXPECTED_DIR + name);
+		TestUtils.writeTestMatrix(baseDirectory + EXPECTED_DIR + cacheDir + name, matrix, true);
+		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
 	/**
 	 * <p>
@@ -676,13 +679,13 @@ public abstract class AutomatedTestBase
 	 *            scalar value
 	 */
 	protected void writeExpectedHelperMatrix(String name, double value) {
-		TestUtils.writeTestMatrix(baseDirectory + EXPECTED_DIR + name, new double[][] { { value, value } });
-		expectedFiles.add(baseDirectory + EXPECTED_DIR + name);
+		TestUtils.writeTestMatrix(baseDirectory + EXPECTED_DIR + cacheDir + name, new double[][] { { value, value } });
+		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
 
 	protected void writeExpectedScalar(String name, double value) {
-		TestUtils.writeTestScalar(baseDirectory + EXPECTED_DIR + name, value);
-		expectedFiles.add(baseDirectory + EXPECTED_DIR + name);
+		TestUtils.writeTestScalar(baseDirectory + EXPECTED_DIR + cacheDir + name, value);
+		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
 	
 	@SuppressWarnings("deprecation")
@@ -691,18 +694,18 @@ public abstract class AutomatedTestBase
 	}
 
 	@SuppressWarnings("deprecation")
-	public static HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
-		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + fileName);
-		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + fileName);
+	public HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
+		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
+		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 	
 	protected static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
-	public static HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
-		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + fileName);
-		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + fileName);
+	public HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
+		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
+		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 	
 	/**
@@ -728,6 +731,7 @@ public abstract class AutomatedTestBase
 		}
 	}
 	
+	
 	/**
 	 * <p>
 	 * Loads a test configuration with its parameters. Adds the output
@@ -740,6 +744,23 @@ public abstract class AutomatedTestBase
 	 * 
 	 */
 	protected void loadTestConfiguration(TestConfiguration config) {
+		loadTestConfiguration(config, null);
+	}
+	
+	/**
+	 * <p>
+	 * Loads a test configuration with its parameters. Adds the output
+	 * directories to the output list as well as to the list of possible
+	 * comparison files.
+	 * </p>
+	 * 
+	 * @param configurationName
+	 *            test configuration name
+	 * @param cacheDirectory
+	 *            subdirectory for reusing R script expected results
+	 *            if null, defaults to empty string (i.e., no cache)
+	 */
+	protected void loadTestConfiguration(TestConfiguration config, String cacheDirectory) {
 		if (!availableTestConfigurations.containsValue(config))
 			fail("test configuration not available: " + config.getTestScript());
 		String testDirectory = config.getTestDirectory();
@@ -751,6 +772,8 @@ public abstract class AutomatedTestBase
 				baseDirectory = SCRIPT_DIR + testDirectory;				
 			}
 		}
+		
+		setCacheDirectory(cacheDirectory);
 
 		selectedTest = config.getTestScript();
 
@@ -760,7 +783,7 @@ public abstract class AutomatedTestBase
 			comparisonFiles = new String[outputFiles.length];
 			for (int i = 0; i < outputFiles.length; i++) {
 				outputDirectories[i] = baseDirectory + OUTPUT_DIR + outputFiles[i];
-				comparisonFiles[i] = baseDirectory + EXPECTED_DIR + outputFiles[i];
+				comparisonFiles[i] = baseDirectory + EXPECTED_DIR + cacheDir + outputFiles[i];
 			}
 		}
 
@@ -770,7 +793,7 @@ public abstract class AutomatedTestBase
 		testVariables.put("outdir", baseDirectory + OUTPUT_DIR);
 		testVariables.put("readhelper", "Helper = read(\"" + baseDirectory + INPUT_DIR + "helper/in\", "
 				+ "rows=1, cols=2, format=\"text\");");
-		testVariables.put("Routdir", baseDirectory + EXPECTED_DIR);
+		testVariables.put("Routdir", baseDirectory + EXPECTED_DIR + cacheDir);
 		
 		// Create a temporary directory for this test case.
 		// Eventually all files written by the tests should go under here, but making
@@ -861,7 +884,7 @@ public abstract class AutomatedTestBase
 		// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 		// Some of the R scripts will fail if the "expected" directory doesn't exist.
 		// Make sure the directory exists.
-		File expectedDir = new File(baseDirectory, "expected");
+		File expectedDir = new File(baseDirectory, "expected" + "/" + cacheDir);
 		expectedDir.mkdirs();
 		// *** END HACK ***
 		
@@ -897,7 +920,27 @@ public abstract class AutomatedTestBase
 		ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".R", testVariables);
 		}
 	
+		if (cacheDir.length() > 0)
+		{
+			File expectedFile = null;
+			String[] outputFiles = null;
+			TestConfiguration testConfig = getTestConfiguration(selectedTest);
+			if (testConfig != null)
+			{
+				outputFiles = testConfig.getOutputFiles();
+			}
 			
+			if (outputFiles != null && outputFiles.length > 0)
+			{
+				expectedFile = new File (expectedDir.getPath() + "/" + outputFiles[0]);
+				if (expectedFile.canRead())
+				{
+					System.out.println("Skipping R script cmd: " + cmd);
+					return;
+				}
+			}
+		}
+		
 		try {
 			long t0 = System.nanoTime();
 			System.out.println("starting R script");
@@ -1554,4 +1597,10 @@ public abstract class AutomatedTestBase
 		return (path != null && path.contains(getClass().getSimpleName()));
 	}
 	
+	private void setCacheDirectory(String directory) {
+		cacheDir = (directory != null) ? directory : "";
+		if (cacheDir.length() > 0 && !cacheDir.endsWith("/")) {
+			cacheDir += "/";
+		}
+	}
 }

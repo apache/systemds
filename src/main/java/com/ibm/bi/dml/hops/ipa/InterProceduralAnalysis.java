@@ -1102,8 +1102,12 @@ public class InterProceduralAnalysis
 		if( hop.getVisited()==VisitStatus.DONE )
 			return;
 
-		//handle leaf node for variable
-		if( hop.requiresCheckpoint() ){
+		//handle leaf node for variable (checkpoint directly bound
+		//to logical variable name and not used)
+		if( hop.requiresCheckpoint() && hop.getParent().size()==1 
+			&& hop.getParent().get(0) instanceof DataOp
+			&& ((DataOp)hop.getParent().get(0)).getDataOpType()==DataOpTypes.TRANSIENTWRITE)
+		{
 			checkpoints.add(hop);
 		}
 		

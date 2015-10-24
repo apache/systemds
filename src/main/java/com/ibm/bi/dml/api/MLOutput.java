@@ -19,16 +19,21 @@ package com.ibm.bi.dml.api;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.mllib.linalg.DenseVector;
+import org.apache.spark.mllib.linalg.VectorUDT;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
@@ -110,6 +115,57 @@ public class MLOutput {
 		else {
 			return getDF(sqlContext, varName);
 		}
+		
+	}
+	
+	/**
+	 * This methods improves the performance of MLPipeline wrappers.
+	 * @param sqlContext
+	 * @param varName
+	 * @param range range is inclusive
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public DataFrame getDF(SQLContext sqlContext, String varName, HashMap<String, Tuple2<Long, Long>> range) throws DMLRuntimeException {
+		JavaPairRDD<MatrixIndexes,MatrixBlock> binaryBlockRDD = getBinaryBlockedRDD(varName);
+		if(binaryBlockRDD == null) {
+			throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
+		}
+		MatrixCharacteristics mc = _outMetadata.get(varName);
+		long rlen = mc.getRows(); long clen = mc.getCols();
+		int brlen = mc.getRowsPerBlock(); int bclen = mc.getColsPerBlock();
+		
+		ArrayList<Tuple2<String, Tuple2<Long, Long>>> alRange = new ArrayList<Tuple2<String, Tuple2<Long, Long>>>();
+		for(Entry<String, Tuple2<Long, Long>> e : range.entrySet()) {
+			alRange.add(new Tuple2<String, Tuple2<Long,Long>>(e.getKey(), e.getValue()));
+		}
+		
+		// Very expensive operation here: groupByKey (where number of keys might be too large)
+		JavaRDD<Row> rowsRDD = binaryBlockRDD.flatMapToPair(new ProjectRows(rlen, clen, brlen, bclen))
+				.groupByKey().map(new ConvertDoubleArrayToRangeRows(clen, bclen, alRange));
+
+		int numColumns = (int) clen;
+		if(numColumns <= 0) {
+			throw new DMLRuntimeException("Output dimensions unknown after executing the script and hence cannot create the dataframe");
+		}
+		
+		List<StructField> fields = new ArrayList<StructField>();
+		// LongTypes throw an error: java.lang.Double incompatible with java.lang.Long
+		fields.add(DataTypes.createStructField("ID", DataTypes.DoubleType, false));
+		for(int k = 0; k < alRange.size(); k++) {
+			String colName = alRange.get(k)._1;
+			long low = alRange.get(k)._2._1;
+			long high = alRange.get(k)._2._2;
+			if(low != high)
+				fields.add(DataTypes.createStructField(colName, new VectorUDT(), false));
+			else
+				fields.add(DataTypes.createStructField(colName, DataTypes.DoubleType, false));
+		}
+		
+		// This will cause infinite recursion due to bug in Spark
+		// https://issues.apache.org/jira/browse/SPARK-6999
+		// return sqlContext.createDataFrame(rowsRDD, colNames); // where ArrayList<String> colNames
+		return sqlContext.createDataFrame(rowsRDD.rdd(), DataTypes.createStructType(fields));
 		
 	}
 	
@@ -261,7 +317,87 @@ public class MLOutput {
 			Object[] row_fields = row;
 			return RowFactory.create(row_fields);
 		}
-		
 	}
 	
+	
+	public static class ConvertDoubleArrayToRangeRows implements Function<Tuple2<Long, Iterable<Tuple2<Long, Double[]>>>, Row> {
+		private static final long serialVersionUID = 4441184411670316972L;
+		
+		int bclen; long clen;
+		ArrayList<Tuple2<String, Tuple2<Long, Long>>> range;
+		public ConvertDoubleArrayToRangeRows(long clen, int bclen, ArrayList<Tuple2<String, Tuple2<Long, Long>>> range) {
+			this.bclen = bclen;
+			this.clen = clen;
+			this.range = range;
+		}
+
+		@Override
+		public Row call(Tuple2<Long, Iterable<Tuple2<Long, Double[]>>> arg0)
+				throws Exception {
+			
+			HashMap<Long, Double[]> partialRows = new HashMap<Long, Double[]>();
+			int sizeOfPartialRows = 0;
+			for(Tuple2<Long, Double[]> kv : arg0._2) {
+				partialRows.put(kv._1, kv._2);
+				sizeOfPartialRows += kv._2.length;
+			}
+			
+			// Insert first row as row index
+			Object[] row = null;
+			row = new Object[range.size() + 1];
+			
+			double [] vecVals = new double[sizeOfPartialRows];
+			
+			for(long columnBlockIndex = 1; columnBlockIndex <= partialRows.size(); columnBlockIndex++) {
+				if(partialRows.containsKey(columnBlockIndex)) {
+					Double [] array = partialRows.get(columnBlockIndex);
+					// ------------------------------------------------------------------
+					//	Compute local block size: 
+					int lclen = UtilFunctions.computeBlockSize(clen, columnBlockIndex, bclen);
+					// ------------------------------------------------------------------
+					if(array.length != lclen) {
+						throw new Exception("Incorrect double array provided by ProjectRows");
+					}
+					for(int i = 0; i < lclen; i++) {
+						vecVals[(int) ((columnBlockIndex-1)*bclen + i)] = array[i];
+					}
+				}
+				else {
+					throw new Exception("The block for column index " + columnBlockIndex + " is missing. Make sure the last instruction is not returning empty blocks");
+				}
+			}
+			
+			long rowIndex = arg0._1;
+			row[0] = new Double(rowIndex);
+			
+			int i = 1;
+			
+			//for(Entry<String, Tuple2<Long, Long>> e : range.entrySet()) {
+			for(int k = 0; k < range.size(); k++) {
+				long low = range.get(k)._2._1;
+				long high = range.get(k)._2._2;
+				
+				if(high < low) {
+					throw new Exception("Incorrect range:" + high + "<" + low);
+				}
+				
+				if(low == high) {
+					row[i] = new Double(vecVals[(int) (low-1)]);
+				}
+				else {
+					int lengthOfVector = (int) (high - low + 1);
+					double [] tempVector = new double[lengthOfVector];
+					for(int j = 0; j < lengthOfVector; j++) {
+						tempVector[j] = vecVals[(int) (low + j - 1)];
+					}
+					row[i] = new DenseVector(tempVector);
+				}
+				
+				i++;
+			}
+			
+			Object[] row_fields = row;
+			return RowFactory.create(row_fields);
+		}
+	}
 }

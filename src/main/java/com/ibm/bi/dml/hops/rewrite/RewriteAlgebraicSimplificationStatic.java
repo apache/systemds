@@ -1281,8 +1281,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		Hop hnew = null;
 		
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol
-			&& ((AggUnaryOp)hi).getOp() == AggOp.SUM      //all patterns rooted by sum()
-			&& hi.getInput().get(0) instanceof BinaryOp ) //all patterns subrooted by binary op
+			&& ((AggUnaryOp)hi).getOp() == AggOp.SUM     //all patterns rooted by sum()
+			&& hi.getInput().get(0) instanceof BinaryOp  //all patterns subrooted by binary op
+			&& hi.getInput().get(0).getDim2() > 1  )     //not applied for vector-vector mult
 		{
 			BinaryOp bop = (BinaryOp) hi.getInput().get(0);
 			boolean appliedPattern = false;
@@ -1479,6 +1480,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		if(    hi instanceof BinaryOp //all patterns subrooted by W *
 			&& ((BinaryOp) hi).getOp()==OpOp2.MULT
+			&& hi.getDim2() > 1       //not applied for vector-vector mult
 			&& HopRewriteUtils.isEqualSize(hi.getInput().get(0), hi.getInput().get(1)) //prevent mv
 			&& hi.getInput().get(0).getDataType()==DataType.MATRIX 
 			&& hi.getInput().get(1) instanceof UnaryOp ) //sigmoid/log
@@ -1628,8 +1630,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		if( hi instanceof AggBinaryOp && ((AggBinaryOp)hi).isMatrixMultiply()  
 			&& (hi.getInput().get(0) instanceof BinaryOp
 			&& HopRewriteUtils.isValidOp(((BinaryOp)hi.getInput().get(0)).getOp(), LOOKUP_VALID_WDIVMM_BINARY)
-			||  hi.getInput().get(1) instanceof BinaryOp 
-			&& (((AggBinaryOp) hi).checkMapMultChain() == ChainType.NONE || hi.getInput().get(1).getDim2() > 1) //no mmchain
+			|| hi.getInput().get(1) instanceof BinaryOp 
+			&& hi.getDim2() > 1 //not applied for vector-vector mult
 			&& HopRewriteUtils.isValidOp(((BinaryOp)hi.getInput().get(1)).getOp(), LOOKUP_VALID_WDIVMM_BINARY)) ) 
 		{
 			Hop left = hi.getInput().get(0);
@@ -1762,6 +1764,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		if( !appliedPattern
 			&& hi instanceof BinaryOp && ((BinaryOp)hi).getOp()==LOOKUP_VALID_WDIVMM_BINARY[0] //MULT	
 			&& HopRewriteUtils.isEqualSize(hi.getInput().get(0), hi.getInput().get(1)) //prevent mv
+			&& hi.getDim2() > 1 //not applied for vector-vector mult
 			&& hi.getInput().get(0).getDataType() == DataType.MATRIX 
 			&& hi.getInput().get(0).getDim2() > hi.getInput().get(0).getColsInBlock()
 			&& hi.getInput().get(1) instanceof AggBinaryOp
@@ -1810,8 +1813,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		//Pattern 1) sum( X * log(U %*% t(V)))
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol
-			&& ((AggUnaryOp)hi).getOp() == AggOp.SUM      //pattern rooted by sum()
-			&& hi.getInput().get(0) instanceof BinaryOp ) //pattern subrooted by binary op
+			&& ((AggUnaryOp)hi).getOp() == AggOp.SUM     //pattern rooted by sum()
+			&& hi.getInput().get(0) instanceof BinaryOp  //pattern subrooted by binary op
+			&& hi.getInput().get(0).getDim2() > 1   )    //not applied for vector-vector mult
 		{
 			BinaryOp bop = (BinaryOp) hi.getInput().get(0);
 			Hop left = bop.getInput().get(0);

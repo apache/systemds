@@ -99,10 +99,26 @@ to compute the mean of a categorical attribute like ‘Hair Color’.
 
 ### Usage
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Univar-Stats.dml
-                            -nvargs X=<file> 
+                            -nvargs X=<file>
                                     TYPES=<file>
                                     STATS=<file>
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Univar-Stats.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         TYPES=<file>
+                                         STATS=<file>
+</div>
+</div>
 
 
 ### Arguments
@@ -122,10 +138,26 @@ be stored. The format of the output matrix is defined by
 
 ### Examples
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Univar-Stats.dml
                             -nvargs X=/user/ml/X.mtx
                                     TYPES=/user/ml/types.mtx
                                     STATS=/user/ml/stats.mtx
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Univar-Stats.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         TYPES=/user/ml/types.mtx
+                                         STATS=/user/ml/stats.mtx
+</div>
+</div>
 
 
 * * *
@@ -524,6 +556,8 @@ attributes like ‘Hair Color’.
 
 ### Usage
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f bivar-stats.dml
                             -nvargs X=<file>
                                     index1=<file>
@@ -531,6 +565,23 @@ attributes like ‘Hair Color’.
                                     types1=<file>
                                     types2=<file>
                                     OUTDIR=<directory>
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f bivar-stats.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         index1=<file>
+                                         index2=<file>
+                                         types1=<file>
+                                         types2=<file>
+                                         OUTDIR=<directory>
+</div>
+</div>
 
 
 ### Arguments
@@ -574,6 +625,8 @@ are defined in [**Table 2**](algorithms-descriptive-statistics.html#table2).
 
 ### Examples
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f bivar-stats.dml
                             -nvargs X=/user/ml/X.mtx
                                     index1=/user/ml/S1.mtx
@@ -581,7 +634,24 @@ are defined in [**Table 2**](algorithms-descriptive-statistics.html#table2).
                                     types1=/user/ml/K1.mtx
                                     types2=/user/ml/K2.mtx
                                     OUTDIR=/user/ml/stats.mtx
-    
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f bivar-stats.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         index1=/user/ml/S1.mtx
+                                         index2=/user/ml/S2.mtx
+                                         types1=/user/ml/K1.mtx
+                                         types2=/user/ml/K2.mtx
+                                         OUTDIR=/user/ml/stats.mtx
+</div>
+</div>
+
 
 * * *
 
@@ -1046,6 +1116,8 @@ becomes reversed and amplified (from $+0.1$ to $-0.5$) if we ignore the months.
 
 ### Usage
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f stratstats.dml
                             -nvargs X=<file>
                                     Xcid=[file]
@@ -1055,6 +1127,25 @@ becomes reversed and amplified (from $+0.1$ to $-0.5$) if we ignore the months.
                                     Scid=[int]
                                     O=<file>
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f stratstats.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Xcid=[file]
+                                         Y=[file]
+                                         Ycid=[file]
+                                         S=[file]
+                                         Scid=[int]
+                                         O=<file>
+                                         fmt=[format]
+</div>
+</div>
 
 
 ### Arguments
@@ -1233,21 +1324,61 @@ SystemML Language Reference for details.
 
 ### Examples
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f stratstats.dml
                             -nvargs X=/user/ml/X.mtx
                                     Xcid=/user/ml/Xcid.mtx
                                     Y=/user/ml/Y.mtx
                                     Ycid=/user/ml/Ycid.mtx
-                                    S=/user/ml/S.mtx Scid=2
+                                    S=/user/ml/S.mtx
+                                    Scid=2
                                     O=/user/ml/Out.mtx
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f stratstats.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Xcid=/user/ml/Xcid.mtx
+                                         Y=/user/ml/Y.mtx
+                                         Ycid=/user/ml/Ycid.mtx
+                                         S=/user/ml/S.mtx
+                                         Scid=2
+                                         O=/user/ml/Out.mtx
+                                         fmt=csv
+</div>
+</div>
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f stratstats.dml
                             -nvargs X=/user/ml/Data.mtx
                                     Xcid=/user/ml/Xcid.mtx
                                     Ycid=/user/ml/Ycid.mtx
                                     Scid=7
                                     O=/user/ml/Out.mtx
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f stratstats.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/Data.mtx
+                                         Xcid=/user/ml/Xcid.mtx
+                                         Ycid=/user/ml/Ycid.mtx
+                                         Scid=7
+                                         O=/user/ml/Out.mtx
+</div>
+</div>
 
 
 ### Details

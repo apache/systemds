@@ -25,6 +25,8 @@ top-$K$ (for a given value of $K$) principle components.
 
 ### Usage
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f PCA.dml
                             -nvargs INPUT=<file>
                                     K=<int>
@@ -34,6 +36,25 @@ top-$K$ (for a given value of $K$) principle components.
                                     OFMT=[format]
                                     MODEL=<file>
                                     OUTPUT=<file>
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f PCA.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs INPUT=<file>
+                                         K=<int>
+                                         CENTER=[int]
+                                         SCALE=[int]
+                                         PROJDATA=<int>
+                                         OFMT=[format]
+                                         MODEL=<file>
+                                         OUTPUT=<file>
+</div>
+</div>
 
 
 #### Arguments
@@ -66,9 +87,10 @@ SystemML Language Reference for details.
     vector space.
 
 
-
 #### Examples
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f PCA.dml 
                             -nvargs INPUT=/user/ml/input.mtx
                                     K=10
@@ -77,7 +99,27 @@ SystemML Language Reference for details.
                                     FMT=csv
                                     PROJDATA=1
                                     OUTPUT=/user/ml/pca_output/
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f PCA.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs INPUT=/user/ml/input.mtx
+                                         K=10
+                                         CENTER=1
+                                         SCALE=1O
+                                         FMT=csv
+                                         PROJDATA=1
+                                         OUTPUT=/user/ml/pca_output/
+</div>
+</div>
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f PCA.dml
                             -nvargs INPUT=/user/ml/test_input.mtx
                                     K=10
@@ -87,7 +129,25 @@ SystemML Language Reference for details.
                                     PROJDATA=1
                                     MODEL=/user/ml/pca_output/
                                     OUTPUT=/user/ml/test_output.mtx
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f PCA.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs INPUT=/user/ml/test_input.mtx
+                                         K=10
+                                         CENTER=1
+                                         SCALE=1O
+                                         FMT=csv
+                                         PROJDATA=1
+                                         MODEL=/user/ml/pca_output/
+                                         OUTPUT=/user/ml/test_output.mtx
+</div>
+</div>
 
 
 #### Details
@@ -164,6 +224,8 @@ problems.
 
 **ALS**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f ALS.dml
                             -nvargs V=<file>
                                     L=<file>
@@ -175,9 +237,32 @@ problems.
                                     check=[boolean]
                                     thr=[double]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f ALS.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs V=<file>
+                                         L=<file>
+                                         R=<file>
+                                         rank=[int]
+                                         reg=[L2|wL2]
+                                         lambda=[double]
+                                         maxi=[int]
+                                         check=[boolean]
+                                         thr=[double]
+                                         fmt=[format]
+</div>
+</div>
 
 **ALS Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f ALS_predict.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -186,9 +271,29 @@ problems.
                                     Vrows=<int>
                                     Vcols=<int>
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f ALS_predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         L=<file>
+                                         R=<file>
+                                         Vrows=<int>
+                                         Vcols=<int>
+                                         fmt=[format]
+</div>
+</div>
 
 **ALS Top-K Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f ALS_topk_predict.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -197,6 +302,24 @@ problems.
                                     V=<file>
                                     K=[int]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f ALS_topk_predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         L=<file>
+                                         R=<file>
+                                         V=<file>
+                                         K=[int]
+                                         fmt=[format]
+</div>
+</div>
 
 
 ### Arguments - ALS
@@ -275,6 +398,8 @@ SystemML Language Reference for details.
 
 **ALS**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f ALS.dml
                             -nvargs V=/user/ml/V
                                     L=/user/ml/L
@@ -286,12 +411,34 @@ SystemML Language Reference for details.
                                     check=TRUE
                                     thr=0.001
                                     fmt=csv
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f ALS.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs V=/user/ml/V
+                                         L=/user/ml/L
+                                         R=/user/ml/R
+                                         rank=10
+                                         reg="wL"
+                                         lambda=0.0001
+                                         maxi=50
+                                         check=TRUE
+                                         thr=0.001
+                                         fmt=csv
+</div>
+</div>
 
 **ALS Prediction**:
 
 To compute predicted ratings for a given list of users and items:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f ALS_predict.dml
                             -nvargs X=/user/ml/X
                                     Y=/user/ml/Y
@@ -300,13 +447,32 @@ To compute predicted ratings for a given list of users and items:
                                     Vrows=100000
                                     Vcols=10000
                                     fmt=csv
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f ALS_predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X
+                                         Y=/user/ml/Y
+                                         L=/user/ml/L
+                                         R=/user/ml/R
+                                         Vrows=100000
+                                         Vcols=10000
+                                         fmt=csv
+</div>
+</div>
 
 **ALS Top-K Prediction**:
 
 To compute top-K items with highest predicted ratings together with the
 predicted ratings for a given list of users:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f ALS_topk_predict.dml
                             -nvargs X=/user/ml/X
                                     Y=/user/ml/Y
@@ -315,6 +481,24 @@ predicted ratings for a given list of users:
                                     V=/user/ml/V
                                     K=10
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f ALS_topk_predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X
+                                         Y=/user/ml/Y
+                                         L=/user/ml/L
+                                         R=/user/ml/R
+                                         V=/user/ml/V
+                                         K=10
+                                         fmt=csv
+</div>
+</div>
 
 
 ### Details

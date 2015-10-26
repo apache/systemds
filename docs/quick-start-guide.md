@@ -17,7 +17,7 @@ about running SystemML in distributed execution mode (Hadoop, Spark) will
 be added soon.
 For more in depth information, please refer to the
 [Algorithms Reference](algorithms-reference.html) and the
-[SystemML Language Reference](dml-language-reference.html).
+[DML Language Reference](dml-language-reference.html).
 
 
 <br/>
@@ -122,9 +122,9 @@ data file `<filename>` must be `<filename>.mtd`.
 
 # Example 1 - Univariate Statistics
 
-Let's start with a simple example, computing certain [univariate statistics](systemml-algorithms-descriptive-statistics.html#univariate-statistics)
+Let's start with a simple example, computing certain [univariate statistics](algorithms-descriptive-statistics.html#univariate-statistics)
 for each feature column using the algorithm `Univar-Stats.dml` which requires 3
-[arguments](systemml-algorithms-descriptive-statistics.html#arguments):
+[arguments](algorithms-descriptive-statistics.html#arguments):
 
 * `X`:  location of the input data file to analyze
 * `TYPES`:  location of the file that contains the feature column types encoded by integer numbers: `1` = scale, `2` = nominal, `3` = ordinal
@@ -225,7 +225,7 @@ features.
 # Example 2 - Binary-class Support Vector Machines
 
 Let's take the same `haberman.data` to explore the 
-[binary-class support vector machines](systemml-algorithms-classification.html#binary-class-support-vector-machines) algorithm `l2-svm.dml`. 
+[binary-class support vector machines](algorithms-classification.html#binary-class-support-vector-machines) algorithm `l2-svm.dml`. 
 This example also illustrates how to use of the sampling algorithm `sample.dml`
 and the data split algorithm `spliXY.dml`.
 
@@ -278,7 +278,7 @@ the `splitXY.dml` algorithm on our training and test data sets.
 
 Now we need to train our model using the `l2-svm.dml` algorithm.
 
-[Parameters](systemml-algorithms-classification.html#arguments-1):
+[Parameters](algorithms-classification.html#arguments-1):
 
  * `X`         : (input)  filename of training data features
  * `Y`         : (input)  filename of training data labels
@@ -335,7 +335,7 @@ If the confusion matrix looks like this ..
 
 <br/>
 
-Refer to the *SystemML Algorithms Reference* (`docs/SystemML_Algorithms_Reference.pdf`) for more details.
+Refer to the [Algorithms Reference](algorithms-reference.html) for more details.
 
 <br/>
 
@@ -353,46 +353,8 @@ the memory available to the JVM, i.e:
 
 # Next Steps
 
-Check out the [SystemML Algorithm Reference](systemml-algorithms.html) and run
+Check out the [Algorithms Reference](algorithms-reference.html) and run
 some of the other pre-packaged algorithms.
 
-<style type="text/css">
-<!--
-    ol { list-style-type: none; counter-reset: item; margin: 1em; }
-    ol > li { display: table; counter-increment: item; margin-bottom: 0.1em; }
-    ol > li:before { content: counters(item, ".") ". "; display: table-cell; padding-right: 0.6em; }
-    li ol > li { margin: 0; }
-    li ol > li:before { content: counters(item, ".") " "; }
--->
-</style>
-
-1. Descriptive Statistics
-    - [Univariate Statistics](systemml-algorithms-descriptive-statistics.html#univariate-statistics) (`Univar-Stats.dml`)
-    - [Bivariate Statistics](systemml-algorithms-descriptive-statistics.html#bivariate-statistics) (`bivar-stats.dml`)
-    - [Stratified Bivariate Statistics](systemml-algorithms-descriptive-statistics.html#stratified-bivariate-statistics) (`stratstats.dml`)
-2. Classification
-    - [Multinomial Logistic Regression](systemml-algorithms-classification.html#multinomial-logistic-regression) (`MultiLogReg.dml`)
-    - [Binary-Class Support Vector Machines](systemml-algorithms-classification.html#binary-class-support-vector-machines) (`l2-svm.dml`, `l2-svm-predict.dml`)
-    - [Multi-Class Support Vector Machines](systemml-algorithms-classification.html#multi-class-support-vector-machines) (`m-svm.dml`, `m-svm-predict.dml`)
-    - [Naive Bayes](systemml-algorithms-classification.html#naive-bayes) (`naive-bayes.dml`, `naive-bayes-predict.dml`)
-3. Clustering
-    - [K-Means Clustering](systemml-algorithms-clustering.html#k-means-clustering) (`Kmeans.dml`, `Kmeans-predict.dml`)
-4. Regression
-    - [Linear Regression](systemml-algorithms-regression.html#linear-regression) (`LinearRegDS.dml`, `LinearRegCG.dml`)
-    - [Generalized Linear Models](systemml-algorithms-regression.html#generalized-linear-models) (`GLM.dml`)
-    - [Regression Scoring and Prediction](systemml-algorithms-regression.html#regression-scoring-and-prediction) (`GLM-predict.dml`)
-5. Matrix Factorization
-    - [Principle Component Analysis](systemml-algorithms-matrix-factorization.html#principle-component-analysis) (`PCA.dml`)
-6. Interpolation
-    - [Cubic Spline Interpolation](systemml-algorithms-interpolations.html#cubic-spline)
-   
-
-{% comment %} TODO: update the algorithms in the standalone package {% endcomment %} 
-
-{% comment %} TODO: update the algorithms reference doc to include all algorithms, currently missing decision-tree.dml {% endcomment %} 
-
-<br/>
-  
-Follow the [Programming Guide](systemml-programming-guide.html) to implement
-your own SystemML algorithms.
+Follow the [DML and PyDML Programming Guide](dml-and-pydml-programming-guide.html) to become familiar with DML and PyDML.
 

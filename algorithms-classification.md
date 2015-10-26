@@ -108,6 +108,8 @@ Eqs. (1) and (2).
 
 ### Usage
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f MultiLogReg.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -119,7 +121,27 @@ Eqs. (1) and (2).
                                     moi=[int]
                                     mii=[int]
                                     fmt=[format]
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f MultiLogReg.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         B=<file>
+                                         Log=[file]
+                                         icpt=[int]
+                                         reg=[double]
+                                         tol=[double]
+                                         moi=[int]
+                                         mii=[int]
+                                         fmt=[format]
+</div>
+</div>
 
 ### Arguments
 
@@ -173,6 +195,8 @@ SystemML Language Reference for details.
 
 ### Examples
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f MultiLogReg.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
@@ -184,6 +208,27 @@ SystemML Language Reference for details.
                                     moi=100
                                     mii=10
                                     Log=/user/ml/log.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f MultiLogReg.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/Y.mtx
+                                         B=/user/ml/B.mtx
+                                         fmt=csv
+                                         icpt=2
+                                         reg=1.0
+                                         tol=0.0001
+                                         moi=100
+                                         mii=10
+                                         Log=/user/ml/log.csv
+</div>
+</div>
 
 
 * * *
@@ -329,6 +374,8 @@ support vector machine (`y` with domain size `2`).
 
 **Binary-Class Support Vector Machines**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f l2-svm.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -339,9 +386,31 @@ support vector machine (`y` with domain size `2`).
                                     model=<file>
                                     Log=<file>
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f l2-svm.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         icpt=[int]
+                                         tol=[double]
+                                         reg=[double]
+                                         maxiter=[int]
+                                         model=<file>
+                                         Log=<file>
+                                         fmt=[format]
+</div>
+</div>
 
 **Binary-Class Support Vector Machines Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f l2-svm-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
@@ -351,7 +420,25 @@ support vector machine (`y` with domain size `2`).
                                     accuracy=[file]
                                     confusion=[file]
                                     fmt=[format]
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f l2-svm-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=[file]
+                                         icpt=[int]
+                                         model=<file>
+                                         scores=[file]
+                                         accuracy=[file]
+                                         confusion=[file]
+                                         fmt=[format]
+</div>
+</div>
 
 #### Arguments
 
@@ -403,6 +490,8 @@ using a held-out test set. Note that this is an optional argument.
 
 **Binary-Class Support Vector Machines**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f l2-svm.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/y.mtx
@@ -413,9 +502,31 @@ using a held-out test set. Note that this is an optional argument.
                                     maxiter=100
                                     model=/user/ml/weights.csv
                                     Log=/user/ml/Log.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f l2-svm.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/y.mtx
+                                         icpt=0
+                                         tol=0.001
+                                         fmt=csv
+                                         reg=1.0
+                                         maxiter=100
+                                         model=/user/ml/weights.csv
+                                         Log=/user/ml/Log.csv
+</div>
+</div>
 
 **Binary-Class Support Vector Machines Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f l2-svm-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/y.mtx
@@ -425,6 +536,25 @@ using a held-out test set. Note that this is an optional argument.
                                     scores=/user/ml/scores.csv
                                     accuracy=/user/ml/accuracy.csv
                                     confusion=/user/ml/confusion.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f l2-svm-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/y.mtx
+                                         icpt=0
+                                         fmt=csv
+                                         model=/user/ml/weights.csv
+                                         scores=/user/ml/scores.csv
+                                         accuracy=/user/ml/accuracy.csv
+                                         confusion=/user/ml/confusion.csv
+</div>
+</div>
 
 
 #### Details
@@ -481,6 +611,8 @@ class labels.
 
 **Multi-Class Support Vector Machines**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f m-svm.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -491,9 +623,31 @@ class labels.
                                     model=<file>
                                     Log=<file>
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f m-svm.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         icpt=[int]
+                                         tol=[double]
+                                         reg=[double]
+                                         maxiter=[int]
+                                         model=<file>
+                                         Log=<file>
+                                         fmt=[format]
+</div>
+</div>
 
 **Multi-Class Support Vector Machines Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f m-svm-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
@@ -503,6 +657,25 @@ class labels.
                                     accuracy=[file]
                                     confusion=[file]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f m-svm-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=[file]
+                                         icpt=[int]
+                                         model=<file>
+                                         scores=[file]
+                                         accuracy=[file]
+                                         confusion=[file]
+                                         fmt=[format]
+</div>
+</div>
 
 
 #### Arguments
@@ -555,28 +728,71 @@ SystemML Language Reference for details.
 
 **Multi-Class Support Vector Machines**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f m-svm.dml
                             -nvargs X=/user/ml/X.mtx
-                                    Y=/user/ml/y.mtx 
+                                    Y=/user/ml/y.mtx
                                     icpt=0
                                     tol=0.001
-                                    reg=1.0 
-                                    maxiter=100 
-                                    fmt=csv 
+                                    reg=1.0
+                                    maxiter=100
+                                    fmt=csv
                                     model=/user/ml/weights.csv
                                     Log=/user/ml/Log.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f m-svm.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/y.mtx
+                                         icpt=0
+                                         tol=0.001
+                                         reg=1.0
+                                         maxiter=100
+                                         fmt=csv
+                                         model=/user/ml/weights.csv
+                                         Log=/user/ml/Log.csv
+</div>
+</div>
 
 **Multi-Class Support Vector Machines Prediction**:
 
-    hadoop jar SystemML.jar -f m-svm-predict.dml 
-                            -nvargs X=/user/ml/X.mtx 
-                                    Y=/user/ml/y.mtx 
-                                    icpt=0 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
+    hadoop jar SystemML.jar -f m-svm-predict.dml
+                            -nvargs X=/user/ml/X.mtx
+                                    Y=/user/ml/y.mtx
+                                    icpt=0
                                     fmt=csv
                                     model=/user/ml/weights.csv
                                     scores=/user/ml/scores.csv
                                     accuracy=/user/ml/accuracy.csv
                                     confusion=/user/ml/confusion.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f m-svm-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/y.mtx
+                                         icpt=0
+                                         fmt=csv
+                                         model=/user/ml/weights.csv
+                                         scores=/user/ml/scores.csv
+                                         accuracy=/user/ml/accuracy.csv
+                                         confusion=/user/ml/confusion.csv
+</div>
+</div>
 
 
 #### Details
@@ -636,6 +852,8 @@ applicable when all features are counts of categorical values.
 
 **Naive Bayes**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f naive-bayes.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -644,9 +862,29 @@ applicable when all features are counts of categorical values.
                                     conditionals=<file>
                                     accuracy=<file>
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f naive-bayes.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         laplace=[double]
+                                         prior=<file>
+                                         conditionals=<file>
+                                         accuracy=<file>
+                                         fmt=[format]
+</div>
+</div>
 
 **Naive Bayes Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f naive-bayes-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
@@ -656,6 +894,25 @@ applicable when all features are counts of categorical values.
                                     accuracy=[file]
                                     confusion=[file]
                                     probabilities=[file]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f naive-bayes-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=[file]
+                                         prior=<file>
+                                         conditionals=<file>
+                                         fmt=[format]
+                                         accuracy=[file]
+                                         confusion=[file]
+                                         probabilities=[file]
+</div>
+</div>
 
 
 ### Arguments
@@ -698,25 +955,67 @@ SystemML Language Reference for details.
 
 **Naive Bayes**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f naive-bayes.dml
-                            -nvargs X=/user/ml/X.mtx 
-                                    Y=/user/ml/y.mtx 
-                                    laplace=1 fmt=csv
+                            -nvargs X=/user/ml/X.mtx
+                                    Y=/user/ml/y.mtx
+                                    laplace=1
+                                    fmt=csv
                                     prior=/user/ml/prior.csv
                                     conditionals=/user/ml/conditionals.csv
                                     accuracy=/user/ml/accuracy.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f naive-bayes.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/y.mtx
+                                         laplace=1
+                                         fmt=csv
+                                         prior=/user/ml/prior.csv
+                                         conditionals=/user/ml/conditionals.csv
+                                         accuracy=/user/ml/accuracy.csv
+</div>
+</div>
 
 **Naive Bayes Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f naive-bayes-predict.dml
-                            -nvargs X=/user/ml/X.mtx 
-                                    Y=/user/ml/y.mtx 
+                            -nvargs X=/user/ml/X.mtx
+                                    Y=/user/ml/y.mtx
                                     prior=/user/ml/prior.csv
                                     conditionals=/user/ml/conditionals.csv
                                     fmt=csv
                                     accuracy=/user/ml/accuracy.csv
                                     probabilities=/user/ml/probabilities.csv
                                     confusion=/user/ml/confusion.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f naive-bayes-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/y.mtx
+                                         prior=/user/ml/prior.csv
+                                         conditionals=/user/ml/conditionals.csv
+                                         fmt=csv
+                                         accuracy=/user/ml/accuracy.csv
+                                         probabilities=/user/ml/probabilities.csv
+                                         confusion=/user/ml/confusion.csv
+</div>
+</div>
 
 
 ### Details
@@ -781,6 +1080,8 @@ implementation is well-suited to handle large-scale data and builds a
 
 **Decision Tree**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f decision-tree.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -795,9 +1096,35 @@ implementation is well-suited to handle large-scale data and builds a
                                     S_map=[file]
                                     C_map=[file]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f decision-tree.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         R=[file]
+                                         M=<file>
+                                         bins=[int]
+                                         depth=[int]
+                                         num_leaf=[int]
+                                         num_samples=[int]
+                                         impurity=[Gini|entropy]
+                                         O=[file]
+                                         S_map=[file]
+                                         C_map=[file]
+                                         fmt=[format]
+</div>
+</div>
 
 **Decision Tree Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f decision-tree-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
@@ -807,6 +1134,25 @@ implementation is well-suited to handle large-scale data and builds a
                                     A=[file]
                                     CM=[file]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f decision-tree-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=[file]
+                                         R=[file]
+                                         M=<file>
+                                         P=<file>
+                                         A=[file]
+                                         CM=[file]
+                                         fmt=[format]
+</div>
+</div>
 
 
 ### Arguments
@@ -875,6 +1221,8 @@ SystemML Language Reference for details.
 
 **Decision Tree**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f decision-tree.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
@@ -886,9 +1234,32 @@ SystemML Language Reference for details.
                                     num_samples=3000
                                     impurity=Gini
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f decision-tree.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/Y.mtx
+                                         R=/user/ml/R.csv
+                                         M=/user/ml/model.csv
+                                         bins=20
+                                         depth=25
+                                         num_leaf=10
+                                         num_samples=3000
+                                         impurity=Gini
+                                         fmt=csv
+</div>
+</div>
 
 **Decision Tree Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f decision-tree-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
@@ -898,7 +1269,25 @@ SystemML Language Reference for details.
                                     A=/user/ml/accuracy.csv
                                     CM=/user/ml/confusion.csv
                                     fmt=csv
-                                    
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f decision-tree-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/Y.mtx
+                                         R=/user/ml/R.csv
+                                         M=/user/ml/model.csv
+                                         P=/user/ml/predictions.csv
+                                         A=/user/ml/accuracy.csv
+                                         CM=/user/ml/confusion.csv
+                                         fmt=csv
+</div>
+</div>
 
 
 ### Details
@@ -1096,6 +1485,8 @@ for classification in parallel.
 
 **Random Forest**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f random-forest.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -1113,9 +1504,38 @@ for classification in parallel.
                                     S_map=[file]
                                     C_map=[file]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f random-forest.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         R=[file]
+                                         M=<file>
+                                         bins=[int]
+                                         depth=[int]
+                                         num_leaf=[int]
+                                         num_samples=[int]
+                                         num_trees=[int]
+                                         subsamp_rate=[double]
+                                         feature_subset=[double]
+                                         impurity=[Gini|entropy]
+                                         C=[file]
+                                         S_map=[file]
+                                         C_map=[file]
+                                         fmt=[format]
+</div>
+</div>
 
 **Random Forest Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f random-forest-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
@@ -1127,6 +1547,27 @@ for classification in parallel.
                                     OOB=[file]
                                     CM=[file]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f random-forest-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=[file]
+                                         R=[file]
+                                         M=<file>
+                                         C=[file]
+                                         P=<file>
+                                         A=[file]
+                                         OOB=[file]
+                                         CM=[file]
+                                         fmt=[format]
+</div>
+</div>
 
 
 ### Arguments
@@ -1215,6 +1656,8 @@ SystemML Language Reference for details.
 
 **Random Forest**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f random-forest.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
@@ -1227,11 +1670,35 @@ SystemML Language Reference for details.
                                     num_trees=10
                                     impurity=Gini
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f random-forest.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/Y.mtx
+                                         R=/user/ml/R.csv
+                                         M=/user/ml/model.csv
+                                         bins=20
+                                         depth=25
+                                         num_leaf=10
+                                         num_samples=3000
+                                         num_trees=10
+                                         impurity=Gini
+                                         fmt=csv
+</div>
+</div>
 
 **Random Forest Prediction**:
 
 To compute predictions:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f random-forest-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
@@ -1241,6 +1708,25 @@ To compute predictions:
                                     A=/user/ml/accuracy.csv
                                     CM=/user/ml/confusion.csv
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f random-forest-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/Y.mtx
+                                         R=/user/ml/R.csv
+                                         M=/user/ml/model.csv
+                                         P=/user/ml/predictions.csv
+                                         A=/user/ml/accuracy.csv
+                                         CM=/user/ml/confusion.csv
+                                         fmt=csv
+</div>
+</div>
 
 
 ### Details

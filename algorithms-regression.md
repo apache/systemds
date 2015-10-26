@@ -61,6 +61,8 @@ efficient when the number of features $m$ is relatively small
 
 **Linear Regression - Direct Solve**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegDS.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -69,10 +71,29 @@ efficient when the number of features $m$ is relatively small
                                     icpt=[int]
                                     reg=[double]
                                     fmt=[format]
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f LinearRegDS.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         B=<file>
+                                         O=[file]
+                                         icpt=[int]
+                                         reg=[double]
+                                         fmt=[format]
+</div>
+</div>
 
 **Linear Regression - Conjugate Gradient**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegCG.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -84,6 +105,27 @@ efficient when the number of features $m$ is relatively small
                                     tol=[double]
                                     maxi=[int]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f LinearRegCG.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         B=<file>
+                                         O=[file]
+                                         Log=[file]
+                                         icpt=[int]
+                                         reg=[double]
+                                         tol=[double]
+                                         maxi=[int]
+                                         fmt=[format]
+</div>
+</div>
 
 
 ### Arguments
@@ -135,30 +177,71 @@ SystemML Language Reference for details.
 
 **Linear Regression - Direct Solve**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegDS.dml
-                            -nvargs X=/user/ml/X.mtx 
-                                    Y=/user/ml/Y.mtx 
-                                    B=/user/ml/B.mtx 
-                                    fmt=csv 
-                                    O=/user/ml/stats.csv 
-                                    icpt=2 
+                            -nvargs X=/user/ml/X.mtx
+                                    Y=/user/ml/Y.mtx
+                                    B=/user/ml/B.mtx
+                                    fmt=csv
+                                    O=/user/ml/stats.csv
+                                    icpt=2
                                     reg=1.0
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f LinearRegDS.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/Y.mtx
+                                         B=/user/ml/B.mtx
+                                         fmt=csv
+                                         O=/user/ml/stats.csv
+                                         icpt=2
+                                         reg=1.0
+</div>
+</div>
 
 **Linear Regression - Conjugate Gradient**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f LinearRegCG.dml
-                            -nvargs X=/user/ml/X.mtx 
-                                    Y=/user/ml/Y.mtx 
-                                    B=/user/ml/B.mtx 
-                                    fmt=csv 
-                                    O=/user/ml/stats.csv 
-                                    icpt=2 
-                                    reg=1.0 
-                                    tol=0.00000001 
-                                    maxi=100 
+                            -nvargs X=/user/ml/X.mtx
+                                    Y=/user/ml/Y.mtx
+                                    B=/user/ml/B.mtx
+                                    fmt=csv
+                                    O=/user/ml/stats.csv
+                                    icpt=2
+                                    reg=1.0
+                                    tol=0.00000001
+                                    maxi=100
                                     Log=/user/ml/log.csv
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f LinearRegCG.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/Y.mtx
+                                         B=/user/ml/B.mtx
+                                         fmt=csv
+                                         O=/user/ml/stats.csv
+                                         icpt=2
+                                         reg=1.0
+                                         tol=0.00000001
+                                         maxi=100
+                                         Log=/user/ml/log.csv
+</div>
+</div>
 
 
 * * *
@@ -368,6 +451,8 @@ lowest AIC is computed.
 
 ### Usage
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f StepLinearRegDS.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -377,7 +462,25 @@ lowest AIC is computed.
                                     icpt=[int]
                                     thr=[double]
                                     fmt=[format]
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f StepLinearRegDS.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         B=<file>
+                                         S=[file]
+                                         O=[file]
+                                         icpt=[int]
+                                         thr=[double]
+                                         fmt=[format]
+</div>
+</div>
 
 ### Arguments
 
@@ -419,6 +522,8 @@ SystemML Language Reference for details.
 
 ### Examples
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f StepLinearRegDS.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
@@ -428,6 +533,25 @@ SystemML Language Reference for details.
                                     icpt=2
                                     thr=0.05
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f StepLinearRegDS.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/Y.mtx
+                                         B=/user/ml/B.mtx
+                                         S=/user/ml/selected.csv
+                                         O=/user/ml/stats.csv
+                                         icpt=2
+                                         thr=0.05
+                                         fmt=csv
+</div>
+</div>
 
 
 ### Details
@@ -521,6 +645,8 @@ distributions and link functions, see below for details.
 
 ### Usage
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f GLM.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -539,7 +665,34 @@ distributions and link functions, see below for details.
                                     disp=[double]
                                     moi=[int]
                                     mii=[int]
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f GLM.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         B=<file>
+                                         fmt=[format]
+                                         O=[file]
+                                         Log=[file]
+                                         dfam=[int]
+                                         vpow=[double]
+                                         link=[int]
+                                         lpow=[double]
+                                         yneg=[double]
+                                         icpt=[int]
+                                         reg=[double]
+                                         tol=[double]
+                                         disp=[double]
+                                         moi=[int]
+                                         mii=[int]
+</div>
+</div>
 
 ### Arguments
 
@@ -629,27 +782,53 @@ data
 **mii**: (default: `0`) Maximum number of inner (conjugate gradient) iterations, or 0
 if no maximum limit provided
 
-* * *
 
 ### Examples
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f GLM.dml
-                            -nvargs X=/user/ml/X.mtx 
-                                    Y=/user/ml/Y.mtx 
-                                    B=/user/ml/B.mtx 
-                                    fmt=csv 
-                                    dfam=2 
-                                    link=2 
-                                    yneg=-1.0 
-                                    icpt=2 
-                                    reg=0.01 
-                                    tol=0.00000001 
-                                    disp=1.0 
-                                    moi=100 
-                                    mii=10 
-                                    O=/user/ml/stats.csv 
+                            -nvargs X=/user/ml/X.mtx
+                                    Y=/user/ml/Y.mtx
+                                    B=/user/ml/B.mtx
+                                    fmt=csv
+                                    dfam=2
+                                    link=2
+                                    yneg=-1.0
+                                    icpt=2
+                                    reg=0.01
+                                    tol=0.00000001
+                                    disp=1.0
+                                    moi=100
+                                    mii=10
+                                    O=/user/ml/stats.csv
                                     Log=/user/ml/log.csv
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f GLM.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/Y.mtx
+                                         B=/user/ml/B.mtx
+                                         fmt=csv
+                                         dfam=2
+                                         link=2
+                                         yneg=-1.0
+                                         icpt=2
+                                         reg=0.01
+                                         tol=0.00000001
+                                         disp=1.0
+                                         moi=100
+                                         mii=10
+                                         O=/user/ml/stats.csv
+                                         Log=/user/ml/log.csv
+</div>
+</div>
 
 * * *
 
@@ -944,6 +1123,8 @@ distribution family is supported (see below for details).
 
 ### Usage
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f StepGLM.dml
                             -nvargs X=<file>
                                     Y=<file>
@@ -959,6 +1140,31 @@ distribution family is supported (see below for details).
                                     mii=[int]
                                     thr=[double]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f StepGLM.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=<file>
+                                         B=<file>
+                                         S=[file]
+                                         O=[file]
+                                         link=[int]
+                                         yneg=[double]
+                                         icpt=[int]
+                                         tol=[double]
+                                         disp=[double]
+                                         moi=[int]
+                                         mii=[int]
+                                         thr=[double]
+                                         fmt=[format]
+</div>
+</div>
 
 
 ### Arguments
@@ -1023,6 +1229,8 @@ SystemML Language Reference for details.
 
 ### Examples
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f StepGLM.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
@@ -1037,6 +1245,30 @@ SystemML Language Reference for details.
                                     mii=10
                                     thr=0.05
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f StepGLM.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         Y=/user/ml/Y.mtx
+                                         B=/user/ml/B.mtx
+                                         S=/user/ml/selected.csv
+                                         O=/user/ml/stats.csv
+                                         link=2
+                                         yneg=-1.0
+                                         icpt=2
+                                         tol=0.000001
+                                         moi=100
+                                         mii=10
+                                         thr=0.05
+                                         fmt=csv
+</div>
+</div>
 
 
 ### Details
@@ -1145,6 +1377,8 @@ this step outside the scope of `GLM-predict.dml` for now.
 
 ### Usage
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f GLM-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
@@ -1157,6 +1391,28 @@ this step outside the scope of `GLM-predict.dml` for now.
                                     lpow=[double]
                                     disp=[double]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f GLM-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         Y=[file]
+                                         B=<file>
+                                         M=[file]
+                                         O=[file]
+                                         dfam=[int]
+                                         vpow=[double]
+                                         link=[int]
+                                         lpow=[double]
+                                         disp=[double]
+                                         fmt=[format]
+</div>
+</div>
 
 
 ### Arguments
@@ -1258,101 +1514,256 @@ argument is set arbitrarily. The correct dispersion value should be
 computed from the training data during model estimation, or omitted if
 unknown (which sets it to `1.0`).
 
-Linear regression example:
+**Linear regression example**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f GLM-predict.dml
-                            -nvargs dfam=1 
-                                    vpow=0.0 
-                                    link=1 
-                                    lpow=1.0 
-                                    disp=5.67 
-                                    X=/user/ml/X.mtx 
-                                    B=/user/ml/B.mtx 
-                                    M=/user/ml/Means.mtx 
-                                    fmt=csv 
-                                    Y=/user/ml/Y.mtx 
-                                    O=/user/ml/stats.csv
-
-
-Linear regression example, prediction only (no Y given):
-
-    hadoop jar SystemML.jar -f GLM-predict.dml
-                            -nvargs dfam=1 
-                                    vpow=0.0 
-                                    link=1 
-                                    lpow=1.0 
-                                    X=/user/ml/X.mtx 
-                                    B=/user/ml/B.mtx 
-                                    M=/user/ml/Means.mtx 
+                            -nvargs dfam=1
+                                    vpow=0.0
+                                    link=1
+                                    lpow=1.0
+                                    disp=5.67
+                                    X=/user/ml/X.mtx
+                                    B=/user/ml/B.mtx
+                                    M=/user/ml/Means.mtx
                                     fmt=csv
-
-Binomial logistic regression example:
-
-    hadoop jar SystemML.jar -f GLM-predict.dml
-                            -nvargs dfam=2 
-                                    link=2 
-                                    disp=3.0004464 
-                                    X=/user/ml/X.mtx 
-                                    B=/user/ml/B.mtx 
-                                    M=/user/ml/Probabilities.mtx 
-                                    fmt=csv 
-                                    Y=/user/ml/Y.mtx 
+                                    Y=/user/ml/Y.mtx
                                     O=/user/ml/stats.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f GLM-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs dfam=1
+                                         vpow=0.0
+                                         link=1
+                                         lpow=1.0
+                                         disp=5.67
+                                         X=/user/ml/X.mtx
+                                         B=/user/ml/B.mtx
+                                         M=/user/ml/Means.mtx
+                                         fmt=csv
+                                         Y=/user/ml/Y.mtx
+                                         O=/user/ml/stats.csv
+</div>
+</div>
 
-Binomial probit regression example:
+**Linear regression example, prediction only (no Y given)**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f GLM-predict.dml
-                            -nvargs dfam=2 
-                                    link=3 
-                                    disp=3.0004464 
-                                    X=/user/ml/X.mtx 
-                                    B=/user/ml/B.mtx 
-                                    M=/user/ml/Probabilities.mtx 
-                                    fmt=csv 
-                                    Y=/user/ml/Y.mtx 
+                            -nvargs dfam=1
+                                    vpow=0.0
+                                    link=1
+                                    lpow=1.0
+                                    X=/user/ml/X.mtx
+                                    B=/user/ml/B.mtx
+                                    M=/user/ml/Means.mtx
+                                    fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f GLM-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs dfam=1
+                                         vpow=0.0
+                                         link=1
+                                         lpow=1.0
+                                         X=/user/ml/X.mtx
+                                         B=/user/ml/B.mtx
+                                         M=/user/ml/Means.mtx
+                                         fmt=csv
+</div>
+</div>
+
+**Binomial logistic regression example**:
+
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
+    hadoop jar SystemML.jar -f GLM-predict.dml
+                            -nvargs dfam=2
+                                    link=2
+                                    disp=3.0004464
+                                    X=/user/ml/X.mtx
+                                    B=/user/ml/B.mtx
+                                    M=/user/ml/Probabilities.mtx
+                                    fmt=csv
+                                    Y=/user/ml/Y.mtx
                                     O=/user/ml/stats.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f GLM-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs dfam=2
+                                         link=2
+                                         disp=3.0004464
+                                         X=/user/ml/X.mtx
+                                         B=/user/ml/B.mtx
+                                         M=/user/ml/Probabilities.mtx
+                                         fmt=csv
+                                         Y=/user/ml/Y.mtx
+                                         O=/user/ml/stats.csv
+</div>
+</div>
 
-Multinomial logistic regression example:
+**Binomial probit regression example**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
+    hadoop jar SystemML.jar -f GLM-predict.dml
+                            -nvargs dfam=2
+                                    link=3
+                                    disp=3.0004464
+                                    X=/user/ml/X.mtx
+                                    B=/user/ml/B.mtx
+                                    M=/user/ml/Probabilities.mtx
+                                    fmt=csv
+                                    Y=/user/ml/Y.mtx
+                                    O=/user/ml/stats.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f GLM-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs dfam=2
+                                         link=3
+                                         disp=3.0004464
+                                         X=/user/ml/X.mtx
+                                         B=/user/ml/B.mtx
+                                         M=/user/ml/Probabilities.mtx
+                                         fmt=csv
+                                         Y=/user/ml/Y.mtx
+                                         O=/user/ml/stats.csv
+</div>
+</div>
+
+**Multinomial logistic regression example**:
+
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f GLM-predict.dml
                             -nvargs dfam=3 
-                                    X=/user/ml/X.mtx 
-                                    B=/user/ml/B.mtx 
-                                    M=/user/ml/Probabilities.mtx 
-                                    fmt=csv 
-                                    Y=/user/ml/Y.mtx 
+                                    X=/user/ml/X.mtx
+                                    B=/user/ml/B.mtx
+                                    M=/user/ml/Probabilities.mtx
+                                    fmt=csv
+                                    Y=/user/ml/Y.mtx
                                     O=/user/ml/stats.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f GLM-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs dfam=3
+                                         X=/user/ml/X.mtx
+                                         B=/user/ml/B.mtx
+                                         M=/user/ml/Probabilities.mtx
+                                         fmt=csv
+                                         Y=/user/ml/Y.mtx
+                                         O=/user/ml/stats.csv
+</div>
+</div>
 
-Poisson regression with the log link example:
+**Poisson regression with the log link example**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f GLM-predict.dml
-                            -nvargs dfam=1 
-                                    vpow=1.0 
-                                    link=1 
-                                    lpow=0.0 
-                                    disp=3.45 
-                                    X=/user/ml/X.mtx 
-                                    B=/user/ml/B.mtx 
-                                    M=/user/ml/Means.mtx 
-                                    fmt=csv 
-                                    Y=/user/ml/Y.mtx 
+                            -nvargs dfam=1
+                                    vpow=1.0
+                                    link=1
+                                    lpow=0.0
+                                    disp=3.45
+                                    X=/user/ml/X.mtx
+                                    B=/user/ml/B.mtx
+                                    M=/user/ml/Means.mtx
+                                    fmt=csv
+                                    Y=/user/ml/Y.mtx
                                     O=/user/ml/stats.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f GLM-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs dfam=1
+                                         vpow=1.0
+                                         link=1
+                                         lpow=0.0
+                                         disp=3.45
+                                         X=/user/ml/X.mtx
+                                         B=/user/ml/B.mtx
+                                         M=/user/ml/Means.mtx
+                                         fmt=csv
+                                         Y=/user/ml/Y.mtx
+                                         O=/user/ml/stats.csv
+</div>
+</div>
 
-Gamma regression with the inverse (reciprocal) link example:
+**Gamma regression with the inverse (reciprocal) link example**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f GLM-predict.dml
-                            -nvargs dfam=1 
-                                    vpow=2.0 
-                                    link=1 
-                                    lpow=-1.0 
-                                    disp=1.99118 
-                                    X=/user/ml/X.mtx 
-                                    B=/user/ml/B.mtx 
-                                    M=/user/ml/Means.mtx 
-                                    fmt=csv 
-                                    Y=/user/ml/Y.mtx 
+                            -nvargs dfam=1
+                                    vpow=2.0
+                                    link=1
+                                    lpow=-1.0
+                                    disp=1.99118
+                                    X=/user/ml/X.mtx
+                                    B=/user/ml/B.mtx
+                                    M=/user/ml/Means.mtx
+                                    fmt=csv
+                                    Y=/user/ml/Y.mtx
                                     O=/user/ml/stats.csv
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f GLM-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs dfam=1
+                                         vpow=2.0
+                                         link=1
+                                         lpow=-1.0
+                                         disp=1.99118
+                                         X=/user/ml/X.mtx
+                                         B=/user/ml/B.mtx
+                                         M=/user/ml/Means.mtx
+                                         fmt=csv
+                                         Y=/user/ml/Y.mtx
+                                         O=/user/ml/stats.csv
+</div>
+</div>
 
 * * *
 

@@ -23,6 +23,8 @@ censored and uncensored survival times.
 
 ### Usage
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f KM.dml
                             -nvargs X=<file>
                                     TE=<file>
@@ -36,6 +38,29 @@ censored and uncensored survival times.
                                     ctype=[plain|log|log-log]
                                     ttype=[none|log-rank|wilcoxon]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f KM.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         TE=<file>
+                                         GI=<file>
+                                         SI=<file>
+                                         O=<file>
+                                         M=<file>
+                                         T=<file>
+                                         alpha=[double]
+                                         etype=[greenwood|peto]
+                                         ctype=[plain|log|log-log]
+                                         ttype=[none|log-rank|wilcoxon]
+                                         fmt=[format]
+</div>
+</div>
 
 
 ### Arguments
@@ -95,6 +120,8 @@ SystemML Language Reference for details.
 
 ### Examples
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f KM.dml
                             -nvargs X=/user/ml/X.mtx
                                     TE=/user/ml/TE
@@ -106,7 +133,30 @@ SystemML Language Reference for details.
                                     etype=greenwood
                                     ctype=plain
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f KM.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         TE=/user/ml/TE
+                                         GI=/user/ml/GI
+                                         SI=/user/ml/SI
+                                         O=/user/ml/kaplan-meier.csv
+                                         M=/user/ml/model.csv
+                                         alpha=0.01
+                                         etype=greenwood
+                                         ctype=plain
+                                         fmt=csv
+</div>
+</div>
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f KM.dml
                             -nvargs X=/user/ml/X.mtx
                                     TE=/user/ml/TE
@@ -120,6 +170,29 @@ SystemML Language Reference for details.
                                     ctype=log
                                     ttype=log-rank
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f KM.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         TE=/user/ml/TE
+                                         GI=/user/ml/GI
+                                         SI=/user/ml/SI
+                                         O=/user/ml/kaplan-meier.csv
+                                         M=/user/ml/model.csv
+                                         T=/user/ml/test.csv
+                                         alpha=0.01
+                                         etype=peto
+                                         ctype=log
+                                         ttype=log-rank
+                                         fmt=csv
+</div>
+</div>
 
 
 ### Details
@@ -350,6 +423,8 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
 
 **Cox**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Cox.dml
                             -nvargs X=<file>
                                     TE=<file>
@@ -367,9 +442,39 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
                                     moi=[int]
                                     mii=[int]
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Cox.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         TE=<file>
+                                         F=<file>
+                                         R=[file]
+                                         M=<file>
+                                         S=[file]
+                                         T=[file]
+                                         COV=<file>
+                                         RT=<file>
+                                         XO=<file>
+                                         MF=<file>
+                                         alpha=[double]
+                                         tol=[double]
+                                         moi=[int]
+                                         mii=[int]
+                                         fmt=[format]
+</div>
+</div>
+
 
 **Cox Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Cox-predict.dml
                             -nvargs X=<file>
                                     RT=<file>
@@ -379,6 +484,26 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
                                     MF=<file>
                                     P=<file>
                                     fmt=[format]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Cox-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         RT=<file>
+                                         M=<file>
+                                         Y=<file>
+                                         COV=<file>
+                                         MF=<file>
+                                         P=<file>
+                                         fmt=[format]
+</div>
+</div>
+
 
 ### Arguments - Cox Model Fitting/Prediction
 
@@ -456,6 +581,8 @@ SystemML Language Reference for details.
 
 **Cox**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Cox.dml
                             -nvargs X=/user/ml/X.mtx
                                     TE=/user/ml/TE
@@ -466,7 +593,29 @@ SystemML Language Reference for details.
                                     COV=/user/ml/var-covar.csv
                                     XO=/user/ml/X-sorted.mtx
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Cox.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         TE=/user/ml/TE
+                                         F=/user/ml/F
+                                         R=/user/ml/R
+                                         M=/user/ml/model.csv
+                                         T=/user/ml/test.csv
+                                         COV=/user/ml/var-covar.csv
+                                         XO=/user/ml/X-sorted.mtx
+                                         fmt=csv
+</div>
+</div>
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Cox.dml
                             -nvargs X=/user/ml/X.mtx
                                     TE=/user/ml/TE
@@ -483,9 +632,37 @@ SystemML Language Reference for details.
                                     moi=100
                                     mii=20
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Cox.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         TE=/user/ml/TE
+                                         F=/user/ml/F
+                                         R=/user/ml/R
+                                         M=/user/ml/model.csv
+                                         T=/user/ml/test.csv
+                                         COV=/user/ml/var-covar.csv
+                                         RT=/user/ml/recoded-timestamps.csv
+                                         XO=/user/ml/X-sorted.csv
+                                         MF=/user/ml/baseline.csv
+                                         alpha=0.01
+                                         tol=0.000001
+                                         moi=100
+                                         mii=20
+                                         fmt=csv
+</div>
+</div>
 
 **Cox Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Cox-predict.dml
                             -nvargs X=/user/ml/X-sorted.mtx
                                     RT=/user/ml/recoded-timestamps.csv
@@ -495,6 +672,25 @@ SystemML Language Reference for details.
                                     MF=/user/ml/baseline.csv
                                     P=/user/ml/predictions.csv
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Cox-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X-sorted.mtx
+                                         RT=/user/ml/recoded-timestamps.csv
+                                         M=/user/ml/model.csv
+                                         Y=/user/ml/Y.mtx
+                                         COV=/user/ml/var-covar.csv
+                                         MF=/user/ml/baseline.csv
+                                         P=/user/ml/predictions.csv
+                                         fmt=csv
+</div>
+</div>
 
 
 ### Details
@@ -671,7 +867,7 @@ follows. File `S` stores the following information
   * Line 5: Cox & Snell Rsquare
   * Line 6: maximum possible Rsquare.
 
-Above, the AIC is computed as in [[Stepwise Linear Regression]](algorithms-regression.html#stepwise-linear-regression), the Cox & Snell Rsquare
+Above, the AIC is computed as in [Stepwise Linear Regression](algorithms-regression.html#stepwise-linear-regression), the Cox & Snell Rsquare
 is equal to $$1-\exp\{ -l/n \}$$, where $l$ is the log-rank test statistic
 as discussed above and $n$ is total number of observations, and the
 maximum possible Rsquare computed as $$1-\exp\{ -2 L(\textbf{0})/n \}$$,

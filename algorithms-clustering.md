@@ -95,6 +95,8 @@ apart is a “false negative” etc.
 
 **K-Means**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Kmeans.dml
                             -nvargs X=<file>
                                     C=[file]
@@ -107,9 +109,33 @@ apart is a “false negative” etc.
                                     Y=[file]
                                     fmt=[format]
                                     verb=[int]
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Kmeans.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=<file>
+                                         C=[file]
+                                         k=<int>
+                                         runs=[int]
+                                         maxi=[int]
+                                         tol=[double]
+                                         samp=[int]
+                                         isY=[int]
+                                         Y=[file]
+                                         fmt=[format]
+                                         verb=[int]
+</div>
+</div>
 
 **K-Means Prediction**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Kmeans-predict.dml
                             -nvargs X=[file]
                                     C=[file]
@@ -117,7 +143,23 @@ apart is a “false negative” etc.
                                     prY=[file]
                                     fmt=[format]
                                     O=[file]
-
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Kmeans-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=[file]
+                                         C=[file]
+                                         spY=[file]
+                                         prY=[file]
+                                         fmt=[format]
+                                         O=[file]
+</div>
+</div>
 
 
 ### Arguments - K-Means
@@ -186,12 +228,31 @@ standard output
 
 **K-Means**:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Kmeans.dml
                             -nvargs X=/user/ml/X.mtx
                                     k=5
                                     C=/user/ml/centroids.mtx
                                     fmt=csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Kmeans.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         k=5
+                                         C=/user/ml/centroids.mtx
+                                         fmt=csv
+</div>
+</div>
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Kmeans.dml
                             -nvargs X=/user/ml/X.mtx
                                     k=5
@@ -203,33 +264,104 @@ standard output
                                     isY=1
                                     Y=/user/ml/Yout.mtx
                                     verb=1
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Kmeans.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         k=5
+                                         runs=100
+                                         maxi=5000
+                                         tol=0.00000001
+                                         samp=20
+                                         C=/user/ml/centroids.mtx
+                                         isY=1
+                                         Y=/user/ml/Yout.mtx
+                                         verb=1
+</div>
+</div>
 
 **K-Means Prediction**:
 
 To predict Y given X and C:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Kmeans-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     C=/user/ml/C.mtx
                                     prY=/user/ml/PredY.mtx
                                     O=/user/ml/stats.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Kmeans-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         C=/user/ml/C.mtx
+                                         prY=/user/ml/PredY.mtx
+                                         O=/user/ml/stats.csv
+</div>
+</div>
 
 To compare “actual” labels `spY` with “predicted” labels
 given X and C:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Kmeans-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     C=/user/ml/C.mtx
                                     spY=/user/ml/Y.mtx
                                     O=/user/ml/stats.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Kmeans-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs X=/user/ml/X.mtx
+                                         C=/user/ml/C.mtx
+                                         spY=/user/ml/Y.mtx
+                                         O=/user/ml/stats.csv
+</div>
+</div>
 
 To compare “actual” labels `spY` with given “predicted”
 labels prY:
 
+<div class="codetabs">
+<div data-lang="Hadoop" markdown="1">
     hadoop jar SystemML.jar -f Kmeans-predict.dml
                             -nvargs spY=/user/ml/Y.mtx
                                     prY=/user/ml/PredY.mtx
                                     O=/user/ml/stats.csv
+</div>
+<div data-lang="Spark" markdown="1">
+    $SPARK_HOME/bin/spark-submit --master yarn-cluster
+                                 --conf spark.driver.maxResultSize=0
+                                 --conf spark.akka.frameSize=128
+                                 SystemML.jar
+                                 -f Kmeans-predict.dml
+                                 -config=SystemML-config.xml
+                                 -exec hybrid_spark
+                                 -nvargs spY=/user/ml/Y.mtx
+                                         prY=/user/ml/PredY.mtx
+                                         O=/user/ml/stats.csv
+</div>
+</div>
 
 
 * * *

@@ -52,7 +52,7 @@ The `DMLScript` class serves as the main entrypoint to SystemML. Executing
 In Eclipse, a Debug Configuration can be created with `DMLScript` as the Main class and any arguments specified as
 Program arguments. A PyDML script requires the addition of a `-python` switch.
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="Eclipse Debug Configuration - Main" markdown="1">
 ![Eclipse Debug Configuration - Main](img/dml-and-pydml-programming-guide/dmlscript-debug-configuration-hello-world-main-class.png "DMLScript Debug Configuration, Main class")
@@ -81,7 +81,7 @@ based on its value. Mathematical operations typically operate on
 doubles/floats, whereas integers/ints are typically useful for tasks such as
 iteration and accessing elements in a matrix.
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="DML" markdown="1">
 {% highlight r %}
@@ -161,7 +161,7 @@ function. In the example below, a matrix element is still considered to be of th
 so the value is cast to a scalar in order to print it. Matrix element values are of type **double**/**float**.
 *Note that matrices index from 1 in both DML and PyDML.*
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="DML" markdown="1">
 {% highlight r %}
@@ -212,7 +212,7 @@ PyDML Language Reference (Matrix Construction).
 A matrix can be saved using the **`write()`** function in DML and the **`save()`** function in PyDML. SystemML supports four
 different formats: **`text`** (`i,j,v`), **`mm`** (`Matrix Market`), **`csv`** (`delimiter-separated values`), and **`binary`**.
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="DML" markdown="1">
 {% highlight r %}
@@ -239,7 +239,7 @@ save(m, "m.binary", format="binary")
 Saving a matrix automatically creates a metadata file for each format except for Matrix Market, since Matrix Market contains
 metadata within the *.mm file. All formats are text-based except binary. The contents of the resulting files are shown here.
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="m.txt" markdown="1">
 	1 1 1.0
@@ -321,7 +321,7 @@ A matrix can be loaded using the **`read()`** function in DML and the **`load()`
 formats: **`text`** (`i,j,v`), **`mm`** (`Matrix Market`), **`csv`** (`delimiter-separated values`), and **`binary`**. To read a file, a corresponding
 metadata file is required, except for the Matrix Market format.
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="DML" markdown="1">
 {% highlight r %}
@@ -387,7 +387,7 @@ by 2 and assign the resulting matrix to D.
 This example also shows a user-defined function called `printMatrix()`, which takes a string and matrix as arguments and returns
 nothing.
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="DML" markdown="1">
 {% highlight r %}
@@ -471,7 +471,7 @@ specifying row 2 and leaving the column blank. We obtain a column slice (vector)
 column 3. After that, we obtain a submatrix via range indexing, where we specify rows 2 to 3, separated by a colon, and columns
 1 to 2, separated by a colon.
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="DML" markdown="1">
 {% highlight r %}
@@ -557,7 +557,7 @@ DML and PyDML feature 3 loop statements: `while`, `for`, and `parfor` (parallel 
 sequentially as in a regular `for` loop. The `parfor` statement can include several optional parameters, as described
 in the DML Language Reference ([ParFor Statement](dml-language-reference.html#parfor-statement)) and PyDML Language Reference (ParFor Statement).
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="DML" markdown="1">
 {% highlight r %}
@@ -623,7 +623,7 @@ Functions encapsulate useful functionality in SystemML. In addition to built-in 
 Functions take 0 or more parameters and return 0 or more values.
 Currently, if a function returns nothing, it still needs to be assigned to a variable.
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="DML" markdown="1">
 {% highlight r %}
@@ -669,7 +669,7 @@ is appended to the matrix. A column consisting of the row sums is appended to th
 matrix is returned to variable B. Matrix A is output to the `A.csv` file and matrix B is saved as the `B.csv` file.
 
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="A.csv" markdown="1">
 	1.6091961493071,0.7088614208099939
@@ -698,7 +698,7 @@ In the example below, a matrix is read from the file system using named argument
 using the `rowsToPrint` argument, which defaults to 2 if no argument is supplied. Likewise, the number of columns is
 specified using `colsToPrint` with a default value of 2.
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="DML" markdown="1">
 {% highlight r %}
@@ -780,7 +780,7 @@ for (i in 1:numRowsToPrint):
 
 Here, we see identical functionality but with positional arguments.
 
-<div class="codetabs">
+<div class="codetabs2">
 
 <div data-lang="DML" markdown="1">
 {% highlight r %}

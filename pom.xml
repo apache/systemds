@@ -160,7 +160,7 @@
 				<version>2.4</version><!--$NO-MVN-MAN-VER$-->
 				<executions>
 					<execution>
-						<id>create-package-assemblies</id>
+						<id>create-package-assembly</id>
 						<phase>package</phase>
 						<goals>
 							<goal>single</goal>
@@ -170,7 +170,7 @@
 						</configuration>
 					</execution>
 					<execution>
-						<id>create-bigsheets-package-assemblies</id>
+						<id>create-cluster-binary-distribution-assembly</id>
 						<phase>package</phase>
 						<goals>
 							<goal>single</goal>

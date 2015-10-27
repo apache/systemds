@@ -15,6 +15,15 @@
 
 	<fileSets>
 		<fileSet>
+			<directory>${basedir}/src/assembly/standalone</directory>
+			<includes>
+				<include>LICENSE</include>
+				<include>NOTICE</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+
+		<fileSet>
 			<directory>${basedir}</directory>
 			<includes>
 				<include>SystemML-config.xml</include>

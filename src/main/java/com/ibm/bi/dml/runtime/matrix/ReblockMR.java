@@ -204,9 +204,9 @@ public class ReblockMR
 		long maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
 		long blockSize = InfrastructureAnalyzer.getHDFSBlockSize()/(1024*1024);
 		long maxSize = -1; //in MB
-		for( int i=0; i<rlen.length; i++ )
-		{			
-			long tmp = MatrixBlock.estimateSizeOnDisk(rlen[i], clen[i], nnz[i]) / (1024*1024);
+		for( int i=0; i<rlen.length; i++ ) {	
+			long lnnz = (nnz[i] > 0) ? nnz[i] : rlen[i] * clen[i];
+			long tmp = MatrixBlock.estimateSizeOnDisk(rlen[i], clen[i], lnnz) / (1024*1024);
 			maxSize = Math.max(maxSize, tmp);
 		}
 		

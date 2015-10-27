@@ -140,28 +140,26 @@ public class RDDConverterUtils
 	 */
 	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<MatrixIndexes,MatrixBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
 	{
-		//sort if required
 		JavaPairRDD<MatrixIndexes,MatrixBlock> input = in;
-		if( strict ) {
-			input = in.sortByKey(true);
-		}
 		
-		//fast path without shuffle
-		JavaRDD<String> out = null;
-		if( mcIn.getCols()<=mcIn.getColsPerBlock() )
-		{
-			out = input.flatMap( 
-					new BinaryBlockToCSVFunction(props) );
-		}
-		//general case with shuffle
-		else
-		{
-			out = input.flatMapToPair(new SliceBinaryBlockToRowsFunction(mcIn.getRowsPerBlock()))
+		//fast path without, general case with shuffle
+		if( mcIn.getCols()>mcIn.getColsPerBlock() ) {
+			//create row partitioned matrix
+			input = input
+					.flatMapToPair(new SliceBinaryBlockToRowsFunction(mcIn.getRowsPerBlock()))
 					.groupByKey()
-					.mapToPair(new ConcatenateBlocksFunction(mcIn.getCols(), mcIn.getColsPerBlock()))
-					.flatMap(new BinaryBlockToCSVFunction(props));
+					.mapToPair(new ConcatenateBlocksFunction(mcIn.getCols(), mcIn.getColsPerBlock()));	
 		}
 		
+		//sort if required (on blocks/rows)
+		if( strict ) {
+			input = input.sortByKey(true);
+		}
+		
+		//convert binary block to csv (from blocks/rows)
+		JavaRDD<String> out = input
+				.flatMap(new BinaryBlockToCSVFunction(props));
+	
 		return out;
 	}
 	
@@ -733,13 +731,13 @@ public class RDDConverterUtils
 			Iterator<Tuple2<Long, MatrixBlock>> iter = arg0._2().iterator();
 			while( iter.hasNext() ) {
 				Tuple2<Long, MatrixBlock> entry = iter.next();
-				tmpBlks[entry._1().intValue()] = entry._2();
+				tmpBlks[entry._1().intValue()-1] = entry._2();
 			}
 		
 			//concatenate blocks
 			MatrixBlock out = new MatrixBlock(1,(int)_clen, tmpBlks[0].isInSparseFormat());
-			for( int i=0; i<_ncblks; i++ ) {
-				out.copy(0, 0, i*_bclen, (i+1)*_bclen-1, tmpBlks[i], false);				
+			for( int i=0; i<_ncblks; i++ ) {				
+				out.copy(0, 0, i*_bclen, (int)Math.min((i+1)*_bclen, _clen)-1, tmpBlks[i], false);				
 			}
 			out.recomputeNonZeros();
 			

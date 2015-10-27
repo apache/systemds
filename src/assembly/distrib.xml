@@ -8,7 +8,8 @@
 		<format>zip</format>
 	</formats>
 	
-	<includeBaseDirectory>false</includeBaseDirectory>
+	<includeBaseDirectory>true</includeBaseDirectory>
+	<baseDirectory>system-ml-${version}</baseDirectory>
 
 	<fileSets>
 		<fileSet>

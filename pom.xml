@@ -573,6 +573,12 @@
 			<artifactId>antlr4</artifactId>
 			<version>4.3</version>
 			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<artifactId>antlr-runtime</artifactId>
+					<groupId>org.antlr</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.antlr</groupId>

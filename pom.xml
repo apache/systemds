@@ -170,6 +170,18 @@
 						</configuration>
 					</execution>
 					<execution>
+						<id>create-source-distribution-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/source.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
+					<execution>
 						<id>create-cluster-binary-distribution-assembly</id>
 						<phase>package</phase>
 						<goals>

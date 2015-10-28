@@ -38,9 +38,7 @@ import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -171,9 +169,9 @@ public class MLOutput {
 	
 	public JavaRDD<String> getStringRDD(String varName, String format) throws DMLRuntimeException {
 		if(format.compareTo("text") == 0) {
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = getBinaryBlockedRDD(varName);
-			JavaRDD<String> ijv = in1.flatMap(new ConvertMatrixBlockToIJVLines(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize));
-			return ijv;
+			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryRDD = getBinaryBlockedRDD(varName);
+			MatrixCharacteristics mcIn = getMatrixCharacteristics(varName); 
+			return RDDConverterUtilsExt.binaryBlockToStringRDD(binaryRDD, mcIn, format);
 		}
 //		else if(format.compareTo("csv") == 0) {
 //			

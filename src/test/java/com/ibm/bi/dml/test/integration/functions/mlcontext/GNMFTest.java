@@ -8,7 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.spark.SparkContext;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.Function;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -21,10 +23,17 @@ import com.ibm.bi.dml.api.MLContext;
 import com.ibm.bi.dml.api.MLOutput;
 import com.ibm.bi.dml.parser.ParseException;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
 import com.ibm.bi.dml.runtime.util.MapReduceTool;
 import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.utils.TestUtils;
+import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
+
+import org.apache.spark.mllib.linalg.distributed.MatrixEntry;
+import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix;
 
 @RunWith(value = Parameterized.class)
 public class GNMFTest extends AutomatedTestBase 
@@ -159,7 +168,14 @@ public class GNMFTest extends AutomatedTestBase
 			}
 			
 			if(numRegisteredOutputs >= 2) {
-				JavaRDD<String> wOut = out.getStringRDD("W", "text");
+//				Test converter: Text -> CoordinateMatrix -> BinaryBlock -> Text
+//				JavaRDD<String> wOut = out.getStringRDD("W", "text");
+				JavaRDD<MatrixEntry> matRDD = out.getStringRDD("W", "text").map(new StringToMatrixEntry());
+				MatrixCharacteristics mcW = out.getMatrixCharacteristics("W");
+				CoordinateMatrix coordinateMatrix = new CoordinateMatrix(matRDD.rdd(), mcW.getRows(), mcW.getCols());
+				JavaPairRDD<MatrixIndexes, MatrixBlock> binaryRDD = RDDConverterUtilsExt.coordinateMatrixToBinaryBlock(sc, coordinateMatrix, mcW, true);
+				JavaRDD<String> wOut = RDDConverterUtilsExt.binaryBlockToStringRDD(binaryRDD, mcW, "text");
+				
 				String fName = output("w");
 				try {
 					MapReduceTool.deleteFileIfExistOnHDFS( fName );
@@ -186,5 +202,24 @@ public class GNMFTest extends AutomatedTestBase
 			DMLScript.rtplatform = oldRT;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
 		}
+	}
+	
+	public static class StringToMatrixEntry implements Function<String, MatrixEntry> {
+
+		private static final long serialVersionUID = 7456391906436606324L;
+
+		@Override
+		public MatrixEntry call(String str) throws Exception {
+			String [] elem = str.split(" ");
+			if(elem.length != 3) {
+				throw new Exception("Expected text entry but got: " + str);
+			}
+			
+			long row = Long.parseLong(elem[0]);
+			long col = Long.parseLong(elem[1]);
+			double value = Double.parseDouble(elem[2]);
+			return new MatrixEntry(row, col, value);
+		}
+		
 	}
 }

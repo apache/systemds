@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.hadoop.io.Text;
 import org.apache.spark.Accumulator;
+import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -115,6 +116,12 @@ public class RDDConverterUtilsExt
 		out = RDDAggregateUtils.mergeByKey( out ); 
 		
 		return out;
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(SparkContext sc,
+			CoordinateMatrix input, MatrixCharacteristics mcIn, boolean outputEmptyBlocks) throws DMLRuntimeException 
+	{
+		return coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), input, mcIn, true);
 	}
 	
 	// Useful for printing, testing binary blocked RDD and also for external use.
@@ -452,7 +459,7 @@ public class RDDConverterUtilsExt
 		
 		// ----------------------------------------------------
 		// Can extend this by having type hierarchy
-		public MatrixCell textToMatrixCell(Text txt) {
+		public Tuple2<MatrixIndexes, MatrixCell> textToMatrixCell(Text txt) {
 			FastStringTokenizer st = new FastStringTokenizer(' ');
 			//get input string (ignore matrix market comments)
 			String strVal = txt.toString();
@@ -461,19 +468,18 @@ public class RDDConverterUtilsExt
 			
 			//parse input ijv triple
 			st.reset( strVal );
-			//FIXME
-			//long row = st.nextLong();
-			//long col = st.nextLong();
+			long row = st.nextLong();
+			long col = st.nextLong();
 			double val = st.nextDouble();
-			return new MatrixCell(val);
+			MatrixIndexes indx = new MatrixIndexes(row, col);
+			MatrixCell cell = new MatrixCell(val);
+			return new Tuple2<MatrixIndexes, MatrixCell>(indx, cell);
 		}
 		
-		public MatrixCell matrixEntryToMatrixCell(MatrixEntry entry) {
-			//FIXME
-			//long row = entry.i();
-			//long col = entry.j();
-			double val = entry.value();
-			return new MatrixCell(val);
+		public Tuple2<MatrixIndexes, MatrixCell> matrixEntryToMatrixCell(MatrixEntry entry) {
+			MatrixIndexes indx = new MatrixIndexes(entry.i(), entry.j());
+			MatrixCell cell = new MatrixCell(entry.value());
+			return new Tuple2<MatrixIndexes, MatrixCell>(indx, cell);
 		}
 		
 		// ----------------------------------------------------
@@ -484,7 +490,7 @@ public class RDDConverterUtilsExt
 		
 			Iterator<?> iter = (Iterator<?>) arg0;
 			while( iter.hasNext() ) {
-				MatrixCell cell = null;
+				Tuple2<MatrixIndexes, MatrixCell> cell = null;
 				switch(converter) {
 					case MATRIXENTRY_TO_MATRIXCELL:
 						cell = matrixEntryToMatrixCell((MatrixEntry) iter.next());
@@ -507,7 +513,7 @@ public class RDDConverterUtilsExt
 					flushBufferToList(rbuff, ret);
 				
 				//add value to reblock buffer
-				rbuff.appendCell(-1, -1, cell.getValue());
+				rbuff.appendCell(cell._1.getRowIndex(), cell._1.getColumnIndex(), cell._2.getValue());
 			}
 			
 			//final flush buffer

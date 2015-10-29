@@ -140,7 +140,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
  			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
-			hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
+			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
+ 			hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));  
 			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
@@ -735,6 +736,57 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(hi, input);
 				
 				LOG.debug("Applied simplifyUnaryAggReorgOperation");
+			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop simplifyTransposedAppend( Hop parent, Hop hi, int pos )
+	{
+		//e.g., t(cbind(t(A),t(B))) --> rbind(A,B), t(rbind(t(A),t(B))) --> cbind(A,B)		
+		if(   hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.TRANSPOSE  //t() rooted
+		   && hi.getInput().get(0) instanceof BinaryOp
+		   && (((BinaryOp)hi.getInput().get(0)).getOp()==OpOp2.CBIND    //append (cbind/rbind)
+		    || ((BinaryOp)hi.getInput().get(0)).getOp()==OpOp2.RBIND) 
+		   && hi.getInput().get(0).getParent().size() == 1 ) //single consumers of append
+		{
+			BinaryOp bop = (BinaryOp)hi.getInput().get(0);
+			if( bop.getInput().get(0) instanceof ReorgOp  //both inputs transpose ops
+				&& ((ReorgOp)bop.getInput().get(0)).getOp()==ReOrgOp.TRANSPOSE
+				&& bop.getInput().get(1) instanceof ReorgOp 
+				&& ((ReorgOp)bop.getInput().get(1)).getOp()==ReOrgOp.TRANSPOSE )
+			{
+				Hop left = bop.getInput().get(0).getInput().get(0);
+				Hop right = bop.getInput().get(1).getInput().get(0);
+				
+				//rewire links from parent, transpose, and binary
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.addChildReference(parent, bop, pos);
+				HopRewriteUtils.removeAllChildReferences(hi);
+				HopRewriteUtils.removeAllChildReferences(bop);
+				
+				//change append type (safe due to single parent check)
+				if( bop.getOp()==OpOp2.CBIND )
+					bop.setOp(OpOp2.RBIND);
+				else 
+					bop.setOp(OpOp2.CBIND);
+				
+				//relink new childs to binary op
+				HopRewriteUtils.addChildReference(bop, left, 0);
+				HopRewriteUtils.addChildReference(bop, right, 1);
+				bop.refreshSizeInformation();
+				
+				hi = bop;
+			
+				LOG.debug("Applied simplifyTransposedAppend (line "+hi.getBeginLine()+").");				
 			}
 		}
 		

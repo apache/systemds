@@ -277,7 +277,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return (   hop instanceof BinaryOp 
 				&& in.get(0) instanceof LiteralOp 
 				&& in.get(1) instanceof LiteralOp
-				&& ((BinaryOp)hop).getOp()!=OpOp2.APPEND );
+				&& ((BinaryOp)hop).getOp()!=OpOp2.CBIND
+				&& ((BinaryOp)hop).getOp()!=OpOp2.RBIND);
 		
 		//string append is rejected although possible because it
 		//messes up the explain runtime output due to introduced \n 

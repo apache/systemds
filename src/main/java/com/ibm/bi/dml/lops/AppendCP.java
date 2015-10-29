@@ -25,24 +25,27 @@ import com.ibm.bi.dml.parser.Expression.*;
 
 public class AppendCP extends Lop
 {
-
 	public static final String OPCODE = "append";
 	
-	public AppendCP(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) 
+	private boolean _cbind = true;
+	
+	public AppendCP(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, boolean cbind) 
 	{
 		super(Lop.Type.Append, dt, vt);
 		init(input1, input2, input3, dt, vt);
+		
+		_cbind = cbind;
 	}
 	
 	public void init(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) 
 	{
-		this.addInput(input1);
+		addInput(input1);
 		input1.addOutput(this);
 
-		this.addInput(input2);
+		addInput(input2);
 		input2.addOutput(this);
 		
-		this.addInput(input3);
+		addInput(input3);
 		input3.addOutput(this);
 		
 		boolean breaksAlignment = false;
@@ -50,7 +53,7 @@ public class AppendCP extends Lop
 		boolean definesMRJob = false;
 		
 		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties( inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 	
 	@Override
@@ -64,7 +67,7 @@ public class AppendCP extends Lop
 		throws LopsException
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append( this.lps.execType );
+		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( "append" );
 		
@@ -78,9 +81,11 @@ public class AppendCP extends Lop
 		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index+"") );
+		sb.append( prepOutputOperand(output_index+"") );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _cbind );
 		
 		return sb.toString();
 	}
-
 }

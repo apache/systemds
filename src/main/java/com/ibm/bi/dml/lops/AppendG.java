@@ -36,13 +36,16 @@ import com.ibm.bi.dml.parser.Expression.*;
  */
 public class AppendG extends Lop
 {
-	
 	public static final String OPCODE = "gappend";
 	
-	public AppendG(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, ExecType et) 
+	private boolean _cbind = true;
+	
+	public AppendG(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, boolean cbind, ExecType et) 
 	{
 		super(Lop.Type.Append, dt, vt);
 		init(input1, input2, input3, input4, dt, vt, et);
+		
+		_cbind = cbind;
 	}
 	
 	public void init(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, ExecType et) 
@@ -84,27 +87,12 @@ public class AppendG extends Lop
 	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int output_index) 
 		throws LopsException
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( OPCODE );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1+""));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2+""));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(3).prepScalarInputOperand(getExecType()));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index+"") );
-		
-		return sb.toString();	
+		return getInstructions(
+				String.valueOf(input_index1),
+				String.valueOf(input_index2),
+				String.valueOf(input_index3),
+				String.valueOf(input_index4),
+				String.valueOf(output_index) );
 	}
 	
 	//called when append executes in SP
@@ -130,7 +118,10 @@ public class AppendG extends Lop
 		sb.append( getInputs().get(3).prepScalarInputOperand(getExecType()));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index+"") );
+		sb.append( prepOutputOperand(output_index+"") );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _cbind );
 		
 		return sb.toString();
 	}

@@ -207,5 +207,6 @@ public abstract class MatrixValue implements WritableComparable
 			throws DMLUnsupportedOperationException, DMLRuntimeException;
 
 	public abstract void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
-			int blockRowFactor, int blockColFactor, boolean m2IsLast, int nextNCol)throws DMLUnsupportedOperationException, DMLRuntimeException ;
+			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
+			throws DMLUnsupportedOperationException, DMLRuntimeException ;
 }

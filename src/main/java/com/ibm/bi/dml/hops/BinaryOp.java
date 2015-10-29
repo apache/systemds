@@ -153,7 +153,8 @@ public class BinaryOp extends Hop
 				constructLopsMedian(et);
 				break;
 			}
-			case APPEND: {
+			case CBIND: 
+			case RBIND: {
 				constructLopsAppend(et);
 				break;
 			}
@@ -494,6 +495,7 @@ public class BinaryOp extends Hop
 		DataType dt2 = getInput().get(1).getDataType();
 		ValueType vt1 = getInput().get(0).getValueType();
 		ValueType vt2 = getInput().get(1).getValueType();
+		boolean cbind = op==OpOp2.CBIND;
 		
 		//sanity check for input data types
 		if( !((dt1==DataType.MATRIX && dt2==DataType.MATRIX)
@@ -506,29 +508,31 @@ public class BinaryOp extends Hop
 		Lop append = null;
 		if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
 		{
+			long rlen = cbind ? getInput().get(0).getDim1() : (getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) ?
+				getInput().get(0).getDim1()+getInput().get(1).getDim1() : -1;
+			long clen = cbind ? ((getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) ?
+				getInput().get(0).getDim2()+getInput().get(1).getDim2() : -1) : getInput().get(0).getDim2();			
+		
 			if( et == ExecType.MR )
 			{
-				append = constructMRAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), this);				
+				append = constructMRAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), cbind, this);				
 			}
 			else if(et == ExecType.SPARK) 
 			{
-				long ncol = (getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) ? 
-						   getInput().get(0).getDim2()+getInput().get(1).getDim2() : -1; 
-				append = constructSPAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), this);
-				append.getOutputParameters().setDimensions(getInput().get(0).getDim1(), ncol, getRowsInBlock(), getColsInBlock(), getNnz());
+				append = constructSPAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), cbind, this);
+				append.getOutputParameters().setDimensions(rlen, clen, getRowsInBlock(), getColsInBlock(), getNnz());
 			}
 			else //CP
 			{
-				Lop offset = createOffsetLop( getInput().get(0), true ); //offset 1st input
-				append = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, getDataType(), getValueType());
-				append.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2()+getInput().get(1).getDim2(), 
-							                                getRowsInBlock(), getColsInBlock(), getNnz());
+				Lop offset = createOffsetLop( getInput().get(0), cbind ); //offset 1st input
+				append = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, getDataType(), getValueType(), cbind);
+				append.getOutputParameters().setDimensions(rlen, clen, getRowsInBlock(), getColsInBlock(), getNnz());
 			}
 		}
 		else //SCALAR-STRING and SCALAR-STRING (always CP)
 		{
 			append = new AppendCP(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-				     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType());
+				     Data.createLiteralLop(ValueType.INT, "-1"), getDataType(), getValueType(), cbind);
 			append.getOutputParameters().setDimensions(0,0,-1,-1,-1);
 		}
 		
@@ -603,7 +607,6 @@ public class BinaryOp extends Hop
 			{
 				Hop left = getInput().get(0);
 				Hop right = getInput().get(1);
-				//TODO need to create spark-specific op selection for supporting binarym/binaryr
 				MMBinaryMethod mbin = optFindMMBinaryMethodSpark(left, right);
 				
 				Lop  binary = null;
@@ -760,7 +763,7 @@ public class BinaryOp extends Hop
 		if( dimsKnown() && _nnz<0 ) //never after inference
 			nnz = -1; 
 		
-		if(op==OpOp2.APPEND && !OptimizerUtils.ALLOW_DYN_RECOMPILATION && !(getDataType()==DataType.SCALAR) ) {	
+		if((op==OpOp2.CBIND || op==OpOp2.RBIND) && !OptimizerUtils.ALLOW_DYN_RECOMPILATION && !(getDataType()==DataType.SCALAR) ) {	
 			ret = OptimizerUtils.DEFAULT_SIZE;
 		}
 		else
@@ -826,14 +829,26 @@ public class BinaryOp extends Hop
 		DataType dt1 = input1.getDataType();
 		DataType dt2 = input2.getDataType();
 		
-		if( op== OpOp2.APPEND )
-		{
+		if( op== OpOp2.CBIND ) {
 			long ldim1 = -1, ldim2 = -1, lnnz = -1;
 			
 			if( mc[0].rowsKnown() || mc[1].rowsKnown() )
 				ldim1 = mc[0].rowsKnown() ? mc[0].getRows() : mc[1].getRows();
 			if( mc[0].colsKnown() && mc[1].colsKnown() )
 				ldim2 = mc[0].getCols()+mc[1].getCols();
+			if( mc[0].nnzKnown() && mc[1].nnzKnown() )
+				lnnz = mc[0].getNonZeros() + mc[1].getNonZeros();
+			
+			if( ldim1 > 0 || ldim2 > 0 || lnnz >= 0 )
+				return new long[]{ldim1, ldim2, lnnz};
+		}
+		else if( op== OpOp2.CBIND ) {
+			long ldim1 = -1, ldim2 = -1, lnnz = -1;
+			
+			if( mc[0].colsKnown() || mc[1].colsKnown() )
+				ldim2 = mc[0].colsKnown() ? mc[0].getCols() : mc[1].getCols();
+			if( mc[0].rowsKnown() && mc[1].rowsKnown() )
+				ldim1 = mc[0].getRows()+mc[1].getRows();
 			if( mc[0].nnzKnown() && mc[1].nnzKnown() )
 				lnnz = mc[0].getNonZeros() + mc[1].getNonZeros();
 			
@@ -979,7 +994,7 @@ public class BinaryOp extends Hop
 		
 		//mark for recompile (forever)
 		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==REMOTE) 
-			|| (op == OpOp2.APPEND && getDataType()!=DataType.SCALAR) ) )
+			|| ((op == OpOp2.CBIND || op == OpOp2.RBIND) && getDataType()!=DataType.SCALAR) ) )
 		{
 			setRequiresRecompile();
 		}
@@ -997,11 +1012,12 @@ public class BinaryOp extends Hop
 	 * 
 	 * @param left
 	 * @param right
+	 * @param cbind 
 	 * @return
 	 * @throws HopsException 
 	 * @throws LopsException 
 	 */
-	public static Lop constructMRAppendLop( Hop left, Hop right, DataType dt, ValueType vt, Hop current ) 
+	public static Lop constructMRAppendLop( Hop left, Hop right, DataType dt, ValueType vt, boolean cbind, Hop current ) 
 		throws HopsException, LopsException
 	{
 		Lop ret = null;
@@ -1010,13 +1026,14 @@ public class BinaryOp extends Hop
 		long m1_dim2 = left.getDim2();		
 		long m2_dim1 = right.getDim1();
 		long m2_dim2 = right.getDim2();
-		long m3_dim2 = (m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1; //output cols
+		long m3_dim1 = cbind ? m1_dim1 : ((m1_dim1>0 && m2_dim1>0) ? (m1_dim1 + m2_dim1) : -1); //output rows
+		long m3_dim2 = cbind ? ((m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1): m1_dim2; //output cols
 		long m3_nnz = (left.getNnz()>0 && right.getNnz()>0) ? (left.getNnz() + right.getNnz()) : -1; //output nnz
 		long brlen = left.getRowsInBlock();
 		long bclen = left.getColsInBlock();
 		
-		Lop offset = createOffsetLop( left, true ); //offset 1st input
-		AppendMethod am = optFindAppendMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen);
+		Lop offset = createOffsetLop( left, cbind ); //offset 1st input
+		AppendMethod am = optFindAppendMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen, cbind);
 	
 		switch( am )
 		{
@@ -1034,9 +1051,9 @@ public class BinaryOp extends Hop
 					dcInput.setAllPositions(right.getBeginLine(), right.getBeginColumn(), right.getEndLine(), right.getEndColumn());
 				}					
 				
-				AppendM appM = new AppendM(left.constructLops(), dcInput, offset, dt, vt, needPart, ExecType.MR);
+				AppendM appM = new AppendM(left.constructLops(), dcInput, offset, dt, vt, cbind, needPart, ExecType.MR);
 				appM.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-				appM.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
+				appM.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
 				ret = appM;
 				break;
 			}
@@ -1051,8 +1068,8 @@ public class BinaryOp extends Hop
 				group1.getOutputParameters().setDimensions(m2_dim1, m2_dim2, brlen, bclen, right.getNnz());
 				group1.setAllPositions(right.getBeginLine(), right.getBeginColumn(), right.getEndLine(), right.getEndColumn());
 				
-				AppendR appR = new AppendR(group1, group2, dt, vt, ExecType.MR);
-				appR.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
+				AppendR appR = new AppendR(group1, group2, dt, vt, cbind, ExecType.MR);
+				appR.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
 				appR.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				
 				ret = appR;
@@ -1061,20 +1078,20 @@ public class BinaryOp extends Hop
 			case MR_GAPPEND:
 			{
 				//general case: map expand append, reduce aggregate
-				Lop offset2 = createOffsetLop( right, true ); //offset second input
+				Lop offset2 = createOffsetLop( right, cbind ); //offset second input
 				
-				AppendG appG = new AppendG(left.constructLops(), right.constructLops(),	offset, offset2, dt, vt, ExecType.MR);
-				appG.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
+				AppendG appG = new AppendG(left.constructLops(), right.constructLops(),	offset, offset2, dt, vt, cbind, ExecType.MR);
+				appG.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
 				appG.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				
 				//group
 				Group group1 = new Group(appG, Group.OperationTypes.Sort, DataType.MATRIX, vt);
-				group1.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
+				group1.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
 				group1.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				
 				//aggregate
 				Aggregate agg1 = new Aggregate(group1, Aggregate.OperationTypes.Sum, DataType.MATRIX, vt, ExecType.MR);
-				agg1.getOutputParameters().setDimensions(m1_dim1, m3_dim2, brlen, bclen, m3_nnz);
+				agg1.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
 				agg1.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 				ret = agg1;
 				break;
@@ -1097,36 +1114,40 @@ public class BinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	public Lop constructSPAppendLop( Hop left, Hop right, DataType dt, ValueType vt, Hop current ) 
+	public static Lop constructSPAppendLop( Hop left, Hop right, DataType dt, ValueType vt, boolean cbind, Hop current ) 
 		throws HopsException, LopsException
 	{
 		Lop ret = null;
 		
-		Lop offset = createOffsetLop( left, true ); //offset 1st input
+		Lop offset = createOffsetLop( left, cbind ); //offset 1st input
 		AppendMethod am = optFindAppendSPMethod(left.getDim1(), left.getDim2(), right.getDim1(), right.getDim2(), 
-				right.getRowsInBlock(), right.getColsInBlock(), right.getNnz());
+				right.getRowsInBlock(), right.getColsInBlock(), right.getNnz(), cbind);
 	
 		switch( am )
 		{
 			case MR_MAPPEND: //special case map-only append
 			{
-				ret = new AppendM(left.constructLops(), right.constructLops(), offset, getDataType(), getValueType(), false, ExecType.SPARK);
+				ret = new AppendM(left.constructLops(), right.constructLops(), offset, 
+						current.getDataType(), current.getValueType(), cbind, false, ExecType.SPARK);
 				break;
 			}
 			case MR_RAPPEND: //special case reduce append w/ one column block
 			{
-				ret = new AppendR(left.constructLops(), right.constructLops(), getDataType(), getValueType(), ExecType.SPARK);
+				ret = new AppendR(left.constructLops(), right.constructLops(), 
+						current.getDataType(), current.getValueType(), cbind, ExecType.SPARK);
 				break;
 			}	
 			case MR_GAPPEND:
 			{
-				Lop offset2 = createOffsetLop( right, true ); //offset second input
-				ret = new AppendG(left.constructLops(), right.constructLops(), offset, offset2, getDataType(), getValueType(), ExecType.SPARK);
+				Lop offset2 = createOffsetLop( right, cbind ); //offset second input
+				ret = new AppendG(left.constructLops(), right.constructLops(), offset, offset2, 
+						current.getDataType(), current.getValueType(), cbind, ExecType.SPARK);
 				break;
 			}
 			case SP_GAlignedAppend:
 			{
-				ret = new AppendGAlignedSP(left.constructLops(), right.constructLops(), offset, getDataType(), getValueType());
+				ret = new AppendGAlignedSP(left.constructLops(), right.constructLops(), offset, 
+						current.getDataType(), current.getValueType(), cbind);
 				break;
 			}
 			default:
@@ -1151,7 +1172,7 @@ public class BinaryOp extends Hop
 	 * @throws HopsException
 	 * @throws LopsException
 	 */
-	public static Lop constructAppendLopChain( Hop left, Hop right1, Hop right2, DataType dt, ValueType vt, Hop current ) 
+	public static Lop constructAppendLopChain( Hop left, Hop right1, Hop right2, DataType dt, ValueType vt, boolean cbind, Hop current ) 
 		throws HopsException, LopsException
 	{
 		long m1_dim1 = left.getDim1();
@@ -1188,11 +1209,11 @@ public class BinaryOp extends Hop
 		group1.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, right2.getNnz());
 		group1.setAllPositions(right2.getBeginLine(), right2.getBeginColumn(), right2.getEndLine(), right2.getEndColumn());
 		
-		AppendR appR1 = new AppendR(group1, group2, dt, vt, ExecType.MR);
+		AppendR appR1 = new AppendR(group1, group2, dt, vt, cbind, ExecType.MR);
 		appR1.getOutputParameters().setDimensions(m1_dim1, m41_dim2, brlen, bclen, m41_nnz);
 		appR1.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 		
-		AppendR appR2 = new AppendR(appR1, group3, dt, vt, ExecType.MR);
+		AppendR appR2 = new AppendR(appR1, group3, dt, vt, cbind, ExecType.MR);
 		appR1.getOutputParameters().setDimensions(m1_dim1, m42_dim2, brlen, bclen, m42_nnz);
 		appR1.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
 	
@@ -1227,15 +1248,16 @@ public class BinaryOp extends Hop
 	 * @param m2_dim2
 	 * @return
 	 */
-	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb )
+	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb, boolean cbind )
 	{
 		if(FORCED_APPEND_METHOD != null) {
 			return FORCED_APPEND_METHOD;
 		}
 		
 		//check for best case (map-only)		
-		if(    m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 				
-			&& m2_dim2 <= m1_cpb  ) //rhs is smaller than column block 
+		if(    m2_dim1 >= 1 && m2_dim2 >= 1   //rhs dims known 				
+			&& (cbind && m2_dim2 <= m1_cpb    //rhs is smaller than column block 
+			|| !cbind && m2_dim1 <= m1_rpb) ) //rhs is smaller than row block
 		{
 			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
 			if ( footprint < APPEND_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudgetMap(true) )
@@ -1243,8 +1265,10 @@ public class BinaryOp extends Hop
 		}
 		
 		//check for in-block append (reduce-only)
-		if( m1_dim2 >= 1 && m2_dim2 >= 0 //column dims known
-			&& m1_dim2+m2_dim2 <= m1_cpb ) //output has one column block
+		if( cbind && m1_dim2 >= 1 && m2_dim2 >= 0  //column dims known
+			&& m1_dim2+m2_dim2 <= m1_cpb   //output has one column block
+		  ||!cbind && m1_dim1 >= 1 && m2_dim1 >= 0 //row dims known
+			&& m1_dim1+m2_dim1 <= m1_rpb ) //output has one column block
 		{
 			return AppendMethod.MR_RAPPEND;
 		}
@@ -1253,30 +1277,35 @@ public class BinaryOp extends Hop
 		return AppendMethod.MR_GAPPEND; 	
 	}
 	
-	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m2_rpb, long m2_cpb, long m2_nnz )
+	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb, long m2_nnz, boolean cbind )
 	{
 		if(FORCED_APPEND_METHOD != null) {
 			return FORCED_APPEND_METHOD;
 		}
 		
 		//check for best case (map-only w/o shuffle)		
-		if(    m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 				
-			&& m2_dim2 <= m2_cpb  ) //rhs is smaller than column block 
+		if(    m2_dim1 >= 1 && m2_dim2 >= 1   //rhs dims known 				
+			&& (cbind && m2_dim2 <= m1_cpb    //rhs is smaller than column block 
+			|| !cbind && m2_dim1 <= m1_rpb) ) //rhs is smaller than row block
 		{
-			if( OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m2_rpb, m2_cpb, m2_nnz) ) {
+			if( OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m1_rpb, m1_cpb, m2_nnz) ) {
 				return AppendMethod.MR_MAPPEND;
 			}
 		}
 		
 		//check for in-block append (reduce-only)
-		if( m1_dim2 >= 1 && m2_dim2 >= 0 //column dims known
-			&& m1_dim2+m2_dim2 <= m2_cpb ) //output has one column block
+		if( cbind && m1_dim2 >= 1 && m2_dim2 >= 0  //column dims known
+			&& m1_dim2+m2_dim2 <= m1_cpb   //output has one column block
+		  ||!cbind && m1_dim1 >= 1 && m2_dim1 >= 0 //row dims known
+			&& m1_dim1+m2_dim1 <= m1_rpb ) //output has one column block
 		{
 			return AppendMethod.MR_RAPPEND;
 		}
 		
 		// if(mc1.getCols() % mc1.getColsPerBlock() == 0) {
-		if(m1_dim2 % m2_cpb == 0) {
+		if( cbind && m1_dim2 % m1_cpb == 0 
+		   || !cbind && m1_dim1 % m1_rpb == 0 ) 
+		{
 			return AppendMethod.SP_GAlignedAppend;
 		}
 		
@@ -1400,13 +1429,24 @@ public class BinaryOp extends Hop
 		else //MATRIX OUTPUT
 		{
 			//TODO quantile
-			if( op == OpOp2.APPEND )
+			if( op == OpOp2.CBIND )
 			{
 				setDim1( (input1.getDim1()>0) ? input1.getDim1() : input2.getDim1() );
 					
 				//ensure both columns are known, otherwise dangerous underestimation due to +(-1)
 				if( input1.getDim2()>0 && input2.getDim2()>0 )
 					setDim2( input1.getDim2() + input2.getDim2() );
+				//ensure both nnz are known, otherwise dangerous underestimation due to +(-1)
+				if( input1.getNnz()>0 && input2.getNnz()>0 )
+					setNnz( input1.getNnz() + input2.getNnz() );
+			}
+			else if( op == OpOp2.RBIND )
+			{
+				setDim2( (input1.getDim2()>0) ? input1.getDim2() : input2.getDim2() );
+					
+				//ensure both rows are known, otherwise dangerous underestimation due to +(-1)
+				if( input1.getDim1()>0 && input2.getDim1()>0 )
+					setDim1( input1.getDim1() + input2.getDim1() );
 				//ensure both nnz are known, otherwise dangerous underestimation due to +(-1)
 				if( input1.getNnz()>0 && input2.getNnz()>0 )
 					setNnz( input1.getNnz() + input2.getNnz() );

@@ -38,32 +38,34 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 
 public class AppendGAlignedSPInstruction extends BinarySPInstruction
 {
+	private boolean _cbind = true;
 	
-	public AppendGAlignedSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr)
+	public AppendGAlignedSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, boolean cbind, String opcode, String istr)
 	{
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.GAppend;
+		_cbind = cbind;
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException
 	{
-		//4 parts to the instruction besides opcode and execlocation
-		//two input args, one output arg and offset = 4
-		InstructionUtils.checkNumFields ( str, 4 );
-		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		InstructionUtils.checkNumFields (parts, 5);
+		
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand in3 = new CPOperand(parts[3]);
 		CPOperand out = new CPOperand(parts[4]);
+		boolean cbind = Boolean.parseBoolean(parts[5]);
 		
 		if(!opcode.equalsIgnoreCase("galignedappend"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendGSPInstruction: " + str);
-		else
-			return new AppendGAlignedSPInstruction(new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1)), 
-										   in1, in2, in3, out, opcode, str);
+		
+		return new AppendGAlignedSPInstruction(
+				new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1)), 
+				in1, in2, in3, out, cbind, opcode, str);
 	}
 	
 	@Override
@@ -71,38 +73,21 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
 		// general case append (map-extend, aggregate)
-
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
+		checkBinaryAppendInputCharacteristics(sec, _cbind, false, true);
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
-		
-		if(!mc1.dimsKnown() || !mc2.dimsKnown()) {
-			throw new DMLRuntimeException("The dimensions unknown for inputs");
-		}
-		else if(mc1.getRows() != mc2.getRows()) {
-			throw new DMLRuntimeException("The number of rows of inputs should match for append instruction");
-		}
-		else if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
-			throw new DMLRuntimeException("The block sizes donot match for input matrices");
-		}
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		
-		if(mc1.getCols() % mc1.getColsPerBlock() == 0) {
-			// Simple changing of matrix indexes of RHS
-			long shiftBy = (long) Math.ceil((double)mc1.getCols() / mc1.getColsPerBlock());
-			out = in1.union(
-						in2.mapToPair(new ShiftColumnIndex(shiftBy))
-					);
-		}
-		else {
-			throw new DMLRuntimeException("Incorrect append instruction when mc1.getCols() % mc1.getColsPerBlock() != 0. Should have used AppendGSP");
-		}
+		// Simple changing of matrix indexes of RHS
+		long shiftBy = _cbind ? mc1.getNumColBlocks() : mc1.getNumRowBlocks();		
+		out = in2.mapToPair(new ShiftColumnIndex(shiftBy, _cbind));
+		out = in1.union( out );
 		
 		//put output RDD handle into symbol table
-		updateBinaryAppendOutputMatrixCharacteristics(sec);
+		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());
@@ -116,16 +101,20 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction
 		private static final long serialVersionUID = -5185023611319654242L;
 		
 		private long _shiftBy;
+		private boolean _cbind;
 		
-		public ShiftColumnIndex(long shiftBy) {
+		public ShiftColumnIndex(long shiftBy, boolean cbind) {
 			_shiftBy = shiftBy;
+			_cbind = cbind;
 		}
 
 		@Override
 		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
 			throws Exception 
 		{	
-			return new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(kv._1.getRowIndex(), kv._1.getColumnIndex()+_shiftBy), kv._2);
+			long rix = _cbind ? kv._1.getRowIndex() : kv._1.getRowIndex() + _shiftBy;
+			long cix = _cbind ? kv._1.getColumnIndex() + _shiftBy : kv._1.getColumnIndex();			
+			return new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(rix, cix), kv._2);
 		}
 	}
 }

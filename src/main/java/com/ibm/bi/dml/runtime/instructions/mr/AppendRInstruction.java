@@ -29,22 +29,23 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public class AppendRInstruction extends AppendInstruction 
 {
-	
-	public AppendRInstruction(Operator op, byte in1, byte in2, byte out, String istr)
+	public AppendRInstruction(Operator op, byte in1, byte in2, byte out, boolean cbind, String istr)
 	{
-		super(op, in1, in2, out, istr);
+		super(op, in1, in2, out, cbind, istr);
 	}
 
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
-		InstructionUtils.checkNumFields ( str, 3 );
-		
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{
 		String[] parts = InstructionUtils.getInstructionParts ( str );
+		InstructionUtils.checkNumFields(parts, 5);
 		
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);
 		byte out = Byte.parseByte(parts[3]);
+		boolean cbind = Boolean.parseBoolean(parts[4]);
 			
-		return new AppendRInstruction(null, in1, in2, out, str);
+		return new AppendRInstruction(null, in1, in2, out, cbind, str);
 	}
 	
 	
@@ -65,7 +66,7 @@ public class AppendRInstruction extends AppendInstruction
 		MatrixBlock mbLeft = (MatrixBlock)left.getValue();
 		MatrixBlock mbRight = (MatrixBlock)right.getValue();
 		
-		MatrixBlock ret = mbLeft.appendOperations(mbRight, new MatrixBlock());
+		MatrixBlock ret = mbLeft.appendOperations(mbRight, new MatrixBlock(), _cbind);
 		
 		//put result into cache
 		cachedValues.add(output, new IndexedMatrixValue(left.getIndexes(), ret));

@@ -3648,9 +3648,24 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public MatrixBlock appendOperations( MatrixBlock that, MatrixBlock ret ) 	
 		throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{
+		//default append-cbind
+		return appendOperations(that, ret, true);
+	}
+	
+	/**
+	 * 
+	 * @param that
+	 * @param ret
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
+	public MatrixBlock appendOperations( MatrixBlock that, MatrixBlock ret, boolean cbind ) 	
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		MatrixBlock result = checkType( ret );
-		final int m = rlen;
-		final int n = clen+that.clen;
+		final int m = cbind ? rlen : rlen+that.rlen;
+		final int n = cbind ? clen+that.clen : clen;
 		final long nnz = nonZeros+that.nonZeros;		
 		boolean sp = evalSparseFormatInMemory(m, n, nnz);
 		
@@ -3664,17 +3679,29 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		//copy left and right input into output
 		if( !result.sparse ) //DENSE
 		{	
-			result.copy(0, m-1, 0, clen-1, this, false);
-			result.copy(0, m-1, clen, n-1, that, false);
+			if( cbind ) {
+				result.copy(0, m-1, 0, clen-1, this, false);
+				result.copy(0, m-1, clen, n-1, that, false);
+			}
+			else { //rbind
+				result.copy(0, rlen-1, 0, n-1, this, false);
+				result.copy(rlen, m-1, 0, n-1, that, false);	
+			}
 		}
 		else //SPARSE
 		{
 			//adjust sparse rows if required
 			if( !this.isEmptyBlock(false) || !that.isEmptyBlock(false) )
 				result.allocateSparseRowsBlock();
-			result.appendToSparse(this, 0, 0);
-			result.appendToSparse(that, 0, clen);
+			
+			result.appendToSparse(this, 0, 0);			
+			if( cbind )
+				result.appendToSparse(that, 0, clen);
+			else //rbind
+				result.appendToSparse(that, rlen, 0);
 		}		
+		
+		//update meta data
 		result.nonZeros = nnz;
 		
 		return result;
@@ -4203,13 +4230,14 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	//nextNCol is the number columns for the block right of block v2
 	public void appendOperations(MatrixValue v2,
 			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor,
-			int blockColFactor, boolean m2IsLast, int nextNCol)
+			int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		MatrixBlock m2 = (MatrixBlock)v2;
 		
 		//case 1: copy lhs and rhs to output
-		if( clen==blockColFactor )
+		if( cbind && clen==blockColFactor 
+			|| !cbind && rlen==blockRowFactor )
 		{
 			((MatrixBlock) outlist.get(0).getValue()).copy(this);
 			((MatrixBlock) outlist.get(1).getValue()).copy(m2);
@@ -4218,21 +4246,27 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		else
 		{
 			//single output block (via plain append operation)
-			if( clen + m2.clen < blockColFactor )
+			if( cbind && clen + m2.clen < blockColFactor
+				|| !cbind && rlen + m2.rlen < blockRowFactor )
 			{
-				appendOperations(m2, (MatrixBlock) outlist.get(0).getValue());
+				appendOperations(m2, (MatrixBlock) outlist.get(0).getValue(), cbind);
 			}
 			//two output blocks (via slice and append)
 			else
 			{
 				//prepare output block 1
 				MatrixBlock ret1 = (MatrixBlock) outlist.get(0).getValue();
-				MatrixBlock tmp1 = m2.sliceOperations(0, rlen-1, 0, blockColFactor-clen-1, new MatrixBlock());
-				appendOperations(tmp1, ret1);
+				int lrlen1 = cbind ? rlen-1 : blockRowFactor-rlen-1;
+				int lclen1 = cbind ? blockColFactor-clen-1 : clen-1;
+				MatrixBlock tmp1 = m2.sliceOperations(0, lrlen1, 0, lclen1, new MatrixBlock());
+				appendOperations(tmp1, ret1, cbind);
 	
 				//prepare output block 2
 				MatrixBlock ret2 = (MatrixBlock) outlist.get(1).getValue();
-				m2.sliceOperations(0, rlen-1, blockColFactor-clen, m2.clen-1, ret2);
+				if( cbind )
+					m2.sliceOperations(0, rlen-1, lclen1+1, m2.clen-1, ret2);
+				else
+					m2.sliceOperations(lrlen1+1, m2.rlen-1, 0, clen-1, ret2);
 			}
 		}
 	}

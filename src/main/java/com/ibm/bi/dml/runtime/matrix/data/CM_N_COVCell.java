@@ -375,7 +375,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
-			int blockRowFactor, int blockColFactor, boolean m2IsLast, int nextNCol)
+			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
 	throws DMLUnsupportedOperationException, DMLRuntimeException   {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}

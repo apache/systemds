@@ -45,8 +45,7 @@ public abstract class Expression
 		CONDITIONALAND, CONDITIONALOR, LOGICALAND, LOGICALOR, NOT, INVALID
 	};
 
-	public enum BuiltinFunctionOp {
-		APPEND, 
+	public enum BuiltinFunctionOp { 
 		ABS, 
 		ACOS,
 		ASIN, 
@@ -105,6 +104,8 @@ public abstract class Expression
 		SOLVE,
 		CEIL,
 		FLOOR,
+		CBIND, //previously APPEND
+		RBIND,
 		MEDIAN,
 		INVERSE,
 		SAMPLE

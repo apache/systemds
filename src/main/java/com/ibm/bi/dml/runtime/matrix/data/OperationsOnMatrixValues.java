@@ -69,10 +69,10 @@ public class OperationsOnMatrixValues
 	}
 
 	public static void performAppend(MatrixValue valueIn1, MatrixValue valueIn2,
-			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor, int blockColFactor, boolean m2IsLast, int nextNCol) 
+			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor, int blockColFactor,  boolean cbind, boolean m2IsLast, int nextNCol) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		valueIn1.appendOperations(valueIn2, outlist, blockRowFactor, blockColFactor, m2IsLast, nextNCol);
+		valueIn1.appendOperations(valueIn2, outlist, blockRowFactor, blockColFactor, cbind, m2IsLast, nextNCol);
 	}
 	
 	public static void performZeroOut(MatrixIndexes indexesIn, MatrixValue valueIn, 

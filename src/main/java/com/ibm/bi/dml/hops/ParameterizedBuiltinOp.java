@@ -223,7 +223,7 @@ public class ParameterizedBuiltinOp extends Hop
 						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
 						getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)),
 						getInput().get(_paramIndexMap.get(Statement.GAGG_WEIGHTS)),
-						DataType.MATRIX, getValueType(), 
+						DataType.MATRIX, getValueType(), true,
 						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
 
 				// add the combine lop to parameter list, with a new name "combinedinput"
@@ -238,7 +238,7 @@ public class ParameterizedBuiltinOp extends Hop
 				Lop append = BinaryOp.constructMRAppendLop(
 						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
 						getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)), 
-						DataType.MATRIX, getValueType(), 
+						DataType.MATRIX, getValueType(), true,
 						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
 				
 				// add the combine lop to parameter list, with a new name

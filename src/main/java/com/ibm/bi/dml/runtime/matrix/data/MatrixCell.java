@@ -481,7 +481,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
-			int blockRowFactor, int blockColFactor, boolean m2IsLast, int nextNCol) 
+			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException  {
 		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
 		MatrixCell c2=checkType(valueIn2);

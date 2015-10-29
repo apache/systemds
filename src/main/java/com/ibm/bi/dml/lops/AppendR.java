@@ -24,14 +24,17 @@ import com.ibm.bi.dml.parser.Expression.*;
 
 
 public class AppendR extends Lop
-{
-	
+{	
 	public static final String OPCODE = "rappend";
 	
-	public AppendR(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
+	private boolean _cbind = true;
+	
+	public AppendR(Lop input1, Lop input2, DataType dt, ValueType vt, boolean cbind, ExecType et) 
 	{
 		super(Lop.Type.Append, dt, vt);
 		init(input1, input2, dt, vt, et);
+		
+		_cbind = cbind;
 	}
 	
 	public void init(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
@@ -68,22 +71,10 @@ public class AppendR extends Lop
 	public String getInstructions(int input_index1, int input_index2, int output_index) 
 		throws LopsException
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( OPCODE );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1+""));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2+""));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output_index+"") );
-		
-		return sb.toString();	
+		return getInstructions(
+				String.valueOf(input_index1),
+				String.valueOf(input_index2),
+				String.valueOf(output_index) );
 	}
 	
 	//called when append executes in CP
@@ -104,6 +95,9 @@ public class AppendR extends Lop
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output_index+"") );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _cbind );
 		
 		return sb.toString();
 	}

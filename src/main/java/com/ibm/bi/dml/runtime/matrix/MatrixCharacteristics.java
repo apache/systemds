@@ -140,6 +140,14 @@ public class MatrixCharacteristics implements Serializable
 		numColumnsPerBlock = bclen;
 	} 
 	
+	public long getNumRowBlocks(){
+		return (long) Math.ceil((double)getRows() / getRowsPerBlock());
+	}
+	
+	public long getNumColBlocks(){
+		return (long) Math.ceil((double)getCols() / getColsPerBlock());
+	}
+	
 	public String toString()
 	{
 		return "["+numRows+" x "+numColumns+", nnz="+nonZero
@@ -233,7 +241,10 @@ public class MatrixCharacteristics implements Serializable
 			AppendInstruction realIns = (AppendInstruction)ins;
 			MatrixCharacteristics in_dim1 = dims.get(realIns.input1);
 			MatrixCharacteristics in_dim2 = dims.get(realIns.input2);
-			dimOut.set(in_dim1.numRows, in_dim1.numColumns+in_dim2.numColumns, in_dim1.numRowsPerBlock, in_dim2.numColumnsPerBlock);
+			if( realIns.isCBind() )
+				dimOut.set(in_dim1.numRows, in_dim1.numColumns+in_dim2.numColumns, in_dim1.numRowsPerBlock, in_dim2.numColumnsPerBlock);
+			else
+				dimOut.set(in_dim1.numRows+in_dim2.numRows, in_dim1.numColumns, in_dim1.numRowsPerBlock, in_dim2.numColumnsPerBlock);
 		}
 		else if(ins instanceof CumulativeAggregateInstruction)
 		{

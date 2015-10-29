@@ -2341,9 +2341,14 @@ public class DMLTranslator
 					                    Hop.ReOrgOp.TRANSPOSE, expr);
 			break;
 			
-		case APPEND:
+		case CBIND:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), 
-										Hop.OpOp2.APPEND, expr, expr2);
+										Hop.OpOp2.CBIND, expr, expr2);
+			break;
+		
+		case RBIND:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+										Hop.OpOp2.RBIND, expr, expr2);
 			break;
 		
 		case DIAG:

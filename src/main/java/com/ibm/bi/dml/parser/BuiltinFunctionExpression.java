@@ -386,21 +386,21 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
 			output.setValueType(ValueType.BOOLEAN);
-			break;	
-		case APPEND:
+			break;
+			
+		case CBIND:
+		case RBIND:	
 			checkNumParameters(2);
 			
 			//scalar string append (string concatenation with \n)
-			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
-			{
+			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR ) {
 				checkScalarParam(getFirstExpr());
 				checkScalarParam(getSecondExpr());
 				checkValueTypeParam(getFirstExpr(), ValueType.STRING);
 				checkValueTypeParam(getSecondExpr(), ValueType.STRING);
 			}
-			//matrix append (cbind)
-			else
-			{				
+			//matrix append (rbind/cbind)
+			else {				
 				checkMatrixParam(getFirstExpr());
 				checkMatrixParam(getSecondExpr());
 			}
@@ -408,29 +408,35 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDataType(id.getDataType());
 			output.setValueType(id.getValueType());
 			
-			// set output dimensions
+			// set output dimensions and validate consistency
 			long appendDim1 = -1, appendDim2 = -1;
-			if (getFirstExpr().getOutput().getDim1() > 0 && getSecondExpr().getOutput().getDim1() > 0){
-				if (getFirstExpr().getOutput().getDim1() != getSecondExpr().getOutput().getDim1()){
-					raiseValidateError("inputs to append must have same number of rows: input 1 rows: " + 
-							getFirstExpr().getOutput().getDim1() +  ", input 2 rows " + getSecondExpr().getOutput().getDim1(), 
-							 conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-				}
-				appendDim1 = getFirstExpr().getOutput().getDim1();
+			long m1rlen = getFirstExpr().getOutput().getDim1();
+			long m1clen = getFirstExpr().getOutput().getDim2();
+			long m2rlen = getSecondExpr().getOutput().getDim1();
+			long m2clen = getSecondExpr().getOutput().getDim2();
+			
+			if( getOpCode() == BuiltinFunctionOp.CBIND ) {
+				if (m1rlen > 0 && m2rlen > 0 && m1rlen!=m2rlen) {
+					raiseValidateError("inputs to cbind must have same number of rows: input 1 rows: " + 
+						m1rlen+", input 2 rows: "+m2rlen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				}				
+				appendDim1 = (m1rlen>0) ? m1rlen : m2rlen;
+				appendDim2 = (m1clen>0 && m2clen>0)? m1clen + m2clen : -1;
 			}
-			else if (getFirstExpr().getOutput().getDim1() > 0)	
-				appendDim1 = getFirstExpr().getOutput().getDim1(); 
-			else if (getSecondExpr().getOutput().getDim1() > 0 )
-				appendDim1 = getSecondExpr().getOutput().getDim1(); 
-				
-			if (getFirstExpr().getOutput().getDim2() > 0 && getSecondExpr().getOutput().getDim2() > 0){
-				appendDim2 = getFirstExpr().getOutput().getDim2() + getSecondExpr().getOutput().getDim2();
+			else if( getOpCode() == BuiltinFunctionOp.RBIND ) {
+				if (m1clen > 0 && m2clen > 0 && m1clen!=m2clen) {
+					raiseValidateError("inputs to rbind must have same number of columns: input 1 columns: " + 
+						m1clen+", input 2 columns: "+m2clen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				}				
+				appendDim1 = (m1rlen>0 && m2rlen>0)? m1rlen + m2rlen : -1;
+				appendDim2 = (m1clen>0) ? m1clen : m2clen;
 			}
 			
-			output.setDimensions(appendDim1, appendDim2); 
-			
+			output.setDimensions(appendDim1, appendDim2); 			
 			output.setBlockDimensions (id.getRowsInBlock(), id.getColumnsInBlock());
+			
 			break;
+			
 		case PPRED:
 			// ppred (X,Y, "<"); ppred (X,y, "<"); ppred (y,X, "<");
 			checkNumParameters(3);
@@ -1301,8 +1307,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.TRACE;
 		else if (functionName.equals("t"))
 			 bifop = Expression.BuiltinFunctionOp.TRANS;
-		else if (functionName.equals("append"))
-			bifop = Expression.BuiltinFunctionOp.APPEND;
+		else if (functionName.equals("cbind") || functionName.equals("append"))
+			bifop = Expression.BuiltinFunctionOp.CBIND;
+		else if (functionName.equals("rbind"))
+			bifop = Expression.BuiltinFunctionOp.RBIND;
 		else if (functionName.equals("range"))
 			bifop = Expression.BuiltinFunctionOp.RANGE;
 		else if (functionName.equals("prod"))

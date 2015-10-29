@@ -30,7 +30,8 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public class AppendInstruction extends BinaryMRInstructionBase 
 {
-		
+	protected boolean _cbind = true;
+	
 	/**
 	 * 
 	 * @param op
@@ -39,13 +40,18 @@ public class AppendInstruction extends BinaryMRInstructionBase
 	 * @param out
 	 * @param istr
 	 */
-	public AppendInstruction(Operator op, byte in1, byte in2, byte out, String istr)
+	public AppendInstruction(Operator op, byte in1, byte in2, byte out, boolean cbind, String istr)
 	{
 		super(op, in1, in2, out);
 		instString = istr;	
 		mrtype = MRINSTRUCTION_TYPE.Append;
+		_cbind = cbind;
 	}
 
+	public boolean isCBind() {
+		return _cbind;
+	}
+	
 	/**
 	 * 
 	 * @param str

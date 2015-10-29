@@ -244,7 +244,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	 * @param sec
 	 * @throws DMLRuntimeException
 	 */
-	protected void updateBinaryAppendOutputMatrixCharacteristics(SparkExecutionContext sec) 
+	protected void updateBinaryAppendOutputMatrixCharacteristics(SparkExecutionContext sec, boolean cbind) 
 		throws DMLRuntimeException
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
@@ -256,7 +256,10 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 			if( !mc1.dimsKnown() || !mc2.dimsKnown() )
 				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from inputs.");
 			
-			mcOut.set(mc1.getRows(), mc1.getCols()+mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+			if( cbind )
+				mcOut.set(mc1.getRows(), mc1.getCols()+mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+			else //rbind
+				mcOut.set(mc1.getRows()+mc2.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 		}	
 		
 		//infer initially unknown nnz from inputs
@@ -321,5 +324,41 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 			throw new DMLRuntimeException("Blocksize mismatch matrix-matrix binary operations: "
 					+ "[" + mc1.getRowsPerBlock() + "x" + mc1.getColsPerBlock()  + " vs " + mc2.getRowsPerBlock() + "x" + mc2.getColsPerBlock() + "]");
 		}	
+	}
+	
+	/**
+	 * 
+	 * @param sec
+	 * @param cbind
+	 * @throws DMLRuntimeException
+	 */
+	protected void checkBinaryAppendInputCharacteristics(SparkExecutionContext sec, boolean cbind, boolean checkSingleBlk, boolean checkAligned) 
+		throws DMLRuntimeException
+	{
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		
+		if(!mc1.dimsKnown() || !mc2.dimsKnown()) {
+			throw new DMLRuntimeException("The dimensions unknown for inputs");
+		}
+		else if(cbind && mc1.getRows() != mc2.getRows()) {
+			throw new DMLRuntimeException("The number of rows of inputs should match for append-cbind instruction");
+		}
+		else if(!cbind && mc1.getCols() != mc2.getCols()) {
+			throw new DMLRuntimeException("The number of columns of inputs should match for append-rbind instruction");
+		}
+		else if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
+			throw new DMLRuntimeException("The block sizes donot match for input matrices");
+		}
+		
+		if( checkSingleBlk ) {
+			if(mc1.getCols() + mc2.getCols() > mc1.getColsPerBlock())
+				throw new DMLRuntimeException("Output must have at most one column block"); 
+		}
+		
+		if( checkAligned ) {
+			if( mc1.getCols() % mc1.getColsPerBlock() != 0 )
+				throw new DMLRuntimeException("Input matrices are not aligned to blocksize boundaries. Wrong append selected");
+		}
 	}
 }

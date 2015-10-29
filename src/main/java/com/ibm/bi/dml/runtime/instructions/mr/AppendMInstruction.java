@@ -38,26 +38,26 @@ public class AppendMInstruction extends AppendInstruction implements IDistribute
 {	
 	private long _offset = -1; 
 	
-	public AppendMInstruction(Operator op, byte in1, byte in2, long offset, CacheType type, byte out, String istr)
+	public AppendMInstruction(Operator op, byte in1, byte in2, long offset, CacheType type, byte out, boolean cbind, String istr)
 	{
-		super(op, in1, in2, out, istr);
+		super(op, in1, in2, out, cbind, istr);
 		_offset = offset;
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		InstructionUtils.checkNumFields ( str, 5 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
+		InstructionUtils.checkNumFields(parts, 6);
 		
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);
 		long offset = (long)(Double.parseDouble(parts[3]));
 		byte out = Byte.parseByte(parts[4]);
 		CacheType type = CacheType.valueOf(parts[5]);
+		boolean cbind = Boolean.parseBoolean(parts[6]);
 		
-		return new AppendMInstruction(null, in1, in2, offset, type, out, str);
+		return new AppendMInstruction(null, in1, in2, offset, type, out, cbind, str);
 	}
 	
 	@Override //IDistributedCacheConsumer
@@ -89,45 +89,64 @@ public class AppendMInstruction extends AppendInstruction implements IDistribute
 				continue;
 		
 			//check for boundary block
-			long lastBlockColIndex = (long)Math.ceil((double)_offset/blockColFactor);
+			int blen = _cbind ? blockColFactor : blockRowFactor;
+			long lastBlockColIndex = (long)Math.ceil((double)_offset/blen);	
 			
 			//case 1: pass through of non-boundary blocks
-			if( in1.getIndexes().getColumnIndex()!=lastBlockColIndex ) {
+			MatrixIndexes ix = in1.getIndexes();
+			if( (_cbind?ix.getColumnIndex():ix.getRowIndex())!=lastBlockColIndex ) {
 				cachedValues.add(output, in1);
 			}
 			//case 2: pass through full input block and rhs block 
-			else if( in1.getValue().getNumColumns() == blockColFactor ) {
+			else if( _cbind && in1.getValue().getNumColumns() == blen 
+					|| !_cbind && in1.getValue().getNumRows() == blen ) {
 				//output lhs block
 				cachedValues.add(output, in1);
 				
 				//output shallow copy of rhs block
 				DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
-				IndexedMatrixValue tmp = new IndexedMatrixValue(
-						new MatrixIndexes(in1.getIndexes().getRowIndex(), in1.getIndexes().getColumnIndex()+1),
-						dcInput.getDataBlock((int)in1.getIndexes().getRowIndex(), 1).getValue());
-				cachedValues.add(output, tmp);
+				if( _cbind ) {
+					cachedValues.add(output, new IndexedMatrixValue(
+							new MatrixIndexes(ix.getRowIndex(), ix.getColumnIndex()+1),
+							dcInput.getDataBlock((int)ix.getRowIndex(), 1).getValue()));
+				}
+				else {
+					cachedValues.add(output, new IndexedMatrixValue(
+							new MatrixIndexes(ix.getRowIndex()+1, ix.getColumnIndex()),
+							dcInput.getDataBlock(1, (int)ix.getColumnIndex()).getValue()));	
+				}
 			}
 			//case 3: append operation on boundary block
 			else 
 			{
 				DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input2);
-				MatrixValue value_in2 = dcInput.getDataBlock((int)in1.getIndexes().getRowIndex(), 1).getValue();
 				
 				//allocate space for the output value
 				ArrayList<IndexedMatrixValue> outlist=new ArrayList<IndexedMatrixValue>(2);
 				IndexedMatrixValue first=cachedValues.holdPlace(output, valueClass);
-				first.getIndexes().setIndexes(in1.getIndexes());
+				first.getIndexes().setIndexes(ix);
 				outlist.add(first);
 				
-				if(in1.getValue().getNumColumns()+value_in2.getNumColumns()>blockColFactor)
-				{
-					IndexedMatrixValue second=cachedValues.holdPlace(output, valueClass);
-					second.getIndexes().setIndexes(in1.getIndexes().getRowIndex(), in1.getIndexes().getColumnIndex()+1);
-					outlist.add(second);
+				MatrixValue value_in2 = null;
+				if( _cbind ) {
+					value_in2 = dcInput.getDataBlock((int)ix.getRowIndex(), 1).getValue();
+					if(in1.getValue().getNumColumns()+value_in2.getNumColumns()>blen) {
+						IndexedMatrixValue second=cachedValues.holdPlace(output, valueClass);
+						second.getIndexes().setIndexes(ix.getRowIndex(), ix.getColumnIndex()+1);
+						outlist.add(second);
+					}
+				}
+				else { //rbind
+					value_in2 = dcInput.getDataBlock(1, (int)ix.getRowIndex()).getValue();
+					if(in1.getValue().getNumRows()+value_in2.getNumRows()>blen) {
+						IndexedMatrixValue second=cachedValues.holdPlace(output, valueClass);
+						second.getIndexes().setIndexes(ix.getRowIndex()+1, ix.getColumnIndex());
+						outlist.add(second);
+					}
 				}
 	
 				OperationsOnMatrixValues.performAppend(in1.getValue(), value_in2, outlist, 
-					blockRowFactor, blockColFactor, true, 0);			
+					blockRowFactor, blockColFactor, _cbind, true, 0);			
 			}
 		}
 	}

@@ -18,7 +18,6 @@
 package com.ibm.bi.dml.runtime.instructions.cp;
 
 import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -31,10 +30,10 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 
 
 public class AppendCPInstruction extends BinaryCPInstruction
-{
-	
+{	
 	public enum AppendType{
 		CBIND,
+		RBIND,
 		STRING,
 	}
 
@@ -50,32 +49,27 @@ public class AppendCPInstruction extends BinaryCPInstruction
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
-		throws DMLRuntimeException {
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		
-		//4 parts to the instruction besides opcode and execlocation
-		//two input args, one output arg and offset = 4
-		InstructionUtils.checkNumFields ( str, 4 );
-		
+		throws DMLRuntimeException 
+	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode = parts[0];
-		in1.split(parts[1]);
-		in2.split(parts[2]);
-		in3.split(parts[3]);
-		out.split(parts[4]);
-		//String offset_str = parts[4];
-		 
-		AppendType type = (in1.getDataType()==DataType.MATRIX) ? AppendType.CBIND : AppendType.STRING;
+		InstructionUtils.checkNumFields (parts, 5);
 		
+		String opcode = parts[0];
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
+		CPOperand in3 = new CPOperand(parts[3]);
+		CPOperand out = new CPOperand(parts[4]);
+		boolean cbind = Boolean.parseBoolean(parts[5]);
+		
+		AppendType type = (in1.getDataType()!=DataType.MATRIX) ? AppendType.STRING :
+						  cbind ? AppendType.CBIND : AppendType.RBIND;
 		
 		if(!opcode.equalsIgnoreCase("append"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendCPInstruction: " + str);
-		else
-			return new AppendCPInstruction(new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1)), 
-										   in1, in2, in3, out, type, opcode, str);
+
+		return new AppendCPInstruction(
+				new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1)), 
+				in1, in2, in3, out, type, opcode, str);
 	}
 	
 	@Override
@@ -89,18 +83,38 @@ public class AppendCPInstruction extends BinaryCPInstruction
 			MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 			
 			//check input dimensions
-			if(matBlock1.getNumRows() != matBlock2.getNumRows())
-				throw new DMLRuntimeException("Append is not possible for input matrices " 
+			if(matBlock1.getNumRows() != matBlock2.getNumRows()) {
+				throw new DMLRuntimeException("Append-cbind is not possible for input matrices " 
 											  + input1.getName() + " and " + input2.getName()
-											  + "with unequal number of rows");
+											  + " with different number of rows");
+			}
+				
+			//execute append operations (append both inputs to initially empty output)
+			MatrixBlock ret = matBlock1.appendOperations(matBlock2, new MatrixBlock(), true);
+			
+			//set output and release inputs 
+			ec.setMatrixOutput(output.getName(), ret);
+			ec.releaseMatrixInput(input1.getName());
+			ec.releaseMatrixInput(input2.getName());
+		}
+		else if( _type == AppendType.RBIND )
+		{
+			//get inputs
+			MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+			MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+			
+			//check input dimensions
+			if(matBlock1.getNumColumns() != matBlock2.getNumColumns()) {
+				throw new DMLRuntimeException("Append-rbind is not possible for input matrices " 
+											  + input1.getName() + " and " + input2.getName()
+											  + " with different number of columns");
+			}
 			
 			//execute append operations (append both inputs to initially empty output)
-			MatrixBlock ret = matBlock1.appendOperations(matBlock2, new MatrixBlock());
+			MatrixBlock ret = matBlock1.appendOperations(matBlock2, new MatrixBlock(), false);
 			
-			//set output
+			//set output and release inputs 
 			ec.setMatrixOutput(output.getName(), ret);
-			
-			//release inputs 
 			ec.releaseMatrixInput(input1.getName());
 			ec.releaseMatrixInput(input2.getName());
 		}

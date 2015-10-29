@@ -25,23 +25,22 @@ import com.ibm.bi.dml.parser.Expression.*;
 
 public class AppendM extends Lop
 {
-	
 	public static final String OPCODE = "mappend";
 	
 	public enum CacheType {
 		RIGHT,
 		RIGHT_PART,
 	}
-
+	
+	private boolean _cbind = true;
 	private CacheType _cacheType = null;
 	
-	
-	public AppendM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, boolean partitioned, ExecType et) 
+	public AppendM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, boolean cbind, boolean partitioned, ExecType et) 
 	{
 		super(Lop.Type.Append, dt, vt);
 		init(input1, input2, input3, dt, vt, et);
 		
-		//partitioned right input
+		_cbind = cbind;
 		_cacheType = partitioned ? CacheType.RIGHT_PART : CacheType.RIGHT;
 	}
 	
@@ -78,30 +77,14 @@ public class AppendM extends Lop
 	}
 
 	//called when append executes in MR
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) throws LopsException
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) 
+		throws LopsException
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( OPCODE );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1+""));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2+""));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index+"") );
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_cacheType);
-		
-		return sb.toString();	
+		return getInstructions(
+				String.valueOf(input_index1),
+				String.valueOf(input_index2),
+				String.valueOf(input_index3),
+				String.valueOf(output_index) );
 	}
 
 
@@ -125,10 +108,17 @@ public class AppendM extends Lop
 		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output) );
+		sb.append( prepOutputOperand(output) );
 
 		//note: for SP: no cache type
+		if( getExecType()==ExecType.MR ){
+			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(_cacheType);	
+		}
 		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _cbind );
+				
 		return sb.toString();
 	}
 	

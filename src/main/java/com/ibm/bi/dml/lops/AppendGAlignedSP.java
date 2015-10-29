@@ -8,24 +8,27 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 
 public class AppendGAlignedSP extends Lop
 {
-
 	public static final String OPCODE = "galignedappend";
+
+	private boolean _cbind = true;
 	
-	public AppendGAlignedSP(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) 
+	public AppendGAlignedSP(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, boolean cbind) 
 	{
-		super(Lop.Type.Append, dt, vt);
+		super(Lop.Type.Append, dt, vt);		
 		init(input1, input2, input3, dt, vt);
+		
+		_cbind = true;
 	}
 	
 	public void init(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt) 
 	{
-		this.addInput(input1);
+		addInput(input1);
 		input1.addOutput(this);
 
-		this.addInput(input2);
+		addInput(input2);
 		input2.addOutput(this);
 		
-		this.addInput(input3);
+		addInput(input3);
 		input3.addOutput(this);
 		
 		boolean breaksAlignment = false;
@@ -33,12 +36,11 @@ public class AppendGAlignedSP extends Lop
 		boolean definesMRJob = false;
 		
 		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 	
 	@Override
 	public String toString() {
-
 		return " AppendGSP: ";
 	}
 
@@ -47,7 +49,7 @@ public class AppendGAlignedSP extends Lop
 		throws LopsException
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append( this.lps.execType );
+		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( OPCODE );
 		
@@ -61,7 +63,10 @@ public class AppendGAlignedSP extends Lop
 		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index+"") );
+		sb.append( prepOutputOperand(output_index+"") );
+		
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _cbind );
 		
 		return sb.toString();
 	}

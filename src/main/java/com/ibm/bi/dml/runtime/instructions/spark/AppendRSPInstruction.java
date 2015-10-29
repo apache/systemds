@@ -30,7 +30,6 @@ import com.ibm.bi.dml.runtime.functionobjects.OffsetColumnIndex;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
@@ -38,31 +37,33 @@ import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
 
 public class AppendRSPInstruction extends BinarySPInstruction
 {
+	private boolean _cbind = true;
 	
-	public AppendRSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr)
+	public AppendRSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean cbind, String opcode, String istr)
 	{
 		super(op, in1, in2, out, opcode, istr);
 		_sptype = SPINSTRUCTION_TYPE.RAppend;
+		_cbind = cbind;
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	
-		//4 parts to the instruction besides opcode and exec location
-		//two input args, one output arg = 3
-		InstructionUtils.checkNumFields ( str, 3 );
-		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		InstructionUtils.checkNumFields (parts, 4);
+		
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
+		boolean cbind = Boolean.parseBoolean(parts[4]);
 		
 		if(!opcode.equalsIgnoreCase("rappend"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendRSPInstruction: " + str);
-		else
-			return new AppendRSPInstruction(new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1)), 
-										   in1, in2, out, opcode, str);
+		
+		return new AppendRSPInstruction(
+				new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1)), 
+				in1, in2, out, cbind, opcode, str);
 	}
 	
 	@Override
@@ -71,21 +72,7 @@ public class AppendRSPInstruction extends BinarySPInstruction
 	{
 		// reduce-only append (output must have at most one column block)
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
-		
-		if(!mc1.dimsKnown() || !mc2.dimsKnown()) {
-			throw new DMLRuntimeException("The dimensions unknown for inputs");
-		}
-		else if(mc1.getRows() != mc2.getRows()) {
-			throw new DMLRuntimeException("The number of rows of inputs should match for append instruction");
-		}
-		else if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
-			throw new DMLRuntimeException("The block sizes donot match for input matrices");
-		}
-		else if(mc1.getCols() + mc2.getCols() > mc1.getColsPerBlock()) {
-			throw new DMLRuntimeException("In AppendRSPInstruction, output must have at most one column block"); 
-		}
+		checkBinaryAppendInputCharacteristics(sec, _cbind, true, false);
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
@@ -93,10 +80,10 @@ public class AppendRSPInstruction extends BinarySPInstruction
 		//execute reduce-append operations (partitioning preserving)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
 				.join(in2)
-				.mapValues(new ReduceSideAppendFunction());
+				.mapValues(new ReduceSideAppendFunction(_cbind));
 
 		//put output RDD handle into symbol table
-		updateBinaryAppendOutputMatrixCharacteristics(sec);
+		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());		
@@ -109,6 +96,12 @@ public class AppendRSPInstruction extends BinarySPInstruction
 	{
 		private static final long serialVersionUID = -6763904972560309095L;
 
+		private boolean _cbind = true;
+				
+		public ReduceSideAppendFunction(boolean cbind) {
+			_cbind = cbind;
+		}
+		
 		@Override
 		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0)
 			throws Exception 
@@ -116,7 +109,7 @@ public class AppendRSPInstruction extends BinarySPInstruction
 			MatrixBlock left = arg0._1();
 			MatrixBlock right = arg0._2();
 			
-			return left.appendOperations(right, new MatrixBlock());
+			return left.appendOperations(right, new MatrixBlock(), _cbind);
 		}
 	}
 }

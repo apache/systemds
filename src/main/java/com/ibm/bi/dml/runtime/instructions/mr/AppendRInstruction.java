@@ -38,7 +38,7 @@ public class AppendRInstruction extends AppendInstruction
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		InstructionUtils.checkNumFields(parts, 5);
+		InstructionUtils.checkNumFields(parts, 4);
 		
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);

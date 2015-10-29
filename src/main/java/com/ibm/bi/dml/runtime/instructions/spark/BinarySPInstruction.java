@@ -65,9 +65,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
 		throws DMLRuntimeException
 	{	
-		InstructionUtils.checkNumFields ( instr, 3 );
-		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		InstructionUtils.checkNumFields ( parts, 3 );
+		
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		in2.split(parts[2]);
@@ -79,9 +79,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out)
 		throws DMLRuntimeException
 	{
-		InstructionUtils.checkNumFields ( instr, 4 );
-		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		InstructionUtils.checkNumFields ( parts, 4 );
+		
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		in2.split(parts[2]);

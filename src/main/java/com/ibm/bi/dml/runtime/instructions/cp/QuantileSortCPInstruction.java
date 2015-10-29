@@ -51,7 +51,8 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
-		throws DMLRuntimeException {
+		throws DMLRuntimeException 
+	{
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = null;
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

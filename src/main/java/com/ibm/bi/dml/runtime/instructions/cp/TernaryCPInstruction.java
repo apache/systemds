@@ -55,11 +55,12 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 		_ignoreZeros = ignoreZeros;
 	}
 
-	public static TernaryCPInstruction parseInstruction(String inst) throws DMLRuntimeException{
-		
-		InstructionUtils.checkNumFields ( inst, 7 );
-		
+	public static TernaryCPInstruction parseInstruction(String inst) 
+		throws DMLRuntimeException
+	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
+		InstructionUtils.checkNumFields ( parts, 7 );
+		
 		String opcode = parts[0];
 		
 		//handle opcode

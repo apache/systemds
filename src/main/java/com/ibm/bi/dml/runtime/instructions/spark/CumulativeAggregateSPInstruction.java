@@ -23,8 +23,6 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -59,16 +57,12 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 	public static CumulativeAggregateSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-
-		InstructionUtils.checkNumFields ( str, 2 );
-		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
-		
+		InstructionUtils.checkNumFields ( parts, 2 );
+				
 		String opcode = parts[0];
-		in1.split(parts[1]);
-		out.split(parts[2]);
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand out = new CPOperand(parts[2]);
 		
 		AggregateUnaryOperator aggun = InstructionUtils.parseCumulativeAggregateUnaryOperator(opcode);
 		

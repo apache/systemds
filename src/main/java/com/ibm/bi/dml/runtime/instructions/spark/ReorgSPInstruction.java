@@ -87,8 +87,8 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			return new ReorgSPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("rsort") ) {
-			InstructionUtils.checkNumFields(str, 5, 6);
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+			InstructionUtils.checkNumFields(parts, 5, 6);
 			in.split(parts[1]);
 			out.split(parts[5]);
 			CPOperand col = new CPOperand(parts[2]);

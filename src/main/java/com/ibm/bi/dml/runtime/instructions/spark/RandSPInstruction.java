@@ -198,7 +198,9 @@ public class RandSPInstruction extends UnarySPInstruction
 	public static Instruction parseInstruction(String str) 
 		throws DMLRuntimeException 
 	{
-		String opcode = InstructionUtils.getOpCode(str);
+		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
+		String opcode = s[0];
+		
 		DataGenMethod method = DataGenMethod.INVALID;
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
@@ -216,7 +218,6 @@ public class RandSPInstruction extends UnarySPInstruction
 		}
 		
 		Operator op = null;
-		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
 		// output is specified by the last operand
 		CPOperand out = new CPOperand(s[s.length-1]); 
 

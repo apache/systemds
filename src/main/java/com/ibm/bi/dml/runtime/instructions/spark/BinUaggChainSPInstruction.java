@@ -53,11 +53,9 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		//check number of fields (2/3 inputs, output, type)
-		InstructionUtils.checkNumFields ( str, 4 );
-		
 		//parse instruction parts (without exec type)
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );		
+		InstructionUtils.checkNumFields( parts, 4 );
 		
 		String opcode = parts[0];
 		BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[1]);

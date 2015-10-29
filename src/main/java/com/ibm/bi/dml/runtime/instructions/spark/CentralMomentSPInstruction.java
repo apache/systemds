@@ -67,14 +67,14 @@ public class CentralMomentSPInstruction extends UnarySPInstruction
 		CPOperand in3 = null; 
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		
-		String opcode = InstructionUtils.getOpCode(str); 
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0]; 
 		
 		//check supported opcode
 		if( !opcode.equalsIgnoreCase("cm") ) {
 			throw new DMLRuntimeException("Unsupported opcode "+opcode);
 		}
 			
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		if ( parts.length == 4 ) {
 			// Example: CP.cm.mVar0.Var1.mVar2; (without weights)
 			in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

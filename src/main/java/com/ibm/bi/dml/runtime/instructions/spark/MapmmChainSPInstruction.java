@@ -27,8 +27,6 @@ import scala.Tuple2;
 
 import com.ibm.bi.dml.lops.MapMultChain;
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -91,37 +89,30 @@ public class MapmmChainSPInstruction extends SPInstruction
 	public static MapmmChainSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-
-		String opcode = InstructionUtils.getOpCode(str);
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );	
+		InstructionUtils.checkNumFields ( parts, 4, 5 );
+		String opcode = parts[0];
 
 		//check supported opcode 
 		if ( !opcode.equalsIgnoreCase(MapMultChain.OPCODE)){
 			throw new DMLRuntimeException("MapmmChainSPInstruction.parseInstruction():: Unknown opcode " + opcode);	
 		}
-		
-		//check number of fields (2/3 inputs, output, type)
-		InstructionUtils.checkNumFields ( str, 4, 5 );
 			
 		//parse instruction parts (without exec type)
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );	
-		in1.split(parts[1]);
-		in2.split(parts[2]);
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
 		
 		if( parts.length==5 )
 		{
-			out.split(parts[3]);
+			CPOperand out = new CPOperand(parts[3]);
 			ChainType type = ChainType.valueOf(parts[4]);
 			
 			return new MapmmChainSPInstruction(null, in1, in2, out, type, opcode, str);
 		}
 		else //parts.length==6
 		{
-			in3.split(parts[3]);
-			out.split(parts[4]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand out = new CPOperand(parts[4]);
 			ChainType type = ChainType.valueOf(parts[5]);
 		
 			return new MapmmChainSPInstruction(null, in1, in2, in3, out, type, opcode, str);

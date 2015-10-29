@@ -50,7 +50,7 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction
 		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase("tak+*")) {
-			InstructionUtils.checkNumFields ( str, 5 );
+			InstructionUtils.checkNumFields( parts, 5 );
 			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);

@@ -71,9 +71,9 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		InstructionUtils.checkNumFields( str, 5 );
-		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		InstructionUtils.checkNumFields( parts, 5 );
+		
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);

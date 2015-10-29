@@ -25,31 +25,22 @@ import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 public abstract class BinaryCPInstruction extends ComputationCPInstruction
 {
 	
-	public BinaryCPInstruction(Operator op, 
-							 CPOperand in1, 
-							 CPOperand in2, 
-							 CPOperand out, 
-							 String opcode,
-						     String istr ){
+	public BinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, 
+			String opcode, String istr ){
 		super(op, in1, in2, out, opcode, istr);
 	}
 
-	public BinaryCPInstruction(Operator op, 
-			 CPOperand in1, 
-			 CPOperand in2, 
-			 CPOperand in3, 
-			 CPOperand out, 
-			 String opcode,
-		     String istr ){
+	public BinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, 
+			String opcode, String istr ){
 		super(op, in1, in2, in3, out, opcode, istr);
 	}
 
-	static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
-		throws DMLRuntimeException{
-		
-		InstructionUtils.checkNumFields ( instr, 3 );
-		
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
+		throws DMLRuntimeException
+	{	
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		InstructionUtils.checkNumFields ( parts, 3 );
+		
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		in2.split(parts[2]);
@@ -58,12 +49,12 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction
 		return opcode;
 	}
 	
-	static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out)
-	throws DMLRuntimeException{
-	
-		InstructionUtils.checkNumFields ( instr, 4 );
-		
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out)
+		throws DMLRuntimeException
+	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		InstructionUtils.checkNumFields ( parts, 4 );
+		
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		in2.split(parts[2]);

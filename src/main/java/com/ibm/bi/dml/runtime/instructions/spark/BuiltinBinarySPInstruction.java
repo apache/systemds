@@ -44,8 +44,9 @@ public abstract class BuiltinBinarySPInstruction extends BinarySPInstruction
 		ValueFunction func = null;
 		if(str.startsWith("SPARK"+Lop.OPERAND_DELIMITOR+"map")) //map builtin function
 		{
-			InstructionUtils.checkNumFields ( str, 5 );
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+			InstructionUtils.checkNumFields ( parts, 5 );
+			
 			opcode = parts[0];
 			in1.split(parts[1]);
 			in2.split(parts[2]);

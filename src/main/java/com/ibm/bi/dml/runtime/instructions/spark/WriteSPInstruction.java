@@ -73,12 +73,12 @@ public class WriteSPInstruction extends SPInstruction
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		String opcode = InstructionUtils.getOpCode(str);
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
+		String opcode = parts[0];
+		
 		if( !opcode.equals("write") ) {
 			throw new DMLRuntimeException("Unsupported opcode");
 		}
-		
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		
 		// All write instructions have 3 parameters, except in case of delimited/csv file.
 		// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)

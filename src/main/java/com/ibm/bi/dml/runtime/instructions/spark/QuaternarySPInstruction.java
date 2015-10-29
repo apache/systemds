@@ -85,7 +85,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 	public static QuaternarySPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
-		String opcode = InstructionUtils.getOpCode(str);
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 		
 		//validity check
 		if( !InstructionUtils.isDistQuaternaryOpcode(opcode) ) {
@@ -100,12 +101,9 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 			//check number of fields (4 inputs, output, type)
 			if( isRed )
-				InstructionUtils.checkNumFields ( str, 8 );
+				InstructionUtils.checkNumFields ( parts, 8 );
 			else
-				InstructionUtils.checkNumFields ( str, 6 );
-				
-			//parse instruction parts (without exec type)
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				InstructionUtils.checkNumFields ( parts, 6 );
 			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -126,12 +124,9 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 			//check number of fields (3 inputs, output, type)
 			if( isRed )
-				InstructionUtils.checkNumFields ( str, 7 );
+				InstructionUtils.checkNumFields( parts, 7 );
 			else
-				InstructionUtils.checkNumFields ( str, 5 );
-				
-			//parse instruction parts (without exec type)
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				InstructionUtils.checkNumFields( parts, 5 );
 			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);

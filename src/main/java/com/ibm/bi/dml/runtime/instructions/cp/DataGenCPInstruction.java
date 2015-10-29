@@ -21,8 +21,6 @@ import com.ibm.bi.dml.hops.DataGenOp;
 import com.ibm.bi.dml.hops.Hop.DataGenMethod;
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -168,29 +166,29 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 
 	public static Instruction parseInstruction(String str) throws DMLRuntimeException 
 	{
-		String opcode = InstructionUtils.getOpCode(str);
 		DataGenMethod method = DataGenMethod.INVALID;
+
+		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
+		String opcode = s[0];
 		
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( str, 12 );
+			InstructionUtils.checkNumFields ( s, 12 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
 			// 8 operands: rows, cols, rpb, cpb, from, to, incr, outvar
-			InstructionUtils.checkNumFields ( str, 8 ); 
+			InstructionUtils.checkNumFields ( s, 8 ); 
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE) ) {
 			method = DataGenMethod.SAMPLE;
 			// 7 operands: range, size, replace, seed, rpb, cpb, outvar
-			InstructionUtils.checkNumFields ( str, 7 ); 
+			InstructionUtils.checkNumFields ( s, 7 ); 
 		}
 		
+		CPOperand out = new CPOperand(s[s.length-1]); // ouput is specified by the last operand
 		Operator op = null;
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
-		out.split(s[s.length-1]); // ouput is specified by the last operand
-
+		
 		if ( method == DataGenMethod.RAND ) 
 		{
 			long rows = -1, cols = -1;

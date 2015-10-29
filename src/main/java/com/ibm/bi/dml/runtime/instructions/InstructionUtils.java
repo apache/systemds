@@ -117,6 +117,26 @@ public class InstructionUtils
 	
 	/**
 	 * 
+	 * @param parts
+	 * @param expected1
+	 * @param expected2
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static int checkNumFields( String[] parts, int expected1, int expected2 ) 
+		throws DMLRuntimeException 
+	{
+		int numParts = parts.length;
+		int numFields = numParts - 1; //account for opcode
+		
+		if ( numFields != expected1 && numFields != expected2 ) 
+			throw new DMLRuntimeException("checkNumFields() -- expected number (" + expected1 + " or "+ expected2 +") != is not equal to actual number (" + numFields + ").");
+		
+		return numFields; 
+	}
+	
+	/**
+	 * 
 	 * @param str
 	 * @param expected1
 	 * @param expected2

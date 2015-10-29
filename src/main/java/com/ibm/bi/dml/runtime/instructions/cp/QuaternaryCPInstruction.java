@@ -63,7 +63,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		
 		if( opcode.equalsIgnoreCase("wsloss") ) 
 		{
-			InstructionUtils.checkNumFields ( inst, 7 );
+			InstructionUtils.checkNumFields ( parts, 7 );
 			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -78,7 +78,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		}
 		else if( opcode.equalsIgnoreCase("wsigmoid") || opcode.equalsIgnoreCase("wdivmm") || opcode.equalsIgnoreCase("wcemm") )
 		{
-			InstructionUtils.checkNumFields ( inst, 6 );
+			InstructionUtils.checkNumFields ( parts, 6 );
 			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);

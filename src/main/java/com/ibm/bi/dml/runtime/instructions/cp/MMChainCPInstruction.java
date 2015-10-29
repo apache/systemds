@@ -18,8 +18,6 @@
 package com.ibm.bi.dml.runtime.instructions.cp;
 
 import com.ibm.bi.dml.lops.MapMultChain.ChainType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -55,24 +53,17 @@ public class MMChainCPInstruction extends UnaryCPInstruction
 	public static Instruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		
-		String opcode = InstructionUtils.getOpCode(str);
-		
-		//check number of fields (2/3 inputs, output, type)
-		InstructionUtils.checkNumFields ( str, 5, 6 );
-		
 		//parse instruction parts (without exec type)
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );		
-		in1.split(parts[1]);
-		in2.split(parts[2]);
+		InstructionUtils.checkNumFields( parts, 5, 6 );
+	
+		String opcode = parts[0];
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
 		
 		if( parts.length==6 )
 		{
-			out.split(parts[3]);
+			CPOperand out= new CPOperand(parts[3]);
 			ChainType type = ChainType.valueOf(parts[4]);
 			int k = Integer.parseInt(parts[5]);
 			
@@ -80,8 +71,8 @@ public class MMChainCPInstruction extends UnaryCPInstruction
 		}
 		else //parts.length==7
 		{
-			in3.split(parts[3]);
-			out.split(parts[4]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand out = new CPOperand(parts[4]);
 			ChainType type = ChainType.valueOf(parts[5]);
 			int k = Integer.parseInt(parts[6]);
 			

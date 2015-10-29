@@ -29,8 +29,6 @@ import scala.Tuple2;
 import com.ibm.bi.dml.hops.OptimizerUtils;
 import com.ibm.bi.dml.lops.MapMult.CacheType;
 import com.ibm.bi.dml.lops.PMMJ;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -76,19 +74,14 @@ public class PmmSPInstruction extends BinarySPInstruction
 	public static PmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand nrow = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-
+		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = InstructionUtils.getOpCode(str);
 
 		if ( opcode.equalsIgnoreCase(PMMJ.OPCODE)) {
-			String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
-			in1.split(parts[1]);
-			in2.split(parts[2]);
-			nrow.split(parts[3]);
-			out.split(parts[4]);
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand nrow = new CPOperand(parts[3]);
+			CPOperand out = new CPOperand(parts[4]);
 			CacheType type = CacheType.valueOf(parts[5]);
 			
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());

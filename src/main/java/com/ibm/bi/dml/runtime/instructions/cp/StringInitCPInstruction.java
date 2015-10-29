@@ -21,8 +21,6 @@ import java.util.StringTokenizer;
 
 import com.ibm.bi.dml.lops.DataGen;
 import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
@@ -69,13 +67,11 @@ public class StringInitCPInstruction extends UnaryCPInstruction
 		if( !opcode.equals(DataGen.SINIT_OPCODE) )
 			throw new DMLRuntimeException("Unsupported opcode: "+opcode);
 		
-		//check fields
-		InstructionUtils.checkNumFields( str, 6 );
-		
 		//parse instruction
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
-		out.split(s[s.length-1]); // ouput is specified by the last operand
+		InstructionUtils.checkNumFields( s, 6 );
+		
+		CPOperand out = new CPOperand(s[s.length-1]); // output is specified by the last operand
 
 		long rows = (s[1].contains( Lop.VARIABLE_NAME_PLACEHOLDER)?-1:Double.valueOf(s[1]).longValue());
 		long cols = (s[2].contains( Lop.VARIABLE_NAME_PLACEHOLDER)?-1:Double.valueOf(s[2]).longValue());

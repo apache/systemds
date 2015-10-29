@@ -22,8 +22,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 
 import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -59,19 +57,16 @@ public class TsmmSPInstruction extends UnarySPInstruction
 	public static TsmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-
-		String opcode = InstructionUtils.getOpCode(str);
+		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 		
 		//check supported opcode 
 		if ( !opcode.equalsIgnoreCase("tsmm") ) {
 			throw new DMLRuntimeException("TsmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);			
 		}
 			
-		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
-		in1.split(parts[1]);
-		out.split(parts[2]);
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand out = new CPOperand(parts[2]);
 		MMTSJType type = MMTSJType.valueOf(parts[3]);
 		
 		return new TsmmSPInstruction(null, in1, out, type, opcode, str);

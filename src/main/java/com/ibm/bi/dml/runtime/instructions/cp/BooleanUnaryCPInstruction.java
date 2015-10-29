@@ -29,11 +29,8 @@ import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
 public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 {
 	
-	public BooleanUnaryCPInstruction(Operator op,
-									 CPOperand in,
-									 CPOperand out,
-									 String opcode,
-									 String instr){
+	public BooleanUnaryCPInstruction(Operator op, CPOperand in, CPOperand out,
+			String opcode, String instr){
 		super(op, in, out, opcode, instr);
 		_cptype = CPINSTRUCTION_TYPE.BooleanUnary;
 	}

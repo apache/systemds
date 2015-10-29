@@ -26,8 +26,6 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -64,18 +62,15 @@ public class RmmSPInstruction extends BinarySPInstruction
 	 * @throws DMLRuntimeException
 	 */
 	public static RmmSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException {
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-
-		String opcode = InstructionUtils.getOpCode(str);
+		throws DMLRuntimeException 
+	{
+		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 
 		if ( "rmm".equals(opcode) ) {
-			String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
-			in1.split(parts[1]);
-			in2.split(parts[2]);
-			out.split(parts[3]);
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand out = new CPOperand(parts[3]);
 			
 			return new RmmSPInstruction(null, in1, in2, out, opcode, str);
 		} 

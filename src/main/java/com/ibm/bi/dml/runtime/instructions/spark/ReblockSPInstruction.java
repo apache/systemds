@@ -22,8 +22,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 
 import com.ibm.bi.dml.hops.recompile.Recompiler;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
@@ -61,18 +59,15 @@ public class ReblockSPInstruction extends UnarySPInstruction
 	
 	public static Instruction parseInstruction(String str)  throws DMLRuntimeException 
 	{
-		String opcode = InstructionUtils.getOpCode(str);
+		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
+		
 		if(opcode.compareTo("rblk") != 0) {
 			throw new DMLRuntimeException("Incorrect opcode for ReblockSPInstruction:" + opcode);
 		}
 		
-		// Example parts of ReblockSPInstruction: [rblk, pREADG·MATRIX·DOUBLE, _mVar1·MATRIX·DOUBLE, 1000, 1000, true]
-		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
-		
-		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		in.split(parts[1]);
-		out.split(parts[2]);
+		CPOperand in = new CPOperand(parts[1]);
+		CPOperand out = new CPOperand(parts[2]);
 		int brlen=Integer.parseInt(parts[3]);
 		int bclen=Integer.parseInt(parts[4]);
 		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[5]);

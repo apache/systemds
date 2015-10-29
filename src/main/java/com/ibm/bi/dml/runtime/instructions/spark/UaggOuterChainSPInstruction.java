@@ -90,11 +90,11 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 	public static UaggOuterChainSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
-		String opcode = InstructionUtils.getOpCode(str);
+		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 
 		if ( opcode.equalsIgnoreCase(UAggOuterChain.OPCODE)) {
-			String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
-
+			
 			AggregateUnaryOperator uaggop = InstructionUtils.parseBasicAggregateUnaryOperator(parts[1]);
 			BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[2]);
 

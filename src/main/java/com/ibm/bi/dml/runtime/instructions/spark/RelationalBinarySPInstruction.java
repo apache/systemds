@@ -29,9 +29,9 @@ public abstract class RelationalBinarySPInstruction extends BinarySPInstruction 
 		VectorType vtype = null;
 		
 		if(str.startsWith("SPARK"+Lop.OPERAND_DELIMITOR+"map")) {
-			InstructionUtils.checkNumFields ( str, 5 );
-			
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+			InstructionUtils.checkNumFields ( parts, 5 );
+			
 			opcode = parts[0];
 			in1.split(parts[1]);
 			in2.split(parts[2]);

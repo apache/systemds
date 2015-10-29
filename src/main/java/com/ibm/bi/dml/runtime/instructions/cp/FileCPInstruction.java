@@ -74,9 +74,8 @@ public class FileCPInstruction extends CPInstruction
 		if ( opcode.equalsIgnoreCase("rm") ) 
 			_arity = 1;
 		
-		InstructionUtils.checkNumFields ( str, _arity ); // there is no output, so we just have _arity
-		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
+		InstructionUtils.checkNumFields ( parts, _arity ); // there is no output, so we just have _arity
 		
 		String in1, in2;
 		opcode = parts[0];

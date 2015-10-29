@@ -83,9 +83,9 @@ public class TernarySPInstruction extends ComputationSPInstruction
 	public static TernarySPInstruction parseInstruction(String inst) 
 		throws DMLRuntimeException
 	{	
-		InstructionUtils.checkNumFields ( inst, 7 );
-		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
+		InstructionUtils.checkNumFields ( parts, 7 );
+		
 		String opcode = parts[0];
 		
 		//handle opcode

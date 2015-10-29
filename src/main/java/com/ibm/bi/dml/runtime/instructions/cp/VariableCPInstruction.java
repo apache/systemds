@@ -236,11 +236,12 @@ public class VariableCPInstruction extends CPInstruction
 		}
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
-		String opcode = InstructionUtils.getOpCode(str);
-		VariableOperationCode voc = getVariableOperationCode(opcode);
+	public static Instruction parseInstruction ( String str ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{	
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
+		String opcode = parts[0];
+		VariableOperationCode voc = getVariableOperationCode(opcode);
 		int _arity = -1;
 		
 		if ( voc == VariableOperationCode.CreateVariable ){
@@ -260,7 +261,7 @@ public class VariableCPInstruction extends CPInstruction
 		}
 		else {
 			_arity = getArity(voc);
-			InstructionUtils.checkNumFields ( str, _arity ); // no output
+			InstructionUtils.checkNumFields ( parts, _arity ); // no output
 		}
 		
 		CPOperand in1=null, in2=null, in3=null, out=null;

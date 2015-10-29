@@ -59,7 +59,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction
 		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase("tak+*")) {
-			InstructionUtils.checkNumFields ( str, 4 );
+			InstructionUtils.checkNumFields ( parts, 4 );
 			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);

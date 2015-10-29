@@ -74,10 +74,13 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 	}
 	
 	public static Instruction parseInstruction ( String str ) 
-		throws DMLRuntimeException {
+		throws DMLRuntimeException 
+	{
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		String opcode = InstructionUtils.getOpCode(str);
+		
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase("r'") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
@@ -88,8 +91,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 			return new ReorgCPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("rsort") ) {
-			InstructionUtils.checkNumFields(str, 5);
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+			InstructionUtils.checkNumFields(parts, 5);
 			in.split(parts[1]);
 			out.split(parts[5]);
 			CPOperand col = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

@@ -69,8 +69,8 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction
 	public static Instruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{
-		InstructionUtils.checkNumFields(str, 3);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		InstructionUtils.checkNumFields(parts, 3);
 		String opcode = parts[0];
 		
 		CPOperand in1 = new CPOperand(parts[1]);

@@ -31,9 +31,7 @@ import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
 public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction
-{
-	
-	
+{	
 	public CentralMomentCPInstruction(CMOperator cm, CPOperand in1, CPOperand in2, 
 			CPOperand in3, CPOperand out, String opcode, String str) 
 	{
@@ -48,14 +46,14 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction
 		CPOperand in3 = null; 
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		
-		String opcode = InstructionUtils.getOpCode(str); 
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0]; 
 		
 		//check supported opcode
 		if( !opcode.equalsIgnoreCase("cm") ) {
 			throw new DMLRuntimeException("Unsupported opcode "+opcode);
 		}
 			
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		if ( parts.length == 4 ) {
 			// Example: CP.cm.mVar0.Var1.mVar2; (without weights)
 			in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

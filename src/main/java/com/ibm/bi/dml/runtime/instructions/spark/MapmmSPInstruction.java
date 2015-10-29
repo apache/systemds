@@ -82,11 +82,11 @@ public class MapmmSPInstruction extends BinarySPInstruction
 	public static MapmmSPInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{
-		String opcode = InstructionUtils.getOpCode(str);
+		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
+		String opcode = parts[0];
 
-		if ( opcode.equalsIgnoreCase(MapMult.OPCODE)) {
-			String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
-
+		if ( opcode.equalsIgnoreCase(MapMult.OPCODE)) 
+		{
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);

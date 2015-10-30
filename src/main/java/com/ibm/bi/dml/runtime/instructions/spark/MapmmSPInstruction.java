@@ -135,7 +135,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		
 		//empty output block filter
 		if( !_outputEmpty )
-			in1 = in1.filter(new FilterNonEmptyBlocksFunction());
+			out = out.filter(new FilterNonEmptyBlocksFunction());
 		
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )

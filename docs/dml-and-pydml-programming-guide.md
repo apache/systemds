@@ -629,10 +629,10 @@ Currently, if a function returns nothing, it still needs to be assigned to a var
 {% highlight r %}
 doSomething = function(matrix[double] mat) return (matrix[double] ret) {
     additionalCol = matrix(1, rows=nrow(mat), cols=1) # 1x3 matrix with 1 values
-    ret = append(mat, additionalCol) # append column to matrix
-    ret = append(ret, seq(0, 2, 1))  # append column (0,1,2) to matrix
-    ret = append(ret, rowMaxs(ret))  # append column of max row values to matrix
-    ret = append(ret, rowSums(ret))  # append column of row sums to matrix
+    ret = cbind(mat, additionalCol) # concatenate column to matrix
+    ret = cbind(ret, seq(0, 2, 1))  # concatenate column (0,1,2) to matrix
+    ret = cbind(ret, rowMaxs(ret))  # concatenate column of max row values to matrix
+    ret = cbind(ret, rowSums(ret))  # concatenate column of row sums to matrix
 }
 
 A = rand(rows=3, cols=2, min=0, max=2) # random 3x2 matrix with values 0 to 2
@@ -646,10 +646,10 @@ write(B, "B.csv", format="csv")
 {% highlight python %}
 def doSomething(mat: matrix[float]) -> (ret: matrix[float]):
     additionalCol = full(1, rows=nrow(mat), cols=1) # 1x3 matrix with 1 values
-    ret = append(mat, additionalCol) # append column to matrix
-    ret = append(ret, seq(0, 2, 1))  # append column (0,1,2) to matrix
-    ret = append(ret, rowMaxs(ret))  # append column of max row values to matrix
-    ret = append(ret, rowSums(ret))  # append column of row sums to matrix
+    ret = cbind(mat, additionalCol) # concatenate column to matrix
+    ret = cbind(ret, seq(0, 2, 1))  # concatenate column (0,1,2) to matrix
+    ret = cbind(ret, rowMaxs(ret))  # concatenate column of max row values to matrix
+    ret = cbind(ret, rowSums(ret))  # concatenate column of row sums to matrix
 
 A = rand(rows=3, cols=2, min=0, max=2) # random 3x2 matrix with values 0 to 2
 B = doSomething(A)
@@ -663,9 +663,9 @@ save(B, "B.csv", format="csv")
 In the above example, a 3x2 matrix of random doubles between 0 and 2 is created using the **`rand()`** function.
 Additional parameters can be passed to **`rand()`** to control sparsity and other matrix characteristics.
 
-Matrix A is passed to the `doSomething` function. A column of 1 values is appended to the matrix. A column
-consisting of the values `(0, 1, 2)` is appended to the matrix. Next, a column consisting of the maximum row values
-is appended to the matrix. A column consisting of the row sums is appended to the matrix, and this resulting
+Matrix A is passed to the `doSomething` function. A column of 1 values is concatenated to the matrix. A column
+consisting of the values `(0, 1, 2)` is concatenated to the matrix. Next, a column consisting of the maximum row values
+is concatenated to the matrix. A column consisting of the row sums is concatenated to the matrix, and this resulting
 matrix is returned to variable B. Matrix A is output to the `A.csv` file and matrix B is saved as the `B.csv` file.
 
 

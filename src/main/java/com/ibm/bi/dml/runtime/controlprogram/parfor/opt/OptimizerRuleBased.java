@@ -1958,7 +1958,7 @@ public class OptimizerRuleBased extends Optimizer
 					double sp = mo.getSparsity();
 					sum += (k+1) * (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(),
 							Math.min((1.0/k)+sp, 1.0)));	// Every worker will consume memory for (MatrixSize/k + nnz) data.
-														// This is applicable only when there is non-zerp nnz. 
+														// This is applicable only when there is non-zero nnz. 
 				}
 			} 
 		}

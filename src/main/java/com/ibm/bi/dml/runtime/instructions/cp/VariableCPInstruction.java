@@ -19,6 +19,8 @@ package com.ibm.bi.dml.runtime.instructions.cp;
 
 import java.io.IOException;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.UnaryCP;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -86,6 +88,7 @@ public class VariableCPInstruction extends CPInstruction
 	}
 	
 	private static IDSequence _uniqueVarID;	
+	private static final int CREATEVAR_FILE_NAME_VAR_POS=3;
 	
 	private VariableOperationCode opcode;
 	private CPOperand input1;
@@ -918,7 +921,8 @@ public class VariableCPInstruction extends CPInstruction
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(varName); 
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(fileName);
+		sb.append(fileName);		// Constant CREATEVAR_FILE_NAME_VAR_POS is used to find a position of filename within a string generated through this function.
+									// If this position of filename within this string changes then constant CREATEVAR_FILE_NAME_VAR_POS to be updated.
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(fNameOverride);
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -959,19 +963,18 @@ public class VariableCPInstruction extends CPInstruction
 		{
 			//replace in-memory instruction
 			input2.set_name(input2.getName().replaceAll(pattern, replace));
-			int pos = 3;
-		
-			String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
+
+			// Find a start position of file name string.
+			int iPos = StringUtils.ordinalIndexOf(instString, Lop.OPERAND_DELIMITOR, CREATEVAR_FILE_NAME_VAR_POS); 
+			// Find a end position of file name string.
+			int iPos2 = StringUtils.indexOf(instString, Lop.OPERAND_DELIMITOR, iPos+1);
+			
 			StringBuilder sb = new StringBuilder();
-			for( int i=0; i<parts.length; i++ )
-			{
-				if( i>0 ) sb.append(Lop.OPERAND_DELIMITOR);
-				
-				if( i==pos )
-					sb.append(ProgramConverter.saveReplaceFilenameThreadID(parts[i], pattern, replace));
-				else
-					sb.append(parts[i]);
-			}
+			sb.append(instString.substring(0,iPos+1));			// It takes first part before file name.
+			// This will replace 'pattern' with 'replace' string from file name.
+			sb.append(ProgramConverter.saveReplaceFilenameThreadID(instString.substring(iPos+1, iPos2+1), pattern, replace));  
+			sb.append(instString.substring(iPos2+1));			// It takes last part after file name.
+			
 			instString = sb.toString();
 		}
 	}

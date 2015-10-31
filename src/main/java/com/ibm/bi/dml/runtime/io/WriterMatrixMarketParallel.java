@@ -67,6 +67,12 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();
 		numThreads = Math.min(numThreads, numPartFiles);
 		
+		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
+		if( numThreads <= 1 ) {
+			super.writeMatrixMarketMatrixToHDFS(path, job, src, rlen, clen, nnz);
+			return;
+		}
+		
 		//create directory for concurrent tasks
 		MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 

@@ -66,6 +66,12 @@ public class WriterTextCellParallel extends WriterTextCell
 		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();
 		numThreads = Math.min(numThreads, numPartFiles);
 		
+		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
+		if( numThreads <= 1 ) {
+			super.writeTextCellMatrixToHDFS(path, job, src, rlen, clen);
+			return;
+		}
+		
 		//create directory for concurrent tasks
 		MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 

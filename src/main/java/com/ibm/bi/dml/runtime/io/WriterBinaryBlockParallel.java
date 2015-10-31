@@ -73,6 +73,12 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 		int numThreads = OptimizerUtils.getParallelBinaryWriteParallelism();
 		numThreads = Math.min(numThreads, numPartFiles);
 		
+		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
+		if( numThreads <= 1 ) {
+			super.writeBinaryBlockMatrixToHDFS(path, job, src, rlen, clen, brlen, bclen, replication);
+			return;
+		}
+			
 		//set up preferred custom serialization framework for binary block format
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );

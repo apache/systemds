@@ -36,6 +36,7 @@ import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
 import com.ibm.bi.dml.hops.Hop.ReOrgOp;
 import com.ibm.bi.dml.hops.Hop.VisitStatus;
 import com.ibm.bi.dml.hops.HopsException;
+import com.ibm.bi.dml.hops.LeftIndexingOp;
 import com.ibm.bi.dml.hops.LiteralOp;
 import com.ibm.bi.dml.hops.MemoTable;
 import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
@@ -519,6 +520,24 @@ public class HopRewriteUtils
 	
 	/**
 	 * 
+	 * @param input1
+	 * @param input2
+	 * @param op
+	 * @return
+	 */
+	public static BinaryOp createBinary(Hop input1, Hop input2, OpOp2 op)
+	{
+		BinaryOp bop = new BinaryOp(input1.getName(), input1.getDataType(), 
+				input1.getValueType(), op, input1, input2);
+		HopRewriteUtils.setOutputBlocksizes(bop, input1.getRowsInBlock(), input1.getColsInBlock());
+		HopRewriteUtils.copyLineNumbers(input1, bop);
+		bop.refreshSizeInformation();	
+		
+		return bop;
+	}
+	
+	/**
+	 * 
 	 * @param left
 	 * @param right
 	 * @return
@@ -766,6 +785,38 @@ public class HopRewriteUtils
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	public static boolean isFullColumnIndexing(LeftIndexingOp hop)
+	{
+		boolean colPred = hop.getColLowerEqualsUpper();  //single col
+		
+		Hop rl = hop.getInput().get(2);
+		Hop ru = hop.getInput().get(3);
+		
+		return colPred && rl instanceof LiteralOp && getDoubleValueSafe((LiteralOp)rl)==1
+				&& ru instanceof LiteralOp && getDoubleValueSafe((LiteralOp)ru)==hop.getDim1();
+	}
+	
+	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	public static boolean isFullRowIndexing(LeftIndexingOp hop)
+	{
+		boolean rowPred = hop.getRowLowerEqualsUpper();  //single row
+		
+		Hop cl = hop.getInput().get(4);
+		Hop cu = hop.getInput().get(5);
+		
+		return rowPred && cl instanceof LiteralOp && getDoubleValueSafe((LiteralOp)cl)==1
+				&& cu instanceof LiteralOp && getDoubleValueSafe((LiteralOp)cu)==hop.getDim2();
 	}
 	
 	/**

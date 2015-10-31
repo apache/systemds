@@ -991,11 +991,9 @@ public class BinaryOp extends Hop
 			//pull unary scalar operation into spark 
 			_etype = ExecType.SPARK;
 		}
-		
+
 		//mark for recompile (forever)
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && ((!dimsKnown(true)&&_etype==REMOTE) 
-			|| ((op == OpOp2.CBIND || op == OpOp2.RBIND) && getDataType()!=DataType.SCALAR) ) )
-		{
+		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE ) {
 			setRequiresRecompile();
 		}
 		

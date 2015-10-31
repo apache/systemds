@@ -188,7 +188,7 @@ public class InfrastructureAnalyzer
 	public static long getRemoteMaxMemoryMap()
 	{
 		if( _remoteJVMMaxMemMap == -1 )
-			analyzeHadoopCluster();
+			analyzeHadoopConfiguration();
 		
 		return _remoteJVMMaxMemMap;
 	}
@@ -210,7 +210,7 @@ public class InfrastructureAnalyzer
 	public static long getRemoteMaxMemoryReduce()
 	{
 		if( _remoteJVMMaxMemReduce == -1 )
-			analyzeHadoopCluster();
+			analyzeHadoopConfiguration();
 		
 		return _remoteJVMMaxMemReduce;
 	}
@@ -245,7 +245,7 @@ public class InfrastructureAnalyzer
 	public static long getRemoteMaxMemorySortBuffer( )
 	{
 		if( _remoteMRSortMem == -1 )
-			analyzeHadoopCluster();
+			analyzeHadoopConfiguration();
 		
 		return _remoteMRSortMem;		
 	}
@@ -253,7 +253,7 @@ public class InfrastructureAnalyzer
 	public static boolean isLocalMode()
 	{
 		if( _remoteJVMMaxMemMap == -1 )
-			analyzeHadoopCluster();
+			analyzeHadoopConfiguration();
 		
 		return _localJT;		
 	}
@@ -314,7 +314,7 @@ public class InfrastructureAnalyzer
 	public static long getHDFSBlockSize()
 	{
 		if( _blocksize == -1 )
-			analyzeHadoopCluster();
+			analyzeHadoopConfiguration();
 		
 		return _blocksize;		
 	}
@@ -327,7 +327,7 @@ public class InfrastructureAnalyzer
 	public static boolean isYarnEnabled()
 	{
 		if( _remoteJVMMaxMemMap == -1 )
-			analyzeHadoopCluster();
+			analyzeHadoopConfiguration();
 		
 		return _yarnEnabled;
 	}
@@ -484,41 +484,55 @@ public class InfrastructureAnalyzer
 			ClusterStatus stat = client.getClusterStatus();
 			if( stat != null ) //if in cluster mode
 			{
+				//analyze cluster status
 				_remotePar = stat.getTaskTrackers();
 				_remoteParMap = stat.getMaxMapTasks(); 
 				_remoteParReduce = stat.getMaxReduceTasks(); 
-				_remoteMRSortMem = (1024*1024) * job.getLong("io.sort.mb",100); //1MB
 				
-				//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
-				//(for robustness we probe both: child and map configuration parameters)
-				String javaOpts1 = job.get("mapred.child.java.opts"); //internally mapred/mapreduce synonym
-				String javaOpts2 = job.get("mapreduce.map.java.opts", null); //internally mapred/mapreduce synonym
-				String javaOpts3 = job.get("mapreduce.reduce.java.opts", null); //internally mapred/mapreduce synonym
-				if( javaOpts2 != null ) //specific value overrides generic
-					_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts2); 
-				else
-					_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts1);
-				if( javaOpts3 != null ) //specific value overrides generic
-					_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts3); 
-				else
-					_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts1);
-				
-				//HDFS blocksize
-				String blocksize = job.get(MRConfigurationNames.DFS_BLOCK_SIZE, "134217728");
-				_blocksize = Long.parseLong(blocksize);
-				
-				//is yarn enabled
-				String framework = job.get("mapreduce.framework.name");
-				_yarnEnabled = (framework!=null && framework.equals("yarn"));
-				
-				//analyze if local mode (internally requires yarn_enabled)
-				_localJT = analyzeLocalMode(job);
+				//analyze pure configuration properties
+				analyzeHadoopConfiguration();
 			}		
 		} 
 		catch (IOException e) 
 		{
 			throw new RuntimeException("Unable to analyze infrastructure.",e);
 		}
+	}
+	
+	/**
+	 * Analyzes only properties of hadoop configuration in order to prevent 
+	 * expensive call to cluster status .
+	 */
+	private static void analyzeHadoopConfiguration()
+	{
+		JobConf job = ConfigurationManager.getCachedJobConf();
+		
+		_remoteMRSortMem = (1024*1024) * job.getLong("io.sort.mb",100); //1MB
+			
+		//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
+		//(for robustness we probe both: child and map configuration parameters)
+		String javaOpts1 = job.get("mapred.child.java.opts"); //internally mapred/mapreduce synonym
+		String javaOpts2 = job.get("mapreduce.map.java.opts", null); //internally mapred/mapreduce synonym
+		String javaOpts3 = job.get("mapreduce.reduce.java.opts", null); //internally mapred/mapreduce synonym
+		if( javaOpts2 != null ) //specific value overrides generic
+			_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts2); 
+		else
+			_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts1);
+		if( javaOpts3 != null ) //specific value overrides generic
+			_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts3); 
+		else
+			_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts1);
+		
+		//HDFS blocksize
+		String blocksize = job.get(MRConfigurationNames.DFS_BLOCK_SIZE, "134217728");
+		_blocksize = Long.parseLong(blocksize);
+		
+		//is yarn enabled
+		String framework = job.get("mapreduce.framework.name");
+		_yarnEnabled = (framework!=null && framework.equals("yarn"));
+		
+		//analyze if local mode (internally requires yarn_enabled)
+		_localJT = analyzeLocalMode(job);		
 	}
 	
 	/**

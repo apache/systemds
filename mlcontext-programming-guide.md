@@ -26,13 +26,13 @@ To use SystemML with the Spark Shell, the SystemML jar can be referenced using t
 Instructions to build the SystemML jar can be found in the [SystemML GitHub README](http://www.github.com/SparkTC/systemml).
 
 {% highlight bash %}
-./bin/spark-shell --executor-memory 4G --driver-memory 4G --jars system-ml-5.2-SNAPSHOT.jar
+./bin/spark-shell --executor-memory 4G --driver-memory 4G --jars SystemML.jar
 {% endhighlight %}
 
 Here is an example of Spark Shell with SystemML and YARN.
 
 {% highlight bash %}
-./bin/spark-shell --master yarn-client --num-executors 3 --driver-memory 5G --executor-memory 5G --executor-cores 4 --jars system-ml-5.2-SNAPSHOT.jar
+./bin/spark-shell --master yarn-client --num-executors 3 --driver-memory 5G --executor-memory 5G --executor-cores 4 --jars SystemML.jar
 {% endhighlight %}
 
 
@@ -511,7 +511,7 @@ this demonstration, it features `SPARK_HOME`, `SPARK_SUBMIT_OPTIONS`, and `ZEPPE
 environment variables:
 
 	export SPARK_HOME=/Users/example/spark-1.5.1-bin-hadoop2.6
-	export SPARK_SUBMIT_OPTIONS="--jars $/Users/example/systemml/system-ml/target/system-ml-5.2-SNAPSHOT.jar"
+	export SPARK_SUBMIT_OPTIONS="--jars $/Users/example/systemml/system-ml/target/SystemML.jar"
 	export ZEPPELIN_SPARK_USEHIVECONTEXT=false
 
 Start Zeppelin using the `zeppelin.sh` script:

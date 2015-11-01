@@ -15,35 +15,47 @@ This tutorial provides a quick introduction to using SystemML by
 running existing SystemML algorithms in standalone mode. More information
 about running SystemML in distributed execution mode (Hadoop, Spark) will 
 be added soon.
-For more in depth information, please refer to the
+For more in-depth information, please refer to the
 [Algorithms Reference](algorithms-reference.html) and the
 [DML Language Reference](dml-language-reference.html).
 
-
-<br/>
 
 # What is SystemML
 
 SystemML enables large-scale machine learning (ML) via a high-level declarative
 language with R-like syntax called [DML](dml-language-reference.html). 
-This language allows Data Scientists to 
+This language allows data scientists to 
 express their ML algorithms with full flexibility but without the need to fine-tune 
 distributed runtime execution plans and system configurations. 
 These ML programs are dynamically compiled and optimized based on data 
-and cluster characteristics using rule and cost-based optimization techniques. 
+and cluster characteristics using rule- and cost-based optimization techniques. 
 The compiler automatically generates hybrid runtime execution plans ranging 
 from in-memory, single node execution to distributed computation for Hadoop M/R 
 or Spark Batch execution.
 SystemML features a suite of algorithms for Descriptive Statistics, Classification, 
-Clustering, Regression, and Matrix Factorization. Detailed descriptions of these 
+Clustering, Regression, Matrix Factorization, and Survival Analysis. Detailed descriptions of these 
 algorithms can be found in the [Algorithms Reference](algorithms-reference.html).
 
 <br/>
 
-# Distributed vs Standalone Execution Mode
+# Download SystemML
 
-SystemML can operate in standalone mode, allowing data 
-scientists to quikly develop algorithms on a single machine.
+Binary releases of SystemML are available for download at
+[https://github.com/SparkTC/systemml/releases](https://github.com/SparkTC/systemml/releases).
+
+The SystemML project is available on GitHub at [https://github.com/SparkTC/systemml](https://github.com/SparkTC/systemml).
+SystemML can be downloaded from GitHub and built with Maven. Instructions to build and
+test SystemML can be found in the GitHub README file.
+
+<br/>
+
+# Standalone vs Distributed Execution Mode
+
+SystemML's standalone mode is designed to allow data scientists to rapidly prototype algorithms
+on a single machine. The standalone release packages all required libraries into a single distribution file.
+In standalone mode, all operations occur on a single node in a non-Hadoop environment. Standalone mode
+is not appropriate for large datasets.
+
 For large-scale production environments, SystemML algorithm execution can be
 distributed across a multi-node cluster using [Apache Hadoop](https://hadoop.apache.org/) 
 or [Apache Spark](http://spark.apache.org/). 
@@ -248,7 +260,7 @@ We will create the file `perc.csv` and `perc.csv.mtd` to define the sampling vec
     $ printf "0.5\n0.5" > data/perc.csv
     $ echo '{"rows": 2, "cols": 1, "format": "csv"}' > data/perc.csv.mtd
 
-Let's run the sampling algortihm to create the two data samples:
+Let's run the sampling algorithm to create the two data samples:
 
     $ ./runStandaloneSystemML.sh algorithms/utils/sample.dml -nvargs X=data/haberman.data sv=data/perc.csv O=data/haberman.part ofmt="csv"
 
@@ -256,7 +268,7 @@ Let's run the sampling algortihm to create the two data samples:
 
 ## Splitting Labels from Features
 
-Next we use the `splitXY.dml` algortithm to separate the feature columns from 
+Next we use the `splitXY.dml` algorithm to separate the feature columns from 
 the label column(s).
 
 Parameters:

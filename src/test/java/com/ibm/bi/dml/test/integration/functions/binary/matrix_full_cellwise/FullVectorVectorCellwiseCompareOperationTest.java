@@ -40,6 +40,7 @@ public class FullVectorVectorCellwiseCompareOperationTest extends AutomatedTestB
 	
 	private final static String TEST_NAME = "FullVectorVectorCellwiseOperation";
 	private final static String TEST_DIR = "functions/binary/matrix_full_cellwise/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullVectorVectorCellwiseCompareOperationTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1001;
@@ -65,7 +66,7 @@ public class FullVectorVectorCellwiseCompareOperationTest extends AutomatedTestB
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"C"}));
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"C"}));
 	}
 	
 	
@@ -190,20 +191,18 @@ public class FullVectorVectorCellwiseCompareOperationTest extends AutomatedTestB
 				case NOT_EQUALS: 			opcode="!="; opcoder="ne"; break;
 			}
 			
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-stats", "-explain","recompile_runtime","-args", 
-											HOME + INPUT_DIR + "A",
-					                        HOME + INPUT_DIR + "B",
+											input("A"),
+					                        input("B"),
 					                        opcode,
-					                        HOME + OUTPUT_DIR + "C"    };
+					                        output("C") };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + opcoder + " " + HOME + EXPECTED_DIR;
-			
-			loadTestConfiguration(config);
+			       inputDir() + " " + opcoder + " " + expectedDir();
 	
 			//get sparsity
 			double lsparsity1 = 1.0, lsparsity2 = 1.0;

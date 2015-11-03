@@ -304,7 +304,7 @@ The for loop body may contain any sequence of statements. The statements in the 
  
 #### ParFor Statement
 
-The syntax and semantics of a parfor statement are equivalent to a for statement except for the different keyword and a list of optional parameters.
+The syntax and semantics of a `parfor` (parallel `for`) statement are equivalent to a `for` statement except for the different keyword and a list of optional parameters.
 
     parfor (var in <for_predicate> <parfor_paramslist> ) {
         <statement>*
@@ -329,7 +329,36 @@ The syntax and semantics of a parfor statement are equivalent to a for statement
 	<result_merge_mode>           is one of the following tokens: LOCAL_MEM LOCAL_FILE LOCAL_AUTOMATIC REMOTE_MR 
 	<optimization_mode>           is one of the following tokens: NONE RULEBASED HEURISTIC GREEDY FULL_DP
 	 
-If any of these parameters is not specified, the following respective defaults are used: check = 1, par = [number of virtual processors on master node], mode = LOCAL, taskpartitioner = FIXED, tasksize =1, datapartitioner = NONE, resultmerge = LOCAL_AUTOMATIC, opt = RULEBASED.
+If any of these parameters is not specified, the following respective defaults are used: `check = 1`, `par = [number of virtual processors on master node]`, `mode = LOCAL`, `taskpartitioner = FIXED`, `tasksize = 1`, `datapartitioner = NONE`, `resultmerge = LOCAL_AUTOMATIC`, `opt = RULEBASED`.
+
+Of particular note is the `check` parameter. SystemML's `parfor` statement by default (`check = 1`) performs dependency analysis in an
+attempt to guarantee result correctness for parallel execution. For example, the following `parfor` statement is **incorrect** because
+the iterations do not act independently, so they are not parallizable. The iterations incorrectly try to increment the same `sum` variable.
+
+	sum = 0
+	parfor(i in 1:3) {
+	    sum = sum + i; # not parallizable - generates error
+	}
+	print(sum)
+
+SystemML's `parfor` dependency analysis can occasionally result in false positives, as in the following example. This example creates a 2x30
+matrix. It then utilizes a `parfor` loop to write 10 2x3 matrices into the 2x30 matrix. This `parfor` statement is parallizable and correct,
+but the dependency analysis generates a false positive dependency error for the variable `ms`.
+
+	ms = matrix(0, rows=2, cols=3*10)
+	parfor (v in 1:10) { # parallizable - false positive
+	    mv = matrix(v, rows=2, cols=3)
+	    ms[,(v-1)*3+1:v*3] = mv
+	}
+
+If a false positive arises but you are certain that the `parfor` is parallizable, the `parfor` dependency check can be disabled via
+the `check = 0` option.
+
+	ms = matrix(0, rows=2, cols=3*10)
+	parfor (v in 1:10, check=0) { # parallizable
+	    mv = matrix(v, rows=2, cols=3)
+	    ms[,(v-1)*3+1:v*3] = mv
+	}
 
 ### User-Defined Function (UDF)
  

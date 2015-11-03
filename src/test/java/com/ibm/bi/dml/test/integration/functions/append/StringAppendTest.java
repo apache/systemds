@@ -35,12 +35,13 @@ public class StringAppendTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "loop_string_append";
 		
 	private final static String TEST_DIR = "functions/append/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + StringAppendTest.class.getSimpleName() + "/";
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {"S"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"S"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S"}));
 	}
 
 	@Test
@@ -118,13 +119,12 @@ public class StringAppendTest extends AutomatedTestBase
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME);			
-			loadTestConfiguration(config);
+			getAndLoadTestConfiguration(TEST_NAME);			
 			
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args",  Integer.toString(iters),
-					                             RI_HOME + OUTPUT_DIR + "C" };
+					                             output("C") };
 			
 			runTest(true, exceptionExpected, DMLException.class, 0);
 		}

@@ -35,6 +35,7 @@ public class AppendChainTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "AppendChainTest";
 	private final static String TEST_DIR = "functions/append/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + AppendChainTest.class.getSimpleName() + "/";
 
 	private final static double epsilon=0.0000000001;
 	private final static int min=1;
@@ -53,7 +54,7 @@ public class AppendChainTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, 
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
 				new String[] {"C"}));
 	}
 
@@ -130,7 +131,7 @@ public class AppendChainTest extends AutomatedTestBase
 	 */
 	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols1, int cols2, int cols3, boolean sparse)
 	{
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
 		RUNTIME_PLATFORM prevPlfm=rtplatform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -140,8 +141,6 @@ public class AppendChainTest extends AutomatedTestBase
 		    rtplatform = platform;
 		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-	
-		    loadTestConfiguration(config);
 			
 	        config.addVariable("rows", rows);
 	        config.addVariable("cols", cols1);
@@ -149,17 +148,17 @@ public class AppendChainTest extends AutomatedTestBase
 			//This is for running the junit test the new way, i.e., construct the arguments directly
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "A" , 
+			programArgs = new String[]{"-args",  input("A"), 
 					                             Long.toString(rows), 
 					                             Long.toString(cols1),
-								                 RI_HOME + INPUT_DIR + "B1" ,
+								                 input("B1"),
 								                 Long.toString(cols2),
-								                 RI_HOME + INPUT_DIR + "B2" ,
+								                 input("B2"),
 								                 Long.toString(cols3),
-		                                         RI_HOME + OUTPUT_DIR + "C" };
+		                                         output("C") };
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       RI_HOME + INPUT_DIR + " "+ RI_HOME + EXPECTED_DIR;
+			       inputDir() + " "+ expectedDir();
 	
 			double sparsity = sparse ? sparsity2 : sparsity1; 
 			double sparsity2 = 1-sparsity;

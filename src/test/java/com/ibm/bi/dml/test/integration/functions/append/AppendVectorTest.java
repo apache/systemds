@@ -38,6 +38,7 @@ public class AppendVectorTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "AppendVectorTest";
 	private final static String TEST_DIR = "functions/append/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + AppendVectorTest.class.getSimpleName() + "/";
 
 	private final static double epsilon=0.0000000001;
 	private final static int rows1 = 1279;
@@ -49,7 +50,7 @@ public class AppendVectorTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, 
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
 				new String[] {"C"}));
 	}
 	
@@ -86,7 +87,7 @@ public class AppendVectorTest extends AutomatedTestBase
 	
 	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols)
 	{
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
 		RUNTIME_PLATFORM prevPlfm=rtplatform;
 		
@@ -102,16 +103,15 @@ public class AppendVectorTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args",  RI_HOME + INPUT_DIR + "A" , 
+			programArgs = new String[]{"-explain", "-args",  input("A"), 
 					Long.toString(rows), Long.toString(cols),
-								RI_HOME + INPUT_DIR + "B" ,
-		                         RI_HOME + OUTPUT_DIR + "C" };
+								input("B"),
+		                        output("C") };
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       RI_HOME + INPUT_DIR + " "+ RI_HOME + EXPECTED_DIR;
+			       inputDir() + " "+ expectedDir();
 	
 			Random rand=new Random(System.currentTimeMillis());
-			loadTestConfiguration(config);
 			double sparsity=rand.nextDouble();
 			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
 	        writeInputMatrix("A", A, true);

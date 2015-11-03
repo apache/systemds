@@ -25,14 +25,11 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 public class ScalarToMatrixInLoopTest extends AutomatedTestBase 
 {
-
+	private static final String TEST_DIR = "functions/terms/";
 	
-	@SuppressWarnings("deprecation")
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/terms/";
-
-		availableTestConfigurations.put("ScalarToMatrixInLoop", new TestConfiguration("TestScalarToMatrixInLoop", new String[] {}));
+		addTestConfiguration("ScalarToMatrixInLoop", new TestConfiguration(TEST_DIR, "TestScalarToMatrixInLoop", new String[] {}));
 	}
 
 	@Test

@@ -26,14 +26,11 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class ScalarMatrixUnaryBinaryTermTest extends AutomatedTestBase 
 {
-
+	private static final String TEST_DIR = "functions/terms/";
 	
-	@SuppressWarnings("deprecation")
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/terms/";
-
-		availableTestConfigurations.put("TestTerm1", new TestConfiguration("TestTerm1", new String[] {}));
+		addTestConfiguration("TestTerm1", new TestConfiguration(TEST_DIR, "TestTerm1", new String[] {}));
 	}
 
 	@Test

@@ -22,7 +22,6 @@ import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
@@ -35,7 +34,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
@@ -92,7 +91,7 @@ public class AppendMSPInstruction extends BinarySPInstruction
 		int bclen = mc1.getColsPerBlock();
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		Broadcast<PartitionedMatrixBlock> in2 = sec.getBroadcastForVariable( input2.getName() );
+		PartitionedBroadcastMatrix in2 = sec.getBroadcastForVariable( input2.getName() );
 		long off = sec.getScalarInput( _offset.getName(), _offset.getValueType(), _offset.isLiteral()).getLongValue();
 		
 		//execute map-append operations (partitioning preserving if #in-blocks = #out-blocks)
@@ -139,14 +138,14 @@ public class AppendMSPInstruction extends BinarySPInstruction
 	{
 		private static final long serialVersionUID = 2738541014432173450L;
 		
-		private Broadcast<PartitionedMatrixBlock> _pm = null;
+		private PartitionedBroadcastMatrix _pm = null;
 		private boolean _cbind = true;
 		private long _offset; 
 		private int _brlen; 
 		private int _bclen;
 		private long _lastBlockColIndex;
 		
-		public MapSideAppendFunction(Broadcast<PartitionedMatrixBlock> binput, boolean cbind, long offset, int brlen, int bclen)  
+		public MapSideAppendFunction(PartitionedBroadcastMatrix binput, boolean cbind, long offset, int brlen, int bclen)  
 		{
 			_pm = binput;
 			_cbind = cbind;
@@ -185,12 +184,12 @@ public class AppendMSPInstruction extends BinarySPInstruction
 				if( _cbind ) {
 					ret.add( new Tuple2<MatrixIndexes, MatrixBlock>(
 							new MatrixIndexes(ix.getRowIndex(), ix.getColumnIndex()+1),
-							_pm.getValue().getMatrixBlock((int)ix.getRowIndex(), 1)) );
+							_pm.getMatrixBlock((int)ix.getRowIndex(), 1)) );
 				}
 				else { //rbind
 					ret.add( new Tuple2<MatrixIndexes, MatrixBlock>(
 							new MatrixIndexes(ix.getRowIndex()+1, ix.getColumnIndex()),
-							_pm.getValue().getMatrixBlock(1, (int)ix.getColumnIndex())) );	
+							_pm.getMatrixBlock(1, (int)ix.getColumnIndex())) );	
 				}
 			}
 			//case 3: append operation on boundary block
@@ -203,7 +202,7 @@ public class AppendMSPInstruction extends BinarySPInstruction
 				
 				MatrixBlock value_in2 = null;
 				if( _cbind ) {
-					value_in2 = _pm.getValue().getMatrixBlock((int)ix.getRowIndex(), 1);
+					value_in2 = _pm.getMatrixBlock((int)ix.getRowIndex(), 1);
 					if(in1.getValue().getNumColumns()+value_in2.getNumColumns()>_bclen) {
 						IndexedMatrixValue second=new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
 						second.getIndexes().setIndexes(ix.getRowIndex(), ix.getColumnIndex()+1);
@@ -211,7 +210,7 @@ public class AppendMSPInstruction extends BinarySPInstruction
 					}
 				}
 				else { //rbind
-					value_in2 = _pm.getValue().getMatrixBlock(1, (int)ix.getColumnIndex());
+					value_in2 = _pm.getMatrixBlock(1, (int)ix.getColumnIndex());
 					if(in1.getValue().getNumRows()+value_in2.getNumRows()>_brlen) {
 						IndexedMatrixValue second=new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
 						second.getIndexes().setIndexes(ix.getRowIndex()+1, ix.getColumnIndex());
@@ -234,11 +233,11 @@ public class AppendMSPInstruction extends BinarySPInstruction
 	{
 		private static final long serialVersionUID = 5767240739761027220L;
 
-		private Broadcast<PartitionedMatrixBlock> _pm = null;
+		private PartitionedBroadcastMatrix _pm = null;
 		private boolean _cbind = true;
 		private long _lastBlockColIndex = -1;
 		
-		public MapSideAppendPartitionFunction(Broadcast<PartitionedMatrixBlock> binput, boolean cbind, long offset, int brlen, int bclen)  
+		public MapSideAppendPartitionFunction(PartitionedBroadcastMatrix binput, boolean cbind, long offset, int brlen, int bclen)  
 		{
 			_pm = binput;
 			_cbind = cbind;
@@ -270,9 +269,6 @@ public class AppendMSPInstruction extends BinarySPInstruction
 			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg)
 				throws Exception
 			{
-				//get the broadcast once
-				PartitionedMatrixBlock pm = _pm.value();
-				
 				MatrixIndexes ix = arg._1();
 				MatrixBlock in1 = arg._2();
 				
@@ -284,7 +280,7 @@ public class AppendMSPInstruction extends BinarySPInstruction
 				else {
 					int rowix = _cbind ? (int)ix.getRowIndex() : 1;
 					int colix = _cbind ? 1 : (int)ix.getColumnIndex();					
-					MatrixBlock in2 = pm.getMatrixBlock(rowix, colix);
+					MatrixBlock in2 = _pm.getMatrixBlock(rowix, colix);
 					MatrixBlock out = in1.appendOperations(in2, new MatrixBlock(), _cbind);
 					return new Tuple2<MatrixIndexes,MatrixBlock>(ix, out);
 				}	

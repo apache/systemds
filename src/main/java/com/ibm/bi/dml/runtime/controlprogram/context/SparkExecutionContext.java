@@ -45,6 +45,7 @@ import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
@@ -328,30 +329,52 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public Broadcast<PartitionedMatrixBlock> getBroadcastForVariable( String varname ) 
+	@SuppressWarnings("unchecked")
+	public PartitionedBroadcastMatrix getBroadcastForVariable( String varname ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		MatrixObject mo = getMatrixObject(varname);
 		
-		Broadcast<PartitionedMatrixBlock> bret = null;
+		PartitionedBroadcastMatrix bret = null;
+		
 		if(    mo.getBroadcastHandle()!=null 
-			&& mo.getBroadcastHandle().getBroadcast().isValid() ) 
+			&& mo.getBroadcastHandle().isValid() ) 
 		{
 			//reuse existing broadcast handle
 			bret = mo.getBroadcastHandle().getBroadcast();
 		}
 		else 
 		{
+			//obtain meta data for matrix 
 			int brlen = (int) mo.getNumRowsPerBlock();
 			int bclen = (int) mo.getNumColumnsPerBlock();
 			
-			//read data into memory (no matter where it comes from)
+			//create partitioned matrix block and release memory consumed by input
 			MatrixBlock mb = mo.acquireRead();
 			PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(mb, brlen, bclen);
-			bret = getSparkContext().broadcast(pmb);
+			mo.release();
+			
+			//determine coarse-grained partitioning
+			int numPerPart = PartitionedBroadcastMatrix.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), brlen, bclen);
+			int numParts = (int) Math.ceil((double)pmb.getNumRowBlocks()*pmb.getNumColumnBlocks() / numPerPart); 
+			Broadcast<PartitionedMatrixBlock>[] ret = new Broadcast[numParts];
+					
+			//create coarse-grained partitioned broadcasts
+			if( numParts > 1 ) {
+				for( int i=0; i<numParts; i++ ) {
+					int offset = i * numPerPart;
+					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
+					PartitionedMatrixBlock tmp = pmb.createPartition(offset, numBlks);
+					ret[i] = getSparkContext().broadcast(tmp);
+				}
+			}
+			else { //single partition
+				ret[0] = getSparkContext().broadcast( pmb);
+			}
+		
+			bret = new PartitionedBroadcastMatrix(ret);
 			BroadcastObject bchandle = new BroadcastObject(bret, varname);
 			mo.setBroadcastHandle(bchandle);
-			mo.release();
 		}
 		
 		return bret;
@@ -818,8 +841,11 @@ public class SparkExecutionContext extends ExecutionContext
 		//cleanup current lineage object (from driver/executors)
 		if( lob instanceof RDDObject )
 			cleanupRDDVariable(((RDDObject)lob).getRDD());
-		else if( lob instanceof BroadcastObject )
-			cleanupBroadcastVariable(((BroadcastObject)lob).getBroadcast());
+		else if( lob instanceof BroadcastObject ) {
+			PartitionedBroadcastMatrix pbm = ((BroadcastObject)lob).getBroadcast();
+			for( Broadcast<PartitionedMatrixBlock> bc : pbm.getBroadcasts() )
+				cleanupBroadcastVariable(bc);
+		}
 	
 		//recursively process lineage children
 		for( LineageObject c : lob.getLineageChilds() ){

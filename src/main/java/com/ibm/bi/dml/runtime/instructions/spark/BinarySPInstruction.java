@@ -18,7 +18,6 @@
 package com.ibm.bi.dml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.broadcast.Broadcast;
 
 import com.ibm.bi.dml.lops.BinaryM.VectorType;
 import com.ibm.bi.dml.parser.Expression.DataType;
@@ -29,7 +28,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixMatrixBinaryOpFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixVectorBinaryOpPartitionFunction;
@@ -156,7 +155,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		String rddVar = input1.getName(); 
 		String bcastVar = input2.getName();
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-		Broadcast<PartitionedMatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
+		PartitionedBroadcastMatrix in2 = sec.getBroadcastForVariable( bcastVar );
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(rddVar);
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(bcastVar);
 		

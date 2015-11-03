@@ -23,7 +23,6 @@ import java.util.Iterator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
@@ -36,7 +35,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.IsBlockInRange;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
@@ -181,7 +180,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex"))
 		{
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			Broadcast<PartitionedMatrixBlock> broadcastIn2 = null;
+			PartitionedBroadcastMatrix broadcastIn2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 			
@@ -386,13 +385,13 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 	{
 		private static final long serialVersionUID = 1757075506076838258L;
 		
-		private Broadcast<PartitionedMatrixBlock> _binput;
+		private PartitionedBroadcastMatrix _binput;
 		private IndexRange _ixrange;
 		private int _brlen;
 		private int _bclen;
 		
 		
-		public LeftIndexPartitionFunction(Broadcast<PartitionedMatrixBlock> binput, IndexRange ixrange, MatrixCharacteristics mc) 
+		public LeftIndexPartitionFunction(PartitionedBroadcastMatrix binput, IndexRange ixrange, MatrixCharacteristics mc) 
 		{
 			_binput = binput;
 			_ixrange = ixrange;
@@ -437,8 +436,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
 				
 				// Provide global zero-based index to sliceOperations
-				PartitionedMatrixBlock rhsMatBlock = _binput.getValue();
-				MatrixBlock slicedRHSMatBlock = rhsMatBlock.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
+				MatrixBlock slicedRHSMatBlock = _binput.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
 				
 				// Provide local zero-based index to leftIndexingOperations
 				int lhs_lrl = UtilFunctions.cellInBlockCalculation(lhs_rl, _brlen);

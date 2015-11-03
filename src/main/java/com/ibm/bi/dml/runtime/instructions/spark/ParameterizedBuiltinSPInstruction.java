@@ -24,7 +24,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
@@ -43,7 +42,7 @@ import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractGroup;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.ExtractGroupNWeights;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
@@ -251,7 +250,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//get input rdd handle
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( rddInVar );
 			JavaPairRDD<MatrixIndexes,MatrixBlock> off;
-			Broadcast<PartitionedMatrixBlock> broadcastOff;
+			PartitionedBroadcastMatrix broadcastOff;
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(rddInVar);
 			boolean rows = sec.getScalarInput(params.get("margin"), ValueType.STRING, true).getStringValue().equals("rows");
 			long maxDim = sec.getScalarInput(params.get("maxdim"), ValueType.DOUBLE, false).getLongValue();
@@ -426,9 +425,9 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		private long _brlen;
 		private long _bclen;
 		
-		Broadcast<PartitionedMatrixBlock> _off = null;
+		private PartitionedBroadcastMatrix _off = null;
 				
-		public RDDRemoveEmptyFunctionInMem(boolean rmRows, long len, long brlen, long bclen,Broadcast<PartitionedMatrixBlock> off) 
+		public RDDRemoveEmptyFunctionInMem(boolean rmRows, long len, long brlen, long bclen, PartitionedBroadcastMatrix off) 
 		{
 			_rmRows = rmRows;
 			_len = len;
@@ -446,9 +445,9 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//IndexedMatrixValue offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2()._2());
 			IndexedMatrixValue offsets = null;
 			if(_rmRows)
-				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.value().getMatrixBlock((int)arg0._1().getRowIndex(), 1));
+				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getMatrixBlock((int)arg0._1().getRowIndex(), 1));
 			else
-				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.value().getMatrixBlock(1, (int)arg0._1().getColumnIndex()));
+				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getMatrixBlock(1, (int)arg0._1().getColumnIndex()));
 			
 			//execute remove empty operations
 			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();

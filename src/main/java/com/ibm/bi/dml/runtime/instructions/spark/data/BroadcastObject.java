@@ -21,10 +21,9 @@ import org.apache.spark.broadcast.Broadcast;
 
 public class BroadcastObject extends LineageObject
 {
-
-	private Broadcast<PartitionedMatrixBlock> _bcHandle = null;
+	private PartitionedBroadcastMatrix _bcHandle = null;
 	
-	public BroadcastObject( Broadcast<PartitionedMatrixBlock> bvar, String varName )
+	public BroadcastObject( PartitionedBroadcastMatrix bvar, String varName )
 	{
 		_bcHandle = bvar;
 		_varName = varName;
@@ -34,8 +33,21 @@ public class BroadcastObject extends LineageObject
 	 * 
 	 * @return
 	 */
-	public Broadcast<PartitionedMatrixBlock> getBroadcast()
+	public PartitionedBroadcastMatrix getBroadcast()
 	{
 		return _bcHandle;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isValid() 
+	{
+		Broadcast<PartitionedMatrixBlock>[] tmp = _bcHandle.getBroadcasts();
+		for( Broadcast<PartitionedMatrixBlock> bc : tmp )
+			if( !bc.isValid() )
+				return false;		
+		return true;
 	}
 }

@@ -57,6 +57,7 @@ public class PartitionedMatrixBlock implements Externalizable
 	private int _clen = -1;
 	private int _brlen = -1;
 	private int _bclen = -1;
+	private int _offset = 0;
 	
 	public PartitionedMatrixBlock() {
 		//do nothing (required for Externalizable)
@@ -92,6 +93,8 @@ public class PartitionedMatrixBlock implements Externalizable
 		catch(Exception ex) {
 			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
 		}
+		
+		_offset = 0;
 	}
 	
 	public PartitionedMatrixBlock(int rlen, int clen, int brlen, int bclen) 
@@ -107,6 +110,22 @@ public class PartitionedMatrixBlock implements Externalizable
 		_partBlocks = new MatrixBlock[nrblks * ncblks];		
 	}
 	
+	public long getNumRows() {
+		return _rlen;
+	}
+	
+	public long getNumCols() {
+		return _clen;
+	}
+	
+	public long getNumRowsPerBlock() {
+		return _brlen;
+	}
+	
+	public long getNumColumnsPerBlock() {
+		return _bclen;
+	}
+	
 	/**
 	 * 
 	 * @return
@@ -114,14 +133,6 @@ public class PartitionedMatrixBlock implements Externalizable
 	public int getNumRowBlocks() 
 	{
 		return (int)Math.ceil((double)_rlen/_brlen);
-	}
-	
-	public long getNumRows() {
-		return _rlen;
-	}
-	
-	public long getNumCols() {
-		return _clen;
 	}
 	
 	/**
@@ -153,7 +164,8 @@ public class PartitionedMatrixBlock implements Externalizable
 		//get the requested matrix block
 		int rix = rowIndex - 1;
 		int cix = colIndex - 1;
-		return _partBlocks[rix*ncblks + cix];
+		int ix = rix*ncblks+cix - _offset;
+		return _partBlocks[ ix ];
 	}
 	
 	/**
@@ -176,7 +188,8 @@ public class PartitionedMatrixBlock implements Externalizable
 		//get the requested matrix block
 		int rix = rowIndex - 1;
 		int cix = colIndex - 1;
-		_partBlocks[rix*ncblks + cix] = mb;
+		int ix = rix*ncblks+cix - _offset;
+		_partBlocks[ ix ] = mb;
 		
 	}
 	
@@ -186,7 +199,7 @@ public class PartitionedMatrixBlock implements Externalizable
 	 */
 	public long estimateSizeInMemory()
 	{
-		long ret = 8; //header
+		long ret = 24; //header
 		ret += 32;    //block array
 		
 		if( _partBlocks != null )
@@ -202,7 +215,7 @@ public class PartitionedMatrixBlock implements Externalizable
 	 */
 	public long estimateSizeOnDisk()
 	{
-		long ret = 8; //header
+		long ret = 24; //header
 		
 		if( _partBlocks != null )
 			for( MatrixBlock mb : _partBlocks )
@@ -211,6 +224,26 @@ public class PartitionedMatrixBlock implements Externalizable
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param offset
+	 * @param numBlks
+	 * @return
+	 */
+	public PartitionedMatrixBlock createPartition( int offset, int numBlks )
+	{
+		PartitionedMatrixBlock ret = new PartitionedMatrixBlock();
+		ret._rlen = _rlen;
+		ret._clen = _clen;
+		ret._brlen = _brlen;
+		ret._bclen = _bclen;
+		ret._partBlocks = new MatrixBlock[numBlks];
+		ret._offset = offset;
+		
+		System.arraycopy(_partBlocks, offset, ret._partBlocks, 0, numBlks);
+		
+		return ret;
+	}
 
 	/**
 	 * Utility for slice operations over partitioned matrices, where the index range can cover
@@ -321,6 +354,8 @@ public class PartitionedMatrixBlock implements Externalizable
 		dos.writeInt(_clen);
 		dos.writeInt(_brlen);
 		dos.writeInt(_bclen);
+		dos.writeInt(_offset);
+		dos.writeInt(_partBlocks.length);
 		for( MatrixBlock mb : _partBlocks )
 			mb.write(dos);
 	}
@@ -337,11 +372,12 @@ public class PartitionedMatrixBlock implements Externalizable
 		_clen = dis.readInt();
 		_brlen = dis.readInt();
 		_bclen = dis.readInt();
-		int nrblks = getNumRowBlocks();
-		int ncblks = getNumColumnBlocks();
-		_partBlocks = new MatrixBlock[nrblks * ncblks];
+		_offset = dis.readInt();
 		
-		for( int i=0; i<_partBlocks.length; i++ ){
+		int len = dis.readInt();
+		_partBlocks = new MatrixBlock[len];
+		
+		for( int i=0; i<len; i++ ) {
 			_partBlocks[i] = new MatrixBlock();
 			_partBlocks[i].readFields(dis);
 		}

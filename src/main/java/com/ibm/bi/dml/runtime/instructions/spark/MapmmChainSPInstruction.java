@@ -21,7 +21,6 @@ package com.ibm.bi.dml.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
@@ -33,7 +32,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
@@ -127,7 +126,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		
 		//get rdd and broadcast inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getBinaryBlockRDDHandleForVariable( _input1.getName() );
-		Broadcast<PartitionedMatrixBlock> inV = sec.getBroadcastForVariable( _input2.getName() );
+		PartitionedBroadcastMatrix inV = sec.getBroadcastForVariable( _input2.getName() );
 		
 		//execute mapmmchain (guaranteed to have single output block)
 		MatrixBlock out = null;
@@ -137,7 +136,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 			out = RDDAggregateUtils.sumStable(tmp);		
 		}
 		else { // ChainType.XtwXv
-			Broadcast<PartitionedMatrixBlock> inW = sec.getBroadcastForVariable( _input3.getName() );
+			PartitionedBroadcastMatrix inW = sec.getBroadcastForVariable( _input3.getName() );
 			RDDMapMMChainFunction2 fmmc = new RDDMapMMChainFunction2(inV, inW);
 			JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = inX.mapToPair(fmmc);
 			out = RDDAggregateUtils.sumStable(tmp);		
@@ -157,9 +156,9 @@ public class MapmmChainSPInstruction extends SPInstruction
 	{
 		private static final long serialVersionUID = 8197406787010296291L;
 
-		private Broadcast<PartitionedMatrixBlock> _pmV = null;
+		private PartitionedBroadcastMatrix _pmV = null;
 		
-		public RDDMapMMChainFunction( Broadcast<PartitionedMatrixBlock> bV) 
+		public RDDMapMMChainFunction( PartitionedBroadcastMatrix bV) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
 		{			
 			//get first broadcast vector (always single block)
@@ -170,7 +169,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		public MatrixBlock call( MatrixBlock arg0 ) 
 			throws Exception 
 		{
-			MatrixBlock pmV = _pmV.value().getMatrixBlock(1, 1);
+			MatrixBlock pmV = _pmV.getMatrixBlock(1, 1);
 			
 			//execute mapmmchain operation
 			MatrixBlock out = new MatrixBlock();
@@ -186,10 +185,10 @@ public class MapmmChainSPInstruction extends SPInstruction
 	{
 		private static final long serialVersionUID = -7926980450209760212L;
 
-		private Broadcast<PartitionedMatrixBlock> _pmV = null;
-		private Broadcast<PartitionedMatrixBlock> _pmW = null;
+		private PartitionedBroadcastMatrix _pmV = null;
+		private PartitionedBroadcastMatrix _pmW = null;
 		
-		public RDDMapMMChainFunction2( Broadcast<PartitionedMatrixBlock> bV, Broadcast<PartitionedMatrixBlock> bW) 
+		public RDDMapMMChainFunction2( PartitionedBroadcastMatrix bV, PartitionedBroadcastMatrix bW) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
 		{			
 			//get both broadcast vectors (first always single block)
@@ -201,7 +200,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
-			MatrixBlock pmV = _pmV.value().getMatrixBlock(1, 1);
+			MatrixBlock pmV = _pmV.getMatrixBlock(1, 1);
 			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
@@ -211,8 +210,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//execute mapmmchain operation
-			PartitionedMatrixBlock pmW = _pmW.value();
-			blkIn.chainMatrixMultOperations(pmV, pmW.getMatrixBlock(rowIx,1), blkOut, ChainType.XtwXv);
+			blkIn.chainMatrixMultOperations(pmV, _pmW.getMatrixBlock(rowIx,1), blkOut, ChainType.XtwXv);
 				
 			//output new tuple
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);

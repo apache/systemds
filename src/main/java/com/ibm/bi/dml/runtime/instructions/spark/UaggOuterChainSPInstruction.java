@@ -41,7 +41,7 @@ import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
 import com.ibm.bi.dml.runtime.instructions.spark.functions.AggregateDropCorrectionFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
@@ -157,7 +157,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		}
 		else
 		{
-			Broadcast<PartitionedMatrixBlock> bv = sec.getBroadcastForVariable( bcastVar ); 
+			PartitionedBroadcastMatrix bv = sec.getBroadcastForVariable( bcastVar ); 
 			
 			//partitioning-preserving map-to-pair (under constraints)
 			out = in1.mapPartitionsToPair( new RDDMapGenUAggOuterChainFunction(bv, _uaggOp, _aggOp, _bOp, mcIn), noKeyChange );	
@@ -313,7 +313,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 	{
 		private static final long serialVersionUID = 8197406787010296291L;
 
-		private Broadcast<PartitionedMatrixBlock> _pbc = null;
+		private PartitionedBroadcastMatrix _pbc = null;
 		
 		// Operators
 		private AggregateUnaryOperator _uaggOp = null;
@@ -326,10 +326,9 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 		private MatrixValue _tmpVal1 = null;
 		private MatrixValue _tmpVal2 = null;
 
-		public RDDMapGenUAggOuterChainFunction(Broadcast<PartitionedMatrixBlock> binput, AggregateUnaryOperator uaggOp, AggregateOperator aggOp, BinaryOperator bOp, 
+		public RDDMapGenUAggOuterChainFunction(PartitionedBroadcastMatrix binput, AggregateUnaryOperator uaggOp, AggregateOperator aggOp, BinaryOperator bOp, 
 				MatrixCharacteristics mc)
 		{
-			//partition vector for fast in memory lookup
 			_pbc = binput;
 			
 			// Operators
@@ -362,8 +361,6 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg)
 				throws Exception
 			{
-				PartitionedMatrixBlock pm = _pbc.value();
-				
 				MatrixIndexes in1Ix = arg._1();
 				MatrixBlock in1Val  = arg._2();
 
@@ -372,11 +369,11 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 				MatrixBlock corr = null;
 				
 					
-				long  in2_colBlocks = pm.getNumColumnBlocks();
+				long  in2_colBlocks = _pbc.getNumColumnBlocks();
 				
 				for(int bidx=1; bidx <= in2_colBlocks; bidx++) 
 				{
-					MatrixValue in2Val = pm.getMatrixBlock(1, bidx);
+					MatrixValue in2Val = _pbc.getMatrixBlock(1, bidx);
 					
 					//outer block operation
 					OperationsOnMatrixValues.performBinaryIgnoreIndexes(in1Val, in2Val, _tmpVal1, _bOp);

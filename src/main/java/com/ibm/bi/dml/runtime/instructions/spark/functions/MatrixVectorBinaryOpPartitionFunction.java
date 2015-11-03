@@ -20,13 +20,12 @@ package com.ibm.bi.dml.runtime.instructions.spark.functions;
 import java.util.Iterator;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
 import com.ibm.bi.dml.lops.BinaryM.VectorType;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LazyIterableIterator;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
@@ -36,10 +35,10 @@ public class MatrixVectorBinaryOpPartitionFunction implements PairFlatMapFunctio
 	private static final long serialVersionUID = 9096091404578628534L;
 	
 	private BinaryOperator _op = null;
-	private Broadcast<PartitionedMatrixBlock> _pmV = null;
+	private PartitionedBroadcastMatrix _pmV = null;
 	private VectorType _vtype = null;
 	
-	public MatrixVectorBinaryOpPartitionFunction( BinaryOperator op, Broadcast<PartitionedMatrixBlock> binput, VectorType vtype ) 
+	public MatrixVectorBinaryOpPartitionFunction( BinaryOperator op, PartitionedBroadcastMatrix binput, VectorType vtype ) 
 	{
 		_op = op;
 		_pmV = binput;
@@ -75,7 +74,7 @@ public class MatrixVectorBinaryOpPartitionFunction implements PairFlatMapFunctio
 			//get the rhs block 
 			int rix= (int)((_vtype==VectorType.COL_VECTOR) ? ix.getRowIndex() : 1);
 			int cix= (int)((_vtype==VectorType.COL_VECTOR) ? 1 : ix.getColumnIndex());
-			MatrixBlock in2 = _pmV.value().getMatrixBlock(rix, cix);
+			MatrixBlock in2 = _pmV.getMatrixBlock(rix, cix);
 				
 			//execute the binary operation
 			MatrixBlock ret = (MatrixBlock) (in1.binaryOperations (_op, in2, new MatrixBlock()));

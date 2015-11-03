@@ -37,18 +37,16 @@ import com.ibm.bi.dml.test.utils.TestUtils;
  */
 public class MatrixReshapeTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "MatrixReshape1";
 	private final static String TEST_NAME2 = "MatrixReshape2";
 	private final static String TEST_DIR = "functions/reorg/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + MatrixReshapeTest.class.getSimpleName() + "/";
 
 	//note: (1) even number of rows/cols required, (2) same dims because controlled via exec platform
 	private final static int rows1 = 35;
 	private final static int cols1 = 25;
 	private final static int rows2 = 2500; 
 	private final static int cols2 = 1500; 
-	
-	
 	
 	private final static double sparsityDense = 0.7;
 	private final static double sparsitySparse = 0.1;
@@ -66,15 +64,11 @@ public class MatrixReshapeTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "Y" })   );
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Y" }) );
 		
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, 
-				new String[] { "Y" })   );
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Y" }) );
 	}
 
 	//CP exec type
@@ -365,22 +359,17 @@ public class MatrixReshapeTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols);
+			loadTestConfiguration(config);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "X" , 
-					                            String.valueOf(rows),
-												String.valueOf(cols),
-												String.valueOf(trows),
-												String.valueOf(tcols),
-												HOME + OUTPUT_DIR + "Y" };
+			programArgs = new String[]{"-args", input("X"), String.valueOf(rows), String.valueOf(cols),
+				String.valueOf(trows), String.valueOf(tcols), output("Y") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		           HOME + INPUT_DIR + " " + trows + " " + tcols + " " + HOME + EXPECTED_DIR;
-			
-			loadTestConfiguration(config);
+		           inputDir() + " " + trows + " " + tcols + " " + expectedDir();
 			
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 			writeInputMatrix("X", X, true); 

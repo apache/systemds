@@ -39,12 +39,11 @@ import com.ibm.bi.dml.test.utils.TestUtils;
  */
 public class FullOrderTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "Order";
 	private final static String TEST_NAME2 = "OrderDyn";
 	
-	
 	private final static String TEST_DIR = "functions/reorg/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FullOrderTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1017;
@@ -74,15 +73,16 @@ public class FullOrderTest extends AutomatedTestBase
 
 		long elapsedMsec = System.currentTimeMillis() - startMsec;
 		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
-
 	}
 	
 	@Override
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"B"})); 
-		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_DIR, TEST_NAME2,new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME1,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"B"}));
+		addTestConfiguration(TEST_NAME2,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"B"}));
 	}
 
 	
@@ -948,22 +948,18 @@ public class FullOrderTest extends AutomatedTestBase
 			int bycol = matrix ? by : 1;
 			double sparsity = dtype==InputType.DENSE ? sparsity1 : sparsity2;
 			
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
-					                        Integer.toString(bycol),
-					                        Boolean.toString(desc).toUpperCase(),
-					                        Boolean.toString(ixreturn).toUpperCase(),
-					                        HOME + OUTPUT_DIR + "B"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + bycol + " " + Boolean.toString(desc).toUpperCase() + " " + 
-				   Boolean.toString(ixreturn).toUpperCase() + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-explain","-args", input("A"), Integer.toString(bycol),
+				Boolean.toString(desc).toUpperCase(), Boolean.toString(ixreturn).toUpperCase(), output("B") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + 
+				bycol + " " + Boolean.toString(desc).toUpperCase() + " " + 
+				Boolean.toString(ixreturn).toUpperCase() + " " + expectedDir();
 	
 			//generate actual dataset 
 			double min = (dtype==InputType.EMPTY)? 0 : -1;

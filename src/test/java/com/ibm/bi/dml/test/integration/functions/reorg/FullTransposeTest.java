@@ -35,11 +35,10 @@ import com.ibm.bi.dml.test.utils.TestUtils;
  */
 public class FullTransposeTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "Transpose";
-
 	
 	private final static String TEST_DIR = "functions/reorg/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FullTransposeTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1751;
@@ -58,7 +57,8 @@ public class FullTransposeTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"Y"})); 
+		addTestConfiguration(TEST_NAME1,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"Y"})); 
 	}
 
 	
@@ -208,20 +208,16 @@ public class FullTransposeTest extends AutomatedTestBase
 			
 			double sparsity = (sparse) ? sparsity1 : sparsity2;
 			
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "X",
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        HOME + OUTPUT_DIR + "Y"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-args", input("X"),
+				Integer.toString(rows), Integer.toString(cols), output("Y") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset 
 			double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7); 

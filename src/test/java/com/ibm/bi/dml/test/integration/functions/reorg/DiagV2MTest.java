@@ -31,8 +31,8 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class DiagV2MTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_DIR = "functions/reorg/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + DiagV2MTest.class.getSimpleName() + "/";
 
 	private final static double epsilon=0.0000000001;
 	private final static int rows = 1059;
@@ -41,8 +41,8 @@ public class DiagV2MTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("DiagV2MTest", new TestConfiguration(TEST_DIR, "DiagV2MTest", 
-				new String[] {"C"}));
+		addTestConfiguration("DiagV2MTest", 
+			new TestConfiguration(TEST_CLASS_DIR, "DiagV2MTest", new String[] {"C"}));
 	}
 	
 	public void commonReorgTest(RUNTIME_PLATFORM platform)
@@ -58,32 +58,27 @@ public class DiagV2MTest extends AutomatedTestBase
 
 		try {
 	        config.addVariable("rows", rows);
+			loadTestConfiguration(config);
 	          
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + "DiagV2MTest" + ".dml";
-			programArgs = new String[]{"-explain", "-args",  RI_HOME + INPUT_DIR + "A" , 
-					Long.toString(rows), RI_HOME + OUTPUT_DIR + "C" };
+			programArgs = new String[]{"-explain", "-args",  input("A"), Long.toString(rows), output("C") };
+			
 			fullRScriptName = RI_HOME + "DiagV2MTest" + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       RI_HOME + INPUT_DIR + " "+ RI_HOME + EXPECTED_DIR;
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			Random rand=new Random(System.currentTimeMillis());
-			loadTestConfiguration(config);
 			double sparsity=0.599200924665577;//rand.nextDouble();
 			double[][] A = getRandomMatrix(rows, 1, min, max, sparsity, 1397289950533L); // System.currentTimeMillis()
 	        writeInputMatrix("A", A, true);
 	        sparsity=rand.nextDouble();   
 			
-	        //boolean exceptionExpected = false;
-			//int expectedNumberOfJobs = 12;
-			//runTest(exceptionExpected, null, expectedNumberOfJobs);
 	        boolean exceptionExpected = false;
 			int expectedNumberOfJobs = -1;
 			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
 			
 			runRScript(true);
-			//disableOutAndExpectedDeletion();
 		
 			for(String file: config.getOutputFiles())
 			{

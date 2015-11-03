@@ -1,12 +1,11 @@
 ---
 layout: global
 title: SystemML Debugger Guide
-displayTitle: SystemML Debugger Guide
-displayTitle: <a href="debugger-guide.html">SystemML Debugger Guide</a>
+description: SystemML Debugger Guide
 ---
 
 
-# SystemML Debugger
+## Overview
 
 SystemML supports DML script-level debugging through a command line interface.  The SystemML debugger provides functionality typically found in a debugging environment like setting breakpoints, controlling program execution, and inspecting variables.  To run a script in debug mode, specify the '-debug' option as shown in below example.
 

@@ -18,6 +18,7 @@ For more information about SystemML, please consult the following references:
 * [Quick Start Guide](quick-start-guide.html)
 * [DML and PyDML Programming Guide](dml-and-pydml-programming-guide.html)
 * [MLContext Programming Guide](mlcontext-programming-guide.html)
+* [Debugger Guide](debugger-guide.html)
 * [Algorithms Reference](algorithms-reference.html)
 * [DML (R-like Declarative Machine Learning) Language Reference](dml-language-reference.html)
 * PyDML (Python-Like Declarative Machine Learning) Language Reference - **Coming Soon**

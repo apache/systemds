@@ -40,23 +40,23 @@ public class LiteralOp extends Hop
 		//default constructor for clone
 	}
 	
-	public LiteralOp(String l, double value) {
-		super(l, DataType.SCALAR, ValueType.DOUBLE);
+	public LiteralOp(double value) {
+		super(String.valueOf(value), DataType.SCALAR, ValueType.DOUBLE);
 		this.value_double = value;
 	}
 
-	public LiteralOp(String l, long value) {
-		super(l, DataType.SCALAR, ValueType.INT);
+	public LiteralOp(long value) {
+		super(String.valueOf(value), DataType.SCALAR, ValueType.INT);
 		this.value_long = value;
 	}
 
-	public LiteralOp(String l, String value) {
-		super(l, DataType.SCALAR, ValueType.STRING);
+	public LiteralOp(String value) {
+		super(value, DataType.SCALAR, ValueType.STRING);
 		this.value_string = value;
 	}
 
-	public LiteralOp(String l, boolean value) {
-		super(l, DataType.SCALAR, ValueType.BOOLEAN);
+	public LiteralOp(boolean value) {
+		super(String.valueOf(value), DataType.SCALAR, ValueType.BOOLEAN);
 		this.value_boolean = value;
 	}
 

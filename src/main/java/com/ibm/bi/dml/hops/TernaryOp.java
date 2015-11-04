@@ -504,7 +504,7 @@ public class TernaryOp extends Hop
 								new Lop[] {					
 										group, //matrix
 										getInput().get(2).constructLops(), //weight
-										new LiteralOp(String.valueOf(left),left).constructLops() //left
+										new LiteralOp(left).constructLops() //left
 								},
 								tertiaryOp,
 								getDataType(), getValueType(), et);
@@ -513,7 +513,7 @@ public class TernaryOp extends Hop
 								new Lop[] {					
 										group,//getInput().get(1).constructLops(), //matrix
 										getInput().get(2).constructLops(), //weight
-										new LiteralOp(String.valueOf(left),left).constructLops(), //left
+										new LiteralOp(left).constructLops(), //left
 										inputLops[3],
 										inputLops[4]
 								},

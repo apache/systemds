@@ -1236,7 +1236,7 @@ public class InterProceduralAnalysis
 			//algebraic simplification rewrites; otherwise more complex
 			//recursive processing of childs and rewiring required)
 			HopRewriteUtils.removeChildReferenceByPos(hop, hop.getInput().get(1), 1);
-			HopRewriteUtils.addChildReference(hop, new LiteralOp("1",1), 1);
+			HopRewriteUtils.addChildReference(hop, new LiteralOp(1), 1);
 		}
 		
 		//recursively process child nodes

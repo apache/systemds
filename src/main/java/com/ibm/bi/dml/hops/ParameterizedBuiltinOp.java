@@ -401,7 +401,7 @@ public class ParameterizedBuiltinOp extends Hop
 				//step1: compute index vectors
 				Hop ppred0 = input;
 				if( !isPPredInput ) { //ppred only if required
-					ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+					ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp(0));
 					HopRewriteUtils.updateHopCharacteristics(ppred0, brlen, bclen, memo, this);
 				}
 				
@@ -420,7 +420,7 @@ public class ParameterizedBuiltinOp extends Hop
 				else //GENERAL CASE: GENERAL PERMUTATION MATRIX
 				{
 					//max ensures non-zero entries and at least one output row
-					BinaryOp max = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MAX, cumsum, new LiteralOp("1",1));
+					BinaryOp max = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MAX, cumsum, new LiteralOp(1));
 					HopRewriteUtils.updateHopCharacteristics(max, brlen, bclen, memo, this);
 					
 					DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(input);
@@ -470,7 +470,7 @@ public class ParameterizedBuiltinOp extends Hop
 				
 				if(selectHop == null) {
 					//Step1: compute row/col non-empty indicators 
-					ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+					ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp(0));
 					HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
 					ppred0.refreshSizeInformation();
 					ppred0.setForcedExecType(ExecType.MR); //always MR 
@@ -581,7 +581,7 @@ public class ParameterizedBuiltinOp extends Hop
 			
 			if(selectHop == null) {
 				//Step1: compute row/col non-empty indicators 
-				ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
+				ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp(0));
 				HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
 				ppred0.refreshSizeInformation();
 				ppred0.setForcedExecType(ExecType.SPARK); //always Spark

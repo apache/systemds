@@ -147,9 +147,9 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		HashMap<String, Lop> inputLops = new HashMap<String, Lop>();
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
 			if( cur.getKey().equals(DataExpression.RAND_ROWS) && _dim1>0 )
-				inputLops.put(cur.getKey(), new LiteralOp(String.valueOf(_dim1), _dim1).constructLops());
+				inputLops.put(cur.getKey(), new LiteralOp(_dim1).constructLops());
 			else if( cur.getKey().equals(DataExpression.RAND_COLS) && _dim2>0 )
-				inputLops.put(cur.getKey(), new LiteralOp(String.valueOf(_dim2), _dim2).constructLops());
+				inputLops.put(cur.getKey(), new LiteralOp(_dim2).constructLops());
 			else
 				inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
 		}

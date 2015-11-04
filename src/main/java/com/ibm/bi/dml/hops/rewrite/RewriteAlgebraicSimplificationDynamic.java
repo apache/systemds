@@ -194,8 +194,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				//remove unnecessary right indexing
 				HopRewriteUtils.removeChildReference(parent, hi);
 				
-				Hop hnew = HopRewriteUtils.createDataGenOpByVal( new LiteralOp(String.valueOf(hi.getDim1()), hi.getDim1()), 
-						                                         new LiteralOp(String.valueOf(hi.getDim2()), hi.getDim2()), 0);
+				Hop hnew = HopRewriteUtils.createDataGenOpByVal( new LiteralOp(hi.getDim1()), 
+						                                         new LiteralOp(hi.getDim2()), 0);
 				HopRewriteUtils.addChildReference(parent, hnew, pos);
 				parent.refreshSizeInformation();
 				hi = hnew;
@@ -787,7 +787,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 					Hop hnew = null;
 					if( uhi.getDirection() == Direction.RowCol ) 
-						hnew = new LiteralOp("0", 0.0);
+						hnew = new LiteralOp(0.0);
 					else if( uhi.getDirection() == Direction.Col ) 
 						hnew = HopRewriteUtils.createDataGenOp(uhi, input, 0); //nrow(uhi)=1
 					else //if( uhi.getDirection() == Direction.Row ) 
@@ -872,7 +872,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 							hnew = HopRewriteUtils.createDataGenOp(input, false, input, true, 0);
 						else //diagm2v
 							hnew = HopRewriteUtils.createDataGenOpByVal(
-									HopRewriteUtils.createValueHop(input,true), new LiteralOp("1",1), 0);
+									HopRewriteUtils.createValueHop(input,true), new LiteralOp(1), 0);
 					}
 				}
 				else if( rhi.getOp() == ReOrgOp.RESHAPE )
@@ -1463,7 +1463,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					case MINUS: {
 						if( HopRewriteUtils.isEmpty(left) && notBinaryMV ) { //empty left
 							HopRewriteUtils.removeChildReference(hi, left);
-							HopRewriteUtils.addChildReference(hi, new LiteralOp("0",0), 0);
+							HopRewriteUtils.addChildReference(hi, new LiteralOp(0), 0);
 							hnew = hi;
 						}
 						else if( HopRewriteUtils.isEmpty(right) ) //empty and size known
@@ -1533,7 +1533,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
 				
 				//create new operators 
-				BinaryOp minus = new BinaryOp(hi.getName(), hi.getDataType(), hi.getValueType(), OpOp2.MINUS, new LiteralOp("0",0), hi);			
+				BinaryOp minus = new BinaryOp(hi.getName(), hi.getDataType(), hi.getValueType(), OpOp2.MINUS, new LiteralOp(0), hi);			
 				minus.setRowsInBlock(hi.getRowsInBlock());
 				minus.setColsInBlock(hi.getColsInBlock());
 				
@@ -1568,7 +1568,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				ArrayList<Hop> parents = (ArrayList<Hop>) hi.getParent().clone();
 				
 				//create new operators 
-				BinaryOp minus = new BinaryOp(hi.getName(), hi.getDataType(), hi.getValueType(), OpOp2.MINUS, new LiteralOp("0",0), hi);			
+				BinaryOp minus = new BinaryOp(hi.getName(), hi.getDataType(), hi.getValueType(), OpOp2.MINUS, new LiteralOp(0), hi);			
 				minus.setRowsInBlock(hi.getRowsInBlock());
 				minus.setColsInBlock(hi.getColsInBlock());
 				
@@ -1715,7 +1715,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		
 			//apply rewrite if known nnz 
 			if( X != null && X.getNnz() > 0 ){
-				Hop hnew = new LiteralOp(String.valueOf(X.getNnz()), X.getNnz());
+				Hop hnew = new LiteralOp(X.getNnz());
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
 				HopRewriteUtils.addChildReference(parent, hnew, pos);
 				

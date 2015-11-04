@@ -297,21 +297,21 @@ public class HopRewriteUtils
 	public static Hop createDataGenOp( Hop input, double value ) 
 		throws HopsException
 	{		
-		Hop rows = (input.getDim1()>0) ? new LiteralOp(String.valueOf(input.getDim1()),input.getDim1()) : 
+		Hop rows = (input.getDim1()>0) ? new LiteralOp(input.getDim1()) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
-		Hop cols = (input.getDim2()>0) ? new LiteralOp(String.valueOf(input.getDim2()),input.getDim2()) :
+		Hop cols = (input.getDim2()>0) ? new LiteralOp(input.getDim2()) :
 			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, input);
-		Hop val = new LiteralOp(String.valueOf(value), value);
+		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<String, Hop>();
 		params.put(DataExpression.RAND_ROWS, rows);
 		params.put(DataExpression.RAND_COLS, cols);
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
-		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
-		params.put(DataExpression.RAND_LAMBDA, new LiteralOp("-1.0",-1.0));
-		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
-		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
+		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
@@ -356,8 +356,8 @@ public class HopRewriteUtils
 		smin = smin * scale + shift;
 		smax = smax * scale + shift;
 		
-		Hop sminHop = new LiteralOp(String.valueOf(smin), smin);
-		Hop smaxHop = new LiteralOp(String.valueOf(smax), smax);
+		Hop sminHop = new LiteralOp(smin);
+		Hop smaxHop = new LiteralOp(smax);
 		
 		HashMap<String, Hop> params2 = new HashMap<String, Hop>();
 		params2.put(DataExpression.RAND_ROWS, rows);
@@ -384,21 +384,21 @@ public class HopRewriteUtils
 	public static Hop createDataGenOp( Hop rowInput, Hop colInput, double value ) 
 		throws HopsException
 	{		
-		Hop rows = (rowInput.getDim1()>0) ? new LiteralOp(String.valueOf(rowInput.getDim1()),rowInput.getDim1()) : 
+		Hop rows = (rowInput.getDim1()>0) ? new LiteralOp(rowInput.getDim1()) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, rowInput);
-		Hop cols = (colInput.getDim2()>0) ? new LiteralOp(String.valueOf(colInput.getDim2()),colInput.getDim2()) :
+		Hop cols = (colInput.getDim2()>0) ? new LiteralOp(colInput.getDim2()) :
 			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, colInput);
-		Hop val = new LiteralOp(String.valueOf(value), value);
+		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<String, Hop>();
 		params.put(DataExpression.RAND_ROWS, rows);
 		params.put(DataExpression.RAND_COLS, cols);
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
-		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
-		params.put(DataExpression.RAND_LAMBDA, new LiteralOp("-1.0",-1.0));
-		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
-		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
+		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
@@ -417,21 +417,21 @@ public class HopRewriteUtils
 		long nrow = tRowInput ? rowInput.getDim2() : rowInput.getDim1();
 		long ncol = tColInput ? colInput.getDim1() : rowInput.getDim2();
 		
-		Hop rows = (nrow>0) ? new LiteralOp(String.valueOf(nrow), nrow) : 
+		Hop rows = (nrow>0) ? new LiteralOp(nrow) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, tRowInput?OpOp1.NCOL:OpOp1.NROW, rowInput);
-		Hop cols = (ncol>0) ? new LiteralOp(String.valueOf(ncol), ncol) :
+		Hop cols = (ncol>0) ? new LiteralOp(ncol) :
 			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, tColInput?OpOp1.NROW:OpOp1.NCOL, colInput);
-		Hop val = new LiteralOp(String.valueOf(value), value);
+		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<String, Hop>();
 		params.put(DataExpression.RAND_ROWS, rows);
 		params.put(DataExpression.RAND_COLS, cols);
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
-		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
-		params.put(DataExpression.RAND_LAMBDA,new LiteralOp("-1.0",-1.0));
-		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
-		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_LAMBDA,new LiteralOp(-1.0));
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
+		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
@@ -447,17 +447,17 @@ public class HopRewriteUtils
 	public static Hop createDataGenOpByVal( Hop rowInput, Hop colInput, double value ) 
 		throws HopsException
 	{		
-		Hop val = new LiteralOp(String.valueOf(value), value);
+		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<String, Hop>();
 		params.put(DataExpression.RAND_ROWS, rowInput);
 		params.put(DataExpression.RAND_COLS, colInput);
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
-		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM,DataExpression.RAND_PDF_UNIFORM));
-		params.put(DataExpression.RAND_LAMBDA, new LiteralOp("-1.0",-1.0));
-		params.put(DataExpression.RAND_SPARSITY, new LiteralOp("1.0",1.0));		
-		params.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
+		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
+		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
@@ -510,7 +510,7 @@ public class HopRewriteUtils
 	 */
 	public static BinaryOp createMinus(Hop input)
 	{
-		BinaryOp minus = new BinaryOp(input.getName(), input.getDataType(), input.getValueType(), OpOp2.MINUS, new LiteralOp("0", 0), input);
+		BinaryOp minus = new BinaryOp(input.getName(), input.getDataType(), input.getValueType(), OpOp2.MINUS, new LiteralOp(0), input);
 		HopRewriteUtils.setOutputBlocksizes(minus, input.getRowsInBlock(), input.getColsInBlock());
 		HopRewriteUtils.copyLineNumbers(input, minus);
 		minus.refreshSizeInformation();	
@@ -557,11 +557,11 @@ public class HopRewriteUtils
 	{
 		Hop ret = null;
 		if( row ){
-			ret = (hop.getDim1()>0) ? new LiteralOp(String.valueOf(hop.getDim1()),hop.getDim1()) : 
+			ret = (hop.getDim1()>0) ? new LiteralOp(hop.getDim1()) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, hop);
 		}
 		else{
-			ret = (hop.getDim2()>0) ? new LiteralOp(String.valueOf(hop.getDim2()),hop.getDim2()) :
+			ret = (hop.getDim2()>0) ? new LiteralOp(hop.getDim2()) :
 			       new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, hop);
 		}
 		
@@ -578,19 +578,19 @@ public class HopRewriteUtils
 	public static DataGenOp createSeqDataGenOp( Hop input, boolean asc ) 
 		throws HopsException
 	{		
-		Hop to = (input.getDim1()>0) ? new LiteralOp(String.valueOf(input.getDim1()),input.getDim1()) : 
+		Hop to = (input.getDim1()>0) ? new LiteralOp(input.getDim1()) : 
 			       new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
 		
 		HashMap<String, Hop> params = new HashMap<String, Hop>();
 		if( asc ) {
-			params.put(Statement.SEQ_FROM, new LiteralOp("1",1));
+			params.put(Statement.SEQ_FROM, new LiteralOp(1));
 			params.put(Statement.SEQ_TO, to);
-			params.put(Statement.SEQ_INCR, new LiteralOp("1",1));
+			params.put(Statement.SEQ_INCR, new LiteralOp(1));
 		}
 		else {
 			params.put(Statement.SEQ_FROM, to);
-			params.put(Statement.SEQ_TO, new LiteralOp("1",1));
-			params.put(Statement.SEQ_INCR, new LiteralOp("-1",-1));	
+			params.put(Statement.SEQ_TO, new LiteralOp(1));
+			params.put(Statement.SEQ_INCR, new LiteralOp(-1));	
 		}
 		
 		//note internal refresh size information

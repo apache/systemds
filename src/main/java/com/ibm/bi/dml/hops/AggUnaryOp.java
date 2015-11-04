@@ -661,7 +661,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		{
 			in1 = input11.constructLops();
 			in2 = input12.constructLops();
-			in3 = new LiteralOp("1",1).constructLops();
+			in3 = new LiteralOp(1).constructLops();
 		}
 
 		//create new ternary aggregate operator 

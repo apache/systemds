@@ -133,13 +133,13 @@ public class LiteralReplacement
 				ScalarObject sdat = (ScalarObject)dat;
 				switch( sdat.getValueType() ) {
 					case INT:
-						ret = new LiteralOp(String.valueOf(sdat.getLongValue()), sdat.getLongValue());		
+						ret = new LiteralOp(sdat.getLongValue());		
 						break;
 					case DOUBLE:
-						ret = new LiteralOp(String.valueOf(sdat.getDoubleValue()), sdat.getDoubleValue());	
+						ret = new LiteralOp(sdat.getDoubleValue());	
 						break;
 					case BOOLEAN:
-						ret = new LiteralOp(String.valueOf(sdat.getBooleanValue()), sdat.getBooleanValue());
+						ret = new LiteralOp(sdat.getBooleanValue());
 						break;
 					default:	
 						//otherwise: do nothing
@@ -172,13 +172,13 @@ public class LiteralReplacement
 				UnaryOp cast = (UnaryOp) c;
 				switch( cast.getOp() ) {
 					case CAST_AS_INT:
-						ret = new LiteralOp(String.valueOf(sdat.getLongValue()), sdat.getLongValue());		
+						ret = new LiteralOp(sdat.getLongValue());		
 						break;
 					case CAST_AS_DOUBLE:
-						ret = new LiteralOp(String.valueOf(sdat.getDoubleValue()), sdat.getDoubleValue());		
+						ret = new LiteralOp(sdat.getDoubleValue());		
 						break;						
 					case CAST_AS_BOOLEAN:
-						ret = new LiteralOp(String.valueOf(sdat.getBooleanValue()), sdat.getBooleanValue());		
+						ret = new LiteralOp(sdat.getBooleanValue());		
 						break;
 					default:	
 						//otherwise: do nothing
@@ -214,15 +214,15 @@ public class LiteralReplacement
 				switch( cast.getOp() ) {
 					case CAST_AS_INT:
 						long ival = HopRewriteUtils.getIntValue(sdat);
-						ret = new LiteralOp(String.valueOf(ival), ival);		
+						ret = new LiteralOp(ival);		
 						break;
 					case CAST_AS_DOUBLE:
 						long dval = HopRewriteUtils.getIntValue(sdat);
-						ret = new LiteralOp(String.valueOf(dval), dval);		
+						ret = new LiteralOp(dval);		
 						break;						
 					case CAST_AS_BOOLEAN:
 						boolean bval = HopRewriteUtils.getBooleanValue(sdat);
-						ret = new LiteralOp(String.valueOf(bval), bval);		
+						ret = new LiteralOp(bval);		
 						break;
 					default:	
 						//otherwise: do nothing
@@ -264,7 +264,7 @@ public class LiteralReplacement
 				mo.release();
 				
 				//literal substitution (always double)
-				ret = new LiteralOp(String.valueOf(value), value);
+				ret = new LiteralOp(value);
 			}
 		}
 
@@ -312,7 +312,7 @@ public class LiteralReplacement
 					mo.release();
 					
 					//literal substitution (always double)
-					ret = new LiteralOp(String.valueOf(value), value);
+					ret = new LiteralOp(value);
 				}
 			}
 		}
@@ -350,7 +350,7 @@ public class LiteralReplacement
 				mo.release();
 					
 				//literal substitution (always double)
-				ret = new LiteralOp(String.valueOf(value), value);
+				ret = new LiteralOp(value);
 			}		
 		}
 		
@@ -403,7 +403,7 @@ public class LiteralReplacement
 					mo.release();
 						
 					//literal substitution (always double)
-					ret = new LiteralOp(String.valueOf(value), value);
+					ret = new LiteralOp(value);
 				}
 			}		
 		}

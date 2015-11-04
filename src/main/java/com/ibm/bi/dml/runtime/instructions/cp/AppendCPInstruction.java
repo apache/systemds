@@ -86,7 +86,7 @@ public class AppendCPInstruction extends BinaryCPInstruction
 			if(matBlock1.getNumRows() != matBlock2.getNumRows()) {
 				throw new DMLRuntimeException("Append-cbind is not possible for input matrices " 
 											  + input1.getName() + " and " + input2.getName()
-											  + " with different number of rows");
+											  + " with different number of rows: "+matBlock1.getNumRows()+" vs "+matBlock2.getNumRows());
 			}
 				
 			//execute append operations (append both inputs to initially empty output)
@@ -107,7 +107,7 @@ public class AppendCPInstruction extends BinaryCPInstruction
 			if(matBlock1.getNumColumns() != matBlock2.getNumColumns()) {
 				throw new DMLRuntimeException("Append-rbind is not possible for input matrices " 
 											  + input1.getName() + " and " + input2.getName()
-											  + " with different number of columns");
+											  + " with different number of columns: "+matBlock1.getNumColumns()+" vs "+matBlock2.getNumColumns());
 			}
 			
 			//execute append operations (append both inputs to initially empty output)

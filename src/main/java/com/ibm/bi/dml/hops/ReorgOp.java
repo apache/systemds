@@ -180,14 +180,14 @@ public class ReorgOp extends Hop
 					if( !(desc instanceof LiteralOp && ixret instanceof LiteralOp) ) {
 						LOG.warn("Unsupported non-constant ordering parameters, using defaults and mark for recompilation.");
 						setRequiresRecompile();
-						desc = new LiteralOp("false", false);
-						ixret = new LiteralOp("false", false);
+						desc = new LiteralOp(false);
+						ixret = new LiteralOp(false);
 					}
 						
 					//Step 1: extraction (if unknown ncol or multiple columns)
 					Hop vinput = input;
 					if( input.getDim2() != 1 ) {
-						vinput = new IndexingOp("tmp1", getDataType(), getValueType(), input, new LiteralOp("1", 1L), 
+						vinput = new IndexingOp("tmp1", getDataType(), getValueType(), input, new LiteralOp(1L), 
 								HopRewriteUtils.createValueHop(input, true), by, by, false, true);
 						vinput.refreshSizeInformation();
 						HopRewriteUtils.setOutputBlocksizes(vinput, getRowsInBlock(), getColsInBlock());
@@ -224,9 +224,9 @@ public class ReorgOp extends Hop
 						//small vector, use in-memory sort
 						ArrayList<Hop> sinputs = new ArrayList<Hop>();
 						sinputs.add(vinput);
-						sinputs.add(new LiteralOp("1",1)); //by (always vector)
+						sinputs.add(new LiteralOp(1)); //by (always vector)
 						sinputs.add(desc);
-						sinputs.add(new LiteralOp("TRUE", true)); //indexreturn (always indexes)
+						sinputs.add(new LiteralOp(true)); //indexreturn (always indexes)
 						voutput = new ReorgOp("tmp3", getDataType(), getValueType(), ReOrgOp.SORT, sinputs); 
 						HopRewriteUtils.copyLineNumbers(this, voutput);	
 						//explicitly construct CP lop; otherwise there is danger of infinite recursion if forced runtime platform.
@@ -247,7 +247,7 @@ public class ReorgOp extends Hop
 						HopRewriteUtils.copyLineNumbers(this, seq);	
 						
 						//generate table
-						TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp("1",1L) );
+						TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp(1L) );
 						HopRewriteUtils.setOutputBlocksizes(table, getRowsInBlock(), getColsInBlock());
 						table.refreshSizeInformation();
 						table.setForcedExecType(ExecType.MR); //force MR 

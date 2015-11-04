@@ -1466,13 +1466,13 @@ public class DMLTranslator
 				return processIndexingExpression(sourceIndexed,target,hops);
 			} else if (source instanceof IntIdentifier) {
 				IntIdentifier sourceInt = (IntIdentifier) source;
-				LiteralOp litop = new LiteralOp(Long.toString(sourceInt.getValue()), sourceInt.getValue());
+				LiteralOp litop = new LiteralOp(sourceInt.getValue());
 				litop.setAllPositions(sourceInt.getBeginLine(), sourceInt.getBeginColumn(), sourceInt.getEndLine(), sourceInt.getEndColumn());
 				setIdentifierParams(litop, sourceInt);
 				return litop;
 			} else if (source instanceof DoubleIdentifier) {
 				DoubleIdentifier sourceDouble = (DoubleIdentifier) source;
-				LiteralOp litop = new LiteralOp(Double.toString(sourceDouble.getValue()), sourceDouble.getValue());
+				LiteralOp litop = new LiteralOp(sourceDouble.getValue());
 				litop.setAllPositions(sourceDouble.getBeginLine(), sourceDouble.getBeginColumn(), sourceDouble.getEndLine(), sourceDouble.getEndColumn());
 				setIdentifierParams(litop, sourceDouble);
 				return litop;
@@ -1481,13 +1481,13 @@ public class DMLTranslator
 				return hops.get(sourceId.getName());
 			} else if (source instanceof BooleanIdentifier) {
 				BooleanIdentifier sourceBoolean = (BooleanIdentifier) source;
-				LiteralOp litop = new LiteralOp(String.valueOf(sourceBoolean.getValue()), sourceBoolean.getValue());
+				LiteralOp litop = new LiteralOp(sourceBoolean.getValue());
 				litop.setAllPositions(sourceBoolean.getBeginLine(), sourceBoolean.getBeginColumn(), sourceBoolean.getEndLine(), sourceBoolean.getEndColumn());
 				setIdentifierParams(litop, sourceBoolean);
 				return litop;
 			} else if (source instanceof StringIdentifier) {
 				StringIdentifier sourceString = (StringIdentifier) source;
-				LiteralOp litop = new LiteralOp(sourceString.getValue(), sourceString.getValue());
+				LiteralOp litop = new LiteralOp(sourceString.getValue());
 				litop.setAllPositions(sourceString.getBeginLine(), sourceString.getBeginColumn(), sourceString.getEndLine(), sourceString.getEndColumn());
 				setIdentifierParams(litop, sourceString);
 				return litop;
@@ -1564,14 +1564,14 @@ public class DMLTranslator
 		if (target.getRowLowerBound() != null)
 			rowLowerHops = processExpression(target.getRowLowerBound(),null,hops);
 		else
-			rowLowerHops = new LiteralOp(Long.toString(1), 1);
+			rowLowerHops = new LiteralOp(1);
 		
 		if (target.getRowUpperBound() != null)
 			rowUpperHops = processExpression(target.getRowUpperBound(),null,hops);
 		else
 		{
 			if ( target.getDim1() != -1 ) 
-				rowUpperHops = new LiteralOp(Long.toString(target.getOrigDim1()), target.getOrigDim1());
+				rowUpperHops = new LiteralOp(target.getOrigDim1());
 			else
 			{
 				try {
@@ -1587,14 +1587,14 @@ public class DMLTranslator
 		if (target.getColLowerBound() != null)
 			colLowerHops = processExpression(target.getColLowerBound(),null,hops);
 		else
-			colLowerHops = new LiteralOp(Long.toString(1), 1);
+			colLowerHops = new LiteralOp(1);
 		
 		if (target.getColUpperBound() != null)
 			colUpperHops = processExpression(target.getColUpperBound(),null,hops);
 		else
 		{
 			if ( target.getDim2() != -1 ) 
-				colUpperHops = new LiteralOp(Long.toString(target.getOrigDim2()), target.getOrigDim2());
+				colUpperHops = new LiteralOp(target.getOrigDim2());
 			else
 			{
 				try {
@@ -1647,14 +1647,14 @@ public class DMLTranslator
 		if (source.getRowLowerBound() != null)
 			rowLowerHops = processExpression(source.getRowLowerBound(),null,hops);
 		else
-			rowLowerHops = new LiteralOp(Long.toString(1), 1);
+			rowLowerHops = new LiteralOp(1);
 		
 		if (source.getRowUpperBound() != null)
 			rowUpperHops = processExpression(source.getRowUpperBound(),null,hops);
 		else
 		{
 			if ( source.getOrigDim1() != -1 ) 
-				rowUpperHops = new LiteralOp(Long.toString(source.getOrigDim1()), source.getOrigDim1());
+				rowUpperHops = new LiteralOp(source.getOrigDim1());
 			else
 			{
 				try {
@@ -1670,14 +1670,14 @@ public class DMLTranslator
 		if (source.getColLowerBound() != null)
 			colLowerHops = processExpression(source.getColLowerBound(),null,hops);
 		else
-			colLowerHops = new LiteralOp(Long.toString(1), 1);
+			colLowerHops = new LiteralOp(1);
 		
 		if (source.getColUpperBound() != null)
 			colUpperHops = processExpression(source.getColUpperBound(),null,hops);
 		else
 		{
 			if ( source.getOrigDim2() != -1 ) 
-				colUpperHops = new LiteralOp(Long.toString(source.getOrigDim2()), source.getOrigDim2());
+				colUpperHops = new LiteralOp(source.getOrigDim2());
 			else
 			{
 				try {
@@ -1873,23 +1873,23 @@ public class DMLTranslator
 		switch(op) {
 		case QNORM:
 		case PNORM:
-			distLop = new LiteralOp("normal", "normal");
+			distLop = new LiteralOp("normal");
 			break;
 		case QT:
 		case PT:
-			distLop = new LiteralOp("t", "t");
+			distLop = new LiteralOp("t");
 			break;
 		case QF:
 		case PF:
-			distLop = new LiteralOp("f", "f");
+			distLop = new LiteralOp("f");
 			break;
 		case QCHISQ:
 		case PCHISQ:
-			distLop = new LiteralOp("chisq", "chisq");
+			distLop = new LiteralOp("chisq");
 			break;
 		case QEXP:
 		case PEXP:
-			distLop = new LiteralOp("exp", "exp");
+			distLop = new LiteralOp("exp");
 			break;
 			
 		case CDF:
@@ -2230,7 +2230,7 @@ public class DMLTranslator
 				currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NROW, expr);
 			}
 			else {
-				currBuiltinOp = new LiteralOp(Long.toString(nRows), nRows);
+				currBuiltinOp = new LiteralOp(nRows);
 			}
 			break;
 
@@ -2243,7 +2243,7 @@ public class DMLTranslator
 				currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NCOL, expr);
 			}
 			else {
-				currBuiltinOp = new LiteralOp(Long.toString(nCols), nCols);
+				currBuiltinOp = new LiteralOp(nCols);
 			}
 			break;
 		case LENGTH:
@@ -2258,7 +2258,7 @@ public class DMLTranslator
 			}
 			else {
 				long lval = (nCols2 * nRows2);
-				currBuiltinOp = new LiteralOp(Long.toString(lval), lval);
+				currBuiltinOp = new LiteralOp(lval);
 			}
 			break;
 
@@ -2276,7 +2276,7 @@ public class DMLTranslator
 			else {
 				// example: x = mean(Y,W);
 				// stable weighted mean is implemented by using centralMoment with order = 0
-				Hop orderHop = new LiteralOp(Integer.toString(0), 0);
+				Hop orderHop = new LiteralOp(0);
 				currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 						Hop.OpOp3.CENTRALMOMENT, expr, expr2, orderHop);
 			}
@@ -2367,7 +2367,7 @@ public class DMLTranslator
 			case 4:
 				// example DML statement: F = ctable(A,B) or F = ctable(A,B,10,15)
 				// here, weight is interpreted as 1.0
-				Hop weightHop = new LiteralOp(Double.toString(1.0), 1.0);
+				Hop weightHop = new LiteralOp(1.0);
 				// set dimensions
 				weightHop.setDim1(0);
 				weightHop.setDim2(0);
@@ -2621,7 +2621,7 @@ public class DMLTranslator
 			HashMap<String,Hop> tmpparams = new HashMap<String, Hop>();
 			tmpparams.put(DataExpression.RAND_MAX, expr); //range
 			tmpparams.put(DataExpression.RAND_ROWS, expr2);
-			tmpparams.put(DataExpression.RAND_COLS, new LiteralOp("1",1));
+			tmpparams.put(DataExpression.RAND_COLS, new LiteralOp(1));
 			
 			if ( in.length == 4 ) 
 			{
@@ -2635,11 +2635,11 @@ public class DMLTranslator
 				if ( expr3.getValueType() == ValueType.BOOLEAN ) 
 				{
 					tmpparams.put(DataExpression.RAND_PDF, expr3);
-					tmpparams.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+					tmpparams.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 				}
 				else if ( expr3.getValueType() == ValueType.INT ) 
 				{
-					tmpparams.put(DataExpression.RAND_PDF, new LiteralOp(String.valueOf(false), false));
+					tmpparams.put(DataExpression.RAND_PDF, new LiteralOp(false));
 					tmpparams.put(DataExpression.RAND_SEED, expr3 );
 				}
 				else 
@@ -2648,8 +2648,8 @@ public class DMLTranslator
 			}
 			else if ( in.length == 2 )
 			{
-				tmpparams.put(DataExpression.RAND_PDF, new LiteralOp(String.valueOf(false), false));
-				tmpparams.put(DataExpression.RAND_SEED, new LiteralOp(String.valueOf(DataGenOp.UNSPECIFIED_SEED),DataGenOp.UNSPECIFIED_SEED) );
+				tmpparams.put(DataExpression.RAND_PDF, new LiteralOp(false));
+				tmpparams.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 			}
 			
 			currBuiltinOp = new DataGenOp(DataGenMethod.SAMPLE, target, tmpparams);

@@ -19,6 +19,8 @@ package com.ibm.bi.dml.hops.rewrite;
 
 import java.util.ArrayList;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -46,8 +48,11 @@ import com.ibm.bi.dml.parser.WhileStatementBlock;
  */
 public class ProgramRewriter 
 {
+	private static final Log LOG = LogFactory.getLog(ProgramRewriter.class.getName());
+	
 	//internal local debug level
 	private static final boolean LDEBUG = false; 
+	private static final boolean CHECK = false;
 	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
 	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;
@@ -269,6 +274,11 @@ public class ProgramRewriter
 		{
 			Hop.resetVisitStatus( roots ); //reset for each rule
 			roots = r.rewriteHopDAGs(roots, state);
+		
+			if( CHECK ) {		
+				LOG.info("Validation after: "+r.getClass().getName());
+				HopDagValidator.validateHopDag(roots);
+			}
 		}
 		
 		return roots;
@@ -287,6 +297,11 @@ public class ProgramRewriter
 		{
 			root.resetVisitStatus(); //reset for each rule
 			root = r.rewriteHopDAG(root, state);
+		
+			if( CHECK ) {
+				LOG.info("Validation after: "+r.getClass().getName());
+				HopDagValidator.validateHopDag(root);
+			}
 		}
 		
 		return root;

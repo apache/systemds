@@ -41,15 +41,16 @@ public class DiagTest extends AutomatedTestBase
 {
 
 	private static final String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + DiagTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		
 		// positive tests
-		addTestConfiguration("DiagTest", new TestConfiguration(TEST_DIR, "DiagTest", new String[] { "b", "d" }));
+		addTestConfiguration("DiagTest", new TestConfiguration(TEST_CLASS_DIR, "DiagTest", new String[] { "b", "d" }));
 		
 		// negative tests
-		addTestConfiguration("WrongDimensionsTest", new TestConfiguration(TEST_DIR, "DiagSingleTest",
+		addTestConfiguration("WrongDimensionsTest", new TestConfiguration(TEST_CLASS_DIR, "DiagSingleTest",
 				new String[] { "b" }));
 	}
 	

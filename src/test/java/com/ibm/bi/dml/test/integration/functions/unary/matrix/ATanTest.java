@@ -29,17 +29,18 @@ public class ATanTest extends AutomatedTestBase
 {
 	
 	private static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ATanTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		
 		addTestConfiguration("PositiveTest",
-				new TestConfiguration(TEST_DIR, "ATanTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration(TEST_CLASS_DIR, "ATanTest", new String[] { "vector", "matrix" }));
 		addTestConfiguration("NegativeTest",
-				new TestConfiguration(TEST_DIR, "ATanTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration(TEST_CLASS_DIR, "ATanTest", new String[] { "vector", "matrix" }));
 		addTestConfiguration("RandomTest",
-				new TestConfiguration(TEST_DIR, "ATanTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration(TEST_CLASS_DIR, "ATanTest", new String[] { "vector", "matrix" }));
 	}
 	
 	@Test

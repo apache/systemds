@@ -39,9 +39,9 @@ import com.ibm.bi.dml.utils.Statistics;
  */
 public class FullSelectPosTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "SelPos";
 	private final static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FullSelectPosTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-10;
 	
@@ -54,7 +54,7 @@ public class FullSelectPosTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
 	}
 
 	@Test
@@ -145,19 +145,17 @@ public class FullSelectPosTest extends AutomatedTestBase
 		{
 			double sparsity = (sparse) ? spSparse : spDense;
 			
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats", "-args",  //stats required for opcode check
-											HOME + INPUT_DIR + "A",
-					                        HOME + OUTPUT_DIR + "B"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
 			
-			loadTestConfiguration(config);
+			//stats parameter required for opcode check
+			programArgs = new String[]{"-stats", "-args", input("A"), output("B") };
+			
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset 
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, sparsity, 7); 

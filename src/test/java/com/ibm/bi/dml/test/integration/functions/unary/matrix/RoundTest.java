@@ -41,7 +41,8 @@ public class RoundTest extends AutomatedTestBase
 	};
 	
 	private final static String TEST_DIR = "functions/unary/matrix/";
-
+	private static final String TEST_CLASS_DIR = TEST_DIR + RoundTest.class.getSimpleName() + "/";
+	
 	private final static int rows1 = 200;
 	private final static int cols1 = 200;    
 	private final static int rows2 = 1500;
@@ -52,9 +53,9 @@ public class RoundTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_TYPE.ROUND.scriptName, new TestConfiguration(TEST_DIR, TEST_TYPE.ROUND.scriptName, new String[] { "R" }));
-		addTestConfiguration(TEST_TYPE.FLOOR.scriptName, new TestConfiguration(TEST_DIR, TEST_TYPE.FLOOR.scriptName, new String[] { "R" }));
-		addTestConfiguration(TEST_TYPE.CEIL.scriptName,  new TestConfiguration(TEST_DIR, TEST_TYPE.CEIL.scriptName, new String[] { "R" }));
+		addTestConfiguration(TEST_TYPE.ROUND.scriptName, new TestConfiguration(TEST_CLASS_DIR, TEST_TYPE.ROUND.scriptName, new String[] { "R" }));
+		addTestConfiguration(TEST_TYPE.FLOOR.scriptName, new TestConfiguration(TEST_CLASS_DIR, TEST_TYPE.FLOOR.scriptName, new String[] { "R" }));
+		addTestConfiguration(TEST_TYPE.CEIL.scriptName,  new TestConfiguration(TEST_CLASS_DIR, TEST_TYPE.CEIL.scriptName, new String[] { "R" }));
 	}
 	
 	@Test
@@ -466,30 +467,24 @@ public class RoundTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(test.scriptName);
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + test.scriptName + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "math" , 
-							                //Integer.toString(rows),
-							                //Integer.toString(cols),
-							                //Double.toString(sparsity),
-					                        HOME + OUTPUT_DIR + "R" };
+			programArgs = new String[]{"-args", input("math"), output("R") };
 	
 			fullRScriptName = HOME + test.scriptName + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;	
-	
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();	
 			
 			long seed = System.nanoTime();
-	        double[][] matrix = getRandomMatrix(rows, cols, 10, 20, sparsity, seed);
+			double[][] matrix = getRandomMatrix(rows, cols, 10, 20, sparsity, seed);
 			writeInputMatrixWithMTD("math", matrix, true);
 			
 			runTest(true, false, null, -1);
 			runRScript(true); 
 	
-			
-			TestUtils.compareDMLHDFSFileWithRFile(HOME + EXPECTED_DIR + "R", HOME + OUTPUT_DIR + "R", 1e-9);
+			TestUtils.compareDMLHDFSFileWithRFile(expected("R"), output("R"), 1e-9);
 		}
 		finally
 		{
@@ -497,6 +492,4 @@ public class RoundTest extends AutomatedTestBase
 			rtplatform = rtOld;
 		}
 	}
-	
-	
 }

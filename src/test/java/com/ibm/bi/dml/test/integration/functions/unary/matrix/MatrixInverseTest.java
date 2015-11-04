@@ -26,9 +26,9 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 public class MatrixInverseTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "Inverse";
 	private final static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + MatrixInverseTest.class.getSimpleName() + "/";
 
 	private final static int rows = 1001;
 	private final static int cols = 1001;
@@ -37,27 +37,21 @@ public class MatrixInverseTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "AI" })   ); 
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "AI" }) );
 
 		// *** GENERATE data ONCE, and use it FOR ALL tests involving w/ different platforms
 		// Therefore, data generation is done in setUp() method.
 		
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" , 
-											HOME + OUTPUT_DIR + config.getOutputFiles()[0] };
+		programArgs = new String[]{"-args", input("A"), output(config.getOutputFiles()[0]) };
 
 		fullRScriptName = HOME + TEST_NAME + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + "A.mtx" + " " + 
-			       HOME + EXPECTED_DIR + config.getOutputFiles()[0];
-
-		loadTestConfiguration(config);
+		rCmd = "Rscript" + " " + fullRScriptName + " " + input("A.mtx") + " " + 
+		    expected(config.getOutputFiles()[0]);
 		
 		double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 10);
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
@@ -103,7 +97,4 @@ public class MatrixInverseTest extends AutomatedTestBase
 		
 		rtplatform = rtold;
 	}
-	
-
-	
 }

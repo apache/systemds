@@ -28,16 +28,17 @@ public class ASinTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ASinTest.class.getSimpleName() + "/";
 	private static final double EPS = 1e-14;
 	
 	@Override
 	public void setUp() {
 		addTestConfiguration("PositiveTest",
-				new TestConfiguration(TEST_DIR, "ASinTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration(TEST_CLASS_DIR, "ASinTest", new String[] { "vector", "matrix" }));
 		addTestConfiguration("NegativeTest",
-				new TestConfiguration(TEST_DIR, "ASinTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration(TEST_CLASS_DIR, "ASinTest", new String[] { "vector", "matrix" }));
 		addTestConfiguration("RandomTest",
-				new TestConfiguration(TEST_DIR, "ASinTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration(TEST_CLASS_DIR, "ASinTest", new String[] { "vector", "matrix" }));
 	}
 	
 	@Test

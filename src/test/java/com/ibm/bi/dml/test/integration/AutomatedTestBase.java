@@ -127,7 +127,7 @@ public abstract class AutomatedTestBase
 	
 	/**
 	 * Script source directory for .dml and .r files only
-	 * (SCRIPT_TARGET_DIR for generated test data artifacts).
+	 * (TEST_DATA_DIR for generated test data artifacts).
 	 */
 	protected static final String SCRIPT_DIR = "./src/test/scripts/";
 	protected static final String INPUT_DIR = "in/";
@@ -174,6 +174,7 @@ public abstract class AutomatedTestBase
 	protected String fullRScriptName;
 	
 	protected static String baseDirectory;
+	protected static String sourceDirectory;
 	protected HashMap<String, TestConfiguration> availableTestConfigurations;
 	
 	/* For testing in the old way */
@@ -767,9 +768,11 @@ public abstract class AutomatedTestBase
 		if (testDirectory != null) {
 			if (isTargetTestDirectory(testDirectory)) {
 				baseDirectory = TEST_DATA_DIR + testDirectory;				
+				sourceDirectory = SCRIPT_DIR + getSourceDirectory(testDirectory);
 			}
 			else {
 				baseDirectory = SCRIPT_DIR + testDirectory;				
+				sourceDirectory = baseDirectory;
 			}
 		}
 		
@@ -879,7 +882,7 @@ public abstract class AutomatedTestBase
 	 */
 	protected void runRScript(boolean newWay) {
 	
-		String executionFile = baseDirectory + selectedTest + ".R"; 
+		String executionFile = sourceDirectory + selectedTest + ".R"; 
 		
 		// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 		// Some of the R scripts will fail if the "expected" directory doesn't exist.
@@ -917,7 +920,7 @@ public abstract class AutomatedTestBase
 			}
 		}
 		if( !newWay ) {
-		ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".R", testVariables);
+			ParameterBuilder.setVariablesInScript(sourceDirectory, selectedTest + ".R", testVariables);
 		}
 	
 		if (cacheDir.length() > 0)
@@ -1078,11 +1081,11 @@ public abstract class AutomatedTestBase
 	 */
 	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
 		
-		String executionFile = baseDirectory + selectedTest + ".dml";
+		String executionFile = sourceDirectory + selectedTest + ".dml";
 		
 		if( !newWay ) {
 			executionFile = executionFile + "t";
-			ParameterBuilder.setVariablesInScript(baseDirectory, selectedTest + ".dml", testVariables);
+			ParameterBuilder.setVariablesInScript(sourceDirectory, selectedTest + ".dml", testVariables);
 		}
 		
 		//cleanup scratch folder (prevent side effect between tests)
@@ -1412,8 +1415,8 @@ public abstract class AutomatedTestBase
 			TestUtils.clearDirectory(baseDirectory + OUTPUT_DIR);
 			TestUtils.removeHDFSFiles(expectedFiles.toArray(new String[expectedFiles.size()]));
 			TestUtils.clearDirectory(baseDirectory + EXPECTED_DIR);
-			TestUtils.removeFiles(new String[] { baseDirectory + selectedTest + ".dmlt" });
-			TestUtils.removeFiles(new String[] { baseDirectory + selectedTest + ".Rt" });
+			TestUtils.removeFiles(new String[] { sourceDirectory + selectedTest + ".dmlt" });
+			TestUtils.removeFiles(new String[] { sourceDirectory + selectedTest + ".Rt" });
 		}
 
 		TestUtils.clearAssertionInformation();
@@ -1602,5 +1605,20 @@ public abstract class AutomatedTestBase
 		if (cacheDir.length() > 0 && !cacheDir.endsWith("/")) {
 			cacheDir += "/";
 		}
+	}
+	
+	private String getSourceDirectory(String testDirectory) {
+		String sourceDirectory = "";
+		
+		if (null != testDirectory)
+		{
+			if (testDirectory.endsWith("/"))
+			{
+				testDirectory = testDirectory.substring(0, testDirectory.length() - "/".length());
+			}
+			sourceDirectory = testDirectory.substring(0, testDirectory.lastIndexOf("/") + "/".length());
+		}
+		
+		return sourceDirectory;
 	}
 }

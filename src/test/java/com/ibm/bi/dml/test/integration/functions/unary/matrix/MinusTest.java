@@ -30,9 +30,9 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class MinusTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "Minus";
 	private final static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + MinusTest.class.getSimpleName() + "/";
 
 	private final static int rows = 1501;
 	private final static int cols = 2502;
@@ -45,10 +45,8 @@ public class MinusTest extends AutomatedTestBase
 	{
 		TestUtils.clearAssertionInformation();
 		
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "Y" })   ); 
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Y" }) ); 
 	}
 	
 	@Test
@@ -113,14 +111,11 @@ public class MinusTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "X" , 
-					                            String.valueOf(rows),
-												String.valueOf(cols),
-												HOME + OUTPUT_DIR + "Y" };
-			fullRScriptName = HOME + TEST_NAME1 + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-args", 
+				input("X"), String.valueOf(rows), String.valueOf(cols), output("Y") };
 			
+			fullRScriptName = HOME + TEST_NAME1 + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			double sparsity = sparse ? sparsitySparse : sparsityDense;
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);

@@ -41,6 +41,7 @@ public class IQMTest extends AutomatedTestBase
 	};
 	
 	private final static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + IQMTest.class.getSimpleName() + "/";
 
 	private final static String[] datasets 
 	= {
@@ -78,7 +79,7 @@ public class IQMTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		availableTestConfigurations.put(TEST_TYPE.IQM.scriptName, new TestConfiguration(TEST_DIR,TEST_TYPE.IQM.scriptName, new String[] { "iqmFile", "iqmWtFile" }));
+		availableTestConfigurations.put(TEST_TYPE.IQM.scriptName, new TestConfiguration(TEST_CLASS_DIR, TEST_TYPE.IQM.scriptName, new String[] { "iqmFile", "iqmWtFile" }));
 	}
 	
 	@Test
@@ -261,14 +262,15 @@ public class IQMTest extends AutomatedTestBase
 			config.addVariable("rows", rows);
 			config.addVariable("cols", 1);
 	
+			loadTestConfiguration(config);
+	
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + test.scriptName + ".dml";
-			String outFile=HOME + OUTPUT_DIR + "iqmFile", wtOutFile=HOME + OUTPUT_DIR + "iqmWtFile";
-			programArgs = new String[]{"-args", dataString, weightsString, Integer.toString(rows), 
-					                        outFile, wtOutFile };
-	
-			loadTestConfiguration(config);
+			String outFile = output("iqmFile");
+			String wtOutFile = output("iqmWtFile");
+			programArgs = new String[]{"-args", dataString, weightsString, Integer.toString(rows),
+				outFile, wtOutFile };
 			
 			runTest(true, false, null, -1);
 	

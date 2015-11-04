@@ -29,6 +29,7 @@ public class LUFactorizeTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "lu";
 	private final static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + LUFactorizeTest.class.getSimpleName() + "/";
 
 	private final static int rows1 = 500;
 	private final static int rows2 = 2500;
@@ -39,12 +40,8 @@ public class LUFactorizeTest extends AutomatedTestBase
 	{
 		addTestConfiguration(
 				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, 
 				new String[] { "D" })   ); 
-
-		// *** GENERATE data ONCE, and use it FOR ALL tests involving w/ different platforms
-		// Therefore, data generation is done in setUp() method.
-		
 	}
 	
 	@Test
@@ -104,14 +101,11 @@ public class LUFactorizeTest extends AutomatedTestBase
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME1);
+			getAndLoadTestConfiguration(TEST_NAME1);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" ,
-												HOME + OUTPUT_DIR + "D" };
-	
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-args", input("A"), output("D") };
 			
 			double[][] A = getRandomMatrix(rows, rows, 0, 1, sparsity, 10);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, rows, -1, -1, -1);

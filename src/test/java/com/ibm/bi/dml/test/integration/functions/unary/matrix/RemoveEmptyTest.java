@@ -29,12 +29,12 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 public class RemoveEmptyTest extends AutomatedTestBase 
 {
-
 	private final static String TEST_NAME1 = "removeEmpty1";
 	private final static String TEST_NAME2 = "removeEmpty2";
 	private final static String TEST_NAME3 = "removeEmpty3";
 	private final static String TEST_NAME4 = "removeEmpty4";
 	private final static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RemoveEmptyTest.class.getSimpleName() + "/";
 
 	private final static int _rows = 3500;
 	private final static int _cols = 2500;
@@ -45,22 +45,14 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "V" })   ); 
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, 
-				new String[] { "V" })   ); 
-		addTestConfiguration(
-				TEST_NAME3, 
-				new TestConfiguration(TEST_DIR, TEST_NAME3, 
-				new String[] { "V" })   ); 
-		addTestConfiguration(
-				TEST_NAME4, 
-				new TestConfiguration(TEST_DIR, TEST_NAME4, 
-				new String[] { "V" })   ); 
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "V" }) );
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "V" }) );
+		addTestConfiguration(TEST_NAME3, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "V" }) );
+		addTestConfiguration(TEST_NAME4, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "V" }) );
 	}
 	
 	@Test
@@ -471,29 +463,23 @@ public class RemoveEmptyTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(testname);
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			if (!bSelectIndex) {
 				if(!testname.equals(TEST_NAME3))
-					programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "V" , 
-												margin,
-												HOME + OUTPUT_DIR + "V" };
+					programArgs = new String[]{"-explain", "-args", input("V"), 
+						margin, output("V") };
 				else
-					programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "V" ,
-						String.valueOf(rows),
-						String.valueOf(cols),
-						margin,
-						HOME + OUTPUT_DIR + "V" };					
+					programArgs = new String[]{"-explain", "-args", input("V"), 
+						String.valueOf(rows), String.valueOf(cols), margin, output("V") };
 			}
 			else
-				programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "V" , 
-												HOME + INPUT_DIR + "I" ,
-												margin,
-												HOME + OUTPUT_DIR + "V" };
+				programArgs = new String[]{"-explain", "-args", input("V"), input("I"),
+					margin, output("V") };
 			
-			loadTestConfiguration(config);
 			if( cols==1 ) //test3 (removeEmpty-diag)
 				createInputVector(margin, rows, sparsity, bSelectIndex);
 			else //test1/test2 (general case)

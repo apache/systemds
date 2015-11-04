@@ -29,6 +29,7 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "eigen";
 	private final static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + EigenFactorizeTest.class.getSimpleName() + "/";
 
 	private final static int rows1 = 500;
 	private final static int rows2 = 1000;
@@ -40,12 +41,8 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	{
 		addTestConfiguration(
 				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, 
 				new String[] { "D" })   ); 
-
-		// *** GENERATE data ONCE, and use it FOR ALL tests involving w/ different platforms
-		// Therefore, data generation is done in setUp() method.
-		
 	}
 	
 	@Test
@@ -105,15 +102,12 @@ public class EigenFactorizeTest extends AutomatedTestBase
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME1);
+			getAndLoadTestConfiguration(TEST_NAME1);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" ,
-												Integer.toString(numEigenValuesToEvaluate),
-												HOME + OUTPUT_DIR + "D" };
-	
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-args", input("A"),
+				Integer.toString(numEigenValuesToEvaluate), output("D") };
 			
 			double[][] A = getRandomMatrix(rows, rows, 0, 1, sparsity, 10);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, rows, -1, -1, -1);
@@ -121,9 +115,9 @@ public class EigenFactorizeTest extends AutomatedTestBase
 			
 			// Expected matrix = 1x1 zero matrix 
 			double[][] D  = new double[numEigenValuesToEvaluate][1];
-			//D[0][0] = 0.0;
-			for(int i=0; i < numEigenValuesToEvaluate; i++)
+			for(int i=0; i < numEigenValuesToEvaluate; i++) {
 				D[i][0] = 0.0;
+			}
 			writeExpectedMatrix("D", D);		
 			
 			boolean exceptionExpected = false;

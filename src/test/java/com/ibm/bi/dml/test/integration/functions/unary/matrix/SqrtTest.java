@@ -30,16 +30,17 @@ public class SqrtTest extends AutomatedTestBase
 {
 	
 	private static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + SqrtTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration("PositiveTest",
-				new TestConfiguration(TEST_DIR, "SqrtTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration(TEST_CLASS_DIR, "SqrtTest", new String[] { "vector", "matrix" }));
 		addTestConfiguration("NegativeVectorTest",
-				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "out" }));
+				new TestConfiguration(TEST_CLASS_DIR, "SqrtSingleTest", new String[] { "out" }));
 		addTestConfiguration("NegativeMatrixTest",
-				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "out" }));
+				new TestConfiguration(TEST_CLASS_DIR, "SqrtSingleTest", new String[] { "out" }));
 	}
 	
 	@Test

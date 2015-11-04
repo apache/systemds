@@ -29,12 +29,13 @@ public class CastAsScalarTest extends AutomatedTestBase
 {
 	    
     private final static String TEST_DIR = "functions/unary/matrix/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + CastAsScalarTest.class.getSimpleName() + "/";
     private final static String TEST_GENERAL = "General";
     
 
     @Override
     public void setUp() {
-        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_DIR, "CastAsScalarTest", new String[] { "b" }));
+        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_CLASS_DIR, "CastAsScalarTest", new String[] { "b" }));
     }
     
     @Test

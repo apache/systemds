@@ -34,7 +34,6 @@ import com.ibm.bi.dml.utils.Statistics;
 
 public class ReplaceTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "replace_value";
 	private final static String TEST_NAME2 = "replace_NaN";
 	private final static String TEST_NAME3 = "replace_Infinity";
@@ -42,6 +41,7 @@ public class ReplaceTest extends AutomatedTestBase
 	private final static String TEST_NAME5 = "replace_maxmin";
 	
 	private final static String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ReplaceTest.class.getSimpleName() + "/";
 
 	private final static int rows = 1577;
 	private final static int cols = 37;
@@ -52,23 +52,17 @@ public class ReplaceTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "C" })   ); 
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "C" })   ); 
-		addTestConfiguration(
-				TEST_NAME3, 
-				new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] { "C" })   ); 
-		addTestConfiguration(
-				TEST_NAME4, 
-				new TestConfiguration(TEST_DIR, TEST_NAME4, new String[] { "C" })   ); 
-		addTestConfiguration(
-				TEST_NAME5, 
-				new TestConfiguration(TEST_DIR, TEST_NAME5, new String[] { "C" })   ); 
+		addTestConfiguration(TEST_NAME1, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) ); 
+		addTestConfiguration(TEST_NAME2, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "C" }) ); 
+		addTestConfiguration(TEST_NAME3, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "C" }) ); 
+		addTestConfiguration(TEST_NAME4, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "C" }) ); 
+		addTestConfiguration(TEST_NAME5, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "C" }) ); 
 	}
-
 	
 	@Test
 	public void testReplaceZeroDenseCP() 
@@ -319,19 +313,16 @@ public class ReplaceTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(test);
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + test + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" , 
-					                            String.valueOf(rows),
-												String.valueOf(cols),
-												HOME + OUTPUT_DIR + "C",
-												String.valueOf(pattern) }; //only respected for TEST_NAME1
-			fullRScriptName = HOME + test + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + pattern + " " + HOME + EXPECTED_DIR;	
+			programArgs = new String[]{"-args", input("A"), String.valueOf(rows), String.valueOf(cols), 
+				output("C"), String.valueOf(pattern) }; //only respected for TEST_NAME1
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + test + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + 
+				pattern + " " + expectedDir();
 			
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 			replaceRandom(A, rows, cols, pattern, 10);	

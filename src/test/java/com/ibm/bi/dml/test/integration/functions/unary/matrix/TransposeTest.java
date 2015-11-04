@@ -29,12 +29,13 @@ public class TransposeTest extends AutomatedTestBase
 {
 
 	private static final String TEST_DIR = "functions/unary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + TransposeTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration("TransposeTest",
-				new TestConfiguration(TEST_DIR,"TransposeTest", new String[] { "vector", "matrix" }));
+				new TestConfiguration(TEST_CLASS_DIR,"TransposeTest", new String[] { "vector", "matrix" }));
 	}
 	
 	@Test

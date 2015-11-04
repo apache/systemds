@@ -40,6 +40,7 @@ public class TraceTest extends AutomatedTestBase
 {
 	
     private final static String TEST_DIR = "functions/aggregate/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + TraceTest.class.getSimpleName() + "/";
     private final static String TEST_GENERAL = "General";
     private final static String TEST_SCALAR = "Scalar";
 
@@ -47,10 +48,10 @@ public class TraceTest extends AutomatedTestBase
     @Override
     public void setUp() {
         // positive tests
-        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_DIR, "TraceTest", new String[] { "b" }));
+        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_CLASS_DIR, "TraceTest", new String[] { "b" }));
         
         // negative tests
-        addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_DIR, "TraceScalarTest", new String[] { "b" }));
+        addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_CLASS_DIR, "TraceScalarTest", new String[] { "b" }));
     }
 
     @Test

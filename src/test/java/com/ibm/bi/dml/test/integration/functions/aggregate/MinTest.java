@@ -40,6 +40,7 @@ public class MinTest extends AutomatedTestBase
 {
 	
     private final static String TEST_DIR = "functions/aggregate/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + MinTest.class.getSimpleName() + "/";
     private final static String TEST_GENERAL = "General";
     private final static String TEST_SCALAR = "Scalar";
 
@@ -47,11 +48,11 @@ public class MinTest extends AutomatedTestBase
     @Override
     public void setUp() {
         // positive tests
-        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_DIR, "MinTest", new String[] { "vector_min",
+        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_CLASS_DIR, "MinTest", new String[] { "vector_min",
                 "matrix_min" }));
         
         // negative tests
-        addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_DIR, "MinScalarTest", new String[] { "vector_min",
+        addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_CLASS_DIR, "MinScalarTest", new String[] { "vector_min",
                 "matrix_min" }));
     }
 

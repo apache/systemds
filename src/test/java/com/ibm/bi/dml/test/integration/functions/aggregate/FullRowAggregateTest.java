@@ -37,7 +37,6 @@ import com.ibm.bi.dml.test.utils.TestUtils;
  */
 public class FullRowAggregateTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "RowSums";
 	private final static String TEST_NAME2 = "RowMeans";
 	private final static String TEST_NAME3 = "RowMaxs";
@@ -46,6 +45,7 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	private final static String TEST_NAME6 = "RowIndexMins";
 	
 	private final static String TEST_DIR = "functions/aggregate/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FullRowAggregateTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1;
@@ -87,12 +87,12 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"B"})); 
-		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_DIR, TEST_NAME2,new String[]{"B"})); 
-		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_DIR, TEST_NAME3,new String[]{"B"})); 
-		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_DIR, TEST_NAME4,new String[]{"B"}));
-		addTestConfiguration(TEST_NAME5,new TestConfiguration(TEST_DIR, TEST_NAME5,new String[]{"B"}));
-		addTestConfiguration(TEST_NAME6,new TestConfiguration(TEST_DIR, TEST_NAME6,new String[]{"B"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[]{"B"}));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[]{"B"}));
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[]{"B"}));
 	}
 
 	
@@ -1131,20 +1131,16 @@ public class FullRowAggregateTest extends AutomatedTestBase
 			int rows = (vector) ? rows1 : rows2;
 			double sparsity = (sparse) ? sparsity1 : sparsity2;
 			
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "A",
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        HOME + OUTPUT_DIR + "B"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-explain", "-args", input("A"),
+				Integer.toString(rows), Integer.toString(cols), output("B") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset
 			double min, max;
@@ -1171,7 +1167,6 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
-			
 		
 			runRScript(true); 
 		
@@ -1188,5 +1183,4 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		}
 	}
 	
-		
 }

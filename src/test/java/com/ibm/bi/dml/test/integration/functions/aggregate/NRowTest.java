@@ -40,6 +40,7 @@ public class NRowTest extends AutomatedTestBase
 {
 	
     private final static String TEST_DIR = "functions/aggregate/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + NRowTest.class.getSimpleName() + "/";
     private final static String TEST_GENERAL = "General";
     private final static String TEST_SCALAR = "Scalar";
 
@@ -47,11 +48,11 @@ public class NRowTest extends AutomatedTestBase
     @Override
     public void setUp() {
         // positive tests
-        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_DIR, "NRowTest", new String[] { "vector_rows",
+        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_CLASS_DIR, "NRowTest", new String[] { "vector_rows",
                 "matrix_rows" }));
         
         // negative tests
-        addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_DIR, "NRowScalarTest", new String[] {
+        addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_CLASS_DIR, "NRowScalarTest", new String[] {
                 "vector_rows", "matrix_rows" }));
     }
 

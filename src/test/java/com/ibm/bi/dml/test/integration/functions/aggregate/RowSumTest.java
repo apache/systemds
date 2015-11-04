@@ -40,6 +40,7 @@ public class RowSumTest extends AutomatedTestBase
 {
 	
     private final static String TEST_DIR = "functions/aggregate/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + RowSumTest.class.getSimpleName() + "/";
     private final static String TEST_GENERAL = "General";
     private final static String TEST_SCALAR = "Scalar";
 
@@ -47,11 +48,11 @@ public class RowSumTest extends AutomatedTestBase
     @Override
     public void setUp() {
         // positive tests
-        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_DIR, "RowSumTest", new String[] {
+        addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_CLASS_DIR, "RowSumTest", new String[] {
                 "vector_rowsum", "matrix_rowsum" }));
         
         // negative tests
-        addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_DIR, "RowSumScalarTest", new String[] {
+        addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_CLASS_DIR, "RowSumScalarTest", new String[] {
                 "vector_rowsum", "matrix_rowsum" }));
     }
 

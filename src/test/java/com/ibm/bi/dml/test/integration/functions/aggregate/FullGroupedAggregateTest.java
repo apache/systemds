@@ -39,11 +39,11 @@ import com.ibm.bi.dml.test.utils.TestUtils;
  */
 public class FullGroupedAggregateTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "GroupedAggregate";
 	private final static String TEST_NAME2 = "GroupedAggregateWeights";
 	
 	private final static String TEST_DIR = "functions/aggregate/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FullGroupedAggregateTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 17654;
@@ -67,8 +67,8 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[]{"C"})); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[]{"D"})); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"C"})); 
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"D"})); 
 		TestUtils.clearAssertionInformation();
 	}
 
@@ -562,45 +562,37 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 			
 			double sparsity = (sparse) ? sparsity1 : sparsity2;
 			
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			if( !weights ){
-				programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
-												HOME + INPUT_DIR + "B", 
-												Integer.toString(fn),
-						                        HOME + OUTPUT_DIR + "C"    };
+				programArgs = new String[]{"-explain","-args", input("A"), input("B"), 
+					Integer.toString(fn), output("C") };
 			}
 			else{
-				programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
-												HOME + INPUT_DIR + "B",
-												HOME + INPUT_DIR + "C",
-												Integer.toString(fn),
-						                        HOME + OUTPUT_DIR + "D"    };
+				programArgs = new String[]{"-args", input("A"), input("B"), input("C"),
+					Integer.toString(fn), output("D") };
 			}
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + fn + " " + HOME + EXPECTED_DIR;
-			
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + fn + " " + expectedDir();
 	
 			//generate actual dataset 
 			double[][] A = getRandomMatrix(transpose?cols:rows, transpose?rows:cols, -0.05, 1, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 			MatrixCharacteristics mc1 = new MatrixCharacteristics(transpose?cols:rows, transpose?rows:cols,1000,1000);
-			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "A.mtd", ValueType.DOUBLE, mc1, OutputInfo.TextCellOutputInfo);
+			MapReduceTool.writeMetaDataFile(input("A.mtd"), ValueType.DOUBLE, mc1, OutputInfo.TextCellOutputInfo);
 			double[][] B = TestUtils.round(getRandomMatrix(rows, cols, 1, numGroups, 1.0, 3)); 
 			writeInputMatrix("B", B, true);
 			MatrixCharacteristics mc2 = new MatrixCharacteristics(rows,cols,1000,1000);
-			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "B.mtd", ValueType.DOUBLE, mc2, OutputInfo.TextCellOutputInfo);
+			MapReduceTool.writeMetaDataFile(input("B.mtd"), ValueType.DOUBLE, mc2, OutputInfo.TextCellOutputInfo);
 			if( weights ){
 				//currently we use integer weights due to our definition of weight as multiplicity
 				double[][] C = TestUtils.round(getRandomMatrix(rows, cols, 1, maxWeight, 1.0, 3)); 
 				writeInputMatrix("C", C, true);
 				MatrixCharacteristics mc3 = new MatrixCharacteristics(rows,cols,1000,1000);
-				MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "C.mtd", ValueType.DOUBLE, mc3, OutputInfo.TextCellOutputInfo);	
+				MapReduceTool.writeMetaDataFile(input("C.mtd"), ValueType.DOUBLE, mc3, OutputInfo.TextCellOutputInfo);	
 			}
 			
 			//run tests

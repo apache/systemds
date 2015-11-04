@@ -34,10 +34,10 @@ import com.ibm.bi.dml.test.utils.TestUtils;
  */
 public class AggregateInfTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "InfSum";
 
 	private final static String TEST_DIR = "functions/aggregate/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + AggregateInfTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 1205;
@@ -48,7 +48,8 @@ public class AggregateInfTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"B"})); 
+		addTestConfiguration(TEST_NAME,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"B"})); 
 	}
 
 	
@@ -116,18 +117,15 @@ public class AggregateInfTest extends AutomatedTestBase
 		{
 			double sparsity = (sparse) ? sparsity1 : sparsity2;
 			
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
-					                        HOME + OUTPUT_DIR + "B"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-args", input("A"), output("B") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset 
 			double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7); 

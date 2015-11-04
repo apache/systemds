@@ -536,7 +536,8 @@ public class LibMatrixReorg
 		
 		//sanity check for input nnz (incl implicit handling of empty blocks)
 		if( !ignore && in.getNonZeros()<in.getNumRows() )
-			throw new DMLRuntimeException("Invalid input w/ zeros for rexpand ignore=false.");
+			throw new DMLRuntimeException("Invalid input w/ zeros for rexpand ignore=false "
+					+ "(rlen="+in.getNumRows()+", nnz="+in.getNonZeros()+").");
 		
 		//check for empty inputs (for ignore=true)
 		if( in.isEmptyBlock(false) ) {

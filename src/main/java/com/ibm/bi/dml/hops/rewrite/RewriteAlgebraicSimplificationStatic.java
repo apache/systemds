@@ -2089,8 +2089,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				inputargs.put("target", hi.getInput().get(ixTgt));
 				inputargs.put("max", hi.getInput().get(ixMax));
 				inputargs.put("dir", new LiteralOp(direction, direction));
-				inputargs.put("ignore", new LiteralOp("true", false));
-				inputargs.put("cast", new LiteralOp("false", true));
+				inputargs.put("ignore", new LiteralOp("false", false));
+				inputargs.put("cast", new LiteralOp("true", true));
 			
 				//create new hop
 				ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", DataType.MATRIX, ValueType.DOUBLE, 

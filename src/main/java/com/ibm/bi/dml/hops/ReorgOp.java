@@ -180,8 +180,8 @@ public class ReorgOp extends Hop
 					if( !(desc instanceof LiteralOp && ixret instanceof LiteralOp) ) {
 						LOG.warn("Unsupported non-constant ordering parameters, using defaults and mark for recompilation.");
 						setRequiresRecompile();
-						desc = new LiteralOp("FALSE", false);
-						ixret = new LiteralOp("FALSE", false);
+						desc = new LiteralOp("false", false);
+						ixret = new LiteralOp("false", false);
 					}
 						
 					//Step 1: extraction (if unknown ncol or multiple columns)

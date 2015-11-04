@@ -1481,7 +1481,7 @@ public class DMLTranslator
 				return hops.get(sourceId.getName());
 			} else if (source instanceof BooleanIdentifier) {
 				BooleanIdentifier sourceBoolean = (BooleanIdentifier) source;
-				LiteralOp litop = new LiteralOp(Boolean.toString(sourceBoolean.getValue()), sourceBoolean.getValue());
+				LiteralOp litop = new LiteralOp(String.valueOf(sourceBoolean.getValue()), sourceBoolean.getValue());
 				litop.setAllPositions(sourceBoolean.getBeginLine(), sourceBoolean.getBeginColumn(), sourceBoolean.getEndLine(), sourceBoolean.getEndColumn());
 				setIdentifierParams(litop, sourceBoolean);
 				return litop;

@@ -32,18 +32,19 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixMultiplicationTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		// positive tests
-		addTestConfiguration("MatrixMultiplicationTest", new TestConfiguration(TEST_DIR, "MatrixMultiplicationTest",
-				new String[] { "c" }));
-		addTestConfiguration("WrongDimensionsTest", new TestConfiguration(TEST_DIR, "MatrixMultiplicationTest",
-				new String[] { "c" }));
-		addTestConfiguration("AMultASpecial1Test", new TestConfiguration(TEST_DIR, "AMultASpecial1Test",
-				new String[] { "a" }));
-		addTestConfiguration("AMultBSpecial2Test", new TestConfiguration(TEST_DIR, "AMultBSpecial2Test",
-				new String[] { "e" }));
+		addTestConfiguration("MatrixMultiplicationTest", 
+			new TestConfiguration(TEST_CLASS_DIR, "MatrixMultiplicationTest", new String[] { "c" }));
+		addTestConfiguration("WrongDimensionsTest", 
+			new TestConfiguration(TEST_CLASS_DIR, "MatrixMultiplicationTest", new String[] { "c" }));
+		addTestConfiguration("AMultASpecial1Test", 
+			new TestConfiguration(TEST_CLASS_DIR, "AMultASpecial1Test", new String[] { "a" }));
+		addTestConfiguration("AMultBSpecial2Test", 
+			new TestConfiguration(TEST_CLASS_DIR, "AMultBSpecial2Test", new String[] { "e" }));
 
 		// negative tests
 	}

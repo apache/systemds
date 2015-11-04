@@ -29,23 +29,24 @@ public class ScalarModulusTest extends AutomatedTestBase
 {
 		
 	private static final String TEST_DIR = "functions/binary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ScalarModulusTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		// positive tests
-		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
+		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
+		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
+		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
+		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("SparseTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
+		addTestConfiguration("SparseTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
+		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("DivisionByZeroTest", new TestConfiguration(TEST_DIR, "ScalarModulusTest",
+		addTestConfiguration("DivisionByZeroTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarModulusTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
 		
 		// negative tests

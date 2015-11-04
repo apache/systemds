@@ -23,26 +23,26 @@ import com.ibm.bi.dml.test.integration.AutomatedTestBase;
 import com.ibm.bi.dml.test.integration.TestConfiguration;
 
 
-
 public class ScalarSubtractionTest extends AutomatedTestBase 
 {
 	
 	private static final String TEST_DIR = "functions/binary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ScalarSubtractionTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		// positive tests
-		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
+		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
+		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
+		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
+		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("SparseTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
+		addTestConfiguration("SparseTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_DIR, "ScalarSubtractionTest",
+		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarSubtractionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
 		
 		// negative tests

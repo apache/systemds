@@ -36,6 +36,7 @@ public class MapMultLimitTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "MapMultLimitTest";
 	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + MapMultLimitTest.class.getSimpleName() + "/";
 	
 	private final static int rows1 = 2000;
 	private final static int rows2 = 3500;
@@ -46,10 +47,8 @@ public class MapMultLimitTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "C1", "C2" })   ); 
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "C1", "C2" }) ); 
 	}
 	
 	@Test
@@ -61,19 +60,13 @@ public class MapMultLimitTest extends AutomatedTestBase
 
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", 
-										HOME + INPUT_DIR + "A",
-										HOME + INPUT_DIR + "B1",
-										HOME + INPUT_DIR + "B2",
-					                    HOME + OUTPUT_DIR + "C1",
-					                    HOME + OUTPUT_DIR + "C2"
-					                  };
-			loadTestConfiguration(config);
+				input("A"), input("B1"), input("B2"), output("C1"), output("C2") };
 	
 			//System.out.println("Generating A ...");
 			double[][] A = getRandomMatrix(rows1, rows2, 0, 1, sparsity1, 10); 

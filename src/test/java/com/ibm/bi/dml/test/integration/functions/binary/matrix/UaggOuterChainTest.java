@@ -43,6 +43,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "UaggOuterChain";
 	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + UaggOuterChainTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	
 	private final static int rows = 1468;
@@ -67,7 +68,8 @@ public class UaggOuterChainTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "C" })); 
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" })); 
 	}
 	
 	// Less Uagg RowSums -- MR
@@ -351,7 +353,6 @@ public class UaggOuterChainTest extends AutomatedTestBase
 		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, SumType.ROW_SUM, false, ExecType.SPARK);
 	}
 	
-
 
 	// NotEquals Uagg RowSums -- SP
 	@Test
@@ -669,7 +670,6 @@ public class UaggOuterChainTest extends AutomatedTestBase
 		runBinUaggTest(TEST_NAME1, Type.EQUALS, false, true, SumType.COL_SUM, false, ExecType.SPARK);
 	}
 	
-
 
 	// NotEquals Uagg ColSums -- SP
 	@Test
@@ -1012,7 +1012,6 @@ public class UaggOuterChainTest extends AutomatedTestBase
 	}
 	
 
-
 	// NotEquals Uagg Sums -- SP
 	@Test
 	public void testNotEqualsUaggOuterChainSumsSingleDenseSP() 
@@ -1039,7 +1038,6 @@ public class UaggOuterChainTest extends AutomatedTestBase
 	}
 	
 	
-
 	// Empty Block Sums All (Data with 0.0 values)
 	
 	@Test
@@ -1230,7 +1228,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 		try
 		{
 			String TEST_NAME = testname;
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 
@@ -1278,14 +1276,11 @@ public class UaggOuterChainTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;			
 			fullDMLScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix + ".dml";
-			programArgs = new String[]{"-stats", "-explain","-args", HOME + INPUT_DIR + "A",
-					                            HOME + INPUT_DIR + "B",
-					                            HOME + OUTPUT_DIR + "C"};
-			fullRScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix +".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-stats", "-explain","-args", 
+				input("A"), input("B"), output("C")};
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix +".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			double dAMinVal = -1, dAMaxVal = 1, dBMinVal = -1, dBMaxVal = 1;
 			

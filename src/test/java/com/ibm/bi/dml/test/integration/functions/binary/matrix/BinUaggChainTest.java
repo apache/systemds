@@ -38,6 +38,7 @@ public class BinUaggChainTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "BinUaggChain_Col";
 	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BinUaggChainTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	
 	private final static int rows = 1468;
@@ -51,7 +52,7 @@ public class BinUaggChainTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "B" })); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" })); 
 	}
 
 	@Test
@@ -131,18 +132,15 @@ public class BinUaggChainTest extends AutomatedTestBase
 		try
 		{
 			String TEST_NAME = testname;
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
-					                            HOME + OUTPUT_DIR + "B"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-args", input("A"), output("B")};
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual datasets
 			double[][] A = getRandomMatrix(rows, singleBlock?cols1:cols2, -1, 1, sparse?sparsity2:sparsity1, 7);

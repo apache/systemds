@@ -40,6 +40,7 @@ public class QuantileTest extends AutomatedTestBase
 	private final static String TEST_NAME3 = "IQM";
 	
 	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + QuantileTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 1973;
@@ -51,9 +52,12 @@ public class QuantileTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" })   ); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" })   ); 
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] { "R" })   ); 		
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) ); 
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) ); 
+		addTestConfiguration(TEST_NAME3, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) ); 		
 	}
 	
 	@Test
@@ -258,18 +262,14 @@ public class QuantileTest extends AutomatedTestBase
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
-					                        Double.toString(p),
-					                        HOME + OUTPUT_DIR + "R"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + p + " "+ HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-args", input("A"), Double.toString(p), output("R")};
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + p + " "+ expectedDir();
 	
 			//generate actual dataset (always dense because values <=0 invalid)
 			double sparsitya = sparse ? sparsity2 : sparsity1;

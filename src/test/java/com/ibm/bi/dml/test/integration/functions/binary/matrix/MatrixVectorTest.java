@@ -27,9 +27,9 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class MatrixVectorTest extends AutomatedTestBase 
 {
 
-	
 	private final static String TEST_NAME1 = "MatrixVectorMultiplication";
 	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixVectorTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 3500;
@@ -42,10 +42,8 @@ public class MatrixVectorTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "y" })   ); 
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "y" }) ); 
 	}
 	
 	@Test
@@ -128,21 +126,15 @@ public class MatrixVectorTest extends AutomatedTestBase
 
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME1);
+			getAndLoadTestConfiguration(TEST_NAME1);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-args", 
-										HOME + INPUT_DIR + "A",
-										HOME + INPUT_DIR + "x" ,
-					                    HOME + OUTPUT_DIR + "y"
-					                  };
-			fullRScriptName = HOME + TEST_NAME1 + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-args", input("A"), input("x"), output("y")};
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME1 + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 10); 

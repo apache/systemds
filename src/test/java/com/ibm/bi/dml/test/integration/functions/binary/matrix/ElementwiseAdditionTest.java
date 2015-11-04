@@ -28,33 +28,34 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class ElementwiseAdditionTest extends AutomatedTestBase 
 {
 		
-	private String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ElementwiseAdditionTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		// positive tests
 		addTestConfiguration("DenseTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionTest", new String[] { "c" }));
 		addTestConfiguration("SparseTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionTest", new String[] { "c" }));
 		addTestConfiguration("EmptyTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionTest", new String[] { "c" }));
 		addTestConfiguration("WrongDimensionLessRowsTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
 		addTestConfiguration("WrongDimensionMoreRowsTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
 		addTestConfiguration("WrongDimensionLessColsTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
 		addTestConfiguration("WrongDimensionMoreColsTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
 		addTestConfiguration("WrongDimensionLessRowsLessColsTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
 		addTestConfiguration("WrongDimensionMoreRowsMoreColsTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
 		addTestConfiguration("WrongDimensionLessRowsMoreColsTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
 		addTestConfiguration("WrongDimensionMoreRowsLessColsTest",
-				new TestConfiguration(TEST_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
+			new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionVariableDimensionsTest", new String[] { "c" }));
 		
 		// negative tests
 	}

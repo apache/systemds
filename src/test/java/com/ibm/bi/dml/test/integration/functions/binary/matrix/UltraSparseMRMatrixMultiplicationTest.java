@@ -44,6 +44,8 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "UltraSparseMatrixMultiplication";
 	private final static String TEST_NAME2 = "UltraSparseMatrixMultiplication2";
 	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + 
+		UltraSparseMRMatrixMultiplicationTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 4045; 
@@ -56,14 +58,10 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "C" })   ); 
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, 
-				new String[] { "C" })   ); 
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) ); 
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "C" }) ); 
 	}
 
 	@Test
@@ -139,7 +137,6 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, false, false);
 	}
 	
-	
 
 	/**
 	 * 
@@ -169,21 +166,16 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 		try
 		{
 			String TEST_NAME = (rowwise) ? TEST_NAME1 : TEST_NAME2;
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        HOME + INPUT_DIR + "B",
-					                        HOME + OUTPUT_DIR + "C"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-explain","-args", input("A"),
+				Integer.toString(rows), Integer.toString(cols), input("B"), output("C") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparseM1?sparsity2:sparsity1, 7); 

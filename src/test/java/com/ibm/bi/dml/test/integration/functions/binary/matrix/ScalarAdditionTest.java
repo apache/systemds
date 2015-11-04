@@ -28,21 +28,22 @@ public class ScalarAdditionTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "functions/binary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ScalarAdditionTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		// positive tests
-		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_DIR, "ScalarAdditionTest",
+		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarAdditionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_DIR, "ScalarAdditionTest",
+		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarAdditionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_DIR, "ScalarAdditionTest",
+		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarAdditionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_DIR, "ScalarAdditionTest",
+		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarAdditionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("SparseTest", new TestConfiguration(TEST_DIR, "ScalarAdditionTest",
+		addTestConfiguration("SparseTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarAdditionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_DIR, "ScalarAdditionTest",
+		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_CLASS_DIR, "ScalarAdditionTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
 		
 		// negative tests

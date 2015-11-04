@@ -28,17 +28,18 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase 
 {
 	
-	private String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ElementwiseAdditionMultiplicationTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 
 		// positive tests
-		addTestConfiguration("Term1", new TestConfiguration(TEST_DIR, "ElementwiseAdditionMultiplicationTerm1",
+		addTestConfiguration("Term1", new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionMultiplicationTerm1",
 				new String[] { "result" }));
-		addTestConfiguration("Term2", new TestConfiguration(TEST_DIR, "ElementwiseAdditionMultiplicationTerm2",
+		addTestConfiguration("Term2", new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionMultiplicationTerm2",
 				new String[] { "result" }));
-		addTestConfiguration("Term3", new TestConfiguration(TEST_DIR, "ElementwiseAdditionMultiplicationTerm3",
+		addTestConfiguration("Term3", new TestConfiguration(TEST_CLASS_DIR, "ElementwiseAdditionMultiplicationTerm3",
 				new String[] { "result" }));
 	}
 

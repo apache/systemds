@@ -39,6 +39,7 @@ public class MapMultChainTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "MapMultChain";
 	private final static String TEST_NAME2 = "MapMultChainWeights";
 	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + MapMultChainTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	
 	private final static int rowsX = 3468;
@@ -52,8 +53,10 @@ public class MapMultChainTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" })); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" })); 
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" })); 
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" })); 
 	}
 
 	@Test
@@ -227,20 +230,16 @@ public class MapMultChainTest extends AutomatedTestBase
 		try
 		{
 			String TEST_NAME = testname;
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats","-args", HOME + INPUT_DIR + "X",
-					                            HOME + INPUT_DIR + "v",
-					                            HOME + INPUT_DIR + "w",
-					                            HOME + OUTPUT_DIR + "R"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-stats","-args", 
+				input("X"), input("v"), input("w"), output("R")};
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual datasets
 			double[][] X = getRandomMatrix(rowsX, colsX, 0, 1, sparse?sparsity2:sparsity1, 7);

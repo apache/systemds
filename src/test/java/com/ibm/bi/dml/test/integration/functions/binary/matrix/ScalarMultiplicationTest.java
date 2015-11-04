@@ -24,28 +24,28 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 import com.ibm.bi.dml.test.utils.TestUtils;
 
 
-
 public class ScalarMultiplicationTest extends AutomatedTestBase 
 {
 	
 	private static final String TEST_DIR = "functions/binary/matrix/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ScalarMultiplicationTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		
 		// positive tests
-		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
+		addTestConfiguration("IntConstTest", new TestConfiguration(TEST_CLASS_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
+		addTestConfiguration("IntVarTest", new TestConfiguration(TEST_CLASS_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
+		addTestConfiguration("DoubleConstTest", new TestConfiguration(TEST_CLASS_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
+		addTestConfiguration("DoubleVarTest", new TestConfiguration(TEST_CLASS_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("SparseTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
+		addTestConfiguration("SparseTest", new TestConfiguration(TEST_CLASS_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
-		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_DIR,"ScalarMultiplicationTest",
+		addTestConfiguration("EmptyTest", new TestConfiguration(TEST_CLASS_DIR,"ScalarMultiplicationTest",
 				new String[] { "vector_left", "vector_right", "matrix_left", "matrix_right" }));
 		
 		// negative tests

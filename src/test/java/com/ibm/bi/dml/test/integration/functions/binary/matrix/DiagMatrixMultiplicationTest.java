@@ -36,6 +36,7 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "DiagMatrixMultiplication";
 	private final static String TEST_NAME2 = "DiagMatrixMultiplicationTranspose";
 	private final static String TEST_DIR = "functions/binary/matrix/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + DiagMatrixMultiplicationTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rowsA = 1107;
@@ -50,12 +51,10 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "C" })   ); 
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "C" })   ); 
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) ); 
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "C" }) ); 
 	}
 
 	
@@ -285,26 +284,19 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = simplify;
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
-					                        Integer.toString(rowsA),
-					                        Integer.toString(colsA),
-					                        HOME + INPUT_DIR + "B",
-					                        Integer.toString(rowsB),
-					                        Integer.toString(rightVector?1:colsB),
-					                        HOME + OUTPUT_DIR + "C"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-explain","-args", 
+				input("A"), Integer.toString(rowsA), Integer.toString(colsA),
+				input("B"), Integer.toString(rowsB), Integer.toString(rightVector?1:colsB), output("C")};
 			
-			loadTestConfiguration(config);
-	
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rowsA, colsA, 0, 1, sparseM1?sparsity2:sparsity1, 7); 

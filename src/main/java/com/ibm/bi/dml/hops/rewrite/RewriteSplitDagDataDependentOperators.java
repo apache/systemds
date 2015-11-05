@@ -71,7 +71,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		throws HopsException 
 	{
 		ArrayList<StatementBlock> ret = new ArrayList<StatementBlock>();
-		
+	
 		//collect all unknown csv reads hops
 		ArrayList<Hop> cand = new ArrayList<Hop>();
 		collectDataDependentOperators( sb.get_hops(), cand );
@@ -98,9 +98,13 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				ArrayList<Hop> sb1hops = new ArrayList<Hop>();			
 				for( Hop c : cand )
 				{
-					//if there are already transient writes use them and don't introduce artificial variables 
+					//if there are already transient writes use them and don't introduce artificial variables; 
+					//unless there are transient reads w/ the same variable name in the current dag which can
+					//lead to invalid reordering if variable consumers are not feeding into the candidate op.
 					boolean hasTWrites = hasTransientWriteParents(c);
-					
+					boolean moveTWrite = hasTWrites ? HopRewriteUtils.rHasSimpleReadChain(c, 
+							getFirstTransientWriteParent(c).getName()) : false;
+							
 					String varname = null;
 					long rlen = c.getDim1();
 					long clen = c.getDim2();
@@ -108,7 +112,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					long brlen = c.getRowsInBlock();
 					long bclen = c.getColsInBlock();
 					
-					if( hasTWrites ) //reuse existing transient_write
+					if( hasTWrites && moveTWrite) //reuse existing transient_write
 					{		
 						Hop twrite = getFirstTransientWriteParent(c);
 						varname = twrite.getName();

@@ -39,6 +39,7 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "remove_empty_potpourri1";
 	private final static String TEST_NAME2 = "remove_empty_potpourri2";
 	private final static String TEST_NAME3 = "remove_empty_potpourri3";
+	private final static String TEST_NAME4 = "remove_empty_potpourri4";
 	
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static double eps = 1e-10;
@@ -51,43 +52,47 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" }));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" }));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] { "R" }));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_DIR, TEST_NAME4, new String[] { "R" }));
 	}
 	
 	@Test
-	public void testRemoveEmptySequenceReshapeNoRewrite() 
-	{
+	public void testRemoveEmptySequenceReshapeNoRewrite() {
 		runRemoveEmptyTest(TEST_NAME1, false);
 	}
 	
 	@Test
-	public void testRemoveEmptySequenceReshapeRewrite() 
-	{
+	public void testRemoveEmptySequenceReshapeRewrite() {
 		runRemoveEmptyTest(TEST_NAME1, true);
 	}
 	
 	@Test
-	public void testRemoveEmptySumColSumNoRewrite() 
-	{
+	public void testRemoveEmptySumColSumNoRewrite()  {
 		runRemoveEmptyTest(TEST_NAME2, false);
 	}
 	
 	@Test
-	public void testRemoveEmptySumColSumRewrite() 
-	{
+	public void testRemoveEmptySumColSumRewrite() {
 		runRemoveEmptyTest(TEST_NAME2, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyComplexDagSplitNoRewrite() 
-	{
+	public void testRemoveEmptyComplexDagSplitNoRewrite() {
 		runRemoveEmptyTest(TEST_NAME3, false);
 	}
 	
+	@Test
+	public void testRemoveEmptyComplexDagSplitRewrite() {
+		runRemoveEmptyTest(TEST_NAME3, true);
+	}
 	
 	@Test
-	public void testRemoveEmptyComplexDagSplitRewrite() 
-	{
-		runRemoveEmptyTest(TEST_NAME3, true);
+	public void testRemoveEmptyComplexDagSplit2NoRewrite() {
+		runRemoveEmptyTest(TEST_NAME4, false);
+	}
+	
+	@Test
+	public void testRemoveEmptyComplexDagSplit2Rewrite() {
+		runRemoveEmptyTest(TEST_NAME4, true);
 	}
 
 	/**
@@ -106,7 +111,7 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			//note: stats required for runtime check of rewrite
-			programArgs = new String[]{"-args", HOME + OUTPUT_DIR + "R" };
+			programArgs = new String[]{"-explain","-args", HOME + OUTPUT_DIR + "R" };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + HOME + EXPECTED_DIR;
 			

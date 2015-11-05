@@ -1511,8 +1511,10 @@ public abstract class Hop
 	protected void refreshRowsParameterInformation( Hop input )
 	{
 		long size = computeSizeInformation(input);
-		if( size > 0 )
-			setDim1( size );
+			
+		//always set the computed size not just if known (positive) in order to allow 
+		//recompile with unknowns to reset sizes (otherwise potential for incorrect results)
+		setDim1( size );
 	}
 	
 	
@@ -1522,8 +1524,10 @@ public abstract class Hop
 	protected void refreshColsParameterInformation( Hop input )
 	{
 		long size = computeSizeInformation(input);
-		if( size > 0 )
-			setDim2( size );
+		
+		//always set the computed size not just if known (positive) in order to allow 
+		//recompile with unknowns to reset sizes (otherwise potential for incorrect results)
+		setDim2( size );
 	}
 	
 	/**

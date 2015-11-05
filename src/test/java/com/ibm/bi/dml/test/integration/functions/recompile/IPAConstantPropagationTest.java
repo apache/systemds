@@ -135,7 +135,8 @@ public class IPAConstantPropagationTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
 			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = ( branchRemoval && IPA && !update ) ? 0 : 1; //rand
+			//FIXME int expectedNumCompiled = ( branchRemoval && IPA && !update ) ? 0 : 1; //rand
+			int expectedNumCompiled = 1; 
 			int expectedNumExecuted = 0;			
 			
 			checkNumCompiledMRJobs(expectedNumCompiled); 

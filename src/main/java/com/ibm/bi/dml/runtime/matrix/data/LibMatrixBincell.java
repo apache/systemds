@@ -28,9 +28,11 @@ import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
+import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
 import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Or;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
+import com.ibm.bi.dml.runtime.functionobjects.Power2;
 import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 import com.ibm.bi.dml.runtime.util.DataConverter;
@@ -946,6 +948,13 @@ public class LibMatrixBincell
 					}
 					else //GENERAL CASE
 					{
+						//create sparse row without repeated resizing for specific ops
+						if( op.fn instanceof Multiply || op.fn instanceof Multiply2 
+							|| op.fn instanceof Power2  )
+						{
+							c[r] = new SparseRow(alen);
+						}
+						
 						for(int j=0; j<alen; j++) {
 							double val = op.executeScalar(avals[j]);
 							ret.appendValue(r, aix[j], val);

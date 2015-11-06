@@ -1628,9 +1628,12 @@ public class Recompiler
 		if( hop.getVisited() == VisitStatus.DONE )
 			return;
 
+		//recursively process children
 		if( hop.getInput() != null )
 			for( Hop c : hop.getInput() )
 				rUpdateStatistics(c, vars);	
+		
+		boolean updatedSizeExpr = false;
 		
 		//update statistics for transient reads according to current statistics
 		//(with awareness not to override persistent reads to an existing name)
@@ -1668,14 +1671,17 @@ public class Recompiler
 			if (   d.getOp() == DataGenMethod.RAND || d.getOp()==DataGenMethod.SINIT 
 				|| d.getOp() == DataGenMethod.SAMPLE ) 
 			{
+				boolean initUnknown = !d.dimsKnown();
 				int ix1 = params.get(DataExpression.RAND_ROWS);
 				int ix2 = params.get(DataExpression.RAND_COLS);
 				//update rows/cols by evaluating simple expression of literals, nrow, ncol, scalars, binaryops
 				d.refreshRowsParameterInformation(d.getInput().get(ix1), vars);
 				d.refreshColsParameterInformation(d.getInput().get(ix2), vars);
+				updatedSizeExpr = initUnknown & d.dimsKnown();
 			} 
 			else if ( d.getOp() == DataGenMethod.SEQ ) 
 			{
+				boolean initUnknown = !d.dimsKnown();
 				int ix1 = params.get(Statement.SEQ_FROM);
 				int ix2 = params.get(Statement.SEQ_TO);
 				int ix3 = params.get(Statement.SEQ_INCR);
@@ -1696,6 +1702,7 @@ public class Recompiler
 					d.setDim2( 1 );
 					d.setIncrementValue( incr );
 				}
+				updatedSizeExpr = initUnknown & d.dimsKnown();
 			}
 			else {
 				throw new DMLRuntimeException("Unexpected data generation method: " + d.getOp());
@@ -1706,8 +1713,10 @@ public class Recompiler
 				 && ((ReorgOp)(hop)).getOp()==Hop.ReOrgOp.RESHAPE )
 		{
 			ReorgOp d = (ReorgOp) hop;
+			boolean initUnknown = !d.dimsKnown();
 			d.refreshRowsParameterInformation(d.getInput().get(1), vars);
 			d.refreshColsParameterInformation(d.getInput().get(2), vars);
+			updatedSizeExpr = initUnknown & d.dimsKnown();
 		}
 		//update size expression for indexing according to symbol table entries
 		else if( hop instanceof IndexingOp )
@@ -1717,6 +1726,7 @@ public class Recompiler
 			Hop input3 = iop.getInput().get(2); //inpRowU
 			Hop input4 = iop.getInput().get(3); //inpColL
 			Hop input5 = iop.getInput().get(4); //inpColU
+			boolean initUnknown = !iop.dimsKnown();
 			double rl = iop.computeBoundsInformation(input2, vars);
 			double ru = iop.computeBoundsInformation(input3, vars);
 			double cl = iop.computeBoundsInformation(input4, vars);
@@ -1725,10 +1735,14 @@ public class Recompiler
 				iop.setDim1( (long)(ru-rl+1) );
 			if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
 				iop.setDim2( (long)(cu-cl+1) );
+			updatedSizeExpr = initUnknown & iop.dimsKnown();
 		}
 		
-		//propagate statistics along inner nodes of DAG
-		hop.refreshSizeInformation();
+		//propagate statistics along inner nodes of DAG,
+		//without overwriting inferred size expressions
+		if( !updatedSizeExpr ) {
+			hop.refreshSizeInformation();
+		}
 		
 		hop.setVisited(VisitStatus.DONE);
 	}

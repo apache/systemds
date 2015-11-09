@@ -693,6 +693,17 @@ public class HopRewriteUtils
 	}
 	
 	/**
+	 * 
+	 * @param hop
+	 * @return
+	 */
+	public static boolean isSingleBlock( Hop hop ) {
+		return isSingleBlock(hop, true)
+			&& isSingleBlock(hop, false);
+	}
+	
+	
+	/**
 	 * Checks our BLOCKSIZE CONSTRAINT, w/ awareness of forced single node
 	 * execution mode.
 	 * 

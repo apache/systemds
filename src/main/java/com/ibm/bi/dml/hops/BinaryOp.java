@@ -17,6 +17,7 @@
 
 package com.ibm.bi.dml.hops;
 
+import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
 import com.ibm.bi.dml.lops.Aggregate;
 import com.ibm.bi.dml.lops.AppendGAlignedSP;
 import com.ibm.bi.dml.lops.AppendM;
@@ -986,6 +987,7 @@ public class BinaryOp extends Hop
 			&& supportsMatrixScalarOperations()                          //scalar operations
 			&& !(getInput().get(dt1.isScalar()?1:0) instanceof DataOp)   //input is not checkpoint
 			&& getInput().get(dt1.isScalar()?1:0).getParent().size()==1  //unary scalar is only parent
+			&& !HopRewriteUtils.isSingleBlock(getInput().get(dt1.isScalar()?1:0)) //single block triggered exec
 			&& getInput().get(dt1.isScalar()?1:0).optFindExecType() == ExecType.SPARK )					
 		{
 			//pull unary scalar operation into spark 

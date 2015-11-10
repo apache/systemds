@@ -475,7 +475,7 @@ public class OptimizerUtils
 	 * @param nnz
 	 * @return
 	 */
-	public static boolean checkSparkCollectMemoryBudget( long rlen, long clen, int brlen, int bclen, long nnz )
+	public static boolean checkSparkCollectMemoryBudget( long rlen, long clen, int brlen, int bclen, long nnz, long memPinned )
 	{
 		//compute size of output matrix and its blocked representation
 		double sp = getSparsity(rlen, clen, nnz);
@@ -483,7 +483,7 @@ public class OptimizerUtils
 		double memPMatrix = estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, sp);
 		
 		//check if both output matrix and partitioned matrix fit into local mem budget
-		return (memMatrix + memPMatrix < getLocalMemBudget());
+		return (memPinned + memMatrix + memPMatrix < getLocalMemBudget());
 	}
 	
 	/**

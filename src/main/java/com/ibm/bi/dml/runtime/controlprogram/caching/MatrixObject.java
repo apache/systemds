@@ -61,9 +61,15 @@ import com.ibm.bi.dml.runtime.util.MapReduceTool;
  */
 public class MatrixObject extends CacheableData
 {
-
 	private static final long serialVersionUID = 6374712373206495637L;
 
+	/**
+	 * Current state of pinned variables, required for guarded collect.
+	 */
+	private static ThreadLocal<Long> sizePinned = new ThreadLocal<Long>() {
+        @Override protected Long initialValue() { return 0L; }
+    };
+	
 	/**
 	 * Cache for actual data, evicted by garbage collector.
 	 */
@@ -120,7 +126,6 @@ public class MatrixObject extends CacheableData
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject _bcHandle = null; //Broadcast handle
 	private RDDProperties _rddProperties = null;
-	
 	
 	/**
 	 * Information relevant to partitioned matrices.
@@ -523,6 +528,7 @@ public class MatrixObject extends CacheableData
 		
 		//cache status maintenance
 		super.acquire( false, _data==null );	
+		updateStatusPinned(true);
 		
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
@@ -577,6 +583,7 @@ public class MatrixObject extends CacheableData
 
 		//cache status maintenance
 		super.acquire( true, _data==null );
+		updateStatusPinned(true);
 		_dirtyFlag = true;
 		_isAcquireFromEmpty = false;
 		
@@ -622,6 +629,7 @@ public class MatrixObject extends CacheableData
 		if (newData == null)
 			throw new CacheException("acquireModify with empty matrix block.");
 		_data = newData; 
+		updateStatusPinned(true);
 		
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
@@ -667,7 +675,8 @@ public class MatrixObject extends CacheableData
 		
 		//cache status maintenance (pass cacheNoWrite flag)
 		super.release(_isAcquireFromEmpty && !_requiresLocalWrite);
-
+		updateStatusPinned(false);
+		
 		if(    isCachingActive() //only if caching is enabled (otherwise keep everything in mem)
 			&& isCached(true)    //not empty and not read/modify
 			&& !isUpdateInPlace()        //pinned result variable
@@ -694,7 +703,7 @@ public class MatrixObject extends CacheableData
 		else if( LOG.isTraceEnabled() ){
 			LOG.trace("Var "+_varName+" not subject to caching: rows="+_data.getNumRows()+", cols="+_data.getNumColumns()+", state="+getStatusAsString());
 		}
-		
+
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementReleaseTime(t1-t0);
@@ -1351,7 +1360,7 @@ public class MatrixObject extends CacheableData
 			long nnz = mc.getNonZeros();
 			
 			//guarded rdd collect 
-			if( !OptimizerUtils.checkSparkCollectMemoryBudget(rlen, clen, brlen, bclen, nnz) ) {
+			if( !OptimizerUtils.checkSparkCollectMemoryBudget(rlen, clen, brlen, bclen, nnz, sizePinned.get()) ) {
 				//write RDD to hdfs and read to prevent invalid collect mem consumption 
 				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
 				if( !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
@@ -1612,6 +1621,18 @@ public class MatrixObject extends CacheableData
 		{
 			_cache.clear();
 			_cache = null;
+		}
+	}
+	
+	/**
+	 * 
+	 * @param add
+	 */
+	private void updateStatusPinned(boolean add) {
+		if( _data != null ) { //data should never be null
+			long size = sizePinned.get();
+			size += (add ? 1 : -1) * _data.getSizeInMemory();
+			sizePinned.set( Math.max(size,0) );
 		}
 	}
 	

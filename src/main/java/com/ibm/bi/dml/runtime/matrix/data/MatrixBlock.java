@@ -2663,6 +2663,20 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	// Estimates size and sparsity
 	
 	/**
+	 * Estimate size based on current sparse/dense representation.
+	 * 
+	 * @return
+	 */
+	public long getSizeInMemory() 
+	{
+		double sp = OptimizerUtils.getSparsity(rlen, clen, nonZeros);
+		if( sparse )
+			return estimateSizeSparseInMemory(rlen, clen, sp);
+		else
+			return estimateSizeDenseInMemory(rlen, clen);
+	}
+	
+	/**
 	 * 
 	 * @return
 	 */

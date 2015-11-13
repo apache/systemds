@@ -32,6 +32,7 @@ public class RandJobRecompileTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "grpagg_rand_recompile";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RandJobRecompileTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 27;
 	private final static int cols = 2; 
@@ -44,12 +45,9 @@ public class RandJobRecompileTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Z" })   );
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Z" }) );
 	}
-
 	
 	
 	@Test
@@ -75,17 +73,15 @@ public class RandJobRecompileTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",HOME + INPUT_DIR + "X",
-					                           Integer.toString(rows),
-					                           HOME + OUTPUT_DIR + "Z" };
+			programArgs = new String[]{"-args", input("X"), Integer.toString(rows), output("Z") };
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = estSizeEval;
 			

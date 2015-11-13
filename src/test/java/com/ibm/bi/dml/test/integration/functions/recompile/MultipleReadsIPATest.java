@@ -35,6 +35,7 @@ public class MultipleReadsIPATest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "multiple_reads";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + MultipleReadsIPATest.class.getSimpleName() + "/";
 	
 	private final static int rows1 = 10;
 	private final static int cols1 = 11;
@@ -44,12 +45,9 @@ public class MultipleReadsIPATest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "X" })   );
+		addTestConfiguration(TEST_NAME,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "X" }) );
 	}
-
 	
 	
 	@Test
@@ -90,21 +88,21 @@ public class MultipleReadsIPATest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",HOME + INPUT_DIR + "X1",
-					                           Integer.toString(rows1),
-					                           Integer.toString(cols1),
-					                           HOME + INPUT_DIR + "X2",
-					                           Integer.toString(rows2),
-					                           Integer.toString(cols2),
-					                           HOME + OUTPUT_DIR + "X" };
+			programArgs = new String[]{"-args",input("X1"),
+				Integer.toString(rows1),
+				Integer.toString(cols1),
+				input("X2"),
+				Integer.toString(rows2),
+				Integer.toString(cols2),
+				output("X") };
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;

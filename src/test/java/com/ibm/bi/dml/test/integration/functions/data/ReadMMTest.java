@@ -62,37 +62,40 @@ public class ReadMMTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReadMMTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 	
 		// positive tests
-		addTestConfiguration("TextSimpleTest", new TestConfiguration(TEST_DIR, "ReadMMTest", new String[] { "a" }));
-		addTestConfiguration("BinarySimpleTest", new TestConfiguration(TEST_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("TextSimpleTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("BinarySimpleTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
 
 		// negative tests
-		addTestConfiguration("TextWrongRowDimensionTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
-				new String[] { "a" }));
-		addTestConfiguration("TextWrongColDimensionTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
-				new String[] { "a" }));
-		addTestConfiguration("TextWrongDimensionsTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
-				new String[] { "a" }));
-		addTestConfiguration("TextWrongFormatTest", new TestConfiguration(TEST_DIR, "ReadMMTest", 
-				new String[] { "a" }));
-		addTestConfiguration("BinaryWrongRowDimensionTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
-				new String[] { "a" }));
-		addTestConfiguration("BinaryWrongColDimensionTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
-				new String[] { "a" }));
-		addTestConfiguration("BinaryWrongDimensionsTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
-				new String[] { "a" }));
-		addTestConfiguration("BinaryWrongFormatTest", new TestConfiguration(TEST_DIR, "ReadMMTest",
-				new String[] { "a" }));
-		addTestConfiguration("TextWrongIndexBaseTest", new TestConfiguration(TEST_DIR, "ReadMMIndexTest",
-				new String[] { "b" }));
-		addTestConfiguration("EmptyTextTest", new TestConfiguration(TEST_DIR, "ReadMMTest", 
-				new String[] { "a" }));
-		addTestConfiguration("EmptyBinaryTest", new TestConfiguration(TEST_DIR, "ReadMMTest", 
-				new String[] { "a" }));
+		addTestConfiguration("TextWrongRowDimensionTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("TextWrongColDimensionTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("TextWrongDimensionsTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("TextWrongFormatTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("BinaryWrongRowDimensionTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("BinaryWrongColDimensionTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("BinaryWrongDimensionsTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("BinaryWrongFormatTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("TextWrongIndexBaseTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMIndexTest", new String[] { "b" }));
+		addTestConfiguration("EmptyTextTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
+		addTestConfiguration("EmptyBinaryTest",
+			new TestConfiguration(TEST_CLASS_DIR, "ReadMMTest", new String[] { "a" }));
 	}
 
 	@Test
@@ -328,11 +331,11 @@ public class ReadMMTest extends AutomatedTestBase
 		loadTestConfiguration(config);
 
 		try {
-			TestUtils.createFile(baseDirectory + INPUT_DIR + "a/in");
+			TestUtils.createFile(input("a/in"));
 			runTest(true, DMLException.class);
 		} catch (IOException e) {
 			e.printStackTrace();
-			fail("unable to create file " + baseDirectory + INPUT_DIR + "a/in");
+			fail("unable to create file " + input("a/in"));
 		}
 
 	}
@@ -350,7 +353,7 @@ public class ReadMMTest extends AutomatedTestBase
 		loadTestConfiguration(config);
 
 		try {
-			String fname = baseDirectory + INPUT_DIR + "a";
+			String fname = input("a");
 			MapReduceTool.deleteFileIfExistOnHDFS(fname);
 			MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtd");
 			TestUtils.createFile(fname + "/in");
@@ -359,7 +362,7 @@ public class ReadMMTest extends AutomatedTestBase
 			runTest(true, DMLException.class);
 		} catch (IOException e) {
 			e.printStackTrace();
-			fail("unable to create file " + baseDirectory + INPUT_DIR + "a/in");
+			fail("unable to create file " + input("a/in"));
 		}
 	}
 

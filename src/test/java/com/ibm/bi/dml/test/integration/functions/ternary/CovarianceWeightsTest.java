@@ -37,6 +37,7 @@ public class CovarianceWeightsTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "CovarianceWeights";
 	private final static String TEST_DIR = "functions/ternary/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CovarianceWeightsTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 1871;
@@ -49,7 +50,7 @@ public class CovarianceWeightsTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "R" })   ); 
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "R" })   ); 
 	}
 
 	@Test
@@ -111,18 +112,15 @@ public class CovarianceWeightsTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
-					                            HOME + INPUT_DIR + "B",
-					                            HOME + INPUT_DIR + "C",
-					                        HOME + OUTPUT_DIR + "R"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-args", input("A"),
+				input("B"), input("C"), output("R")};
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset (always dense because values <=0 invalid)
 			double sparsitya = sparse ? sparsity2 : sparsity1;

@@ -53,6 +53,7 @@ public class ScalingTest extends AutomatedTestBase
 	private final static String TEST_NAME = "Scaling";
 
 	private final static String TEST_DIR = "functions/transform/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ScalingTest.class.getSimpleName() + "/";
 	
 	private final static int rows1 = 1500;
 	private final static int cols1 = 16;
@@ -61,7 +62,8 @@ public class ScalingTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"R"}));
 	}
 
 	// ---- Scaling CSV ---- 
@@ -181,12 +183,13 @@ public class ScalingTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String specFile = HOME + INPUT_DIR + "spec.json";
-			String inputFile = HOME + INPUT_DIR + "X";
-			String outputFile = HOME + OUTPUT_DIR + config.getOutputFiles()[0];
-			String outputFileR = HOME + EXPECTED_DIR + config.getOutputFiles()[0];
+			String specFile = input("spec.json");
+			String inputFile = input("X");
+			String outputFile = output(config.getOutputFiles()[0]);
+			String outputFileR = expected(config.getOutputFiles()[0]);
 			
 			generateSpecFile(cols, specFile);
 			
@@ -195,16 +198,12 @@ public class ScalingTest extends AutomatedTestBase
 			programArgs = new String[]{"-nvargs", 
 					"DATA=" + inputFile,
 					"TFSPEC=" + specFile,
-					"TFMTD=" + HOME + OUTPUT_DIR + "tfmtd",
+					"TFMTD=" + output("tfmtd"),
 					"TFDATA=" + outputFile,
-					"OFMT=" + ofmt
-              };
+					"OFMT=" + ofmt };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       inputFile + " " + outputFileR;
-			
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputFile + " " + outputFileR;
 	
 			//generate actual dataset 
 			double[][] X = getRandomMatrix(rows, cols, -50, 50, 1.0, 7); 

@@ -42,6 +42,7 @@ public class FullReblockTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "SingleReblockTest";
 	private final static String TEST_NAME2 = "MultipleReblockTest";
 	private final static String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullReblockTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rowsM = 1200;
@@ -62,14 +63,10 @@ public class FullReblockTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "C" })   );
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, 
-				new String[] { "C1", "C2" })   );
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) );
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "C1", "C2" }) );
 	}
 
 	//textcell
@@ -432,20 +429,16 @@ public class FullReblockTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		if( type==Type.Multiple ) {
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A1",
-												HOME + INPUT_DIR + "A2",
-							                    HOME + OUTPUT_DIR + "C1",
-							                    HOME + OUTPUT_DIR + "C2"};
+			programArgs = new String[]{"-args", input("A1"), input("A2"), output("C1"), output("C2")};
 		}
 		else {
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
-						                        HOME + OUTPUT_DIR + "C"};
+			programArgs = new String[]{"-args", input("A"), output("C")};
 		}
-		loadTestConfiguration(config);
 		
 		try 
 		{
@@ -459,11 +452,11 @@ public class FullReblockTest extends AutomatedTestBase
 				double[][] A2 = getRandomMatrix(rows, cols, 0, 1, sparsity, seed2);
 		        
 				//force binary reblock for 999 to match 1000
-		        writeMatrix(A1, HOME + INPUT_DIR + "A1", oi, rows, cols, blocksize-1, blocksize-1);
-		        writeMatrix(A2, HOME + INPUT_DIR + "A2", oi, rows, cols, blocksize-1, blocksize-1);
+		        writeMatrix(A1, input("A1"), oi, rows, cols, blocksize-1, blocksize-1);
+		        writeMatrix(A2, input("A2"), oi, rows, cols, blocksize-1, blocksize-1);
 				runTest(true, false, null, -1);
-		        double[][] C1 = readMatrix(HOME + OUTPUT_DIR + "C1", InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
-		        double[][] C2 = readMatrix(HOME + OUTPUT_DIR + "C2", InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
+		        double[][] C1 = readMatrix(output("C1"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
+		        double[][] C2 = readMatrix(output("C2"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
 				
 		        TestUtils.compareMatrices(A1, C1, rows, cols, eps);
 		        TestUtils.compareMatrices(A2, C2, rows, cols, eps);
@@ -474,9 +467,9 @@ public class FullReblockTest extends AutomatedTestBase
 		        double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, seed1);
 
 				//force binary reblock for 999 to match 1000
-		        writeMatrix(A, HOME + INPUT_DIR + "A", oi, rows, cols, blocksize-1, blocksize-1);
+		        writeMatrix(A, input("A"), oi, rows, cols, blocksize-1, blocksize-1);
 				runTest(true, false, null, -1);
-		        double[][] C = readMatrix(HOME + OUTPUT_DIR + "C", InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
+		        double[][] C = readMatrix(output("C"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
 				
 		        TestUtils.compareMatrices(A, C, rows, cols, eps);
 			}

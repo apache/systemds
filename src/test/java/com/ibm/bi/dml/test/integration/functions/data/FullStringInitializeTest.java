@@ -40,6 +40,7 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "StrInit";
 	private final static String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullStringInitializeTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-10;
 	
@@ -63,7 +64,8 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"A"})); 
+		addTestConfiguration(TEST_NAME,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"A"}));
 	}
 
 	
@@ -342,18 +344,15 @@ public class FullStringInitializeTest extends AutomatedTestBase
 			}
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args",
-					                        sb.toString(),
-											String.valueOf(rows),
-											String.valueOf(cols),
-					                        HOME + OUTPUT_DIR + "A"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
+				sb.toString(), String.valueOf(rows), String.valueOf(cols), output("A") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
 	
 			//run the testcase
 			boolean expectExcept = (errtype!=ErrorType.NO_ERROR);
@@ -361,7 +360,8 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	
 			if( !expectExcept ) {
 				//compare matrices 
-				MatrixBlock ret = DataConverter.readMatrixFromHDFS(HOME + OUTPUT_DIR + "A", InputInfo.TextCellInputInfo, rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, sparsity, null);
+				MatrixBlock ret = DataConverter.readMatrixFromHDFS(output("A"), InputInfo.TextCellInputInfo,
+						rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, sparsity, null);
 				double[][] dret = DataConverter.convertToDoubleMatrix(ret);
 				TestUtils.compareMatrices(A, dret, rows, cols, eps);
 			}

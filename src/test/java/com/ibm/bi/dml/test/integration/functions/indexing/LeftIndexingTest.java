@@ -35,7 +35,8 @@ public class LeftIndexingTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/indexing/";
-
+	private final static String TEST_CLASS_DIR = TEST_DIR + LeftIndexingTest.class.getSimpleName() + "/";
+	
 	private final static double epsilon=0.0000000001;
 	private final static int rows = 1279;
 	private final static int cols = 1050;
@@ -44,7 +45,7 @@ public class LeftIndexingTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("LeftIndexingTest", new TestConfiguration(TEST_DIR, "LeftIndexingTest", 
+		addTestConfiguration("LeftIndexingTest", new TestConfiguration(TEST_CLASS_DIR, "LeftIndexingTest", 
 				new String[] {"AB", "AC", "AD"}));
 	}
 	
@@ -101,28 +102,25 @@ public class LeftIndexingTest extends AutomatedTestBase
 	        config.addVariable("rowend", rowend);
 	        config.addVariable("colstart", colstart);
 	        config.addVariable("colend", colend);
+			loadTestConfiguration(config);
 	        
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String LI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = LI_HOME + "LeftIndexingTest" + ".dml";
-			programArgs = new String[]{"-args",  LI_HOME + INPUT_DIR + "A" , 
-		               			Long.toString(rows), Long.toString(cols),
-		                        Long.toString(rowstart), Long.toString(rowend),
-		                        Long.toString(colstart), Long.toString(colend),
-		                        LI_HOME + OUTPUT_DIR + "AB" , 
-		                         LI_HOME + OUTPUT_DIR + "AC" , 
-		                         LI_HOME + OUTPUT_DIR + "AD",
-		                         LI_HOME + INPUT_DIR + "B" , 
-		                         LI_HOME + INPUT_DIR + "C" , 
-		                         LI_HOME + INPUT_DIR + "D",
-		                         Long.toString(rowend-rowstart+1), 
-		                         Long.toString(colend-colstart+1),
-			                     Long.toString(cols-colstart+1)};
+			programArgs = new String[]{"-args",  input("A"),
+				Long.toString(rows), Long.toString(cols),
+				Long.toString(rowstart), Long.toString(rowend),
+				Long.toString(colstart), Long.toString(colend),
+				output("AB"), output("AC"), output("AD"),
+				input("B"), input("C"), input("D"),
+				Long.toString(rowend-rowstart+1), 
+				Long.toString(colend-colstart+1),
+				Long.toString(cols-colstart+1)};
+			
 			fullRScriptName = LI_HOME + "LeftIndexingTest" + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       LI_HOME + INPUT_DIR + " "+rowstart+" "+rowend+" "+colstart+" "+colend+" " + LI_HOME + EXPECTED_DIR;
+				inputDir() + " " + rowstart + " " + rowend + " " + colstart + " " + colend + " " + expectedDir();
 	
-			loadTestConfiguration(config);
 			double sparsity=1.0;//rand.nextDouble(); 
 	        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
 	        writeInputMatrix("A", A, true);

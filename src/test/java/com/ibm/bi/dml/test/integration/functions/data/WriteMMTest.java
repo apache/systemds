@@ -47,6 +47,7 @@ public class WriteMMTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "WriteMMTest";
 	private final static String TEST_NAME2 = "WriteMMComplexTest";
 	private final static String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + WriteMMTest.class.getSimpleName() + "/";
 	
 	//for CP
 	private final static int rows1 = 30;
@@ -60,14 +61,10 @@ public class WriteMMTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "B" })   ); 
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, 
-				new String[] { "B" })   ); 
+		addTestConfiguration(TEST_NAME1,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" }) ); 
+		addTestConfiguration(TEST_NAME2,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "B" }) ); 
 	}
 
 	@Test
@@ -125,17 +122,13 @@ public class WriteMMTest extends AutomatedTestBase
 	
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", HOME + INPUT_DIR + "A" ,
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        HOME + OUTPUT_DIR + "B"  };
-			
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-explain", "-args",
+				input("A"), Integer.toString(rows), Integer.toString(cols), output("B") };
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, System.currentTimeMillis()); 

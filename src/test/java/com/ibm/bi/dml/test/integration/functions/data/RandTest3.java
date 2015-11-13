@@ -40,14 +40,14 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class RandTest3 extends AutomatedTestBase 
 {
 
-
 	private static final String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RandTest3.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 	
 		// positive tests
-		addTestConfiguration("MatrixTest", new TestConfiguration(TEST_DIR, "RandTest3", new String[] { "rand" }));
+		addTestConfiguration("MatrixTest", new TestConfiguration(TEST_CLASS_DIR, "RandTest3", new String[] { "rand" }));
 		
 		// negative tests
 	}

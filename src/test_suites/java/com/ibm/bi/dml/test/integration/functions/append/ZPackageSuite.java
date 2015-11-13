@@ -26,7 +26,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
   AppendVectorTest.class,
   StringAppendTest.class,
-  
+  RBindCBindMatrixTest.class,
   AppendChainTest.class,
   AppendMatrixTest.class
 })

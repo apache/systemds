@@ -19,6 +19,7 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -62,6 +63,14 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 	public static void init()
 	{
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 	
 	@Test
@@ -386,24 +395,16 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 				TEST_CACHE_DIR = "vm" + String.valueOf(sparsityA) + "_" + String.valueOf(sparsityB) + "/";
 			}
 			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
+			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
-			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", TARGET_IN + "A",
-					                        Integer.toString(1),
-					                        Integer.toString(colsA),
-					                        TARGET_IN + "B",
-					                        Integer.toString(rowsB),
-					                        Integer.toString(colsB),
-					                        TARGET_OUT + "C"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       TARGET_IN + " " + TARGET_EXPECTED;
+			programArgs = new String[]{"-args", input("A"), Integer.toString(1), Integer.toString(colsA),
+				input("B"), Integer.toString(rowsB), Integer.toString(colsB), output("C") };
 			
-			loadTestConfiguration(config, TEST_CACHE_DIR);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(1, colsA, 0, 1, sparsityA, 7); 
@@ -455,25 +456,17 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 			if (TEST_CACHE_ENABLED) {
 				TEST_CACHE_DIR = "vv" + rows1 + "_" + cols1 + "_" + rows2 + "_" + cols2 + "_" + String.valueOf(sparsityA) + "/";
 			}
+			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
-			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", TARGET_IN + "A",
-					                        Integer.toString(rows1),
-					                        Integer.toString(cols1),
-					                        TARGET_IN + "B",
-					                        Integer.toString(rows2),
-					                        Integer.toString(cols2),
-					                        TARGET_OUT + "C"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       TARGET_IN + " " + TARGET_EXPECTED;
+			programArgs = new String[]{"-args", input("A"), Integer.toString(rows1), Integer.toString(cols1),
+				input("B"), Integer.toString(rows2), Integer.toString(cols2), output("C") };
 			
-			loadTestConfiguration(config, TEST_CACHE_DIR);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows1, cols1, 0, 1, sparsityA, 7); 

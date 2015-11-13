@@ -32,6 +32,7 @@ public class IPAAssignConstantPropagationTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "constant_propagation_sb";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + IPAAssignConstantPropagationTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 10;
 	private final static int cols = 15;    
@@ -41,7 +42,8 @@ public class IPAAssignConstantPropagationTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "X" }) );
+		addTestConfiguration( TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "X" }) );
 	}
 
 	
@@ -85,17 +87,16 @@ public class IPAAssignConstantPropagationTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", Integer.toString(rows),
-					                            Integer.toString(cols),
-					                            HOME + OUTPUT_DIR + "X" };
+			programArgs = new String[]{"-explain","-args",
+				Integer.toString(rows), Integer.toString(cols), output("X") };
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-				   Integer.toString(rows) + " " + Integer.toString(cols) + " " +
-			       HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+				Integer.toString(rows) + " " + Integer.toString(cols) + " " + expectedDir();			
 
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = branchRemoval;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;

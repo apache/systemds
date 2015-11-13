@@ -36,6 +36,8 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "rewrite_mapmultchain1";
 	private final static String TEST_NAME2 = "rewrite_mapmultchain2";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + 
+		RewriteComplexMapMultChainTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 1974;
 	private final static int cols = 45;
@@ -50,10 +52,11 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "HV" }) );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "HV" }) );
+		addTestConfiguration( TEST_NAME1,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "HV" }) );
+		addTestConfiguration( TEST_NAME2,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "HV" }) );
 	}
-
 	
 	
 	@Test
@@ -129,18 +132,15 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "X",
-												HOME + INPUT_DIR + "P",
-												HOME + INPUT_DIR + "v",
-					                            HOME + OUTPUT_DIR + "HV" };
+			programArgs = new String[]{"-explain","-args",
+				input("X"), input("P"), input("v"), output("HV") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " +
-					HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
 			
@@ -160,7 +160,6 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("HV");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("HV");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
-			
 			
 			//check expected number of compiled and executed MR jobs
 			int expectedNumCompiled = (et==ExecType.CP)?1:(singleCol?4:6); //mapmultchain if single column

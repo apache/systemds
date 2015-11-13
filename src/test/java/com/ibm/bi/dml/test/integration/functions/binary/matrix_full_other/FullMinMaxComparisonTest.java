@@ -20,6 +20,7 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 import java.io.IOException;
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -75,6 +76,14 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 	public static void init()
 	{
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 
 	@Test
@@ -335,24 +344,17 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 
 		try
 		{
-			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
-			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", TARGET_IN + "A",
-                                                TARGET_IN + "B",
-                                                Integer.toString(minFlag),
-                                                TARGET_OUT + "C"    };
-			fullRScriptName = HOME + TEST_NAME_R + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-				       TARGET_IN + " " + minFlag + " " + TARGET_EXPECTED;
+			programArgs = new String[]{"-explain","-args", input("A"), input("B"), 
+				Integer.toString(minFlag), output("C") };
 			
-			loadTestConfiguration(config, TEST_CACHE_DIR);
+			fullRScriptName = HOME + TEST_NAME_R + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + minFlag + " " + expectedDir();
 	
 			//generate actual dataset
 			int mrows1 = (dtM1==DataType.MATRIX)? rows:1;
@@ -362,12 +364,12 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(mrows1, mcols1, -1, 1, sparseM1?sparsity2:sparsity1, 7); 
 			writeInputMatrix("A", A, true);
 			MatrixCharacteristics mc1 = new MatrixCharacteristics(mrows1,mcols1,1000,1000);
-			MapReduceTool.writeMetaDataFile(TARGET_IN + "A.mtd", ValueType.DOUBLE, mc1, OutputInfo.TextCellOutputInfo);
+			MapReduceTool.writeMetaDataFile(input("A.mtd"), ValueType.DOUBLE, mc1, OutputInfo.TextCellOutputInfo);
 			
 			double[][] B = getRandomMatrix(mrows2, mcols2, -1, 1, sparseM2?sparsity2:sparsity1, 3); 
 			writeInputMatrix("B", B, true);
 			MatrixCharacteristics mc2 = new MatrixCharacteristics(mrows2,mcols2,1000,1000);
-			MapReduceTool.writeMetaDataFile(TARGET_IN + "B.mtd", ValueType.DOUBLE, mc2, OutputInfo.TextCellOutputInfo);
+			MapReduceTool.writeMetaDataFile(input("B.mtd"), ValueType.DOUBLE, mc2, OutputInfo.TextCellOutputInfo);
 			
 			//run test
 			runTest(true, false, null, -1); 

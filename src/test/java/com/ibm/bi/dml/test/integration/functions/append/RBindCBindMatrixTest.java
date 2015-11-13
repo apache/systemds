@@ -38,7 +38,8 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "RBindMatrixTest";      //basic rbind test
 	private final static String TEST_NAME2 = "RBindCBindMatrixTest"; //cbind rewritten to rbind
 	private final static String TEST_DIR = "functions/append/";
-
+	private final static String TEST_CLASS_DIR = TEST_DIR + RBindCBindMatrixTest.class.getSimpleName() + "/";
+	
 	private final static double epsilon=0.0000000001;
 	private final static int min=1;
 	private final static int max=100;
@@ -53,8 +54,8 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {"C"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {"C"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"C"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"C"}));
 	}
 
 	@Test
@@ -143,6 +144,7 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 
 		String TEST_NAME = testname;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		loadTestConfiguration(config);
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
 		
 		try
@@ -150,14 +152,10 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 			//stats required for opcode checks
-			programArgs = new String[]{"-stats","-args",  RI_HOME + INPUT_DIR + "A" , 
-								                 RI_HOME + INPUT_DIR + "B" ,
-		                                         RI_HOME + OUTPUT_DIR + "C" };
+			programArgs = new String[]{"-stats","-args",  input("A"), input("B"), output("C") };
+			
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       RI_HOME + INPUT_DIR + " "+ RI_HOME + EXPECTED_DIR;
-	
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " "+ expectedDir();
 			
 			double[][] A = getRandomMatrix(rows1, cols, min, max, sparsity, 823);
 	        writeInputMatrixWithMTD("A", A, true);

@@ -36,6 +36,7 @@ public class PredicateRecompileTest extends AutomatedTestBase
 	private final static String TEST_NAME3 = "for_recompile";
 	private final static String TEST_NAME4 = "parfor_recompile";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + PredicateRecompileTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 10;
 	private final static int cols = 15;    
@@ -45,22 +46,14 @@ public class PredicateRecompileTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "Rout" })   );
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, 
-				new String[] { "Rout" })   );
-		addTestConfiguration(
-				TEST_NAME3, 
-				new TestConfiguration(TEST_DIR, TEST_NAME3, 
-				new String[] { "Rout" })   );
-		addTestConfiguration(
-				TEST_NAME4, 
-				new TestConfiguration(TEST_DIR, TEST_NAME4, 
-				new String[] { "Rout" })   );
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME3, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME4, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "Rout" }) );
 	}
 
 	@Test
@@ -295,18 +288,16 @@ public class PredicateRecompileTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-args",Integer.toString(rows),
-					                           Integer.toString(cols),
-					                           Integer.toString(val),
-					                           HOME + OUTPUT_DIR + "R" };
-			fullRScriptName = HOME + testname + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-args",
+				Integer.toString(rows),
+				Integer.toString(cols),
+				Integer.toString(val),
+				output("R") };
 
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = evalExpr;

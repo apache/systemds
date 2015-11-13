@@ -46,9 +46,9 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class RandRuntimePlatformTest extends AutomatedTestBase 
 {
 	
-	
 	private final static String TEST_DIR = "functions/data/";
 	private final static String TEST_NAME = "RandRuntimePlatformTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RandRuntimePlatformTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-10;
 	
@@ -173,7 +173,7 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"A"})); 
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"A"})); 
 	}
 	
 	@Test
@@ -183,7 +183,7 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 	
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
@@ -191,44 +191,38 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 			if ( !pdf.equalsIgnoreCase("poisson"))
 			{
 				fullDMLScriptName = HOME + TEST_NAME + ".dml";
-				programArgs = new String[]{"-args", Integer.toString(rows),
-						                        Integer.toString(cols),
-						                        Double.toString(sparsity),
-						                        Long.toString(seed),
-						                        pdf,
-						                        HOME + OUTPUT_DIR + "A_CP"    };
+				programArgs = new String[]{"-args", 
+					Integer.toString(rows), Integer.toString(cols),
+					Double.toString(sparsity), Long.toString(seed), pdf, 
+					output("A_CP") };
 			}
 			else 
 			{
 				Random r = new Random(System.nanoTime());
 				double mean = r.nextDouble()*100;
 				fullDMLScriptName = HOME + TEST_NAME + "Poisson" + ".dml";
-				programArgs = new String[]{"-args", Integer.toString(rows),
-						                        Integer.toString(cols),
-						                        Double.toString(sparsity),
-						                        Long.toString(seed),
-						                        pdf,
-						                        Double.toString(mean),
-						                        HOME + OUTPUT_DIR + "A_CP"    };
+				programArgs = new String[]{"-args", 
+					Integer.toString(rows), Integer.toString(cols),
+					Double.toString(sparsity), Long.toString(seed), pdf, Double.toString(mean), 
+					output("A_CP") };
 			}
-			loadTestConfiguration(config);
 	
 			boolean exceptionExpected = false;
 			
 			// Generate Data in CP
 			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-			programArgs[programArgs.length-1] = HOME + OUTPUT_DIR + "A_SN"; // data file generated from CP
+			programArgs[programArgs.length-1] = output("A_SN"); // data file generated from CP
 			runTest(true, exceptionExpected, null, -1); 
 						
 			
 			// Generate Data in CP
 			rtplatform = RUNTIME_PLATFORM.HYBRID;
-			programArgs[programArgs.length-1] = HOME + OUTPUT_DIR + "A_CP"; // data file generated from CP
+			programArgs[programArgs.length-1] = output("A_CP"); // data file generated from CP
 			runTest(true, exceptionExpected, null, -1); 
 			
 			// Generate Data in MR
 			rtplatform = RUNTIME_PLATFORM.HADOOP;
-			programArgs[programArgs.length-1] = HOME + OUTPUT_DIR + "A_MR"; // data file generated from MR
+			programArgs[programArgs.length-1] = output("A_MR"); // data file generated from MR
 			runTest(true, exceptionExpected, null, -1); 
 			
 			boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -236,7 +230,7 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 				// Generate Data in Spark
 				rtplatform = RUNTIME_PLATFORM.SPARK;
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-				programArgs[programArgs.length-1] = HOME + OUTPUT_DIR + "A_SPARK"; // data file generated from MR
+				programArgs[programArgs.length-1] = output("A_SPARK"); // data file generated from MR
 				runTest(true, exceptionExpected, null, -1); 
 			}
 			finally {

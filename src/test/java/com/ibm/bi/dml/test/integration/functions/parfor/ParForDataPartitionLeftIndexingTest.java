@@ -34,6 +34,7 @@ public class ParForDataPartitionLeftIndexingTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "parfor_cdatapartition_leftindexing";
 	private final static String TEST_NAME2 = "parfor_rdatapartition_leftindexing";
 	private final static String TEST_DIR = "functions/parfor/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForDataPartitionLeftIndexingTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static long dim1 = 10000;
@@ -46,8 +47,8 @@ public class ParForDataPartitionLeftIndexingTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" }) );
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 	}
 
 	//colwise partitioning
@@ -109,10 +110,6 @@ public class ParForDataPartitionLeftIndexingTest extends AutomatedTestBase
 	 */
 	private void runParForDataPartitionLeftindexingTest( boolean colwise, boolean sparse, ExecType et )
 	{
-		//rtplatform for MR
-		//RUNTIME_PLATFORM platformOld = rtplatform;
-		//rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-		
 		//force MR leftindexing via very small memory budget
 		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
 		if(et==ExecType.MR) {
@@ -140,17 +137,15 @@ public class ParForDataPartitionLeftIndexingTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "V",
-					                            HOME + OUTPUT_DIR + "R" };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-args", input("V"), output("R") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate input data
 			double[][] V = getRandomMatrix((int)rows, (int)cols, 0, 1, sparsity, 7);
@@ -166,7 +161,6 @@ public class ParForDataPartitionLeftIndexingTest extends AutomatedTestBase
 		}
 		finally
 		{
-			//rtplatform = platformOld;
 			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);
 		}
 	}

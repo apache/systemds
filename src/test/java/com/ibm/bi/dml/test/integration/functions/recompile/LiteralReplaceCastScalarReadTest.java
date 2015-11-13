@@ -35,12 +35,14 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "LiteralReplaceCastScalar";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + 
+		LiteralReplaceCastScalarReadTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "R" }));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "R" }));
 	}
 
 	

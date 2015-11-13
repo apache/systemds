@@ -36,6 +36,7 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 	
 	private final static String TEST_DIR = "functions/indexing/";
 	private final static String TEST_NAME = "LeftIndexingSparseSparseTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + LeftIndexingSparseSparseTest.class.getSimpleName() + "/";
 	
 	private final static int rows1 = 1073;
 	private final static int cols1 = 1050;
@@ -55,8 +56,8 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] {"R"}));
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
 	}
 	
 	@Test
@@ -171,22 +172,17 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 			if( rtplatform == RUNTIME_PLATFORM.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
-			TestConfiguration config = getTestConfiguration(TEST_NAME);    
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 		    
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  
-								HOME + INPUT_DIR + "A" , 
-								HOME + INPUT_DIR + "B" , 
-		               			String.valueOf(cl),
-		               			String.valueOf(cu),
-		                        HOME + OUTPUT_DIR + "R"
-		                        };
+			programArgs = new String[]{"-args", input("A"), input("B"), 
+				String.valueOf(cl), String.valueOf(cu), output("R")};
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + cl + " " + cu + " " + HOME + EXPECTED_DIR;
-	
-			loadTestConfiguration(config);
+			       inputDir() + " " + cl + " " + cu + " " + expectedDir();
 			
 			//generate input data sets
 			double[][] A = getRandomMatrix(rows1, cols1, -1, 1, sparsity1, 1234);
@@ -204,7 +200,6 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 		}
 		
 		runRScript(true);
-		
 		
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 		HashMap<CellIndex, Double> rfile = readRMatrixFromFS("R");

@@ -44,6 +44,7 @@ public class RewritesWeightedSigmoidTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "RewriteWeightedSigmoid";
 	private final static String TEST_DIR = "functions/quaternary/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RewritesWeightedSigmoidTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-10;
 	
@@ -57,7 +58,7 @@ public class RewritesWeightedSigmoidTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"C"}));
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"C"}));
 	}
 
 	@Test
@@ -118,20 +119,16 @@ public class RewritesWeightedSigmoidTest extends AutomatedTestBase
 			double sparsity = (sparse) ? spSparse : spDense;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats", "-explain", "runtime",
-					                   "-args", 
-					                        HOME + INPUT_DIR + "A",
-					                        HOME + INPUT_DIR + "B",
-					                        HOME + OUTPUT_DIR + "C"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-stats", "-explain", "runtime", "-args", 
+				input("A"), input("B"), output("C") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset 
 			double[][] A = getRandomMatrix(rows1, rank, 0, 1, 1.0, 213); 

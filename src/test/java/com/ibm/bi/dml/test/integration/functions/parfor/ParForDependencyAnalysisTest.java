@@ -66,8 +66,9 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class ParForDependencyAnalysisTest extends AutomatedTestBase
 {
 	
-	public static final String REL_DIR = "functions/parfor";
-	public static String DIR = SCRIPT_DIR+ "/" + REL_DIR + "/";
+	private static final String TEST_DIR = "functions/parfor/";
+	private static final String HOME = SCRIPT_DIR + TEST_DIR;
+	private static final String TEST_CLASS_DIR = TEST_DIR + ParForDependencyAnalysisTest.class.getSimpleName() + "/";
 	
 	/**
 	 * Main method for running one test at a time.
@@ -327,9 +328,11 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 		{
 			// Tell the superclass about the name of this test, so that the superclass can
 			// create temporary directories.
-			TestConfiguration testConfig = new TestConfiguration(REL_DIR, scriptFilename, 
+			int index = scriptFilename.lastIndexOf(".dml");
+			String testName = scriptFilename.substring(0, index > 0 ? index : scriptFilename.length());
+			TestConfiguration testConfig = new TestConfiguration(TEST_CLASS_DIR, testName, 
 					new String[] {});
-			addTestConfiguration(scriptFilename, testConfig);
+			addTestConfiguration(testName, testConfig);
 			loadTestConfiguration(testConfig);
 			
 			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
@@ -339,7 +342,7 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 			HashMap<String, String> argVals = new HashMap<String,String>();
 			
 			//read script
-			BufferedReader in = new BufferedReader(new FileReader(DIR+scriptFilename));
+			BufferedReader in = new BufferedReader(new FileReader(HOME + scriptFilename));
 			String s1 = null;
 			while ((s1 = in.readLine()) != null)
 				dmlScriptString += s1 + "\n";

@@ -33,9 +33,9 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class Jdk7IssueRightIndexingTest extends AutomatedTestBase
 {
 
-	
 	private final static String TEST_NAME = "Jdk7IssueTest";
 	private final static String TEST_DIR = "functions/indexing/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + Jdk7IssueRightIndexingTest.class.getSimpleName() + "/";
 
 	private final static double eps = 0.0000000001;
 	private final static int rows = 1000000;
@@ -46,7 +46,7 @@ public class Jdk7IssueRightIndexingTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
 	}
 	
 	@Test
@@ -122,16 +122,15 @@ public class Jdk7IssueRightIndexingTest extends AutomatedTestBase
 			
 		    config.addVariable("rows", rows);
 	        config.addVariable("cols", cols);
+	
+			loadTestConfiguration(config);
 	        
 	        String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "M" ,
-		                                         RI_HOME + OUTPUT_DIR + "R" };
+			programArgs = new String[]{"-args", input("M"), output("R") };
+			
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       RI_HOME + INPUT_DIR + " " + RI_HOME + EXPECTED_DIR;
-	
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			//generate input data
 			double sparsity = sparse ? sparsity2 : sparsity1;

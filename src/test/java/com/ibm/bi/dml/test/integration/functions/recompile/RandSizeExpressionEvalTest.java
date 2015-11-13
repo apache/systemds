@@ -30,10 +30,11 @@ import com.ibm.bi.dml.utils.Statistics;
 
 public class RandSizeExpressionEvalTest extends AutomatedTestBase 
 {
-
 	
 	private final static String TEST_NAME = "rand_size_expr_eval";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + 
+		RandSizeExpressionEvalTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 14;
 	private final static int cols = 14;
@@ -41,7 +42,7 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[]{} ));
+		addTestConfiguration( TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{} ));
 	}
 
 	@Test
@@ -70,20 +71,18 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 		boolean oldFlagRand1 = OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE;
 		boolean oldFlagRand2 = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
 		boolean oldFlagRand3 = OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION;
-		
-		
+				
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testName);
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testName + ".dml";
-			programArgs = new String[]{"-args", Integer.toString(rows), Integer.toString(cols), HOME + OUTPUT_DIR + "R" };
-			
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-args", Integer.toString(rows), Integer.toString(cols), output("R") };
 	
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = evalExpr;
 			OptimizerUtils.ALLOW_CONSTANT_FOLDING = constFold;
@@ -92,8 +91,7 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE = false;
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = false;
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = false;
-			
-			
+						
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
 			

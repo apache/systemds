@@ -32,6 +32,7 @@ public class RandRecompileTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "rand_recompile2"; //nrow
 	private final static String TEST_NAME3 = "rand_recompile3"; //ncol
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RandRecompileTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 200;
 	private final static int cols = 200;
@@ -39,15 +40,12 @@ public class RandRecompileTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, new String[]{} ));
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, new String[]{} ));
-		addTestConfiguration(
-				TEST_NAME3, 
-				new TestConfiguration(TEST_DIR, TEST_NAME3, new String[]{} ));
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{} ));
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{} ));
+		addTestConfiguration(TEST_NAME3, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[]{} ));
 	}
 
 	@Test
@@ -120,20 +118,18 @@ public class RandRecompileTest extends AutomatedTestBase
 		boolean oldFlagRand2 = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
 		boolean oldFlagRand3 = OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION;
 		
-		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testName);
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testName + ".dml";
 			programArgs = new String[]{"-args", Integer.toString(rows), Integer.toString(cols) };
 			
-			loadTestConfiguration(config);
-	
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 			
@@ -141,7 +137,6 @@ public class RandRecompileTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE = false;
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = false;
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = false;
-			
 			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 

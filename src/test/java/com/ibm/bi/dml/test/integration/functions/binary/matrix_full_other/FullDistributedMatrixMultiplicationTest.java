@@ -19,6 +19,7 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -53,10 +54,8 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
-				new String[] { "C" })   ); 
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "C" }) ); 
 		if (TEST_CACHE_ENABLED) {
 			setOutAndExpectedDeletionDisabled(true);
 		}
@@ -66,6 +65,14 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 	public static void init()
 	{
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 	
 	@Test
@@ -248,20 +255,15 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 				TEST_CACHE_DIR = String.valueOf(sparsityA) + "_" + String.valueOf(sparsityB) + "/";
 			}
 			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
+			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
-			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", TARGET_IN + "A",
-                                            TARGET_IN + "B",
-                                            TARGET_OUT + "C"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       TARGET_IN + " " + TARGET_EXPECTED;
+			programArgs = new String[]{"-args", input("A"), input("B"), output("C") };
 			
-			loadTestConfiguration(config, TEST_CACHE_DIR);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rowsA, colsA, 0, 1, sparsityA, 12357); 

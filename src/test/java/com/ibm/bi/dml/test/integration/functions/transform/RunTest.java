@@ -38,6 +38,7 @@ public class RunTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Transform";
 	private final static String TEST_NAME2 = "Apply";
 	private final static String TEST_DIR = "functions/transform/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RunTest.class.getSimpleName() + "/";
 	
 	private final static String HOMES_DATASET 	= "homes/homes.csv";
 	//private final static String HOMES_SPEC 		= "homes/homes.tfspec.json";
@@ -59,7 +60,7 @@ public class RunTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 	}
 	
 	// ---- NAN BinaryBlock ----
@@ -215,7 +216,7 @@ public class RunTest extends AutomatedTestBase
 
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME1);
+			getAndLoadTestConfiguration(TEST_NAME1);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
@@ -226,10 +227,9 @@ public class RunTest extends AutomatedTestBase
 				programArgs = new String[]{"-nvargs", 
 											"DATA=" + HOME + "input/" + dataset,
 											"TFSPEC=" + HOME + "input/" + spec,
-											"TFMTD=" + HOME + OUTPUT_DIR + "tfmtd",
-											"TFDATA=" + HOME + OUTPUT_DIR + "tfout",
-											"OFMT=" + ofmt
-					                  };
+											"TFMTD=" + output("tfmtd"),
+											"TFDATA=" + output("tfout"),
+											"OFMT=" + ofmt };
 			}
 			else {
 				fullDMLScriptName  = HOME + TEST_NAME1 + "_colnames.dml";
@@ -237,13 +237,10 @@ public class RunTest extends AutomatedTestBase
 											"DATA=" + HOME + "input/" + dataset,
 											"TFSPEC=" + HOME + "input/" + spec,
 											"COLNAMES=" + HOME + "input/" + colnames,
-											"TFMTD=" + HOME + OUTPUT_DIR + "tfmtd",
-											"TFDATA=" + HOME + OUTPUT_DIR + "tfout",
-											"OFMT=" + ofmt
-						              };
+											"TFMTD=" + output("tfmtd"),
+											"TFDATA=" + output("tfout"),
+											"OFMT=" + ofmt };
 			}
-				
-			loadTestConfiguration(config);
 	
 			boolean exceptionExpected = exception;
 			runTest(true, exceptionExpected, null, -1); 
@@ -251,13 +248,10 @@ public class RunTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
 			programArgs = new String[]{"-nvargs", 
 											"DATA=" + HOME + "input/" + dataset,
-											"APPLYMTD=" + HOME + OUTPUT_DIR + "tfmtd",  // generated above
-											"TFMTD=" + HOME + OUTPUT_DIR + "test_tfmtd",
-											"TFDATA=" + HOME + OUTPUT_DIR + "test_tfout",
-											"OFMT=" + ofmt
-					                  };
-			
-			loadTestConfiguration(config);
+											"APPLYMTD=" + output("tfmtd"),  // generated above
+											"TFMTD=" + output("test_tfmtd"),
+											"TFDATA=" + output("test_tfout"),
+											"OFMT=" + ofmt };
 	
 			exceptionExpected = exception;
 			runTest(true, exceptionExpected, null, -1); 

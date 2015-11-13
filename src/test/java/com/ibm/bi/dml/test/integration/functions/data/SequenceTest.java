@@ -41,9 +41,9 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class SequenceTest extends AutomatedTestBase 
 {
 
-	
 	private final static String TEST_DIR = "functions/data/";
 	private final static String TEST_NAME = "Sequence";
+	private final static String TEST_CLASS_DIR = TEST_DIR + SequenceTest.class.getSimpleName() + "/";
 	
 	private enum TEST_TYPE { THREE_INPUTS, TWO_INPUTS, ERROR };
 	
@@ -87,7 +87,8 @@ public class SequenceTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"A"})); 
+		addTestConfiguration(TEST_NAME,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"A"})); 
 	}
 	
 	@Test
@@ -96,18 +97,20 @@ public class SequenceTest extends AutomatedTestBase
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			boolean exceptionExpected = false;
+			
 			if ( test_type == TEST_TYPE.THREE_INPUTS || test_type == TEST_TYPE.ERROR ) {
 				fullDMLScriptName = HOME + TEST_NAME + ".dml";
 				fullRScriptName = HOME + TEST_NAME + ".R";
-				programArgs = new String[]{"-args", Double.toString(from),
-                        Double.toString(to),
-                        Double.toString(incr),
-                        HOME + OUTPUT_DIR + "A" };
+				
+				programArgs = new String[]{"-args", Double.toString(from), 
+					Double.toString(to), Double.toString(incr), output("A") };
+				
 				rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       from + " "+ to + " " + incr + " " + HOME + EXPECTED_DIR;
+					from + " " + to + " " + incr + " " + expectedDir();
 				
 				if ( test_type == TEST_TYPE.ERROR ) 
 					exceptionExpected = true;
@@ -115,33 +118,33 @@ public class SequenceTest extends AutomatedTestBase
 			else {
 				fullDMLScriptName = HOME + TEST_NAME + "2inputs.dml";
 				fullRScriptName = HOME + TEST_NAME + "2inputs.R";
+				
 				programArgs = new String[]{"-args", Double.toString(from),
-                        Double.toString(to),
-                        HOME + OUTPUT_DIR + "A" };
+					Double.toString(to), output("A") };
+				
 				rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       from + " "+ to + " " + HOME + EXPECTED_DIR;
+					from + " " + to + " " + expectedDir();
 			
 			}
-			loadTestConfiguration(config);
 			int outputIndex = programArgs.length-1;
 	
 			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-			programArgs[outputIndex] = HOME + OUTPUT_DIR + "A_CP";
+			programArgs[outputIndex] = output("A_CP");
 			runTest(true, exceptionExpected, null, -1); 
 			
 			rtplatform = RUNTIME_PLATFORM.HADOOP;
-			programArgs[outputIndex] = HOME + OUTPUT_DIR + "A_HADOOP";
+			programArgs[outputIndex] = output("A_HADOOP");
 			runTest(true, exceptionExpected, null, -1); 
 			
 			rtplatform = RUNTIME_PLATFORM.HYBRID;
-			programArgs[outputIndex] = HOME + OUTPUT_DIR + "A_HYBRID";
+			programArgs[outputIndex] = output("A_HYBRID");
 			runTest(true, exceptionExpected, null, -1);
 			
 			rtplatform = RUNTIME_PLATFORM.SPARK;
 			boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 			try {
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-				programArgs[outputIndex] = HOME + OUTPUT_DIR + "A_SPARK";
+				programArgs[outputIndex] = output("A_SPARK");
 				runTest(true, exceptionExpected, null, -1);
 			}
 			finally {

@@ -41,6 +41,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "parfor_repeatedopt2";
 	private final static String TEST_NAME3 = "parfor_repeatedopt3";
 	private final static String TEST_DIR = "functions/parfor/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForRepeatedOptimizationTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	
 	private final static int rows = 1000000; 
@@ -50,9 +51,9 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[]{"R"}) ); 
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[]{"R"}) ); 
-		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[]{"R"}) ); 
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"R"}) ); 
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"R"}) ); 
+		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[]{"R"}) ); 
 		
 	}
 
@@ -119,6 +120,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		try
 		{
@@ -128,16 +130,14 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats","-args", HOME + INPUT_DIR + "V" , 
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        HOME + OUTPUT_DIR + "R",
-					                        Integer.toString((update||changedDim)?1:0)};
+			programArgs = new String[]{"-stats","-args", input("V"), 
+				Integer.toString(rows), Integer.toString(cols),
+				output("R"),
+				Integer.toString((update||changedDim)?1:0)};
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR + " " + Integer.toString((update||changedDim)?1:0);
-			
-			loadTestConfiguration(config);
+				inputDir() + " " + expectedDir() + " " + Integer.toString((update||changedDim)?1:0);
 	
 	        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 			writeInputMatrix("V", V, true);

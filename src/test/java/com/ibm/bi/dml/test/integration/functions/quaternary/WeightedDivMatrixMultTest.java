@@ -51,6 +51,7 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	private final static String TEST_NAME6 = "WeightedDivMMMultMinusLeft";
 	private final static String TEST_NAME7 = "WeightedDivMMMultMinusRight";
 	private final static String TEST_DIR = "functions/quaternary/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + WeightedDivMatrixMultTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-6;
 	
@@ -64,13 +65,13 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_DIR, TEST_NAME1,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_DIR, TEST_NAME2,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_DIR, TEST_NAME3,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_DIR, TEST_NAME4,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME5,new TestConfiguration(TEST_DIR, TEST_NAME5,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME6,new TestConfiguration(TEST_DIR, TEST_NAME6,new String[]{"R"}));
-		addTestConfiguration(TEST_NAME7,new TestConfiguration(TEST_DIR, TEST_NAME7,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME5,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME6,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME7,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7,new String[]{"R"}));
 	
 	}
 
@@ -447,21 +448,16 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 			String TEST_NAME = testname;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats", "-explain", "runtime",
-					                   "-args", 
-					                        HOME + INPUT_DIR + "W",
-					                        HOME + INPUT_DIR + "U",
-					                        HOME + INPUT_DIR + "V",
-					                        HOME + OUTPUT_DIR + "R"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-stats", "-explain", "runtime", "-args",
+				input("W"), input("U"), input("V"), output("R") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset 
 			double[][] W = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 

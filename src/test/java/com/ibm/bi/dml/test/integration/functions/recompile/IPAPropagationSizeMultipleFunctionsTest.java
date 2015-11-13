@@ -37,6 +37,8 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 	private final static String TEST_NAME5 = "multiple_function_calls5";
 	
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + 
+		IPAPropagationSizeMultipleFunctionsTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 10;
 	private final static int cols = 15;    
@@ -46,13 +48,12 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_DIR, TEST_NAME4, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_DIR, TEST_NAME5, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
 	}
-
 	
 	
 	@Test
@@ -116,7 +117,6 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 	}
 	
 	
-
 	/**
 	 * 
 	 * @param condition
@@ -130,18 +130,15 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", 
-												 HOME + INPUT_DIR + "V",
-					                             HOME + OUTPUT_DIR + "R" };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-				   HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;			
+			programArgs = new String[]{"-explain","-args", input("V"), output("R") };
 			
-			loadTestConfiguration(config);
-
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+			
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 
 			//generate input data

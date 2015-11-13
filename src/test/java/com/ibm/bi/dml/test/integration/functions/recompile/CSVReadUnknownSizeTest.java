@@ -37,6 +37,7 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 
 	private final static String TEST_NAME = "csv_read_unknown";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CSVReadUnknownSizeTest.class.getSimpleName() + "/";
 
 	private final static int rows = 10;
 	private final static int cols = 15;
@@ -58,9 +59,8 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR,
-				TEST_NAME, new String[] { "X" }));
-		setOutAndExpectedDeletionDisabled(true);
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "X" }));
 	}
 
 	@Test
@@ -96,17 +96,15 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args",HOME + INPUT_DIR + "X",
-					                           HOME + OUTPUT_DIR + "R" };
+			programArgs = new String[]{"-explain", "-args", input("X"), output("R") };
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			OptimizerUtils.ALLOW_SPLIT_HOP_DAGS = splitDags;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
@@ -115,12 +113,11 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(X);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, 1000, 1000);
 			CSVFileFormatProperties fprop = new CSVFileFormatProperties();			
-			DataConverter.writeMatrixToHDFS(mb, HOME + INPUT_DIR + "X", OutputInfo.CSVOutputInfo, mc, -1, fprop);
+			DataConverter.writeMatrixToHDFS(mb, input("X"), OutputInfo.CSVOutputInfo, mc, -1, fprop);
 			mc.set(-1, -1, -1, -1);
-			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "X.mtd", ValueType.DOUBLE, mc, OutputInfo.CSVOutputInfo, fprop);
+			MapReduceTool.writeMetaDataFile(input("X.mtd"), ValueType.DOUBLE, mc, OutputInfo.CSVOutputInfo, fprop);
 			
 			runTest(true, false, null, -1); 
-	
 			
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");

@@ -49,6 +49,7 @@ public class CTableSequenceTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "CTableSequenceRight";
 	
 	private final static String TEST_DIR = "functions/ternary/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CTableSequenceTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 2407;
@@ -59,8 +60,8 @@ public class CTableSequenceTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "B" })   ); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "B" })   ); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" }) );
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "B" }) );
 	}
 	
 	@Test
@@ -239,21 +240,19 @@ public class CTableSequenceTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A",
-					                        Integer.toString(rows),
-					                        Integer.toString(1),
-					                        Integer.toString(withAgg?1:0),
-					                        HOME + OUTPUT_DIR + "B"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-explain","-args", input("A"),
+				Integer.toString(rows),
+				Integer.toString(1),
+				Integer.toString(withAgg?1:0),
+				output("B")};
 			
-			loadTestConfiguration(config);
-	
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			//generate actual dataset (always dense because values <=0 invalid)
 			double[][] A = floor(getRandomMatrix(rows, 1, 1, maxVal, 1.0, 7), rows, 1); 

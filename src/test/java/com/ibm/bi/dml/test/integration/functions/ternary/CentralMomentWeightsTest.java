@@ -37,6 +37,7 @@ public class CentralMomentWeightsTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "CentralMomentWeights";
 	private final static String TEST_DIR = "functions/ternary/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CentralMomentWeightsTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 1871;
@@ -49,7 +50,7 @@ public class CentralMomentWeightsTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "R" })   ); 
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "R" }) ); 
 	}
 
 	@Test
@@ -183,18 +184,16 @@ public class CentralMomentWeightsTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A",
-					                            HOME + INPUT_DIR + "B",
-					                        Integer.toString(order),
-					                        HOME + OUTPUT_DIR + "R"};
+			programArgs = new String[]{"-args", input("A"),
+				input("B"), Integer.toString(order), output("R")};
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + order + " "+ HOME + EXPECTED_DIR;
-			
-			loadTestConfiguration(config);
+				inputDir() + " " + order + " "+ expectedDir();
 	
 			//generate actual dataset (always dense because values <=0 invalid)
 			double sparsitya = sparse ? sparsity2 : sparsity1;

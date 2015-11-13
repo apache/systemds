@@ -32,10 +32,9 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 public class LeftIndexingScalarTest extends AutomatedTestBase
 {
 
-	
 	private final static String TEST_DIR = "functions/indexing/";
 	private final static String TEST_NAME = "LeftIndexingScalarTest";
-
+	private final static String TEST_CLASS_DIR = TEST_DIR + LeftIndexingScalarTest.class.getSimpleName() + "/";
 	
 	private final static double epsilon=0.0000000001;
 	private final static int rows = 1279;
@@ -47,7 +46,7 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] {"A"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"A"}));
 	}
 
 	@Test
@@ -86,18 +85,15 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain" , "-args",  HOME + INPUT_DIR + "A" , 
-							               		Long.toString(rows), 
-							               		Long.toString(cols),
-							               		HOME + OUTPUT_DIR + "A"};
+			programArgs = new String[]{"-explain" , "-args",  input("A"), 
+				Long.toString(rows), Long.toString(cols), output("A")};
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " "+ HOME + EXPECTED_DIR;
-	
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 	        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
 	        writeInputMatrix("A", A, true);

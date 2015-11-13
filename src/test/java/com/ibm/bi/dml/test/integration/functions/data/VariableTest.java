@@ -36,15 +36,15 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class VariableTest extends AutomatedTestBase 
 {
 
-	
 	private static final String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + VariableTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		
 		// positive tests
-		addTestConfiguration("CopyVariableTest", new TestConfiguration(TEST_DIR, "CopyVariableTest",
-				new String[] { "a", "b" }));
+		addTestConfiguration("CopyVariableTest",
+			new TestConfiguration(TEST_CLASS_DIR, "CopyVariableTest", new String[] { "a", "b" }));
 		
 		// negative tests
 	}

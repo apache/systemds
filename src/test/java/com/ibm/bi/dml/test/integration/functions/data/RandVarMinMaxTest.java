@@ -43,6 +43,7 @@ public class RandVarMinMaxTest extends AutomatedTestBase
 	private final static String TEST_NAME_DML3 = "RandVarMinMax3";
 	private final static String TEST_NAME_R = "RandVarMinMax";
 	private final static String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RandVarMinMaxTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 2;
 	private final static int cols = 100;
@@ -52,9 +53,12 @@ public class RandVarMinMaxTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME_DML1, new TestConfiguration(TEST_DIR, TEST_NAME_DML1, new String[] { "R" }) ); 
-		addTestConfiguration( TEST_NAME_DML2, new TestConfiguration(TEST_DIR, TEST_NAME_DML2, new String[] { "R" }) ); 
-		addTestConfiguration( TEST_NAME_DML3, new TestConfiguration(TEST_DIR, TEST_NAME_DML3, new String[] { "R" }) ); 
+		addTestConfiguration( TEST_NAME_DML1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_DML1, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME_DML2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_DML2, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME_DML3, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_DML3, new String[] { "R" }) );
 	}
 
 	@Test
@@ -124,17 +128,16 @@ public class RandVarMinMaxTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullRScriptName = HOME + TEST_NAME_R + ".R";
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", Integer.toString(rows),
-					                            Integer.toString(cols),
-					                            HOME + OUTPUT_DIR + "R"  };
+			programArgs = new String[]{"-args", 
+					Integer.toString(rows), Integer.toString(cols), output("R") };
+			
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-					Integer.toString(rows) + " " + Integer.toString(cols) + " " + HOME + EXPECTED_DIR;
-				
-			loadTestConfiguration(config);
+					Integer.toString(rows) + " " + Integer.toString(cols) + " " + expectedDir();
 	
 			runTest(true, false, null, -1);
 			runRScript(true); 

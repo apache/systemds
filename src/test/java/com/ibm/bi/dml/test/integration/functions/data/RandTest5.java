@@ -38,6 +38,7 @@ public class RandTest5 extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "RandTest5";
 	private final static String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RandTest5.class.getSimpleName() + "/";
 	
 	private final static int rows = 1323;
 	private final static int cols = 1156; 
@@ -60,7 +61,7 @@ public class RandTest5 extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "C" })   );
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" })   );
 		TestUtils.clearAssertionInformation();
 	}
 
@@ -211,16 +212,12 @@ public class RandTest5 extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		
+		loadTestConfiguration(config);
+		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-explain", "-args", Integer.toString(rows),
-											Integer.toString(cols),
-											Double.toString(min),
-											Double.toString(max),
-											Double.toString(sparsity),
-							                HOME + OUTPUT_DIR + "C"};
-		
-		loadTestConfiguration(config);
+		programArgs = new String[]{"-explain", "-args", Integer.toString(rows), Integer.toString(cols),
+			Double.toString(min), Double.toString(max), Double.toString(sparsity), output("C")};
 		
 		try 
 		{

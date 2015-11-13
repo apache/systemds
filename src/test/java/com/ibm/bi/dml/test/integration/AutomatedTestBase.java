@@ -628,6 +628,9 @@ public abstract class AutomatedTestBase
 	 *            two dimensional matrix
 	 */
 	protected void writeExpectedMatrixMarket(String name, double[][] matrix) {
+		File path = new File(baseDirectory, EXPECTED_DIR + cacheDir);
+		path.mkdirs();
+
 		TestUtils.writeTestMatrix(baseDirectory + EXPECTED_DIR + cacheDir + name, matrix, true);
 		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
@@ -1570,11 +1573,11 @@ public abstract class AutomatedTestBase
 	}
 	
 	protected String expected(String expected) {
-		return baseDirectory + EXPECTED_DIR + expected;
+		return baseDirectory + EXPECTED_DIR + cacheDir + expected;
 	}
 	
 	protected String expectedDir() {
-		return baseDirectory + EXPECTED_DIR;
+		return baseDirectory + EXPECTED_DIR + cacheDir;
 	}
 	
 	protected String getScript() {

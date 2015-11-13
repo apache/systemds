@@ -37,7 +37,8 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "RightIndexingMatrixTest";
 	private final static String TEST_DIR = "functions/indexing/";
-
+	private final static String TEST_CLASS_DIR = TEST_DIR + RightIndexingMatrixTest.class.getSimpleName() + "/";
+	
 	private final static double epsilon=0.0000000001;
 	private final static int rows = 2279;
 	private final static int cols = 1050;
@@ -50,7 +51,7 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, 
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
 				new String[] {"B", "C", "D"}));
 	}
 	
@@ -129,22 +130,21 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	        config.addVariable("rowend", rowend);
 	        config.addVariable("colstart", colstart);
 	        config.addVariable("colend", colend);
+			loadTestConfiguration(config);
 	        
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "A" , 
-		               			Long.toString(rows), Long.toString(cols),
-		                        Long.toString(rowstart), Long.toString(rowend),
-		                        Long.toString(colstart), Long.toString(colend),
-		                         RI_HOME + OUTPUT_DIR + "B" , 
-		                         RI_HOME + OUTPUT_DIR + "C" , 
-		                         RI_HOME + OUTPUT_DIR + "D" };
+			programArgs = new String[]{"-args",  input("A"), 
+				Long.toString(rows), Long.toString(cols),
+				Long.toString(rowstart), Long.toString(rowend),
+				Long.toString(colstart), Long.toString(colend),
+				output("B"), output("C"), output("D") };
+			
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       RI_HOME + INPUT_DIR + " "+rowstart+" "+rowend+" "+colstart+" "+colend+" " + RI_HOME + EXPECTED_DIR;
+				inputDir() + " " + rowstart + " " + rowend + " " + colstart + " " + colend + " " + expectedDir();
 	
-			loadTestConfiguration(config);
 			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
 	        writeInputMatrix("A", A, true);
 	        

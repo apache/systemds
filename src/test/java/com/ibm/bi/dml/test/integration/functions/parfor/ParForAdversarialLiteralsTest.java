@@ -39,6 +39,7 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 	private final static String TEST_NAME4b = "parfor_literals4b"; //remote parfor, varname _t0
 	
 	private final static String TEST_DIR = "functions/parfor/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForAdversarialLiteralsTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 20;
@@ -49,34 +50,20 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1a, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1a, 
-				new String[] { "_t0B" })   );
-		addTestConfiguration(
-				TEST_NAME1b, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1b, 
-				new String[] { "_t0B" })   );
-		addTestConfiguration(
-				TEST_NAME1c, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1c, 
-				new String[] { "_t0B" })   );
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, 
-				new String[] { "B" })   );
-		addTestConfiguration(
-				TEST_NAME3, 
-				new TestConfiguration(TEST_DIR, TEST_NAME3, 
-				new String[] { "B" })   );
-		addTestConfiguration(
-				TEST_NAME4a, 
-				new TestConfiguration(TEST_DIR, TEST_NAME4a, 
-				new String[] { "B" })   );
-		addTestConfiguration(
-				TEST_NAME4b, 
-				new TestConfiguration(TEST_DIR, TEST_NAME4b, 
-				new String[] { "B" })   );
+		addTestConfiguration(TEST_NAME1a, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1a, new String[] { "_t0B" }) );
+		addTestConfiguration(TEST_NAME1b, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1b, new String[] { "_t0B" }) );
+		addTestConfiguration(TEST_NAME1c, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1c, new String[] { "_t0B" }) );
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "B" }) );
+		addTestConfiguration(TEST_NAME3, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "B" }) );
+		addTestConfiguration(TEST_NAME4a, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4a, new String[] { "B" }) );
+		addTestConfiguration(TEST_NAME4b, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4b, new String[] { "B" }) );
 	}
 
 	@Test
@@ -129,6 +116,7 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		// This is for running the junit test the new way, i.e., construct the arguments directly 
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -136,15 +124,12 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		String OUT = (testName.equals(TEST_NAME1a)||testName.equals(TEST_NAME1b))?ProgramConverter.CP_ROOT_THREAD_ID:"B";
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" , 
-				                        Integer.toString(rows),
-				                        Integer.toString(cols),
-				                        HOME + OUTPUT_DIR + OUT };
-		fullRScriptName = HOME + TEST_NAME + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+		programArgs = new String[]{"-args", input(IN),
+			Integer.toString(rows), Integer.toString(cols), output(OUT) };
 		
-		loadTestConfiguration(config);
+		fullRScriptName = HOME + TEST_NAME + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+		
         double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 		writeInputMatrix("A", A, false);
 
@@ -152,7 +137,7 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		runTest(true, exceptionExpected, null, -1);
 		
 		//compare matrices
-		HashMap<CellIndex, Double> dmlin = TestUtils.readDMLMatrixFromHDFS(HOME+INPUT_DIR+IN);
+		HashMap<CellIndex, Double> dmlin = TestUtils.readDMLMatrixFromHDFS(input(IN));
 		HashMap<CellIndex, Double> dmlout = readDMLMatrixFromHDFS(OUT); 
 				
 		TestUtils.compareMatrices(dmlin, dmlout, eps, "DMLin", "DMLout");			

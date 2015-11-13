@@ -37,6 +37,7 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "append_nnz";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + IPAComplexAppendTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 300000;
 	private final static int cols = 1000;
@@ -46,9 +47,9 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "Y" }) );
+		addTestConfiguration( TEST_NAME,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Y" }) );
 	}
-
 	
 	
 	@Test
@@ -97,26 +98,20 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", 
-					                         HOME + OUTPUT_DIR + "X" };
-			
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " +
-					 HOME + EXPECTED_DIR + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-args", output("X") };
 
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			
-			
 			//generate input data
 			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, OptimizerUtils.getSparsity(rows, cols, nnz), -1, 1, "uniform", 7);
 			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows,cols,1000,1000,nnz);
-			DataConverter.writeMatrixToHDFS(mb, HOME + OUTPUT_DIR + "X", OutputInfo.BinaryBlockOutputInfo, mc1);
-			MapReduceTool.writeMetaDataFile(HOME + OUTPUT_DIR + "X.mtd", ValueType.DOUBLE, mc1, OutputInfo.BinaryBlockOutputInfo);
+			DataConverter.writeMatrixToHDFS(mb, output("X"), OutputInfo.BinaryBlockOutputInfo, mc1);
+			MapReduceTool.writeMetaDataFile(output("X.mtd"), ValueType.DOUBLE, mc1, OutputInfo.BinaryBlockOutputInfo);
 			
 			//run test
 			runTest(true, false, null, -1); 

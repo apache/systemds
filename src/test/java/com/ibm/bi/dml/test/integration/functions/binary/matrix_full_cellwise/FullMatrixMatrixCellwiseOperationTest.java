@@ -48,7 +48,7 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 	
 	private enum OpType{
 		ADDITION,
-		SUBSTRACTION,
+		SUBTRACTION,
 		MULTIPLICATION,
 		DIVISION
 	}
@@ -125,57 +125,57 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testSubstractionDenseDenseSP() 
+	public void testSubtractionDenseDenseSP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.DENSE, ExecType.SPARK);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.DENSE, SparsityType.DENSE, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testSubstractionDenseSparseSP() 
+	public void testSubtractionDenseSparseSP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.SPARK);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testSubstractionDenseEmptySP() 
+	public void testSubtractionDenseEmptySP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.SPARK);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testSubstractionSparseDenseSP() 
+	public void testSubtractionSparseDenseSP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.SPARK);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testSubstractionSparseSparseSP() 
+	public void testSubtractionSparseSparseSP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.SPARK);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testSubstractionSparseEmptySP() 
+	public void testSubtractionSparseEmptySP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.SPARK);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testSubstractionEmptyDenseSP() 
+	public void testSubtractionEmptyDenseSP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.SPARK);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testSubstractionEmptySparseSP() 
+	public void testSubtractionEmptySparseSP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.SPARK);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testSubstractionEmptyEmptySP() 
+	public void testSubtractionEmptyEmptySP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.SPARK);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.SPARK);
 	}
 	
 	@Test
@@ -397,111 +397,111 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 	}	
 	
 	@Test
-	public void testSubstractionDenseDenseCP() 
+	public void testSubtractionDenseDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.DENSE, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.DENSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
-	public void testSubstractionDenseSparseCP() 
+	public void testSubtractionDenseSparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.CP);
 	}
 	
 	@Test
-	public void testSubstractionDenseEmptyCP() 
+	public void testSubtractionDenseEmptyCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
-	public void testSubstractionSparseDenseCP() 
+	public void testSubtractionSparseDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
-	public void testSubstractionSparseSparseCP() 
+	public void testSubtractionSparseSparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.CP);
 	}
 	
 	@Test
-	public void testSubstractionSparseEmptyCP() 
+	public void testSubtractionSparseEmptyCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
-	public void testSubstractionEmptyDenseCP() 
+	public void testSubtractionEmptyDenseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
-	public void testSubstractionEmptySparseCP() 
+	public void testSubtractionEmptySparseCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.CP);
 	}
 	
 	@Test
-	public void testSubstractionEmptyEmptyCP() 
+	public void testSubtractionEmptyEmptyCP() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.CP);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.CP);
 	}
 	
 	@Test
-	public void testSubstractionDenseDenseMR() 
+	public void testSubtractionDenseDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.DENSE, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.DENSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
-	public void testSubstractionDenseSparseMR() 
+	public void testSubtractionDenseSparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.DENSE, SparsityType.SPARSE, ExecType.MR);
 	}
 	
 	@Test
-	public void testSubstractionDenseEmptyMR() 
+	public void testSubtractionDenseEmptyMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.DENSE, SparsityType.EMPTY, ExecType.MR);
 	}
 	
 	@Test
-	public void testSubstractionSparseDenseMR() 
+	public void testSubtractionSparseDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.SPARSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
-	public void testSubstractionSparseSparseMR() 
+	public void testSubtractionSparseSparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.SPARSE, SparsityType.SPARSE, ExecType.MR);
 	}
 	
 	@Test
-	public void testSubstractionSparseEmptyMR() 
+	public void testSubtractionSparseEmptyMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.SPARSE, SparsityType.EMPTY, ExecType.MR);
 	}
 	
 	@Test
-	public void testSubstractionEmptyDenseMR() 
+	public void testSubtractionEmptyDenseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.EMPTY, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
-	public void testSubstractionEmptySparseMR() 
+	public void testSubtractionEmptySparseMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.EMPTY, SparsityType.SPARSE, ExecType.MR);
 	}
 	
 	@Test
-	public void testSubstractionEmptyEmptyMR() 
+	public void testSubtractionEmptyEmptyMR() 
 	{
-		runMatrixCellwiseOperationTest(OpType.SUBSTRACTION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.MR);
+		runMatrixCellwiseOperationTest(OpType.SUBTRACTION, SparsityType.EMPTY, SparsityType.EMPTY, ExecType.MR);
 	}
 	
 	@Test
@@ -746,31 +746,24 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 			switch( type )
 			{
 				case ADDITION: TEST_NAME = TEST_NAME1; break;
-				case SUBSTRACTION: TEST_NAME = TEST_NAME2; break;
+				case SUBTRACTION: TEST_NAME = TEST_NAME2; break;
 				case MULTIPLICATION: TEST_NAME = TEST_NAME3; break;
 				case DIVISION: TEST_NAME = TEST_NAME4; break;
 			}
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
-			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", TARGET_IN + "A",
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        TARGET_IN + "B",
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        TARGET_OUT + "C"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       TARGET_IN + " " + TARGET_EXPECTED;
+			programArgs = new String[]{"-explain", "-args",
+				input("A"), Integer.toString(rows), Integer.toString(cols),
+				input("B"), Integer.toString(rows), Integer.toString(cols),
+				output("C") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//get sparsity
 			double lsparsity1 = 1.0, lsparsity2 = 1.0;
@@ -825,5 +818,4 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 		}
 	}
 	
-		
 }

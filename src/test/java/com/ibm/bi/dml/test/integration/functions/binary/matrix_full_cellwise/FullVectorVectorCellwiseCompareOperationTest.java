@@ -66,7 +66,7 @@ public class FullVectorVectorCellwiseCompareOperationTest extends AutomatedTestB
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"C"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"C"}));
 	}
 	
 	
@@ -196,13 +196,11 @@ public class FullVectorVectorCellwiseCompareOperationTest extends AutomatedTestB
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-stats", "-explain","recompile_runtime","-args", 
-											input("A"),
-					                        input("B"),
-					                        opcode,
-					                        output("C") };
+				input("A"), input("B"), opcode, output("C") };
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       inputDir() + " " + opcoder + " " + expectedDir();
+				inputDir() + " " + opcoder + " " + expectedDir();
 	
 			//get sparsity
 			double lsparsity1 = 1.0, lsparsity2 = 1.0;

@@ -24,6 +24,9 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	RewritesWeightedSigmoidTest.class,
+	WeightedCrossEntropyTest.class,
+	WeightedDivMatrixMultTest.class,
 	WeightedSquaredLossTest.class,
 	WeightedSigmoidTest.class
 })

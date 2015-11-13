@@ -41,6 +41,7 @@ public class RandVarSeedTest extends AutomatedTestBase
 {	
 	private final static String TEST_NAME_DML1 = "RandVarSeed";
 	private final static String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RandVarSeedTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 3;
 	private final static int cols = 100;
@@ -50,7 +51,8 @@ public class RandVarSeedTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME_DML1, new TestConfiguration(TEST_DIR, TEST_NAME_DML1, new String[] { "R" }) ); 
+		addTestConfiguration( TEST_NAME_DML1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_DML1, new String[] { "R" }) ); 
 	}
 
 	@Test
@@ -90,23 +92,20 @@ public class RandVarSeedTest extends AutomatedTestBase
 	
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 			long seed = new Random(7).nextLong();
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String fnameSeed = HOME + INPUT_DIR + "s";
+			String fnameSeed = input("s");
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", Integer.toString(rows),
-					                            Integer.toString(cols),
-					                            fnameSeed,
-					                            HOME + OUTPUT_DIR + "R"  };
+			programArgs = new String[]{"-args", 
+				Integer.toString(rows), Integer.toString(cols), fnameSeed, output("R") };
 			
 			//write seed as input scalar (to force treatment as variable)			
 			MapReduceTool.writeIntToHDFS(seed, fnameSeed);
 			MapReduceTool.writeScalarMetaDataFile(fnameSeed+".mtd", ValueType.INT);
 			
 			//run test
-			loadTestConfiguration(config);
 			runTest(true, false, null, -1);
 			
 			//generate expected matrix

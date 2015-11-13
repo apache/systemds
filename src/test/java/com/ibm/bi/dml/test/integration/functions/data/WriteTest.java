@@ -44,15 +44,16 @@ public class WriteTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + WriteTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		
 		// positive tests
-		addTestConfiguration("TextTest", new TestConfiguration(TEST_DIR, "WriteTest", new String[] { "a" }));
-		addTestConfiguration("BinaryTest", new TestConfiguration(TEST_DIR, "WriteTest", new String[] { "a" }));
-		addTestConfiguration("WriteTwiceTest", new TestConfiguration(TEST_DIR, "WriteTwiceTest", new String[] { "b", "c" }));
+		addTestConfiguration("TextTest", new TestConfiguration(TEST_CLASS_DIR, "WriteTest", new String[] { "a" }));
+		addTestConfiguration("BinaryTest", new TestConfiguration(TEST_CLASS_DIR, "WriteTest", new String[] { "a" }));
+		addTestConfiguration("WriteTwiceTest", new TestConfiguration(TEST_CLASS_DIR, "WriteTwiceTest", new String[] { "b", "c" }));
 		
 		// negative tests
 	}
@@ -95,8 +96,7 @@ public class WriteTest extends AutomatedTestBase
 		
 		//compareResults();
 		
-		BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a",1000,1000);
-		//BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(baseDirectory + OUTPUT_DIR + "a",1000,100);
+		BinaryMatrixCharacteristics matrix = TestUtils.readBlocksFromSequenceFile(output("a"),1000,1000);
 		assertEquals(rows, matrix.getRows());
 		assertEquals(cols, matrix.getCols());
 		double[][] matrixValues = matrix.getValues();

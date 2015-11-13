@@ -40,6 +40,7 @@ public class QuantileWeightsTest extends AutomatedTestBase
 	private final static String TEST_NAME3 = "IQMWeights";
 	
 	private final static String TEST_DIR = "functions/ternary/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + QuantileWeightsTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 1973;
@@ -51,9 +52,9 @@ public class QuantileWeightsTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" })   ); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" })   ); 
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] { "R" })   ); 		
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 	}
 	
 	@Test
@@ -259,19 +260,16 @@ public class QuantileWeightsTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", 
-					                        HOME + INPUT_DIR + "A",
-					                        HOME + INPUT_DIR + "W",
-					                        Double.toString(p),
-					                        HOME + OUTPUT_DIR + "R"};
+				input("A"), input("W"), Double.toString(p), output("R")};
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + p + " "+ HOME + EXPECTED_DIR;
-			
-			loadTestConfiguration(config);
+				inputDir() + " " + p + " " + expectedDir();
 	
 			//generate actual dataset (always dense because values <=0 invalid)
 			double sparsitya = sparse ? sparsity2 : sparsity1;

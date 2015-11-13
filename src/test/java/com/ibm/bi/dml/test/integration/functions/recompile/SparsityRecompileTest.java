@@ -45,6 +45,7 @@ public class SparsityRecompileTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "if_recompile_sparse";
 	private final static String TEST_NAME3 = "for_recompile_sparse";
 	private final static String TEST_NAME4 = "parfor_recompile_sparse";
+	private final static String TEST_CLASS_DIR = TEST_DIR + SparsityRecompileTest.class.getSimpleName() + "/";
 	
 	private final static long rows = 1000;
 	private final static long cols = 500000;    
@@ -65,29 +66,20 @@ public class SparsityRecompileTest extends AutomatedTestBase
 
 		long elapsedMsec = System.currentTimeMillis() - startMsec;
 		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
-
 	}
 	
 	@Override
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "Rout" })   );
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, 
-				new String[] { "Rout" })   );
-		addTestConfiguration(
-				TEST_NAME3, 
-				new TestConfiguration(TEST_DIR, TEST_NAME3, 
-				new String[] { "Rout" })   );
-		addTestConfiguration(
-				TEST_NAME4, 
-				new TestConfiguration(TEST_DIR, TEST_NAME4, 
-				new String[] { "Rout" })   );
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME3, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME4, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "Rout" }) );
 	}
 
 	@Test
@@ -145,24 +137,20 @@ public class SparsityRecompileTest extends AutomatedTestBase
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(testname);
+			getAndLoadTestConfiguration(testname);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "-args",HOME + INPUT_DIR + "V",
-					                           Double.toString(val),
-					                           HOME + OUTPUT_DIR + "R" };
-			fullRScriptName = HOME + testname + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-explain", "-args",
+				input("V"), Double.toString(val), output("R") };
 
 			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
 			
 			MatrixBlock mb = MatrixBlock.randOperations((int)rows, (int)cols, sparsity, 0, 1, "uniform", System.currentTimeMillis());
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows,cols,DMLTranslator.DMLBlockSize,DMLTranslator.DMLBlockSize,(long)(rows*cols*sparsity));
-			DataConverter.writeMatrixToHDFS(mb, HOME + INPUT_DIR + "V", OutputInfo.TextCellOutputInfo, mc);
-			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "V.mtd", ValueType.DOUBLE, mc, OutputInfo.TextCellOutputInfo);
+			
+			DataConverter.writeMatrixToHDFS(mb, input("V"), OutputInfo.TextCellOutputInfo, mc);
+			MapReduceTool.writeMetaDataFile(input("V.mtd"), ValueType.DOUBLE, mc, OutputInfo.TextCellOutputInfo);
 			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 

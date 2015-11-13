@@ -33,6 +33,7 @@ public class IPAConstantPropagationTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "constant_propagation_if";
 	private final static String TEST_NAME2 = "constant_propagation_while";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + IPAConstantPropagationTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 10;
 	private final static int cols = 15;    
@@ -41,10 +42,9 @@ public class IPAConstantPropagationTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "X" }) );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "X" }) );
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "X" }) );
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "X" }) );
 	}
-
 	
 	
 	@Test
@@ -111,17 +111,16 @@ public class IPAConstantPropagationTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", Integer.toString(rows),
-					                            Integer.toString(cols),
-					                            HOME + OUTPUT_DIR + "X" };
+			programArgs = new String[]{"-explain","-args", 
+				Integer.toString(rows), Integer.toString(cols), output("X") };
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-				   Integer.toString(rows) + " " + Integer.toString(cols) + " " +
-			       HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+				Integer.toString(rows) + " " + Integer.toString(cols) + " " + expectedDir();
 
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = branchRemoval;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;

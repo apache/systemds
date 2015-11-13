@@ -36,6 +36,7 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 	private final static String TEST_NAME5 = "for_pred3a"; //expression
 	private final static String TEST_NAME6 = "for_pred3b"; //expression seq
 	private final static String TEST_DIR = "functions/parfor/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ForLoopPredicateTest.class.getSimpleName() + "/";
 	
 	private final static double from = 1;
 	private final static double to = 10.2;
@@ -44,12 +45,12 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[]{"R"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[]{"R"}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[]{"R"}));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_DIR, TEST_NAME4, new String[]{"R"}));
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_DIR, TEST_NAME5, new String[]{"R"}));
-		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_DIR, TEST_NAME6, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[]{"R"}));
 	}
 
 	@Test
@@ -142,7 +143,7 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 			case 6: TEST_NAME = TEST_NAME6; break;
 		}
 		
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
 		
 		Object valFrom = null;
 		Object valTo = null;
@@ -163,16 +164,14 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args", 
-				                        String.valueOf(valFrom),
-				                        String.valueOf(valTo),
-				                        String.valueOf(valIncrement),
-				                        HOME + OUTPUT_DIR + "R" };
+		programArgs = new String[]{"-args",
+			String.valueOf(valFrom), 
+			String.valueOf(valTo), 
+			String.valueOf(valIncrement), 
+			output("R") };
+		
 		fullRScriptName = HOME + TEST_NAME1 + ".R";
 		rCmd = null;
-		
-		loadTestConfiguration(config);
-
 
 		runTest(true, false, null, -1);
 		

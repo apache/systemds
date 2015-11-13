@@ -33,6 +33,7 @@ public class ParForNaNResultMergeTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static String TEST_NAME1 = "parfor_NaN1";
 	private final static String TEST_NAME2 = "parfor_NaN2";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForNaNResultMergeTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 0;
 	
@@ -43,8 +44,8 @@ public class ParForNaNResultMergeTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" }) );
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 	}
 
 	@Test
@@ -88,18 +89,16 @@ public class ParForNaNResultMergeTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[]{"-args", 
-									 String.valueOf(rows),
-				                     String.valueOf(xrow),  
-				                     HOME + OUTPUT_DIR + "R" };
+			String.valueOf(rows), String.valueOf(xrow), output("R") };
+		
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-				String.valueOf(rows) + " " + String.valueOf(xrow) + " " + HOME + EXPECTED_DIR;
-		
-		loadTestConfiguration(config);
+			String.valueOf(rows) + " " + String.valueOf(xrow) + " " + expectedDir();
 
 		//run tests
 		runTest(true, false, null, -1);

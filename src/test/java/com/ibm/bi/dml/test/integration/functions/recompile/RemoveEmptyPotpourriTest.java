@@ -42,6 +42,7 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME4 = "remove_empty_potpourri4";
 	
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RemoveEmptyPotpourriTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	
@@ -49,10 +50,10 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" }));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" }));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] { "R" }));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_DIR, TEST_NAME4, new String[] { "R" }));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }));
 	}
 	
 	@Test
@@ -102,7 +103,7 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 	 */
 	private void runRemoveEmptyTest( String TEST_NAME, boolean rewrite )
 	{	
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try
@@ -111,11 +112,10 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			//note: stats required for runtime check of rewrite
-			programArgs = new String[]{"-explain","-args", HOME + OUTPUT_DIR + "R" };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-explain","-args", output("R") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + expectedDir();
 	
 			runTest(true, false, null, -1); 
 			runRScript(true);

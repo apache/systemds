@@ -33,6 +33,7 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "parfor_optimizer2";
 	private final static String TEST_NAME3 = "parfor_optimizer3";
 	private final static String TEST_DIR = "functions/parfor/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForRulebasedOptimizerTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	
@@ -54,18 +55,12 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "Rout" })   ); 
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, 
-				new String[] { "Rout" })   ); 
-		addTestConfiguration(
-				TEST_NAME3, 
-				new TestConfiguration(TEST_DIR, TEST_NAME3, 
-				new String[] { "Rout" })   ); 		
+		addTestConfiguration(TEST_NAME1,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME2,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME3,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "Rout" }) );
 	}
 
 	
@@ -201,29 +196,27 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		}
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		if( scriptNum==1 )
 		{
-			programArgs = new String[]{ "-args", HOME + INPUT_DIR + "V" , 
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        HOME + OUTPUT_DIR + "R" };
+			programArgs = new String[]{ "-args", input("V"), 
+				Integer.toString(rows), Integer.toString(cols), 
+				output("R") };
+			
 			rCmd = "Rscript" + " " + HOME + TEST_NAME1 + ".R" + " " + 
-		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+				inputDir() + " " + expectedDir();
 		}	
 		else if( scriptNum==3 )
 		{
-			programArgs = new String[]{ "-args", HOME + INPUT_DIR + "V" , 
-							                Integer.toString(rows),
-							                Integer.toString(cols),
-							                Integer.toString(cols/2),
-							                HOME + OUTPUT_DIR + "R" };	
+			programArgs = new String[]{ "-args", input("V"), 
+				Integer.toString(rows), Integer.toString(cols), 
+				Integer.toString(cols/2), 
+				output("R") };
+			
 			rCmd = "Rscript" + " " + HOME + TEST_NAME3 + ".R" + " " + 
-		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+				inputDir() + " " + expectedDir();
 		}	
-		
-		
-		loadTestConfiguration(config);
 
 		long seed = System.nanoTime();
         double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
@@ -245,28 +238,24 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME2);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "D" ,
-				                        HOME + INPUT_DIR + "S1" ,
-				                        HOME + INPUT_DIR + "S2" ,
-				                        HOME + INPUT_DIR + "K1" ,
-				                        HOME + INPUT_DIR + "K2" ,
-				                        HOME + OUTPUT_DIR + "bivarstats",
-				                        Integer.toString(rows),
-				                        Integer.toString(cols),
-				                        Integer.toString(cols),
-				                        Integer.toString(cols*cols),
-				                        Integer.toString(7)
-				                         };
-		
-				
+		programArgs = new String[]{"-args", 
+			input("D"),
+			input("S1"), input("S2"),
+			input("K1"), input("K2"),
+			output("bivarstats"),
+			Integer.toString(rows),
+			Integer.toString(cols),
+			Integer.toString(cols),
+			Integer.toString(cols*cols),
+			Integer.toString(7) };
+			
 		rCmd = "Rscript" + " " + HOME + TEST_NAME2 + ".R" + " " + 
-		       HOME + INPUT_DIR + " " + Integer.toString(7) + " " + HOME + EXPECTED_DIR;
-		
-		loadTestConfiguration(config);
+			inputDir() + " " + Integer.toString(7) + " " + expectedDir();
 
 		//generate actual dataset
 		double[][] D = getRandomMatrix(rows, cols, 1, 7, 1.0, 7777); 
@@ -296,8 +285,7 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
         	K2[0][i] = Dkind[(int)S2[0][i]-1];
         }
         writeInputMatrix("K1", K1, true);
-		writeInputMatrix("K2", K2, true);			
-
+		writeInputMatrix("K2", K2, true);
 		
 		boolean exceptionExpected = false;
 		runTest(true, exceptionExpected, null, -1);

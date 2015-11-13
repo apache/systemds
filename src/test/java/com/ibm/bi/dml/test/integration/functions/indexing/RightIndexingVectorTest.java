@@ -34,11 +34,11 @@ import com.ibm.bi.dml.test.utils.TestUtils;
 
 public class RightIndexingVectorTest extends AutomatedTestBase
 {
-
 	
 	private final static String TEST_NAME = "RightIndexingVectorTest";
 	private final static String TEST_DIR = "functions/indexing/";
-
+	private final static String TEST_CLASS_DIR = TEST_DIR + RightIndexingVectorTest.class.getSimpleName() + "/";
+	
 	private final static double epsilon=0.0000000001;
 	private final static int rows = 2279;
 	private final static int cols = 1050;
@@ -47,7 +47,7 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, 
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
 				new String[] {"B", "C", "D"}));
 	}
 	
@@ -89,20 +89,17 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 		    
 		    config.addVariable("rows", rows);
 	        config.addVariable("cols", cols);
+	
+			loadTestConfiguration(config);
 	        
 	        String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  RI_HOME + INPUT_DIR + "A" , 
-		               							 Long.toString(rows), 
-		               							 Long.toString(cols),
-		                                         RI_HOME + OUTPUT_DIR + "B" , 
-		                                         RI_HOME + OUTPUT_DIR + "C" , 
-		                                         RI_HOME + OUTPUT_DIR + "D" };
+			programArgs = new String[]{"-args",  input("A"),
+				Long.toString(rows), Long.toString(cols),
+				output("B"), output("C"), output("D") };
+			
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       RI_HOME + INPUT_DIR + " " + RI_HOME + EXPECTED_DIR;
-	
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			Random rand=new Random(System.currentTimeMillis());
 	        double sparsity=rand.nextDouble();

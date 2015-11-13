@@ -35,6 +35,7 @@ public class FunctionRecompileTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "funct_recompile";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionRecompileTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 20;
@@ -46,10 +47,8 @@ public class FunctionRecompileTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "Rout" })   );
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
 	}
 
 	@Test
@@ -63,7 +62,6 @@ public class FunctionRecompileTest extends AutomatedTestBase
 	{
 		runFunctionTest(false, true);
 	}
-	
 
 	@Test
 	public void testFunctionWithRecompileWithoutIPA() 
@@ -88,19 +86,16 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME1);
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "V" , 
-					                        Integer.toString(rows),
-					                        Integer.toString(cols),
-					                        HOME + OUTPUT_DIR + "R" };
-			fullRScriptName = HOME + TEST_NAME1 + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-args", input("V"), 
+				Integer.toString(rows), Integer.toString(cols), output("R") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME1 + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			long seed = System.nanoTime();
 	        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);

@@ -35,6 +35,7 @@ public class TableOutputTest extends AutomatedTestBase
 	private final static String TEST_NAME = "TableOutputTest";
 	
 	private final static String TEST_DIR = "functions/ternary/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + TableOutputTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 50000;
 	private final static int maxVal1 = 7, maxVal2 = 15; 
@@ -43,7 +44,7 @@ public class TableOutputTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "F" })   ); 
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "F" }) );
 	}
 
 	@Test
@@ -126,6 +127,7 @@ public class TableOutputTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 
 			int dim1 = maxVal1 + delta;
 			int dim2 = maxVal2 + delta;
@@ -134,16 +136,11 @@ public class TableOutputTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-explain","-args", 
-											HOME + INPUT_DIR + "A", 
-											HOME + INPUT_DIR + "B",
-					                        Integer.toString(dim1),
-					                        Integer.toString(dim2),
-					                        HOME + OUTPUT_DIR + "F"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+				input("A"), input("B"),
+				Integer.toString(dim1), Integer.toString(dim2), output("F")};
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			//generate actual dataset (always dense because values <=0 invalid)
 			double[][] A = floor(getRandomMatrix(rows, 1, 1, maxVal1, 1.0, -1), rows, 1); 
@@ -194,8 +191,6 @@ public class TableOutputTest extends AutomatedTestBase
 				}
 			}
 			Assert.assertEquals(0, numErrors);
-			
-			
 		}
 		finally
 		{

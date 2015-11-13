@@ -37,15 +37,15 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class ReblockTest extends AutomatedTestBase 
 {
 
-	
 	private static final String TEST_DIR = "functions/data/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReblockTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		
 		// positive tests
-		addTestConfiguration("ReblockTest", new TestConfiguration(TEST_DIR, "ReblockTest",
-				new String[] { "a" }));
+		addTestConfiguration("ReblockTest", 
+			new TestConfiguration(TEST_CLASS_DIR, "ReblockTest", new String[] { "a" }));
 		
 		// negative tests
 	}

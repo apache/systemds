@@ -43,6 +43,7 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	private final static String TEST_NAME = "remove_empty_recompile";
 	
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RemoveEmptyRecompileTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 20;
@@ -70,7 +71,7 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "R" }));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "R" }));
 	}
 
 	
@@ -245,6 +246,7 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols);
+			loadTestConfiguration(config);
 			
 			//IPA always disabled to force recompile
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
@@ -253,14 +255,12 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			//note: stats required for runtime check of rewrite
-			programArgs = new String[]{"-explain","-stats","-args", HOME + INPUT_DIR + "X" , 
-					                        Integer.toString(type.ordinal()),
-					                        HOME + OUTPUT_DIR + "R" };
+			programArgs = new String[]{"-explain","-stats","-args",
+				input("X"), Integer.toString(type.ordinal()), output("R") };
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + Integer.toString(type.ordinal()) + " " + HOME + EXPECTED_DIR;
-			
-			loadTestConfiguration(config);
+				inputDir() + " " + Integer.toString(type.ordinal()) + " " + expectedDir();
 	
 			long seed = System.nanoTime();
 	        double[][] X = getRandomMatrix(rows, cols, 0, empty?0:1, sparsity, seed);

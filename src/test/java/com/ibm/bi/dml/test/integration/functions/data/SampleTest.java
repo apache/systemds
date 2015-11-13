@@ -39,9 +39,9 @@ import com.ibm.bi.dml.test.integration.TestConfiguration;
 public class SampleTest extends AutomatedTestBase 
 {
 
-	
 	private final static String TEST_DIR = "functions/data/";
 	private final static String TEST_NAME = "Sample";
+	private final static String TEST_CLASS_DIR = TEST_DIR + SampleTest.class.getSimpleName() + "/";
 	
 	private enum TEST_TYPE { FOUR_INPUTS, THREE_INPUTS1, THREE_INPUTS2, TWO_INPUTS, ERROR };
 	
@@ -87,7 +87,8 @@ public class SampleTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_DIR, TEST_NAME,new String[]{"A"})); 
+		addTestConfiguration(TEST_NAME,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"A"}));
 	}
 	
 	@Test
@@ -112,7 +113,8 @@ public class SampleTest extends AutomatedTestBase
 	}
 	
 	private void runSampleTest() {
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
+
 	 	String HOME = SCRIPT_DIR + TEST_DIR;
 		boolean exceptionExpected = false;
 
@@ -125,14 +127,14 @@ public class SampleTest extends AutomatedTestBase
 				exceptionExpected = true;
 			fullDMLScriptName = HOME + TEST_NAME + "2" + ".dml";
 			programArgs = new String[] { "-args", Long.toString(_range),
-					Long.toString(_size), HOME + OUTPUT_DIR + "A" };
+					Long.toString(_size), output("A") };
 			break;
 
 		case THREE_INPUTS1:
 			fullDMLScriptName = HOME + TEST_NAME + "3" + ".dml";
 			programArgs = new String[] { "-args", Long.toString(_range),
 					Long.toString(_size), (_replace ? "TRUE" : "FALSE"),
-					HOME + OUTPUT_DIR + "A" };
+					output("A") };
 			break;
 		case THREE_INPUTS2:
 			if (_range < _size)
@@ -140,7 +142,7 @@ public class SampleTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + TEST_NAME + "3" + ".dml";
 			programArgs = new String[] { "-args", Long.toString(_range),
 					Long.toString(_size), Long.toString(_seed),
-					HOME + OUTPUT_DIR + "A" };
+					output("A") };
 			break;
 
 		case FOUR_INPUTS:
@@ -148,11 +150,9 @@ public class SampleTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + TEST_NAME + "4" + ".dml";
 			programArgs = new String[] { "-args", Long.toString(_range),
 					Long.toString(_size), (_replace ? "TRUE" : "FALSE"),
-					Long.toString(_seed), HOME + OUTPUT_DIR + "A" };
+					Long.toString(_seed), output("A") };
 			break;
 		}
-
-		loadTestConfiguration(config);
 
 		runTest(true, exceptionExpected,
 				(exceptionExpected ? DMLException.class : null), -1);

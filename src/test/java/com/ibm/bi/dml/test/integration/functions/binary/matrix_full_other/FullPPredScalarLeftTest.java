@@ -19,6 +19,7 @@ package com.ibm.bi.dml.test.integration.functions.binary.matrix_full_other;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -65,6 +66,14 @@ public class FullPPredScalarLeftTest extends AutomatedTestBase
 	public static void init()
 	{
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 
 	@Override
@@ -393,21 +402,17 @@ public class FullPPredScalarLeftTest extends AutomatedTestBase
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
+			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
-			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", TARGET_IN + "A" ,
-                                            Integer.toString(type.ordinal()),
-                                            Double.toString(constant),
-                                            TARGET_OUT + "B"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       TARGET_IN + " " + type.ordinal() + " " + constant + " " + TARGET_EXPECTED;
+			programArgs = new String[]{"-explain","-args", input("A"), 
+				Integer.toString(type.ordinal()), Double.toString(constant), output("B") };
 			
-			loadTestConfiguration(config, TEST_CACHE_DIR);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " +  inputDir() + " " + 
+				type.ordinal() + " " + constant + " " + expectedDir();
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, sparsity, 7); 

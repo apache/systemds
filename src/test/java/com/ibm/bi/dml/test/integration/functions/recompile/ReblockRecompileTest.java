@@ -37,12 +37,12 @@ import com.ibm.bi.dml.utils.Statistics;
 
 public class ReblockRecompileTest extends AutomatedTestBase 
 {
-
 	
 	private final static String TEST_NAME1 = "rblk_recompile1";
 	private final static String TEST_NAME2 = "rblk_recompile2";
 	private final static String TEST_NAME3 = "rblk_recompile3";
 	private final static String TEST_DIR = "functions/recompile/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReblockRecompileTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 20;   
@@ -51,18 +51,12 @@ public class ReblockRecompileTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME1, 
-				new TestConfiguration(TEST_DIR, TEST_NAME1, 
-				new String[] { "Rout" })   );
-		addTestConfiguration(
-				TEST_NAME2, 
-				new TestConfiguration(TEST_DIR, TEST_NAME2, 
-				new String[] { "Rout" })   );
-		addTestConfiguration(
-				TEST_NAME3, 
-				new TestConfiguration(TEST_DIR, TEST_NAME3, 
-				new String[] { "Rout" })   );
+		addTestConfiguration(TEST_NAME1, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME2, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME3, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "Rout" }) );
 	}
 	
 	@Test
@@ -95,18 +89,15 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
+		loadTestConfiguration(config);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "V" , 
-				                        Integer.toString(rows),
-				                        HOME + OUTPUT_DIR + "R" };
-		fullRScriptName = HOME + TEST_NAME + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
+		programArgs = new String[]{"-args", input("V"), Integer.toString(rows), output("R") };
 		
-		loadTestConfiguration(config);
+		fullRScriptName = HOME + TEST_NAME + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 		long seed = System.nanoTime();
         double[][] V = getRandomMatrix(rows, 1, 1, 5, 1.0d, seed);
@@ -114,7 +105,7 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		
 		//cleanup previous executions
 		try {
-			MapReduceTool.deleteFileIfExistOnHDFS(HOME + OUTPUT_DIR + "R" );
+			MapReduceTool.deleteFileIfExistOnHDFS(output("R"));
 		} catch (IOException e1){}
 		
 		boolean exceptionExpected = false;
@@ -127,7 +118,7 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		//compare matrices		
 		try 
 		{
-			MatrixBlock mo = DataConverter.readMatrixFromHDFS(HOME + OUTPUT_DIR+"R", InputInfo.BinaryBlockInputInfo, rows, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+			MatrixBlock mo = DataConverter.readMatrixFromHDFS(output("R"), InputInfo.BinaryBlockInputInfo, rows, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 			HashMap<CellIndex, Double> dmlfile = new HashMap<CellIndex,Double>();
 			for( int i=0; i<mo.getNumRows(); i++ )
 				for( int j=0; j<mo.getNumColumns(); j++ )

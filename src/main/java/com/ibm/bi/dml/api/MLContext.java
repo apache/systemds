@@ -191,7 +191,6 @@ public class MLContext {
 	private ArrayList<String> _inVarnames = null;
 	private ArrayList<String> _outVarnames = null;
 	private LocalVariableMap _variables = null; // temporary symbol table
-	private boolean _parsePyDML = false;
 	private Program _rtprog = null;
 	
 	// --------------------------------------------------
@@ -614,6 +613,29 @@ public class MLContext {
 	 * Execute DML script by passing named arguments using specified config file.
 	 * @param dmlScriptFilePath the dml script can be in local filesystem or in HDFS
 	 * @param namedArgs
+	 * @param parsePyDML
+	 * @param configFilePath
+	 * @throws IOException
+	 * @throws DMLException
+	 * @throws ParseException 
+	 */
+	public MLOutput execute(String dmlScriptFilePath, HashMap<String, String> namedArgs, boolean parsePyDML, String configFilePath) throws IOException, DMLException, ParseException {
+		String [] args = new String[namedArgs.size()];
+		int i = 0;
+		for(Entry<String, String> entry : namedArgs.entrySet()) {
+			if(entry.getValue().trim().compareTo("") == 0)
+				args[i] = entry.getKey() + "=\"" + entry.getValue() + "\"";
+			else
+				args[i] = entry.getKey() + "=" + entry.getValue();
+			i++;
+		}
+		return compileAndExecuteScript(dmlScriptFilePath, args, true, parsePyDML, configFilePath);
+	}
+	
+	/**
+	 * Execute DML script by passing named arguments using specified config file.
+	 * @param dmlScriptFilePath the dml script can be in local filesystem or in HDFS
+	 * @param namedArgs
 	 * @param configFilePath
 	 * @throws IOException
 	 * @throws DMLException
@@ -629,7 +651,8 @@ public class MLContext {
 				args[i] = entry.getKey() + "=" + entry.getValue();
 			i++;
 		}
-		return compileAndExecuteScript(dmlScriptFilePath, args, true, configFilePath);
+		
+		return compileAndExecuteScript(dmlScriptFilePath, args, true, false, configFilePath);
 	}
 	
 	/**
@@ -641,7 +664,7 @@ public class MLContext {
 	 * @throws ParseException 
 	 */
 	public MLOutput execute(String dmlScriptFilePath, HashMap<String, String> namedArgs) throws IOException, DMLException, ParseException {
-		return execute(dmlScriptFilePath, namedArgs, null);
+		return execute(dmlScriptFilePath, namedArgs, false, null);
 	}
 	
 	/**
@@ -668,8 +691,7 @@ public class MLContext {
 	 * @throws ParseException
 	 */
 	public MLOutput execute(String dmlScriptFilePath, HashMap<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
-		this._parsePyDML = parsePyDML;
-		return execute(dmlScriptFilePath, namedArgs);
+		return execute(dmlScriptFilePath, namedArgs, parsePyDML, null);
 	}
 	
 	/**
@@ -696,7 +718,25 @@ public class MLContext {
 	 * @throws ParseException 
 	 */
 	public MLOutput execute(String dmlScriptFilePath, String [] args, String configFilePath) throws IOException, DMLException, ParseException {
-		return compileAndExecuteScript(dmlScriptFilePath, args, false, configFilePath);
+		return execute(dmlScriptFilePath, args, false, configFilePath);
+	}
+	
+	/**
+	 * Execute DML script by passing positional arguments using specified config file
+	 * This method is implemented for compatibility with Python MLContext.
+	 * Java/Scala users should use 'MLOutput execute(String dmlScriptFilePath, String [] args, String configFilePath)' instead as
+	 * equivalent scala collections (Seq/ArrayBuffer) is not implemented.
+	 * @param dmlScriptFilePath
+	 * @param args
+	 * @param configFilePath
+	 * @throws IOException
+	 * @throws DMLException
+	 * @throws ParseException 
+	 */
+	public MLOutput execute(String dmlScriptFilePath, ArrayList<String> args, String configFilePath) throws IOException, DMLException, ParseException {
+		String [] argsArr = new String[args.size()];
+		argsArr = args.toArray(argsArr);
+		return execute(dmlScriptFilePath, argsArr, false, configFilePath);
 	}
 	
 	/**
@@ -708,7 +748,63 @@ public class MLContext {
 	 * @throws ParseException 
 	 */
 	public MLOutput execute(String dmlScriptFilePath, String [] args) throws IOException, DMLException, ParseException {
-		return compileAndExecuteScript(dmlScriptFilePath, args, false, null);
+		return execute(dmlScriptFilePath, args, false, null);
+	}
+	
+	/**
+	 * Execute DML script by passing positional arguments using default configuration.
+	 * This method is implemented for compatibility with Python MLContext.
+	 * Java/Scala users should use 'MLOutput execute(String dmlScriptFilePath, String [] args)' instead as
+	 * equivalent scala collections (Seq/ArrayBuffer) is not implemented.
+	 * @param dmlScriptFilePath
+	 * @param args
+	 * @throws IOException
+	 * @throws DMLException
+	 * @throws ParseException 
+	 */
+	public MLOutput execute(String dmlScriptFilePath, ArrayList<String> args) throws IOException, DMLException, ParseException {
+		String [] argsArr = new String[args.size()];
+		argsArr = args.toArray(argsArr);
+		return execute(dmlScriptFilePath, argsArr, false, null);
+	}
+	
+	/**
+	 * Experimental: Execute DML script by passing positional arguments if parsePyDML=true, using default configuration.
+	 * This method is implemented for compatibility with Python MLContext.
+	 * Java/Scala users should use 'MLOutput execute(String dmlScriptFilePath, String [] args, boolean parsePyDML)' instead as
+	 * equivalent scala collections (Seq/ArrayBuffer) is not implemented.
+	 * @param dmlScriptFilePath
+	 * @param args
+	 * @param parsePyDML
+	 * @return
+	 * @throws IOException
+	 * @throws DMLException
+	 * @throws ParseException
+	 */
+	public MLOutput execute(String dmlScriptFilePath, ArrayList<String> args, boolean parsePyDML) throws IOException, DMLException, ParseException {
+		String [] argsArr = new String[args.size()];
+		argsArr = args.toArray(argsArr);
+		return execute(dmlScriptFilePath, argsArr, parsePyDML, null);
+	}
+	
+	/**
+	 * Experimental: Execute DML script by passing positional arguments if parsePyDML=true, using specified config file.
+	 * This method is implemented for compatibility with Python MLContext.
+	 * Java/Scala users should use 'MLOutput execute(String dmlScriptFilePath, String [] args, boolean parsePyDML, String configFilePath)' instead as
+	 * equivalent scala collections (Seq/ArrayBuffer) is not implemented.
+	 * @param dmlScriptFilePath
+	 * @param args
+	 * @param parsePyDML
+	 * @param configFilePath
+	 * @return
+	 * @throws IOException
+	 * @throws DMLException
+	 * @throws ParseException
+	 */
+	public MLOutput execute(String dmlScriptFilePath, ArrayList<String> args, boolean parsePyDML, String configFilePath) throws IOException, DMLException, ParseException {
+		String [] argsArr = new String[args.size()];
+		argsArr = args.toArray(argsArr);
+		return execute(dmlScriptFilePath, argsArr, parsePyDML, configFilePath);
 	}
 	
 	/**
@@ -723,8 +819,7 @@ public class MLContext {
 	 * @throws ParseException
 	 */
 	public MLOutput execute(String dmlScriptFilePath, String [] args, boolean parsePyDML, String configFilePath) throws IOException, DMLException, ParseException {
-		this._parsePyDML = parsePyDML;
-		return compileAndExecuteScript(dmlScriptFilePath, args, false, configFilePath);
+		return compileAndExecuteScript(dmlScriptFilePath, args, false, parsePyDML, configFilePath);
 	}
 	
 	/**
@@ -738,8 +833,7 @@ public class MLContext {
 	 * @throws ParseException
 	 */
 	public MLOutput execute(String dmlScriptFilePath, String [] args, boolean parsePyDML) throws IOException, DMLException, ParseException {
-		this._parsePyDML = parsePyDML;
-		return compileAndExecuteScript(dmlScriptFilePath, args, false, null);
+		return execute(dmlScriptFilePath, args, parsePyDML, null);
 	}
 	
 	/**
@@ -751,7 +845,7 @@ public class MLContext {
 	 * @throws ParseException 
 	 */
 	public MLOutput execute(String dmlScriptFilePath, String configFilePath) throws IOException, DMLException, ParseException {
-		return compileAndExecuteScript(dmlScriptFilePath, null, false, configFilePath);
+		return execute(dmlScriptFilePath, false, configFilePath);
 	}
 	
 	/**
@@ -762,7 +856,7 @@ public class MLContext {
 	 * @throws ParseException 
 	 */
 	public MLOutput execute(String dmlScriptFilePath) throws IOException, DMLException, ParseException {
-		return compileAndExecuteScript(dmlScriptFilePath, null, false, null);
+		return execute(dmlScriptFilePath, false, null);
 	}
 	
 	/**
@@ -776,8 +870,7 @@ public class MLContext {
 	 * @throws ParseException
 	 */
 	public MLOutput execute(String dmlScriptFilePath, boolean parsePyDML, String configFilePath) throws IOException, DMLException, ParseException {
-		this._parsePyDML = parsePyDML;
-		return compileAndExecuteScript(dmlScriptFilePath, null, false, configFilePath);
+		return compileAndExecuteScript(dmlScriptFilePath, null, false, parsePyDML, configFilePath);
 	}
 	
 	/**
@@ -790,8 +883,7 @@ public class MLContext {
 	 * @throws ParseException
 	 */
 	public MLOutput execute(String dmlScriptFilePath, boolean parsePyDML) throws IOException, DMLException, ParseException {
-		this._parsePyDML = parsePyDML;
-		return compileAndExecuteScript(dmlScriptFilePath, null, false, null);
+		return execute(dmlScriptFilePath, parsePyDML, null);
 	}
 	
 	// -------------------------------- Utility methods begins ----------------------------------------------------------
@@ -1041,11 +1133,11 @@ public class MLContext {
 	 * @throws ParseException
 	 */
 	public MLOutput executeScript(String dmlScript) throws IOException, DMLException, ParseException {
-		return compileAndExecuteScript(dmlScript, null, false, false, null);
+		return compileAndExecuteScript(dmlScript, null, false, false, false, null);
 	}
 	
 	public MLOutput executeScript(String dmlScript, String configFilePath) throws IOException, DMLException, ParseException {
-		return compileAndExecuteScript(dmlScript, null, false, false, configFilePath);
+		return compileAndExecuteScript(dmlScript, null, false, false, false, configFilePath);
 	}
 	
 	private void checkIfRegisteringInputAllowed() throws DMLRuntimeException {
@@ -1054,9 +1146,8 @@ public class MLContext {
 		}
 	}
 	
-	// Only file based input
-	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument, String configFilePath) throws IOException, DMLException, ParseException {
-		return compileAndExecuteScript(dmlScriptFilePath, args, isNamedArgument, true, configFilePath);
+	private MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument, boolean isPyDML, String configFilePath) throws IOException, DMLException, ParseException {
+		return compileAndExecuteScript(dmlScriptFilePath, args, true, isNamedArgument, isPyDML, configFilePath);
 	}
 	
 	/**
@@ -1071,7 +1162,7 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException
 	 */
-	private MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument, boolean isFile, String configFilePath) throws IOException, DMLException, ParseException {
+	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args,  boolean isFile, boolean isNamedArgument, boolean isPyDML, String configFilePath) throws IOException, DMLException, ParseException {
 		try {
 			if(getActiveMLContext() != null) {
 				throw new DMLRuntimeException("SystemML (and hence by definition MLContext) doesnot support parallel execute() calls from same or different MLContexts. "
@@ -1110,7 +1201,7 @@ public class MLContext {
 				HashMap<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
 				
 				// Run the DML script
-				ExecutionContext ec = executeUsingSimplifiedCompilationChain(dmlScriptFilePath, isFile, argVals, _parsePyDML, inputs, outputs, _variables, configFilePath);
+				ExecutionContext ec = executeUsingSimplifiedCompilationChain(dmlScriptFilePath, isFile, argVals, isPyDML, inputs, outputs, _variables, configFilePath);
 				
 				// Now collect the output
 				if(_outVarnames != null) {

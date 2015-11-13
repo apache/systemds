@@ -118,12 +118,12 @@ public class RewriteConstantFolding extends HopRewriteRule
 			rConstantFoldingExpression(h);
 		}
 		
+		LiteralOp literal = null;
+		
 		//fold binary op if both are literals / unary op if literal
 		if(    root.getDataType() == DataType.SCALAR //scalar ouput
 			&& ( isApplicableBinaryOp(root) || isApplicableUnaryOp(root) ) )	
 		{ 
-			LiteralOp literal = null;
-			
 			//core constant folding via runtime instructions
 			try {
 				literal = evalScalarOperation(root); 
@@ -132,46 +132,48 @@ public class RewriteConstantFolding extends HopRewriteRule
 			{
 				LOG.error("Failed to execute constant folding instructions. No abort.", ex);
 			}
-									
-			//replace binary operator with folded constant
-			if( literal != null ) 
-			{
-				//reverse replacement in order to keep common subexpression elimination
-				int plen = root.getParent().size();
-				if( plen > 0 ) //broot is NOT a DAG root
-				{
-					for( int i=0; i<root.getParent().size(); i++ ) //for all parents
-					{
-						Hop parent = root.getParent().get(i);
-						for( int j=0; j<parent.getInput().size(); j++ )
-						{
-							Hop child = parent.getInput().get(j);
-							if( root == child )
-							{
-								//replace operator
-								parent.getInput().remove(j);
-								parent.getInput().add(j, literal);
-							}
-						}
-					}
-					root.getParent().clear();	
-				}
-				else //broot IS a DAG root
-				{
-					root = literal;
-				}
-			}		
+			
 		}
 		//fold conjunctive predicate if at least one input is literal 'false'
 		else if( isApplicableFalseConjunctivePredicate(root) )
 		{
-			root = new LiteralOp(false);
+			literal = new LiteralOp(false);
 		}
 		//fold disjunctive predicate if at least one input is literal 'true'
 		else if( isApplicableTrueDisjunctivePredicate(root) )
 		{
-			root = new LiteralOp(true);
+			literal = new LiteralOp(true);
 		}
+									
+		//replace binary operator with folded constant
+		if( literal != null ) 
+		{
+			//reverse replacement in order to keep common subexpression elimination
+			int plen = root.getParent().size();
+			if( plen > 0 ) //broot is NOT a DAG root
+			{
+				for( int i=0; i<root.getParent().size(); i++ ) //for all parents
+				{
+					Hop parent = root.getParent().get(i);
+					for( int j=0; j<parent.getInput().size(); j++ )
+					{
+						Hop child = parent.getInput().get(j);
+						if( root == child )
+						{
+							//replace operator
+							//root to parent link cannot be removed within this loop, as loop iterates over list containing parents.
+							parent.getInput().remove(j);
+							HopRewriteUtils.addChildReference(parent, literal,j);
+						}
+					}
+				}
+				root.getParent().clear();
+			}
+			else //broot IS a DAG root
+			{
+				root = literal;
+			}
+		}		
 			
 		
 		//mark processed

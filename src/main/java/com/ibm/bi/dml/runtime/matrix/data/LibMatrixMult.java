@@ -3540,7 +3540,6 @@ public class LibMatrixMult
 			if( pm2 ) { //vector-matrix / matrix-matrix
 				//allocate local result for partial aggregation
 				_ret = new MatrixBlock(ret.rlen, ret.clen, false);
-				_ret.allocateDenseBlock();
 			}
 			else { //default case
 				_ret = ret;
@@ -3550,6 +3549,10 @@ public class LibMatrixMult
 		@Override
 		public Object call() throws DMLRuntimeException
 		{
+			//thread-local allocation
+			if( _pm2 )
+				_ret.allocateDenseBlock();
+			
 			//compute block matrix multiplication
 			if( _m1.isUltraSparse() || _m2.isUltraSparse() )
 				matrixMultUltraSparse(_m1, _m2, _ret, _rl, _ru);

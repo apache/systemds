@@ -919,10 +919,11 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				case AggregateTernary: //opcodes: tak+*
 					return 6 * d1m * d1n; //2*1(*) + 4 (k+)
 					
-				case AggregateUnary: //opcodes: uak+, uark+, uack+, uamean, uarmean, uacmean, 
-									 //         uamax, uarmax, uarimax, uacmax, uamin, uarmin, uacmin, 
-									 //         ua+, uar+, uac+, ua*, uatrace, uaktrace, 
-					                 //         nrow, ncol, length, cm
+				case AggregateUnary: //opcodes: uak+, uark+, uack+, uasqk+, uarsqk+, uacsqk+,
+				                     //         uamean, uarmean, uacmean,
+				                     //         uamax, uarmax, uarimax, uacmax, uamin, uarmin, uacmin,
+				                     //         ua+, uar+, uac+, ua*, uatrace, uaktrace,
+				                     //         nrow, ncol, length, cm
 					
 					if( optype.equals("nrow") || optype.equals("ncol") || optype.equals("length") )
 						return DEFAULT_NFLOP_NOOP;
@@ -949,6 +950,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				    }
 				    else if( optype.equals("uak+") || optype.equals("uark+") || optype.equals("uark+"))
 				    	return 4 * d1m * d1n; //1*k+
+					else if( optype.equals("uasqk+") || optype.equals("uarsqk+") || optype.equals("uacsqk+"))
+						return 5 * d1m * d1n; // +1 for multiplication to square term
 				    else if( optype.equals("uamean") || optype.equals("uarmean") || optype.equals("uacmean"))
 						return 7 * d1m * d1n; //1*k+
 				    else if(   optype.equals("uamax") || optype.equals("uarmax") || optype.equals("uacmax") 
@@ -1183,12 +1186,14 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		{
 			switch(mrtype)
 			{
-				case Aggregate: //opcodes: a+, ak+, a*, amax, amin, amean 
+				case Aggregate: //opcodes: a+, ak+, asqk+, a*, amax, amin, amean
 					//TODO should be aggregate unary
 					int numMap = Integer.parseInt(args[0]);
 					if( optype.equals("ak+") )
-				    	return 4 * numMap * d1m * d1n * d1s;
-				    else 
+						return 4 * numMap * d1m * d1n * d1s;
+					else if( optype.equals("asqk+") )
+						return 5 * numMap * d1m * d1n * d1s; // +1 for multiplication to square term
+					else
 						return numMap * d1m * d1n * d1s;
 					
 				case AggregateBinary: //opcodes: cpmm, rmm, mapmult

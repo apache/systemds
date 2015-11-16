@@ -20,6 +20,7 @@ package com.ibm.bi.dml.runtime.matrix.operators;
 
 import com.ibm.bi.dml.runtime.functionobjects.IndexFunction;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
+import com.ibm.bi.dml.runtime.functionobjects.KahanPlusSq;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Or;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
@@ -48,8 +49,9 @@ public class AggregateUnaryOperator  extends Operator
 		
 		//decide on sparse safe
 		if( aggOp.increOp.fn instanceof Plus || 
-			aggOp.increOp.fn instanceof KahanPlus || 
-			aggOp.increOp.fn instanceof Or || 
+			aggOp.increOp.fn instanceof KahanPlus ||
+			aggOp.increOp.fn instanceof KahanPlusSq ||
+			aggOp.increOp.fn instanceof Or ||
 			aggOp.increOp.fn instanceof Minus ) 
 		{
 			sparseSafe=true;

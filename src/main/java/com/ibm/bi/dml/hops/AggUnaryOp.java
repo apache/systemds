@@ -341,6 +341,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					val = dim2 * OptimizerUtils.INT_SIZE;
 				break;
 			case SUM:
+			case SUM_SQ:
 				//worst-case correction LASTROW / LASTCOLUMN 
 				if( _direction == Direction.Col ) //(potentially sparse)
 					val = OptimizerUtils.estimateSizeExactSparsity(1, dim2, sparsity);
@@ -695,9 +696,9 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	public boolean isTransposeSafe()
 	{
 		boolean ret = (_direction == Direction.RowCol) && //full aggregate
-                      (_op == AggOp.SUM || _op == AggOp.MIN || //valid aggregration functions
-		               _op == AggOp.MAX || _op == AggOp.PROD || 
-		               _op == AggOp.MEAN);
+		              (_op == AggOp.SUM || _op == AggOp.SUM_SQ || //valid aggregration functions
+		               _op == AggOp.MIN || _op == AggOp.MAX ||
+		               _op == AggOp.PROD || _op == AggOp.MEAN);
 		//note: trace and maxindex are not transpose-safe.
 		
 		return ret;	

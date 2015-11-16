@@ -75,6 +75,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uak+"   	, CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uark+"   , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uack+"   , CPINSTRUCTION_TYPE.AggregateUnary);
+		String2CPInstructionType.put( "uasqk+"  , CPINSTRUCTION_TYPE.AggregateUnary);
+		String2CPInstructionType.put( "uarsqk+" , CPINSTRUCTION_TYPE.AggregateUnary);
+		String2CPInstructionType.put( "uacsqk+" , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uamean"  , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uarmean" , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uacmean" , CPINSTRUCTION_TYPE.AggregateUnary);

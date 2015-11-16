@@ -49,7 +49,9 @@ import com.ibm.bi.dml.runtime.functionobjects.CM;
 import com.ibm.bi.dml.runtime.functionobjects.CTable;
 import com.ibm.bi.dml.runtime.functionobjects.DiagIndex;
 import com.ibm.bi.dml.runtime.functionobjects.Divide;
+import com.ibm.bi.dml.runtime.functionobjects.KahanFunction;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
+import com.ibm.bi.dml.runtime.functionobjects.KahanPlusSq;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
@@ -1105,20 +1107,51 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	/**
 	 * Wrapper method for reduceall-sum of a matrix.
 	 * 
-	 * @return
+	 * @return Sum of the values in the matrix.
 	 * @throws DMLRuntimeException
 	 */
 	public double sum() 
 		throws DMLRuntimeException
 	{
+		KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+		return sumWithFn(kplus);
+	}
+
+	/**
+	 * Wrapper method for reduceall-sumSq of a matrix.
+	 *
+	 * @return Sum of the squared values in the matrix.
+	 * @throws DMLRuntimeException
+	 */
+	public double sumSq()
+			throws DMLRuntimeException
+	{
+		KahanPlusSq kplusSq = KahanPlusSq.getKahanPlusSqFnObject();
+		return sumWithFn(kplusSq);
+	}
+
+	/**
+	 * Wrapper method for reduceall-sum of a matrix using the given
+	 * Kahan function for summation.
+	 *
+	 * @param kfunc A Kahan function object to use for summation.
+	 * @return Sum of the values in the matrix with the given
+	 *         function applied.
+	 * @throws DMLRuntimeException
+	 */
+	private double sumWithFn(KahanFunction kfunc)
+			throws DMLRuntimeException
+	{
 		//construct operator
-		AggregateOperator aop = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
-		AggregateUnaryOperator auop = new AggregateUnaryOperator( aop, ReduceAll.getReduceAllFnObject());
-		
+		CorrectionLocationType corrLoc = CorrectionLocationType.LASTCOLUMN;
+		ReduceAll reduceAllObj = ReduceAll.getReduceAllFnObject();
+		AggregateOperator aop = new AggregateOperator(0, kfunc, true, corrLoc);
+		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, reduceAllObj);
+
 		//execute operation
 		MatrixBlock out = new MatrixBlock(1, 2, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out, auop);
-		
+
 		return out.quickGetValue(0, 0);
 	}
 

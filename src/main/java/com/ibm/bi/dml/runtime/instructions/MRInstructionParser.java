@@ -86,6 +86,7 @@ public class MRInstructionParser extends InstructionParser
 		// AGG Instruction Opcodes 
 		String2MRInstructionType.put( "a+"    , MRINSTRUCTION_TYPE.Aggregate);
 		String2MRInstructionType.put( "ak+"   , MRINSTRUCTION_TYPE.Aggregate);
+		String2MRInstructionType.put( "asqk+" , MRINSTRUCTION_TYPE.Aggregate);
 		String2MRInstructionType.put( "a*"    , MRINSTRUCTION_TYPE.Aggregate);
 		String2MRInstructionType.put( "amax"  , MRINSTRUCTION_TYPE.Aggregate);
 		String2MRInstructionType.put( "amin"  , MRINSTRUCTION_TYPE.Aggregate);
@@ -105,6 +106,9 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "uak+"  , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uark+" , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uack+" , MRINSTRUCTION_TYPE.AggregateUnary);
+		String2MRInstructionType.put( "uasqk+" , MRINSTRUCTION_TYPE.AggregateUnary);
+		String2MRInstructionType.put( "uarsqk+", MRINSTRUCTION_TYPE.AggregateUnary);
+		String2MRInstructionType.put( "uacsqk+", MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uamean", MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uarmean",MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uacmean",MRINSTRUCTION_TYPE.AggregateUnary);

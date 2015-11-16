@@ -22,6 +22,7 @@ import java.io.Serializable;
 
 import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
+import com.ibm.bi.dml.runtime.functionobjects.KahanPlusSq;
 import com.ibm.bi.dml.runtime.functionobjects.Minus;
 import com.ibm.bi.dml.runtime.functionobjects.Or;
 import com.ibm.bi.dml.runtime.functionobjects.Plus;
@@ -45,7 +46,7 @@ public class AggregateOperator  extends Operator implements Serializable
 		increOp=new BinaryOperator(op);
 		//increFn=op;
 		//as long as (v op 0)=v, then op is sparseSafe
-		if(op instanceof Plus || op instanceof KahanPlus 
+		if(op instanceof Plus || op instanceof KahanPlus || op instanceof KahanPlusSq
 				|| op instanceof Or || op instanceof Minus)
 			sparseSafe=true;
 		else

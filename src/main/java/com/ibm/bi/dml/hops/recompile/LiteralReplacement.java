@@ -486,6 +486,7 @@ public class LiteralReplacement
 	{
 		boolean cdir = (auop.getDirection() == Direction.RowCol);		
 		boolean cop = (  auop.getOp() == AggOp.SUM
+				      || auop.getOp() == AggOp.SUM_SQ
 				      || auop.getOp() == AggOp.MIN
 				      || auop.getOp() == AggOp.MAX ); 
 		
@@ -512,7 +513,10 @@ public class LiteralReplacement
 			case SUM: 
 				val = mb.sum(); 
 				break;
-			case MIN: 
+			case SUM_SQ:
+				val = mb.sumSq();
+				break;
+			case MIN:
 				val = mb.min(); 
 				break;
 			case MAX: 

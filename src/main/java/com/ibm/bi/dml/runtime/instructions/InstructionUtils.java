@@ -44,6 +44,7 @@ import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
 import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
+import com.ibm.bi.dml.runtime.functionobjects.KahanPlusSq;
 import com.ibm.bi.dml.runtime.functionobjects.LessThan;
 import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
 import com.ibm.bi.dml.runtime.functionobjects.Mean;
@@ -326,6 +327,20 @@ public class InstructionUtils
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 		}
+		else if ( opcode.equalsIgnoreCase("uasqk+") ) {
+			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uarsqk+") ) {
+			// RowSums
+			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uacsqk+") ) {
+			// ColSums
+			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), true, CorrectionLocationType.LASTROW);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
 		else if ( opcode.equalsIgnoreCase("uamean") ) {
 			// Mean
 			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
@@ -418,7 +433,12 @@ public class InstructionUtils
 			boolean lcorrExists = (corrExists==null) ? true : Boolean.parseBoolean(corrExists);
 			CorrectionLocationType lcorrLoc = (corrLoc==null) ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.valueOf(corrLoc);
 			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), lcorrExists, lcorrLoc);
-		} 
+		}
+		else if ( opcode.equalsIgnoreCase("asqk+") ) {
+			boolean lcorrExists = (corrExists==null) ? true : Boolean.parseBoolean(corrExists);
+			CorrectionLocationType lcorrLoc = (corrLoc==null) ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.valueOf(corrLoc);
+			agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), lcorrExists, lcorrLoc);
+		}
 		else if ( opcode.equalsIgnoreCase("a+") ) {
 			agg = new AggregateOperator(0, Plus.getPlusFnObject());
 		} 
@@ -721,6 +741,8 @@ public class InstructionUtils
 	{
 		if ( opcode.equalsIgnoreCase("uak+") || opcode.equalsIgnoreCase("uark+") || opcode.equalsIgnoreCase("uack+"))
 			return "ak+";
+		else if ( opcode.equalsIgnoreCase("uasqk+") || opcode.equalsIgnoreCase("uarsqk+") || opcode.equalsIgnoreCase("uacsqk+") )
+			return "asqk+";
 		else if ( opcode.equalsIgnoreCase("uamean") || opcode.equalsIgnoreCase("uarmean") || opcode.equalsIgnoreCase("uacmean") )
 			return "amean";
 		else if ( opcode.equalsIgnoreCase("ua+") || opcode.equalsIgnoreCase("uar+") || opcode.equalsIgnoreCase("uac+") )
@@ -748,9 +770,11 @@ public class InstructionUtils
 	 */
 	public static CorrectionLocationType deriveAggregateOperatorCorrectionLocation(String opcode)
 	{
-		if (   opcode.equalsIgnoreCase("uak+") || opcode.equalsIgnoreCase("uark+") || opcode.equalsIgnoreCase("uatrace") || opcode.equalsIgnoreCase("uaktrace") )
+		if ( opcode.equalsIgnoreCase("uak+") || opcode.equalsIgnoreCase("uark+") ||
+				opcode.equalsIgnoreCase("uasqk+") || opcode.equalsIgnoreCase("uarsqk+") ||
+				opcode.equalsIgnoreCase("uatrace") || opcode.equalsIgnoreCase("uaktrace") )
 			return CorrectionLocationType.LASTCOLUMN;
-		else if ( opcode.equalsIgnoreCase("uack+") ) 
+		else if ( opcode.equalsIgnoreCase("uack+") || opcode.equalsIgnoreCase("uacsqk+") )
 			return CorrectionLocationType.LASTROW;
 		else if ( opcode.equalsIgnoreCase("uamean") || opcode.equalsIgnoreCase("uarmean") )
 			return CorrectionLocationType.LASTTWOCOLUMNS;

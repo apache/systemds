@@ -49,7 +49,8 @@ public class AggregateInstruction extends UnaryMRInstructionBase
 		out = Byte.parseByte(parts[2]);
 		
 		AggregateOperator agg = null;
-		if(opcode.equalsIgnoreCase("ak+") || opcode.equalsIgnoreCase("amean")) {
+		if(opcode.equalsIgnoreCase("ak+") || opcode.equalsIgnoreCase("asqk+")
+				|| opcode.equalsIgnoreCase("amean")) {
 			InstructionUtils.checkNumFields ( str, 4 );
 			agg = InstructionUtils.parseAggregateOperator(opcode, parts[3], parts[4]);
 		}

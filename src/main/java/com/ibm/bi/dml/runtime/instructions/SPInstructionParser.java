@@ -82,6 +82,9 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "uak+"   	, SPINSTRUCTION_TYPE.AggregateUnary);
 		String2SPInstructionType.put( "uark+"   , SPINSTRUCTION_TYPE.AggregateUnary);
 		String2SPInstructionType.put( "uack+"   , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uasqk+" 	, SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uarsqk+" , SPINSTRUCTION_TYPE.AggregateUnary);
+		String2SPInstructionType.put( "uacsqk+" , SPINSTRUCTION_TYPE.AggregateUnary);
 		String2SPInstructionType.put( "uamean"  , SPINSTRUCTION_TYPE.AggregateUnary);
 		String2SPInstructionType.put( "uarmean" , SPINSTRUCTION_TYPE.AggregateUnary);
 		String2SPInstructionType.put( "uacmean" , SPINSTRUCTION_TYPE.AggregateUnary);

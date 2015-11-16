@@ -172,6 +172,7 @@ public class PartialAggregate extends Lop
 
 		switch (operation) {
 		case KahanSum:
+		case KahanSumSq:
 		case KahanTrace:
 			switch (direction) {
 				case Col:
@@ -344,7 +345,17 @@ public class PartialAggregate extends Lop
 					return "uack+";
 				break;
 			}
-			
+
+			case KahanSumSq: {
+				if( dir == DirectionTypes.RowCol )
+					return "uasqk+";
+				else if( dir == DirectionTypes.Row )
+					return "uarsqk+";
+				else if( dir == DirectionTypes.Col )
+					return "uacsqk+";
+				break;
+			}
+
 			case Product: {
 				if( dir == DirectionTypes.RowCol )
 					return "ua*";

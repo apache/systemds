@@ -35,7 +35,9 @@ public class Aggregate extends Lop
 	
 	/** Aggregate operation types **/
 	
-	public enum OperationTypes {Sum,Product,Min,Max,Trace,KahanSum,KahanTrace,Mean,MaxIndex, MinIndex};	
+	public enum OperationTypes {
+		Sum, Product, Min, Max, Trace, KahanSum, KahanSumSq, KahanTrace, Mean,MaxIndex, MinIndex
+	}
 	OperationTypes operation;
  
 	private boolean isCorrectionUsed = false;
@@ -78,7 +80,8 @@ public class Aggregate extends Lop
 	
 	// this function must be invoked during hop-to-lop translation
 	public void setupCorrectionLocation(CorrectionLocationType loc) {
-		if ( operation == OperationTypes.KahanSum || operation == OperationTypes.KahanTrace || operation == OperationTypes.Mean ) {
+		if (operation == OperationTypes.KahanSum || operation == OperationTypes.KahanSumSq
+				|| operation == OperationTypes.KahanTrace || operation == OperationTypes.Mean) {
 			isCorrectionUsed = true;
 			correctionLocation = loc;
 		}
@@ -121,10 +124,11 @@ public class Aggregate extends Lop
 			return "arimax";
 		case MinIndex:
 			return "arimin";
-			
 		case KahanSum:
 		case KahanTrace: 
-			return "ak+"; 
+			return "ak+";
+		case KahanSumSq:
+			return "asqk+";
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Aggregate operation: " + operation);
 		}
@@ -154,7 +158,8 @@ public class Aggregate extends Lop
 		boolean isCorrectionApplicable = false;
 		
 		String opcode = getOpcode(); 
-		if (operation == OperationTypes.Mean || operation == OperationTypes.KahanSum || operation == OperationTypes.KahanTrace ) 
+		if (operation == OperationTypes.Mean || operation == OperationTypes.KahanSum
+				|| operation == OperationTypes.KahanSumSq || operation == OperationTypes.KahanTrace)
 			isCorrectionApplicable = true;
 		
 		StringBuilder sb = new StringBuilder();

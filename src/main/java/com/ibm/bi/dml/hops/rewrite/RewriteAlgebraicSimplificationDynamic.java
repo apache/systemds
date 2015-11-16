@@ -61,11 +61,11 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	
 	
 	//valid aggregation operation types for rowOp to Op conversions (not all operations apply)
-	private static AggOp[] LOOKUP_VALID_ROW_COL_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX, AggOp.MEAN};	
+	private static AggOp[] LOOKUP_VALID_ROW_COL_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN};
 	
 	//valid aggregation operation types for empty (sparse-safe) operations (not all operations apply)
 	//AggOp.MEAN currently not due to missing count/corrections
-	private static AggOp[] LOOKUP_VALID_EMPTY_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX, AggOp.PROD, AggOp.TRACE}; 
+	private static AggOp[] LOOKUP_VALID_EMPTY_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.PROD, AggOp.TRACE};
 	
 	//valid unary operation types for empty (sparse-safe) operations (not all operations apply)
 	private static OpOp1[] LOOKUP_VALID_EMPTY_UNARY = new OpOp1[]{OpOp1.ABS, OpOp1.SIN, OpOp1.TAN, OpOp1.SQRT, OpOp1.ROUND, OpOp1.CUMSUM}; 
@@ -160,7 +160,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
 			hi = pushdownBinaryOperationOnDiag(hop, hi, i);   //e.g., diag(X)*7 -> diag(X*7); if col vector
 			hi = simplifyDotProductSum(hop, hi, i);           //e.g., sum(v^2) -> t(v)%*%v if ncol(v)==1 
-			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size 
+			hi = fuseSumSquared(hop, hi, i);                  //e.g., sum(X^2) -> sumSq(X), if ncol(X)>1
+			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size
 			hi = simplifySumMatrixMult(hop, hi, i);           //e.g., sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)), if not dot product
 			hi = simplifyEmptyBinaryOperation(hop, hi, i);    //e.g., X*Y -> matrix(0,nrow(X), ncol(X)) / X+Y->X / X-Y -> X
 			hi = simplifyScalarMVBinaryOperation(hi); 		  //e.g., X*y -> X*as.scalar(y), if y is a 1-1 matrix
@@ -1409,6 +1410,57 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			}
 		}
 		
+		return hi;
+	}
+
+	/**
+	 * Replace SUM(X^2) with a fused SUM_SQ(X) HOP.
+	 *
+	 * @param parent Parent HOP for which hi is an input.
+	 * @param hi Current HOP for potential rewrite.
+	 * @param pos Position of hi in parent's list of inputs.
+	 *
+	 * @return Either hi or the rewritten HOP replacing it.
+	 *
+	 * @throws HopsException
+	 */
+	private Hop fuseSumSquared(Hop parent, Hop hi, int pos)
+			throws HopsException {
+		// if SUM
+		if (hi instanceof AggUnaryOp && ((AggUnaryOp) hi).getOp() == AggOp.SUM) {
+			Hop sumInput = hi.getInput().get(0);
+
+			// if input to SUM is POW(X,2), and no other consumers of the POW(X,2) HOP
+			if (sumInput instanceof BinaryOp && ((BinaryOp) sumInput).getOp() == OpOp2.POW
+					&& sumInput.getInput().get(1) instanceof LiteralOp
+					&& HopRewriteUtils.getDoubleValue((LiteralOp) sumInput.getInput().get(1)) == 2
+					&& sumInput.getParent().size() == 1) {
+				Hop x = sumInput.getInput().get(0);
+
+				// if X is NOT a column vector
+				if (x.getDim2() > 1) {
+					// perform rewrite from SUM(POW(X,2)) to SUM_SQ(X)
+					DataType dt = hi.getDataType();
+					ValueType vt = hi.getValueType();
+					Direction dir = ((AggUnaryOp) hi).getDirection();
+					long brlen = hi.getRowsInBlock();
+					long bclen = hi.getColsInBlock();
+					AggUnaryOp sumSq = new AggUnaryOp("sumSq", dt, vt, AggOp.SUM_SQ, dir, x);
+					HopRewriteUtils.setOutputBlocksizes(sumSq, brlen, bclen);
+					HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+					HopRewriteUtils.addChildReference(parent, sumSq, pos);
+
+					// cleanup
+					if (hi.getParent().isEmpty())
+						HopRewriteUtils.removeAllChildReferences(hi);
+					if(sumInput.getParent().isEmpty())
+						HopRewriteUtils.removeAllChildReferences(sumInput);
+
+					// replace current HOP with new SUM_SQ HOP
+					hi = sumSq;
+				}
+			}
+		}
 		return hi;
 	}
 	

@@ -1059,7 +1059,7 @@ public abstract class Hop
 	
 	
 	public enum AggOp {
-		SUM, MIN, MAX, TRACE, PROD, MEAN, MAXINDEX, MININDEX
+		SUM, SUM_SQ, MIN, MAX, TRACE, PROD, MEAN, MAXINDEX, MININDEX
 	};
 
 	public enum ReOrgOp {
@@ -1111,7 +1111,7 @@ public abstract class Hop
 	static {
 		HopsAgg2Lops = new HashMap<Hop.AggOp, com.ibm.bi.dml.lops.Aggregate.OperationTypes>();
 		HopsAgg2Lops.put(AggOp.SUM, com.ibm.bi.dml.lops.Aggregate.OperationTypes.KahanSum);
-	//	HopsAgg2Lops.put(AggOp.SUM, dml.lops.Aggregate.OperationTypes.Sum);
+		HopsAgg2Lops.put(AggOp.SUM_SQ, com.ibm.bi.dml.lops.Aggregate.OperationTypes.KahanSumSq);
 		HopsAgg2Lops.put(AggOp.TRACE, com.ibm.bi.dml.lops.Aggregate.OperationTypes.KahanTrace);
 		HopsAgg2Lops.put(AggOp.MIN, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Min);
 		HopsAgg2Lops.put(AggOp.MAX, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Max);
@@ -1385,6 +1385,7 @@ public abstract class Hop
 	static {
 		HopsAgg2String = new HashMap<Hop.AggOp, String>();
 		HopsAgg2String.put(AggOp.SUM, "+");
+		HopsAgg2String.put(AggOp.SUM_SQ, "sq+");
 		HopsAgg2String.put(AggOp.PROD, "*");
 		HopsAgg2String.put(AggOp.MIN, "min");
 		HopsAgg2String.put(AggOp.MAX, "max");

@@ -24,7 +24,7 @@ import com.ibm.bi.dml.runtime.instructions.cp.Data;
 import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
 
 
-public class KahanPlus extends ValueFunction implements Serializable
+public class KahanPlus extends KahanFunction implements Serializable
 {
 
 	private static final long serialVersionUID = -8338160609569967791L;

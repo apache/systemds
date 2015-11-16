@@ -29,7 +29,9 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
 import com.ibm.bi.dml.runtime.functionobjects.IndexFunction;
+import com.ibm.bi.dml.runtime.functionobjects.KahanFunction;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
+import com.ibm.bi.dml.runtime.functionobjects.KahanPlusSq;
 import com.ibm.bi.dml.runtime.functionobjects.Mean;
 import com.ibm.bi.dml.runtime.functionobjects.Multiply;
 import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
@@ -73,6 +75,7 @@ public class LibMatrixAgg
 	
 	private enum AggType {
 		KAHAN_SUM,
+		KAHAN_SUM_SQ,
 		CUM_KAHAN_SUM,
 		CUM_MIN,
 		CUM_MAX,
@@ -218,7 +221,7 @@ public class LibMatrixAgg
 			return;
 		}
 		
-		//prepare meta data 
+		//prepare meta data
 		AggType aggtype = getAggType(uaop);
 		final int m = in.rlen;
 		final int m2 = out.rlen;
@@ -430,17 +433,20 @@ public class LibMatrixAgg
 		ValueFunction vfn = op.aggOp.increOp.fn;
 		IndexFunction ifn = op.indexFn;
 		
-		//(kahan) sum / trace (for ReduceDiag)
-		if( vfn instanceof KahanPlus 
-			&& (op.aggOp.correctionLocation == CorrectionLocationType.LASTCOLUMN ||op.aggOp.correctionLocation == CorrectionLocationType.LASTROW ) 
+		//(kahan) sum / sum squared / trace (for ReduceDiag)
+		if( vfn instanceof KahanFunction
+			&& (op.aggOp.correctionLocation == CorrectionLocationType.LASTCOLUMN || op.aggOp.correctionLocation == CorrectionLocationType.LASTROW)
 			&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow || ifn instanceof ReduceDiag) )
 		{
-			return AggType.KAHAN_SUM;
+			if (vfn instanceof KahanPlus)
+				return AggType.KAHAN_SUM;
+			else if (vfn instanceof KahanPlusSq)
+				return AggType.KAHAN_SUM_SQ;
 		}
-		
-		//mean 
+
+		//mean
 		if( vfn instanceof Mean 
-			&& (op.aggOp.correctionLocation == CorrectionLocationType.LASTTWOCOLUMNS || op.aggOp.correctionLocation == CorrectionLocationType.LASTTWOROWS ) 
+			&& (op.aggOp.correctionLocation == CorrectionLocationType.LASTTWOCOLUMNS || op.aggOp.correctionLocation == CorrectionLocationType.LASTTWOROWS)
 			&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow) )
 		{
 			return AggType.MEAN;
@@ -996,6 +1002,18 @@ public class LibMatrixAgg
 					d_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				break;
 			}
+			case KAHAN_SUM_SQ: //SUM_SQ via k+,
+			{
+				KahanObject kbuff = new KahanObject(0, 0);
+
+				if( ixFn instanceof ReduceAll ) //SUM_SQ
+					d_uasqkp(a, c, m, n, kbuff, (KahanPlusSq)vFn, rl, ru);
+				else if( ixFn instanceof ReduceCol ) //ROWSUM_SQ
+					d_uarsqkp(a, c, m, n, kbuff, (KahanPlusSq)vFn, rl, ru);
+				else if( ixFn instanceof ReduceRow ) //COLSUM_SQ
+					d_uacsqkp(a, c, m, n, kbuff, (KahanPlusSq)vFn, rl, ru);
+				break;
+			}
 			case CUM_KAHAN_SUM: //CUMSUM
 			{
 				KahanObject kbuff = new KahanObject(0, 0);
@@ -1101,7 +1119,18 @@ public class LibMatrixAgg
 					s_uackp(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
 				else if( ixFn instanceof ReduceDiag ) //TRACE
 					s_uakptrace(a, c, m, n, kbuff, (KahanPlus)vFn, rl, ru);
-					
+				break;
+			}
+			case KAHAN_SUM_SQ: //SUM_SQ via k+
+			{
+				KahanObject kbuff = new KahanObject(0, 0);
+
+				if( ixFn instanceof ReduceAll ) //SUM_SQ
+					s_uasqkp(a, c, m, n, kbuff, (KahanPlusSq)vFn, rl, ru);
+				else if( ixFn instanceof ReduceCol ) //ROWSUM_SQ
+					s_uarsqkp(a, c, m, n, kbuff, (KahanPlusSq)vFn, rl, ru);
+				else if( ixFn instanceof ReduceRow ) //COLSUM_SQ
+					s_uacsqkp(a, c, m, n, kbuff, (KahanPlusSq)vFn, rl, ru);
 				break;
 			}
 			case CUM_KAHAN_SUM: //CUMSUM
@@ -1189,9 +1218,10 @@ public class LibMatrixAgg
 		throws DMLRuntimeException
 	{
 		//do nothing for pseudo sparse-safe operations
-		if(optype==AggType.KAHAN_SUM || optype==AggType.MIN || optype==AggType.MAX || optype==AggType.PROD 
-			|| optype == AggType.CUM_KAHAN_SUM || optype == AggType.CUM_PROD || optype == AggType.CUM_MIN
-			|| optype == AggType.CUM_MAX )
+		if(optype==AggType.KAHAN_SUM || optype==AggType.KAHAN_SUM_SQ
+				|| optype==AggType.MIN || optype==AggType.MAX || optype==AggType.PROD
+				|| optype == AggType.CUM_KAHAN_SUM || optype == AggType.CUM_PROD
+				|| optype == AggType.CUM_MIN || optype == AggType.CUM_MAX)
 		{
 			return;
 		}
@@ -1293,7 +1323,81 @@ public class LibMatrixAgg
 		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n )
 			sumAgg( a, c, aix, 0, n, kbuff, kplus );
 	}
-	
+
+	/**
+	 * SUM_SQ, opcode: uasqk+, dense input.
+	 *
+	 * @param a Array of values to square & sum.
+	 * @param c Output array to store sum and correction factor.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param kbuff A KahanObject to hold the current sum and
+	 *              correction factor for the Kahan summation
+	 *              algorithm.
+	 * @param kplusSq A KahanPlusSq object to perform summation of
+	 *                squared values.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void d_uasqkp(double[] a, double[] c, int m, int n, KahanObject kbuff,
+	                             KahanPlusSq kplusSq, int rl, int ru)
+	{
+		int len = Math.min((ru-rl)*n, a.length);
+		sumSq(a, rl*n, len, kbuff, kplusSq);
+		c[0] = kbuff._sum;
+		c[1] = kbuff._correction;
+	}
+
+	/**
+	 * ROWSUM_SQ, opcode: uarsqk+, dense input.
+	 *
+	 * @param a Array of values to square & sum row-wise.
+	 * @param c Output array to store sum and correction factor
+	 *          for each row.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param kbuff A KahanObject to hold the current sum and
+	 *              correction factor for the Kahan summation
+	 *              algorithm.
+	 * @param kplusSq A KahanPlusSq object to perform summation of
+	 *                squared values.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void d_uarsqkp(double[] a, double[] c, int m, int n, KahanObject kbuff,
+	                              KahanPlusSq kplusSq, int rl, int ru)
+	{
+		for (int i=rl, aix=rl*n, cix=rl*2; i<ru; i++, aix+=n, cix+=2) {
+			kbuff.set(0, 0); //reset buffer
+			sumSq(a, aix, n, kbuff, kplusSq);
+			c[cix+0] = kbuff._sum;
+			c[cix+1] = kbuff._correction;
+		}
+	}
+
+	/**
+	 * COLSUM_SQ, opcode: uacsqk+, dense input.
+	 *
+	 * @param a Array of values to square & sum column-wise.
+	 * @param c Output array to store sum and correction factor
+	 *          for each column.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param kbuff A KahanObject to hold the current sum and
+	 *              correction factor for the Kahan summation
+	 *              algorithm.
+	 * @param kplusSq A KahanPlusSq object to perform summation of
+	 *                squared values.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void d_uacsqkp(double[] a, double[] c, int m, int n, KahanObject kbuff,
+	                              KahanPlusSq kplusSq, int rl, int ru)
+	{
+		for (int i=rl, aix=rl*n; i<ru; i++, aix+=n)
+			sumSqAgg(a, c, aix, 0, n, kbuff, kplusSq);
+	}
+
 	/**
 	 * CUMSUM, opcode: ucumk+, dense input.
 	 * 
@@ -1314,7 +1418,7 @@ public class LibMatrixAgg
 		for( int i=0, aix=0; i<m; i++, aix+=n ) {
 			sumAgg( a, csums, aix, 0, n, kbuff, kplus );
 			System.arraycopy(csums, 0, c, aix, n);	
-		}			
+		}
 	}
 	
 	/**
@@ -1628,7 +1732,104 @@ public class LibMatrixAgg
 			}
 		}
 	}
-	
+
+	/**
+	 * SUM_SQ, opcode: uasqk+, sparse input.
+	 *
+	 * @param a Sparse array of values to square & sum.
+	 * @param c Output array to store sum and correction factor.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param kbuff A KahanObject to hold the current sum and
+	 *              correction factor for the Kahan summation
+	 *              algorithm.
+	 * @param kplusSq A KahanPlusSq object to perform summation of
+	 *                squared values.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void s_uasqkp(SparseRow[] a, double[] c, int m, int n, KahanObject kbuff,
+	                             KahanPlusSq kplusSq, int rl, int ru )
+	{
+		for (int i=rl; i<ru; i++) {
+			SparseRow arow = a[i];
+			if (arow!=null && !arow.isEmpty()) {
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				sumSq(avals, 0, alen, kbuff, kplusSq);
+			}
+		}
+		c[0] = kbuff._sum;
+		c[1] = kbuff._correction;
+	}
+
+	/**
+	 * ROWSUM_SQ, opcode: uarsqk+, sparse input.
+	 *
+	 * @param a Sparse array of values to square & sum row-wise.
+	 * @param c Output array to store sum and correction factor
+	 *          for each row.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param kbuff A KahanObject to hold the current sum and
+	 *              correction factor for the Kahan summation
+	 *              algorithm.
+	 * @param kplusSq A KahanPlusSq object to perform summation of
+	 *                squared values.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void s_uarsqkp(SparseRow[] a, double[] c, int m, int n, KahanObject kbuff,
+	                              KahanPlusSq kplusSq, int rl, int ru )
+	{
+		//compute row aggregates
+		for (int i=rl, cix=rl*2; i<ru; i++, cix+=2) {
+			SparseRow arow = a[i];
+			if (arow!=null && !arow.isEmpty()) {
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				kbuff.set(0, 0); //reset buffer
+				sumSq(avals, 0, alen, kbuff, kplusSq);
+				c[cix+0] = kbuff._sum;
+				c[cix+1] = kbuff._correction;
+			}
+		}
+	}
+
+	/**
+	 * COLSUM_SQ, opcode: uacsqk+, sparse input.
+	 *
+	 * @param a Sparse array of values to square & sum column-wise.
+	 * @param c Output array to store sum and correction factor
+	 *          for each column.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param kbuff A KahanObject to hold the current sum and
+	 *              correction factor for the Kahan summation
+	 *              algorithm.
+	 * @param kplusSq A KahanPlusSq object to perform summation of
+	 *                squared values.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void s_uacsqkp(SparseRow[] a, double[] c, int m, int n, KahanObject kbuff,
+	                              KahanPlusSq kplusSq, int rl, int ru )
+	{
+		//init result (for empty columns)
+		Arrays.fill(c, 0);
+
+		//compute column aggregates
+		for (int i=rl; i<ru; i++) {
+			SparseRow arow = a[i];
+			if (arow!=null && !arow.isEmpty()) {
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				int[] aix = arow.getIndexContainer();
+				sumSqAgg(avals, c, aix, alen, n, kbuff, kplusSq);
+			}
+		}
+	}
+
 	/**
 	 * CUMSUM, opcode: ucumk+, sparse input.
 	 * 
@@ -2123,64 +2324,137 @@ public class LibMatrixAgg
 	////////////////////////////////////////////
 	
 	/**
-	 * 
-	 * @param a
-	 * @param ai
-	 * @param len
-	 * @param kbuff
-	 * @param kplus
+	 * Summation using the Kahan summation algorithm with the
+	 * KahanPlus function.
 	 */
-	private static void sum( double[] a, int ai, final int len, KahanObject kbuff, KahanPlus kplus )
+	private static void sum(double[] a, int ai, final int len, KahanObject kbuff, KahanPlus kplus)
 	{
-		for( int i=0; i<len; i++, ai++ )
-			kplus.execute2(kbuff, a[ ai ]);
+		sumWithFn(a, ai, len, kbuff, kplus);
+	}
+
+	/**
+	 * Aggregated summation using the Kahan summation algorithm with
+	 * the KahanPlus function.
+	 */
+	private static void sumAgg(double[] a, double[] c, int ai, int ci, final int len,
+	                           KahanObject kbuff, KahanPlus kplus)
+	{
+		sumAggWithFn(a, c, ai, ci, len, kbuff, kplus);
 	}
 	
 	/**
-	 * 
-	 * @param a
-	 * @param c
-	 * @param ai
-	 * @param ci
-	 * @param len
-	 * @param kbuff
-	 * @param kplus
+	 * Aggregated summation using the Kahan summation algorithm with
+	 * the KahanPlus function.
 	 */
-	private static void sumAgg( double[] a, double[] c, int ai, int ci, final int len, KahanObject kbuff, KahanPlus kplus )
+	private static void sumAgg(double[] a, double[] c, int[] ai, final int len, final int n,
+	                           KahanObject kbuff, KahanPlus kplus)
 	{
-		for( int i=0; i<len; i++, ai++, ci++ )
-		{
-			kbuff._sum        = c[ci];
+		sumAggWithFn(a, c, ai, len, n, kbuff, kplus);
+	}
+
+	/**
+	 * Summation of squared values using the Kahan summation algorithm
+	 * with the KahanPlusSq function.
+	 */
+	private static void sumSq(double[] a, int ai, final int len,
+	                          KahanObject kbuff, KahanPlusSq kplusSq)
+	{
+		sumWithFn(a, ai, len, kbuff, kplusSq);
+	}
+
+	/**
+	 * Aggregated summation of squared values using the Kahan
+	 * summation algorithm with the KahanPlusSq function.
+	 */
+	private static void sumSqAgg(double[] a, double[] c, int ai, int ci, final int len,
+	                             KahanObject kbuff, KahanPlusSq kplusSq)
+	{
+		sumAggWithFn(a, c, ai, ci, len, kbuff, kplusSq);
+	}
+
+	/**
+	 * Aggregated summation of squared values using the Kahan
+	 * summation algorithm with the KahanPlusSq function.
+	 */
+	private static void sumSqAgg(double[] a, double[] c, int[] ai, final int len, final int n,
+	                             KahanObject kbuff, KahanPlusSq kplusSq)
+	{
+		sumAggWithFn(a, c, ai, len, n, kbuff, kplusSq);
+	}
+
+	/**
+	 * Summation using the Kahan summation algorithm with one of the
+	 * Kahan functions.
+	 *
+	 * @param a Array of values to sum.
+	 * @param ai Index at which to start processing.
+	 * @param len Number of values to process, starting at index ai.
+	 * @param kbuff A KahanObject to hold the current sum and
+	 *              correction factor for the Kahan summation
+	 *              algorithm.
+	 * @param kfunc A KahanFunction object to perform the summation.
+	 */
+	private static void sumWithFn(double[] a, int ai, final int len,
+	                              KahanObject kbuff, KahanFunction kfunc)
+	{
+		for (int i=0; i<len; i++, ai++)
+			kfunc.execute2(kbuff, a[ai]);
+	}
+
+	/**
+	 * Aggregated summation using the Kahan summation algorithm
+	 * with one of the Kahan functions.
+	 *
+	 * @param a Array of values to sum.
+	 * @param c Output array to store aggregated sum and correction
+	 *          factors.
+	 * @param ai Index at which to start processing array `a`.
+	 * @param ci Index at which to start storing aggregated results
+	 *           into array `c`.
+	 * @param len Number of values to process, starting at index ai.
+	 * @param kbuff A KahanObject to hold the current sum and
+	 *              correction factor for the Kahan summation
+	 *              algorithm.
+	 * @param kfunc A KahanFunction object to perform the summation.
+	 */
+	private static void sumAggWithFn(double[] a, double[] c, int ai, int ci, final int len,
+	                                 KahanObject kbuff, KahanFunction kfunc)
+	{
+		for (int i=0; i<len; i++, ai++, ci++) {
+			kbuff._sum = c[ci];
 			kbuff._correction = c[ci+len];
-			kplus.execute2(kbuff, a[ai]);
-			c[ci]     = kbuff._sum;
+			kfunc.execute2(kbuff, a[ai]);
+			c[ci] = kbuff._sum;
 			c[ci+len] = kbuff._correction;
 		}
 	}
-	
+
 	/**
-	 * 
-	 * @param a
-	 * @param c
-	 * @param ai
-	 * @param len
-	 * @param clen
-	 * @param kbuff
-	 * @param kplus
+	 * Aggregated summation using the Kahan summation algorithm
+	 * with one of the Kahan functions.
+	 *
+	 * @param a Array of values to sum.
+	 * @param c Output array to store aggregated sum and correction
+	 *          factors.
+	 * @param ai Array of indices to process for array `a`.
+	 * @param len Number of indices in `ai` to process.
+	 * @param n Number of values per row.
+	 * @param kbuff A KahanObject to hold the current sum and
+	 *              correction factor for the Kahan summation
+	 *              algorithm.
+	 * @param kfunc A KahanFunction object to perform the summation.
 	 */
-	private static void sumAgg( double[] a, double[] c, int[] ai, final int len, final int n, KahanObject kbuff, KahanPlus kplus )
+	private static void sumAggWithFn(double[] a, double[] c, int[] ai, final int len, final int n,
+	                                 KahanObject kbuff, KahanFunction kfunc)
 	{
-		for( int i=0; i<len; i++ )
-		{
-			kbuff._sum        = c[ ai[i] ];
-			kbuff._correction = c[ ai[i]+n ];
-			kplus.execute2( kbuff, a[i] );
-			c[ ai[i] ]      = kbuff._sum;
-			c[ ai[i]+n ] = kbuff._correction;
+		for (int i=0; i<len; i++) {
+			kbuff._sum = c[ai[i]];
+			kbuff._correction = c[ai[i]+n];
+			kfunc.execute2(kbuff, a[i]);
+			c[ai[i]] = kbuff._sum;
+			c[ai[i]+n] = kbuff._correction;
 		}
 	}
-	
-	
 	/**
 	 * 
 	 * @param a

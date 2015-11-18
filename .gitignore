@@ -14,7 +14,19 @@
 
 # Build artifacts
 target/
-/bin/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.metadata
+
+# User configuration files
+conf/SystemML-config.xml
+conf/log4j.properties
 
 # Documentation artifacts
 docs/_site
@@ -37,4 +49,5 @@ src/test/scripts/**/in
 src/test/scripts/**/out
 src/test/scripts/**/expected
 
-
+# Working directory
+temp/*

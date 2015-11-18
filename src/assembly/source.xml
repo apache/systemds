@@ -30,14 +30,19 @@
 
     <fileSets>
         <fileSet>
-            <directory>${basedir}/..</directory>
+            <directory>${basedir}</directory>
             <outputDirectory></outputDirectory>
             <excludes>
                 <exclude>**/.*</exclude>
                 <exclude>**/.*/**</exclude>
+                <exclude>**/*.iml</exclude>
                 <exclude>**/*.log</exclude>
+                <exclude>**/conf/*.properties</exclude>
+                <exclude>**/conf/*.xml</exclude>
                 <exclude>**/target</exclude>
                 <exclude>**/target/**/*</exclude>
+                <exclude>**/temp</exclude>
+                <exclude>**/temp/**/*</exclude>
                 <exclude>**/maven-eclipse.xml</exclude>
                 <exclude>**/dependency-reduced-pom.xml</exclude>
                 <exclude>modules/web-javascript-dojo/src/main/resources/dojo/**</exclude>

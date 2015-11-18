@@ -23,15 +23,15 @@ TEMP=~/temp/systemml_test
 # should this test suite continue after encountering an error? true false
 CONTINUE_ON_ERROR=true
 
-# expecting this test script to be in directory ${PROJECT_ROOT_DIR}/system-ml/src/test/scripts
-TEST_SCRIPT_REL_DIR=system-ml/src/test/scripts
+# expecting this test script to be in directory ${PROJECT_ROOT_DIR}/src/test/scripts
+TEST_SCRIPT_REL_DIR=src/test/scripts
 
 # expecting the run script to be in directory ${PROJECT_ROOT_DIR}/bin
 RUN_SCRIPT=systemml
 
 # the DML script with arguments we use to test the run script
 DML_SCRIPT=genLinearRegressionData.dml
-DML_SCRIPT_PATH=system-ml/scripts/datagen
+DML_SCRIPT_PATH=scripts/datagen
 DML_OUTPUT=linRegData.csv
 DML_ARGS="-nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=${DML_OUTPUT} format=csv perc=0.5"
 DML_SCRIPT_WITH_ARGS="${DML_SCRIPT} ${DML_ARGS}"

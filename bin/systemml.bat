@@ -31,7 +31,7 @@ pushd %~dp0..
 SET PROJECT_ROOT_DIR=%CD%
 popd
 
-SET BUILD_DIR=%PROJECT_ROOT_DIR%\system-ml\target
+SET BUILD_DIR=%PROJECT_ROOT_DIR%\target
 SET HADOOP_LIB_DIR=%BUILD_DIR%\lib
 SET DML_SCRIPT_CLASS=%BUILD_DIR%\classes\com\ibm\bi\dml\api\DMLScript.class
 
@@ -88,13 +88,13 @@ IF NOT EXIST %SCRIPT_FILE% IF NOT DEFINED SCRIPT_FILE_FOUND (
 
 
 :: the hadoop winutils
-SET HADOOP_HOME=%PROJECT_ROOT_DIR%\system-ml\target\lib\hadoop
+SET HADOOP_HOME=%PROJECT_ROOT_DIR%\target\lib\hadoop
 
 :: add dependent libraries to classpath (since Java 1.6 we can use wildcards)
-set CLASSPATH=%PROJECT_ROOT_DIR%\system-ml\target\lib\*
+set CLASSPATH=%PROJECT_ROOT_DIR%\target\lib\*
 
 :: add compiled SystemML classes to classpath
-set CLASSPATH=%CLASSPATH%;%PROJECT_ROOT_DIR%\system-ml\target\classes
+set CLASSPATH=%CLASSPATH%;%PROJECT_ROOT_DIR%\target\classes
 
 
 :: remove the DML script file from the list of arguments

@@ -125,12 +125,12 @@
 			<destName>SystemML.jar</destName>
 		</file>
 		<file>
-			<source>../LICENSE</source>
+			<source>LICENSE</source>
 			<outputDirectory>.</outputDirectory>
 			<destName>LICENSE</destName>
 		</file>
 		<file>
-			<source>../NOTICE</source>
+			<source>NOTICE</source>
 			<outputDirectory>.</outputDirectory>
 			<destName>NOTICE</destName>
 		</file>

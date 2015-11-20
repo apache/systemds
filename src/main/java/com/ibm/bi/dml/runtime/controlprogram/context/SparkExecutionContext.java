@@ -257,8 +257,7 @@ public class SparkExecutionContext extends ExecutionContext
 	@SuppressWarnings("unchecked")
 	public JavaPairRDD<?,?> getRDDHandleForMatrixObject( MatrixObject mo, InputInfo inputInfo ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
-	{
-		
+	{		
 		//NOTE: MB this logic should be integrated into MatrixObject
 		//However, for now we cannot assume that spark libraries are 
 		//always available and hence only store generic references in 
@@ -278,12 +277,25 @@ public class SparkExecutionContext extends ExecutionContext
 		else if( mo.isDirty() || mo.isCached(false) )
 		{
 			//get in-memory matrix block and parallelize it
-			MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-			rdd = toJavaPairRDD(getSparkContext(), mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
-			mo.release(); //unpin matrix
+			//w/ guarded parallelize (fallback to export, rdd from file if too large)
+			boolean fromFile = false;
+			if( !OptimizerUtils.checkSparkCollectMemoryBudget(mo.getMatrixCharacteristics(), 0) ) {
+				if( mo.isDirty() ) { //write only if necessary
+					mo.exportData();
+				}
+				rdd = getSparkContext().hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				rdd = ((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd).mapToPair( new CopyBlockPairFunction() ); //cp is workaround for read bug			
+				fromFile = true;
+			}
+			else { //default case
+				MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
+				rdd = toJavaPairRDD(getSparkContext(), mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
+				mo.release(); //unpin matrix
+			}
 			
 			//keep rdd handle for future operations on it
 			RDDObject rddhandle = new RDDObject(rdd, mo.getVarName());
+			rddhandle.setHDFSFile(fromFile);
 			mo.setRDDHandle(rddhandle);
 		}
 		//CASE 3: non-dirty (file exists on HDFS)

@@ -468,6 +468,22 @@ public class OptimizerUtils
 	
 	/**
 	 * 
+	 * @param mc
+	 * @param memPinned
+	 * @return
+	 */
+	public static boolean checkSparkCollectMemoryBudget( MatrixCharacteristics mc, long memPinned )
+	{
+		return checkSparkCollectMemoryBudget(
+				mc.getRows(), 
+				mc.getCols(),
+				mc.getRowsPerBlock(),
+				mc.getColsPerBlock(),
+				mc.getNonZeros(), memPinned);
+	}
+	
+	/**
+	 * 
 	 * @param rlen
 	 * @param clen
 	 * @param brlen

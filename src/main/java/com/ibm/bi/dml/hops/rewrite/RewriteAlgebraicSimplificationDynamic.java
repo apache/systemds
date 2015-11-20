@@ -1363,7 +1363,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//check for sum(v^2), might have been rewritten from sum(v*v)
 			if( hi2 instanceof BinaryOp && ((BinaryOp)hi2).getOp()==OpOp2.POW
 				&& hi2.getInput().get(1) instanceof LiteralOp 
-				&& HopRewriteUtils.getIntValue((LiteralOp)hi2.getInput().get(1))==2
+				&& HopRewriteUtils.getDoubleValue((LiteralOp)hi2.getInput().get(1))==2
 				&& hi2.getParent().size() == 1 ) //no other consumer than sum
 			{
 				Hop input = hi2.getInput().get(0);

@@ -33,7 +33,6 @@ import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 //for now only works for range based indexing op
 public class IndexingOp extends Hop 
 {
-	
 	public static String OPSTRING = "rix"; //"Indexing";
 	
 	private boolean _rowLowerEqualsUpper = false;
@@ -417,6 +416,10 @@ public class IndexingOp extends Hop
 			setDim1( HopRewriteUtils.getIntValueSafe((LiteralOp)input3)
 					-HopRewriteUtils.getIntValueSafe((LiteralOp)input2)+1 );
 		}
+		else if( isBlockIndexingExpression(input2, input3) ) {
+			setDim1(getBlockIndexingExpressionSize(input2, input3));
+		}
+		
 		if( _colLowerEqualsUpper ) //COLS
 			setDim2(1);
 		else if( allCols ) 
@@ -424,7 +427,10 @@ public class IndexingOp extends Hop
 		else if( constColRange ){
 			setDim2( HopRewriteUtils.getIntValueSafe((LiteralOp)input5)
 					-HopRewriteUtils.getIntValueSafe((LiteralOp)input4)+1 );
-		} 
+		}
+		else if( isBlockIndexingExpression(input4, input5) ) {
+			setDim2(getBlockIndexingExpressionSize(input4, input5));
+		}
 	}
 	
 	@Override

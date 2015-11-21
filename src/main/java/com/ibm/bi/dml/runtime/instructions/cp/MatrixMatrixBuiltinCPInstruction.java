@@ -41,8 +41,8 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException{
-
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
 		String opcode = getOpcode();
         
         if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
@@ -55,15 +55,19 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		String output_name = output.getName();
 		BinaryOperator bop = (BinaryOperator) _optr;
 		
-        MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
-        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+		MatrixBlock inBlock1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock inBlock2 = ec.getMatrixInput(input2.getName());
 		
-        MatrixBlock resultBlock = (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
-		
-		ec.setMatrixOutput(output_name, resultBlock);
-		
+		MatrixBlock retBlock = (MatrixBlock) inBlock1.binaryOperations(bop, inBlock2, new MatrixBlock());
+	
 		ec.releaseMatrixInput(input1.getName());
 		ec.releaseMatrixInput(input2.getName());
+		
+		// Ensure right dense/sparse output representation (guarded by released input memory)
+		if( checkGuardedRepresentationChange(inBlock1, inBlock2, retBlock) ) {
+ 			retBlock.examSparsity();
+ 		}
+        
+		ec.setMatrixOutput(output_name, retBlock);
 	}
-	
 }

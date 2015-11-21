@@ -25,7 +25,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
 
-
+//TODO rename to MatrixScalar...
 public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstruction
 {
 	
@@ -45,15 +45,21 @@ public class ScalarMatrixRelationalCPInstruction extends RelationalBinaryCPInstr
 		CPOperand mat = ( input1.getDataType() == DataType.MATRIX ) ? input1 : input2;
 		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
 		
-		MatrixBlock matBlock = ec.getMatrixInput(mat.getName());
+		MatrixBlock inBlock = ec.getMatrixInput(mat.getName());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 		
 		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op.setConstant(constant.getDoubleValue());
 		
-		MatrixBlock resultBlock = (MatrixBlock) matBlock.scalarOperations(sc_op, new MatrixBlock());
+		MatrixBlock retBlock = (MatrixBlock) inBlock.scalarOperations(sc_op, new MatrixBlock());
 		
 		ec.releaseMatrixInput(mat.getName());
-		ec.setMatrixOutput(output.getName(), resultBlock);
+
+		// Ensure right dense/sparse output representation (guarded by released input memory)
+		if( checkGuardedRepresentationChange(inBlock, retBlock) ) {
+ 			retBlock.examSparsity();
+ 		}
+		
+		ec.setMatrixOutput(output.getName(), retBlock);
 	}
 }

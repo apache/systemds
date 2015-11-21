@@ -17,6 +17,8 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
+import com.ibm.bi.dml.hops.OptimizerUtils;
+import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 
 public abstract class ComputationCPInstruction extends CPInstruction 
@@ -44,5 +46,30 @@ public abstract class ComputationCPInstruction extends CPInstruction
 
 	public String getOutputVariableName() {
 		return output.getName();
+	}
+	
+	/**
+	 * 
+	 * @param in1
+	 * @param out
+	 * @return
+	 */
+	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock out ) {
+		return checkGuardedRepresentationChange(in1, null, out);
+	}
+	
+	/**
+	 * 
+	 * @param in1
+	 * @param in2
+	 * @param out
+	 * @return
+	 */
+	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock in2, MatrixBlock out )
+	{
+		double memDense = OptimizerUtils.estimateSize(out.getNumRows(), out.getNumColumns());
+		double memIn1 = (in1 != null) ? in1.getSizeInMemory() : 0;
+		double memIn2 = (in2 != null) ? in2.getSizeInMemory() : 0;
+		return ( memDense < memIn1 + memIn2 );	
 	}
 }

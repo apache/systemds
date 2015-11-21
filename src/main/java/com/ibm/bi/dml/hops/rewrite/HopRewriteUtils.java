@@ -159,10 +159,11 @@ public class HopRewriteUtils
 	}
 	
 	/**
-	 * 
-	 * @param op
-	 * @return
-	 * @throws HopsException
+	 * Return the int value of a LiteralOp (as a long).
+	 *
+	 * Note: For comparisons, this is *only* to be used in situations
+	 * in which the value is absolutely guaranteed to be an integer.
+	 * Otherwise, a safer alternative is `getDoubleValue`.
 	 */
 	public static long getIntValue( LiteralOp op )
 		throws HopsException

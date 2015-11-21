@@ -930,7 +930,7 @@ public class TernaryOp extends Hop
 						DataGenOp dgop = (DataGenOp) input1;
 						if( dgop.getOp() == DataGenMethod.SEQ ){
 							Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
-							ret = (incr instanceof LiteralOp && HopRewriteUtils.getIntValue((LiteralOp)incr)==1)
+							ret = (incr instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)incr)==1)
 								  || dgop.getIncrementValue()==1.0; //set by recompiler
 						}
 					}
@@ -940,7 +940,7 @@ public class TernaryOp extends Hop
 						DataGenOp dgop = (DataGenOp) input2;
 						if( dgop.getOp() == DataGenMethod.SEQ ){
 							Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
-							ret |= (incr instanceof LiteralOp && HopRewriteUtils.getIntValue((LiteralOp)incr)==1)
+							ret |= (incr instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)incr)==1)
 								   || dgop.getIncrementValue()==1.0; //set by recompiler;
 						}
 					}

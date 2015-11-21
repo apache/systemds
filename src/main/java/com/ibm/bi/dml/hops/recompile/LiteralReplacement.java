@@ -217,7 +217,7 @@ public class LiteralReplacement
 						ret = new LiteralOp(ival);		
 						break;
 					case CAST_AS_DOUBLE:
-						long dval = HopRewriteUtils.getIntValue(sdat);
+						double dval = HopRewriteUtils.getDoubleValue(sdat);
 						ret = new LiteralOp(dval);		
 						break;						
 					case CAST_AS_BOOLEAN:

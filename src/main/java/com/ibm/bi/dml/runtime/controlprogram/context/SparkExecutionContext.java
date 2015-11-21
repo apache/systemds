@@ -17,6 +17,7 @@
 
 package com.ibm.bi.dml.runtime.controlprogram.context;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -813,12 +814,14 @@ public class SparkExecutionContext extends ExecutionContext
 					//clean cached data	
 					mo.clearData(); 
 					
-					//clean hdfs data
-					if( mo.isFileExists() ) {
-						String fpath = mo.getFileName();
-						if (fpath != null) {
-							MapReduceTool.deleteFileIfExistOnHDFS(fpath);
-							MapReduceTool.deleteFileIfExistOnHDFS(fpath + ".mtd");
+					//clean hdfs data if no pending rdd operations on it
+					if( mo.isFileExists() && mo.getFileName()!=null ) {
+						if( mo.getRDDHandle()==null ) {
+							MapReduceTool.deleteFileWithMTDIfExistOnHDFS(mo.getFileName());
+						}
+						else { //deferred file removal
+							RDDObject rdd = mo.getRDDHandle();
+							rdd.setHDFSFilename(mo.getFileName());
 						}
 					}
 					
@@ -839,7 +842,13 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 	
-	private void rCleanupLineageObject(LineageObject lob)
+	/**
+	 * 
+	 * @param lob
+	 * @throws IOException
+	 */
+	private void rCleanupLineageObject(LineageObject lob) 
+		throws IOException
 	{		
 		//abort recursive cleanup if still consumers
 		if( lob.getNumReferences() > 0 )
@@ -851,8 +860,14 @@ public class SparkExecutionContext extends ExecutionContext
 			return;
 		
 		//cleanup current lineage object (from driver/executors)
-		if( lob instanceof RDDObject )
-			cleanupRDDVariable(((RDDObject)lob).getRDD());
+		//incl deferred hdfs file removal (only if metadata set by cleanup call)
+		if( lob instanceof RDDObject ) {
+			RDDObject rdd = (RDDObject)lob;
+			cleanupRDDVariable(rdd.getRDD());
+			if( rdd.getHDFSFilename()!=null ) { //deferred file removal
+				MapReduceTool.deleteFileWithMTDIfExistOnHDFS(rdd.getHDFSFilename());
+			}
+		}
 		else if( lob instanceof BroadcastObject ) {
 			PartitionedBroadcastMatrix pbm = ((BroadcastObject)lob).getBroadcast();
 			for( Broadcast<PartitionedMatrixBlock> bc : pbm.getBroadcasts() )

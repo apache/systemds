@@ -137,6 +137,11 @@ public class MapReduceTool
 		}
 	}
 
+	public static void deleteFileWithMTDIfExistOnHDFS(String fname)  throws IOException {
+		deleteFileIfExistOnHDFS(fname);
+		deleteFileIfExistOnHDFS(fname + ".mtd");
+	}
+	
 	public static void deleteFileIfExistOnHDFS(String dir) throws IOException {
 		Path outpath = new Path(dir);
 		FileSystem fs = FileSystem.get(_rJob);

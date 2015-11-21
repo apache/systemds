@@ -27,6 +27,7 @@ public class RDDObject extends LineageObject
 	//meta data on origin of given rdd handle
 	private boolean _checkpointed = false; //created via checkpoint instruction
 	private boolean _hdfsfile = false;     //created from hdfs file
+	private String  _hdfsFname = null;     //hdfs filename, if created from hdfs.  
 	
 	public RDDObject( JavaPairRDD<?,?> rddvar, String varName)
 	{
@@ -53,14 +54,20 @@ public class RDDObject extends LineageObject
 		return _checkpointed;
 	}
 	
-	public void setHDFSFile( boolean flag )
-	{
+	public void setHDFSFile( boolean flag ) {
 		_hdfsfile = flag;
 	}
 	
-	public boolean isHDFSFile()
-	{
+	public void setHDFSFilename( String fname ) {
+		_hdfsFname = fname;
+	}
+	
+	public boolean isHDFSFile() {
 		return _hdfsfile;
+	}
+	
+	public String getHDFSFilename() {
+		return _hdfsFname;
 	}
 	
 

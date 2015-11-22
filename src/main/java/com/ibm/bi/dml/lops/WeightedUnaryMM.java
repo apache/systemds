@@ -19,6 +19,7 @@ package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.Unary.OperationTypes;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -26,26 +27,24 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 /**
  * 
  */
-public class WeightedSigmoid extends Lop 
+public class WeightedUnaryMM extends Lop 
 {
+	public static final String OPCODE = "mapwumm";
+	public static final String OPCODE_CP = "wumm";
 
-	public static final String OPCODE = "mapwsigmoid";
-	public static final String OPCODE_CP = "wsigmoid";
-	private int _numThreads = 1;
-
-	public enum WSigmoidType {
-		BASIC, 
-		LOG, 
-		MINUS,
-		LOG_MINUS,
+	public enum WUMMType {
+		MULT,
+		DIV,
 	}
 	
-	private WSigmoidType _wsigmoidType = null;
+	private WUMMType _wummType = null;
+	private OperationTypes _uop = null;
+	private int _numThreads = 1;
 	
-	public WeightedSigmoid(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WSigmoidType wt, ExecType et) 
+	public WeightedUnaryMM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WUMMType wt, OperationTypes op, ExecType et) 
 		throws LopsException 
 	{
-		super(Lop.Type.WeightedSigmoid, dt, vt);		
+		super(Lop.Type.WeightedUMM, dt, vt);		
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
@@ -54,7 +53,8 @@ public class WeightedSigmoid extends Lop
 		input3.addOutput(this);
 		
 		//setup mapmult parameters
-		_wsigmoidType = wt;
+		_wummType = wt;
+		_uop = op;
 		setupLopProperties(et);
 	}
 	
@@ -86,11 +86,12 @@ public class WeightedSigmoid extends Lop
 	}
 
 	public String toString() {
-		return "Operation = WeightedSigmoid";
+		return "Operation = WeightedUMM";
 	}
 	
 	@Override
-	public String getInstructions(int input1, int input2, int input3, int output)
+	public String getInstructions(int input1, int input2, int input3, int output) 
+		throws LopsException
 	{
 		return getInstructions(
 				String.valueOf(input1),
@@ -100,7 +101,8 @@ public class WeightedSigmoid extends Lop
 	}
 
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String output)
+	public String getInstructions(String input1, String input2, String input3, String output) 
+		throws LopsException
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -111,6 +113,9 @@ public class WeightedSigmoid extends Lop
 			sb.append(OPCODE_CP);
 		else
 			sb.append(OPCODE);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(Unary.getOpcode(_uop));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(0).prepInputOperand(input1));
@@ -125,7 +130,7 @@ public class WeightedSigmoid extends Lop
 		sb.append( prepOutputOperand(output));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_wsigmoidType);
+		sb.append(_wummType);
 		
 		//append degree of parallelism
 		if( getExecType()==ExecType.CP ) {

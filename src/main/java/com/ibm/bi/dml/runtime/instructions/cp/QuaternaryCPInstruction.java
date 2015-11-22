@@ -21,6 +21,7 @@ import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
+import com.ibm.bi.dml.lops.WeightedUnaryMM.WUMMType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -93,6 +94,19 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 			else if( opcode.equalsIgnoreCase("wcemm") ) 		
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
 		}
+		else if( opcode.equalsIgnoreCase("wumm") )
+		{
+			InstructionUtils.checkNumFields ( parts, 7 );
+			
+			String uopcode = parts[1];
+			CPOperand in1 = new CPOperand(parts[2]);
+			CPOperand in2 = new CPOperand(parts[3]);
+			CPOperand in3 = new CPOperand(parts[4]);
+			CPOperand out = new CPOperand(parts[5]);
+			int k = Integer.parseInt(parts[7]);
+			
+			return new QuaternaryCPInstruction(new QuaternaryOperator(WUMMType.valueOf(parts[6]),uopcode), in1, in2, in3, null, out, k, opcode, inst);
+		}
 		
 		throw new DMLRuntimeException("Unexpected opcode in QuaternaryCPInstruction: " + inst);
 	}
@@ -124,7 +138,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 				ec.releaseMatrixInput(input4.getName());
 			ec.setVariable(output.getName(), new DoubleObject(out.getValue(0, 0)));
 		}
-		else { //wsigmoid / wdivmm
+		else { //wsigmoid / wdivmm / wumm
 			ec.setMatrixOutput(output.getName(), (MatrixBlock)out);
 		}
 	}	

@@ -5914,7 +5914,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		//prepare intermediates and output
 		if( qop.wtype1 != null || qop.wtype4 != null )
 			R.reset(1, 1, false);
-		else if( qop.wtype2 != null )
+		else if( qop.wtype2 != null || qop.wtype5 != null )
 			R.reset(rlen, clen, sparse);
 		else if( qop.wtype3 != null ) {
 			MatrixCharacteristics mc = qop.wtype3.computeOutputCharacteristics(X.rlen, X.clen, U.clen);
@@ -5947,6 +5947,12 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				LibMatrixMult.matrixMultWCeMM(X, U, V, R, qop.wtype4, k);
 			else
 				LibMatrixMult.matrixMultWCeMM(X, U, V, R, qop.wtype4);	
+		}
+		else if( qop.wtype5 != null ){ //wumm
+			if( k > 1 )
+				LibMatrixMult.matrixMultWuMM(X, U, V, R, qop.wtype5, qop.fn, k);
+			else
+				LibMatrixMult.matrixMultWuMM(X, U, V, R, qop.wtype5, qop.fn);	
 		}
 		
 		return R;

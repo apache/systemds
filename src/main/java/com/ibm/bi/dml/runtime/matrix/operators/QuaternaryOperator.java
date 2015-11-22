@@ -22,8 +22,11 @@ import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
+import com.ibm.bi.dml.lops.WeightedUnaryMM.WUMMType;
 import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.FunctionObject;
+import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
+import com.ibm.bi.dml.runtime.functionobjects.Power2;
+import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 
 public class QuaternaryOperator extends Operator 
 {
@@ -34,8 +37,9 @@ public class QuaternaryOperator extends Operator
 	public WSigmoidType wtype2 = null;
 	public WDivMMType wtype3 = null;
 	public WCeMMType wtype4 = null;
+	public WUMMType wtype5 = null;
 	
-	public FunctionObject fn;
+	public ValueFunction fn;
 	
 	/**
 	 * wsloss
@@ -72,5 +76,22 @@ public class QuaternaryOperator extends Operator
 	 */
 	public QuaternaryOperator( WCeMMType wt ) {
 		wtype4 = wt;
+	}
+	
+	/**
+	 * wumm
+	 * 
+	 * @param wt
+	 * @param op
+	 */
+	public QuaternaryOperator( WUMMType wt, String op ) {
+		wtype5 = wt;
+		
+		if( op.equals("^2") )
+			fn = Power2.getPower2FnObject();
+		else if( op.equals("*2") )
+			fn = Multiply2.getMultiply2FnObject();
+		else
+			fn = Builtin.getBuiltinFnObject(op);
 	}
 }

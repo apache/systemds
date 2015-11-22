@@ -21,6 +21,5 @@ import java.io.Serializable;
 
 public class ValueFunction extends FunctionObject implements Serializable
 {
-	
 	private static final long serialVersionUID = -4985988545393861058L;
 }

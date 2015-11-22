@@ -1,6 +1,6 @@
 #####################################################################
 # TITLE: An Overview of Matrix Multiplication Operators in SystemML #
-# DATE MODIFIED: 09/26/2015                                         #
+# DATE MODIFIED: 11/21/2015                                         #
 #####################################################################
 
 In the following, we give an overview of backend-specific physical matrix multiplication operators in SystemML as well as their internally used matrix multiplication block operations.
@@ -48,6 +48,7 @@ A QuaternaryOp hop can be compiled into the following physical operators. Note t
   - WSigmoid (weighted sigmoid)                          --> wsigmoid
   - WDivMM (weighted divide matrix multiplication)       --> wdivmm
   - WCeMM (weighted cross entropy matrix multiplication) --> wcemm
+  - WuMM (weighted unary op matrix multiplication)       --> wumm
 
 * 2) Physical Operator in MR (distributed, mapreduce)
   - MapWSLoss (map-side weighted squared loss)           --> wsloss
@@ -58,6 +59,8 @@ A QuaternaryOp hop can be compiled into the following physical operators. Note t
   - RedWDivMM (reduce-side weighted divide matrix mult)  --> wdivmm
   - MapWCeMM (map-side weighted cross entr. matrix mult) --> wcemm
   - RedWCeMM (reduce-side w. cross entr. matrix mult)    --> wcemm
+  - MapWuMM (map-side weighted unary op matrix mult)     --> wumm
+  - RedWuMM (reduce-side weighted unary op matrix mult)  --> wumm
 
 * 3) Physical Operators in SPARK (distributed, spark)
   - MapWSLoss (see MR, mappartitions + reduce)           --> wsloss           
@@ -70,8 +73,11 @@ A QuaternaryOp hop can be compiled into the following physical operators. Note t
   - RedWDivMM (see MR, 1/2x flatmaptopair + 1/2x join +  --> wdivmm 
     maptopair + reducebykey)  
   - MapWCeMM (see MR, mappartitions + reduce)            --> wcemm           
-  - RedWDivMM (see MR, 1/2x flatmaptopair + 1/2x join +  --> wcemm 
+  - RedWCeMM (see MR, 1/2x flatmaptopair + 1/2x join +   --> wcemm 
     maptopair + reduce)  
+  - MapWuMM (see MR, mappartitions)                      --> wumm
+  - RedWuMM (see MR, 1/2x flatmaptopair +                --> wumm
+    1/2x join + maptopair)          
   
   
 C) CORE MATRIX MULT PRIMITIVES LibMatrixMult (incl related script patterns)
@@ -112,9 +118,11 @@ C) CORE MATRIX MULT PRIMITIVES LibMatrixMult (incl related script patterns)
   - sequential / multi-threaded (same block ops, par over rows in X)                 
   - all dense, sparse-dense factors, sparse/dense-* x 7 patterns
 
-* 8) wcemm   (sum(X*log(U%*%t(V))))  
+* 8) wcemm    (sum(X*log(U%*%t(V))))  
   - sequential / multi-threaded (same block ops, par over rows in X)                 
   - all dense, sparse-dense factors, sparse/dense-*, 1 pattern
 
-
-  
+* 9) wumm     ((a) X*uop(U%*%t(V)), (b) X/uop(U%*%t(V)))
+  - any unary operator, e.g., X*exp(U%*%t(V)) or X*(U%*%t(V))^2  
+  - sequential / multi-threaded (same block ops, par over rows in X)                 
+  - all dense, sparse-dense factors, sparse/dense-*, 2 pattern

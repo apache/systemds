@@ -26,6 +26,9 @@ import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
+import com.ibm.bi.dml.lops.WeightedUnaryMM;
+import com.ibm.bi.dml.lops.WeightedUnaryMM.WUMMType;
+import com.ibm.bi.dml.lops.WeightedUnaryMMR;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
@@ -111,7 +114,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			//output size independent of chain type (scalar)
 			dimOut.set(1, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 		}
-		else if( qop.wtype2 != null ) { //wsigmoid
+		else if( qop.wtype2 != null || qop.wtype5 != null ) { //wsigmoid/wumm
 			//output size determined by main input
 			dimOut.set(mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 		}
@@ -168,6 +171,33 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			boolean cacheV = isRed ? Boolean.parseBoolean(parts[8]) : true;
 			
 			return new QuaternaryInstruction(new QuaternaryOperator(wtype), in1, in2, in3, in4, out, cacheU, cacheV, str);	
+		}
+		else if(    WeightedUnaryMM.OPCODE.equalsIgnoreCase(opcode)    //wumm
+				|| WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode) )
+		{
+			boolean isRed = WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode);
+			
+			//check number of fields (4 inputs, output, type)
+			if( isRed )
+				InstructionUtils.checkNumFields ( str, 8 );
+			else
+				InstructionUtils.checkNumFields ( str, 6 );
+				
+			//parse instruction parts (without exec type)
+			String[] parts = InstructionUtils.getInstructionParts(str);
+			
+			String uopcode = parts[1];
+			byte in1 = Byte.parseByte(parts[2]);
+			byte in2 = Byte.parseByte(parts[3]);
+			byte in3 = Byte.parseByte(parts[4]);
+			byte out = Byte.parseByte(parts[5]);
+			WUMMType wtype = WUMMType.valueOf(parts[6]);
+			
+			//in mappers always through distcache, in reducers through distcache/shuffle
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[8]) : true;
+			
+			return new QuaternaryInstruction(new QuaternaryOperator(wtype,uopcode), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);	
 		}
 		else //wsigmoid / wdivmm / wcemm
 		{
@@ -303,7 +333,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 				
 				if( qop.wtype1 != null || qop.wtype4 != null) 
 					outIx.setIndexes(1, 1); //wsloss
-				else if ( qop.wtype2 != null || qop.wtype3!=null && qop.wtype3.isBasic() ) 
+				else if ( qop.wtype2 != null || qop.wtype5 != null || qop.wtype3!=null && qop.wtype3.isBasic() ) 
 					outIx.setIndexes(inIx); //wsigmoid/wdivmm-basic
 				else { //wdivmm
 					boolean left = qop.wtype3.isLeft();

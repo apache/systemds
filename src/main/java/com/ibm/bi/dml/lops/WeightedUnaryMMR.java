@@ -19,6 +19,8 @@ package com.ibm.bi.dml.lops;
 
 import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
 import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import com.ibm.bi.dml.lops.Unary.OperationTypes;
+import com.ibm.bi.dml.lops.WeightedUnaryMM.WUMMType;
 import com.ibm.bi.dml.lops.compile.JobType;
 import com.ibm.bi.dml.parser.Expression.DataType;
 import com.ibm.bi.dml.parser.Expression.ValueType;
@@ -26,26 +28,19 @@ import com.ibm.bi.dml.parser.Expression.ValueType;
 /**
  * 
  */
-public class WeightedSigmoid extends Lop 
+public class WeightedUnaryMMR extends Lop 
 {
-
-	public static final String OPCODE = "mapwsigmoid";
-	public static final String OPCODE_CP = "wsigmoid";
-	private int _numThreads = 1;
-
-	public enum WSigmoidType {
-		BASIC, 
-		LOG, 
-		MINUS,
-		LOG_MINUS,
-	}
+	public static final String OPCODE = "redwumm";
 	
-	private WSigmoidType _wsigmoidType = null;
+	private WUMMType _wummType = null;
+	private OperationTypes _uop = null;
+	private boolean _cacheU = false;
+	private boolean _cacheV = false;
 	
-	public WeightedSigmoid(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WSigmoidType wt, ExecType et) 
+	public WeightedUnaryMMR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WUMMType wt, OperationTypes op, boolean cacheU, boolean cacheV, ExecType et) 
 		throws LopsException 
 	{
-		super(Lop.Type.WeightedSigmoid, dt, vt);		
+		super(Lop.Type.WeightedUMM, dt, vt);		
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
@@ -54,15 +49,20 @@ public class WeightedSigmoid extends Lop
 		input3.addOutput(this);
 		
 		//setup mapmult parameters
-		_wsigmoidType = wt;
+		_wummType = wt;
+		_uop = op;
+		_cacheU = cacheU;
+		_cacheV = cacheV;
 		setupLopProperties(et);
 	}
 	
 	/**
 	 * 
 	 * @param et
+	 * @throws LopsException 
 	 */
-	private void setupLopProperties( ExecType et )
+	private void setupLopProperties( ExecType et ) 
+		throws LopsException
 	{
 		if( et == ExecType.MR )
 		{
@@ -72,7 +72,7 @@ public class WeightedSigmoid extends Lop
 			boolean definesMRJob = false;
 			lps.addCompatibility(JobType.GMR);
 			lps.addCompatibility(JobType.DATAGEN);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+			lps.setProperties( inputs, ExecType.MR, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
 		}
 		else //Spark/CP
 		{
@@ -86,11 +86,12 @@ public class WeightedSigmoid extends Lop
 	}
 
 	public String toString() {
-		return "Operation = WeightedSigmoid";
+		return "Operation = WeightedUMMR";
 	}
 	
 	@Override
 	public String getInstructions(int input1, int input2, int input3, int output)
+		throws LopsException
 	{
 		return getInstructions(
 				String.valueOf(input1),
@@ -101,16 +102,17 @@ public class WeightedSigmoid extends Lop
 
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output)
+		throws LopsException
 	{
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append(getExecType());
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		if( getExecType() == ExecType.CP )
-			sb.append(OPCODE_CP);
-		else
-			sb.append(OPCODE);
+		sb.append(OPCODE);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(Unary.getOpcode(_uop));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(0).prepInputOperand(input1));
@@ -120,18 +122,18 @@ public class WeightedSigmoid extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(2).prepInputOperand(input3));
-		
+	
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_wsigmoidType);
+		sb.append(_wummType);
 		
-		//append degree of parallelism
-		if( getExecType()==ExecType.CP ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _numThreads );
-		}
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheU);
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(_cacheV);
 		
 		return sb.toString();
 	}
@@ -139,7 +141,7 @@ public class WeightedSigmoid extends Lop
 	@Override
 	public boolean usesDistributedCache() 
 	{
-		if( getExecType()==ExecType.MR )
+		if( _cacheU || _cacheV )
 			return true;
 		else
 			return false;
@@ -148,13 +150,13 @@ public class WeightedSigmoid extends Lop
 	@Override
 	public int[] distributedCacheInputIndex() 
 	{
-		if( getExecType()==ExecType.MR )
-			return new int[]{2,3};
-		else
+		if( !_cacheU && !_cacheV )
 			return new int[]{-1};
-	}
-	
-	public void setNumThreads(int k) {
-		_numThreads = k;
+		else if( _cacheU && !_cacheV )
+			return new int[]{2};
+		else if( !_cacheU && _cacheV )
+			return new int[]{3};
+		else
+			return new int[]{2,3};
 	}
 }

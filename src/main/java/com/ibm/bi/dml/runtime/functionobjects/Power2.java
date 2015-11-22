@@ -42,6 +42,11 @@ public class Power2 extends ValueFunction
 	}
 	
 	@Override
+	public double execute(double in1) {
+		return in1*in1; //ignore in2 because always 2; 
+	}
+	
+	@Override
 	public double execute(double in1, double in2) {
 		return in1*in1; //ignore in2 because always 2; 
 	}

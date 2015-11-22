@@ -203,6 +203,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "wsigmoid", CPINSTRUCTION_TYPE.Quaternary);
 		String2CPInstructionType.put( "wdivmm"  , CPINSTRUCTION_TYPE.Quaternary);
 		String2CPInstructionType.put( "wcemm"   , CPINSTRUCTION_TYPE.Quaternary);
+		String2CPInstructionType.put( "wumm"    , CPINSTRUCTION_TYPE.Quaternary);
 		
 		// User-defined function Opcodes
 		String2CPInstructionType.put( "extfunct"   	, CPINSTRUCTION_TYPE.External);

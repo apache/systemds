@@ -31,6 +31,8 @@ import com.ibm.bi.dml.lops.WeightedSigmoid;
 import com.ibm.bi.dml.lops.WeightedSigmoidR;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
+import com.ibm.bi.dml.lops.WeightedUnaryMM;
+import com.ibm.bi.dml.lops.WeightedUnaryMMR;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
@@ -224,6 +226,8 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( WeightedDivMMR.OPCODE,       MRINSTRUCTION_TYPE.Quaternary);
 		String2MRInstructionType.put( WeightedCrossEntropy.OPCODE, MRINSTRUCTION_TYPE.Quaternary);
 		String2MRInstructionType.put( WeightedCrossEntropyR.OPCODE,MRINSTRUCTION_TYPE.Quaternary);
+		String2MRInstructionType.put( WeightedUnaryMM.OPCODE,      MRINSTRUCTION_TYPE.Quaternary);
+		String2MRInstructionType.put( WeightedUnaryMMR.OPCODE,     MRINSTRUCTION_TYPE.Quaternary);
 		
 		// Combine Instruction Opcodes
 		String2MRInstructionType.put( "combinebinary" , MRINSTRUCTION_TYPE.CombineBinary);

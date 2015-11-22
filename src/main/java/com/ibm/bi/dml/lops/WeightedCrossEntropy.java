@@ -86,31 +86,13 @@ public class WeightedCrossEntropy extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index)
+	public String getInstructions(int input1, int input2, int input3, int output)
 	{
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(2).prepInputOperand(input_index3));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( prepOutputOperand(output_index));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_wcemmType);
-		
-		return sb.toString();
+		return getInstructions(
+				String.valueOf(input1),
+				String.valueOf(input2),
+				String.valueOf(input3),
+				String.valueOf(output));
 	}
 
 	@Override

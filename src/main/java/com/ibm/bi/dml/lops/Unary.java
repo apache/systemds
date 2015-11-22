@@ -160,8 +160,27 @@ public class Unary extends Lop
 			return "Operation: " + operation + " " + "Label: N/A";
 	}
 
-	private String getOpcode() throws LopsException {
-		switch (operation) {
+	/**
+	 * 
+	 * @return
+	 * @throws LopsException
+	 */
+	private String getOpcode() 
+		throws LopsException 
+	{
+		return getOpcode(operation);
+	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 * @throws LopsException
+	 */
+	public static String getOpcode(OperationTypes op) 
+		throws LopsException 
+	{
+		switch (op) {
 		case NOT:
 			return "!";
 		case ABS:
@@ -289,8 +308,8 @@ public class Unary extends Lop
 			return "sel+";
 		
 		default:
-			throw new LopsException(this.printErrorLocation() + 
-					"Instruction not defined for Unary operation: " + operation);
+			throw new LopsException(
+					"Instruction not defined for Unary operation: " + op);
 		}
 	}
 	public String getInstructions(String input1, String output) 

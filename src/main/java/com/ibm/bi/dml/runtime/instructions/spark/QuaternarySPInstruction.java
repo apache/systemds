@@ -39,6 +39,9 @@ import com.ibm.bi.dml.lops.WeightedSquaredLossR;
 import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
 import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
+import com.ibm.bi.dml.lops.WeightedUnaryMM;
+import com.ibm.bi.dml.lops.WeightedUnaryMM.WUMMType;
+import com.ibm.bi.dml.lops.WeightedUnaryMMR;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
@@ -117,6 +120,30 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 			return new QuaternarySPInstruction(new QuaternaryOperator(wtype), in1, in2, in3, in4, out, cacheU, cacheV, opcode, str);	
 		}
+		else if(    WeightedUnaryMM.OPCODE.equalsIgnoreCase(opcode)    //wumm
+			|| WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode) )
+		{
+			boolean isRed = WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode);
+			
+			//check number of fields (4 inputs, output, type)
+			if( isRed )
+				InstructionUtils.checkNumFields ( parts, 8 );
+			else
+				InstructionUtils.checkNumFields ( parts, 6 );
+			
+			String uopcode = parts[1];
+			CPOperand in1 = new CPOperand(parts[2]);
+			CPOperand in2 = new CPOperand(parts[3]);
+			CPOperand in3 = new CPOperand(parts[4]);
+			CPOperand out = new CPOperand(parts[5]);
+			WUMMType wtype = WUMMType.valueOf(parts[6]);
+			
+			//in mappers always through distcache, in reducers through distcache/shuffle
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[8]) : true;
+			
+			return new QuaternarySPInstruction(new QuaternaryOperator(wtype, uopcode), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);	
+		}
 		else //map/redwsigmoid, map/redwdivmm, map/redwcemm
 		{
 			boolean isRed = opcode.startsWith("red");
@@ -171,7 +198,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(getOpcode())  
 			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(getOpcode())
 			|| WeightedDivMM.OPCODE.equalsIgnoreCase(getOpcode()) 
-			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(getOpcode()) ) 
+			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(getOpcode())
+			|| WeightedUnaryMM.OPCODE.equalsIgnoreCase(getOpcode())) 
 		{
 			PartitionedBroadcastMatrix bc1 = sec.getBroadcastForVariable( input2.getName() );
 			PartitionedBroadcastMatrix bc2 = sec.getBroadcastForVariable( input3.getName() );
@@ -242,7 +270,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			DoubleObject ret = new DoubleObject(tmp.getValue(0, 0));
 			sec.setVariable(output.getName(), ret);
 		}
-		else //map/redwsigmoid, map/redwdivmm 
+		else //map/redwsigmoid, map/redwdivmm, map/redwumm 
 		{
 			//aggregation if required (map/redwdivmm)
 			if( qop.wtype3 != null && !qop.wtype3.isBasic() )
@@ -275,7 +303,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		MatrixCharacteristics mcIn3 = sec.getMatrixCharacteristics(input3.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
-		if( qop.wtype2 != null ) {
+		if( qop.wtype2 != null || qop.wtype5 != null ) {
 			//output size determined by main input
 			mcOut.set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
 		}

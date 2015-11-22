@@ -34,6 +34,8 @@ import com.ibm.bi.dml.lops.WeightedSigmoid;
 import com.ibm.bi.dml.lops.WeightedSigmoidR;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
+import com.ibm.bi.dml.lops.WeightedUnaryMM;
+import com.ibm.bi.dml.lops.WeightedUnaryMMR;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.functionobjects.And;
@@ -799,7 +801,9 @@ public class InstructionUtils
 			|| WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode)        //redwsigmoid
 			|| WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)           //mapwdivmm
 			|| WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode)          //redwdivmm
-			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(opcode)    //mapwdcemm
-			|| WeightedCrossEntropyR.OPCODE.equalsIgnoreCase(opcode);  //redwdcemm
+			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(opcode)    //mapwcemm
+			|| WeightedCrossEntropyR.OPCODE.equalsIgnoreCase(opcode)   //redwcemm
+			|| WeightedUnaryMM.OPCODE.equalsIgnoreCase(opcode)         //mapwumm
+			|| WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode);       //redwumm
 	}
 }

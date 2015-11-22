@@ -1054,6 +1054,7 @@ public abstract class Hop
 		WSIGMOID, //weighted sigmoid mm
 		WDIVMM, //weighted divide mm
 		WCEMM, //weighted cross entropy mm
+		WUMM, //weighted unary mm 
 		INVALID 
 	};
 	

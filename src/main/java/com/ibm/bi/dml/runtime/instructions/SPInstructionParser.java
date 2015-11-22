@@ -29,6 +29,8 @@ import com.ibm.bi.dml.lops.WeightedSigmoid;
 import com.ibm.bi.dml.lops.WeightedSigmoidR;
 import com.ibm.bi.dml.lops.WeightedSquaredLoss;
 import com.ibm.bi.dml.lops.WeightedSquaredLossR;
+import com.ibm.bi.dml.lops.WeightedUnaryMM;
+import com.ibm.bi.dml.lops.WeightedUnaryMMR;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.instructions.spark.AggregateTernarySPInstruction;
@@ -224,6 +226,8 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( WeightedDivMMR.OPCODE,       SPINSTRUCTION_TYPE.Quaternary);
 		String2SPInstructionType.put( WeightedCrossEntropy.OPCODE, SPINSTRUCTION_TYPE.Quaternary);
 		String2SPInstructionType.put( WeightedCrossEntropyR.OPCODE,SPINSTRUCTION_TYPE.Quaternary);
+		String2SPInstructionType.put( WeightedUnaryMM.OPCODE,      SPINSTRUCTION_TYPE.Quaternary);
+		String2SPInstructionType.put( WeightedUnaryMMR.OPCODE,     SPINSTRUCTION_TYPE.Quaternary);
 		
 		//cumsum/cumprod/cummin/cummax
 		String2SPInstructionType.put( "ucumack+"  , SPINSTRUCTION_TYPE.CumsumAggregate);

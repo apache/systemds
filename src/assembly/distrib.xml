@@ -135,7 +135,4 @@
 			<destName>NOTICE</destName>
 		</file>
 	</files>
-	
-	<!-- <dependencySets> <dependencySet> <includes> <include>com.ibm.biginsights:system-ml:jar:*</include> 
-		</includes> <outputDirectory>.</outputDirectory> </dependencySet> </dependencySets> -->
 </assembly>

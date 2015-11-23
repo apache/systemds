@@ -1391,7 +1391,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				&& HopRewriteUtils.isEqualSize(bop.getInput().get(0), bop.getInput().get(1)) //prevent mv
 				&& ((BinaryOp)bop.getInput().get(1)).getOp()==OpOp2.POW 
 				&& bop.getInput().get(1).getInput().get(1) instanceof LiteralOp
-				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1).getInput().get(1))==2)
+				&& HopRewriteUtils.getDoubleValue((LiteralOp)bop.getInput().get(1).getInput().get(1))==2)
 			{
 				Hop W = bop.getInput().get(0);
 				Hop tmp = bop.getInput().get(1).getInput().get(0); //(X - U %*% t(V))
@@ -1447,7 +1447,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//alternative pattern: sum ((W * (U %*% t(V)) - X) ^ 2)
 			if( !appliedPattern
 				&& bop.getOp()==OpOp2.POW && bop.getInput().get(1) instanceof LiteralOp
-				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1))==2
+				&& HopRewriteUtils.getDoubleValue((LiteralOp)bop.getInput().get(1))==2
 				&& bop.getInput().get(0) instanceof BinaryOp	
 				&& bop.getInput().get(0).getDataType()==DataType.MATRIX	
 				&& ((BinaryOp)bop.getInput().get(0)).getOp()==OpOp2.MINUS
@@ -1502,7 +1502,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//alternative pattern: sum (((U %*% t(V)) - X) ^ 2)
 			if( !appliedPattern
 				&& bop.getOp()==OpOp2.POW && bop.getInput().get(1) instanceof LiteralOp
-				&& HopRewriteUtils.getIntValue((LiteralOp)bop.getInput().get(1))==2
+				&& HopRewriteUtils.getDoubleValue((LiteralOp)bop.getInput().get(1))==2
 				&& bop.getInput().get(0) instanceof BinaryOp	
 				&& bop.getInput().get(0).getDataType()==DataType.MATRIX	
 				&& ((BinaryOp)bop.getInput().get(0)).getOp()==OpOp2.MINUS

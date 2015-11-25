@@ -304,9 +304,12 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		
 		//tsmm left is guaranteed to require only X but not t(X), while
 		//tsmm right might have additional requirements to transpose X if sparse
+		//NOTE: as a heuristic this correction is only applied if not a column vector because
+		//most other vector operations require memory for at least two vectors (we aim for 
+		//consistency in order to prevent anomalies in parfor opt leading to small degree of par)
 		MMTSJType mmtsj = checkTransposeSelf();
-		if( mmtsj.isLeft() && getInput().get(0).dimsKnown() ){
-			_memEstimate = _memEstimate - getInput().get(1)._memEstimate;
+		if( mmtsj.isLeft() && getInput().get(1).dimsKnown() && getInput().get(1).getDim2()>1 ) {
+			_memEstimate = _memEstimate - getInput().get(0)._outputMemEstimate;
 		}
 	}
 

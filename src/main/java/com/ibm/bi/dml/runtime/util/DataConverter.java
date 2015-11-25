@@ -353,17 +353,14 @@ public class DataConverter
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
-					ret[cell.i*rows+cell.j] = (cell.v != 0.0);
+					ret[cell.i*cols+cell.j] = (cell.v != 0.0);
 				}
 			}
 			else
 			{
-				if( !mb.isEmptyBlock(false) )
-				{
-					for( int i=0; i<rows; i++ )
-						for( int j=0; j<cols; j++ )
-							ret[i*cols+j] = (mb.getValueDenseUnsafe(i, j) != 0.0);
-				}
+				for( int i=0, cix=0; i<rows; i++ )
+					for( int j=0; j<cols; j++, cix++)
+						ret[cix] = (mb.getValueDenseUnsafe(i, j) != 0.0);
 			}
 		}
 		
@@ -391,16 +388,15 @@ public class DataConverter
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
-					ret[cell.i*rows+cell.j] = (int)cell.v;
+					ret[cell.i*cols+cell.j] = (int)cell.v;
 				}
 			}
 			else
 			{
 				//memcopy row major representation if at least 1 non-zero
-				if( !mb.isEmptyBlock(false) )
-					for( int i=0; i<rows; i++ )
-						for( int j=0; j<cols; j++ )
-							ret[i*cols+j] = (int)(mb.getValueDenseUnsafe(i, j));
+				for( int i=0, cix=0; i<rows; i++ )
+					for( int j=0; j<cols; j++, cix++ )
+						ret[cix] = (int)(mb.getValueDenseUnsafe(i, j));
 			}
 		}
 		
@@ -426,14 +422,13 @@ public class DataConverter
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
-					ret[cell.i*rows+cell.j] = cell.v;
+					ret[cell.i*cols+cell.j] = cell.v;
 				}
 			}
 			else
 			{
 				//memcopy row major representation if at least 1 non-zero
-				if( !mb.isEmptyBlock(false) )
-					System.arraycopy(mb.getDenseArray(), 0, ret, 0, rows*cols);
+				System.arraycopy(mb.getDenseArray(), 0, ret, 0, rows*cols);
 			}
 		}
 		

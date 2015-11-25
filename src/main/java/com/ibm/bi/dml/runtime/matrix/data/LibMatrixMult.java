@@ -160,7 +160,6 @@ public class LibMatrixMult
 			return;
 		}
 		
-		
 		//Timing time = new Timing(true);
 		
 		//pre-processing: output allocation (in contrast to single-threaded,
@@ -1245,6 +1244,7 @@ public class LibMatrixMult
 		double[] c = ret.denseBlock;
 		final int m = m1.rlen;
 		final int n = m2.clen;
+		final int cd = m2.rlen;
 
 		if( LOW_LEVEL_OPTIMIZATION )
 		{
@@ -1294,6 +1294,36 @@ public class LibMatrixMult
 							vectMultiplyAdd(avals[k], b, c, aix[k]*n, 0, n);
 					}
 				}
+			}
+			else if( pm2 && m<=16 )    //MATRIX-MATRIX (short lhs) 
+			{
+				SparseRow[] a = m1.sparseRows;
+				for( int i=0, cix=0; i<a.length; i++, cix+=n )
+					if( a[i] != null && !a[i].isEmpty() ) 
+					{
+						int alen = a[i].size();
+						int[] aix = a[i].getIndexContainer();
+						double[] avals = a[i].getValueContainer();					
+						
+						int k1 = (rl==0) ? 0 : a[i].searchIndexesFirstGTE(rl);
+						k1 = (k1>=0) ? k1 : alen;
+						int k2 = (ru==cd) ? alen : a[i].searchIndexesFirstGTE(ru);
+						k2 = (k2>=0) ? k2 : alen;
+						
+						//rest not aligned to blocks of 4 rows
+		    			final int bn = (k2-k1) % 4;
+		    			switch( bn ){
+			    			case 1: vectMultiplyAdd(avals[k1], b, c, aix[k1]*n, cix, n); break;
+			    	    	case 2: vectMultiplyAdd2(avals[k1],avals[k1+1], b, c, aix[k1]*n, aix[k1+1]*n, cix, n); break;
+			    			case 3: vectMultiplyAdd3(avals[k1],avals[k1+1],avals[k1+2], b, c, aix[k1]*n, aix[k1+1]*n, aix[k1+2]*n, cix, n); break;
+		    			}
+		    			
+		    			//compute blocks of 4 rows (core inner loop)
+		    			for( int k = k1+bn; k<k2; k+=4 ) {
+		    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
+		    						          aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
+		    			}
+					}
 			}
 			else                       //MATRIX-MATRIX
 			{
@@ -3683,7 +3713,8 @@ public class LibMatrixMult
 	{
 		//parallelize over rows in rhs matrix if number of rows in lhs/output is very small
 		return (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && !(m1.isUltraSparse()||m2.isUltraSparse()))
-			|| (m1.rlen<=16 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && m2.rlen > m1.rlen && !m1.sparse && !m2.sparse
+			|| (m1.rlen<=16 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && m2.rlen > m1.rlen 
+			   && ( !m1.sparse && !m2.sparse || m1.sparse && !m2.sparse ) //dense-dense / sparse/dense
 			   && (long)k * 8 * m1.rlen * m2.clen < MEM_OVERHEAD_THRESHOLD ); 
 	}
 	

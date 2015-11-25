@@ -34,6 +34,9 @@ import org.junit.runners.Suite;
 	ProdTest.class,
 	RowSumTest.class,
 	SumTest.class,
+	SumSqTest.class,
+	RowSumsSqTest.class,
+	ColSumsSqTest.class,
 	TraceTest.class,
   
 	FullAggregateTest.class,

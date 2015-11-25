@@ -2242,15 +2242,22 @@ public class OptimizerRuleBased extends Optimizer
 	private void rCollectZipmmPartitioningCandidates( OptNode n, HashSet<String> cand )
 	{
 		//collect zipmm inputs
-		if( n.getNodeType()==NodeType.HOP ) {
+		if( n.getNodeType()==NodeType.HOP ) 
+		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			if( h instanceof AggBinaryOp && (((AggBinaryOp)h).getMMultMethod()==MMultMethod.ZIPMM 
-				||((AggBinaryOp)h).getMMultMethod()==MMultMethod.CPMM) ){
-				
-				if( h.getInput().get(0) instanceof DataOp ) 
-					cand.add( h.getInput().get(0).getName() );
-				if( h.getInput().get(1) instanceof DataOp ) 
-					cand.add( h.getInput().get(1).getName() );
+				||((AggBinaryOp)h).getMMultMethod()==MMultMethod.CPMM) )
+			{
+				//found zipmm or cpmm (unknowns) which might turn into zipmm
+				//check for dataop or dataops under transpose on both sides
+				for( Hop in : h.getInput() ) {
+					if( in instanceof DataOp )
+						cand.add( in.getName() );
+					else if( in instanceof ReorgOp 
+						&& ((ReorgOp)in).getOp()==ReOrgOp.TRANSPOSE
+						&& in.getInput().get(0) instanceof DataOp )
+						cand.add( in.getInput().get(0).getName() );
+				}
 			}
 		}
 		

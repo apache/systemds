@@ -393,13 +393,26 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		
 		Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
 		Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX)); //max
+		Hop sparsity = getInput().get(_paramIndexMap.get(DataExpression.RAND_SPARSITY)); //sparsity
 		
 		//literal value comparison
-		if( min instanceof LiteralOp && max instanceof LiteralOp){
+		if( min instanceof LiteralOp && max instanceof LiteralOp && sparsity instanceof LiteralOp){
 			try{
 				double minVal = HopRewriteUtils.getDoubleValue((LiteralOp)min);
 				double maxVal = HopRewriteUtils.getDoubleValue((LiteralOp)max);
-				return (minVal == maxVal);
+				double sp = HopRewriteUtils.getDoubleValue((LiteralOp)sparsity);
+				return (sp==1.0 && minVal == maxVal);
+			}
+			catch(Exception ex)
+			{
+				return false;
+			}
+		}
+		//reference comparison (based on common subexpression elimination)
+		else if ( min == max && sparsity instanceof LiteralOp ) {
+			try {
+				double sp = HopRewriteUtils.getDoubleValue((LiteralOp)sparsity);
+				return (sp==1.0);
 			}
 			catch(Exception ex)
 			{
@@ -407,8 +420,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 			}
 		}
 		
-		//reference comparison (based on common subexpression elimination)
-		return (min == max);
+		return false;
 	}
 	
 	/**

@@ -30,7 +30,7 @@ import com.ibm.bi.dml.udf.Scalar.ScalarValueType;
  * Wrapper class for time invocation
  * 
  * time = externalFunction(Integer i) return (Double B) implemented in
- * (classname="com.ibm.bi.dml.packagesupport.TimeWrapper",exectype="mem");
+ * (classname="com.ibm.bi.dml.udf.lib.TimeWrapper",exectype="mem");
  * 
  * t = time (1);
  * 

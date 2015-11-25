@@ -43,7 +43,7 @@ import com.ibm.bi.dml.udf.Matrix.ValueType;
  * 
  * permutation_matrix= externalFunction(Matrix[Double] A, Boolean desc) return
  * (Matrix[Double] P) implemented in
- * (classname="com.ibm.bi.dml.packagesupport.PermutationMatrixWrapper"
+ * (classname="com.ibm.bi.dml.udf.lib.PermutationMatrixWrapper"
  * ,exectype="mem"); A = read( "Data/A.mtx"); P = permutation_matrix( A[,2],
  * false); B = P %*% A
  * 

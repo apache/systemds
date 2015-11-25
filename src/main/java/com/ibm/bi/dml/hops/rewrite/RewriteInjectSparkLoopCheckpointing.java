@@ -107,6 +107,9 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 				sb0.setLiveIn(livein);
 				sb0.setLiveOut(liveout);
 				ret.add(sb0);
+				
+				//maintain rewrite status
+				status.setInjectedCheckpoints();
 			}
 		}
 			

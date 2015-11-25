@@ -33,6 +33,7 @@ import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.lops.LopsException;
 import com.ibm.bi.dml.lops.compile.Dag;
 import com.ibm.bi.dml.parser.DMLProgram;
+import com.ibm.bi.dml.parser.DMLTranslator;
 import com.ibm.bi.dml.parser.ForStatement;
 import com.ibm.bi.dml.parser.ForStatementBlock;
 import com.ibm.bi.dml.parser.IfStatement;
@@ -73,13 +74,21 @@ public class ProgramRecompiler
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 * @throws LopsException 
+	 * @throws HopsException 
 	 */
 	public static ArrayList<ProgramBlock> generatePartitialRuntimeProgram(Program rtprog, ArrayList<StatementBlock> sbs) 
-		throws LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException
+		throws LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException, HopsException
 	{
 		ArrayList<ProgramBlock> ret = new ArrayList<ProgramBlock>();
 		DMLConfig config = ConfigurationManager.getConfig();
 		
+		//construct lops from hops if not existing
+		DMLTranslator dmlt = new DMLTranslator(sbs.get(0).getDMLProg());
+		for( StatementBlock sb : sbs ) {
+			dmlt.constructLops(sb);
+		}
+		
+		//construct runtime program from lops
 		for( StatementBlock sb : sbs ) {
 			DMLProgram prog = sb.getDMLProg();
 			ret.add( prog.createRuntimeProgramBlock(rtprog, sb, config) );

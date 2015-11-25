@@ -1669,8 +1669,8 @@ public class LibMatrixReorg
 		boolean[] flags = null; 
 		int rlen2 = 0; 
 		
-		if(select == null) {
-		
+		if(select == null) 
+		{
 			flags = new boolean[ m ]; //false
 			//Step 1: scan block and determine non-empty rows
 			
@@ -1699,12 +1699,12 @@ public class LibMatrixReorg
 						}
 				}
 			}
-		} else {			
+		} 
+		else {			
 			flags = DataConverter.convertToBooleanVector(select);
 			rlen2 = (int)select.getNonZeros();
 		}
 
-		
 		//Step 2: reset result and copy rows
 		//dense stays dense if correct input representation (but robust for any input), 
 		//sparse might be dense/sparse
@@ -1770,7 +1770,8 @@ public class LibMatrixReorg
 		//(we optimized for cache-friendly behavior and hence don't do early abort)
 		boolean[] flags = null; 
 		
-		if (select == null) {
+		if (select == null) 
+		{
 			flags = new boolean[ n ]; //false
 			if( in.sparse ) //SPARSE 
 			{
@@ -1793,21 +1794,24 @@ public class LibMatrixReorg
 						if( a[aix] != 0 )
 							flags[j] = true; 	
 			}
-		} else {			
+		} 
+		else {			
 			flags = DataConverter.convertToBooleanVector(select);
 		}
 
 		
 		//Step 2: determine number of columns
 		int clen2 = 0;
-		for( int j=0; j<n; j++ )
+		for( int j=0; j<n; j++ ) {
 			clen2 += flags[j] ? 1 : 0;
+		}
 		
 		//Step 3: create mapping of flags to target indexes
 		int[] cix = new int[n];
-		for( int j=0, pos=0; j<n; j++ )
+		for( int j=0, pos=0; j<n; j++ ) {
 			if( flags[j] )
 				cix[j] = pos++;	
+		}
 		
 		//Step 3: reset result and copy cols
 		//dense stays dense if correct input representation (but robust for any input), 
@@ -1827,7 +1831,8 @@ public class LibMatrixReorg
 					int[] aix = a[i].getIndexContainer();
 					double[] avals = a[i].getValueContainer();
 					for( int j=0; j<alen; j++ )
-						ret.appendValue(i, cix[aix[j]], avals[j]);
+						if( flags[aix[j]] )
+							ret.appendValue(i, cix[aix[j]], avals[j]);
 				}
 		}
 		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
@@ -1838,7 +1843,7 @@ public class LibMatrixReorg
 			
 			for(int i=0, aix=0, lcix=0; i<m; i++, lcix+=clen2)
 				for(int j=0; j<n; j++, aix++)
-					if( a[aix] != 0 )
+					if( flags[j] )
 						 c[ lcix+cix[j] ] = a[aix];	
 		}
 		else //SPARSE <- DENSE
@@ -1848,7 +1853,7 @@ public class LibMatrixReorg
 			
 			for(int i=0, aix=0; i<m; i++)
 				for(int j=0; j<n; j++, aix++)
-					if( a[aix] != 0 )
+					if( flags[j] && a[aix]!=0 )
 						 ret.appendValue(i, cix[j], a[aix]);	
 		}
 		

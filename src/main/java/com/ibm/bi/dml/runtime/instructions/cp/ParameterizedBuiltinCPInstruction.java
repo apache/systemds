@@ -17,21 +17,27 @@
 
 package com.ibm.bi.dml.runtime.instructions.cp;
 
+import java.io.IOException;
 import java.util.HashMap;
+
+import org.apache.wink.json4j.JSONException;
 
 import com.ibm.bi.dml.lops.Lop;
 import com.ibm.bi.dml.parser.Statement;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
 import com.ibm.bi.dml.runtime.functionobjects.ParameterizedBuiltin;
 import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
 import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
+import com.ibm.bi.dml.runtime.matrix.JobReturn;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.operators.Operator;
 import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
+import com.ibm.bi.dml.runtime.transform.DataTransform;
 
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
@@ -216,6 +222,21 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			//release locks
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
+		}
+		else if ( opcode.equalsIgnoreCase("transform")) {
+			MatrixObject mo = (MatrixObject) ec.getVariable(params.get("target"));
+			MatrixObject out = (MatrixObject) ec.getVariable(output.getName());
+			
+			try {
+				JobReturn jt = DataTransform.cpDataTransform(this, new MatrixObject[] { mo } , new MatrixObject[] {out} );
+				out.updateMatrixCharacteristics(jt.getMatrixCharacteristics(0));
+			} catch (IllegalArgumentException e) {
+				throw new DMLRuntimeException(e);
+			} catch (IOException e) {
+				throw new DMLRuntimeException(e);
+			} catch (JSONException e) {
+				throw new DMLRuntimeException(e);
+			}
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

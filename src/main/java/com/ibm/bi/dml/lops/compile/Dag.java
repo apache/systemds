@@ -2875,9 +2875,16 @@ public class Dag<N extends Lop>
 					oparams.setLabel(Lop.MATRIX_VAR_NAME_PREFIX + var_index.getNextID());
 
 					// generate an instruction that creates a symbol table entry for the new variable in CSV format
-					Instruction createvarInst = VariableCPInstruction.parseInstruction( 
-													dataInput.getCreateVarInstructions(
-															oparams.getFile_name(), oparams.getLabel()) );
+					Data delimLop = (Data) dataInput.getNamedInputLop(DataExpression.DELIM_DELIMITER);
+
+					Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
+					        oparams.getLabel(),
+							oparams.getFile_name(), 
+							true, 
+							OutputInfo.outputInfoToString(OutputInfo.CSVOutputInfo),
+							new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), -1, -1, oparams.getNnz()), 
+							false, delimLop.getStringValue(), true
+						);
 					
 					createvarInst.setLocation(node);
 					

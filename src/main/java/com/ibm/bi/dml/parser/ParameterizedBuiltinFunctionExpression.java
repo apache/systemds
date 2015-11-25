@@ -242,7 +242,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			raiseValidateError("Named parameter '" + TF_FN_PARAM_DATA + "' missing. Please specify the input data set.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		else if( data.getOutput().getDataType() != DataType.FRAME ){
-			raiseValidateError("Input to tansform() must be of type 'table'. It is of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			raiseValidateError("Input to tansform() must be of type 'frame'. It is of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}	
 		
 		Expression txmtd = getVarParam(TF_FN_PARAM_TXMTD);

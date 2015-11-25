@@ -78,6 +78,12 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testIrisSingleNodeCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", "iris", false);
+	}
+	
+	@Test
 	public void testIrisSPHybridCSV() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "iris", false);
@@ -101,6 +107,12 @@ public class TransformTest extends AutomatedTestBase
 	public void testIrisHybridBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "iris", false);
+	}
+	
+	@Test
+	public void testIrisSingleNodeBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "binary", "iris", false);
 	}
 	
 	@Test
@@ -130,6 +142,12 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testHomesSingleNodeCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", "homes", false);
+	}
+	
+	@Test
 	public void testHomesHadoopCSV() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homes", false);
@@ -153,6 +171,12 @@ public class TransformTest extends AutomatedTestBase
 	public void testHomesHybridBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes", false);
+	}
+	
+	@Test
+	public void testHomesSingleNodeBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "binary", "homes", false);
 	}
 	
 	@Test
@@ -182,6 +206,12 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testOmitHomesSingleNodeCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", "homesomit", false);
+	}
+	
+	@Test
 	public void testOmitHomesHadoopCSV() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homesomit", false);
@@ -205,6 +235,12 @@ public class TransformTest extends AutomatedTestBase
 	public void testOmitHomesHybridBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homesomit", false);
+	}
+	
+	@Test
+	public void testOmitHomesSingleNodeBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "binary", "homesomit", false);
 	}
 	
 	@Test
@@ -234,6 +270,12 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testHomes2SingleNodeCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", "homes2", false);
+	}
+	
+	@Test
 	public void testHomes2HadoopCSV() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homes2", false);
@@ -257,6 +299,12 @@ public class TransformTest extends AutomatedTestBase
 	public void testHomes2HybridBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes2", false);
+	}
+	
+	@Test
+	public void testHomes2SingleNodeBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "binary", "homes2", false);
 	}
 	
 	@Test
@@ -286,6 +334,12 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testIrisSingleNodeIDCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", "iris", true);
+	}
+	
+	@Test
 	public void testIrisSPHybridIDCSV() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "iris", true);
@@ -309,6 +363,12 @@ public class TransformTest extends AutomatedTestBase
 	public void testIrisHybridIDBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "iris", true);
+	}
+	
+	@Test
+	public void testIrisSingleNodeIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "binary", "iris", true);
 	}
 	
 	@Test
@@ -338,6 +398,12 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testHomesSingleNodeIDCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", "homes", true);
+	}
+	
+	@Test
 	public void testHomesSPHybridIDCSV() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", "homes", true);
@@ -361,6 +427,12 @@ public class TransformTest extends AutomatedTestBase
 	public void testHomesHybridIDBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes", true);
+	}
+	
+	@Test
+	public void testHomesSingleNodeIDBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "binary", "homes", true);
 	}
 	
 	@Test
@@ -390,6 +462,12 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testOmitHomesIDSingleNodeCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", "homesomit", true);
+	}
+	
+	@Test
 	public void testOmitHomesIDHadoopCSV() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homesomit", true);
@@ -413,6 +491,12 @@ public class TransformTest extends AutomatedTestBase
 	public void testOmitHomesIDHybridBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homesomit", true);
+	}
+	
+	@Test
+	public void testOmitHomesIDSingleNodeBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "binary", "homesomit", true);
 	}
 	
 	@Test
@@ -442,6 +526,12 @@ public class TransformTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testHomes2IDSingleNodeCSV() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", "homes2", true);
+	}
+	
+	@Test
 	public void testHomes2IDHadoopCSV() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HADOOP, "csv", "homes2", true);
@@ -465,6 +555,12 @@ public class TransformTest extends AutomatedTestBase
 	public void testHomes2IDHybridBB() 
 	{
 		runTransformTest(RUNTIME_PLATFORM.HYBRID, "binary", "homes2", true);
+	}
+	
+	@Test
+	public void testHomes2IDSingleNodeBB() 
+	{
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "binary", "homes2", true);
 	}
 	
 	@Test

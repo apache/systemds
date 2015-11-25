@@ -59,6 +59,7 @@ import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
 import com.ibm.bi.dml.runtime.instructions.Instruction;
 import com.ibm.bi.dml.runtime.instructions.InstructionParser;
 import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import com.ibm.bi.dml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
@@ -644,6 +645,29 @@ public class DataTransform {
 			inputCSVProperties = (CSVFileFormatProperties)inputMatrix.getFileFormatProperties();
 		}
 		
+		TransformOperands(ParameterizedBuiltinCPInstruction inst, MatrixObject inputMatrix) {
+			HashMap<String, String> params = inst.getParameterMap();
+			
+			inputPath = inputMatrix.getFileName();
+			txMtdPath = params.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXMTD);
+			
+			if ( params.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC) != null ) {
+				isApply = false;
+				specFile = params.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC);
+				applyTxPath = null;
+			}
+			else if ( params.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD) != null ) {
+				isApply = true;
+				specFile = null;
+				applyTxPath = params.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
+			}
+			
+			if ( params.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_OUTNAMES) != null)
+				outNamesFile = params.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_OUTNAMES);
+			
+			inputCSVProperties = (CSVFileFormatProperties)inputMatrix.getFileFormatProperties();
+		}
+		
 		TransformOperands(ParameterizedBuiltinSPInstruction inst, MatrixObject inputMatrix) {
 			HashMap<String,String> params = inst.getParams();
 			
@@ -1033,12 +1057,20 @@ public class DataTransform {
 	 * @throws JSONException 
 	 * @throws IllegalArgumentException 
 	 */
+	public static JobReturn cpDataTransform(ParameterizedBuiltinCPInstruction inst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices) throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException {
+		TransformOperands oprnds = new TransformOperands(inst, inputMatrices[0]);
+		return cpDataTransform(oprnds, inputMatrices, outputMatrices);
+	}
+
 	public static JobReturn cpDataTransform(String inst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices) throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException {
 		String[] insts = inst.split(Instruction.INSTRUCTION_DELIM);
-		
 		// Parse transform instruction (the first instruction) to obtain relevant fields
 		TransformOperands oprnds = new TransformOperands(insts[0], inputMatrices[0]);
 		
+		return cpDataTransform(oprnds, inputMatrices, outputMatrices);
+	}
+		
+	public static JobReturn cpDataTransform(TransformOperands oprnds, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices) throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException {
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		FileSystem fs = FileSystem.get(job);
 		// find the first file in alphabetical ordering of partfiles in directory inputPath 

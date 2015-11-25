@@ -954,6 +954,33 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}	
 	
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean hasHeader, String delim, boolean sparse) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(mc.getRows());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(mc.getCols());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(mc.getRowsPerBlock());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(mc.getColsPerBlock());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(mc.getNonZeros());
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(hasHeader);
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(delim);
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(sparse);
+		
+		String str = sb.toString();
+
+		return parseInstruction(str);
+	}	
+	
 	@Override
 	public void updateInstructionThreadID(String pattern, String replace)
 		throws DMLRuntimeException

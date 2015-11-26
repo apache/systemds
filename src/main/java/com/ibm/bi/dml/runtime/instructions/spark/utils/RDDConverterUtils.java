@@ -79,7 +79,7 @@ public class RDDConverterUtils
 		}
 		
 		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
+		out = RDDAggregateUtils.mergeByKey( mcOut, out ); 
 		
 		return out;
 	}
@@ -108,7 +108,7 @@ public class RDDConverterUtils
 		}
 		
 		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
+		out = RDDAggregateUtils.mergeByKey( mcOut, out ); 
 		
 		return out;
 	}
@@ -201,7 +201,7 @@ public class RDDConverterUtils
 					new CSVToBinaryBlockFunction(mcOut, delim, fill, fillValue));
 		
 		//aggregate partial matrix blocks
-		out = RDDAggregateUtils.mergeByKey( out ); 
+		out = RDDAggregateUtils.mergeByKey( mcOut, out ); 
 		
 		return out;
 	}

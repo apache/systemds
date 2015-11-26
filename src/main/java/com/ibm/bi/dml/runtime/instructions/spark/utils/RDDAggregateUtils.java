@@ -25,8 +25,10 @@ import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
 import com.ibm.bi.dml.runtime.DMLRuntimeException;
 import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
 import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
+import com.ibm.bi.dml.runtime.instructions.spark.data.BlockPartitioner;
 import com.ibm.bi.dml.runtime.instructions.spark.data.CorrMatrixBlock;
 import com.ibm.bi.dml.runtime.instructions.spark.data.RowMatrixBlock;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
 import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -115,6 +117,28 @@ public class RDDAggregateUtils
 	 * @param in
 	 * @return
 	 */
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sumByKeyStable( MatrixCharacteristics mc, JavaPairRDD<MatrixIndexes, MatrixBlock> in )
+	{
+		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
+		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
+				in.combineByKey( new CreateBlockCombinerFunction(), 
+							     new MergeSumBlockValueFunction(), 
+							     new MergeSumBlockCombinerFunction(),
+							     new BlockPartitioner(mc, in.partitions().size()));
+		
+		//strip-off correction blocks from 					     
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out =  
+				tmp.mapValues( new ExtractMatrixBlock() );
+		
+		//return the aggregate rdd
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
 	public static JavaPairRDD<MatrixIndexes, Double> sumCellsByKeyStable( JavaPairRDD<MatrixIndexes, Double> in )
 	{
 		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
@@ -180,6 +204,30 @@ public class RDDAggregateUtils
 	}
 	
 	/**
+	 * 
+	 * @param mc
+	 * @param in
+	 * @param aop
+	 * @return
+	 */
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> aggByKeyStable( MatrixCharacteristics mc, JavaPairRDD<MatrixIndexes, MatrixBlock> in, AggregateOperator aop )
+	{
+		//stable sum of blocks per key, by passing correction blocks along with aggregates 		
+		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
+				in.combineByKey( new CreateBlockCombinerFunction(), 
+							     new MergeAggBlockValueFunction(aop), 
+							     new MergeAggBlockCombinerFunction(aop),
+							     new BlockPartitioner(mc, in.partitions().size()));
+		
+		//strip-off correction blocks from 					     
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out =  
+				tmp.mapValues( new ExtractMatrixBlock() );
+		
+		//return the aggregate rdd
+		return out;
+	}
+	
+	/**
 	 * Merges disjoint data of all blocks per key.
 	 * 
 	 * Note: The behavior of this method is undefined for both sparse and dense data if the 
@@ -188,9 +236,23 @@ public class RDDAggregateUtils
 	 * @param in
 	 * @return
 	 */
+	@Deprecated
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> mergeByKey( JavaPairRDD<MatrixIndexes, MatrixBlock> in )
 	{
 		return in.reduceByKey(
+				new MergeBlocksFunction());
+	}
+	
+	/**
+	 * 
+	 * @param mc
+	 * @param in
+	 * @return
+	 */
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> mergeByKey( MatrixCharacteristics mc, JavaPairRDD<MatrixIndexes, MatrixBlock> in )
+	{
+		return in.reduceByKey(
+				new BlockPartitioner(mc, in.partitions().size()),
 				new MergeBlocksFunction());
 	}
 	

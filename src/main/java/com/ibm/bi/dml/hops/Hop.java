@@ -351,7 +351,8 @@ public abstract class Hop
 			//(1) avoid unnecessary persist and unpersist calls, and 
 			//(2) avoid unnecessary creation of spark context (incl executors)
 			if(    OptimizerUtils.isHybridExecutionMode() 
-				&& _outputMemEstimate < OptimizerUtils.getLocalMemBudget()
+				&& (getDim2() > 1 && _outputMemEstimate < OptimizerUtils.getLocalMemBudget()
+				|| getDim2() == 1 && _outputMemEstimate < OptimizerUtils.getLocalMemBudget()/3 )
 				|| _etypeForced == ExecType.CP )
 			{
 				et = ExecType.CP;

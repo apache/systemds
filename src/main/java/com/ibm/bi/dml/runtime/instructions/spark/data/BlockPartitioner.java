@@ -41,26 +41,37 @@ public class BlockPartitioner extends Partitioner
 	
 	public BlockPartitioner(MatrixCharacteristics mc, int numParts) 
 	{
+		//sanity check known dimensions
+		if( !mc.dimsKnown() || mc.getRowsPerBlock()<1 || mc.getColsPerBlock()<1 ) {
+			throw new RuntimeException("Invalid unknown matrix characteristics.");
+		}
+		
+		//prepare meta data
 		long nrblks = mc.getNumRowBlocks();
 		long ncblks = mc.getNumColBlocks();
 		long nblks = nrblks * ncblks;
-		long nblksPerPart = (long)Math.ceil((double)nblks / numParts); 
-		long dimBlks = (long) Math.ceil(Math.sqrt(nblksPerPart));
 		
+		//compute perfect squared tile-size (via flooring to
+		//avoid empty partitions; overflow handled via mod numParts)
+		double nblksPerPart = Math.max((double)nblks/numParts,1);
+		long dimBlks = (long)Math.max(Math.floor(Math.sqrt(nblksPerPart)),1);
+		
+		//adjust tile shape according to matrix shape
 		if( nrblks < dimBlks ) { //short and fat
 			_rbPerPart = nrblks;
-			_cbPerPart = (long)Math.ceil((double)nblksPerPart/_rbPerPart);
+			_cbPerPart = (long)Math.max(Math.floor(nblksPerPart/_rbPerPart),1);
 		}
 		else if( ncblks < dimBlks ) { //tall and skinny
 			_cbPerPart = ncblks;
-			_rbPerPart = (long)Math.ceil((double)nblksPerPart/_cbPerPart);
+			_rbPerPart = (long)Math.max(Math.floor(nblksPerPart/_cbPerPart),1);
 		}
 		else { //general case
 			_rbPerPart = dimBlks;
 			_cbPerPart = dimBlks; 
 		}
 		
-		_ncparts = (int)(ncblks/_cbPerPart);
+		//compute meta data for runtime
+		_ncparts = (int)Math.ceil((double)ncblks/_cbPerPart);
 		_numParts = numParts;
 	}
 	
@@ -77,11 +88,27 @@ public class BlockPartitioner extends Partitioner
 		MatrixIndexes ix = (MatrixIndexes) arg0;
 		int ixr = (int)((ix.getRowIndex()-1)/_rbPerPart);
 		int ixc = (int)((ix.getColumnIndex()-1)/_cbPerPart);
-		return ixr * _ncparts + ixc;
+		int id = ixr * _ncparts + ixc;
+		
+		//ensure valid range
+		return id % _numParts;
 	}
 
 	@Override
 	public int numPartitions() {
 		return _numParts;
+	}
+
+	@Override
+	public boolean equals(Object obj) 
+	{
+		if( !(obj instanceof BlockPartitioner) )
+			return false;
+		
+		BlockPartitioner that = (BlockPartitioner) obj;
+		return _numParts == that._numParts
+			&& _ncparts == that._ncparts
+			&& _rbPerPart == that._rbPerPart
+			&& _cbPerPart == that._cbPerPart;
 	}
 }

@@ -44,6 +44,7 @@ import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
+import com.ibm.bi.dml.runtime.instructions.spark.data.BlockPartitioner;
 import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
 import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
@@ -54,6 +55,7 @@ import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockPairFunction
 import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import com.ibm.bi.dml.runtime.instructions.spark.utils.SparkUtils;
+import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
 import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
 import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
@@ -391,6 +393,24 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 		
 		return bret;
+	}
+	
+	/**
+	 * 
+	 * @param varname
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public BlockPartitioner getPartitionerForRDDVariable(String varname) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//get input rdd and matrix characteristics
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = getBinaryBlockRDDHandleForVariable(varname);
+		MatrixCharacteristics mc = getMatrixCharacteristics(varname);
+		
+		//create tile-based matrix partitioner
+		return new BlockPartitioner(mc, in.partitions().size());
 	}
 	
 	/**

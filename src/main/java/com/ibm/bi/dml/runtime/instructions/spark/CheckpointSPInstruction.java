@@ -96,14 +96,8 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		if( !in.getStorageLevel().equals( _level ) ) 
 		{
 			//investigate issue of unnecessarily large number of partitions
-			boolean coalesce = false;
-			int numPartitions = -1;
-			if( mcIn.dimsKnown(true) ) {
-				double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-				double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mcIn);
-				numPartitions = (int) Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1);
-				coalesce = ( numPartitions < in.partitions().size() );
-			}
+			int numPartitions = getNumCoalescePartitions(mcIn, in);
+			boolean coalesce = ( numPartitions < in.partitions().size() );
 			
 			//checkpoint pre-processing rdd operations
 			if( coalesce ) {
@@ -141,6 +135,24 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 			mo.setRDDHandle(outro);
 		}
 		sec.setVariable( output.getName(), mo);
+	}
+	
+	/**
+	 * 
+	 * @param mc
+	 * @param in
+	 * @return
+	 */
+	public static int getNumCoalescePartitions(MatrixCharacteristics mc, JavaPairRDD<MatrixIndexes,MatrixBlock> in)
+	{
+		if( mc.dimsKnown(true) ) {
+			double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
+			double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
+			return (int) Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1);
+		}
+		else {
+			return in.partitions().size();
+		}
 	}
 }
 

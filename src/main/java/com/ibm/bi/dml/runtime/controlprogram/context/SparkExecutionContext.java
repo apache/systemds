@@ -29,6 +29,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
@@ -43,6 +44,7 @@ import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
 import com.ibm.bi.dml.runtime.controlprogram.Program;
 import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
 import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import com.ibm.bi.dml.runtime.instructions.spark.CheckpointSPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
 import com.ibm.bi.dml.runtime.instructions.spark.data.BlockPartitioner;
 import com.ibm.bi.dml.runtime.instructions.spark.data.BroadcastObject;
@@ -944,8 +946,21 @@ public class SparkExecutionContext extends ExecutionContext
 	{
 		//get input rdd and default storage level
 		MatrixObject mo = getMatrixObject(var);
+		MatrixCharacteristics mcIn = mo.getMatrixCharacteristics();
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
 				getRDDHandleForMatrixObject(mo, InputInfo.BinaryBlockInputInfo);
+		
+		//avoid unnecessary caching of input in order to reduce memory pressure
+		if( mo.getRDDHandle().allowsShortCircuitRead()
+			&& isRDDMarkedForCaching(in.id()) && !isRDDCached(in.id()) ) {
+			in = (JavaPairRDD<MatrixIndexes,MatrixBlock>)
+					((RDDObject)mo.getRDDHandle().getLineageChilds().get(0)).getRDD();
+			
+			//investigate issue of unnecessarily large number of partitions
+			int numPartitions = CheckpointSPInstruction.getNumCoalescePartitions(mcIn, in);
+			if( numPartitions < in.partitions().size() )
+				in = in.coalesce( numPartitions );
+		}
 		
 		//repartition and persist rdd (force creation of shuffled rdd via merge)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDAggregateUtils.mergeByKey(in);
@@ -998,6 +1013,36 @@ public class SparkExecutionContext extends ExecutionContext
 			getSparkContext().sc().setLocalProperty(
 					"spark.scheduler.pool", null);
 		}
+	}
+	
+	/**
+	 * 
+	 * @param rddID
+	 * @return
+	 */
+	private boolean isRDDMarkedForCaching( int rddID ) {
+		JavaSparkContext jsc = getSparkContext();
+		return jsc.sc().getPersistentRDDs().contains(rddID);
+	}
+	
+	/**
+	 * 
+	 * @param rddID
+	 * @return
+	 */
+	private boolean isRDDCached( int rddID ) {
+		//check that rdd is marked for caching
+		JavaSparkContext jsc = getSparkContext();
+		if( !jsc.sc().getPersistentRDDs().contains(rddID) ) {
+			return false;
+		}
+		
+		//check that rdd is actually already cached
+		for( RDDInfo info : jsc.sc().getRDDStorageInfo() ) {
+			if( info.id() == rddID )
+				return info.isCached();
+		}
+		return false;
 	}
 	
 	///////////////////////////////////////////
@@ -1106,4 +1151,5 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 		
 	}
+	
 }

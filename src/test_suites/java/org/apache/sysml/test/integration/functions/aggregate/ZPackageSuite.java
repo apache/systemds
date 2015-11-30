@@ -40,7 +40,10 @@ import org.junit.runners.Suite;
 	RowSumsSqTest.class,
 	ColSumsSqTest.class,
 	TraceTest.class,
-  
+	StdDevTest.class,
+	RowStdDevsTest.class,
+	ColStdDevsTest.class,
+
 	FullAggregateTest.class,
 	FullColAggregateTest.class,
 	FullGroupedAggregateTest.class,

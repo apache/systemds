@@ -2188,9 +2188,21 @@ public class DMLTranslator
 			break;
 
 		case COLMEAN:
-			// hop to compute colSums
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN,
 					Direction.Col, expr);
+			break;
+
+		case COLSD:
+			// colStdDevs = sqrt(colVariances)
+			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), AggOp.VAR, Direction.Col, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
+			break;
+
+		case COLVAR:
+			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), AggOp.VAR, Direction.Col, expr);
 			break;
 
 		case ROWSUM:
@@ -2221,6 +2233,19 @@ public class DMLTranslator
 		case ROWMEAN:
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN,
 					Direction.Row, expr);
+			break;
+
+		case ROWSD:
+			// rowStdDevs = sqrt(rowVariances)
+			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), AggOp.VAR, Direction.Row, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
+			break;
+
+		case ROWVAR:
+			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), AggOp.VAR, Direction.Row, expr);
 			break;
 
 		case NROW:
@@ -2283,7 +2308,20 @@ public class DMLTranslator
 						Hop.OpOp3.CENTRALMOMENT, expr, expr2, orderHop);
 			}
 			break;
-			
+
+		case SD:
+			// stdDev = sqrt(variance)
+			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), AggOp.VAR, Direction.RowCol, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
+			break;
+
+		case VAR:
+			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), AggOp.VAR, Direction.RowCol, expr);
+			break;
+
 		case MIN:
 			//construct AggUnary for min(X) but BinaryOp for min(X,Y)
 			if( expr2 == null ) {
@@ -2295,6 +2333,7 @@ public class DMLTranslator
 						expr, expr2);
 			}
 			break;
+
 		case MAX:
 			//construct AggUnary for max(X) but BinaryOp for max(X,Y)
 			if( expr2 == null ) {

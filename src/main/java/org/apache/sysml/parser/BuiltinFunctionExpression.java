@@ -237,6 +237,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case COLMAX:
 		case COLMIN:
 		case COLMEAN:
+		case COLSD:
+		case COLVAR:
 			// colSums(X);
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
@@ -251,6 +253,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ROWMIN:
 		case ROWINDEXMIN:
 		case ROWMEAN:
+		case ROWSD:
+		case ROWVAR:
 			//rowSums(X);
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
@@ -262,6 +266,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case SUM:
 		case PROD:
 		case TRACE:
+		case SD:
+		case VAR:
 			// sum(X);
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
@@ -1319,6 +1325,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.SUM;
 		else if (functionName.equals("mean"))
 			bifop = Expression.BuiltinFunctionOp.MEAN;
+		else if (functionName.equals("sd"))
+			bifop = Expression.BuiltinFunctionOp.SD;
+		else if (functionName.equals("var"))
+			bifop = Expression.BuiltinFunctionOp.VAR;
 		else if (functionName.equals("trace"))
 			bifop = Expression.BuiltinFunctionOp.TRACE;
 		else if (functionName.equals("t"))
@@ -1353,6 +1363,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.ROWMEAN;
 		else if (functionName.equals("colMeans"))
 			 bifop = Expression.BuiltinFunctionOp.COLMEAN;
+		else if (functionName.equals("rowSds"))
+			bifop = Expression.BuiltinFunctionOp.ROWSD;
+		else if (functionName.equals("colSds"))
+			bifop = Expression.BuiltinFunctionOp.COLSD;
+		else if (functionName.equals("rowVars"))
+			bifop = Expression.BuiltinFunctionOp.ROWVAR;
+		else if (functionName.equals("colVars"))
+			bifop = Expression.BuiltinFunctionOp.COLVAR;
 		else if (functionName.equals("cummax"))
 			 bifop = Expression.BuiltinFunctionOp.CUMMAX;
 		else if (functionName.equals("cummin"))

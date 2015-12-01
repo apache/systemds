@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt.gdfgraph;
+package org.apache.sysml.hops.globalopt.gdfgraph;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 
 public class GDFLoopNode extends GDFNode
 {

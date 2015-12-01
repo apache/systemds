@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.functionobjects;
+package org.apache.sysml.runtime.functionobjects;
 
 /**
  * Integer modulus, where we adhere to the defined R semantics:

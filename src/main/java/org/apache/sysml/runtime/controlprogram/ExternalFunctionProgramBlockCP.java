@@ -15,27 +15,27 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram;
+package org.apache.sysml.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.ExternalFunctionStatement;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.udf.ExternalFunctionInvocationInstruction;
-import com.ibm.bi.dml.udf.Matrix;
-import com.ibm.bi.dml.udf.PackageRuntimeException;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.DataIdentifier;
+import org.apache.sysml.parser.ExternalFunctionStatement;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.udf.ExternalFunctionInvocationInstruction;
+import org.apache.sysml.udf.Matrix;
+import org.apache.sysml.udf.PackageRuntimeException;
 
 /**
  * CP external function program block, that overcomes the need for 

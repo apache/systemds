@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.descriptivestats;
+package org.apache.sysml.test.integration.applications.descriptivestats;
 
 import java.util.Arrays;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
 
 public class OrderStatisticsTest extends AutomatedTestBase 
 {

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.quaternary;
+package org.apache.sysml.test.integration.functions.quaternary;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

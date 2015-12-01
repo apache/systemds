@@ -15,17 +15,17 @@
  * 
  */
 
-package com.ibm.bi.dml.parser.antlr4;
+package org.apache.sysml.parser.antlr4;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.Token;
 
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.antlr4.DmlParser.FunctionCallAssignmentStatementContext;
-import com.ibm.bi.dml.parser.antlr4.DmlParser.ParameterizedExpressionContext;
-import com.ibm.bi.dml.parser.antlr4.DmlSyntacticErrorListener.CustomDmlErrorListener;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.antlr4.DmlParser.FunctionCallAssignmentStatementContext;
+import org.apache.sysml.parser.antlr4.DmlParser.ParameterizedExpressionContext;
+import org.apache.sysml.parser.antlr4.DmlSyntacticErrorListener.CustomDmlErrorListener;
 
 public class DmlSyntacticValidatorHelper {
 	
@@ -47,16 +47,16 @@ public class DmlSyntacticValidatorHelper {
 		return _errorListener.peekFileName();
 	}
 	
-//	public static void setInfoForArithmeticOp(com.ibm.bi.dml.parser.Expression current, 
-//			com.ibm.bi.dml.parser.Expression left, 
-//			com.ibm.bi.dml.parser.Expression right, String opStr) {
+//	public static void setInfoForArithmeticOp(org.apache.sysml.parser.Expression current, 
+//			org.apache.sysml.parser.Expression left, 
+//			org.apache.sysml.parser.Expression right, String opStr) {
 //		try {
 //			// PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, MATMULT, POW, INVALID
-//			com.ibm.bi.dml.parser.Expression.BinaryOp bop = com.ibm.bi.dml.parser.Expression.getBinaryOp(opStr);
-//			current = new com.ibm.bi.dml.parser.BinaryExpression(bop);
-//			((com.ibm.bi.dml.parser.BinaryExpression)current).setLeft(left);
-//			((com.ibm.bi.dml.parser.BinaryExpression)current).setRight(right);
-//			((com.ibm.bi.dml.parser.BinaryExpression)current).setFilename(DmlSyntacticErrorListener.currentFileName.peek());
+//			org.apache.sysml.parser.Expression.BinaryOp bop = org.apache.sysml.parser.Expression.getBinaryOp(opStr);
+//			current = new org.apache.sysml.parser.BinaryExpression(bop);
+//			((org.apache.sysml.parser.BinaryExpression)current).setLeft(left);
+//			((org.apache.sysml.parser.BinaryExpression)current).setRight(right);
+//			((org.apache.sysml.parser.BinaryExpression)current).setFilename(DmlSyntacticErrorListener.currentFileName.peek());
 //		}
 //		catch(Exception e) {
 //			System.out.println("In setInfoForArithmeticOp>>");
@@ -64,14 +64,14 @@ public class DmlSyntacticValidatorHelper {
 //		}
 //	}
 	
-//	public static void setInfoForBooleanOp(com.ibm.bi.dml.parser.Expression current, 
-//			com.ibm.bi.dml.parser.Expression left, 
-//			com.ibm.bi.dml.parser.Expression right, String opStr) {
-//		com.ibm.bi.dml.parser.Expression.BooleanOp bop = com.ibm.bi.dml.parser.Expression.getBooleanOp(opStr);
-//		current = new com.ibm.bi.dml.parser.BooleanExpression(bop);
-//		((com.ibm.bi.dml.parser.BooleanExpression)current).setLeft(left);
-//		((com.ibm.bi.dml.parser.BooleanExpression)current).setRight(right);
-//		((com.ibm.bi.dml.parser.BooleanExpression)current).setFilename(DmlSyntacticErrorListener.currentFileName.peek());
+//	public static void setInfoForBooleanOp(org.apache.sysml.parser.Expression current, 
+//			org.apache.sysml.parser.Expression left, 
+//			org.apache.sysml.parser.Expression right, String opStr) {
+//		org.apache.sysml.parser.Expression.BooleanOp bop = org.apache.sysml.parser.Expression.getBooleanOp(opStr);
+//		current = new org.apache.sysml.parser.BooleanExpression(bop);
+//		((org.apache.sysml.parser.BooleanExpression)current).setLeft(left);
+//		((org.apache.sysml.parser.BooleanExpression)current).setRight(right);
+//		((org.apache.sysml.parser.BooleanExpression)current).setFilename(DmlSyntacticErrorListener.currentFileName.peek());
 //	}
 	
 	public boolean validateBuiltinFunctions(FunctionCallAssignmentStatementContext ctx) {
@@ -87,14 +87,14 @@ public class DmlSyntacticValidatorHelper {
 		return true;
 	}
 	
-	public ArrayList<com.ibm.bi.dml.parser.ParameterExpression> getParameterExpressionList(List<ParameterizedExpressionContext> paramExprs) {
-		ArrayList<com.ibm.bi.dml.parser.ParameterExpression> retVal = new ArrayList<com.ibm.bi.dml.parser.ParameterExpression>();
+	public ArrayList<org.apache.sysml.parser.ParameterExpression> getParameterExpressionList(List<ParameterizedExpressionContext> paramExprs) {
+		ArrayList<org.apache.sysml.parser.ParameterExpression> retVal = new ArrayList<org.apache.sysml.parser.ParameterExpression>();
 		for(ParameterizedExpressionContext ctx : paramExprs) {
 			String paramName = null;
 			if(ctx.paramName != null && ctx.paramName.getText() != null && !ctx.paramName.getText().isEmpty()) {
 				paramName = ctx.paramName.getText();
 			}
-			com.ibm.bi.dml.parser.ParameterExpression myArg = new com.ibm.bi.dml.parser.ParameterExpression(paramName, ctx.paramVal.info.expr);
+			org.apache.sysml.parser.ParameterExpression myArg = new org.apache.sysml.parser.ParameterExpression(paramName, ctx.paramVal.info.expr);
 			retVal.add(myArg);
 		}
 		return retVal;

@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.caching;
+package org.apache.sysml.runtime.controlprogram.caching;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLRuntimeException;
 
 public class CacheException extends DMLRuntimeException
 {

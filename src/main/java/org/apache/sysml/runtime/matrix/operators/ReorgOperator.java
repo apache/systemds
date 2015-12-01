@@ -16,11 +16,11 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.operators;
+package org.apache.sysml.runtime.matrix.operators;
 
 import java.io.Serializable;
 
-import com.ibm.bi.dml.runtime.functionobjects.IndexFunction;
+import org.apache.sysml.runtime.functionobjects.IndexFunction;
 
 public class ReorgOperator  extends Operator implements Serializable
 {

@@ -15,19 +15,19 @@
  * 
  */
 
-package com.ibm.bi.dml.udf.lib;
+package org.apache.sysml.udf.lib;
 
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.udf.FunctionParameter;
-import com.ibm.bi.dml.udf.Matrix;
-import com.ibm.bi.dml.udf.PackageFunction;
-import com.ibm.bi.dml.udf.PackageRuntimeException;
-import com.ibm.bi.dml.udf.Scalar;
-import com.ibm.bi.dml.udf.Scalar.ScalarValueType;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.udf.FunctionParameter;
+import org.apache.sysml.udf.Matrix;
+import org.apache.sysml.udf.PackageFunction;
+import org.apache.sysml.udf.PackageRuntimeException;
+import org.apache.sysml.udf.Scalar;
+import org.apache.sysml.udf.Scalar.ScalarValueType;
 
 /**
  * 

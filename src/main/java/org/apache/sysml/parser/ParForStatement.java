@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 /**
  * This ParForStatement is essentially identical to a ForStatement, except an extended

@@ -14,10 +14,10 @@
  * limitations under the License.
  * 
  */
-package com.ibm.bi.dml.runtime.instructions.spark.functions;
+package org.apache.sysml.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
  * General purpose copy function for binary block rdds. This function can be used in

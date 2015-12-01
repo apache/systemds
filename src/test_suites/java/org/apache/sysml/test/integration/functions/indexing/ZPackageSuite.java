@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.indexing;
+package org.apache.sysml.test.integration.functions.indexing;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

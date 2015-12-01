@@ -15,16 +15,16 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.unary.matrix;
+package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
 
 
 

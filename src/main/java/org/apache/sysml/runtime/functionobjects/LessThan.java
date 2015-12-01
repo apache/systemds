@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.functionobjects;
+package org.apache.sysml.runtime.functionobjects;
 
 public class LessThan extends ValueFunction 
 {

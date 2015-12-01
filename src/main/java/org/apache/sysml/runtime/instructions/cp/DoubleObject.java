@@ -15,10 +15,10 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.cp;
+package org.apache.sysml.runtime.instructions.cp;
 
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class DoubleObject extends ScalarObject 
 {

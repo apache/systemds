@@ -19,9 +19,9 @@ grammar Pydml;
 
 @header
 {
-    // package com.ibm.bi.dml.python;
-    //import com.ibm.bi.dml.parser.antlr4.StatementInfo;
-    //import com.ibm.bi.dml.parser.antlr4.ExpressionInfo;
+    // package org.apache.sysml.python;
+    //import org.apache.sysml.parser.antlr4.StatementInfo;
+    //import org.apache.sysml.parser.antlr4.ExpressionInfo;
 }
 
 // This antlr grammar is based on Python 3.3 language reference: https://docs.python.org/3.3/reference/grammar.html
@@ -200,7 +200,7 @@ dataIdentifier returns [ ExpressionInfo dataInfo ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
        $dataInfo = new ExpressionInfo();
-       // $dataInfo.expr = new com.ibm.bi.dml.parser.DataIdentifier();
+       // $dataInfo.expr = new org.apache.sysml.parser.DataIdentifier();
 } :
     // ------------------------------------------
     // IndexedIdentifier
@@ -214,7 +214,7 @@ expression returns [ ExpressionInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
        $info = new ExpressionInfo();
-       // $info.expr = new com.ibm.bi.dml.parser.BinaryExpression(com.ibm.bi.dml.parser.Expression.BinaryOp.INVALID);
+       // $info.expr = new org.apache.sysml.parser.BinaryExpression(org.apache.sysml.parser.Expression.BinaryOp.INVALID);
 } :
     // ------------------------------------------
     // BinaryExpression

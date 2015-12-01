@@ -15,29 +15,29 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.lops.LopProperties;
-import com.ibm.bi.dml.parser.ParForStatementBlock;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.lops.LopProperties;
+import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 
 /**
  * Rule-Based ParFor Optimizer (time: O(n)):

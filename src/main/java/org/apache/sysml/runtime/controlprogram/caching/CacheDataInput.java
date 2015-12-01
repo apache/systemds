@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.caching;
+package org.apache.sysml.runtime.controlprogram.caching;
 
 import java.io.DataInput;
 import java.io.IOException;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlockDataInput;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.MatrixBlockDataInput;
+import org.apache.sysml.runtime.matrix.data.SparseRow;
 
 public class CacheDataInput implements DataInput, MatrixBlockDataInput
 {

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,12 +30,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.hops.DataGenOp;
-import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.JSONHelper;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.DataGenOp;
+import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.JSONHelper;
 
 
 public class DataExpression extends DataIdentifier 

@@ -15,17 +15,17 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 /**
  * 

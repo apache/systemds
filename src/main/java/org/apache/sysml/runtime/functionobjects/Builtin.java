@@ -15,16 +15,16 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.functionobjects;
+package org.apache.sysml.runtime.functionobjects;
 
 import java.util.HashMap;
 
 import org.apache.commons.math3.util.FastMath;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLScriptException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLScriptException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 
 
 /**

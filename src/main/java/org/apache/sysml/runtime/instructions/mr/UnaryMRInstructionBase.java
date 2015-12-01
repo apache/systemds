@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.mr;
+package org.apache.sysml.runtime.instructions.mr;
 
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public abstract class UnaryMRInstructionBase extends MRInstruction 
 {

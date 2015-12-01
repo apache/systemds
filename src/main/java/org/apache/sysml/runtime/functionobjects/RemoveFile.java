@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.functionobjects;
+package org.apache.sysml.runtime.functionobjects;
 
 import java.io.IOException;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 
 public class RemoveFile extends FileFunction 

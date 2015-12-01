@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.yarn;
+package org.apache.sysml.yarn;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,17 +25,17 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.yarn.ropt.ResourceConfig;
-import com.ibm.bi.dml.yarn.ropt.ResourceOptimizer;
-import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
-import com.ibm.bi.dml.yarn.ropt.YarnClusterConfig;
-import com.ibm.bi.dml.yarn.ropt.YarnOptimizerUtils;
-import com.ibm.bi.dml.yarn.ropt.YarnOptimizerUtils.GridEnumType;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.yarn.ropt.ResourceConfig;
+import org.apache.sysml.yarn.ropt.ResourceOptimizer;
+import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
+import org.apache.sysml.yarn.ropt.YarnClusterConfig;
+import org.apache.sysml.yarn.ropt.YarnOptimizerUtils;
+import org.apache.sysml.yarn.ropt.YarnOptimizerUtils.GridEnumType;
 
 /**
  * The sole purpose of this class is to serve as a proxy to
@@ -56,7 +56,7 @@ public class DMLYarnClientProxy
 	{
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("com.ibm.bi.dml.yarn")
+			Logger.getLogger("org.apache.sysml.yarn")
 			      .setLevel((Level) Level.DEBUG);
 		}
 	}

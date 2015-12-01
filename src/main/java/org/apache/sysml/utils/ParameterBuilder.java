@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.utils;
+package org.apache.sysml.utils;
 
 import static org.junit.Assert.fail;
 

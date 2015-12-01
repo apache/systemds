@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.dml;
+package org.apache.sysml.test.integration.applications.dml;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ibm.bi.dml.test.integration.applications.GNMFTest;
+import org.apache.sysml.test.integration.applications.GNMFTest;
 
 @RunWith(value = Parameterized.class)
 public class GNMFDMLTest extends GNMFTest {

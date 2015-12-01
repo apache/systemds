@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.lops.compile;
+package org.apache.sysml.lops.compile;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,56 +30,56 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.AggBinaryOp;
-import com.ibm.bi.dml.hops.BinaryOp;
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.lops.AppendM;
-import com.ibm.bi.dml.lops.BinaryM;
-import com.ibm.bi.dml.lops.CombineBinary;
-import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.PMMJ;
-import com.ibm.bi.dml.lops.ParameterizedBuiltin;
-import com.ibm.bi.dml.lops.SortKeys;
-import com.ibm.bi.dml.lops.Data.OperationTypes;
-import com.ibm.bi.dml.lops.FunctionCallCP;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.Lop.Type;
-import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.MapMult;
-import com.ibm.bi.dml.lops.OutputParameters;
-import com.ibm.bi.dml.lops.OutputParameters.Format;
-import com.ibm.bi.dml.lops.PickByCount;
-import com.ibm.bi.dml.lops.Unary;
-import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.parser.Expression;
-import com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.StatementBlock;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
-import com.ibm.bi.dml.runtime.instructions.InstructionParser;
-import com.ibm.bi.dml.runtime.instructions.SPInstructionParser;
-import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.AggBinaryOp;
+import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.lops.AppendM;
+import org.apache.sysml.lops.BinaryM;
+import org.apache.sysml.lops.CombineBinary;
+import org.apache.sysml.lops.Data;
+import org.apache.sysml.lops.PMMJ;
+import org.apache.sysml.lops.ParameterizedBuiltin;
+import org.apache.sysml.lops.SortKeys;
+import org.apache.sysml.lops.Data.OperationTypes;
+import org.apache.sysml.lops.FunctionCallCP;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.Lop.Type;
+import org.apache.sysml.lops.LopProperties.ExecLocation;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.MapMult;
+import org.apache.sysml.lops.OutputParameters;
+import org.apache.sysml.lops.OutputParameters.Format;
+import org.apache.sysml.lops.PickByCount;
+import org.apache.sysml.lops.Unary;
+import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.Expression;
+import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.instructions.CPInstructionParser;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.InstructionParser;
+import org.apache.sysml.runtime.instructions.SPInstructionParser;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction;
+import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.sort.PickFromCompactInputFormat;
 
 
 
@@ -2775,12 +2775,12 @@ public class Dag<N extends Lop>
 		} else if (node.getType() == Type.CombineBinary) {
 			// Output format of CombineBinary (CB) depends on how the output is consumed
 			CombineBinary combine = (CombineBinary) node;
-			if ( combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreSort ) {
+			if ( combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreSort ) {
 				oinfo = OutputInfo.OutputInfoForSortInput; 
 			}
-			else if ( combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreCentralMoment 
-					  || combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreCovUnweighted 
-					  || combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreGroupedAggUnweighted ) {
+			else if ( combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreCentralMoment 
+					  || combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreCovUnweighted 
+					  || combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreGroupedAggUnweighted ) {
 				oinfo = OutputInfo.WeightedPairOutputInfo;
 			}
 		} else if ( node.getType() == Type.CombineTernary) {
@@ -2861,7 +2861,7 @@ public class Dag<N extends Lop>
 				out.addLastInstruction(currInstr);
 			}
 			else if(node instanceof ParameterizedBuiltin 
-					&& ((ParameterizedBuiltin)node).getOp() == com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM) {
+					&& ((ParameterizedBuiltin)node).getOp() == org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM) {
 				
 				ParameterizedBuiltin pbi = (ParameterizedBuiltin)node;
 				Lop input = pbi.getNamedInput(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
@@ -3661,7 +3661,7 @@ public class Dag<N extends Lop>
 		if (node.getExecLocation() == ExecLocation.Data ) {
 			if ( ((Data)node).getFileFormatType() == FileFormatTypes.CSV 
 					&& !(node.getInputs().get(0) instanceof ParameterizedBuiltin 
-							&& ((ParameterizedBuiltin)node.getInputs().get(0)).getOp() == com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM)) {
+							&& ((ParameterizedBuiltin)node.getInputs().get(0)).getOp() == org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM)) {
 				// Generate write instruction, which goes into CSV_WRITE Job
 				int output_index = start_index[0];
 				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), output_index));
@@ -3701,7 +3701,7 @@ public class Dag<N extends Lop>
 				break;
 				
 			case ParameterizedBuiltin:
-				if( ((ParameterizedBuiltin)node).getOp() == com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM ) {
+				if( ((ParameterizedBuiltin)node).getOp() == org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM ) {
 					shuffleInstructions.add(node.getInstructions(output_index));
 					if(DMLScript.ENABLE_DEBUG_MODE) {
 						MRJobLineNumbers.add(node._beginLine);
@@ -4239,13 +4239,13 @@ public class Dag<N extends Lop>
 				// InputInfo of L is the ouputInfo of CombineBinary
 				// And, the outputInfo of CombineBinary depends on the operation!
 				CombineBinary combine = (CombineBinary) node;
-				if ( combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreSort ) {
+				if ( combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreSort ) {
 					nodeInputInfo = new InputInfo(SequenceFileInputFormat.class,
 							DoubleWritable.class, IntWritable.class);
 				}
-				else if ( combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreCentralMoment 
-						  || combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreCovUnweighted
-						  || combine.getOperation() == com.ibm.bi.dml.lops.CombineBinary.OperationTypes.PreGroupedAggUnweighted ) {
+				else if ( combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreCentralMoment 
+						  || combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreCovUnweighted
+						  || combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreGroupedAggUnweighted ) {
 					nodeInputInfo = InputInfo.WeightedPairInputInfo;
 				}
 			} else if ( node.getType() == Type.CombineTernary ) {

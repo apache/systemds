@@ -36,7 +36,7 @@ class MLContext(object):
             monitorPerformance = (args[0] if len(args) > 0 else False)
             setForcedSparkExecType = (args[1] if len(args) > 1 else False)
             self.sc = sc
-            self.ml = sc._jvm.com.ibm.bi.dml.api.MLContext(sc._jsc, monitorPerformance, setForcedSparkExecType)
+            self.ml = sc._jvm.org.apache.sysml.api.MLContext(sc._jsc, monitorPerformance, setForcedSparkExecType)
         except Py4JError:
             traceback.print_exc()
 

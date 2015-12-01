@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.misc;
+package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
 
 /**
  * 

@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor;
+package org.apache.sysml.runtime.controlprogram.parfor;
 
-import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.instructions.cp.IntObject;
 
 /**
  * This static task partitioner virtually iterates over the given FOR loop (from, to, incr),

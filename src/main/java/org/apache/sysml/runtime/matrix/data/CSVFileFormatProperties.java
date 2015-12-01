@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.io.Serializable;
 
-import com.ibm.bi.dml.parser.DataExpression;
+import org.apache.sysml.parser.DataExpression;
 
 public class CSVFileFormatProperties extends FileFormatProperties implements Serializable
 {

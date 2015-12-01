@@ -15,21 +15,21 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.parfor;
+package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
 
 public class ParForColwiseDataPartitioningTest extends AutomatedTestBase 
 {

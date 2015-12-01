@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.utils;
+package org.apache.sysml.runtime.instructions.spark.utils;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -37,21 +37,21 @@ import org.apache.spark.mllib.regression.LabeledPoint;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.spark.data.SerLongWritable;
-import com.ibm.bi.dml.runtime.instructions.spark.data.SerText;
-import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
-import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.mapred.ReblockBuffer;
-import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.spark.data.SerLongWritable;
+import org.apache.sysml.runtime.instructions.spark.data.SerText;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.matrix.mapred.ReblockBuffer;
+import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.FastStringTokenizer;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class RDDConverterUtils 
 {
@@ -209,8 +209,8 @@ public class RDDConverterUtils
 	/**
 	 * Example usage:
 	 * <pre><code>
-	 * import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils
-	 * import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics
+	 * import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils
+	 * import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 	 * import org.apache.spark.api.java.JavaSparkContext
 	 * val A = sc.textFile("ranA.csv")
 	 * val Amc = new MatrixCharacteristics

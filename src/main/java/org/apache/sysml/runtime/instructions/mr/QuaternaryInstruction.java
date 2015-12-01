@@ -15,36 +15,36 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.mr;
+package org.apache.sysml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
-import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
-import com.ibm.bi.dml.lops.WeightedDivMMR;
-import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
-import com.ibm.bi.dml.lops.WeightedSquaredLoss;
-import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
-import com.ibm.bi.dml.lops.WeightedSquaredLossR;
-import com.ibm.bi.dml.lops.WeightedUnaryMM;
-import com.ibm.bi.dml.lops.WeightedUnaryMM.WUMMType;
-import com.ibm.bi.dml.lops.WeightedUnaryMMR;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.LibMatrixReorg;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
-import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.matrix.operators.QuaternaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.lops.WeightedCrossEntropy.WCeMMType;
+import org.apache.sysml.lops.WeightedDivMM.WDivMMType;
+import org.apache.sysml.lops.WeightedDivMMR;
+import org.apache.sysml.lops.WeightedSigmoid.WSigmoidType;
+import org.apache.sysml.lops.WeightedSquaredLoss;
+import org.apache.sysml.lops.WeightedSquaredLoss.WeightsType;
+import org.apache.sysml.lops.WeightedSquaredLossR;
+import org.apache.sysml.lops.WeightedUnaryMM;
+import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
+import org.apache.sysml.lops.WeightedUnaryMMR;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.functionobjects.SwapIndex;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixValue;
+import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
+import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.matrix.mapred.MRBaseForCommonInstructions;
+import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
+import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 
 /**
  * 

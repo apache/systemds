@@ -15,16 +15,16 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.binary.matrix;
+package org.apache.sysml.test.integration.functions.binary.matrix;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.utils.Statistics;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * Tests the number of mapmult operations that can be piggybacked into the same GMR job.

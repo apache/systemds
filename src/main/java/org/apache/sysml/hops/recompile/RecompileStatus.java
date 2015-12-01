@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.recompile;
+package org.apache.sysml.hops.recompile;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.parser.VariableSet;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.parser.VariableSet;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class RecompileStatus 
 {

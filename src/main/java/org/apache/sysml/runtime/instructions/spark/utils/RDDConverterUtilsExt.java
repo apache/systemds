@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.utils;
+package org.apache.sysml.runtime.instructions.spark.utils;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -45,19 +45,19 @@ import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.api.MLOutput.ConvertDoubleArrayToRows;
-import com.ibm.bi.dml.api.MLOutput.ProjectRows;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
-import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.mapred.ReblockBuffer;
-import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.api.MLOutput.ConvertDoubleArrayToRows;
+import org.apache.sysml.api.MLOutput.ProjectRows;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.matrix.mapred.ReblockBuffer;
+import org.apache.sysml.runtime.util.FastStringTokenizer;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * NOTE: These are experimental converter utils. Once thoroughly tested, they
@@ -77,8 +77,8 @@ public class RDDConverterUtilsExt
 	/**
 	 * Example usage:
 	 * <pre><code>
-	 * import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt
-	 * import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics
+	 * import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt
+	 * import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 	 * import org.apache.spark.api.java.JavaSparkContext
 	 * import org.apache.spark.mllib.linalg.distributed.MatrixEntry
 	 * import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix

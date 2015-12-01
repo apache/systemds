@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.yarn;
+package org.apache.sysml.yarn;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

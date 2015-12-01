@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,11 +23,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Set;
 
-import com.ibm.bi.dml.lops.LopProperties;
-import com.ibm.bi.dml.lops.Lop;
+import org.apache.sysml.lops.LopProperties;
+import org.apache.sysml.lops.Lop;
 
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 
 /**
  * Internal representation of a plan alternative for program blocks and instructions 

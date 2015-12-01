@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.unary.matrix;
+package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

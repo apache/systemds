@@ -15,16 +15,16 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.external;
+package org.apache.sysml.test.integration.functions.external;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.utils.Statistics;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.utils.Statistics;
 
 public class FunctionExpressionsTest extends AutomatedTestBase 
 {

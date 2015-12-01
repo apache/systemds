@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.io.csv;
+package org.apache.sysml.test.integration.functions.io.csv;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

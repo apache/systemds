@@ -15,19 +15,19 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt;
+package org.apache.sysml.hops.globalopt;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.FunctionOp;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode.NodeType;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.FunctionOp;
+import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 
 public class Plan 

@@ -15,22 +15,22 @@
  * 
  */
 
-package com.ibm.bi.dml.udf.lib;
+package org.apache.sysml.udf.lib;
 
-//import com.ibm.bi.dml.packagesupport.Scalar;
-//import com.ibm.bi.dml.packagesupport.FIO;
+//import org.apache.sysml.packagesupport.Scalar;
+//import org.apache.sysml.packagesupport.FIO;
 
-import com.ibm.bi.dml.udf.FunctionParameter;
-import com.ibm.bi.dml.udf.PackageFunction;
-import com.ibm.bi.dml.udf.PackageRuntimeException;
-import com.ibm.bi.dml.udf.Scalar;
-import com.ibm.bi.dml.udf.Scalar.ScalarValueType;
+import org.apache.sysml.udf.FunctionParameter;
+import org.apache.sysml.udf.PackageFunction;
+import org.apache.sysml.udf.PackageRuntimeException;
+import org.apache.sysml.udf.Scalar;
+import org.apache.sysml.udf.Scalar.ScalarValueType;
 
 /**
  * Wrapper class for time invocation
  * 
  * time = externalFunction(Integer i) return (Double B) implemented in
- * (classname="com.ibm.bi.dml.udf.lib.TimeWrapper",exectype="mem");
+ * (classname="org.apache.sysml.udf.lib.TimeWrapper",exectype="mem");
  * 
  * t = time (1);
  * 

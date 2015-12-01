@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.utils;
+package org.apache.sysml.utils;
 
-import com.ibm.bi.dml.api.DMLException;
+import org.apache.sysml.api.DMLException;
 
 /**
  * This exception should be thrown to flag errors by systemML apps

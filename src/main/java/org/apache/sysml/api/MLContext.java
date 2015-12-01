@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.api;
+package org.apache.sysml.api;
 
 
 import java.io.IOException;
@@ -32,53 +32,53 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
 
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.api.jmlc.JMLCUtils;
-import com.ibm.bi.dml.api.monitoring.SparkMonitoringUtil;
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
-import com.ibm.bi.dml.hops.globalopt.GlobalOptimizerWrapper;
-import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
-import com.ibm.bi.dml.hops.rewrite.RewriteRemovePersistentReadWrite;
-import com.ibm.bi.dml.parser.AParserWrapper;
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.parser.Expression;
-import com.ibm.bi.dml.parser.IntIdentifier;
-import com.ibm.bi.dml.parser.LanguageException;
-import com.ibm.bi.dml.parser.StringIdentifier;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.cp.Data;
-import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
-import com.ibm.bi.dml.runtime.instructions.spark.data.RDDProperties;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockPairFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyTextInputFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.SparkListener;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.utils.Explain;
-import com.ibm.bi.dml.utils.Statistics;
-import com.ibm.bi.dml.utils.Explain.ExplainCounts;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.api.jmlc.JMLCUtils;
+import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
+import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
+import org.apache.sysml.hops.rewrite.ProgramRewriter;
+import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
+import org.apache.sysml.parser.AParserWrapper;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.Expression;
+import org.apache.sysml.parser.IntIdentifier;
+import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.StringIdentifier;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysml.runtime.instructions.spark.data.RDDProperties;
+import org.apache.sysml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
+import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.utils.Explain;
+import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.utils.Explain.ExplainCounts;
 
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
@@ -89,7 +89,7 @@ import org.apache.spark.sql.SQLContext;
  * <p>
  * Typical usage for MLContext is as follows:
  * <pre><code>
- * scala> import com.ibm.bi.dml.api.MLContext
+ * scala> import org.apache.sysml.api.MLContext
  * </code></pre>
  * <p>
  * Create input DataFrame from CSV file and potentially perform some feature transformation

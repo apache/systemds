@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.debug;
+package org.apache.sysml.debug;
 
 import java.io.BufferedReader;
 import java.io.IOException;

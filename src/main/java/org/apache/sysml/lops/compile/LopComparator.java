@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.lops.compile;
+package org.apache.sysml.lops.compile;
 
 import java.util.Comparator;
 
-import com.ibm.bi.dml.lops.Lop;
+import org.apache.sysml.lops.Lop;
 
 
 /**

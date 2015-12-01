@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.api.ml.functions;
+package org.apache.sysml.api.ml.functions;
 
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Row;

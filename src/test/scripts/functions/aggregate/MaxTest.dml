@@ -16,7 +16,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.aggregate.MaxTest.java
+# junit test class: org.apache.sysml.test.integration.functions.aggregate.MaxTest.java
 
 $$readhelper$$
 

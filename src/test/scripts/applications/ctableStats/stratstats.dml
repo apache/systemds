@@ -307,7 +307,7 @@ print ("END STRATIFIED STATISTICS SCRIPT");
 
 
 deNaN = externalFunction (Matrix[Double] A) return (Matrix[Double] B)
-        implemented in (classname = "com.ibm.bi.dml.udf.lib.DeNaNWrapper", exectype = "mem");
+        implemented in (classname = "org.apache.sysml.udf.lib.DeNaNWrapper", exectype = "mem");
 
 fStat_tailprob = function (Matrix[double] fStat, Matrix[double] df_1, Matrix[double] df_2) return (Matrix[double] tailprob)
 { # TEMPORARY IMPLEMENTATION

@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.data;
+package org.apache.sysml.runtime.instructions.spark.data;
 
 import java.io.Serializable;
 
 import org.apache.spark.broadcast.Broadcast;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
  * This class is a wrapper around an array of broadcasts of partitioned matrix blocks,

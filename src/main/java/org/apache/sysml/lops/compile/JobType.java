@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.lops.compile;
+package org.apache.sysml.lops.compile;
 
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.ParameterizedBuiltin;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import org.apache.sysml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.Data;
+import org.apache.sysml.lops.ParameterizedBuiltin;
+import org.apache.sysml.runtime.DMLRuntimeException;
 
 
 /**

@@ -2,7 +2,7 @@
 # Ax = b: solve for x via QR decomposition
 
 #solve = externalFunction(Matrix[Double] a, Matrix[Double] b)  return(Matrix[Double] c)
-#  implemented in (classname="com.ibm.bi.dml.udf.lib.LinearSolverWrapperCP",exectype="mem")   
+#  implemented in (classname="org.apache.sysml.udf.lib.LinearSolverWrapperCP",exectype="mem")   
 
 A = read($1);
 b = read($2);

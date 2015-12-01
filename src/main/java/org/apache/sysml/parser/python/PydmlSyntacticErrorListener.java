@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser.python;
+package org.apache.sysml.parser.python;
 
 import java.util.Stack;
 
@@ -25,7 +25,7 @@ import org.antlr.v4.runtime.Recognizer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.api.DMLScript;
+import org.apache.sysml.api.DMLScript;
 
 public class PydmlSyntacticErrorListener {
 	

@@ -16,12 +16,12 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 
-import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
+import org.apache.sysml.runtime.util.FastStringTokenizer;
 
 public class TextCellToRowBlockConverter implements Converter<LongWritable, Text, MatrixIndexes, MatrixBlock>
 {

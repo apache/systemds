@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 
 public abstract class Identifier extends Expression
 {

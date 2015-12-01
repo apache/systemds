@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.scalability;
+package org.apache.sysml.test.integration.scalability;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

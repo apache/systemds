@@ -16,30 +16,30 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.operators;
+package org.apache.sysml.runtime.matrix.operators;
 
 import java.io.Serializable;
 
-import com.ibm.bi.dml.hops.Hop.OpOp2;
-import com.ibm.bi.dml.runtime.functionobjects.And;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.Divide;
-import com.ibm.bi.dml.runtime.functionobjects.Equals;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.IntegerDivide;
-import com.ibm.bi.dml.runtime.functionobjects.LessThan;
-import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.Minus;
-import com.ibm.bi.dml.runtime.functionobjects.MinusNz;
-import com.ibm.bi.dml.runtime.functionobjects.Modulus;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
-import com.ibm.bi.dml.runtime.functionobjects.Or;
-import com.ibm.bi.dml.runtime.functionobjects.Plus;
-import com.ibm.bi.dml.runtime.functionobjects.Power;
-import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
+import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.runtime.functionobjects.And;
+import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Divide;
+import org.apache.sysml.runtime.functionobjects.Equals;
+import org.apache.sysml.runtime.functionobjects.GreaterThan;
+import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
+import org.apache.sysml.runtime.functionobjects.IntegerDivide;
+import org.apache.sysml.runtime.functionobjects.LessThan;
+import org.apache.sysml.runtime.functionobjects.LessThanEquals;
+import org.apache.sysml.runtime.functionobjects.Minus;
+import org.apache.sysml.runtime.functionobjects.MinusNz;
+import org.apache.sysml.runtime.functionobjects.Modulus;
+import org.apache.sysml.runtime.functionobjects.Multiply;
+import org.apache.sysml.runtime.functionobjects.NotEquals;
+import org.apache.sysml.runtime.functionobjects.Or;
+import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.Power;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
 
 public class BinaryOperator  extends Operator implements Serializable
 {

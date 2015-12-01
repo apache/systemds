@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,27 +23,27 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.CSVReBlock;
-import com.ibm.bi.dml.lops.Checkpoint;
-import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.ReBlock;
-import com.ibm.bi.dml.lops.UnaryCP;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.lops.CSVReBlock;
+import org.apache.sysml.lops.Checkpoint;
+import org.apache.sysml.lops.Data;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.ReBlock;
+import org.apache.sysml.lops.UnaryCP;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public abstract class Hop 
@@ -1100,180 +1100,180 @@ public abstract class Hop
 		RowCol, Row, Col
 	};
 
-	protected static final HashMap<DataOpTypes, com.ibm.bi.dml.lops.Data.OperationTypes> HopsData2Lops;
+	protected static final HashMap<DataOpTypes, org.apache.sysml.lops.Data.OperationTypes> HopsData2Lops;
 	static {
-		HopsData2Lops = new HashMap<Hop.DataOpTypes, com.ibm.bi.dml.lops.Data.OperationTypes>();
-		HopsData2Lops.put(DataOpTypes.PERSISTENTREAD, com.ibm.bi.dml.lops.Data.OperationTypes.READ);
-		HopsData2Lops.put(DataOpTypes.PERSISTENTWRITE, com.ibm.bi.dml.lops.Data.OperationTypes.WRITE);
-		HopsData2Lops.put(DataOpTypes.TRANSIENTWRITE, com.ibm.bi.dml.lops.Data.OperationTypes.WRITE);
-		HopsData2Lops.put(DataOpTypes.TRANSIENTREAD, com.ibm.bi.dml.lops.Data.OperationTypes.READ);
+		HopsData2Lops = new HashMap<Hop.DataOpTypes, org.apache.sysml.lops.Data.OperationTypes>();
+		HopsData2Lops.put(DataOpTypes.PERSISTENTREAD, org.apache.sysml.lops.Data.OperationTypes.READ);
+		HopsData2Lops.put(DataOpTypes.PERSISTENTWRITE, org.apache.sysml.lops.Data.OperationTypes.WRITE);
+		HopsData2Lops.put(DataOpTypes.TRANSIENTWRITE, org.apache.sysml.lops.Data.OperationTypes.WRITE);
+		HopsData2Lops.put(DataOpTypes.TRANSIENTREAD, org.apache.sysml.lops.Data.OperationTypes.READ);
 	}
 
-	protected static final HashMap<Hop.AggOp, com.ibm.bi.dml.lops.Aggregate.OperationTypes> HopsAgg2Lops;
+	protected static final HashMap<Hop.AggOp, org.apache.sysml.lops.Aggregate.OperationTypes> HopsAgg2Lops;
 	static {
-		HopsAgg2Lops = new HashMap<Hop.AggOp, com.ibm.bi.dml.lops.Aggregate.OperationTypes>();
-		HopsAgg2Lops.put(AggOp.SUM, com.ibm.bi.dml.lops.Aggregate.OperationTypes.KahanSum);
-		HopsAgg2Lops.put(AggOp.SUM_SQ, com.ibm.bi.dml.lops.Aggregate.OperationTypes.KahanSumSq);
-		HopsAgg2Lops.put(AggOp.TRACE, com.ibm.bi.dml.lops.Aggregate.OperationTypes.KahanTrace);
-		HopsAgg2Lops.put(AggOp.MIN, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Min);
-		HopsAgg2Lops.put(AggOp.MAX, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Max);
-		HopsAgg2Lops.put(AggOp.MAXINDEX, com.ibm.bi.dml.lops.Aggregate.OperationTypes.MaxIndex);
-		HopsAgg2Lops.put(AggOp.MININDEX, com.ibm.bi.dml.lops.Aggregate.OperationTypes.MinIndex);
-		HopsAgg2Lops.put(AggOp.PROD, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Product);
-		HopsAgg2Lops.put(AggOp.MEAN, com.ibm.bi.dml.lops.Aggregate.OperationTypes.Mean);
+		HopsAgg2Lops = new HashMap<Hop.AggOp, org.apache.sysml.lops.Aggregate.OperationTypes>();
+		HopsAgg2Lops.put(AggOp.SUM, org.apache.sysml.lops.Aggregate.OperationTypes.KahanSum);
+		HopsAgg2Lops.put(AggOp.SUM_SQ, org.apache.sysml.lops.Aggregate.OperationTypes.KahanSumSq);
+		HopsAgg2Lops.put(AggOp.TRACE, org.apache.sysml.lops.Aggregate.OperationTypes.KahanTrace);
+		HopsAgg2Lops.put(AggOp.MIN, org.apache.sysml.lops.Aggregate.OperationTypes.Min);
+		HopsAgg2Lops.put(AggOp.MAX, org.apache.sysml.lops.Aggregate.OperationTypes.Max);
+		HopsAgg2Lops.put(AggOp.MAXINDEX, org.apache.sysml.lops.Aggregate.OperationTypes.MaxIndex);
+		HopsAgg2Lops.put(AggOp.MININDEX, org.apache.sysml.lops.Aggregate.OperationTypes.MinIndex);
+		HopsAgg2Lops.put(AggOp.PROD, org.apache.sysml.lops.Aggregate.OperationTypes.Product);
+		HopsAgg2Lops.put(AggOp.MEAN, org.apache.sysml.lops.Aggregate.OperationTypes.Mean);
 	}
 
-	protected static final HashMap<ReOrgOp, com.ibm.bi.dml.lops.Transform.OperationTypes> HopsTransf2Lops;
+	protected static final HashMap<ReOrgOp, org.apache.sysml.lops.Transform.OperationTypes> HopsTransf2Lops;
 	static {
-		HopsTransf2Lops = new HashMap<ReOrgOp, com.ibm.bi.dml.lops.Transform.OperationTypes>();
-		HopsTransf2Lops.put(ReOrgOp.TRANSPOSE, com.ibm.bi.dml.lops.Transform.OperationTypes.Transpose);
-		HopsTransf2Lops.put(ReOrgOp.DIAG, com.ibm.bi.dml.lops.Transform.OperationTypes.Diag);
-		HopsTransf2Lops.put(ReOrgOp.RESHAPE, com.ibm.bi.dml.lops.Transform.OperationTypes.Reshape);
-		HopsTransf2Lops.put(ReOrgOp.SORT, com.ibm.bi.dml.lops.Transform.OperationTypes.Sort);
-
-	}
-
-	protected static final HashMap<Hop.Direction, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
-	static {
-		HopsDirection2Lops = new HashMap<Hop.Direction, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes>();
-		HopsDirection2Lops.put(Direction.RowCol, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes.RowCol);
-		HopsDirection2Lops.put(Direction.Col, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes.Col);
-		HopsDirection2Lops.put(Direction.Row, com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes.Row);
+		HopsTransf2Lops = new HashMap<ReOrgOp, org.apache.sysml.lops.Transform.OperationTypes>();
+		HopsTransf2Lops.put(ReOrgOp.TRANSPOSE, org.apache.sysml.lops.Transform.OperationTypes.Transpose);
+		HopsTransf2Lops.put(ReOrgOp.DIAG, org.apache.sysml.lops.Transform.OperationTypes.Diag);
+		HopsTransf2Lops.put(ReOrgOp.RESHAPE, org.apache.sysml.lops.Transform.OperationTypes.Reshape);
+		HopsTransf2Lops.put(ReOrgOp.SORT, org.apache.sysml.lops.Transform.OperationTypes.Sort);
 
 	}
 
-	protected static final HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Binary.OperationTypes> HopsOpOp2LopsB;
+	protected static final HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
 	static {
-		HopsOpOp2LopsB = new HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Binary.OperationTypes>();
-		HopsOpOp2LopsB.put(OpOp2.PLUS, com.ibm.bi.dml.lops.Binary.OperationTypes.ADD);
-		HopsOpOp2LopsB.put(OpOp2.MINUS, com.ibm.bi.dml.lops.Binary.OperationTypes.SUBTRACT);
-		HopsOpOp2LopsB.put(OpOp2.MULT, com.ibm.bi.dml.lops.Binary.OperationTypes.MULTIPLY);
-		HopsOpOp2LopsB.put(OpOp2.DIV, com.ibm.bi.dml.lops.Binary.OperationTypes.DIVIDE);
-		HopsOpOp2LopsB.put(OpOp2.MODULUS, com.ibm.bi.dml.lops.Binary.OperationTypes.MODULUS);
-		HopsOpOp2LopsB.put(OpOp2.INTDIV, com.ibm.bi.dml.lops.Binary.OperationTypes.INTDIV);
-		HopsOpOp2LopsB.put(OpOp2.MINUS1_MULT, com.ibm.bi.dml.lops.Binary.OperationTypes.MINUS1_MULTIPLY);
-		HopsOpOp2LopsB.put(OpOp2.LESS, com.ibm.bi.dml.lops.Binary.OperationTypes.LESS_THAN);
-		HopsOpOp2LopsB.put(OpOp2.LESSEQUAL, com.ibm.bi.dml.lops.Binary.OperationTypes.LESS_THAN_OR_EQUALS);
-		HopsOpOp2LopsB.put(OpOp2.GREATER, com.ibm.bi.dml.lops.Binary.OperationTypes.GREATER_THAN);
-		HopsOpOp2LopsB.put(OpOp2.GREATEREQUAL, com.ibm.bi.dml.lops.Binary.OperationTypes.GREATER_THAN_OR_EQUALS);
-		HopsOpOp2LopsB.put(OpOp2.EQUAL, com.ibm.bi.dml.lops.Binary.OperationTypes.EQUALS);
-		HopsOpOp2LopsB.put(OpOp2.NOTEQUAL, com.ibm.bi.dml.lops.Binary.OperationTypes.NOT_EQUALS);
-		HopsOpOp2LopsB.put(OpOp2.MIN, com.ibm.bi.dml.lops.Binary.OperationTypes.MIN);
-		HopsOpOp2LopsB.put(OpOp2.MAX, com.ibm.bi.dml.lops.Binary.OperationTypes.MAX);
-		HopsOpOp2LopsB.put(OpOp2.AND, com.ibm.bi.dml.lops.Binary.OperationTypes.OR);
-		HopsOpOp2LopsB.put(OpOp2.OR, com.ibm.bi.dml.lops.Binary.OperationTypes.AND);
-		HopsOpOp2LopsB.put(OpOp2.SOLVE, com.ibm.bi.dml.lops.Binary.OperationTypes.SOLVE);
-		HopsOpOp2LopsB.put(OpOp2.POW, com.ibm.bi.dml.lops.Binary.OperationTypes.POW);
-		HopsOpOp2LopsB.put(OpOp2.LOG, com.ibm.bi.dml.lops.Binary.OperationTypes.NOTSUPPORTED);
+		HopsDirection2Lops = new HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes>();
+		HopsDirection2Lops.put(Direction.RowCol, org.apache.sysml.lops.PartialAggregate.DirectionTypes.RowCol);
+		HopsDirection2Lops.put(Direction.Col, org.apache.sysml.lops.PartialAggregate.DirectionTypes.Col);
+		HopsDirection2Lops.put(Direction.Row, org.apache.sysml.lops.PartialAggregate.DirectionTypes.Row);
+
 	}
 
-	protected static final HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes> HopsOpOp2LopsBS;
+	protected static final HashMap<Hop.OpOp2, org.apache.sysml.lops.Binary.OperationTypes> HopsOpOp2LopsB;
 	static {
-		HopsOpOp2LopsBS = new HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes>();
-		HopsOpOp2LopsBS.put(OpOp2.PLUS, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.ADD);	
-		HopsOpOp2LopsBS.put(OpOp2.MINUS, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.SUBTRACT);
-		HopsOpOp2LopsBS.put(OpOp2.MULT, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.MULTIPLY);
-		HopsOpOp2LopsBS.put(OpOp2.DIV, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.DIVIDE);
-		HopsOpOp2LopsBS.put(OpOp2.MODULUS, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.MODULUS);
-		HopsOpOp2LopsBS.put(OpOp2.INTDIV, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.INTDIV);
-		HopsOpOp2LopsBS.put(OpOp2.LESS, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.LESS_THAN);
-		HopsOpOp2LopsBS.put(OpOp2.LESSEQUAL, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.LESS_THAN_OR_EQUALS);
-		HopsOpOp2LopsBS.put(OpOp2.GREATER, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.GREATER_THAN);
-		HopsOpOp2LopsBS.put(OpOp2.GREATEREQUAL, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.GREATER_THAN_OR_EQUALS);
-		HopsOpOp2LopsBS.put(OpOp2.EQUAL, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.EQUALS);
-		HopsOpOp2LopsBS.put(OpOp2.NOTEQUAL, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.NOT_EQUALS);
-		HopsOpOp2LopsBS.put(OpOp2.MIN, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.MIN);
-		HopsOpOp2LopsBS.put(OpOp2.MAX, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.MAX);
-		HopsOpOp2LopsBS.put(OpOp2.AND, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.AND);
-		HopsOpOp2LopsBS.put(OpOp2.OR, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.OR);
-		HopsOpOp2LopsBS.put(OpOp2.LOG, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.LOG);
-		HopsOpOp2LopsBS.put(OpOp2.POW, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.POW);
-		HopsOpOp2LopsBS.put(OpOp2.PRINT, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.PRINT);
-		HopsOpOp2LopsBS.put(OpOp2.SEQINCR, com.ibm.bi.dml.lops.BinaryScalar.OperationTypes.SEQINCR);
+		HopsOpOp2LopsB = new HashMap<Hop.OpOp2, org.apache.sysml.lops.Binary.OperationTypes>();
+		HopsOpOp2LopsB.put(OpOp2.PLUS, org.apache.sysml.lops.Binary.OperationTypes.ADD);
+		HopsOpOp2LopsB.put(OpOp2.MINUS, org.apache.sysml.lops.Binary.OperationTypes.SUBTRACT);
+		HopsOpOp2LopsB.put(OpOp2.MULT, org.apache.sysml.lops.Binary.OperationTypes.MULTIPLY);
+		HopsOpOp2LopsB.put(OpOp2.DIV, org.apache.sysml.lops.Binary.OperationTypes.DIVIDE);
+		HopsOpOp2LopsB.put(OpOp2.MODULUS, org.apache.sysml.lops.Binary.OperationTypes.MODULUS);
+		HopsOpOp2LopsB.put(OpOp2.INTDIV, org.apache.sysml.lops.Binary.OperationTypes.INTDIV);
+		HopsOpOp2LopsB.put(OpOp2.MINUS1_MULT, org.apache.sysml.lops.Binary.OperationTypes.MINUS1_MULTIPLY);
+		HopsOpOp2LopsB.put(OpOp2.LESS, org.apache.sysml.lops.Binary.OperationTypes.LESS_THAN);
+		HopsOpOp2LopsB.put(OpOp2.LESSEQUAL, org.apache.sysml.lops.Binary.OperationTypes.LESS_THAN_OR_EQUALS);
+		HopsOpOp2LopsB.put(OpOp2.GREATER, org.apache.sysml.lops.Binary.OperationTypes.GREATER_THAN);
+		HopsOpOp2LopsB.put(OpOp2.GREATEREQUAL, org.apache.sysml.lops.Binary.OperationTypes.GREATER_THAN_OR_EQUALS);
+		HopsOpOp2LopsB.put(OpOp2.EQUAL, org.apache.sysml.lops.Binary.OperationTypes.EQUALS);
+		HopsOpOp2LopsB.put(OpOp2.NOTEQUAL, org.apache.sysml.lops.Binary.OperationTypes.NOT_EQUALS);
+		HopsOpOp2LopsB.put(OpOp2.MIN, org.apache.sysml.lops.Binary.OperationTypes.MIN);
+		HopsOpOp2LopsB.put(OpOp2.MAX, org.apache.sysml.lops.Binary.OperationTypes.MAX);
+		HopsOpOp2LopsB.put(OpOp2.AND, org.apache.sysml.lops.Binary.OperationTypes.OR);
+		HopsOpOp2LopsB.put(OpOp2.OR, org.apache.sysml.lops.Binary.OperationTypes.AND);
+		HopsOpOp2LopsB.put(OpOp2.SOLVE, org.apache.sysml.lops.Binary.OperationTypes.SOLVE);
+		HopsOpOp2LopsB.put(OpOp2.POW, org.apache.sysml.lops.Binary.OperationTypes.POW);
+		HopsOpOp2LopsB.put(OpOp2.LOG, org.apache.sysml.lops.Binary.OperationTypes.NOTSUPPORTED);
 	}
 
-	protected static final HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
+	protected static final HashMap<Hop.OpOp2, org.apache.sysml.lops.BinaryScalar.OperationTypes> HopsOpOp2LopsBS;
 	static {
-		HopsOpOp2LopsU = new HashMap<Hop.OpOp2, com.ibm.bi.dml.lops.Unary.OperationTypes>();
-		HopsOpOp2LopsU.put(OpOp2.PLUS, com.ibm.bi.dml.lops.Unary.OperationTypes.ADD);
-		HopsOpOp2LopsU.put(OpOp2.MINUS, com.ibm.bi.dml.lops.Unary.OperationTypes.SUBTRACT);
-		HopsOpOp2LopsU.put(OpOp2.MULT, com.ibm.bi.dml.lops.Unary.OperationTypes.MULTIPLY);
-		HopsOpOp2LopsU.put(OpOp2.DIV, com.ibm.bi.dml.lops.Unary.OperationTypes.DIVIDE);
-		HopsOpOp2LopsU.put(OpOp2.MODULUS, com.ibm.bi.dml.lops.Unary.OperationTypes.MODULUS);
-		HopsOpOp2LopsU.put(OpOp2.INTDIV, com.ibm.bi.dml.lops.Unary.OperationTypes.INTDIV);
-		HopsOpOp2LopsU.put(OpOp2.MINUS1_MULT, com.ibm.bi.dml.lops.Unary.OperationTypes.MINUS1_MULTIPLY);
-		HopsOpOp2LopsU.put(OpOp2.LESSEQUAL, com.ibm.bi.dml.lops.Unary.OperationTypes.LESS_THAN_OR_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.LESS, com.ibm.bi.dml.lops.Unary.OperationTypes.LESS_THAN);
-		HopsOpOp2LopsU.put(OpOp2.GREATEREQUAL, com.ibm.bi.dml.lops.Unary.OperationTypes.GREATER_THAN_OR_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.GREATER, com.ibm.bi.dml.lops.Unary.OperationTypes.GREATER_THAN);
-		HopsOpOp2LopsU.put(OpOp2.EQUAL, com.ibm.bi.dml.lops.Unary.OperationTypes.EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.NOTEQUAL, com.ibm.bi.dml.lops.Unary.OperationTypes.NOT_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.AND, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp2LopsU.put(OpOp2.OR, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp2LopsU.put(OpOp2.MAX, com.ibm.bi.dml.lops.Unary.OperationTypes.MAX);
-		HopsOpOp2LopsU.put(OpOp2.MIN, com.ibm.bi.dml.lops.Unary.OperationTypes.MIN);
-		HopsOpOp2LopsU.put(OpOp2.LOG, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG);
-		HopsOpOp2LopsU.put(OpOp2.POW, com.ibm.bi.dml.lops.Unary.OperationTypes.POW);
-		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, com.ibm.bi.dml.lops.Unary.OperationTypes.SUBTRACT_NZ);
-		HopsOpOp2LopsU.put(OpOp2.LOG_NZ, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG_NZ);
+		HopsOpOp2LopsBS = new HashMap<Hop.OpOp2, org.apache.sysml.lops.BinaryScalar.OperationTypes>();
+		HopsOpOp2LopsBS.put(OpOp2.PLUS, org.apache.sysml.lops.BinaryScalar.OperationTypes.ADD);	
+		HopsOpOp2LopsBS.put(OpOp2.MINUS, org.apache.sysml.lops.BinaryScalar.OperationTypes.SUBTRACT);
+		HopsOpOp2LopsBS.put(OpOp2.MULT, org.apache.sysml.lops.BinaryScalar.OperationTypes.MULTIPLY);
+		HopsOpOp2LopsBS.put(OpOp2.DIV, org.apache.sysml.lops.BinaryScalar.OperationTypes.DIVIDE);
+		HopsOpOp2LopsBS.put(OpOp2.MODULUS, org.apache.sysml.lops.BinaryScalar.OperationTypes.MODULUS);
+		HopsOpOp2LopsBS.put(OpOp2.INTDIV, org.apache.sysml.lops.BinaryScalar.OperationTypes.INTDIV);
+		HopsOpOp2LopsBS.put(OpOp2.LESS, org.apache.sysml.lops.BinaryScalar.OperationTypes.LESS_THAN);
+		HopsOpOp2LopsBS.put(OpOp2.LESSEQUAL, org.apache.sysml.lops.BinaryScalar.OperationTypes.LESS_THAN_OR_EQUALS);
+		HopsOpOp2LopsBS.put(OpOp2.GREATER, org.apache.sysml.lops.BinaryScalar.OperationTypes.GREATER_THAN);
+		HopsOpOp2LopsBS.put(OpOp2.GREATEREQUAL, org.apache.sysml.lops.BinaryScalar.OperationTypes.GREATER_THAN_OR_EQUALS);
+		HopsOpOp2LopsBS.put(OpOp2.EQUAL, org.apache.sysml.lops.BinaryScalar.OperationTypes.EQUALS);
+		HopsOpOp2LopsBS.put(OpOp2.NOTEQUAL, org.apache.sysml.lops.BinaryScalar.OperationTypes.NOT_EQUALS);
+		HopsOpOp2LopsBS.put(OpOp2.MIN, org.apache.sysml.lops.BinaryScalar.OperationTypes.MIN);
+		HopsOpOp2LopsBS.put(OpOp2.MAX, org.apache.sysml.lops.BinaryScalar.OperationTypes.MAX);
+		HopsOpOp2LopsBS.put(OpOp2.AND, org.apache.sysml.lops.BinaryScalar.OperationTypes.AND);
+		HopsOpOp2LopsBS.put(OpOp2.OR, org.apache.sysml.lops.BinaryScalar.OperationTypes.OR);
+		HopsOpOp2LopsBS.put(OpOp2.LOG, org.apache.sysml.lops.BinaryScalar.OperationTypes.LOG);
+		HopsOpOp2LopsBS.put(OpOp2.POW, org.apache.sysml.lops.BinaryScalar.OperationTypes.POW);
+		HopsOpOp2LopsBS.put(OpOp2.PRINT, org.apache.sysml.lops.BinaryScalar.OperationTypes.PRINT);
+		HopsOpOp2LopsBS.put(OpOp2.SEQINCR, org.apache.sysml.lops.BinaryScalar.OperationTypes.SEQINCR);
 	}
 
-	protected static final HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
+	protected static final HashMap<Hop.OpOp2, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
 	static {
-		HopsOpOp1LopsU = new HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.Unary.OperationTypes>();
-		HopsOpOp1LopsU.put(OpOp1.NOT, com.ibm.bi.dml.lops.Unary.OperationTypes.NOT);
-		HopsOpOp1LopsU.put(OpOp1.ABS, com.ibm.bi.dml.lops.Unary.OperationTypes.ABS);
-		HopsOpOp1LopsU.put(OpOp1.SIN, com.ibm.bi.dml.lops.Unary.OperationTypes.SIN);
-		HopsOpOp1LopsU.put(OpOp1.COS, com.ibm.bi.dml.lops.Unary.OperationTypes.COS);
-		HopsOpOp1LopsU.put(OpOp1.TAN, com.ibm.bi.dml.lops.Unary.OperationTypes.TAN);
-		HopsOpOp1LopsU.put(OpOp1.ASIN, com.ibm.bi.dml.lops.Unary.OperationTypes.ASIN);
-		HopsOpOp1LopsU.put(OpOp1.ACOS, com.ibm.bi.dml.lops.Unary.OperationTypes.ACOS);
-		HopsOpOp1LopsU.put(OpOp1.ATAN, com.ibm.bi.dml.lops.Unary.OperationTypes.ATAN);
-		HopsOpOp1LopsU.put(OpOp1.SQRT, com.ibm.bi.dml.lops.Unary.OperationTypes.SQRT);
-		HopsOpOp1LopsU.put(OpOp1.EXP, com.ibm.bi.dml.lops.Unary.OperationTypes.EXP);
-		HopsOpOp1LopsU.put(OpOp1.LOG, com.ibm.bi.dml.lops.Unary.OperationTypes.LOG);
-		HopsOpOp1LopsU.put(OpOp1.ROUND, com.ibm.bi.dml.lops.Unary.OperationTypes.ROUND);
-		HopsOpOp1LopsU.put(OpOp1.CEIL, com.ibm.bi.dml.lops.Unary.OperationTypes.CEIL);
-		HopsOpOp1LopsU.put(OpOp1.FLOOR, com.ibm.bi.dml.lops.Unary.OperationTypes.FLOOR);
-		HopsOpOp1LopsU.put(OpOp1.CUMSUM, com.ibm.bi.dml.lops.Unary.OperationTypes.CUMSUM);
-		HopsOpOp1LopsU.put(OpOp1.CUMPROD, com.ibm.bi.dml.lops.Unary.OperationTypes.CUMPROD);
-		HopsOpOp1LopsU.put(OpOp1.CUMMIN, com.ibm.bi.dml.lops.Unary.OperationTypes.CUMMIN);
-		HopsOpOp1LopsU.put(OpOp1.CUMMAX, com.ibm.bi.dml.lops.Unary.OperationTypes.CUMMAX);
-		HopsOpOp1LopsU.put(OpOp1.INVERSE, com.ibm.bi.dml.lops.Unary.OperationTypes.INVERSE);
-		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.Unary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp1LopsU.put(OpOp1.SPROP, com.ibm.bi.dml.lops.Unary.OperationTypes.SPROP);
-		HopsOpOp1LopsU.put(OpOp1.SIGMOID, com.ibm.bi.dml.lops.Unary.OperationTypes.SIGMOID);
-		HopsOpOp1LopsU.put(OpOp1.SELP, com.ibm.bi.dml.lops.Unary.OperationTypes.SELP);
+		HopsOpOp2LopsU = new HashMap<Hop.OpOp2, org.apache.sysml.lops.Unary.OperationTypes>();
+		HopsOpOp2LopsU.put(OpOp2.PLUS, org.apache.sysml.lops.Unary.OperationTypes.ADD);
+		HopsOpOp2LopsU.put(OpOp2.MINUS, org.apache.sysml.lops.Unary.OperationTypes.SUBTRACT);
+		HopsOpOp2LopsU.put(OpOp2.MULT, org.apache.sysml.lops.Unary.OperationTypes.MULTIPLY);
+		HopsOpOp2LopsU.put(OpOp2.DIV, org.apache.sysml.lops.Unary.OperationTypes.DIVIDE);
+		HopsOpOp2LopsU.put(OpOp2.MODULUS, org.apache.sysml.lops.Unary.OperationTypes.MODULUS);
+		HopsOpOp2LopsU.put(OpOp2.INTDIV, org.apache.sysml.lops.Unary.OperationTypes.INTDIV);
+		HopsOpOp2LopsU.put(OpOp2.MINUS1_MULT, org.apache.sysml.lops.Unary.OperationTypes.MINUS1_MULTIPLY);
+		HopsOpOp2LopsU.put(OpOp2.LESSEQUAL, org.apache.sysml.lops.Unary.OperationTypes.LESS_THAN_OR_EQUALS);
+		HopsOpOp2LopsU.put(OpOp2.LESS, org.apache.sysml.lops.Unary.OperationTypes.LESS_THAN);
+		HopsOpOp2LopsU.put(OpOp2.GREATEREQUAL, org.apache.sysml.lops.Unary.OperationTypes.GREATER_THAN_OR_EQUALS);
+		HopsOpOp2LopsU.put(OpOp2.GREATER, org.apache.sysml.lops.Unary.OperationTypes.GREATER_THAN);
+		HopsOpOp2LopsU.put(OpOp2.EQUAL, org.apache.sysml.lops.Unary.OperationTypes.EQUALS);
+		HopsOpOp2LopsU.put(OpOp2.NOTEQUAL, org.apache.sysml.lops.Unary.OperationTypes.NOT_EQUALS);
+		HopsOpOp2LopsU.put(OpOp2.AND, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsU.put(OpOp2.OR, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp2LopsU.put(OpOp2.MAX, org.apache.sysml.lops.Unary.OperationTypes.MAX);
+		HopsOpOp2LopsU.put(OpOp2.MIN, org.apache.sysml.lops.Unary.OperationTypes.MIN);
+		HopsOpOp2LopsU.put(OpOp2.LOG, org.apache.sysml.lops.Unary.OperationTypes.LOG);
+		HopsOpOp2LopsU.put(OpOp2.POW, org.apache.sysml.lops.Unary.OperationTypes.POW);
+		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, org.apache.sysml.lops.Unary.OperationTypes.SUBTRACT_NZ);
+		HopsOpOp2LopsU.put(OpOp2.LOG_NZ, org.apache.sysml.lops.Unary.OperationTypes.LOG_NZ);
 	}
 
-	protected static final HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
+	protected static final HashMap<Hop.OpOp1, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp1LopsU;
 	static {
-		HopsOpOp1LopsUS = new HashMap<Hop.OpOp1, com.ibm.bi.dml.lops.UnaryCP.OperationTypes>();
-		HopsOpOp1LopsUS.put(OpOp1.NOT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NOT);
-		HopsOpOp1LopsUS.put(OpOp1.ABS, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ABS);
-		HopsOpOp1LopsUS.put(OpOp1.SIN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.SIN);
-		HopsOpOp1LopsUS.put(OpOp1.COS, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.COS);
-		HopsOpOp1LopsUS.put(OpOp1.TAN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.TAN);
-		HopsOpOp1LopsUS.put(OpOp1.ASIN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ASIN);
-		HopsOpOp1LopsUS.put(OpOp1.ACOS, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ACOS);
-		HopsOpOp1LopsUS.put(OpOp1.ATAN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ATAN);
-		HopsOpOp1LopsUS.put(OpOp1.SQRT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.SQRT);
-		HopsOpOp1LopsUS.put(OpOp1.EXP, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.EXP);
-		HopsOpOp1LopsUS.put(OpOp1.LOG, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.LOG);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_SCALAR, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CAST_AS_SCALAR);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_MATRIX, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CAST_AS_MATRIX);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_DOUBLE, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CAST_AS_DOUBLE);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_INT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CAST_AS_INT);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_BOOLEAN, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CAST_AS_BOOLEAN);
-		HopsOpOp1LopsUS.put(OpOp1.NROW, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NROW);
-		HopsOpOp1LopsUS.put(OpOp1.NCOL, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.NCOL);
-		HopsOpOp1LopsUS.put(OpOp1.LENGTH, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.LENGTH);
-		HopsOpOp1LopsUS.put(OpOp1.PRINT, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.PRINT);
-		HopsOpOp1LopsUS.put(OpOp1.ROUND, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.ROUND);
-		HopsOpOp1LopsUS.put(OpOp1.CEIL, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.CEIL);
-		HopsOpOp1LopsUS.put(OpOp1.FLOOR, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.FLOOR);
-		HopsOpOp1LopsUS.put(OpOp1.STOP, com.ibm.bi.dml.lops.UnaryCP.OperationTypes.STOP);
+		HopsOpOp1LopsU = new HashMap<Hop.OpOp1, org.apache.sysml.lops.Unary.OperationTypes>();
+		HopsOpOp1LopsU.put(OpOp1.NOT, org.apache.sysml.lops.Unary.OperationTypes.NOT);
+		HopsOpOp1LopsU.put(OpOp1.ABS, org.apache.sysml.lops.Unary.OperationTypes.ABS);
+		HopsOpOp1LopsU.put(OpOp1.SIN, org.apache.sysml.lops.Unary.OperationTypes.SIN);
+		HopsOpOp1LopsU.put(OpOp1.COS, org.apache.sysml.lops.Unary.OperationTypes.COS);
+		HopsOpOp1LopsU.put(OpOp1.TAN, org.apache.sysml.lops.Unary.OperationTypes.TAN);
+		HopsOpOp1LopsU.put(OpOp1.ASIN, org.apache.sysml.lops.Unary.OperationTypes.ASIN);
+		HopsOpOp1LopsU.put(OpOp1.ACOS, org.apache.sysml.lops.Unary.OperationTypes.ACOS);
+		HopsOpOp1LopsU.put(OpOp1.ATAN, org.apache.sysml.lops.Unary.OperationTypes.ATAN);
+		HopsOpOp1LopsU.put(OpOp1.SQRT, org.apache.sysml.lops.Unary.OperationTypes.SQRT);
+		HopsOpOp1LopsU.put(OpOp1.EXP, org.apache.sysml.lops.Unary.OperationTypes.EXP);
+		HopsOpOp1LopsU.put(OpOp1.LOG, org.apache.sysml.lops.Unary.OperationTypes.LOG);
+		HopsOpOp1LopsU.put(OpOp1.ROUND, org.apache.sysml.lops.Unary.OperationTypes.ROUND);
+		HopsOpOp1LopsU.put(OpOp1.CEIL, org.apache.sysml.lops.Unary.OperationTypes.CEIL);
+		HopsOpOp1LopsU.put(OpOp1.FLOOR, org.apache.sysml.lops.Unary.OperationTypes.FLOOR);
+		HopsOpOp1LopsU.put(OpOp1.CUMSUM, org.apache.sysml.lops.Unary.OperationTypes.CUMSUM);
+		HopsOpOp1LopsU.put(OpOp1.CUMPROD, org.apache.sysml.lops.Unary.OperationTypes.CUMPROD);
+		HopsOpOp1LopsU.put(OpOp1.CUMMIN, org.apache.sysml.lops.Unary.OperationTypes.CUMMIN);
+		HopsOpOp1LopsU.put(OpOp1.CUMMAX, org.apache.sysml.lops.Unary.OperationTypes.CUMMAX);
+		HopsOpOp1LopsU.put(OpOp1.INVERSE, org.apache.sysml.lops.Unary.OperationTypes.INVERSE);
+		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp1LopsU.put(OpOp1.SPROP, org.apache.sysml.lops.Unary.OperationTypes.SPROP);
+		HopsOpOp1LopsU.put(OpOp1.SIGMOID, org.apache.sysml.lops.Unary.OperationTypes.SIGMOID);
+		HopsOpOp1LopsU.put(OpOp1.SELP, org.apache.sysml.lops.Unary.OperationTypes.SELP);
+	}
+
+	protected static final HashMap<Hop.OpOp1, org.apache.sysml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
+	static {
+		HopsOpOp1LopsUS = new HashMap<Hop.OpOp1, org.apache.sysml.lops.UnaryCP.OperationTypes>();
+		HopsOpOp1LopsUS.put(OpOp1.NOT, org.apache.sysml.lops.UnaryCP.OperationTypes.NOT);
+		HopsOpOp1LopsUS.put(OpOp1.ABS, org.apache.sysml.lops.UnaryCP.OperationTypes.ABS);
+		HopsOpOp1LopsUS.put(OpOp1.SIN, org.apache.sysml.lops.UnaryCP.OperationTypes.SIN);
+		HopsOpOp1LopsUS.put(OpOp1.COS, org.apache.sysml.lops.UnaryCP.OperationTypes.COS);
+		HopsOpOp1LopsUS.put(OpOp1.TAN, org.apache.sysml.lops.UnaryCP.OperationTypes.TAN);
+		HopsOpOp1LopsUS.put(OpOp1.ASIN, org.apache.sysml.lops.UnaryCP.OperationTypes.ASIN);
+		HopsOpOp1LopsUS.put(OpOp1.ACOS, org.apache.sysml.lops.UnaryCP.OperationTypes.ACOS);
+		HopsOpOp1LopsUS.put(OpOp1.ATAN, org.apache.sysml.lops.UnaryCP.OperationTypes.ATAN);
+		HopsOpOp1LopsUS.put(OpOp1.SQRT, org.apache.sysml.lops.UnaryCP.OperationTypes.SQRT);
+		HopsOpOp1LopsUS.put(OpOp1.EXP, org.apache.sysml.lops.UnaryCP.OperationTypes.EXP);
+		HopsOpOp1LopsUS.put(OpOp1.LOG, org.apache.sysml.lops.UnaryCP.OperationTypes.LOG);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_SCALAR, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_SCALAR);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_MATRIX, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_MATRIX);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_DOUBLE, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_DOUBLE);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_INT, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_INT);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_BOOLEAN, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_BOOLEAN);
+		HopsOpOp1LopsUS.put(OpOp1.NROW, org.apache.sysml.lops.UnaryCP.OperationTypes.NROW);
+		HopsOpOp1LopsUS.put(OpOp1.NCOL, org.apache.sysml.lops.UnaryCP.OperationTypes.NCOL);
+		HopsOpOp1LopsUS.put(OpOp1.LENGTH, org.apache.sysml.lops.UnaryCP.OperationTypes.LENGTH);
+		HopsOpOp1LopsUS.put(OpOp1.PRINT, org.apache.sysml.lops.UnaryCP.OperationTypes.PRINT);
+		HopsOpOp1LopsUS.put(OpOp1.ROUND, org.apache.sysml.lops.UnaryCP.OperationTypes.ROUND);
+		HopsOpOp1LopsUS.put(OpOp1.CEIL, org.apache.sysml.lops.UnaryCP.OperationTypes.CEIL);
+		HopsOpOp1LopsUS.put(OpOp1.FLOOR, org.apache.sysml.lops.UnaryCP.OperationTypes.FLOOR);
+		HopsOpOp1LopsUS.put(OpOp1.STOP, org.apache.sysml.lops.UnaryCP.OperationTypes.STOP);
 	}
 
 	protected static final HashMap<Hop.OpOp1, String> HopsOpOp12String;
@@ -1305,15 +1305,15 @@ public abstract class Hop
 		HopsOpOp12String.put(OpOp1.SIGMOID, "sigmoid");
 	}
 	
-	protected static final HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
+	protected static final HashMap<Hop.ParamBuiltinOp, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
 	static {
-		HopsParameterizedBuiltinLops = new HashMap<Hop.ParamBuiltinOp, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes>();
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.CDF, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.CDF);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.INVCDF, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.INVCDF);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REPLACE, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.REPLACE);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REXPAND, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.REXPAND);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORM, com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM);
+		HopsParameterizedBuiltinLops = new HashMap<Hop.ParamBuiltinOp, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes>();
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.CDF, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.CDF);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.INVCDF, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.INVCDF);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REPLACE, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.REPLACE);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REXPAND, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.REXPAND);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORM, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM);
 	}
 
 	protected static final HashMap<Hop.OpOp2, String> HopsOpOp2String;

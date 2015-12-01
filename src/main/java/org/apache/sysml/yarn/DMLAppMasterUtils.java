@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.yarn;
+package org.apache.sysml.yarn;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,21 +24,21 @@ import java.util.HashMap;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.yarn.ropt.ResourceConfig;
-import com.ibm.bi.dml.yarn.ropt.ResourceOptimizer;
-import com.ibm.bi.dml.yarn.ropt.YarnClusterConfig;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.yarn.ropt.ResourceConfig;
+import org.apache.sysml.yarn.ropt.ResourceOptimizer;
+import org.apache.sysml.yarn.ropt.YarnClusterConfig;
 
 public class DMLAppMasterUtils 
 {

@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestVariable;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestVariable;
 
 /**
  * Cost Estimator for runtime programs. It uses a offline created performance profile

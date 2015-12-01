@@ -15,10 +15,10 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.blocks;
+package org.apache.sysml.test.integration.functions.blocks;
 
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
 

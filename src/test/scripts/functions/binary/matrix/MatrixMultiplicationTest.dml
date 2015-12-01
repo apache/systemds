@@ -16,7 +16,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.binary.matrix.MatrixMultiplicationTest.java
+# junit test class: org.apache.sysml.test.integration.functions.binary.matrix.MatrixMultiplicationTest.java
 
 A = read("$$indir$$a", rows=$$m$$, cols=$$n1$$, format="text");
 B = read("$$indir$$b", rows=$$n2$$, cols=$$k$$, format="text");

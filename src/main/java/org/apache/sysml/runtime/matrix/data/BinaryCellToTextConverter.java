@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;

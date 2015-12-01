@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
-import com.ibm.bi.dml.api.DMLException;
+import org.apache.sysml.api.DMLException;
 
 /**
  * <p>Exception occurring at the Language level.</p>

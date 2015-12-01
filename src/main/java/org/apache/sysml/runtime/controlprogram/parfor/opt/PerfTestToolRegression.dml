@@ -21,15 +21,15 @@
 
 dynRead = externalFunction(Matrix[Double] d, String fname, Integer m, Integer n) 
 return (Matrix[Double] D) 
-implemented in (classname="com.ibm.bi.dml.runtime.controlprogram.parfor.test.dml.DynamicReadMatrix2DCP",exectype="mem") 
+implemented in (classname="org.apache.sysml.runtime.controlprogram.parfor.test.dml.DynamicReadMatrix2DCP",exectype="mem") 
 
 dynWrite = externalFunction(Matrix[Double] R, String fname) 
 return (Matrix[Double] D) 
-implemented in (classname="com.ibm.bi.dml.runtime.controlprogram.parfor.test.dml.DynamicWriteMatrix2DCP",exectype="mem") 
+implemented in (classname="org.apache.sysml.runtime.controlprogram.parfor.test.dml.DynamicWriteMatrix2DCP",exectype="mem") 
 
 solve = externalFunction(Matrix[Double] A, Matrix[Double] y) 
 return (Matrix[Double] b) 
-implemented in (classname="com.ibm.bi.dml.packagesupport.LinearSolverWrapperCP",exectype="mem") 
+implemented in (classname="org.apache.sysml.packagesupport.LinearSolverWrapperCP",exectype="mem") 
 
 k = %numModels%;
 m = -1; 

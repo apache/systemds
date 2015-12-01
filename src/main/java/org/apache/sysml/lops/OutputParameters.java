@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.lops;
+package org.apache.sysml.lops;
 
-import com.ibm.bi.dml.hops.HopsException;
+import org.apache.sysml.hops.HopsException;
 
 /**
  * class to maintain output parameters for a lop.

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.cost;
+package org.apache.sysml.hops.cost;
 
 /**
  * 

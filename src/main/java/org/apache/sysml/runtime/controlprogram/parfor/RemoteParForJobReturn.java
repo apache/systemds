@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor;
+package org.apache.sysml.runtime.controlprogram.parfor;
 
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 
 /**
  * Wrapper for job return of ParFor REMOTE for transferring statistics and result symbol table.

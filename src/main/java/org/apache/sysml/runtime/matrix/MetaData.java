@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix;
+package org.apache.sysml.runtime.matrix;
 
 /**
  * Class to store metadata associated with a file (e.g., a matrix) on disk.

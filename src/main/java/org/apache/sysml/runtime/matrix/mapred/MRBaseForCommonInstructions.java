@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.mapred;
+package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,29 +28,29 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.AggregateUnaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.AppendGInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.AppendMInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.BinaryMInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.BinaryMRInstructionBase;
-import com.ibm.bi.dml.runtime.instructions.mr.CumulativeAggregateInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CumulativeSplitInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.MatrixReshapeMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.RangeBasedReIndexInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.RemoveEmptyMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.ReorgInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.UnaryMRInstructionBase;
-import com.ibm.bi.dml.runtime.instructions.mr.ZeroOutInstruction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.AggregateUnaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.AppendGInstruction;
+import org.apache.sysml.runtime.instructions.mr.AppendMInstruction;
+import org.apache.sysml.runtime.instructions.mr.BinaryMInstruction;
+import org.apache.sysml.runtime.instructions.mr.BinaryMRInstructionBase;
+import org.apache.sysml.runtime.instructions.mr.CumulativeAggregateInstruction;
+import org.apache.sysml.runtime.instructions.mr.CumulativeSplitInstruction;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction;
+import org.apache.sysml.runtime.instructions.mr.MatrixReshapeMRInstruction;
+import org.apache.sysml.runtime.instructions.mr.RangeBasedReIndexInstruction;
+import org.apache.sysml.runtime.instructions.mr.RemoveEmptyMRInstruction;
+import org.apache.sysml.runtime.instructions.mr.ReorgInstruction;
+import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
+import org.apache.sysml.runtime.instructions.mr.ZeroOutInstruction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixValue;
 
 
 @SuppressWarnings("deprecation")

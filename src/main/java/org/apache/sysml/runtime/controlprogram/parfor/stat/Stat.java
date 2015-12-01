@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.stat;
+package org.apache.sysml.runtime.controlprogram.parfor.stat;
 
 /**
  * Collection of all ParFor statistic types.

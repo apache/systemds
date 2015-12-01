@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.utils;
+package org.apache.sysml.utils;
 
 import java.io.IOException;
 import java.io.Reader;

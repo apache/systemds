@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.yarn.ropt;
+package org.apache.sysml.yarn.ropt;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,8 +33,8 @@ import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 
 /**
  * Central place for analyzing and obtaining static infrastructure properties

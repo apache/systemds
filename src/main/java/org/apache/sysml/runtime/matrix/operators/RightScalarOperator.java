@@ -16,14 +16,14 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.operators;
+package org.apache.sysml.runtime.matrix.operators;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.LessThan;
-import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.GreaterThan;
+import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
+import org.apache.sysml.runtime.functionobjects.LessThan;
+import org.apache.sysml.runtime.functionobjects.LessThanEquals;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
 
 
 public class RightScalarOperator extends ScalarOperator 

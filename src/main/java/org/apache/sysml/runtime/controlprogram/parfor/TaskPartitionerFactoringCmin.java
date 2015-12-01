@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor;
+package org.apache.sysml.runtime.controlprogram.parfor;
 
-import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.instructions.cp.IntObject;
 
 /**
  * Factoring with minimum constraint (e.g., if communication is expensive)

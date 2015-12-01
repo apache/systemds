@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.data;
+package org.apache.sysml.runtime.instructions.spark.data;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
 public abstract class LineageObject 
 {

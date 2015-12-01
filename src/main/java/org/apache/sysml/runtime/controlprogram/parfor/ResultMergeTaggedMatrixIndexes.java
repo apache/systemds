@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor;
+package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -23,7 +23,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * This class serves as composite key for the remote result merge job

@@ -16,17 +16,17 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.operators;
+package org.apache.sysml.runtime.matrix.operators;
 
-import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
-import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
-import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
-import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
-import com.ibm.bi.dml.lops.WeightedUnaryMM.WUMMType;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
-import com.ibm.bi.dml.runtime.functionobjects.Power2;
-import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.lops.WeightedDivMM.WDivMMType;
+import org.apache.sysml.lops.WeightedSigmoid.WSigmoidType;
+import org.apache.sysml.lops.WeightedSquaredLoss.WeightsType;
+import org.apache.sysml.lops.WeightedCrossEntropy.WCeMMType;
+import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
+import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Multiply2;
+import org.apache.sysml.runtime.functionobjects.Power2;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
 
 public class QuaternaryOperator extends Operator 
 {

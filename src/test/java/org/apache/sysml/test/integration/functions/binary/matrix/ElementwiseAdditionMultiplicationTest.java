@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.binary.matrix;
+package org.apache.sysml.test.integration.functions.binary.matrix;
 
 import java.util.Date;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
 
 
 public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase 

@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.parser.antlr4;
+package org.apache.sysml.parser.antlr4;
 
 import java.util.HashMap;
-import com.ibm.bi.dml.parser.DMLProgram;
+import org.apache.sysml.parser.DMLProgram;
 
 public class StatementInfo {
 
-	public com.ibm.bi.dml.parser.Statement stmt = null;
+	public org.apache.sysml.parser.Statement stmt = null;
 	
 	// Valid only for import statements
 	public HashMap<String,DMLProgram> namespaces = null;

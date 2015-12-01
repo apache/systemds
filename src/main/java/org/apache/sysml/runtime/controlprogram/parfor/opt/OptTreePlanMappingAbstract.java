@@ -15,16 +15,16 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.StatementBlock;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 
 public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 {

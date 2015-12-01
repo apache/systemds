@@ -16,12 +16,12 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
-import com.ibm.bi.dml.runtime.util.SortUtils;
+import org.apache.sysml.runtime.util.SortUtils;
 
 public class SparseRow implements Serializable 
 {

@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.api;
+package org.apache.sysml.api;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.api.monitoring.Location;
-import com.ibm.bi.dml.parser.Expression;
-import com.ibm.bi.dml.parser.LanguageException;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
+import org.apache.sysml.api.monitoring.Location;
+import org.apache.sysml.parser.Expression;
+import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 
 /**
  * The purpose of this proxy is to shield systemml internals from direct access to MLContext

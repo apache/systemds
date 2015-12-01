@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 
 import java.io.Serializable;
@@ -30,9 +30,9 @@ import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.matrix.MetaData;
-import com.ibm.bi.dml.runtime.matrix.sort.PickFromCompactInputFormat;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.matrix.MetaData;
+import org.apache.sysml.runtime.matrix.sort.PickFromCompactInputFormat;
 
 @SuppressWarnings("rawtypes")
 public class InputInfo implements Serializable 

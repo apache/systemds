@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
-import com.ibm.bi.dml.parser.python.PyDMLParserWrapper;
+import org.apache.sysml.parser.antlr4.DMLParserWrapper;
+import org.apache.sysml.parser.python.PyDMLParserWrapper;
 
 /**
  * Base class for all dml parsers in order to make the various compilation chains

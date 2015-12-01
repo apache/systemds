@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt;
+package org.apache.sysml.hops.globalopt;
 
 import com.google.common.base.Objects;
 

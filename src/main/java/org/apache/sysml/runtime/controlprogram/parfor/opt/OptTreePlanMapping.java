@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 /**
  * Helper class for mapping nodes of the internal plan representation to statement blocks and 

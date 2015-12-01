@@ -16,23 +16,23 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.operators;
+package org.apache.sysml.runtime.matrix.operators;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.functionobjects.And;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
-import com.ibm.bi.dml.runtime.functionobjects.Equals;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
-import com.ibm.bi.dml.runtime.functionobjects.LessThan;
-import com.ibm.bi.dml.runtime.functionobjects.Minus;
-import com.ibm.bi.dml.runtime.functionobjects.MinusNz;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply2;
-import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
-import com.ibm.bi.dml.runtime.functionobjects.Power;
-import com.ibm.bi.dml.runtime.functionobjects.Power2;
-import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.And;
+import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
+import org.apache.sysml.runtime.functionobjects.Equals;
+import org.apache.sysml.runtime.functionobjects.GreaterThan;
+import org.apache.sysml.runtime.functionobjects.LessThan;
+import org.apache.sysml.runtime.functionobjects.Minus;
+import org.apache.sysml.runtime.functionobjects.MinusNz;
+import org.apache.sysml.runtime.functionobjects.Multiply;
+import org.apache.sysml.runtime.functionobjects.Multiply2;
+import org.apache.sysml.runtime.functionobjects.NotEquals;
+import org.apache.sysml.runtime.functionobjects.Power;
+import org.apache.sysml.runtime.functionobjects.Power2;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
 
 
 public class ScalarOperator  extends Operator 

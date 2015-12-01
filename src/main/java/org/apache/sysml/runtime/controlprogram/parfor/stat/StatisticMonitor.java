@@ -15,16 +15,16 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.stat;
+package org.apache.sysml.runtime.controlprogram.parfor.stat;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 
 /**
  * This singleton statistic monitor is used to consolidate all parfor runtime statistics.

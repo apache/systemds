@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.recompile;
+package org.apache.sysml.test.integration.functions.recompile;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

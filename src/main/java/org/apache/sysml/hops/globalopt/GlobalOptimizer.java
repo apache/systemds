@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt;
+package org.apache.sysml.hops.globalopt;
 
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFGraph;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 
 /**
  * Super class for all optimizers (e.g., transformation-based, and enumeration-based)

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser.python;
+package org.apache.sysml.parser.python;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -35,28 +35,28 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.parser.AParserWrapper;
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.ForStatement;
-import com.ibm.bi.dml.parser.ForStatementBlock;
-import com.ibm.bi.dml.parser.FunctionStatementBlock;
-import com.ibm.bi.dml.parser.IfStatement;
-import com.ibm.bi.dml.parser.IfStatementBlock;
-import com.ibm.bi.dml.parser.ImportStatement;
-import com.ibm.bi.dml.parser.LanguageException;
-import com.ibm.bi.dml.parser.ParForStatement;
-import com.ibm.bi.dml.parser.ParForStatementBlock;
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.parser.Statement;
-import com.ibm.bi.dml.parser.StatementBlock;
-import com.ibm.bi.dml.parser.WhileStatement;
-import com.ibm.bi.dml.parser.WhileStatementBlock;
-import com.ibm.bi.dml.parser.antlr4.DMLParserWrapper;
-import com.ibm.bi.dml.parser.python.PydmlParser.FunctionStatementContext;
-import com.ibm.bi.dml.parser.python.PydmlParser.PmlprogramContext;
-import com.ibm.bi.dml.parser.python.PydmlParser.StatementContext;
-import com.ibm.bi.dml.parser.python.PydmlSyntacticErrorListener.CustomDmlErrorListener;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.parser.AParserWrapper;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.ForStatement;
+import org.apache.sysml.parser.ForStatementBlock;
+import org.apache.sysml.parser.FunctionStatementBlock;
+import org.apache.sysml.parser.IfStatement;
+import org.apache.sysml.parser.IfStatementBlock;
+import org.apache.sysml.parser.ImportStatement;
+import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.ParForStatement;
+import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.parser.WhileStatement;
+import org.apache.sysml.parser.WhileStatementBlock;
+import org.apache.sysml.parser.antlr4.DMLParserWrapper;
+import org.apache.sysml.parser.python.PydmlParser.FunctionStatementContext;
+import org.apache.sysml.parser.python.PydmlParser.PmlprogramContext;
+import org.apache.sysml.parser.python.PydmlParser.StatementContext;
+import org.apache.sysml.parser.python.PydmlSyntacticErrorListener.CustomDmlErrorListener;
 
 /**
  * Logic of this wrapper is similar to DMLParserWrapper.
@@ -73,7 +73,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 	 * @param current a statement
 	 * @return corresponding statement block
 	 */
-	public static StatementBlock getStatementBlock(com.ibm.bi.dml.parser.Statement current) {
+	public static StatementBlock getStatementBlock(org.apache.sysml.parser.Statement current) {
 		StatementBlock blk = null;
 		if(current instanceof ParForStatement) {
 			blk = new ParForStatementBlock();

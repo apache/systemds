@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram;
+package org.apache.sysml.runtime.controlprogram;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.instructions.cp.Data;
-import com.ibm.bi.dml.runtime.instructions.spark.data.LineageObject;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.spark.data.LineageObject;
 
 import java.util.HashMap;
 import java.util.StringTokenizer;
@@ -37,7 +37,7 @@ import java.util.Set;
 public class LocalVariableMap implements Cloneable
 {	
 	private static String eol = System.getProperty ("line.separator");
-	private static String ELEMENT_DELIM = com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter.ELEMENT_DELIM;
+	private static String ELEMENT_DELIM = org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter.ELEMENT_DELIM;
 	private static IDSequence _seq = new IDSequence();
 	
 	private HashMap <String, Data> localMap = null;

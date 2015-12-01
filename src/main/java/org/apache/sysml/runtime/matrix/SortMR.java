@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix;
+package org.apache.sysml.runtime.matrix;
 
 import java.io.IOException;
 import java.net.URI;
@@ -42,33 +42,33 @@ import org.apache.hadoop.mapred.Partitioner;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.SortKeys;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.UnaryInstruction;
-import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
-import com.ibm.bi.dml.runtime.matrix.sort.CompactInputFormat;
-import com.ibm.bi.dml.runtime.matrix.sort.CompactOutputFormat;
-import com.ibm.bi.dml.runtime.matrix.sort.IndexSortComparable;
-import com.ibm.bi.dml.runtime.matrix.sort.IndexSortComparableDesc;
-import com.ibm.bi.dml.runtime.matrix.sort.IndexSortMapper;
-import com.ibm.bi.dml.runtime.matrix.sort.IndexSortReducer;
-import com.ibm.bi.dml.runtime.matrix.sort.IndexSortStitchupReducer;
-import com.ibm.bi.dml.runtime.matrix.sort.SamplingSortMRInputFormat;
-import com.ibm.bi.dml.runtime.matrix.sort.IndexSortStitchupMapper;
-import com.ibm.bi.dml.runtime.matrix.sort.ValueSortMapper;
-import com.ibm.bi.dml.runtime.matrix.sort.ValueSortReducer;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.SortKeys;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction;
+import org.apache.sysml.runtime.instructions.mr.UnaryInstruction;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
+import org.apache.sysml.runtime.matrix.sort.CompactInputFormat;
+import org.apache.sysml.runtime.matrix.sort.CompactOutputFormat;
+import org.apache.sysml.runtime.matrix.sort.IndexSortComparable;
+import org.apache.sysml.runtime.matrix.sort.IndexSortComparableDesc;
+import org.apache.sysml.runtime.matrix.sort.IndexSortMapper;
+import org.apache.sysml.runtime.matrix.sort.IndexSortReducer;
+import org.apache.sysml.runtime.matrix.sort.IndexSortStitchupReducer;
+import org.apache.sysml.runtime.matrix.sort.SamplingSortMRInputFormat;
+import org.apache.sysml.runtime.matrix.sort.IndexSortStitchupMapper;
+import org.apache.sysml.runtime.matrix.sort.ValueSortMapper;
+import org.apache.sysml.runtime.matrix.sort.ValueSortReducer;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 
 /**

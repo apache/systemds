@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.Hop.VisitStatus;
-import com.ibm.bi.dml.hops.UnaryOp;
-import com.ibm.bi.dml.parser.Expression.ValueType;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.parser.Expression.ValueType;
 
 /**
  * Rule: RemoveUnnecessaryCasts. For all value type casts check

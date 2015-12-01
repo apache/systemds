@@ -16,7 +16,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.terms.ScalarToMatrixInLoop.java
+# junit test class: org.apache.sysml.test.integration.functions.terms.ScalarToMatrixInLoop.java
 
 A = Rand(cols=$$cols$$, rows=$$rows$$);
 W = 5;

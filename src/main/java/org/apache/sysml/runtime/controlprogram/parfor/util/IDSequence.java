@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
+package org.apache.sysml.runtime.controlprogram.parfor.util;
 
 /**
  * ID sequence for generating unique long identifiers with start 0 and increment 1.

@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.pydml;
+package org.apache.sysml.test.integration.applications.pydml;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ibm.bi.dml.test.integration.applications.MDABivariateStatsTest;
+import org.apache.sysml.test.integration.applications.MDABivariateStatsTest;
 
 @RunWith(value = Parameterized.class)
 public class MDABivariateStatsPyDMLTest extends MDABivariateStatsTest {

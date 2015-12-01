@@ -15,28 +15,28 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
-import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
-import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.CentralMoment;
-import com.ibm.bi.dml.lops.CoVariance;
-import com.ibm.bi.dml.lops.CombineBinary;
-import com.ibm.bi.dml.lops.CombineTernary;
-import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.PickByCount;
-import com.ibm.bi.dml.lops.SortKeys;
-import com.ibm.bi.dml.lops.Ternary;
-import com.ibm.bi.dml.lops.UnaryCP;
-import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.parser.Statement;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.CentralMoment;
+import org.apache.sysml.lops.CoVariance;
+import org.apache.sysml.lops.CombineBinary;
+import org.apache.sysml.lops.CombineTernary;
+import org.apache.sysml.lops.Group;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.PickByCount;
+import org.apache.sysml.lops.SortKeys;
+import org.apache.sysml.lops.Ternary;
+import org.apache.sysml.lops.UnaryCP;
+import org.apache.sysml.lops.CombineBinary.OperationTypes;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 /* Primary use cases for now, are
  * 		quantile (<n-1-matrix>, <n-1-matrix>, <literal>):      quantile (A, w, 0.5)

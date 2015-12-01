@@ -15,30 +15,30 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.Aggregate.OperationTypes;
-import com.ibm.bi.dml.lops.CombineUnary;
-import com.ibm.bi.dml.lops.CumulativeOffsetBinary;
-import com.ibm.bi.dml.lops.CumulativePartialAggregate;
-import com.ibm.bi.dml.lops.CumulativeSplitAggregate;
-import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.PartialAggregate;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.lops.PickByCount;
-import com.ibm.bi.dml.lops.SortKeys;
-import com.ibm.bi.dml.lops.Unary;
-import com.ibm.bi.dml.lops.UnaryCP;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.Aggregate.OperationTypes;
+import org.apache.sysml.lops.CombineUnary;
+import org.apache.sysml.lops.CumulativeOffsetBinary;
+import org.apache.sysml.lops.CumulativePartialAggregate;
+import org.apache.sysml.lops.CumulativeSplitAggregate;
+import org.apache.sysml.lops.Data;
+import org.apache.sysml.lops.Group;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.PartialAggregate;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
+import org.apache.sysml.lops.PickByCount;
+import org.apache.sysml.lops.SortKeys;
+import org.apache.sysml.lops.Unary;
+import org.apache.sysml.lops.UnaryCP;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 
 /* Unary (cell operations): e.g, b_ij = round(a_ij)

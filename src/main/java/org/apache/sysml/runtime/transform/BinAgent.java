@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.transform;
+package org.apache.sysml.runtime.transform;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -38,8 +38,8 @@ import org.apache.wink.json4j.JSONObject;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.transform.MVImputeAgent.MVMethod;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.transform.MVImputeAgent.MVMethod;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class BinAgent extends TransformationAgent {
 	

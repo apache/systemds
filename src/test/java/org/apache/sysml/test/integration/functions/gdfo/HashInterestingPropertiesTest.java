@@ -15,18 +15,18 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.gdfo;
+package org.apache.sysml.test.integration.functions.gdfo;
 
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ibm.bi.dml.hops.globalopt.InterestingProperties;
-import com.ibm.bi.dml.hops.globalopt.InterestingProperties.Format;
-import com.ibm.bi.dml.hops.globalopt.InterestingProperties.Location;
-import com.ibm.bi.dml.hops.globalopt.InterestingProperties.Partitioning;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.hops.globalopt.InterestingProperties;
+import org.apache.sysml.hops.globalopt.InterestingProperties.Format;
+import org.apache.sysml.hops.globalopt.InterestingProperties.Location;
+import org.apache.sysml.hops.globalopt.InterestingProperties.Partitioning;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.utils.TestUtils;
 
 public class HashInterestingPropertiesTest extends AutomatedTestBase
 {

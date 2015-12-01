@@ -15,10 +15,10 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt.gdfresolve;
+package org.apache.sysml.hops.globalopt.gdfresolve;
 
-import com.ibm.bi.dml.hops.globalopt.gdfresolve.GDFMismatchHeuristic.MismatchHeuristicType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import org.apache.sysml.hops.globalopt.gdfresolve.GDFMismatchHeuristic.MismatchHeuristicType;
+import org.apache.sysml.runtime.DMLRuntimeException;
 
 public abstract class MismatchHeuristicFactory 
 {

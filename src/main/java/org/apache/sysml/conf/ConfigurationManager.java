@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.conf;
+package org.apache.sysml.conf;
 
 import org.apache.hadoop.mapred.JobConf;
 

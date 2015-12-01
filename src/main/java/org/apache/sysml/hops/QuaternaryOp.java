@@ -15,41 +15,41 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
-import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
-import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.DataPartition;
-import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.RepMat;
-import com.ibm.bi.dml.lops.Transform;
-import com.ibm.bi.dml.lops.Unary;
-import com.ibm.bi.dml.lops.UnaryCP;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.lops.WeightedCrossEntropy;
-import com.ibm.bi.dml.lops.WeightedCrossEntropyR;
-import com.ibm.bi.dml.lops.WeightedDivMM;
-import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
-import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
-import com.ibm.bi.dml.lops.WeightedDivMMR;
-import com.ibm.bi.dml.lops.WeightedSigmoid;
-import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
-import com.ibm.bi.dml.lops.WeightedSigmoidR;
-import com.ibm.bi.dml.lops.WeightedSquaredLoss;
-import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
-import com.ibm.bi.dml.lops.WeightedSquaredLossR;
-import com.ibm.bi.dml.lops.WeightedUnaryMM;
-import com.ibm.bi.dml.lops.WeightedUnaryMM.WUMMType;
-import com.ibm.bi.dml.lops.WeightedUnaryMMR;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
+import org.apache.sysml.hops.Hop.MultiThreadedHop;
+import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.DataPartition;
+import org.apache.sysml.lops.Group;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.RepMat;
+import org.apache.sysml.lops.Transform;
+import org.apache.sysml.lops.Unary;
+import org.apache.sysml.lops.UnaryCP;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
+import org.apache.sysml.lops.WeightedCrossEntropy;
+import org.apache.sysml.lops.WeightedCrossEntropyR;
+import org.apache.sysml.lops.WeightedDivMM;
+import org.apache.sysml.lops.WeightedCrossEntropy.WCeMMType;
+import org.apache.sysml.lops.WeightedDivMM.WDivMMType;
+import org.apache.sysml.lops.WeightedDivMMR;
+import org.apache.sysml.lops.WeightedSigmoid;
+import org.apache.sysml.lops.WeightedSigmoid.WSigmoidType;
+import org.apache.sysml.lops.WeightedSigmoidR;
+import org.apache.sysml.lops.WeightedSquaredLoss;
+import org.apache.sysml.lops.WeightedSquaredLoss.WeightsType;
+import org.apache.sysml.lops.WeightedSquaredLossR;
+import org.apache.sysml.lops.WeightedUnaryMM;
+import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
+import org.apache.sysml.lops.WeightedUnaryMMR;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 
 /** 
  * Note: this hop should be called AggQuaternaryOp in consistency with AggUnaryOp and AggBinaryOp;

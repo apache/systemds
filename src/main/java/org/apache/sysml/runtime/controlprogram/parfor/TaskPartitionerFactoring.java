@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor;
+package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.Task.TaskType;
-import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.parfor.Task.TaskType;
+import org.apache.sysml.runtime.instructions.cp.IntObject;
 
 /**
  * This factoring task partitioner virtually iterates over the given FOR loop (from, to, incr),

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
+package org.apache.sysml.runtime.controlprogram.parfor.util;
 
 /**
  * Helper class for representing text cell and binary cell records in order to

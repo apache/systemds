@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.transform;
+package org.apache.sysml.runtime.transform;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,9 +37,9 @@ import org.apache.wink.json4j.JSONObject;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
-import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
+import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 
 public class GenTfMtdSPARK {
 

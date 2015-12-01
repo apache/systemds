@@ -15,16 +15,16 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.VisitStatus;
-import com.ibm.bi.dml.hops.recompile.RecompileStatus;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.recompile.RecompileStatus;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 /**
  * Memoization Table (hop id, worst-case matrix characteristics).

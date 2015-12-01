@@ -19,11 +19,11 @@
 
 dynRead = externalFunction(String fname, Integer rows, Integer cols, String format)
 return (Matrix[Double] M) 
-implemented in (classname="com.ibm.bi.dml.udf.lib.DynamicReadMatrixCP",exectype="mem")   
+implemented in (classname="org.apache.sysml.udf.lib.DynamicReadMatrixCP",exectype="mem")   
 
 dynWrite = externalFunction(Matrix[Double] input, String fname, String format)
 return(Boolean success)
-implemented in (classname="com.ibm.bi.dml.udf.lib.DynamicWriteMatrixCP",exectype="mem")  
+implemented in (classname="org.apache.sysml.udf.lib.DynamicWriteMatrixCP",exectype="mem")  
 
 
 X = read($1, rows=$2, cols=$3, format="text");

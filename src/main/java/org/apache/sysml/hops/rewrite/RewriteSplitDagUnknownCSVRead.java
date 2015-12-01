@@ -15,19 +15,19 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.hops.Hop.VisitStatus;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.StatementBlock;
-import com.ibm.bi.dml.parser.VariableSet;
+import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.parser.DataIdentifier;
+import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.parser.VariableSet;
 
 /**
  * Rule: Split Hop DAG after CSV reads with unknown size. This is

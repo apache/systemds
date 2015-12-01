@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.mqo;
+package org.apache.sysml.runtime.controlprogram.parfor.mqo;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.runtime.matrix.MetaData;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.matrix.JobReturn;
+import org.apache.sysml.runtime.matrix.MetaData;
 
 /**
  * Merged MR Job instruction to hold the actually merged instruction as well as offsets of

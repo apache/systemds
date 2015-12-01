@@ -16,7 +16,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.terms.ScalarMatrixUnaryBinaryTest.java
+# junit test class: org.apache.sysml.test.integration.functions.terms.ScalarMatrixUnaryBinaryTest.java
 
 A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 

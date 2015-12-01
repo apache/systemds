@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.mr;
+package org.apache.sysml.runtime.instructions.mr;
 
-import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class CSVReblockInstruction extends ReblockInstruction 
 {

@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.lops;
+package org.apache.sysml.lops;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.lops.compile.JobType;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 public class LopProperties 
 {

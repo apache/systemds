@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt;
+package org.apache.sysml.hops.globalopt;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFCrossBlockNode;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode.NodeType;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFCrossBlockNode;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 
 public class PlanSet 
 {

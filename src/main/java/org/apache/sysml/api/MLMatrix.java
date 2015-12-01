@@ -14,7 +14,7 @@
  * limitations under the License.
  * 
  */
-package com.ibm.bi.dml.api;
+package org.apache.sysml.api;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,14 +32,14 @@ import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMIMBFromRow;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLBlock;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.spark.functions.GetMIMBFromRow;
+import org.apache.sysml.runtime.instructions.spark.functions.GetMLBlock;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * Experimental API: Might be discontinued in future release
@@ -56,7 +56,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
  * Also, note that this library is not thread-safe. The operator precedence is not exactly same as DML (as the precedence is
  * enforced by scala compiler), so please use appropriate brackets to enforce precedence. 
 
- import com.ibm.bi.dml.api.{MLContext, MLMatrix}
+ import org.apache.sysml.api.{MLContext, MLMatrix}
  val ml = new MLContext(sc)
  val mat1 = ml.read(sqlContext, "V_small.csv", "csv")
  val mat2 = ml.read(sqlContext, "W_small.mtx", "binary")

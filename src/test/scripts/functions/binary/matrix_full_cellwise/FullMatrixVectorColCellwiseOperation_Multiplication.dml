@@ -17,7 +17,7 @@
 #-------------------------------------------------------------
 
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.binary.matrix.FullMatrixMultiplicationTest.java
+# junit test class: org.apache.sysml.test.integration.functions.binary.matrix.FullMatrixMultiplicationTest.java
 
 A = read($1, format="text");
 B = read($2, format="text");

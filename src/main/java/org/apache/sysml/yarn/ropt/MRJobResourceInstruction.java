@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.yarn.ropt;
+package org.apache.sysml.yarn.ropt;
 
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
 
 /**
  * The purpose of this class is to encode the yarn mapred memory configuration into 

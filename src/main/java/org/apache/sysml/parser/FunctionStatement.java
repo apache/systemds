@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.lops.Lop;
+import org.apache.sysml.lops.Lop;
 
 
 public class FunctionStatement extends Statement

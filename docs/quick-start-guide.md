@@ -357,7 +357,7 @@ If you encounter a `"java.lang.OutOfMemoryError"` you can edit the invocation
 script (`runStandaloneSystemML.sh` or `runStandaloneSystemML.bat`) to increase
 the memory available to the JVM, i.e: 
 
-    java -Xmx16g -Xms4g -Xmn1g -cp ${CLASSPATH} com.ibm.bi.dml.api.DMLScript \
+    java -Xmx16g -Xms4g -Xmn1g -cp ${CLASSPATH} org.apache.sysml.api.DMLScript \
          -f ${SCRIPT_FILE} -exec singlenode -config=SystemML-config.xml \
          $@
 

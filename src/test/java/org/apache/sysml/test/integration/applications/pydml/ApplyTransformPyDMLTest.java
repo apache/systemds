@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.pydml;
+package org.apache.sysml.test.integration.applications.pydml;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ibm.bi.dml.test.integration.applications.ApplyTransformTest;
+import org.apache.sysml.test.integration.applications.ApplyTransformTest;
 
 @RunWith(value = Parameterized.class)
 public class ApplyTransformPyDMLTest extends ApplyTransformTest {

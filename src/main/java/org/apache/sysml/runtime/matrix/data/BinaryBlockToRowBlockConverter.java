@@ -16,10 +16,10 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
-import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.api.DMLException;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class BinaryBlockToRowBlockConverter implements Converter<MatrixIndexes, MatrixBlock, MatrixIndexes, MatrixBlock>
 {

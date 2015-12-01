@@ -15,18 +15,18 @@
  * 
  */
 
-package com.ibm.bi.dml.lops;
+package org.apache.sysml.lops;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.OutputParameters.Format;
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
+import org.apache.sysml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.lops.LopProperties.ExecLocation;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.OutputParameters.Format;
+import org.apache.sysml.lops.compile.JobType;
+import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 
 
 
@@ -140,7 +140,7 @@ public class Data extends Lop
 			// If the input is data transform, then csv write can be piggybacked onto TRANSFORM job.
 			// Otherwise, the input must be converted to csv format via WriteCSV MR job.
 			if ( input instanceof ParameterizedBuiltin 
-					&& ((ParameterizedBuiltin)input).getOp() == com.ibm.bi.dml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM ) {
+					&& ((ParameterizedBuiltin)input).getOp() == org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORM ) {
 				lps.addCompatibility(JobType.TRANSFORM);
 				definesMRJob = false;
 			}

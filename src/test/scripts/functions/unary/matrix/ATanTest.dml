@@ -17,7 +17,7 @@
 #-------------------------------------------------------------
 
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.unary.matrix.TanTest.java
+# junit test class: org.apache.sysml.test.integration.functions.unary.matrix.TanTest.java
 
 Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
 TanVector = atan(Vector);

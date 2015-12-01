@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,12 +29,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 
-import com.ibm.bi.dml.hops.DataGenOp;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.util.NormalPRNGenerator;
-import com.ibm.bi.dml.runtime.util.PRNGenerator;
-import com.ibm.bi.dml.runtime.util.PoissonPRNGenerator;
-import com.ibm.bi.dml.runtime.util.UniformPRNGenerator;
+import org.apache.sysml.hops.DataGenOp;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.util.NormalPRNGenerator;
+import org.apache.sysml.runtime.util.PRNGenerator;
+import org.apache.sysml.runtime.util.PoissonPRNGenerator;
+import org.apache.sysml.runtime.util.UniformPRNGenerator;
 
 /**
  *  

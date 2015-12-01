@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.transform;
+package org.apache.sysml.runtime.transform;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -37,7 +37,7 @@ import org.apache.wink.json4j.JSONObject;
 
 import com.google.common.base.Functions;
 import com.google.common.collect.Ordering;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class DummycodeAgent extends TransformationAgent {	
 	

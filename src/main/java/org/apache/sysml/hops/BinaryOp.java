@@ -15,41 +15,41 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
-import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
-import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.AppendGAlignedSP;
-import com.ibm.bi.dml.lops.AppendM;
-import com.ibm.bi.dml.lops.AppendCP;
-import com.ibm.bi.dml.lops.AppendG;
-import com.ibm.bi.dml.lops.AppendR;
-import com.ibm.bi.dml.lops.Binary;
-import com.ibm.bi.dml.lops.BinaryScalar;
-import com.ibm.bi.dml.lops.BinaryM;
-import com.ibm.bi.dml.lops.BinaryUAggChain;
-import com.ibm.bi.dml.lops.CentralMoment;
-import com.ibm.bi.dml.lops.CoVariance;
-import com.ibm.bi.dml.lops.CombineBinary;
-import com.ibm.bi.dml.lops.CombineUnary;
-import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.DataPartition;
-import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.PartialAggregate;
-import com.ibm.bi.dml.lops.PickByCount;
-import com.ibm.bi.dml.lops.RepMat;
-import com.ibm.bi.dml.lops.SortKeys;
-import com.ibm.bi.dml.lops.Unary;
-import com.ibm.bi.dml.lops.UnaryCP;
-import com.ibm.bi.dml.lops.CombineBinary.OperationTypes;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.AppendGAlignedSP;
+import org.apache.sysml.lops.AppendM;
+import org.apache.sysml.lops.AppendCP;
+import org.apache.sysml.lops.AppendG;
+import org.apache.sysml.lops.AppendR;
+import org.apache.sysml.lops.Binary;
+import org.apache.sysml.lops.BinaryScalar;
+import org.apache.sysml.lops.BinaryM;
+import org.apache.sysml.lops.BinaryUAggChain;
+import org.apache.sysml.lops.CentralMoment;
+import org.apache.sysml.lops.CoVariance;
+import org.apache.sysml.lops.CombineBinary;
+import org.apache.sysml.lops.CombineUnary;
+import org.apache.sysml.lops.Data;
+import org.apache.sysml.lops.DataPartition;
+import org.apache.sysml.lops.Group;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.PartialAggregate;
+import org.apache.sysml.lops.PickByCount;
+import org.apache.sysml.lops.RepMat;
+import org.apache.sysml.lops.SortKeys;
+import org.apache.sysml.lops.Unary;
+import org.apache.sysml.lops.UnaryCP;
+import org.apache.sysml.lops.CombineBinary.OperationTypes;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 
 
 /* Binary (cell operations): aij + bij

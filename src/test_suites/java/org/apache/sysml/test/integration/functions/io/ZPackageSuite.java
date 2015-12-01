@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.io;
+package org.apache.sysml.test.integration.functions.io;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

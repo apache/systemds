@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt;
+package org.apache.sysml.hops.globalopt;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,34 +23,34 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.VisitStatus;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.cost.CostEstimationWrapper;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFLoopNode;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode.NodeType;
-import com.ibm.bi.dml.hops.globalopt.gdfresolve.GDFMismatchHeuristic;
-import com.ibm.bi.dml.hops.globalopt.gdfresolve.GDFMismatchHeuristic.MismatchHeuristicType;
-import com.ibm.bi.dml.hops.globalopt.gdfresolve.MismatchHeuristicFactory;
-import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
-import com.ibm.bi.dml.hops.recompile.Recompiler;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.cost.CostEstimationWrapper;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFGraph;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFLoopNode;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
+import org.apache.sysml.hops.globalopt.gdfresolve.GDFMismatchHeuristic;
+import org.apache.sysml.hops.globalopt.gdfresolve.GDFMismatchHeuristic.MismatchHeuristicType;
+import org.apache.sysml.hops.globalopt.gdfresolve.MismatchHeuristicFactory;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 
 /**
  * Global data flow optimization via enumeration-based optimizer (dynamic programming). 

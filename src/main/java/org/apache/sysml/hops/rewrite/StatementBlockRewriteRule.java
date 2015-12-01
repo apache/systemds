@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.parser.StatementBlock;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.parser.StatementBlock;
 
 /**
  * Base class for all hop rewrites in order to enable generic

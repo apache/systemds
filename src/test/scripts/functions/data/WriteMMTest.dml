@@ -17,7 +17,7 @@
 #-------------------------------------------------------------
 
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.data.WriteMMTest.java
+# junit test class: org.apache.sysml.test.integration.functions.data.WriteMMTest.java
 
 A = read($1, rows=$2, cols=$3, format="text");
 

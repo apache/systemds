@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.udf;
+package org.apache.sysml.udf;
 
 import java.io.Serializable;
 

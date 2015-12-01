@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.transform;
+package org.apache.sysml.runtime.transform;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
@@ -27,7 +27,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
 
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
+import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
 
 
 public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, DistinctValue>{

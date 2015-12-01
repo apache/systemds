@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.mqo;
+package org.apache.sysml.runtime.controlprogram.parfor.mqo;
 
 import java.util.LinkedList;
 
-import com.ibm.bi.dml.lops.runtime.RunMRJobs;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.runtime.matrix.data.Pair;
-import com.ibm.bi.dml.utils.Statistics;
+import org.apache.sysml.lops.runtime.RunMRJobs;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.matrix.JobReturn;
+import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.utils.Statistics;
 
 public class PiggybackingWorkerTimeSequential extends PiggybackingWorker
 {

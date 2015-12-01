@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.mapred;
+package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 
@@ -26,14 +26,14 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.hops.Hop.DataGenMethod;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.mr.DataGenMRInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.RandInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.LibMatrixDatagen;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.RandomMatrixGenerator;
+import org.apache.sysml.hops.Hop.DataGenMethod;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.mr.DataGenMRInstruction;
+import org.apache.sysml.runtime.instructions.mr.RandInstruction;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDatagen;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.RandomMatrixGenerator;
 
 
 public class DataGenMapper extends GMRMapper 

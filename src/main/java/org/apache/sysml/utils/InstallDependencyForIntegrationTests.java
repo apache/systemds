@@ -14,7 +14,7 @@
  * limitations under the License.
  * 
  */
-package com.ibm.bi.dml.utils;
+package org.apache.sysml.utils;
 
 import static org.junit.Assert.fail;
 
@@ -23,7 +23,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-//import com.ibm.bi.dml.test.utils.TestUtils;
+//import org.apache.sysml.test.utils.TestUtils;
 
 /**
  * This class will be used to setup dependency on Eclipse environment as well as on Jenkins server

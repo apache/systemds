@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.parser.antlr4;
+package org.apache.sysml.parser.antlr4;
 
 
 public class ExpressionInfo {
 	
-	public com.ibm.bi.dml.parser.Expression expr = null;
+	public org.apache.sysml.parser.Expression expr = null;
 
 	// For parfor and for
-	public com.ibm.bi.dml.parser.Expression from = null;
-	public com.ibm.bi.dml.parser.Expression to = null;
-	public com.ibm.bi.dml.parser.Expression increment = null;
+	public org.apache.sysml.parser.Expression from = null;
+	public org.apache.sysml.parser.Expression to = null;
+	public org.apache.sysml.parser.Expression increment = null;
 }

@@ -44,17 +44,17 @@ An `MLContext` object can be created by passing its constructor a reference to t
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
-scala>import com.ibm.bi.dml.api.MLContext
-import com.ibm.bi.dml.api.MLContext
+scala>import org.apache.sysml.api.MLContext
+import org.apache.sysml.api.MLContext
 
 scala> val ml = new MLContext(sc)
-ml: com.ibm.bi.dml.api.MLContext = com.ibm.bi.dml.api.MLContext@33e38c6b
+ml: org.apache.sysml.api.MLContext = org.apache.sysml.api.MLContext@33e38c6b
 {% endhighlight %}
 </div>
 
 <div data-lang="Statements" markdown="1">
 {% highlight scala %}
-import com.ibm.bi.dml.api.MLContext
+import org.apache.sysml.api.MLContext
 val ml = new MLContext(sc)
 {% endhighlight %}
 </div>
@@ -125,27 +125,27 @@ an `MLOutput` object. The `getScalar()` method extracts a scalar value from a `D
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
-scala> import com.ibm.bi.dml.api.MLOutput
-import com.ibm.bi.dml.api.MLOutput
+scala> import org.apache.sysml.api.MLOutput
+import org.apache.sysml.api.MLOutput
 
 scala> def getScalar(outputs: MLOutput, symbol: String): Any =
      | outputs.getDF(sqlContext, symbol).first()(1)
-getScalar: (outputs: com.ibm.bi.dml.api.MLOutput, symbol: String)Any
+getScalar: (outputs: org.apache.sysml.api.MLOutput, symbol: String)Any
 
 scala> def getScalarDouble(outputs: MLOutput, symbol: String): Double =
      | getScalar(outputs, symbol).asInstanceOf[Double]
-getScalarDouble: (outputs: com.ibm.bi.dml.api.MLOutput, symbol: String)Double
+getScalarDouble: (outputs: org.apache.sysml.api.MLOutput, symbol: String)Double
 
 scala> def getScalarInt(outputs: MLOutput, symbol: String): Int =
      | getScalarDouble(outputs, symbol).toInt
-getScalarInt: (outputs: com.ibm.bi.dml.api.MLOutput, symbol: String)Int
+getScalarInt: (outputs: org.apache.sysml.api.MLOutput, symbol: String)Int
 
 {% endhighlight %}
 </div>
 
 <div data-lang="Statements" markdown="1">
 {% highlight scala %}
-import com.ibm.bi.dml.api.MLOutput
+import org.apache.sysml.api.MLOutput
 def getScalar(outputs: MLOutput, symbol: String): Any =
 outputs.getDF(sqlContext, symbol).first()(1)
 def getScalarDouble(outputs: MLOutput, symbol: String): Double =
@@ -176,11 +176,11 @@ to convert the `DataFrame df` to a SystemML binary-block matrix, which is repres
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
-scala> import com.ibm.bi.dml.runtime.instructions.spark.utils.{RDDConverterUtilsExt => RDDConverterUtils}
-import com.ibm.bi.dml.runtime.instructions.spark.utils.{RDDConverterUtilsExt=>RDDConverterUtils}
+scala> import org.apache.sysml.runtime.instructions.spark.utils.{RDDConverterUtilsExt => RDDConverterUtils}
+import org.apache.sysml.runtime.instructions.spark.utils.{RDDConverterUtilsExt=>RDDConverterUtils}
 
-scala> import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics
+scala> import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 
 scala> val numRowsPerBlock = 1000
 numRowsPerBlock: Int = 1000
@@ -189,18 +189,18 @@ scala> val numColsPerBlock = 1000
 numColsPerBlock: Int = 1000
 
 scala> val mc = new MatrixCharacteristics(numRows, numCols, numRowsPerBlock, numColsPerBlock)
-mc: com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics = [100000 x 1000, nnz=-1, blocks (1000 x 1000)]
+mc: org.apache.sysml.runtime.matrix.MatrixCharacteristics = [100000 x 1000, nnz=-1, blocks (1000 x 1000)]
 
 scala> val sysMlMatrix = RDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc, false)
-sysMlMatrix: org.apache.spark.api.java.JavaPairRDD[com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes,com.ibm.bi.dml.runtime.matrix.data.MatrixBlock] = org.apache.spark.api.java.JavaPairRDD@2bce3248
+sysMlMatrix: org.apache.spark.api.java.JavaPairRDD[org.apache.sysml.runtime.matrix.data.MatrixIndexes,org.apache.sysml.runtime.matrix.data.MatrixBlock] = org.apache.spark.api.java.JavaPairRDD@2bce3248
 
 {% endhighlight %}
 </div>
 
 <div data-lang="Statements" markdown="1">
 {% highlight scala %}
-import com.ibm.bi.dml.runtime.instructions.spark.utils.{RDDConverterUtilsExt => RDDConverterUtils}
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.instructions.spark.utils.{RDDConverterUtilsExt => RDDConverterUtils}
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 val numRowsPerBlock = 1000
 val numColsPerBlock = 1000
 val mc = new MatrixCharacteristics(numRows, numCols, numRowsPerBlock, numColsPerBlock)
@@ -268,7 +268,7 @@ nargs: scala.collection.immutable.Map[String,String] = Map(Xin -> " ", Mout -> "
 scala> val outputs = ml.execute("shape.dml", nargs)
 15/10/12 16:29:15 WARN : Your hostname, derons-mbp.usca.ibm.com resolves to a loopback/non-reachable address: 127.0.0.1, but we couldn't find any external IP address!
 15/10/12 16:29:15 WARN OptimizerUtils: Auto-disable multi-threaded text read for 'text' and 'csv' due to thread contention on JRE < 1.8 (java.version=1.7.0_80).
-outputs: com.ibm.bi.dml.api.MLOutput = com.ibm.bi.dml.api.MLOutput@4d424743
+outputs: org.apache.sysml.api.MLOutput = org.apache.sysml.api.MLOutput@4d424743
 
 scala> val m = getScalarInt(outputs, "m")
 m: Int = 100000
@@ -362,11 +362,11 @@ mean value of the matrix.
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
-scala> import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes
+scala> import org.apache.sysml.runtime.matrix.data.MatrixIndexes
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes
 
-scala> import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock
+scala> import org.apache.sysml.runtime.matrix.data.MatrixBlock
+import org.apache.sysml.runtime.matrix.data.MatrixBlock
 
 scala> import org.apache.spark.api.java.JavaPairRDD
 import org.apache.spark.api.java.JavaPairRDD
@@ -383,15 +383,15 @@ scala> def minMaxMean(mat: JavaPairRDD[MatrixIndexes, MatrixBlock], rows: Int, c
      | val meanOut = getScalarDouble(outputs, "meanOut")
      | (minOut, maxOut, meanOut)
      | }
-minMaxMean: (mat: org.apache.spark.api.java.JavaPairRDD[com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes,com.ibm.bi.dml.runtime.matrix.data.MatrixBlock], rows: Int, cols: Int, ml: com.ibm.bi.dml.api.MLContext)(Double, Double, Double)
+minMaxMean: (mat: org.apache.spark.api.java.JavaPairRDD[org.apache.sysml.runtime.matrix.data.MatrixIndexes,org.apache.sysml.runtime.matrix.data.MatrixBlock], rows: Int, cols: Int, ml: org.apache.sysml.api.MLContext)(Double, Double, Double)
 
 {% endhighlight %}
 </div>
 
 <div data-lang="Statements" markdown="1">
 {% highlight scala %}
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes
+import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.spark.api.java.JavaPairRDD
 def minMaxMean(mat: JavaPairRDD[MatrixIndexes, MatrixBlock], rows: Int, cols: Int, ml: MLContext): (Double, Double, Double) = {
 ml.reset()
@@ -452,7 +452,7 @@ to standard output.
 
 
 {% highlight java %}
-package com.ibm.bi.dml;
+package org.apache.sysml;
 
 import java.util.HashMap;
 
@@ -462,8 +462,8 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
 
-import com.ibm.bi.dml.api.MLContext;
-import com.ibm.bi.dml.api.MLOutput;
+import org.apache.sysml.api.MLContext;
+import org.apache.sysml.api.MLOutput;
 
 public class MLContextExample {
 
@@ -835,7 +835,7 @@ This cell contains helper methods to return `Double` and `Int` values from outpu
 **Cell:**
 {% highlight scala %}
 // Helper functions
-import com.ibm.bi.dml.api.MLOutput
+import org.apache.sysml.api.MLOutput
 
 def getScalar(outputs: MLOutput, symbol: String): Any =
     outputs.getDF(sqlContext, symbol).first()(1)
@@ -849,10 +849,10 @@ def getScalarInt(outputs: MLOutput, symbol: String): Int =
 
 **Output:**
 {% highlight scala %}
-import com.ibm.bi.dml.api.MLOutput
-getScalar: (outputs: com.ibm.bi.dml.api.MLOutput, symbol: String)Any
-getScalarDouble: (outputs: com.ibm.bi.dml.api.MLOutput, symbol: String)Double
-getScalarInt: (outputs: com.ibm.bi.dml.api.MLOutput, symbol: String)Int
+import org.apache.sysml.api.MLOutput
+getScalar: (outputs: org.apache.sysml.api.MLOutput, symbol: String)Any
+getScalarDouble: (outputs: org.apache.sysml.api.MLOutput, symbol: String)Double
+getScalarInt: (outputs: org.apache.sysml.api.MLOutput, symbol: String)Int
 {% endhighlight %}
 
 
@@ -867,9 +867,9 @@ and single-column `label` matrix, both represented by the
 **Cell:**
 {% highlight scala %}
 // Imports
-import com.ibm.bi.dml.api.MLContext
-import com.ibm.bi.dml.runtime.instructions.spark.utils.{RDDConverterUtilsExt => RDDConverterUtils}
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.api.MLContext
+import org.apache.sysml.runtime.instructions.spark.utils.{RDDConverterUtilsExt => RDDConverterUtils}
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 // Create SystemML context
 val ml = new MLContext(sc)
@@ -890,16 +890,16 @@ val cnt2 = y2.count()
 
 **Output:**
 {% highlight scala %}
-import com.ibm.bi.dml.api.MLContext
-import com.ibm.bi.dml.runtime.instructions.spark.utils.{RDDConverterUtilsExt=>RDDConverterUtils}
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics
-ml: com.ibm.bi.dml.api.MLContext = com.ibm.bi.dml.api.MLContext@38d59245
-mcX: com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics = [10000 x 1000, nnz=-1, blocks (1000 x 1000)]
-mcY: com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics = [10000 x 1, nnz=-1, blocks (1000 x 1000)]
-X: org.apache.spark.api.java.JavaPairRDD[com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes,com.ibm.bi.dml.runtime.matrix.data.MatrixBlock] = org.apache.spark.api.java.JavaPairRDD@b5a86e3
-y: org.apache.spark.api.java.JavaPairRDD[com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes,com.ibm.bi.dml.runtime.matrix.data.MatrixBlock] = org.apache.spark.api.java.JavaPairRDD@56377665
-X2: org.apache.spark.api.java.JavaPairRDD[com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes,com.ibm.bi.dml.runtime.matrix.data.MatrixBlock] = org.apache.spark.api.java.JavaPairRDD@650f29d2
-y2: org.apache.spark.api.java.JavaPairRDD[com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes,com.ibm.bi.dml.runtime.matrix.data.MatrixBlock] = org.apache.spark.api.java.JavaPairRDD@334857a8
+import org.apache.sysml.api.MLContext
+import org.apache.sysml.runtime.instructions.spark.utils.{RDDConverterUtilsExt=>RDDConverterUtils}
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics
+ml: org.apache.sysml.api.MLContext = org.apache.sysml.api.MLContext@38d59245
+mcX: org.apache.sysml.runtime.matrix.MatrixCharacteristics = [10000 x 1000, nnz=-1, blocks (1000 x 1000)]
+mcY: org.apache.sysml.runtime.matrix.MatrixCharacteristics = [10000 x 1, nnz=-1, blocks (1000 x 1000)]
+X: org.apache.spark.api.java.JavaPairRDD[org.apache.sysml.runtime.matrix.data.MatrixIndexes,org.apache.sysml.runtime.matrix.data.MatrixBlock] = org.apache.spark.api.java.JavaPairRDD@b5a86e3
+y: org.apache.spark.api.java.JavaPairRDD[org.apache.sysml.runtime.matrix.data.MatrixIndexes,org.apache.sysml.runtime.matrix.data.MatrixBlock] = org.apache.spark.api.java.JavaPairRDD@56377665
+X2: org.apache.spark.api.java.JavaPairRDD[org.apache.sysml.runtime.matrix.data.MatrixIndexes,org.apache.sysml.runtime.matrix.data.MatrixBlock] = org.apache.spark.api.java.JavaPairRDD@650f29d2
+y2: org.apache.spark.api.java.JavaPairRDD[org.apache.sysml.runtime.matrix.data.MatrixIndexes,org.apache.sysml.runtime.matrix.data.MatrixBlock] = org.apache.spark.api.java.JavaPairRDD@334857a8
 cnt1: Long = 10
 cnt2: Long = 10
 {% endhighlight %}
@@ -936,7 +936,7 @@ val trainingTimePerIter = trainingTime / iters
 **Output:**
 {% highlight scala %}
 start: Long = 1444672090620
-outputs: com.ibm.bi.dml.api.MLOutput = com.ibm.bi.dml.api.MLOutput@5d2c22d0
+outputs: org.apache.sysml.api.MLOutput = org.apache.sysml.api.MLOutput@5d2c22d0
 trainingTime: Double = 1.176
 B: org.apache.spark.sql.DataFrame = [C1: double]
 r2: Double = 0.9677079547216473

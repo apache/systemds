@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.matrix;
+package org.apache.sysml.runtime.matrix;
 
 import java.util.HashSet;
 
@@ -26,20 +26,20 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.TripleIndexes;
-import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRMapper;
-import com.ibm.bi.dml.runtime.matrix.mapred.MMRJMRReducer;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
-import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixBlock;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixCell;
+import org.apache.sysml.runtime.matrix.data.TripleIndexes;
+import org.apache.sysml.runtime.matrix.mapred.MMRJMRMapper;
+import org.apache.sysml.runtime.matrix.mapred.MMRJMRReducer;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
+import org.apache.sysml.yarn.DMLAppMasterUtils;
 
 /*
  * inBlockRepresentation: indicate whether to use block representation or cell representation

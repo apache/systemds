@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,16 +26,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.DiagIndex;
-import com.ibm.bi.dml.runtime.functionobjects.SortIndex;
-import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
-import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
-import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.runtime.util.SortUtils;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.functionobjects.DiagIndex;
+import org.apache.sysml.runtime.functionobjects.SortIndex;
+import org.apache.sysml.runtime.functionobjects.SwapIndex;
+import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.SortUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * MB:

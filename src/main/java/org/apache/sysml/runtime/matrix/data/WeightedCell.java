@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -24,12 +24,12 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 
 public class WeightedCell extends MatrixCell

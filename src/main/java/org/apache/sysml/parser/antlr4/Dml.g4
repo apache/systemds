@@ -20,7 +20,7 @@ grammar Dml;
 @header
 {
 	// Commenting the package name and explicitly passing it in build.xml to maintain compatibility with maven plugin
-    // package com.ibm.bi.dml.antlr4;
+    // package org.apache.sysml.antlr4;
 }
 
 // DML Program is a list of expression
@@ -91,7 +91,7 @@ dataIdentifier returns [ ExpressionInfo dataInfo ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
        $dataInfo = new ExpressionInfo();
-       // $dataInfo.expr = new com.ibm.bi.dml.parser.DataIdentifier();
+       // $dataInfo.expr = new org.apache.sysml.parser.DataIdentifier();
 } :
     // ------------------------------------------
     // IndexedIdentifier
@@ -105,7 +105,7 @@ expression returns [ ExpressionInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
        $info = new ExpressionInfo();
-       // $info.expr = new com.ibm.bi.dml.parser.BinaryExpression(com.ibm.bi.dml.parser.Expression.BinaryOp.INVALID);
+       // $info.expr = new org.apache.sysml.parser.BinaryExpression(org.apache.sysml.parser.Expression.BinaryOp.INVALID);
 } :
     // ------------------------------------------
     // BinaryExpression

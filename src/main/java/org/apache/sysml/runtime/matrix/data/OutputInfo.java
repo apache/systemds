@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.io.Serializable;
 
@@ -29,9 +29,9 @@ import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput;
-import com.ibm.bi.dml.runtime.matrix.sort.CompactOutputFormat;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput;
+import org.apache.sysml.runtime.matrix.sort.CompactOutputFormat;
 
 
 

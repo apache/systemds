@@ -14,7 +14,7 @@
  * limitations under the License.
  * 
  */
-package com.ibm.bi.dml.runtime.matrix.sort;
+package org.apache.sysml.runtime.matrix.sort;
 
 import java.io.IOException;
 
@@ -28,13 +28,13 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.mr.CombineUnaryInstruction;
-import com.ibm.bi.dml.runtime.matrix.SortMR;
-import com.ibm.bi.dml.runtime.matrix.data.Converter;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.Pair;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.mr.CombineUnaryInstruction;
+import org.apache.sysml.runtime.matrix.SortMR;
+import org.apache.sysml.runtime.matrix.data.Converter;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
+import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
 @SuppressWarnings("rawtypes")
 public class ValueSortMapper<KIN extends WritableComparable, VIN extends Writable, KOUT extends WritableComparable, VOUT extends Writable> extends MapReduceBase 

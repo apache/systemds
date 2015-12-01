@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.binary.matrix;
+package org.apache.sysml.test.integration.functions.binary.matrix;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.api.DMLException;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
 
 
 public class ElementwiseMultiplicationTest extends AutomatedTestBase 

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.io;
+package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,13 +25,13 @@ import org.apache.hadoop.io.serializer.Deserializer;
 import org.apache.hadoop.io.serializer.Serialization;
 import org.apache.hadoop.io.serializer.Serializer;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.util.FastBufferedDataInputStream;
-import com.ibm.bi.dml.runtime.util.FastBufferedDataOutputStream;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
+import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 
 /**
  * This custom serialization class can be used via 
- * job.set("io.serializations", "com.ibm.bi.dml.runtime.io.BinaryBlockSerialization"); 
+ * job.set("io.serializations", "org.apache.sysml.runtime.io.BinaryBlockSerialization"); 
  * 
  * 
  */

@@ -15,20 +15,20 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram;
+package org.apache.sysml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.recompile.Recompiler;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLScriptException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.cp.Data;
-import com.ibm.bi.dml.utils.Statistics;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.parser.DataIdentifier;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLScriptException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.utils.Statistics;
 
 
 public class FunctionProgramBlock extends ProgramBlock 

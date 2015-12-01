@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,46 +28,46 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.ipa.InterProceduralAnalysis;
-import com.ibm.bi.dml.hops.rewrite.HopRewriteRule;
-import com.ibm.bi.dml.hops.rewrite.ProgramRewriteStatus;
-import com.ibm.bi.dml.hops.rewrite.ProgramRewriter;
-import com.ibm.bi.dml.hops.rewrite.RewriteConstantFolding;
-import com.ibm.bi.dml.hops.rewrite.RewriteRemoveUnnecessaryBranches;
-import com.ibm.bi.dml.hops.rewrite.StatementBlockRewriteRule;
-import com.ibm.bi.dml.hops.recompile.Recompiler;
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.ForStatement;
-import com.ibm.bi.dml.parser.ForStatementBlock;
-import com.ibm.bi.dml.parser.IfStatement;
-import com.ibm.bi.dml.parser.IfStatementBlock;
-import com.ibm.bi.dml.parser.LanguageException;
-import com.ibm.bi.dml.parser.ParForStatementBlock;
-import com.ibm.bi.dml.parser.StatementBlock;
-import com.ibm.bi.dml.parser.WhileStatement;
-import com.ibm.bi.dml.parser.WhileStatementBlock;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Stat;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.StatisticMonitor;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.Statistics;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.ipa.InterProceduralAnalysis;
+import org.apache.sysml.hops.rewrite.HopRewriteRule;
+import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
+import org.apache.sysml.hops.rewrite.ProgramRewriter;
+import org.apache.sysml.hops.rewrite.RewriteConstantFolding;
+import org.apache.sysml.hops.rewrite.RewriteRemoveUnnecessaryBranches;
+import org.apache.sysml.hops.rewrite.StatementBlockRewriteRule;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.ForStatement;
+import org.apache.sysml.parser.ForStatementBlock;
+import org.apache.sysml.parser.IfStatement;
+import org.apache.sysml.parser.IfStatementBlock;
+import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.parser.WhileStatement;
+import org.apache.sysml.parser.WhileStatementBlock;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.StatisticMonitor;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.Statistics;
 
 
 /**
@@ -97,7 +97,7 @@ public class OptimizationWrapper
 	{
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("com.ibm.bi.dml.runtime.controlprogram.parfor.opt")
+			Logger.getLogger("org.apache.sysml.runtime.controlprogram.parfor.opt")
 				  .setLevel((Level) Level.DEBUG);
 		}
 	}
@@ -186,7 +186,7 @@ public class OptimizationWrapper
 	public static void setLogLevel( Level optLogLevel )
 	{
 		if( !LDEBUG ){ //set log level if not overwritten by internal flag
-			Logger.getLogger("com.ibm.bi.dml.runtime.controlprogram.parfor.opt")
+			Logger.getLogger("org.apache.sysml.runtime.controlprogram.parfor.opt")
 			      .setLevel( optLogLevel );
 		}
 	}

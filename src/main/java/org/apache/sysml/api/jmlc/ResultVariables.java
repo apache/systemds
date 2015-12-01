@@ -15,16 +15,16 @@
  * 
  */
 
-package com.ibm.bi.dml.api.jmlc;
+package org.apache.sysml.api.jmlc;
 
 import java.util.HashMap;
 import java.util.Set;
 
-import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.instructions.cp.Data;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.util.DataConverter;
+import org.apache.sysml.api.DMLException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.DataConverter;
 
 /**
  * JMLC (Java Machine Learning Connector) API:

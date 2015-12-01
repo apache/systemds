@@ -18,7 +18,7 @@
 
 
 binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) return (Matrix[Double] B, Integer numbinsdef) 
-	implemented in (classname="com.ibm.bi.dml.udf.lib.BinningWrapper",exectype="mem")
+	implemented in (classname="org.apache.sysml.udf.lib.BinningWrapper",exectype="mem")
 	
 fmt = ifdef($fmt, "text");
 num_bins = ifdef($bins, 3); # 50

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.matrix.mapred;
+package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -26,16 +26,16 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.functionobjects.CM;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
-import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
-import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedInt;
-import com.ibm.bi.dml.runtime.matrix.data.WeightedCell;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.functionobjects.CM;
+import org.apache.sysml.runtime.functionobjects.KahanPlus;
+import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
+import org.apache.sysml.runtime.matrix.data.TaggedInt;
+import org.apache.sysml.runtime.matrix.data.WeightedCell;
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.runtime.matrix.operators.CMOperator;
+import org.apache.sysml.runtime.matrix.operators.Operator;
 
 
 public class GroupedAggMRCombiner extends ReduceBase

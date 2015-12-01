@@ -18,7 +18,7 @@
 
 
 orderExternal = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B) 
-			    implemented in (classname="com.ibm.bi.dml.udf.lib.OrderWrapper",exectype="mem")
+			    implemented in (classname="org.apache.sysml.udf.lib.OrderWrapper",exectype="mem")
  
 A = read( $1, rows=$2, cols=$3);  
 B1 = orderExternal(A, $4, FALSE);

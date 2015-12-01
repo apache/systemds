@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.pydml;
+package org.apache.sysml.test.integration.applications.pydml;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ibm.bi.dml.test.integration.applications.CsplineCGTest;
+import org.apache.sysml.test.integration.applications.CsplineCGTest;
 
 @RunWith(value = Parameterized.class)
 public class CsplineCGPyDMLTest extends CsplineCGTest {

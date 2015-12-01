@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.sort;
+package org.apache.sysml.runtime.matrix.sort;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,10 +39,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
-import com.ibm.bi.dml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
+import org.apache.sysml.runtime.matrix.data.Pair;
 
 //key class to read has to be DoubleWritable
 public class PickFromCompactInputFormat extends FileInputFormat<MatrixIndexes, MatrixCell>

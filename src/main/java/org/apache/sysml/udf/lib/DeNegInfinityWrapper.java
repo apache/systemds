@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.udf.lib;
+package org.apache.sysml.udf.lib;
 
 
-import com.ibm.bi.dml.udf.FunctionParameter;
-import com.ibm.bi.dml.udf.Matrix;
-import com.ibm.bi.dml.udf.PackageFunction;
-import com.ibm.bi.dml.udf.PackageRuntimeException;
-import com.ibm.bi.dml.udf.Matrix.ValueType;
+import org.apache.sysml.udf.FunctionParameter;
+import org.apache.sysml.udf.Matrix;
+import org.apache.sysml.udf.PackageFunction;
+import org.apache.sysml.udf.PackageRuntimeException;
+import org.apache.sysml.udf.Matrix.ValueType;
 
 /**
  * Wrapper class to deNegInfinity matrices by replacing all Negative Infinities

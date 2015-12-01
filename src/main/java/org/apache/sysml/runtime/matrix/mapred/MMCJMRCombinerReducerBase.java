@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.mapred;
+package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,14 +24,14 @@ import java.util.Iterator;
 
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.AggregateInstruction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.AggregateInstruction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixValue;
+import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 
 
 public class MMCJMRCombinerReducerBase extends ReduceBase

@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.debug;
+package org.apache.sysml.debug;
 
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 
 public class DMLFrame {
 	

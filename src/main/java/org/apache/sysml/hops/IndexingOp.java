@@ -15,20 +15,20 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
-import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
-import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
-import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.RangeBasedReIndex;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.Data;
+import org.apache.sysml.lops.Group;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.RangeBasedReIndex;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 //for now only works for range based indexing op
 public class IndexingOp extends Hop 

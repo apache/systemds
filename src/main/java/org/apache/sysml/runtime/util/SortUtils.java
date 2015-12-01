@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.util;
+package org.apache.sysml.runtime.util;
 
 import java.util.Arrays;
 import java.util.Random;
 
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 
 /**
  * Utilities for sorting, primarily used for SparseRows.

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.data;
+package org.apache.sysml.runtime.instructions.spark.data;
 
 /**
  * Class which allows the MLContext to pass properties for the RDD

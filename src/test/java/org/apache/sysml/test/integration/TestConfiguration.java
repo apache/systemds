@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration;
+package org.apache.sysml.test.integration;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.test.utils.TestUtils;
 
 
 

@@ -15,34 +15,34 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.hops.BinaryOp;
-import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.OpOp2;
-import com.ibm.bi.dml.hops.Hop.VisitStatus;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.UnaryOp;
-import com.ibm.bi.dml.hops.recompile.Recompiler;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.compile.Dag;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.compile.Dag;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 
 /**
  * Rule: Constant Folding. For all statement blocks, 

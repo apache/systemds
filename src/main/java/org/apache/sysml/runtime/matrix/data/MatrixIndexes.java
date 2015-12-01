@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -29,7 +29,7 @@ import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * This represent the indexes to the blocks of the matrix.

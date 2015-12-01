@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.instructions.spark.utils;
+package org.apache.sysml.runtime.instructions.spark.utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,17 +30,17 @@ import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.lops.Checkpoint;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.CopyBlockFunction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.lops.Checkpoint;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockFunction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class SparkUtils 
 {	

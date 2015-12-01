@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.io;
+package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
 
@@ -24,15 +24,15 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.matrix.data.IJV;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.matrix.data.IJV;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class WriterBinaryCell extends MatrixWriter
 {

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.transform;
+package org.apache.sysml.runtime.transform;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,8 +34,8 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
 
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
 
 public class GTFMTDReducer implements Reducer<IntWritable, DistinctValue, Text, LongWritable> {

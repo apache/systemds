@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.debug;
+package org.apache.sysml.debug;
 
 import java.util.Stack;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 
 public class DebugState 
 {

@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.caching;
+package org.apache.sysml.runtime.controlprogram.caching;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.LocalFileUtils;
 
 /**
  * Wrapper for WriteBuffer byte array per matrix in order to

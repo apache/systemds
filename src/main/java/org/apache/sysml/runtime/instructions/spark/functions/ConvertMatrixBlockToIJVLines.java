@@ -14,7 +14,7 @@
  * limitations under the License.
  * 
  */
-package com.ibm.bi.dml.runtime.instructions.spark.functions;
+package org.apache.sysml.runtime.instructions.spark.functions;
 
 import java.util.Iterator;
 
@@ -22,9 +22,9 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.BinaryBlockToTextCellConverter;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.BinaryBlockToTextCellConverter;
 
 public class ConvertMatrixBlockToIJVLines implements FlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, String> {
 

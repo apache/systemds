@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.debug;
+package org.apache.sysml.debug;
 
 import java.util.TreeMap;
 
-import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;
+import org.apache.sysml.runtime.instructions.cp.BreakPointInstruction;
+import org.apache.sysml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;
 
 
 /**

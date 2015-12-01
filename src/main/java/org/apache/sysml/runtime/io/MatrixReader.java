@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.io;
+package org.apache.sysml.runtime.io;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -25,10 +25,10 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 /**
  * Base class for all format-specific matrix readers. Every reader is required to implement the basic 

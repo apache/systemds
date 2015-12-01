@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,27 +23,27 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
-import com.ibm.bi.dml.runtime.functionobjects.IndexFunction;
-import com.ibm.bi.dml.runtime.functionobjects.KahanFunction;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlusSq;
-import com.ibm.bi.dml.runtime.functionobjects.Mean;
-import com.ibm.bi.dml.runtime.functionobjects.Multiply;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceDiag;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
-import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
-import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
+import org.apache.sysml.runtime.functionobjects.IndexFunction;
+import org.apache.sysml.runtime.functionobjects.KahanFunction;
+import org.apache.sysml.runtime.functionobjects.KahanPlus;
+import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
+import org.apache.sysml.runtime.functionobjects.Mean;
+import org.apache.sysml.runtime.functionobjects.Multiply;
+import org.apache.sysml.runtime.functionobjects.ReduceAll;
+import org.apache.sysml.runtime.functionobjects.ReduceCol;
+import org.apache.sysml.runtime.functionobjects.ReduceDiag;
+import org.apache.sysml.runtime.functionobjects.ReduceRow;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * MB:

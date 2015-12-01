@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.jmlc;
+package org.apache.sysml.test.integration.functions.jmlc;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,18 +23,18 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.api.jmlc.Connection;
-import com.ibm.bi.dml.api.jmlc.PreparedScript;
-import com.ibm.bi.dml.api.jmlc.ResultVariables;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
-import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.api.DMLException;
+import org.apache.sysml.api.jmlc.Connection;
+import org.apache.sysml.api.jmlc.PreparedScript;
+import org.apache.sysml.api.jmlc.ResultVariables;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
 
 /**
  * 

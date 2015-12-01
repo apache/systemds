@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
+package org.apache.sysml.runtime.controlprogram.parfor.util;
 
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;

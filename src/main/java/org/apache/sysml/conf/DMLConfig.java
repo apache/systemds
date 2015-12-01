@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.conf;
+package org.apache.sysml.conf;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -41,9 +41,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.util.LocalFileUtils;
 
 
 public class DMLConfig 

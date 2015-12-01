@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.unary.scalar;
+package org.apache.sysml.test.integration.functions.unary.scalar;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

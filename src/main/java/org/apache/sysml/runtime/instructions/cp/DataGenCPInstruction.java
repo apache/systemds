@@ -15,21 +15,21 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.cp;
+package org.apache.sysml.runtime.instructions.cp;
 
-import com.ibm.bi.dml.hops.DataGenOp;
-import com.ibm.bi.dml.hops.Hop.DataGenMethod;
-import com.ibm.bi.dml.lops.DataGen;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.matrix.data.LibMatrixDatagen;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.RandomMatrixGenerator;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.hops.DataGenOp;
+import org.apache.sysml.hops.Hop.DataGenMethod;
+import org.apache.sysml.lops.DataGen;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDatagen;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.RandomMatrixGenerator;
+import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class DataGenCPInstruction extends UnaryCPInstruction
 {

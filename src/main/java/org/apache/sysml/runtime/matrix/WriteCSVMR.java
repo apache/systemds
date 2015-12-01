@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.matrix;
+package org.apache.sysml.runtime.matrix;
 
 import java.util.HashMap;
 
@@ -26,21 +26,21 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.instructions.MRInstructionParser;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CSVWriteInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
-import com.ibm.bi.dml.runtime.matrix.mapred.CSVWriteMapper;
-import com.ibm.bi.dml.runtime.matrix.mapred.CSVWriteReducer;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
-import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.instructions.MRInstructionParser;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.instructions.mr.CSVWriteInstruction;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
+import org.apache.sysml.runtime.matrix.mapred.CSVWriteMapper;
+import org.apache.sysml.runtime.matrix.mapred.CSVWriteReducer;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
+import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
 public class WriteCSVMR 
 {

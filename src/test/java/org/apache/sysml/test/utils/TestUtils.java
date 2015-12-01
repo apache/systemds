@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.utils;
+package org.apache.sysml.test.utils;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -52,14 +52,14 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 
-import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
-import com.ibm.bi.dml.runtime.matrix.data.IJV;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
-import com.ibm.bi.dml.test.integration.BinaryMatrixCharacteristics;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.data.IJV;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
+import org.apache.sysml.test.integration.BinaryMatrixCharacteristics;
 
 
 /**

@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix;
+package org.apache.sysml.runtime.matrix;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,17 +25,17 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
 
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedInt;
-import com.ibm.bi.dml.runtime.matrix.data.WeightedCell;
-import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRCombiner;
-import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRMapper;
-import com.ibm.bi.dml.runtime.matrix.mapred.GroupedAggMRReducer;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.TaggedInt;
+import org.apache.sysml.runtime.matrix.data.WeightedCell;
+import org.apache.sysml.runtime.matrix.mapred.GroupedAggMRCombiner;
+import org.apache.sysml.runtime.matrix.mapred.GroupedAggMRMapper;
+import org.apache.sysml.runtime.matrix.mapred.GroupedAggMRReducer;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 
 public class GroupedAggMR 

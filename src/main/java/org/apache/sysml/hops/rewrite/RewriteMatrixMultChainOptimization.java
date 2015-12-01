@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,10 +25,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.hops.AggBinaryOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.utils.Explain;
+import org.apache.sysml.hops.AggBinaryOp;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.utils.Explain;
 
 /**
  * Rule: Determine the optimal order of execution for a chain of
@@ -47,7 +47,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	{
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("com.ibm.bi.dml.hops.rewrite.RewriteMatrixMultChainOptimization")
+			Logger.getLogger("org.apache.sysml.hops.rewrite.RewriteMatrixMultChainOptimization")
 				  .setLevel((Level) Level.TRACE);
 		}
 	}

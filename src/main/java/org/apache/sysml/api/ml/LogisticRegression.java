@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.api.ml;
+package org.apache.sysml.api.ml;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,17 +18,17 @@ import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
 
-import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.api.MLContext;
-import com.ibm.bi.dml.api.MLOutput;
-import com.ibm.bi.dml.api.ml.LogisticRegressionModel;
-import com.ibm.bi.dml.api.ml.functions.ConvertSingleColumnToString;
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.api.DMLException;
+import org.apache.sysml.api.MLContext;
+import org.apache.sysml.api.MLOutput;
+import org.apache.sysml.api.ml.LogisticRegressionModel;
+import org.apache.sysml.api.ml.functions.ConvertSingleColumnToString;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * 
@@ -46,7 +46,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
  * <pre><code>
  * // Code to demonstrate usage of pipeline
  * import org.apache.spark.ml.Pipeline
- * import com.ibm.bi.dml.api.ml.LogisticRegression
+ * import org.apache.sysml.api.ml.LogisticRegression
  * import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
  * import org.apache.spark.mllib.linalg.Vector
  * case class LabeledDocument(id: Long, text: String, label: Double)
@@ -78,7 +78,7 @@ import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
  * 
  * // Code to demonstrate usage of cross-validation
  * import org.apache.spark.ml.Pipeline
- * import com.ibm.bi.dml.api.ml.LogisticRegression
+ * import org.apache.sysml.api.ml.LogisticRegression
  * import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
  * import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
  * import org.apache.spark.ml.tuning.{ParamGridBuilder, CrossValidator}

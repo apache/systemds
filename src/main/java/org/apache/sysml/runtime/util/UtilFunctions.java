@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.util;
+package org.apache.sysml.runtime.util;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.NumItemsByEachReducerMetaData;
-import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
+import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 
 public class UtilFunctions 
 {

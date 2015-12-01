@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix;
+package org.apache.sysml.runtime.matrix;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -39,22 +39,22 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
-import com.ibm.bi.dml.runtime.matrix.mapred.CSVAssignRowIDMapper;
-import com.ibm.bi.dml.runtime.matrix.mapred.CSVAssignRowIDReducer;
-import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockMapper;
-import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockReducer;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
-import com.ibm.bi.dml.runtime.transform.TfUtils;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
+import org.apache.sysml.runtime.matrix.mapred.CSVAssignRowIDMapper;
+import org.apache.sysml.runtime.matrix.mapred.CSVAssignRowIDReducer;
+import org.apache.sysml.runtime.matrix.mapred.CSVReblockMapper;
+import org.apache.sysml.runtime.matrix.mapred.CSVReblockReducer;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
+import org.apache.sysml.runtime.transform.TfUtils;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 
 @SuppressWarnings("deprecation")

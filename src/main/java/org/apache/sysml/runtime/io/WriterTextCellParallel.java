@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.io;
+package org.apache.sysml.runtime.io;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -31,14 +31,14 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.matrix.data.IJV;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.matrix.data.IJV;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class WriterTextCellParallel extends WriterTextCell
 {

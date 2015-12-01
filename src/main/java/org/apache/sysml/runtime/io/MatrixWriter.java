@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.io;
+package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
  * Base class for all format-specific matrix writers. Every writer is required to implement the basic 

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.ipa;
+package org.apache.sysml.hops.ipa;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,52 +30,52 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.hops.BinaryOp;
-import com.ibm.bi.dml.hops.DataGenOp;
-import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.FunctionOp;
-import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.OpOp2;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.Hop.VisitStatus;
-import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
-import com.ibm.bi.dml.hops.recompile.Recompiler;
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.ExternalFunctionStatement;
-import com.ibm.bi.dml.parser.ForStatement;
-import com.ibm.bi.dml.parser.ForStatementBlock;
-import com.ibm.bi.dml.parser.FunctionStatement;
-import com.ibm.bi.dml.parser.FunctionStatementBlock;
-import com.ibm.bi.dml.parser.IfStatement;
-import com.ibm.bi.dml.parser.IfStatementBlock;
-import com.ibm.bi.dml.parser.LanguageException;
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.parser.StatementBlock;
-import com.ibm.bi.dml.parser.WhileStatement;
-import com.ibm.bi.dml.parser.WhileStatementBlock;
-import com.ibm.bi.dml.runtime.controlprogram.LocalVariableMap;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.cp.Data;
-import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
-import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.udf.lib.DeNaNWrapper;
-import com.ibm.bi.dml.udf.lib.DeNegInfinityWrapper;
-import com.ibm.bi.dml.udf.lib.DynamicReadMatrixCP;
-import com.ibm.bi.dml.udf.lib.DynamicReadMatrixRcCP;
-import com.ibm.bi.dml.udf.lib.OrderWrapper;
+import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.DataGenOp;
+import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.FunctionOp;
+import org.apache.sysml.hops.FunctionOp.FunctionType;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.DataIdentifier;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ExternalFunctionStatement;
+import org.apache.sysml.parser.ForStatement;
+import org.apache.sysml.parser.ForStatementBlock;
+import org.apache.sysml.parser.FunctionStatement;
+import org.apache.sysml.parser.FunctionStatementBlock;
+import org.apache.sysml.parser.IfStatement;
+import org.apache.sysml.parser.IfStatementBlock;
+import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.parser.WhileStatement;
+import org.apache.sysml.parser.WhileStatementBlock;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.cp.BooleanObject;
+import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.cp.DoubleObject;
+import org.apache.sysml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.udf.lib.DeNaNWrapper;
+import org.apache.sysml.udf.lib.DeNegInfinityWrapper;
+import org.apache.sysml.udf.lib.DynamicReadMatrixCP;
+import org.apache.sysml.udf.lib.DynamicReadMatrixRcCP;
+import org.apache.sysml.udf.lib.OrderWrapper;
 
 /**
  * This Inter Procedural Analysis (IPA) serves two major purposes:
@@ -103,7 +103,7 @@ import com.ibm.bi.dml.udf.lib.OrderWrapper;
  *     If ALLOW_MULTIPLE_FUNCTION_CALLS is enabled we treat multiple calls with the same sizes
  *     as one call and hence, propagate those statistics into the function as well.
  *   * Output size inference happens for DML-bodied functions that are invoked exactly once
- *     and for external functions that are known in advance (see UDFs in com.ibm.bi.dml.udf).
+ *     and for external functions that are known in advance (see UDFs in org.apache.sysml.udf).
  *   * Size propagation across DAGs requires control flow awareness:
  *     - Generic statement blocks: updated variables -> old stats in; new stats out
  *     - While/for statement blocks: updated variables -> old stats in/out if loop insensitive; otherwise unknown
@@ -129,7 +129,7 @@ public class InterProceduralAnalysis
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("com.ibm.bi.dml.parser.InterProceduralAnalysis")
+			Logger.getLogger("org.apache.sysml.parser.InterProceduralAnalysis")
 				  .setLevel((Level) Level.DEBUG);
 		}
 	}
@@ -831,14 +831,14 @@ public class InterProceduralAnalysis
 			MatrixObject moOut = createOutputMatrix(input.getDim1(), input.getDim2(),lnnz);
 			callVars.put(fop.getOutputVariableNames()[0], moOut);
 		}
-		else if( className.equals("com.ibm.bi.dml.udf.lib.EigenWrapper") ) 
+		else if( className.equals("org.apache.sysml.udf.lib.EigenWrapper") ) 
 		//else if( className.equals(EigenWrapper.class.getName()) ) //string ref for build flexibility
 		{
 			Hop input = fop.getInput().get(0);
 			callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(input.getDim1(), 1, -1));
 			callVars.put(fop.getOutputVariableNames()[1], createOutputMatrix(input.getDim1(), input.getDim1(),-1));			
 		}
-		else if( className.equals("com.ibm.bi.dml.udf.lib.LinearSolverWrapperCP") ) 
+		else if( className.equals("org.apache.sysml.udf.lib.LinearSolverWrapperCP") ) 
 		//else if( className.equals(LinearSolverWrapperCP.class.getName()) ) //string ref for build flexibility
 		{
 			Hop input = fop.getInput().get(1);

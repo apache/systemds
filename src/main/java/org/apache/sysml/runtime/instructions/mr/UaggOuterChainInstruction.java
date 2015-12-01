@@ -15,32 +15,32 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.mr;
+package org.apache.sysml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.LibMatrixOuterAgg;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
-import com.ibm.bi.dml.runtime.matrix.mapred.CachedValueMap;
-import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
-import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRBaseForCommonInstructions;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.functionobjects.ReduceAll;
+import org.apache.sysml.runtime.functionobjects.ReduceCol;
+import org.apache.sysml.runtime.functionobjects.ReduceRow;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.LibMatrixOuterAgg;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixValue;
+import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
+import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
+import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
+import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.matrix.mapred.MRBaseForCommonInstructions;
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
 
 /**

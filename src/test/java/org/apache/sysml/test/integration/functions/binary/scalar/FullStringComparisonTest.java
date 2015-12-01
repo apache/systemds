@@ -15,16 +15,16 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.binary.scalar;
+package org.apache.sysml.test.integration.functions.binary.scalar;
 
 import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
+import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
 
 /**
  * The main purpose of this test is to verify all combinations of

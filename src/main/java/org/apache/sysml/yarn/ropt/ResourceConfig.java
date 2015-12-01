@@ -15,21 +15,21 @@
  * 
  */
 
-package com.ibm.bi.dml.yarn.ropt;
+package org.apache.sysml.yarn.ropt;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.parser.ForStatementBlock;
-import com.ibm.bi.dml.parser.IfStatementBlock;
-import com.ibm.bi.dml.parser.WhileStatementBlock;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.parser.ForStatementBlock;
+import org.apache.sysml.parser.IfStatementBlock;
+import org.apache.sysml.parser.WhileStatementBlock;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 
 public class ResourceConfig 
 {

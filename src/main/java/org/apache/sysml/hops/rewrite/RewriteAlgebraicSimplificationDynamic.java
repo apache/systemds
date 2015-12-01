@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,30 +23,30 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.hops.AggBinaryOp;
-import com.ibm.bi.dml.hops.AggUnaryOp;
-import com.ibm.bi.dml.hops.BinaryOp;
-import com.ibm.bi.dml.hops.DataGenOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.QuaternaryOp;
-import com.ibm.bi.dml.hops.Hop.AggOp;
-import com.ibm.bi.dml.hops.Hop.DataGenMethod;
-import com.ibm.bi.dml.hops.Hop.Direction;
-import com.ibm.bi.dml.hops.Hop.OpOp1;
-import com.ibm.bi.dml.hops.Hop.OpOp4;
-import com.ibm.bi.dml.hops.Hop.ReOrgOp;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.IndexingOp;
-import com.ibm.bi.dml.hops.LeftIndexingOp;
-import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.Hop.OpOp2;
-import com.ibm.bi.dml.hops.ReorgOp;
-import com.ibm.bi.dml.hops.UnaryOp;
-import com.ibm.bi.dml.lops.MapMultChain.ChainType;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
+import org.apache.sysml.hops.AggBinaryOp;
+import org.apache.sysml.hops.AggUnaryOp;
+import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.DataGenOp;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.QuaternaryOp;
+import org.apache.sysml.hops.Hop.AggOp;
+import org.apache.sysml.hops.Hop.DataGenMethod;
+import org.apache.sysml.hops.Hop.Direction;
+import org.apache.sysml.hops.Hop.OpOp1;
+import org.apache.sysml.hops.Hop.OpOp4;
+import org.apache.sysml.hops.Hop.ReOrgOp;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.IndexingOp;
+import org.apache.sysml.hops.LeftIndexingOp;
+import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.ReorgOp;
+import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.lops.MapMultChain.ChainType;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 
 /**
  * Rule: Algebraic Simplifications. Simplifies binary expressions

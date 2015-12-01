@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,7 +23,7 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.hops.Hop.FileFormatTypes;
 
 
 public abstract class Expression 

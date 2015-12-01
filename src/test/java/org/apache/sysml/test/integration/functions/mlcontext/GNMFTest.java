@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.test.integration.functions.mlcontext;
+package org.apache.sysml.test.integration.functions.mlcontext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,21 +16,21 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.api.MLContext;
-import com.ibm.bi.dml.api.MLOutput;
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.utils.TestUtils;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
+import org.apache.sysml.api.DMLException;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.api.MLContext;
+import org.apache.sysml.api.MLOutput;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.utils.TestUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 
 import org.apache.spark.mllib.linalg.distributed.MatrixEntry;
 import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix;

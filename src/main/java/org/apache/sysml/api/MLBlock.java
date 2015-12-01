@@ -14,7 +14,7 @@
  * limitations under the License.
  * 
  */
-package com.ibm.bi.dml.api;
+package org.apache.sysml.api;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -27,8 +27,8 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 import scala.collection.Seq;
 

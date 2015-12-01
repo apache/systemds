@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.mapred;
+package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -26,15 +26,15 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.data.TripleIndexes;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixValue;
+import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixValue;
+import org.apache.sysml.runtime.matrix.data.TripleIndexes;
+import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 
 
 

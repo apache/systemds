@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.matrix.sort;
+package org.apache.sysml.runtime.matrix.sort;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -29,8 +29,8 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.matrix.SortMR;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.matrix.SortMR;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 @SuppressWarnings("rawtypes")
 public class ValueSortReducer<K extends WritableComparable, V extends Writable> extends MapReduceBase 

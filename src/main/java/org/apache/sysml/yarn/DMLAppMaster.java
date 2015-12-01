@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.yarn;
+package org.apache.sysml.yarn;
 
 import java.io.IOException;
 
@@ -37,10 +37,10 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.runtime.DMLScriptException;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.runtime.DMLScriptException;
 
 public class DMLAppMaster 
 {
@@ -54,7 +54,7 @@ public class DMLAppMaster
 	{
 		// for internal debugging only
 		if( DMLYarnClientProxy.LDEBUG ) {
-			Logger.getLogger("com.ibm.bi.dml.yarn").setLevel((Level) Level.DEBUG);
+			Logger.getLogger("org.apache.sysml.yarn").setLevel((Level) Level.DEBUG);
 		}
 	}
 	

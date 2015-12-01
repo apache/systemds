@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.transform;
+package org.apache.sysml.runtime.transform;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -44,40 +44,40 @@ import org.apache.wink.json4j.JSONObject;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.CSVReBlock;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.ParameterizedBuiltinFunctionExpression;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionParser;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.data.RDDObject;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtils;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.AssignRowIDMRReturn;
-import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.transform.TransformationAgent.TX_METHOD;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.JSONHelper;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.lops.CSVReBlock;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.InstructionParser;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
+import org.apache.sysml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysml.runtime.matrix.CSVReblockMR;
+import org.apache.sysml.runtime.matrix.CSVReblockMR.AssignRowIDMRReturn;
+import org.apache.sysml.runtime.matrix.JobReturn;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.transform.TransformationAgent.TX_METHOD;
+import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.JSONHelper;
 
 public class DataTransform {
 	

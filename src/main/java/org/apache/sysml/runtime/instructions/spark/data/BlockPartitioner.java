@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.data;
+package org.apache.sysml.runtime.instructions.spark.data;
 
 import org.apache.spark.Partitioner;
 
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * Default partitioner used for all binary block rdd operations in order

@@ -74,7 +74,7 @@
 							<goal>java</goal>
 						</goals>
 						<configuration>
-							<mainClass>com.ibm.bi.dml.utils.InstallDependencyForIntegrationTests</mainClass>
+							<mainClass>org.apache.sysml.utils.InstallDependencyForIntegrationTests</mainClass>
 							<arguments>
 								<argument>${skipTests}</argument>
 							</arguments>
@@ -262,7 +262,7 @@
 						<!-- </manifest> -->
 						<manifestEntries>
 							<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
-							<Main-Class>com.ibm.bi.dml.api.DMLScript</Main-Class>
+							<Main-Class>org.apache.sysml.api.DMLScript</Main-Class>
 						</manifestEntries>
 					</archive>
 				</configuration>

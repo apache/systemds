@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 
@@ -24,21 +24,21 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.ForStatement;
-import com.ibm.bi.dml.parser.ForStatementBlock;
-import com.ibm.bi.dml.parser.FunctionStatement;
-import com.ibm.bi.dml.parser.FunctionStatementBlock;
-import com.ibm.bi.dml.parser.IfStatement;
-import com.ibm.bi.dml.parser.IfStatementBlock;
-import com.ibm.bi.dml.parser.LanguageException;
-import com.ibm.bi.dml.parser.ParForStatementBlock;
-import com.ibm.bi.dml.parser.StatementBlock;
-import com.ibm.bi.dml.parser.WhileStatement;
-import com.ibm.bi.dml.parser.WhileStatementBlock;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.ForStatement;
+import org.apache.sysml.parser.ForStatementBlock;
+import org.apache.sysml.parser.FunctionStatement;
+import org.apache.sysml.parser.FunctionStatementBlock;
+import org.apache.sysml.parser.IfStatement;
+import org.apache.sysml.parser.IfStatementBlock;
+import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.parser.WhileStatement;
+import org.apache.sysml.parser.WhileStatementBlock;
 
 /**
  * This program rewriter applies a variety of rule-based rewrites
@@ -60,7 +60,7 @@ public class ProgramRewriter
 	static{
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("com.ibm.bi.dml.hops.rewrite")
+			Logger.getLogger("org.apache.sysml.hops.rewrite")
 				  .setLevel((Level) Level.DEBUG);
 		}
 		

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -23,15 +23,15 @@ import java.util.LinkedList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.parser.ParForStatementBlock;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 
 
 /**

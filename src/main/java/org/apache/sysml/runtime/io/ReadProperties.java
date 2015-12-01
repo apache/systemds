@@ -15,10 +15,10 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.io;
+package org.apache.sysml.runtime.io;
 
-import com.ibm.bi.dml.runtime.matrix.data.FileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 
 public class ReadProperties 
 {

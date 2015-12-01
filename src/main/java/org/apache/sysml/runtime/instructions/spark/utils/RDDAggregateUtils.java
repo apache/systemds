@@ -15,22 +15,22 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.utils;
+package org.apache.sysml.runtime.instructions.spark.utils;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
-import com.ibm.bi.dml.runtime.instructions.spark.data.CorrMatrixBlock;
-import com.ibm.bi.dml.runtime.instructions.spark.data.RowMatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.OperationsOnMatrixValues;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.KahanPlus;
+import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.instructions.spark.data.CorrMatrixBlock;
+import org.apache.sysml.runtime.instructions.spark.data.RowMatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 
 /**
  * Collection of utility methods for aggregating binary block rdds. As a general

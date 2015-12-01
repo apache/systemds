@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.cp;
+package org.apache.sysml.runtime.instructions.cp;
 
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 
 public class StringObject extends ScalarObject 
 {	

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime;
+package org.apache.sysml.runtime;
 
 
 /**

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser.antlr4;
+package org.apache.sysml.parser.antlr4;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -37,29 +37,29 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.parser.AParserWrapper;
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.ForStatement;
-import com.ibm.bi.dml.parser.ForStatementBlock;
-import com.ibm.bi.dml.parser.FunctionStatementBlock;
-import com.ibm.bi.dml.parser.IfStatement;
-import com.ibm.bi.dml.parser.IfStatementBlock;
-import com.ibm.bi.dml.parser.ImportStatement;
-import com.ibm.bi.dml.parser.LanguageException;
-import com.ibm.bi.dml.parser.ParForStatement;
-import com.ibm.bi.dml.parser.ParForStatementBlock;
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.parser.Statement;
-import com.ibm.bi.dml.parser.StatementBlock;
-import com.ibm.bi.dml.parser.WhileStatement;
-import com.ibm.bi.dml.parser.WhileStatementBlock;
-import com.ibm.bi.dml.parser.antlr4.DmlParser.DmlprogramContext;
-import com.ibm.bi.dml.parser.antlr4.DmlParser.FunctionStatementContext;
-import com.ibm.bi.dml.parser.antlr4.DmlParser.StatementContext;
-import com.ibm.bi.dml.parser.antlr4.DmlSyntacticErrorListener.CustomDmlErrorListener;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.parser.AParserWrapper;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.ForStatement;
+import org.apache.sysml.parser.ForStatementBlock;
+import org.apache.sysml.parser.FunctionStatementBlock;
+import org.apache.sysml.parser.IfStatement;
+import org.apache.sysml.parser.IfStatementBlock;
+import org.apache.sysml.parser.ImportStatement;
+import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.ParForStatement;
+import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.parser.WhileStatement;
+import org.apache.sysml.parser.WhileStatementBlock;
+import org.apache.sysml.parser.antlr4.DmlParser.DmlprogramContext;
+import org.apache.sysml.parser.antlr4.DmlParser.FunctionStatementContext;
+import org.apache.sysml.parser.antlr4.DmlParser.StatementContext;
+import org.apache.sysml.parser.antlr4.DmlSyntacticErrorListener.CustomDmlErrorListener;
+import org.apache.sysml.runtime.util.LocalFileUtils;
 
 /**
  * This is the main entry point for the Antlr4 parser.
@@ -273,7 +273,7 @@ public class DMLParserWrapper extends AParserWrapper
 
 		// Then add all the statements
 		for(StatementContext stmtCtx : ast.blocks) {
-			com.ibm.bi.dml.parser.Statement current = stmtCtx.info.stmt;
+			org.apache.sysml.parser.Statement current = stmtCtx.info.stmt;
 			if(current == null) {
 				LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " cannot process the statement");
 				return null;

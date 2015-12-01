@@ -15,19 +15,19 @@
  * 
  */
 
-package com.ibm.bi.dml.lops;
+package org.apache.sysml.lops;
 
 import java.util.HashMap;
 
-import com.ibm.bi.dml.hops.Hop.DataGenMethod;
-import com.ibm.bi.dml.lops.LopProperties.ExecLocation;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.OutputParameters.Format;
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.parser.Statement;
-import com.ibm.bi.dml.parser.Expression.*;
+import org.apache.sysml.hops.Hop.DataGenMethod;
+import org.apache.sysml.lops.LopProperties.ExecLocation;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.OutputParameters.Format;
+import org.apache.sysml.lops.compile.JobType;
+import org.apache.sysml.parser.DataIdentifier;
+import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.parser.Expression.*;
 
 
 /**

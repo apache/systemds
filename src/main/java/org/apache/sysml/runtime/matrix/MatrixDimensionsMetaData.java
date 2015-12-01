@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix;
+package org.apache.sysml.runtime.matrix;
 
 public class MatrixDimensionsMetaData extends MetaData 
 {

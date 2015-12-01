@@ -15,31 +15,31 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark;
+package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 
-import com.ibm.bi.dml.lops.BinaryM.VectorType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.instructions.cp.CPOperand;
-import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixMatrixBinaryOpFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.MatrixVectorBinaryOpPartitionFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.OuterVectorBinaryOpFunction;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVectorFunction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.lops.BinaryM.VectorType;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
+import org.apache.sysml.runtime.instructions.spark.functions.MatrixMatrixBinaryOpFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.MatrixVectorBinaryOpPartitionFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.OuterVectorBinaryOpFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.ReplicateVectorFunction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 
 public abstract class BinarySPInstruction extends ComputationSPInstruction
 {

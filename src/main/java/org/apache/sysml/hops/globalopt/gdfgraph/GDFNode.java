@@ -15,24 +15,24 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt.gdfgraph;
+package org.apache.sysml.hops.globalopt.gdfgraph;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.hops.AggUnaryOp;
-import com.ibm.bi.dml.hops.DataGenOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.DataGenMethod;
-import com.ibm.bi.dml.hops.Hop.Direction;
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.hops.Hop.OpOp1;
-import com.ibm.bi.dml.hops.Hop.ReOrgOp;
-import com.ibm.bi.dml.hops.ReorgOp;
-import com.ibm.bi.dml.hops.UnaryOp;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.hops.AggUnaryOp;
+import org.apache.sysml.hops.DataGenOp;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataGenMethod;
+import org.apache.sysml.hops.Hop.Direction;
+import org.apache.sysml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.hops.Hop.OpOp1;
+import org.apache.sysml.hops.Hop.ReOrgOp;
+import org.apache.sysml.hops.ReorgOp;
+import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 /**
  * The reason of a custom graph structure is to unify both within DAG

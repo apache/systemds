@@ -15,22 +15,22 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.FunctionOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.Expression.DataType;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.FunctionOp;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.hops.Hop.ParamBuiltinOp;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.ParameterizedBuiltinOp;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.Expression.DataType;
 
 /**
  * Rule: BlockSizeAndReblock. For all statement blocks, determine

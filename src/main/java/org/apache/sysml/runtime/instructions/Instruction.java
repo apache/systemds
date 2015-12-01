@@ -15,17 +15,17 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions;
+package org.apache.sysml.runtime.instructions;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.api.monitoring.Location;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.api.monitoring.Location;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.parser.DataIdentifier;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 
 
 public abstract class Instruction 

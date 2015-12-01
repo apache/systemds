@@ -15,21 +15,21 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.functions;
+package org.apache.sysml.runtime.instructions.spark.functions;
 
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.Converter;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.data.Pair;
-import com.ibm.bi.dml.runtime.matrix.data.TextToBinaryCellConverter;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.Converter;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixValue;
+import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.matrix.data.TextToBinaryCellConverter;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class ConvertTextLineToBinaryCellFunction implements PairFunction<String, MatrixIndexes, MatrixCell> {

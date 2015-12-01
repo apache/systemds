@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt.gdfgraph;
+package org.apache.sysml.hops.globalopt.gdfgraph;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.Program;
 
 public class GDFGraph 
 {

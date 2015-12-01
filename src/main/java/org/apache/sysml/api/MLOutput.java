@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.api;
+package org.apache.sysml.api;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,13 +38,13 @@ import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.GetMLBlock;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.spark.functions.GetMLBlock;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * This is a simple container object that returns the output of execute from MLContext 

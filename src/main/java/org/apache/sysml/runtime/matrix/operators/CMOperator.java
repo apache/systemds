@@ -16,10 +16,10 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.operators;
+package org.apache.sysml.runtime.matrix.operators;
 
-import com.ibm.bi.dml.runtime.functionobjects.CM;
-import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.functionobjects.CM;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
 
 public class CMOperator extends Operator 
 {

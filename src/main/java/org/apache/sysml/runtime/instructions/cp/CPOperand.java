@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.cp;
+package org.apache.sysml.runtime.instructions.cp;
 
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.parser.Expression.*;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.parser.Expression.*;
+import org.apache.sysml.runtime.instructions.Instruction;
 
 
 public class CPOperand 

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.transform;
+package org.apache.sysml.runtime.transform;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -37,17 +37,17 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.io.MatrixReader;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.utils.JSONHelper;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.io.MatrixReader;
+import org.apache.sysml.runtime.matrix.CSVReblockMR;
+import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.JSONHelper;
 
 
 @SuppressWarnings("deprecation")

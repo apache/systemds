@@ -16,17 +16,17 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.cp.KahanObject;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 
 
 public class MatrixPackedCell extends MatrixCell

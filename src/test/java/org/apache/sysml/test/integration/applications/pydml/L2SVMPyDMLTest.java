@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.pydml;
+package org.apache.sysml.test.integration.applications.pydml;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ibm.bi.dml.test.integration.applications.L2SVMTest;
+import org.apache.sysml.test.integration.applications.L2SVMTest;
 
 @RunWith(value = Parameterized.class)
 public class L2SVMPyDMLTest extends L2SVMTest {

@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration;
+package org.apache.sysml.test.integration;
 
 import java.util.ArrayList;
 
 import org.junit.After;
 import org.junit.Before;
 
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.test.utils.TestUtils;
 
 
 public abstract class AutomatedScalabilityTestBase extends AutomatedTestBase 

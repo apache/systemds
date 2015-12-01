@@ -16,14 +16,14 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.operators;
+package org.apache.sysml.runtime.matrix.operators;
 
-import com.ibm.bi.dml.runtime.functionobjects.IndexFunction;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlusSq;
-import com.ibm.bi.dml.runtime.functionobjects.Minus;
-import com.ibm.bi.dml.runtime.functionobjects.Or;
-import com.ibm.bi.dml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.IndexFunction;
+import org.apache.sysml.runtime.functionobjects.KahanPlus;
+import org.apache.sysml.runtime.functionobjects.KahanPlusSq;
+import org.apache.sysml.runtime.functionobjects.Minus;
+import org.apache.sysml.runtime.functionobjects.Or;
+import org.apache.sysml.runtime.functionobjects.Plus;
 
 
 public class AggregateUnaryOperator  extends Operator 

@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.functions;
+package org.apache.sysml.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
 public class MatrixMatrixBinaryOpFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock> 
 {

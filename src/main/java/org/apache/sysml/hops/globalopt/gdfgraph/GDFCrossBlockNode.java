@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt.gdfgraph;
+package org.apache.sysml.hops.globalopt.gdfgraph;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 
 /**
  * Crossblock operators represent 

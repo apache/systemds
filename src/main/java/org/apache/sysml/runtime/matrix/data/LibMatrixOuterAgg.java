@@ -15,28 +15,28 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.util.Arrays;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.Builtin;
-import com.ibm.bi.dml.runtime.functionobjects.Equals;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThan;
-import com.ibm.bi.dml.runtime.functionobjects.GreaterThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.KahanPlus;
-import com.ibm.bi.dml.runtime.functionobjects.LessThan;
-import com.ibm.bi.dml.runtime.functionobjects.LessThanEquals;
-import com.ibm.bi.dml.runtime.functionobjects.NotEquals;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceAll;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceCol;
-import com.ibm.bi.dml.runtime.functionobjects.ReduceRow;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
-import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.runtime.util.SortUtils;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Equals;
+import org.apache.sysml.runtime.functionobjects.GreaterThan;
+import org.apache.sysml.runtime.functionobjects.GreaterThanEquals;
+import org.apache.sysml.runtime.functionobjects.KahanPlus;
+import org.apache.sysml.runtime.functionobjects.LessThan;
+import org.apache.sysml.runtime.functionobjects.LessThanEquals;
+import org.apache.sysml.runtime.functionobjects.NotEquals;
+import org.apache.sysml.runtime.functionobjects.ReduceAll;
+import org.apache.sysml.runtime.functionobjects.ReduceCol;
+import org.apache.sysml.runtime.functionobjects.ReduceRow;
+import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.SortUtils;
 
 /**
  * ACS:

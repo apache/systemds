@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.dml;
+package org.apache.sysml.test.integration.applications.dml;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.test.integration.applications.HITSTest;
+import org.apache.sysml.test.integration.applications.HITSTest;
 
 public class HITSDMLTest extends HITSTest {
 

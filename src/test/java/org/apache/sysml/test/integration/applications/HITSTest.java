@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications;
+package org.apache.sysml.test.integration.applications;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.utils.TestUtils;
 
 
 public abstract class HITSTest extends AutomatedTestBase 

@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.api.ml;
+package org.apache.sysml.api.ml;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,15 +16,15 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
 
-import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.api.MLContext;
-import com.ibm.bi.dml.api.MLOutput;
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.api.DMLException;
+import org.apache.sysml.api.MLContext;
+import org.apache.sysml.api.MLOutput;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 public class LogisticRegressionModel extends ProbabilisticClassificationModel<Vector, LogisticRegressionModel> {
 

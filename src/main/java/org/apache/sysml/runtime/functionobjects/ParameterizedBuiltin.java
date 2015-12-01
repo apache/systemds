@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.functionobjects;
+package org.apache.sysml.runtime.functionobjects;
 
 import java.util.HashMap;
 
@@ -27,8 +27,8 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.distribution.TDistribution;
 import org.apache.commons.math3.exception.MathArithmeticException;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 /**

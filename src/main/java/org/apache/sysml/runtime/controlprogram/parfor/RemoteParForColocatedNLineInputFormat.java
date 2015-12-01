@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor;
+package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
 
@@ -24,8 +24,8 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
 /**
  * Specific extension of NLineInputFormat in order to ensure data colocation

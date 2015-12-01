@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.cost;
+package org.apache.sysml.hops.cost;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.instructions.Instruction;
 
 /**
  * 

@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.mapred;
+package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,12 +29,12 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.mr.AggregateBinaryInstruction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.data.TripleIndexes;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixValue;
+import org.apache.sysml.runtime.matrix.data.TripleIndexes;
 
 
 public class MMRJMRMapper extends MapperBase 

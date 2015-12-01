@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 public class ProgramRewriteStatus 
 {

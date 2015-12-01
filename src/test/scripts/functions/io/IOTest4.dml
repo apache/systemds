@@ -16,7 +16,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.io.IOTest4.java
+# junit test class: org.apache.sysml.test.integration.functions.io.IOTest4.java
 
 B = 12;
 if( 1==1 ){

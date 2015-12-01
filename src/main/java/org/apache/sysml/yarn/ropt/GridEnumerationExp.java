@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.yarn.ropt;
+package org.apache.sysml.yarn.ropt;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 
 public class GridEnumerationExp extends GridEnumeration
 {

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
+package org.apache.sysml.runtime.controlprogram.parfor.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -28,9 +28,9 @@ import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.util.FastStringTokenizer;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.FastStringTokenizer;
 
 public class StagingFileUtils 
 {

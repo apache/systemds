@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.dml;
+package org.apache.sysml.test.integration.applications.dml;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ibm.bi.dml.test.integration.applications.PageRankTest;
+import org.apache.sysml.test.integration.applications.PageRankTest;
 
 @RunWith(value = Parameterized.class)
 public class PageRankDMLTest extends PageRankTest {

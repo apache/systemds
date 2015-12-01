@@ -15,20 +15,20 @@
  * 
  */
 
-package com.ibm.bi.dml.udf.lib;
+package org.apache.sysml.udf.lib;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.udf.FunctionParameter;
-import com.ibm.bi.dml.udf.Matrix;
-import com.ibm.bi.dml.udf.PackageFunction;
-import com.ibm.bi.dml.udf.PackageRuntimeException;
-import com.ibm.bi.dml.udf.Scalar;
-import com.ibm.bi.dml.udf.Matrix.ValueType;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.udf.FunctionParameter;
+import org.apache.sysml.udf.Matrix;
+import org.apache.sysml.udf.PackageFunction;
+import org.apache.sysml.udf.PackageRuntimeException;
+import org.apache.sysml.udf.Scalar;
+import org.apache.sysml.udf.Matrix.ValueType;
 
 /**
  * Wrapper class for Sorting and Creating of a Permutation Matrix
@@ -43,7 +43,7 @@ import com.ibm.bi.dml.udf.Matrix.ValueType;
  * 
  * permutation_matrix= externalFunction(Matrix[Double] A, Boolean desc) return
  * (Matrix[Double] P) implemented in
- * (classname="com.ibm.bi.dml.udf.lib.PermutationMatrixWrapper"
+ * (classname="org.apache.sysml.udf.lib.PermutationMatrixWrapper"
  * ,exectype="mem"); A = read( "Data/A.mtx"); P = permutation_matrix( A[,2],
  * false); B = P %*% A
  * 

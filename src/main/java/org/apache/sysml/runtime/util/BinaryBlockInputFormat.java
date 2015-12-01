@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.util;
+package org.apache.sysml.runtime.util;
 
 import java.io.IOException;
 
@@ -26,8 +26,8 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.FileSplit;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * Custom binary block input format to return the custom record reader.

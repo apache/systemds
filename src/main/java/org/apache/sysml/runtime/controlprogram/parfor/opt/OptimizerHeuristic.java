@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
 
 
 /**

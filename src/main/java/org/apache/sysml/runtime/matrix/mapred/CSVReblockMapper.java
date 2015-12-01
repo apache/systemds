@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.matrix.mapred;
+package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,14 +33,14 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
-import com.ibm.bi.dml.runtime.io.IOUtilFunctions;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.BlockRow;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.CSVReblockMR;
+import org.apache.sysml.runtime.matrix.CSVReblockMR.BlockRow;
+import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable, Text, TaggedFirstSecondIndexes, BlockRow>
 {

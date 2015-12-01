@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.mapred;
+package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,12 +28,12 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixPackedCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixPackedCell;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixValue;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
+import org.apache.sysml.runtime.matrix.data.MatrixPackedCell;
+import org.apache.sysml.runtime.matrix.data.MatrixValue;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixPackedCell;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixValue;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 /**
  * 

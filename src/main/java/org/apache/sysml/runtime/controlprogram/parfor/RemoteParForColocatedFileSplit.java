@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor;
+package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -34,9 +34,9 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.Task.TaskType;
-import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.runtime.controlprogram.parfor.Task.TaskType;
+import org.apache.sysml.runtime.instructions.cp.IntObject;
 
 
 /**

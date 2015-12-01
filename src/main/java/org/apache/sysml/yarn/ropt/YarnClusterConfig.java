@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.yarn.ropt;
+package org.apache.sysml.yarn.ropt;
 
 public class YarnClusterConfig 
 {	

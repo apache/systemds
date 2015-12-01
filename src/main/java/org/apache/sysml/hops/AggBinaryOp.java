@@ -15,41 +15,41 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
-import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.Binary;
-import com.ibm.bi.dml.lops.DataPartition;
-import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.MMCJ;
-import com.ibm.bi.dml.lops.MMRJ;
-import com.ibm.bi.dml.lops.MMTSJ;
-import com.ibm.bi.dml.lops.MMCJ.MMCJType;
-import com.ibm.bi.dml.lops.MMTSJ.MMTSJType;
-import com.ibm.bi.dml.lops.MMZip;
-import com.ibm.bi.dml.lops.MapMult;
-import com.ibm.bi.dml.lops.MapMultChain;
-import com.ibm.bi.dml.lops.MapMultChain.ChainType;
-import com.ibm.bi.dml.lops.PMMJ;
-import com.ibm.bi.dml.lops.PMapMult;
-import com.ibm.bi.dml.lops.PartialAggregate.CorrectionLocationType;
-import com.ibm.bi.dml.lops.Transform;
-import com.ibm.bi.dml.lops.Transform.OperationTypes;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.mapred.DistributedCacheInput;
-import com.ibm.bi.dml.runtime.matrix.mapred.MMCJMRReducerWithAggregator;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.Binary;
+import org.apache.sysml.lops.DataPartition;
+import org.apache.sysml.lops.Group;
+import org.apache.sysml.hops.Hop.MultiThreadedHop;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.MMCJ;
+import org.apache.sysml.lops.MMRJ;
+import org.apache.sysml.lops.MMTSJ;
+import org.apache.sysml.lops.MMCJ.MMCJType;
+import org.apache.sysml.lops.MMTSJ.MMTSJType;
+import org.apache.sysml.lops.MMZip;
+import org.apache.sysml.lops.MapMult;
+import org.apache.sysml.lops.MapMultChain;
+import org.apache.sysml.lops.MapMultChain.ChainType;
+import org.apache.sysml.lops.PMMJ;
+import org.apache.sysml.lops.PMapMult;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
+import org.apache.sysml.lops.Transform;
+import org.apache.sysml.lops.Transform.OperationTypes;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
+import org.apache.sysml.runtime.matrix.mapred.MMCJMRReducerWithAggregator;
 
 
 /* Aggregate binary (cell operations): Sum (aij + bij)

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

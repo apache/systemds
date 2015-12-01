@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.InternalTestVariable;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.TestVariable;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.InternalTestVariable;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestMeasure;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.TestVariable;
 
 /**
  * Internal representation of a test configuration consisting of a logical TestMeasure,

@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.util;
+package org.apache.sysml.runtime.util;
 
 import java.io.DataOutput;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlockDataOutput;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.MatrixBlockDataOutput;
+import org.apache.sysml.runtime.matrix.data.SparseRow;
 
 /**
  * This buffered output stream is essentially a merged version of

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,27 +24,27 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.LopProperties;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.compile.Dag;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
-import com.ibm.bi.dml.runtime.controlprogram.ForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.FunctionProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.IfProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.ProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.WhileProgramBlock;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.instructions.CPInstructionParser;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.lops.LopProperties;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.compile.Dag;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
+import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
+import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.instructions.CPInstructionParser;
+import org.apache.sysml.runtime.instructions.Instruction;
 
 
 

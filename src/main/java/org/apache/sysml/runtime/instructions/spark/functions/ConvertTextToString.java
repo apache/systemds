@@ -14,7 +14,7 @@
  * limitations under the License.
  * 
  */
-package com.ibm.bi.dml.runtime.instructions.spark.functions;
+package org.apache.sysml.runtime.instructions.spark.functions;
 
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.function.Function;

@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.functions;
+package org.apache.sysml.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * Function class that finds the index of last cell in the given matrix block.

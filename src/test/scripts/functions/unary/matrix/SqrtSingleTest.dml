@@ -16,7 +16,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.unary.matrix.SqrtTest.java
+# junit test class: org.apache.sysml.test.integration.functions.unary.matrix.SqrtTest.java
 
 In = read("$$indir$$in", rows=$$rows$$, cols=$$cols$$, format="text");
 Out = sqrt(In);

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser.antlr4;
+package org.apache.sysml.parser.antlr4;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
@@ -23,7 +23,7 @@ import org.antlr.v4.runtime.Recognizer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.api.DMLScript;
+import org.apache.sysml.api.DMLScript;
 
 import java.util.Stack;
 

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.caching;
+package org.apache.sysml.runtime.controlprogram.caching;
 
 
 public class CacheIOException extends CacheException

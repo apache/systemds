@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.api;
+package org.apache.sysml.api;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -45,46 +45,46 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.xml.sax.SAXException;
 
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.debug.DMLDebugger;
-import com.ibm.bi.dml.debug.DMLDebuggerException;
-import com.ibm.bi.dml.debug.DMLDebuggerProgramInfo;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.OptimizerUtils.OptimizationLevel;
-import com.ibm.bi.dml.hops.globalopt.GlobalOptimizerWrapper;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.parser.AParserWrapper;
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.LanguageException;
-import com.ibm.bi.dml.parser.ParseException;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLScriptException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
-import com.ibm.bi.dml.runtime.controlprogram.caching.CacheableData;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDHandler;
-import com.ibm.bi.dml.runtime.matrix.CleanupMR;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
-import com.ibm.bi.dml.utils.Explain;
-import com.ibm.bi.dml.utils.Explain.ExplainCounts;
-import com.ibm.bi.dml.utils.Explain.ExplainType;
-import com.ibm.bi.dml.utils.Statistics;
-import com.ibm.bi.dml.yarn.DMLAppMasterUtils;
-// import com.ibm.bi.dml.utils.visualize.DotGraph;
-import com.ibm.bi.dml.yarn.DMLYarnClientProxy;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.debug.DMLDebugger;
+import org.apache.sysml.debug.DMLDebuggerException;
+import org.apache.sysml.debug.DMLDebuggerProgramInfo;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
+import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.parser.AParserWrapper;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLScriptException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
+import org.apache.sysml.runtime.matrix.CleanupMR;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.utils.Explain;
+import org.apache.sysml.utils.Explain.ExplainCounts;
+import org.apache.sysml.utils.Explain.ExplainType;
+import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.yarn.DMLAppMasterUtils;
+// import org.apache.sysml.utils.visualize.DotGraph;
+import org.apache.sysml.yarn.DMLYarnClientProxy;
 
 
 public class DMLScript 
@@ -536,10 +536,10 @@ public class DMLScript
 		
 		if (debug != null){
 			if (debug.equalsIgnoreCase("debug")){
-				Logger.getLogger("com.ibm.bi.dml").setLevel((Level) Level.DEBUG);
+				Logger.getLogger("org.apache.sysml").setLevel((Level) Level.DEBUG);
 			}
 			else if (debug.equalsIgnoreCase("trace")){
-				Logger.getLogger("com.ibm.bi.dml").setLevel((Level) Level.TRACE);
+				Logger.getLogger("org.apache.sysml").setLevel((Level) Level.TRACE);
 			}
 		}
 	}

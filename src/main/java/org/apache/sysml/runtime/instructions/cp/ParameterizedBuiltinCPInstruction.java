@@ -15,29 +15,29 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.cp;
+package org.apache.sysml.runtime.instructions.cp;
 
 import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.wink.json4j.JSONException;
 
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.parser.Statement;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.functionobjects.ParameterizedBuiltin;
-import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.instructions.mr.GroupedAggregateInstruction;
-import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.matrix.operators.SimpleOperator;
-import com.ibm.bi.dml.runtime.transform.DataTransform;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.functionobjects.ParameterizedBuiltin;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
+import org.apache.sysml.runtime.matrix.JobReturn;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
+import org.apache.sysml.runtime.transform.DataTransform;
 
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 

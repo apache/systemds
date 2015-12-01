@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 /**
  * This exception is thrown when parse errors are encountered.

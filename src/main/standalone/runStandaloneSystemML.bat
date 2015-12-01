@@ -15,7 +15,7 @@ set LOG4JPROP=log4j.properties
 
 for /f "tokens=1,* delims= " %%a in ("%*") do set ALLBUTFIRST=%%b
 
-java -Xmx4g -Xms4g -Xmn400m -cp %CLASSPATH% -Dlog4j.configuration=file:%LOG4JPROP% com.ibm.bi.dml.api.DMLScript -f %1 -exec singlenode -config=SystemML-config.xml %ALLBUTFIRST%
+java -Xmx4g -Xms4g -Xmn400m -cp %CLASSPATH% -Dlog4j.configuration=file:%LOG4JPROP% org.apache.sysml.api.DMLScript -f %1 -exec singlenode -config=SystemML-config.xml %ALLBUTFIRST%
 GOTO End
 
 :Err

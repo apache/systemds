@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.operators;
+package org.apache.sysml.runtime.matrix.operators;
 
 import java.io.Serializable;
 

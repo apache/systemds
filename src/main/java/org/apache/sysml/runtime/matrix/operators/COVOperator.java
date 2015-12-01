@@ -16,9 +16,9 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.operators;
+package org.apache.sysml.runtime.matrix.operators;
 
-import com.ibm.bi.dml.runtime.functionobjects.COV;
+import org.apache.sysml.runtime.functionobjects.COV;
 
 public class COVOperator extends Operator 
 {

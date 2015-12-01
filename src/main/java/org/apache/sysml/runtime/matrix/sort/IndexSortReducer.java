@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.matrix.sort;
+package org.apache.sysml.runtime.matrix.sort;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -27,11 +27,11 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.matrix.SortMR;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.matrix.SortMR;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class IndexSortReducer extends MapReduceBase 
     implements Reducer<IndexSortComparable, LongWritable, MatrixIndexes, MatrixBlock>

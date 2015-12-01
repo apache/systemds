@@ -15,23 +15,23 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.transform;
+package org.apache.sysml.test.integration.functions.transform;
 
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.runtime.io.ReaderBinaryBlock;
-import com.ibm.bi.dml.runtime.io.ReaderTextCSV;
-import com.ibm.bi.dml.runtime.matrix.data.CSVFileFormatProperties;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.runtime.io.ReaderBinaryBlock;
+import org.apache.sysml.runtime.io.ReaderTextCSV;
+import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
 
 public class TransformTest extends AutomatedTestBase 
 {

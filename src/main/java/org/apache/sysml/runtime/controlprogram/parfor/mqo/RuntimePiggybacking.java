@@ -15,18 +15,18 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.mqo;
+package org.apache.sysml.runtime.controlprogram.parfor.mqo;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 
 
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.matrix.JobReturn;
-import com.ibm.bi.dml.runtime.matrix.data.Pair;
+import org.apache.sysml.lops.compile.JobType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.matrix.JobReturn;
+import org.apache.sysml.runtime.matrix.data.Pair;
 
 
 /**

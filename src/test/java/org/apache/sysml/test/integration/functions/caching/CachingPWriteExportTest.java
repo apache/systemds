@@ -15,18 +15,18 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.caching;
+package org.apache.sysml.test.integration.functions.caching;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
 
 public class CachingPWriteExportTest extends AutomatedTestBase 
 {

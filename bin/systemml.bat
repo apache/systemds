@@ -111,7 +111,7 @@ set CMD=java -Xmx4g -Xms2g -Xmn400m ^
      -cp "%CLASSPATH%" ^
      -Dlog4j.configuration=file:"%PROJECT_ROOT_DIR%\conf\log4j.properties" ^
      -Duser.dir="%USER_DIR%" ^
-     com.ibm.bi.dml.api.DMLScript ^
+     org.apache.sysml.api.DMLScript ^
      -f %SCRIPT_FILE% ^
      -exec singlenode ^
      -config="%PROJECT_ROOT_DIR%\conf\SystemML-config.xml" ^

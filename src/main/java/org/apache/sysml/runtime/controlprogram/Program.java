@@ -15,17 +15,17 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram;
+package org.apache.sysml.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLScriptException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLScriptException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 
 
 public class Program 

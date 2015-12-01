@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.mr;
+package org.apache.sysml.runtime.instructions.mr;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.matrix.operators.Operator;
 
 /**
  * Dummy instruction for cost estimation of data partition mr.

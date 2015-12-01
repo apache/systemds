@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt;
+package org.apache.sysml.hops.globalopt;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFNode;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
 
 /**
  * This MemoStructure is the central location for storing enumerated plans (configurations) and serves

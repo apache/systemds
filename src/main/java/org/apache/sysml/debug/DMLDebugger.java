@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.debug;
+package org.apache.sysml.debug;
 
 import java.io.PrintStream;
 import java.util.HashMap;
@@ -23,10 +23,10 @@ import java.util.HashMap;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang.math.IntRange;
 
-import com.ibm.bi.dml.debug.DMLDebuggerFunctions;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContextFactory;
-import com.ibm.bi.dml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;
+import org.apache.sysml.debug.DMLDebuggerFunctions;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCTION_STATUS;
 
 /** 
  * This class implements a debugger control module for DML scripts.

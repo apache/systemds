@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.mqo;
+package org.apache.sysml.runtime.controlprogram.parfor.mqo;
 
 import java.io.IOException;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
 public class RuntimePiggybackingUtils 
 {

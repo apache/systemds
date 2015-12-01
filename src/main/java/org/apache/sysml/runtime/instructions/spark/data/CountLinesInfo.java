@@ -14,7 +14,7 @@
  * limitations under the License.
  * 
  */
-package com.ibm.bi.dml.runtime.instructions.spark.data;
+package org.apache.sysml.runtime.instructions.spark.data;
 
 import java.io.Serializable;
 

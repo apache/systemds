@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix;
+package org.apache.sysml.runtime.matrix;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,25 +33,25 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
 
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CombineBinaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.CombineTernaryInstruction;
-import com.ibm.bi.dml.runtime.instructions.mr.MRInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.Pair;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.data.WeightedPair;
-import com.ibm.bi.dml.runtime.matrix.mapred.GMRMapper;
-import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
-import com.ibm.bi.dml.runtime.matrix.mapred.ReduceBase;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.instructions.mr.CombineBinaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.CombineTernaryInstruction;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixBlock;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixCell;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixValue;
+import org.apache.sysml.runtime.matrix.data.WeightedPair;
+import org.apache.sysml.runtime.matrix.mapred.GMRMapper;
+import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.matrix.mapred.ReduceBase;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class CombineMR 

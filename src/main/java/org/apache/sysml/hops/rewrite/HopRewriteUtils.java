@@ -15,46 +15,46 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.hops.AggBinaryOp;
-import com.ibm.bi.dml.hops.BinaryOp;
-import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.AggOp;
-import com.ibm.bi.dml.hops.Hop.DataGenMethod;
-import com.ibm.bi.dml.hops.DataGenOp;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.hops.Hop.OpOp2;
-import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
-import com.ibm.bi.dml.hops.Hop.ReOrgOp;
-import com.ibm.bi.dml.hops.Hop.VisitStatus;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.LeftIndexingOp;
-import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.MemoTable;
-import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
-import com.ibm.bi.dml.hops.ReorgOp;
-import com.ibm.bi.dml.hops.UnaryOp;
-import com.ibm.bi.dml.hops.Hop.OpOp1;
-import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.Statement;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
-import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.AggBinaryOp;
+import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.AggOp;
+import org.apache.sysml.hops.Hop.DataGenMethod;
+import org.apache.sysml.hops.DataGenOp;
+import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.Hop.ParamBuiltinOp;
+import org.apache.sysml.hops.Hop.ReOrgOp;
+import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.LeftIndexingOp;
+import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.MemoTable;
+import org.apache.sysml.hops.ParameterizedBuiltinOp;
+import org.apache.sysml.hops.ReorgOp;
+import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.Hop.OpOp1;
+import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.DataIdentifier;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.cp.BooleanObject;
+import org.apache.sysml.runtime.instructions.cp.DoubleObject;
+import org.apache.sysml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class HopRewriteUtils 
 {

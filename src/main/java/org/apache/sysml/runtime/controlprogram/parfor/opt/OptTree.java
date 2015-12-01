@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 
 /**
  * Represents a complete plan of a top-level parfor. This includes the internal

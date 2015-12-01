@@ -15,28 +15,28 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
 
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
-import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.DataGen;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.DataExpression;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.Statement;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.hops.Hop.MultiThreadedHop;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.DataGen;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.DataIdentifier;
+import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 
 /**
  * 

@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 

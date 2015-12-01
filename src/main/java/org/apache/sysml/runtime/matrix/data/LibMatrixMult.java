@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,18 +26,18 @@ import java.util.concurrent.Executors;
 
 import org.apache.commons.math3.util.FastMath;
 
-import com.ibm.bi.dml.lops.MapMultChain.ChainType;
-import com.ibm.bi.dml.lops.WeightedCrossEntropy.WCeMMType;
-import com.ibm.bi.dml.lops.WeightedDivMM.WDivMMType;
-import com.ibm.bi.dml.lops.WeightedSigmoid.WSigmoidType;
-import com.ibm.bi.dml.lops.WeightedSquaredLoss.WeightsType;
-import com.ibm.bi.dml.lops.WeightedUnaryMM.WUMMType;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.functionobjects.SwapIndex;
-import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
-import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.lops.MapMultChain.ChainType;
+import org.apache.sysml.lops.WeightedCrossEntropy.WCeMMType;
+import org.apache.sysml.lops.WeightedDivMM.WDivMMType;
+import org.apache.sysml.lops.WeightedSigmoid.WSigmoidType;
+import org.apache.sysml.lops.WeightedSquaredLoss.WeightsType;
+import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.functionobjects.SwapIndex;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * MB:

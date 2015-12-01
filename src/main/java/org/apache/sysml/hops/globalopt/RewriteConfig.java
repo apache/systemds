@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt;
+package org.apache.sysml.hops.globalopt;
 
-import com.ibm.bi.dml.hops.Hop.FileFormatTypes;
-import com.ibm.bi.dml.hops.globalopt.InterestingProperties.Location;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
+import org.apache.sysml.hops.Hop.FileFormatTypes;
+import org.apache.sysml.hops.globalopt.InterestingProperties.Location;
+import org.apache.sysml.lops.LopProperties.ExecType;
 
 
 

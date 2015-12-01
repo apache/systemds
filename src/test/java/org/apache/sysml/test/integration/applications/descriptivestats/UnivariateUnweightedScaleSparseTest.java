@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.descriptivestats;
+package org.apache.sysml.test.integration.applications.descriptivestats;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 
 
 /**

@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.opt;
+package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import com.ibm.bi.dml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.PerfTestTool.DataFormat;
 
 /**
  * 

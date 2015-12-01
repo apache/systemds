@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.ibm.bi.dml.runtime.matrix.data.hadoopfix;
+package org.apache.sysml.runtime.matrix.data.hadoopfix;
 
 import java.io.DataInput;
 import java.io.DataOutput;

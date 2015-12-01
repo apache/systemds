@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.instructions.spark.functions;
+package org.apache.sysml.runtime.instructions.spark.functions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,9 +37,9 @@ import scala.collection.Iterator;
 import scala.collection.Seq;
 import scala.xml.Node;
 
-import com.ibm.bi.dml.api.MLContext;
-import com.ibm.bi.dml.api.MLContextProxy;
-import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
+import org.apache.sysml.api.MLContext;
+import org.apache.sysml.api.MLContextProxy;
+import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 
 // Instead of extending org.apache.spark.JavaSparkListener
 /**

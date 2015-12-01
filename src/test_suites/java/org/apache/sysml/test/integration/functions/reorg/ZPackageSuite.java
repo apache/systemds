@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.reorg;
+package org.apache.sysml.test.integration.functions.reorg;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

@@ -15,10 +15,10 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.debug.DMLBreakpointManager;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.debug.DMLBreakpointManager;
 
  
 public class PrintStatement extends Statement

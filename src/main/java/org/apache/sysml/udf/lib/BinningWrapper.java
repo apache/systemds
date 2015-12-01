@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.udf.lib;
+package org.apache.sysml.udf.lib;
 
-import com.ibm.bi.dml.udf.FunctionParameter;
-import com.ibm.bi.dml.udf.Matrix;
-import com.ibm.bi.dml.udf.PackageFunction;
-import com.ibm.bi.dml.udf.PackageRuntimeException;
-import com.ibm.bi.dml.udf.Scalar;
-import com.ibm.bi.dml.udf.Matrix.ValueType;
-import com.ibm.bi.dml.udf.Scalar.ScalarValueType;
+import org.apache.sysml.udf.FunctionParameter;
+import org.apache.sysml.udf.Matrix;
+import org.apache.sysml.udf.PackageFunction;
+import org.apache.sysml.udf.PackageRuntimeException;
+import org.apache.sysml.udf.Scalar;
+import org.apache.sysml.udf.Matrix.ValueType;
+import org.apache.sysml.udf.Scalar.ScalarValueType;
 
 /**
  * Wrapper class for binning a sorted input vector

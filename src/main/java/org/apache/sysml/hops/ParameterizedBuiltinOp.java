@@ -15,27 +15,27 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
-import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.Data;
-import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.GroupedAggregate;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.OutputParameters.Format;
-import com.ibm.bi.dml.lops.ParameterizedBuiltin;
-import com.ibm.bi.dml.lops.RepMat;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.Statement;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.Data;
+import org.apache.sysml.lops.Group;
+import org.apache.sysml.lops.GroupedAggregate;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.OutputParameters.Format;
+import org.apache.sysml.lops.ParameterizedBuiltin;
+import org.apache.sysml.lops.RepMat;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 /**

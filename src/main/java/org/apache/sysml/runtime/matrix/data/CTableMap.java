@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 
-import com.ibm.bi.dml.runtime.util.LongLongDoubleHashMap;
-import com.ibm.bi.dml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
+import org.apache.sysml.runtime.util.LongLongDoubleHashMap;
+import org.apache.sysml.runtime.util.LongLongDoubleHashMap.LLDoubleEntry;
 
 /**
  * Ctable map is an abstraction for the hashmap used for ctable's hash group-by

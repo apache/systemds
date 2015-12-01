@@ -16,9 +16,9 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.operators;
+package org.apache.sysml.runtime.matrix.operators;
 
-import com.ibm.bi.dml.runtime.functionobjects.FunctionObject;
+import org.apache.sysml.runtime.functionobjects.FunctionObject;
 
 /*
  * Simple operator is just a wrapper for a single function object of any type.

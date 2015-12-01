@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.util;
+package org.apache.sysml.runtime.controlprogram.parfor.util;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -24,8 +24,8 @@ import java.io.Serializable;
 
 import org.apache.hadoop.io.Writable;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * Custom writable for a pair of matrix indexes and matrix block

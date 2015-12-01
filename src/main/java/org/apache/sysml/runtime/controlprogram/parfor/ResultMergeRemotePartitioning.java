@@ -15,14 +15,14 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor;
+package org.apache.sysml.runtime.controlprogram.parfor;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Partitioner;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedMatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixBlock;
+import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
 public class ResultMergeRemotePartitioning implements Partitioner<ResultMergeTaggedMatrixIndexes, TaggedMatrixBlock> 
 {

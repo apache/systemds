@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.util;
+package org.apache.sysml.runtime.util;
 
 public abstract class PRNGenerator 
 {

@@ -15,17 +15,17 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.FunctionOp.FunctionType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.FunctionOp.FunctionType;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 
 
 public class FunctionStatementBlock extends StatementBlock 

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.utils;
+package org.apache.sysml.utils;
 
 import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
@@ -28,15 +28,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.runtime.controlprogram.caching.CacheStatistics;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.InstructionUtils;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.FunctionCallCPInstruction;
-import com.ibm.bi.dml.runtime.instructions.spark.SPInstruction;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 
 /**
  * This class captures all statistics.

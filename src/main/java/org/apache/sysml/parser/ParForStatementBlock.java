@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,21 +29,21 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.parser.Expression.BinaryOp;
-import com.ibm.bi.dml.parser.Expression.BuiltinFunctionOp;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.PrintStatement.PRINTTYPE;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PExecMode;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.POptMode;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
-import com.ibm.bi.dml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
-import com.ibm.bi.dml.yarn.ropt.YarnClusterAnalyzer;
+import org.apache.sysml.parser.Expression.BinaryOp;
+import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.PrintStatement.PRINTTYPE;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
 /**
  * 
@@ -147,7 +147,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("com.ibm.bi.dml.parser.ParForStatementBlock")
+			Logger.getLogger("org.apache.sysml.parser.ParForStatementBlock")
 				  .setLevel((Level) Level.TRACE);
 		}
 	}

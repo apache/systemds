@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.parfor.stat;
+package org.apache.sysml.runtime.controlprogram.parfor.stat;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -23,8 +23,8 @@ import java.util.StringTokenizer;
 import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.runtime.matrix.mapred.MRConfigurationNames;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 
 /**
  * Central place for analyzing and obtaining static infrastructure properties

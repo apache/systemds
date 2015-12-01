@@ -17,7 +17,7 @@
 #-------------------------------------------------------------
 
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.unary.scalar.SinTest.java
+# junit test class: org.apache.sysml.test.integration.functions.unary.scalar.SinTest.java
 
 $$readhelper$$
 

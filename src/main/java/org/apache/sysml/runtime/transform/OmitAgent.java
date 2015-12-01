@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.transform;
+package org.apache.sysml.runtime.transform;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -30,7 +30,7 @@ import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class OmitAgent extends TransformationAgent {
 	

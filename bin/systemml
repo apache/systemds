@@ -55,7 +55,7 @@ USER_DIR=$PWD
 
 BUILD_DIR=${PROJECT_ROOT_DIR}/target
 HADOOP_LIB_DIR=${BUILD_DIR}/lib
-DML_SCRIPT_CLASS=${BUILD_DIR}/classes/com/ibm/bi/dml/api/DMLScript.class
+DML_SCRIPT_CLASS=${BUILD_DIR}/classes/org/apache/sysml/api/DMLScript.class
 
 BUILD_ERR_MSG="You must build the project before running this script."
 BUILD_DIR_ERR_MSG="Could not find target directory \"${BUILD_DIR}\". ${BUILD_ERR_MSG}"
@@ -130,7 +130,7 @@ CMD="java -Xmx8g -Xms4g -Xmn1g \
      -cp $CLASSPATH \
      -Dlog4j.configuration=file:'$PROJECT_ROOT_DIR/conf/log4j.properties' \
      -Duser.dir='$USER_DIR' \
-     com.ibm.bi.dml.api.DMLScript \
+     org.apache.sysml.api.DMLScript \
      -f '$SCRIPT_FILE' \
      -exec singlenode \
      -config='$PROJECT_ROOT_DIR/conf/SystemML-config.xml' \

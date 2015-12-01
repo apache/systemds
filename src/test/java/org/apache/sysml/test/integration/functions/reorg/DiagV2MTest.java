@@ -15,19 +15,19 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.reorg;
+package org.apache.sysml.test.integration.functions.reorg;
 
 import java.util.HashMap;
 import java.util.Random;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.DMLScript.RUNTIME_PLATFORM;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue.CellIndex;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
 
 public class DiagV2MTest extends AutomatedTestBase
 {

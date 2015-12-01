@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.pydml;
+package org.apache.sysml.test.integration.applications.pydml;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.test.integration.applications.HITSTest;
+import org.apache.sysml.test.integration.applications.HITSTest;
 
 public class HITSPyDMLTest extends HITSTest {
 

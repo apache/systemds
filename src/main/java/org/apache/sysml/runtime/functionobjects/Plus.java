@@ -15,11 +15,11 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.functionobjects;
+package org.apache.sysml.runtime.functionobjects;
 
 import java.io.Serializable;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLRuntimeException;
 
 // Singleton class
 

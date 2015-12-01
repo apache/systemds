@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.utils;
+package org.apache.sysml.runtime.instructions.spark.utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -32,19 +32,19 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.functionobjects.SortIndex;
-import com.ibm.bi.dml.runtime.instructions.spark.data.PartitionedMatrixBlock;
-import com.ibm.bi.dml.runtime.instructions.spark.data.RowMatrixBlock;
-import com.ibm.bi.dml.runtime.instructions.spark.functions.ReplicateVectorFunction;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
-import com.ibm.bi.dml.runtime.util.DataConverter;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.functionobjects.SortIndex;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import org.apache.sysml.runtime.instructions.spark.data.RowMatrixBlock;
+import org.apache.sysml.runtime.instructions.spark.functions.ReplicateVectorFunction;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * 

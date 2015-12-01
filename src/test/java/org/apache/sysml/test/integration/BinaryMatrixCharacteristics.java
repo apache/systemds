@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration;
+package org.apache.sysml.test.integration;
 
 
 /**

@@ -1,4 +1,4 @@
-package com.ibm.bi.dml.parser.python;
+package org.apache.sysml.parser.python;
 
 /**
  * This class exists solely to prevent compiler warnings.
@@ -8,6 +8,6 @@ package com.ibm.bi.dml.parser.python;
  * (R-like and Python-like dialects), and Antlr-generated code assumes that
  * these classes are present in the parser's namespace.
  */
-class ExpressionInfo extends com.ibm.bi.dml.parser.antlr4.ExpressionInfo {
+class ExpressionInfo extends org.apache.sysml.parser.antlr4.ExpressionInfo {
 
 }

@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime;
+package org.apache.sysml.runtime;
 
-import com.ibm.bi.dml.api.DMLException;
+import org.apache.sysml.api.DMLException;
 
 /**
  * This exception should be thrown to flag runtime errors -- DML equivalent to java.lang.RuntimeException.

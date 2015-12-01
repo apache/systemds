@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.mapred;
+package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,19 +29,19 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.functionobjects.CM;
-import com.ibm.bi.dml.runtime.functionobjects.COV;
-import com.ibm.bi.dml.runtime.functionobjects.ValueFunction;
-import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
-import com.ibm.bi.dml.runtime.instructions.mr.CM_N_COVInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.CM_N_COVCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixCell;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixValue;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
-import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.CM;
+import org.apache.sysml.runtime.functionobjects.COV;
+import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysml.runtime.instructions.mr.CM_N_COVInstruction;
+import org.apache.sysml.runtime.matrix.data.CM_N_COVCell;
+import org.apache.sysml.runtime.matrix.data.MatrixCell;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixValue;
+import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
+import org.apache.sysml.runtime.matrix.operators.CMOperator;
+import org.apache.sysml.runtime.matrix.operators.COVOperator;
 
 
 public class CMCOVMRReducer extends ReduceBase

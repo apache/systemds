@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.transform;
+package org.apache.sysml.runtime.transform;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -31,7 +31,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLRuntimeException;
 
 public class ApplyTfCSVMapper implements Mapper<LongWritable, Text, NullWritable, Text> {
 	

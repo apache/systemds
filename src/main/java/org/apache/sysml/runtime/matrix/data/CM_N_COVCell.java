@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -27,20 +27,20 @@ import java.util.Map;
 
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.instructions.cp.CM_COV_Object;
-import com.ibm.bi.dml.runtime.matrix.mapred.IndexedMatrixValue;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateBinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.AggregateUnaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.BinaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.Operator;
-import com.ibm.bi.dml.runtime.matrix.operators.QuaternaryOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.ReorgOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.ScalarOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.UnaryOperator;
-import com.ibm.bi.dml.runtime.util.IndexRange;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
+import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.util.IndexRange;
 
 @SuppressWarnings("rawtypes")
 public class CM_N_COVCell extends MatrixValue implements WritableComparable

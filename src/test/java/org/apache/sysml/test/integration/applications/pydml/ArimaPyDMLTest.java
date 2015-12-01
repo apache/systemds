@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications.pydml;
+package org.apache.sysml.test.integration.applications.pydml;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import com.ibm.bi.dml.test.integration.applications.ArimaTest;
+import org.apache.sysml.test.integration.applications.ArimaTest;
 
 @RunWith(value = Parameterized.class)
 public class ArimaPyDMLTest extends ArimaTest {

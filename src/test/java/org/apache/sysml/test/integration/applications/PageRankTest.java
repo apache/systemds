@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications;
+package org.apache.sysml.test.integration.applications;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,9 +24,9 @@ import java.util.List;
 
 import org.junit.runners.Parameterized.Parameters;
 
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
 
 public abstract class PageRankTest extends AutomatedTestBase {
 

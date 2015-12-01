@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram;
+package org.apache.sysml.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,44 +24,44 @@ import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.conf.ConfigurationManager;
-import com.ibm.bi.dml.conf.DMLConfig;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.ReBlock;
-import com.ibm.bi.dml.lops.compile.JobType;
-import com.ibm.bi.dml.parser.DMLTranslator;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.ExternalFunctionStatement;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.controlprogram.caching.CacheException;
-import com.ibm.bi.dml.runtime.controlprogram.caching.MatrixObject;
-import com.ibm.bi.dml.runtime.controlprogram.context.ExecutionContext;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.instructions.Instruction;
-import com.ibm.bi.dml.runtime.instructions.MRJobInstruction;
-import com.ibm.bi.dml.runtime.instructions.cp.BooleanObject;
-import com.ibm.bi.dml.runtime.instructions.cp.Data;
-import com.ibm.bi.dml.runtime.instructions.cp.DoubleObject;
-import com.ibm.bi.dml.runtime.instructions.cp.IntObject;
-import com.ibm.bi.dml.runtime.instructions.cp.ScalarObject;
-import com.ibm.bi.dml.runtime.instructions.cp.StringObject;
-import com.ibm.bi.dml.runtime.instructions.cp.VariableCPInstruction;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
-import com.ibm.bi.dml.runtime.matrix.MatrixFormatMetaData;
-import com.ibm.bi.dml.runtime.matrix.data.InputInfo;
-import com.ibm.bi.dml.runtime.matrix.data.OutputInfo;
-import com.ibm.bi.dml.udf.ExternalFunctionInvocationInstruction;
-import com.ibm.bi.dml.udf.FunctionParameter;
-import com.ibm.bi.dml.udf.Matrix;
-import com.ibm.bi.dml.udf.PackageFunction;
-import com.ibm.bi.dml.udf.PackageRuntimeException;
-import com.ibm.bi.dml.udf.Scalar;
-import com.ibm.bi.dml.udf.FunctionParameter.FunctionParameterType;
-import com.ibm.bi.dml.udf.BinaryObject;
-import com.ibm.bi.dml.udf.Scalar.ScalarValueType;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.ReBlock;
+import org.apache.sysml.lops.compile.JobType;
+import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.DataIdentifier;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ExternalFunctionStatement;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.MRJobInstruction;
+import org.apache.sysml.runtime.instructions.cp.BooleanObject;
+import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.cp.DoubleObject;
+import org.apache.sysml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.udf.ExternalFunctionInvocationInstruction;
+import org.apache.sysml.udf.FunctionParameter;
+import org.apache.sysml.udf.Matrix;
+import org.apache.sysml.udf.PackageFunction;
+import org.apache.sysml.udf.PackageRuntimeException;
+import org.apache.sysml.udf.Scalar;
+import org.apache.sysml.udf.FunctionParameter.FunctionParameterType;
+import org.apache.sysml.udf.BinaryObject;
+import org.apache.sysml.udf.Scalar.ScalarValueType;
 
 public class ExternalFunctionProgramBlock extends FunctionProgramBlock 
 {
@@ -916,7 +916,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @return
 	 */
 
-	protected com.ibm.bi.dml.udf.Matrix.ValueType getMatrixValueType(String string) {
+	protected org.apache.sysml.udf.Matrix.ValueType getMatrixValueType(String string) {
 
 		if (string.equals("Double"))
 			return Matrix.ValueType.Double;

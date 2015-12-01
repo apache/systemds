@@ -15,33 +15,33 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.bi.dml.hops.AggBinaryOp;
-import com.ibm.bi.dml.hops.DataOp;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.Hop.OpOp1;
-import com.ibm.bi.dml.hops.Hop.OpOp3;
-import com.ibm.bi.dml.hops.Hop.ParamBuiltinOp;
-import com.ibm.bi.dml.hops.Hop.DataOpTypes;
-import com.ibm.bi.dml.hops.Hop.ReOrgOp;
-import com.ibm.bi.dml.hops.Hop.VisitStatus;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.ParameterizedBuiltinOp;
-import com.ibm.bi.dml.hops.ReorgOp;
-import com.ibm.bi.dml.hops.TernaryOp;
-import com.ibm.bi.dml.hops.UnaryOp;
-import com.ibm.bi.dml.hops.recompile.Recompiler;
-import com.ibm.bi.dml.parser.DataIdentifier;
-import com.ibm.bi.dml.parser.StatementBlock;
-import com.ibm.bi.dml.parser.VariableSet;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
-import com.ibm.bi.dml.runtime.matrix.data.Pair;
+import org.apache.sysml.hops.AggBinaryOp;
+import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.OpOp1;
+import org.apache.sysml.hops.Hop.OpOp3;
+import org.apache.sysml.hops.Hop.ParamBuiltinOp;
+import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.ReOrgOp;
+import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.ParameterizedBuiltinOp;
+import org.apache.sysml.hops.ReorgOp;
+import org.apache.sysml.hops.TernaryOp;
+import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.parser.DataIdentifier;
+import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.parser.VariableSet;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.matrix.data.Pair;
 
 /**
  * Rule: Split Hop DAG after specific data-dependent operators. This is

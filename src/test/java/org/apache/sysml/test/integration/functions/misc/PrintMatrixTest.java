@@ -15,13 +15,13 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.misc;
+package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.api.DMLException;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
+import org.apache.sysml.api.DMLException;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
 
 /**
  *   

@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.spark.functions;
+package org.apache.sysml.runtime.instructions.spark.functions;
 
 import java.util.ArrayList;
 
@@ -26,11 +26,11 @@ import org.apache.spark.mllib.linalg.SparseMatrix;
 
 import scala.Tuple2;
 
-import com.ibm.bi.dml.runtime.matrix.data.IJV;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRowsIterator;
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.matrix.data.IJV;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class GetMLLibBlocks implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, Tuple2<Object, Object>, Matrix> {
 

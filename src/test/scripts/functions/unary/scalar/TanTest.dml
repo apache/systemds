@@ -16,7 +16,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.unary.scalar.TanTest.java
+# junit test class: org.apache.sysml.test.integration.functions.unary.scalar.TanTest.java
 
 $$readhelper$$
 

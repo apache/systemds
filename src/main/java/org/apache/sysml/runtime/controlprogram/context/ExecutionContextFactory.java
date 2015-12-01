@@ -15,10 +15,10 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.context;
+package org.apache.sysml.runtime.controlprogram.context;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.runtime.controlprogram.Program;
 
 public class ExecutionContextFactory 
 {

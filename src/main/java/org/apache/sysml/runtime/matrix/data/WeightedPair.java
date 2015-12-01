@@ -16,13 +16,13 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.data;
+package org.apache.sysml.runtime.matrix.data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 
 
 public class WeightedPair extends WeightedCell 

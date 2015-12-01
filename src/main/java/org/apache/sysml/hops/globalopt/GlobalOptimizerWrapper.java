@@ -15,23 +15,23 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt;
+package org.apache.sysml.hops.globalopt;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GDFGraph;
-import com.ibm.bi.dml.hops.globalopt.gdfgraph.GraphBuilder;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.parser.DMLProgram;
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.DMLUnsupportedOperationException;
-import com.ibm.bi.dml.runtime.controlprogram.Program;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.Timing;
-import com.ibm.bi.dml.utils.Explain;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.globalopt.gdfgraph.GDFGraph;
+import org.apache.sysml.hops.globalopt.gdfgraph.GraphBuilder;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.utils.Explain;
 
 /**
  * Main entry point for Global Data Flow Optimization. It is intended to be invoked after 
@@ -58,7 +58,7 @@ public class GlobalOptimizerWrapper
 	{
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("com.ibm.bi.dml.hops.globalopt")
+			Logger.getLogger("org.apache.sysml.hops.globalopt")
 			      .setLevel((Level) Level.DEBUG);
 		}
 	}

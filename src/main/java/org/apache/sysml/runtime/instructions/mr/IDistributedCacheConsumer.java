@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.instructions.mr;
+package org.apache.sysml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 

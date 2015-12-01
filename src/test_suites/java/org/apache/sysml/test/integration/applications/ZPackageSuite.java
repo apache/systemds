@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.applications;
+package org.apache.sysml.test.integration.applications;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -27,40 +27,40 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 	
   // .applications.dml package
-  com.ibm.bi.dml.test.integration.applications.dml.ApplyTransformDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.ArimaDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.CsplineCGDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.CsplineDSDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.GLMDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.GNMFDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.HITSDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.ID3DMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.L2SVMDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.LinearLogRegDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.LinearRegressionDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.MDABivariateStatsDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.MultiClassSVMDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.NaiveBayesDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.PageRankDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.dml.WelchTDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.ApplyTransformDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.ArimaDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.CsplineCGDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.CsplineDSDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.GLMDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.GNMFDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.HITSDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.ID3DMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.L2SVMDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.LinearLogRegDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.LinearRegressionDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.MDABivariateStatsDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.MultiClassSVMDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.NaiveBayesDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.PageRankDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.WelchTDMLTest.class,
 
   // .applications.pydml package
-  com.ibm.bi.dml.test.integration.applications.pydml.ApplyTransformPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.ArimaPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.CsplineCGPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.CsplineDSPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.GLMPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.GNMFPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.HITSPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.ID3PyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.L2SVMPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.LinearLogRegPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.LinearRegressionPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.MDABivariateStatsPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.MultiClassSVMPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.NaiveBayesPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.PageRankPyDMLTest.class,
-  com.ibm.bi.dml.test.integration.applications.pydml.WelchTPyDMLTest.class
+  org.apache.sysml.test.integration.applications.pydml.ApplyTransformPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.ArimaPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.CsplineCGPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.CsplineDSPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.GLMPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.GNMFPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.HITSPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.ID3PyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.L2SVMPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.LinearLogRegPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.LinearRegressionPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.MDABivariateStatsPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.MultiClassSVMPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.NaiveBayesPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.PageRankPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.WelchTPyDMLTest.class
   
 })
 

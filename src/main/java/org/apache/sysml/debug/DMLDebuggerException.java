@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.debug;
+package org.apache.sysml.debug;
 
-import com.ibm.bi.dml.api.DMLException;
+import org.apache.sysml.api.DMLException;
 
 /**
  * This exception should be thrown to flag debugger errors.

@@ -15,17 +15,17 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.recompile;
+package org.apache.sysml.test.integration.functions.recompile;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ibm.bi.dml.lops.UnaryCP;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.test.utils.TestUtils;
-import com.ibm.bi.dml.utils.Statistics;
+import org.apache.sysml.lops.UnaryCP;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * 

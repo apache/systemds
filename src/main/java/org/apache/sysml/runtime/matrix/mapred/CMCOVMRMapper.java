@@ -16,7 +16,7 @@
  */
 
 
-package com.ibm.bi.dml.runtime.matrix.mapred;
+package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,15 +27,15 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.functionobjects.CM;
-import com.ibm.bi.dml.runtime.functionobjects.COV;
-import com.ibm.bi.dml.runtime.instructions.mr.CM_N_COVInstruction;
-import com.ibm.bi.dml.runtime.matrix.data.CM_N_COVCell;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
-import com.ibm.bi.dml.runtime.matrix.data.WeightedPair;
-import com.ibm.bi.dml.runtime.matrix.operators.CMOperator;
-import com.ibm.bi.dml.runtime.matrix.operators.COVOperator;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.CM;
+import org.apache.sysml.runtime.functionobjects.COV;
+import org.apache.sysml.runtime.instructions.mr.CM_N_COVInstruction;
+import org.apache.sysml.runtime.matrix.data.CM_N_COVCell;
+import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
+import org.apache.sysml.runtime.matrix.data.WeightedPair;
+import org.apache.sysml.runtime.matrix.operators.CMOperator;
+import org.apache.sysml.runtime.matrix.operators.COVOperator;
 
 
 public class CMCOVMRMapper extends MapperBase

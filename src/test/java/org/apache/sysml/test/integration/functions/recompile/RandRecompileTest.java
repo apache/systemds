@@ -15,15 +15,15 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.functions.recompile;
+package org.apache.sysml.test.integration.functions.recompile;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.test.integration.AutomatedTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
-import com.ibm.bi.dml.utils.Statistics;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.utils.Statistics;
 
 public class RandRecompileTest extends AutomatedTestBase 
 {

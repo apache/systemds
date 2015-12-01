@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.api;
+package org.apache.sysml.api;
 
 /**
  * <p>Exception occurring in the DML framework.</p>

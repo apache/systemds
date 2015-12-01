@@ -16,7 +16,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.binary.matrix.TransposeSelfMatrixMultiplicationTest.java
+# junit test class: org.apache.sysml.test.integration.functions.binary.matrix.TransposeSelfMatrixMultiplicationTest.java
 
 A = read($1, rows=$2, cols=$3, format="text");
 B = A %*% t(A);

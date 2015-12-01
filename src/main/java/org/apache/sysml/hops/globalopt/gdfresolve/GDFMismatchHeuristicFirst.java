@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.globalopt.gdfresolve;
+package org.apache.sysml.hops.globalopt.gdfresolve;
 
-import com.ibm.bi.dml.hops.globalopt.RewriteConfig;
+import org.apache.sysml.hops.globalopt.RewriteConfig;
 
 public class GDFMismatchHeuristicFirst extends GDFMismatchHeuristic
 {

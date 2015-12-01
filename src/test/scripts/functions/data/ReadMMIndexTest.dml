@@ -16,7 +16,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: com.ibm.bi.dml.test.integration.functions.data.readTest.java
+# junit test class: org.apache.sysml.test.integration.functions.data.readTest.java
 
 A = read("$$indir$$b", rows=$$rows$$, cols=$$cols$$, format="$$format$$"$$blockrows$$$$blockcols$$);
 write(A, "$$outdir$$b", format="text");

@@ -15,12 +15,12 @@
  * 
  */
 
-package com.ibm.bi.dml.test.integration.scalability;
+package org.apache.sysml.test.integration.scalability;
 
 import org.junit.Test;
 
-import com.ibm.bi.dml.test.integration.AutomatedScalabilityTestBase;
-import com.ibm.bi.dml.test.integration.TestConfiguration;
+import org.apache.sysml.test.integration.AutomatedScalabilityTestBase;
+import org.apache.sysml.test.integration.TestConfiguration;
 
 
 

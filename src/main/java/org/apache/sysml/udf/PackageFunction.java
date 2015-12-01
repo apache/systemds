@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.udf;
+package org.apache.sysml.udf;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 /**
  * Abstract class that should be extended to implement a package function.

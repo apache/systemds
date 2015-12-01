@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.functionobjects;
+package org.apache.sysml.runtime.functionobjects;
 
-import com.ibm.bi.dml.runtime.util.UtilFunctions;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class IntegerDivide extends ValueFunction 
 {

@@ -15,17 +15,17 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.controlprogram.caching;
+package org.apache.sysml.runtime.controlprogram.caching;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.util.LocalFileUtils;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.LocalFileUtils;
 
 /**
  * 

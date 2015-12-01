@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.parser;
+package org.apache.sysml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,19 +24,19 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.api.DMLScript;
-import com.ibm.bi.dml.api.MLContextProxy;
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.OptimizerUtils;
-import com.ibm.bi.dml.hops.recompile.Recompiler;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.FormatType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.parser.LanguageException.LanguageErrorCodes;
-import com.ibm.bi.dml.parser.PrintStatement.PRINTTYPE;
-import com.ibm.bi.dml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.MLContextProxy;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.FormatType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysml.parser.PrintStatement.PRINTTYPE;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 
 public class StatementBlock extends LiveVariableAnalysis

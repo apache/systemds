@@ -15,20 +15,20 @@
  * 
  */
 
-package com.ibm.bi.dml.hops.rewrite;
+package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.ibm.bi.dml.hops.Hop;
-import com.ibm.bi.dml.hops.HopsException;
-import com.ibm.bi.dml.hops.IndexingOp;
-import com.ibm.bi.dml.hops.LeftIndexingOp;
-import com.ibm.bi.dml.hops.LiteralOp;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.hops.IndexingOp;
+import org.apache.sysml.hops.LeftIndexingOp;
+import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 
 /**
  * Rule: Indexing vectorization. This rewrite rule set simplifies

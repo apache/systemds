@@ -407,7 +407,7 @@ userParam=value | User-defined parameter to invoke the package. | Yes | Any non-
     # example of an external UDF
     eigen = externalFunction(matrix[double] A) 
     return (matrix[double] evec, matrix[double] eval) 
-    implemented in (classname="com.ibm.bi.dml.packagesupport.JLapackEigenWrapper")
+    implemented in (classname="org.apache.sysml.packagesupport.JLapackEigenWrapper")
 
 A UDF invocation specifies the function identifier, variable identifiers for calling parameters, and the variables to be populated by the returned values from the function. The syntax for function calls is as follows.
 
@@ -1186,7 +1186,7 @@ The MLContext API allows users to pass RDDs as input/output to SystemML through 
 
 Typical usage for MLContext using Spark's Scala Shell is as follows:
 
-    scala> import com.ibm.bi.dml.api.MLContext
+    scala> import org.apache.sysml.api.MLContext
 
 Create input DataFrame from CSV file and potentially perform some feature transformation
 

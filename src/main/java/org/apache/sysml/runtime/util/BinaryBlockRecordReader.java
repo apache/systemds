@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.util;
+package org.apache.sysml.runtime.util;
 
 import java.io.IOException;
 
@@ -23,8 +23,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.SequenceFileRecordReader;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlock;
-import com.ibm.bi.dml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 /**
  * Custom record reader for binary block. Currently its only purpose is to allow for

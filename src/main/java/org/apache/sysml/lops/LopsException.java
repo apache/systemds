@@ -15,9 +15,9 @@
  * 
  */
 
-package com.ibm.bi.dml.lops;
+package org.apache.sysml.lops;
 
-import com.ibm.bi.dml.api.DMLException;
+import org.apache.sysml.api.DMLException;
 
 public class LopsException extends DMLException 
 {

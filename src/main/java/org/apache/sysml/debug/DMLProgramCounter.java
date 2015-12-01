@@ -16,9 +16,9 @@
  * 
  */
 
-package com.ibm.bi.dml.debug;
+package org.apache.sysml.debug;
 
-import com.ibm.bi.dml.parser.DMLProgram;
+import org.apache.sysml.parser.DMLProgram;
 
 
 public class DMLProgramCounter {

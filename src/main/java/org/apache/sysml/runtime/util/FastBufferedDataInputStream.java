@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.util;
+package org.apache.sysml.runtime.util;
 
 import java.io.DataInput;
 import java.io.EOFException;
@@ -23,8 +23,8 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.ibm.bi.dml.runtime.matrix.data.MatrixBlockDataInput;
-import com.ibm.bi.dml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.MatrixBlockDataInput;
+import org.apache.sysml.runtime.matrix.data.SparseRow;
 
 /**
  * 

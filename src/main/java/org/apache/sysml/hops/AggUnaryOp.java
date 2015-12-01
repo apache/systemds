@@ -15,27 +15,27 @@
  * 
  */
 
-package com.ibm.bi.dml.hops;
+package org.apache.sysml.hops;
 
-import com.ibm.bi.dml.hops.AggBinaryOp.SparkAggType;
-import com.ibm.bi.dml.hops.Hop.MultiThreadedHop;
-import com.ibm.bi.dml.hops.rewrite.HopRewriteUtils;
-import com.ibm.bi.dml.lops.Aggregate;
-import com.ibm.bi.dml.lops.Aggregate.OperationTypes;
-import com.ibm.bi.dml.lops.Binary;
-import com.ibm.bi.dml.lops.Group;
-import com.ibm.bi.dml.lops.Lop;
-import com.ibm.bi.dml.lops.LopsException;
-import com.ibm.bi.dml.lops.PartialAggregate;
-import com.ibm.bi.dml.lops.PartialAggregate.DirectionTypes;
-import com.ibm.bi.dml.lops.TernaryAggregate;
-import com.ibm.bi.dml.lops.UAggOuterChain;
-import com.ibm.bi.dml.lops.UnaryCP;
-import com.ibm.bi.dml.lops.LopProperties.ExecType;
-import com.ibm.bi.dml.parser.Expression.DataType;
-import com.ibm.bi.dml.parser.Expression.ValueType;
-import com.ibm.bi.dml.runtime.controlprogram.context.SparkExecutionContext;
-import com.ibm.bi.dml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysml.hops.Hop.MultiThreadedHop;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.Aggregate.OperationTypes;
+import org.apache.sysml.lops.Binary;
+import org.apache.sysml.lops.Group;
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopsException;
+import org.apache.sysml.lops.PartialAggregate;
+import org.apache.sysml.lops.PartialAggregate.DirectionTypes;
+import org.apache.sysml.lops.TernaryAggregate;
+import org.apache.sysml.lops.UAggOuterChain;
+import org.apache.sysml.lops.UnaryCP;
+import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 
 /* Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum

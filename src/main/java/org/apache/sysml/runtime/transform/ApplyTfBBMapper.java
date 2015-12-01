@@ -15,7 +15,7 @@
  * 
  */
 
-package com.ibm.bi.dml.runtime.transform;
+package org.apache.sysml.runtime.transform;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,14 +33,14 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
 
-import com.ibm.bi.dml.runtime.DMLRuntimeException;
-import com.ibm.bi.dml.runtime.instructions.mr.CSVReblockInstruction;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR;
-import com.ibm.bi.dml.runtime.matrix.CSVReblockMR.OffsetCount;
-import com.ibm.bi.dml.runtime.matrix.data.TaggedFirstSecondIndexes;
-import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockMapper;
-import com.ibm.bi.dml.runtime.matrix.mapred.CSVReblockMapper.IndexedBlockRow;
-import com.ibm.bi.dml.runtime.matrix.mapred.MapperBase;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
+import org.apache.sysml.runtime.matrix.CSVReblockMR;
+import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
+import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
+import org.apache.sysml.runtime.matrix.mapred.CSVReblockMapper;
+import org.apache.sysml.runtime.matrix.mapred.CSVReblockMapper.IndexedBlockRow;
+import org.apache.sysml.runtime.matrix.mapred.MapperBase;
 
 @SuppressWarnings("deprecation")
 public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, Text, TaggedFirstSecondIndexes, CSVReblockMR.BlockRow>{

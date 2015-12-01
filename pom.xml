@@ -35,6 +35,12 @@
 			<url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
 		</license>
 	</licenses>
+	<scm>
+		<connection>scm:git:git@github.com:apache/incubator-systemml</connection>
+		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-systemml</developerConnection>
+		<url>scm:git:git@github.com:apache/incubator-systemml</url>
+		<tag>HEAD</tag>
+	</scm>
 	<issueManagement>
 		<system>JIRA</system>
 		<url>https://issues.apache.org/jira/browse/SYSTEMML</url>
@@ -169,7 +175,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -376,7 +382,6 @@
 
 					<includes>
 						<include>**/integration/**/*Suite.java</include>
-						
 						<!-- <include>**/integration/functions/aggregate/*Test.java</include> -->
 						<include>**/integration/functions/append/*Test.java</include>
 						<include>**/integration/functions/binary/matrix/*Test.java</include>
@@ -466,7 +471,6 @@
 
 
 	<dependencies>
-
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_2.10</artifactId>
@@ -590,7 +594,6 @@
 			</exclusions>
 		</dependency>
 
-
 		<dependency>
 			<groupId>net.sf.opencsv</groupId>
 			<artifactId>opencsv</artifactId>
@@ -623,7 +626,6 @@
 			<version>3.2.1</version>
 			<scope>provided</scope>
 		</dependency>
-
 
 		<dependency>
 			<groupId>org.antlr</groupId>

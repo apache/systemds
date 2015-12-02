@@ -186,71 +186,6 @@
 			</plugin>
 
 			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.4</version><!--$NO-MVN-MAN-VER$-->
-				<executions>
-					<execution>
-						<id>create-package-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<configuration>
-							<skipAssembly>true</skipAssembly>
-						</configuration>
-					</execution>
-					<execution>
-						<id>create-source-distribution-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<configuration>
-							<descriptors>
-								<descriptor>src/assembly/source.xml</descriptor>
-							</descriptors>
-						</configuration>
-					</execution>
-					<execution>
-						<id>create-cluster-binary-distribution-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<configuration>
-							<descriptors>
-								<descriptor>src/assembly/distrib.xml</descriptor>
-							</descriptors>
-						</configuration>
-					</execution>
-					<execution>
-						<id>create-standalone-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<configuration>
-							<descriptors>
-								<descriptor>src/assembly/standalone.xml</descriptor>
-							</descriptors>
-						</configuration>
-					</execution>
-					<execution>
-						<id>create-inmemory-jar</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<configuration>
-							<descriptors>
-								<descriptor>src/assembly/inmemory.xml</descriptor>
-							</descriptors>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>2.4</version><!--$NO-MVN-MAN-VER$-->
@@ -453,9 +388,9 @@
 
 
 	<profiles>
-	<!-- Profile for Windows builds. Not currently needed, but might be needed 
-		in the future. -->
 		<profile>
+			<!-- Profile for Windows builds. Not currently needed, but might be needed
+				in the future. -->
 			<id>platform-windows</id>
 			<activation>
 				<os>
@@ -466,6 +401,118 @@
 				<!-- Extra JVM args for Windows go here.-->
 				<integrationTestExtraJVMArgs />
 			</properties>
+		</profile>
+
+		<profile>
+			<!-- Profile to create source distribution.
+				Execute with `mvn clean package -P SourceDist` -->
+			<id>SourceDist</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>2.4</version><!--$NO-MVN-MAN-VER$-->
+						<executions>
+							<execution>
+								<id>create-source-distribution-assembly</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/source.xml</descriptor>
+									</descriptors>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<!-- Profile to create cluster distribution.
+				Execute with `mvn clean package -P ClusterDist` -->
+			<id>ClusterDist</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>2.4</version><!--$NO-MVN-MAN-VER$-->
+						<executions>
+							<execution>
+								<id>create-cluster-binary-distribution-assembly</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/distrib.xml</descriptor>
+									</descriptors>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<!-- Profile to create standalone distribution.
+				Execute with `mvn clean package -P StandaloneDist` -->
+			<id>StandaloneDist</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>2.4</version><!--$NO-MVN-MAN-VER$-->
+						<executions>
+							<execution>
+								<id>create-standalone-assembly</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/standalone.xml</descriptor>
+									</descriptors>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<!-- Profile to create in-memory distribution.
+				Execute with `mvn clean package -P InmemoryDist` -->
+			<id>InmemoryDist</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>2.4</version><!--$NO-MVN-MAN-VER$-->
+						<executions>
+							<execution>
+								<id>create-inmemory-jar</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/inmemory.xml</descriptor>
+									</descriptors>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 	</profiles>
 

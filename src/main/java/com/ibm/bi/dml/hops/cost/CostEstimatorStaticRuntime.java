@@ -941,14 +941,14 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					}
 				    else if( optype.equals("uatrace") || optype.equals("uaktrace") )
 				    	return 2 * d1m * d1n;
-				    else if( optype.equals("ua+") || optype.equals("uar+") || optype.equals("uar+")  ){
+				    else if( optype.equals("ua+") || optype.equals("uar+") || optype.equals("uac+")  ){
 				    	//sparse safe operations
 				    	if( !leftSparse ) //dense
 				    		return d1m * d1n;
 				    	else //sparse
 				    		return d1m * d1n * d1s;
 				    }
-				    else if( optype.equals("uak+") || optype.equals("uark+") || optype.equals("uark+"))
+				    else if( optype.equals("uak+") || optype.equals("uark+") || optype.equals("uack+"))
 				    	return 4 * d1m * d1n; //1*k+
 					else if( optype.equals("uasqk+") || optype.equals("uarsqk+") || optype.equals("uacsqk+"))
 						return 5 * d1m * d1n; // +1 for multiplication to square term

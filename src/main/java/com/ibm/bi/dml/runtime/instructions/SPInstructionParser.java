@@ -174,6 +174,7 @@ public class SPInstructionParser extends InstructionParser {
 		
 		// Builtin Instruction Opcodes 
 		String2SPInstructionType.put( "log"  , SPINSTRUCTION_TYPE.Builtin);
+		String2SPInstructionType.put( "log_nz"  , SPINSTRUCTION_TYPE.Builtin);
 		
 		String2SPInstructionType.put( "max"  , SPINSTRUCTION_TYPE.BuiltinBinary);
 		String2SPInstructionType.put( "min"  , SPINSTRUCTION_TYPE.BuiltinBinary);

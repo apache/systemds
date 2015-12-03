@@ -1,12 +1,13 @@
 # SystemML
 
-SystemML is a flexible, scalable machine learning (ML) language written in Java.
+SystemML is a flexible, scalable machine learning (ML) system.
 SystemML's distinguishing characteristics are: (1) algorithm customizability,
 (2) multiple execution modes, including Standalone, Hadoop Batch, and Spark Batch,
 and (3) automatic optimization.
 
-The latest documentation can be found at the 
-[SystemML Documentation](http://sparktc.github.io/systemml/) web site.
+[SystemML](http://systemml.apache.org/) is now an Apache Incubator project.
+The latest project documentation can be found at the 
+[SystemML Documentation](http://apache.github.io/incubator-systemml/) web site on GitHub.
 
 
 ### Algorithm Customizability

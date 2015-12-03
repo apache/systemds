@@ -404,9 +404,9 @@
 		</profile>
 
 		<profile>
-			<!-- Profile to create source distribution.
-				Execute with `mvn clean package -P SourceDist` -->
-			<id>SourceDist</id>
+			<!-- Profile to create binary distributions.
+				Execute with `mvn clean package -P distribution` -->
+			<id>distribution</id>
 			<build>
 				<plugins>
 					<plugin>
@@ -425,22 +425,7 @@
 									</descriptors>
 								</configuration>
 							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
 
-		<profile>
-			<!-- Profile to create cluster distribution.
-				Execute with `mvn clean package -P ClusterDist` -->
-			<id>ClusterDist</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.4</version><!--$NO-MVN-MAN-VER$-->
-						<executions>
 							<execution>
 								<id>create-cluster-binary-distribution-assembly</id>
 								<phase>package</phase>
@@ -453,22 +438,7 @@
 									</descriptors>
 								</configuration>
 							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
 
-		<profile>
-			<!-- Profile to create standalone distribution.
-				Execute with `mvn clean package -P StandaloneDist` -->
-			<id>StandaloneDist</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.4</version><!--$NO-MVN-MAN-VER$-->
-						<executions>
 							<execution>
 								<id>create-standalone-assembly</id>
 								<phase>package</phase>
@@ -481,22 +451,7 @@
 									</descriptors>
 								</configuration>
 							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
 
-		<profile>
-			<!-- Profile to create in-memory distribution.
-				Execute with `mvn clean package -P InmemoryDist` -->
-			<id>InmemoryDist</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<version>2.4</version><!--$NO-MVN-MAN-VER$-->
-						<executions>
 							<execution>
 								<id>create-inmemory-jar</id>
 								<phase>package</phase>

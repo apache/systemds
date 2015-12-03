@@ -314,10 +314,10 @@ public abstract class Expression
 				return DataType.MATRIX;
 		}
 
-		LOG.error(id1.printErrorLocation() + "Invalid Datatypes for operation");
-		
-		throw new LanguageException(id1.printErrorLocation() + "Invalid Datatypes for operation",
+		//raise error with id1 location
+		id1.raiseValidateError("Invalid Datatypes for operation "+d1+" "+d2, false, 
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+		return null; //never reached because unconditional
 	}
 
 	public static ValueType computeValueType(Expression e1, Expression e2, boolean cast) throws LanguageException {
@@ -343,10 +343,10 @@ public abstract class Expression
 				return ValueType.STRING;
 		}
 
-		LOG.error(id1.printErrorLocation() + "Invalid Valuetypes for operation");
-		
-		throw new LanguageException(id1.printErrorLocation() + "Invalid Valuetypes for operation",
+		//raise error with id1 location
+		id1.raiseValidateError("Invalid Valuetypes for operation "+v1+" "+v2, false, 
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+		return null; //never reached because unconditional
 	}
 
 	@Override

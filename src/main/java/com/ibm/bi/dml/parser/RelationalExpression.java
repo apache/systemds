@@ -156,7 +156,10 @@ public class RelationalExpression extends Expression
 			output.setDataType(DataType.MATRIX);
 			output.setDimensions(dims[0], dims[1]);
 			output.setBlockDimensions(dims[2], dims[3]);
-			output.setValueType(ValueType.BOOLEAN);
+			
+			//since SystemML only supports double matrices, the value type is forced to
+			//double; once we support boolean matrices this needs to change
+			output.setValueType(ValueType.DOUBLE);
 		}
 		else {
 			output.setBooleanProperties();

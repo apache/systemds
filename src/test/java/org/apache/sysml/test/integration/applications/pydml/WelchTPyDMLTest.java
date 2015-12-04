@@ -28,6 +28,7 @@ public class WelchTPyDMLTest extends WelchTTest {
 
 	public WelchTPyDMLTest(int numAttr, int numPosSamples, int numNegSamples) {
 		super(numAttr, numPosSamples, numNegSamples);
+		TEST_CLASS_DIR = TEST_DIR + WelchTPyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

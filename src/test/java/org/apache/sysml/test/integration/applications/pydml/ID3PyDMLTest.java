@@ -28,6 +28,7 @@ public class ID3PyDMLTest extends ID3Test {
 
 	public ID3PyDMLTest(int numRecords, int numFeatures) {
 		super(numRecords, numFeatures);
+		TEST_CLASS_DIR = TEST_DIR + ID3PyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

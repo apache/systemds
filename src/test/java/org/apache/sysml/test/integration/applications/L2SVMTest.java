@@ -34,6 +34,7 @@ public abstract class L2SVMTest extends AutomatedTestBase
 	
 	protected final static String TEST_DIR = "applications/l2svm/";
 	protected final static String TEST_NAME = "L2SVM";
+	protected String TEST_CLASS_DIR = TEST_DIR + L2SVMTest.class.getSimpleName() + "/";
 
 	protected int numRecords, numFeatures;
 	protected double sparsity;
@@ -58,7 +59,7 @@ public abstract class L2SVMTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-    	addTestConfiguration(TEST_DIR, TEST_NAME);
+    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
 	protected void testL2SVM(ScriptType scriptType)

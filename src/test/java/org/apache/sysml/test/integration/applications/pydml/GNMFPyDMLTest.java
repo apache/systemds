@@ -28,6 +28,7 @@ public class GNMFPyDMLTest extends GNMFTest {
 
 	public GNMFPyDMLTest(int m, int n, int k) {
 		super(m, n, k);
+		TEST_CLASS_DIR = TEST_DIR + GNMFPyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

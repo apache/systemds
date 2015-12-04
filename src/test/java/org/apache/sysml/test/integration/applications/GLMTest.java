@@ -37,6 +37,7 @@ public abstract class GLMTest extends AutomatedTestBase
 	
     protected final static String TEST_DIR = "applications/glm/";
     protected final static String TEST_NAME = "GLM";
+    protected String TEST_CLASS_DIR = TEST_DIR + GLMTest.class.getSimpleName() + "/";
 
     protected int numRecords, numFeatures, distFamilyType, linkType;
     protected double distParam, linkPower, intercept, logFeatureVarianceDisbalance, avgLinearForm, stdevLinearForm, dispersion;
@@ -190,7 +191,7 @@ public abstract class GLMTest extends AutomatedTestBase
     @Override
     public void setUp()
     {
-    	addTestConfiguration(TEST_DIR, TEST_NAME);
+    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
     
     protected void testGLM(ScriptType scriptType)

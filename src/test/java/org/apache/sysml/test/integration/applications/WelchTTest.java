@@ -37,6 +37,7 @@ public abstract class WelchTTest extends AutomatedTestBase {
 	
 	protected final static String TEST_DIR = "applications/welchTTest/";
 	protected final static String TEST_NAME = "welchTTest";
+	protected String TEST_CLASS_DIR = TEST_DIR + WelchTTest.class.getSimpleName() + "/";
 
 	protected int numAttr, numPosSamples, numNegSamples;
 	
@@ -54,7 +55,7 @@ public abstract class WelchTTest extends AutomatedTestBase {
 	 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_DIR, TEST_NAME);
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
 	protected void testWelchTTest(ScriptType scriptType) {

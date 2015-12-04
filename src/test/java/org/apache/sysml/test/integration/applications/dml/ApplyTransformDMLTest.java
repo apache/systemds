@@ -29,6 +29,7 @@ public class ApplyTransformDMLTest extends ApplyTransformTest {
 	public ApplyTransformDMLTest(String X, String missing_value_maps, String binning_maps, String dummy_coding_maps,
 			String normalization_maps) {
 		super(X, missing_value_maps, binning_maps, dummy_coding_maps, normalization_maps);
+		TEST_CLASS_DIR = TEST_DIR + ApplyTransformDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

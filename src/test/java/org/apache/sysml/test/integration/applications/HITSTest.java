@@ -30,10 +30,11 @@ public abstract class HITSTest extends AutomatedTestBase
 {
 	protected final static String TEST_DIR = "applications/hits/";
 	protected final static String TEST_NAME = "HITS";
+	protected String TEST_CLASS_DIR = TEST_DIR + HITSTest.class.getSimpleName() + "/";
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_DIR, TEST_NAME);
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
 	protected void testHits(ScriptType scriptType) {

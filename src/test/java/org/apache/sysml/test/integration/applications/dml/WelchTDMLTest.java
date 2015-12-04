@@ -28,6 +28,7 @@ public class WelchTDMLTest extends WelchTTest {
 
 	public WelchTDMLTest(int numAttr, int numPosSamples, int numNegSamples) {
 		super(numAttr, numPosSamples, numNegSamples);
+		TEST_CLASS_DIR = TEST_DIR + WelchTDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

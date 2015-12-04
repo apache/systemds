@@ -28,6 +28,7 @@ public class LinearRegressionPyDMLTest extends LinearRegressionTest {
 
 	public LinearRegressionPyDMLTest(int rows, int cols, double sp) {
 		super(rows, cols, sp);
+		TEST_CLASS_DIR = TEST_DIR + LinearRegressionPyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

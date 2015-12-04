@@ -28,6 +28,7 @@ public class MDABivariateStatsDMLTest extends MDABivariateStatsTest {
 
 	public MDABivariateStatsDMLTest(int n, int m, int li, int lml) {
 		super(n, m, li, lml);
+		TEST_CLASS_DIR = TEST_DIR + MDABivariateStatsDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

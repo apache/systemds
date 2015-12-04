@@ -23,6 +23,11 @@ import org.apache.sysml.test.integration.applications.HITSTest;
 
 public class HITSPyDMLTest extends HITSTest {
 
+	public HITSPyDMLTest() {
+		super();
+		TEST_CLASS_DIR = TEST_DIR + HITSPyDMLTest.class.getSimpleName() + "/";
+	}
+
 	@Test
 	public void testHitsPyDml() {
 		testHits(ScriptType.PYDML);

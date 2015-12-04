@@ -34,6 +34,7 @@ public abstract class ApplyTransformTest extends AutomatedTestBase{
 	
 	protected final static String TEST_DIR = "applications/apply-transform/";
 	protected final static String TEST_NAME = "apply-transform";
+	protected String TEST_CLASS_DIR = TEST_DIR + ApplyTransformTest.class.getSimpleName() + "/";
 	
 	protected String X, missing_value_maps, binning_maps, dummy_coding_maps, normalization_maps;
     
@@ -65,7 +66,7 @@ public abstract class ApplyTransformTest extends AutomatedTestBase{
 
 	 @Override
 		public void setUp() {
-	    	addTestConfiguration(TEST_DIR, TEST_NAME);
+	    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 		}
 
 	    protected void testApplyTransform(ScriptType scriptType) {
@@ -81,11 +82,11 @@ public abstract class ApplyTransformTest extends AutomatedTestBase{
 		 }
 		 proArgs.add("-stats");
 		 proArgs.add("-nvargs");
-		 proArgs.add("X=" + baseDirectory + X);
-		 proArgs.add("missing_value_maps=" + (missing_value_maps.equals(" ") ? " " : baseDirectory + missing_value_maps));
-		 proArgs.add("bin_defns=" + (binning_maps.equals(" ") ? " " : baseDirectory + binning_maps));
-		 proArgs.add("dummy_code_maps=" + (dummy_coding_maps.equals(" ") ? " " : baseDirectory + dummy_coding_maps));
-		 proArgs.add("normalization_maps=" + (normalization_maps.equals(" ") ? " " : baseDirectory + normalization_maps));
+		 proArgs.add("X=" + sourceDirectory + X);
+		 proArgs.add("missing_value_maps=" + (missing_value_maps.equals(" ") ? " " : sourceDirectory + missing_value_maps));
+		 proArgs.add("bin_defns=" + (binning_maps.equals(" ") ? " " : sourceDirectory + binning_maps));
+		 proArgs.add("dummy_code_maps=" + (dummy_coding_maps.equals(" ") ? " " : sourceDirectory + dummy_coding_maps));
+		 proArgs.add("normalization_maps=" + (normalization_maps.equals(" ") ? " " : sourceDirectory + normalization_maps));
 		 proArgs.add("transformed_X=" + output("transformed_X.mtx"));
 		 proArgs.add("Log=" + output("log.csv"));
 		 programArgs = proArgs.toArray(new String[proArgs.size()]);

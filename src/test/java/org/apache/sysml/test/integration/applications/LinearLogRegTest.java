@@ -34,6 +34,7 @@ public abstract class LinearLogRegTest extends AutomatedTestBase
 	
     protected final static String TEST_DIR = "applications/linearLogReg/";
     protected final static String TEST_NAME = "LinearLogReg";
+    protected String TEST_CLASS_DIR = TEST_DIR + LinearLogRegTest.class.getSimpleName() + "/";
 
     protected int numRecords, numFeatures, numTestRecords;
     protected double sparsity;
@@ -58,7 +59,7 @@ public abstract class LinearLogRegTest extends AutomatedTestBase
     @Override
     public void setUp()
     {
-    	addTestConfiguration(TEST_DIR, TEST_NAME);
+    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
     
     protected void testLinearLogReg(ScriptType scriptType) {

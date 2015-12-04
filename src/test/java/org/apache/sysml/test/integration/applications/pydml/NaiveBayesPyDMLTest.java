@@ -28,6 +28,7 @@ public class NaiveBayesPyDMLTest extends NaiveBayesTest {
 
 	public NaiveBayesPyDMLTest(int rows, int cols, int nc, double sp) {
 		super(rows, cols, nc, sp);
+		TEST_CLASS_DIR = TEST_DIR + NaiveBayesPyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

@@ -37,6 +37,7 @@ public abstract class ID3Test extends AutomatedTestBase
 	
     protected final static String TEST_DIR = "applications/id3/";
     protected final static String TEST_NAME = "id3";
+    protected String TEST_CLASS_DIR = TEST_DIR + ID3Test.class.getSimpleName() + "/";
 
     protected int numRecords, numFeatures;
     
@@ -55,7 +56,7 @@ public abstract class ID3Test extends AutomatedTestBase
     @Override
     public void setUp()
     {
-    	addTestConfiguration(TEST_DIR, TEST_NAME);
+    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
     
     protected void testID3(ScriptType scriptType) 

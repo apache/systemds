@@ -31,6 +31,7 @@ public class GLMDMLTest extends GLMTest {
 			double stdevLinearForm_, double dispersion_) {
 		super(numRecords_, numFeatures_, distFamilyType_, distParam_, linkType_, linkPower_, intercept_,
 				logFeatureVarianceDisbalance_, avgLinearForm_, stdevLinearForm_, dispersion_);
+		TEST_CLASS_DIR = TEST_DIR + GLMDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

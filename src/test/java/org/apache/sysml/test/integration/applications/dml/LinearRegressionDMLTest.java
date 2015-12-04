@@ -28,6 +28,7 @@ public class LinearRegressionDMLTest extends LinearRegressionTest {
 
 	public LinearRegressionDMLTest(int rows, int cols, double sp) {
 		super(rows, cols, sp);
+		TEST_CLASS_DIR = TEST_DIR + LinearRegressionDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

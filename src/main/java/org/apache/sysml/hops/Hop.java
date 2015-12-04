@@ -1031,6 +1031,7 @@ public abstract class Hop
 		SPROP, //sample proportion: P * (1 - P)
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X)) 
 		SELP, //select positive: X * (X>0)
+		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X)
 	}
 
 	// Operations that require two operands

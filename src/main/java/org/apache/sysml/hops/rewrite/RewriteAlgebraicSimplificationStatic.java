@@ -146,6 +146,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplfiy binary or dyn rewrites
 			hi = simplifyGroupedAggregate(hi);          	     //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
 			hi = fuseMinusNzBinaryOperation(hop, hi, i);         //e.g., X-mean*ppred(X,0,!=) -> X -nz mean
+			hi = fuseLogNzUnaryOperation(hop, hi, i);            //e.g., ppred(X,0,"!=")*log(X) -> log_nz(X)
 			hi = fuseLogNzBinaryOperation(hop, hi, i);           //e.g., ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
 			hi = simplifyOuterSeqExpand(hop, hi, i);             //e.g., outer(v, seq(1,m), "==") -> rexpand(v, max=m, dir=row, ignore=true, cast=false)
 			hi = simplifyTableSeqExpand(hop, hi, i);             //e.g., table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
@@ -1341,7 +1342,50 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
-	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop fuseLogNzUnaryOperation(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		//pattern ppred(X,0,"!=")*log(X) -> log_nz(X)
+		//note: this is done as a hop rewrite in order to significantly reduce the 
+		//memory estimate and to prevent dense intermediates if X is ultra sparse  
+		if( hi instanceof BinaryOp && ((BinaryOp)hi).getOp()==OpOp2.MULT
+			&& hi.getInput().get(0).getDataType()==DataType.MATRIX
+			&& hi.getInput().get(1).getDataType()==DataType.MATRIX
+			&& hi.getInput().get(1) instanceof UnaryOp 
+			&& ((UnaryOp)hi.getInput().get(1)).getOp()==OpOp1.LOG )
+		{
+			Hop pred = hi.getInput().get(0);
+			Hop X = hi.getInput().get(1).getInput().get(0);
+			
+			if(    pred instanceof BinaryOp && ((BinaryOp)pred).getOp()==OpOp2.NOTEQUAL
+				&& pred.getInput().get(0) == X //depend on common subexpression elimination
+				&& pred.getInput().get(1) instanceof LiteralOp
+				&& HopRewriteUtils.getDoubleValueSafe((LiteralOp)pred.getInput().get(1))==0 )
+			{
+				Hop hnew = new UnaryOp("tmp", DataType.MATRIX, ValueType.DOUBLE, OpOp1.LOG_NZ, X);
+				HopRewriteUtils.setOutputBlocksizes(hnew, hi.getRowsInBlock(), hi.getColsInBlock());
+				hnew.refreshSizeInformation();
+		
+				//relink new hop into original position
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.addChildReference(parent, hnew, pos);
+				hi = hnew;
+				
+				LOG.debug("Applied fuseLogNzUnaryOperation (line "+hi.getBeginLine()+").");	
+			}		
+		}
+		
+		return hi;
+	}
+
 	/**
 	 * 
 	 * @param parent

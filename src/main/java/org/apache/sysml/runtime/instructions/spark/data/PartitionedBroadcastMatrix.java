@@ -36,8 +36,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 public class PartitionedBroadcastMatrix implements Serializable
 {
 	private static final long serialVersionUID = 1225135967889810877L;
-
-	private static long BROADCAST_PARTSIZE = 200L*1024*1024; //200M cells ~ 1.6GB 
+	private static final long BROADCAST_PARTSIZE = 200L*1024*1024; //200M cells ~ 1.6GB 
 	
 	private Broadcast<PartitionedMatrixBlock>[] _pbc = null;
 	

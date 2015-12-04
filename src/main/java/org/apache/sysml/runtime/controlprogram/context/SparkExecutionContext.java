@@ -354,13 +354,15 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		PartitionedBroadcastMatrix bret = null;
 		
-		if(    mo.getBroadcastHandle()!=null 
+		//reuse existing broadcast handle
+		if( mo.getBroadcastHandle()!=null 
 			&& mo.getBroadcastHandle().isValid() ) 
 		{
-			//reuse existing broadcast handle
 			bret = mo.getBroadcastHandle().getBroadcast();
 		}
-		else 
+		
+		//create new broadcast handle (never created, evicted)
+		if( bret == null ) 
 		{
 			//obtain meta data for matrix 
 			int brlen = (int) mo.getNumRowsPerBlock();
@@ -892,8 +894,9 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 		else if( lob instanceof BroadcastObject ) {
 			PartitionedBroadcastMatrix pbm = ((BroadcastObject)lob).getBroadcast();
-			for( Broadcast<PartitionedMatrixBlock> bc : pbm.getBroadcasts() )
-				cleanupBroadcastVariable(bc);
+			if( pbm != null ) //robustness for evictions
+				for( Broadcast<PartitionedMatrixBlock> bc : pbm.getBroadcasts() )
+					cleanupBroadcastVariable(bc);
 		}
 	
 		//recursively process lineage children

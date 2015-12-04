@@ -19,7 +19,8 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 	 * generated and static
 	 */
 	protected final static String TEST_DIR = "applications/descriptivestats/";
-
+	protected String TEST_CLASS_DIR = TEST_DIR + UnivariateStatsBase.class.getSimpleName() + "/";
+	
 	/** Fudge factor for comparisons against R's output */
 	protected final static double epsilon = 0.000000001;
 
@@ -77,7 +78,7 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		
-		addTestConfiguration("Scale", new TestConfiguration(TEST_DIR, "Scale",
+		addTestConfiguration("Scale", new TestConfiguration(TEST_CLASS_DIR, "Scale",
 				new String[] { "mean" + ".scalar", "std" + ".scalar",
 						"se" + ".scalar", "var" + ".scalar", "cv" + ".scalar",
 						/* "har", "geom", */
@@ -87,7 +88,7 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 						"se_g2" + ".scalar", "out_minus", "out_plus",
 						"median" + ".scalar", "quantile", "iqm" + ".scalar" }));
 		addTestConfiguration("WeightedScaleTest", new TestConfiguration(
-				TEST_DIR, "WeightedScaleTest", new String[] {
+				TEST_CLASS_DIR, "WeightedScaleTest", new String[] {
 						"mean" + ".scalar", "std" + ".scalar",
 						"se" + ".scalar", "var" + ".scalar", "cv" + ".scalar",
 						/* "har", "geom", */
@@ -96,11 +97,11 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 						"se_g1" + ".scalar", "g2" + ".scalar",
 						"se_g2" + ".scalar", "out_minus", "out_plus",
 						"median" + ".scalar", "quantile", "iqm" + ".scalar" }));
-		addTestConfiguration("Categorical", new TestConfiguration(TEST_DIR,
+		addTestConfiguration("Categorical", new TestConfiguration(TEST_CLASS_DIR,
 				"Categorical", new String[] { "Nc", "R" + ".scalar", "Pc", "C",
 						"Mode" })); // Indicate some file is scalar
 		addTestConfiguration("WeightedCategoricalTest", new TestConfiguration(
-				TEST_DIR, "WeightedCategoricalTest", new String[] { "Nc",
+				TEST_CLASS_DIR, "WeightedCategoricalTest", new String[] { "Nc",
 						"R" + ".scalar", "Pc", "C", "Mode" }));
 	}
 
@@ -117,9 +118,7 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 	 * @param rt
 	 *            backend platform to test
 	 */
-	protected void testScaleWithR(SIZE sz, RANGE rng, SPARSITY sp,
-			RUNTIME_PLATFORM rt) {
-
+	protected void testScaleWithR(SIZE sz, RANGE rng, SPARSITY sp, RUNTIME_PLATFORM rt) {
 		RUNTIME_PLATFORM oldrt = rtplatform;
 		rtplatform = rt;
 
@@ -127,30 +126,29 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 			TestConfiguration config = getTestConfiguration("Scale");
 			config.addVariable("rows1", sz.size);
 			config.addVariable("rows2", rows2);
+			loadTestConfiguration(config);
 
 			// This is for running the junit test the new way, i.e., construct
 			// the arguments directly
 			String S_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = S_HOME + "Scale" + ".dml";
 			programArgs = new String[] { "-args",
-					S_HOME + INPUT_DIR + "vector", Integer.toString(sz.size),
-					S_HOME + INPUT_DIR + "prob", Integer.toString(rows2),
-					S_HOME + OUTPUT_DIR + "mean", S_HOME + OUTPUT_DIR + "std",
-					S_HOME + OUTPUT_DIR + "se", S_HOME + OUTPUT_DIR + "var",
-					S_HOME + OUTPUT_DIR + "cv", S_HOME + OUTPUT_DIR + "min",
-					S_HOME + OUTPUT_DIR + "max", S_HOME + OUTPUT_DIR + "rng",
-					S_HOME + OUTPUT_DIR + "g1", S_HOME + OUTPUT_DIR + "se_g1",
-					S_HOME + OUTPUT_DIR + "g2", S_HOME + OUTPUT_DIR + "se_g2",
-					S_HOME + OUTPUT_DIR + "median",
-					S_HOME + OUTPUT_DIR + "iqm",
-					S_HOME + OUTPUT_DIR + "out_minus",
-					S_HOME + OUTPUT_DIR + "out_plus",
-					S_HOME + OUTPUT_DIR + "quantile" };
+					input("vector"), Integer.toString(sz.size),
+					input("prob"), Integer.toString(rows2),
+					output("mean"), output("std"),
+					output("se"), output("var"),
+					output("cv"), output("min"),
+					output("max"), output("rng"),
+					output("g1"), output("se_g1"),
+					output("g2"), output("se_g2"),
+					output("median"),
+					output("iqm"),
+					output("out_minus"),
+					output("out_plus"),
+					output("quantile") };
+			
 			fullRScriptName = S_HOME + "Scale" + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + S_HOME + INPUT_DIR
-					+ " " + S_HOME + EXPECTED_DIR;
-
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			long seed1 = System.currentTimeMillis();
 			long seed2 = System.currentTimeMillis();
@@ -219,31 +217,30 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 			TestConfiguration config = getTestConfiguration("WeightedScaleTest");
 			config.addVariable("rows1", sz.size);
 			config.addVariable("rows2", rows2);
+			loadTestConfiguration(config);
 
 			// This is for running the junit test the new way, i.e., construct
 			// the arguments directly
 			String S_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = S_HOME + "WeightedScaleTest" + ".dml";
 			programArgs = new String[] { "-args",
-					S_HOME + INPUT_DIR + "vector", Integer.toString(sz.size),
-					S_HOME + INPUT_DIR + "weight", S_HOME + INPUT_DIR + "prob",
-					Integer.toString(rows2), S_HOME + OUTPUT_DIR + "mean",
-					S_HOME + OUTPUT_DIR + "std", S_HOME + OUTPUT_DIR + "se",
-					S_HOME + OUTPUT_DIR + "var", S_HOME + OUTPUT_DIR + "cv",
-					S_HOME + OUTPUT_DIR + "min", S_HOME + OUTPUT_DIR + "max",
-					S_HOME + OUTPUT_DIR + "rng", S_HOME + OUTPUT_DIR + "g1",
-					S_HOME + OUTPUT_DIR + "se_g1", S_HOME + OUTPUT_DIR + "g2",
-					S_HOME + OUTPUT_DIR + "se_g2",
-					S_HOME + OUTPUT_DIR + "median",
-					S_HOME + OUTPUT_DIR + "iqm",
-					S_HOME + OUTPUT_DIR + "out_minus",
-					S_HOME + OUTPUT_DIR + "out_plus",
-					S_HOME + OUTPUT_DIR + "quantile" };
+					input("vector"), Integer.toString(sz.size),
+					input("weight"), input("prob"),
+					Integer.toString(rows2), output("mean"),
+					output("std"), output("se"),
+					output("var"), output("cv"),
+					output("min"), output("max"),
+					output("rng"), output("g1"),
+					output("se_g1"), output("g2"),
+					output("se_g2"),
+					output("median"),
+					output("iqm"),
+					output("out_minus"),
+					output("out_plus"),
+					output("quantile") };
+			
 			fullRScriptName = S_HOME + "WeightedScaleTest" + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + S_HOME + INPUT_DIR
-					+ " " + S_HOME + EXPECTED_DIR;
-
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			createHelperMatrix();
 			double[][] vector = getRandomMatrix(sz.size, 1, rng.min, rng.max,

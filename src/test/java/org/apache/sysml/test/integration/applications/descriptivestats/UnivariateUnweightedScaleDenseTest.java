@@ -29,7 +29,10 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 public class UnivariateUnweightedScaleDenseTest extends UnivariateStatsBase
 {
 	
-	
+	public UnivariateUnweightedScaleDenseTest() {
+		super();
+		TEST_CLASS_DIR = TEST_DIR + UnivariateUnweightedScaleDenseTest.class.getSimpleName() + "/";
+	}
 
 	// -------------------------------------------------------------------------------------
 	// Tests 1-12 moved to UnivariateUnweightedScaleSparseTest.java
@@ -159,6 +162,5 @@ public class UnivariateUnweightedScaleDenseTest extends UnivariateStatsBase
 		testScaleWithR(SIZE.DIV4P3, RANGE.POS, SPARSITY.DENSE, RUNTIME_PLATFORM.HADOOP);
 	}
 	// -------------------------------------------------------------------------------------
-		
 	
 }

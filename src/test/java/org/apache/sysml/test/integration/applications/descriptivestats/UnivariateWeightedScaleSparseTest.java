@@ -29,8 +29,13 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 public class UnivariateWeightedScaleSparseTest extends UnivariateStatsBase
 {
 	
-	// -------------------------------------------------------------------------------------------------------
-	
+	public UnivariateWeightedScaleSparseTest() {
+		super();
+		TEST_CLASS_DIR = TEST_DIR + UnivariateWeightedScaleSparseTest.class.getSimpleName() + "/";
+	}
+
+	// -------------------------------------------------------------------------------------
+
 	@Test
 	public void testWeightedScale1() {
 		testWeightedScaleWithR(SIZE.DIV4, RANGE.NEG, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
@@ -158,6 +163,5 @@ public class UnivariateWeightedScaleSparseTest extends UnivariateStatsBase
 	// -------------------------------------------------------------------------------------
 	// Tests 37-48 moved to UnivariateWeightedScaleDenseTest.java
 	// -------------------------------------------------------------------------------------
-	
 	
 }

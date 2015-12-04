@@ -32,10 +32,10 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class ParForUnivariateStatsTest extends AutomatedTestBase 
 {
-
 	
 	private final static String TEST_NAME = "parfor_univariate";
 	private final static String TEST_DIR = "applications/parfor/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForUnivariateStatsTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10; 
 	
 	//for test of sort_mr set optimizerutils mem to 0.00001 and decomment the following
@@ -67,10 +67,8 @@ public class ParForUnivariateStatsTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   );  
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );
 	}
 	
 	@Test
@@ -124,19 +122,17 @@ public class ParForUnivariateStatsTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME +scriptNum + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "D" ,
-				                        HOME + INPUT_DIR + "K",
-				                        Integer.toString((int)maxVal),
-				                        HOME + OUTPUT_DIR + "univarstats" };
+		fullDMLScriptName = HOME + TEST_NAME + scriptNum + ".dml";
+		programArgs = new String[]{"-args", input("D"),
+			input("K"), Integer.toString((int)maxVal), output("univarstats") };
+		
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       HOME + INPUT_DIR + " " + Integer.toString((int)maxVal) + " " + HOME + EXPECTED_DIR;
-		
-		loadTestConfiguration(config);
+			inputDir() + " " + Integer.toString((int)maxVal) + " " + expectedDir();
 
 		//generate actual dataset
 		double[][] D = getRandomMatrix(rows, cols, minVal, maxVal, 1, 7777); 

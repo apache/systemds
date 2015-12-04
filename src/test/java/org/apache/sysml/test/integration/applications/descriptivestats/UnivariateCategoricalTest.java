@@ -30,27 +30,26 @@ import org.apache.sysml.test.utils.TestUtils;
 public class UnivariateCategoricalTest extends UnivariateStatsBase
 {
 	
+	public UnivariateCategoricalTest() {
+		super();
+		TEST_CLASS_DIR = TEST_DIR + UnivariateCategoricalTest.class.getSimpleName() + "/";
+	}
+
 	@Test
 	public void testCategoricalWithR() {
 	
         TestConfiguration config = getTestConfiguration("Categorical");
         config.addVariable("rows1", rows1);
+		loadTestConfiguration(config);
         
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String C_HOME = SCRIPT_DIR + TEST_DIR;	
 		fullDMLScriptName = C_HOME + "Categorical" + ".dml";
-		programArgs = new String[]{"-args",  C_HOME + INPUT_DIR + "vector" , 
-	                        Integer.toString(rows1),
-	                         C_HOME + OUTPUT_DIR + "Nc" , 
-	                         C_HOME + OUTPUT_DIR + "R" , 
-	                         C_HOME + OUTPUT_DIR + "Pc" ,
-	                         C_HOME + OUTPUT_DIR + "C" ,
-	                         C_HOME + OUTPUT_DIR + "Mode" };
+		programArgs = new String[]{"-args",  input("vector"), Integer.toString(rows1),
+			output("Nc"), output("R"), output("Pc"), output("C"), output("Mode") };
+		
 		fullRScriptName = C_HOME + "Categorical" + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       C_HOME + INPUT_DIR + " " + C_HOME + EXPECTED_DIR;
-
-		loadTestConfiguration(config);
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
         double[][] vector = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());
         OrderStatisticsTest.round(vector);
@@ -93,23 +92,17 @@ public class UnivariateCategoricalTest extends UnivariateStatsBase
 	
         TestConfiguration config = getTestConfiguration("WeightedCategoricalTest");
         config.addVariable("rows1", rows1);
+		loadTestConfiguration(config);
 
 		// This is for running the junit test the new way, i.e., construct the arguments directly
 		String C_HOME = SCRIPT_DIR + TEST_DIR;	
 		fullDMLScriptName = C_HOME + "WeightedCategoricalTest" + ".dml";
-		programArgs = new String[]{"-args",  C_HOME + INPUT_DIR + "vector" , 
-	                        Integer.toString(rows1),
-	                         C_HOME + INPUT_DIR + "weight" , 
-	                         C_HOME + OUTPUT_DIR + "Nc" , 
-	                         C_HOME + OUTPUT_DIR + "R" , 
-	                         C_HOME + OUTPUT_DIR + "Pc" ,
-	                         C_HOME + OUTPUT_DIR + "C" ,
-	                         C_HOME + OUTPUT_DIR + "Mode" };
-		fullRScriptName = C_HOME + "WeightedCategoricalTest" + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       C_HOME + INPUT_DIR + " " + C_HOME + EXPECTED_DIR;
+		programArgs = new String[]{"-args",  
+			input("vector"), Integer.toString(rows1), input("weight"),
+			output("Nc"), output("R"), output("Pc"), output("C"), output("Mode") };
 		
-		loadTestConfiguration(config);
+		fullRScriptName = C_HOME + "WeightedCategoricalTest" + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 		createHelperMatrix();
         double[][] vector = getRandomMatrix(rows1, 1, 1, 10, 1, System.currentTimeMillis());

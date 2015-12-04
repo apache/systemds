@@ -30,6 +30,11 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 public class UnivariateUnweightedScaleSparseTest extends UnivariateStatsBase
 {
 	
+	public UnivariateUnweightedScaleSparseTest() {
+		super();
+		TEST_CLASS_DIR = TEST_DIR + UnivariateUnweightedScaleSparseTest.class.getSimpleName() + "/";
+	}
+
 	// -------------------------------------------------------------------------------------
 	@Test
 	public void testScale1() {
@@ -155,10 +160,5 @@ public class UnivariateUnweightedScaleSparseTest extends UnivariateStatsBase
 		testScaleWithR(SIZE.DIV4P3, RANGE.POS, SPARSITY.SPARSE, RUNTIME_PLATFORM.HADOOP);
 	}
 	
-	
-	
-	// -------------------------------------------------------------------------------------------------------
-	
-	
-	
+	// -------------------------------------------------------------------------------------
 }

@@ -34,6 +34,7 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "parfor_bivariate";
 	private final static String TEST_DIR = "applications/parfor/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForBivariateStatsTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows1 = 1000;  // # of rows in each vector (for CP instructions) 
@@ -47,10 +48,8 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   );
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );
 	}
 
 	
@@ -59,7 +58,6 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 	{
 		runParForBivariateStatsTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
 	}
-
 	
 	@Test 
 	public void testParForBivariateStatsLocalLocalMR() 
@@ -67,7 +65,6 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		runParForBivariateStatsTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
 	}
 	
-
 	@Test
 	public void testParForBivariateStatsLocalRemoteCP() 
 	{
@@ -118,27 +115,19 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		//config.addVariable("rows", rows);
 		//config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME +scriptNum + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "D" ,
-				                        HOME + INPUT_DIR + "S1" ,
-				                        HOME + INPUT_DIR + "S2" ,
-				                        HOME + INPUT_DIR + "K1" ,
-				                        HOME + INPUT_DIR + "K2" ,
-				                        HOME + OUTPUT_DIR + "bivarstats",
-				                        Integer.toString(rows),
-				                        Integer.toString(cols),
-				                        Integer.toString(cols2),
-				                        Integer.toString(cols2*cols2),
-				                        Integer.toString((int)maxVal)
-				                         };
+		programArgs = new String[]{"-args", input("D"),
+			input("S1"), input("S2"), input("K1"), input("K2"), output("bivarstats"),
+			Integer.toString(rows), Integer.toString(cols), Integer.toString(cols2),
+			Integer.toString(cols2*cols2), Integer.toString((int)maxVal) };
+		
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       HOME + INPUT_DIR + " " + Integer.toString((int)maxVal) + " " + HOME + EXPECTED_DIR;
-		
-		loadTestConfiguration(config);
+			inputDir() + " " + Integer.toString((int)maxVal) + " " + expectedDir();
 
 		//generate actual dataset
 		double[][] D = getRandomMatrix(rows, cols, minVal, maxVal, 1, 7777); 
@@ -169,7 +158,6 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
         }
         writeInputMatrix("K1", K1, true);
 		writeInputMatrix("K2", K2, true);			
-
 		
 		boolean exceptionExpected = false;
 		runTest(true, exceptionExpected, null, 92); 

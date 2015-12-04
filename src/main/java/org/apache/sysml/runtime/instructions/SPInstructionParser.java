@@ -326,7 +326,7 @@ public class SPInstructionParser extends InstructionParser {
 			
 			case Builtin: 
 				parts = InstructionUtils.getInstructionPartsWithValueType(str);
-				if ( parts[0].equals("log") ) {
+				if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
 					if ( parts.length == 3 ) {
 						// B=log(A), y=log(x)
 						return (SPInstruction) BuiltinUnarySPInstruction.parseInstruction(str);

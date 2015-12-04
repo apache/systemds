@@ -28,6 +28,7 @@ public class ID3DMLTest extends ID3Test {
 
 	public ID3DMLTest(int numRecords, int numFeatures) {
 		super(numRecords, numFeatures);
+		TEST_CLASS_DIR = TEST_DIR + ID3DMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

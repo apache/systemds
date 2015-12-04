@@ -32,6 +32,7 @@ public abstract class PageRankTest extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "applications/page_rank/";
 	protected final static String TEST_NAME = "PageRank";
+	protected String TEST_CLASS_DIR = TEST_DIR + PageRankTest.class.getSimpleName() + "/";
 
 	protected int numRows, numCols;
 
@@ -48,7 +49,7 @@ public abstract class PageRankTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "p" }));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "p" }));
 	}
 
 	protected void testPageRank(ScriptType scriptType) {

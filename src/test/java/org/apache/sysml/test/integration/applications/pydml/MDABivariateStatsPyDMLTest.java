@@ -28,6 +28,7 @@ public class MDABivariateStatsPyDMLTest extends MDABivariateStatsTest {
 
 	public MDABivariateStatsPyDMLTest(int n, int m, int li, int lml) {
 		super(n, m, li, lml);
+		TEST_CLASS_DIR = TEST_DIR + MDABivariateStatsPyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

@@ -28,6 +28,7 @@ public class MultiClassSVMDMLTest extends MultiClassSVMTest {
 
 	public MultiClassSVMDMLTest(int rows, int cols, int nc, boolean intercept, double sp) {
 		super(rows, cols, nc, intercept, sp);
+		TEST_CLASS_DIR = TEST_DIR + MultiClassSVMDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

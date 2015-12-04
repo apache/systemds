@@ -28,6 +28,7 @@ public class PageRankPyDMLTest extends PageRankTest {
 
 	public PageRankPyDMLTest(int rows, int cols) {
 		super(rows, cols);
+		TEST_CLASS_DIR = TEST_DIR + PageRankPyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

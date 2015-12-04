@@ -28,6 +28,7 @@ public class CsplineCGDMLTest extends CsplineCGTest {
 
 	public CsplineCGDMLTest(int rows, int cols) {
 		super(rows, cols);
+		TEST_CLASS_DIR = TEST_DIR + CsplineCGDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

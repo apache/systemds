@@ -33,6 +33,7 @@ public abstract class MultiClassSVMTest  extends AutomatedTestBase
 {	
 	protected final static String TEST_DIR = "applications/m-svm/";
 	protected final static String TEST_NAME = "m-svm";
+	protected String TEST_CLASS_DIR = TEST_DIR + MultiClassSVMTest.class.getSimpleName() + "/";
 
 	protected int _numRecords;
 	protected int _numFeatures;
@@ -68,7 +69,7 @@ public abstract class MultiClassSVMTest  extends AutomatedTestBase
 	 
 	 @Override
 	 public void setUp() {
-		 addTestConfiguration(TEST_DIR, TEST_NAME);
+		 addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	 }
 	 
 	 protected void testMultiClassSVM( ScriptType scriptType ) 

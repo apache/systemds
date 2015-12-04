@@ -28,6 +28,7 @@ public class GNMFDMLTest extends GNMFTest {
 
 	public GNMFDMLTest(int m, int n, int k) {
 		super(m, n, k);
+		TEST_CLASS_DIR = TEST_DIR + GNMFDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

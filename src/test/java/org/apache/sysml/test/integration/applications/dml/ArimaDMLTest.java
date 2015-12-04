@@ -28,6 +28,7 @@ public class ArimaDMLTest extends ArimaTest {
 
 	public ArimaDMLTest(int m, int p, int d, int q, int P, int D, int Q, int s, int include_mean, int useJacobi) {
 		super(m, p, d, q, P, D, Q, s, include_mean, useJacobi);
+		TEST_CLASS_DIR = TEST_DIR + ArimaDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

@@ -1581,11 +1581,11 @@ public abstract class AutomatedTestBase
 	}
 	
 	protected String getScript() {
-		return baseDirectory + selectedTest + "." + scriptType.lowerCase();
+		return sourceDirectory + selectedTest + "." + scriptType.lowerCase();
 	}
 	
 	protected String getRScript() {
-		return baseDirectory + selectedTest + ".R";
+		return sourceDirectory + selectedTest + ".R";
 	}
 	
 	protected String getRCmd(String ... args) {

@@ -35,6 +35,7 @@ public abstract class MDABivariateStatsTest extends AutomatedTestBase
 
 	protected final static String TEST_DIR = "applications/mdabivar/";
 	protected final static String TEST_NAME = "MDABivariateStats";
+	protected String TEST_CLASS_DIR = TEST_DIR + MDABivariateStatsTest.class.getSimpleName() + "/";
 	
 	protected int n, m, label_index, label_measurement_level;
 	
@@ -55,7 +56,7 @@ public abstract class MDABivariateStatsTest extends AutomatedTestBase
 	 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_DIR, TEST_NAME);
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
 	protected void testMDABivariateStats(ScriptType scriptType) {

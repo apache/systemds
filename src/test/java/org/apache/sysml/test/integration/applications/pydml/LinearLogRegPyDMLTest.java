@@ -28,6 +28,7 @@ public class LinearLogRegPyDMLTest extends LinearLogRegTest {
 
 	public LinearLogRegPyDMLTest(int numRecords, int numFeatures, int numTestRecords, double sparsity) {
 		super(numRecords, numFeatures, numTestRecords, sparsity);
+		TEST_CLASS_DIR = TEST_DIR + LinearLogRegPyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

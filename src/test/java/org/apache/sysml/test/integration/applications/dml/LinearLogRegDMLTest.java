@@ -28,6 +28,7 @@ public class LinearLogRegDMLTest extends LinearLogRegTest {
 
 	public LinearLogRegDMLTest(int numRecords, int numFeatures, int numTestRecords, double sparsity) {
 		super(numRecords, numFeatures, numTestRecords, sparsity);
+		TEST_CLASS_DIR = TEST_DIR + LinearLogRegDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

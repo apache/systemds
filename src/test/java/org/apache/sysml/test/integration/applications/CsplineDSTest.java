@@ -33,6 +33,7 @@ public abstract class CsplineDSTest  extends AutomatedTestBase {
 
     protected final static String TEST_DIR = "applications/cspline/";
     protected final static String TEST_NAME = "CsplineDS";
+    protected String TEST_CLASS_DIR = TEST_DIR + CsplineDSTest.class.getSimpleName() + "/";
 
     protected int numRecords, numDim;
 
@@ -53,7 +54,7 @@ public abstract class CsplineDSTest  extends AutomatedTestBase {
 
     @Override
     public void setUp() {
-        addTestConfiguration(TEST_DIR, TEST_NAME);
+        addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
 
     protected void testCsplineDS(ScriptType scriptType)
@@ -107,4 +108,3 @@ public abstract class CsplineDSTest  extends AutomatedTestBase {
         TestUtils.compareMatrices(priorR, priorSYSTEMML, Math.pow(10, -12), "k_R", "k_SYSTEMML");
     }
 }
-

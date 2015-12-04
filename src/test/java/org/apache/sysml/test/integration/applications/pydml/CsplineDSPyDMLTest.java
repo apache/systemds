@@ -28,6 +28,7 @@ public class CsplineDSPyDMLTest extends CsplineDSTest {
 
 	public CsplineDSPyDMLTest(int rows, int cols) {
 		super(rows, cols);
+		TEST_CLASS_DIR = TEST_DIR + CsplineDSPyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

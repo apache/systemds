@@ -33,6 +33,7 @@ public abstract class NaiveBayesTest  extends AutomatedTestBase{
 	
 	protected final static String TEST_DIR = "applications/naive-bayes/";
 	protected final static String TEST_NAME = "naive-bayes";
+	protected String TEST_CLASS_DIR = TEST_DIR + NaiveBayesTest.class.getSimpleName() + "/";
 
 	protected int numRecords, numFeatures, numClasses;
     protected double sparsity;
@@ -62,7 +63,7 @@ public abstract class NaiveBayesTest  extends AutomatedTestBase{
 	 
 	 @Override
 	 public void setUp() {
-		 addTestConfiguration(TEST_DIR, TEST_NAME);
+		 addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	 }
 	 
 	 protected void testNaiveBayes(ScriptType scriptType)

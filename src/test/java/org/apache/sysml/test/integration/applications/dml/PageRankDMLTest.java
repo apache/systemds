@@ -28,6 +28,7 @@ public class PageRankDMLTest extends PageRankTest {
 
 	public PageRankDMLTest(int rows, int cols) {
 		super(rows, cols);
+		TEST_CLASS_DIR = TEST_DIR + PageRankDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

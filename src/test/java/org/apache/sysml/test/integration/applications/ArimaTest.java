@@ -34,6 +34,7 @@ public abstract class ArimaTest extends AutomatedTestBase {
 	
 	protected final static String TEST_DIR = "applications/arima_box-jenkins/";
 	protected final static String TEST_NAME = "arima";
+	protected String TEST_CLASS_DIR = TEST_DIR + ArimaTest.class.getSimpleName() + "/";
 	
 	protected int max_func_invoc, p, d, q, P, D, Q, s, include_mean, useJacobi;
 	
@@ -58,7 +59,7 @@ public abstract class ArimaTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-    	addTestConfiguration(TEST_DIR, TEST_NAME);
+    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
 	protected void testArima(ScriptType scriptType) {

@@ -33,6 +33,7 @@ public abstract class LinearRegressionTest extends AutomatedTestBase {
 	
 	protected final static String TEST_DIR = "applications/linear_regression/";
 	protected final static String TEST_NAME = "LinearRegression";
+	protected String TEST_CLASS_DIR = TEST_DIR + LinearRegressionTest.class.getSimpleName() + "/";
 
 	protected int numRecords, numFeatures;
 	protected double sparsity;
@@ -56,7 +57,7 @@ public abstract class LinearRegressionTest extends AutomatedTestBase {
     @Override
     public void setUp()
     {
-        addTestConfiguration(TEST_DIR, TEST_NAME);
+        addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
     
     protected void testLinearRegression(ScriptType scriptType) {

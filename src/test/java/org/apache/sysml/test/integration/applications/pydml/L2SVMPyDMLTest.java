@@ -28,6 +28,7 @@ public class L2SVMPyDMLTest extends L2SVMTest {
 
 	public L2SVMPyDMLTest(int rows, int cols, double sp, boolean intercept) {
 		super(rows, cols, sp, intercept);
+		TEST_CLASS_DIR = TEST_DIR + L2SVMPyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

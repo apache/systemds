@@ -28,6 +28,7 @@ public class NaiveBayesDMLTest extends NaiveBayesTest {
 
 	public NaiveBayesDMLTest(int rows, int cols, int nc, double sp) {
 		super(rows, cols, nc, sp);
+		TEST_CLASS_DIR = TEST_DIR + NaiveBayesDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

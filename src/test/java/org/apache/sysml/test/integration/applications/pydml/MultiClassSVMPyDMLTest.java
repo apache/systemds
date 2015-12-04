@@ -28,6 +28,7 @@ public class MultiClassSVMPyDMLTest extends MultiClassSVMTest {
 
 	public MultiClassSVMPyDMLTest(int rows, int cols, int nc, boolean intercept, double sp) {
 		super(rows, cols, nc, intercept, sp);
+		TEST_CLASS_DIR = TEST_DIR + MultiClassSVMPyDMLTest.class.getSimpleName() + "/";
 	}
 
 	@Test

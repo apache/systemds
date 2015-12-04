@@ -35,6 +35,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "parfor_corr";
 	private final static String TEST_DIR = "applications/parfor/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForCorrelationTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 3578;  
@@ -48,10 +49,8 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   );
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );
 	}
 
 	@Test
@@ -158,6 +157,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		boolean oldStatistics = DMLScript.STATISTICS;
 		
@@ -165,24 +165,16 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + scriptNum + ".dml";
 		if( statistics ){
-			programArgs = new String[]{ "-stats", "-args", 
-					                    HOME + INPUT_DIR + "V" , 
-					                    Integer.toString(rows),
-					                    Integer.toString(cols),
-					                    HOME + OUTPUT_DIR + "PearsonR" };
+			programArgs = new String[]{ "-stats", "-args",
+				input("V"), Integer.toString(rows), Integer.toString(cols), output("PearsonR") };
 		}
 		else {
-			programArgs = new String[]{ "-args", 
-					                    HOME + INPUT_DIR + "V" , 
-					                    Integer.toString(rows),
-					                    Integer.toString(cols),
-					                    HOME + OUTPUT_DIR + "PearsonR" };
+			programArgs = new String[]{ "-args",
+				input("V"), Integer.toString(rows), Integer.toString(cols), output("PearsonR") };
 		}
-		fullRScriptName = HOME + TEST_NAME + ".R";
-		rCmd = "Rscript" + " " + HOME + TEST_NAME + ".R" + " " + 
-		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
 		
-		loadTestConfiguration(config);
+		fullRScriptName = HOME + TEST_NAME + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 		long seed = System.nanoTime();
         double[][] V = getRandomMatrix(rows, cols, minVal, maxVal, 1.0, seed);

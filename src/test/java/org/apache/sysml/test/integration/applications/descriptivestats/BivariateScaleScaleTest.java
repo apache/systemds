@@ -30,11 +30,11 @@ import org.apache.sysml.test.utils.TestUtils;
 public class BivariateScaleScaleTest extends AutomatedTestBase 
 {
 
-	
 	private final static String TEST_DIR = "applications/descriptivestats/";
 	private final static String TEST_SCALE_SCALE = "ScaleScale";
 	private final static String TEST_SCALE_SCALE_WEIGHTS = "ScaleScalePearsonRWithWeightsTest";
-
+	private final static String TEST_CLASS_DIR = TEST_DIR + BivariateScaleScaleTest.class.getSimpleName() + "/";
+	
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 100000;      // # of rows in each vector
@@ -44,10 +44,10 @@ public class BivariateScaleScaleTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_SCALE_SCALE, new TestConfiguration(TEST_DIR,
+		addTestConfiguration(TEST_SCALE_SCALE, new TestConfiguration(TEST_CLASS_DIR,
 				TEST_SCALE_SCALE, new String[] { "PearsonR" + ".scalar" }));
 		addTestConfiguration(TEST_SCALE_SCALE_WEIGHTS, new TestConfiguration(
-				TEST_DIR, "ScaleScalePearsonRWithWeightsTest",
+				TEST_CLASS_DIR, "ScaleScalePearsonRWithWeightsTest",
 				new String[] { "PearsonR" + ".scalar" }));
 	}
 	
@@ -55,21 +55,17 @@ public class BivariateScaleScaleTest extends AutomatedTestBase
 	public void testPearsonR() {
 
 		TestConfiguration config = getTestConfiguration(TEST_SCALE_SCALE);
-		
 		config.addVariable("rows", rows);
+		loadTestConfiguration(config);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String SS_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = SS_HOME + TEST_SCALE_SCALE + ".dml";
-		programArgs = new String[]{"-args",  SS_HOME + INPUT_DIR + "X" , 
-				                        Integer.toString(rows),
-				                         SS_HOME + INPUT_DIR + "Y" , 
-				                         SS_HOME + OUTPUT_DIR + "PearsonR" };
-		fullRScriptName = SS_HOME + TEST_SCALE_SCALE + ".R";
-		rCmd = "Rscript" + " " + SS_HOME + TEST_SCALE_SCALE + ".R" + " " + 
-		       SS_HOME + INPUT_DIR + " " + SS_HOME + EXPECTED_DIR;
+		programArgs = new String[]{"-args",  input("X"), 
+			Integer.toString(rows), input("Y"), output("PearsonR") };
 		
-		loadTestConfiguration(config);
+		fullRScriptName = SS_HOME + TEST_SCALE_SCALE + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 		long seed = System.currentTimeMillis();
 		//System.out.println("Seed = " + seed);
@@ -114,22 +110,17 @@ public class BivariateScaleScaleTest extends AutomatedTestBase
 	public void testPearsonRWithWeights() {
 
 		TestConfiguration config = getTestConfiguration(TEST_SCALE_SCALE_WEIGHTS);
-		
 		config.addVariable("rows", rows);
+		loadTestConfiguration(config);
 
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String SS_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = SS_HOME + TEST_SCALE_SCALE_WEIGHTS + ".dml";
-		programArgs = new String[]{"-args",  SS_HOME + INPUT_DIR + "X" , 
-				                        Integer.toString(rows),
-				                         SS_HOME + INPUT_DIR + "Y" , 
-				                         SS_HOME + INPUT_DIR + "WM" , 
-				                         SS_HOME + OUTPUT_DIR + "PearsonR" };
+		programArgs = new String[]{"-args",  input("X"),
+			Integer.toString(rows), input("Y"), input("WM"), output("PearsonR") };
+		
 		fullRScriptName = SS_HOME + TEST_SCALE_SCALE_WEIGHTS + ".R";
-		rCmd = "Rscript" + " " + SS_HOME + TEST_SCALE_SCALE_WEIGHTS + ".R" + " " + 
-		       SS_HOME + INPUT_DIR + " " + SS_HOME + EXPECTED_DIR;
-
-		loadTestConfiguration(config);
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 		//long seed = System.currentTimeMillis();
 		//System.out.println("Seed = " + seed);
@@ -173,5 +164,4 @@ public class BivariateScaleScaleTest extends AutomatedTestBase
 
 	}
 	
-
 }

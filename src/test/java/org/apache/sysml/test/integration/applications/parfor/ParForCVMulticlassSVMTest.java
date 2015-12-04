@@ -29,10 +29,10 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class ParForCVMulticlassSVMTest extends AutomatedTestBase 
 {
-
 	
 	private final static String TEST_NAME = "parfor_cv_multiclasssvm";
 	private final static String TEST_DIR = "applications/parfor/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForCVMulticlassSVMTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-10; 
 		
@@ -70,10 +70,8 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "stats" })   );  
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "stats" }) );
 	}
 	
 	@Test
@@ -122,29 +120,22 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME +scriptNum + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "X" ,
-				                        HOME + INPUT_DIR + "y",
-				                        Integer.toString(rows),
-				                        Integer.toString(cols),
-				                        Integer.toString(k),
-				                        Integer.toString(intercept),
-				                        Integer.toString(numclasses),
-				                        Double.toString(epsilon),
-				                        Double.toString(lambda),
-				                        Integer.toString(maxiter),
-				                        HOME + OUTPUT_DIR + "stats",
-				                        HOME + INPUT_DIR + "P"};
-		fullRScriptName = HOME + TEST_NAME + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       HOME + INPUT_DIR + " " + Integer.toString(k) + " " + Integer.toString(intercept) 
-		       + " " + Integer.toString(numclasses) + " " + Double.toString(epsilon) + " " + Double.toString(lambda)  
-		       + " " + Integer.toString(maxiter)+ " " + HOME + EXPECTED_DIR;
+		programArgs = new String[]{"-args", input("X"), input("y"),
+			Integer.toString(rows), Integer.toString(cols),
+			Integer.toString(k), Integer.toString(intercept), Integer.toString(numclasses),
+			Double.toString(epsilon), Double.toString(lambda), Integer.toString(maxiter),
+			output("stats"), input("P")};
 		
-		loadTestConfiguration(config);
+		fullRScriptName = HOME + TEST_NAME + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + 
+			Integer.toString(k) + " " + Integer.toString(intercept) + " " + Integer.toString(numclasses) + " " + 
+			Double.toString(epsilon) + " " + Double.toString(lambda) + " " + Integer.toString(maxiter) + " " + 
+			expectedDir();
 
 		double sparsity = (sparse)? sparsity2 : sparsity1;
 		

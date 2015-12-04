@@ -28,8 +28,13 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
  */
 public class UnivariateWeightedScaleDenseTest extends UnivariateStatsBase
 {
+
+	public UnivariateWeightedScaleDenseTest() {
+		super();
+		TEST_CLASS_DIR = TEST_DIR + UnivariateWeightedScaleDenseTest.class.getSimpleName() + "/";
+	}
 	
-	// -------------------------------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------------------
 	// Tests 1-12 moved to UnivariateWeightedScaleSparseTest.java
 	// -------------------------------------------------------------------------------------
 

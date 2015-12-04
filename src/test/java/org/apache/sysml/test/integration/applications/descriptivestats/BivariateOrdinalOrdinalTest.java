@@ -29,11 +29,11 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class BivariateOrdinalOrdinalTest extends AutomatedTestBase 
 {
-
 	
 	private final static String TEST_DIR = "applications/descriptivestats/";
 	private final static String TEST_ORDINAL_ORDINAL = "OrdinalOrdinal";
 	private final static String TEST_ORDINAL_ORDINAL_WEIGHTS = "OrdinalOrdinalWithWeightsTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BivariateOrdinalOrdinalTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-9;
 	private final static int rows = 10000;
@@ -44,31 +44,27 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_ORDINAL_ORDINAL, 
-				new TestConfiguration(TEST_DIR, TEST_ORDINAL_ORDINAL, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_ORDINAL_ORDINAL, 
 					new String[] { "Spearman"+".scalar" }));
 		addTestConfiguration(TEST_ORDINAL_ORDINAL_WEIGHTS, 
-				new TestConfiguration(TEST_DIR, TEST_ORDINAL_ORDINAL_WEIGHTS, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_ORDINAL_ORDINAL_WEIGHTS, 
 					new String[] { "Spearman"+".scalar" }));
 	}
 	
 	@Test
 	public void testOrdinalOrdinal() {
 		TestConfiguration config = getTestConfiguration(TEST_ORDINAL_ORDINAL);
-		
 		config.addVariable("rows", rows);
+		loadTestConfiguration(config);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String OO_HOME = SCRIPT_DIR + TEST_DIR;	
 		fullDMLScriptName = OO_HOME + TEST_ORDINAL_ORDINAL + ".dml";
-		programArgs = new String[]{"-args", OO_HOME + INPUT_DIR + "A", 
-	                        Integer.toString(rows),
-	                        OO_HOME + INPUT_DIR + "B", 
-	                        OO_HOME + OUTPUT_DIR + "Spearman"};
+		programArgs = new String[]{"-args", input("A"),
+			Integer.toString(rows), input("B"), output("Spearman")};
+		
 		fullRScriptName = OO_HOME + TEST_ORDINAL_ORDINAL + ".R";
-		rCmd = "Rscript" + " " + OO_HOME + TEST_ORDINAL_ORDINAL + ".R" + " " + 
-		       OO_HOME + INPUT_DIR + " " + OO_HOME + EXPECTED_DIR;
-
-		loadTestConfiguration(config);
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
         double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
         double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis()+1);
@@ -107,23 +103,17 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 	@Test
 	public void testOrdinalOrdinalWithWeights() {
 		TestConfiguration config = getTestConfiguration(TEST_ORDINAL_ORDINAL_WEIGHTS);
-		
 		config.addVariable("rows", rows);
+		loadTestConfiguration(config);
 
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String OO_HOME = SCRIPT_DIR + TEST_DIR;	
 		fullDMLScriptName = OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".dml";
-		programArgs = new String[]{"-args", OO_HOME + INPUT_DIR + "A", 
-	                        Integer.toString(rows),
-	                        OO_HOME + INPUT_DIR + "B", 
-	                        OO_HOME + INPUT_DIR + "WM", 
-	                        OO_HOME + OUTPUT_DIR + "Spearman"};
+		programArgs = new String[]{"-args", input("A"),
+			Integer.toString(rows), input("B"), input("WM"), output("Spearman")};
 
 		fullRScriptName = OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".R";
-		rCmd = "Rscript" + " " + OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".R" + " " + 
-		       OO_HOME + INPUT_DIR + " " + OO_HOME + EXPECTED_DIR;
-
-		loadTestConfiguration(config);
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
         double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
         double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis());
@@ -157,5 +147,4 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 		}
 	}
 	
-
 }

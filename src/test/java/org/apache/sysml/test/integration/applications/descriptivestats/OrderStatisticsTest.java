@@ -28,17 +28,16 @@ public class OrderStatisticsTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "applications/descriptivestats/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + OrderStatisticsTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		addTestConfiguration("SimpleQuantileTest",
-				new TestConfiguration(TEST_DIR, "SimpleQuantileTest", new String[] { "median", "weighted_median" }));
+			new TestConfiguration(TEST_CLASS_DIR, "SimpleQuantileTest", new String[] { "median", "weighted_median" }));
 		addTestConfiguration("QuantileTest",
-				new TestConfiguration(TEST_DIR, "QuantileTest", new String[] { "quantile", "weighted_quantile" }));
+			new TestConfiguration(TEST_CLASS_DIR, "QuantileTest", new String[] { "quantile", "weighted_quantile" }));
 		addTestConfiguration("IQMTest",
-				new TestConfiguration(TEST_DIR, "IQMTest", new String[] { "iqm", "weighted_iqm" }));
-		
-		
+			new TestConfiguration(TEST_CLASS_DIR, "IQMTest", new String[] { "iqm", "weighted_iqm" }));
 	}
 	
 	public static double quantile(double[] vector, double p)

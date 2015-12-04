@@ -29,9 +29,9 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class BivariateCategoricalCategoricallTest extends AutomatedTestBase 
 {
-
 	
 	private final static String TEST_DIR = "applications/descriptivestats/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BivariateCategoricalCategoricallTest.class.getSimpleName() + "/";
 	private final static String TEST_NOMINAL_NOMINAL = "CategoricalCategorical";
 	private final static String TEST_NOMINAL_NOMINAL_WEIGHTS = "CategoricalCategoricalWithWeightsTest";
 	private final static String TEST_ODDS_RATIO = "OddsRatio";
@@ -44,41 +44,41 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NOMINAL_NOMINAL, new TestConfiguration(TEST_DIR, TEST_NOMINAL_NOMINAL, 
+		addTestConfiguration(TEST_NOMINAL_NOMINAL, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NOMINAL_NOMINAL, 
 				new String[] { "PValue"+".scalar", "CramersV"+".scalar" }));
-		addTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS, new TestConfiguration(TEST_DIR, TEST_NOMINAL_NOMINAL_WEIGHTS, new String[] { "PValue"+".scalar", "CramersV"+".scalar" }));
-		addTestConfiguration(TEST_ODDS_RATIO, new TestConfiguration(TEST_DIR, TEST_ODDS_RATIO, new String[] { 	"oddsRatio"+".scalar", 
-																												"sigma"+".scalar", 
-																												"leftConf"+".scalar", 
-																												"rightConf"+".scalar", 
-																												"sigmasAway"+".scalar" 
-																												//"chiSquared"+".scalar", 
-																												//"degFreedom"+".scalar", 
-																												//"pValue"+".scalar", 
-																												//"cramersV"+".scalar"
-																												}));
+		addTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NOMINAL_NOMINAL_WEIGHTS, 
+				new String[] { "PValue"+".scalar", "CramersV"+".scalar" }));
+		addTestConfiguration(TEST_ODDS_RATIO, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_ODDS_RATIO, 
+				new String[] { 	
+					"oddsRatio"+".scalar", 
+					"sigma"+".scalar", 
+					"leftConf"+".scalar", 
+					"rightConf"+".scalar", 
+					"sigmasAway"+".scalar" 
+					//"chiSquared"+".scalar", 
+					//"degFreedom"+".scalar", 
+					//"pValue"+".scalar", 
+					//"cramersV"+".scalar"
+					}));
 	}
 
 	@Test
 	public void testCategoricalCategorical() {
-		
 		TestConfiguration config = getTestConfiguration(TEST_NOMINAL_NOMINAL);
-		
 		config.addVariable("rows", rows);
+		loadTestConfiguration(config);
 
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String CC_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = CC_HOME + TEST_NOMINAL_NOMINAL + ".dml";
-		programArgs = new String[]{"-args",  CC_HOME + INPUT_DIR + "A" , 
-				                        Integer.toString(rows),
-				                        CC_HOME + INPUT_DIR + "B" , 
-				                        CC_HOME + OUTPUT_DIR + "PValue" , 
-				                        CC_HOME + OUTPUT_DIR + "CramersV" };
-		fullRScriptName = CC_HOME + TEST_NOMINAL_NOMINAL + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       CC_HOME + INPUT_DIR + " " + CC_HOME + EXPECTED_DIR;
+		programArgs = new String[]{"-args", input("A"), Integer.toString(rows), input("B"), 
+			output("PValue"), output("CramersV")};
 		
-		loadTestConfiguration(config);
+		fullRScriptName = CC_HOME + TEST_NOMINAL_NOMINAL + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
         double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, 3);
         double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, 7);
@@ -126,25 +126,18 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 
 	@Test
 	public void testCategoricalCategoricalWithWeights() {
-
 		TestConfiguration config = getTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS);
-		
 		config.addVariable("rows", rows);
+		loadTestConfiguration(config);
 
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String CC_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = CC_HOME + TEST_NOMINAL_NOMINAL_WEIGHTS + ".dml";
-		programArgs = new String[]{"-args",  CC_HOME + INPUT_DIR + "A" , 
-				                        Integer.toString(rows),
-				                        CC_HOME + INPUT_DIR + "B" , 
-				                        CC_HOME + INPUT_DIR + "WM" , 
-				                        CC_HOME + OUTPUT_DIR + "PValue" , 
-				                        CC_HOME + OUTPUT_DIR + "CramersV" };
-		fullRScriptName = CC_HOME + TEST_NOMINAL_NOMINAL_WEIGHTS + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       CC_HOME + INPUT_DIR + " " + CC_HOME + EXPECTED_DIR;
+		programArgs = new String[]{"-args", input("A"), Integer.toString(rows),
+			input("B"), input("WM"), output("PValue"), output("CramersV") };
 		
-		loadTestConfiguration(config);
+		fullRScriptName = CC_HOME + TEST_NOMINAL_NOMINAL_WEIGHTS + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
         double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
         double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis()+1);
@@ -191,32 +184,27 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 	
 	@Test
 	public void testOddsRatio() {
-		
 		TestConfiguration config = getTestConfiguration(TEST_ODDS_RATIO);
-		
 		config.addVariable("rows", rows);
+		loadTestConfiguration(config);
 
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String CC_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = CC_HOME + TEST_ODDS_RATIO + ".dml";
-		programArgs = new String[]{"-args",  CC_HOME + INPUT_DIR + "A" , 
-				                        Integer.toString(rows),
-				                        CC_HOME + INPUT_DIR + "B" , 
-				                        CC_HOME + OUTPUT_DIR + "oddsRatio" , 
-				                        CC_HOME + OUTPUT_DIR + "sigma", 
-				                        CC_HOME + OUTPUT_DIR + "leftConf" , 
-				                        CC_HOME + OUTPUT_DIR + "rightConf", 
-				                        CC_HOME + OUTPUT_DIR + "sigmasAway" 
-				                        //CC_HOME + OUTPUT_DIR + "chiSquared", 
-				                        //CC_HOME + OUTPUT_DIR + "degFreedom" , 
-				                        //CC_HOME + OUTPUT_DIR + "pValue", 
-				                        //CC_HOME + OUTPUT_DIR + "cramersV"
-				                        };
-		fullRScriptName = CC_HOME + TEST_ODDS_RATIO + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       CC_HOME + INPUT_DIR + " " + CC_HOME + EXPECTED_DIR;
+		programArgs = new String[]{"-args",  input("A"), Integer.toString(rows), input("B"), 
+			output("oddsRatio"), 
+			output("sigma"), 
+			output("leftConf"), 
+			output("rightConf"), 
+			output("sigmasAway")
+			//output("chiSquared"), 
+			//output(degFreedom"), 
+			//output("pValue"), 
+			//output("cramersV")
+			};
 		
-		loadTestConfiguration(config);
+		fullRScriptName = CC_HOME + TEST_ODDS_RATIO + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 		// current test works only for 2x2 contingency tables => #categories must be 2
 		int numCat = 2;
@@ -251,6 +239,4 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 		
 	}
 	
-
-
 }

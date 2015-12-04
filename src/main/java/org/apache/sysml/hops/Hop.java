@@ -1372,8 +1372,11 @@ public abstract class Hop
 	protected static final HashMap<Hop.OpOp4, String> HopsOpOp4String;
 	static {
 		HopsOpOp4String = new HashMap<Hop.OpOp4, String>();
-		HopsOpOp4String.put(OpOp4.WSLOSS, "wsloss");
+		HopsOpOp4String.put(OpOp4.WSLOSS,   "wsloss");
 		HopsOpOp4String.put(OpOp4.WSIGMOID, "wsigmoid");
+		HopsOpOp4String.put(OpOp4.WCEMM,    "wcemm");
+		HopsOpOp4String.put(OpOp4.WDIVMM,   "wdivmm");
+		HopsOpOp4String.put(OpOp4.WUMM,     "wumm");
 	}
 
 	protected static final HashMap<Hop.Direction, String> HopsDirection2String;

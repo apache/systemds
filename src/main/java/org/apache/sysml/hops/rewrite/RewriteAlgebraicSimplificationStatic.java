@@ -983,6 +983,22 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					}
 				}
 			}
+			
+			//select positive (selp) operator; pattern: max(X,0) -> selp+
+			if( bop.getOp() == OpOp2.MAX && left.getDataType()==DataType.MATRIX 
+					&& right instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)right)==0 )
+			{
+				UnaryOp unary = HopRewriteUtils.createUnary(left, OpOp1.SELP);
+				HopRewriteUtils.removeChildReferenceByPos(parent, bop, pos);
+				HopRewriteUtils.addChildReference(parent, unary, pos);
+				
+				//cleanup if only consumer of intermediate
+				if( bop.getParent().isEmpty() )
+					HopRewriteUtils.removeAllChildReferences(bop);					
+				hi = unary;
+				
+				LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp3");
+			}
 		}
 		
 		return hi;

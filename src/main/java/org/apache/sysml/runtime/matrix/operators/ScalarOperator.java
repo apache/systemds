@@ -83,7 +83,10 @@ public class ScalarOperator  extends Operator
 			|| (fn instanceof LessThan && _constant==0)
 			|| (fn instanceof NotEquals && _constant==0)
 			|| (fn instanceof Equals && _constant!=0)
-			|| (fn instanceof Minus && _constant==0))
+			|| (fn instanceof Minus && _constant==0)
+			|| (fn instanceof Minus && _constant==0)
+			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.MAX && _constant<=0)
+			|| (fn instanceof Builtin && ((Builtin)fn).getBuiltinFunctionCode()==BuiltinFunctionCode.MIN && _constant>=0))
 		{
 			sparseSafe = true;
 		}

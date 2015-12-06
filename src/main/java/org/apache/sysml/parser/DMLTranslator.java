@@ -2606,11 +2606,8 @@ public class DMLTranslator
 			HashMap<String,Hop> randParams = new HashMap<String,Hop>();
 			randParams.put(Statement.SEQ_FROM, expr);
 			randParams.put(Statement.SEQ_TO, expr2);
-			if ( expr3 == null ) {
-				expr3 = new BinaryOp(Statement.SEQ_INCR, DataType.SCALAR, ValueType.DOUBLE, Hop.OpOp2.SEQINCR, expr, expr2);
-				//throw new ParseException("Unable to search for increment field in seq()."); //randParams.put(Statement.SEQ_INCR, new LiteralOp("defaultIncr", Double.NaN));
-			}
-			randParams.put(Statement.SEQ_INCR, expr3);
+			randParams.put(Statement.SEQ_INCR, (expr3!=null)?expr3 : new LiteralOp(1)); 
+			//note incr: default -1 (for from>to) handled during runtime
 			currBuiltinOp = new DataGenOp(DataGenMethod.SEQ, target, randParams);
 			break;
 			

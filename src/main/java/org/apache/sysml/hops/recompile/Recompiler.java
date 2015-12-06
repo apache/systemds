@@ -35,7 +35,6 @@ import org.apache.wink.json4j.JSONObject;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
@@ -1692,11 +1691,8 @@ public class Recompiler
 				double incr = d.computeBoundsInformation(d.getInput().get(ix3), vars);
 				
 				//special case increment 
-				Hop input3 = d.getInput().get(ix3);
-				if ( input3 instanceof BinaryOp && ((BinaryOp)input3).getOp() == Hop.OpOp2.SEQINCR 
-					&& from!=Double.MAX_VALUE && to!=Double.MAX_VALUE ) 
-				{
-					incr =( from >= to )? -1.0 : 1.0;
+				if ( from!=Double.MAX_VALUE && to!=Double.MAX_VALUE ) {
+					incr = ( from >= to && incr==1 ) ? -1.0 : 1.0;
 				}
 				
 				if ( from!=Double.MAX_VALUE && to!=Double.MAX_VALUE && incr!=Double.MAX_VALUE ) {

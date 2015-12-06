@@ -1040,7 +1040,7 @@ public abstract class Hop
 	public enum OpOp2 {
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
 		MIN, MAX, AND, OR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
-		CENTRALMOMENT, COVARIANCE, CBIND, RBIND, SEQINCR, SOLVE, MEDIAN, INVALID,
+		CENTRALMOMENT, COVARIANCE, CBIND, RBIND, SOLVE, MEDIAN, INVALID,
 		//fused ML-specific operators for performance
 		MINUS_NZ, //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
@@ -1192,7 +1192,6 @@ public abstract class Hop
 		HopsOpOp2LopsBS.put(OpOp2.LOG, org.apache.sysml.lops.BinaryScalar.OperationTypes.LOG);
 		HopsOpOp2LopsBS.put(OpOp2.POW, org.apache.sysml.lops.BinaryScalar.OperationTypes.POW);
 		HopsOpOp2LopsBS.put(OpOp2.PRINT, org.apache.sysml.lops.BinaryScalar.OperationTypes.PRINT);
-		HopsOpOp2LopsBS.put(OpOp2.SEQINCR, org.apache.sysml.lops.BinaryScalar.OperationTypes.SEQINCR);
 	}
 
 	protected static final HashMap<Hop.OpOp2, org.apache.sysml.lops.Unary.OperationTypes> HopsOpOp2LopsU;
@@ -1354,7 +1353,6 @@ public abstract class Hop
 		HopsOpOp2String.put(OpOp2.CBIND, "cbind");
 		HopsOpOp2String.put(OpOp2.RBIND, "rbind");
 		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
-		HopsOpOp2String.put(OpOp2.SEQINCR, "seqincr");
 	}
 	
 	public static String getOpOp2String( OpOp2 op ) {

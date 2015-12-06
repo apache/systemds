@@ -96,7 +96,7 @@ public class BinaryOperator  extends Operator implements Serializable
 		
 		//non-supported ops (not required for sparsity estimates):
 		//PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
-		//CENTRALMOMENT, COVARIANCE, APPEND, SEQINCR, SOLVE, MEDIAN,
+		//CENTRALMOMENT, COVARIANCE, APPEND, SOLVE, MEDIAN,
 			
 		return OpOp2.INVALID;
 	}

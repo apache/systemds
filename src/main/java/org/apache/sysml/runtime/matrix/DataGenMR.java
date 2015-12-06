@@ -195,6 +195,9 @@ public class DataGenMR
 				double from = seqInst.fromValue;
 				double to = seqInst.toValue;
 				double incr = seqInst.incrValue;
+
+				//handle default 1 to -1 for special case of from>to
+				incr = LibMatrixDatagen.updateSeqIncr(from, to, incr);
 				
 				// Correctness checks on (from, to, incr)
 				boolean neg = (from > to);

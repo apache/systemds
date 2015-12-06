@@ -41,7 +41,6 @@ public class BinaryScalar extends Lop
 		LOG,POW,MAX,MIN,PRINT,
 		IQSIZE,
 		Over,
-		SEQINCR
 	}
 	
 	OperationTypes operation;
@@ -190,9 +189,6 @@ public class BinaryScalar extends Lop
 				
 			case IQSIZE:
 				return "iqsize"; 
-			
-			case SEQINCR:
-				return "seqincr";
 				
 			default:
 				throw new UnsupportedOperationException("Instruction is not defined for BinaryScalar operator: " + op);

@@ -98,6 +98,9 @@ implements Mapper<Writable, Writable, Writable, Writable>
 				double to=Double.parseDouble(params[3]);
 				double incr=Double.parseDouble(params[4]);
 				
+				//handle default 1 to -1 for special case of from>to
+				incr = LibMatrixDatagen.updateSeqIncr(from, to, incr);
+				
 				//sequence data generation
 				try {
 					indexes[i].setIndexes(blockRowNumber, blockColNumber);

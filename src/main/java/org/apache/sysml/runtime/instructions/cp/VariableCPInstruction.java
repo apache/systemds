@@ -86,7 +86,6 @@ public class VariableCPInstruction extends CPInstruction
 		Write, 
 		Read, 
 		SetFileName, 
-		SequenceIncrement,
 	}
 	
 	private static IDSequence _uniqueVarID;	
@@ -149,9 +148,6 @@ public class VariableCPInstruction extends CPInstruction
 		
 		else if ( str.equalsIgnoreCase("setfilename") ) 
 			return VariableOperationCode.SetFileName;
-		
-		else if ( str.equalsIgnoreCase("seqincr") ) 
-			return VariableOperationCode.SequenceIncrement;
 		
 		else
 			throw new DMLUnsupportedOperationException("Invalid function: " + str);
@@ -234,7 +230,6 @@ public class VariableCPInstruction extends CPInstruction
 			return 1;
 		case Write:
 		case SetFileName:
-		case SequenceIncrement:
 			return 3;
 		default:
 			return 2;
@@ -413,12 +408,6 @@ public class VariableCPInstruction extends CPInstruction
 			//return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, str);
 			break;
 		
-		case SequenceIncrement:
-			in1 = new CPOperand(parts[1]);
-			in2 = new CPOperand(parts[2]);
-			out = new CPOperand(parts[3]);
-			break;
-				
 		}
 		return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, out, _arity, opcode, str);
 	}
@@ -583,20 +572,7 @@ public class VariableCPInstruction extends CPInstruction
 				throw new DMLRuntimeException("Invalid data type (" + input1.getDataType() + ") in SetFileName instruction: " + instString);
 			}
 			break;
-			
-		case SequenceIncrement:
-			ScalarObject fromObj = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
-			ScalarObject toObj = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
-			double ret = Double.NaN;
-			if ( fromObj.getDoubleValue() > toObj.getDoubleValue() )
-				ret = -1.0;
-			else
-				ret = 1.0;
-			ScalarObject incrObj = (ScalarObject) new DoubleObject(ret);
-			ec.setVariable(output.getName(), incrObj);
-
-			break;
-			
+	
 		default:
 			throw new DMLRuntimeException("Unknown opcode: " + opcode );
 		}

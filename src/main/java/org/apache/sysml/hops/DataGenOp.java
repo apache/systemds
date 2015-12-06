@@ -258,14 +258,6 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 				if( toVal > 0 )	
 					return new long[]{ toVal, 1, -1 };
 			}
-			//here, we check for the common case of seq(1,x,?), i.e., from=1, to=x, b(seqincr) operator
-			if(    from instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)from)==1
-				&& incr instanceof BinaryOp && ((BinaryOp)incr).getOp() == Hop.OpOp2.SEQINCR ) //implicit 1
-			{
-				long toVal = computeDimParameterInformation(to, memo);
-				if( toVal > 0 )	
-					return new long[]{ toVal, 1, -1 };
-			}
 			//here, we check for the common case of seq(x,1,-1), i.e. from=x, to=1 incr=-1
 			if(    to instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)to)==1
 				&& incr instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)incr)==-1 )
@@ -350,12 +342,8 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 			
 			double incr = computeBoundsInformation(input3);
 			boolean incrKnown = (incr != Double.MAX_VALUE);
-			
-			if(  !incrKnown && input3 instanceof BinaryOp //special case for incr
-			   && ((BinaryOp)input3).getOp() == Hop.OpOp2.SEQINCR && fromKnown && toKnown) 
-			{
+			if(  fromKnown && toKnown && incr == 1) {
 				incr = ( from >= to ) ? -1 : 1;
-				incrKnown = true;
 			}
 			
 			if ( fromKnown && toKnown && incrKnown ) {

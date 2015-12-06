@@ -390,6 +390,9 @@ public class RandSPInstruction extends UnarySPInstruction
 				throw new DMLRuntimeException("ERROR: While performing seq(" + seq_from + "," + seq_to + "," + seq_incr + ")");
 			}
 			
+			//handle default 1 to -1 for special case of from>to
+			seq_incr = LibMatrixDatagen.updateSeqIncr(seq_from, seq_to, seq_incr);
+			
 			if( LOG.isTraceEnabled() )
 				LOG.trace("Process RandSPInstruction seq with seqFrom="+seq_from+", seqTo="+seq_to+", seqIncr"+seq_incr);
 			

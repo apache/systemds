@@ -727,7 +727,7 @@ public class ParameterizedBuiltinOp extends Hop
 			if( cols )
 			{
 				//selection vector: boolean array in the number of columns 
-				ret += OptimizerUtils.BIT_SIZE * dim2;
+				ret += OptimizerUtils.BOOLEAN_SIZE * dim2;
 				
 				//removeEmpty-cols has additional memory requirements for intermediate 
 				//data structures in order to make this a cache-friendly operation.
@@ -736,7 +736,7 @@ public class ParameterizedBuiltinOp extends Hop
 			else //rows
 			{
 				//selection vector: boolean array in the number of rows 
-				ret += OptimizerUtils.BIT_SIZE * dim1;
+				ret += OptimizerUtils.BOOLEAN_SIZE * dim1;
 			}
 		}
 		else if( _op == ParamBuiltinOp.REXPAND )

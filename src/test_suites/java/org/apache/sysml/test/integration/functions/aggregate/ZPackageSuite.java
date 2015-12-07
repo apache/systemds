@@ -43,6 +43,9 @@ import org.junit.runners.Suite;
 	StdDevTest.class,
 	RowStdDevsTest.class,
 	ColStdDevsTest.class,
+	VarianceTest.class,
+	RowVariancesTest.class,
+	ColVariancesTest.class,
 
 	FullAggregateTest.class,
 	FullColAggregateTest.class,

@@ -151,11 +151,11 @@ public class PyDMLParserWrapper extends AParserWrapper
 //				in = new ANTLRInputStream(new FileInputStream(fileName));
 //			}
 		} catch (FileNotFoundException e) {
-			throw new ParseException("ERROR: Cannot find file:" + fileName);
+			throw new ParseException("ERROR: Cannot find file:" + fileName, e);
 		} catch (IOException e) {
-			throw new ParseException("ERROR: Cannot open file:" + fileName);
+			throw new ParseException("ERROR: Cannot open file:" + fileName, e);
 		} catch (LanguageException e) {
-			throw new ParseException("ERROR: " + e.getMessage());
+			throw new ParseException("ERROR: " + e.getMessage(), e);
 		}
 
 		PmlprogramContext ast = null;
@@ -205,7 +205,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 			}
 		}
 		catch(Exception e) {
-			throw getParseException(e, "ERROR: Cannot parse the program:" + fileName);
+			throw new ParseException("ERROR: Cannot parse the program:" + fileName, e);
 		}
 		
 
@@ -225,26 +225,12 @@ public class PyDMLParserWrapper extends AParserWrapper
 			dmlPgm = createDMLProgram(ast);
 		}
 		catch(Exception e) {
-			throw getParseException(e, "ERROR: Cannot translate the parse tree into DMLProgram");
+			throw new ParseException("ERROR: Cannot translate the parse tree into DMLProgram" + e.getMessage(), e);
 		}
 		
 		return dmlPgm;
 	}
-	
-	// Alternative is to uncomment the try/catch. But this method is preferred as it allows throwing "ParseException" as
-	// well as providing a given message (such as "Cannot translate the parse tree").
-	private ParseException getParseException(Exception e, String message) {
-		String stackTrace = null;
-		try {
-			PrintWriter printWriter = new PrintWriter(new StringWriter());
-			e.printStackTrace(printWriter);
-			stackTrace = printWriter.toString();
-		} catch(Exception e1) {}
-		if(stackTrace != null)
-			return new ParseException(message + ":\n" + stackTrace);
-		else
-			return new ParseException(message);
-	}
+
 
 	private DMLProgram createDMLProgram(PmlprogramContext ast) {
 

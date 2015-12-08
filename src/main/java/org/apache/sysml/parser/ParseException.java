@@ -63,7 +63,10 @@ public class ParseException extends Exception
   public ParseException(String message) {
     super(message);
   }
-
+  
+  public ParseException(String message, Exception e) {
+	  super(message, e);
+  }
   /**
    * This is the last token that has been consumed successfully.  If
    * this object has been created due to a parse error, the token

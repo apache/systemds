@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -62,6 +62,14 @@
 		</mailingList>
 	</mailingLists>
 
+	<properties>
+		<hadoop.version>2.4.1</hadoop.version>
+		<antlr.version>4.3</antlr.version>
+
+		<!-- OS-specific JVM arguments for running integration tests -->
+		<integrationTestExtraJVMArgs />
+	</properties>
+
 	<build>
 		<plugins>
 
@@ -84,7 +92,7 @@
 					</execution>
 				</executions>
 			</plugin>
-		
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -124,7 +132,7 @@
 					</execution>
 				</executions>
 			</plugin>
-		
+
 			<!-- PLEASE DO NOT REMOVE! NEEDED to "PACKAGE" ANTLR RUNTIME INTO SYSTEMML.JAR -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -140,8 +148,8 @@
 				</executions>
 
 				<configuration>
-					<!-- Include signature files so that recent versions of Java will run 
-						the resulting jar without complaining about "Invalid signature file digest 
+					<!-- Include signature files so that recent versions of Java will run
+						the resulting jar without complaining about "Invalid signature file digest
 						for Manifest main attributes". -->
 					<filters>
 						<filter>
@@ -155,7 +163,7 @@
 					</filters>
 				</configuration>
 			</plugin>
-			
+
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
@@ -239,7 +247,7 @@
 					<sourceDirectory>${basedir}/src/main/java</sourceDirectory>
 					<outputDirectory>${basedir}/src/main/java</outputDirectory>
 				</configuration>
-				<version>4.3</version>
+				<version>${antlr.version}</version>
 				<executions>
 					<execution>
 						<id>antlr</id>
@@ -256,16 +264,16 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.18</version><!--$NO-MVN-MAN-VER$-->
 				<configuration>
-					
+
 					<!-- STDERR/STDOUT to individual .txt files instead of console -->
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
 
-					<!-- Run (num cores) test harness classes in parallel, each in a separate 
+					<!-- Run (num cores) test harness classes in parallel, each in a separate
 						process -->
 					<forkCount>1C</forkCount>
 					<reuseForks>true</reuseForks>
 
-					<!-- Third argument prevents Java from popping up lots of windows on 
+					<!-- Third argument prevents Java from popping up lots of windows on
 						MacOS -->
 					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m -Djava.awt.headless=true</argLine>
 
@@ -299,7 +307,7 @@
 					</execution>
 				</executions>
 				<configuration>
-							
+
 					<!-- STDERR/STDOUT to individual .txt files instead of console -->
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
 
@@ -311,7 +319,7 @@
 					<forkCount>0.5C</forkCount>
 					<reuseForks>false</reuseForks>
 
-					<!-- Last argument prevents Java from popping up lots of windows on 
+					<!-- Last argument prevents Java from popping up lots of windows on
 						MacOS -->
 					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m
 						${integrationTestExtraJVMArgs}
@@ -356,7 +364,7 @@
 				</configuration>
 			</plugin>
 
-		<!-- Prevent m2e warnings about the use of maven-remote-resources-plugin 
+		<!-- Prevent m2e warnings about the use of maven-remote-resources-plugin
 		in the Maven archetype that we currently use for this project. -->
 			<plugin>
 				<groupId>org.eclipse.m2e</groupId>
@@ -521,14 +529,14 @@
 			<version>1.4.0</version>
 			<scope>provided</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_2.10</artifactId>
 			<version>1.4.0</version>
 			<scope>provided</scope>
 		</dependency>
-		
+
 		<!-- To support dataframe in mlcontext -->
 		<dependency>
 			<groupId>org.apache.spark</groupId>
@@ -547,7 +555,7 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
-			<version>2.4.1</version>
+			<version>${hadoop.version}</version>
 			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
@@ -559,7 +567,7 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-hdfs</artifactId>
-			<version>2.4.1</version>
+			<version>${hadoop.version}</version>
 			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
@@ -571,7 +579,7 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-client</artifactId>
-			<version>2.4.1</version>
+			<version>${hadoop.version}</version>
 			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
@@ -583,7 +591,7 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-mapreduce-client-app</artifactId>
-			<version>2.4.1</version>
+			<version>${hadoop.version}</version>
 			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
@@ -595,7 +603,7 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-			<version>2.4.1</version>
+			<version>${hadoop.version}</version>
 			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
@@ -674,7 +682,7 @@
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4</artifactId>
-			<version>4.3</version>
+			<version>${antlr.version}</version>
 			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
@@ -686,21 +694,21 @@
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4-runtime</artifactId>
-			<version>4.3</version>
+			<version>${antlr.version}</version>
 		</dependency>
 
 		<!-- Libraries for yarn integration -->
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-api</artifactId>
-			<version>2.4.1</version>
+			<version>${hadoop.version}</version>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-common</artifactId>
-			<version>2.4.1</version>
+			<version>${hadoop.version}</version>
 			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
@@ -713,22 +721,17 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-client</artifactId>
-			<version>2.4.1</version>
+			<version>${hadoop.version}</version>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-mapreduce-client-common</artifactId>
-			<version>2.4.1</version>
+			<version>${hadoop.version}</version>
 			<scope>provided</scope>
 		</dependency>
 
 	</dependencies>
-
-	<properties>
-		<!-- OS-specific JVM arguments for running integration tests -->
-		<integrationTestExtraJVMArgs />
-	</properties>
 
 </project>

@@ -147,9 +147,7 @@ public class RDDConverterUtilsExt
 			throws DMLRuntimeException {
 		
 		if(containsID) {
-			// Uncomment this when we move to Spark 1.4.0 or higher 
-			// df = df.sort("ID").drop("ID");
-			throw new DMLRuntimeException("containsID is not supported yet");
+			inputDF = dropColumn(inputDF.sort("ID"), "ID");
 		}
 		
 		DataFrame df = inputDF.select(vectorColumnName);
@@ -178,34 +176,45 @@ public class RDDConverterUtilsExt
 		return out;
 	}
 	
+	/**
+	 * Adding utility to support for dropping columns for older Spark versions.
+	 * @param df
+	 * @param column
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static DataFrame dropColumn(DataFrame df, String column) throws DMLRuntimeException {
+		ArrayList<String> columnToSelect = new ArrayList<String>();
+		String firstCol = null;
+		boolean colPresent = false;
+		for(String col : df.columns()) {
+			if(col.compareTo(column) == 0) {
+				colPresent = true;
+			}
+			else if(firstCol == null) {
+				firstCol = col;
+			}
+			else {
+				columnToSelect.add(col);
+			}
+		}
+		
+		if(!colPresent) {
+			throw new DMLRuntimeException("The column \"" + column + "\" is not present in the dataframe.");
+		}
+		else if(firstCol == null) {
+			throw new DMLRuntimeException("No column other than \"" + column + "\" present in the dataframe.");
+		}
+		
+		// Round about way to do in Java (not exposed in Spark 1.3.0): df = df.sort("ID").drop("ID");
+		return df.select(firstCol, scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
+	}
+	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
 			DataFrame df, MatrixCharacteristics mcOut, boolean containsID) 
 			throws DMLRuntimeException {
 		if(containsID) {
-			ArrayList<String> columnToSelect = new ArrayList<String>();
-			String firstCol = null;
-			boolean colIDPresent = false;
-			for(String col : df.columns()) {
-				if(col.compareTo("ID") == 0) {
-					colIDPresent = true;
-				}
-				else if(firstCol == null) {
-					firstCol = col;
-				}
-				else {
-					columnToSelect.add(col);
-				}
-			}
-			
-			if(!colIDPresent) {
-				throw new DMLRuntimeException("The column \"ID\" is not present in the dataframe.");
-			}
-			else if(firstCol == null) {
-				throw new DMLRuntimeException("No column other than \"ID\" present in the dataframe.");
-			}
-			
-			// Round about way to do in Java (not exposed in Spark 1.3.0): df = df.sort("ID").drop("ID");
-			df = df.sort("ID").select(firstCol, scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
+			df = dropColumn(df.sort("ID"), "ID");
 		}
 			
 		//determine unknown dimensions and sparsity if required

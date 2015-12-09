@@ -206,13 +206,35 @@ public class RDDConverterUtilsExt
 			throw new DMLRuntimeException("No column other than \"" + column + "\" present in the dataframe.");
 		}
 		
-		// Round about way to do in Java (not exposed in Spark 1.3.0): df = df.sort("ID").drop("ID");
+		// Round about way to do in Java (not exposed in Spark 1.3.0): df = df.drop("ID");
 		return df.select(firstCol, scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
 	}
 	
+	public static DataFrame projectColumns(DataFrame df, ArrayList<String> columns) throws DMLRuntimeException {
+		ArrayList<String> columnToSelect = new ArrayList<String>();
+		for(int i = 1; i < columns.size(); i++) {
+			columnToSelect.add(columns.get(i));
+		}
+		return df.select(columns.get(0), scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
+	}
+	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame df, MatrixCharacteristics mcOut, boolean containsID) 
+			DataFrame df, MatrixCharacteristics mcOut, boolean containsID) throws DMLRuntimeException {
+		return dataFrameToBinaryBlock(sc, df, mcOut, containsID, null);
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
+			DataFrame df, MatrixCharacteristics mcOut, ArrayList<String> columns) throws DMLRuntimeException {
+		return dataFrameToBinaryBlock(sc, df, mcOut, false, columns);
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
+			DataFrame df, MatrixCharacteristics mcOut, boolean containsID, ArrayList<String> columns) 
 			throws DMLRuntimeException {
+		if(columns != null) {
+			df = projectColumns(df, columns);
+		}
+		
 		if(containsID) {
 			df = dropColumn(df.sort("ID"), "ID");
 		}
@@ -276,7 +298,7 @@ public class RDDConverterUtilsExt
 			for(int i = 0; i < oldNumCols; i++) {
 				fields[i] = arg0._1.get(i);
 			}
-			fields[oldNumCols] = new Double(arg0._2);
+			fields[oldNumCols] = new Double(arg0._2 + 1);
 			return RowFactory.create(fields);
 		}
 		

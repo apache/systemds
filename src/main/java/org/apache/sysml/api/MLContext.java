@@ -248,9 +248,6 @@ public class MLContext {
 	
 	/**
 	 * Register DataFrame as input. 
-	 * Current version doesnot support containsID=true.
-	 * Note: for Spark 1.4.0 or higher, registerInput(varName, df.sort("ID").drop("ID"), true) = registerInput(varName, df, false)
-	 * <p>
 	 * Marks the variable in the DML script as input variable.
 	 * Note that this expects a "varName = read(...)" statement in the DML script which through non-MLContext invocation
 	 * would have been created by reading a HDFS file.  

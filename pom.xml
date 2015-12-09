@@ -406,6 +406,46 @@
 		</profile>
 
 		<profile>
+			<id>rat</id>
+			<build>
+				<defaultGoal>clean org.apache.rat:apache-rat-plugin:check</defaultGoal>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.rat</groupId>
+						<artifactId>apache-rat-plugin</artifactId>
+						<version>0.11</version>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>check</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<excludes>
+								<exclude>.gitignore</exclude>
+								<exclude>.repository/</exclude>
+								<exclude>.idea/</exclude>
+								<exclude>.git</exclude>
+								<exclude>.settings</exclude>
+								<exclude>.classpath</exclude>
+								<exclude>.project</exclude>
+								<exclude>docs</exclude>
+								<exclude>**/*.csv</exclude>
+								<exclude>**/*.json</exclude>
+								<exclude>**/*.mtx</exclude>
+								<exclude>**/*.mtd</exclude>
+								<exclude>**/target/**</exclude>
+								<exclude>**/README.md</exclude>
+							</excludes>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
 			<!-- Profile to create binary distributions.
 				Execute with `mvn clean package -P distribution` -->
 			<id>distribution</id>

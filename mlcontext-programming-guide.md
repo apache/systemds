@@ -41,7 +41,7 @@ binary-block data format, allowing for SystemML's optimizations to be performed.
 ## Start Spark Shell with SystemML
 
 To use SystemML with the Spark Shell, the SystemML jar can be referenced using the Spark Shell's `--jars` option. 
-Instructions to build the SystemML jar can be found in the [SystemML GitHub README](http://www.github.com/SparkTC/systemml).
+Instructions to build the SystemML jar can be found in the [SystemML GitHub README](https://github.com/apache/incubator-systemml).
 
 {% highlight bash %}
 ./bin/spark-shell --executor-memory 4G --driver-memory 4G --jars SystemML.jar

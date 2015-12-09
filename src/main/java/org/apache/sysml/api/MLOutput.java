@@ -87,6 +87,9 @@ public class MLOutput {
 	 * @throws DMLRuntimeException
 	 */
 	public DataFrame getDF(SQLContext sqlContext, String varName) throws DMLRuntimeException {
+		if(sqlContext == null) {
+			throw new DMLRuntimeException("SQLContext is not created.");
+		}
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
 		if(rdd != null) {
 			MatrixCharacteristics mc = _outMetadata.get(varName);
@@ -104,6 +107,9 @@ public class MLOutput {
 	 * @throws DMLRuntimeException
 	 */
 	public DataFrame getDF(SQLContext sqlContext, String varName, boolean outputVector) throws DMLRuntimeException {
+		if(sqlContext == null) {
+			throw new DMLRuntimeException("SQLContext is not created.");
+		}
 		if(outputVector) {
 			JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
 			if(rdd != null) {
@@ -127,6 +133,9 @@ public class MLOutput {
 	 * @throws DMLRuntimeException
 	 */
 	public DataFrame getDF(SQLContext sqlContext, String varName, HashMap<String, Tuple2<Long, Long>> range) throws DMLRuntimeException {
+		if(sqlContext == null) {
+			throw new DMLRuntimeException("SQLContext is not created.");
+		}
 		JavaPairRDD<MatrixIndexes,MatrixBlock> binaryBlockRDD = getBinaryBlockedRDD(varName);
 		if(binaryBlockRDD == null) {
 			throw new DMLRuntimeException("Variable " + varName + " not found in the output symbol table.");
@@ -185,6 +194,12 @@ public class MLOutput {
 	}
 	
 	public MLMatrix getMLMatrix(MLContext ml, SQLContext sqlContext, String varName) throws DMLRuntimeException {
+		if(sqlContext == null) {
+			throw new DMLRuntimeException("SQLContext is not created.");
+		}
+		else if(ml == null) {
+			throw new DMLRuntimeException("MLContext is not created.");
+		}
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = getBinaryBlockedRDD(varName);
 		if(rdd != null) {
 			MatrixCharacteristics mc = getMatrixCharacteristics(varName);

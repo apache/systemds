@@ -63,9 +63,10 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * in order to prevent unnecessary worse asymptotic behavior.
  *
  * This library currently covers the following opcodes:
- * ak+, uak+, uark+, uack+, uamin, uarmin, uacmin, uamax, uarmax, uacmax,
- * ua*, uamean, uarmean, uacmean, uarimax, uaktrace.
- * cumk+, cummin, cummax, cum*, tak+
+ * ak+, uak+, uark+, uack+, uasqk+, uarsqk+, uacsqk+,
+ * uamin, uarmin, uacmin, uamax, uarmax, uacmax,
+ * ua*, uamean, uarmean, uacmean, uavar, uarvar, uacvar,
+ * uarimax, uaktrace, cumk+, cummin, cummax, cum*, tak+.
  * 
  * TODO next opcode extensions: a+, colindexmax
  */
@@ -90,6 +91,7 @@ public class LibMatrixAgg
 		MIN,
 		MAX,
 		MEAN,
+		VAR,
 		MAX_INDEX,
 		MIN_INDEX,
 		PROD,
@@ -544,13 +546,23 @@ public class LibMatrixAgg
 		{
 			return AggType.MEAN;
 		}
-		
+
+		//variance
+		if( vfn instanceof CM
+				&& ((CM) vfn).getAggOpType() == AggregateOperationTypes.VARIANCE
+				&& (op.aggOp.correctionLocation == CorrectionLocationType.LASTFOURCOLUMNS ||
+					op.aggOp.correctionLocation == CorrectionLocationType.LASTFOURROWS)
+				&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow) )
+		{
+			return AggType.VAR;
+		}
+
 		//prod
 		if( vfn instanceof Multiply && ifn instanceof ReduceAll )
 		{
 			return AggType.PROD;
 		}
-		
+
 		//min / max
 		if( vfn instanceof Builtin &&
 		    (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow) )
@@ -1396,17 +1408,28 @@ public class LibMatrixAgg
 			case MEAN: //MEAN
 			{
 				KahanObject kbuff = new KahanObject(0, 0);
-				
+
 				if( ixFn instanceof ReduceAll ) // MEAN
 					d_uamean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				else if( ixFn instanceof ReduceCol ) //ROWMEAN
 					d_uarmean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLMEAN
 					d_uacmean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
-				
 				break;
 			}
-			case PROD: //PROD 
+			case VAR: //VAR
+			{
+				CM_COV_Object cbuff = new CM_COV_Object();
+
+				if( ixFn instanceof ReduceAll ) //VAR
+					d_uavar(a, c, m, n, cbuff, (CM)vFn, rl, ru);
+				else if( ixFn instanceof ReduceCol ) //ROWVAR
+					d_uarvar(a, c, m, n, cbuff, (CM)vFn, rl, ru);
+				else if( ixFn instanceof ReduceRow ) //COLVAR
+					d_uacvar(a, c, m, n, cbuff, (CM)vFn, rl, ru);
+				break;
+			}
+			case PROD: //PROD
 			{
 				if( ixFn instanceof ReduceAll ) // PROD
 					d_uam(a, c, m, n, rl, ru );
@@ -1521,10 +1544,21 @@ public class LibMatrixAgg
 					s_uarmean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
 				else if( ixFn instanceof ReduceRow ) //COLMEAN
 					s_uacmean(a, c, m, n, kbuff, (Mean)vFn, rl, ru);
-				
 				break;
 			}
-			case PROD: //PROD 
+			case VAR: //VAR
+			{
+				CM_COV_Object cbuff = new CM_COV_Object();
+
+				if( ixFn instanceof ReduceAll ) //VAR
+					s_uavar(a, c, m, n, cbuff, (CM)vFn, rl, ru);
+				else if( ixFn instanceof ReduceCol ) //ROWVAR
+					s_uarvar(a, c, m, n, cbuff, (CM)vFn, rl, ru);
+				else if( ixFn instanceof ReduceRow ) //COLVAR
+					s_uacvar(a, c, m, n, cbuff, (CM)vFn, rl, ru);
+				break;
+			}
+			case PROD: //PROD
 			{
 				if( ixFn instanceof ReduceAll ) // PROD
 					s_uam(a, c, m, n, rl, ru );
@@ -1588,7 +1622,20 @@ public class LibMatrixAgg
 						out.quickSetValue(1, j, in.rlen); //count				
 				break;
 			}
-			
+			case VAR:
+			{
+				// results: { var | mean, count, m2 correction, mean correction }
+				if( ixFn instanceof ReduceAll ) //VAR
+					out.quickSetValue(0, 2, in.rlen*in.clen); //count
+				else if( ixFn instanceof ReduceCol ) //ROWVAR
+					for( int i=0; i<in.rlen; i++ )
+						out.quickSetValue(i, 2, in.clen); //count
+				else if( ixFn instanceof ReduceRow ) //COLVAR
+					for( int j=0; j<in.clen; j++ )
+						out.quickSetValue(2, j, in.rlen); //count
+				break;
+			}
+
 			default:
 				throw new DMLRuntimeException("Unsupported aggregation type: "+optype);
 		}
@@ -1963,8 +2010,94 @@ public class LibMatrixAgg
 		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n )
 			meanAgg( a, c, aix, 0, n, kbuff, kmean );
 	}
-	
-	
+
+	/**
+	 * VAR, opcode: uavar, dense input.
+	 *
+	 * @param a Array of values.
+	 * @param c Output array to store variance, mean, count,
+	 *          m2 correction factor, and mean correction factor.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param cbuff A CM_COV_Object to hold various intermediate
+	 *              values for the variance calculation.
+	 * @param cm A CM object of type Variance to perform the variance
+	 *           calculation.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void d_uavar(double[] a, double[] c, int m, int n, CM_COV_Object cbuff, CM cm,
+	                            int rl, int ru) throws DMLRuntimeException
+	{
+		int len = Math.min((ru-rl)*n, a.length);
+		var(a, rl*n, len, cbuff, cm);
+		// store results: { var | mean, count, m2 correction, mean correction }
+		c[0] = cbuff.getRequiredResult(AggregateOperationTypes.VARIANCE);
+		c[1] = cbuff.mean._sum;
+		c[2] = cbuff.w;
+		c[3] = cbuff.m2._correction;
+		c[4] = cbuff.mean._correction;
+	}
+
+	/**
+	 * ROWVAR, opcode: uarvar, dense input.
+	 *
+	 * @param a Array of values.
+	 * @param c Output array to store variance, mean, count,
+	 *          m2 correction factor, and mean correction factor
+	 *          for each row.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param cbuff A CM_COV_Object to hold various intermediate
+	 *              values for the variance calculation.
+	 * @param cm A CM object of type Variance to perform the variance
+	 *           calculation.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void d_uarvar(double[] a, double[] c, int m, int n, CM_COV_Object cbuff, CM cm,
+	                             int rl, int ru) throws DMLRuntimeException
+	{
+		// calculate variance for each row
+		for (int i=rl, aix=rl*n, cix=rl*5; i<ru; i++, aix+=n, cix+=5) {
+			cbuff.reset(); // reset buffer for each row
+			var(a, aix, n, cbuff, cm);
+			// store row results: { var | mean, count, m2 correction, mean correction }
+			c[cix] = cbuff.getRequiredResult(AggregateOperationTypes.VARIANCE);
+			c[cix+1] = cbuff.mean._sum;
+			c[cix+2] = cbuff.w;
+			c[cix+3] = cbuff.m2._correction;
+			c[cix+4] = cbuff.mean._correction;
+		}
+	}
+
+	/**
+	 * COLVAR, opcode: uacvar, dense input.
+	 *
+	 * @param a Array of values.
+	 * @param c Output array to store variance, mean, count,
+	 *          m2 correction factor, and mean correction factor
+	 *          for each column.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param cbuff A CM_COV_Object to hold various intermediate
+	 *              values for the variance calculation.
+	 * @param cm A CM object of type Variance to perform the variance
+	 *           calculation.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void d_uacvar(double[] a, double[] c, int m, int n, CM_COV_Object cbuff, CM cm,
+	                             int rl, int ru) throws DMLRuntimeException
+	{
+		//init output (base for incremental agg)
+		Arrays.fill(c, 0);
+
+		// calculate variance for each column incrementally
+		for (int i=rl, aix=rl*n; i<ru; i++, aix+=n)
+			varAgg(a, c, aix, 0, n, cbuff, cm);
+	}
+
 	/**
 	 * PROD, opcode: ua*, dense input.
 	 * 
@@ -2535,7 +2668,7 @@ public class LibMatrixAgg
 		c[1] = len;
 		c[2] = kbuff._correction;
 	}
-	
+
 	/**
 	 * ROWMEAN, opcode: uarmean, sparse input.
 	 * 
@@ -2619,7 +2752,139 @@ public class LibMatrixAgg
 			}
 		}
 	}
-	
+
+	/**
+	 * VAR, opcode: uavar, sparse input.
+	 *
+	 * @param a Sparse array of values.
+	 * @param c Output array to store variance, mean, count,
+	 *          m2 correction factor, and mean correction factor.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param cbuff A CM_COV_Object to hold various intermediate
+	 *              values for the variance calculation.
+	 * @param cm A CM object of type Variance to perform the variance
+	 *           calculation.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void s_uavar(SparseRow[] a, double[] c, int m, int n, CM_COV_Object cbuff, CM cm,
+	                            int rl, int ru) throws DMLRuntimeException
+	{
+		// compute and store count of empty cells before aggregation
+		int count = 0;
+		for (int i=rl; i<ru; i++)
+			count += (a[i]==null) ? n : n-a[i].size();
+		cbuff.w = count;
+
+		// calculate aggregated variance (only using non-empty cells)
+		for (int i=rl; i<ru; i++) {
+			SparseRow arow = a[i];
+			if (arow!=null && !arow.isEmpty()) {
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				var(avals, 0, alen, cbuff, cm);
+			}
+		}
+
+		// store results: { var | mean, count, m2 correction, mean correction }
+		c[0] = cbuff.getRequiredResult(AggregateOperationTypes.VARIANCE);
+		c[1] = cbuff.mean._sum;
+		c[2] = cbuff.w;
+		c[3] = cbuff.m2._correction;
+		c[4] = cbuff.mean._correction;
+	}
+
+	/**
+	 * ROWVAR, opcode: uarvar, sparse input.
+	 *
+	 * @param a Sparse array of values.
+	 * @param c Output array to store variance, mean, count,
+	 *          m2 correction factor, and mean correction factor.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param cbuff A CM_COV_Object to hold various intermediate
+	 *              values for the variance calculation.
+	 * @param cm A CM object of type Variance to perform the variance
+	 *           calculation.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void s_uarvar(SparseRow[] a, double[] c, int m, int n, CM_COV_Object cbuff, CM cm,
+	                             int rl, int ru) throws DMLRuntimeException
+	{
+		// calculate aggregated variance for each row
+		for (int i=rl, cix=rl*5; i<ru; i++, cix+=5) {
+			cbuff.reset(); // reset buffer for each row
+
+			// compute and store count of empty cells in this row
+			// before aggregation
+			int count = (a[i] == null) ? n : n-a[i].size();
+			cbuff.w = count;
+
+			SparseRow arow = a[i];
+			if (arow != null && !arow.isEmpty()) {
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				var(avals, 0, alen, cbuff, cm);
+			}
+
+			// store results: { var | mean, count, m2 correction, mean correction }
+			c[cix] = cbuff.getRequiredResult(AggregateOperationTypes.VARIANCE);
+			c[cix+1] = cbuff.mean._sum;
+			c[cix+2] = cbuff.w;
+			c[cix+3] = cbuff.m2._correction;
+			c[cix+4] = cbuff.mean._correction;
+		}
+	}
+
+	/**
+	 * COLVAR, opcode: uacvar, sparse input.
+	 *
+	 * @param a Sparse array of values.
+	 * @param c Output array to store variance, mean, count,
+	 *          m2 correction factor, and mean correction factor.
+	 * @param m Number of rows.
+	 * @param n Number of values per row.
+	 * @param cbuff A CM_COV_Object to hold various intermediate
+	 *              values for the variance calculation.
+	 * @param cm A CM object of type Variance to perform the variance
+	 *           calculation.
+	 * @param rl Lower row limit.
+	 * @param ru Upper row limit.
+	 */
+	private static void s_uacvar(SparseRow[] a, double[] c, int m, int n, CM_COV_Object cbuff, CM cm,
+	                             int rl, int ru) throws DMLRuntimeException
+	{
+		//init output (base for incremental agg)
+		Arrays.fill(c, 0);
+
+		// compute and store counts of empty cells per column
+		// before aggregation
+		// note: column results are { var | mean, count, m2 correction, mean correction }
+		Arrays.fill(c, n*2, n*3, ru-rl); // counts stored in 3rd row
+		for (int i=rl; i<ru; i++) {
+			SparseRow arow = a[i];
+			if (arow!=null && !arow.isEmpty()) {
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				int[] aix = arow.getIndexContainer();
+				countDisAgg(avals, c, aix, n*2, alen); // counts stored in 3rd row
+			}
+		}
+
+		// calculate aggregated variance for each column
+		for (int i=rl; i<ru; i++) {
+			SparseRow arow = a[i];
+			if (arow != null && !arow.isEmpty()) {
+				int alen = arow.size();
+				double[] avals = arow.getValueContainer();
+				int[] aix = arow.getIndexContainer();
+				varAgg(avals, c, aix, alen, n, cbuff, cm);
+			}
+		}
+	}
+
 	/**
 	 * PROD, opcode: ua*, sparse input.
 	 * 
@@ -2863,18 +3128,7 @@ public class LibMatrixAgg
 			mean.execute2(kbuff, a[ai], count+1);
 		}
 	}
-	
-	/*
-	private static void mean( final double aval, final int len, int count, KahanObject kbuff, KahanPlus kplus )
-	{
-		for( int i=0; i<len; i++, count++ )
-		{
-			//delta: (newvalue-buffer._sum)/count
-			kplus.execute2(kbuff, (aval-kbuff._sum)/(count+1));
-		}
-	}
-	*/
-	
+
 	/**
 	 * 
 	 * @param a
@@ -2921,7 +3175,96 @@ public class LibMatrixAgg
 			c[ai[i]+2*n] = kbuff._correction;
 		}
 	}
-	
+
+	/**
+	 * Variance
+	 *
+	 * @param a Array of values to sum.
+	 * @param ai Index at which to start processing.
+	 * @param len Number of values to process, starting at index ai.
+	 * @param cbuff A CM_COV_Object to hold various intermediate
+	 *              values for the variance calculation.
+	 * @param cm A CM object of type Variance to perform the variance
+	 *           calculation.
+	 */
+	private static void var(double[] a, int ai, final int len, CM_COV_Object cbuff, CM cm)
+			throws DMLRuntimeException
+	{
+		for(int i=0; i<len; i++, ai++)
+			cbuff = (CM_COV_Object) cm.execute(cbuff, a[ai]);
+	}
+
+	/**
+	 * Aggregated variance
+	 *
+	 * @param a Array of values to sum.
+	 * @param c Output array to store aggregated sum and correction
+	 *          factors.
+	 * @param ai Index at which to start processing array `a`.
+	 * @param ci Index at which to start storing aggregated results
+	 *           into array `c`.
+	 * @param len Number of values to process, starting at index ai.
+	 * @param cbuff A CM_COV_Object to hold various intermediate
+	 *              values for the variance calculation.
+	 * @param cm A CM object of type Variance to perform the variance
+	 *           calculation.
+	 */
+	private static void varAgg(double[] a, double[] c, int ai, int ci, final int len,
+	                           CM_COV_Object cbuff, CM cm) throws DMLRuntimeException
+	{
+		for (int i=0; i<len; i++, ai++, ci++) {
+			// extract current values: { var | mean, count, m2 correction, mean correction }
+			cbuff.w = c[ci+2*len]; // count
+			cbuff.m2._sum = c[ci] * (cbuff.w - 1); // m2 = var * (n - 1)
+			cbuff.mean._sum = c[ci+len]; // mean
+			cbuff.m2._correction = c[ci+3*len];
+			cbuff.mean._correction = c[ci+4*len];
+			// calculate incremental aggregated variance
+			cbuff = (CM_COV_Object) cm.execute(cbuff, a[ai]);
+			// store updated values: { var | mean, count, m2 correction, mean correction }
+			c[ci] = cbuff.getRequiredResult(AggregateOperationTypes.VARIANCE);
+			c[ci+len] = cbuff.mean._sum;
+			c[ci+2*len] = cbuff.w;
+			c[ci+3*len] = cbuff.m2._correction;
+			c[ci+4*len] = cbuff.mean._correction;
+		}
+	}
+
+	/**
+	 * Aggregated variance
+	 *
+	 * @param a Array of values to sum.
+	 * @param c Output array to store aggregated sum and correction
+	 *          factors.
+	 * @param ai Array of indices to process for array `a`.
+	 * @param len Number of indices in `ai` to process.
+	 * @param n Number of values per row.
+	 * @param cbuff A CM_COV_Object to hold various intermediate
+	 *              values for the variance calculation.
+	 * @param cm A CM object of type Variance to perform the variance
+	 *           calculation.
+	 */
+	private static void varAgg(double[] a, double[] c, int[] ai, final int len, final int n,
+	                           CM_COV_Object cbuff, CM cm) throws DMLRuntimeException
+	{
+		for (int i=0; i<len; i++) {
+			// extract current values: { var | mean, count, m2 correction, mean correction }
+			cbuff.w = c[ai[i]+2*n]; // count
+			cbuff.m2._sum = c[ai[i]] * (cbuff.w - 1); // m2 = var * (n - 1)
+			cbuff.mean._sum = c[ai[i]+n]; // mean
+			cbuff.m2._correction = c[ai[i]+3*n];
+			cbuff.mean._correction = c[ai[i]+4*n];
+			// calculate incremental aggregated variance
+			cbuff = (CM_COV_Object) cm.execute(cbuff, a[i]);
+			// store updated values: { var | mean, count, m2 correction, mean correction }
+			c[ai[i]] = cbuff.getRequiredResult(AggregateOperationTypes.VARIANCE);
+			c[ai[i]+n] = cbuff.mean._sum;
+			c[ai[i]+2*n] = cbuff.w;
+			c[ai[i]+3*n] = cbuff.m2._correction;
+			c[ai[i]+4*n] = cbuff.mean._correction;
+		}
+	}
+
 	/**
 	 * Meant for builtin function ops (min, max) 
 	 * 

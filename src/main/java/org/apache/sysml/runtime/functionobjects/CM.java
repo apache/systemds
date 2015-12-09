@@ -80,6 +80,10 @@ public class CM extends ValueFunction
 		throw new CloneNotSupportedException();
 	}
 
+	public AggregateOperationTypes getAggOpType() {
+		return _type;
+	}
+
 	/**
 	 * Special case for weights w2==1
 	 */

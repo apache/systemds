@@ -83,6 +83,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "uamean"  , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uarmean" , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uacmean" , CPINSTRUCTION_TYPE.AggregateUnary);
+		String2CPInstructionType.put( "uavar"   , CPINSTRUCTION_TYPE.AggregateUnary);
+		String2CPInstructionType.put( "uarvar"  , CPINSTRUCTION_TYPE.AggregateUnary);
+		String2CPInstructionType.put( "uacvar"  , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uamax"   , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uarmax"  , CPINSTRUCTION_TYPE.AggregateUnary);
 		String2CPInstructionType.put( "uarimax", CPINSTRUCTION_TYPE.AggregateUnary);

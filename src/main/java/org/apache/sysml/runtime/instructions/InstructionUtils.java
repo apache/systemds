@@ -43,6 +43,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.And;
 import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.Divide;
 import org.apache.sysml.runtime.functionobjects.Equals;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
@@ -77,6 +78,7 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
 
 public class InstructionUtils 
@@ -362,6 +364,27 @@ public class InstructionUtils
 			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOROWS);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 		}
+		else if ( opcode.equalsIgnoreCase("uavar") ) {
+			// Variance
+			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
+			CorrectionLocationType cloc = CorrectionLocationType.LASTFOURCOLUMNS;
+			AggregateOperator agg = new AggregateOperator(0, varFn, true, cloc);
+			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uarvar") ) {
+			// RowVariances
+			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
+			CorrectionLocationType cloc = CorrectionLocationType.LASTFOURCOLUMNS;
+			AggregateOperator agg = new AggregateOperator(0, varFn, true, cloc);
+			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
+		}
+		else if ( opcode.equalsIgnoreCase("uacvar") ) {
+			// ColVariances
+			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
+			CorrectionLocationType cloc = CorrectionLocationType.LASTFOURROWS;
+			AggregateOperator agg = new AggregateOperator(0, varFn, true, cloc);
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
+		}
 		else if ( opcode.equalsIgnoreCase("ua+") ) {
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
@@ -468,7 +491,15 @@ public class InstructionUtils
 			CorrectionLocationType lcorrLoc = (corrLoc==null) ? CorrectionLocationType.LASTTWOCOLUMNS : CorrectionLocationType.valueOf(corrLoc);
 			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), lcorrExists, lcorrLoc);
 		}
-		
+		else if ( opcode.equalsIgnoreCase("avar") ) {
+			boolean lcorrExists = (corrExists==null) ? true : Boolean.parseBoolean(corrExists);
+			CorrectionLocationType lcorrLoc = (corrLoc==null) ?
+					CorrectionLocationType.LASTFOURCOLUMNS :
+					CorrectionLocationType.valueOf(corrLoc);
+			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
+			agg = new AggregateOperator(0, varFn, lcorrExists, lcorrLoc);
+		}
+
 		return agg;
 	}
 	
@@ -751,6 +782,8 @@ public class InstructionUtils
 			return "asqk+";
 		else if ( opcode.equalsIgnoreCase("uamean") || opcode.equalsIgnoreCase("uarmean") || opcode.equalsIgnoreCase("uacmean") )
 			return "amean";
+		else if ( opcode.equalsIgnoreCase("uavar") || opcode.equalsIgnoreCase("uarvar") || opcode.equalsIgnoreCase("uacvar") )
+			return "avar";
 		else if ( opcode.equalsIgnoreCase("ua+") || opcode.equalsIgnoreCase("uar+") || opcode.equalsIgnoreCase("uac+") )
 			return "a+";
 		else if ( opcode.equalsIgnoreCase("ua*") )
@@ -786,7 +819,11 @@ public class InstructionUtils
 			return CorrectionLocationType.LASTTWOCOLUMNS;
 		else if ( opcode.equalsIgnoreCase("uacmean") )
 			return CorrectionLocationType.LASTTWOROWS;
-		else if (opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin") )	
+		else if ( opcode.equalsIgnoreCase("uavar") || opcode.equalsIgnoreCase("uarvar") )
+			return CorrectionLocationType.LASTFOURCOLUMNS;
+		else if ( opcode.equalsIgnoreCase("uacvar") )
+			return CorrectionLocationType.LASTFOURROWS;
+		else if (opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin") )
 			return CorrectionLocationType.LASTCOLUMN;
 		
 		return CorrectionLocationType.NONE;

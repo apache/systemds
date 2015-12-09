@@ -125,14 +125,35 @@ public class CM_COV_Object extends Data
 	{
 		return w==0 && mean.isAllZero()  && mean_v.isAllZero() && c2.isAllZero() ;
 	}
-	
+
+	/**
+	 * Return the result of the aggregated operation given the
+	 * operator.
+	 */
 	public double getRequiredResult(Operator op) throws DMLRuntimeException
 	{
 		if(op instanceof CMOperator)
 		{
 			AggregateOperationTypes agg=((CMOperator)op).aggOpType;
-			switch(agg)
-			{
+			return getRequiredResult(agg);
+		}
+		else
+		{
+			//avoid division by 0
+			if(w==1.0)
+				return 0;
+			else
+				return c2._sum/(w-1.0);
+		}
+	}
+
+	/**
+	 * Return the result of the aggregated operation given the
+	 * operation type.
+	 */
+	public double getRequiredResult(AggregateOperationTypes agg) throws DMLRuntimeException {
+		switch(agg)
+		{
 			case COUNT:
 				return w;
 			case MEAN:
@@ -147,18 +168,9 @@ public class CM_COV_Object extends Data
 				return w==1.0? 0:m2._sum/(w-1);
 			default:
 				throw new DMLRuntimeException("Invalid aggreagte in CM_CV_Object: " + agg);
-			}
-		}
-		else
-		{
-			//avoid division by 0
-			if(w==1.0)
-				return 0;
-			else
-				return c2._sum/(w-1.0);
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param op

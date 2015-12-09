@@ -40,10 +40,11 @@ algorithms can be found in the [Algorithms Reference](algorithms-reference.html)
 
 # Download SystemML
 
-Binary releases of SystemML are available for download at
+The pre-incubator binary release of SystemML 0.8.0 is available for download at
 [https://github.com/SparkTC/systemml/releases](https://github.com/SparkTC/systemml/releases).
+Apache incubator binary releases of SystemML will be available from the [Apache SystemML (incubating)](http://systemml.apache.org/) website.
 
-The SystemML project is available on GitHub at [https://github.com/SparkTC/systemml](https://github.com/SparkTC/systemml).
+The SystemML project is available on GitHub at [https://github.com/apache/incubator-systemml](https://github.com/apache/incubator-systemml).
 SystemML can be downloaded from GitHub and built with Maven. Instructions to build and
 test SystemML can be found in the GitHub README file.
 
@@ -80,7 +81,7 @@ To follow along with this guide, first build a standalone package of SystemML
 or build it from source {% endcomment %} using [Apache Maven](http://maven.apache.org)
 and unpack it to your working directory, i.e. ```~/systemml-tutorial```.
 
-    $ git clone https://github.com/SparkTC/systemml.git
+    $ git clone https://github.com/apache/incubator-systemml.git
     $ mvn clean package
     $ tar -xzf `find . -name 'system-ml*standalone.tar.gz'` -C ~/systemml-tutorial
 

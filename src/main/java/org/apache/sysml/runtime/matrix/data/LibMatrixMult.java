@@ -1597,7 +1597,8 @@ public class LibMatrixMult
 		double[] c = ret.denseBlock;
 		final int cd = mX.clen; //features in X
 		boolean weights = (ct == ChainType.XtwXv);
-
+		boolean weights2 = (ct == ChainType.XtXvy);
+		
 		//temporary array for cache blocking
 		//(blocksize chosen to fit b+v in L2 (256KB) for default 1k blocks)
 		final int blocksize = 24; // constraint: factor of 4
@@ -1611,10 +1612,12 @@ public class LibMatrixMult
 			for( int j=0, aix=bi*cd; j < blocksize; j++, aix+=cd)
 				tmp[j] = dotProduct(a, b, aix, 0, cd);
 			
-			//multiply weights (in-place), if required
+			//multiply/substract weights (in-place), if required
 			if( weights ) 
 				vectMultiply(w, tmp, bi, 0, blocksize);	
-			
+			else if( weights2 )
+				vectSubstract(w, tmp, bi, 0, blocksize);
+				
 			//compute 2nd matrix vector for row block and aggregate
 			for (int j=0, aix=bi*cd; j < blocksize; j+=4, aix+=4*cd)
 				vectMultiplyAdd4(tmp[j], tmp[j+1], tmp[j+2], tmp[j+3], a, c, aix, aix+cd, aix+2*cd, aix+3*cd, 0, cd);
@@ -1623,7 +1626,8 @@ public class LibMatrixMult
 		//compute rest (not aligned to blocksize)
 		for( int i=bn, aix=bn*cd; i < ru; i++, aix+=cd ) {
 			double val = dotProduct(a, b, aix, 0, cd);
-			val *= (weights) ? w[i] : 1; 
+			val *= (weights) ? w[i] : 1;
+			val -= (weights2) ? w[i] : 0;
 			vectMultiplyAdd(val, a, c, aix, 0, cd);				
 		}
 	}
@@ -1647,6 +1651,7 @@ public class LibMatrixMult
 		double[] w = (mW!=null) ? mW.denseBlock : null;
 		double[] c = ret.denseBlock;
 		boolean weights = (ct == ChainType.XtwXv);
+		boolean weights2 = (ct == ChainType.XtXvy);
 		
 		//temporary array for cache blocking
 		//(blocksize chosen to fit b+v in L2 (256KB) for default 1k blocks)
@@ -1673,7 +1678,9 @@ public class LibMatrixMult
 			//multiply weights (in-place), if required
 			if( weights ) 
 				vectMultiply(w, tmp, bi, 0, tmplen);	
-			
+			else if( weights2 )
+				vectSubstract(w, tmp, bi, 0, tmplen);
+		
 			//compute 2nd matrix vector for row block and aggregate
 			for( int j=0; j < tmplen; j++) {
 				SparseRow arow = a[bi+j];
@@ -3468,6 +3475,38 @@ public class LibMatrixMult
 		}
 	}
 	
+	/**
+	 * 
+	 * @param a
+	 * @param c
+	 * @param ai
+	 * @param ci
+	 * @param len
+	 */
+	private static void vectSubstract( double[] a, double[] c, int ai, int ci, final int len )
+	{
+		final int bn = len%8;
+		
+		//rest, not aligned to 8-blocks
+		for( int j = 0; j < bn; j++, ai++, ci++)
+			c[ ci ] += a[ ai ];
+		
+		//unrolled 8-block  (for better instruction-level parallelism)
+		for( int j = bn; j < len; j+=8, ai+=8, ci+=8) 
+		{
+			//read 64B cachelines of a and c
+			//compute c' = c * a
+			//write back 64B cacheline of c = c'
+			c[ ci+0 ] -= a[ ai+0 ];
+			c[ ci+1 ] -= a[ ai+1 ];
+			c[ ci+2 ] -= a[ ai+2 ];
+			c[ ci+3 ] -= a[ ai+3 ];
+			c[ ci+4 ] -= a[ ai+4 ];
+			c[ ci+5 ] -= a[ ai+5 ];
+			c[ ci+6 ] -= a[ ai+6 ];
+			c[ ci+7 ] -= a[ ai+7 ];
+		}
+	}
 
 	/**
 	 * 

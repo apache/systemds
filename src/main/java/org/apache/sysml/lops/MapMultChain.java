@@ -35,6 +35,7 @@ public class MapMultChain extends Lop
 	public enum ChainType {
 		XtXv,  //(t(X) %*% (X %*% v))
 		XtwXv, //(t(X) %*% (w * (X %*% v)))
+		XtXvy, //(t(X) %*% ((X %*% v) - y))
 		NONE,
 	}
 	
@@ -71,7 +72,7 @@ public class MapMultChain extends Lop
 	 * @return 
 	 * @throws LopsException
 	 */	
-	public MapMultChain(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) 
+	public MapMultChain(Lop input1, Lop input2, Lop input3, ChainType chain, DataType dt, ValueType vt, ExecType et) 
 		throws LopsException 
 	{
 		super(Lop.Type.MapMultChain, dt, vt);		
@@ -83,7 +84,7 @@ public class MapMultChain extends Lop
 		input3.addOutput(this);
 		
 		//setup mapmult parameters
-		_chainType = ChainType.XtwXv;
+		_chainType = chain;
 		setupLopProperties(et);
 	}
 
@@ -261,7 +262,7 @@ public class MapMultChain extends Lop
 	{
 		if( _chainType == ChainType.XtXv )
 			return new int[]{2};
-		else if( _chainType == ChainType.XtwXv )
+		else if( _chainType == ChainType.XtwXv || _chainType == ChainType.XtXvy )
 			return new int[]{2,3};
 		
 		//error

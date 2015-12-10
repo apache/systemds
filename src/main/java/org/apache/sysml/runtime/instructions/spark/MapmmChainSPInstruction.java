@@ -137,9 +137,9 @@ public class MapmmChainSPInstruction extends SPInstruction
 			JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = inX.mapValues(fmmc);
 			out = RDDAggregateUtils.sumStable(tmp);		
 		}
-		else { // ChainType.XtwXv
+		else { // ChainType.XtwXv / ChainType.XtXvy
 			PartitionedBroadcastMatrix inW = sec.getBroadcastForVariable( _input3.getName() );
-			RDDMapMMChainFunction2 fmmc = new RDDMapMMChainFunction2(inV, inW);
+			RDDMapMMChainFunction2 fmmc = new RDDMapMMChainFunction2(inV, inW, _chainType);
 			JavaPairRDD<MatrixIndexes,MatrixBlock> tmp = inX.mapToPair(fmmc);
 			out = RDDAggregateUtils.sumStable(tmp);		
 		}
@@ -189,13 +189,15 @@ public class MapmmChainSPInstruction extends SPInstruction
 
 		private PartitionedBroadcastMatrix _pmV = null;
 		private PartitionedBroadcastMatrix _pmW = null;
+		private ChainType _chainType = null;
 		
-		public RDDMapMMChainFunction2( PartitionedBroadcastMatrix bV, PartitionedBroadcastMatrix bW) 
+		public RDDMapMMChainFunction2( PartitionedBroadcastMatrix bV, PartitionedBroadcastMatrix bW, ChainType chain) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
 		{			
 			//get both broadcast vectors (first always single block)
 			_pmV = bV;
 			_pmW = bW;
+			_chainType = chain;
 		}
 		
 		@Override
@@ -212,7 +214,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//execute mapmmchain operation
-			blkIn.chainMatrixMultOperations(pmV, _pmW.getMatrixBlock(rowIx,1), blkOut, ChainType.XtwXv);
+			blkIn.chainMatrixMultOperations(pmV, _pmW.getMatrixBlock(rowIx,1), blkOut, _chainType);
 				
 			//output new tuple
 			return new Tuple2<MatrixIndexes, MatrixBlock>(ixOut, blkOut);

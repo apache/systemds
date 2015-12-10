@@ -506,7 +506,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				
 			//check mapmultchain patterns
 			//t(X)%*%(w*(X%*%v))
-			if( in2 instanceof BinaryOp )
+			if( in2 instanceof BinaryOp && ((BinaryOp)in2).getOp()==OpOp2.MULT )
 			{
 				Hop in3b = in2.getInput().get(1);
 				if( in3b instanceof AggBinaryOp )
@@ -514,6 +514,18 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 					Hop in4 = in3b.getInput().get(0);
 					if( X == in4 ) //common input
 						chainType = ChainType.XtwXv;
+				}
+			}
+			//t(X)%*%((X%*%v)-y)
+			else if( in2 instanceof BinaryOp && ((BinaryOp)in2).getOp()==OpOp2.MINUS )
+			{
+				Hop in3a = in2.getInput().get(0);
+				Hop in3b = in2.getInput().get(1);				
+				if( in3a instanceof AggBinaryOp && in3b.getDataType()==DataType.MATRIX )
+				{
+					Hop in4 = in3a.getInput().get(0);
+					if( X == in4 ) //common input
+						chainType = ChainType.XtXvy;
 				}
 			}
 			//t(X)%*%(X%*%v)
@@ -565,11 +577,13 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			Hop hv = getInput().get(1).getInput().get(1);
 			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), getDataType(), getValueType(), ExecType.CP);
 		}
-		else { //if( chainType == ChainType.XtwXv )
+		else { //ChainType.XtwXv / ChainType.XtwXvy
+			int wix = (chain == ChainType.XtwXv) ? 0 : 1;
+			int vix = (chain == ChainType.XtwXv) ? 1 : 0;
 			Hop hX = getInput().get(0).getInput().get(0);
-			Hop hw = getInput().get(1).getInput().get(0);
-			Hop hv = getInput().get(1).getInput().get(1).getInput().get(1);
-			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), hw.constructLops(), getDataType(), getValueType(), ExecType.CP);
+			Hop hw = getInput().get(1).getInput().get(wix);
+			Hop hv = getInput().get(1).getInput().get(vix).getInput().get(1);
+			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), hw.constructLops(), chain, getDataType(), getValueType(), ExecType.CP);
 		}
 		
 		//set degree of parallelism
@@ -768,11 +782,13 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			Hop hv = getInput().get(1).getInput().get(1);
 			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), getDataType(), getValueType(), ExecType.SPARK);
 		}
-		else { //if( chainType == ChainType.XtwXv )
+		else { //ChainType.XtwXv / ChainType.XtXvy
+			int wix = (chain == ChainType.XtwXv) ? 0 : 1;
+			int vix = (chain == ChainType.XtwXv) ? 1 : 0;
 			Hop hX = getInput().get(0).getInput().get(0);
-			Hop hw = getInput().get(1).getInput().get(0);
-			Hop hv = getInput().get(1).getInput().get(1).getInput().get(1);
-			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), hw.constructLops(), getDataType(), getValueType(), ExecType.SPARK);
+			Hop hw = getInput().get(1).getInput().get(wix);
+			Hop hv = getInput().get(1).getInput().get(vix).getInput().get(1);
+			mapmmchain = new MapMultChain( hX.constructLops(), hv.constructLops(), hw.constructLops(), chain, getDataType(), getValueType(), ExecType.SPARK);
 		}
 		setOutputDimensions(mapmmchain);
 		setLineNumbers(mapmmchain);
@@ -1121,12 +1137,14 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			mapmult.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mapmult);
 		}
-		else //if( chainType == ChainType.XtwXv )
+		else //ChainType.XtwXv / ChainType.XtXvy
 		{
 			//v never needs partitioning because always single block
+			int wix = (chainType == ChainType.XtwXv) ? 0 : 1;
+			int vix = (chainType == ChainType.XtwXv) ? 1 : 0;
 			Hop hX = getInput().get(0).getInput().get(0);
-			Hop hw = getInput().get(1).getInput().get(0);
-			Hop hv = getInput().get(1).getInput().get(1).getInput().get(1);
+			Hop hw = getInput().get(1).getInput().get(wix);
+			Hop hv = getInput().get(1).getInput().get(vix).getInput().get(1);
 			
 			double mestW = OptimizerUtils.estimateSize(hw.getDim1(), hw.getDim2());
 			boolean needPart = !hw.dimsKnown() || hw.getDim1() * hw.getDim2() > DistributedCacheInput.PARTITION_SIZE;
@@ -1140,7 +1158,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				w = hw.constructLops();
 			
 			//core matrix mult
-			mapmult = new MapMultChain( X, v, w, getDataType(), getValueType(), ExecType.MR);
+			mapmult = new MapMultChain( X, v, w, chainType, getDataType(), getValueType(), ExecType.MR);
 			mapmult.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 			setLineNumbers(mapmult);
 		}
@@ -1607,7 +1625,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				{
 					return MMultMethod.MAPMM_CHAIN;
 				}
-				else if( chainType==ChainType.XtwXv && m1_rows>=0 && m2_cols>=0 && m1_cols>=0
+				else if( (chainType==ChainType.XtwXv || chainType==ChainType.XtXvy )
+					&& m1_rows>=0 && m2_cols>=0 && m1_cols>=0
 					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols ) 
 					   + OptimizerUtils.estimateSize(m1_cols, m2_cols) < memBudget )
 				{
@@ -1751,7 +1770,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				{
 					return MMultMethod.MAPMM_CHAIN;
 				}
-				else if( chainType==ChainType.XtwXv && m1_rows>=0 && m2_cols>=0 && m1_cols>=0
+				else if( (chainType==ChainType.XtwXv || chainType==ChainType.XtXvy ) 
+					&& m1_rows>=0 && m2_cols>=0 && m1_cols>=0
 					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols) 
 					   + OptimizerUtils.estimateSize(m1_cols, m2_cols) < memBudgetExec
 					&& 2*(OptimizerUtils.estimateSize(m1_rows, m2_cols) 

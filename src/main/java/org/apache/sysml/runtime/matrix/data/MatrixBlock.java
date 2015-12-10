@@ -3834,7 +3834,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//check for transpose type
-		if( !(ctype == ChainType.XtXv || ctype == ChainType.XtwXv) )
+		if( !(ctype == ChainType.XtXv || ctype == ChainType.XtwXv || ctype == ChainType.XtXvy) )
 			throw new DMLRuntimeException("Invalid mmchain type '"+ctype.toString()+"'.");
 		
 		//check for matching dimensions

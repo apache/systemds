@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions.spark.utils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
@@ -142,8 +143,13 @@ public class RDDConverterUtilsExt
 		}
 	}
 	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> vectorDataFrameToBinaryBlock(SparkContext sc,
+			DataFrame inputDF, MatrixCharacteristics mcOut, boolean containsID, String vectorColumnName) throws DMLRuntimeException {
+		return vectorDataFrameToBinaryBlock(new JavaSparkContext(sc), inputDF, mcOut, containsID, vectorColumnName);
+	}
+	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> vectorDataFrameToBinaryBlock(JavaSparkContext sc,
-			DataFrame inputDF, MatrixCharacteristics mcOut, boolean containsID, String vectorColumnName) 
+			DataFrame inputDF, MatrixCharacteristics mcOut, boolean containsID, String vectorColumnName)
 			throws DMLRuntimeException {
 		
 		if(containsID) {
@@ -218,6 +224,35 @@ public class RDDConverterUtilsExt
 		return df.select(columns.get(0), scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
 	}
 	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(SparkContext sc,
+			DataFrame df, MatrixCharacteristics mcOut, boolean containsID) throws DMLRuntimeException {
+		return dataFrameToBinaryBlock(new JavaSparkContext(sc), df, mcOut, containsID, null);
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(SparkContext sc,
+			DataFrame df, MatrixCharacteristics mcOut, String [] columns) throws DMLRuntimeException {
+		ArrayList<String> columns1 = new ArrayList<String>(Arrays.asList(columns));
+		return dataFrameToBinaryBlock(new JavaSparkContext(sc), df, mcOut, false, columns1);
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(SparkContext sc,
+			DataFrame df, MatrixCharacteristics mcOut, ArrayList<String> columns) throws DMLRuntimeException {
+		return dataFrameToBinaryBlock(new JavaSparkContext(sc), df, mcOut, false, columns);
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(SparkContext sc,
+			DataFrame df, MatrixCharacteristics mcOut, boolean containsID, String [] columns) 
+			throws DMLRuntimeException {
+		ArrayList<String> columns1 = new ArrayList<String>(Arrays.asList(columns));
+		return dataFrameToBinaryBlock(new JavaSparkContext(sc), df, mcOut, containsID, columns1);
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(SparkContext sc,
+			DataFrame df, MatrixCharacteristics mcOut, boolean containsID, ArrayList<String> columns) 
+			throws DMLRuntimeException {
+		return dataFrameToBinaryBlock(new JavaSparkContext(sc), df, mcOut, containsID, columns);
+	}
+	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
 			DataFrame df, MatrixCharacteristics mcOut, boolean containsID) throws DMLRuntimeException {
 		return dataFrameToBinaryBlock(sc, df, mcOut, containsID, null);
@@ -228,6 +263,17 @@ public class RDDConverterUtilsExt
 		return dataFrameToBinaryBlock(sc, df, mcOut, false, columns);
 	}
 	
+	/**
+	 * Converts DataFrame into binary blocked RDD. 
+	 * Note: mcOut will be set if you don't know the dimensions.
+	 * @param sc
+	 * @param df
+	 * @param mcOut
+	 * @param containsID
+	 * @param columns
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
 			DataFrame df, MatrixCharacteristics mcOut, boolean containsID, ArrayList<String> columns) 
 			throws DMLRuntimeException {

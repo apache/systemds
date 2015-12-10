@@ -21,7 +21,9 @@ package org.apache.sysml.test.integration.functions.aggregate;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -74,6 +76,24 @@ public class FullAggregateTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[]{"B"}));
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[]{"B"}));
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[]{"B"}));
+
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
+	}
+
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 	
 	@Test
@@ -545,7 +565,14 @@ public class FullAggregateTest extends AutomatedTestBase
 			int rows = (type==OpType.TRACE) ? cols : rows1;
 			double sparsity = (sparse) ? sparsity1 : sparsity2;
 			
-			getAndLoadTestConfiguration(TEST_NAME);
+			String TEST_CACHE_DIR = "";
+			if (TEST_CACHE_ENABLED)
+			{
+				TEST_CACHE_DIR = type.ordinal() + "_" + rows + "_" + cols + "_" + sparsity + "/";
+			}
+			
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;

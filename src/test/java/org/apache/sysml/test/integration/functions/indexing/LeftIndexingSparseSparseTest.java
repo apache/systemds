@@ -21,6 +21,8 @@ package org.apache.sysml.test.integration.functions.indexing;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -60,6 +62,24 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 	public void setUp() {
 		addTestConfiguration(TEST_NAME, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
+		
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
+	}
+	
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 	
 	@Test
@@ -175,7 +195,14 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			loadTestConfiguration(config);
+			
+			String TEST_CACHE_DIR = "";
+			if (TEST_CACHE_ENABLED)
+			{
+				TEST_CACHE_DIR = type.toString() + "/";
+			}
+			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 		    
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";

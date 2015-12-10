@@ -21,7 +21,9 @@ package org.apache.sysml.test.integration.functions.quaternary;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -68,8 +70,25 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4,new String[]{"R"}));
+
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
 	}
 
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
+	}
 	
 	@Test
 	public void testSigmoidDenseBasicNoRewritesCP() 
@@ -458,7 +477,14 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 			String TEST_NAME = testname;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			loadTestConfiguration(config);
+
+			String TEST_CACHE_DIR = "";
+			if (TEST_CACHE_ENABLED)
+			{
+				TEST_CACHE_DIR = TEST_NAME + "_" + sparsity + "/";
+			}
+			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;

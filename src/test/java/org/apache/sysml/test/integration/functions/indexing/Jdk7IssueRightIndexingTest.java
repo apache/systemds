@@ -21,6 +21,8 @@ package org.apache.sysml.test.integration.functions.indexing;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -49,6 +51,24 @@ public class Jdk7IssueRightIndexingTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
+		
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
+	}
+	
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 	
 	@Test
@@ -124,8 +144,16 @@ public class Jdk7IssueRightIndexingTest extends AutomatedTestBase
 			
 		    config.addVariable("rows", rows);
 	        config.addVariable("cols", cols);
+			
+			double sparsity = sparse ? sparsity2 : sparsity1;
+			
+			String TEST_CACHE_DIR = "";
+			if (TEST_CACHE_ENABLED)
+			{
+				TEST_CACHE_DIR = sparsity + "/";
+			}
 	
-			loadTestConfiguration(config);
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 	        
 	        String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
@@ -135,7 +163,6 @@ public class Jdk7IssueRightIndexingTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			//generate input data
-			double sparsity = sparse ? sparsity2 : sparsity1;
 			double[][] M = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 	        writeInputMatrixWithMTD("M", M, true);
 	        

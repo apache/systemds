@@ -41,6 +41,7 @@ public class SumSqTest extends AutomatedTestBase {
 
     private static final String TEST_NAME = "SumSq";
     private static final String TEST_DIR = "functions/aggregate/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + SumSqTest.class.getSimpleName() + "/";
     private static final String INPUT_NAME = "X";
     private static final String OUTPUT_NAME = "sumSq";
 
@@ -54,7 +55,7 @@ public class SumSqTest extends AutomatedTestBase {
     @Override
     public void setUp() {
         TestUtils.clearAssertionInformation();
-        TestConfiguration config = new TestConfiguration(TEST_DIR, TEST_NAME);
+        TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME);
         addTestConfiguration(TEST_NAME, config);
     }
 
@@ -222,16 +223,13 @@ public class SumSqTest extends AutomatedTestBase {
 
         try {
             // Create and load test configuration
-            TestConfiguration config = getTestConfiguration(testName);
+            getAndLoadTestConfiguration(testName);
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + testName + ".dml";
             programArgs = new String[]{"-explain", "-stats", "-args",
-                    HOME + INPUT_DIR + INPUT_NAME,
-                    HOME + OUTPUT_DIR + OUTPUT_NAME};
+                    input(INPUT_NAME), output(OUTPUT_NAME)};
             fullRScriptName = HOME + testName + ".R";
-            rCmd = "Rscript" + " " + fullRScriptName + " " +
-                    HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
-            loadTestConfiguration(config);
+            rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
             // Generate data
             double sparsity = sparse ? sparsity2 : sparsity1;

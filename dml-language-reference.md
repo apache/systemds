@@ -786,20 +786,24 @@ As an example, see the content of a matrix file X.mtx in text format with 4 non-
 
 The content of the MTD file X.mtx.mtd associated with data X.mtx is:
 
-    { "data_type": "matrix",
-    "value_type": "double", 
-    "rows": 10,
-    "cols": 8,
-    "nnz": 4,
-    "format": "text",
-    "description": { "author": "SystemML" } }
+    {
+        "data_type": "matrix",
+        "value_type": "double",
+        "rows": 10,
+        "cols": 8,
+        "nnz": 4,
+        "format": "text",
+        "description": { "author": "SystemML" }
+    }
 
 The content of the MTD file scalar_i.mtd associated with a scalar data file scalar_i (which contains the integer scalar value 2)
 
-    { "data_type": "scalar", 
-    "value_type": "double", 
-    "format": "text", 
-    "description": { "author": "SystemML" } }
+    {
+        "data_type": "scalar",
+        "value_type": "double",
+        "format": "text",
+        "description": { "author": "SystemML" }
+    }
 
 The MTD file contains a single JSON object with the attributes described below. 
 
@@ -887,19 +891,21 @@ format | Valid for all three datatypes. <br/> Indicates the output file format. 
 
 ##### Examples
 
-    # write V to HDFS file “out/file”, in text format. 
+    # write V to HDFS file “out/file”, in text format.
     # Create MTD file out/file.mtd
-    write(V, "out/file"); 
+    write(V, "out/file");
 
 out/file.mtd:
 
-    { "data_type": "matrix",
-    "value_type": "double", 
-    "rows": 10,
-    "cols": 8,
-    "nnz": 4,
-    "format": "text”,
-    "description": { "author": "SystemML" } }
+    {
+        "data_type": "matrix",
+        "value_type": "double",
+        "rows": 10,
+        "cols": 8,
+        "nnz": 4,
+        "format": "text”,
+        "description": { "author": "SystemML" }
+    }
 
 Write V to HDFS file”out/file” in binary blocked format:
 
@@ -907,15 +913,17 @@ Write V to HDFS file”out/file” in binary blocked format:
 
 out/file.mtd:
 
-    { "data_type": "matrix",
-    "value_type": "double", 
-    "rows": 10,
-    "cols": 8,
-    "nnz": 4,
-    "rows_in_block": 1000,
-    "cols_in_block": 1000,
-    "format": "binary",
-    "description": { "author": "SystemML" } }
+    {
+        "data_type": "matrix",
+        "value_type": "double",
+        "rows": 10,
+        "cols": 8,
+        "nnz": 4,
+        "rows_in_block": 1000,
+        "cols_in_block": 1000,
+        "format": "binary",
+        "description": { "author": "SystemML" }
+    }
 
 Write a scalar integer value to HDFS file “out/scalar_i”
 
@@ -923,10 +931,12 @@ Write a scalar integer value to HDFS file “out/scalar_i”
 
 out/scalar_i.mtd:
 
-    {"data_type": "scalar",
-    "value_type": "double", 
-    "format": "text",
-    "description": { "author": "SystemML" } }
+    {
+        "data_type": "scalar",
+        "value_type": "double",
+        "format": "text",
+        "description": { "author": "SystemML" }
+    }
 
 Unlike read(), write() function does not need a constant string expression, so following example will work:
 
@@ -938,106 +948,288 @@ Unlike read(), write() function does not need a constant string expression, so f
 
 ### Data Pre-Processing Built-In Functions
 
-Data pre-processing built-in ```transform()``` is used to transform a given tabular input data set (with data type ```frame```) in CSV format into a ```matrix```. The ```transform()``` function supports the following five column-level data transformations:
+The data pre-processing built-in `transform()` function is used to transform a given tabular input data set (with data type `frame`) in CSV format into a `matrix`. The `transform()` function supports the following six column-level data transformations:
 
-  * *Missing Value Imputation*: This replaces missing data in individual columns with valid values, depending on the specific imputation method. There are three supported imputation methods -- ```global_mean``` that replaces a missing value in a *numeric/scale* column with the mean of all non-missing entries in the column; ```global_mode``` that replaces a missing value in a *categorical* column with the mode of all non-missing entries in the column; and ```constant``` that replaces missing values in a *scale/categorical* column with the specified constant.
-  * *Recoding*: This is applicable for *categorical* columns. It maps all distinct categories (potentially, strings and booleans) in the column into consecutive numbers, starting from 1. For example, a ```direction``` column with four distinct values (east, west, north, south) into a column with four numeric values 1.0, 2.0, 3.0, and 4.0.
-  * *Binning*: This procedure is used to group a number of continuous values (i.e., discretize) into a small number of *bins*. For example, a column with ```age``` values can be discretized into a small number of age intervals. The only method that is currently supported is ```equi-width``` binning.
-  * *Dummycoding*: This procedure transforms a categorical column into multiple columns of zeros and ones, which collectively capture the full information about the categorical variable. The number of resulting columns is equal to the number of distinct values in the input column. In the example of ```direction``` variable mentioned above, this procedure replaces the original column with four new columns with zeros and ones – ```direction_east```, ```direction_west```, ```direction_north```, and ```direction_south```. 
-  * *Scaling*: This centers and/or scales the values in a given numeric/continuous column. The two supported methods are ```mean-subtraction``` that centers each value by subtracting the mean, and ```z-score``` that scales mean subtracted values by dividing them with the respective column-wise standard deviation.
+  * *Omitting*: Given a list of columns, this transformation removes all rows which contain missing values for at least one of the specified columns.
+  * *Missing Value Imputation*: This replaces missing data in individual columns with valid values, depending on the specific imputation method. There are three supported imputation methods -- `global_mean` that replaces a missing value in a *numeric/scale* column with the mean of all non-missing entries in the column; `global_mode` that replaces a missing value in a *categorical* column with the mode of all non-missing entries in the column; and `constant` that replaces missing values in a *scale/categorical* column with the specified constant.
+  * *Recoding*: This is applicable for *categorical* columns. It maps all distinct categories (potentially, strings and booleans) in the column into consecutive numbers, starting from 1. For example, a `direction` column with four distinct values (east, west, north, south) into a column with four numeric values 1.0, 2.0, 3.0, and 4.0.
+  * *Binning*: This procedure is used to group a number of continuous values (i.e., discretize) into a small number of *bins*. For example, a column with `age` values can be discretized into a small number of age intervals. The only method that is currently supported is `equi-width` binning.
+  * *Dummycoding*: This procedure transforms a categorical column into multiple columns of zeros and ones, which collectively capture the full information about the categorical variable. The number of resulting columns is equal to the number of distinct values in the input column. In the example of the `direction` variable mentioned above, this procedure replaces the original column with four new columns with zeros and ones – `direction_east`, `direction_west`, `direction_north`, and `direction_south`. 
+  * *Scaling*: This centers and/or scales the values in a given numeric/continuous column. The two supported methods are `mean-subtraction` that centers each value by subtracting the mean, and `z-score` that scales mean subtracted values by dividing them with the respective column-wise standard deviation.
 
-The transformations are specified to operate on individual columns. The set of all required transformations must be provided via a *specification* file in JSON format. Furthermore, the notation indicating missing values must be specified in the mtd file associated with the input CSV data, along with other properties such as header and delimiter. As an example, consider the following sample of *homes* data set.
+The transformations are specified to operate on individual columns. The set of all required transformations across all the columns in the input data must be provided via a *specification* file in JSON format. Furthermore, the notation indicating missing values must be specified using the `na.strings` property in the `mtd` file associated with the input CSV data, along with other properties such as `header` and `sep` (the delimiter). Note that the delimiter cannot be part of any value. For example, if a "," (comma) is part of any value, then it cannot be used a delimiter. Users must choose a different `sep` value (e.g., a tab "\t").
 
-```data.csv```
+The following table indicates which transformations can be used simultaneously on a single column.
 
-Note that the missing values are denoted either by an empty value (as in the 6<sup>th</sup> row) or as a string “NA”. This information must be captured via ```na.strings``` property in the mtd file associated with the input data. Assuming that this data is stored in CSV format with “,” as the delimiter, the mtd file ```data.csv.mtd``` would look as follows:
+Table 12. Data transformations that can be used simultaneously.
 
-```data.csv.mtd```
+<div style="float:left">
+<table>
+  <thead>
+    <tr>
+      <th>&nbsp;</th>
+      <th>OMIT</th>
+      <th>MVI</th>
+      <th>RCD</th>
+      <th>BIN</th>
+      <th>DCD</th>
+      <th>SCL</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="grayboldcell">OMIT</td>
+      <td class="centerboldcell">-</td>
+      <td class="centerboldcell lightred">x</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+    </tr>
+    <tr>
+      <td class="grayboldcell">MVI</td>
+      <td class="centerboldcell lightred">x</td>
+      <td class="centerboldcell">-</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+    </tr>
+    <tr>
+      <td class="grayboldcell">RCD</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell">-</td>
+      <td class="centerboldcell lightred">x</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightred">x</td>
+    </tr>
+    <tr>
+      <td class="grayboldcell">BIN</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightred">x</td>
+      <td class="centerboldcell">-</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightred">x</td>
+    </tr>
+    <tr>
+      <td class="grayboldcell">DCD</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell">-</td>
+      <td class="centerboldcell lightred">x</td>
+    </tr>
+    <tr>
+      <td class="grayboldcell">SCL</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightgreen">*</td>
+      <td class="centerboldcell lightred">x</td>
+      <td class="centerboldcell lightred">x</td>
+      <td class="centerboldcell lightred">x</td>
+      <td class="centerboldcell">-</td>
+    </tr>
+  </tbody>
+</table>
 
-    {  
-        "data_type": "frame",  
-        "format": "csv",
-        "delimiter": ","
-        "header": true,  
-        "na.strings": ["NA", ""]
-    }
+</div>
+<div style="float:left; margin-left:5px;">
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="boldcell">OMIT</td><td>Missing value handling by omitting</td></tr>
+    <tr><td class="boldcell">MVI</td><td>Missing value handling by imputation</td></tr>
+    <tr><td class="boldcell">RCD</td><td>Recoding</td></tr>
+    <tr><td class="boldcell">BIN</td><td>Binning</td></tr>
+    <tr><td class="boldcell">DCD</td><td>Dummycoding</td></tr>
+    <tr><td class="boldcell">SCL</td><td>Scaling</td></tr>
+  </tbody>
+</table>
+</div>
+<div style="float:left; margin-left:5px;">
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="centerboldcell lightgreen">*</td><td>The combination is allowed</td></tr>
+    <tr><td class="centerboldcell lightred">x</td><td>The combination is invalid</td></tr>
+    <tr><td class="centerboldcell">-</td><td>The combination is not applicable</td></tr>
+  </tbody>
+</table>
+</div>
 
-An example of the transformation *specification* file is given below:
+<br style="clear: left;" />
+<br/>
 
-    {
-        "impute": 
-        [ { "name": "zipcode"     , "method": "global_mode" }
-         ,{ "name": "district"    , "method": "constant", "value": "south" }
-         ,{ "name": "numbedrooms" , "method": "constant", "value": 2 }
-         ,{ "name": "numbathrooms", "method": "constant", "value": 1 }
-         ,{ "name": "floors"      , "method": "constant", "value": 1 }
-         ,{ "name": "view"        , "method": "global_mode" }
-         ,{ "name": "askingprice" , "method": "global_mean" }
-        ]
-        
-        ,"recode": 
-        [ "zipcode", "district", "numbedrooms", "numbathrooms", "floors", "view" ]
-        
-        ,"bin": 
-        [ { "name": "saleprice"  , "method": "equi-width", "numbins": 3 }
-         ,{ "name": "sqft"       , "method": "equi-width", "numbins": 4 }
-        ]
-        
-        ,"dummycode": 
-        [ "district", "numbathrooms", "floors", "view", "saleprice", "sqft" ]
-        
-        ,"scale": 
-        [ { "name": "sqft", "method": "mean-subtraction" }
-         ,{ "name": "saleprice", "method": "z-score" }
-         ,{ "name": "askingprice", "method": "z-score" }
-        ]
-    }
+The `transform()` function signature is shown here:
 
-Evidently, the *specification* file must provide the complete information about *all* required transformations across *all* the columns in the input data. Given such a *specification* file, the input data set ```data.csv``` is transformed using the built-in function ```transform()```: 
+	output = transform(target = input,
+	                   transformSpec = "/path/to/transformation/specification",
+	                   transformPath = "/path/to/transformation/metadata",
+	                   applyTransformPath = "/path/to/transformation/metadata")
 
-    output = transform(target = input, 
-                       transformPath = ”...”, 
-                       transformSpec = ”...”, 
-                       applyTransformPath = ”...”)
+The `target` parameter points to the input tabular data that needs to be transformed, the `transformSpec` parameter refers to the transformation specification JSON file indicating the list of transformations that must be performed, and `transformPath` denotes the output directory at which all the resulting metadata constructed during the transformation process is stored. Examples of such metadata include the number of distinct values in a categorical column, the list of distinct values and associated *recoded* IDs, the bin definitions (number of bins, bin widths), etc. This metadata can subsequently be utilized to transform new incoming data, for example, the test set in a predictive modeling exercise. The parameter `applyTransformPath` refers to existing transformation metadata which was generated by some earlier invocation of the `transform()` function. Therefore, in any invocation of `transform()`, only `transformSpec` *or* `applyTransformPath` can be specified. The transformation metadata is generated when `transformSpec` is specified, and it is used and applied when `applyTransformPath` is specified. On the other hand, the `transformPath` always refers to a location where the resulting transformation metadata is stored.
 
-Following sample DML script shows its usage.
+The `transform()` function returns the actual transformed data in the form of a matrix, containing only numeric values.
 
-    D = read("data.csv");
-    tfD = transform(target=D, 
-                    transformSpec="/path/to/transformation/specification/",
-                    transformPath="/path/to/transformation/metadata");        
-    s = sum(tfD);
-    print(“Sum = “ + s);
-    write(tfD, "/path/to/transformed/data", format="binary");
+As an example of the `transform()` function, consider the following [`data.csv`](files/dml-language-reference/data.csv) file that represents a sample of homes data.
 
-The ```target``` parameter points to the input tabular data that needs to be transformed, the ```transformSpec``` refers to the transformation specification JSON indicating the list of transformations that must be performed, and finally ```transformPath``` denotes the output path on HDFS at which all the metadata constructed during the transformation process is stored. Examples of such metadata includes, the number distinct values in a categorical column, the list of distinct values and associated *recoded* IDs, the bin definitions (number of bins, bin widths), etc. This metadata can subsequently be utilized to transform new incoming data, for example, the test set in a predictive modeling exercise. The function returns the actual transformed data ```tfD``` in the form of a matrix, containing only numeric values. 
+Table 13. The [`data.csv`](files/dml-language-reference/data.csv) homes data set
 
-Following code snippet shows an example scenario of transforming a training data set, and subsequently the testing data set.
+zipcode | district | sqft | numbedrooms | numbathrooms | floors | view  | saleprice | askingprice
+--------|----------|------|-------------|--------------|--------|-------|-----------|------------
+95141   | south    | 3002 | 6           | 3            | 2      | FALSE | 929       | 934
+NA      | west     | 1373 |             | 1            | 3      | FALSE | 695       | 698
+91312   | south    | NA   | 6           | 2            | 2      | FALSE | 902       |
+94555   | NA       | 1835 | 3           |              | 3      |       | 888       | 892
+95141   | west     | 2770 | 5           | 2.5          |        | TRUE  | 812       | 816
+95141   | east     | 2833 | 6           | 2.5          | 2      | TRUE  | 927       |
+96334   | NA       | 1339 | 6           | 3            | 1      | FALSE | 672       | 675
+96334   | south    | 2742 | 6           | 2.5          | 2      | FALSE | 872       | 876
+96334   | north    | 2195 | 5           | 2.5          | 2      | FALSE | 799       | 803
+
+<br/>
+
+Note that the missing values are denoted either by an empty value or as a `String` "NA". This information must be captured via the `na.strings` property in the metadata file associated with the input data. In this example, the data is stored in CSV format with "," as the delimiter (the `sep` property). Recall that the delimiter cannot be part of any value. The metadata file [`data.csv.mtd`](files/dml-language-reference/data.csv.mtd) looks as follows:
+
+	{
+	    "data_type": "frame",
+	    "format": "csv",
+	    "sep": ",",
+	    "header": true,
+	    "na.strings": [ "NA", "" ]
+	}
+
+An example transformation specification file [`data.spec.json`](files/dml-language-reference/data.spec.json) is given below:
+
+	{
+	    "omit": [ "zipcode" ]
+	   ,"impute":
+	    [ { "name": "district"    , "method": "constant", "value": "south" }
+	     ,{ "name": "numbedrooms" , "method": "constant", "value": 2 }
+	     ,{ "name": "numbathrooms", "method": "constant", "value": 1 }
+	     ,{ "name": "floors"      , "method": "constant", "value": 1 }
+	     ,{ "name": "view"        , "method": "global_mode" }
+	     ,{ "name": "askingprice" , "method": "global_mean" }
+	     ,{ "name": "sqft"        , "method": "global_mean" }
+	    ]
+	    
+	    ,"recode":
+	    [ "zipcode", "district", "numbedrooms", "numbathrooms", "floors", "view" ]
+	    
+	    ,"bin":
+	    [ { "name": "saleprice"  , "method": "equi-width", "numbins": 3 }
+	     ,{ "name": "sqft"       , "method": "equi-width", "numbins": 4 }
+	    ]
+	    
+	    ,"dummycode":
+	    [ "district", "numbathrooms", "floors", "view", "saleprice", "sqft" ]
+	    
+	}
+
+The following DML utilizes the `transform()` function.
+
+	D = read("/user/ml/data.csv");
+	tfD = transform(target=D,
+	                transformSpec="/user/ml/data.spec.json",
+	                transformPath="/user/ml/data-transformation");
+	s = sum(tfD);
+	print("Sum = " + s);
+
+The transformation specification file can also utilize column numbers rather than than column names by setting
+the `ids` property to true.
+The following [`data.spec2.json`](files/dml-language-reference/data.spec2.json) specification file is the equivalent of the
+aforementioned [`data.spec.json`](files/dml-language-reference/data.spec.json) file but with column numbers
+rather than column names.
+
+	{
+	    "ids": true
+	    ,"omit" : [ 1 ]
+	    ,"impute":
+	    [ { "id": 2, "method": "constant", "value": "south" }
+	     ,{ "id": 4, "method": "constant", "value": 2 }
+	     ,{ "id": 5, "method": "constant", "value": 1 }
+	     ,{ "id": 6, "method": "constant", "value": 1 }
+	     ,{ "id": 7, "method": "global_mode" }
+	     ,{ "id": 9, "method": "global_mean" }
+	     ,{ "id": 3, "method": "global_mean" }
+	    ]
+	    
+	    ,"recode": [ 1, 2, 4, 5, 6, 7 ]
+	    
+	    ,"bin":
+	    [ { "id": 8, "method": "equi-width", "numbins": 3 }
+	     ,{ "id": 3, "method": "equi-width", "numbins": 4 }
+	    ]
+	    
+	    ,"dummycode": [ 2, 5, 6, 7, 8, 3 ]
+	    
+	}
+
+As a further JSON transformation specification example, the following [`data.spec3.json`](files/dml-language-reference/data.spec3.json) file specifies *scaling* transformations on three columns.
+
+	{
+	    "omit": [ "zipcode" ]
+	   ,"impute":
+	    [ { "name": "district"    , "method": "constant", "value": "south" }
+	     ,{ "name": "numbedrooms" , "method": "constant", "value": 2 }
+	     ,{ "name": "numbathrooms", "method": "constant", "value": 1 }
+	     ,{ "name": "floors"      , "method": "constant", "value": 1 }
+	     ,{ "name": "view"        , "method": "global_mode" }
+	     ,{ "name": "askingprice" , "method": "global_mean" }
+	     ,{ "name": "sqft"        , "method": "global_mean" }
+	    ]
+	    
+	    ,"recode":
+	    [ "zipcode", "district", "numbedrooms", "numbathrooms", "floors", "view" ]
+	    
+	    ,"dummycode":
+	    [ "district", "numbathrooms", "floors", "view" ]
+	    
+	    ,"scale":
+	    [ { "name": "sqft", "method": "mean-subtraction" }
+	     ,{ "name": "saleprice", "method": "z-score" }
+	     ,{ "name": "askingprice", "method": "z-score" }
+	    ]
+	}
+
+The following code snippet shows an example scenario of transforming a training data set and subsequently testing the data set.
 
 #### Training Phase
 
-    Train = read(“/user/ml/trainset.csv”);
-    trainD = transform(target=Train, 
-                       transformSpec=”/user/ml/tf.spec.json”,  
-                       transformPath=”/user/ml/train_tf_metadata”);
+    Train = read("/user/ml/trainset.csv");
+    trainD = transform(target=Train,
+                       transformSpec="/user/ml/tf.spec.json",
+                       transformPath="/user/ml/train_tf_metadata");
     # Build a predictive model using trainD
     ...
 
 #### Testing Phase
 
-    Test = read(“/user/ml/testset.csv”);
-    testD = transform(target=Test, 
-                      transformPath=”/user/ml/test_tf_metadata”, 
-                      applyTransformPath=”/user/ml/train_tf_metdata”);
+    Test = read("/user/ml/testset.csv");
+    testD = transform(target=Test,
+                      transformPath="/user/ml/test_tf_metadata",
+                      applyTransformPath="/user/ml/train_tf_metdata");
     # Test the model using testD
     ...
 
-Note that the metadata generated during the training phase (located at ```/user/ml/train_tf_metadata``` on HDFS) is used to apply the list of transformations (that were carried out on training data set) on the test data set. The parameter ```applyTransformPath``` refers to an existing metadata, which was generated by some earlier invocation of ```transform()``` function. Therefore, in any invocation of ```transform()```, only one of ```transformSpec``` or ```applyTransformPath``` can be specified. The transformation metadata is generated when ```transformSpec``` is specified, and it is simply used and applied when ```applyTransformPath``` is specified. On the other hand, the ```transformPath``` always refers to a location on HDFS where the resulting transformation metadata is stored. Since the second invocation of ```transform()``` does not really generate any new metdata data, the given metadata (```/user/ml/train_tf_metdata```) is simply copied to the target location (```/user/ml/test_tf_metdata```). Even though such a behavior creates redundant copies of transformation metadata, it is preferred as it allows us to associate every data set with the corresponding transformation metadata.
+Note that the metadata generated during the training phase (located at `/user/ml/train_tf_metadata`) is used to apply the list of transformations (that were carried out on training data set) on the test data set. Since the second invocation of `transform()` does not really generate any new metadata data, the given metadata (`/user/ml/train_tf_metdata`) is copied to the target location (`/user/ml/test_tf_metdata`). Even though such a behavior creates redundant copies of transformation metadata, it is preferred as it allows the association of every data set with the corresponding transformation metadata.
 
 
 ### Other Built-In Functions
 
-Table 12. Other Built-In Functions
+Table 14. Other Built-In Functions
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------

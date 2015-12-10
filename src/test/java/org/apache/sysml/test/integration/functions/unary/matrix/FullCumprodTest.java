@@ -21,7 +21,9 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -61,8 +63,25 @@ public class FullCumprodTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
+
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
 	}
 
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
+	}
 		
 	@Test
 	public void testCumprodColVectorDenseCP() 
@@ -244,7 +263,14 @@ public class FullCumprodTest extends AutomatedTestBase
 			int rows = (type==InputType.ROW_VECTOR) ? 1 : rowsMatrix;
 			double sparsity = (sparse) ? spSparse : spDense;
 			
-			getAndLoadTestConfiguration(TEST_NAME);
+			String TEST_CACHE_DIR = "";
+			if (TEST_CACHE_ENABLED)
+			{
+				TEST_CACHE_DIR = type.ordinal() + "_" + sparsity + "/";
+			}
+			
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;

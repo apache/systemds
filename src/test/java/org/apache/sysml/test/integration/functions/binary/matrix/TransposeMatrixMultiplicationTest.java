@@ -21,6 +21,8 @@ package org.apache.sysml.test.integration.functions.binary.matrix;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -68,8 +70,25 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) );
 		addTestConfiguration( TEST_NAME2, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "C" }) );
+
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
 	}
 
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
+	}
 	
 	@Test
 	public void testTransposeMMDenseDenseCP() 
@@ -299,7 +318,18 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 		
 		try
 		{
-			getAndLoadTestConfiguration(TEST_NAME);
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			
+			double sparsityM1 = sparseM1?sparsity2:sparsity1;
+			double sparsityM2 = sparseM2?sparsity2:sparsity1;
+			
+			String TEST_CACHE_DIR = "";
+			if (TEST_CACHE_ENABLED)
+			{
+				TEST_CACHE_DIR = sparsityM1 + "_" + sparsityM2 + "_" + vectorM2 + "_" + minusM1 + "/";
+			}
+			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
@@ -312,9 +342,9 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			//generate actual dataset
-			double[][] A = getRandomMatrix(rowsA, colsA, 0, 1, sparseM1?sparsity2:sparsity1, 7); 
+			double[][] A = getRandomMatrix(rowsA, colsA, 0, 1, sparsityM1, 7); 
 			writeInputMatrix("A", A, true);
-			double[][] B = getRandomMatrix(rowsB, colsB, 0, 1, sparseM2?sparsity2:sparsity1, 3); 
+			double[][] B = getRandomMatrix(rowsB, colsB, 0, 1, sparsityM2, 3); 
 			writeInputMatrix("B", B, true);
 	
 			boolean exceptionExpected = false;

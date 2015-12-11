@@ -1612,11 +1612,11 @@ public class LibMatrixMult
 			for( int j=0, aix=bi*cd; j < blocksize; j++, aix+=cd)
 				tmp[j] = dotProduct(a, b, aix, 0, cd);
 			
-			//multiply/substract weights (in-place), if required
+			//multiply/subtract weights (in-place), if required
 			if( weights ) 
 				vectMultiply(w, tmp, bi, 0, blocksize);	
 			else if( weights2 )
-				vectSubstract(w, tmp, bi, 0, blocksize);
+				vectSubtract(w, tmp, bi, 0, blocksize);
 				
 			//compute 2nd matrix vector for row block and aggregate
 			for (int j=0, aix=bi*cd; j < blocksize; j+=4, aix+=4*cd)
@@ -1679,7 +1679,7 @@ public class LibMatrixMult
 			if( weights ) 
 				vectMultiply(w, tmp, bi, 0, tmplen);	
 			else if( weights2 )
-				vectSubstract(w, tmp, bi, 0, tmplen);
+				vectSubtract(w, tmp, bi, 0, tmplen);
 		
 			//compute 2nd matrix vector for row block and aggregate
 			for( int j=0; j < tmplen; j++) {
@@ -3483,13 +3483,13 @@ public class LibMatrixMult
 	 * @param ci
 	 * @param len
 	 */
-	private static void vectSubstract( double[] a, double[] c, int ai, int ci, final int len )
+	private static void vectSubtract( double[] a, double[] c, int ai, int ci, final int len )
 	{
 		final int bn = len%8;
 		
 		//rest, not aligned to 8-blocks
 		for( int j = 0; j < bn; j++, ai++, ci++)
-			c[ ci ] += a[ ai ];
+			c[ ci ] -= a[ ai ];
 		
 		//unrolled 8-block  (for better instruction-level parallelism)
 		for( int j = bn; j < len; j+=8, ai+=8, ci+=8) 

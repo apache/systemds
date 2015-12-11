@@ -47,7 +47,7 @@ public class MapMultChainTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + MapMultChainTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	
-	private final static int rowsX = 3468;
+	private final static int rowsX = 3471; //mod 8 = 7
 	private final static int colsX = 567;
 	
 	private final static double sparsity1 = 0.7;

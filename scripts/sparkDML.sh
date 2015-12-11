@@ -22,19 +22,19 @@
 
 #set -x
 
+
 # Environment
 
-SPARK_HOME=/home/biadmin/spark-1.4.0/spark-1.4.0-SNAPSHOT-bin-hadoop2.4
-SYSTEMML_HOME="."
+DEFAULT_SPARK_HOME=/home/biadmin/spark-1.4.0/spark-1.4.0-SNAPSHOT-bin-hadoop2.4
+DEFAULT_SYSTEMML_HOME=.
 
-# Default Values
+if [ -z ${SPARK_HOME} ]; then
+  SPARK_HOME=${DEFAULT_SPARK_HOME}
+fi
 
-master=yarn-client
-driver_memory=20G
-num_executors=5
-executor_memory=60G
-executor_cores=24
-conf="--conf spark.driver.maxResultSize=0 --conf spark.akka.frameSize=128"
+if [ -z ${SYSTEMML_HOME} ]; then
+  SYSTEMML_HOME="."
+fi
 
 # error help print
 
@@ -53,13 +53,13 @@ Usage: $0 [-h] [SPARK-SUBMIT OPTIONS] -f <dml-filename> [SYSTEMML OPTIONS]
 
    SPARK-SUBMIT OPTIONS:
    --conf <property>=<value>   Configuration settings:                  
-                                 spark.driver.maxResultSize            Default: 0 
-                                 spark.akka.frameSize                  Default: 128
-   --driver-memory <num>       Memory for driver (e.g. 512M)]          Default: 20G
-   --master <string>           local | yarn-client | yarn-cluster]     Default: yarn-client
-   --num-executors <num>       Number of executors to launch (e.g. 2)  Default: 5
-   --executor-memory <num>     Memory per executor (e.g. 1G)           Default: 60G
-   --executor-cores <num>      Memory per executor (e.g. )             Default: 24
+                                 spark.driver.maxResultSize
+                                 spark.akka.frameSize
+   --driver-memory <num>       Memory for driver (e.g. 512M)]
+   --master <string>           local | yarn-client | yarn-cluster]
+   --num-executors <num>       Number of executors to launch (e.g. 2)
+   --executor-memory <num>     Memory per executor (e.g. 1G)
+   --executor-cores <num>      Memory per executor (e.g. )
 
    -f                          DML script file name, e.g. hdfs:/user/biadmin/test.dml
 
@@ -79,11 +79,11 @@ EOF
 while true ; do
   case "$1" in
     -h)                printUsageExit ; exit 1 ;;
-    --master)          master=$2 ; shift 2 ;; 
-    --driver-memory)   driver_memory=$2 ; shift 2 ;; 
-    --num-executors)   num_executors=$2 ; shift 2 ;;
-    --executor-memory) executor_memory=$2 ; shift 2 ;;
-    --executor-cores)  executor_cores=$2 ; shift 2 ;;
+    --master)          master="--master "$2 ; shift 2 ;;
+    --driver-memory)   driver_memory="--driver-memory "$2 ; shift 2 ;;
+    --num-executors)   num_executors="--num-executors "$2 ; shift 2 ;;
+    --executor-memory) executor_memory="--executor-memory "$2 ; shift 2 ;;
+    --executor-cores)  executor_cores="--executor-cores "$2 ; shift 2 ;;
     --conf)            conf=${conf}' --conf '$2 ; shift 2 ;;
      -f)               f=$2 ; shift 2 ;;
     --stats)           stats="-stats" ; shift 1 ;;
@@ -97,16 +97,23 @@ done
 
 # SystemML Spark invocation
 
+spark_conf=${SPARK_HOME}/conf
+
+if [ ${SPARK_CONF_DIR} ]; then
+  spark_conf=${SPARK_CONF_DIR}
+fi
+
 $SPARK_HOME/bin/spark-submit \
-     --master ${master} \
-     --driver-memory ${driver_memory} \
-     --num-executors ${num_executors} \
-     --executor-memory ${executor_memory} \
-     --executor-cores ${executor_cores} \
+     ${master} \
+     $driver_memory \
+     $num_executors \
+     $executor_memory \
+     $executor_cores \
+     --properties-file ${spark_conf}/spark-defaults.conf \
      ${conf} \
-     $SYSTEMML_HOME/SystemML.jar \
+     ${SYSTEMML_HOME}/SystemML.jar \
          -f ${f} \
-         -config=$SYSTEMML_HOME/SystemML-config.xml \
+         -config=${SYSTEMML_HOME}/conf/SystemML-config.xml \
          -exec hybrid_spark \
          $explain \
          $stats \

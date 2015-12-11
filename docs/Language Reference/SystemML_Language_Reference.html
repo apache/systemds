@@ -2381,13 +2381,13 @@ DML’s syntax closely follows R, thereby minimizing the learning curve to use
 SystemML. Before getting into detail, let’s start with a simple Hello World
 program in DML. <span class=GramE>Assuming that <span class=SpellE>Hadoop</span>
 is installed on your machine or cluster, place SystemML.jar and
-SystemML-config.xml into your directory.</span> Now, create a text file “<span
-class=SpellE><span style='font-size:11.0pt;font-family:"Courier New"'>hello.dml</span></span>”
+SystemML-config.xml into your directory.</span> Now, create a text file "<span
+class=SpellE><span style='font-size:11.0pt;font-family:"Courier New"'>hello.dml</span></span>"
 containing following code:</p>
 
 <p class=MsoNormal><span style='mso-tab-count:1'>            </span><span
 class=GramE><span style='font-size:11.0pt;font-family:"Courier New"'>print(</span></span><span
-style='font-size:11.0pt;font-family:"Courier New"'>“Hello World”);<o:p></o:p></span></p>
+style='font-size:11.0pt;font-family:"Courier New"'>"Hello World");<o:p></o:p></span></p>
 
 <p class=MsoNormal>To run this program on your machine, use following command:</p>
 
@@ -2398,7 +2398,7 @@ class=SpellE>hello.dml</span><o:p></o:p></span></p>
 
 <p class=MsoNormal>The option <span style='font-size:11.0pt;font-family:"Courier New"'>-f</span>
 in the above command refers to the path to the DML script. The detailed list of
-the options is given in the section “Invocation of SystemML”.<span
+the options is given in the section "Invocation of SystemML".<span
 style='mso-spacerun:yes'>  </span>Note: to install <span class=SpellE>Hadoop</span>,
 please follow the instructions given in the <a href="http://ibm.co/1yHtrdb">http://ibm.co/1yHtrdb</a></p>
 
@@ -2518,8 +2518,8 @@ respectively. Since A is a <span style='font-size:11.0pt;font-family:"Courier Ne
 it has to be converted to <span style='font-size:11.0pt;font-family:"Courier New"'>scalar</span>
 using a built-in function <span class=SpellE><span style='font-size:11.0pt;
 font-family:"Courier New";mso-bidi-font-style:italic'>as.scalar</span></span>.
-In the above script the operator “<span style='font-size:11.0pt;font-family:
-"Courier New";mso-bidi-font-style:italic'>+</span>” used inside <span
+In the above script the operator "<span style='font-size:11.0pt;font-family:
+"Courier New";mso-bidi-font-style:italic'>+</span>" used inside <span
 class=GramE><span style='font-size:11.0pt;font-family:"Courier New"'>print(</span></span><span
 style='font-size:11.0pt;font-family:"Courier New"'>)</span> function, performs
 string concatenation. Hence, the output of above script is as follows:</p>
@@ -2534,8 +2534,8 @@ class=GramE><span style='font-size:11.0pt;font-family:"Courier New";mso-bidi-fon
 italic'>(</span></span><span style='font-size:11.0pt;font-family:"Courier New";
 mso-bidi-font-style:italic'>A[1,1])</span> we would have used <span
 style='font-size:11.0pt;font-family:"Courier New";mso-bidi-font-style:italic'>A[1,1]</span>,
-then we will get an compilation error “<span style='font-size:11.0pt;
-font-family:"Courier New"'>print statement can only print scalars</span>”. </p>
+then we will get an compilation error "<span style='font-size:11.0pt;
+font-family:"Courier New"'>print statement can only print scalars</span>". </p>
 
 <h2><a name="_Toc425846320"><span style='mso-fareast-font-family:"Times New Roman"'>Comments</span></a><span
 style='mso-fareast-font-family:"Times New Roman"'><o:p></o:p></span></h2>
@@ -2826,8 +2826,8 @@ style='font-size:12.0pt'><span class=GramE>.</span> Operators<o:p></o:p></span><
   mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt;
   mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
   <p class=MsoNormal>Assignment (Lowest <span class=SpellE>precendence</span>).
-  Note: associativity of assignment “<span style='font-size:11.0pt;font-family:
-  "Courier New"'>a = b = 3</span>” is not supported</p>
+  Note: associativity of assignment "<span style='font-size:11.0pt;font-family:
+  "Courier New"'>a = b = 3</span>" is not supported</p>
   </td>
  </tr>
 </table>
@@ -3825,7 +3825,7 @@ style='mso-list:Ignore'>1.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp
 </span></span><![endif]>As named arguments (recommended): </p>
 
 <p class=MsoListParagraph><span style='font-size:10.0pt;font-family:"Courier New"'>-<span
-class=SpellE>nvargs</span> param1=7 param2=”<span class=SpellE>abc</span>”
+class=SpellE>nvargs</span> param1=7 param2="<span class=SpellE>abc</span>"
 param3=3.14<o:p></o:p></span></p>
 
 <p class=MsoListParagraph style='text-indent:-.25in;mso-list:l11 level1 lfo6'><![if !supportLists]><span
@@ -3833,11 +3833,11 @@ style='mso-list:Ignore'>2.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp
 </span></span><![endif]>As positional arguments (deprecated): </p>
 
 <p class=MsoListParagraph><span style='font-size:10.0pt;font-family:"Courier New"'>-<span
-class=SpellE>args</span> 7 “<span class=SpellE>abc</span>” 3.14<o:p></o:p></span></p>
+class=SpellE>args</span> 7 "<span class=SpellE>abc</span>" 3.14<o:p></o:p></span></p>
 
-<p class=MsoNormal>The named arguments can be accessed by adding “$” before the
+<p class=MsoNormal>The named arguments can be accessed by adding "$" before the
 parameter name, i.e. $param1. On the other hand, the positional parameter are
-accessible by adding “$” before their positions (starting from index 1), i.e.
+accessible by adding "$" before their positions (starting from index 1), i.e.
 $1. A string parameter can be passed without quote. For example, <span
 style='font-size:10.0pt;font-family:"Courier New"'>param2=<span class=SpellE><span
 class=GramE>abc</span></span> </span>is valid argument, but it is not
@@ -3874,10 +3874,10 @@ style='font-size:11.0pt;font-family:"Courier New";mso-bidi-font-style:italic'>if
 class=GramE><span style='font-size:11.0pt;font-family:"Courier New";mso-bidi-font-style:
 italic'>(</span></span><span style='font-size:11.0pt;font-family:"Courier New";
 mso-bidi-font-style:italic'>$<span class=SpellE>nbrRows</span>, 10)</span>
-function is a short-hand for “<span class=SpellE><span style='font-size:11.0pt;
+function is a short-hand for "<span class=SpellE><span style='font-size:11.0pt;
 font-family:"Courier New";mso-bidi-font-style:italic'>ifdef</span></span><span
 style='font-size:11.0pt;font-family:"Courier New";mso-bidi-font-style:italic'>($<span
-class=SpellE>nbrRows</span>) then $<span class=SpellE>nbrRows</span> else 10</span>”</p>
+class=SpellE>nbrRows</span>) then $<span class=SpellE>nbrRows</span> else 10</span>"</p>
 
 <p class=MsoNormal>Let’s assume that the above script is invoked using
 following the command line values:</p>
@@ -3888,9 +3888,9 @@ jar SystemML.jar -f <span class=SpellE>test.dml</span> -<span class=SpellE>nvarg
 class=SpellE>nbrRows</span>=5 <span class=SpellE>nbrCols</span>=5</p>
 
 <p class=MsoNormal>In this case, the script will create a random matrix M with
-5 rows and 5 columns and write it to the file “<span class=SpellE>text.mtx</span>”
+5 rows and 5 columns and write it to the file "<span class=SpellE>text.mtx</span>"
 in <span class=SpellE>csv</span> format. After that it will print the message
-“Done creating and writing random matrix in <span class=SpellE>test.mtx</span>”
+“Done creating and writing random matrix in <span class=SpellE>test.mtx</span>"
 on the standard output.</p>
 
 <p class=MsoNormal>If however, the above script is invoked from the command
@@ -3931,7 +3931,7 @@ value type<br>
 
 <p class=MsoNormal>In above example, the placeholder variable $<span
 class=SpellE>nbrCols</span> will be treated as integer in the script. If
-however, the command line arguments were “<span class=SpellE>nbrCols</span>=5.0”,
+however, the command line arguments were "<span class=SpellE>nbrCols</span>=5.0”,
 then it would be treated as a double.</p>
 
 <p class=MsoNormal><u>NOTE:</u><span style='mso-spacerun:yes'>  </span><span
@@ -4384,12 +4384,12 @@ Manipulation, and Aggregation Built-In Functions<o:p></o:p></span></p>
   of non-zero cells (constant value)</p>
   <p class=MsoNormal><span class=SpellE><span class=GramE>pdf</span></span><b
   style='mso-bidi-font-weight:normal'>:</b> “uniform” (min, max) distribution,
-  or “normal” (0,1) distribution; or “<span class=SpellE>poisson</span>”
+  or “normal” (0,1) distribution; or "<span class=SpellE>poisson</span>"
   (lambda=1) distribution. <span class=GramE>string</span>; default value is
   “uniform”. Note that, for the Poisson distribution, users can provide the
   mean/lambda parameter as follows:</p>
   <p class=MsoNormal><span class=GramE>rand(</span>rows=1000,cols=1000, <span
-  class=SpellE>pdf</span>=”<span class=SpellE>poisson</span>”, lambda=2.5). </p>
+  class=SpellE>pdf</span>="<span class=SpellE>poisson</span>", lambda=2.5). </p>
   <p class=MsoNormal>The default value for lambda is 1.</p>
   <p class=MsoNormal>Output: matrix<span style='mso-fareast-font-family:"Times New Roman";
   mso-fareast-theme-font:minor-fareast;color:black'><o:p></o:p></span></p>
@@ -5215,7 +5215,7 @@ style='font-size:12.0pt'>.Statistical Built-In Functions<o:p></o:p></span></p>
   <p class=MsoNormal>The parameter <span class=SpellE><i style='mso-bidi-font-style:
   normal'>fn</i></span> takes one of the following functions:
   &quot;count&quot;, &quot;sum&quot;, &quot;mean&quot;, &quot;variance&quot;,
-  &quot;<span class=SpellE>centralmoment</span>”. In the case of central
+  &quot;<span class=SpellE>centralmoment</span>". In the case of central
   moment, one must also provide the <i style='mso-bidi-font-style:normal'>order</i>
   of the moment that need to be computed (see example).</p>
   <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman";
@@ -5654,8 +5654,8 @@ style='font-size:12.0pt'>.Statistical Built-In Functions<o:p></o:p></span></p>
   <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'>Applies element
   wise binary operation <span style='mso-fareast-font-family:"Times New Roman";
   mso-fareast-theme-font:minor-fareast;color:black'>“op” (<span class=GramE>for<span
-  style='mso-spacerun:yes'>  </span>example</span>: “&lt;”, “==”, “&gt;=”, “*”,
-  “min”) on the all combination of vector. Note: Using “*”, we get outer
+  style='mso-spacerun:yes'>  </span>example</span>: "&lt;", "==", "&gt;=", "*",
+  “min”) on the all combination of vector. Note: Using "*", we get outer
   product of two vectors.</span></p>
   </td>
   <td width=133 valign=top style='width:99.65pt;border-top:none;border-left:
@@ -5868,10 +5868,10 @@ style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]><span class=SpellE><span class=GramE><span
 style='font-family:"Courier New"'>dist</span></span></span>: name of the
-distribution specified as a string. Valid values are “<i style='mso-bidi-font-style:
-normal'>normal</i>” (for Normal or Gaussian distribution), “f” (for F
-distribution), “t” (for Student t-distribution), “<span class=SpellE>chisq</span>”
-(for Chi Squared distribution), and “<span class=SpellE>exp</span>” (for
+distribution specified as a string. Valid values are "<i style='mso-bidi-font-style:
+normal'>normal</i>" (for Normal or Gaussian distribution), “f” (for F
+distribution), “t” (for Student t-distribution), "<span class=SpellE>chisq</span>"
+(for Chi Squared distribution), and "<span class=SpellE>exp</span>" (for
 Exponential distribution). This is a mandatory argument.</p>
 
 <p class=MsoListParagraph style='text-indent:-.25in;mso-list:l10 level1 lfo10'><![if !supportLists]><span
@@ -5919,8 +5919,8 @@ style='mso-list:Ignore'>o<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;
 </span></span></span><![endif]><span style='mso-bidi-font-size:14.0pt'>For </span><span
 class=SpellE><span style='mso-bidi-font-size:14.0pt;font-family:"Courier New"'>dist</span></span><span
 style='mso-bidi-font-size:14.0pt;font-family:"Courier New"'>=”t”</span><span
-style='mso-bidi-font-size:14.0pt'>, and <span class=SpellE>dist</span>=”<span
-class=SpellE>chisq</span>”, valid parameter is </span><span class=SpellE><span
+style='mso-bidi-font-size:14.0pt'>, and <span class=SpellE>dist</span>="<span
+class=SpellE>chisq</span>", valid parameter is </span><span class=SpellE><span
 class=GramE><span style='mso-bidi-font-size:14.0pt;font-family:"Courier New"'>df</span></span></span><span
 style='mso-bidi-font-size:14.0pt'> that specifies the degrees of freedom. This
 parameter is mandatory.<o:p></o:p></span></p>
@@ -5931,8 +5931,8 @@ mso-list:l10 level2 lfo10'><![if !supportLists]><span style='mso-bidi-font-size:
 style='mso-list:Ignore'>o<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;
 </span></span></span><![endif]><span style='mso-bidi-font-size:14.0pt'>For </span><span
 class=SpellE><span style='mso-bidi-font-size:14.0pt;font-family:"Courier New"'>dist</span></span><span
-style='mso-bidi-font-size:14.0pt;font-family:"Courier New"'>=”<span
-class=SpellE>exp</span>”</span><span style='mso-bidi-font-size:14.0pt'>, valid
+style='mso-bidi-font-size:14.0pt;font-family:"Courier New"'>="<span
+class=SpellE>exp</span>"</span><span style='mso-bidi-font-size:14.0pt'>, valid
 parameter is </span><span style='mso-bidi-font-size:14.0pt;font-family:"Courier New"'>rate</span><span
 style='mso-bidi-font-size:14.0pt'> that specifies the rate at which events
 occur. Note that the mean of exponential distribution is </span><span
@@ -6153,7 +6153,7 @@ color:black'><o:p>&nbsp;</o:p></span></p>
 style='font-family:"Courier New";mso-fareast-font-family:"Times New Roman";
 mso-fareast-theme-font:minor-fareast;color:black'>q=<span class=SpellE><span
 class=GramE>icdf</span></span><span class=GramE>(</span>target=p, <span
-class=SpellE>dist</span>=”<span class=SpellE>exp</span>”); <o:p></o:p></span></p>
+class=SpellE>dist</span>="<span class=SpellE>exp</span>"); <o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span class=GramE><span
 style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
@@ -6173,7 +6173,7 @@ color:black'><o:p>&nbsp;</o:p></span></p>
 style='font-family:"Courier New";mso-fareast-font-family:"Times New Roman";
 mso-fareast-theme-font:minor-fareast;color:black'>q=<span class=SpellE><span
 class=GramE>icdf</span></span><span class=GramE>(</span>target=p, <span
-class=SpellE>dist</span>=”<span class=SpellE>chisq</span>”, <span class=SpellE>df</span>=50);
+class=SpellE>dist</span>="<span class=SpellE>chisq</span>", <span class=SpellE>df</span>=50);
 <o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span class=GramE><span
@@ -6903,7 +6903,7 @@ below. </p>
   <td width=120 valign=top style='width:1.25in;border-top:none;border-left:
   none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
   padding:0in 5.4pt 0in 5.4pt;height:29.95pt'>
-  <p>Yes – only when format=”<span class=SpellE>csv</span>”.<span
+  <p>Yes – only when format="<span class=SpellE>csv</span>".<span
   style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast'><o:p></o:p></span></p>
   </td>
   <td width=156 valign=top style='width:117.0pt;border-top:none;border-left:
@@ -6934,7 +6934,7 @@ below. </p>
   <td width=120 valign=top style='width:1.25in;border-top:none;border-left:
   none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
   padding:0in 5.4pt 0in 5.4pt;height:29.95pt'>
-  <p>Yes – only when format=”<span class=SpellE>csv</span>”<span
+  <p>Yes – only when format="<span class=SpellE>csv</span>"<span
   style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast'><o:p></o:p></span></p>
   </td>
   <td width=156 valign=top style='width:117.0pt;border-top:none;border-left:
@@ -7305,7 +7305,7 @@ Function<o:p></o:p></span></h4>
 <p>The syntax of a read statement is as follows:<span style='mso-fareast-font-family:
 "Times New Roman";mso-fareast-theme-font:minor-fareast'><o:p></o:p></span></p>
 
-<p class=Code><span class=GramE>read(</span>“<span class=SpellE>inputfile</span>”,
+<p class=Code><span class=GramE>read(</span>"<span class=SpellE>inputfile</span>",
 [list of parameters])</p>
 
 <p><span class=GramE>where</span> <span class=SpellE>inputfile</span> is the
@@ -7314,9 +7314,9 @@ in MTD files. For &quot;<span class=SpellE>inputfile</span>&quot; parameter,
 the user can use constant string concatenation to give the full path of the
 file, where &quot;+&quot; is used as the concatenation operator. However, the
 file path must evaluate to a constant string at compile time. For example,
-“/my/<span class=SpellE>dir</span>”+“<span class=SpellE>filename.mtx</span>” is
-valid parameter but “/my/<span class=SpellE>dir</span>”+“filename”+i+“.<span
-class=SpellE>mtx</span>” is not (where i is a variable).</p>
+"/my/<span class=SpellE>dir</span>"+"<span class=SpellE>filename.mtx</span>" is
+valid parameter but "/my/<span class=SpellE>dir</span>"+“filename”+i+".<span
+class=SpellE>mtx</span>" is not (where i is a variable).</p>
 
 <p>The user has the option of specifying each parameter value either in the MTD
 file, the read function invocation, or in both locations. <b>However, parameter
@@ -7389,10 +7389,10 @@ parameters for <span class=GramE>write(</span>)<span style='mso-spacerun:yes'> 
 SystemML writes a MTD file for the written data.<span style='mso-fareast-font-family:
 "Times New Roman";mso-fareast-theme-font:minor-fareast'><o:p></o:p></span></p>
 
-<p class=Code><span class=GramE>write(</span>identifier, “<span class=SpellE>outputfile</span>”,
-format = “<span class=SpellE>fmt</span>”)</p>
+<p class=Code><span class=GramE>write(</span>identifier, "<span class=SpellE>outputfile</span>",
+format = "<span class=SpellE>fmt</span>")</p>
 
-<p>The user can use constant string concatenation in “<span class=SpellE>outputfile</span>”
+<p>The user can use constant string concatenation in "<span class=SpellE>outputfile</span>"
 parameter to give the full path of the file, where &quot;+&quot; is used as the
 concatenation operator. </p>
 
@@ -7548,7 +7548,7 @@ binary blocked format:</p>
 &quot;description&quot;: { &quot;author&quot;: &quot;SystemML&quot; } }</p>
 
 <p class=MsoNormal>Write a scalar integer value to HDFS file “out/<span
-class=SpellE>scalar_i</span>”</p>
+class=SpellE>scalar_i</span>"</p>
 
 <p class=Code><span class=GramE>write(</span>x, &quot;out/<span class=SpellE>scalar_i</span>&quot;);</p>
 
@@ -7804,7 +7804,7 @@ value (as in the 3<sup>rd</sup> row) and as a string “NA”. This information
 must be captured via <span class=SpellE><span style='font-size:11.0pt;
 font-family:"Courier New"'>na.strings</span></span> property in the <span
 class=SpellE>mtd</span> file associated with the input data. Assuming that this
-data is stored in CSV format with “,” as the delimiter, the <span class=SpellE>mtd</span>
+data is stored in CSV format with "," as the delimiter, the <span class=SpellE>mtd</span>
 file <span class=SpellE><span style='font-size:11.0pt;font-family:"Courier New"'>data.csv.mtd</span></span>
 would look as follows:</p>
 
@@ -7856,8 +7856,8 @@ style='font-size:10.0pt;font-family:"Courier New"'>{<o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'><span
-style='mso-spacerun:yes'>   </span>“<span class=GramE>omit</span>” : [ “<span
-class=SpellE>zipcode</span>” ]<o:p></o:p></span></p>
+style='mso-spacerun:yes'>   </span>"<span class=GramE>omit</span>" : [ "<span
+class=SpellE>zipcode</span>" ]<o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'><span
@@ -8146,23 +8146,23 @@ style='font-size:10.0pt;font-family:"Courier New"'> = transform(target = input,
 style='font-size:10.0pt;font-family:"Courier New"'><span
 style='mso-spacerun:yes'>     </span><span
 style='mso-spacerun:yes'>              </span><span class=SpellE>transformPath</span>
-<span class=GramE>= ”</span>...”, <o:p></o:p></span></p>
+<span class=GramE>= "</span>...", <o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'><span
 style='mso-spacerun:yes'>     </span><span
 style='mso-spacerun:yes'>              </span><span class=SpellE>transformSpec</span>
-<span class=GramE>= ”</span>...”, <o:p></o:p></span></p>
+<span class=GramE>= "</span>...", <o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'><span
 style='mso-spacerun:yes'>                   </span><span class=SpellE>applyTransformPath</span>
-<span class=GramE>= ”</span>...”,<o:p></o:p></span></p>
+<span class=GramE>= "</span>...",<o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'><span
 style='mso-spacerun:yes'>                   </span><span class=SpellE><span
-class=GramE>outputNames</span></span> = “...”)<o:p></o:p></span></p>
+class=GramE>outputNames</span></span> = "...")<o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><o:p>&nbsp;</o:p></p>
 
@@ -8199,7 +8199,7 @@ class=SpellE>tfD</span>);<o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span class=GramE><span
 style='font-size:10.0pt;font-family:"Courier New"'>print(</span></span><span
-style='font-size:10.0pt;font-family:"Courier New"'>“Sum = “ + s);<o:p></o:p></span></p>
+style='font-size:10.0pt;font-family:"Courier New"'>“Sum = " + s);<o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span class=GramE><span
 style='font-size:10.0pt;font-family:"Courier New"'>write(</span></span><span
@@ -8247,7 +8247,7 @@ style='mso-bidi-font-weight:normal'><span style='font-size:10.0pt;font-family:
 "Courier New"'>Training Phase<o:p></o:p></span></b></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
-style='font-size:10.0pt;font-family:"Courier New"'>Train = <span class=GramE>read(</span>“/user/<span
+style='font-size:10.0pt;font-family:"Courier New"'>Train = <span class=GramE>read(</span>"/user/<span
 class=SpellE>biuser</span>/trainset.csv”);<o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span class=SpellE><span
@@ -8256,14 +8256,14 @@ style='font-size:10.0pt;font-family:"Courier New"'> = transform(target=Train, <o
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'><span
-style='mso-spacerun:yes'>                   </span><span class=SpellE>transformSpec</span>=”/user/<span
-class=SpellE>biuser</span>/<span class=SpellE>tf.spec.json</span>”,<span
+style='mso-spacerun:yes'>                   </span><span class=SpellE>transformSpec</span>="/user/<span
+class=SpellE>biuser</span>/<span class=SpellE>tf.spec.json</span>",<span
 style='mso-spacerun:yes'>  </span><o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'><span
-style='mso-spacerun:yes'>                   </span><span class=SpellE>transformPath</span>=”/user/<span
-class=SpellE>biuser</span>/<span class=SpellE>train_tf_metadata</span>”);<o:p></o:p></span></p>
+style='mso-spacerun:yes'>                   </span><span class=SpellE>transformPath</span>="/user/<span
+class=SpellE>biuser</span>/<span class=SpellE>train_tf_metadata</span>");<o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'># Build a predictive model
@@ -8280,7 +8280,7 @@ style='mso-bidi-font-weight:normal'><span style='font-size:10.0pt;font-family:
 "Courier New"'>Testing Phase<o:p></o:p></span></b></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
-style='font-size:10.0pt;font-family:"Courier New"'>Test = <span class=GramE>read(</span>“/user/<span
+style='font-size:10.0pt;font-family:"Courier New"'>Test = <span class=GramE>read(</span>"/user/<span
 class=SpellE>biuser</span>/testset.csv”);<o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span class=SpellE><span
@@ -8289,13 +8289,13 @@ style='font-size:10.0pt;font-family:"Courier New"'> = transform(target=Test, <o:
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'><span
-style='mso-spacerun:yes'>                  </span><span class=SpellE>transformPath</span>=”/user/<span
-class=SpellE>biuser</span>/<span class=SpellE>test_tf_metadata</span>”, <o:p></o:p></span></p>
+style='mso-spacerun:yes'>                  </span><span class=SpellE>transformPath</span>="/user/<span
+class=SpellE>biuser</span>/<span class=SpellE>test_tf_metadata</span>", <o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'><span
-style='mso-spacerun:yes'>                  </span><span class=SpellE>applyTransformPath</span>=”/user/<span
-class=SpellE>biuser</span>/<span class=SpellE>train_tf_metdata</span>”);<o:p></o:p></span></p>
+style='mso-spacerun:yes'>                  </span><span class=SpellE>applyTransformPath</span>="/user/<span
+class=SpellE>biuser</span>/<span class=SpellE>train_tf_metdata</span>");<o:p></o:p></span></p>
 
 <p class=MsoNormal style='margin:0in;margin-bottom:.0001pt'><span
 style='font-size:10.0pt;font-family:"Courier New"'># Test the model using <span

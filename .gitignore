@@ -12,6 +12,9 @@
 *.iml
 *.iws
 
+# checksum files
+*.crc
+
 # Build artifacts
 target/
 pom.xml.tag

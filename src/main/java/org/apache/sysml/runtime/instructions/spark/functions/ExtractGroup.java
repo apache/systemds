@@ -24,11 +24,8 @@ import java.util.ArrayList;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 import scala.Tuple2;
-
-import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -39,28 +36,22 @@ public class ExtractGroup  implements PairFlatMapFunction<Tuple2<MatrixIndexes,T
 	@Override
 	public Iterable<Tuple2<Long, WeightedCell>> call(
 			Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg)
-			throws Exception {
+			throws Exception 
+	{
 		MatrixBlock group = arg._2._1;
 		MatrixBlock target = arg._2._2;
 		
-		ArrayList<Double> groupIDs = getColumn(group);
-		ArrayList<Double> values = getColumn(target);
-		ArrayList<Tuple2<Long, WeightedCell>> groupValuePairs = new ArrayList<Tuple2<Long, WeightedCell>>();
-		
-		if(groupIDs.size() != values.size()) {
-			throw new Exception("The blocksize for group and target block are mismatched: " + groupIDs.size()  + " != " + values.size());
+		//sanity check matching block dimensions
+		if(group.getNumRows() != target.getNumRows()) {
+			throw new Exception("The blocksize for group and target blocks are mismatched: " + group.getNumRows()  + " != " + target.getNumRows());
 		}
 		
-		for(int i = 0; i < groupIDs.size(); i++) {
+		//output weighted cells
+		ArrayList<Tuple2<Long, WeightedCell>> groupValuePairs = new ArrayList<Tuple2<Long, WeightedCell>>();
+		for(int i = 0; i < group.getNumRows(); i++) {
 			WeightedCell weightedCell = new WeightedCell();
-			try {
-				weightedCell.setValue(values.get(i));
-			}
-			catch(Exception e) {
-				weightedCell.setValue(0);
-			}
-			weightedCell.setWeight(1.0);
-			long groupVal = UtilFunctions.toLong(groupIDs.get(i));
+			weightedCell.setValue(target.quickGetValue(i, 0));
+			long groupVal = UtilFunctions.toLong(group.quickGetValue(i, 0));
 			if(groupVal < 1) {
 				throw new Exception("Expected group values to be greater than equal to 1 but found " + groupVal);
 			}
@@ -68,26 +59,4 @@ public class ExtractGroup  implements PairFlatMapFunction<Tuple2<MatrixIndexes,T
 		}
 		return groupValuePairs;
 	}
-	
-	
-	public ArrayList<Double> getColumn(MatrixBlock blk) throws Exception {
-		ArrayList<Double> retVal = new ArrayList<Double>();
-		if(blk != null) {
-			if (blk.isInSparseFormat()) {
-				SparseRowsIterator iter = blk.getSparseRowsIterator();
-				while( iter.hasNext() ) {
-					IJV cell = iter.next();
-					retVal.add(cell.v);
-				}
-			}
-			else {
-				double[] valuesInBlock = blk.getDenseArray();
-				for(int i = 0; i < valuesInBlock.length; i++) {
-					retVal.add(valuesInBlock[i]);
-				}
-			}
-		}
-		return retVal;
-	}
-	
 }

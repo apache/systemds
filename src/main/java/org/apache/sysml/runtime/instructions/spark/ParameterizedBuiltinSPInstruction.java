@@ -50,7 +50,6 @@ import org.apache.sysml.runtime.instructions.spark.functions.ExtractGroupNWeight
 import org.apache.sysml.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
 import org.apache.sysml.runtime.instructions.spark.functions.PerformGroupByAggInReducer;
 import org.apache.sysml.runtime.instructions.spark.functions.ReplicateVectorFunction;
-import org.apache.sysml.runtime.instructions.spark.functions.UnflattenIterablesAfterCogroup;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -202,15 +201,12 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 					throw new DMLRuntimeException("Grouped Aggregate SPInstruction is not supported for dimension of target != weights");
 				}
 				
-				groupWeightedCells = groups.cogroup(target)
-						.mapToPair(new UnflattenIterablesAfterCogroup())
-						.cogroup(weights)
+				groupWeightedCells = groups.join(target).join(weights)
 						.flatMapToPair(new ExtractGroupNWeights());	
 			}
 			else {
-				groupWeightedCells = groups.cogroup(target)
-							.mapToPair(new UnflattenIterablesAfterCogroup())
-							.flatMapToPair(new ExtractGroup());
+				groupWeightedCells = groups.join(target)
+						.flatMapToPair(new ExtractGroup());
 			}
 			
 			// Step 2: Make sure we have brlen required while creating <MatrixIndexes, MatrixCell> 

@@ -157,7 +157,7 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 		if( _chainType == ChainType.XtXv ){
 			indexes.add(_input2);
 		}
-		else if( _chainType == ChainType.XtwXv ){
+		else {
 			indexes.add(_input2);
 			indexes.add(_input3);	
 		}
@@ -210,7 +210,7 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 				if( _chainType == ChainType.XtXv )
 					processXtXvOperations(inIx, inVal, outIx, outVal);
 				else
-					processXtwXvOperations(inIx, inVal, outIx, outVal);
+					processXtwXvOperations(inIx, inVal, outIx, outVal, _chainType);
 				
 				//put the output value in the cache
 				if(iout==tempValue)
@@ -253,7 +253,7 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
-	private void processXtwXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal )
+	private void processXtwXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal, ChainType chain )
 		throws DMLRuntimeException, DMLUnsupportedOperationException
 	{
 		DistributedCacheInput dcInput2 = MRBaseForCommonInstructions.dcValues.get(_input2); //v
@@ -263,7 +263,7 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 		MatrixBlock w = (MatrixBlock) dcInput3.getDataBlock((int)inIx.getRowIndex(), 1).getValue();
 		
 		//process core block operation
-		Xi.chainMatrixMultOperations(v, w, (MatrixBlock) outVal, ChainType.XtwXv);
+		Xi.chainMatrixMultOperations(v, w, (MatrixBlock) outVal, chain);
 		outIx.setIndexes(1, 1);
 	}
 }

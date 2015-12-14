@@ -21,7 +21,9 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -64,8 +66,25 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"B"}));
 		addTestConfiguration(TEST_NAME2,
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"B"}));
+
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
 	}
 
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
+	}
 	
 	@Test
 	public void testSampleProportionVectorDenseCP() 
@@ -241,7 +260,14 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 			double sparsity = (sparse) ? spSparse : spDense;
 			String TEST_NAME = testname;
 			
-			getAndLoadTestConfiguration(TEST_NAME);
+			String TEST_CACHE_DIR = "";
+			if (TEST_CACHE_ENABLED)
+			{
+				TEST_CACHE_DIR = testname + type.ordinal() + "_" + sparsity + "/";
+			}
+			
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;

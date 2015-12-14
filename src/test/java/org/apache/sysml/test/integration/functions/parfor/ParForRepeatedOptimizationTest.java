@@ -21,8 +21,9 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
-
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -57,6 +58,23 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"R"}) ); 
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[]{"R"}) ); 
 		
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
+	}
+	
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 
 	@Test
@@ -122,7 +140,14 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
-		loadTestConfiguration(config);
+		
+		String TEST_CACHE_DIR = "";
+		if (TEST_CACHE_ENABLED)
+		{
+			TEST_CACHE_DIR = TEST_NAME +  "/";
+		}
+		
+		loadTestConfiguration(config, TEST_CACHE_DIR);
 		
 		try
 		{

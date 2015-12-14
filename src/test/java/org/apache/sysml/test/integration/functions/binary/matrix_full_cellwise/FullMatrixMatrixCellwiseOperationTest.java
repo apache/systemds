@@ -21,6 +21,8 @@ package org.apache.sysml.test.integration.functions.binary.matrix_full_cellwise;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -68,6 +70,24 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"C"})); 
 		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[]{"C"})); 
 		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4,new String[]{"C"})); 
+
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
+	}
+
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 
 	// ----------------
@@ -754,18 +774,6 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 			}
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			loadTestConfiguration(config);
-			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args",
-				input("A"), Integer.toString(rows), Integer.toString(cols),
-				input("B"), Integer.toString(rows), Integer.toString(cols),
-				output("C") };
-			
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//get sparsity
 			double lsparsity1 = 1.0, lsparsity2 = 1.0;
@@ -779,6 +787,25 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 				case SPARSE: lsparsity2 = sparsity2; break;
 				case EMPTY: lsparsity2 = 0.0; break;
 			}
+			
+			String TEST_CACHE_DIR = "";
+			if (TEST_CACHE_ENABLED && (type != OpType.DIVISION))
+			{
+				TEST_CACHE_DIR = type.ordinal() + "_" + lsparsity1 + "_" + lsparsity2 + "/";
+			}
+			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
+			
+			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[]{"-explain", "-args",
+				input("A"), Integer.toString(rows), Integer.toString(cols),
+				input("B"), Integer.toString(rows), Integer.toString(cols),
+				output("C") };
+			
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, 0, (lsparsity1==0)?0:1, lsparsity1, 7); 

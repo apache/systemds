@@ -272,24 +272,17 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 				TEST_CACHE_DIR = "mm" + String.valueOf(sparsityA) + "_" + String.valueOf(sparsityB) + "/";
 			}
 			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
+			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
-			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", TARGET_IN + "A",
-                                            Integer.toString(rowsA),
-                                            Integer.toString(colsA),
-                                            TARGET_IN + "B",
-                                            Integer.toString(rowsB),
-                                            Integer.toString(colsB),
-                                            TARGET_OUT + "C"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       TARGET_IN + " " + TARGET_EXPECTED;
+			programArgs = new String[]{"-args",
+				input("A"), Integer.toString(rowsA), Integer.toString(colsA),
+				input("B"), Integer.toString(rowsB), Integer.toString(colsB), output("C") };
 			
-			loadTestConfiguration(config, TEST_CACHE_DIR);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rowsA, colsA, 0, 1, sparsityA, 7); 
@@ -337,24 +330,17 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 				TEST_CACHE_DIR = "mv" + String.valueOf(sparsityA) + "/";
 			}
 			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
+			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String TARGET_IN = TEST_DATA_DIR + TEST_CLASS_DIR + INPUT_DIR;
-			String TARGET_OUT = TEST_DATA_DIR + TEST_CLASS_DIR + OUTPUT_DIR;
-			String TARGET_EXPECTED = TEST_DATA_DIR + TEST_CLASS_DIR + EXPECTED_DIR + TEST_CACHE_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", TARGET_IN + "A",
-					                        Integer.toString(rowsA),
-					                        Integer.toString(colsA),
-					                        TARGET_IN + "B",
-					                        Integer.toString(rowsB),
-					                        Integer.toString(1),
-					                        TARGET_OUT + "C"    };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       TARGET_IN + " " + TARGET_EXPECTED;
+			programArgs = new String[]{"-args",
+				input("A"), Integer.toString(rowsA), Integer.toString(colsA),
+				input("B"), Integer.toString(rowsB), Integer.toString(1), output("C") };
 			
-			loadTestConfiguration(config, TEST_CACHE_DIR);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rowsA, colsA, 0, 1, sparsityA, 7); 

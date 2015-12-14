@@ -21,7 +21,9 @@ package org.apache.sysml.test.integration.functions.binary.matrix;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -40,11 +42,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "MapMultChain";
 	private final static String TEST_NAME2 = "MapMultChainWeights";
+	private final static String TEST_NAME3 = "MapMultChainWeights2";
 	private final static String TEST_DIR = "functions/binary/matrix/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + MapMultChainTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	
-	private final static int rowsX = 3468;
+	private final static int rowsX = 3471; //mod 8 = 7
 	private final static int colsX = 567;
 	
 	private final static double sparsity1 = 0.7;
@@ -59,8 +62,28 @@ public class MapMultChainTest extends AutomatedTestBase
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" })); 
 		addTestConfiguration(TEST_NAME2, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" })); 
+		addTestConfiguration(TEST_NAME3, 
+				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" })); 
+		
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
 	}
 
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
+	}
+	
 	@Test
 	public void testMapMultChainNoRewriteDenseCP() 
 	{
@@ -71,6 +94,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	public void testMapMultChainWeightsNoRewriteDenseCP() 
 	{
 		runMapMultChainTest(TEST_NAME2, false, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testMapMultChainWeights2NoRewriteDenseCP() 
+	{
+		runMapMultChainTest(TEST_NAME3, false, false, ExecType.CP);
 	}
 	
 	@Test
@@ -86,6 +115,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMapMultChainWeights2NoRewriteSparseCP() 
+	{
+		runMapMultChainTest(TEST_NAME3, true, false, ExecType.CP);
+	}
+	
+	@Test
 	public void testMapMultChainRewriteDenseCP() 
 	{
 		runMapMultChainTest(TEST_NAME1, false, true, ExecType.CP);
@@ -95,6 +130,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	public void testMapMultChainWeightsRewriteDenseCP() 
 	{
 		runMapMultChainTest(TEST_NAME2, false, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testMapMultChainWeights2RewriteDenseCP() 
+	{
+		runMapMultChainTest(TEST_NAME3, false, true, ExecType.CP);
 	}
 	
 	@Test
@@ -110,6 +151,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMapMultChainWeights2RewriteSparseCP() 
+	{
+		runMapMultChainTest(TEST_NAME3, true, true, ExecType.CP);
+	}
+	
+	@Test
 	public void testMapMultChainNoRewriteDenseMR() 
 	{
 		runMapMultChainTest(TEST_NAME1, false, false, ExecType.MR);
@@ -119,6 +166,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	public void testMapMultChainWeightsNoRewriteDenseMR() 
 	{
 		runMapMultChainTest(TEST_NAME2, false, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testMapMultChainWeights2NoRewriteDenseMR() 
+	{
+		runMapMultChainTest(TEST_NAME3, false, false, ExecType.MR);
 	}
 	
 	@Test
@@ -134,6 +187,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMapMultChainWeights2NoRewriteSparseMR() 
+	{
+		runMapMultChainTest(TEST_NAME3, true, false, ExecType.MR);
+	}
+	
+	@Test
 	public void testMapMultChainRewriteDenseMR() 
 	{
 		runMapMultChainTest(TEST_NAME1, false, true, ExecType.MR);
@@ -143,6 +202,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	public void testMapMultChainWeightsRewriteDenseMR() 
 	{
 		runMapMultChainTest(TEST_NAME2, false, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testMapMultChainWeights2RewriteDenseMR() 
+	{
+		runMapMultChainTest(TEST_NAME3, false, true, ExecType.MR);
 	}
 	
 	@Test
@@ -158,6 +223,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMapMultChainWeights2RewriteSparseMR() 
+	{
+		runMapMultChainTest(TEST_NAME3, true, true, ExecType.MR);
+	}
+	
+	@Test
 	public void testMapMultChainNoRewriteDenseSpark() 
 	{
 		runMapMultChainTest(TEST_NAME1, false, false, ExecType.SPARK);
@@ -167,6 +238,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	public void testMapMultChainWeightsNoRewriteDenseSpark() 
 	{
 		runMapMultChainTest(TEST_NAME2, false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMapMultChainWeights2NoRewriteDenseSpark() 
+	{
+		runMapMultChainTest(TEST_NAME3, false, false, ExecType.SPARK);
 	}
 	
 	@Test
@@ -182,6 +259,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMapMultChainWeights2NoRewriteSparseSpark() 
+	{
+		runMapMultChainTest(TEST_NAME3, true, false, ExecType.SPARK);
+	}
+	
+	@Test
 	public void testMapMultChainRewriteDenseSpark() 
 	{
 		runMapMultChainTest(TEST_NAME1, false, true, ExecType.SPARK);
@@ -194,6 +277,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testMapMultChainWeights2RewriteDenseSpark() 
+	{
+		runMapMultChainTest(TEST_NAME3, false, true, ExecType.SPARK);
+	}
+	
+	@Test
 	public void testMapMultChainRewriteSparseSpark() 
 	{
 		runMapMultChainTest(TEST_NAME1, true, true, ExecType.SPARK);
@@ -203,6 +292,12 @@ public class MapMultChainTest extends AutomatedTestBase
 	public void testMapMultChainWeightsRewriteSparseSpark() 
 	{
 		runMapMultChainTest(TEST_NAME2, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMapMultChainWeights2RewriteSparseSpark() 
+	{
+		runMapMultChainTest(TEST_NAME3, true, true, ExecType.SPARK);
 	}
 
 	/**
@@ -232,9 +327,10 @@ public class MapMultChainTest extends AutomatedTestBase
 		try
 		{
 			String TEST_NAME = testname;
-			getAndLoadTestConfiguration(TEST_NAME);
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			String TEST_CACHE_DIR = (TEST_CACHE_ENABLED)? TEST_NAME + "_" + sparse + "/" : "";
+			loadTestConfiguration(config, TEST_CACHE_DIR);
 			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-stats","-args", 
@@ -248,7 +344,7 @@ public class MapMultChainTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("X", X, true);
 			double[][] v = getRandomMatrix(colsX, 1, 0, 1, sparsity1, 3);
 			writeInputMatrixWithMTD("v", v, true);
-			if( TEST_NAME.equals(TEST_NAME2) ){
+			if( !TEST_NAME.equals(TEST_NAME1) ){
 				double[][] w = getRandomMatrix(rowsX, 1, 0, 1, sparse?sparsity2:sparsity1, 10);
 				writeInputMatrixWithMTD("w", w, true);
 			}

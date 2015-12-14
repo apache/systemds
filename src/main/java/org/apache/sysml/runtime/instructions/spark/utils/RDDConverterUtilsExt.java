@@ -424,7 +424,6 @@ public class RDDConverterUtilsExt
 		
 	}
 	
-	@SuppressWarnings("unused")
 	private static class CSVToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<Text,Long>>,MatrixIndexes,MatrixBlock> {
 		private static final long serialVersionUID = 1501589201971233542L;
 		
@@ -472,13 +471,11 @@ public class RDDConverterUtilsExt
 			_aNnz = aNnz;
 		}
 		
-		@SuppressWarnings("unused")
 		public RowAnalysisFunctionHelper( Accumulator<Double> aNnz, String delim ) {
 			_aNnz = aNnz;
 			_delim = delim;
 		}
 		
-		@SuppressWarnings("unused")
 		public String analyzeText(Text v1) throws Exception {
 			//parse input line
 			String line = v1.toString();

@@ -21,7 +21,9 @@ package org.apache.sysml.test.integration.functions.binary.matrix;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -72,6 +74,24 @@ public class UaggOuterChainTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" })); 
+
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
+	}
+
+	@BeforeClass
+	public static void init()
+	{
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	@AfterClass
+	public static void cleanUp()
+	{
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 	
 	// Less Uagg RowSums -- MR
@@ -1136,7 +1156,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 	// Uagg RowIndexMin -- SP
 
 	@Test
-	public void TESTEQUALSUAGGOUTERCHAINROWINDEXMINSINGLEDENSESP() 
+	public void testEqualsUaggOuterChainRowIndexMinSingleDenseSP() 
 	{
 		 runBinUaggTest(TEST_NAME1, Type.EQUALS, true, false, SumType.ROW_INDEX_MIN, false, ExecType.SPARK);
 	}
@@ -1230,7 +1250,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 		try
 		{
 			String TEST_NAME = testname;
-			getAndLoadTestConfiguration(TEST_NAME);
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 
@@ -1275,14 +1295,6 @@ public class UaggOuterChainTest extends AutomatedTestBase
 					strSumTypeSuffix = new String("RowIndexMin");
 					break;
 			}
-			
-			String HOME = SCRIPT_DIR + TEST_DIR;			
-			fullDMLScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix + ".dml";
-			programArgs = new String[]{"-stats", "-explain","-args", 
-				input("A"), input("B"), output("C")};
-			
-			fullRScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix +".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			double dAMinVal = -1, dAMaxVal = 1, dBMinVal = -1, dBMaxVal = 1;
 			
@@ -1294,12 +1306,30 @@ public class UaggOuterChainTest extends AutomatedTestBase
 					dBMinVal = 0;
 					dBMaxVal = 0;
 				}
-				
-					
+			
+			double sparsity = sparse?sparsity2:sparsity1;
+			
+			String TEST_CACHE_DIR = "";
+			if (TEST_CACHE_ENABLED)
+			{
+				TEST_CACHE_DIR = type.ordinal() + "_"+ sumType.ordinal() + "_" +
+						singleBlock + "_" + sparsity + "_" + bEmptyBlock + "/";
+			}
+			
+			loadTestConfiguration(config, TEST_CACHE_DIR);
+			
+			String HOME = SCRIPT_DIR + TEST_DIR;			
+			fullDMLScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix + ".dml";
+			programArgs = new String[]{"-stats", "-explain","-args", 
+				input("A"), input("B"), output("C")};
+			
+			fullRScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix +".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+			
 			//generate actual datasets
-			double[][] A = getRandomMatrix(rows, 1, dAMinVal, dAMaxVal, sparse?sparsity2:sparsity1, 235);
+			double[][] A = getRandomMatrix(rows, 1, dAMinVal, dAMaxVal, sparsity, 235);
 			writeInputMatrixWithMTD("A", A, true);
-			double[][] B = getRandomMatrix(1, singleBlock?cols1:cols2, dBMinVal, dBMaxVal, sparse?sparsity2:sparsity1, 124);
+			double[][] B = getRandomMatrix(1, singleBlock?cols1:cols2, dBMinVal, dBMaxVal, sparsity, 124);
 			writeInputMatrixWithMTD("B", B, true);
 			
 			runTest(true, false, null, -1); 

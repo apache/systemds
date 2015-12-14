@@ -70,7 +70,7 @@ $c_j := mean(S_j)$
 
 After Step 1, the centroids are generally
 different from the cluster means, so we can compute another
-“within-cluster sum of squares” based on the centroids:
+"within-cluster sum of squares" based on the centroids:
 
 $$\textrm{WCSS_C}\,\,=\,\, \sum_{i=1}^n \,\big\|x_i - \mathop{\textrm{centroid}}(S_j: x_i\in S_j)\big\|_2^2
 \label{eqn:WCSS:C}$$ 
@@ -94,7 +94,7 @@ report the best result.
 
 **Scoring.** Our scoring script evaluates the clustering output by comparing it with
 a known category assignment. Since cluster labels have no prior
-correspondence to the categories, we cannot count “correct” and “wrong”
+correspondence to the categories, we cannot count "correct" and "wrong"
 cluster assignments. Instead, we quantify them in two ways:
 
   1. Count how many same-category and different-category pairs of records end
@@ -104,9 +104,9 @@ each cluster, count the prevalence of its most common category.
 
 The number of categories and the number of clusters ($k$) do not have to
 be equal. A same-category pair of records clustered into the same
-cluster is viewed as a “true positive,” a different-category pair
-clustered together is a “false positive,” a same-category pair clustered
-apart is a “false negative” etc.
+cluster is viewed as a "true positive," a different-category pair
+clustered together is a "false positive," a same-category pair clustered
+apart is a "false negative" etc.
 
 
 ### Usage
@@ -210,7 +210,7 @@ centroids)
 SystemML Language Reference for details.
 
 **verb**: (default: `0`) `0` = do not print per-iteration statistics for
-each run, `1` = print them (the “verbose” option)
+each run, `1` = print them (the "verbose" option)
 
 
 ### Arguments - K-Means Prediction
@@ -224,7 +224,7 @@ X and C are provided, `prY` is an
 output, not input
 
 **spY**: (default: `" "`) Location to read a one-column matrix with the externally
-specified “true” assignment of records (rows) to categories, optional
+specified "true" assignment of records (rows) to categories, optional
 for prediction without scoring
 
 **prY**: (default: `" "`) Location to read (or write, if X and
@@ -331,7 +331,7 @@ To predict Y given X and C:
 </div>
 </div>
 
-To compare “actual” labels `spY` with “predicted” labels
+To compare "actual" labels `spY` with "predicted" labels
 given X and C:
 
 <div class="codetabs">
@@ -357,7 +357,7 @@ given X and C:
 </div>
 </div>
 
-To compare “actual” labels `spY` with given “predicted”
+To compare "actual" labels `spY` with given "predicted"
 labels prY:
 
 <div class="codetabs">
@@ -601,7 +601,7 @@ well as the number of iterations limit.
   * Find the closest centroid for each record, sharing equally any records
 with multiple closest centroids.
   * Compute the number of records closest to each centroid, checking for
-“runaway” centroids with no records left (in which case the run fails).
+"runaway" centroids with no records left (in which case the run fails).
   * Compute the new centroids by averaging the records in their clusters.
 
 When a termination condition is satisfied, we store the centroids and

@@ -226,7 +226,7 @@ univariate statistic.
 
 The following table lists the number and name of each univariate statistic. The row
 numbers below correspond to the elements of the first column in the output 
-matrix above. The signs “+” show applicability to scale or/and to categorical 
+matrix above. The signs "+" show applicability to scale or/and to categorical 
 features.
 
   | Row | Name of Statistic          | Scale | Categ. |

@@ -1,13 +1,32 @@
+<!--
+{% comment %}
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to you under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+{% endcomment %}
+-->
+
 # SystemML
 
 SystemML is a flexible, scalable machine learning (ML) system.
 SystemML's distinguishing characteristics are: (1) algorithm customizability,
-(2) multiple execution modes, including Standalone, Hadoop Batch, and Spark Batch,
+(2) multiple execution modes, including Standalone, Hadoop Batch, Spark Batch, and MLContext,
 and (3) automatic optimization.
 
 [SystemML](http://systemml.apache.org/) is now an Apache Incubator project.
 The latest project documentation can be found at the 
-[SystemML Documentation](http://apache.github.io/incubator-systemml/) web site on GitHub.
+[SystemML Documentation](http://apache.github.io/incubator-systemml/) website on GitHub.
 
 
 ### Algorithm Customizability
@@ -49,6 +68,10 @@ SystemML will build on Windows, Linux, or MacOS and requires Maven 3 and Java 7 
 To build SystemML, run:
 
     mvn clean package
+
+To build the SystemML distributions (`.tar.gz`, `.zip`, etc.), run:
+
+    mvn clean package -P distribution
 
 
 * * *
@@ -298,6 +321,8 @@ For convenience, we can encapsulate our DML invocations in a single script:
 	./bin/systemml ./scripts/algorithms/GLM-predict.dml -nvargs X=linRegData.test.data.csv Y=linRegData.test.labels.csv B=betas.csv fmt=csv
 
 
-In this example, we've seen a small part of the capabilities of SystemML. For more detailed information,
-please consult the SystemML Algorithm Reference and SystemML Language Reference.
+In this example, we've seen a small part of the capabilities of SystemML. For more detailed information, please consult the 
+[Apache SystemML (incubating)](http://systemml.apache.org/) website and the
+[SystemML Documentation](http://apache.github.io/incubator-systemml/) website on GitHub.
+
 

@@ -46,21 +46,22 @@ public class AdditionTest extends AutomatedTestBase
 {
 
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + AdditionTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		// positive tests
-		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "AdditionTest",
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_CLASS_DIR, "AdditionTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "AdditionTest",
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_CLASS_DIR, "AdditionTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "AdditionTest",
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_CLASS_DIR, "AdditionTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "AdditionTest",
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_CLASS_DIR, "AdditionTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
 		
 		// negative tests
-		addTestConfiguration("BooleanTest", new TestConfiguration(TEST_DIR, "AdditionSingleTest",
+		addTestConfiguration("BooleanTest", new TestConfiguration(TEST_CLASS_DIR, "AdditionSingleTest",
 				new String[] { "out" }));
 	}
 	

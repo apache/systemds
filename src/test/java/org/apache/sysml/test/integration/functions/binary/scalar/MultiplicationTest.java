@@ -25,22 +25,21 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
 
-
 public class MultiplicationTest extends AutomatedTestBase 
 {
-
 	
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + MultiplicationTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "MultiplicationTest",
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_CLASS_DIR, "MultiplicationTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "MultiplicationTest",
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_CLASS_DIR, "MultiplicationTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "MultiplicationTest",
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_CLASS_DIR, "MultiplicationTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "MultiplicationTest",
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_CLASS_DIR, "MultiplicationTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
 	}
 	

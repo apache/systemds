@@ -27,25 +27,25 @@ import org.apache.sysml.test.integration.TestConfiguration;
 
 public class DivisionTest extends AutomatedTestBase 
 {
-
 	
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + DivisionTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "DivisionTest", new String[] {
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_CLASS_DIR, "DivisionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_int" }));
-		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "DivisionTest", new String[] { "int_int",
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_CLASS_DIR, "DivisionTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "DivisionTest", new String[] { "int_int",
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_CLASS_DIR, "DivisionTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "DivisionTest", new String[] { "int_int",
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_CLASS_DIR, "DivisionTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		addTestConfiguration("PositiveDivisionByZeroTest", new TestConfiguration(TEST_DIR, "DivisionSingleTest",
+		addTestConfiguration("PositiveDivisionByZeroTest", new TestConfiguration(TEST_CLASS_DIR, "DivisionSingleTest",
 				new String[] { "computed" }));
-		addTestConfiguration("NegativeDivisionByZeroTest", new TestConfiguration(TEST_DIR, "DivisionSingleTest",
+		addTestConfiguration("NegativeDivisionByZeroTest", new TestConfiguration(TEST_CLASS_DIR, "DivisionSingleTest",
 				new String[] { "computed" }));
-		addTestConfiguration("ZeroDivisionByZeroTest", new TestConfiguration(TEST_DIR, "DivisionSingleTest",
+		addTestConfiguration("ZeroDivisionByZeroTest", new TestConfiguration(TEST_CLASS_DIR, "DivisionSingleTest",
 				new String[] { "computed" }));
 	}
 

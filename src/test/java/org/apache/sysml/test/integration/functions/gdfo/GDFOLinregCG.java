@@ -39,6 +39,7 @@ public class GDFOLinregCG extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "LinregCG";
 	private final static String TEST_DIR = "functions/gdfo/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + GDFOLinregCG.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemML-config-globalopt.xml";
 	
 	private final static double eps = 1e-5;
@@ -57,7 +58,7 @@ public class GDFOLinregCG extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "w" })); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "w" })); 
 	}
 
 	@Test
@@ -122,25 +123,18 @@ public class GDFOLinregCG extends AutomatedTestBase
 		{
 			String TEST_NAME = testname;
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-explain",//"hops",
-					                    "-config="+HOME+TEST_CONF,
-					                    "-args", HOME + INPUT_DIR + "X",
-					                             HOME + INPUT_DIR + "y",
-					                             String.valueOf(intercept),
-					                             String.valueOf(epsilon),
-					                             String.valueOf(maxiter),
-					                            HOME + OUTPUT_DIR + "w"};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + 
-			       String.valueOf(intercept) + " " + String.valueOf(epsilon) + " " + 
-			       String.valueOf(maxiter) + " " + HOME + EXPECTED_DIR;
-			
-			loadTestConfiguration(config);
+			programArgs = new String[]{ "-explain", //"hops",
+				"-config=" + HOME + TEST_CONF, "-args", input("X"), input("y"),
+				String.valueOf(intercept), String.valueOf(epsilon),
+				String.valueOf(maxiter), output("w")};
+
+			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
+				String.valueOf(maxiter), expectedDir());
 	
 			//generate actual datasets
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 7);

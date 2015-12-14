@@ -26,7 +26,6 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 
-
 /**
  * <p><b>Positive tests:</b></p>
  * <ul>
@@ -42,6 +41,7 @@ public class TanTest extends AutomatedTestBase
 {
 		
 	private static final String TEST_DIR = "functions/unary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + TanTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
@@ -49,11 +49,11 @@ public class TanTest extends AutomatedTestBase
 		
 		// positive tests
 		addTestConfiguration("PositiveTest",
-				new TestConfiguration(TEST_DIR, "TanTest", new String[] { "int", "double" }));
+				new TestConfiguration(TEST_CLASS_DIR, "TanTest", new String[] { "int", "double" }));
 		addTestConfiguration("NegativeTest",
-				new TestConfiguration(TEST_DIR, "TanTest", new String[] { "int", "double" }));
+				new TestConfiguration(TEST_CLASS_DIR, "TanTest", new String[] { "int", "double" }));
 		addTestConfiguration("RandomTest",
-				new TestConfiguration(TEST_DIR, "TanTest", new String[] { "int", "double" }));
+				new TestConfiguration(TEST_CLASS_DIR, "TanTest", new String[] { "int", "double" }));
 		
 		// negative tests
 	}
@@ -63,7 +63,7 @@ public class TanTest extends AutomatedTestBase
 		int intValue = 5;
 		double doubleValue = 5.0;
 		
-		TestConfiguration config = availableTestConfigurations.get("PositiveTest");
+		TestConfiguration config = getTestConfiguration("PositiveTest");
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
@@ -86,7 +86,7 @@ public class TanTest extends AutomatedTestBase
 		int intValue = -5;
 		double doubleValue = -5.0;
 		
-		TestConfiguration config = availableTestConfigurations.get("NegativeTest");
+		TestConfiguration config = getTestConfiguration("NegativeTest");
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		
@@ -109,7 +109,7 @@ public class TanTest extends AutomatedTestBase
 		int intValue = TestUtils.getRandomInt();
 		double doubleValue = TestUtils.getRandomDouble();
 		
-		TestConfiguration config = availableTestConfigurations.get("RandomTest");
+		TestConfiguration config = getTestConfiguration("RandomTest");
 		config.addVariable("int", intValue);
 		config.addVariable("double", doubleValue);
 		

@@ -37,14 +37,15 @@ import org.junit.Test;
 public class WhileTest extends AutomatedTestBase 
 {
 
-	public static final String TEST_DIR = "functions/blocks/";
+	private static final String TEST_DIR = "functions/blocks/";
+	private static String TEST_CLASS_DIR = TEST_DIR + WhileTest.class.getSimpleName() + "/";
 
     @Override
     public void setUp() {
         // positive tests
-        addTestConfiguration("ComputationTest", new TestConfiguration(TEST_DIR, "WhileTest",
+        addTestConfiguration("ComputationTest", new TestConfiguration(TEST_CLASS_DIR, "WhileTest",
         		new String[] { "b" }));
-        addTestConfiguration("CleanUpTest", new TestConfiguration(TEST_DIR, "WhileTest",
+        addTestConfiguration("CleanUpTest", new TestConfiguration(TEST_CLASS_DIR, "WhileTest",
                 new String[] { "b" }));
 
         // negative tests

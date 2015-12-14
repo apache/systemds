@@ -32,10 +32,10 @@ import org.apache.sysml.test.integration.TestConfiguration;
 
 public class CachingPWriteExportTest extends AutomatedTestBase 
 {
-
 	
 	private final static String TEST_NAME = "export";
 	private final static String TEST_DIR = "functions/caching/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CachingPWriteExportTest.class.getSimpleName() + "/";
 
 	private final static int rows = (int)Hop.CPThreshold-1;
 	private final static int cols = (int)Hop.CPThreshold-1;    
@@ -44,10 +44,8 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "V" })   ); 
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "V" }) ); 
 	}
 	
 	@Test
@@ -61,7 +59,6 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 	{
 		runTestExport( "text" );
 	}
-
 	
 	
 	/**
@@ -75,17 +72,13 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "V" , 
-				                        Integer.toString(rows),
-				                        Integer.toString(cols),
-				                        HOME + OUTPUT_DIR + "V",
-				                        outputFormat };
-		
-		loadTestConfiguration(config);
+		programArgs = new String[]{"-args", input("V"),
+			Integer.toString(rows), Integer.toString(cols), output("V"), outputFormat };
 
 		long seed = System.nanoTime();
         double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
@@ -104,19 +97,19 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 			else
 				ii = InputInfo.TextCellInputInfo;
 			
-			MatrixBlock mb = DataConverter.readMatrixFromHDFS(HOME + OUTPUT_DIR + "V", ii, rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, sparsity);
+			MatrixBlock mb = DataConverter.readMatrixFromHDFS(output("V"), ii, rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, sparsity);
 			Vp = DataConverter.convertToDoubleMatrix(mb);
 		}
 		catch(Exception ex)
 		{
 			ex.printStackTrace();
-			throw new RuntimeException(ex);		}
+			throw new RuntimeException(ex);
+		}
 		
 		//compare
 		for( int i=0; i<rows; i++ )
 			for( int j=0; j<cols; j++ )
 				if( V[i][j]!=Vp[i][j] )
-					//System.out.println("Wrong value i="+i+", j="+j+", value1="+V[i][j]+", value2="+Vp[i][j]);
 					Assert.fail("Wrong value i="+i+", j="+j+", value1="+V[i][j]+", value2="+Vp[i][j]);
 	}
 }

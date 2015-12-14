@@ -26,7 +26,6 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 
-
 /**
  * <p><b>Positive tests:</b></p>
  * <ul>
@@ -46,28 +45,28 @@ import org.apache.sysml.test.utils.TestUtils;
  */
 public class SqrtTest extends AutomatedTestBase 
 {
-
 	
 	private static final String TEST_DIR = "functions/unary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + SqrtTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		
 		// positive tests
 		addTestConfiguration("PositiveTest",
-				new TestConfiguration(TEST_DIR, "SqrtTest", new String[] { "int", "double" }));
+				new TestConfiguration(TEST_CLASS_DIR, "SqrtTest", new String[] { "int", "double" }));
 		
 		// random tests
 		addTestConfiguration("RandomIntTest",
-				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "computed" }));
+				new TestConfiguration(TEST_CLASS_DIR, "SqrtSingleTest", new String[] { "computed" }));
 		addTestConfiguration("RandomDoubleTest",
-				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "computed" }));
+				new TestConfiguration(TEST_CLASS_DIR, "SqrtSingleTest", new String[] { "computed" }));
 		
 		// negative tests
 		addTestConfiguration("NegativeIntTest",
-				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "computed" }));
+				new TestConfiguration(TEST_CLASS_DIR, "SqrtSingleTest", new String[] { "computed" }));
 		addTestConfiguration("NegativeDoubleTest",
-				new TestConfiguration(TEST_DIR, "SqrtSingleTest", new String[] { "computed" }));
+				new TestConfiguration(TEST_CLASS_DIR, "SqrtSingleTest", new String[] { "computed" }));
 	}
 	
 	@Test

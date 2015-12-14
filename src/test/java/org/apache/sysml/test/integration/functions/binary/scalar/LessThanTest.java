@@ -31,12 +31,13 @@ public class LessThanTest extends AutomatedTestBase
 {
 	
 	private	final static String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + LessThanTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration("LessThanTest", new TestConfiguration(TEST_DIR, "LessThanTest",
+		addTestConfiguration("LessThanTest", new TestConfiguration(TEST_CLASS_DIR, "LessThanTest",
 				new String[] { "left_1", "left_2", "left_3", "right_1", "right_2", "right_3" }));
 	}
 	

@@ -26,7 +26,6 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 
-
 /**
  * <p><b>Positive tests:</b></p>
  * <ul>
@@ -40,13 +39,14 @@ public class NegationTest extends AutomatedTestBase
 {
 	
 	private static String TEST_DIR = "functions/unary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + NegationTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		
 		// positive tests
-		addTestConfiguration("NegationTest", new TestConfiguration(TEST_DIR, "NegationTest", new String[] { }));
+		addTestConfiguration("NegationTest", new TestConfiguration(TEST_CLASS_DIR, "NegationTest", new String[] { }));
 		
 		// negative tests
 	}

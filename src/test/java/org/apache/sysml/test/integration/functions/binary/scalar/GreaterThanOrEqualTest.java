@@ -29,12 +29,12 @@ import org.apache.sysml.test.integration.TestConfiguration;
 public class GreaterThanOrEqualTest extends AutomatedTestBase 
 {
 
-		
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + GreaterThanOrEqualTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("GreaterThanOrEqualTest", new TestConfiguration(TEST_DIR, "GreaterThanOrEqualTest",
+		addTestConfiguration("GreaterThanOrEqualTest", new TestConfiguration(TEST_CLASS_DIR, "GreaterThanOrEqualTest",
 				new String[] { "left_1", "left_2", "left_3", "right_1", "right_2", "right_3" }));
 	}
 	

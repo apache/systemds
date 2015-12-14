@@ -26,7 +26,6 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 
-
 /**
  * <p><b>Positive tests:</b></p>
  * <ul>
@@ -42,6 +41,7 @@ public class VariableTest extends AutomatedTestBase
 {
 	
     private final static String TEST_DIR = "functions/blocks/";
+    private final static String TEST_CLASS_DIR = TEST_DIR + VariableTest.class.getSimpleName() + "/";
     private final static String TEST_VARIABLE_PASSING_1 = "VariablePassing1";
     private final static String TEST_VARIABLE_PASSING_2 = "VariablePassing2";
     private final static String TEST_VARIABLE_ANALYSIS_1 = "VariableAnalysis1";
@@ -50,14 +50,12 @@ public class VariableTest extends AutomatedTestBase
     @Override
     public void setUp()
     {
-        baseDirectory = SCRIPT_DIR + "functions/blocks/";
-
         // positive tests
-        addTestConfiguration(TEST_VARIABLE_PASSING_1, new TestConfiguration(TEST_DIR, "VariablePassing1Test",
+        addTestConfiguration(TEST_VARIABLE_PASSING_1, new TestConfiguration(TEST_CLASS_DIR, "VariablePassing1Test",
                 new String[] { "c", "e", "f" }));
-        addTestConfiguration(TEST_VARIABLE_PASSING_2, new TestConfiguration(TEST_DIR, "VariablePassing2Test",
+        addTestConfiguration(TEST_VARIABLE_PASSING_2, new TestConfiguration(TEST_CLASS_DIR, "VariablePassing2Test",
                 new String[] { "d" }));
-        addTestConfiguration(TEST_VARIABLE_ANALYSIS_1, new TestConfiguration(TEST_DIR, "VariableAnalysis1Test",
+        addTestConfiguration(TEST_VARIABLE_ANALYSIS_1, new TestConfiguration(TEST_CLASS_DIR, "VariableAnalysis1Test",
                 new String[] { "b" }));
 
         // negative tests

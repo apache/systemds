@@ -32,13 +32,14 @@ public class PrintTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "functions/unary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + PrintTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		
-		addTestConfiguration("PrintTest", new TestConfiguration(TEST_DIR, "PrintTest", new String[] {}));
-		addTestConfiguration("PrintTest2", new TestConfiguration(TEST_DIR, "PrintTest2", new String[] {}));
-		addTestConfiguration("PrintTest3", new TestConfiguration(TEST_DIR, "PrintTest3", new String[] {}));
+		addTestConfiguration("PrintTest", new TestConfiguration(TEST_CLASS_DIR, "PrintTest", new String[] {}));
+		addTestConfiguration("PrintTest2", new TestConfiguration(TEST_CLASS_DIR, "PrintTest2", new String[] {}));
+		addTestConfiguration("PrintTest3", new TestConfiguration(TEST_CLASS_DIR, "PrintTest3", new String[] {}));
 	}
 
 	@Test

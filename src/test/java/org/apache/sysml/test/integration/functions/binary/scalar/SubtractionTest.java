@@ -27,29 +27,29 @@ import org.apache.sysml.test.integration.TestConfiguration;
 
 public class SubtractionTest extends AutomatedTestBase
 {
-
 	
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + SubtractionTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_CLASS_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_CLASS_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_CLASS_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_CLASS_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		addTestConfiguration("NegativeConstConstTest", new TestConfiguration(TEST_DIR, "SubtractionTest",
+		addTestConfiguration("NegativeConstConstTest", new TestConfiguration(TEST_CLASS_DIR, "SubtractionTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double" }));
-		addTestConfiguration("NegativeVarConstTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
+		addTestConfiguration("NegativeVarConstTest", new TestConfiguration(TEST_CLASS_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		addTestConfiguration("NegativeConstVarTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
+		addTestConfiguration("NegativeConstVarTest", new TestConfiguration(TEST_CLASS_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		addTestConfiguration("NegativeVarVarTest", new TestConfiguration(TEST_DIR, "SubtractionTest", new String[] {
+		addTestConfiguration("NegativeVarVarTest", new TestConfiguration(TEST_CLASS_DIR, "SubtractionTest", new String[] {
 				"int_int", "int_double", "double_double", "double_double" }));
-		addTestConfiguration("ConstConstConstTest", new TestConfiguration(TEST_DIR, "SubtractionMultipleOperantsTest",
+		addTestConfiguration("ConstConstConstTest", new TestConfiguration(TEST_CLASS_DIR, "SubtractionMultipleOperantsTest",
 				new String[] { "int_int_int", "double_double_double" }));
 	}
 
@@ -121,7 +121,6 @@ public class SubtractionTest extends AutomatedTestBase
 		config.addVariable("doubleintop1", doubleIntValue1);
 		config.addVariable("doubleintop2", doubleIntValue2);
 
-		// loadTestConfiguration("ConstConstTest");
 		loadTestConfiguration(config);
 
 		double computedIntIntValue = intIntValue1 - intIntValue2;

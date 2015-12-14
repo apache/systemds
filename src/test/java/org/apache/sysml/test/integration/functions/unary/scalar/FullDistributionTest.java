@@ -37,11 +37,12 @@ public class FullDistributionTest extends AutomatedTestBase
 	enum TEST_TYPE { NORMAL, NORMAL_NOPARAMS, NORMAL_MEAN, NORMAL_SD, F, T, CHISQ, EXP, EXP_NOPARAMS };
 	
 	private final static String TEST_DIR = "functions/unary/scalar/";
-
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullDistributionTest.class.getSimpleName() + "/";
+	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "dfout" }));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "dfout" }));
 	}
 	
 	@Test
@@ -85,7 +86,7 @@ public class FullDistributionTest extends AutomatedTestBase
 	}
 	
 	private void runDFTest(TEST_TYPE type, boolean inverse, Double param1, Double param2) {
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
 
 		double in = (new Random(System.nanoTime())).nextDouble();
 		
@@ -93,8 +94,8 @@ public class FullDistributionTest extends AutomatedTestBase
 		fullDMLScriptName = HOME + TEST_NAME + "_" + type.toString() + ".dml";
 		fullRScriptName = HOME + TEST_NAME + "_" + type.toString() + ".R";
 		
-		String DMLout = HOME + OUTPUT_DIR + "dfout";
-		String Rout = HOME + EXPECTED_DIR + "dfout";
+		String DMLout = output("dfout");
+		String Rout = expected("dfout");
 		
 		switch(type) {
 		case NORMAL_NOPARAMS:
@@ -120,8 +121,6 @@ public class FullDistributionTest extends AutomatedTestBase
 			default: 
 				throw new RuntimeException("Invalid distribution function: " + type);
 		}
-		
-		loadTestConfiguration(config);
 		
 		runTest(true, false, null, -1); 
 		runRScript(true); 

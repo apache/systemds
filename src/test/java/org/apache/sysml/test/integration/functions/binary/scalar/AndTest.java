@@ -30,10 +30,11 @@ public class AndTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + AndTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("AndTest", new TestConfiguration(TEST_DIR, "AndTest",
+		addTestConfiguration("AndTest", new TestConfiguration(TEST_CLASS_DIR, "AndTest",
 				new String[] { "left_1", "left_2", "left_3", "left_4", "right_1", "right_2", "right_3", "right_4" }));
 	}
 	

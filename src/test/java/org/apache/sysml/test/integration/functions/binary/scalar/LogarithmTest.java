@@ -25,22 +25,22 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
 
-
 public class LogarithmTest extends AutomatedTestBase 
 {
 		
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + LogarithmTest.class.getSimpleName() + "/";
 	private static final double EPS = 1e-14;
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "LogarithmTest",
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_CLASS_DIR, "LogarithmTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "LogarithmTest",
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_CLASS_DIR, "LogarithmTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "LogarithmTest",
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_CLASS_DIR, "LogarithmTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "LogarithmTest",
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_CLASS_DIR, "LogarithmTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
 	}
 	

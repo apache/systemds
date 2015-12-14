@@ -690,6 +690,9 @@ public abstract class AutomatedTestBase
 	}
 
 	protected void writeExpectedScalar(String name, double value) {
+		File path = new File(baseDirectory, EXPECTED_DIR + cacheDir);
+		path.mkdirs();
+
 		TestUtils.writeTestScalar(baseDirectory + EXPECTED_DIR + cacheDir + name, value);
 		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}

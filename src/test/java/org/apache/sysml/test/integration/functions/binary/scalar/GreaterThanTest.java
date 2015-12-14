@@ -31,11 +31,12 @@ public class GreaterThanTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + GreaterThanTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration("GreaterThanTest", new TestConfiguration(TEST_DIR,"GreaterThanTest",
+		addTestConfiguration("GreaterThanTest", new TestConfiguration(TEST_CLASS_DIR,"GreaterThanTest",
 				new String[] { "left_1", "left_2", "left_3", "right_1", "right_2", "right_3" }));
 	}
 	

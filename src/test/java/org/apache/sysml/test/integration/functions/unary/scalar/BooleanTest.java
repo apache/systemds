@@ -25,19 +25,17 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
 
-
 public class BooleanTest extends AutomatedTestBase 
 {
-
 	
 	private static final String TEST_DIR = "functions/unary/scalar/";
-	
+	private static final String TEST_CLASS_DIR = TEST_DIR + BooleanTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		
 		// positive tests
-		addTestConfiguration("WhileTest", new TestConfiguration(TEST_DIR, "BooleanWhileTest",
+		addTestConfiguration("WhileTest", new TestConfiguration(TEST_CLASS_DIR, "BooleanWhileTest",
 				new String[] { "true", "false" }));
 		
 		// negative tests

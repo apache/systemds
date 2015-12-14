@@ -25,16 +25,15 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
 
-
 public class OrTest extends AutomatedTestBase 
 {
 
-		
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + OrTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("OrTest", new TestConfiguration(TEST_DIR, "OrTest",
+		addTestConfiguration("OrTest", new TestConfiguration(TEST_CLASS_DIR, "OrTest",
 				new String[] { "left_1", "left_2", "left_3", "left_4", "right_1", "right_2", "right_3", "right_4" }));
 	}
 	

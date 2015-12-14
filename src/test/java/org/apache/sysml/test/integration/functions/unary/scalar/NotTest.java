@@ -25,7 +25,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
 
-
 /**
  * <p><b>Positive tests:</b></p>
  * <ul>
@@ -39,11 +38,12 @@ public class NotTest extends AutomatedTestBase
 {
 
 	private static final String TEST_DIR = "functions/unary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + NotTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		// positive tests
-		addTestConfiguration("NotTest", new TestConfiguration(TEST_DIR, "NotTest",
+		addTestConfiguration("NotTest", new TestConfiguration(TEST_CLASS_DIR, "NotTest",
 				new String[] { "true_true", "true_false", "false_false", "false_true" }));
 		
 		// negative tests

@@ -25,22 +25,21 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
 
-
 public class PowerTest extends AutomatedTestBase 
 {
-
 	
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + PowerTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "PowerTest",
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_CLASS_DIR, "PowerTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "PowerTest",
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_CLASS_DIR, "PowerTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "PowerTest",
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_CLASS_DIR, "PowerTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
-		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "PowerTest",
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_CLASS_DIR, "PowerTest",
 				new String[] { "int_int", "int_double", "double_double", "double_double"}));
 	}
 	

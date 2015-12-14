@@ -32,13 +32,14 @@ public class StopTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/unary/scalar/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + StopTest.class.getSimpleName() + "/";
 	private final static String TEST_STOP = "StopTest";
 	
 	@Override
 	public void setUp() {
 		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
 
-		availableTestConfigurations.put(TEST_STOP, new TestConfiguration(TEST_DIR, TEST_STOP, new String[] {}));
+		availableTestConfigurations.put(TEST_STOP, new TestConfiguration(TEST_CLASS_DIR, TEST_STOP, new String[] {}));
 	}
 
 	String errMessage = "M is all 0 matrix.";

@@ -26,7 +26,6 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 
-
 /**
  * <p><b>Positive tests:</b></p>
  * <ul>
@@ -40,19 +39,19 @@ import org.apache.sysml.test.utils.TestUtils;
  */
 public class ASinTest extends AutomatedTestBase 
 {
-
 	
-	private String TEST_DIR = "functions/unary/scalar/";
+	private static final String TEST_DIR = "functions/unary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ASinTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		// positive tests
 		addTestConfiguration("PositiveTest",
-				new TestConfiguration(TEST_DIR, "ASinTest", new String[] { "int", "double" }));
+				new TestConfiguration(TEST_CLASS_DIR, "ASinTest", new String[] { "int", "double" }));
 		addTestConfiguration("NegativeTest",
-				new TestConfiguration(TEST_DIR, "ASinTest", new String[] { "int", "double" }));
+				new TestConfiguration(TEST_CLASS_DIR, "ASinTest", new String[] { "int", "double" }));
 		addTestConfiguration("RandomTest",
-				new TestConfiguration(TEST_DIR, "ASinTest", new String[] { "int", "double" }));
+				new TestConfiguration(TEST_CLASS_DIR, "ASinTest", new String[] { "int", "double" }));
 		
 		// negative tests
 	}

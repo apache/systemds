@@ -35,6 +35,7 @@ public class OrderTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "Order";
 	private final static String TEST_DIR = "functions/external/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + OrderTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 1200;
 	private final static int cols = 1100; 
@@ -45,10 +46,8 @@ public class OrderTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "B.mtx" })   ); 
+		addTestConfiguration(TEST_NAME,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "B.mtx" }) );
 	}
 
 	@Test
@@ -68,22 +67,17 @@ public class OrderTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		int sortcol = sc * (asc ? 1 : -1);
 		int namesuffix = (asc ? 1 : 2);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + namesuffix + ".dml";
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" , 
-				                        Integer.toString(rows),
-				                        Integer.toString(cols),
-				                        Integer.toString(sc),
-				                        HOME + OUTPUT_DIR + "B" };
-		fullRScriptName = HOME + TEST_NAME + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       HOME + INPUT_DIR + " " + sortcol + " " + HOME + EXPECTED_DIR;
+		programArgs = new String[]{"-args", input("A"),
+			Integer.toString(rows), Integer.toString(cols), Integer.toString(sc), output("B") };
 		
-		loadTestConfiguration(config);
+		rCmd = getRCmd(inputDir(), Integer.toString(sortcol), expectedDir());
 
 		try 
 		{
@@ -97,7 +91,6 @@ public class OrderTest extends AutomatedTestBase
 			//check number of compiled and executed scripts (assumes IPA and recompile)
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 1, Statistics.getNoOfCompiledMRJobs()); //reblock
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedMRJobs());
-			
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");

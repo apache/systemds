@@ -27,7 +27,6 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 
-
 /**
  * <p><b>Positive tests:</b></p>
  * <ul>
@@ -48,23 +47,24 @@ public class ExponentTest extends AutomatedTestBase
 {
 		
 	private static final String TEST_DIR = "functions/unary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ExponentTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		// positive tests
-		addTestConfiguration("ConstTest", new TestConfiguration(TEST_DIR, "ExponentTest",
+		addTestConfiguration("ConstTest", new TestConfiguration(TEST_CLASS_DIR, "ExponentTest",
 				new String[] { "int", "double" }));
-		addTestConfiguration("VarTest", new TestConfiguration(TEST_DIR, "ExponentTest",
+		addTestConfiguration("VarTest", new TestConfiguration(TEST_CLASS_DIR, "ExponentTest",
 				new String[] { "int", "double" }));
-		addTestConfiguration("RandomConstTest", new TestConfiguration(TEST_DIR, "ExponentTest",
+		addTestConfiguration("RandomConstTest", new TestConfiguration(TEST_CLASS_DIR, "ExponentTest",
 				new String[] { "int", "double" }));
-		addTestConfiguration("RandomVarTest", new TestConfiguration(TEST_DIR, "ExponentTest",
+		addTestConfiguration("RandomVarTest", new TestConfiguration(TEST_CLASS_DIR, "ExponentTest",
 				new String[] { "int", "double" }));
-		addTestConfiguration("NegativeTest", new TestConfiguration(TEST_DIR, "ExponentTest",
+		addTestConfiguration("NegativeTest", new TestConfiguration(TEST_CLASS_DIR, "ExponentTest",
 				new String[] { "int", "double" }));
 		
 		// negative tests
-		addTestConfiguration("TwoParametersTest", new TestConfiguration(TEST_DIR, "ExponentBinaryTest",
+		addTestConfiguration("TwoParametersTest", new TestConfiguration(TEST_CLASS_DIR, "ExponentBinaryTest",
 				new String[] { "computed" }));
 	}
 	

@@ -38,6 +38,7 @@ public class FullStringComparisonTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME1 = "FullStringComparisonTest";
 	private final static String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FullStringComparisonTest.class.getSimpleName() + "/";
 	
 	public enum Type{
 		GREATER,
@@ -52,7 +53,7 @@ public class FullStringComparisonTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "B" })   ); 
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" })   ); 
 	}
 
 	@Test
@@ -128,7 +129,6 @@ public class FullStringComparisonTest extends AutomatedTestBase
 	}
 	
 	
-	
 	/**
 	 * 
 	 * @param type
@@ -150,24 +150,19 @@ public class FullStringComparisonTest extends AutomatedTestBase
 			case GREATER_EQUALS: string2 = trueCondition ? "aabbccdd" : "abce"; break;
 		}
 		
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
 			
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args", 
-				                        string1,
-				                        string2,
-				                        Integer.toString(type.ordinal()),
-				                        HOME + OUTPUT_DIR + "B"    };
-		
-		loadTestConfiguration(config);
+		programArgs = new String[]{"-args",
+			string1, string2, Integer.toString(type.ordinal()), output("B") };
 
 		//run tests
 		runTest(true, false, null, -1); 
 		
 		//compare result
 		try {
-			boolean retCondition = MapReduceTool.readBooleanFromHDFSFile(HOME + OUTPUT_DIR + "B");
+			boolean retCondition = MapReduceTool.readBooleanFromHDFSFile(output("B"));
 			Assert.assertEquals(trueCondition, retCondition);
 		} 
 		catch (IOException e) {

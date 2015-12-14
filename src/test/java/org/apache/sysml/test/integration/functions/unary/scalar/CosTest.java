@@ -26,7 +26,6 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 
-
 /**
  * <p><b>Positive tests:</b></p>
  * <ul>
@@ -43,19 +42,20 @@ public class CosTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "functions/unary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + CosTest.class.getSimpleName() + "/";
 	private static final double EPS = 1e-14;
 	
 	@Override
 	public void setUp() {
 		
 		// positive tests
-		addTestConfiguration("PositiveTest", new TestConfiguration(TEST_DIR, "CosTest",
+		addTestConfiguration("PositiveTest", new TestConfiguration(TEST_CLASS_DIR, "CosTest",
 				new String[] { "int", "double" }));
-		addTestConfiguration("NegativeTest", new TestConfiguration(TEST_DIR, "CosTest",
+		addTestConfiguration("NegativeTest", new TestConfiguration(TEST_CLASS_DIR, "CosTest",
 				new String[] { "int", "double" }));
-		addTestConfiguration("ZeroTest", new TestConfiguration(TEST_DIR, "CosTest",
+		addTestConfiguration("ZeroTest", new TestConfiguration(TEST_CLASS_DIR, "CosTest",
 				new String[] { "int", "double" }));
-		addTestConfiguration("RandomTest", new TestConfiguration(TEST_DIR, "CosTest",
+		addTestConfiguration("RandomTest", new TestConfiguration(TEST_CLASS_DIR, "CosTest",
 				new String[] { "int", "double" }));
 		
 		// negative tests

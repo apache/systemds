@@ -29,6 +29,7 @@ public class ModulusTest extends AutomatedTestBase
 {
 	
 	private static final String TEST_DIR = "functions/binary/scalar/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ModulusTest.class.getSimpleName() + "/";
 	
 	private double intIntValue1 = 9;
 	private double intIntValue2 = 4;
@@ -47,19 +48,19 @@ public class ModulusTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_DIR, "ModulusTest", new String[] {
+		addTestConfiguration("ConstConstTest", new TestConfiguration(TEST_CLASS_DIR, "ModulusTest", new String[] {
 				"int_int", "int_double", "double_double", "double_int" }));
-		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_DIR, "ModulusTest", new String[] { "int_int",
+		addTestConfiguration("VarConstTest", new TestConfiguration(TEST_CLASS_DIR, "ModulusTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_DIR, "ModulusTest", new String[] { "int_int",
+		addTestConfiguration("ConstVarTest", new TestConfiguration(TEST_CLASS_DIR, "ModulusTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_DIR, "ModulusTest", new String[] { "int_int",
+		addTestConfiguration("VarVarTest", new TestConfiguration(TEST_CLASS_DIR, "ModulusTest", new String[] { "int_int",
 				"int_double", "double_double", "double_int" }));
-		addTestConfiguration("PositiveDivisionByZeroTest", new TestConfiguration(TEST_DIR, "ModulusSingleTest",
+		addTestConfiguration("PositiveDivisionByZeroTest", new TestConfiguration(TEST_CLASS_DIR, "ModulusSingleTest",
 				new String[] { "computed" }));
-		addTestConfiguration("NegativeDivisionByZeroTest", new TestConfiguration(TEST_DIR, "ModulusSingleTest",
+		addTestConfiguration("NegativeDivisionByZeroTest", new TestConfiguration(TEST_CLASS_DIR, "ModulusSingleTest",
 				new String[] { "computed" }));
-		addTestConfiguration("ZeroDivisionByZeroTest", new TestConfiguration(TEST_DIR, "ModulusSingleTest",
+		addTestConfiguration("ZeroDivisionByZeroTest", new TestConfiguration(TEST_CLASS_DIR, "ModulusSingleTest",
 				new String[] { "computed" }));		
 	}
 

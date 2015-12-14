@@ -33,7 +33,8 @@ public class StopTestCtrlStr extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/unary/scalar/";
-	private final static String TEST_STOP = "StopTestLoops";
+	private final static String TEST_CLASS_DIR = TEST_DIR + StopTestCtrlStr.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "StopTestLoops";
 	
 	private final static int rows = 100;
 	private final static String inputName = "in";
@@ -41,21 +42,18 @@ public class StopTestCtrlStr extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/unary/scalar/";
-
-		availableTestConfigurations.put(TEST_STOP, new TestConfiguration(TEST_DIR, TEST_STOP, new String[] {}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {}));
 	}
 
 	@Test
 	public void testStopParfor() {
 		
-		TestConfiguration config = availableTestConfigurations.get(TEST_STOP);
+		getAndLoadTestConfiguration(TEST_NAME);
 		
 		String STOP_HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = STOP_HOME + TEST_STOP + "_parfor.dml";
+		fullDMLScriptName = STOP_HOME + TEST_NAME + "_parfor.dml";
 		programArgs = new String[]{};
 		
-		loadTestConfiguration(config);
 		boolean exceptionExpected = true;
 		int expectedNumberOfJobs = 0;
 		
@@ -97,16 +95,15 @@ public class StopTestCtrlStr extends AutomatedTestBase
 		RUNTIME_PLATFORM oldRT = rtplatform;
 		rtplatform = rt;
 		
-		TestConfiguration config = availableTestConfigurations.get(TEST_STOP);
+		getAndLoadTestConfiguration(TEST_NAME);
 		String STOP_HOME = SCRIPT_DIR + TEST_DIR;
 		
-		fullDMLScriptName = STOP_HOME + TEST_STOP + "_" + loop + ".dml";
-		programArgs = new String[]{"-args", STOP_HOME + INPUT_DIR + inputName, Integer.toString(rows), Double.toString(cutoff)};
+		fullDMLScriptName = STOP_HOME + TEST_NAME + "_" + loop + ".dml";
+		programArgs = new String[]{"-args", input(inputName), Integer.toString(rows), Double.toString(cutoff)};
 		
         double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, System.currentTimeMillis());
         writeInputMatrix(inputName, vector);
 
-		loadTestConfiguration(config);
 		boolean exceptionExpected = false;
 		
         int cutoffIndex = findIndexAtCutoff(vector, cutoff);

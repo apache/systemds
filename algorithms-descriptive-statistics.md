@@ -183,7 +183,7 @@ be stored. The format of the output matrix is defined by
 <a name="table1" />
 **Table 1**: The output matrix of `Univar-Stats.dml` has one row per
 each univariate statistic and one column per input feature. This table
-lists the meaning of each row. Signs “+” show applicability to scale
+lists the meaning of each row. Signs "+" show applicability to scale
 or/and to categorical features.
   
 
@@ -267,13 +267,13 @@ feature varies on exponential scale. For example, the mean of {0.01,
 0.1, 1.0, 10.0, 100.0} is 22.222, greater than all the sample values
 except the largest.
 
-**Median** (output row 13): The “middle” value that separates the higher half of the
+**Median** (output row 13): The "middle" value that separates the higher half of the
 sample values (in a sorted order) from the lower half. To compute the
 median, we sort the sample in the increasing order, preserving
 duplicates: $v^s_1 \leq v^s_2 \leq \ldots \leq v^s_n$. If $n$ is odd,
 the median equals $v^s_i$ where $i = (n\,{+}\,1)\,{/}\,2$, same as the
 $50^{\textrm{th}}$ percentile of the sample. If $n$ is even, there are
-two “middle” values $$v^s_{n/2}$$ and $$v^s_{n/2\,+\,1}$$, so we compute the
+two "middle" values $$v^s_{n/2}$$ and $$v^s_{n/2\,+\,1}$$, so we compute the
 median as the mean of these two values. (For even $n$ we compute the
 $50^{\textrm{th}}$ percentile as $v^s_{n/2}$, not as the median.)
 Example: the median of sample {2.2, 3.2, 3.7, 4.4, 5.3, 5.7, 6.1,
@@ -289,11 +289,11 @@ size.
 **Interquartile mean** (output row 14): For a sample of a quantitative feature, this is
 the mean of the values greater than or equal to the $1^{\textrm{st}}$
 quartile and less than or equal the $3^{\textrm{rd}}$ quartile. In other
-words, it is a “truncated mean” where the lowest 25$\%$ and the highest
+words, it is a "truncated mean" where the lowest 25$\%$ and the highest
 25$\%$ of the sorted values are omitted in its computation. The two
-“border values”, i.e. the $1^{\textrm{st}}$ and the $3^{\textrm{rd}}$
+"border values", i.e. the $1^{\textrm{st}}$ and the $3^{\textrm{rd}}$
 quartiles themselves, contribute to this mean only partially. This
-measure is occasionally used as the “robust” version of the mean that is
+measure is occasionally used as the "robust" version of the mean that is
 less sensitive to the extreme values.*
 
 To compute the measure, we sort the sample in the increasing order,
@@ -445,7 +445,7 @@ is far from normal or if the number of samples is small.
 
 **Kurtosis** (output row 10): As a distribution parameter, kurtosis is a measure of the
 extent to which feature values cluster around a central point. In other
-words, it quantifies “peakedness” of the distribution: how tall and
+words, it quantifies "peakedness" of the distribution: how tall and
 sharp the central peak is relative to a standard bell curve.
 
 Positive kurtosis (*leptokurtic* distribution) indicates that, relative
@@ -705,7 +705,7 @@ statistics for specified pairs of feature columns `X[,i]` and
 files with column pairs of interest to the user. Namely, the file given
 by `index1` contains the vector of the 1st-attribute column indices and
 the file given by `index2` has the vector of the 2nd-attribute column
-indices, with “1st” and “2nd” referring to their places in bivariate
+indices, with "1st" and "2nd" referring to their places in bivariate
 statistics. Note that both `index1` and `index2` files should contain a
 1-row matrix of positive integers.
 
@@ -721,7 +721,7 @@ files. The types must be provided as per the following convention:
 The script organizes its results into (potentially) four output
 matrices, one per each type combination. The types of bivariate
 statistics are defined using the types of the columns that were used for
-their arguments, with “ordinal” sometimes retrogressing to “nominal.”
+their arguments, with "ordinal" sometimes retrogressing to "nominal."
 [**Table 2**](algorithms-descriptive-statistics.html#table2)
 describes what each column in each output matrix
 contains. In particular, the script includes the following statistics:
@@ -850,7 +850,7 @@ Pearson’s $\chi^2$ becomes arbitrarily large as
 $n\to\infty$ and lands extremely far into the tail of the
 $\chi^2$ distribution given a large enough data sample.
 $P\textrm{-}$value of Pearson’s $\chi^2$ returns the tail
-“weight” on the right-hand side of Pearson’s $\chi^2$:
+"weight" on the right-hand side of Pearson’s $\chi^2$:
 
 $$P = Prob\big[r \geq \textrm{Pearson’s $\chi^2$} \big|\,\, r \sim \textrm{the $\chi^2$ distribution}\big]$$
 
@@ -913,11 +913,11 @@ $$\eta^2 \,=\, 1 - \frac{\sum_{i=1}^{n} \big(y_i - \hat{y}[x_i]\big)^2}{\sum_{i=
 
 and $$\bar{y} = (1{/}n)\sum_{i=1}^n y_i$$ is the mean. Value $\hat{y}[x]$
 is the average of $y_i$ among all records where $x_i = x$; it can also
-be viewed as the “predictor” of $y$ given $x$. Then
+be viewed as the "predictor" of $y$ given $x$. Then
 $$\sum_{i=1}^{n} (y_i - \hat{y}[x_i])^2$$ is the residual error
 sum-of-squares and $\sum_{i=1}^{n} (y_i - \bar{y})^2$ is the total
 sum-of-squares for $y$. Hence, $\eta^2$ measures the accuracy of
-predicting $y$ with $x$, just like the “R-squared” statistic measures
+predicting $y$ with $x$, just like the "R-squared" statistic measures
 the accuracy of linear regression. Our output $\eta$ is the square root
 of $\eta^2$.
 
@@ -937,13 +937,13 @@ frequency counts, the $x_i$-values are treated as fixed (non-random).
 
 To compute $F$ statistic, we first compute $\hat{y}[x]$ as
 the average of $y_i$ among all records where $x_i = x$. These
-$\hat{y}[x]$ can be viewed as “predictors” of $y$ given $x$; if $y$ is
-independent on $x$, they should “predict” only the global
+$\hat{y}[x]$ can be viewed as "predictors" of $y$ given $x$; if $y$ is
+independent on $x$, they should "predict" only the global
 mean $\bar{y}$. Then we form two sums-of-squares:
 
-  * *Residual* sum-of-squares of the “predictor” accuracy:
+  * *Residual* sum-of-squares of the "predictor" accuracy:
 $y_i - \hat{y}[x_i]$.
-  * *Explained* sum-of-squares of the “predictor” variability:
+  * *Explained* sum-of-squares of the "predictor" variability:
 $\hat{y}[x_i] - \bar{y}$.
 
 $F$ statistic is the ratio of the explained sum-of-squares
@@ -955,9 +955,9 @@ $$F \,\,=\,\,
 \frac{n\,{-}\,k}{k\,{-}\,1} \cdot \frac{\eta^2}{1 - \eta^2}$$
 
 Here $k$
-is the domain size of the nominal feature $x$. The $k$ “predictors” lose
+is the domain size of the nominal feature $x$. The $k$ "predictors" lose
 1 freedom due to their linear dependence with $\bar{y}$; similarly, the
-$n$ $y_i$-s lose $k$ freedoms due to the “predictors”.
+$n$ $y_i$-s lose $k$ freedoms due to the "predictors".
 
 The statistic can test if the independence hypothesis of $y$ from $x$ is
 reasonable; more generally (with relaxed normality assumptions) it can
@@ -986,7 +986,7 @@ coefficient applied to the feature vectors in which all values
 are replaced by their ranks, i.e.  their positions if the vector is
 sorted. The ranks of identical (duplicate) values are replaced with
 their average rank. For example, in vector $(15, 11, 26, 15, 8)$ the
-value “15” occurs twice with ranks 3 and 4 per the sorted order
+value "15" occurs twice with ranks 3 and 4 per the sorted order
 $(8_1, 11_2, 15_3, 15_4, 26_5)$; so, both values are assigned their
 average rank of $3.5 = (3\,{+}\,4)\,{/}\,2$ and the vector is replaced
 by $(3.5,\, 2,\, 5,\, 3.5,\, 1)$.
@@ -1071,7 +1071,7 @@ covariate pairs.
 
 Both covariates in each pair must be numerical, with the 2-nd covariate
 normally distributed given the 1-st covariate (see Details). Missing
-covariate values or strata are represented by “NaN”. Records with NaN’s
+covariate values or strata are represented by "NaN". Records with NaN’s
 are selectively omitted wherever their NaN’s are material to the output
 statistic.
 
@@ -1173,21 +1173,21 @@ the 1-st covariate (i.e. as the feature variable)
 
 **Xcid**: (default: `" "`) Location to read the single-row matrix that lists all index
 numbers of the $X$-columns used as the 1-st covariate; the default value
-means “use all $X$-columns”
+means "use all $X$-columns"
 
 **Y**: (default: `" "`) Location to read matrix $Y$ whose columns we want to use as
 the 2-nd covariate (i.e. as the response variable); the default value
-means “use $X$ in place of $Y$”
+means "use $X$ in place of $Y$"
 
 **Ycid**: (default: `" "`) Location to read the single-row matrix that lists all index
 numbers of the $Y$-columns used as the 2-nd covariate; the default value
-means “use all $Y$-columns”
+means "use all $Y$-columns"
 
 **S**: (default: `" "`) Location to read matrix $S$ that has the stratum column.
 Note: the stratum column must contain small positive integers; all
 fractional values are rounded; stratum IDs of value ${\leq}\,0$ or NaN
-are treated as missing. The default value for S means “use
-$X$ in place of $S$”
+are treated as missing. The default value for S means "use
+$X$ in place of $S$"
 
 **Scid**: (default: `1`) The index number of the stratum column in $S$
 
@@ -1318,9 +1318,9 @@ SystemML Language Reference for details.
     </tr>
     <tr>
       <td>28</td>
-      <td>p-value for “slope = 0”</td>
+      <td>p-value for "slope = 0"</td>
       <td>38</td>
-      <td>p-value for “slope = 0”</td>
+      <td>p-value for "slope = 0"</td>
     </tr>
     <tr>
       <td>29</td>
@@ -1441,7 +1441,7 @@ $$
 $$
 
 where $V_x$, $V_y$, and $V_{x, y}$ are,
-correspondingly, the “stratified” sample estimates of variance
+correspondingly, the "stratified" sample estimates of variance
 $Var(x)$ and
 $Var(y)$ and covariance
 $Cov(x,y)$ computed as
@@ -1484,10 +1484,10 @@ $$\hat{\beta}\, =\, \frac{V_{x,y}}{V_x}; \,\,\,\, \hat{R} \,=\, \frac{V_{x,y}}{\
 \,\,\,\, \hat{\sigma} \,=\, \sqrt{\frac{\mathrm{RSS}}{n - k - 1}}\,\,\,\,
 \Big(n = \sum_{i=1}^k n_i\Big)$$
 
-The $t$-test and the $F$-test for the null-hypothesis of “$\beta = 0$”
+The $t$-test and the $F$-test for the null-hypothesis of "$\beta = 0$"
 are obtained by considering the effect of $\hat{\beta}$ on the residual
 sum-of-squares, measured by the decrease from $V_y$ to RSS. The
-$F$-statistic is the ratio of the “explained” sum-of-squares to the
+$F$-statistic is the ratio of the "explained" sum-of-squares to the
 residual sum-of-squares, divided by their corresponding degrees of
 freedom. There are $n\,{-}\,k$ degrees of freedom for $V_y$, parameter
 $\beta$ reduces that to $n\,{-}\,k\,{-}\,1$ for RSS, and their

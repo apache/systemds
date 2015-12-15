@@ -54,7 +54,7 @@ $$
 
 Distribution
 $y_i \sim Normal(\mu_i, \sigma^2)$
-models the “unexplained” residual noise and is assumed independent
+models the "unexplained" residual noise and is assumed independent
 across different records.
 
 The goal is to estimate the regression coefficients and the residual
@@ -67,10 +67,10 @@ the response, left after prediction, with its total variance.
 There are two scripts in our library, both doing the same estimation,
 but using different computational methods. Depending on the size and the
 sparsity of the feature matrix $X$, one or the other script may be more
-efficient. The “direct solve” script `LinearRegDS.dml` is more
+efficient. The "direct solve" script `LinearRegDS.dml` is more
 efficient when the number of features $m$ is relatively small
 ($m \sim 1000$ or less) and matrix $X$ is either tall or fairly dense
-(has ${\gg}\:m^2$ nonzeros); otherwise, the “conjugate gradient” script
+(has ${\gg}\:m^2$ nonzeros); otherwise, the "conjugate gradient" script
 `LinearRegCG.dml` is more efficient. If $m > 50000$, use only
 `LinearRegCG.dml`.
 
@@ -370,7 +370,7 @@ to keep the intercept $\beta_0$ unregularized. If the intercept is
 disabled by setting $icpt=0$, the equation is simply $X^T X \beta = X^T Y$.
 
 We implemented two scripts for solving equation (4): one
-is a “direct solver” that computes $A$ and then solves
+is a "direct solver" that computes $A$ and then solves
 $A\beta = [X,\,1]^T Y$ by calling an external package, the other
 performs linear conjugate gradient (CG) iterations without ever
 materializing $A$. The CG algorithm closely follows Algorithm 5.2 in
@@ -394,7 +394,7 @@ solver ($m \lesssim 50000$). A more precise determination between CG
 and DS is subject to further research.
 
 In addition to the $\beta$-vector, the scripts estimate the residual
-standard deviation $\sigma$ and the $R^2$, the ratio of “explained”
+standard deviation $\sigma$ and the $R^2$, the ratio of "explained"
 variance to the total variance of the response variable. These
 statistics only make sense if the number of degrees of freedom
 $n\,{-}\,m\,{-}\,1$ is positive and the regularization constant
@@ -772,8 +772,8 @@ log link $\eta = \log\mu$. Common power links:
   * 1.0 = identity
 
 **yneg**: (default: `0.0`) When `dfam=2` and the response matrix $Y$ has
-1 column, this specifies the $y$-value used for Bernoulli “No” label
-(“Yes” is $1$):
+1 column, this specifies the $y$-value used for Bernoulli "No" label
+("Yes" is $1$):
 0.0 when $y\in\\{0, 1\\}$; -1.0 when
 $y\in\\{-1, 1\\}$
 
@@ -889,14 +889,14 @@ Iteration\#, Value) with Iteration\# being 0 for initial values.
 | LINEAR\_TERM\_MIN   | The minimum value of $X$ %\*% $\beta$, used to check for overflows
 | LINEAR\_TERM\_MAX   | The maximum value of $X$ %\*% $\beta$, used to check for overflows
 | IS\_POINT\_UPDATED  | 1 = new point accepted; 0 = new point rejected, old point restored
-| TRUST\_DELTA        | Updated trust region size, the “delta”
+| TRUST\_DELTA        | Updated trust region size, the "delta"
 
 
 * * *
 
 <a name="table11" />
-**Table 11**: Common GLM distribution families and link functions. (Here “\*” stands
-for “any value.”)
+**Table 11**: Common GLM distribution families and link functions. (Here "\*" stands
+for "any value.")
 
 | dfam | vpow | link | lpow | Distribution<br />Family | Link<br /> Function | Canonical |
 | :--: | :--: | :--: | :--: | :------------: | :--------: | :----: |
@@ -1213,7 +1213,7 @@ following link functions are supported:
   * 3 = probit
   * 4 = cloglog
 
-**yneg**: (default: `0.0`) Response value for Bernoulli “No” label, usually 0.0 or -1.0
+**yneg**: (default: `0.0`) Response value for Bernoulli "No" label, usually 0.0 or -1.0
 
 **icpt**: (default: `0`) Intercept and shifting/rescaling of the features in $X$:
 
@@ -1454,7 +1454,7 @@ response means (for `dfam=1`) or probabilities (for
 
   * $n {\times} 1$: for power-type distributions (`dfam=1`)
   * $n {\times} 2$: for binomial distribution (`dfam=2`),
-col\# 2 is the “No” probability
+col\# 2 is the "No" probability
   * $n {\times} k\,{+}\,1$: for multinomial logit (`dfam=3`),
 col\# $k\,{+}\,1$ is for the baseline
 
@@ -1788,13 +1788,13 @@ unknown (which sets it to `1.0`).
 <a name="table13" />
 **Table 13**: The goodness-of-fit statistics are provided in CSV format, one per each line, with four
 columns: (Name, CID, Disp?, Value).  The columns are: 
-“Name” is the string identifier for the statistic;
-“CID” is an optional integer value that specifies the $Y$-column index for per-column statistics
+"Name" is the string identifier for the statistic;
+"CID" is an optional integer value that specifies the $Y$-column index for per-column statistics
 (note that a bi/multinomial one-column Y-input is converted into multi-column);
-“Disp?” is an optional Boolean value ($TRUE$ or $FALSE$) that tells us
+"Disp?" is an optional Boolean value ($TRUE$ or $FALSE$) that tells us
 whether or not scaling by the input dispersion parameter `disp` has been applied to this
 statistic;
-“Value” is the value of the statistic.
+"Value" is the value of the statistic.
 
 | Name                 | CID | Disp? | Meaning |
 | -------------------- | :-: | :---: | ------- |
@@ -1825,15 +1825,15 @@ The output matrix $M$ of predicted means (or probabilities) is computed
 by matrix-multiplying $X$ with the first column of $B$ or with the
 whole $B$ in the multinomial case, adding the intercept if available
 (conceptually, appending an extra column of ones to $X$); then applying
-the inverse of the model’s link function. The difference between “means”
-and “probabilities” in the categorical case becomes significant when
+the inverse of the model’s link function. The difference between "means"
+and "probabilities" in the categorical case becomes significant when
 there are ${\geq}\,2$ observations per record (with the multi-label
 records) or when the labels such as $-1$ and $1$ are viewed and averaged
 as numerical response values (with the single-label records). To avoid
 any or information loss, we separately return the predicted probability
 of each category label for each record.
 
-When the “actual” response values $Y$ are available, the summary
+When the "actual" response values $Y$ are available, the summary
 statistics are computed and written out as described in
 [**Table 13**](algorithms-regression.html#table13). Below we discuss each of these statistics
 in detail. Note that in the categorical case (binomial and multinomial)
@@ -1845,7 +1845,7 @@ each response label is converted into an indicator vector
 $(0,\ldots,0,1_l,0,\ldots,0)$ where $l$ is the label ID for this record.
 All negative (e.g. $-1$) or zero label IDs are converted to the
 $1 +$ maximum label ID. The largest label ID is viewed as the
-“baseline” as explained in the section on Multinomial Logistic
+"baseline" as explained in the section on Multinomial Logistic
 Regression. We assume that there are $k\geq 1$ non-baseline categories
 and one (last) baseline category.
 
@@ -1900,12 +1900,12 @@ Z \,=\, \frac {\ell(Y) - E_Y \ell(Y)}{\sqrt{Var_Y \ell(Y)}};\quad
 \mathop{\textrm{p-value}}(Z) \,=\, Prob\Big[\,\big|\mathop{\textrm{Normal}}(0,1)\big| \, > \, |Z|\,\Big]
 $$
 
-A low p-value would indicate “underfitting” if $Z\ll 0$ or “overfitting”
-if $Z\gg 0$. Here “overfitting” means that higher-probability labels
+A low p-value would indicate "underfitting" if $Z\ll 0$ or "overfitting"
+if $Z\gg 0$. Here "overfitting" means that higher-probability labels
 occur more often than their probabilities suggest.
 
 We also apply the dispersion input (`disp`) to compute the
-“scaled” version of the $Z$-score and its p-value. Since $\ell(Y)$ is a
+"scaled" version of the $Z$-score and its p-value. Since $\ell(Y)$ is a
 linear function of $Y$, multiplying the GLM-predicted variance of $Y$ by
 `disp` results in multiplying
 $Var_Y \ell(Y)$ by the same
@@ -1954,11 +1954,11 @@ are unreliable (i.e. do not approach the $\chi^2$ distribution) unless
 the predicted means of multi-label counts
 $$\mu_{i,j} = N_i \hspace{0.5pt} p_{i,j}$$ are fairly large: all
 ${\geq}\,1$ and 80% are at least $5$ [[Cochran1954]](algorithms-bibliography.html). They should not
-be used for “one label per record” categoricals.
+be used for "one label per record" categoricals.
 
 `DEVIANCE_G2`, `DEVIANCE_G2_BY_DF`, and
 `DEVIANCE_G2_PVAL`: Deviance $G^2$ is the log of the
-likelihood ratio between the “saturated” model and the linear model
+likelihood ratio between the "saturated" model and the linear model
 being tested for the given dataset, multiplied by two:
 
 $$
@@ -1967,10 +1967,10 @@ G^2 \,=\, 2 \,\log \frac{Prob[Y \mid \textrm{saturated model}\hspace{0.5pt}]}{Pr
 \end{equation}
 $$
 
-The “saturated” model sets the mean
+The "saturated" model sets the mean
 $\mu_i^{\mathrm{sat}}$ to equal $y_i$ for every record (for categorical
 data, $$p_{i,j}^{sat} = y_{i,j} / N_i$$), which represents the
-“perfect fit.” For records with $y_{i,j} \in \{0, N_i\}$ or otherwise at
+"perfect fit." For records with $y_{i,j} \in \{0, N_i\}$ or otherwise at
 a boundary, by continuity we set $0 \log 0 = 0$. The GLM likelihood
 functions defined in (6) become simplified in
 ratio (8) due to canceling out the term $c(y, a)$
@@ -1979,7 +1979,7 @@ since it is the same in both models.
 The log of a likelihood ratio between two nested models, times two, is
 known to approach a $\chi^2$ distribution as $n\to\infty$ if both models
 have fixed parameter spaces. But this is not the case for the
-“saturated” model: it adds more parameters with each record. In
+"saturated" model: it adds more parameters with each record. In
 practice, however, $\chi^2$ distributions are used to compute the
 p-value of $G^2$ [[McCullagh1989]](algorithms-bibliography.html). The number of degrees of
 freedom \#d.f. and the treatment of dispersion are the same as for
@@ -2032,7 +2032,7 @@ We also compute the $R^2$ statistics for each column of $Y$, see
 of $R^2$: in one version the residual sum-of-squares (RSS) includes any
 bias in the residual that might be present (due to the lack of, or
 inaccuracy in, the intercept); in the other version of RSS the bias is
-subtracted by “centering” the residual. In both cases we subtract the
+subtracted by "centering" the residual. In both cases we subtract the
 bias in the total sum-of-squares (in the denominator), and $m'$ equals
 $m$ with the intercept or $m+1$ without the intercept.
 

@@ -43,72 +43,53 @@ import org.apache.sysml.test.integration.TestConfiguration;
  */
 public class DMLScriptTest1 extends AutomatedTestBase 
 {
-
 	
 	private final static String TEST_DIR = "functions/dmlscript/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + DMLScriptTest1.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "DMLScriptTest";
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/dmlscript/";
-
 		// positive tests
-		availableTestConfigurations.put("DMLScriptTest", new TestConfiguration("functions/dmlscript/", "DMLScriptTest", new String[] { "a" }));
+		TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "a" });
+		addTestConfiguration(TEST_NAME, config);
 		
-
-		// negative tests
-		
+		// negative tests		
 	}
 
 	@Test
 	public void testWithFile() {
 		int rows = 10;
 		int cols = 10;
-		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		TestConfiguration config = availableTestConfigurations.get("DMLScriptTest");
+		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-		
-		fullDMLScriptName = baseDirectory + "DMLScriptTest.dml";
-		
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
-	
 		loadTestConfiguration(config);
+		
+		String HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = HOME + "DMLScriptTest.dml";
+		
+		programArgs = new String[]{"-args", input("a"),
+			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		writeInputMatrix("a", a, true);
 
 		runTest(true, false, null, -1);
 
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
+		programArgs = new String[]{"-args", input("a"),
+			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
-		
-		programArgs = new String[]{"-exec", "hybrid",
-	               "-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
+		programArgs = new String[]{"-exec", "hybrid", "-args", input("a"),
+			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
-		programArgs = new String[]{"-exec", "hybrid", "-config=" + baseDirectory + "SystemML-config.xml",
-	               "-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
+		programArgs = new String[]{"-exec", "hybrid", "-config=" + HOME + "SystemML-config.xml",
+			"-args", input("a"), Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
-		
 	}
 
 	@Test
@@ -119,39 +100,26 @@ public class DMLScriptTest1 extends AutomatedTestBase
 		int cols = 10;
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		TestConfiguration config = availableTestConfigurations.get("DMLScriptTest");
+		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-		
-		programArgs = new String[]{"-s", s, 
-	               "-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
-	
 		loadTestConfiguration(config);
+		
+		programArgs = new String[]{"-s", s, "-args", input("a"),
+			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		writeInputMatrix("a", a, true);
 
 		runTest(true, false, null, -1);
 		
-		programArgs = new String[]{"-s", s,
-	               "-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
+		programArgs = new String[]{"-s", s, "-args", input("a"),
+			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
-		programArgs = new String[]{"-s", s, "-config=" + baseDirectory + "SystemML-config.xml", "-exec", "hybrid", 
-	               "-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
+		programArgs = new String[]{"-s", s, "-config=" + HOME + "SystemML-config.xml", "-exec", "hybrid",
+			"-args", input("a"), Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 	}
 }

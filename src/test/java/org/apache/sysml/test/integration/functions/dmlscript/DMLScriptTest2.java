@@ -46,7 +46,8 @@ public class DMLScriptTest2 extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/dmlscript/";
-	
+	private final static String TEST_CLASS_DIR = TEST_DIR + DMLScriptTest2.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "DMLScriptTest2";
 	
 	/**
 	 * Main method for running one test at a time.
@@ -66,14 +67,11 @@ public class DMLScriptTest2 extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/dmlscript/";
-
 		// positive tests
 		
-		
-
 		// negative tests
-		availableTestConfigurations.put("DMLScriptTest2", new TestConfiguration("functions/dmlscript/", "DMLScriptTest2", new String[] { "a" }));
+		TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "a" });
+		addTestConfiguration(TEST_NAME, config);
 	}
 
 	@Test
@@ -82,53 +80,35 @@ public class DMLScriptTest2 extends AutomatedTestBase
 		int cols = 10;
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		TestConfiguration config = availableTestConfigurations.get("DMLScriptTest2");
+		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-		
 		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		writeInputMatrix("a", a, true);
 		
 		//Expect to print out an ERROR message. -f or -s must be the first argument.
-		fullDMLScriptName = baseDirectory + "DMLScriptTest.dml";
-		programArgs = new String[]{ "-exec", "hybrid", "-args", HOME + INPUT_DIR + "a" , 
-		                       Integer.toString(rows),
-		                       Integer.toString(cols),
-		                       "text",
-		                       HOME + OUTPUT_DIR + "a"
-		                       };
+		fullDMLScriptName = HOME + "DMLScriptTest.dml";
+		programArgs = new String[]{ "-exec", "hybrid", "-args", input("a"),
+			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 
 		//Expect to print out an ERROR message. -args should be the last argument.
-		programArgs = new String[]{"-args", HOME + INPUT_DIR + "a" , 
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a",
-	                        "-exec", "hybrid"};
+		programArgs = new String[]{"-args", input("a"),
+			Integer.toString(rows), Integer.toString(cols), "text", output("a"), "-exec", "hybrid"};
 		runTest(true, true, DMLException.class, -1);
 		
 		//Expect to print out an ERROR message, -de is an unknown argument
-		programArgs = new String[]{"-de", "-exec", "hybrid", "-config=" + baseDirectory + "SystemML-config.xml",
-	               "-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
+		programArgs = new String[]{"-de", "-exec", "hybrid", "-config=" + HOME + "SystemML-config.xml",
+			"-args", input("a"), Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
 		//Expect to print out an ERROR message, -config syntax is -config=<config file>
-		programArgs = new String[]{"-exec", "hybrid", "-config", baseDirectory + "SystemML-config.xml",
-			               "-args", HOME + INPUT_DIR + "a" ,
-			                        Integer.toString(rows),
-			                        Integer.toString(cols),
-			                        "text",
-			                        HOME + OUTPUT_DIR + "a"};
+		programArgs = new String[]{"-exec", "hybrid", "-config", HOME + "SystemML-config.xml",
+			"-args", input("a"), Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
-		
 	}
 
 	@Test
@@ -143,52 +123,29 @@ public class DMLScriptTest2 extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-		
 		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		writeInputMatrix("a", a, true);
-
 		
 		//Expect to print out an ERROR message. -f or -s must be the first argument.
-		programArgs = new String[]{ "-v", "-s", s, 
-	               "-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
-	
-		
+		programArgs = new String[]{ "-v", "-s", s, "-args", input("a"),
+			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
-		
 		//Expect to print out an ERROR message. -args should be the last argument.
-		programArgs = new String[]{"-s", s, 
-	               "-args", "-v", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
-	
-		
+		programArgs = new String[]{"-s", s, "-args", "-v", input("a"),
+			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
 		//Expect to print out an ERROR message, -de is an unknown argument
-		programArgs = new String[]{"-s", s, "-de",
-	               "-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
+		programArgs = new String[]{"-s", s, "-de", "-args", input("a"),
+			Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 		
 		//Expect to print out an ERROR message, -config syntax is -config=<config file>
-		programArgs = new String[]{"-s", s, "-config", baseDirectory + "SystemML-config.xml", "-exec", "hybrid", 
-	               "-args", HOME + INPUT_DIR + "a" ,
-	                        Integer.toString(rows),
-	                        Integer.toString(cols),
-	                        "text",
-	                        HOME + OUTPUT_DIR + "a"};
+		programArgs = new String[]{"-s", s, "-config", HOME + "SystemML-config.xml", "-exec", "hybrid",
+			"-args", input("a"), Integer.toString(rows), Integer.toString(cols), "text", output("a")};
 		runTest(true, false, null, -1);
 	}
 }

@@ -60,16 +60,16 @@ limitations under the License.
 
 ## Introduction
 
-SystemML compiles scripts written in Declarative Machine Learning (or DML for short) into MapReduce jobs. DML’s syntax closely follows R, thereby minimizing the learning curve to use SystemML. Before getting into detail, let’s start with a simple Hello World program in DML. Assuming that Hadoop is installed on your machine or cluster, place SystemML.jar and SystemML-config.xml into your directory. Now, create a text file “hello.dml” containing following code:
+SystemML compiles scripts written in Declarative Machine Learning (or DML for short) into MapReduce jobs. DML’s syntax closely follows R, thereby minimizing the learning curve to use SystemML. Before getting into detail, let’s start with a simple Hello World program in DML. Assuming that Hadoop is installed on your machine or cluster, place SystemML.jar and SystemML-config.xml into your directory. Now, create a text file "hello.dml" containing following code:
 
-    print(“Hello World”);
+    print("Hello World");
 
 
 To run this program on your machine, use following command:
 
     hadoop jar SystemML.jar –f hello.dml
 
-The option ```-f``` in the above command refers to the path to the DML script. The detailed list of the options is given in the section “Invocation of SystemML”.  Note: to install Hadoop, please follow the instructions given at [http://ibm.co/1yHtrdb](http://ibm.co/1yHtrdb).
+The option ```-f``` in the above command refers to the path to the DML script. The detailed list of the options is given in the section "Invocation of SystemML".  Note: to install Hadoop, please follow the instructions given at [http://ibm.co/1yHtrdb](http://ibm.co/1yHtrdb).
 
 
 ## Variables
@@ -89,7 +89,7 @@ Identifiers are case-sensitive (e.g., ```var1```, ```Var1```, and ```VAR1``` are
 
 Before, proceeding ahead let’s run the Hello World program using variable:
 
-    helloStr = “Hello World”
+    helloStr = "Hello World"
     print(helloStr)
 
 As seen in above example, there is no formal declaration of a variable. A variable is created when first assigned a value, and its type is inferred.
@@ -144,7 +144,7 @@ Table 1. Operators
 | + - | Matrix or Scalar | Matrix or Scalar<sup>1, 2</sup> | Addition (or string concatenation) and Subtraction
 | < > == != <= >= | Matrix or Scalar (any value type) | Scalar<sup>2</sup> (boolean type) | Relational operators
 | & \| ! | Scalar | Scalar | Boolean operators (Note: operators && and \|\| are not supported)
-| = | - | - | Assignment (Lowest precendence). Note: associativity of assignment “a = b = 3” is not supported
+| = | - | - | Assignment (Lowest precendence). Note: associativity of assignment "a = b = 3" is not supported
 
 1 If one of the operands is a matrix, output is matrix; otherwise it is scalar.
 
@@ -460,7 +460,7 @@ Note: The command-line parameters are treated as constants which are introduced 
     }
     print("A:" + A);
 
-This will result in parser warning, but the program will run to completion. If the expression in the “if” predicate would have evaluated to false, it would have resulted in runtime error. Also, functions need not be defined prior to its call. That is: following code will work without parser warning:
+This will result in parser warning, but the program will run to completion. If the expression in the "if" predicate would have evaluated to false, it would have resulted in runtime error. Also, functions need not be defined prior to its call. That is: following code will work without parser warning:
 
     A = 2;
     C = foo(1, A)
@@ -490,13 +490,13 @@ Since most algorithms require arguments to be passed from command line, DML supp
 
 1. As named arguments (recommended): 
 
-   ```-nvargs param1=7 param2=”abc” param3=3.14```
+   ```-nvargs param1=7 param2="abc" param3=3.14```
 
 2. As positional arguments (deprecated): 
 
-   ```-args 7 “abc” 3.14```
+   ```-args 7 "abc" 3.14```
 
-The named arguments can be accessed by adding “\\$” before the parameter name, i.e. \\$param1. On the other hand, the positional parameter are accessible by adding “\\$” before their positions (starting from index 1), i.e. \\$1. A string parameter can be passed without quote. For example, ```param2=abc``` is valid argument, but it is not recommend.
+The named arguments can be accessed by adding "\\$" before the parameter name, i.e. \\$param1. On the other hand, the positional parameter are accessible by adding "\\$" before their positions (starting from index 1), i.e. \\$1. A string parameter can be passed without quote. For example, ```param2=abc``` is valid argument, but it is not recommend.
 
 Sometimes the user would want to support default values in case user does not explicitly pass the corresponding command line parameter (in below example: ```$nbrRows```). To do so, we use the ```ifdef``` function which assigns either command line parameter or the default value to the local parameter. 
 
@@ -509,13 +509,13 @@ Sometimes the user would want to support default values in case user does not ex
     write (M, $fname, format="csv")
     print("Done creating and writing random matrix in " + $fname)
 
-In above script, ```ifdef(\$nbrRows, 10)``` function is a short-hand for “```ifdef(\$nbrRows) then \$nbrRows else 10```”.
+In above script, ```ifdef(\$nbrRows, 10)``` function is a short-hand for "```ifdef(\$nbrRows) then \$nbrRows else 10```".
 
 Let’s assume that the above script is invoked using following the command line values:
 
     hadoop jar SystemML.jar -f test.dml -nvargs fname=test.mtx nbrRows=5 nbrCols=5
 
-In this case, the script will create a random matrix M with 5 rows and 5 columns and write it to the file “text.mtx” in csv format. After that it will print the message “Done creating and writing random matrix in test.mtx” on the standard output.
+In this case, the script will create a random matrix M with 5 rows and 5 columns and write it to the file "text.mtx" in csv format. After that it will print the message "Done creating and writing random matrix in test.mtx" on the standard output.
 
 If however, the above script is invoked from the command line using named arguments:
 
@@ -536,7 +536,7 @@ Each argValue passed from the command-line has a scalar data type, and the value
     else
         Assign argValue string value type
 
-In above example, the placeholder variable ```\$nbrCols``` will be treated as integer in the script. If however, the command line arguments were “```nbrCols=5.0```”, then it would be treated as a double.
+In above example, the placeholder variable ```\$nbrCols``` will be treated as integer in the script. If however, the command line arguments were "```nbrCols=5.0```", then it would be treated as a double.
 
 NOTE:  argName must be a valid identifier.  
 NOTE:  If argValue contains spaces, it must be enclosed in double-quotes. 
@@ -581,7 +581,7 @@ min() <br/> max() | Return the minimum/maximum cell value in matrix | Input: mat
 min() <br/> max() | Return the minimum/maximum cell values of two matrices, matrix and scalar, or scalar value of two scalars. | Input: matrices or scalars <br/> Output: matrix or scalar | With x,y, z as scalars, and X, Y, Z as matrices: <br/> Z = min (X, Y) <br/> Z = min (X, y) <br/> z = min(x,y)
 nrow(), <br/> ncol(), <br/> length() | Return the number of rows, number of columns, or number of cells in matrix respectively. | Input: matrix <br/> Output: scalar | nrow(X)
 prod() | Return the product of all cells in matrix | Input: matrix <br/> Output: scalarj | prod(X)
-rand() | Generates a random matrix | Input: (rows=&lt;value&gt;, cols=&lt;value&gt;, min=&lt;value&gt;, max=&lt;value&gt;, sparsity=&lt;value&gt;, pdf=&lt;string&gt;, seed=&lt;value&gt;) <br/> rows/cols: Number of rows/cols (expression) <br/> min/max: Min/max value for cells (either constant value, or variable that evaluates to constant value) <br/> sparsity: fraction of non-zero cells (constant value) <br/> pdf: “uniform” (min, max) distribution, or “normal” (0,1) distribution; or “poisson” (lambda=1) distribution. string; default value is “uniform”. Note that, for the Poisson distribution, users can provide the mean/lambda parameter as follows: <br/> rand(rows=1000,cols=1000, pdf=”poisson”, lambda=2.5). <br/> The default value for lambda is 1. <br/> seed: Every invocation of rand() internally generates a random seed with which the cell values are generated. One can optionally provide a seed when repeatability is desired.  <br/> Output: matrix | X = rand(rows=10, cols=20, min=0, max=1, pdf="uniform", sparsity=0.2) <br/> The example generates a 10 x 20 matrix, with cell values uniformly chosen at random between 0 and 1, and approximately 20% of cells will have non-zero values.
+rand() | Generates a random matrix | Input: (rows=&lt;value&gt;, cols=&lt;value&gt;, min=&lt;value&gt;, max=&lt;value&gt;, sparsity=&lt;value&gt;, pdf=&lt;string&gt;, seed=&lt;value&gt;) <br/> rows/cols: Number of rows/cols (expression) <br/> min/max: Min/max value for cells (either constant value, or variable that evaluates to constant value) <br/> sparsity: fraction of non-zero cells (constant value) <br/> pdf: "uniform" (min, max) distribution, or "normal" (0,1) distribution; or "poisson" (lambda=1) distribution. string; default value is "uniform". Note that, for the Poisson distribution, users can provide the mean/lambda parameter as follows: <br/> rand(rows=1000,cols=1000, pdf="poisson", lambda=2.5). <br/> The default value for lambda is 1. <br/> seed: Every invocation of rand() internally generates a random seed with which the cell values are generated. One can optionally provide a seed when repeatability is desired.  <br/> Output: matrix | X = rand(rows=10, cols=20, min=0, max=1, pdf="uniform", sparsity=0.2) <br/> The example generates a 10 x 20 matrix, with cell values uniformly chosen at random between 0 and 1, and approximately 20% of cells will have non-zero values.
 rbind() | Row-wise matrix concatenation. Concatenates the second matrix as additional rows to the first matrix | Input: (X &lt;matrix&gt;, Y &lt;matrix&gt;) <br/>Output: &lt;matrix&gt; <br/> X and Y are matrices, where the number of columns in X and the number of columns in Y are the same. | A = matrix(1, rows=2,cols=3) <br/> B = matrix(2, rows=2,cols=3) <br/> C = rbind(A,B) <br/> print("Dimensions of C: " + nrow(C) + " X " + ncol(C)) <br/> Output: <br/> Dimensions of C: 4 X 3
 removeEmpty() | Removes all empty rows or columns from the input matrix target X according to the specified margin. | Input : (target= X &lt;matrix&gt;, margin="...") <br/> Output : &lt;matrix&gt; <br/> Valid values for margin are "rows" or "cols". | A = removeEmpty(target=X, margin="rows")
 replace() | Creates a copy of input matrix X, where all values that are equal to the scalar pattern s1 are replaced with the scalar replacement s2. | Input : (target= X &lt;matrix&gt;, pattern=&lt;scalar&gt;, replacement=&lt;scalar&gt;) <br/> Output : &lt;matrix&gt; <br/> If s1 is NaN, then all NaN values of X are treated as equal and hence replaced with s2. Positive and negative infinity are treated as different values. | A = replace(target=X, pattern=s1, replacement=s2)
@@ -619,8 +619,8 @@ moment() | Returns the kth central moment of values in a column matrix V, where 
 colSums() <br/> colMeans() <br/> colMaxs() <br/> colMins() | Column-wise computations -- for each column, compute the sum/mean/max/min of cell values | Input: matrix <br/> Output: (1 x n) matrix | colSums(X) <br/> colMeans(X) <br/> colMaxs(X) <br/>colMins(X)
 cov() | Returns the covariance between two 1-dimensional column matrices X and Y. The function takes an optional weights parameter W. All column matrices X, Y, and W (when specified) must have the exact same dimension. | Input: (X &lt;(n x 1) matrix&gt;, Y &lt;(n x 1) matrix&gt; [, W &lt;(n x 1) matrix&gt;)]) <br/> Output: &lt;scalar&gt; | cov(X,Y) <br/> cov(X,Y,W)
 table() | Returns the contingency table of two vectors A and B. The resulting table F consists of max(A) rows and max(B) columns. <br/> More precisely, F[i,j] = \\|{ k \\| A[k] = i and B[k] = j, 1 ≤ k ≤ n }\\|, where A and B are two n-dimensional vectors. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 6. | Input: (&lt;(n x 1) matrix&gt;, &lt;(n x 1) matrix&gt;), [&lt;(n x 1) matrix&gt;]) <br/> Output: &lt;matrix&gt; | F = table(A, B) <br/> F = table(A, B, C) <br/> And, several other forms (see below Table 6.)
-cdf()<br/> pnorm()<br/> pexp()<br/> pchisq()<br/> pf()<br/> pt()<br/> icdf()<br/> qnorm()<br/> qexp()<br/> qchisq()<br/> qf()<br/> qt() | p=cdf(target=q, ...) returns the cumulative probability P[X &lt;= q]. <br/> q=icdf(target=p, ...) returns the inverse cumulative probability i.e., it returns q such that the given target p = P[X&lt;=q]. <br/> For more details, please see the section “Probability Distribution Functions” below Table 6. | Input: (target=&lt;scalar&gt;, dist="...", ...) <br/> Output: &lt;scalar&gt; | p = cdf(target=q, dist="normal", mean=1.5, sd=2); is same as p=pnorm(target=q, mean=1.5, sd=2); <br/> q=icdf(target=p, dist=”normal”) is same as q=qnorm(target=p, mean=0,sd=1) <br/> More examples can be found in the section “Probability Distribution Functions” below Table 6.
-aggregate() | Splits/groups the values from X according to the corresponding values from G, and then applies the function fn on each group. <br/> The result F is a column matrix, in which each row contains the value computed from a distinct group in G. More specifically, F[k,1] = fn( {X[i,1] \\| 1&lt;=i&lt;=n and G[i,1] = k} ), where n = nrow(X) = nrow(G). <br/> Note that the distinct values in G are used as row indexes in the result matrix F. Therefore, nrow(F) = max(G). It is thus recommended that the values in G are consecutive and start from 1. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 6. | Input: (target= X &lt;(n x 1) matrix&gt;, groups = G &lt;(n x 1) matrix&gt;, fn="..." [,weights= W&lt;(n x 1)  matrix&gt;]) <br/> Output: F &lt;matrix&gt; <br/> The parameter fn takes one of the following functions: "count", "sum", "mean", "variance", "centralmoment”. In the case of central moment, one must also provide the order of the moment that need to be computed (see example). | F = aggregate(target=X, groups=G, fn="..." [,weights = W]) <br/> F = aggregate(target=X, groups=G1, fn="sum"); <br/> F = aggregate(target=Y, groups=G2, fn="mean", weights=W); <br/> F = aggregate(target=Z, groups=G3, fn="centralmoment", order="2"); <br/> And, several other forms (see below Table 6.)
+cdf()<br/> pnorm()<br/> pexp()<br/> pchisq()<br/> pf()<br/> pt()<br/> icdf()<br/> qnorm()<br/> qexp()<br/> qchisq()<br/> qf()<br/> qt() | p=cdf(target=q, ...) returns the cumulative probability P[X &lt;= q]. <br/> q=icdf(target=p, ...) returns the inverse cumulative probability i.e., it returns q such that the given target p = P[X&lt;=q]. <br/> For more details, please see the section "Probability Distribution Functions" below Table 6. | Input: (target=&lt;scalar&gt;, dist="...", ...) <br/> Output: &lt;scalar&gt; | p = cdf(target=q, dist="normal", mean=1.5, sd=2); is same as p=pnorm(target=q, mean=1.5, sd=2); <br/> q=icdf(target=p, dist="normal") is same as q=qnorm(target=p, mean=0,sd=1) <br/> More examples can be found in the section "Probability Distribution Functions" below Table 6.
+aggregate() | Splits/groups the values from X according to the corresponding values from G, and then applies the function fn on each group. <br/> The result F is a column matrix, in which each row contains the value computed from a distinct group in G. More specifically, F[k,1] = fn( {X[i,1] \\| 1&lt;=i&lt;=n and G[i,1] = k} ), where n = nrow(X) = nrow(G). <br/> Note that the distinct values in G are used as row indexes in the result matrix F. Therefore, nrow(F) = max(G). It is thus recommended that the values in G are consecutive and start from 1. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 6. | Input: (target= X &lt;(n x 1) matrix&gt;, groups = G &lt;(n x 1) matrix&gt;, fn="..." [,weights= W&lt;(n x 1)  matrix&gt;]) <br/> Output: F &lt;matrix&gt; <br/> The parameter fn takes one of the following functions: "count", "sum", "mean", "variance", "centralmoment". In the case of central moment, one must also provide the order of the moment that need to be computed (see example). | F = aggregate(target=X, groups=G, fn="..." [,weights = W]) <br/> F = aggregate(target=X, groups=G1, fn="sum"); <br/> F = aggregate(target=Y, groups=G2, fn="mean", weights=W); <br/> F = aggregate(target=Z, groups=G3, fn="centralmoment", order="2"); <br/> And, several other forms (see below Table 6.)
 interQuartileMean() | Returns the mean of all x in X such that x&gt;quantile(X, 0.25) and x&lt;=quantile(X, 0.75). X, W are column matrices (vectors) of the same size. W contains the weights for data in X. | Input: (X &lt;(n x 1) matrix&gt; [, W &lt;(n x 1) matrix&gt;)]) <br/> Output: &lt;scalar&gt; | interQuartileMean(X) <br/> interQuartileMean(X, W)
 quantile () | The p-quantile for a random variable X is the value x such that Pr[X&lt;x] &lt;= p and Pr[X&lt;= x] &gt;= p <br/> let n=nrow(X), i=ceiling(p*n), quantile() will return X[i]. p is a scalar (0&lt;p&lt;1) that specifies the quantile to be computed. Optionally, a weight vector may be provided for X. | Input: (X &lt;(n x 1) matrix&gt;, [W &lt;(n x 1) matrix&gt;),] p &lt;scalar&gt;) <br/> Output: &lt;scalar&gt; | quantile(X, p) <br/> quantile(X, W, p)
 quantile () | Returns a column matrix with list of all quantiles requested in P. | Input: (X &lt;(n x 1) matrix&gt;, [W &lt;(n x 1) matrix&gt;),] P &lt;(q x 1) matrix&gt;) <br/> Output: matrix | quantile(X, P) <br/> quantile(X, W, P)
@@ -631,7 +631,7 @@ cumprod() | Column prefix-prod (For row-prefix prod, use cumprod(t(X)) | Input: 
 cummin() | Column prefix-min (For row-prefix min, use cummin(t(X)) | Input: matrix <br/> Output: matrix of the same dimensions | A = matrix("3 4 1 6 5 2", rows=3, cols=2) <br/> B = cummin(A) <br/> The output matrix B = [[3,  4], [1,  4], [1, 2]]
 cummax() | Column prefix-max (For row-prefix min, use cummax(t(X)) | Input: matrix <br/> Output: matrix of the same dimensions | A = matrix("3 4 1 6 5 2", rows=3, cols=2) <br/> B = cummax(A) <br/> The output matrix B = [[3,  4], [3,  6], [5, 6]]
 sample(range, size, replacement, seed) | Sample returns a column vector of length size, containing uniform random numbers from [1, range] | Input: <br/> range: integer <br/> size: integer <br/> replacement: boolean (Optional, default: FALSE) <br/> seed: integer (Optional) <br/> Output: Matrix dimensions are size x 1 | sample(100, 5) <br/> sample(100, 5, TRUE) <br/> sample(100, 120, TRUE) <br/> sample(100, 5, 1234) # 1234 is the seed <br/> sample(100, 5, TRUE, 1234)
-outer(vector1, vector2, “op”) | Applies element wise binary operation “op” (for  example: “&lt;”, “==”, “&gt;=”, “*”, “min”) on the all combination of vector. <br/> Note: Using “*”, we get outer product of two vectors. | Input: vectors of same size d, string <br/> Output: matrix of size d X d | A = matrix("1 4", rows = 2, cols = 1) <br/> B = matrix("3 6", rows = 1, cols = 2) <br/> C = outer(A, B, "&lt;") <br/> D = outer(A, B, "*") <br/> The output matrix C = [[1, 1], [0, 1]] <br/> The output matrix D = [[3, 6], [12, 24]]<br/>
+outer(vector1, vector2, "op") | Applies element wise binary operation "op" (for  example: "&lt;", "==", "&gt;=", "*", "min") on the all combination of vector. <br/> Note: Using "*", we get outer product of two vectors. | Input: vectors of same size d, string <br/> Output: matrix of size d X d | A = matrix("1 4", rows = 2, cols = 1) <br/> B = matrix("3 6", rows = 1, cols = 2) <br/> C = outer(A, B, "&lt;") <br/> D = outer(A, B, "*") <br/> The output matrix C = [[1, 1], [0, 1]] <br/> The output matrix D = [[3, 6], [12, 24]]<br/>
 
 #### Alternative forms of table()
  
@@ -654,14 +654,14 @@ The built-in function table() supports different types of input parameters. Thes
 
 The built-in function aggregate() supports different types of input parameters. These variations are described below:
 
-  * Basic form: ```F=aggregate(target=X, groups=G, fn=”sum”)```
+  * Basic form: ```F=aggregate(target=X, groups=G, fn="sum")```
     As described above in Table 6.
-  * Weighted form: ```F=aggregate(target=X, groups=G, weights=W, fn=”sum”) ```
+  * Weighted form: ```F=aggregate(target=X, groups=G, weights=W, fn="sum") ```
     Users can provide an optional parameter W with the same dimensions as of A and B. In this case, fn computes the weighted statistics over values from X, which are grouped by values from G. 
   * Specified Output Size
 As noted in Table 6, the number of rows in the output matrix F is equal to the maximum value in the grouping matrix G. Therefore, the dimensions of F are known only after its execution is complete. When needed, users can precisely control the size of the output matrix via an additional argument, ```ngroups```, as shown below: <br/>
-    ```F = aggregate(target=X, groups=G, fn=”sum”, ngroups=10);``` <br/>
-The output F will have exactly 10 rows and 1 column. F may be a truncated or padded (with zeros) version of the output produced by ```aggregate(target=X, groups=G, fn=”sum”)``` – depending on the values of ```ngroups``` and ```max(G)```. For example, if ```max(G) < ngroups``` then the last (```ngroups-max(G)```) rows will have zeros.
+    ```F = aggregate(target=X, groups=G, fn="sum", ngroups=10);``` <br/>
+The output F will have exactly 10 rows and 1 column. F may be a truncated or padded (with zeros) version of the output produced by ```aggregate(target=X, groups=G, fn="sum")``` – depending on the values of ```ngroups``` and ```max(G)```. For example, if ```max(G) < ngroups``` then the last (```ngroups-max(G)```) rows will have zeros.
 
 #### Probability Distribution Functions
 
@@ -670,12 +670,12 @@ The output F will have exactly 10 rows and 1 column. F may be a truncated or pad
 This computes the cumulative probability at the given quantile i.e., P[X&lt;=q], where X is random variable whose distribution is specified via string argument fn. 
 
   * ```target```: input quantile at which cumulative probability P[X&lt;=q] is computed, where X is random variable whose distribution is specified via string argument fn. This is a mandatory argument. 
-  * ```dist```: name of the distribution specified as a string. Valid values are “normal” (for Normal or Gaussian distribution), “f” (for F distribution), “t” (for Student t-distribution), “chisq” (for Chi Squared distribution), and “exp” (for Exponential distribution). This is a mandatory argument.
+  * ```dist```: name of the distribution specified as a string. Valid values are "normal" (for Normal or Gaussian distribution), "f" (for F distribution), "t" (for Student t-distribution), "chisq" (for Chi Squared distribution), and "exp" (for Exponential distribution). This is a mandatory argument.
   * ```...```:  parameters of the distribution
-    * For ```dist=”normal”```, valid parameters are mean and sd that specify the mean and standard deviation of the normal distribution. The default values for mean and sd are 0.0 and 1.0, respectively.
-    * For ```dist=”f”```, valid parameters are df1 and df2 that specify two degrees of freedom. Both these parameters are mandatory.
-    * For ```dist=”t”```, and dist=”chisq”, valid parameter is df that specifies the degrees of freedom. This parameter is mandatory.
-    * For ```dist=”exp”```, valid parameter is rate that specifies the rate at which events occur. Note that the mean of exponential distribution is 1.0/rate. The default value is 1.0.
+    * For ```dist="normal"```, valid parameters are mean and sd that specify the mean and standard deviation of the normal distribution. The default values for mean and sd are 0.0 and 1.0, respectively.
+    * For ```dist="f"```, valid parameters are df1 and df2 that specify two degrees of freedom. Both these parameters are mandatory.
+    * For ```dist="t"```, and dist="chisq", valid parameter is df that specifies the degrees of freedom. This parameter is mandatory.
+    * For ```dist="exp"```, valid parameter is rate that specifies the rate at which events occur. Note that the mean of exponential distribution is 1.0/rate. The default value is 1.0.
   * ```Lower.tail```: a Boolean value with default set to TRUE. cdf() computes P[X&lt;=q] when lower.tail=TRUE and it computes P[X&gt;q] when lower.tail=FALSE. In other words, a complement of the cumulative distribution is computed when lower.tail=FALSE.
 
 ##### ```q = icdf(target=p, dist=fn, ...)```
@@ -720,23 +720,23 @@ is same as
 
 Examples of icdf():
 
-```q=icdf(target=p, dist=”normal”);```
+```q=icdf(target=p, dist="normal");```
 is same as 
 ```q=qnorm(target=p, mean=0,sd=1);```
 
-```q=icdf(target=p, dist=”exp”);```
+```q=icdf(target=p, dist="exp");```
 is same as 
 ```q=qexp(target=p, rate=1);```
 
-```q=icdf(target=p, dist=”chisq”, df=50);```
+```q=icdf(target=p, dist="chisq", df=50);```
 is same as 
 ```qchisq(target=p, df=50);```
 
-```q=icdf(target=p, dist=”f”, df1=50, df2=25);```
+```q=icdf(target=p, dist="f", df1=50, df2=25);```
 is same as 
 ```qf(target=p, , df1=50, df2=25);```
 
-```q=icdf(target=p, dist=”t”, df=50);```
+```q=icdf(target=p, dist="t", df=50);```
 is same as 
 ```qt(target=p, df=50);```
 
@@ -813,8 +813,8 @@ Parameter Name | Description | Optional | Permissible values | Data type valid f
 -------------- | ----------- | -------- | ------------------ | -------------------
 data_type | Indicates the data type of the data | Yes. Default value is matrix if not specified. | matrix, scalar. | matrix, scalar.
 value_type | Indicates the value type of data | Yes. Default value is double if not specified | double, int, string, boolean (Not case-sensitive). Must be double when data_type matrix | matrix, scalar.
-rows | Number of rows in matrix | Yes – only when format=”csv”. | Any integer &gt; 0 |  matrix
-cols | Number of columns in matrix | Yes – only when format=”csv” | Any integer &gt; 0 |  matrix
+rows | Number of rows in matrix | Yes – only when format="csv". | Any integer &gt; 0 |  matrix
+cols | Number of columns in matrix | Yes – only when format="csv" | Any integer &gt; 0 |  matrix
 rows_in_block, cols_in_block | Valid only for binary blocked matrix. Indicate dimensions of blocks | No. Only valid if matrix in binary blocked format. | Any integer &gt; 0 | matrix in blocked binary format. Valid only when format "binary"
 nnz | Number of non-zero values | Yes | Any integer &gt; 0 | matrix
 format | data file format | Yes. Default value is text | binary, text, mm, csv | matrix, scalar. Formats mm and csv are applicable only for matrices.
@@ -828,7 +828,7 @@ Parameter Name | Description | Optional | Permissible values | Data type valid f
 -------------- | ----------- | -------- | ------------------ | -------------------
 header | Specifies whether the input data file has a header. Header, if exists, must be a single line and it must also be the first line in the file. | Yes, default value is False. | true or false | Matrix
 sep | Specifies the separator or the delimiter used in the input data file. Note that using a delimiter composed of just numeric values or a dot (decimal point) can be ambiguous and may lead to unexpected results. | Yes,  default value is ‘,’ (comma) | A quoted string | matrix
-fill | Only valid when reading CSV files. It specifies whether or not to fill the empty fields in the input file. Empty fields are denoted by consecutive separators/delimiters. If fill=true then every empty field is filled with the value specified by “default” attribute. An exception is raised if fill=false and and the input file has one or more empty fields. | Yes, default is true. | true or false | matrix
+fill | Only valid when reading CSV files. It specifies whether or not to fill the empty fields in the input file. Empty fields are denoted by consecutive separators/delimiters. If fill=true then every empty field is filled with the value specified by "default" attribute. An exception is raised if fill=false and and the input file has one or more empty fields. | Yes, default is true. | true or false | matrix
 default | Only valid when reading CSV files and fill=true. It specifies the special value with which all empty values are filled while reading the input matrix. | Yes, default value is 0 (zero) | Any double value | matrix
 sparse | Only valid when writing CSV files. It specifies whether or not to explicitly output zero (0) values.  Zero values are written out only when sparse=false. | Yes,  default value is true. | true or false | matrix
 
@@ -842,9 +842,9 @@ Furthermore, the following additional notes apply when reading and writing CSV f
 
 The syntax of a read statement is as follows:
 
-    read(“inputfile”, [list of parameters])
+    read("inputfile", [list of parameters])
 
-where inputfile is the path to the data file in HDFS. The list of parameters is the same as provided in MTD files. For "inputfile" parameter, the user can use constant string concatenation to give the full path of the file, where "+" is used as the concatenation operator. However, the file path must evaluate to a constant string at compile time. For example, “/my/dir”+“filename.mtx” is valid parameter but “/my/dir”+“filename”+i+“.mtx” is not (where i is a variable).
+where inputfile is the path to the data file in HDFS. The list of parameters is the same as provided in MTD files. For "inputfile" parameter, the user can use constant string concatenation to give the full path of the file, where "+" is used as the concatenation operator. However, the file path must evaluate to a constant string at compile time. For example, "/my/dir"+"filename.mtx" is valid parameter but "/my/dir"+"filename"+i+".mtx" is not (where i is a variable).
 
 The user has the option of specifying each parameter value either in the MTD file, the read function invocation, or in both locations. **However, parameter values specified in both the read invocation and MTD file must have the same value. Also, if a scalar value is being read, then format cannot be specified.** The read invocation in SystemML is parameterized as follows during compilation.
 
@@ -859,7 +859,7 @@ The user has the option of specifying each parameter value either in the MTD fil
     # Defaults for data_type and value_type are used. 
     V = read ("in/v", rows=10, cols=8, format="text"); 
     # read a matrix from HDFS with path "in/v".
-    # The user specifies "in" as the directory and “v” as 
+    # The user specifies "in" as the directory and "v" as 
     # the file name and uses constant string concatenation.
     dir = "in";
     file = "v";
@@ -868,7 +868,7 @@ The user has the option of specifying each parameter value either in the MTD fil
     # (MTD file path: in/data.mtd)
     V = read("in/data");
     # read a scalar integer value from HDFS file "in/scalar_i"
-    V = read(“in/scalar_i”,data_type=”scalar", value_type="int");
+    V = read("in/scalar_i",data_type="scalar", value_type="int");
 
 Additionally, readMM() and read.csv() are supported and can be used instead of specifying format="mm", or format="csv" in the read() function.
 
@@ -876,9 +876,9 @@ Additionally, readMM() and read.csv() are supported and can be used instead of s
 
 The write() method is used to persist scalar and matrix data to files in HDFS. The syntax of write() is below. The parameters are described in the table. Note, that the set of supported parameters for write()  is NOT the same as for read(). SystemML writes a MTD file for the written data.
 
-    write(identifier, “outputfile”, format = “fmt”)
+    write(identifier, "outputfile", format = "fmt")
 
-The user can use constant string concatenation in “outputfile” parameter to give the full path of the file, where "+" is used as the concatenation operator.
+The user can use constant string concatenation in "outputfile" parameter to give the full path of the file, where "+" is used as the concatenation operator.
 
 Table 11. Parameters for ```write()``` method 
 
@@ -891,7 +891,7 @@ format | Valid for all three datatypes. <br/> Indicates the output file format. 
 
 ##### Examples
 
-    # write V to HDFS file “out/file”, in text format.
+    # write V to HDFS file "out/file", in text format.
     # Create MTD file out/file.mtd
     write(V, "out/file");
 
@@ -903,13 +903,13 @@ out/file.mtd:
         "rows": 10,
         "cols": 8,
         "nnz": 4,
-        "format": "text”,
+        "format": "text",
         "description": { "author": "SystemML" }
     }
 
-Write V to HDFS file”out/file” in binary blocked format:
+Write V to HDFS file"out/file" in binary blocked format:
 
-    write(V, “out/file”, format=”binary”);
+    write(V, "out/file", format="binary");
 
 out/file.mtd:
 
@@ -925,7 +925,7 @@ out/file.mtd:
         "description": { "author": "SystemML" }
     }
 
-Write a scalar integer value to HDFS file “out/scalar_i”
+Write a scalar integer value to HDFS file "out/scalar_i"
 
     write(x, "out/scalar_i");
 
@@ -1234,8 +1234,8 @@ Table 14. Other Built-In Functions
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
 append() | Append a string to another string separated by "\n" <br/> Limitation: The string may grow up to 1 MByte. | Input: (&lt;string&gt;, &lt;string&gt;) <br/> Output: &lt;string&gt; | s = "iter=" + i <br/> i = i + 1 <br/> s = append(s, "iter=" + i) <br/> write(s, "s.out")
-print() | Prints the value of a scalar variable x. This built-in takes an optional string parameter. | Input: (&lt;scalar&gt;) | print(“hello”) <br/> print(“hello” + “world”) <br/> print("value of x is " + x )
-stop() | Halts the execution of DML program by printing the message that is passed in as the argument. <br/> Note that the use of stop() is not allowed inside a parfor loop. |  Input: (&lt;scalar&gt;) | stop(“Inputs to DML program are invalid”) <br/> stop(“Class labels must be either -1 or +1”)
+print() | Prints the value of a scalar variable x. This built-in takes an optional string parameter. | Input: (&lt;scalar&gt;) | print("hello") <br/> print("hello" + "world") <br/> print("value of x is " + x )
+stop() | Halts the execution of DML program by printing the message that is passed in as the argument. <br/> Note that the use of stop() is not allowed inside a parfor loop. |  Input: (&lt;scalar&gt;) | stop("Inputs to DML program are invalid") <br/> stop("Class labels must be either -1 or +1")
 order() | Sort a column of the matrix X in decreasing/increasing order and return either index (indexreturn=TRUE) or data (indexreturn=FALSE). | Input: (target=X, by=column, decreasing, indexreturn) | order(X, by=1, decreasing=FALSE, indexreturn=FALSE)
 
 
@@ -1363,7 +1363,7 @@ First, you need to call SystemML using –debug flag.
 
     hadoop jar SystemML.jar -f test.dml –debug
 
-You can see the line numbers in your DML script by “list” (or simply “l”) command:
+You can see the line numbers in your DML script by "list" (or simply "l") command:
 
     (SystemMLdb) l
     line    1: A = matrix("1 2 3 4 5 6", rows=3, cols=2)

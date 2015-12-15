@@ -4,7 +4,7 @@
 
 .navbar .brand {
   height: 50px;
-  width: 180px;
+  width: 530px;
   margin-left: 1px;
   padding: 0;
 }
@@ -22,6 +22,8 @@
 .navbar-inner {
   padding-top: 2px;
   height: 50px;
+  background-color: #152935;
+  background-image: none;
 }
 
 .navbar-inner .nav {
@@ -191,4 +193,33 @@ body {
 
 .lightred {
   background: #ff7b7b;
+}
+
+.navbar a, .navbar .nav > li > a {
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-style: normal;
+  text-shadow: none;
+  color: #FFF;
+}
+
+.navbar a:hover {
+  text-decoration: none;
+}
+
+.navbar .nav > li > a:focus, .navbar .nav > li > a:hover {
+  background-color: #0c8672;
+  color: #FFF;
+}
+
+.dropdown-menu a {
+  color: #333;
+}
+
+.dropdown-menu li > a:focus, .dropdown-menu li > a:hover {
+  background-color: #0c8672;
+  background-image: none;
+}
+
+a {
+  color: #0c8672;
 }

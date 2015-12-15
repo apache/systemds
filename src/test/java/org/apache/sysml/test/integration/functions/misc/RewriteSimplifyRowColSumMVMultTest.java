@@ -41,6 +41,7 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 	private static final String TEST_NAME1 = "RewriteRowSumsMVMult";
 	private static final String TEST_NAME2 = "RewriteRowSumsMVMult";
 	private static final String TEST_DIR = "functions/misc/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteSimplifyRowColSumMVMultTest.class.getSimpleName() + "/";
 	
 	private static final int rows = 1234;
 	private static final int cols = 567;
@@ -50,8 +51,8 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" })   );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" })   );
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 	}
 
 	@Test
@@ -91,16 +92,14 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{ "-stats","-args", 
-					                  HOME + INPUT_DIR + "X",
-					                  HOME + OUTPUT_DIR + "R" };
+			programArgs = new String[]{ "-stats","-args", input("X"), output("R") };
+			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " +
-			          HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			rCmd = getRCmd(inputDir(), expectedDir());			
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 

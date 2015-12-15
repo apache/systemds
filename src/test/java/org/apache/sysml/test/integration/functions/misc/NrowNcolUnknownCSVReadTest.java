@@ -40,6 +40,7 @@ public class NrowNcolUnknownCSVReadTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/misc/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + NrowNcolUnknownCSVReadTest.class.getSimpleName() + "/";
 
 	private final static String TEST_NAME1 = "NrowUnknownCSVTest";
 	private final static String TEST_NAME2 = "NcolUnknownCSVTest";
@@ -48,9 +49,9 @@ public class NrowNcolUnknownCSVReadTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] {}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {}));
 	}
 	
 	@Test
@@ -87,21 +88,19 @@ public class NrowNcolUnknownCSVReadTest extends AutomatedTestBase
 			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 			
 			//test configuration
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 		    String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A"};
-			
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-args", input("A")};
 			
 			//generate input data w/o mtd file (delete any mtd file from previous runs)
 			int rows = 1034;
 			int cols = 73;
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, 1.0, 7);
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
-			DataConverter.writeMatrixToHDFS(mb, HOME + INPUT_DIR + "A", OutputInfo.CSVOutputInfo, 
-					                        new MatrixCharacteristics(rows,cols,-1,-1));
-	        MapReduceTool.deleteFileIfExistOnHDFS(HOME + INPUT_DIR + "A.mtd");
+			DataConverter.writeMatrixToHDFS(mb, input("A"), OutputInfo.CSVOutputInfo, 
+				new MatrixCharacteristics(rows,cols,-1,-1));
+	        MapReduceTool.deleteFileIfExistOnHDFS(input("A.mtd"));
 			
 			//run tests
 	        runTest(true, false, null, -1);

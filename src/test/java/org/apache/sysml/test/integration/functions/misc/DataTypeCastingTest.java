@@ -38,16 +38,16 @@ public class DataTypeCastingTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/misc/";
-
+	private final static String TEST_CLASS_DIR = TEST_DIR + DataTypeCastingTest.class.getSimpleName() + "/";
+	
 	private final static String TEST_NAME1 = "castMatrixScalar";
 	private final static String TEST_NAME2 = "castScalarMatrix";
 	
 	
-	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}));
 	}
 	
 	@Test
@@ -93,16 +93,14 @@ public class DataTypeCastingTest extends AutomatedTestBase
 		
 		try
 		{		
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
-		    
+			TestConfiguration config = getTestConfiguration(TEST_NAME);	
+			loadTestConfiguration(config);
+   
 		    String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "V" , 
-								                Integer.toString(numVals),
-								                Integer.toString(numVals),
-								                HOME + OUTPUT_DIR + "R", };
-			
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-args", input("V"), 
+				Integer.toString(numVals), Integer.toString(numVals),
+				output("R") };
 			
 			//write input
 			double[][] V = getRandomMatrix(numVals, numVals, 0, 1, 1.0, 7);
@@ -110,10 +108,9 @@ public class DataTypeCastingTest extends AutomatedTestBase
 				writeInputMatrix("V", V, false);	
 			}
 			else{
-				MapReduceTool.writeDoubleToHDFS(V[0][0], HOME + INPUT_DIR + "V");
-				MapReduceTool.writeScalarMetaDataFile(HOME + INPUT_DIR + "V.mtd", ValueType.DOUBLE);
+				MapReduceTool.writeDoubleToHDFS(V[0][0], input("V"));
+				MapReduceTool.writeScalarMetaDataFile(input("V.mtd"), ValueType.DOUBLE);
 			}
-			
 			
 			//run tests
 	        runTest(true, exceptionExpected, DMLException.class, -1);

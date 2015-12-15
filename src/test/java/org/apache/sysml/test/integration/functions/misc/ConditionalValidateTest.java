@@ -39,6 +39,7 @@ public class ConditionalValidateTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/misc/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ConditionalValidateTest.class.getSimpleName() + "/";
 
 	private final static String TEST_NAME1 = "conditionalValidate1"; //plain
 	private final static String TEST_NAME2 = "conditionalValidate2"; //if
@@ -49,10 +50,10 @@ public class ConditionalValidateTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_DIR, TEST_NAME4, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}));
 	}
 	
 	@Test
@@ -104,8 +105,6 @@ public class ConditionalValidateTest extends AutomatedTestBase
 	}
 	
 	
-	
-	
 	/**
 	 * 
 	 * @param cfc
@@ -118,14 +117,13 @@ public class ConditionalValidateTest extends AutomatedTestBase
 		try
 		{		
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 
 		    String HOME = SCRIPT_DIR + TEST_DIR;
-		    String input = HOME + INPUT_DIR + "Y";
+		    String input = input("Y");
 			
 		    fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", input };
-			
-			loadTestConfiguration(config);
 			
 			//write input
 			double[][] Y = getRandomMatrix(10, 15, 0, 1, 1.0, 7);

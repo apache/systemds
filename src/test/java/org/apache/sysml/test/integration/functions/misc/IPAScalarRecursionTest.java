@@ -33,11 +33,11 @@ public class IPAScalarRecursionTest extends AutomatedTestBase
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_NAME1 = "IPAScalarRecursion";
-	
+	private final static String TEST_CLASS_DIR = TEST_DIR + IPAScalarRecursionTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
 	}
 	
 	@Test
@@ -47,13 +47,11 @@ public class IPAScalarRecursionTest extends AutomatedTestBase
 		
 		try
 		{		
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 		    
 		    String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", Integer.toString(7) };
-			
-			loadTestConfiguration(config);
 			
 			//run tests
 	        runTest(true, false, null, 0);

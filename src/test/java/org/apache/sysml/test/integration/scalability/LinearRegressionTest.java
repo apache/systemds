@@ -31,11 +31,13 @@ public class LinearRegressionTest extends AutomatedScalabilityTestBase
 {
 	
 	private static final String TEST_DIR = "test/scripts/scalability/linear_regression/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + LinearRegressionTest.class.getSimpleName() + "/";
+
 	
     @Override
     public void setUp() {
     	TestUtils.clearAssertionInformation();
-        addTestConfiguration("LinearRegressionTest", new TestConfiguration(TEST_DIR, "LinearRegressionTest", new String[] { "w" }));
+        addTestConfiguration("LinearRegressionTest", new TestConfiguration(TEST_CLASS_DIR, "LinearRegressionTest", new String[] { "w" }));
         matrixSizes = new int[][] {
                 { 19004, 15436 }
         };

@@ -39,11 +39,12 @@ public class SetWorkingDirTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "PackageFunCall1";
 	private final static String TEST_NAME2 = "PackageFunCall2";
 	private final static String TEST_NAME0 = "PackageFunLib";
+	private static final String TEST_CLASS_DIR = TEST_DIR + SetWorkingDirTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {}));
 	}
 	
 	@Test

@@ -45,6 +45,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "DynWriteScalar";
 	private final static String TEST_NAME2 = "DynWriteMatrix";
 	private final static String TEST_DIR = "functions/io/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FullDynWriteTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 350;
@@ -59,8 +60,8 @@ public class FullDynWriteTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "B" })   );
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "B" })   );
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" }) );
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "B" }) );
 	}
 
 	@Test
@@ -138,26 +139,25 @@ public class FullDynWriteTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{ "-explain","-args", HOME + INPUT_DIR + "A",
-				                           getFormatString(fmt),
-				                           HOME + OUTPUT_DIR};
-		loadTestConfiguration(config);
+		programArgs = new String[]{ "-explain","-args",
+			input("A"), getFormatString(fmt), outputDir()};
 		
 		try 
 		{		
 			long seed1 = System.nanoTime();
 		    double[][] A = getRandomMatrix(rows, cols, 0, 1, 1.0, seed1);
-		    writeMatrix(A, HOME + INPUT_DIR + "A", fmt, rows, cols, 1000, 1000, rows*cols);
+		    writeMatrix(A, input("A"), fmt, rows, cols, 1000, 1000, rows*cols);
 		    
 		    //run testcase
 			runTest(true, false, null, -1);
 		    
 			//check existing file and compare results
 			long sum =  computeSum(A);
-			String fname = HOME + OUTPUT_DIR + sum;
+			String fname = output(Long.toString(sum));
 			
 			if( type == Type.Scalar ) {
 				long val = MapReduceTool.readIntegerFromHDFSFile(fname);

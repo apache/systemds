@@ -33,6 +33,7 @@ public class LongOverflowTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/misc/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + LongOverflowTest.class.getSimpleName() + "/";
 
 	private final static String TEST_NAME1 = "LongOverflowMult";
 	private final static String TEST_NAME2 = "LongOverflowPlus";
@@ -49,9 +50,9 @@ public class LongOverflowTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] {}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {}));
 	}
 	
 	@Test
@@ -85,7 +86,6 @@ public class LongOverflowTest extends AutomatedTestBase
 	}
 	
 	
-	
 	/**
 	 * 
 	 * @param cfc
@@ -97,7 +97,7 @@ public class LongOverflowTest extends AutomatedTestBase
 		
 		try
 		{		
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 		    
 			//generate input data;
 			long input1 = (TEST_NAME.equals(TEST_NAME3)? val5 : val1);
@@ -105,10 +105,7 @@ public class LongOverflowTest extends AutomatedTestBase
 			
 		    String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", Long.toString(input1), 
-								                Long.toString(input2) };
-			
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-args", Long.toString(input1), Long.toString(input2) };
 			
 			//run tests
 	        runTest(true, error, DMLException.class, -1);

@@ -28,17 +28,19 @@ import org.apache.sysml.test.integration.TestConfiguration;
 public class ScalarToMatrixInLoopTest extends AutomatedTestBase 
 {
 	private static final String TEST_DIR = "functions/terms/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ScalarToMatrixInLoopTest.class.getSimpleName() + "/";
+	private static final String TEST_NAME = "ScalarToMatrixInLoop";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("ScalarToMatrixInLoop", new TestConfiguration(TEST_DIR, "TestScalarToMatrixInLoop", new String[] {}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, "TestScalarToMatrixInLoop", new String[] {}));
 	}
 
 	@Test
 	public void testScalarToMatrixInLoop() {
 		int rows = 5, cols = 5;
 
-		TestConfiguration config = getTestConfiguration("ScalarToMatrixInLoop");
+		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 

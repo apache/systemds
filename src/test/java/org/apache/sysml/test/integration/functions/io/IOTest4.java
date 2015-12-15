@@ -20,7 +20,6 @@
 package org.apache.sysml.test.integration.functions.io;
 
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -44,17 +43,17 @@ import org.apache.sysml.test.integration.TestConfiguration;
  */
 public class IOTest4 extends AutomatedTestBase 
 {
-	
+	private final static String TEST_DIR = "functions/io/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + IOTest4.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "SimpleTest";
+
 	@Override
 	public void setUp() {
-		baseDirectory = SCRIPT_DIR + "functions/io/";
-
 		// positive tests
-		
-		
-
+				
 		// negative tests
-		availableTestConfigurations.put("SimpleTest", new TestConfiguration("functions/io/", "IOTest4", new String[] { "a" }));
+		addTestConfiguration(TEST_NAME,
+			new TestConfiguration(TEST_CLASS_DIR, "IOTest4", new String[] { "a" }));
 	}
 
 	@Test
@@ -62,7 +61,7 @@ public class IOTest4 extends AutomatedTestBase
 		int rows = 10;
 		int cols = 10;
 
-		TestConfiguration config = availableTestConfigurations.get("SimpleTest");
+		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");

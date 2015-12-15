@@ -34,6 +34,7 @@ public class PiggybackingTest1 extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "Piggybacking1";
 	private final static String TEST_DIR = "functions/piggybacking/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + PiggybackingTest1.class.getSimpleName() + "/";
 
 	private final static int rows = 500;
 	private final static int cols = 500;
@@ -60,10 +61,9 @@ public class PiggybackingTest1 extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "z", "appendTestOut.scalar" })   ); 
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,
+				new String[] { "z", "appendTestOut.scalar" }) ); 
 	}
 	
 	/**
@@ -88,20 +88,17 @@ public class PiggybackingTest1 extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + "_mvmult.dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "A" , 
-												HOME + INPUT_DIR + "x", 
-												HOME + OUTPUT_DIR + config.getOutputFiles()[0] };
+			programArgs = new String[]{"-args", input("A"), 
+				input("x"), output(config.getOutputFiles()[0]) };
 	
 			fullRScriptName = HOME + TEST_NAME + "_mvmult.R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-				       HOME + INPUT_DIR + "A.mtx" + " " + 
-				       HOME + INPUT_DIR + "x.mtx" + " " + 
-				       HOME + EXPECTED_DIR + config.getOutputFiles()[0];
-	
-			loadTestConfiguration(config);
+				input("A.mtx") + " " + input("x.mtx") + " " + 
+				expected(config.getOutputFiles()[0]);
 			
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 10);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
@@ -131,13 +128,12 @@ public class PiggybackingTest1 extends AutomatedTestBase
 		rtplatform = RUNTIME_PLATFORM.HADOOP;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + "_append.dml";
-		String OUT_FILE = HOME + OUTPUT_DIR + config.getOutputFiles()[1];
+		String OUT_FILE = output(config.getOutputFiles()[1]);
 		programArgs = new String[]{"-args", OUT_FILE };
-
-		loadTestConfiguration(config);
 		
 		boolean exceptionExpected = false;
 		int numMRJobs = 4;
@@ -149,7 +145,5 @@ public class PiggybackingTest1 extends AutomatedTestBase
 		
 		rtplatform = rtold;
 	}
-	
-
 	
 }

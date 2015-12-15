@@ -58,7 +58,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/misc/";
-
+	private final static String TEST_CLASS_DIR = TEST_DIR + DataTypeChangeTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
@@ -178,8 +178,8 @@ public class DataTypeChangeTest extends AutomatedTestBase
 		{
 			// Tell the superclass about the name of this test, so that the superclass can
 			// create temporary directories.
-			TestConfiguration testConfig = new TestConfiguration(TEST_DIR, fullTestName, 
-						new String[] {});
+			TestConfiguration testConfig = new TestConfiguration(TEST_CLASS_DIR, fullTestName,
+				new String[] {});
 			addTestConfiguration(fullTestName, testConfig);
 			loadTestConfiguration(testConfig);
 			

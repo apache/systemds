@@ -37,10 +37,10 @@ import org.apache.sysml.test.utils.TestUtils;
 @RunWith(value = Parameterized.class)
 public class FormatChangeTest extends AutomatedTestBase 
 {
-
 	
 	private final static String TEST_NAME = "csv_test";
 	private final static String TEST_DIR = "functions/io/csv/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FormatChangeTest.class.getSimpleName() + "/";
 	
 	//private final static int rows = 1200;
 	//private final static int cols = 100;
@@ -73,10 +73,8 @@ public class FormatChangeTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   );  
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );
 	}
 	
 	public FormatChangeTest(int r, int c, double sp) {
@@ -86,11 +84,11 @@ public class FormatChangeTest extends AutomatedTestBase
 	}
 
 	@Parameters
-	 public static Collection<Object[]> data() {
-	   Object[][] data = new Object[][] { { 2000, 500, 0.01 }, { 1500, 150, 1 } };
-	   return Arrays.asList(data);
-	 }
-	 
+	public static Collection<Object[]> data() {
+		Object[][] data = new Object[][] { { 2000, 500, 0.01 }, { 1500, 150, 1 } };
+		return Arrays.asList(data);
+	}
+	
 	private void setup() {
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -144,15 +142,11 @@ public class FormatChangeTest extends AutomatedTestBase
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		String[] oldProgramArgs = programArgs = new String[]{"-args", 
-											HOME + INPUT_DIR + "D",
-                							format1,
-                							HOME + INPUT_DIR + "D.binary",
-                							format2
-                							};
+			input("D"), format1, input("D.binary"), format2 };
 		
-		String txtFile = HOME + INPUT_DIR + "D";
-		String binFile = HOME + INPUT_DIR + "D.binary";
-		String csvFile  = HOME + OUTPUT_DIR + "D.csv";
+		String txtFile = input("D");
+		String binFile = input("D.binary");
+		String csvFile  = output("D.csv");
 		
 		// text to binary format
 		programArgs[2] = "text";
@@ -202,7 +196,6 @@ public class FormatChangeTest extends AutomatedTestBase
 		
 		compareFiles(rows, cols, sparsity, binFile, "binary", csvFile);
 
-		
 		//fullRScriptName = HOME + TEST_NAME + ".R";
 		//rCmd = "Rscript" + " " + fullRScriptName + " " + 
 		//      HOME + INPUT_DIR + " " + Integer.toString((int)maxVal) + " " + HOME + EXPECTED_DIR;
@@ -216,16 +209,12 @@ public class FormatChangeTest extends AutomatedTestBase
 		String oldDMLScript = fullDMLScriptName;
 		String oldRScript = fullRScriptName;
 		
-		String dmlOutput = HOME + OUTPUT_DIR + "dml.scalar";
-		String rOutput = HOME + OUTPUT_DIR + "R.scalar";
+		String dmlOutput = output("dml.scalar");
+		String rOutput = output("R.scalar");
 		
 		fullDMLScriptName = HOME + "csv_verify.dml";
 		programArgs = new String[]{"-args", dmlFile,
-                							Integer.toString(rows),
-                							Integer.toString(cols),
-                							dmlFormat,
-                							dmlOutput
-                							};
+			Integer.toString(rows), Integer.toString(cols), dmlFormat, dmlOutput };
 		
 		// Check if input csvFile is a directory
 		try {
@@ -235,8 +224,7 @@ public class FormatChangeTest extends AutomatedTestBase
 		}
 		
 		fullRScriptName = HOME + "csv_verify.R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       csvFile + " " + rOutput;
+		rCmd = "Rscript" + " " + fullRScriptName + " " + csvFile + " " + rOutput;
 		
 		// Run the verify test
 		runTest(true, false, null, -1);	

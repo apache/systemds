@@ -39,13 +39,14 @@ public class IPALiteralReplacementTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "IPALiteralReplacement_While";
 	private final static String TEST_NAME2 = "IPALiteralReplacement_ForIf";
 	private final static String TEST_DIR = "functions/misc/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + IPALiteralReplacementTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" })   );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" })   );
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" })   );
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" })   );
 	}
 
 	@Test
@@ -85,13 +86,13 @@ public class IPALiteralReplacementTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-args",HOME + OUTPUT_DIR + "R" };
+			programArgs = new String[]{"-args", output("R") };
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			rCmd = "Rscript" + " " + fullRScriptName + " " + expectedDir();			
 
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 

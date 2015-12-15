@@ -38,6 +38,7 @@ public class SerializeTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "SerializeTest";
 	private final static String TEST_DIR = "functions/io/binary/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + SerializeTest.class.getSimpleName() + "/";
 	
 	public static int rows1 = 746;
 	public static int cols1 = 586;
@@ -49,7 +50,7 @@ public class SerializeTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "X" })   );  
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "X" }) );  
 	}
 	
 	@Test
@@ -93,26 +94,24 @@ public class SerializeTest extends AutomatedTestBase
 		try
 		{	
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "X",
-											    HOME + OUTPUT_DIR + "X"    };
-			
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-args", input("X"), output("X") };
 	
 			//generate actual dataset 
 			double[][] X = getRandomMatrix(rows, cols, -1.0, 1.0, sparsity, 7); 
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(X);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, 1000, 1000);
-			DataConverter.writeMatrixToHDFS(mb, HOME + INPUT_DIR + "X", OutputInfo.BinaryBlockOutputInfo, mc);
-			MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "X.mtd", ValueType.DOUBLE, mc, OutputInfo.BinaryBlockOutputInfo);
+			DataConverter.writeMatrixToHDFS(mb, input("X"), OutputInfo.BinaryBlockOutputInfo, mc);
+			MapReduceTool.writeMetaDataFile(input("X.mtd"), ValueType.DOUBLE, mc, OutputInfo.BinaryBlockOutputInfo);
 			
 			runTest(true, false, null, -1); //mult 7
 			
 			//compare matrices 
-			MatrixBlock mb2 = DataConverter.readMatrixFromHDFS(HOME + OUTPUT_DIR + "X", InputInfo.BinaryBlockInputInfo, rows, cols, 1000, 1000);
+			MatrixBlock mb2 = DataConverter.readMatrixFromHDFS(output("X"), InputInfo.BinaryBlockInputInfo, rows, cols, 1000, 1000);
 			for( int i=0; i<mb.getNumRows(); i++ )
 				for( int j=0; j<mb.getNumColumns(); j++ )
 				{

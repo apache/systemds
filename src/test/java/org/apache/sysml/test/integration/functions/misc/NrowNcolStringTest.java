@@ -31,6 +31,7 @@ public class NrowNcolStringTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/misc/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + NrowNcolStringTest.class.getSimpleName() + "/";
 
 	private final static String TEST_NAME1 = "NrowStringTest";
 	private final static String TEST_NAME2 = "NcolStringTest";
@@ -38,9 +39,9 @@ public class NrowNcolStringTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] {}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {}));
 	}
 	
 	@Test
@@ -74,11 +75,10 @@ public class NrowNcolStringTest extends AutomatedTestBase
 		try
 		{	
 			//test configuration
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 		    String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", "100", "10"};
-			loadTestConfiguration(config);
 			
 			//run tests
 	        runTest(true, false, null, -1);

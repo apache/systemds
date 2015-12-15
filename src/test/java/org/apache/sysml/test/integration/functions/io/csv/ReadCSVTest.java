@@ -41,6 +41,7 @@ public class ReadCSVTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "ReadCSVTest";
 	private final static String TEST_DIR = "functions/io/csv/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReadCSVTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-9;
 
@@ -48,10 +49,8 @@ public class ReadCSVTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   );  
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );  
 	}
 	
 	@Test
@@ -152,8 +151,8 @@ public class ReadCSVTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String inputMatrixName = HOME + INPUT_DIR + "transfusion_" + testNumber + ".data";
-			String dmlOutput = HOME + OUTPUT_DIR + "dml.scalar";
-			String rOutput = HOME + OUTPUT_DIR + "R.scalar";
+			String dmlOutput = output("dml.scalar");
+			String rOutput = output("R.scalar");
 			
 			fullDMLScriptName = HOME + TEST_NAME + "_" + testNumber + ".dml";
 			programArgs = new String[]{"-args", inputMatrixName, dmlOutput};

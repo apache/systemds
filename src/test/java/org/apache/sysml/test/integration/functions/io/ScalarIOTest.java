@@ -32,15 +32,16 @@ public class ScalarIOTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "scalarIOTest";
 	private final static String TEST_DIR = "functions/io/";
-	private final static String OUT_FILE = SCRIPT_DIR + TEST_DIR + OUTPUT_DIR + "a.scalar";
+	private final static String OUT_FILE = "a.scalar";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ScalarIOTest.class.getSimpleName() + "/";
+	private final static String HOME = SCRIPT_DIR + TEST_DIR;
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "a.scalar" })   );  
-		//baseDirectory = SCRIPT_DIR + "functions/io/";
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "a.scalar" }) );
+		
+		getAndLoadTestConfiguration(TEST_NAME);
 	}
 
 	@Test
@@ -48,49 +49,38 @@ public class ScalarIOTest extends AutomatedTestBase
 
 		int int_scalar = 464;
 		
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-		loadTestConfiguration(config);
-
-		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
-		programArgs = new String[]{	"-args", 
-									String.valueOf(int_scalar),
-									HOME + OUTPUT_DIR + "a.scalar"
-                				  };
+		programArgs = new String[]{	"-args", String.valueOf(int_scalar), output("a.scalar") };
 		runTest(true, false, null, -1);
-		int int_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).intValue();
+		
+		int int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).intValue();
 		Assert.assertEquals("Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
 		
 		// Invoke the DML script that does computations and then writes scalar to HDFS
 		fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
 		runTest(true, false, null, -1);
-		int_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).intValue();
-		Assert.assertEquals("Computation test for Integers failed: Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
 		
+		int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).intValue();
+		Assert.assertEquals("Computation test for Integers failed: Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
 	}
 
 	@Test
 	public void testDoubleScalarWrite() 
 	{
 		Double double_scalar = 464.55;
-		
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-		loadTestConfiguration(config);
 
-		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
-		programArgs = new String[]{	"-args", 
-									String.valueOf(double_scalar),
-									HOME + OUTPUT_DIR + "a.scalar"
-                				  };
+		programArgs = new String[]{	"-args", String.valueOf(double_scalar), output("a.scalar") };
 		runTest(true, false, null, -1);
-		Double double_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).doubleValue();
+		
+		Double double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).doubleValue();
 		Assert.assertEquals("Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
 
 		// Invoke the DML script that does computations and then writes scalar to HDFS
 		fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
 		runTest(true, false, null, -1);
-		double_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).doubleValue();
+		
+		double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).doubleValue();
 		Assert.assertEquals("Computation test for Integers failed: Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
 	}
 
@@ -98,19 +88,12 @@ public class ScalarIOTest extends AutomatedTestBase
 	public void testBooleanScalarWrite() {
 
 		boolean boolean_scalar = true;
-		
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-		loadTestConfiguration(config);
 
-		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
-		programArgs = new String[]{	"-args", 
-									String.valueOf(boolean_scalar),
-									HOME + OUTPUT_DIR + "a.scalar"
-                				  };
+		programArgs = new String[]{	"-args", String.valueOf(boolean_scalar), output("a.scalar") };
 		runTest(true, false, null, -1);
 
-		boolean boolean_out_scalar = TestUtils.readDMLBoolean(OUT_FILE);
+		boolean boolean_out_scalar = TestUtils.readDMLBoolean(output(OUT_FILE));
 		
 		Assert.assertEquals("Values not equal: " + boolean_scalar + "!=" + boolean_out_scalar, boolean_scalar, boolean_out_scalar);
 	}
@@ -119,19 +102,12 @@ public class ScalarIOTest extends AutomatedTestBase
 	public void testStringScalarWrite() {
 
 		String string_scalar = "String Test.!";
-		
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-		loadTestConfiguration(config);
 
-		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
-		programArgs = new String[]{	"-args", 
-									String.valueOf(string_scalar),
-									HOME + OUTPUT_DIR + "a.scalar"
-                				  };
+		programArgs = new String[]{	"-args", String.valueOf(string_scalar), output("a.scalar") };
 		runTest(true, false, null, -1);
 
-		String string_out_scalar = TestUtils.readDMLString(OUT_FILE);
+		String string_out_scalar = TestUtils.readDMLString(output(OUT_FILE));
 		
 		Assert.assertEquals("Values not equal: " + string_scalar + "!=" + string_out_scalar, string_scalar, string_out_scalar);
 	}
@@ -141,29 +117,19 @@ public class ScalarIOTest extends AutomatedTestBase
 
 		int int_scalar = 464;
 		
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-		loadTestConfiguration(config);
-
-		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
-		programArgs = new String[]{	"-args", 
-									String.valueOf(int_scalar),
-									HOME + OUTPUT_DIR + "a.scalar"
-                				  };
+		programArgs = new String[]{	"-args", String.valueOf(int_scalar), output("a.scalar") };
 		runTest(true, false, null, -1);
-		//int int_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).intValue();
+		
+		//int int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).intValue();
 		//assertEquals("Values not equal: " + int_scalar + "!=" + int_out_scalar, int_scalar, int_out_scalar);
 		
 		// Invoke the DML script that reads the scalar and prints to stdout
 		fullDMLScriptName = HOME + "ScalarRead.dml";
-		programArgs = new String[] { "-args",
-									 HOME + OUTPUT_DIR + "a.scalar",
-									 "int"
-									};
+		programArgs = new String[] { "-args", output("a.scalar"), "int" };
 		
 		setExpectedStdOut(String.valueOf(int_scalar));
 		runTest(true, false, null, -1);
-		
 	}
 
 	@Test
@@ -171,29 +137,19 @@ public class ScalarIOTest extends AutomatedTestBase
 
 		double double_scalar = 464.5;
 		
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-		loadTestConfiguration(config);
-
-		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
-		programArgs = new String[]{	"-args", 
-									String.valueOf(double_scalar),
-									HOME + OUTPUT_DIR + "a.scalar"
-                				  };
+		programArgs = new String[]{	"-args", String.valueOf(double_scalar), output("a.scalar") };
 		runTest(true, false, null, -1);
-		//double double_out_scalar = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1)).doubleValue();
+		
+		//double double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).doubleValue();
 		//assertEquals("Values not equal: " + double_scalar + "!=" + double_out_scalar, double_scalar, double_out_scalar);
 		
 		// Invoke the DML script that reads the scalar and prints to stdout
 		fullDMLScriptName = HOME + "ScalarRead.dml";
-		programArgs = new String[] { "-args",
-									 HOME + OUTPUT_DIR + "a.scalar",
-									 "double"
-									};
+		programArgs = new String[] { "-args", output("a.scalar"), "double" };
 		
 		setExpectedStdOut(String.valueOf(double_scalar));
 		runTest(true, false, null, -1);
-		
 	}
 
 	@Test
@@ -201,24 +157,14 @@ public class ScalarIOTest extends AutomatedTestBase
 
 		boolean boolean_scalar = true;
 		
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-		loadTestConfiguration(config);
-
-		// TODO Niketan: Separate these as individual tests
-		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
 		programArgs = new String[]{	"-args", 
-									String.valueOf(boolean_scalar).toUpperCase(),
-									HOME + OUTPUT_DIR + "a.scalar"
-                				  };
+			String.valueOf(boolean_scalar).toUpperCase(), output("a.scalar") };
 		runTest(true, false, null, -1);
 
 		// Invoke the DML script that reads the scalar and prints to stdout
 		fullDMLScriptName = HOME + "ScalarRead.dml";
-		programArgs = new String[] { "-args",
-									 HOME + OUTPUT_DIR + "a.scalar",
-									 "boolean"
-									};
+		programArgs = new String[] { "-args", output("a.scalar"), "boolean" };
 		
 		setExpectedStdOut(String.valueOf(boolean_scalar).toUpperCase());
 		runTest(true, false, null, -1);
@@ -229,27 +175,16 @@ public class ScalarIOTest extends AutomatedTestBase
 
 		String string_scalar = "String Test.!";
 		
-		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-		loadTestConfiguration(config);
-
-		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
-		programArgs = new String[]{	"-args", 
-									String.valueOf(string_scalar),
-									HOME + OUTPUT_DIR + "a.scalar"
-                				  };
+		programArgs = new String[]{	"-args", String.valueOf(string_scalar), output("a.scalar") };
 		runTest(true, false, null, -1);
 
 		// Invoke the DML script that reads the scalar and prints to stdout
 		fullDMLScriptName = HOME + "ScalarRead.dml";
-		programArgs = new String[] { "-args",
-									 HOME + OUTPUT_DIR + "a.scalar",
-									 "string"
-									};
+		programArgs = new String[] { "-args", output("a.scalar"), "string" };
 		
 		setExpectedStdOut(String.valueOf(string_scalar));
 		runTest(true, false, null, -1);
 	}
 	
-
 }

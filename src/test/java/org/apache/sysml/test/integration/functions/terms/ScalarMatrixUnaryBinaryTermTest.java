@@ -29,17 +29,19 @@ import org.apache.sysml.test.utils.TestUtils;
 public class ScalarMatrixUnaryBinaryTermTest extends AutomatedTestBase 
 {
 	private static final String TEST_DIR = "functions/terms/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ScalarMatrixUnaryBinaryTermTest.class.getSimpleName() + "/";
+	private static final String TEST_NAME = "TestTerm1";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration("TestTerm1", new TestConfiguration(TEST_DIR, "TestTerm1", new String[] {}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {}));
 	}
 
 	@Test
 	public void testTerm1() {
 		int rows = 5, cols = 5;
 
-		TestConfiguration config = getTestConfiguration("TestTerm1");
+		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 

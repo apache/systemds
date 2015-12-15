@@ -35,6 +35,7 @@ public class FunctionInliningTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "function_chain_inlining";
 	private final static String TEST_NAME2 = "function_chain_non_inlining";
 	private final static String TEST_NAME3 = "function_recursive_inlining";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionInliningTest.class.getSimpleName() + "/";
 	
 	private final static long rows = 3400;
 	private final static long cols = 2700;
@@ -43,10 +44,9 @@ public class FunctionInliningTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "Rout" })   );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "Rout" })   );
-		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] { "Rout" })   );
-		
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Rout" }) );
+		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "Rout" }) );
 	}
 
 	@Test
@@ -97,14 +97,12 @@ public class FunctionInliningTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{/*"-explain",*/"-args",String.valueOf(rows),
-					                           String.valueOf(cols),
-					                           String.valueOf(val),
-					                           HOME + OUTPUT_DIR + "Rout" };
-			loadTestConfiguration(config);
+				String.valueOf(cols), String.valueOf(val), output("Rout") };
 
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 			
@@ -112,9 +110,8 @@ public class FunctionInliningTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//compare output
-			double ret = MapReduceTool.readDoubleFromHDFSFile(HOME + OUTPUT_DIR + "Rout");
+			double ret = MapReduceTool.readDoubleFromHDFSFile(output("Rout"));
 			Assert.assertEquals(Double.valueOf(rows*cols*val*6), Double.valueOf(ret));
-			
 			
 			//compiled MR jobs
 			int expectNumCompiled = IPA ? 0 : (testname.equals(TEST_NAME1)?2: //2GMR in foo1 and foo2 (not removed w/o IPA)

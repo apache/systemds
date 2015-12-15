@@ -32,16 +32,15 @@ public class ReadMMTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "ReadMMTest";
 	private final static String TEST_DIR = "functions/io/matrixmarket/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReadMMTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-9;
 
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   );  
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );
 	}
 	
 	@Test
@@ -100,13 +99,12 @@ public class ReadMMTest extends AutomatedTestBase
 			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = parallel;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			
 			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String inputMatrixName = HOME + INPUT_DIR + "ReadMMTest.mtx";
-			String dmlOutput = HOME + OUTPUT_DIR + "dml.scalar";
-			String rOutput = HOME + OUTPUT_DIR + "R.scalar";
+			String dmlOutput = output("dml.scalar");
+			String rOutput = output("R.scalar");
 			
 			fullDMLScriptName = HOME + TEST_NAME + "_1.dml";
 			programArgs = new String[]{"-args", inputMatrixName, dmlOutput};

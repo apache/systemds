@@ -34,13 +34,14 @@ public class IPAUnknownRecursionTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "IPAUnknownRecursion";
 	private final static String TEST_DIR = "functions/misc/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + IPAUnknownRecursionTest.class.getSimpleName() + "/";
 	
 	private final static int val = 7;
 	
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration( TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "R" })   );
+		addTestConfiguration( TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "R" }) );
 	}
 
 	@Test
@@ -68,15 +69,14 @@ public class IPAUnknownRecursionTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",Integer.toString(val),
-					                           HOME + OUTPUT_DIR + "R" };
+			programArgs = new String[]{"-args", Integer.toString(val), output("R") };
+			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			             val + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			rCmd = getRCmd(Integer.toString(val), expectedDir());			
 
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 

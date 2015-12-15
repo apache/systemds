@@ -42,6 +42,7 @@ public class OuterTableExpandTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "TableExpandTest";
 	
 	private final static String TEST_DIR = "functions/misc/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + OuterTableExpandTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	
 	private final static int rows = 5191;
@@ -54,8 +55,8 @@ public class OuterTableExpandTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "C" })); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "C" })); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" })); 
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "C" })); 
 	}
 	
 	// outer tests ----------------
@@ -223,19 +224,16 @@ public class OuterTableExpandTest extends AutomatedTestBase
 		{
 			String TEST_NAME = testname;
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;			
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-explain","-args", 
-					                            HOME + INPUT_DIR + "A",
-					                            String.valueOf(cols2),
-					                            String.valueOf(left).toUpperCase(),
-					                            HOME + OUTPUT_DIR + "C"};
-			fullRScriptName = HOME + TEST_NAME +".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       HOME + INPUT_DIR + " " + cols2 + " " + String.valueOf(left).toUpperCase() + " " + HOME + EXPECTED_DIR;
+				input("A"), String.valueOf(cols2), String.valueOf(left).toUpperCase(), output("C")};
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME +".R";
+			rCmd = getRCmd(inputDir(), Integer.toString(cols2),
+				String.valueOf(left).toUpperCase(), expectedDir());
 	
 			//generate actual datasets
 			double sparsity = sparse?sparsity2:sparsity1;

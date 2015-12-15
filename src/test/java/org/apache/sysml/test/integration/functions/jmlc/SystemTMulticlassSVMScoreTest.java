@@ -49,6 +49,7 @@ public class SystemTMulticlassSVMScoreTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/jmlc/";
 	private final static String MODEL_FILE = "sentiment_model.mtx";
 	private final static double eps = 1e-10;
+	private final static String TEST_CLASS_DIR = TEST_DIR + SystemTMulticlassSVMScoreTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 107;
 	private final static int cols = 46; //fixed
@@ -62,7 +63,7 @@ public class SystemTMulticlassSVMScoreTest extends AutomatedTestBase
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] { "predicted_y" })   ); 
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "predicted_y" }) ); 
 	}
 
 	
@@ -94,6 +95,7 @@ public class SystemTMulticlassSVMScoreTest extends AutomatedTestBase
 		throws IOException
 	{	
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		loadTestConfiguration(config);
 	
 		//generate inputs
 		ArrayList<double[][]> Xset = generateInputs(nRuns, rows, cols, sparse?sparsity2:sparsity1); 
@@ -104,10 +106,7 @@ public class SystemTMulticlassSVMScoreTest extends AutomatedTestBase
 		//run R and compare results to DML result
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullRScriptName = HOME + TEST_NAME + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;
-		
-		loadTestConfiguration(config);
+		rCmd = getRCmd(inputDir(), expectedDir());
 
 		//write model data once
 		MatrixBlock mb = DataConverter.readMatrixFromHDFS(SCRIPT_DIR + TEST_DIR + MODEL_FILE, 
@@ -151,7 +150,7 @@ public class SystemTMulticlassSVMScoreTest extends AutomatedTestBase
 				
 		try
 		{
-			// Note for Matthias: For now, JMLC pipeline only allows dml
+			// For now, JMLC pipeline only allows dml
 			boolean parsePyDML = false;
 			
 			//read and precompile script

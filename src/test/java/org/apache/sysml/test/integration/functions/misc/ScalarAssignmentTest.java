@@ -36,6 +36,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	private final static String TEST_NAME4 = "IfScalarAssignmentTest";
 	
 	private final static String TEST_DIR = "functions/misc/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ScalarAssignmentTest.class.getSimpleName() + "/";
 
 	public enum ControlFlowConstruct{
 		FOR,
@@ -46,10 +47,10 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] {}));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_DIR, TEST_NAME4, new String[] {}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {}));
 	}
 	
 	@Test
@@ -176,15 +177,14 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 		}
 		
 	    TestConfiguration config = getTestConfiguration(TEST_NAME);
+		loadTestConfiguration(config);
 	    
         String RI_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 		programArgs = new String[]{"-args",  value.toString() };
+		
 		fullRScriptName = RI_HOME + TEST_NAME + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + 
-		       RI_HOME + INPUT_DIR + " " + RI_HOME + EXPECTED_DIR;
-
-		loadTestConfiguration(config);
+		rCmd = getRCmd(inputDir(), expectedDir());
 		
         boolean exceptionExpected = (cfc==ControlFlowConstruct.PARFOR)? true : false; //dependency analysis
         int expectedNumberOfJobs = -1;

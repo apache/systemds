@@ -37,6 +37,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/misc/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ValueTypeCastingTest.class.getSimpleName() + "/";
 
 	private final static String TEST_NAME1 = "castDouble";
 	private final static String TEST_NAME2 = "castInteger";
@@ -45,9 +46,9 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}));
 	}
 	
 	@Test
@@ -143,14 +144,11 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 		
 		try
 		{		
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(TEST_NAME);
 		    
 		    String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "V" , 
-								                HOME + OUTPUT_DIR + "R", };
-			
-			loadTestConfiguration(config);
+			programArgs = new String[]{"-args", input("V"), output("R") };
 			
 			//write input
 			double[][] V = getRandomMatrix(numVals, numVals, 0, 1, 1.0, 7);
@@ -158,34 +156,33 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 			if( matrixInput ){
 				writeInputMatrix("V", V, false);	
 				MatrixCharacteristics mc = new MatrixCharacteristics(numVals,numVals,1000,1000);
-				MapReduceTool.writeMetaDataFile(HOME + INPUT_DIR + "V.mtd", vtIn, mc, OutputInfo.TextCellOutputInfo);
+				MapReduceTool.writeMetaDataFile(input("V.mtd"), vtIn, mc, OutputInfo.TextCellOutputInfo);
 			}
 			else{
-				MapReduceTool.deleteFileIfExistOnHDFS(HOME + INPUT_DIR + "V");
+				MapReduceTool.deleteFileIfExistOnHDFS(input("V"));
 				switch( vtIn ) 
 				{
 					case DOUBLE: 
-						MapReduceTool.writeDoubleToHDFS(V[0][0], HOME + INPUT_DIR + "V"); 
+						MapReduceTool.writeDoubleToHDFS(V[0][0], input("V")); 
 						inVal = V[0][0]; break;
 					case INT:    
-						MapReduceTool.writeIntToHDFS((int)V[0][0], HOME + INPUT_DIR + "V"); 
+						MapReduceTool.writeIntToHDFS((int)V[0][0], input("V")); 
 						inVal = ((int)V[0][0]); break;
 					case BOOLEAN: 
-						MapReduceTool.writeBooleanToHDFS(V[0][0]!=0, HOME + INPUT_DIR + "V"); 
+						MapReduceTool.writeBooleanToHDFS(V[0][0]!=0, input("V")); 
 						inVal = (V[0][0]!=0)?1:0; break;
 					default: 
 						//do nothing	
 				}				
-				MapReduceTool.writeScalarMetaDataFile(HOME + INPUT_DIR + "V.mtd", vtIn);
+				MapReduceTool.writeScalarMetaDataFile(input("V.mtd"), vtIn);
 			}
-			
 			
 			//run tests
 	        runTest(true, exceptionExpected, DMLException.class, -1);
 	        
 	        if( !exceptionExpected ){		        
 		        //compare results
-	        	String outName = HOME + OUTPUT_DIR + "R";
+	        	String outName = output("R");
 		        switch( vtOut ) {
 					case DOUBLE:  Assert.assertEquals(inVal, MapReduceTool.readDoubleFromHDFSFile(outName), 1e-16); break;
 					case INT:     Assert.assertEquals((int) inVal, MapReduceTool.readIntegerFromHDFSFile(outName)); break;

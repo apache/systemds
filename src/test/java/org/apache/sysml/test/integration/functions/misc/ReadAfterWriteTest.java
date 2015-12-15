@@ -35,6 +35,7 @@ public class ReadAfterWriteTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/misc/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReadAfterWriteTest.class.getSimpleName() + "/";
 
 	private final static String TEST_NAME1 = "ReadAfterWriteMatrix1";
 	private final static String TEST_NAME2 = "ReadAfterWriteMatrix2";
@@ -43,10 +44,10 @@ public class ReadAfterWriteTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] {}));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_DIR, TEST_NAME4, new String[] {}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {}));
 	}
 	
 	@Test
@@ -109,17 +110,18 @@ public class ReadAfterWriteTest extends AutomatedTestBase
 		
 		try
 		{	
-			//generate random file suffix
-			int suffix = Math.abs(new Random().nextInt());
-			String filename = SCRIPT_DIR + TEST_DIR + OUTPUT_DIR + suffix;
-			String filename2 = positive ? filename : filename+"_nonexisting";
-			
 			//test configuration
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			loadTestConfiguration(config);
+			
+			//generate random file suffix
+			int suffix = Math.abs(new Random().nextInt());
+			String filename = output(Integer.toString(suffix));
+			String filename2 = positive ? filename : filename+"_nonexisting";
+			
 		    String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", filename, filename2};
-			loadTestConfiguration(config);
 			
 			//run tests
 	        runTest(true, !positive, DMLException.class, -1);
@@ -131,7 +133,7 @@ public class ReadAfterWriteTest extends AutomatedTestBase
 		finally
 		{
 	        //cleanup
-	        TestUtils.clearDirectory(SCRIPT_DIR + TEST_DIR + OUTPUT_DIR);
+	        TestUtils.clearDirectory(outputDir());
 		}
 	}
 }

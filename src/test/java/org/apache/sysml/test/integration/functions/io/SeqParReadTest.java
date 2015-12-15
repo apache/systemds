@@ -38,10 +38,10 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 public class SeqParReadTest extends AutomatedTestBase {
-
 	
 	private final static String TEST_NAME = "SeqParReadTest";
 	private final static String TEST_DIR = "functions/io/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + SeqParReadTest.class.getSimpleName() + "/";
 	
 	private final static int rowsA = 2000;
 	private final static int colsA = 1000;
@@ -73,10 +73,8 @@ public class SeqParReadTest extends AutomatedTestBase {
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   ); 
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) ); 
 	}
 	
 	@Test
@@ -221,26 +219,25 @@ public class SeqParReadTest extends AutomatedTestBase {
 			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = parallel;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			
 			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rowsA, big?colsA:colsB, 0, 1, dense?sparsity2:sparsity1, 7); 
-			writeMatrix(A, HOME + INPUT_DIR + "AX", fmt, rowsA, big?colsA:colsB, 1000, 1000, rowsA*(big?colsA:colsB));
+			writeMatrix(A, input("AX"), fmt, rowsA, big?colsA:colsB, 1000, 1000, rowsA*(big?colsA:colsB));
 			
 			//always write in MM format for R
-			writeMatrix(A, HOME + INPUT_DIR + "BX", OutputInfo.MatrixMarketOutputInfo, rowsA, big?colsA:colsB, 1000, 1000, rowsA*(big?colsA:colsB));
+			writeMatrix(A, input("BX"), OutputInfo.MatrixMarketOutputInfo, rowsA, big?colsA:colsB, 1000, 1000, rowsA*(big?colsA:colsB));
 			
-			String dmlOutput = HOME + OUTPUT_DIR + "dml.scalar";
-			String rOutput = HOME + OUTPUT_DIR + "R.scalar";
+			String dmlOutput = output("dml.scalar");
+			String rOutput = output("R.scalar");
 			
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + INPUT_DIR + "AX", dmlOutput};
+			programArgs = new String[]{"-args", input("AX"), dmlOutput};
 			
 			fullRScriptName = HOME + "matrixmarket/mm_verify.R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + HOME + INPUT_DIR + "BX " + rOutput;
+			rCmd = "Rscript" + " " + fullRScriptName + " " + input("BX") + " " + rOutput;
 			
 			runTest(true, false, null, -1);
 			runRScript(true);

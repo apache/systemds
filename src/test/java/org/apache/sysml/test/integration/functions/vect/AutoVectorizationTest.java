@@ -35,6 +35,7 @@ public class AutoVectorizationTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_DIR = "functions/vect/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + AutoVectorizationTest.class.getSimpleName() + "/";
 
 	private final static String TEST_NAME1 = "VectorizeRixRowPos";
 	private final static String TEST_NAME2 = "VectorizeRixRowNeg";
@@ -67,30 +68,30 @@ public class AutoVectorizationTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_DIR, TEST_NAME3, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_DIR, TEST_NAME4, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_DIR, TEST_NAME5, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_DIR, TEST_NAME6, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_DIR, TEST_NAME7, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_DIR, TEST_NAME8, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_DIR, TEST_NAME9, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_DIR, TEST_NAME10, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_DIR, TEST_NAME11, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_DIR, TEST_NAME12, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME13, new TestConfiguration(TEST_DIR, TEST_NAME13, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME14, new TestConfiguration(TEST_DIR, TEST_NAME14, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME15, new TestConfiguration(TEST_DIR, TEST_NAME15, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME16, new TestConfiguration(TEST_DIR, TEST_NAME16, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME17, new TestConfiguration(TEST_DIR, TEST_NAME17, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME18, new TestConfiguration(TEST_DIR, TEST_NAME18, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME19, new TestConfiguration(TEST_DIR, TEST_NAME19, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME20, new TestConfiguration(TEST_DIR, TEST_NAME20, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME21, new TestConfiguration(TEST_DIR, TEST_NAME21, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME22, new TestConfiguration(TEST_DIR, TEST_NAME22, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME23, new TestConfiguration(TEST_DIR, TEST_NAME23, new String[] {"R"}));
-		addTestConfiguration(TEST_NAME24, new TestConfiguration(TEST_DIR, TEST_NAME24, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME13, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME13, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME14, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME14, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME15, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME15, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME16, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME16, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME17, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME17, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME18, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME18, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME19, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME19, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME20, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME20, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME21, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME21, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME22, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME22, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME23, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME23, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME24, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME24, new String[] {"R"}));
 	}
 	
 	@Test
@@ -225,16 +226,14 @@ public class AutoVectorizationTest extends AutomatedTestBase
 		try
 		{		
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			
+			loadTestConfiguration(config);
+
 		    String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", HOME + INPUT_DIR + "A" , 
-								                HOME + OUTPUT_DIR + "R", };
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-					 HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;		
+			programArgs = new String[]{"-explain","-args", input("A"), output("R") };
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = getRCmd(inputDir(), expectedDir());		
 			
 			//generate input
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, 1.0, 7);

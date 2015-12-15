@@ -29,11 +29,12 @@ import org.apache.sysml.test.integration.TestConfiguration;
 public class PageRankTest extends AutomatedScalabilityTestBase 
 {
 	private static final String TEST_DIR = "test/scripts/scalability/page_rank/";
-	
+	private static final String TEST_CLASS_DIR = TEST_DIR + PageRankTest.class.getSimpleName() + "/";
+
 	
     @Override
     public void setUp() {
-        addTestConfiguration("PageRankTest", new TestConfiguration(TEST_DIR, "PageRankTest", new String[] { "p" }));
+        addTestConfiguration("PageRankTest", new TestConfiguration(TEST_CLASS_DIR, "PageRankTest", new String[] { "p" }));
         matrixSizes = new int[][] {
                 { 9914 }
         };

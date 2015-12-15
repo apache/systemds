@@ -32,10 +32,11 @@ public class PrintMatrixTest extends AutomatedTestBase
 {	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_NAME1 = "PrintMatrixTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + PrintMatrixTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
 	}
 	
 	@Test

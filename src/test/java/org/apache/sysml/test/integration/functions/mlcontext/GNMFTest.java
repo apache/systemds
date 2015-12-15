@@ -59,6 +59,7 @@ public class GNMFTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "applications/gnmf/";
 	private final static String TEST_NAME = "GNMF";
+	private final static String TEST_CLASS_DIR = TEST_DIR + GNMFTest.class.getSimpleName() + "/";
 	
 	int numRegisteredInputs;
 	int numRegisteredOutputs;
@@ -76,7 +77,7 @@ public class GNMFTest extends AutomatedTestBase
 	 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_DIR, TEST_NAME);
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
 	@Test

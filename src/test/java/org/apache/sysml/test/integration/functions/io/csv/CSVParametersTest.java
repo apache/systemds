@@ -39,6 +39,7 @@ public class CSVParametersTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "csvprop_test";
 	private final static String TEST_DIR = "functions/io/csv/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CSVParametersTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 1200;
 	private final static int cols = 100;
@@ -54,10 +55,8 @@ public class CSVParametersTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   );  
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );
 	}
 	
 	public CSVParametersTest(boolean header, String delim, boolean sparse) {
@@ -180,10 +179,10 @@ public class CSVParametersTest extends AutomatedTestBase
 		D = null;
 
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		String txtFile = HOME + INPUT_DIR + "D";
-		//String binFile = HOME + INPUT_DIR + "D.binary";
-		String csvFile  = HOME + OUTPUT_DIR + "D.csv";
-		String scalarFile = HOME + OUTPUT_DIR + "diff.scalar";
+		String txtFile = input("D");
+		//String binFile = input("D.binary");
+		String csvFile  = output("D.csv");
+		String scalarFile = output("diff.scalar");
 		
 		String writeDML = HOME + "csvprop_write.dml";
 		String[] writeArgs = new String[]{"-args", 

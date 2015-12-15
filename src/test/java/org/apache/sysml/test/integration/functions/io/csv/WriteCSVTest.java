@@ -39,20 +39,18 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class WriteCSVTest extends AutomatedTestBase 
 {
-
 	
 	private final static String TEST_NAME = "WriteCSVTest";
 	private final static String TEST_DIR = "functions/io/csv/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + WriteCSVTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-9;
 
 	@Override
 	public void setUp() 
 	{
-		addTestConfiguration(
-				TEST_NAME, 
-				new TestConfiguration(TEST_DIR, TEST_NAME, 
-				new String[] { "Rout" })   );  
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );  
 	}
 	
 	@Test
@@ -101,19 +99,17 @@ public class WriteCSVTest extends AutomatedTestBase
 		rtplatform = platform;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
-		
 		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		String inputMatrixName = HOME + INPUT_DIR + "transfusion_1"; // always read the same data, independent of testNumber
-		String dmlOutput = HOME + OUTPUT_DIR + "dml.scalar";
-		String csvOutputName = HOME + OUTPUT_DIR + "transfusion_dml.data";
-		String rOutput = HOME + OUTPUT_DIR + "R.scalar";
+		String dmlOutput = output("dml.scalar");
+		String csvOutputName = output("transfusion_dml.data");
+		String rOutput = output("R.scalar");
 		
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-explain" ,
-				"-args", inputMatrixName, dmlOutput, csvOutputName, 
-				Boolean.toString(header), sep, Boolean.toString(sparse) };
+		programArgs = new String[]{"-explain", "-args", inputMatrixName, dmlOutput, csvOutputName,
+			Boolean.toString(header), sep, Boolean.toString(sparse) };
 		
 		runTest(true, false, null, -1);
 

@@ -38,14 +38,15 @@ public class ScalarFunctionTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "ScalarFunctionTest2";
 	
 	private final static String TEST_DIR = "functions/misc/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ScalarFunctionTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	
 	@Override
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" })); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" })); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" })); 
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" })); 
 	}
 	
 	
@@ -70,14 +71,14 @@ public class ScalarFunctionTest extends AutomatedTestBase
 	{
 		String TEST_NAME = testname;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;			
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[]{"-args", HOME + OUTPUT_DIR + "R"};
-		fullRScriptName = HOME + TEST_NAME +".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + HOME + EXPECTED_DIR;
+		programArgs = new String[]{"-args", output("R")};
 		
-		loadTestConfiguration(config);
+		fullRScriptName = HOME + TEST_NAME +".R";
+		rCmd = getRCmd(expectedDir());
 
 		//run Tests
 		runTest(true, false, null, -1); 

@@ -34,13 +34,14 @@ public class PrintExpressionTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "PrintExpressionTest1";
 	private final static String TEST_NAME2 = "PrintExpressionTest2";
 	private final static String TEST_DIR = "functions/misc/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + PrintExpressionTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" })); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] { "R" })); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" })); 
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" })); 
 	}
 		
 	@Test
@@ -72,6 +73,7 @@ public class PrintExpressionTest extends AutomatedTestBase
 	{
 		String TEST_NAME = testname;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		loadTestConfiguration(config);
 		
 		//set rewrite configuration
 		boolean oldRewriteFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -81,11 +83,10 @@ public class PrintExpressionTest extends AutomatedTestBase
 		{
 			String HOME = SCRIPT_DIR + TEST_DIR;			
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", HOME + OUTPUT_DIR + "R"};
-			fullRScriptName = HOME + TEST_NAME +".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + HOME + EXPECTED_DIR;
+			programArgs = new String[]{"-args", output("R")};
 			
-			loadTestConfiguration(config);
+			fullRScriptName = HOME + TEST_NAME +".R";
+			rCmd = getRCmd(expectedDir());
 	
 			//run Tests
 			runTest(true, false, null, -1);

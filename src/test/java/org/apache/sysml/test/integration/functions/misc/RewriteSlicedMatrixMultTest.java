@@ -38,6 +38,7 @@ public class RewriteSlicedMatrixMultTest extends AutomatedTestBase
 	
 	private static final String TEST_NAME1 = "RewriteSlicedMatrixMult";
 	private static final String TEST_DIR = "functions/misc/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteSlicedMatrixMultTest.class.getSimpleName() + "/";
 	
 	private static final int dim1 = 1234;
 	private static final int dim2 = 567;
@@ -50,7 +51,7 @@ public class RewriteSlicedMatrixMultTest extends AutomatedTestBase
 	public void setUp() 
 	{
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] { "R" })   );
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 	}
 
 	@Test
@@ -87,17 +88,15 @@ public class RewriteSlicedMatrixMultTest extends AutomatedTestBase
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
+			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{ "-stats","-args", 
-					                  HOME + INPUT_DIR + "A",
-					                  HOME + INPUT_DIR + "B",
-					                  HOME + OUTPUT_DIR + "R" };
+				input("A"), input("B"), output("R") };
+			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " +
-			          HOME + INPUT_DIR + " " + HOME + EXPECTED_DIR;			
-			loadTestConfiguration(config);
+			rCmd = getRCmd(inputDir(), expectedDir());			
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 

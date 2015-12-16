@@ -59,7 +59,7 @@ public class OutputStatement extends Statement
 	}
 	
 	/**
-	 * Called by the parser (both javacc and antlr).
+	 * Called by the parser.
 	 * 
 	 * @param fname
 	 * @param fci

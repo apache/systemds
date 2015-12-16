@@ -45,8 +45,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.xml.sax.SAXException;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.debug.DMLDebugger;
@@ -59,10 +57,10 @@ import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.AParserWrapper;
+import org.apache.sysml.parser.DMLParseException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
@@ -87,6 +85,7 @@ import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 // import org.apache.sysml.utils.visualize.DotGraph;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
+import org.xml.sax.SAXException;
 
 
 public class DMLScript 
@@ -182,7 +181,7 @@ public class DMLScript
 	 * Default DML script invocation (e.g., via 'hadoop jar SystemML.jar -f Test.dml')
 	 * 
 	 * @param args
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 * @throws IOException
 	 * @throws SAXException
 	 * @throws ParserConfigurationException
@@ -555,7 +554,7 @@ public class DMLScript
 	/**
 	 * run: The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
 	 * and customized parameters have been put into _argVals
-	 * @throws ParseException 
+	 * @throws DMLParseException 
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
@@ -565,7 +564,7 @@ public class DMLScript
 	 * @throws DMLException 
 	 */
 	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs, boolean parsePyDML)
-		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
+		throws DMLParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{	
 		//print basic time and environment info
 		printStartExecInfo( dmlScriptStr );
@@ -699,7 +698,7 @@ public class DMLScript
 	 * @param  dmlScriptStr DML script contents (including new lines)
 	 * @param  fnameOptConfig Full path of configuration file for SystemML
 	 * @param  argVals Key-value pairs defining arguments of DML script
-	 * @throws ParseException 
+	 * @throws DMLParseException 
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 * @throws DMLDebuggerException
@@ -710,7 +709,7 @@ public class DMLScript
 	 * @throws DMLException 
 	 */
 	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, boolean parsePyDML)
-		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
+		throws DMLParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{		
 		//produce debugging information (parse, compile and generate runtime program for a given DML script)
 		DMLDebuggerProgramInfo p = compileForDebug(dmlScriptStr, fnameOptConfig, argVals, parsePyDML);
@@ -738,7 +737,7 @@ public class DMLScript
 	 * @param  fnameOptConfig Full path of configuration file for SystemML
 	 * @param  argVals Key-value pairs defining arguments of DML script
 	 * @return dbprog Class containing parsed and compiled DML script w/ hops, lops and runtime program   
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 * @throws IOException
 	 * @throws DMLRuntimeException
 	 * @throws LanguageException
@@ -749,7 +748,7 @@ public class DMLScript
 	//TODO: MB: remove this redundant compile and execute (or at least remove from DMLScript)
 	//TODO: This method should be private once debugger infrastructure is on top of the programmatic API  
 	public static DMLDebuggerProgramInfo compileForDebug(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, boolean parsePyDML)
-			throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException
+			throws DMLParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException
 	{					
 		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
 		
@@ -780,13 +779,13 @@ public class DMLScript
 	}	
 
 	/**
-	 * @throws ParseException 
+	 * @throws DMLParseException 
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 * 
 	 */
 	static void initHadoopExecution( DMLConfig config ) 
-		throws IOException, ParseException, DMLRuntimeException
+		throws IOException, DMLParseException, DMLRuntimeException
 	{
 		//check security aspects
 		checkSecuritySetup( config );
@@ -869,10 +868,10 @@ public class DMLScript
 	 * 
 	 * @param config
 	 * @throws IOException
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 */
 	private static void cleanupHadoopExecution( DMLConfig config ) 
-		throws IOException, ParseException
+		throws IOException, DMLParseException
 	{
 		//create dml-script-specific suffix
 		StringBuilder sb = new StringBuilder();

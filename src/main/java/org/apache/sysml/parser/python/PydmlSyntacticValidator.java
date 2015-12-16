@@ -30,7 +30,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang.StringUtils;
-
 import org.apache.sysml.parser.AssignmentStatement;
 import org.apache.sysml.parser.BinaryExpression;
 import org.apache.sysml.parser.BooleanExpression;
@@ -38,6 +37,7 @@ import org.apache.sysml.parser.BooleanIdentifier;
 import org.apache.sysml.parser.BuiltinFunctionExpression;
 import org.apache.sysml.parser.ConditionalPredicate;
 import org.apache.sysml.parser.ConstIdentifier;
+import org.apache.sysml.parser.DMLParseException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.DataIdentifier;
@@ -61,7 +61,6 @@ import org.apache.sysml.parser.OutputStatement;
 import org.apache.sysml.parser.ParForStatement;
 import org.apache.sysml.parser.ParameterExpression;
 import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.PathStatement;
 import org.apache.sysml.parser.PrintStatement;
 import org.apache.sysml.parser.RelationalExpression;
@@ -757,7 +756,7 @@ public class PydmlSyntacticValidator implements PydmlListener
 		DMLProgram prog = null;
 		try {
 			prog = (new PyDMLParserWrapper()).doParse(filePath, null, argVals);
-		} catch (ParseException e) {
+		} catch (DMLParseException e) {
 			helper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
 			return;
 		}
@@ -1431,7 +1430,7 @@ public class PydmlSyntacticValidator implements PydmlListener
 		try {
 			functCall.setFunctionName(functionName);
 			functCall.setFunctionNamespace(namespace);
-		} catch (ParseException e1) {
+		} catch (DMLParseException e1) {
 			helper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
 			 return;
 		}
@@ -1595,7 +1594,7 @@ public class PydmlSyntacticValidator implements PydmlListener
 		try {
 			functCall.setFunctionName(functionName);
 			functCall.setFunctionNamespace(namespace);
-		} catch (ParseException e1) {
+		} catch (DMLParseException e1) {
 			helper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
 			return;
 		}

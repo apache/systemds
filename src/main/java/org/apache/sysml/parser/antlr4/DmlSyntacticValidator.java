@@ -29,15 +29,44 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
-
+import org.apache.sysml.parser.AssignmentStatement;
+import org.apache.sysml.parser.BinaryExpression;
+import org.apache.sysml.parser.BooleanExpression;
+import org.apache.sysml.parser.BooleanIdentifier;
+import org.apache.sysml.parser.BuiltinFunctionExpression;
 import org.apache.sysml.parser.ConditionalPredicate;
+import org.apache.sysml.parser.ConstIdentifier;
+import org.apache.sysml.parser.DMLParseException;
 import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.DoubleIdentifier;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Expression.DataOp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ExternalFunctionStatement;
+import org.apache.sysml.parser.ForStatement;
+import org.apache.sysml.parser.FunctionCallIdentifier;
+import org.apache.sysml.parser.FunctionStatement;
+import org.apache.sysml.parser.IfStatement;
+import org.apache.sysml.parser.ImportStatement;
+import org.apache.sysml.parser.IndexedIdentifier;
+import org.apache.sysml.parser.IntIdentifier;
+import org.apache.sysml.parser.IterablePredicate;
+import org.apache.sysml.parser.LanguageException;
+import org.apache.sysml.parser.MultiAssignmentStatement;
+import org.apache.sysml.parser.OutputStatement;
+import org.apache.sysml.parser.ParForStatement;
+import org.apache.sysml.parser.ParameterExpression;
+import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
+import org.apache.sysml.parser.PathStatement;
+import org.apache.sysml.parser.PrintStatement;
+import org.apache.sysml.parser.RelationalExpression;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.parser.StringIdentifier;
+import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.antlr4.DmlParser.AddSubExpressionContext;
 import org.apache.sysml.parser.antlr4.DmlParser.AssignmentStatementContext;
 import org.apache.sysml.parser.antlr4.DmlParser.AtomicExpressionContext;
@@ -86,36 +115,6 @@ import org.apache.sysml.parser.antlr4.DmlParser.TypedArgNoAssignContext;
 import org.apache.sysml.parser.antlr4.DmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.antlr4.DmlParser.ValueTypeContext;
 import org.apache.sysml.parser.antlr4.DmlParser.WhileStatementContext;
-import org.apache.sysml.parser.AssignmentStatement;
-import org.apache.sysml.parser.BinaryExpression;
-import org.apache.sysml.parser.BooleanExpression;
-import org.apache.sysml.parser.BooleanIdentifier;
-import org.apache.sysml.parser.BuiltinFunctionExpression;
-import org.apache.sysml.parser.ConstIdentifier;
-import org.apache.sysml.parser.DataExpression;
-import org.apache.sysml.parser.ExternalFunctionStatement;
-import org.apache.sysml.parser.ForStatement;
-import org.apache.sysml.parser.FunctionCallIdentifier;
-import org.apache.sysml.parser.FunctionStatement;
-import org.apache.sysml.parser.IfStatement;
-import org.apache.sysml.parser.ImportStatement;
-import org.apache.sysml.parser.IndexedIdentifier;
-import org.apache.sysml.parser.IntIdentifier;
-import org.apache.sysml.parser.IterablePredicate;
-import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.parser.MultiAssignmentStatement;
-import org.apache.sysml.parser.OutputStatement;
-import org.apache.sysml.parser.ParForStatement;
-import org.apache.sysml.parser.ParameterExpression;
-import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
-import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.parser.PathStatement;
-import org.apache.sysml.parser.PrintStatement;
-import org.apache.sysml.parser.RelationalExpression;
-import org.apache.sysml.parser.Statement;
-import org.apache.sysml.parser.StatementBlock;
-import org.apache.sysml.parser.StringIdentifier;
-import org.apache.sysml.parser.WhileStatement;
 
 public class DmlSyntacticValidator implements DmlListener
 {	
@@ -734,7 +733,7 @@ public class DmlSyntacticValidator implements DmlListener
 		DMLProgram prog = null;
 		try {
 			prog = (new DMLParserWrapper()).doParse(filePath, null, argVals);
-		} catch (ParseException e) {
+		} catch (DMLParseException e) {
 			helper.notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
 			return;
 		}
@@ -902,7 +901,7 @@ public class DmlSyntacticValidator implements DmlListener
 		try {
 			functCall.setFunctionName(functionName);
 			functCall.setFunctionNamespace(namespace);
-		} catch (ParseException e1) {
+		} catch (DMLParseException e1) {
 			helper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
 			 return;
 		}
@@ -1041,7 +1040,7 @@ public class DmlSyntacticValidator implements DmlListener
 		try {
 			functCall.setFunctionName(functionName);
 			functCall.setFunctionNamespace(namespace);
-		} catch (ParseException e1) {
+		} catch (DMLParseException e1) {
 			helper.notifyErrorListeners("unable to process function " + functionName, ctx.start);
 			return;
 		}

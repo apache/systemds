@@ -36,13 +36,11 @@ import org.apache.spark.ml.param.StringArrayParam;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
-
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.MLContext;
 import org.apache.sysml.api.MLOutput;
-import org.apache.sysml.api.ml.LogisticRegressionModel;
 import org.apache.sysml.api.ml.functions.ConvertSingleColumnToString;
-import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.DMLParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -476,7 +474,7 @@ public class LogisticRegression extends ProbabilisticClassifier<Vector, Logistic
 			throw new RuntimeException(e);
 		} catch (DMLException e) {
 			throw new RuntimeException(e);
-		} catch (ParseException e) {
+		} catch (DMLParseException e) {
 			throw new RuntimeException(e);
 		}
 	}

@@ -30,9 +30,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.StringTokenizer;
-import java.util.Map.Entry;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -43,21 +43,17 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import au.com.bytecode.opencsv.CSVReader;
-import au.com.bytecode.opencsv.CSVWriter;
-
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
+import org.apache.sysml.parser.DMLParseException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataIdentifier;
-import org.apache.sysml.parser.ExternalFunctionStatement;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
@@ -86,6 +82,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
+
+import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
 
 /**
  * DML Instructions Performance Test Tool: 
@@ -1438,11 +1437,11 @@ public class PerfTestTool
 	 * @param rows
 	 * @param cols
 	 * @throws IOException
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 * @throws DMLException
 	 */
 	private static void computeRegressionModels( String dmlname, String dmltmpname, String dir, int models, int rows, int cols ) 
-		throws IOException, ParseException, DMLException
+		throws IOException, DMLParseException, DMLException
 	{
 		//clean scratch space 
 		//AutomatedTestBase.cleanupScratchSpace();

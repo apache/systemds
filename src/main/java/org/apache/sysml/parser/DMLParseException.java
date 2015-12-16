@@ -22,7 +22,7 @@ package org.apache.sysml.parser;
 
 import java.util.ArrayList;
 
-public class DMLParseException extends ParseException
+public class DMLParseException extends Exception
 {
 	
 	
@@ -58,22 +58,8 @@ public class DMLParseException extends ParseException
 		super();
 		_filename = fname;
 		_exceptionList = new ArrayList<DMLParseException>();
-		String newMsg = e.getMessage();
-		if (e instanceof ParseException && !(e instanceof DMLParseException)){
-			ParseException parseEx = (ParseException)e;
-			int beginLine = -1, beginColumn = -1;
-			String errorToken = null;
-			if (parseEx.currentToken != null){
-				beginLine    = parseEx.currentToken.beginLine;
-				beginColumn  = parseEx.currentToken.beginColumn;
-				errorToken   = parseEx.currentToken.image;
-				newMsg =  "ERROR: " + _filename + " -- line " + beginLine + ", column " + beginColumn + " -- " + "Parsing error around token \"" + errorToken + "\"";
-			} else {
-				newMsg =  "ERROR: " + _filename + " -- line " + beginLine + ", column " + beginColumn + " -- " + "Parsing error with unspecified token";
-			}
-		}
-		
-		_exceptionList.add(new DMLParseException(_filename, newMsg));
+		String msg = e.getMessage();
+		_exceptionList.add(new DMLParseException(_filename, msg));
 	}
 	
 	public int size(){

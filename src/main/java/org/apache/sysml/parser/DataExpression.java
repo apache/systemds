@@ -201,7 +201,7 @@ public class DataExpression extends DataIdentifier
 				if (pname == null){
 					throw new DMLParseException(dataExpr.getFilename(), dataExpr.printErrorLocation(blp, bcp) + "for Rand Statment all arguments must be named parameters");	
 					//LOG.error(dataExpr.printErrorLocation(beginLine, beginColumn) + "for Rand Statment all arguments must be named parameters");
-					//throw new ParseException(dataExpr.printErrorLocation(beginLine, beginColumn) + "for Rand Statment all arguments must be named parameters");	
+					//throw new DMLParseException(dataExpr.printErrorLocation(beginLine, beginColumn) + "for Rand Statment all arguments must be named parameters");	
 				}
 				dataExpr.addRandExprParam(pname, pexpr); 
 			}
@@ -539,8 +539,6 @@ public class DataExpression extends DataIdentifier
 	 * statement
 	 *  
 	 * @throws LanguageException
-	 * @throws ParseException 
-	 * @throws IOException 
 	 */
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional)

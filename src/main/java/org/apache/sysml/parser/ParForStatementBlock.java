@@ -180,7 +180,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional)
-		throws LanguageException, ParseException, IOException 
+		throws LanguageException, DMLParseException, IOException 
 	{	
 		LOG.trace("PARFOR("+_ID+"): validating ParForStatementBlock.");		
 		

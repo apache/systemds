@@ -43,7 +43,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.DMLParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
@@ -119,11 +119,11 @@ public class DMLConfig
 	/**
 	 * 
 	 * @param fileName
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 * @throws FileNotFoundException 
 	 */
 	public DMLConfig(String fileName) 
-		throws ParseException, FileNotFoundException
+		throws DMLParseException, FileNotFoundException
 	{
 		this( fileName, false );
 	}
@@ -132,11 +132,11 @@ public class DMLConfig
 	 * 
 	 * @param fileName
 	 * @param silent
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 * @throws FileNotFoundException 
 	 */
 	public DMLConfig(String fileName, boolean silent) 
-		throws ParseException, FileNotFoundException
+		throws DMLParseException, FileNotFoundException
 	{
 		config_file_name = fileName;
 		try {
@@ -145,10 +145,10 @@ public class DMLConfig
 			LOCAL_MR_MODE_STAGING_DIR = getTextValue(LOCAL_TMP_DIR) + "/hadoop/mapred/staging";
 			throw fnfe;
 		} catch (Exception e){
-		    //log error, since signature of generated ParseException doesn't allow to pass it 
+		    //log error, since signature of generated DMLParseException doesn't allow to pass it 
 			if( !silent )
 				LOG.error("Failed to parse DML config file ",e);
-			throw new ParseException("ERROR: error parsing DMLConfig file " + fileName);
+			throw new DMLParseException("ERROR: error parsing DMLConfig file " + fileName);
 		}
 		
 		LOCAL_MR_MODE_STAGING_DIR = getTextValue(LOCAL_TMP_DIR) + "/hadoop/mapred/staging";
@@ -166,7 +166,7 @@ public class DMLConfig
 	}
 	
 	public void merge(DMLConfig otherConfig) 
-		throws ParseException
+		throws DMLParseException
 	{
 		if (otherConfig == null) 
 			return;
@@ -195,7 +195,7 @@ public class DMLConfig
 			} // end if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
 		} catch (Exception e){
 			LOG.error("Failed in merge default config file with optional config file",e);
-			throw new ParseException("ERROR: error merging config file" + otherConfig.config_file_name + " with " + config_file_name);
+			throw new DMLParseException("ERROR: error merging config file" + otherConfig.config_file_name + " with " + config_file_name);
 		}
 	}
 	
@@ -352,11 +352,11 @@ public class DMLConfig
 	/**
 	 * 
 	 * @return
-	 * @throws ParseException 
+	 * @throws DMLParseException 
 	 * @throws FileNotFoundException 
 	 */
 	public static DMLConfig readAndMergeConfigurationFiles( String optConfig ) 
-		throws ParseException, FileNotFoundException
+		throws DMLParseException, FileNotFoundException
 	{
 		// optional config specified overwrites/merge into the default config
 		DMLConfig defaultConfig = null;
@@ -367,7 +367,7 @@ public class DMLConfig
 				defaultConfig = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH, true);
 			} catch (FileNotFoundException fnfe) { // it is OK to not have the default, but give a warning
 				LOG.warn("No default SystemML config file (" + DEFAULT_SYSTEMML_CONFIG_FILEPATH + ") found");
-			} catch (ParseException e) {
+			} catch (DMLParseException e) {
 				defaultConfig = null;
 				throw e;
 			}
@@ -376,7 +376,7 @@ public class DMLConfig
 			} catch (FileNotFoundException fnfe) {
 				LOG.error("Config file " + optConfig + " not found");
 				throw fnfe;
-			} catch (ParseException e) {
+			} catch (DMLParseException e) {
 				optionalConfig = null;
 				throw e;
 			}
@@ -384,7 +384,7 @@ public class DMLConfig
 				try {
 					defaultConfig.merge(optionalConfig);
 				}
-				catch(ParseException e){
+				catch(DMLParseException e){
 					defaultConfig = null;
 					throw e;
 				}
@@ -401,7 +401,7 @@ public class DMLConfig
 				LOG.warn("Using default settings in DMLConfig");
 				DMLConfig dmlConfig = new DMLConfig();
 				return dmlConfig;
-			} catch (ParseException e) { 
+			} catch (DMLParseException e) { 
 				defaultConfig = null;
 				throw e;
 			}

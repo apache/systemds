@@ -39,6 +39,8 @@ For more information about SystemML, please consult the following references:
 * [Quick Start Guide](quick-start-guide.html)
 * [DML and PyDML Programming Guide](dml-and-pydml-programming-guide.html)
 * [MLContext Programming Guide](mlcontext-programming-guide.html)
+* [Hadoop Batch Mode](hadoop-batch-mode.html)
+* Spark Batch Mode - **Coming Soon**
 * [Debugger Guide](debugger-guide.html)
 * [Algorithms Reference](algorithms-reference.html)
 * [DML (R-like Declarative Machine Learning) Language Reference](dml-language-reference.html)

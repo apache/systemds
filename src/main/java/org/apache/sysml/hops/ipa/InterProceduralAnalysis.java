@@ -31,7 +31,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
@@ -40,12 +39,13 @@ import org.apache.sysml.hops.FunctionOp.FunctionType;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.OpOp2;
-import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
-import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.parser.DMLParseException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataIdentifier;
@@ -59,7 +59,6 @@ import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
 import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
@@ -147,11 +146,11 @@ public class InterProceduralAnalysis
 	 * @param dmlt
 	 * @param dmlp
 	 * @throws HopsException
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 * @throws LanguageException
 	 */
 	public void analyzeProgram( DMLProgram dmlp ) 
-		throws HopsException, ParseException, LanguageException
+		throws HopsException, DMLParseException, LanguageException
 	{
 		//step 1: get candidates for statistics propagation into functions (if required)
 		Map<String, Integer> fcandCounts = new HashMap<String, Integer>();
@@ -203,11 +202,11 @@ public class InterProceduralAnalysis
 	 * 
 	 * @param sb
 	 * @return
-	 * @throws ParseException 
+	 * @throws DMLParseException 
 	 * @throws HopsException 
 	 */
 	public Set<String> analyzeSubProgram( StatementBlock sb ) 
-		throws HopsException, ParseException
+		throws HopsException, DMLParseException
 	{
 		DMLTranslator.resetHopsDAGVisitStatus(sb);
 		
@@ -242,10 +241,10 @@ public class InterProceduralAnalysis
 	 * @param sb
 	 * @param fcand
 	 * @throws HopsException
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 */
 	private void getFunctionCandidatesForStatisticPropagation( StatementBlock sb, Map<String, Integer> fcandCounts, Map<String, FunctionOp> fcandHops ) 
-		throws HopsException, ParseException
+		throws HopsException, DMLParseException
 	{
 		if (sb instanceof FunctionStatementBlock)
 		{
@@ -292,10 +291,10 @@ public class InterProceduralAnalysis
 	 * @param hop
 	 * @param fcand
 	 * @throws HopsException
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 */
 	private void getFunctionCandidatesForStatisticPropagation(DMLProgram prog, Hop hop, Map<String, Integer> fcandCounts, Map<String, FunctionOp> fcandHops ) 
-		throws HopsException, ParseException
+		throws HopsException, DMLParseException
 	{
 		if( hop.getVisited() == VisitStatus.DONE )
 			return;
@@ -432,11 +431,11 @@ public class InterProceduralAnalysis
 	 * @param sb
 	 * @param fcand
 	 * @throws HopsException
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 * @throws CloneNotSupportedException 
 	 */
 	private void propagateStatisticsAcrossBlock( StatementBlock sb, Set<String> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
-		throws HopsException, ParseException
+		throws HopsException, DMLParseException
 	{
 		if (sb instanceof FunctionStatementBlock)
 		{
@@ -588,10 +587,10 @@ public class InterProceduralAnalysis
 	 * @param fcand
 	 * @param callVars
 	 * @throws HopsException
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 */
 	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, Set<String> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
-			throws HopsException, ParseException
+			throws HopsException, DMLParseException
 	{
 		for( Hop root : roots )
 			propagateStatisticsIntoFunctions(prog, root, fcand, callVars, fcandSafeNNZ, fnStack);
@@ -604,10 +603,10 @@ public class InterProceduralAnalysis
 	 * @param hop
 	 * @param fcand
 	 * @throws HopsException
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 */
 	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, Set<String> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
-		throws HopsException, ParseException
+		throws HopsException, DMLParseException
 	{
 		if( hop.getVisited() == VisitStatus.DONE )
 			return;

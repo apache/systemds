@@ -566,7 +566,7 @@ public class DMLDebugger
 //	 * compile: Compile DML script and generate hops, lops and runtime program for debugger. 
 //	 * @param  dmlScriptStr DML script contents (including new lines)
 //	 * @param  argVals Key-value pairs defining arguments of DML script  
-//	 * @throws ParseException
+//	 * @throws DMLParseException
 //	 * @throws IOException
 //	 * @throws DMLRuntimeException
 //	 * @throws LanguageException
@@ -576,7 +576,7 @@ public class DMLDebugger
 //	 * @throws Exception 
 //	 */
 //	private void recompile(String dmlScriptStr, HashMap<String,String> argVals)
-//			throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException, Exception
+//			throws DMLParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException, Exception
 //	{
 //		dbprog = new DMLDebuggerProgramInfo();
 //			

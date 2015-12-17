@@ -36,10 +36,10 @@ public abstract class AParserWrapper
 	 * @param dmlScript
 	 * @param argVals
 	 * @return
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 */
 	public abstract DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) 
-		throws ParseException;
+		throws DMLParseException;
 	
 	
 	/**

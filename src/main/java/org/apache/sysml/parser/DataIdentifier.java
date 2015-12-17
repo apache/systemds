@@ -73,7 +73,7 @@ public class DataIdentifier extends Identifier
 	}
 	
 
-	public void setTypeInfo( String valueType, String dataType) throws ParseException{
+	public void setTypeInfo( String valueType, String dataType) throws DMLParseException{
 		
 		if (valueType.equalsIgnoreCase("int") || valueType.equalsIgnoreCase("integer"))
 			this.setValueType(ValueType.INT);
@@ -88,7 +88,7 @@ public class DataIdentifier extends Identifier
 		else {
 			// provide location for this exception in the parser
 			LOG.error(this.printErrorLocation() + "function parameter has unknown value type " + valueType);
-			throw new ParseException(this.printErrorLocation() + "function parameter has unknown value type " + valueType);
+			throw new DMLParseException(this.printErrorLocation() + "function parameter has unknown value type " + valueType);
 		}
 		
 		if (dataType.equalsIgnoreCase("object"))
@@ -100,7 +100,7 @@ public class DataIdentifier extends Identifier
 		else {
 			// provide location for this exception in the parser
 			LOG.error(this.printErrorLocation() + "function parameter has unknown data type " + valueType);
-			throw new ParseException(this.printErrorLocation() + "function parameter has unknown data type " + valueType);
+			throw new DMLParseException(this.printErrorLocation() + "function parameter has unknown data type " + valueType);
 		}
 		
 	}

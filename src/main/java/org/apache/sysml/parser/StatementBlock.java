@@ -537,11 +537,11 @@ public class StatementBlock extends LiveVariableAnalysis
 	 * @param conditional
 	 * @return
 	 * @throws LanguageException
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 * @throws IOException
 	 */
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
-		throws LanguageException, ParseException, IOException 
+		throws LanguageException, DMLParseException, IOException 
 	{
 		_constVarsIn.putAll(constVars);
 		HashMap<String, ConstIdentifier> currConstVars = new HashMap<String,ConstIdentifier>();
@@ -784,7 +784,7 @@ public class StatementBlock extends LiveVariableAnalysis
 	}
 	
 	public void setStatementFormatType(OutputStatement s, boolean conditionalValidate) 
-		throws LanguageException, ParseException
+		throws LanguageException, DMLParseException
 	{
 		//case of specified format parameter
 		if (s.getExprParam(DataExpression.FORMAT_TYPE)!= null )
@@ -818,7 +818,7 @@ public class StatementBlock extends LiveVariableAnalysis
 	}
 	
 	public void setStatementFormatType(AssignmentStatement s, boolean conditionalValidate) 
-		throws LanguageException, ParseException
+		throws LanguageException, DMLParseException
 	{
 		
 		if (!(s.getSource() instanceof DataExpression))

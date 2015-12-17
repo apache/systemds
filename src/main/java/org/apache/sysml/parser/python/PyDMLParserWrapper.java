@@ -48,7 +48,7 @@ import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatement;
 import org.apache.sysml.parser.ParForStatementBlock;
-import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.DMLParseException;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
@@ -106,14 +106,14 @@ public class PyDMLParserWrapper extends AParserWrapper
 	 * @param dmlScript required
 	 * @param argVals
 	 * @return
-	 * @throws ParseException
+	 * @throws DMLParseException
 	 */
 	@Override
-	public DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
+	public DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) throws DMLParseException {
 		DMLProgram prog = null;
 		
 		if(dmlScript == null || dmlScript.trim().isEmpty()) {
-			throw new ParseException("Incorrect usage of parse. Please pass dmlScript not just filename");
+			throw new DMLParseException("Incorrect usage of parse. Please pass dmlScript not just filename");
 		}
 		
 		// Set the pipeline required for ANTLR parsing
@@ -121,7 +121,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 		prog = parser.doParse(fileName, dmlScript, argVals);
 		
 		if(prog == null) {
-			throw new ParseException("One or more errors found during parsing. (could not construct AST for file: " + fileName + "). Cannot proceed ahead.");
+			throw new DMLParseException("One or more errors found during parsing. (could not construct AST for file: " + fileName + "). Cannot proceed ahead.");
 		}
 		return prog;
 	}
@@ -131,7 +131,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 	 * @param fileName
 	 * @return null if atleast one error
 	 */
-	public DMLProgram doParse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
+	public DMLProgram doParse(String fileName, String dmlScript, HashMap<String,String> argVals) throws DMLParseException {
 		DMLProgram dmlPgm = null;
 		
 		ANTLRInputStream in;
@@ -144,16 +144,16 @@ public class PyDMLParserWrapper extends AParserWrapper
 			in = new org.antlr.v4.runtime.ANTLRInputStream(stream);
 //			else {
 //				if(!(new File(fileName)).exists()) {
-//					throw new ParseException("ERROR: Cannot open file:" + fileName);
+//					throw new DMLParseException("ERROR: Cannot open file:" + fileName);
 //				}
 //				in = new ANTLRInputStream(new FileInputStream(fileName));
 //			}
 		} catch (FileNotFoundException e) {
-			throw new ParseException("ERROR: Cannot find file:" + fileName, e);
+			throw new DMLParseException("ERROR: Cannot find file:" + fileName, e);
 		} catch (IOException e) {
-			throw new ParseException("ERROR: Cannot open file:" + fileName, e);
+			throw new DMLParseException("ERROR: Cannot open file:" + fileName, e);
 		} catch (LanguageException e) {
-			throw new ParseException("ERROR: " + e.getMessage(), e);
+			throw new DMLParseException("ERROR: " + e.getMessage(), e);
 		}
 
 		PmlprogramContext ast = null;
@@ -203,7 +203,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 			}
 		}
 		catch(Exception e) {
-			throw new ParseException("ERROR: Cannot parse the program:" + fileName, e);
+			throw new DMLParseException("ERROR: Cannot parse the program:" + fileName, e);
 		}
 		
 
@@ -223,7 +223,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 			dmlPgm = createDMLProgram(ast);
 		}
 		catch(Exception e) {
-			throw new ParseException("ERROR: Cannot translate the parse tree into DMLProgram" + e.getMessage(), e);
+			throw new DMLParseException("ERROR: Cannot translate the parse tree into DMLProgram" + e.getMessage(), e);
 		}
 		
 		return dmlPgm;

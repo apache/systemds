@@ -39,7 +39,7 @@ public class WhileStatementBlock extends StatementBlock
 	
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
-		throws LanguageException, ParseException, IOException 
+		throws LanguageException, DMLParseException, IOException 
 	{	
 		if (_statements.size() > 1){
 			raiseValidateError("WhileStatementBlock should have only 1 statement (while statement)", conditional);

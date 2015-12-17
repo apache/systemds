@@ -327,8 +327,8 @@
 
 					<includes>
 						<include>**/integration/applications/**/*Suite.java</include>
+						<include>**/integration/functions/gdfo/*Suite.java</include>
 						<include>**/integration/functions/**/*Test*.java</include>
-						<include>**/integration/functions/gdfo/*.java</include>
 						<include>**/integration/scalability/**/*Test.java</include>
 					</includes>
 

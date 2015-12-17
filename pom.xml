@@ -326,38 +326,13 @@
 						-Djava.awt.headless=true</argLine>
 
 					<includes>
-						<include>**/integration/**/*Suite.java</include>
-						<!-- <include>**/integration/functions/aggregate/*Test.java</include> -->
-						<include>**/integration/functions/append/*Test.java</include>
-						<include>**/integration/functions/binary/matrix/*Test.java</include>
-						<include>**/integration/functions/binary/matrix_full_cellwise/*Test.java</include>
-						<include>**/integration/functions/binary/matrix_full_other/*Test.java</include>
-						<include>**/integration/functions/data/*Test*.java</include>
-						<include>**/integration/functions/indexing/*Test.java</include>
-						<include>**/integration/functions/parfor/*Test.java</include>
-						<include>**/integration/functions/quaternary/*Test.java</include>
-						<include>**/integration/functions/recompile/*Test.java</include>
-						<include>**/integration/functions/reorg/*Test.java</include>
-						<include>**/integration/functions/ternary/*Test.java</include>
-						<include>**/integration/functions/transform/*Test.java</include>
-						<include>**/integration/functions/unary/matrix/*Test.java</include>
+						<include>**/integration/applications/**/*Suite.java</include>
+						<include>**/integration/functions/**/*Test*.java</include>
+						<include>**/integration/functions/gdfo/*.java</include>
+						<include>**/integration/scalability/**/*Test.java</include>
 					</includes>
 
 					<excludes>
-						<!-- <exclude>**/integration/functions/aggregate/*Suite.java</exclude> -->
-						<exclude>**/integration/functions/append/*Suite.java</exclude>
-						<exclude>**/integration/functions/binary/matrix/*Suite.java</exclude>
-						<exclude>**/integration/functions/binary/matrix_full_cellwise/*Suite.java</exclude>
-						<exclude>**/integration/functions/binary/matrix_full_other/*Suite.java</exclude>
-						<exclude>**/integration/functions/data/*Suite.java</exclude>
-						<exclude>**/integration/functions/indexing/*Suite.java</exclude>
-						<exclude>**/integration/functions/parfor/*Suite.java</exclude>
-						<exclude>**/integration/functions/quaternary/*Suite.java</exclude>
-						<exclude>**/integration/functions/recompile/*Suite.java</exclude>
-						<exclude>**/integration/functions/reorg/*Suite.java</exclude>
-						<exclude>**/integration/functions/ternary/*Suite.java</exclude>
-						<exclude>**/integration/functions/transform/*Suite.java</exclude>
-						<exclude>**/integration/functions/unary/matrix/*Suite.java</exclude>
 						<exclude>**/slowtest/**</exclude>
 					</excludes>
 

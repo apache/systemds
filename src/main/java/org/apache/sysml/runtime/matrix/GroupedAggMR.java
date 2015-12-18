@@ -26,11 +26,10 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.Counters.Group;
-
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.data.TaggedInt;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
 import org.apache.sysml.runtime.matrix.mapred.GroupedAggMRCombiner;
 import org.apache.sysml.runtime.matrix.mapred.GroupedAggMRMapper;
@@ -116,7 +115,7 @@ public class GroupedAggMR
 		// configure mapper and the mapper output key value pairs
 		job.setMapperClass(GroupedAggMRMapper.class);
 		job.setCombinerClass(GroupedAggMRCombiner.class); 
-		job.setMapOutputKeyClass(TaggedInt.class);
+		job.setMapOutputKeyClass(TaggedMatrixIndexes.class);
 		job.setMapOutputValueClass(WeightedCell.class);
 		
 		//configure reducer

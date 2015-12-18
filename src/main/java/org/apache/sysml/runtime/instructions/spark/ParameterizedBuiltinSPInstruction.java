@@ -25,7 +25,6 @@ import java.util.HashMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
@@ -185,12 +184,12 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			
 			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( params.get(Statement.GAGG_TARGET) );
 			MatrixCharacteristics mc2 = sec.getMatrixCharacteristics( params.get(Statement.GAGG_GROUPS) );
-			if(mc1.dimsKnown() && mc2.dimsKnown() && (mc1.getRows() != mc2.getRows() || mc1.getCols() != mc2.getCols())) {
-				throw new DMLRuntimeException("Grouped Aggregate SPInstruction is not supported for dimension of target != groups");
+			if(mc1.dimsKnown() && mc2.dimsKnown() && (mc1.getRows() != mc2.getRows() || mc2.getCols() !=1)) {
+				throw new DMLRuntimeException("Grouped Aggregate dimension mismatch between target and groups.");
 			}
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			
-			JavaPairRDD<Long, WeightedCell> groupWeightedCells = null;
+			JavaPairRDD<MatrixIndexes, WeightedCell> groupWeightedCells = null;
 			
 			// Step 1: First extract groupWeightedCells from group, target and weights
 			if ( params.get(Statement.GAGG_WEIGHTS) != null ) {
@@ -198,15 +197,22 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 				
 				MatrixCharacteristics mc3 = sec.getMatrixCharacteristics( params.get(Statement.GAGG_GROUPS) );
 				if(mc1.dimsKnown() && mc3.dimsKnown() && (mc1.getRows() != mc3.getRows() || mc1.getCols() != mc3.getCols())) {
-					throw new DMLRuntimeException("Grouped Aggregate SPInstruction is not supported for dimension of target != weights");
+					throw new DMLRuntimeException("Grouped Aggregate dimension mismatch between target, groups, and weights.");
 				}
 				
 				groupWeightedCells = groups.join(target).join(weights)
 						.flatMapToPair(new ExtractGroupNWeights());	
 			}
-			else {
+			else //input vector or matrix
+			{
+				//replicate groups if necessary
+				if( mc1.getNumColBlocks() > 1 ) {
+					groups = groups.flatMapToPair(
+							new ReplicateVectorFunction(false, mc1.getNumColBlocks() ));
+				}
+				
 				groupWeightedCells = groups.join(target)
-						.flatMapToPair(new ExtractGroup());
+						.flatMapToPair(new ExtractGroup(mc1.getColsPerBlock()));
 			}
 			
 			// Step 2: Make sure we have brlen required while creating <MatrixIndexes, MatrixCell> 
@@ -219,21 +225,20 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			JavaPairRDD<MatrixIndexes, MatrixCell> out = null;
 			if(_optr instanceof CMOperator && ((CMOperator) _optr).isPartialAggregateOperator() ) {
 				out = groupWeightedCells.reduceByKey(new PerformGroupByAggInCombiner(_optr))
-						.mapToPair(new CreateMatrixCell(brlen, _optr));
+						.mapValues(new CreateMatrixCell(brlen, _optr));
 			}
 			else {
 				// Use groupby key because partial aggregation is not supported
 				out = groupWeightedCells.groupByKey()
-						.mapToPair(new PerformGroupByAggInReducer(_optr))
-						.mapToPair(new CreateMatrixCell(brlen, _optr));
+						.mapValues(new PerformGroupByAggInReducer(_optr))
+						.mapValues(new CreateMatrixCell(brlen, _optr));
 			}
 			
 			// Step 4: Set output characteristics and rdd handle 
 			setOutputCharacteristicsForGroupedAgg(mc1, mcOut, out);
 			
 			//store output rdd handle
-			sec.setRDDHandleForVariable(output.getName(), out);
-			
+			sec.setRDDHandleForVariable(output.getName(), out);			
 			sec.addLineageRDD(output.getName(), params.get(Statement.GAGG_TARGET) );
 			sec.addLineageRDD(output.getName(), params.get(Statement.GAGG_GROUPS) );
 			if ( params.get(Statement.GAGG_WEIGHTS) != null ) {
@@ -499,7 +504,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 	/**
 	 * 
 	 */
-	public static class CreateMatrixCell implements PairFunction<Tuple2<Long,WeightedCell>, MatrixIndexes, MatrixCell> 
+	public static class CreateMatrixCell implements Function<WeightedCell, MatrixCell> 
 	{
 		private static final long serialVersionUID = -5783727852453040737L;
 		
@@ -510,8 +515,9 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		}
 
 		@Override
-		public Tuple2<MatrixIndexes, MatrixCell> call(Tuple2<Long, WeightedCell> kv) throws Exception {
-
+		public MatrixCell call(WeightedCell kv) 
+			throws Exception 
+		{
 			double val = -1;
 			if(op instanceof CMOperator)
 			{
@@ -519,23 +525,22 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 				switch(agg)
 				{
 				case COUNT:
-					val = kv._2.getWeight();
+					val = kv.getWeight();
 					break;
 				case MEAN:
-					val = kv._2.getValue();
+					val = kv.getValue();
 					break;
 				case CM2:
-					val = kv._2.getValue()/ kv._2.getWeight();
+					val = kv.getValue()/ kv.getWeight();
 					break;
 				case CM3:
-					val = kv._2.getValue()/ kv._2.getWeight();
+					val = kv.getValue()/ kv.getWeight();
 					break;
 				case CM4:
-					val = kv._2.getValue()/ kv._2.getWeight();
+					val = kv.getValue()/ kv.getWeight();
 					break;
 				case VARIANCE:
-					val = kv._2.getValue()/kv._2.getWeight();
-					// val = kv._2.getWeight() ==1.0? 0:kv._2.getValue()/(kv._2.getWeight() - 1);
+					val = kv.getValue()/kv.getWeight();
 					break;
 				default:
 					throw new DMLRuntimeException("Invalid aggreagte in CM_CV_Object: " + agg);
@@ -544,15 +549,11 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			else
 			{
 				//avoid division by 0
-				val = kv._2.getValue()/kv._2.getWeight();
+				val = kv.getValue()/kv.getWeight();
 			}
 			
-			MatrixIndexes indx = new MatrixIndexes(kv._1, 1);
-			MatrixCell cell = new MatrixCell(val);
-			
-			return new Tuple2<MatrixIndexes, MatrixCell>(indx, cell);
+			return new MatrixCell(val);
 		}
-		
 	}
 	
 	/**
@@ -572,14 +573,13 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			
 			if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
 				int ngroups = (int) Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS));
-				mcOut.set(ngroups, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				mcOut.set(ngroups, mc1.getCols(), -1, -1); //grouped aggregate with cell output
 			}
 			else {
 				out = SparkUtils.cacheBinaryCellRDD(out);
 				mcOut.set(SparkUtils.computeMatrixCharacteristics(out));
-				mcOut.setBlockSize(mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				mcOut.setBlockSize(-1, -1); //grouped aggregate with cell output
 			}
 		}
 	}
-	
 }

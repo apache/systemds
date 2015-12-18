@@ -5295,13 +5295,14 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		MatrixBlock weights = checkType(wghts);
 		
 		//check valid dimensions
+		boolean validMatrixOp = (weights == null && ngroups>=1);
 		if( this.getNumColumns() != 1 || (weights!=null && weights.getNumColumns()!=1) )
 			throw new DMLRuntimeException("groupedAggregate can only operate on 1-dimensional column matrices for groups and weights.");
-		if( target.getNumColumns() != 1 && op instanceof CMOperator )
+		if( target.getNumColumns() != 1 && op instanceof CMOperator && !validMatrixOp )
 			throw new DMLRuntimeException("groupedAggregate can only operate on 1-dimensional column matrices for target (for this aggregation function).");
-		if( target.getNumColumns() != 1 && target.getNumRows()!=1 )
+		if( target.getNumColumns() != 1 && target.getNumRows()!=1 && !validMatrixOp )
 			throw new DMLRuntimeException("groupedAggregate can only operate on 1-dimensional column or row matrix for target.");
-		if( this.getNumRows() != Math.max(target.getNumRows(),target.getNumColumns()) || (weights != null && this.getNumRows() != weights.getNumRows()) ) 
+		if( this.getNumRows() != target.getNumRows() && this.getNumRows() !=Math.max(target.getNumRows(),target.getNumColumns()) || (weights != null && this.getNumRows() != weights.getNumRows()) ) 
 			throw new DMLRuntimeException("groupedAggregate can only operate on matrices with equal dimensions.");
 		
 		// obtain numGroups from instruction, if provided
@@ -5323,40 +5324,22 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 	
 		// Allocate result matrix
+		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
 		MatrixBlock result = checkType(ret);
 		boolean result_sparsity = estimateSparsityOnGroupedAgg(rlen, numGroups);
 		if(result==null)
-			result=new MatrixBlock(numGroups, 1, result_sparsity);
+			result=new MatrixBlock(numGroups, rowVector?1:target.getNumRows(), result_sparsity);
 		else
-			result.reset(numGroups, 1, result_sparsity);
+			result.reset(numGroups, rowVector?1:target.getNumRows(), result_sparsity);
 
-		// Compute the result
-		double w = 1; // default weight
-		
 		//CM operator for count, mean, variance
 		//note: current support only for column vectors
-		if(op instanceof CMOperator) {
+		if(op instanceof CMOperator) 
+		{
 			// initialize required objects for storing the result of CM operations
-			CM cmFn = CM.getCMFnObject(((CMOperator) op).getAggOpType());
-			CM_COV_Object[] cmValues = new CM_COV_Object[numGroups];
-			for ( int i=0; i < numGroups; i++ )
-				cmValues[i] = new CM_COV_Object();
+			CMOperator cmOp = (CMOperator) op;
 			
-			for ( int i=0; i < this.getNumRows(); i++ ) {
-				int g = (int) this.quickGetValue(i, 0);
-				if ( g > numGroups )
-					continue;
-				double d = target.quickGetValue(i,0);
-				if ( weights != null )
-					w = weights.quickGetValue(i,0);
-				// cmValues is 0-indexed, whereas range of values for g = [1,numGroups]
-				cmFn.execute(cmValues[g-1], d, w); 
-			}
-			
-			// extract the required value from each CM_COV_Object
-			for ( int i=0; i < numGroups; i++ )
-				// result is 0-indexed, so is cmValues
-				result.quickSetValue(i, 0, cmValues[i].getRequiredResult(op));
+			groupedAggregateCM(target, weights, result, cmOp);
 		}
 		//Aggregate operator for sum (via kahan sum)
 		//note: support for row/column vectors and dense/sparse
@@ -5387,9 +5370,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @param op
 	 * @throws DMLRuntimeException 
 	 */
-	private void groupedAggregateKahanPlus( MatrixBlock target, MatrixBlock weights, MatrixBlock result, AggregateOperator aggop ) throws DMLRuntimeException
+	private void groupedAggregateKahanPlus( MatrixBlock target, MatrixBlock weights, MatrixBlock result, AggregateOperator aggop ) 
+		throws DMLRuntimeException
 	{
-		boolean rowVector = target.getNumColumns()>1;
+		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
+		int numCols = (!rowVector) ? target.getNumColumns() : 1;
 		double w = 1; //default weight
 		
 		//skip empty blocks (sparse-safe operation)
@@ -5397,9 +5382,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			return;
 		
 		//init group buffers
-		KahanObject[] buffer = new KahanObject[numGroups];
-		for(int i=0; i < numGroups; i++ )
-			buffer[i] = new KahanObject(aggop.initialValue, 0);
+		KahanObject[][] buffer = new KahanObject[numGroups][numCols];
+		for( int i=0; i<numGroups; i++ )
+			for( int j=0; j<numCols; j++ )
+				buffer[i][j] = new KahanObject(aggop.initialValue, 0);
 			
 		if( rowVector ) //target is rowvector
 		{	
@@ -5417,7 +5403,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 							continue;
 						if ( weights != null )
 							w = weights.quickGetValue(aix[j],0);
-						aggop.increOp.fn.execute(buffer[g-1], avals[j]*w);						
+						aggop.increOp.fn.execute(buffer[g-1][0], avals[j]*w);						
 					}
 				}
 					
@@ -5434,34 +5420,141 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 						if ( weights != null )
 							w = weights.quickGetValue(i,0);
 						// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
-						aggop.increOp.fn.execute(buffer[g-1], d*w);
+						aggop.increOp.fn.execute(buffer[g-1][0], d*w);
 					}
 				}
 			}
 		}
-		else //column vector (always dense, but works for sparse as well)
+		else //column vector or matrix 
 		{
-			for ( int i=0; i < this.getNumRows(); i++ ) 
+			if( target.sparse ) //SPARSE target
 			{
-				double d = target.quickGetValue(i,0);
-				if( d != 0 ) //sparse-safe
+				SparseRow[] a = target.sparseRows;
+				
+				for( int i=0; i < getNumRows(); i++ ) 
 				{
 					int g = (int) this.quickGetValue(i, 0);		
 					if ( g > numGroups )
 						continue;
-					if ( weights != null )
-						w = weights.quickGetValue(i,0);
-					// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
-					aggop.increOp.fn.execute(buffer[g-1], d*w);
+					
+					if( a[i] != null && !a[i].isEmpty() )
+					{
+						int len = a[i].size();
+						int[] aix = a[i].getIndexContainer();
+						double[] avals = a[i].getValueContainer();	
+						for( int j=0; j<len; j++ ) //for each nnz
+						{
+							if ( weights != null )
+								w = weights.quickGetValue(aix[j],0);
+							aggop.increOp.fn.execute(buffer[g-1][aix[j]], avals[j]*w);						
+						}
+					}
+				}
+			}
+			else //DENSE target
+			{
+				double[] a = target.denseBlock;
+				
+				for( int i=0, aix=0; i < getNumRows(); i++, aix+=numCols ) 
+				{
+					int g = (int) this.quickGetValue(i, 0);		
+					if ( g > numGroups )
+						continue;
+				
+					for( int j=0; j < numCols; j++ ) {
+						double d = a[ aix+j ];
+						if( d != 0 ) { //sparse-safe
+							if ( weights != null )
+								w = weights.quickGetValue(i,0);
+							// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
+							aggop.increOp.fn.execute(buffer[g-1][j], d*w);
+						}
+					}
 				}
 			}
 		}
 		
 		// extract the results from group buffers
-		for ( int i=0; i < numGroups; i++ )
-			result.quickSetValue(i, 0, buffer[i]._sum);
+		for( int i=0; i < numGroups; i++ )
+			for( int j=0; j < numCols; j++ )
+				result.appendValue(i, j, buffer[i][j]._sum);
 	}
 
+	/**
+	 * 
+	 * @param target
+	 * @param weights
+	 * @param result
+	 * @param cmOp
+	 * @throws DMLRuntimeException
+	 */
+	private void groupedAggregateCM( MatrixBlock target, MatrixBlock weights, MatrixBlock result, CMOperator cmOp ) 
+		throws DMLRuntimeException
+	{
+		CM cmFn = CM.getCMFnObject(((CMOperator) cmOp).getAggOpType());
+		double w = 1; //default weight
+		
+		//init group buffers
+		CM_COV_Object[][] cmValues = new CM_COV_Object[numGroups][target.clen];
+		for ( int i=0; i < numGroups; i++ )
+			for( int j=0; j < target.clen; j++  )
+				cmValues[i][j] = new CM_COV_Object();
+		
+		
+		//column vector or matrix
+		if( target.sparse ) //SPARSE target
+		{
+			SparseRow[] a = target.sparseRows;
+			
+			for( int i=0; i < getNumRows(); i++ ) 
+			{
+				int g = (int) this.quickGetValue(i, 0);		
+				if ( g > numGroups )
+					continue;
+				
+				if( a[i] != null && !a[i].isEmpty() )
+				{
+					int len = a[i].size();
+					int[] aix = a[i].getIndexContainer();
+					double[] avals = a[i].getValueContainer();	
+					for( int j=0; j<len; j++ ) //for each nnz
+					{
+						if ( weights != null )
+							w = weights.quickGetValue(aix[j],0);
+						cmFn.execute(cmValues[g-1][aix[j]], avals[j], w);						
+					}
+					//TODO sparse unsafe correction
+				}
+			}
+		}
+		else //DENSE target
+		{
+			double[] a = target.denseBlock;
+			
+			for( int i=0, aix=0; i < getNumRows(); i++, aix+=target.clen ) 
+			{
+				int g = (int) this.quickGetValue(i, 0);		
+				if ( g > numGroups )
+					continue;
+			
+				for( int j=0; j < target.clen; j++ ) {
+					double d = a[ aix+j ]; //sparse unsafe
+					if ( weights != null )
+						w = weights.quickGetValue(i,0);
+					// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
+					cmFn.execute(cmValues[g-1][j], d, w);
+				}
+			}
+		}
+		
+		// extract the required value from each CM_COV_Object
+		for( int i=0; i < numGroups; i++ ) 
+			for( int j=0; j < target.clen; j++ ) {
+				// result is 0-indexed, so is cmValues
+				result.appendValue(i, j, cmValues[i][j].getRequiredResult(cmOp));
+			}			
+	}
+	
 	/**
 	 * 
 	 * @param ret

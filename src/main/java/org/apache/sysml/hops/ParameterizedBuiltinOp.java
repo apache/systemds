@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.AppendR;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.GroupedAggregate;
@@ -237,21 +238,53 @@ public class ParameterizedBuiltinOp extends Hop
 			} 
 			else 
 			{
-				Lop append = BinaryOp.constructMRAppendLop(
-						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
-						getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)), 
+				Hop target = getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET));
+				Hop groups = getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS));
+				Lop append = null;
+				
+				if( target.getDim2()>=target.getColsInBlock() ) //multi-column-block result matrix
+				{
+					long m1_dim1 = target.getDim1();
+					long m1_dim2 = target.getDim2();		
+					long m2_dim1 = groups.getDim1();
+					long m2_dim2 = groups.getDim2();
+					long m3_dim1 = m1_dim1; 
+					long m3_dim2 = ((m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1);
+					long m3_nnz = (target.getNnz()>0 && groups.getNnz()>0) ? (target.getNnz() + groups.getNnz()) : -1; 
+					long brlen = target.getRowsInBlock();
+					long bclen = target.getColsInBlock();
+					
+					Lop offset = createOffsetLop(target, true); 
+					Lop rep = new RepMat(groups.constructLops(), offset, true, groups.getDataType(), groups.getValueType());
+					setOutputDimensions(rep);
+					setLineNumbers(rep);	
+					
+					Group group1 = new Group(target.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, target.getValueType());
+					group1.getOutputParameters().setDimensions(m1_dim1, m1_dim2, brlen, bclen, target.getNnz());
+					setLineNumbers(group1);
+					
+					Group group2 = new Group(rep, Group.OperationTypes.Sort, DataType.MATRIX, groups.getValueType());
+					group1.getOutputParameters().setDimensions(m2_dim1, m2_dim2, brlen, bclen, groups.getNnz());
+					setLineNumbers(group2);
+					
+					append = new AppendR(group1, group2, DataType.MATRIX, ValueType.DOUBLE, true, ExecType.MR);
+					append.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
+					setLineNumbers(append);
+				}
+				else //single-column-block vector or matrix
+				{
+					append = BinaryOp.constructMRAppendLop(
+						target, groups, 
 						DataType.MATRIX, getValueType(), true,
 						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
+				}
 				
-				// add the combine lop to parameter list, with a new name
-				// "combinedinput"
+				// add the combine lop to parameter list, with a new name "combinedinput"
 				inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
 				inputlops.remove(Statement.GAGG_TARGET);
 				inputlops.remove(Statement.GAGG_GROUPS);
-
 			}
 			
-			int colwise = -1;
 			long outputDim1=-1, outputDim2=-1;
 			Lop numGroups = inputlops.get(Statement.GAGG_NUM_GROUPS);
 			if ( !dimsKnown() && numGroups != null && numGroups instanceof Data && ((Data)numGroups).isLiteral() ) {
@@ -260,25 +293,20 @@ public class ParameterizedBuiltinOp extends Hop
 				Lop input = inputlops.get(GroupedAggregate.COMBINEDINPUT);
 				long inDim1 = input.getOutputParameters().getNumRows();
 				long inDim2 = input.getOutputParameters().getNumCols();
-				if(inDim1 > 0 && inDim2 > 0 ) {
-					if ( inDim1 > inDim2 )
-						colwise = 1;
-					else 
-						colwise = 0;
-				}
+				boolean rowwise = (inDim1==1 && inDim2 > 1 );
 				
-				if ( colwise == 1 ) {
+				if( rowwise ) { //vector
 					outputDim1 = ngroups;
 					outputDim2 = 1;
 				}
-				else if ( colwise == 0 ) {
-					outputDim1 = 1;
+				else { //vector or matrix
+					outputDim1 = inDim2;
 					outputDim2 = ngroups;
 				}
 				
 			}
 			
-			GroupedAggregate grp_agg = new GroupedAggregate(inputlops, getDataType(), getValueType());
+			GroupedAggregate grp_agg = new GroupedAggregate(inputlops, isWeighted, getDataType(), getValueType());
 			
 			// output dimensions are unknown at compilation time
 			grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
@@ -774,7 +802,8 @@ public class ParameterizedBuiltinOp extends Hop
 				Hop ngroups = getInput().get(_paramIndexMap.get(Statement.GAGG_NUM_GROUPS));
 				if(ngroups != null && ngroups instanceof LiteralOp) {
 					long m = HopRewriteUtils.getIntValueSafe((LiteralOp)ngroups);
-					return new long[]{m,1,m};
+					long n = (mc.getRows()==1)?1:mc.getCols();
+					return new long[]{m, n, m};
 				}
 			}
 			
@@ -782,9 +811,10 @@ public class ParameterizedBuiltinOp extends Hop
 			// #groups = #rows in the grouping attribute (e.g., categorical attribute is an ID column, say EmployeeID).
 			// In such a case, #rows in the output = #rows in the input. Also, output sparsity is 
 			// likely to be 1.0 (e.g., groupedAgg(groups=<a ID column>, fn="count"))
-			long m = mc.getRows(); 
+			long m = mc.getRows();
+			long n = (mc.getRows()==1)?1:mc.getCols();
 			if ( m >= 1 ) {
-				ret = new long[]{m, 1, m};
+				ret = new long[]{m, n, m};
 			}
 		}
 		else if(   _op == ParamBuiltinOp.RMEMPTY ) 
@@ -923,8 +953,11 @@ public class ParameterizedBuiltinOp extends Hop
 					}
 				}
 				
+				Hop target = getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET));
+				long ldim2 = (target.getDim1()==1)?1:target.getDim2(); 
+				
 				setDim1( ldim1 );
-				setDim2( 1 );
+				setDim2( ldim2 );
 				break;
 			}
 			case RMEMPTY: {

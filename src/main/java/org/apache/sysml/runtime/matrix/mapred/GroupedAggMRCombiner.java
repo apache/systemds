@@ -27,13 +27,12 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
-import org.apache.sysml.runtime.matrix.data.TaggedInt;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
@@ -41,9 +40,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 
 public class GroupedAggMRCombiner extends ReduceBase
-	implements Reducer<TaggedInt, WeightedCell, TaggedInt, WeightedCell>
-{
-	
+	implements Reducer<TaggedMatrixIndexes, WeightedCell, TaggedMatrixIndexes, WeightedCell>
+{	
 	//grouped aggregate instructions
 	private HashMap<Byte, GroupedAggregateInstruction> grpaggInstructions = new HashMap<Byte, GroupedAggregateInstruction>();
 	
@@ -53,8 +51,8 @@ public class GroupedAggMRCombiner extends ReduceBase
 	private WeightedCell outCell = new WeightedCell();
 
 	@Override
-	public void reduce(TaggedInt key, Iterator<WeightedCell> values,
-			           OutputCollector<TaggedInt, WeightedCell> out, Reporter reporter)
+	public void reduce(TaggedMatrixIndexes key, Iterator<WeightedCell> values,
+			           OutputCollector<TaggedMatrixIndexes, WeightedCell> out, Reporter reporter)
 		throws IOException 
 	{
 		long start = System.currentTimeMillis();

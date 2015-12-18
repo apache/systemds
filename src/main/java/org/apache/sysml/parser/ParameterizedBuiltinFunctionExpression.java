@@ -403,59 +403,76 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 	}
 	
-	private void validateGroupedAgg(DataIdentifier output, boolean conditional) throws LanguageException {
-		int colwise = -1;
+	/**
+	 * 
+	 * @param output
+	 * @param conditional
+	 * @throws LanguageException
+	 */
+	private void validateGroupedAgg(DataIdentifier output, boolean conditional) 
+		throws LanguageException 
+	{
+		//check existing target and groups
 		if (getVarParam(Statement.GAGG_TARGET)  == null || getVarParam(Statement.GAGG_GROUPS) == null){
-			raiseValidateError("Must define both target and groups and both must have same dimensions", conditional);
+			raiseValidateError("Must define both target and groups.", conditional);
 		}
-		if (getVarParam(Statement.GAGG_TARGET) instanceof DataIdentifier && getVarParam(Statement.GAGG_GROUPS) instanceof DataIdentifier && (getVarParam(Statement.GAGG_WEIGHTS) == null || getVarParam(Statement.GAGG_WEIGHTS) instanceof DataIdentifier))
+		
+		Expression exprTarget = getVarParam(Statement.GAGG_TARGET);
+		Expression exprGroups = getVarParam(Statement.GAGG_GROUPS);
+		Expression exprNGroups = getVarParam(Statement.GAGG_NUM_GROUPS);
+		
+		//check valid input dimensions
+		boolean colwise = true;
+		boolean matrix = false;
+		if( exprGroups.getOutput().dimsKnown() && exprTarget.getOutput().dimsKnown() )
 		{
-			
-			DataIdentifier targetid = (DataIdentifier)getVarParam(Statement.GAGG_TARGET);
-			DataIdentifier groupsid = (DataIdentifier)getVarParam(Statement.GAGG_GROUPS);
-			DataIdentifier weightsid = (DataIdentifier)getVarParam(Statement.GAGG_WEIGHTS);
-		
-			if ( targetid.dimsKnown() ) {
-				colwise = targetid.getDim1() > targetid.getDim2() ? 1 : 0;
+			//check for valid matrix input
+			if( exprGroups.getOutput().getDim2()==1 && exprTarget.getOutput().getDim2()>1 )
+			{
+				if( getVarParam(Statement.GAGG_WEIGHTS) != null ) {
+					raiseValidateError("Matrix input not supported with weights.", conditional);
+				}
+				if( getVarParam(Statement.GAGG_NUM_GROUPS) == null ) {
+					raiseValidateError("Matrix input not supported without specified numgroups.", conditional);
+				}
+				if( exprGroups.getOutput().getDim1() != exprTarget.getOutput().getDim1() ) {					
+					raiseValidateError("Target and groups must have same dimensions -- " + " target dims: " + 
+						exprTarget.getOutput().getDim1() +" x "+exprTarget.getOutput().getDim2()+", groups dims: " + exprGroups.getOutput().getDim1() + " x 1.", conditional);
+				}
+				matrix = true;
 			}
-			else if ( groupsid.dimsKnown() ) {
-				colwise = groupsid.getDim1() > groupsid.getDim2() ? 1 : 0;
+			//check for valid col vector input
+			else if( exprGroups.getOutput().getDim2()==1 && exprTarget.getOutput().getDim2()==1 )
+			{
+				if( exprGroups.getOutput().getDim1() != exprTarget.getOutput().getDim1() ) {					
+					raiseValidateError("Target and groups must have same dimensions -- " + " target dims: " + 
+						exprTarget.getOutput().getDim1() +" x 1, groups dims: " + exprGroups.getOutput().getDim1() + " x 1.", conditional);
+				}
 			}
-			else if ( weightsid != null && weightsid.dimsKnown() ) {
-				colwise = weightsid.getDim1() > weightsid.getDim2() ? 1 : 0;
+			//check for valid row vector input
+			else if( exprGroups.getOutput().getDim1()==1 && exprTarget.getOutput().getDim1()==1 )
+			{
+				if( exprGroups.getOutput().getDim2() != exprTarget.getOutput().getDim2() ) {					
+					raiseValidateError("Target and groups must have same dimensions -- " + " target dims: " + 
+						"1 x " + exprTarget.getOutput().getDim2() +", groups dims: 1 x " + exprGroups.getOutput().getDim2() + ".", conditional);
+				}
+				colwise = true;
 			}
-			
-			//precompute number of rows and columns because target can be row or column vector
-			long rowsTarget = targetid.getDim1(); // Math.max(targetid.getDim1(),targetid.getDim2());
-			long colsTarget = targetid.getDim2(); // Math.min(targetid.getDim1(),targetid.getDim2());
-			
-			if( targetid.dimsKnown() && groupsid.dimsKnown() &&
-				(rowsTarget != groupsid.getDim1() || colsTarget != groupsid.getDim2()) )
-			{					
-				raiseValidateError("target and groups must have same dimensions -- " 
-						+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- groupsid dims: " + groupsid.getDim1() + " rows, " + groupsid.getDim2() + " cols ", conditional);
-			}
-			
-			if( weightsid != null && (targetid.dimsKnown() && weightsid.dimsKnown()) &&
-				(rowsTarget != weightsid.getDim1() || colsTarget != weightsid.getDim2() ))
-			{		
-				raiseValidateError("target and weights must have same dimensions -- "
-						+ " targetid dims: " + targetid.getDim1() +" rows, " + targetid.getDim2() + " cols -- weightsid dims: " + weightsid.getDim1() + " rows, " + weightsid.getDim2() + " cols ", conditional);
+			else {
+				raiseValidateError("Invalid target and groups inputs - dimension mismatch.", conditional);
 			}
 		}
 		
 		
-		if (getVarParam(Statement.GAGG_FN) == null){
+		//check function parameter
+		Expression functParam = getVarParam(Statement.GAGG_FN);
+		if( functParam == null ) {
 			raiseValidateError("must define function name (fn=<function name>) for aggregate()", conditional);
 		}
-		
-		Expression functParam = getVarParam(Statement.GAGG_FN);
-		
-		if (functParam instanceof Identifier)
+		else if (functParam instanceof Identifier)
 		{
 			// standardize to lowercase and dequote fname
-			String fnameStr = getVarParam(Statement.GAGG_FN).toString();
-			
+			String fnameStr = functParam.toString();
 			
 			// check that IF fname="centralmoment" THEN order=m is defined, where m=2,3,4 
 			// check ELSE IF fname is allowed
@@ -474,25 +491,25 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			}
 		}
 		
-		Expression ngroupsParam = getVarParam(Statement.GAGG_NUM_GROUPS);
+		//determine output dimensions
 		long outputDim1 = -1, outputDim2 = -1;
-		if( ngroupsParam != null && ngroupsParam instanceof Identifier ) 
+		if( exprNGroups != null && exprNGroups instanceof Identifier ) 
 		{
-			Identifier numGroups = (Identifier) ngroupsParam;
+			Identifier numGroups = (Identifier) exprNGroups;
 			if ( numGroups != null && numGroups instanceof ConstIdentifier) {
 				long ngroups = ((ConstIdentifier)numGroups).getLongValue();
-				if ( colwise == 1 ) {
+				if ( colwise ) {
 					outputDim1 = ngroups;
-					outputDim2 = 1;
+					outputDim2 = matrix ? exprTarget.getOutput().getDim2() : 1;
 				}
-				else if ( colwise == 0 ) {
-					outputDim1 = 1;
+				else {
+					outputDim1 = 1; //no support for matrix
 					outputDim2 = ngroups;
 				}
 			}
 		}
 		
-		// Output is a matrix with unknown dims
+		//set output meta data
 		output.setDataType(DataType.MATRIX);
 		output.setValueType(ValueType.DOUBLE);
 		output.setDimensions(outputDim1, outputDim2);

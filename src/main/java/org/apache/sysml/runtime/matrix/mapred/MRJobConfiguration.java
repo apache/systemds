@@ -922,11 +922,28 @@ public class MRJobConfiguration
 		String str=job.get(CM_N_COV_INSTRUCTIONS_CONFIG);
 		return MRInstructionParser.parseCM_N_COVInstructions(str);
 	}
+	
+	/**
+	 * 
+	 * @param job
+	 * @return
+	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException
+	 */
 	public static GroupedAggregateInstruction[] getGroupedAggregateInstructions(JobConf job) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
+		//parse all grouped aggregate instructions
 		String str=job.get(GROUPEDAGG_INSTRUCTIONS_CONFIG);
-		return MRInstructionParser.parseGroupedAggInstructions(str);
+		GroupedAggregateInstruction[] tmp = MRInstructionParser.parseGroupedAggInstructions(str);
+		
+		//obtain bclen for all instructions
+		for( int i=0; i< tmp.length; i++ ) {
+			byte tag = tmp[i].input;
+			tmp[i].setBclen(getMatrixCharacteristicsForInput(job, tag).getColsPerBlock());
+		}
+		
+		return tmp;
 	}
 	
 	public static String[] getOutputs(JobConf job)

@@ -1291,7 +1291,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		{
 			ParameterizedBuiltinOp phi = (ParameterizedBuiltinOp)hi;
 			
-			if( phi.isCountFunction() ) //aggregate(fn="count")
+			if( phi.isCountFunction() //aggregate(fn="count")
+				&& phi.getTargetHop().getDim2()==1 ) //only for vector
 			{
 				HashMap<String, Integer> params = phi.getParamIndexMap();
 				int ix1 = params.get(Statement.GAGG_TARGET);

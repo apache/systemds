@@ -30,12 +30,12 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class ExtractGroupNWeights implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>>, Long, WeightedCell> {
+public class ExtractGroupNWeights implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>>, MatrixIndexes, WeightedCell> {
 
 	private static final long serialVersionUID = -188180042997588072L;
 
 	@Override
-	public Iterable<Tuple2<Long, WeightedCell>> call(
+	public Iterable<Tuple2<MatrixIndexes, WeightedCell>> call(
 			Tuple2<MatrixIndexes, Tuple2<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock>> arg)
 		throws Exception 
 	{
@@ -49,7 +49,7 @@ public class ExtractGroupNWeights implements PairFlatMapFunction<Tuple2<MatrixIn
 		}
 		
 		//output weighted cells		
-		ArrayList<Tuple2<Long, WeightedCell>> groupValuePairs = new ArrayList<Tuple2<Long, WeightedCell>>();
+		ArrayList<Tuple2<MatrixIndexes, WeightedCell>> groupValuePairs = new ArrayList<Tuple2<MatrixIndexes, WeightedCell>>();
 		for(int i = 0; i < group.getNumRows(); i++) {
 			WeightedCell weightedCell = new WeightedCell();
 			weightedCell.setValue(target.quickGetValue(i, 0));
@@ -58,7 +58,8 @@ public class ExtractGroupNWeights implements PairFlatMapFunction<Tuple2<MatrixIn
 			if(groupVal < 1) {
 				throw new Exception("Expected group values to be greater than equal to 1 but found " + groupVal);
 			}
-			groupValuePairs.add(new Tuple2<Long, WeightedCell>(groupVal, weightedCell));
+			MatrixIndexes ix = new MatrixIndexes(groupVal, 1);
+			groupValuePairs.add(new Tuple2<MatrixIndexes, WeightedCell>(ix, weightedCell));
 		}
 		
 		return groupValuePairs;

@@ -34,11 +34,12 @@ import org.apache.sysml.parser.Expression.*;
  * 
  */
 public class GroupedAggregate extends Lop 
-{
-	
+{	
 	private HashMap<String, Lop> _inputParams;
 	private static final String opcode = "groupedagg";
 	public static final String COMBINEDINPUT = "combinedinput";
+	
+	private boolean _weights = false;
 	
 	/**
 	 * Constructor to perform grouped aggregate.
@@ -46,7 +47,28 @@ public class GroupedAggregate extends Lop
 	 *   "combinedinput" -- actual data
 	 *   "function" -- aggregate function
 	 */
+	
+	public GroupedAggregate(
+			HashMap<String, Lop> inputParameterLops, boolean weights,
+			DataType dt, ValueType vt) {		
+		this(inputParameterLops, dt, vt, ExecType.MR);
+		_weights = weights;
+	}
 
+	public GroupedAggregate(
+			HashMap<String, Lop> inputParameterLops, 
+			DataType dt, ValueType vt, ExecType et) {
+		super(Lop.Type.GroupedAgg, dt, vt);
+		init(inputParameterLops, dt, vt, et);
+	}
+	
+	/**
+	 * 
+	 * @param inputParameterLops
+	 * @param dt
+	 * @param vt
+	 * @param et
+	 */
 	private void init(HashMap<String, Lop> inputParameterLops, 
 			DataType dt, ValueType vt, ExecType et) {
 		if ( et == ExecType.MR ) {
@@ -103,19 +125,6 @@ public class GroupedAggregate extends Lop
 			lps.addCompatibility(JobType.INVALID);
 			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
 		}
-	}
-	
-	public GroupedAggregate(
-			HashMap<String, Lop> inputParameterLops, 
-			DataType dt, ValueType vt) {
-		this(inputParameterLops, dt, vt, ExecType.MR);
-	}
-
-	public GroupedAggregate(
-			HashMap<String, Lop> inputParameterLops, 
-			DataType dt, ValueType vt, ExecType et) {
-		super(Lop.Type.GroupedAgg, dt, vt);
-		init(inputParameterLops, dt, vt, et);
 	}
 
 	@Override
@@ -184,33 +193,6 @@ public class GroupedAggregate extends Lop
 		
 		return sb.toString();
 	}
-
-	/*@Override
-	public String getInstructions(String input1, String input2, String output) 
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "groupedagg" );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( input1 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(0).getDataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(0).getValueType() );
-		sb.append( input2 );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getInputs().get(1).getDataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getInputs().get(1).getValueType() );
-		sb.append( output );
-		sb.append( DATATYPE_PREFIX );
-		sb.append( getDataType() );
-		sb.append( VALUETYPE_PREFIX );
-		sb.append( getValueType() );
-		
-		return sb.toString();
-	}*/
 	
 	@Override
 	public String getInstructions(int input_index, int output_index) 
@@ -237,8 +219,11 @@ public class GroupedAggregate extends Lop
 		
 		// add output_index to instruction
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output_index));
-		
+		sb.append( prepOutputOperand(output_index) );
+	
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( _weights );
+			
 		return sb.toString();
 	}
 	

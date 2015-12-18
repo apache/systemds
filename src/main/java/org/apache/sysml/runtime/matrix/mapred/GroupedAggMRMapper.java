@@ -23,34 +23,32 @@ package org.apache.sysml.runtime.matrix.mapred;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
-import org.apache.sysml.runtime.matrix.data.TaggedInt;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
 
 
 public class GroupedAggMRMapper extends MapperBase
-	implements Mapper<MatrixIndexes, MatrixValue, TaggedInt, WeightedCell>
+	implements Mapper<MatrixIndexes, MatrixValue, TaggedMatrixIndexes, WeightedCell>
 {
 		
 	//block instructions that need to be performed in part by mapper
 	protected ArrayList<ArrayList<GroupedAggregateInstruction>> groupAgg_instructions=new ArrayList<ArrayList<GroupedAggregateInstruction>>();
-	private IntWritable outKeyValue=new IntWritable();
-	private TaggedInt outKey=new TaggedInt(outKeyValue, (byte)0);
+	private MatrixIndexes outKeyValue=new MatrixIndexes();
+	private TaggedMatrixIndexes outKey=new TaggedMatrixIndexes(outKeyValue, (byte)0);
 	private WeightedCell outValue=new WeightedCell();
 
 	@Override
 	public void map(MatrixIndexes key, MatrixValue value,
-			        OutputCollector<TaggedInt, WeightedCell> out, Reporter reporter) 
+			        OutputCollector<TaggedMatrixIndexes, WeightedCell> out, Reporter reporter) 
 	    throws IOException 
 	{
 		for(int i=0; i<representativeMatrixes.size(); i++)
@@ -65,21 +63,25 @@ public class GroupedAggMRMapper extends MapperBase
 				
 				int rlen = block.getNumRows();
 				int clen = block.getNumColumns();
-				if( clen == 2 ) //w/o weights
+				if( !ins.hasWeights() ) //w/o weights (input vector or matrix)
 				{
-					for( int r=0; r<rlen; r++ )
-					{
-						outKeyValue.set((int)block.quickGetValue(r, 1));
-						outValue.setValue(block.quickGetValue(r, 0));
-						outValue.setWeight(1);
-						out.collect(outKey, outValue);		
+					long coloff = (key.getColumnIndex()-1)*ins.getBclen();
+					
+					for( int r=0; r<rlen; r++ ) {
+						int group = (int)block.quickGetValue(r, clen-1);
+						for( int c=0; c<clen-1; c++ ) {
+							outKeyValue.setIndexes(group, coloff+c+1);
+							outValue.setValue(block.quickGetValue(r, c));
+							outValue.setWeight(1);
+							out.collect(outKey, outValue);		
+						}
 					}
 				}
-				else //w/ weights
+				else //w/ weights (input vector)
 				{
 					for( int r=0; r<rlen; r++ )
 					{
-						outKeyValue.set((int)block.quickGetValue(r, 1));
+						outKeyValue.setIndexes((int)block.quickGetValue(r, 1),1);
 						outValue.setValue(block.quickGetValue(r, 0));
 						outValue.setWeight(block.quickGetValue(r, 2));
 						out.collect(outKey, outValue);		

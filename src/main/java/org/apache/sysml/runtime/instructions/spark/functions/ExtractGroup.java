@@ -29,15 +29,22 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class ExtractGroup  implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock, MatrixBlock>>, Long, WeightedCell> {
+public class ExtractGroup  implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock, MatrixBlock>>, MatrixIndexes, WeightedCell> {
 
 	private static final long serialVersionUID = -7059358143841229966L;
 
+	private long _bclen = -1;
+	
+	public ExtractGroup( long bclen ) {
+		_bclen = bclen;
+	}
+	
 	@Override
-	public Iterable<Tuple2<Long, WeightedCell>> call(
+	public Iterable<Tuple2<MatrixIndexes, WeightedCell>> call(
 			Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg)
 			throws Exception 
 	{
+		MatrixIndexes ix = arg._1;
 		MatrixBlock group = arg._2._1;
 		MatrixBlock target = arg._2._2;
 		
@@ -47,15 +54,20 @@ public class ExtractGroup  implements PairFlatMapFunction<Tuple2<MatrixIndexes,T
 		}
 		
 		//output weighted cells
-		ArrayList<Tuple2<Long, WeightedCell>> groupValuePairs = new ArrayList<Tuple2<Long, WeightedCell>>();
+		ArrayList<Tuple2<MatrixIndexes, WeightedCell>> groupValuePairs = new ArrayList<Tuple2<MatrixIndexes, WeightedCell>>();
+		long coloff = (ix.getColumnIndex()-1)*_bclen;
 		for(int i = 0; i < group.getNumRows(); i++) {
-			WeightedCell weightedCell = new WeightedCell();
-			weightedCell.setValue(target.quickGetValue(i, 0));
 			long groupVal = UtilFunctions.toLong(group.quickGetValue(i, 0));
 			if(groupVal < 1) {
 				throw new Exception("Expected group values to be greater than equal to 1 but found " + groupVal);
 			}
-			groupValuePairs.add(new Tuple2<Long, WeightedCell>(groupVal, weightedCell));
+			for( int j=0; j<target.getNumColumns(); j++ ) {
+				WeightedCell weightedCell = new WeightedCell();
+				weightedCell.setValue(target.quickGetValue(i, j));
+				weightedCell.setWeight(1);
+				MatrixIndexes ixout = new MatrixIndexes(groupVal,coloff+j+1);
+				groupValuePairs.add(new Tuple2<MatrixIndexes, WeightedCell>(ixout, weightedCell));
+			}
 		}
 		return groupValuePairs;
 	}

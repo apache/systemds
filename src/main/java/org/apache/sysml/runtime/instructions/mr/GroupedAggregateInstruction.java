@@ -37,12 +37,27 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTy
 
 public class GroupedAggregateInstruction extends UnaryMRInstructionBase
 {
+	private boolean _weights = false;
+	private long _bclen = -1;
 	
-	
-	public GroupedAggregateInstruction(Operator op, byte in, byte out, String istr) {
+	public GroupedAggregateInstruction(Operator op, byte in, byte out, boolean weights, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.GroupedAggregate;
 		instString = istr;
+		
+		_weights = weights;
+	}
+
+	public boolean hasWeights() {
+		return _weights;
+	}
+	
+	public void setBclen(long bclen){
+		_bclen = bclen;
+	}
+	
+	public long getBclen(){
+		return _bclen;
 	}
 
 	@Override
@@ -63,14 +78,15 @@ public class GroupedAggregateInstruction extends UnaryMRInstructionBase
 		byte in, out;
 		String opcode = parts[0];
 		in = Byte.parseByte(parts[1]);
-		out = Byte.parseByte(parts[parts.length - 1]);
+		out = Byte.parseByte(parts[parts.length - 2]);
+		boolean weights = Boolean.parseBoolean(parts[parts.length-1]);
 		
 		if ( !opcode.equalsIgnoreCase("groupedagg") ) {
 			throw new DMLRuntimeException("Invalid opcode in GroupedAggregateInstruction: " + opcode);
 		}
 		
 		Operator optr = parseGroupedAggOperator(parts[2], parts[3]);
-		return new GroupedAggregateInstruction(optr, in, out, str);
+		return new GroupedAggregateInstruction(optr, in, out, weights, str);
 	}
 	
 	public static Operator parseGroupedAggOperator(String fn, String other) throws DMLRuntimeException {

@@ -29,14 +29,13 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.TaggedInt;
+import org.apache.sysml.runtime.matrix.data.TaggedMatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
@@ -44,7 +43,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 
 public class GroupedAggMRReducer extends ReduceBase
-	implements Reducer<TaggedInt, WeightedCell, MatrixIndexes, MatrixCell >
+	implements Reducer<TaggedMatrixIndexes, WeightedCell, MatrixIndexes, MatrixCell >
 {
 	
 	private MatrixIndexes outIndex=new MatrixIndexes(1, 1);
@@ -55,7 +54,7 @@ public class GroupedAggMRReducer extends ReduceBase
 	private HashMap<Byte, ArrayList<Integer>> outputIndexesMapping=new HashMap<Byte, ArrayList<Integer>>();
 	
 	@Override
-	public void reduce(TaggedInt key,Iterator<WeightedCell> values,
+	public void reduce(TaggedMatrixIndexes key,Iterator<WeightedCell> values,
 			OutputCollector<MatrixIndexes, MatrixCell> out, Reporter report)
 		throws IOException 
 	{
@@ -112,7 +111,7 @@ public class GroupedAggMRReducer extends ReduceBase
 			throw new IOException(ex);
 		}
 		
-		outIndex.setIndexes((long)key.getBaseObject().get(), 1);
+		outIndex.setIndexes(key.getBaseObject());
 		cachedValues.reset();
 		cachedValues.set(key.getTag(), outIndex, outCell);
 		processReducerInstructions();

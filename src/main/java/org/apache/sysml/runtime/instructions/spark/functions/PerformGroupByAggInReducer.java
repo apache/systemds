@@ -19,9 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.spark.functions;
 
-import org.apache.spark.api.java.function.PairFunction;
-
-import scala.Tuple2;
+import org.apache.spark.api.java.function.Function;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.CM;
@@ -33,8 +31,8 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-public class PerformGroupByAggInReducer implements PairFunction<Tuple2<Long,Iterable<WeightedCell>>, Long, WeightedCell> {
-
+public class PerformGroupByAggInReducer implements Function<Iterable<WeightedCell>, WeightedCell> 
+{
 	private static final long serialVersionUID = 8160556441153227417L;
 	
 	Operator op;
@@ -43,32 +41,21 @@ public class PerformGroupByAggInReducer implements PairFunction<Tuple2<Long,Iter
 	}
 
 	@Override
-	public Tuple2<Long, WeightedCell> call(
-			Tuple2<Long, Iterable<WeightedCell>> kv) throws Exception {
-		return new Tuple2<Long, WeightedCell>(kv._1, doAggregation(op, kv._2));
-	}
-	
-	public WeightedCell doAggregation(Operator op, Iterable<WeightedCell> values) throws DMLRuntimeException {
+	public WeightedCell call(Iterable<WeightedCell> kv)
+		throws Exception 
+	{
 		WeightedCell outCell = new WeightedCell();
 		CM_COV_Object cmObj = new CM_COV_Object(); 
 		if(op instanceof CMOperator) //everything except sum
 		{
 			cmObj.reset();
 			CM lcmFn = CM.getCMFnObject(((CMOperator) op).aggOpType); // cmFn.get(key.getTag());
-			if( ((CMOperator) op).isPartialAggregateOperator() )
-			{
+			if( ((CMOperator) op).isPartialAggregateOperator() ) {
 				throw new DMLRuntimeException("Incorrect usage, should have used PerformGroupByAggInCombiner");
-				
-//				//partial aggregate cm operator
-//				for(WeightedCell value : values)
-//					lcmFn.execute(cmObj, value.getValue(), value.getWeight());
-//				
-//				outCell.setValue(cmObj.getRequiredPartialResult(op));
-//				outCell.setWeight(cmObj.getWeight());
 			}
 			else //forward tuples to reducer
 			{
-				for(WeightedCell value : values)
+				for(WeightedCell value : kv)
 					lcmFn.execute(cmObj, value.getValue(), value.getWeight());
 				
 				outCell.setValue(cmObj.getRequiredResult(op));
@@ -85,7 +72,7 @@ public class PerformGroupByAggInReducer implements PairFunction<Tuple2<Long,Iter
 				KahanPlus.getKahanPlusFnObject();
 				
 				//partial aggregate with correction
-				for(WeightedCell value : values)
+				for(WeightedCell value : kv)
 					aggop.increOp.fn.execute(buffer, value.getValue()*value.getWeight());
 				
 				outCell.setValue(buffer._sum);
@@ -96,7 +83,7 @@ public class PerformGroupByAggInReducer implements PairFunction<Tuple2<Long,Iter
 				double v = aggop.initialValue;
 				
 				//partial aggregate without correction
-				for(WeightedCell value : values)
+				for(WeightedCell value : kv)
 					v=aggop.increOp.fn.execute(v, value.getValue()*value.getWeight());
 				
 				outCell.setValue(v);
@@ -108,5 +95,4 @@ public class PerformGroupByAggInReducer implements PairFunction<Tuple2<Long,Iter
 		
 		return outCell;
 	}
-	
 }

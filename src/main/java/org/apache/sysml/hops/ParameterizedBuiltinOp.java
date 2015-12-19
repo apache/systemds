@@ -242,7 +242,8 @@ public class ParameterizedBuiltinOp extends Hop
 				Hop groups = getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS));
 				Lop append = null;
 				
-				if( target.getDim2()>=target.getColsInBlock() ) //multi-column-block result matrix
+				if(  target.getDim2()>=target.getColsInBlock()  // multi-column-block result matrix
+					|| target.getDim2()<=0  )                   // unkown
 				{
 					long m1_dim1 = target.getDim1();
 					long m1_dim2 = target.getDim2();		
@@ -273,10 +274,8 @@ public class ParameterizedBuiltinOp extends Hop
 				}
 				else //single-column-block vector or matrix
 				{
-					append = BinaryOp.constructMRAppendLop(
-						target, groups, 
-						DataType.MATRIX, getValueType(), true,
-						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
+					append = BinaryOp.constructMRAppendLop(target, groups, 
+							DataType.MATRIX, getValueType(), true, target);
 				}
 				
 				// add the combine lop to parameter list, with a new name "combinedinput"
@@ -307,11 +306,9 @@ public class ParameterizedBuiltinOp extends Hop
 			}
 			
 			GroupedAggregate grp_agg = new GroupedAggregate(inputlops, isWeighted, getDataType(), getValueType());
-			
-			// output dimensions are unknown at compilation time
 			grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
-			grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
+			setLineNumbers(grp_agg);
+			
 			setLops(grp_agg);
 			setRequiresReblock( true );
 		}

@@ -97,7 +97,7 @@ public abstract class ID3Test extends AutomatedTestBase
         //run tests
         //(changed expected MR from 62 to 66 because we now also count MR jobs in predicates)
         //(changed expected MR from 66 to 68 because we now rewrite sum(v1*v2) to t(v1)%*%v2 which rarely creates more jobs due to MMCJ incompatibility of other operations)
-		runTest(true, EXCEPTION_NOT_EXPECTED, null, 68); //max 68 compiled jobs		
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, 70); //max 68 compiled jobs		
 		runRScript(true);
         
 		//check also num actually executed jobs

@@ -349,7 +349,7 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 			String TEST_NAME = testname;
 			int fn = type.ordinal();
 			double sparsity = (sparse) ? sparsity1 : sparsity2;
-			String TEST_CACHE_DIR = TEST_CACHE_ENABLED ? TEST_NAME + type.ordinal() + "_" + sparsity + "/" : "";
+			String TEST_CACHE_DIR = TEST_CACHE_ENABLED ? TEST_NAME + type.ordinal() + "_" + sparsity + "_" + numCols + "/" : "";
 			boolean exceptionExpected = !TEST_NAME.equals(TEST_NAME1);
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -379,11 +379,16 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 			
 			//compare matrices 
 			if( !exceptionExpected ){
+				//run R script for comparison
 				runRScript(true); 
 				
+				//compare output matrices
 				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
 				HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+				
+				//check dml output meta data
+				checkDMLMetaDataFile("C", new MatrixCharacteristics(numGroups,numCols,1,1));
 			}
 		}
 		catch(IOException ex)
@@ -397,6 +402,4 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
-	
-		
 }

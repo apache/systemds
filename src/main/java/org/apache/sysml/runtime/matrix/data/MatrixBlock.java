@@ -5328,9 +5328,9 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		MatrixBlock result = checkType(ret);
 		boolean result_sparsity = estimateSparsityOnGroupedAgg(rlen, numGroups);
 		if(result==null)
-			result=new MatrixBlock(numGroups, rowVector?1:target.getNumRows(), result_sparsity);
+			result=new MatrixBlock(numGroups, rowVector?1:target.getNumColumns(), result_sparsity);
 		else
-			result.reset(numGroups, rowVector?1:target.getNumRows(), result_sparsity);
+			result.reset(numGroups, rowVector?1:target.getNumColumns(), result_sparsity);
 
 		//CM operator for count, mean, variance
 		//note: current support only for column vectors

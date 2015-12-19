@@ -1524,13 +1524,15 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		//pattern: table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
 		//note: this rewrite supports both left/right sequence 
 		
-		if(    hi instanceof TernaryOp && hi.getInput().size()==5 
-			&& hi.getInput().get(3) instanceof LiteralOp && hi.getInput().get(4) instanceof LiteralOp )
+		if(    hi instanceof TernaryOp && hi.getInput().size()==5 //table without weights 
+			&& hi.getInput().get(2) instanceof LiteralOp
+			&& HopRewriteUtils.getDoubleValue((LiteralOp)hi.getInput().get(2))==1	
+			&& hi.getInput().get(3) instanceof LiteralOp && hi.getInput().get(4) instanceof LiteralOp)
 		{
 			if(  (HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) &&
-				   hi.getInput().get(3) instanceof LiteralOp)   //pattern a: table(seq(1,nrow(v)), v, nrow(v), m)
+				   hi.getInput().get(4) instanceof LiteralOp)   //pattern a: table(seq(1,nrow(v)), v, nrow(v), m)
 			   ||(HopRewriteUtils.isBasic1NSequence(hi.getInput().get(1)) &&
-				   hi.getInput().get(2) instanceof LiteralOp) ) //pattern b: table(v, seq(1,nrow(v)), m, nrow(v))
+				   hi.getInput().get(3) instanceof LiteralOp) ) //pattern b: table(v, seq(1,nrow(v)), m, nrow(v))
 			{
 				//determine variable parameters for pattern a/b
 				int ixTgt = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? 1 : 0;

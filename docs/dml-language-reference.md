@@ -1236,7 +1236,7 @@ Function | Description | Parameters | Example
 append() | Append a string to another string separated by "\n" <br/> Limitation: The string may grow up to 1 MByte. | Input: (&lt;string&gt;, &lt;string&gt;) <br/> Output: &lt;string&gt; | s = "iter=" + i <br/> i = i + 1 <br/> s = append(s, "iter=" + i) <br/> write(s, "s.out")
 print() | Prints the value of a scalar variable x. This built-in takes an optional string parameter. | Input: (&lt;scalar&gt;) | print("hello") <br/> print("hello" + "world") <br/> print("value of x is " + x )
 stop() | Halts the execution of DML program by printing the message that is passed in as the argument. <br/> Note that the use of stop() is not allowed inside a parfor loop. |  Input: (&lt;scalar&gt;) | stop("Inputs to DML program are invalid") <br/> stop("Class labels must be either -1 or +1")
-order() | Sort a column of the matrix X in decreasing/increasing order and return either index (indexreturn=TRUE) or data (indexreturn=FALSE). | Input: (target=X, by=column, decreasing, indexreturn) | order(X, by=1, decreasing=FALSE, indexreturn=FALSE)
+order() | Sort a column of the matrix X in decreasing/increasing order and return either index (index.return=TRUE) or data (index.return=FALSE). | Input: (target=X, by=column, decreasing, index.return) | order(X, by=1, decreasing=FALSE, index.return=FALSE)
 
 
 * * *

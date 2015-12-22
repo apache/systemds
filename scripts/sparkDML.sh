@@ -107,19 +107,12 @@ done
 
 # SystemML Spark invocation
 
-spark_conf=${SPARK_HOME}/conf
-
-if [ ${SPARK_CONF_DIR} ]; then
-  spark_conf=${SPARK_CONF_DIR}
-fi
-
 $SPARK_HOME/bin/spark-submit \
      ${master} \
      ${driver_memory} \
      ${num_executors} \
      ${executor_memory} \
      ${executor_cores} \
-     --properties-file ${spark_conf}/spark-defaults.conf \
      ${conf} \
      ${SYSTEMML_HOME}/SystemML.jar \
          -f ${f} \

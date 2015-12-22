@@ -157,6 +157,16 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MOMENT4, true, ExecType.CP);
 	}
 
+	@Test
+	public void testGroupedAggSumDenseWideCP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.SUM, false, ExecType.CP, cols2);
+	}
+	
+	@Test
+	public void testGroupedAggSumSparseWideCP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.SUM, true, ExecType.CP, cols2);
+	}
+	
 	//special CP testcases (negative)
 	
 	@Test

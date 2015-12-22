@@ -29,7 +29,6 @@ import java.util.Set;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
@@ -38,12 +37,14 @@ import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.AggBinaryOp.MMultMethod;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
+import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
@@ -1523,7 +1524,9 @@ public class OptimizerRuleBased extends Optimizer
 					//set degree of parallelism for multi-threaded leaf nodes
 					Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(c.getID());
 					if(    OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY 
-						&& h instanceof MultiThreadedHop ) //abop, datagenop, qop
+						&& h instanceof MultiThreadedHop //abop, datagenop, qop, paramop
+						&& !( h instanceof ParameterizedBuiltinOp //only paramop-grpagg
+							 && ((ParameterizedBuiltinOp)h).getOp()!=ParamBuiltinOp.GROUPEDAGG) )
 					{
 						MultiThreadedHop mhop = (MultiThreadedHop) h;
 						mhop.setMaxNumThreads(opsK); //set max constraint in hop

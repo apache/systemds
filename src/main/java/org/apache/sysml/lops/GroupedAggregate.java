@@ -39,8 +39,9 @@ public class GroupedAggregate extends Lop
 	private static final String opcode = "groupedagg";
 	public static final String COMBINEDINPUT = "combinedinput";
 	
-	private boolean _weights = false;
-	
+	private boolean _weights = false;	
+	private int _numThreads = 1;
+
 	/**
 	 * Constructor to perform grouped aggregate.
 	 * inputParameterLops <- parameters required to compute different aggregates (hashmap)
@@ -60,6 +61,14 @@ public class GroupedAggregate extends Lop
 			DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.GroupedAgg, dt, vt);
 		init(inputParameterLops, dt, vt, et);
+	}
+	
+	public GroupedAggregate(
+			HashMap<String, Lop> inputParameterLops, 
+			DataType dt, ValueType vt, ExecType et, int k) {
+		super(Lop.Type.GroupedAgg, dt, vt);
+		init(inputParameterLops, dt, vt, et);
+		_numThreads = k;
 	}
 	
 	/**
@@ -188,8 +197,15 @@ public class GroupedAggregate extends Lop
 			}
 		}
 		
+		if( getExecType()==ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( "k" );
+			sb.append( Lop.NAME_VALUE_SEPARATOR );
+			sb.append( _numThreads );	
+		}
+		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output));
+		sb.append( prepOutputOperand(output));
 		
 		return sb.toString();
 	}

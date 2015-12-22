@@ -22,6 +22,7 @@ package org.apache.sysml.hops;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.AppendR;
@@ -45,19 +46,19 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * Defines the HOP for calling an internal function (with custom parameters) from a DML script. 
  * 
  */
-public class ParameterizedBuiltinOp extends Hop 
-{
-	
+public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
+{	
 	private static boolean COMPILE_PARALLEL_REMOVEEMPTY = true;
 	public static boolean FORCE_DIST_RM_EMPTY = false;
 
 	//operator type
 	private ParamBuiltinOp _op;
+
+	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	//removeEmpty hints
 	private boolean _outputEmptyBlocks = true;
 	private boolean _outputPermutationMatrix = false;
-
 	private boolean _bRmEmptyBC = false;
 	
 	/**
@@ -127,6 +128,16 @@ public class ParameterizedBuiltinOp extends Hop
 		Hop targetHop = getInput().get(_paramIndexMap.get("target"));
 		
 		return targetHop;
+	}
+	
+	@Override
+	public void setMaxNumThreads( int k ) {
+		_maxNumThreads = k;
+	}
+	
+	@Override
+	public int getMaxNumThreads() {
+		return _maxNumThreads;
 	}
 	
 	@Override
@@ -214,11 +225,31 @@ public class ParameterizedBuiltinOp extends Hop
 		//reset reblock requirement (see MR aggregate / construct lops)
 		setRequiresReblock( false );
 		
+		//determine output dimensions
+		long outputDim1=-1, outputDim2=-1;
+		Lop numGroups = inputlops.get(Statement.GAGG_NUM_GROUPS);
+		if ( !dimsKnown() && numGroups != null && numGroups instanceof Data && ((Data)numGroups).isLiteral() ) {
+			long ngroups = ((Data)numGroups).getLongValue();
+			
+			Lop input = inputlops.get(GroupedAggregate.COMBINEDINPUT);
+			long inDim1 = input.getOutputParameters().getNumRows();
+			long inDim2 = input.getOutputParameters().getNumCols();
+			boolean rowwise = (inDim1==1 && inDim2 > 1 );
+			
+			if( rowwise ) { //vector
+				outputDim1 = ngroups;
+				outputDim2 = 1;
+			}
+			else { //vector or matrix
+				outputDim1 = inDim2;
+				outputDim2 = ngroups;
+			}			
+		}
+		
+		//construct lops
 		if ( et == ExecType.MR ) 
 		{
-			// construct necessary lops: combineBinary/combineTertiary and
-			// groupedAgg
-
+			// construct necessary lops: combineBinary/combineTertiary and groupedAgg
 			boolean isWeighted = (_paramIndexMap.get(Statement.GAGG_WEIGHTS) != null);
 			if (isWeighted) 
 			{
@@ -284,27 +315,6 @@ public class ParameterizedBuiltinOp extends Hop
 				inputlops.remove(Statement.GAGG_GROUPS);
 			}
 			
-			long outputDim1=-1, outputDim2=-1;
-			Lop numGroups = inputlops.get(Statement.GAGG_NUM_GROUPS);
-			if ( !dimsKnown() && numGroups != null && numGroups instanceof Data && ((Data)numGroups).isLiteral() ) {
-				long ngroups = ((Data)numGroups).getLongValue();
-				
-				Lop input = inputlops.get(GroupedAggregate.COMBINEDINPUT);
-				long inDim1 = input.getOutputParameters().getNumRows();
-				long inDim2 = input.getOutputParameters().getNumCols();
-				boolean rowwise = (inDim1==1 && inDim2 > 1 );
-				
-				if( rowwise ) { //vector
-					outputDim1 = ngroups;
-					outputDim2 = 1;
-				}
-				else { //vector or matrix
-					outputDim1 = inDim2;
-					outputDim2 = ngroups;
-				}
-				
-			}
-			
 			GroupedAggregate grp_agg = new GroupedAggregate(inputlops, isWeighted, getDataType(), getValueType());
 			grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
 			setLineNumbers(grp_agg);
@@ -312,26 +322,25 @@ public class ParameterizedBuiltinOp extends Hop
 			setLops(grp_agg);
 			setRequiresReblock( true );
 		}
-		else //CP 
+		else //CP/Spark 
 		{
-			GroupedAggregate grp_agg = new GroupedAggregate(inputlops,
-					getDataType(), getValueType(), et);
-			// output dimensions are unknown at compilation time
-			grp_agg.getOutputParameters().setDimensions(-1, -1, -1, -1, -1);
-			grp_agg.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			GroupedAggregate grp_agg = null;
 			
-			// introduce a reblock lop only if it is NOT single_node execution
-			if( et == ExecType.CP){
-				//force blocked output in CP (see below)
-				grp_agg.getOutputParameters().setDimensions(-1, 1, getRowsInBlock(), getColsInBlock(), -1);
+			if( et == ExecType.CP) 
+			{
+				int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
+				grp_agg = new GroupedAggregate(inputlops, getDataType(), getValueType(), et, k);						
+				grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
 			}
-			else if(et == ExecType.SPARK) {
-				grp_agg.getOutputParameters().setDimensions(-1, 1, -1, -1, -1);
+			else if(et == ExecType.SPARK) 
+			{
+				grp_agg = new GroupedAggregate(inputlops, getDataType(), getValueType(), et);						
+				grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, -1, -1, -1);
 				setRequiresReblock( true );
 			}
-			//grouped agg, w/o reblock in CP
-			setLops(grp_agg);
 			
+			setLineNumbers(grp_agg);
+			setLops(grp_agg);
 		}
 	}
 

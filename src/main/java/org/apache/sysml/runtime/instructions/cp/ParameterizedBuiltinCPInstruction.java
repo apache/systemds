@@ -165,7 +165,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			}
 			
 			// compute the result
-			MatrixBlock soresBlock = (MatrixBlock) (groups.groupedAggOperations(target, weights, new MatrixBlock(), ngroups, _optr));
+			int k = Integer.parseInt(params.get("k")); //num threads
+			MatrixBlock soresBlock = (MatrixBlock) (groups.groupedAggOperations(target, weights, new MatrixBlock(), ngroups, _optr, k));
 			
 			ec.setMatrixOutput(output.getName(), soresBlock);
 			// release locks

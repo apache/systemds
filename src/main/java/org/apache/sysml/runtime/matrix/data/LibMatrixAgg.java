@@ -30,6 +30,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
+import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.IndexFunction;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
@@ -41,9 +42,12 @@ import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceDiag;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysml.runtime.matrix.operators.CMOperator;
+import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -385,7 +389,87 @@ public class LibMatrixAgg
 		
 		return val;			
 	}
+
+	/**
+	 * 
+	 * @param groups
+	 * @param target
+	 * @param weights
+	 * @param result
+	 * @param numGroups
+	 * @param op
+	 * @throws DMLRuntimeException
+	 */
+	public static void groupedAggregate(MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, Operator op) 
+		throws DMLRuntimeException
+	{
+		if( !(op instanceof CMOperator || op instanceof AggregateOperator) ) {
+			throw new DMLRuntimeException("Invalid operator (" + op + ") encountered while processing groupedAggregate.");
+		}
+		
+		//CM operator for count, mean, variance
+		//note: current support only for column vectors
+		if(op instanceof CMOperator) {
+			CMOperator cmOp = (CMOperator) op;
+			groupedAggregateCM(groups, target, weights, result, numGroups, cmOp, 0, target.clen);
+		}
+		//Aggregate operator for sum (via kahan sum)
+		//note: support for row/column vectors and dense/sparse
+		else if( op instanceof AggregateOperator ) {
+			AggregateOperator aggop = (AggregateOperator) op;
+			groupedAggregateKahanPlus(groups, target, weights, result, numGroups, aggop, 0, target.clen);
+		}		
+	}
 	
+	/**
+	 * 
+	 * @param groups
+	 * @param target
+	 * @param weights
+	 * @param result
+	 * @param numGroups
+	 * @param op
+	 * @param k
+	 * @throws DMLRuntimeException
+	 */
+	public static void groupedAggregate(MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, Operator op, int k) 
+		throws DMLRuntimeException
+	{
+		//fall back to sequential version if necessary
+		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
+		if( k <= 1 || (long)target.rlen*target.clen < PAR_NUMCELL_THRESHOLD || rowVector ) {
+			groupedAggregate(groups, target, weights, result, numGroups, op);
+			return;
+		}
+		
+		if( !(op instanceof CMOperator || op instanceof AggregateOperator) ) {
+			throw new DMLRuntimeException("Invalid operator (" + op + ") encountered while processing groupedAggregate.");
+		}
+		
+		//preprocessing
+		result.sparse = false;
+		result.allocateDenseBlock();
+		
+		//core multi-threaded grouped aggregate computation
+		//(currently: parallelization over columns to avoid additional memory requirements)
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ArrayList<GrpAggTask> tasks = new ArrayList<GrpAggTask>();
+			int blklen = (int)(Math.ceil((double)target.clen/k));
+			for( int i=0; i<k & i*blklen<target.clen; i++ )
+				tasks.add( new GrpAggTask(groups, target, weights, result, numGroups, op, i*blklen, Math.min((i+1)*blklen, target.clen)) );
+			pool.invokeAll(tasks);	
+			pool.shutdown();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		
+		//postprocessing
+		result.recomputeNonZeros();
+		result.examSparsity();
+	}
+		
 	/**
 	 * 
 	 * @param op
@@ -617,6 +701,211 @@ public class LibMatrixAgg
 		}
 	
 		return kbuff._sum;
+	}
+	
+
+	/**
+	 * This is a specific implementation for aggregate(fn="sum"), where we use KahanPlus for numerical
+	 * stability. In contrast to other functions of aggregate, this implementation supports row and column
+	 * vectors for target and exploits sparse representations since KahanPlus is sparse-safe.
+	 * 
+	 * @param target
+	 * @param weights
+	 * @param op
+	 * @throws DMLRuntimeException 
+	 */
+	private static void groupedAggregateKahanPlus( MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, AggregateOperator aggop, int cl, int cu ) 
+		throws DMLRuntimeException
+	{
+		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
+		int numCols = (!rowVector) ? target.getNumColumns() : 1;
+		double w = 1; //default weight
+		
+		//skip empty blocks (sparse-safe operation)
+		if( target.isEmptyBlock(false) ) 
+			return;
+		
+		//init group buffers
+		int numCols2 = cu-cl;
+		KahanObject[][] buffer = new KahanObject[numGroups][numCols2];
+		for( int i=0; i<numGroups; i++ )
+			for( int j=0; j<numCols2; j++ )
+				buffer[i][j] = new KahanObject(aggop.initialValue, 0);
+			
+		if( rowVector ) //target is rowvector
+		{	
+			//note: always sequential, no need to respect cl/cu 
+			
+			if( target.sparse ) //SPARSE target
+			{
+				if( target.sparseRows[0]!=null )
+				{
+					int len = target.sparseRows[0].size();
+					int[] aix = target.sparseRows[0].getIndexContainer();
+					double[] avals = target.sparseRows[0].getValueContainer();	
+					for( int j=0; j<len; j++ ) //for each nnz
+					{
+						int g = (int) groups.quickGetValue(aix[j], 0);		
+						if ( g > numGroups )
+							continue;
+						if ( weights != null )
+							w = weights.quickGetValue(aix[j],0);
+						aggop.increOp.fn.execute(buffer[g-1][0], avals[j]*w);						
+					}
+				}
+					
+			}
+			else //DENSE target
+			{
+				for ( int i=0; i < target.getNumColumns(); i++ ) {
+					double d = target.denseBlock[ i ];
+					if( d != 0 ) //sparse-safe
+					{
+						int g = (int) groups.quickGetValue(i, 0);		
+						if ( g > numGroups )
+							continue;
+						if ( weights != null )
+							w = weights.quickGetValue(i,0);
+						// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
+						aggop.increOp.fn.execute(buffer[g-1][0], d*w);
+					}
+				}
+			}
+		}
+		else //column vector or matrix 
+		{
+			if( target.sparse ) //SPARSE target
+			{
+				SparseRow[] a = target.sparseRows;
+				
+				for( int i=0; i < groups.getNumRows(); i++ ) 
+				{
+					int g = (int) groups.quickGetValue(i, 0);		
+					if ( g > numGroups )
+						continue;
+					
+					if( a[i] != null && !a[i].isEmpty() )
+					{
+						int len = a[i].size();
+						int[] aix = a[i].getIndexContainer();
+						double[] avals = a[i].getValueContainer();	
+						int j = (cl==0) ? 0 : a[i].searchIndexesFirstGTE(cl);
+						j = (j>=0) ? j : len;
+						
+						for( ; j<len && aix[j]<cu; j++ ) //for each nnz
+						{
+							if ( weights != null )
+								w = weights.quickGetValue(aix[j],0);
+							aggop.increOp.fn.execute(buffer[g-1][aix[j]-cl], avals[j]*w);						
+						}
+					}
+				}
+			}
+			else //DENSE target
+			{
+				double[] a = target.denseBlock;
+				
+				for( int i=0, aix=0; i < groups.getNumRows(); i++, aix+=numCols ) 
+				{
+					int g = (int) groups.quickGetValue(i, 0);		
+					if ( g > numGroups )
+						continue;
+				
+					for( int j=cl; j < cu; j++ ) {
+						double d = a[ aix+j ];
+						if( d != 0 ) { //sparse-safe
+							if ( weights != null )
+								w = weights.quickGetValue(i,0);
+							// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
+							aggop.increOp.fn.execute(buffer[g-1][j-cl], d*w);
+						}
+					}
+				}
+			}
+		}
+		
+		// extract the results from group buffers
+		for( int i=0; i < numGroups; i++ )
+			for( int j=0; j < numCols2; j++ )
+				result.appendValue(i, j+cl, buffer[i][j]._sum);
+	}
+
+	/**
+	 * 
+	 * @param target
+	 * @param weights
+	 * @param result
+	 * @param cmOp
+	 * @throws DMLRuntimeException
+	 */
+	private static void groupedAggregateCM( MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, CMOperator cmOp, int cl, int cu ) 
+		throws DMLRuntimeException
+	{
+		CM cmFn = CM.getCMFnObject(((CMOperator) cmOp).getAggOpType());
+		double w = 1; //default weight
+		
+		//init group buffers
+		int numCols2 = cu-cl;
+		CM_COV_Object[][] cmValues = new CM_COV_Object[numGroups][numCols2];
+		for ( int i=0; i < numGroups; i++ )
+			for( int j=0; j < numCols2; j++  )
+				cmValues[i][j] = new CM_COV_Object();
+		
+		//column vector or matrix
+		if( target.sparse ) //SPARSE target
+		{
+			SparseRow[] a = target.sparseRows;
+			
+			for( int i=0; i < groups.getNumRows(); i++ ) 
+			{
+				int g = (int) groups.quickGetValue(i, 0);		
+				if ( g > numGroups )
+					continue;
+				
+				if( a[i] != null && !a[i].isEmpty() )
+				{
+					int len = a[i].size();
+					int[] aix = a[i].getIndexContainer();
+					double[] avals = a[i].getValueContainer();	
+					int j = (cl==0) ? 0 : a[i].searchIndexesFirstGTE(cl);
+					j = (j>=0) ? j : len;
+					
+					for( ; j<len && aix[j]<cu; j++ ) //for each nnz
+					{
+						if ( weights != null )
+							w = weights.quickGetValue(i, 0);
+						cmFn.execute(cmValues[g-1][aix[j]-cl], avals[j], w);						
+					}
+					//TODO sparse unsafe correction
+				}
+			}
+		}
+		else //DENSE target
+		{
+			double[] a = target.denseBlock;
+			
+			for( int i=0, aix=0; i < groups.getNumRows(); i++, aix+=target.clen ) 
+			{
+				int g = (int) groups.quickGetValue(i, 0);		
+				if ( g > numGroups )
+					continue;
+			
+				for( int j=cl; j<cu; j++ ) {
+					double d = a[ aix+j ]; //sparse unsafe
+					if ( weights != null )
+						w = weights.quickGetValue(i,0);
+					// buffer is 0-indexed, whereas range of values for g = [1,numGroups]
+					cmFn.execute(cmValues[g-1][j-cl], d, w);
+				}
+			}
+		}
+		
+		// extract the required value from each CM_COV_Object
+		for( int i=0; i < numGroups; i++ ) 
+			for( int j=0; j < numCols2; j++ ) {
+				// result is 0-indexed, so is cmValues
+				result.appendValue(i, j, cmValues[i][j+cl].getRequiredResult(cmOp));
+			}			
 	}
 	
 	/**
@@ -2861,5 +3150,48 @@ public class LibMatrixAgg
 			return _ret;
 		}
 	}
-}
+	
+	private static class GrpAggTask extends AggTask 
+	{
+		private MatrixBlock _groups  = null;
+		private MatrixBlock _target  = null;
+		private MatrixBlock _weights  = null;
+		private MatrixBlock _ret  = null;
+		private int _numGroups = -1;
+		private Operator _op = null;
+		private int _cl = -1;
+		private int _cu = -1;
 
+		protected GrpAggTask( MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock ret, int numGroups, Operator op, int cl, int cu ) 
+			throws DMLRuntimeException
+		{
+			_groups = groups;
+			_target = target;
+			_weights = weights;
+			_ret = ret;
+			_numGroups = numGroups;
+			_op = op;
+			_cl = cl;
+			_cu = cu;
+		}
+		
+		@Override
+		public Object call() throws DMLRuntimeException
+		{
+			//CM operator for count, mean, variance
+			//note: current support only for column vectors
+			if( _op instanceof CMOperator ) {
+				CMOperator cmOp = (CMOperator) _op;
+				groupedAggregateCM(_groups, _target, _weights, _ret, _numGroups, cmOp, _cl, _cu);
+			}
+			//Aggregate operator for sum (via kahan sum)
+			//note: support for row/column vectors and dense/sparse
+			else if( _op instanceof AggregateOperator ) {
+				AggregateOperator aggop = (AggregateOperator) _op;
+				groupedAggregateKahanPlus(_groups, _target, _weights, _ret, _numGroups, aggop, _cl, _cu);
+			}
+			
+			return null;
+		}
+	}
+}

@@ -205,6 +205,11 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			}
 			else //input vector or matrix
 			{
+				long ngroups = -1;
+				if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
+					ngroups = (long) Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS));
+				}
+				
 				//replicate groups if necessary
 				if( mc1.getNumColBlocks() > 1 ) {
 					groups = groups.flatMapToPair(
@@ -212,7 +217,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 				}
 				
 				groupWeightedCells = groups.join(target)
-						.flatMapToPair(new ExtractGroup(mc1.getColsPerBlock()));
+						.flatMapToPair(new ExtractGroup(mc1.getColsPerBlock(), ngroups, _optr));
 			}
 			
 			// Step 2: Make sure we have brlen required while creating <MatrixIndexes, MatrixCell> 

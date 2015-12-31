@@ -5285,7 +5285,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixValue groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups, Operator op) 
+	public MatrixBlock groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups, Operator op) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		//single-threaded grouped aggregate 
@@ -5304,11 +5304,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public MatrixValue groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups, Operator op, int k) 
+	public MatrixBlock groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups, Operator op, int k) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 		
 	{
 		//setup input matrices
-		// this <- groups
 		MatrixBlock target = checkType(tgt);
 		MatrixBlock weights = checkType(wghts);
 		

@@ -1931,10 +1931,13 @@ public class Recompiler
 			return false;
 		}
 
-		//robustness for usage through mlcontext (key/values of input rdds are not
-		//serializable for text; also bufferpool rdd read only supported for binaryblock)
+		//robustness for usage through mlcontext (key/values of input rdds are 
+		//not serializable for text; also bufferpool rdd read only supported for 
+		// binarycell and binaryblock)
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) in.getMetaData();
-		if( in.getRDDHandle() != null && iimd.getInputInfo() != InputInfo.BinaryBlockInputInfo ) {
+		if( in.getRDDHandle() != null 
+			&& iimd.getInputInfo() != InputInfo.BinaryBlockInputInfo 
+			&& iimd.getInputInfo() != InputInfo.BinaryCellInputInfo ) {
 			return false;
 		}		
 		

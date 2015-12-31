@@ -506,8 +506,8 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 	
 	/**
-	 * Utility method for creating a single matrix block out of an RDD. Note that this collect call
-	 * might trigger execution of any pending transformations. 
+	 * Utility method for creating a single matrix block out of a binary block RDD. 
+	 * Note that this collect call might trigger execution of any pending transformations. 
 	 * 
 	 * NOTE: This is an unguarded utility function, which requires memory for both the output matrix
 	 * and its collected, blocked representation.
@@ -574,6 +574,60 @@ public class SparkExecutionContext extends ExecutionContext
 			out.recomputeNonZeros();
 			out.examSparsity();
 		}
+		
+		return out;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static MatrixBlock toMatrixBlock(RDDObject rdd, int rlen, int clen, long nnz) 
+		throws DMLRuntimeException
+	{			
+		return toMatrixBlock(
+				(JavaPairRDD<MatrixIndexes, MatrixCell>) rdd.getRDD(), 
+				rlen, clen, nnz);
+	}
+	
+	/**
+	 * Utility method for creating a single matrix block out of a binary cell RDD. 
+	 * Note that this collect call might trigger execution of any pending transformations. 
+	 * 
+	 * @param rdd
+	 * @param rlen
+	 * @param clen
+	 * @param nnz
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock toMatrixBlock(JavaPairRDD<MatrixIndexes, MatrixCell> rdd, int rlen, int clen, long nnz) 
+		throws DMLRuntimeException
+	{
+		MatrixBlock out = null;
+		
+		//determine target sparse/dense representation
+		long lnnz = (nnz >= 0) ? nnz : (long)rlen * clen;
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, lnnz);
+		
+		//create output matrix block (w/ lazy allocation)
+		out = new MatrixBlock(rlen, clen, sparse);
+		List<Tuple2<MatrixIndexes,MatrixCell>> list = rdd.collect();
+		
+		//copy blocks one-at-a-time into output matrix block
+		for( Tuple2<MatrixIndexes,MatrixCell> keyval : list )
+		{
+			//unpack index-block pair
+			MatrixIndexes ix = keyval._1();
+			MatrixCell cell = keyval._2();
+			
+			//append cell to dense/sparse target in order to avoid shifting for sparse
+			//note: this append requires a final sort of sparse rows
+			out.appendValue((int)ix.getRowIndex()-1, (int)ix.getColumnIndex()-1, cell.getValue());
+		}
+		
+		//post-processing output matrix
+		if( sparse )
+			out.sortSparseRows();
+		out.recomputeNonZeros();
+		out.examSparsity();
 		
 		return out;
 	}

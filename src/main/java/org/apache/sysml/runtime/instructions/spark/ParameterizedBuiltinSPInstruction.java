@@ -44,7 +44,8 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
-import org.apache.sysml.runtime.instructions.spark.functions.ExtractGroup;
+import org.apache.sysml.runtime.instructions.spark.functions.ExtractGroup.ExtractGroupBroadcast;
+import org.apache.sysml.runtime.instructions.spark.functions.ExtractGroup.ExtractGroupJoin;
 import org.apache.sysml.runtime.instructions.spark.functions.ExtractGroupNWeights;
 import org.apache.sysml.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
 import org.apache.sysml.runtime.instructions.spark.functions.PerformGroupByAggInReducer;
@@ -58,6 +59,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -177,13 +179,16 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		//opcode guaranteed to be a valid opcode (see parsing)
 		if ( opcode.equalsIgnoreCase("groupedagg") ) 
 		{	
+			boolean broadcastGroups = Boolean.parseBoolean(params.get("broadcast"));
+			
 			//get input rdd handle
+			String groupsVar = params.get(Statement.GAGG_GROUPS);
 			JavaPairRDD<MatrixIndexes,MatrixBlock> target = sec.getBinaryBlockRDDHandleForVariable( params.get(Statement.GAGG_TARGET) );
-			JavaPairRDD<MatrixIndexes,MatrixBlock> groups = sec.getBinaryBlockRDDHandleForVariable( params.get(Statement.GAGG_GROUPS) );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> groups = broadcastGroups ? null : sec.getBinaryBlockRDDHandleForVariable( groupsVar );
 			JavaPairRDD<MatrixIndexes,MatrixBlock> weights = null;
 			
 			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( params.get(Statement.GAGG_TARGET) );
-			MatrixCharacteristics mc2 = sec.getMatrixCharacteristics( params.get(Statement.GAGG_GROUPS) );
+			MatrixCharacteristics mc2 = sec.getMatrixCharacteristics( groupsVar );
 			if(mc1.dimsKnown() && mc2.dimsKnown() && (mc1.getRows() != mc2.getRows() || mc2.getCols() !=1)) {
 				throw new DMLRuntimeException("Grouped Aggregate dimension mismatch between target and groups.");
 			}
@@ -195,7 +200,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			if ( params.get(Statement.GAGG_WEIGHTS) != null ) {
 				weights = sec.getBinaryBlockRDDHandleForVariable( params.get(Statement.GAGG_WEIGHTS) );
 				
-				MatrixCharacteristics mc3 = sec.getMatrixCharacteristics( params.get(Statement.GAGG_GROUPS) );
+				MatrixCharacteristics mc3 = sec.getMatrixCharacteristics( params.get(Statement.GAGG_WEIGHTS) );
 				if(mc1.dimsKnown() && mc3.dimsKnown() && (mc1.getRows() != mc3.getRows() || mc1.getCols() != mc3.getCols())) {
 					throw new DMLRuntimeException("Grouped Aggregate dimension mismatch between target, groups, and weights.");
 				}
@@ -205,19 +210,26 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			}
 			else //input vector or matrix
 			{
-				long ngroups = -1;
-				if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
-					ngroups = (long) Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS));
-				}
+				String ngroupsStr = params.get(Statement.GAGG_NUM_GROUPS);
+				long ngroups = (ngroupsStr != null) ? (long) Double.parseDouble(ngroupsStr) : -1;
 				
-				//replicate groups if necessary
-				if( mc1.getNumColBlocks() > 1 ) {
-					groups = groups.flatMapToPair(
+				//execute basic grouped aggregate (extract and preagg)
+				if( broadcastGroups ) {
+					PartitionedBroadcastMatrix pbm = sec.getBroadcastForVariable(groupsVar);
+					groupWeightedCells = target
+							.flatMapToPair(new ExtractGroupBroadcast(pbm, mc1.getColsPerBlock(), ngroups, _optr));						
+				}
+				else { //general case
+					
+					//replicate groups if necessary
+					if( mc1.getNumColBlocks() > 1 ) {
+						groups = groups.flatMapToPair(
 							new ReplicateVectorFunction(false, mc1.getNumColBlocks() ));
+					}
+					
+					groupWeightedCells = groups.join(target)
+							.flatMapToPair(new ExtractGroupJoin(mc1.getColsPerBlock(), ngroups, _optr));		
 				}
-				
-				groupWeightedCells = groups.join(target)
-						.flatMapToPair(new ExtractGroup(mc1.getColsPerBlock(), ngroups, _optr));
 			}
 			
 			// Step 2: Make sure we have brlen required while creating <MatrixIndexes, MatrixCell> 
@@ -228,7 +240,8 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			
 			// Step 3: Now perform grouped aggregate operation (either on combiner side or reducer side)
 			JavaPairRDD<MatrixIndexes, MatrixCell> out = null;
-			if(_optr instanceof CMOperator && ((CMOperator) _optr).isPartialAggregateOperator() ) {
+			if(_optr instanceof CMOperator && ((CMOperator) _optr).isPartialAggregateOperator() 
+				|| _optr instanceof AggregateOperator ) {
 				out = groupWeightedCells.reduceByKey(new PerformGroupByAggInCombiner(_optr))
 						.mapValues(new CreateMatrixCell(brlen, _optr));
 			}
@@ -244,8 +257,8 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);			
-			sec.addLineageRDD(output.getName(), params.get(Statement.GAGG_TARGET) );
-			sec.addLineageRDD(output.getName(), params.get(Statement.GAGG_GROUPS) );
+			sec.addLineageRDD( output.getName(), params.get(Statement.GAGG_TARGET) );
+			sec.addLineage( output.getName(), groupsVar, broadcastGroups );
 			if ( params.get(Statement.GAGG_WEIGHTS) != null ) {
 				sec.addLineageRDD(output.getName(), params.get(Statement.GAGG_WEIGHTS) );
 			}

@@ -334,7 +334,13 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			}
 			else if(et == ExecType.SPARK) 
 			{
-				grp_agg = new GroupedAggregate(inputlops, getDataType(), getValueType(), et);						
+				//physical operator selection
+				Hop groups = getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS));
+				boolean broadcastGroups = (_paramIndexMap.get(Statement.GAGG_WEIGHTS) == null &&
+						OptimizerUtils.checkSparkBroadcastMemoryBudget( groups.getDim1(), groups.getDim2(), 
+								groups.getRowsInBlock(), groups.getColsInBlock(), groups.getNnz()) );
+				
+				grp_agg = new GroupedAggregate(inputlops, getDataType(), getValueType(), et, broadcastGroups);						
 				grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, -1, -1, -1);
 				setRequiresReblock( true );
 			}

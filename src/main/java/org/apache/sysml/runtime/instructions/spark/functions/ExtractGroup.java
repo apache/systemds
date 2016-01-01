@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.spark.functions;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -26,6 +27,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
 
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
@@ -33,13 +35,13 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class ExtractGroup  implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock, MatrixBlock>>, MatrixIndexes, WeightedCell> {
-
+public abstract class ExtractGroup implements Serializable 
+{
 	private static final long serialVersionUID = -7059358143841229966L;
 
-	private long _bclen = -1; 
-	private long _ngroups = -1; 
-	private Operator _op = null;
+	protected long _bclen = -1; 
+	protected long _ngroups = -1; 
+	protected Operator _op = null;
 	
 	public ExtractGroup( long bclen, long ngroups, Operator op ) {
 		_bclen = bclen;
@@ -47,15 +49,16 @@ public class ExtractGroup  implements PairFlatMapFunction<Tuple2<MatrixIndexes,T
 		_op = op;
 	}
 	
-	@Override
-	public Iterable<Tuple2<MatrixIndexes, WeightedCell>> call(
-			Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg)
-			throws Exception 
+	/**
+	 * 
+	 * @param ix
+	 * @param group
+	 * @param target
+	 * @return
+	 * @throws Exception 
+	 */
+	protected Iterable<Tuple2<MatrixIndexes, WeightedCell>> execute(MatrixIndexes ix, MatrixBlock group, MatrixBlock target) throws Exception
 	{
-		MatrixIndexes ix = arg._1;
-		MatrixBlock group = arg._2._1;
-		MatrixBlock target = arg._2._2;
-		
 		//sanity check matching block dimensions
 		if(group.getNumRows() != target.getNumRows()) {
 			throw new Exception("The blocksize for group and target blocks are mismatched: " + group.getNumRows()  + " != " + target.getNumRows());
@@ -102,6 +105,57 @@ public class ExtractGroup  implements PairFlatMapFunction<Tuple2<MatrixIndexes,T
 			}
 		}
 		
-		return groupValuePairs;
+		return groupValuePairs;	
+	}
+	
+	/**
+	 * 
+	 */
+	public static class ExtractGroupJoin extends ExtractGroup implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<MatrixBlock, MatrixBlock>>, MatrixIndexes, WeightedCell> 
+	{
+		private static final long serialVersionUID = 8890978615936560266L;
+
+		public ExtractGroupJoin(long bclen, long ngroups, Operator op) {
+			super(bclen, ngroups, op);
+		}
+		
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, WeightedCell>> call(
+				Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg)
+				throws Exception 
+		{
+			MatrixIndexes ix = arg._1;
+			MatrixBlock group = arg._2._1;
+			MatrixBlock target = arg._2._2;
+	
+			return execute(ix, group, target);
+		}	
+	}
+	
+	/**
+	 * 
+	 */
+	public static class ExtractGroupBroadcast extends ExtractGroup implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, WeightedCell> 
+	{
+		private static final long serialVersionUID = 5709955602290131093L;
+		
+		private PartitionedBroadcastMatrix _pbm = null;
+		
+		public ExtractGroupBroadcast( PartitionedBroadcastMatrix pbm, long bclen, long ngroups, Operator op ) {
+			super(bclen, ngroups, op);
+			_pbm = pbm;
+		}
+		
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, WeightedCell>> call(
+				Tuple2<MatrixIndexes, MatrixBlock> arg)
+				throws Exception 
+		{
+			MatrixIndexes ix = arg._1;
+			MatrixBlock group = _pbm.getMatrixBlock((int)ix.getRowIndex(), 1);
+			MatrixBlock target = arg._2;
+			
+			return execute(ix, group, target);
+		}	
 	}
 }

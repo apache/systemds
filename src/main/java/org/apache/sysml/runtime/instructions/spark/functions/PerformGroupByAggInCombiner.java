@@ -35,31 +35,30 @@ public class PerformGroupByAggInCombiner implements Function2<WeightedCell, Weig
 
 	private static final long serialVersionUID = -813530414567786509L;
 	
-	Operator op;
+	private Operator _op;
+	
 	public PerformGroupByAggInCombiner(Operator op) {
-		this.op = op;
+		_op = op;
 	}
 
 	@Override
-	public WeightedCell call(WeightedCell value1, WeightedCell value2) throws Exception {
-		return doAggregation(op, value1, value2);
-	}
-
-	public WeightedCell doAggregation(Operator op, WeightedCell value1, WeightedCell value2) throws DMLRuntimeException {
+	public WeightedCell call(WeightedCell value1, WeightedCell value2) 
+		throws Exception 
+	{
 		WeightedCell outCell = new WeightedCell();
 		CM_COV_Object cmObj = new CM_COV_Object(); 
-		if(op instanceof CMOperator) //everything except sum
+		if(_op instanceof CMOperator) //everything except sum
 		{
-			if( ((CMOperator) op).isPartialAggregateOperator() )
+			if( ((CMOperator) _op).isPartialAggregateOperator() )
 			{
 				cmObj.reset();
-				CM lcmFn = CM.getCMFnObject(((CMOperator) op).aggOpType); // cmFn.get(key.getTag());
+				CM lcmFn = CM.getCMFnObject(((CMOperator) _op).aggOpType); // cmFn.get(key.getTag());
 				
 				//partial aggregate cm operator
 				lcmFn.execute(cmObj, value1.getValue(), value1.getWeight());
 				lcmFn.execute(cmObj, value2.getValue(), value2.getWeight());
 				
-				outCell.setValue(cmObj.getRequiredPartialResult(op));
+				outCell.setValue(cmObj.getRequiredPartialResult(_op));
 				outCell.setWeight(cmObj.getWeight());	
 			}
 			else //forward tuples to reducer
@@ -67,9 +66,9 @@ public class PerformGroupByAggInCombiner implements Function2<WeightedCell, Weig
 				throw new DMLRuntimeException("Incorrect usage, should have used PerformGroupByAggInReducer");
 			}				
 		}
-		else if(op instanceof AggregateOperator) //sum
+		else if(_op instanceof AggregateOperator) //sum
 		{
-			AggregateOperator aggop=(AggregateOperator) op;
+			AggregateOperator aggop=(AggregateOperator) _op;
 				
 			if( aggop.correctionExists ) {
 				KahanObject buffer=new KahanObject(aggop.initialValue, 0);
@@ -96,7 +95,7 @@ public class PerformGroupByAggInCombiner implements Function2<WeightedCell, Weig
 			}				
 		}
 		else
-			throw new DMLRuntimeException("Unsupported operator in grouped aggregate instruction:" + op);
+			throw new DMLRuntimeException("Unsupported operator in grouped aggregate instruction:" + _op);
 		
 		return outCell;
 	}

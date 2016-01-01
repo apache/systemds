@@ -40,6 +40,11 @@ public class GroupedAggregate extends Lop
 	public static final String COMBINEDINPUT = "combinedinput";
 	
 	private boolean _weights = false;	
+	
+	//spark-specific parameters
+	private boolean _broadcastGroups = false;
+	
+	//cp-specific parameters
 	private int _numThreads = 1;
 
 	/**
@@ -61,6 +66,14 @@ public class GroupedAggregate extends Lop
 			DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.GroupedAgg, dt, vt);
 		init(inputParameterLops, dt, vt, et);
+	}
+	
+	public GroupedAggregate(
+			HashMap<String, Lop> inputParameterLops, 
+			DataType dt, ValueType vt, ExecType et, boolean broadcastGroups) {
+		super(Lop.Type.GroupedAgg, dt, vt);
+		init(inputParameterLops, dt, vt, et);
+		_broadcastGroups = broadcastGroups;
 	}
 	
 	public GroupedAggregate(
@@ -202,6 +215,12 @@ public class GroupedAggregate extends Lop
 			sb.append( "k" );
 			sb.append( Lop.NAME_VALUE_SEPARATOR );
 			sb.append( _numThreads );	
+		}
+		else if( getExecType()==ExecType.SPARK ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( "broadcast" );
+			sb.append( Lop.NAME_VALUE_SEPARATOR );
+			sb.append( _broadcastGroups );	
 		}
 		
 		sb.append( OPERAND_DELIMITOR );

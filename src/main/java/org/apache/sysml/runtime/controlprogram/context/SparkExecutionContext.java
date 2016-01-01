@@ -876,6 +876,22 @@ public class SparkExecutionContext extends ExecutionContext
 		parent.addLineageChild( child );
 	}
 	
+	/**
+	 * 
+	 * @param varParent
+	 * @param varChild
+	 * @param broadcast
+	 * @throws DMLRuntimeException
+	 */
+	public void addLineage(String varParent, String varChild, boolean broadcast) 
+		throws DMLRuntimeException
+	{
+		if( broadcast )
+			addLineageBroadcast(varParent, varChild);
+		else
+			addLineageRDD(varParent, varChild);
+	}
+	
 	@Override
 	public void cleanupMatrixObject( MatrixObject mo ) 
 		throws DMLRuntimeException

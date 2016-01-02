@@ -56,6 +56,7 @@ import org.apache.sysml.runtime.instructions.mr.CumulativeSplitInstruction;
 import org.apache.sysml.runtime.instructions.mr.DataGenMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.DataPartitionMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
+import org.apache.sysml.runtime.instructions.mr.GroupedAggregateMInstruction;
 import org.apache.sysml.runtime.instructions.mr.MMTSJMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.instructions.mr.MapMultChainInstruction;
@@ -247,7 +248,7 @@ public class MRInstructionParser extends InstructionParser
 		
 		//groupedAgg Instruction Opcodes
 		String2MRInstructionType.put( "groupedagg"  , MRINSTRUCTION_TYPE.GroupedAggregate); 
-		//String2MRInstructionType.put( "grpcm"  , MRINSTRUCTION_TYPE.GroupedAggregate); 
+		String2MRInstructionType.put( "mapgroupedagg"  , MRINSTRUCTION_TYPE.MapGroupedAggregate); 
 		
 		//rangereindexing
 		String2MRInstructionType.put( "rangeReIndex"  , MRINSTRUCTION_TYPE.RangeReIndex);
@@ -392,6 +393,9 @@ public class MRInstructionParser extends InstructionParser
 	
 		case GroupedAggregate:
 			return (MRInstruction) GroupedAggregateInstruction.parseInstruction(str);
+		
+		case MapGroupedAggregate:
+			return (MRInstruction) GroupedAggregateMInstruction.parseInstruction(str);
 		
 		case RangeReIndex:
 			return (MRInstruction) RangeBasedReIndexInstruction.parseInstruction(str);

@@ -28,13 +28,14 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
-
+import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 
 public class GroupedAggMRMapper extends MapperBase
 	implements Mapper<MatrixIndexes, MatrixValue, TaggedMatrixIndexes, WeightedCell>
@@ -51,8 +52,8 @@ public class GroupedAggMRMapper extends MapperBase
 			        OutputCollector<TaggedMatrixIndexes, WeightedCell> out, Reporter reporter) 
 	    throws IOException 
 	{
-		for(int i=0; i<representativeMatrixes.size(); i++)
-			for(GroupedAggregateInstruction ins : groupAgg_instructions.get(i))
+		for(int k=0; k<representativeMatrixes.size(); k++)
+			for(GroupedAggregateInstruction ins : groupAgg_instructions.get(k))
 			{
 				//set the tag once for the block
 				outKey.setTag(ins.output);
@@ -67,13 +68,46 @@ public class GroupedAggMRMapper extends MapperBase
 				{
 					long coloff = (key.getColumnIndex()-1)*ins.getBclen();
 					
-					for( int r=0; r<rlen; r++ ) {
-						int group = (int)block.quickGetValue(r, clen-1);
-						for( int c=0; c<clen-1; c++ ) {
-							outKeyValue.setIndexes(group, coloff+c+1);
-							outValue.setValue(block.quickGetValue(r, c));
-							outValue.setWeight(1);
-							out.collect(outKey, outValue);		
+					//local pre-aggregation for sum w/ known output dimensions
+					if(ins.getOperator() instanceof AggregateOperator && ins.getNGroups() > 0 
+						&& OptimizerUtils.isValidCPDimensions(ins.getNGroups(), block.getNumColumns()-1) ) 
+					{
+						try 
+						{
+							MatrixBlock group = block.sliceOperations(0, block.getNumRows()-1, 
+									block.getNumColumns()-1, block.getNumColumns()-1, new MatrixBlock());
+							MatrixBlock target = block.sliceOperations(0, block.getNumRows()-1, 
+									0, block.getNumColumns()-2, new MatrixBlock());
+								
+							MatrixBlock tmp = group.groupedAggOperations(target, null, new MatrixBlock(), ins.getNGroups(), ins.getOperator());
+							
+							for(int i=0; i<tmp.getNumRows(); i++) {
+								for( int j=0; j<tmp.getNumColumns(); j++ ) {
+									double tmpval = tmp.quickGetValue(i, j);
+									if( tmpval != 0 ) {
+										outKeyValue.setIndexes(i+1,coloff+j+1);
+										outValue.setValue(tmpval);
+										outValue.setWeight(1);
+										out.collect(outKey, outValue);
+									}
+								}
+							}
+						} 
+						catch(Exception ex) {
+							throw new IOException(ex);
+						}
+					}
+					//general case without pre-aggregation
+					else
+					{
+						for( int r=0; r<rlen; r++ ) {
+							int group = (int)block.quickGetValue(r, clen-1);
+							for( int c=0; c<clen-1; c++ ) {
+								outKeyValue.setIndexes(group, coloff+c+1);
+								outValue.setValue(block.quickGetValue(r, c));
+								outValue.setWeight(1);
+								out.collect(outKey, outValue);		
+							}
 						}
 					}
 				}

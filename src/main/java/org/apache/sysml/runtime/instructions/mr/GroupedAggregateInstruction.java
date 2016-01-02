@@ -38,18 +38,24 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTy
 public class GroupedAggregateInstruction extends UnaryMRInstructionBase
 {
 	private boolean _weights = false;
+	private int _ngroups = -1;
 	private long _bclen = -1;
 	
-	public GroupedAggregateInstruction(Operator op, byte in, byte out, boolean weights, String istr) {
+	public GroupedAggregateInstruction(Operator op, byte in, byte out, boolean weights, int ngroups, String istr) {
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.GroupedAggregate;
 		instString = istr;
 		
 		_weights = weights;
+		_ngroups = ngroups;
 	}
 
 	public boolean hasWeights() {
 		return _weights;
+	}
+	
+	public int getNGroups() {
+		return _ngroups;
 	}
 	
 	public void setBclen(long bclen){
@@ -73,20 +79,21 @@ public class GroupedAggregateInstruction extends UnaryMRInstructionBase
 	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		if(parts.length<2)
+		if(parts.length<3)
 			throw new DMLRuntimeException("the number of fields of instruction "+str+" is less than 2!");
 		byte in, out;
 		String opcode = parts[0];
 		in = Byte.parseByte(parts[1]);
-		out = Byte.parseByte(parts[parts.length - 2]);
-		boolean weights = Boolean.parseBoolean(parts[parts.length-1]);
+		out = Byte.parseByte(parts[parts.length - 3]);
+		boolean weights = Boolean.parseBoolean(parts[parts.length-2]);
+		int ngroups = Integer.parseInt(parts[parts.length-1]);
 		
 		if ( !opcode.equalsIgnoreCase("groupedagg") ) {
 			throw new DMLRuntimeException("Invalid opcode in GroupedAggregateInstruction: " + opcode);
 		}
 		
 		Operator optr = parseGroupedAggOperator(parts[2], parts[3]);
-		return new GroupedAggregateInstruction(optr, in, out, weights, str);
+		return new GroupedAggregateInstruction(optr, in, out, weights, ngroups, str);
 	}
 	
 	public static Operator parseGroupedAggOperator(String fn, String other) throws DMLRuntimeException {

@@ -23,6 +23,7 @@ import java.util.StringTokenizer;
 
 import org.apache.sysml.lops.AppendM;
 import org.apache.sysml.lops.BinaryM;
+import org.apache.sysml.lops.GroupedAggregateM;
 import org.apache.sysml.lops.MapMult;
 import org.apache.sysml.lops.MapMultChain;
 import org.apache.sysml.lops.PMMJ;
@@ -299,6 +300,7 @@ public class InstructionUtils
 			   || opcode.equalsIgnoreCase(MapMultChain.OPCODE)
 			   || opcode.equalsIgnoreCase(PMMJ.OPCODE)
 			   || opcode.equalsIgnoreCase(UAggOuterChain.OPCODE)
+			   || opcode.equalsIgnoreCase(GroupedAggregateM.OPCODE)
 			   || isDistQuaternaryOpcode( opcode ) //multiple quaternary opcodes
 			   || BinaryM.isOpcode( opcode ) ) //multiple binary opcodes	
 			{

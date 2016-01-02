@@ -50,7 +50,7 @@ public abstract class Lop
 		Grouping, 											//MR grouping
 		Append,                                             //CP/MR append (column append)
 		CombineUnary, CombineBinary, CombineTernary,        //MR combine (stitch together)
-		CentralMoment, CoVariance, GroupedAgg,
+		CentralMoment, CoVariance, GroupedAgg, GroupedAggM,
 		Transform, DataPartition, RepMat,                   //CP/MR reorganization, partitioning, replication
 		ParameterizedBuiltin,                               //CP/MR parameterized ops (name/value)
 		FunctionCallCP, 									//CP function calls 

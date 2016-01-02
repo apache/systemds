@@ -27,18 +27,23 @@ import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.AppendR;
 import org.apache.sysml.lops.Data;
+import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.GroupedAggregate;
+import org.apache.sysml.lops.GroupedAggregateM;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.OutputParameters.Format;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.lops.ParameterizedBuiltin;
 import org.apache.sysml.lops.RepMat;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.Statement;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
@@ -249,6 +254,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		//construct lops
 		if ( et == ExecType.MR ) 
 		{
+			Lop grp_agg = null;
+			
 			// construct necessary lops: combineBinary/combineTertiary and groupedAgg
 			boolean isWeighted = (_paramIndexMap.get(Statement.GAGG_WEIGHTS) != null);
 			if (isWeighted) 
@@ -266,61 +273,105 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				inputlops.remove(Statement.GAGG_GROUPS);
 				inputlops.remove(Statement.GAGG_WEIGHTS);
 
+				grp_agg = new GroupedAggregate(inputlops, isWeighted, getDataType(), getValueType());
+				grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
+				
+				setRequiresReblock( true );
 			} 
 			else 
 			{
 				Hop target = getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET));
 				Hop groups = getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS));
 				Lop append = null;
-				
-				if(  target.getDim2()>=target.getColsInBlock()  // multi-column-block result matrix
-					|| target.getDim2()<=0  )                   // unkown
+			
+				//physical operator selection
+				double groupsSizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(groups.getDim1(), groups.getDim2(), groups.getRowsInBlock(), groups.getColsInBlock(), groups.getNnz());
+			
+				if( groupsSizeP < OptimizerUtils.getRemoteMemBudgetMap(true) //mapgroupedagg
+					&& getInput().get(_paramIndexMap.get(Statement.GAGG_FN)) instanceof LiteralOp
+					&& ((LiteralOp)getInput().get(_paramIndexMap.get(Statement.GAGG_FN))).getStringValue().equals("sum")
+					&& inputlops.get(Statement.GAGG_NUM_GROUPS) != null ) 
 				{
-					long m1_dim1 = target.getDim1();
-					long m1_dim2 = target.getDim2();		
-					long m2_dim1 = groups.getDim1();
-					long m2_dim2 = groups.getDim2();
-					long m3_dim1 = m1_dim1; 
-					long m3_dim2 = ((m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1);
-					long m3_nnz = (target.getNnz()>0 && groups.getNnz()>0) ? (target.getNnz() + groups.getNnz()) : -1; 
-					long brlen = target.getRowsInBlock();
-					long bclen = target.getColsInBlock();
+					//pre partitioning
+					boolean needPart = (groups.dimsKnown() && groups.getDim1()*groups.getDim2() > DistributedCacheInput.PARTITION_SIZE);  
+					if( needPart ) {
+						ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(groups.getDim1(), groups.getDim2(), 1.0) 
+								          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
+						Lop dcinput = new DataPartition(groups.constructLops(), DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+						dcinput.getOutputParameters().setDimensions(groups.getDim1(), groups.getDim2(), target.getRowsInBlock(), target.getColsInBlock(), groups.getNnz());
+						setLineNumbers(dcinput);
+						
+						inputlops.put(Statement.GAGG_GROUPS, dcinput);
+					}
 					
-					Lop offset = createOffsetLop(target, true); 
-					Lop rep = new RepMat(groups.constructLops(), offset, true, groups.getDataType(), groups.getValueType());
-					setOutputDimensions(rep);
-					setLineNumbers(rep);	
+					Lop grp_agg_m = new GroupedAggregateM(inputlops, getDataType(), getValueType(), needPart, ExecType.MR);
+					grp_agg_m.getOutputParameters().setDimensions(outputDim1, outputDim2, target.getRowsInBlock(), target.getColsInBlock(), -1);
+					setLineNumbers(grp_agg_m);
 					
-					Group group1 = new Group(target.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, target.getValueType());
-					group1.getOutputParameters().setDimensions(m1_dim1, m1_dim2, brlen, bclen, target.getNnz());
-					setLineNumbers(group1);
+					//post aggregation 
+					Group grp = new Group(grp_agg_m, Group.OperationTypes.Sort, getDataType(), getValueType());
+					grp.getOutputParameters().setDimensions(outputDim1, outputDim2, target.getRowsInBlock(), target.getColsInBlock(), -1);
+					setLineNumbers(grp);
 					
-					Group group2 = new Group(rep, Group.OperationTypes.Sort, DataType.MATRIX, groups.getValueType());
-					group1.getOutputParameters().setDimensions(m2_dim1, m2_dim2, brlen, bclen, groups.getNnz());
-					setLineNumbers(group2);
+					Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(AggOp.SUM), getDataType(), getValueType(), ExecType.MR);
+					agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
+					agg1.getOutputParameters().setDimensions(outputDim1, outputDim2, target.getRowsInBlock(), target.getColsInBlock(), -1);			
+					grp_agg = agg1;
 					
-					append = new AppendR(group1, group2, DataType.MATRIX, ValueType.DOUBLE, true, ExecType.MR);
-					append.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
-					setLineNumbers(append);
+					//note: no reblock required
 				}
-				else //single-column-block vector or matrix
-				{
-					append = BinaryOp.constructMRAppendLop(target, groups, 
-							DataType.MATRIX, getValueType(), true, target);
+				else //general case: groupedagg
+				{				
+					if(  target.getDim2()>=target.getColsInBlock()  // multi-column-block result matrix
+						|| target.getDim2()<=0  )                   // unkown
+					{
+						long m1_dim1 = target.getDim1();
+						long m1_dim2 = target.getDim2();		
+						long m2_dim1 = groups.getDim1();
+						long m2_dim2 = groups.getDim2();
+						long m3_dim1 = m1_dim1; 
+						long m3_dim2 = ((m1_dim2>0 && m2_dim2>0) ? (m1_dim2 + m2_dim2) : -1);
+						long m3_nnz = (target.getNnz()>0 && groups.getNnz()>0) ? (target.getNnz() + groups.getNnz()) : -1; 
+						long brlen = target.getRowsInBlock();
+						long bclen = target.getColsInBlock();
+						
+						Lop offset = createOffsetLop(target, true); 
+						Lop rep = new RepMat(groups.constructLops(), offset, true, groups.getDataType(), groups.getValueType());
+						setOutputDimensions(rep);
+						setLineNumbers(rep);	
+						
+						Group group1 = new Group(target.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, target.getValueType());
+						group1.getOutputParameters().setDimensions(m1_dim1, m1_dim2, brlen, bclen, target.getNnz());
+						setLineNumbers(group1);
+						
+						Group group2 = new Group(rep, Group.OperationTypes.Sort, DataType.MATRIX, groups.getValueType());
+						group1.getOutputParameters().setDimensions(m2_dim1, m2_dim2, brlen, bclen, groups.getNnz());
+						setLineNumbers(group2);
+						
+						append = new AppendR(group1, group2, DataType.MATRIX, ValueType.DOUBLE, true, ExecType.MR);
+						append.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
+						setLineNumbers(append);
+					}
+					else //single-column-block vector or matrix
+					{
+						append = BinaryOp.constructMRAppendLop(target, groups, 
+								DataType.MATRIX, getValueType(), true, target);
+					}
+					
+					// add the combine lop to parameter list, with a new name "combinedinput"
+					inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
+					inputlops.remove(Statement.GAGG_TARGET);
+					inputlops.remove(Statement.GAGG_GROUPS);
+
+					grp_agg = new GroupedAggregate(inputlops, isWeighted, getDataType(), getValueType());
+					grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
+
+					setRequiresReblock( true );
 				}
-				
-				// add the combine lop to parameter list, with a new name "combinedinput"
-				inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
-				inputlops.remove(Statement.GAGG_TARGET);
-				inputlops.remove(Statement.GAGG_GROUPS);
 			}
 			
-			GroupedAggregate grp_agg = new GroupedAggregate(inputlops, isWeighted, getDataType(), getValueType());
-			grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
 			setLineNumbers(grp_agg);
-			
 			setLops(grp_agg);
-			setRequiresReblock( true );
 		}
 		else //CP/Spark 
 		{

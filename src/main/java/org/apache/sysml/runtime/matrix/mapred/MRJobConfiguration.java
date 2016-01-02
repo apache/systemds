@@ -1271,7 +1271,7 @@ public class MRJobConfiguration
 		job.set(RESULT_DIMS_UNKNOWN_CONFIG, MRJobConfiguration.getIndexesString(updDimsUnknown));
 	}
 	
-	public static void setUpMultipleOutputs(JobConf job, byte[] resultIndexes, byte[] resultDimsUnknwon, String[] outputs, 
+	public static void setUpMultipleOutputs(JobConf job, byte[] resultIndexes, byte[] resultDimsUnknown, String[] outputs, 
 			OutputInfo[] outputInfos, boolean inBlockRepresentation, boolean mayContainCtable) 
 	throws Exception
 	{
@@ -1281,19 +1281,17 @@ public class MRJobConfiguration
 			throw new Exception("number of outputs and outputInfos indexes does not match");
 		
 		job.set(RESULT_INDEXES_CONFIG, MRJobConfiguration.getIndexesString(resultIndexes));
-		job.set(RESULT_DIMS_UNKNOWN_CONFIG, MRJobConfiguration.getIndexesString(resultDimsUnknwon));
+		job.set(RESULT_DIMS_UNKNOWN_CONFIG, MRJobConfiguration.getIndexesString(resultDimsUnknown));
 		job.setStrings(OUTPUT_MATRICES_DIRS_CONFIG, outputs);
 		job.setOutputCommitter(MultipleOutputCommitter.class);
 		
 		for(int i=0; i<outputs.length; i++)
 		{
 			MapReduceTool.deleteFileIfExistOnHDFS(new Path(outputs[i]), job);
-			if ( mayContainCtable && resultDimsUnknwon[i] == (byte) 1 ) 
-			{
+			if ( mayContainCtable && resultDimsUnknown[i] == (byte) 1 )  {
 				setOutputInfo(job, i, outputInfos[i], false);
 			}
-			else
-			{
+			else {
 				setOutputInfo(job, i, outputInfos[i], inBlockRepresentation);
 			}
 			MultipleOutputs.addNamedOutput(job, Integer.toString(i), 
@@ -1306,7 +1304,6 @@ public class MRJobConfiguration
 		Path tempOutputPath = new Path( constructTempOutputFilename() );
 		FileOutputFormat.setOutputPath(job, tempOutputPath);
 		MapReduceTool.deleteFileIfExistOnHDFS(tempOutputPath, job);
-		
 	}
 	
 	public static void setUpMultipleOutputs(JobConf job, byte[] resultIndexes, byte[] resultDimsUnknwon, String[] outputs, 
@@ -1428,6 +1425,7 @@ public class MRJobConfiguration
 			for(MRInstruction ins: insMapper)
 			{
 				MatrixCharacteristics.computeDimension(dims, ins);
+				
 				if( ins instanceof UnaryMRInstructionBase )
 				{
 					UnaryMRInstructionBase tempIns=(UnaryMRInstructionBase) ins;

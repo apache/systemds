@@ -258,9 +258,11 @@ public class GroupedAggregate extends Lop
 	
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _weights );
-			
+		
+		sb.append( OPERAND_DELIMITOR );
+		Lop ngroups = _inputParams.get(Statement.GAGG_NUM_GROUPS);
+		sb.append( (ngroups!=null)? ngroups.prepScalarInputOperand(getExecType()) : "-1" );
+		
 		return sb.toString();
 	}
-	
-
 }

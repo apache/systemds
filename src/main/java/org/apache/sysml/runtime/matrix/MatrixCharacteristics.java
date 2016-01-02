@@ -40,6 +40,7 @@ import org.apache.sysml.runtime.instructions.mr.CombineUnaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.CumulativeAggregateInstruction;
 import org.apache.sysml.runtime.instructions.mr.DataGenMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
+import org.apache.sysml.runtime.instructions.mr.GroupedAggregateMInstruction;
 import org.apache.sysml.runtime.instructions.mr.MMTSJMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.instructions.mr.MapMultChainInstruction;
@@ -350,6 +351,12 @@ public class MatrixCharacteristics implements Serializable
 			MatrixCharacteristics mc1 = dims.get(realIns.input1);
 			MatrixCharacteristics mc2 = dims.get(realIns.input2);
 			realIns.computeOutputCharacteristics(mc1, mc2, dimOut);
+		}
+		else if( ins instanceof GroupedAggregateMInstruction )
+		{
+			GroupedAggregateMInstruction realIns = (GroupedAggregateMInstruction) ins;
+			MatrixCharacteristics mc1 = dims.get(realIns.input1);
+			realIns.computeOutputCharacteristics(mc1, dimOut);
 		}
 		else if(ins instanceof BinaryInstruction || ins instanceof BinaryMInstruction || ins instanceof CombineBinaryInstruction )
 		{

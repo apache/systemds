@@ -25,7 +25,6 @@ import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -55,7 +54,7 @@ public class GroupedAggregateMInstruction extends BinaryMRInstructionBase implem
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction ( String str ) 
+	public static GroupedAggregateMInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionParts ( str );

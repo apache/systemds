@@ -28,10 +28,10 @@ import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_T
 
 
 public class InstructionParser 
-{
-		
-	public static Instruction parseSingleInstruction ( String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
-		
+{		
+	public static Instruction parseSingleInstruction ( String str ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{	
 		if ( str == null || str.isEmpty() )
 			return null;
 		
@@ -58,7 +58,9 @@ public class InstructionParser
 		}
 	}
 	
-	public static Instruction[] parseMixedInstructions ( String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	public static Instruction[] parseMixedInstructions ( String str ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		if ( str == null || str.isEmpty() )
 			return null;
 		
@@ -71,11 +73,4 @@ public class InstructionParser
 		
 		return inst;
 	}
-	
-	public static void printInstructions(Instruction[] instructions)
-	{
-		for(Instruction ins: instructions)
-			System.out.println(ins.toString());
-	}
-
 }

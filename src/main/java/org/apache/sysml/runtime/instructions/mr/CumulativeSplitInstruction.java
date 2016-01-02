@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -55,7 +54,7 @@ public class CumulativeSplitInstruction extends UnaryInstruction
 		_lastRowBlockIndex = (long)Math.ceil((double)_mcIn.getRows()/_mcIn.getRowsPerBlock());
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static CumulativeSplitInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		InstructionUtils.checkNumFields ( str, 3 );

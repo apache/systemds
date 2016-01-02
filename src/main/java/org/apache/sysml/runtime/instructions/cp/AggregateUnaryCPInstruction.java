@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Builtin;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -52,7 +51,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		_cptype = CPINSTRUCTION_TYPE.AggregateUnary;		
 	}
 	
-	public static Instruction parseInstruction(String str)
+	public static AggregateUnaryCPInstruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);

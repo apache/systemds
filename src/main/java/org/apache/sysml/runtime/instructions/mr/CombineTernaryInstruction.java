@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.mr;
 import org.apache.sysml.lops.Ternary.OperationTypes;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
@@ -38,7 +37,7 @@ public class CombineTernaryInstruction extends TernaryInstruction
 		mrtype = MRINSTRUCTION_TYPE.CombineTernary;
 	}
 
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static CombineTernaryInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		// example instruction string - ctabletransform:::0:DOUBLE:::1:DOUBLE:::2:DOUBLE:::3:DOUBLE 
 		InstructionUtils.checkNumFields ( str, 4 );

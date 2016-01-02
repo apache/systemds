@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -75,7 +74,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 		_ixret = ixret;
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static ReorgCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

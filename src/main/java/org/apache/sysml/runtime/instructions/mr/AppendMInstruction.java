@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.lops.AppendM.CacheType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -46,7 +45,7 @@ public class AppendMInstruction extends AppendInstruction implements IDistribute
 		_offset = offset;
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static AppendMInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionParts ( str );

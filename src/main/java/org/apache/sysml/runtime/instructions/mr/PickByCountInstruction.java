@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.mr;
 import org.apache.sysml.lops.PickByCount.OperationTypes;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
@@ -68,7 +67,7 @@ public class PickByCountInstruction extends MRInstruction
 		isValuePick=false;
 	}
 
-	public static Instruction parseInstruction ( String str ) 
+	public static PickByCountInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	
 		InstructionUtils.checkNumFields ( str, 5 );

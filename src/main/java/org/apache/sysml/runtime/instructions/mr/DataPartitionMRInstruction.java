@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
@@ -36,7 +35,7 @@ public class DataPartitionMRInstruction extends UnaryInstruction
 		super(op, in, out, istr);
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static DataPartitionMRInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		InstructionUtils.checkNumFields ( str, 3 );

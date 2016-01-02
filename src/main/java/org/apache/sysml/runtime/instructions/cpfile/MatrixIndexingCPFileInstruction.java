@@ -24,7 +24,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.MatrixIndexingCPInstruction;
@@ -57,7 +56,7 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 		super( op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static MatrixIndexingCPFileInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		

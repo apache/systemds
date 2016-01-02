@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
@@ -40,7 +39,7 @@ public class AggregateInstruction extends UnaryMRInstructionBase
 		instString = istr;
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static AggregateInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	
 		String[] parts = InstructionUtils.getInstructionParts ( str );

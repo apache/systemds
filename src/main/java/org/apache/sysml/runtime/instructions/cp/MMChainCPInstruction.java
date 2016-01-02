@@ -23,7 +23,6 @@ import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -52,7 +51,7 @@ public class MMChainCPInstruction extends UnaryCPInstruction
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction ( String str ) 
+	public static MMChainCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		//parse instruction parts (without exec type)

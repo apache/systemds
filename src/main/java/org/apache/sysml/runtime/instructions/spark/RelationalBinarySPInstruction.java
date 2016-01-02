@@ -24,7 +24,6 @@ import org.apache.sysml.lops.BinaryM.VectorType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -37,7 +36,7 @@ public abstract class RelationalBinarySPInstruction extends BinarySPInstruction 
 		_sptype = SPINSTRUCTION_TYPE.RelationalBinary;
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static RelationalBinarySPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

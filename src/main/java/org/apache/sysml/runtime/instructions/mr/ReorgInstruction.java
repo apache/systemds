@@ -25,7 +25,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -62,7 +61,7 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 		_outputEmptyBlocks = flag; 
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static ReorgInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		InstructionUtils.checkNumFields ( str, 2 );
 		

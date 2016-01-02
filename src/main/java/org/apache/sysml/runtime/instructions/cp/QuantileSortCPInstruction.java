@@ -25,7 +25,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -52,7 +51,7 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction
 		_cptype = CPINSTRUCTION_TYPE.QSort;
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static QuantileSortCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

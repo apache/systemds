@@ -236,7 +236,7 @@ public class VariableCPInstruction extends CPInstruction
 		}
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static VariableCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{	
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );

@@ -25,7 +25,6 @@ import org.apache.sysml.lops.AppendM.CacheType;
 import org.apache.sysml.lops.BinaryM.VectorType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -56,7 +55,7 @@ public class BinaryMInstruction extends BinaryMRInstructionBase implements IDist
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction ( String str ) 
+	public static BinaryMInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{	
 		InstructionUtils.checkNumFields ( str, 5 );

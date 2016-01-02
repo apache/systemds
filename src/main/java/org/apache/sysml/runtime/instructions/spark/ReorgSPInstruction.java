@@ -36,7 +36,6 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
@@ -73,7 +72,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		_bSortIndInMem = bSortIndInMem;
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static ReorgSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

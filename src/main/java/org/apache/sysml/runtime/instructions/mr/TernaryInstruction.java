@@ -25,7 +25,6 @@ import org.apache.sysml.lops.Ternary;
 import org.apache.sysml.lops.Ternary.OperationTypes;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -157,7 +156,7 @@ public class TernaryInstruction extends MRInstruction
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction ( String str ) 
+	public static TernaryInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{		
 		// example instruction string 

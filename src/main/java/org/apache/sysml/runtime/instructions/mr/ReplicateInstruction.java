@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -70,7 +69,7 @@ public class ReplicateInstruction extends UnaryMRInstructionBase
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction ( String str ) 
+	public static ReplicateInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		//check instruction format

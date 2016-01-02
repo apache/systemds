@@ -24,7 +24,6 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -62,7 +61,7 @@ public class CumulativeOffsetInstruction extends BinaryInstruction
 		}
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static CumulativeOffsetInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		InstructionUtils.checkNumFields ( str, 3 );

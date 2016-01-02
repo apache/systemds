@@ -81,8 +81,9 @@ public class FunctionCallCPInstruction extends CPInstruction
 	 * extFunct:::foo:::2:::1:::in1:::in2:::out1
 	 * 
 	 */
-	public static Instruction parseInstruction(String str) throws DMLRuntimeException, DMLUnsupportedOperationException {
-		
+	public static FunctionCallCPInstruction parseInstruction(String str) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{	
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String namespace = parts[1];
 		String functionName = parts[2];

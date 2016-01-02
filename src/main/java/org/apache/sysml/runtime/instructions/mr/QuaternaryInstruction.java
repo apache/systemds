@@ -34,7 +34,6 @@ import org.apache.sysml.lops.WeightedUnaryMMR;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
@@ -136,7 +135,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction( String str ) 
+	public static QuaternaryInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{		
 		String opcode = InstructionUtils.getOpCode(str);

@@ -25,7 +25,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.CM;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
@@ -39,7 +38,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction
 		super(cm, in1, in2, in3, out, opcode, str);
 	}
 
-	public static Instruction parseInstruction(String str)
+	public static CentralMomentCPInstruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

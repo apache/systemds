@@ -247,157 +247,150 @@ public class CPInstructionParser extends InstructionParser
 		String2CPFileInstructionType.put( "rmempty"	    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 	}
 
-	public static CPInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	public static CPInstruction parseSingleInstruction (String str ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		if ( str == null || str.isEmpty() )
 			return null;
 
 		CPINSTRUCTION_TYPE cptype = InstructionUtils.getCPType(str); 
 		if ( cptype == null ) 
 			throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
-		CPInstruction cpinst = CPInstructionParser.parseSingleInstruction(cptype, str);
+		CPInstruction cpinst = parseSingleInstruction(cptype, str);
 		if ( cpinst == null )
 			throw new DMLRuntimeException("Unable to parse instruction: " + str);
 		return cpinst;
 	}
 	
-	public static CPInstruction parseSingleInstruction ( CPINSTRUCTION_TYPE cptype, String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	public static CPInstruction parseSingleInstruction ( CPINSTRUCTION_TYPE cptype, String str ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		ExecType execType = null; 
 		
 		if ( str == null || str.isEmpty() ) 
 			return null;
-		switch(cptype) {
-		case AggregateUnary:
-			return (CPInstruction) AggregateUnaryCPInstruction.parseInstruction(str);
 		
-		case AggregateBinary:
-			return (CPInstruction) AggregateBinaryCPInstruction.parseInstruction(str);
-
-		case AggregateTernary:
-			return (CPInstruction) AggregateTernaryCPInstruction.parseInstruction(str);
+		switch(cptype) 
+		{
+			case AggregateUnary:
+				return AggregateUnaryCPInstruction.parseInstruction(str);
 			
-		case ArithmeticBinary:
-			return (CPInstruction) ArithmeticBinaryCPInstruction.parseInstruction(str);
-		
-		case Ternary:
-			return (CPInstruction) TernaryCPInstruction.parseInstruction(str);
-		
-		case Quaternary:
-			return (CPInstruction) QuaternaryCPInstruction.parseInstruction(str);
-		
-		case BooleanBinary:
-			return (CPInstruction) BooleanBinaryCPInstruction.parseInstruction(str);
+			case AggregateBinary:
+				return AggregateBinaryCPInstruction.parseInstruction(str);
+	
+			case AggregateTernary:
+				return AggregateTernaryCPInstruction.parseInstruction(str);
+				
+			case ArithmeticBinary:
+				return ArithmeticBinaryCPInstruction.parseInstruction(str);
 			
-		case BooleanUnary:
-			return (CPInstruction) BooleanUnaryCPInstruction.parseInstruction(str);
+			case Ternary:
+				return TernaryCPInstruction.parseInstruction(str);
 			
-		case BuiltinBinary:
-			return (CPInstruction) BuiltinBinaryCPInstruction.parseInstruction(str);
+			case Quaternary:
+				return QuaternaryCPInstruction.parseInstruction(str);
 			
-		case BuiltinUnary:
-			return (CPInstruction) BuiltinUnaryCPInstruction.parseInstruction(str);
+			case BooleanBinary:
+				return BooleanBinaryCPInstruction.parseInstruction(str);
+				
+			case BooleanUnary:
+				return BooleanUnaryCPInstruction.parseInstruction(str);
+				
+			case BuiltinBinary:
+				return BuiltinBinaryCPInstruction.parseInstruction(str);
+				
+			case BuiltinUnary:
+				return BuiltinUnaryCPInstruction.parseInstruction(str);
+				
+			case Reorg:
+				return ReorgCPInstruction.parseInstruction(str);
+				
+			case UaggOuterChain:
+				return UaggOuterChainCPInstruction.parseInstruction(str);
+				
+			case MatrixReshape:
+				return MatrixReshapeCPInstruction.parseInstruction(str);	
+	
+			case Append:
+				return AppendCPInstruction.parseInstruction(str);
+				
+			case RelationalBinary:
+				return RelationalBinaryCPInstruction.parseInstruction(str);
+				
+			case File:
+				return FileCPInstruction.parseInstruction(str);
+				
+			case Variable:
+				return VariableCPInstruction.parseInstruction(str);
+				
+			case Rand:
+				return DataGenCPInstruction.parseInstruction(str);
+				
+			case StringInit:
+				return StringInitCPInstruction.parseInstruction(str);
+				
+			case External:
+				return FunctionCallCPInstruction.parseInstruction(str);
+				
+			case ParameterizedBuiltin: 
+				execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
+				if( execType == ExecType.CP )
+					return ParameterizedBuiltinCPInstruction.parseInstruction(str);
+				else //exectype CP_FILE
+					return ParameterizedBuiltinCPFileInstruction.parseInstruction(str);
+	
+			case MultiReturnBuiltin:
+				return MultiReturnBuiltinCPInstruction.parseInstruction(str);
+				
+			case QSort: 
+				return QuantileSortCPInstruction.parseInstruction(str);
 			
-		case Reorg:
-			return (CPInstruction) ReorgCPInstruction.parseInstruction(str);
+			case QPick: 
+				return QuantilePickCPInstruction.parseInstruction(str);
 			
-		case UaggOuterChain:
-			return (CPInstruction) UaggOuterChainCPInstruction.parseInstruction(str);
+			case MatrixIndexing: 
+				execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
+				if( execType == ExecType.CP )
+					return MatrixIndexingCPInstruction.parseInstruction(str);
+				else //exectype CP_FILE
+					return MatrixIndexingCPFileInstruction.parseInstruction(str);
 			
-		case MatrixReshape:
-			return (CPInstruction) MatrixReshapeCPInstruction.parseInstruction(str);	
-
-		case Append:
-			return (CPInstruction) AppendCPInstruction.parseInstruction(str);
-			
-		case RelationalBinary:
-			return (CPInstruction) RelationalBinaryCPInstruction.parseInstruction(str);
-			
-		case File:
-			return (CPInstruction) FileCPInstruction.parseInstruction(str);
-			
-		case Variable:
-			return (CPInstruction) VariableCPInstruction.parseInstruction(str);
-			
-		case Rand:
-			return (CPInstruction) DataGenCPInstruction.parseInstruction(str);
-			
-		case StringInit:
-			return (CPInstruction) StringInitCPInstruction.parseInstruction(str);
-			
-		case External:
-			//return (CPInstruction) ExtBuiltinCPInstruction.parseInstruction(str);
-			return (CPInstruction) FunctionCallCPInstruction.parseInstruction(str);
-			
-		case ParameterizedBuiltin: 
-			execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
-			if( execType == ExecType.CP )
-				return (CPInstruction) ParameterizedBuiltinCPInstruction.parseInstruction(str);
-			else //exectype CP_FILE
-				return (CPInstruction) ParameterizedBuiltinCPFileInstruction.parseInstruction(str);
-
-		case MultiReturnBuiltin:
-			return (CPInstruction) MultiReturnBuiltinCPInstruction.parseInstruction(str);
-			
-		case QSort: 
-			return (CPInstruction) QuantileSortCPInstruction.parseInstruction(str);
-		
-		case QPick: 
-			return (CPInstruction) QuantilePickCPInstruction.parseInstruction(str);
-		
-		case MatrixIndexing: 
-			execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
-			if( execType == ExecType.CP )
-				return (CPInstruction) MatrixIndexingCPInstruction.parseInstruction(str);
-			else //exectype CP_FILE
-				return (CPInstruction) MatrixIndexingCPFileInstruction.parseInstruction(str);
-		
-		case Builtin: 
-			String []parts = InstructionUtils.getInstructionPartsWithValueType(str);
-			if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
-				if ( parts.length == 3 ) {
-					// B=log(A), y=log(x)
-					return (CPInstruction) BuiltinUnaryCPInstruction.parseInstruction(str);
-				} else if ( parts.length == 4 ) {
-					// B=log(A,10), y=log(x,10)
-					return (CPInstruction) BuiltinBinaryCPInstruction.parseInstruction(str);
+			case Builtin: 
+				String []parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
+					if ( parts.length == 3 ) {
+						// B=log(A), y=log(x)
+						return BuiltinUnaryCPInstruction.parseInstruction(str);
+					} else if ( parts.length == 4 ) {
+						// B=log(A,10), y=log(x,10)
+						return BuiltinBinaryCPInstruction.parseInstruction(str);
+					}
 				}
-			}
-			else {
-				throw new DMLRuntimeException("Invalid Builtin Instruction: " + str );
-			}
-		case MMTSJ:
-			return (CPInstruction) MMTSJCPInstruction.parseInstruction(str);
-		case PMMJ:
-			return (CPInstruction) PMMJCPInstruction.parseInstruction(str);
-		case MMChain:
-			return (CPInstruction) MMChainCPInstruction.parseInstruction(str);
-		
-		case Partition:
-			return (CPInstruction) DataPartitionCPInstruction.parseInstruction(str);	
-
-		case CentralMoment:
-			return (CPInstruction) CentralMomentCPInstruction.parseInstruction(str);
-
-		case Covariance:
-			return (CPInstruction) CovarianceCPInstruction.parseInstruction(str);
+				else {
+					throw new DMLRuntimeException("Invalid Builtin Instruction: " + str );
+				}
+			case MMTSJ:
+				return MMTSJCPInstruction.parseInstruction(str);
 			
-		case INVALID:
-		default: 
-			throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );
+			case PMMJ:
+				return PMMJCPInstruction.parseInstruction(str);
+			
+			case MMChain:
+				return MMChainCPInstruction.parseInstruction(str);
+			
+			case Partition:
+				return DataPartitionCPInstruction.parseInstruction(str);	
+	
+			case CentralMoment:
+				return CentralMomentCPInstruction.parseInstruction(str);
+	
+			case Covariance:
+				return CovarianceCPInstruction.parseInstruction(str);
+				
+			case INVALID:
+			
+			default: 
+				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );
 		}
 	}
-	
-	public static CPInstruction[] parseMixedInstructions ( String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
-		if ( str == null || str.isEmpty() )
-			return null;
-		
-		Instruction[] inst = InstructionParser.parseMixedInstructions(str);
-		CPInstruction[] cpinst = new CPInstruction[inst.length];
-		for ( int i=0; i < inst.length; i++ ) {
-			cpinst[i] = (CPInstruction) inst[i];
-		}
-		
-		return cpinst;
-	}
-	
-	
 }

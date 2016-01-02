@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -115,7 +114,7 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction( String str ) 
+	public static MapMultChainInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{		
 		//check number of fields (2/3 inputs, output, type)

@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
@@ -60,7 +59,7 @@ public class AppendInstruction extends BinaryMRInstructionBase
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction ( String str ) 
+	public static AppendInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		String opcode = InstructionUtils.getOpCode(str);

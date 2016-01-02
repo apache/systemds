@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.wink.json4j.JSONException;
-
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -32,7 +31,6 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
 import org.apache.sysml.runtime.matrix.JobReturn;
@@ -74,7 +72,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		return paramMap;
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static ParameterizedBuiltinCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);

@@ -25,7 +25,6 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -53,7 +52,7 @@ public class ScalarInstruction extends UnaryMRInstructionBase
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction ( String str )
+	public static ScalarInstruction parseInstruction ( String str )
 		throws DMLRuntimeException 
 	{	
 		InstructionUtils.checkNumFields ( str, 3 );

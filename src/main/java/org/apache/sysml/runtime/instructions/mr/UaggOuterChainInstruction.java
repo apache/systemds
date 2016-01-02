@@ -28,7 +28,6 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.LibMatrixOuterAgg;
@@ -91,7 +90,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction( String str ) 
+	public static UaggOuterChainInstruction parseInstruction( String str ) 
 		throws DMLRuntimeException 
 	{		
 		//check number of fields (2/3 inputs, output, type)

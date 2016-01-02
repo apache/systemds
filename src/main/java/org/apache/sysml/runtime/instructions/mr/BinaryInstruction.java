@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -42,8 +41,9 @@ public class BinaryInstruction extends BinaryMRInstructionBase
 		instString = istr;
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
-		
+	public static BinaryInstruction parseInstruction ( String str ) 
+		throws DMLRuntimeException 
+	{	
 		InstructionUtils.checkNumFields ( str, 3 );
 		
 		String[] parts = InstructionUtils.getInstructionParts ( str );

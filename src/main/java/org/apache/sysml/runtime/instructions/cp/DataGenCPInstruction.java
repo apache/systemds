@@ -25,7 +25,6 @@ import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -166,7 +165,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction
 		this.sparsity = sparsity;
 	}
 
-	public static Instruction parseInstruction(String str) throws DMLRuntimeException 
+	public static DataGenCPInstruction parseInstruction(String str) 
+		throws DMLRuntimeException 
 	{
 		DataGenMethod method = DataGenMethod.INVALID;
 

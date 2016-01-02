@@ -59,7 +59,7 @@ public class CSVReblockInstruction extends ReblockInstruction
 		return parseInstruction(sb.toString());
 		
 	}
-	public static Instruction parseInstruction(String str) {
+	public static CSVReblockInstruction parseInstruction(String str) {
 		Operator op = null;
 		byte input, output;
 		String[] s=str.split(Instruction.OPERAND_DELIM);

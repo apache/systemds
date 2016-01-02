@@ -26,7 +26,6 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.LibMatrixOuterAgg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -51,7 +50,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction
 		instString = istr;
 	}
 
-	public static Instruction parseInstruction(String str)
+	public static UaggOuterChainCPInstruction parseInstruction(String str)
 		throws DMLRuntimeException 
 	{
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);

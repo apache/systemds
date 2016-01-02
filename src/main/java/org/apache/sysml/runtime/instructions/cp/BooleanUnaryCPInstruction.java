@@ -23,7 +23,6 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
@@ -37,7 +36,9 @@ public class BooleanUnaryCPInstruction extends UnaryCPInstruction
 		_cptype = CPINSTRUCTION_TYPE.BooleanUnary;
 	}
 
-	public static Instruction parseInstruction (String str) throws DMLRuntimeException {
+	public static BooleanUnaryCPInstruction parseInstruction (String str) 
+		throws DMLRuntimeException 
+	{
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = parseUnaryInstruction(str, in, out);

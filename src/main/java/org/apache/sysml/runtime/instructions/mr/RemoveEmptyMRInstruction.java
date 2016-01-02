@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -70,7 +69,7 @@ public class RemoveEmptyMRInstruction extends BinaryInstruction
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction ( String str ) 
+	public static RemoveEmptyMRInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		InstructionUtils.checkNumFields ( str, 5 );

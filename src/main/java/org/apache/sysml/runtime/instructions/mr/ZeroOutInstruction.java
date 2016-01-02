@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -52,7 +51,7 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase
 		indexRange=rng;
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static ZeroOutInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		InstructionUtils.checkNumFields ( str, 6 );
 		

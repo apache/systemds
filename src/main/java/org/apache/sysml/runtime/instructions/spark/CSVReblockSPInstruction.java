@@ -29,7 +29,6 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
@@ -62,7 +61,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 		_missingValue = missingValue;
 	}
 
-	public static Instruction parseInstruction(String str)
+	public static CSVReblockSPInstruction parseInstruction(String str)
 			throws DMLRuntimeException 
 	{
 		String opcode = InstructionUtils.getOpCode(str);

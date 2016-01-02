@@ -76,8 +76,8 @@ import org.apache.sysml.runtime.instructions.spark.WriteSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ZipmmSPInstruction;
 
 
-public class SPInstructionParser extends InstructionParser {
-	
+public class SPInstructionParser extends InstructionParser 
+{	
 	public static final HashMap<String, SPINSTRUCTION_TYPE> String2SPInstructionType;
 	static {
 		String2SPInstructionType = new HashMap<String, SPInstruction.SPINSTRUCTION_TYPE>();
@@ -253,7 +253,9 @@ public class SPInstructionParser extends InstructionParser {
 		String2SPInstructionType.put( "write"   , SPINSTRUCTION_TYPE.Write);
 	}
 
-	public static Instruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	public static SPInstruction parseSingleInstruction (String str ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		if ( str == null || str.isEmpty() )
 			return null;
 
@@ -261,14 +263,15 @@ public class SPInstructionParser extends InstructionParser {
 		if ( cptype == null )
 			// return null;
 			throw new DMLUnsupportedOperationException("Invalid SP Instruction Type: " + str);
-		Instruction cpinst = SPInstructionParser.parseSingleInstruction(cptype, str);
-		if ( cpinst == null )
+		SPInstruction spinst = parseSingleInstruction(cptype, str);
+		if ( spinst == null )
 			throw new DMLRuntimeException("Unable to parse instruction: " + str);
-		return cpinst;
+		return spinst;
 	}
 	
-	public static Instruction parseSingleInstruction ( SPINSTRUCTION_TYPE sptype, String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
-		
+	public static SPInstruction parseSingleInstruction ( SPINSTRUCTION_TYPE sptype, String str ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{	
 		if ( str == null || str.isEmpty() ) 
 			return null;
 		
@@ -305,10 +308,13 @@ public class SPInstructionParser extends InstructionParser {
 				
 			case MatrixIndexing:
 				return MatrixIndexingSPInstruction.parseInstruction(str);
+				
 			case Reorg:
 				return ReorgSPInstruction.parseInstruction(str);
+				
 			case ArithmeticBinary:
 				return ArithmeticBinarySPInstruction.parseInstruction(str);
+				
 			case RelationalBinary:
 				return RelationalBinarySPInstruction.parseInstruction(str);
 			
@@ -323,6 +329,7 @@ public class SPInstructionParser extends InstructionParser {
 			// Reblock instructions	
 			case Reblock:
 				return ReblockSPInstruction.parseInstruction(str);
+				
 			case CSVReblock:
 				return CSVReblockSPInstruction.parseInstruction(str);
 			
@@ -400,19 +407,4 @@ public class SPInstructionParser extends InstructionParser {
 				throw new DMLUnsupportedOperationException("Invalid SP Instruction Type: " + sptype );
 		}
 	}
-	
-	public static SPInstruction[] parseMixedInstructions ( String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
-		if ( str == null || str.isEmpty() )
-			return null;
-		
-		Instruction[] inst = InstructionParser.parseMixedInstructions(str);
-		SPInstruction[] cpinst = new SPInstruction[inst.length];
-		for ( int i=0; i < inst.length; i++ ) {
-			cpinst[i] = (SPInstruction) inst[i];
-		}
-		
-		return cpinst;
-	}
-	
-	
 }

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -44,7 +43,7 @@ public class UnaryInstruction extends UnaryMRInstructionBase
 		instString = istr;
 	}
 	
-	public static Instruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static UnaryInstruction parseInstruction ( String str ) throws DMLRuntimeException {
 		
 		String opcode = InstructionUtils.getOpCode(str);
 	 

@@ -82,8 +82,7 @@ import org.apache.sysml.runtime.matrix.SortMR;
 
 
 public class MRInstructionParser extends InstructionParser 
-{
-	
+{	
 	static public HashMap<String, MRINSTRUCTION_TYPE> String2MRInstructionType;
 	static {
 		String2MRInstructionType = new HashMap<String, MRINSTRUCTION_TYPE>();
@@ -291,152 +290,158 @@ public class MRInstructionParser extends InstructionParser
 	}
 	
 	
-	public static MRInstruction parseSingleInstruction (String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	public static MRInstruction parseSingleInstruction (String str ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		if ( str == null || str.isEmpty() )
 			return null;
 		
 		MRINSTRUCTION_TYPE mrtype = InstructionUtils.getMRType(str); 
-		return MRInstructionParser.parseSingleInstruction(mrtype, str);
+		return parseSingleInstruction(mrtype, str);
 	}
 	
-	public static MRInstruction parseSingleInstruction (MRINSTRUCTION_TYPE mrtype, String str ) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	public static MRInstruction parseSingleInstruction (MRINSTRUCTION_TYPE mrtype, String str ) 
+		throws DMLUnsupportedOperationException, DMLRuntimeException 
+	{
 		if ( str == null || str.isEmpty() )
 			return null;
 		
-		switch(mrtype) {
-		case Aggregate:
-			return (MRInstruction) AggregateInstruction.parseInstruction(str);
-			
-		case ArithmeticBinary: {
-			String opcode = InstructionUtils.getOpCode(str);
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-			// extract datatypes of first and second input operands
-			String dt1 = parts[1].split(Instruction.DATATYPE_PREFIX)[1].split(Instruction.VALUETYPE_PREFIX)[0];
-			String dt2 = parts[2].split(Instruction.DATATYPE_PREFIX)[1].split(Instruction.VALUETYPE_PREFIX)[0];
-			if ( dt1.equalsIgnoreCase("SCALAR") || dt2.equalsIgnoreCase("SCALAR") ) {
-				return (MRInstruction) ScalarInstruction.parseInstruction(str);
+		switch(mrtype) 
+		{
+			case Aggregate:
+				return AggregateInstruction.parseInstruction(str);
+				
+			case ArithmeticBinary: {
+				String opcode = InstructionUtils.getOpCode(str);
+				String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				// extract datatypes of first and second input operands
+				String dt1 = parts[1].split(Instruction.DATATYPE_PREFIX)[1].split(Instruction.VALUETYPE_PREFIX)[0];
+				String dt2 = parts[2].split(Instruction.DATATYPE_PREFIX)[1].split(Instruction.VALUETYPE_PREFIX)[0];
+				if ( dt1.equalsIgnoreCase("SCALAR") || dt2.equalsIgnoreCase("SCALAR") ) {
+					return ScalarInstruction.parseInstruction(str);
+				}
+				else {
+					if( BinaryM.isOpcode( opcode ) )
+						return BinaryMInstruction.parseInstruction(str);
+					else
+						return BinaryInstruction.parseInstruction(str);
+				}
 			}
-			else {
-				if( BinaryM.isOpcode( opcode ) )
-					return (MRInstruction) BinaryMInstruction.parseInstruction(str);
-				else
-					return (MRInstruction) BinaryInstruction.parseInstruction(str);
+			
+			case AggregateBinary:
+				return AggregateBinaryInstruction.parseInstruction(str);
+				
+			case AggregateUnary:
+				return AggregateUnaryInstruction.parseInstruction(str);
+				
+			case Ternary: 
+				return TernaryInstruction.parseInstruction(str);
+			
+			case Quaternary: 
+				return QuaternaryInstruction.parseInstruction(str);
+				
+			case Rand:
+				return RandInstruction.parseInstruction(str);
+				
+			case Seq:
+				return SeqInstruction.parseInstruction(str);
+				
+			case Reblock:
+				return ReblockInstruction.parseInstruction(str);
+			
+			case Append:
+				return AppendInstruction.parseInstruction(str);
+				
+			case Reorg:
+				return ReorgInstruction.parseInstruction(str);
+				
+			case Replicate:
+				return ReplicateInstruction.parseInstruction(str);
+			
+			case Unary: {
+				String opcode = InstructionUtils.getOpCode(str);
+				String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				if( parts.length==4 && (opcode.equalsIgnoreCase("log") || opcode.equalsIgnoreCase("log_nz")) )
+					return ScalarInstruction.parseInstruction(str);
+				else //default case
+					return UnaryInstruction.parseInstruction(str);
 			}
-		}
-		case AggregateBinary:
-			return (MRInstruction) AggregateBinaryInstruction.parseInstruction(str);
+			case MMTSJ:
+				return MMTSJMRInstruction.parseInstruction(str);
 			
-		case AggregateUnary:
-			return (MRInstruction) AggregateUnaryInstruction.parseInstruction(str);
+			case PMMJ:
+				return PMMJMRInstruction.parseInstruction(str);
 			
-		case Ternary: 
-			return (MRInstruction) TernaryInstruction.parseInstruction(str);
-		
-		case Quaternary: 
-			return (MRInstruction) QuaternaryInstruction.parseInstruction(str);
+			case MapMultChain:
+				return MapMultChainInstruction.parseInstruction(str);
 			
-		case Rand:
-			return (MRInstruction) RandInstruction.parseInstruction(str);
+			case BinUaggChain:
+				return BinUaggChainInstruction.parseInstruction(str);
 			
-		case Seq:
-			return (MRInstruction) SeqInstruction.parseInstruction(str);
+			case UaggOuterChain:
+				return UaggOuterChainInstruction.parseInstruction(str);
+				
+			case CombineTernary:
+				return CombineTernaryInstruction.parseInstruction(str);
+				
+			case CombineBinary:
+				return CombineBinaryInstruction.parseInstruction(str);
+				
+			case CombineUnary:
+				return CombineUnaryInstruction.parseInstruction(str);
+				
+			case PickByCount:
+				return PickByCountInstruction.parseInstruction(str);
+				
+			case CM_N_COV:
+				return CM_N_COVInstruction.parseInstruction(str);
+		
+			case GroupedAggregate:
+				return GroupedAggregateInstruction.parseInstruction(str);
 			
-		case Reblock:
-			return (MRInstruction) ReblockInstruction.parseInstruction(str);
-		
-		case Append:
-			return (MRInstruction) AppendInstruction.parseInstruction(str);
+			case MapGroupedAggregate:
+				return GroupedAggregateMInstruction.parseInstruction(str);
 			
-		case Reorg:
-			return (MRInstruction) ReorgInstruction.parseInstruction(str);
+			case RangeReIndex:
+				return RangeBasedReIndexInstruction.parseInstruction(str);
 			
-		case Replicate:
-			return (MRInstruction) ReplicateInstruction.parseInstruction(str);
-		
-		case Unary: {
-			String opcode = InstructionUtils.getOpCode(str);
-			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-			if( parts.length==4 && (opcode.equalsIgnoreCase("log") || opcode.equalsIgnoreCase("log_nz")) )
-				return (MRInstruction) ScalarInstruction.parseInstruction(str);
-			else //default case
-				return (MRInstruction) UnaryInstruction.parseInstruction(str);
-		}
-		case MMTSJ:
-			return (MRInstruction) MMTSJMRInstruction.parseInstruction(str);
-		
-		case PMMJ:
-			return (MRInstruction) PMMJMRInstruction.parseInstruction(str);
-		
-		case MapMultChain:
-			return (MRInstruction) MapMultChainInstruction.parseInstruction(str);
-		
-		case BinUaggChain:
-			return (MRInstruction) BinUaggChainInstruction.parseInstruction(str);
-		
-		case UaggOuterChain:
-			return (MRInstruction) UaggOuterChainInstruction.parseInstruction(str);
+			case ZeroOut:
+				return ZeroOutInstruction.parseInstruction(str);
 			
-		case CombineTernary:
-			return (MRInstruction) CombineTernaryInstruction.parseInstruction(str);
+			case MatrixReshape:
+				return MatrixReshapeMRInstruction.parseInstruction(str);	
 			
-		case CombineBinary:
-			return (MRInstruction) CombineBinaryInstruction.parseInstruction(str);
+			case Sort: //workaround for dummy MR sort instruction
+				return SortMR.parseSortInstruction(str);
 			
-		case CombineUnary:
-			return (MRInstruction) CombineUnaryInstruction.parseInstruction(str);
+			case CSVReblock:
+				return CSVReblockInstruction.parseInstruction(str);
+				
+			case CSVWrite:
+				return CSVWriteInstruction.parseInstruction(str);
+				
+			case ParameterizedBuiltin:
+				return ParameterizedBuiltinMRInstruction.parseInstruction(str);
 			
-		case PickByCount:
-			return (MRInstruction) PickByCountInstruction.parseInstruction(str);
+			case RemoveEmpty:
+				return RemoveEmptyMRInstruction.parseInstruction(str);
+				
+			case Partition:
+				return DataPartitionMRInstruction.parseInstruction(str);
+				
+			case CumsumAggregate:
+				return CumulativeAggregateInstruction.parseInstruction(str);
+				
+			case CumsumSplit:
+				return CumulativeSplitInstruction.parseInstruction(str);
 			
-		case CM_N_COV:
-			return (MRInstruction) CM_N_COVInstruction.parseInstruction(str);
-	
-		case GroupedAggregate:
-			return (MRInstruction) GroupedAggregateInstruction.parseInstruction(str);
-		
-		case MapGroupedAggregate:
-			return (MRInstruction) GroupedAggregateMInstruction.parseInstruction(str);
-		
-		case RangeReIndex:
-			return (MRInstruction) RangeBasedReIndexInstruction.parseInstruction(str);
-		
-		case ZeroOut:
-			return (MRInstruction) ZeroOutInstruction.parseInstruction(str);
-		
-		case MatrixReshape:
-			return (MRInstruction) MatrixReshapeMRInstruction.parseInstruction(str);	
-		
-		case Sort: //workaround for dummy MR sort instruction
-			return SortMR.parseSortInstruction(str);
-		
-		case CSVReblock:
-			return (MRInstruction)CSVReblockInstruction.parseInstruction(str);
+			case CumsumOffset:
+				return CumulativeOffsetInstruction.parseInstruction(str);
 			
-		case CSVWrite:
-			return (MRInstruction)CSVWriteInstruction.parseInstruction(str);
+			case INVALID:
 			
-		case ParameterizedBuiltin:
-			return (MRInstruction)ParameterizedBuiltinMRInstruction.parseInstruction(str);
-		
-		case RemoveEmpty:
-			return (MRInstruction)RemoveEmptyMRInstruction.parseInstruction(str);
-			
-		case Partition:
-			return (MRInstruction)DataPartitionMRInstruction.parseInstruction(str);
-			
-		case CumsumAggregate:
-			return (MRInstruction)CumulativeAggregateInstruction.parseInstruction(str);
-			
-		case CumsumSplit:
-			return (MRInstruction)CumulativeSplitInstruction.parseInstruction(str);
-		
-		case CumsumOffset:
-			return (MRInstruction)CumulativeOffsetInstruction.parseInstruction(str);
-		
-		case INVALID:
-		
-		default: 
-			throw new DMLRuntimeException("Invalid MR Instruction Type: " + mrtype );
+			default: 
+				throw new DMLRuntimeException("Invalid MR Instruction Type: " + mrtype );
 		}
 	}
 	
@@ -451,25 +456,6 @@ public class MRInstructionParser extends InstructionParser
 		}
 		
 		return mrinst;
-	}
-	
-	// TODO: figure out if we need all the functions below 
-	
-	//unary operation contains scalar, transform, reorg, aggregate unary
-	public static UnaryInstruction[] parseUnaryInstructions(String str) throws DMLUnsupportedOperationException, DMLRuntimeException 
-	{
-		UnaryInstruction[] inst=null;
-		if(str!=null && !str.isEmpty())
-		{
-			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
-			inst = new UnaryInstruction[strlist.length];
-			
-			for(int i=0; i < strlist.length; i++)
-			{
-				inst[i] = (UnaryInstruction) UnaryInstruction.parseInstruction( strlist[i] );
-			}
-		}
-		return inst;
 	}
 	
 	public static AggregateInstruction[] parseAggregateInstructions(String str) throws DMLUnsupportedOperationException, DMLRuntimeException 
@@ -621,5 +607,4 @@ public class MRInstructionParser extends InstructionParser
 		}
 		return inst;
 	}
-	
 }

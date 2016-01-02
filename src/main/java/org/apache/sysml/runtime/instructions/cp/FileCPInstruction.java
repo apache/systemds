@@ -26,7 +26,6 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.RemoveFile;
 import org.apache.sysml.runtime.functionobjects.RenameFile;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
@@ -67,7 +66,7 @@ public class FileCPInstruction extends CPInstruction
 			throw new DMLUnsupportedOperationException("Invalid function: " + str);
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static FileCPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		String opcode = InstructionUtils.getOpCode(str);

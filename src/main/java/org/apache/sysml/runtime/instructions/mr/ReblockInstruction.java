@@ -43,7 +43,7 @@ public class ReblockInstruction extends UnaryMRInstructionBase
 		instString = istr;
 	}
 	
-	public static Instruction parseInstruction(String str) 
+	public static ReblockInstruction parseInstruction(String str) 
 	{
 		Operator op = null;
 	

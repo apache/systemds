@@ -26,70 +26,59 @@
 #
 
 # defaults
-cmdLine_laplace = ifdef($laplace, 1)
-cmdLine_fmt = ifdef($fmt, "text")
+laplaceCorrection = ifdef($laplace, 1)
+fmt = ifdef($fmt, "text")
 
 # reading input args
 D = read($X)
-min_feature_val = min(D)
-if(min_feature_val < 0)
-	stop("Stopping due to invalid argument: Multinomial naive Bayes is meant for count-based feature values, minimum value in X is negative")
+C = read($Y)
 numRows = nrow(D)
+numFeatures = ncol(D)
+minFeatureVal = min(D)
+numClasses = max(C)
+minLabelVal = min(C)
+
+# sanity checks of data and arguments
+if(minFeatureVal < 0)
+	stop("Stopping due to invalid argument: Multinomial naive Bayes is meant for count-based feature values, minimum value in X is negative")
 if(numRows < 2)
 	stop("Stopping due to invalid inputs: Not possible to learn a classifier without at least 2 rows")
-
-C = read($Y)
-if(min(C) < 1)
+if(minLabelVal < 1)
 	stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
-numClasses = max(C)
 if(numClasses == 1)
 	stop("Stopping due to invalid argument: Maximum label value is 1, need more than one class to learn a multi-class classifier")	
-mod1 = C %% 1
-mod1_should_be_nrow = sum(abs(ppred(mod1, 0, "==")))
-if(mod1_should_be_nrow != numRows)
+if(sum(abs(C%%1 == 0)) != numRows)
 	stop("Stopping due to invalid argument: Please ensure that Y contains (positive) integral labels")
-	
-laplace_correction = cmdLine_laplace
-if(laplace_correction < 0)
+if(laplaceCorrection < 0)
 	stop("Stopping due to invalid argument: Laplacian correction (laplace) must be non-negative")
 
-numFeatures = ncol(D)
-
 # Compute conditionals
-
 # Compute the feature counts for each class
 classFeatureCounts = aggregate(target=D, groups=C, fn="sum", ngroups=as.integer(numClasses))
 
 # Compute the total feature count for each class 
 # and add the number of features to this sum
 # for subsequent regularization (Laplace's rule)
-classSums = rowSums(classFeatureCounts) + numFeatures*laplace_correction
+classSums = rowSums(classFeatureCounts) + numFeatures*laplaceCorrection
 
 # Compute class conditional probabilities
-#ones = matrix(1, rows=1, cols=numFeatures)
-#repClassSums = classSums %*% ones
-#class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums
-class_conditionals = (classFeatureCounts + laplace_correction) / classSums
+classConditionals = (classFeatureCounts + laplaceCorrection) / classSums
 
 # Compute class priors
-class_counts = aggregate(target=C, groups=C, fn="count", ngroups=as.integer(numClasses))
-class_prior = class_counts / numRows;
+classCounts = aggregate(target=C, groups=C, fn="count", ngroups=as.integer(numClasses))
+classPrior = classCounts / numRows;
 
 # Compute accuracy on training set
-ones = matrix(1, rows=numRows, cols=1)
-D_w_ones = cbind(D, ones)
-model = cbind(class_conditionals, class_prior)
-log_probs = D_w_ones %*% t(log(model))
-pred = rowIndexMax(log_probs)
-acc = sum(ppred(pred, C, "==")) / numRows * 100
+logProbs = D %*% t(log(classConditionals)) + t(log(classPrior));
+acc = sum(rowIndexMax(logProbs) == C) / numRows * 100
 
 acc_str = "Training Accuracy (%): " + acc
 print(acc_str)
 write(acc_str, $accuracy)
 
-extra_model_params = as.matrix(numFeatures)
-class_prior = t(append(t(class_prior), extra_model_params))
+extraModelParams = as.matrix(numFeatures)
+classPrior = rbind(classPrior, extraModelParams)
 
 # write out the model
-write(class_prior, $prior, format=cmdLine_fmt);
-write(class_conditionals, $conditionals, format=cmdLine_fmt);
+write(classPrior, $prior, format=fmt);
+write(classConditionals, $conditionals, format=fmt);

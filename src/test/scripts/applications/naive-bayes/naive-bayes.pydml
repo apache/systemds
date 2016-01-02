@@ -33,44 +33,39 @@ fmt = ifdef($fmt, "text")
 numClasses = $classes
 D = load($X)
 C = load($Y)
-laplace_correction = ifdef($laplace, 1)
+laplaceCorrection = ifdef($laplace, 1)
 
 numRows = nrow(D)
 numFeatures = ncol(D)
 
 # Compute conditionals
-
 # Compute the feature counts for each class
 classFeatureCounts = aggregate(target=D, groups=C, fn="sum", ngroups=numClasses);
 
 # Compute the total feature count for each class 
 # and add the number of features to this sum
 # for subsequent regularization (Laplace's rule)
-classSums = rowSums(classFeatureCounts) + numFeatures*laplace_correction
+classSums = rowSums(classFeatureCounts) + numFeatures*laplaceCorrection
 
 # Compute class conditional probabilities
-ones = full(1, rows=1, cols=numFeatures)
-repClassSums = dot(classSums, ones)
-class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums
+classConditionals = (classFeatureCounts + laplaceCorrection) / classSums
 
 # Compute class priors
-class_counts = aggregate(target=C, groups=C, fn="count", ngroups=numClasses)
-class_prior = class_counts / numRows
+classCounts = aggregate(target=C, groups=C, fn="count", ngroups=numClasses)
+classPrior = classCounts / numRows
 
 # Compute accuracy on training set
-ones = full(1, rows=numRows, cols=1)
-D_w_ones = cbind(D, ones)
-model = cbind(class_conditionals, class_prior)
-log_model = log(model)
-transpose_log_model = log_model.transpose()
-log_probs = dot(D_w_ones, transpose_log_model)
-pred = rowIndexMax(log_probs)
-acc = sum(ppred(pred, C, "==")) / numRows * 100
+lmodel1 = log(classConditionals)
+lmodel2 = log(classPrior)
+tlmodel1 = lmodel1.transpose()
+tlmodel2 = lmodel2.transpose()
+logProbs = dot(D, tlmodel1) + tlmodel2
+acc = sum(rowIndexMax(logProbs) == C) / numRows * 100
 
 acc_str = "Training Accuracy (%): " + acc
 print(acc_str)
 save(acc_str, $accuracy)
 
 # write out the model
-save(class_prior, $prior, format=fmt)
-save(class_conditionals, $conditionals, format=fmt)
+save(classPrior, $prior, format=fmt)
+save(classConditionals, $conditionals, format=fmt)

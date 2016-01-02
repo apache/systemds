@@ -19,21 +19,16 @@
 #
 #-------------------------------------------------------------
 
-# Implements multinomial naive Bayes classifier with Laplace correction
-#
-# Example Usage:
-# hadoop jar SystemML.jar -f naive-bayes.pydml -python -nvargs X=<Data> Y=<labels> classes=<Num Classes> laplace=<Laplace Correction> prior=<Model file1> conditionals=<Model file2> accuracy=<accuracy file> fmt="text"
-#
+args <- commandArgs(TRUE)
 
-# defaults
-# $laplace = 1
-fmt = ifdef($fmt, "text")
+library("Matrix")
+
+D = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
+C = as.matrix(readMM(paste(args[1], "Y.mtx", sep="")))
 
 # reading input args
-numClasses = $classes
-D = load($X)
-C = load($Y)
-laplace_correction = ifdef($laplace, 1)
+numClasses = as.integer(args[2]);
+laplace_correction = as.double(args[3]);
 
 numRows = nrow(D)
 numFeatures = ncol(D)
@@ -41,7 +36,11 @@ numFeatures = ncol(D)
 # Compute conditionals
 
 # Compute the feature counts for each class
-classFeatureCounts = aggregate(target=D, groups=C, fn="sum", ngroups=numClasses);
+classFeatureCounts = matrix(0, numClasses, numFeatures)
+for (i in 1:numFeatures) {
+  Col = D[,i]
+  classFeatureCounts[,i] = aggregate(as.vector(Col), by=list(as.vector(C)), FUN=sum)[,2];
+}
 
 # Compute the total feature count for each class 
 # and add the number of features to this sum
@@ -49,28 +48,24 @@ classFeatureCounts = aggregate(target=D, groups=C, fn="sum", ngroups=numClasses)
 classSums = rowSums(classFeatureCounts) + numFeatures*laplace_correction
 
 # Compute class conditional probabilities
-ones = full(1, rows=1, cols=numFeatures)
-repClassSums = dot(classSums, ones)
-class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums
+ones = matrix(1, 1, numFeatures)
+repClassSums = classSums %*% ones;
+class_conditionals = (classFeatureCounts + laplace_correction) / repClassSums;
 
 # Compute class priors
-class_counts = aggregate(target=C, groups=C, fn="count", ngroups=numClasses)
-class_prior = class_counts / numRows
+class_counts = aggregate(as.vector(C), by=list(as.vector(C)), FUN=length)[,2]
+class_prior = class_counts / numRows;
 
 # Compute accuracy on training set
-ones = full(1, rows=numRows, cols=1)
+ones = matrix(1, numRows, 1)
 D_w_ones = cbind(D, ones)
 model = cbind(class_conditionals, class_prior)
-log_model = log(model)
-transpose_log_model = log_model.transpose()
-log_probs = dot(D_w_ones, transpose_log_model)
-pred = rowIndexMax(log_probs)
-acc = sum(ppred(pred, C, "==")) / numRows * 100
+log_probs = D_w_ones %*% t(log(model))
+pred = max.col(log_probs,ties.method="last");
+acc = sum(pred == C) / numRows * 100
 
-acc_str = "Training Accuracy (%): " + acc
-print(acc_str)
-save(acc_str, $accuracy)
+print(paste("Training Accuracy (%): ", acc, sep=""))
 
 # write out the model
-save(class_prior, $prior, format=fmt)
-save(class_conditionals, $conditionals, format=fmt)
+writeMM(as(class_prior, "CsparseMatrix"), paste(args[4], "prior", sep=""));
+writeMM(as(class_conditionals, "CsparseMatrix"), paste(args[4], "conditionals", sep=""));

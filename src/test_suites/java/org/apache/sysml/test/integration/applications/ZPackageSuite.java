@@ -43,6 +43,7 @@ import org.junit.runners.Suite;
   org.apache.sysml.test.integration.applications.dml.MDABivariateStatsDMLTest.class,
   org.apache.sysml.test.integration.applications.dml.MultiClassSVMDMLTest.class,
   org.apache.sysml.test.integration.applications.dml.NaiveBayesDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.NaiveBayesParforDMLTest.class,
   org.apache.sysml.test.integration.applications.dml.PageRankDMLTest.class,
   org.apache.sysml.test.integration.applications.dml.WelchTDMLTest.class,
 
@@ -61,6 +62,7 @@ import org.junit.runners.Suite;
   org.apache.sysml.test.integration.applications.pydml.MDABivariateStatsPyDMLTest.class,
   org.apache.sysml.test.integration.applications.pydml.MultiClassSVMPyDMLTest.class,
   org.apache.sysml.test.integration.applications.pydml.NaiveBayesPyDMLTest.class,
+  org.apache.sysml.test.integration.applications.pydml.NaiveBayesParforPyDMLTest.class,
   org.apache.sysml.test.integration.applications.pydml.PageRankPyDMLTest.class,
   org.apache.sysml.test.integration.applications.pydml.WelchTPyDMLTest.class
   

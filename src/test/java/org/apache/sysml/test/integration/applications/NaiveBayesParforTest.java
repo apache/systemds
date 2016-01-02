@@ -31,16 +31,16 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 
-public abstract class NaiveBayesTest  extends AutomatedTestBase{
+public abstract class NaiveBayesParforTest  extends AutomatedTestBase{
 	
-	protected final static String TEST_DIR = "applications/naive-bayes/";
+	protected final static String TEST_DIR = "applications/naive-bayes-parfor/";
 	protected final static String TEST_NAME = "naive-bayes";
-	protected String TEST_CLASS_DIR = TEST_DIR + NaiveBayesTest.class.getSimpleName() + "/";
+	protected String TEST_CLASS_DIR = TEST_DIR + NaiveBayesParforTest.class.getSimpleName() + "/";
 
 	protected int numRecords, numFeatures, numClasses;
     protected double sparsity;
     
-    public NaiveBayesTest(int rows, int cols, int nc, double sp) {
+    public NaiveBayesParforTest(int rows, int cols, int nc, double sp) {
 		numRecords = rows;
 		numFeatures = cols;
 		numClasses = nc;

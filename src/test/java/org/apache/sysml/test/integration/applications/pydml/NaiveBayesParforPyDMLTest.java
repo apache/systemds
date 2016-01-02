@@ -17,39 +17,24 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.aggregate;
+package org.apache.sysml.test.integration.applications.pydml;
 
+import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.runners.Parameterized;
+import org.apache.sysml.test.integration.applications.NaiveBayesParforTest;
 
-/** Group together the tests in this package into a single suite so that the Maven build
- *  won't run two of them at once. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	AggregateInfTest.class,
-	ColSumTest.class,
-	LengthTest.class,
-	MaxTest.class,
-	MinTest.class,
-	NColTest.class,
-	NRowTest.class,
-	ProdTest.class,
-	RowSumTest.class,
-	SumTest.class,
-	SumSqTest.class,
-	RowSumsSqTest.class,
-	ColSumsSqTest.class,
-	TraceTest.class,
-  
-	FullAggregateTest.class,
-	FullColAggregateTest.class,
-	FullGroupedAggregateTest.class,
-	FullGroupedAggregateMatrixTest.class,
-	FullRowAggregateTest.class
-})
+@RunWith(value = Parameterized.class)
+public class NaiveBayesParforPyDMLTest extends NaiveBayesParforTest {
 
+	public NaiveBayesParforPyDMLTest(int rows, int cols, int nc, double sp) {
+		super(rows, cols, nc, sp);
+		TEST_CLASS_DIR = TEST_DIR + NaiveBayesParforPyDMLTest.class.getSimpleName() + "/";
+	}
 
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
+	@Test
+	public void testNaiveBayesPyDml() {
+		testNaiveBayes(ScriptType.PYDML);
+	}
 
 }

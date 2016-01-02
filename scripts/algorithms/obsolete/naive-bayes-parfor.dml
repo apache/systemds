@@ -58,7 +58,11 @@ numFeatures = ncol(D)
 # Compute conditionals
 
 # Compute the feature counts for each class
-classFeatureCounts = aggregate(target=D, groups=C, fn="sum", ngroups=as.integer(numClasses))
+classFeatureCounts = matrix(0, rows=numClasses, cols=numFeatures)
+parfor (i in 1:numFeatures) {
+  Col = D[,i]
+  classFeatureCounts[,i] = aggregate(target=Col, groups=C, fn="sum", ngroups=as.integer(numClasses))
+}
 
 # Compute the total feature count for each class 
 # and add the number of features to this sum
@@ -77,8 +81,8 @@ class_prior = class_counts / numRows;
 
 # Compute accuracy on training set
 ones = matrix(1, rows=numRows, cols=1)
-D_w_ones = cbind(D, ones)
-model = cbind(class_conditionals, class_prior)
+D_w_ones = append(D, ones)
+model = append(class_conditionals, class_prior)
 log_probs = D_w_ones %*% t(log(model))
 pred = rowIndexMax(log_probs)
 acc = sum(ppred(pred, C, "==")) / numRows * 100
@@ -87,7 +91,8 @@ acc_str = "Training Accuracy (%): " + acc
 print(acc_str)
 write(acc_str, $accuracy)
 
-extra_model_params = as.matrix(numFeatures)
+extra_model_params = matrix(0, rows=1, cols=1)
+extra_model_params[1, 1] = numFeatures
 class_prior = t(append(t(class_prior), extra_model_params))
 
 # write out the model

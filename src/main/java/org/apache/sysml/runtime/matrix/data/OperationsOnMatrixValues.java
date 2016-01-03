@@ -350,4 +350,45 @@ public class OperationsOnMatrixValues
 		//execute actual slice operation
 		in.getValue().sliceOperations(outlist, tmpRange, rowCut, colCut, brlen, bclen, boundaryRlen, boundaryClen);
 	}
+	
+	/**
+	 * 
+	 * @param target
+	 * @param groups
+	 * @param brlen
+	 * @param bclen
+	 * @param outlist
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	public static void performMapGroupedAggregate( Operator op, IndexedMatrixValue inTarget, MatrixBlock groups, int ngroups, int brlen, int bclen, ArrayList<IndexedMatrixValue> outlist ) throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		MatrixIndexes ix = inTarget.getIndexes();
+		MatrixBlock target = (MatrixBlock)inTarget.getValue();
+		
+		//execute grouped aggregate operations
+		MatrixBlock out = groups.groupedAggOperations(target, null, new MatrixBlock(), ngroups, op);
+		
+		if( out.getNumRows()<=brlen && out.getNumColumns()<=bclen )
+		{
+			//single output block
+			outlist.add( new IndexedMatrixValue(new MatrixIndexes(1,ix.getColumnIndex()), out) );	
+		}
+		else
+		{
+			//multiple output blocks (by op def, single column block )				
+			for(int blockRow = 0; blockRow < (int)Math.ceil(out.getNumRows()/(double)brlen); blockRow++)
+			{
+				int maxRow = (blockRow*brlen + brlen < out.getNumRows()) ? brlen : out.getNumRows() - blockRow*brlen;			
+				int row_offset = blockRow*brlen;
+
+				//copy submatrix to block
+				MatrixBlock tmp = out.sliceOperations( row_offset, row_offset+maxRow-1, 
+						             0, out.getNumColumns()-1, new MatrixBlock() );
+				
+				//append block to result cache
+				outlist.add(new IndexedMatrixValue(new MatrixIndexes(blockRow+1,ix.getColumnIndex()), tmp));			
+			}
+		}
+	}
 }

@@ -28,7 +28,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDSortUtils;
@@ -59,7 +58,7 @@ public class QuantileSortSPInstruction extends UnarySPInstruction
 		_sptype = SPINSTRUCTION_TYPE.QSort;
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static QuantileSortSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = null;

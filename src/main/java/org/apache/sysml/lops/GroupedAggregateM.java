@@ -68,13 +68,25 @@ public class GroupedAggregateM extends Lop
 		addInput(inputParameterLops.get(Statement.GAGG_GROUPS));
 		inputParameterLops.get(Statement.GAGG_GROUPS).addOutput(this);
 		
-		//setup MR parameters
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		lps.addCompatibility(JobType.GMR);
-		lps.addCompatibility(JobType.DATAGEN);
-		lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		if( et == ExecType.MR )
+		{
+			//setup MR parameters
+			boolean breaksAlignment = true;
+			boolean aligner = false;
+			boolean definesMRJob = false;
+			lps.addCompatibility(JobType.GMR);
+			lps.addCompatibility(JobType.DATAGEN);
+			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
+		}
+		else //SPARK
+		{
+			//setup Spark parameters 
+			boolean breaksAlignment = false;
+			boolean aligner = false;
+			boolean definesMRJob = false;
+			lps.addCompatibility(JobType.INVALID);
+			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
 	}
 
 	@Override
@@ -84,6 +96,15 @@ public class GroupedAggregateM extends Lop
 	
 	@Override
 	public String getInstructions(int input1, int input2, int output) 
+	{
+		return getInstructions(
+			String.valueOf(input1),
+			String.valueOf(input2),
+			String.valueOf(output) );
+	}
+	
+	@Override
+	public String getInstructions(String input1, String input2, String output) 
 	{
 		StringBuilder sb = new StringBuilder();
 		

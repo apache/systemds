@@ -34,7 +34,6 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.functions.ComputeBinaryBlockNnzFunction;
@@ -72,7 +71,7 @@ public class WriteSPInstruction extends SPInstruction
 		formatProperties = null; // set in case of csv
 	}
 
-	public static Instruction parseInstruction ( String str ) 
+	public static WriteSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );

@@ -201,11 +201,12 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "sel+", SPINSTRUCTION_TYPE.BuiltinUnary);
 		
 		// Parameterized Builtin Functions
-		String2SPInstructionType.put( "groupedagg"	, SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "rmempty"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "replace"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "rexpand"	    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
-		String2SPInstructionType.put( "transform"   , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "groupedagg"	 , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "mapgroupedagg", SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "rmempty"	     , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "replace"	     , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "rexpand"	     , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "transform"    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		
 		String2SPInstructionType.put( "mappend", SPINSTRUCTION_TYPE.MAppend);
 		String2SPInstructionType.put( "rappend", SPINSTRUCTION_TYPE.RAppend);
@@ -338,10 +339,10 @@ public class SPInstructionParser extends InstructionParser
 				if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
 					if ( parts.length == 3 ) {
 						// B=log(A), y=log(x)
-						return (SPInstruction) BuiltinUnarySPInstruction.parseInstruction(str);
+						return BuiltinUnarySPInstruction.parseInstruction(str);
 					} else if ( parts.length == 4 ) {
 						// B=log(A,10), y=log(x,10)
-						return (SPInstruction) BuiltinBinarySPInstruction.parseInstruction(str);
+						return BuiltinBinarySPInstruction.parseInstruction(str);
 					}
 				}
 				else {
@@ -349,40 +350,40 @@ public class SPInstructionParser extends InstructionParser
 				}
 				
 			case BuiltinBinary:
-				return (SPInstruction) BuiltinBinarySPInstruction.parseInstruction(str);
+				return BuiltinBinarySPInstruction.parseInstruction(str);
 				
 			case BuiltinUnary:
-				return (SPInstruction) BuiltinUnarySPInstruction.parseInstruction(str);
+				return BuiltinUnarySPInstruction.parseInstruction(str);
 				
 			case ParameterizedBuiltin:
-				return (SPInstruction) ParameterizedBuiltinSPInstruction.parseInstruction(str);
+				return ParameterizedBuiltinSPInstruction.parseInstruction(str);
 				
 			case MatrixReshape:
-				return (SPInstruction) MatrixReshapeSPInstruction.parseInstruction(str);
+				return MatrixReshapeSPInstruction.parseInstruction(str);
 				
 			case MAppend:
-				return (SPInstruction) AppendMSPInstruction.parseInstruction(str);
+				return AppendMSPInstruction.parseInstruction(str);
 			
 			case GAppend:
-				return (SPInstruction) AppendGSPInstruction.parseInstruction(str);
+				return AppendGSPInstruction.parseInstruction(str);
 			
 			case GAlignedAppend:
-				return (SPInstruction) AppendGAlignedSPInstruction.parseInstruction(str);
+				return AppendGAlignedSPInstruction.parseInstruction(str);
 				
 			case RAppend:
-				return (SPInstruction) AppendRSPInstruction.parseInstruction(str);
+				return AppendRSPInstruction.parseInstruction(str);
 				
 			case Rand:
-				return (SPInstruction) RandSPInstruction.parseInstruction(str);
+				return RandSPInstruction.parseInstruction(str);
 				
 			case QSort: 
-				return (SPInstruction) QuantileSortSPInstruction.parseInstruction(str);
+				return QuantileSortSPInstruction.parseInstruction(str);
 			
 			case QPick: 
-				return (SPInstruction) QuantilePickSPInstruction.parseInstruction(str);
+				return QuantilePickSPInstruction.parseInstruction(str);
 			
 			case Write:
-				return (SPInstruction) WriteSPInstruction.parseInstruction(str);
+				return WriteSPInstruction.parseInstruction(str);
 				
 			case CumsumAggregate:
 				return CumulativeAggregateSPInstruction.parseInstruction(str);

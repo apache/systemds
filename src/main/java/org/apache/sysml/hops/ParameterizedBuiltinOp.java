@@ -375,7 +375,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		}
 		else //CP/Spark 
 		{
-			GroupedAggregate grp_agg = null;
+			Lop grp_agg = null;
 			
 			if( et == ExecType.CP) 
 			{
@@ -391,9 +391,23 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 						OptimizerUtils.checkSparkBroadcastMemoryBudget( groups.getDim1(), groups.getDim2(), 
 								groups.getRowsInBlock(), groups.getColsInBlock(), groups.getNnz()) );
 				
-				grp_agg = new GroupedAggregate(inputlops, getDataType(), getValueType(), et, broadcastGroups);						
-				grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, -1, -1, -1);
-				setRequiresReblock( true );
+				if( broadcastGroups //mapgroupedagg
+					&& getInput().get(_paramIndexMap.get(Statement.GAGG_FN)) instanceof LiteralOp
+					&& ((LiteralOp)getInput().get(_paramIndexMap.get(Statement.GAGG_FN))).getStringValue().equals("sum")
+					&& inputlops.get(Statement.GAGG_NUM_GROUPS) != null ) 
+				{
+					Hop target = getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET));
+					
+					grp_agg = new GroupedAggregateM(inputlops, getDataType(), getValueType(), true, ExecType.SPARK);						
+					grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, target.getRowsInBlock(), target.getColsInBlock(), -1);
+					//no reblock required (directly output binary block)
+				}
+				else //groupedagg (w/ or w/o broadcast)
+				{
+					grp_agg = new GroupedAggregate(inputlops, getDataType(), getValueType(), et, broadcastGroups);						
+					grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, -1, -1, -1);
+					setRequiresReblock( true );	
+				}
 			}
 			
 			setLineNumbers(grp_agg);

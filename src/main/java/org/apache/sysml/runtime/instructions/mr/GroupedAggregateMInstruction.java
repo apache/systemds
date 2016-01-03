@@ -30,6 +30,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
+import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -90,37 +91,19 @@ public class GroupedAggregateMInstruction extends BinaryMRInstructionBase implem
 			
 			//get all inputs
 			MatrixIndexes ix = in1.getIndexes();
-			MatrixBlock target = (MatrixBlock)in1.getValue();
 			MatrixBlock groups = (MatrixBlock)dcInput.getDataBlock((int)ix.getRowIndex(), 1).getValue();
-			
-			//execute grouped aggregate operations
-			MatrixBlock out = groups.groupedAggOperations(target, null, new MatrixBlock(), _ngroups, getOperator());
 			
 			//output blocked result
 			int brlen = dcInput.getNumRowsPerBlock();
 			int bclen = dcInput.getNumColsPerBlock();
 			
-			if( out.getNumRows()<=brlen && out.getNumColumns()<=bclen )
-			{
-				//single output block
-				cachedValues.add(output, new IndexedMatrixValue(new MatrixIndexes(1,ix.getColumnIndex()), out));	
-			}
-			else
-			{
-				//multiple output blocks (by op def, single column block )				
-				for(int blockRow = 0; blockRow < (int)Math.ceil(out.getNumRows()/(double)brlen); blockRow++)
-				{
-					int maxRow = (blockRow*brlen + brlen < out.getNumRows()) ? brlen : out.getNumRows() - blockRow*brlen;			
-					int row_offset = blockRow*brlen;
-
-					//copy submatrix to block
-					MatrixBlock tmp = out.sliceOperations( row_offset, row_offset+maxRow-1, 
-							             0, out.getNumColumns()-1, new MatrixBlock() );
-					
-					//append block to result cache
-					cachedValues.add(output, new IndexedMatrixValue(
-							new MatrixIndexes(blockRow+1,ix.getColumnIndex()), tmp));			
-				}
+			//execute map grouped aggregate operations
+			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+			OperationsOnMatrixValues.performMapGroupedAggregate(getOperator(), in1, groups, _ngroups, brlen, bclen, outlist);
+			
+			//output all result blocks
+			for( IndexedMatrixValue out : outlist ) {
+				cachedValues.add(output, out);
 			}			
 		}	
 	}

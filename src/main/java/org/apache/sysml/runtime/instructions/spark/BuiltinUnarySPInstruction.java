@@ -25,7 +25,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
@@ -47,7 +46,7 @@ public abstract class BuiltinUnarySPInstruction extends UnarySPInstruction
 	 * @throws DMLRuntimeException
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public static Instruction parseInstruction ( String str ) 
+	public static BuiltinUnarySPInstruction parseInstruction ( String str ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

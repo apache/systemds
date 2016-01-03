@@ -45,7 +45,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
@@ -197,7 +196,7 @@ public class RandSPInstruction extends UnarySPInstruction
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static Instruction parseInstruction(String str) 
+	public static RandSPInstruction parseInstruction(String str) 
 		throws DMLRuntimeException 
 	{
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );

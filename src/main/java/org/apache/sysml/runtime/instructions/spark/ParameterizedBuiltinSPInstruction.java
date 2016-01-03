@@ -29,6 +29,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
 
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysml.parser.Statement;
@@ -37,9 +38,9 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
-import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
@@ -57,6 +58,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
@@ -68,10 +70,10 @@ import org.apache.sysml.runtime.transform.DataTransform;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction 
-{
-	
-	private int arity;
+{	
 	protected HashMap<String,String> params;
+	
+	//removeEmpty-specific attributes
 	private boolean _bRmEmptyBC = false;
 	
 	public ParameterizedBuiltinSPInstruction(Operator op, HashMap<String,String> paramsMap, CPOperand out, String opcode, String istr, boolean bRmEmptyBC )
@@ -82,10 +84,6 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		_bRmEmptyBC = bRmEmptyBC;
 	}
 
-	public int getArity() {
-		return arity;
-	}
-	
 	public HashMap<String,String> getParams() { return params; }
 	
 	public static HashMap<String, String> constructParameterMap(String[] params) {
@@ -102,70 +100,89 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		return paramMap;
 	}
 	
-	public static Instruction parseInstruction ( String str ) 
+	public static ParameterizedBuiltinSPInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		// first part is always the opcode
 		String opcode = parts[0];
-		// last part is always the output
-		CPOperand out = new CPOperand( parts[parts.length-1] ); 
 
-		// process remaining parts and build a hash map
-		HashMap<String,String> paramsMap = constructParameterMap(parts);
+		if( opcode.equalsIgnoreCase("mapgroupedagg") )
+		{
+			CPOperand target = new CPOperand( parts[1] ); 
+			CPOperand groups = new CPOperand( parts[2] );
+			CPOperand out = new CPOperand( parts[3] );
 
-		// determine the appropriate value function
-		ValueFunction func = null;
-		if ( opcode.equalsIgnoreCase("groupedagg")) {
-			// check for mandatory arguments
-			String fnStr = paramsMap.get("fn");
-			if ( fnStr == null ) 
-				throw new DMLRuntimeException("Function parameter is missing in groupedAggregate.");
-			if ( fnStr.equalsIgnoreCase("centralmoment") ) {
-				if ( paramsMap.get("order") == null )
-					throw new DMLRuntimeException("Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
-			}
+			HashMap<String,String> paramsMap = new HashMap<String, String>();
+			paramsMap.put(Statement.GAGG_TARGET, target.getName());
+			paramsMap.put(Statement.GAGG_GROUPS, groups.getName());
+			paramsMap.put(Statement.GAGG_NUM_GROUPS, parts[4]);
 			
-			Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
-			return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
+			Operator op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			
+			return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);		
 		}
-		else if(   opcode.equalsIgnoreCase("rmempty") ) 
+		else
 		{
-			boolean bRmEmptyBC = false; 
-			if(parts.length > 6)
-				bRmEmptyBC = (parts[5].compareTo("true") == 0)?true:false;
-								
-			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, bRmEmptyBC);
-		}
-		else if(   opcode.equalsIgnoreCase("rexpand") ) 
-		{
-			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
-		}
-		else if(   opcode.equalsIgnoreCase("replace") ) 
-		{
-			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
-		}
-		else if ( opcode.equalsIgnoreCase("transform") ) 
-		{
-			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-			String specFile = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC);
-			String applyTxPath = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
-			if ( specFile != null && applyTxPath != null)
-				throw new DMLRuntimeException(
-						"Invalid parameters to transform(). Only one of '"
-								+ ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC
-								+ "' or '"
-								+ ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD
-								+ "' can be specified.");
-			return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
-		}
-		else {
-			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
-		}
+			// last part is always the output
+			CPOperand out = new CPOperand( parts[parts.length-1] ); 
 
+			// process remaining parts and build a hash map
+			HashMap<String,String> paramsMap = constructParameterMap(parts);
+
+			// determine the appropriate value function
+			ValueFunction func = null;
+					
+			if ( opcode.equalsIgnoreCase("groupedagg")) {
+				// check for mandatory arguments
+				String fnStr = paramsMap.get("fn");
+				if ( fnStr == null ) 
+					throw new DMLRuntimeException("Function parameter is missing in groupedAggregate.");
+				if ( fnStr.equalsIgnoreCase("centralmoment") ) {
+					if ( paramsMap.get("order") == null )
+						throw new DMLRuntimeException("Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
+				}
+				
+				Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
+				return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
+			}
+			else if(   opcode.equalsIgnoreCase("rmempty") ) 
+			{
+				boolean bRmEmptyBC = false; 
+				if(parts.length > 6)
+					bRmEmptyBC = (parts[5].compareTo("true") == 0)?true:false;
+									
+				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
+				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, bRmEmptyBC);
+			}
+			else if(   opcode.equalsIgnoreCase("rexpand") ) 
+			{
+				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
+				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
+			}
+			else if(   opcode.equalsIgnoreCase("replace") ) 
+			{
+				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
+				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
+			}
+			else if ( opcode.equalsIgnoreCase("transform") ) 
+			{
+				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
+				String specFile = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC);
+				String applyTxPath = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
+				if ( specFile != null && applyTxPath != null)
+					throw new DMLRuntimeException(
+							"Invalid parameters to transform(). Only one of '"
+									+ ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC
+									+ "' or '"
+									+ ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD
+									+ "' can be specified.");
+				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
+			}
+			else {
+				throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
+			}
+		}
 	}
 	
 
@@ -177,7 +194,31 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		String opcode = getOpcode();
 		
 		//opcode guaranteed to be a valid opcode (see parsing)
-		if ( opcode.equalsIgnoreCase("groupedagg") ) 
+		if( opcode.equalsIgnoreCase("mapgroupedagg") )
+		{		
+			//get input rdd handle
+			String targetVar = params.get(Statement.GAGG_TARGET);
+			String groupsVar = params.get(Statement.GAGG_GROUPS);			
+			JavaPairRDD<MatrixIndexes,MatrixBlock> target = sec.getBinaryBlockRDDHandleForVariable(targetVar);
+			PartitionedBroadcastMatrix groups = sec.getBroadcastForVariable(groupsVar);
+			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( targetVar );
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			CPOperand ngrpOp = new CPOperand(params.get(Statement.GAGG_NUM_GROUPS));
+			int ngroups = (int)sec.getScalarInput(ngrpOp.getName(), ngrpOp.getValueType(), ngrpOp.isLiteral()).getLongValue();
+			
+			//execute map grouped aggregate
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
+					target.flatMapToPair(new RDDMapGroupedAggFunction(groups, _optr, 
+							ngroups, mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
+			out = RDDAggregateUtils.sumByKeyStable(out);
+			
+			//updated characteristics and handle outputs
+			mcOut.set(ngroups, mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1);
+			sec.setRDDHandleForVariable(output.getName(), out);			
+			sec.addLineageRDD( output.getName(), targetVar );
+			sec.addLineageBroadcast( output.getName(), groupsVar );	
+		}
+		else if ( opcode.equalsIgnoreCase("groupedagg") ) 
 		{	
 			boolean broadcastGroups = Boolean.parseBoolean(params.get("broadcast"));
 			
@@ -516,6 +557,44 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			
 			//prepare and return outputs
 			return SparkUtils.fromIndexedMatrixBlock(out);
+		}
+	}
+	
+	public static class RDDMapGroupedAggFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,MatrixIndexes,MatrixBlock> 
+	{
+		private static final long serialVersionUID = 6795402640178679851L;
+		
+		private PartitionedBroadcastMatrix _pbm = null;
+		private Operator _op = null;
+		private int _ngroups = -1;
+		private int _brlen = -1;
+		private int _bclen = -1;
+		
+		public RDDMapGroupedAggFunction(PartitionedBroadcastMatrix pbm, Operator op, int ngroups, int brlen, int bclen) 
+		{
+			_pbm = pbm;
+			_op = op;
+			_ngroups = ngroups;
+			_brlen = brlen;
+			_bclen = bclen;
+		}
+
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
+			throws Exception 
+		{
+			//get all inputs
+			MatrixIndexes ix = arg0._1();
+			MatrixBlock target = arg0._2();		
+			MatrixBlock groups = _pbm.getMatrixBlock((int)ix.getRowIndex(), 1);
+			
+			//execute map grouped aggregate operations
+			IndexedMatrixValue in1 = SparkUtils.toIndexedMatrixBlock(ix, target);
+			ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+			OperationsOnMatrixValues.performMapGroupedAggregate(_op, in1, groups, _ngroups, _brlen, _bclen, outlist);
+			
+			//output all result blocks
+			return SparkUtils.fromIndexedMatrixBlock(outlist);
 		}
 	}
 	

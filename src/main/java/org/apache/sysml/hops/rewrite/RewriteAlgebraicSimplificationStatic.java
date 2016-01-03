@@ -138,7 +138,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
  			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
-			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
+			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor
+ 			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
  			hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));  
 			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
@@ -731,6 +732,38 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(hi, input);
 				
 				LOG.debug("Applied simplifyUnaryAggReorgOperation");
+			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop simplifyUnaryPPredOperation( Hop parent, Hop hi, int pos )
+	{
+		if( hi instanceof UnaryOp && hi.getDataType()==DataType.MATRIX  //unaryop
+			&& hi.getInput().get(0) instanceof BinaryOp                 //binaryop - ppred
+			&& ((BinaryOp)hi.getInput().get(0)).isPPredOperation() )
+		{
+			UnaryOp uop = (UnaryOp) hi; //valid unary op
+			if( uop.getOp()==OpOp1.ABS || uop.getOp()==OpOp1.CEIL
+				|| uop.getOp()==OpOp1.FLOOR || uop.getOp()==OpOp1.ROUND )
+			{
+				//clear link unary-binary
+				Hop input = uop.getInput().get(0);
+				HopRewriteUtils.removeAllChildReferences(hi);
+				
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.addChildReference(parent, input, pos);
+				hi = input;
+				
+				LOG.debug("Applied simplifyUnaryPPredOperation.");	
 			}
 		}
 		

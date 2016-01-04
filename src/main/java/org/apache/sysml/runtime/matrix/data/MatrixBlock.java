@@ -3085,14 +3085,11 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			double[] c = ret.denseBlock;
 			
 			//unary op, incl nnz maintenance
-			for( int i=0, ix=0; i<m; i++ ) {
-				for( int j=0; j<n; j++, ix++ ) {
-					c[ix] = op.fn.execute(a[ix]);
-					if( c[ix] != 0 ) 
-						ret.nonZeros++;
-				}
-			}
-			
+			int len = m*n;
+			for( int i=0; i<len; i++ ) {
+				c[i] = op.fn.execute(a[i]);
+				ret.nonZeros += (c[i] != 0) ? 1 : 0;
+			}			
 		}
 	}
 	

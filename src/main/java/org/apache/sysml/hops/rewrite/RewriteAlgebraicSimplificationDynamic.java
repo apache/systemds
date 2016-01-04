@@ -63,7 +63,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private static final Log LOG = LogFactory.getLog(RewriteAlgebraicSimplificationDynamic.class.getName());
 	
 	//valid aggregation operation types for rowOp to Op conversions (not all operations apply)
-	private static AggOp[] LOOKUP_VALID_ROW_COL_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN};
+	private static AggOp[] LOOKUP_VALID_ROW_COL_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN, AggOp.VAR};
 	
 	//valid aggregation operation types for empty (sparse-safe) operations (not all operations apply)
 	//AggOp.MEAN currently not due to missing count/corrections
@@ -151,6 +151,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if output == input dims
 			hi = removeUnnecessaryOuterProduct(hop, hi, i);   //e.g., X*(Y%*%matrix(1,...) -> X*Y, if Y col vector
 			hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,cols=1)) -> rand(rows=1,cols=10), if one dim=1
+			hi = simplifyColVariance(hop, hi, i);             //e.g., colVars(X) -> matrix(0, 1, col(X)), if row vector
+			hi = simplifyRowVariance(hop, hi, i);             //e.g., rowVars(X) -> matrix(0, row(X), 1), if column vector
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
 			hi = simplifyRowwiseAggregate(hop, hi, i);        //e.g., rowsums(X) -> sum(X) or X, if row/col vector
 			hi = simplifyColSumsMVMult(hop, hi, i);           //e.g., colSums(X*Y) -> t(Y) %*% X, if Y col vector
@@ -177,7 +179,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size
 			hi = simplifySumMatrixMult(hop, hi, i);           //e.g., sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)), if not dot product / wsloss
 			hi = simplifyEmptyBinaryOperation(hop, hi, i);    //e.g., X*Y -> matrix(0,nrow(X), ncol(X)) / X+Y->X / X-Y -> X
-			hi = simplifyScalarMVBinaryOperation(hi); 		  //e.g., X*y -> X*as.scalar(y), if y is a 1-1 matrix
+			hi = simplifyScalarMVBinaryOperation(hi);         //e.g., X*y -> X*as.scalar(y), if y is a 1-1 matrix
 			hi = simplifyNnzComputation(hop, hi, i);          //e.g., sum(ppred(X,0,"!=")) -> literal(nnz(X)), if nnz known
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -543,7 +545,75 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		
 		return hi;
 	}
-	
+
+	/**
+	 * The variance of a single value is zero, thus COLVAR of a row
+	 * vector is equal to a row of zeros.
+	 */
+	private Hop simplifyColVariance(Hop parent, Hop hi, int pos)
+		throws HopsException
+	{
+		// if COLVAR
+		if (hi instanceof AggUnaryOp && ((AggUnaryOp) hi).getOp() == AggOp.VAR
+				&& ((AggUnaryOp) hi).getDirection() == Direction.Col) {
+			AggUnaryOp varHop = (AggUnaryOp) hi;
+			Hop input = hi.getInput().get(0);
+
+			// if input is a row vector, column variances will each be zero
+			if (input.getDim1() == 1) {
+				// perform rewrite from COLVAR(X) to row vector of zeros
+				Hop emptyRow = HopRewriteUtils.createDataGenOp(varHop, input, 0); // nrow(varHop)=1
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.addChildReference(parent, emptyRow, pos);
+				parent.refreshSizeInformation();
+
+				// cleanup
+				if (hi.getParent().isEmpty())
+					HopRewriteUtils.removeAllChildReferences(hi);
+				if(input.getParent().isEmpty())
+					HopRewriteUtils.removeAllChildReferences(input);
+
+				// replace current HOP with new empty row HOP
+				hi = emptyRow;
+			}
+		}
+		return hi;
+	}
+
+	/**
+	 * The variance of a single value is zero, thus ROWVAR of a column
+	 * vector is equal to a column of zeros.
+	 */
+	private Hop simplifyRowVariance(Hop parent, Hop hi, int pos)
+			throws HopsException
+	{
+		// if ROWVAR
+		if (hi instanceof AggUnaryOp && ((AggUnaryOp) hi).getOp() == AggOp.VAR
+				&& ((AggUnaryOp) hi).getDirection() == Direction.Row) {
+			AggUnaryOp varHop = (AggUnaryOp) hi;
+			Hop input = hi.getInput().get(0);
+
+			// if input is a column vector, row variances will each be zero
+			if (input.getDim2() == 1) {
+				// perform rewrite from ROWVAR(X) to column vector of zeros
+				Hop emptyCol = HopRewriteUtils.createDataGenOp(input, varHop, 0); // ncol(varHop)=1
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.addChildReference(parent, emptyCol, pos);
+				parent.refreshSizeInformation();
+
+				// cleanup
+				if (hi.getParent().isEmpty())
+					HopRewriteUtils.removeAllChildReferences(hi);
+				if(input.getParent().isEmpty())
+					HopRewriteUtils.removeAllChildReferences(input);
+
+				// replace current HOP with new empty column HOP
+				hi = emptyCol;
+			}
+		}
+		return hi;
+	}
+
 	/**
 	 * 
 	 * @param parent
@@ -605,7 +675,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		
 		return hi;
 	}
-	
+
 	/**
 	 * 
 	 * @param parent

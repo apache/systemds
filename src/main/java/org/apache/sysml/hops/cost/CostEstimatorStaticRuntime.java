@@ -922,7 +922,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					return 6 * d1m * d1n; //2*1(*) + 4 (k+)
 					
 				case AggregateUnary: //opcodes: uak+, uark+, uack+, uasqk+, uarsqk+, uacsqk+,
-				                     //         uamean, uarmean, uacmean,
+				                     //         uamean, uarmean, uacmean, uavar, uarvar, uacvar,
 				                     //         uamax, uarmax, uarimax, uacmax, uamin, uarmin, uacmin,
 				                     //         ua+, uar+, uac+, ua*, uatrace, uaktrace,
 				                     //         nrow, ncol, length, cm
@@ -952,11 +952,13 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				    }
 				    else if( optype.equals("uak+") || optype.equals("uark+") || optype.equals("uack+"))
 				    	return 4 * d1m * d1n; //1*k+
-					else if( optype.equals("uasqk+") || optype.equals("uarsqk+") || optype.equals("uacsqk+"))
+				    else if( optype.equals("uasqk+") || optype.equals("uarsqk+") || optype.equals("uacsqk+"))
 						return 5 * d1m * d1n; // +1 for multiplication to square term
 				    else if( optype.equals("uamean") || optype.equals("uarmean") || optype.equals("uacmean"))
 						return 7 * d1m * d1n; //1*k+
-				    else if(   optype.equals("uamax") || optype.equals("uarmax") || optype.equals("uacmax") 
+				    else if( optype.equals("uavar") || optype.equals("uarvar") || optype.equals("uacvar"))
+						return 14 * d1m * d1n;
+				    else if(   optype.equals("uamax") || optype.equals("uarmax") || optype.equals("uacmax")
 				    		|| optype.equals("uamin") || optype.equals("uarmin") || optype.equals("uacmin")
 				    		|| optype.equals("uarimax") || optype.equals("ua*") )
 				    	return d1m * d1n;
@@ -1195,6 +1197,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						return 4 * numMap * d1m * d1n * d1s;
 					else if( optype.equals("asqk+") )
 						return 5 * numMap * d1m * d1n * d1s; // +1 for multiplication to square term
+					else if( optype.equals("avar") )
+						return 14 * numMap * d1m * d1n * d1s;
 					else
 						return numMap * d1m * d1n * d1s;
 					

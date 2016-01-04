@@ -47,6 +47,7 @@ import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
+import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -411,7 +412,13 @@ public class LibMatrixAgg
 		//note: current support only for column vectors
 		if(op instanceof CMOperator) {
 			CMOperator cmOp = (CMOperator) op;
-			groupedAggregateCM(groups, target, weights, result, numGroups, cmOp, 0, target.clen);
+			if( cmOp.getAggOpType()==AggregateOperationTypes.COUNT && weights==null && target.clen==1 ) {
+				//special case for vector counts
+				groupedAggregateVecCount(groups, result, numGroups);
+			}
+			else { //general case
+				groupedAggregateCM(groups, target, weights, result, numGroups, cmOp, 0, target.clen);
+			}
 		}
 		//Aggregate operator for sum (via kahan sum)
 		//note: support for row/column vectors and dense/sparse
@@ -437,7 +444,7 @@ public class LibMatrixAgg
 	{
 		//fall back to sequential version if necessary
 		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
-		if( k <= 1 || (long)target.rlen*target.clen < PAR_NUMCELL_THRESHOLD || rowVector ) {
+		if( k <= 1 || (long)target.rlen*target.clen < PAR_NUMCELL_THRESHOLD || rowVector || target.clen==1 ) {
 			groupedAggregate(groups, target, weights, result, numGroups, op);
 			return;
 		}
@@ -906,6 +913,38 @@ public class LibMatrixAgg
 				// result is 0-indexed, so is cmValues
 				result.appendValue(i, j, cmValues[i][j+cl].getRequiredResult(cmOp));
 			}			
+	}
+	
+	/**
+	 * 
+	 * @param groups
+	 * @param result
+	 * @param numGroups
+	 * @throws DMLRuntimeException
+	 */
+	private static void groupedAggregateVecCount( MatrixBlock groups, MatrixBlock result, int numGroups ) 
+		throws DMLRuntimeException
+	{
+		//note: groups are always dense because 0 invalid
+		if( groups.isInSparseFormat() || groups.isEmptyBlock(false) )
+			throw new DMLRuntimeException("Unsupported sparse input for aggregate-count on group vector.");
+		
+		double[] a = groups.denseBlock;
+		int[] tmp = new int[numGroups];
+		int m = groups.rlen;
+		
+		//compute counts
+		for( int i = 0; i < m; i++ ) {
+			int g = (int) a[i];		
+			if ( g > numGroups )
+				continue;
+			tmp[g-1]++;
+		}
+		
+		//copy counts into result
+		for( int i=0; i<numGroups; i++ ) {
+			result.appendValue(i, 0, tmp[i]);
+		}
 	}
 	
 	/**

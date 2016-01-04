@@ -2426,6 +2426,7 @@ public class DMLTranslator
 		case ASIN:
 		case ACOS:
 		case ATAN:
+		case SIGN:	
 		case SQRT:
 		case EXP:
 		case ROUND:
@@ -2457,6 +2458,9 @@ public class DMLTranslator
 				break;
 			case ATAN:
 				mathOp1 = Hop.OpOp1.ATAN;
+				break;
+			case SIGN:
+				mathOp1 = Hop.OpOp1.SIGN;
 				break;
 			case SQRT:
 				mathOp1 = Hop.OpOp1.SQRT;

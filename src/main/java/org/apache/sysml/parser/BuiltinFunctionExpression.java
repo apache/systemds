@@ -1031,6 +1031,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ACOS:
 		case ASIN:
 		case ATAN:
+		case SIGN:	
 		case SQRT:
 		case ABS:
 		case LOG:
@@ -1053,6 +1054,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ACOS:
 		case ASIN:
 		case ATAN:
+		case SIGN:	
 		case SQRT:
 		case ABS:
 		case EXP:
@@ -1299,6 +1301,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			 bifop = Expression.BuiltinFunctionOp.NCOL;
 		else if (functionName.equals("nrow"))
 			bifop = Expression.BuiltinFunctionOp.NROW;
+		else if (functionName.equals("sign"))
+			 bifop = Expression.BuiltinFunctionOp.SIGN;
 		else if (functionName.equals("sqrt"))
 			 bifop = Expression.BuiltinFunctionOp.SQRT;
 		else if (functionName.equals("sum"))

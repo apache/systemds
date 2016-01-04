@@ -133,7 +133,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = removeUnnecessaryBinaryOperation(hop, hi, i);   //e.g., X*1 -> X (dep: should come after rm unnecessary vectorize)
 			hi = fuseDatagenAndBinaryOperation(hop, hi, i);      //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
 			hi = fuseDatagenAndMinusOperation(hop, hi, i);       //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
- 			hi = simplifyBinaryToUnaryOperation(hi);             //e.g., X*X -> X^2 (pow2)
+ 			hi = simplifyBinaryToUnaryOperation(hop, hi, i);     //e.g., X*X -> X^2 (pow2), X+X -> X*2, (X>0)-(X<0) -> sign(X)
  			hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
@@ -470,15 +470,19 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 * handle simplification of binary operations
 	 * (relies on previous common subexpression elimination)
 	 * 
-	 * X+X -> X*2 or X*X -> X^2
+	 * X+X -> X*2, X*X -> X^2, (X>0)-(X<0) -> sign(X)
+	 * @throws HopsException 
 	 */
-	private Hop simplifyBinaryToUnaryOperation( Hop hi )
+	private Hop simplifyBinaryToUnaryOperation( Hop parent, Hop hi, int pos ) 
+		throws HopsException
 	{
 		if( hi instanceof BinaryOp )
 		{
 			BinaryOp bop = (BinaryOp)hi;
 			Hop left = hi.getInput().get(0);
 			Hop right = hi.getInput().get(1);
+			
+			//patterns: X+X -> X*2, X*X -> X^2,
 			if( left == right && left.getDataType()==DataType.MATRIX )
 			{
 				//note: we simplify this to unary operations first (less mem and better MR plan),
@@ -503,6 +507,30 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					
 					LOG.debug("Applied simplifyBinaryToUnaryOperation2");
 				}
+			}
+			//patterns: (X>0)-(X<0) -> sign(X)
+			else if( bop.getOp() == OpOp2.MINUS 
+				&& left instanceof BinaryOp && right instanceof BinaryOp
+				&& ((BinaryOp)left).getOp()==OpOp2.GREATER && ((BinaryOp)right).getOp()==OpOp2.LESS 
+				&& left.getInput().get(0) == right.getInput().get(0) 
+				&& left.getInput().get(1) instanceof LiteralOp
+				&& HopRewriteUtils.getDoubleValue((LiteralOp)left.getInput().get(1))==0
+				&& right.getInput().get(1) instanceof LiteralOp
+				&& HopRewriteUtils.getDoubleValue((LiteralOp)right.getInput().get(1))==0 )
+			{
+				UnaryOp uop = HopRewriteUtils.createUnary(left.getInput().get(0), OpOp1.SIGN);
+				
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.removeAllChildReferences(hi);
+				HopRewriteUtils.addChildReference(parent, uop, pos);
+				if( left.getParent().isEmpty() )
+					HopRewriteUtils.removeAllChildReferences(left);
+				if( right.getParent().isEmpty() )
+					HopRewriteUtils.removeAllChildReferences(right);
+				
+				hi = uop;
+				
+				LOG.debug("Applied simplifyBinaryToUnaryOperation3");
 			}
 		}
 		
@@ -752,7 +780,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			&& ((BinaryOp)hi.getInput().get(0)).isPPredOperation() )
 		{
 			UnaryOp uop = (UnaryOp) hi; //valid unary op
-			if( uop.getOp()==OpOp1.ABS || uop.getOp()==OpOp1.CEIL
+			if( uop.getOp()==OpOp1.ABS || uop.getOp()==OpOp1.SIGN
+				|| uop.getOp()==OpOp1.SELP || uop.getOp()==OpOp1.CEIL
 				|| uop.getOp()==OpOp1.FLOOR || uop.getOp()==OpOp1.ROUND )
 			{
 				//clear link unary-binary

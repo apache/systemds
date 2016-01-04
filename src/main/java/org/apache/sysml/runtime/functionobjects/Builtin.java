@@ -50,7 +50,7 @@ public class Builtin extends ValueFunction
 
 	private static final long serialVersionUID = 3836744687789840574L;
 	
-	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
+	public enum BuiltinFunctionCode { INVALID, SIN, COS, TAN, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN, MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX, STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, SELP };
 	public BuiltinFunctionCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -72,6 +72,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinFunctionCode.put( "maxindex"    , BuiltinFunctionCode.MAXINDEX);
 		String2BuiltinFunctionCode.put( "minindex"    , BuiltinFunctionCode.MININDEX);
 		String2BuiltinFunctionCode.put( "abs"    , BuiltinFunctionCode.ABS);
+		String2BuiltinFunctionCode.put( "sign"   , BuiltinFunctionCode.SIGN);
 		String2BuiltinFunctionCode.put( "sqrt"   , BuiltinFunctionCode.SQRT);
 		String2BuiltinFunctionCode.put( "exp"    , BuiltinFunctionCode.EXP);
 		String2BuiltinFunctionCode.put( "plogp"  , BuiltinFunctionCode.PLOGP);
@@ -96,7 +97,7 @@ public class Builtin extends ValueFunction
 	// We should create one object for every builtin function that we support
 	private static Builtin sinObj = null, cosObj = null, tanObj = null, asinObj = null, acosObj = null, atanObj = null;
 	private static Builtin logObj = null, lognzObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
-	private static Builtin absObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
+	private static Builtin absObj = null, signObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
 	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null;
 	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null, selpObj = null;
@@ -185,6 +186,10 @@ public class Builtin extends ValueFunction
 			if ( absObj == null )
 				absObj = new Builtin(BuiltinFunctionCode.ABS);
 			return absObj;
+		case SIGN:
+			if ( signObj == null )
+				signObj = new Builtin(BuiltinFunctionCode.SIGN);
+			return signObj;
 		case SQRT:
 			if ( sqrtObj == null )
 				sqrtObj = new Builtin(BuiltinFunctionCode.SQRT);
@@ -285,6 +290,7 @@ public class Builtin extends ValueFunction
 		case ASIN:
 		case ACOS:
 		case ATAN:
+		case SIGN:	
 		case SQRT:
 		case EXP:
 		case PLOGP:
@@ -317,71 +323,58 @@ public class Builtin extends ValueFunction
 		}
 	}
 	
-	public double execute (double in) throws DMLRuntimeException {
+	public double execute (double in) 
+		throws DMLRuntimeException 
+	{
 		switch(bFunc) {
-		case SIN:    return FASTMATH ? FastMath.sin(in) : Math.sin(in);
-		case COS:    return FASTMATH ? FastMath.cos(in) : Math.cos(in);
-		case TAN:    return FASTMATH ? FastMath.tan(in) : Math.tan(in);
-		case ASIN:   return FASTMATH ? FastMath.asin(in) : Math.asin(in);
-		case ACOS:   return FASTMATH ? FastMath.acos(in) : Math.acos(in);
-		case ATAN:   return Math.atan(in); //faster in Math
-		case CEIL:   return FASTMATH ? FastMath.ceil(in) : Math.ceil(in);
-		case FLOOR:  return FASTMATH ? FastMath.floor(in) : Math.floor(in);
-		case LOG:
-			//if ( in <= 0 )
-			//	throw new DMLRuntimeException("Builtin.execute(): logarithm can only be computed for non-negative numbers (input = " + in + ").");
-			// for negative numbers, Math.log will return NaN
-			return FASTMATH ? FastMath.log(in) : Math.log(in);
-		case LOG_NZ:
-			return (in==0) ? 0 : FASTMATH ? FastMath.log(in) : Math.log(in);
-		
-		case ABS:
-			return Math.abs(in); //no need for FastMath
+			case SIN:    return FASTMATH ? FastMath.sin(in) : Math.sin(in);
+			case COS:    return FASTMATH ? FastMath.cos(in) : Math.cos(in);
+			case TAN:    return FASTMATH ? FastMath.tan(in) : Math.tan(in);
+			case ASIN:   return FASTMATH ? FastMath.asin(in) : Math.asin(in);
+			case ACOS:   return FASTMATH ? FastMath.acos(in) : Math.acos(in);
+			case ATAN:   return Math.atan(in); //faster in Math
+			case CEIL:   return FASTMATH ? FastMath.ceil(in) : Math.ceil(in);
+			case FLOOR:  return FASTMATH ? FastMath.floor(in) : Math.floor(in);
+			case LOG:    return FASTMATH ? FastMath.log(in) : Math.log(in);		
+			case LOG_NZ: return (in==0) ? 0 : FASTMATH ? FastMath.log(in) : Math.log(in);
+			case ABS:    return Math.abs(in); //no need for FastMath			
+			case SIGN:	 return FASTMATH ? FastMath.signum(in) : Math.signum(in);			
+			case SQRT:   return Math.sqrt(in); //faster in Math		
+			case EXP:    return FASTMATH ? FastMath.exp(in) : Math.exp(in);		
+			case ROUND: return Math.round(in); //no need for FastMath
 			
-		case SQRT:
-			//if ( in < 0 )
-			//	throw new DMLRuntimeException("Builtin.execute(): squareroot can only be computed for non-negative numbers (input = " + in + ").");
-			return Math.sqrt(in); //faster in Math
-		
-		case PLOGP:
-			if (in == 0.0)
-				return 0.0;
-			else if (in < 0)
-				return Double.NaN;
-			else
-				return (in * (FASTMATH ? FastMath.log(in) : Math.log(in)));
+			case PLOGP:
+				if (in == 0.0)
+					return 0.0;
+				else if (in < 0)
+					return Double.NaN;
+				else
+					return (in * (FASTMATH ? FastMath.log(in) : Math.log(in)));
 			
-		case EXP:
-			return FASTMATH ? FastMath.exp(in) : Math.exp(in);
-		
-		case ROUND:
-			return Math.round(in); //no need for FastMath
+			case SPROP:
+				//sample proportion: P*(1-P)
+				return in * (1 - in); 
+	
+			case SIGMOID:
+				//sigmoid: 1/(1+exp(-x))
+				return FASTMATH ? 1 / (1 + FastMath.exp(-in))  : 1 / (1 + Math.exp(-in));
 			
-		case SPROP:
-			//sample proportion: P*(1-P)
-			return in * (1 - in); 
-
-		case SIGMOID:
-			//sigmoid: 1/(1+exp(-x))
-			return FASTMATH ? 1 / (1 + FastMath.exp(-in))  : 1 / (1 + Math.exp(-in));
-		
-		case SELP:
-			//select positive: x*(x>0)
-			return (in > 0) ? in : 0;
-			
-		default:
-			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
+			case SELP:
+				//select positive: x*(x>0)
+				return (in > 0) ? in : 0;
+				
+			default:
+				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
 	}
 
 	public double execute (long in) throws DMLRuntimeException {
-		return this.execute((double)in);
+		return execute((double)in);
 	}
 
 	/*
 	 * Builtin functions with two inputs
-	 */
-	
+	 */	
 	public double execute (double in1, double in2) throws DMLRuntimeException {
 		switch(bFunc) {
 		
@@ -525,6 +518,4 @@ public class Builtin extends ValueFunction
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
 	}
-
-
 }

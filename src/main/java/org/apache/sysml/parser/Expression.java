@@ -94,6 +94,7 @@ public abstract class Expression
 		ROWSUM, 
 		SEQ,
 		SIN, 
+		SIGN,
 		SQRT,
 		SUM, 
 		TABLE,

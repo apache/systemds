@@ -191,6 +191,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "asin"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "acos"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "atan"  , SPINSTRUCTION_TYPE.BuiltinUnary);
+		String2SPInstructionType.put( "sign"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "sqrt"  , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "plogp" , SPINSTRUCTION_TYPE.BuiltinUnary);
 		String2SPInstructionType.put( "round" , SPINSTRUCTION_TYPE.BuiltinUnary);

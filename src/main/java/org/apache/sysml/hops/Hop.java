@@ -1024,7 +1024,7 @@ public abstract class Hop
 	}
 
 	public enum OpOp1 {
-		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, 
+		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SIGN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
 		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE,
 		//cumulative sums, products, extreme values
@@ -1231,6 +1231,7 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.ASIN, org.apache.sysml.lops.Unary.OperationTypes.ASIN);
 		HopsOpOp1LopsU.put(OpOp1.ACOS, org.apache.sysml.lops.Unary.OperationTypes.ACOS);
 		HopsOpOp1LopsU.put(OpOp1.ATAN, org.apache.sysml.lops.Unary.OperationTypes.ATAN);
+		HopsOpOp1LopsU.put(OpOp1.SIGN, org.apache.sysml.lops.Unary.OperationTypes.SIGN);
 		HopsOpOp1LopsU.put(OpOp1.SQRT, org.apache.sysml.lops.Unary.OperationTypes.SQRT);
 		HopsOpOp1LopsU.put(OpOp1.EXP, org.apache.sysml.lops.Unary.OperationTypes.EXP);
 		HopsOpOp1LopsU.put(OpOp1.LOG, org.apache.sysml.lops.Unary.OperationTypes.LOG);

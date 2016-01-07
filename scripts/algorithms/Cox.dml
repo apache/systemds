@@ -202,10 +202,8 @@ e_r = aggregate (target = RT, groups = RT, fn = "count");
 
 # computing initial loss function value o
 num_distinct = nrow (d_r); # no. of distinct timestamps
-I_rev = table (seq (1, num_distinct, 1), seq (num_distinct, 1, -1)); 
-I_rev_all = table (seq (1, N, 1), seq (N, 1, -1));
-e_r_rev_agg = cumsum (I_rev %*% e_r);
-d_r_rev = I_rev %*% d_r;
+e_r_rev_agg = cumsum (rev(e_r));
+d_r_rev = rev(d_r);
 o = sum (d_r_rev * log (e_r_rev_agg));
 o_init = o;
 if (ncol (X_orig) < 3) {
@@ -223,7 +221,7 @@ if (ncol (X_orig) < 3) {
 # part 1 g0_1
 g0_1 = - t (colSums (X * E)); # g_1
 # part 2 g0_2
-X_rev_agg = cumsum (I_rev_all %*% X);
+X_rev_agg = cumsum (rev(X));
 select = table (seq (1, num_distinct), e_r_rev_agg);
 X_agg = select %*% X_rev_agg;
 g0_2 = t (colSums ((X_agg * d_r_rev)/ e_r_rev_agg));
@@ -251,9 +249,9 @@ while (sum_g2 > exit_g2 & i < maxiter) {
 
 	exp_Xb = exp (X %*% b);
 	exp_Xb_agg = aggregate (target = exp_Xb, groups = RT, fn = "sum");
-	D_r_rev = cumsum (I_rev %*% exp_Xb_agg); # denominator
+	D_r_rev = cumsum (rev(exp_Xb_agg)); # denominator
 	X_exp_Xb = X * exp_Xb;
-	X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
+	X_exp_Xb_rev_agg = cumsum (rev(X_exp_Xb));
 	X_exp_Xb_rev_agg = select %*% X_exp_Xb_rev_agg;
 
     while (r2 > exit_r2 & (! trust_bound_reached) & j < maxinneriter) { 
@@ -261,15 +259,15 @@ while (sum_g2 > exit_g2 & i < maxiter) {
 		# computing Hessian times d (Hd)
 		# part 1 Hd_1
 		Xd = X %*% d;
-		X_Xd_exp_Xb = X * (Xd) * exp_Xb;
-		X_Xd_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_Xd_exp_Xb);
+		X_Xd_exp_Xb = X * (Xd * exp_Xb);
+		X_Xd_exp_Xb_rev_agg = cumsum (rev(X_Xd_exp_Xb));
 		X_Xd_exp_Xb_rev_agg = select %*% X_Xd_exp_Xb_rev_agg;
 		
 		Hd_1 = X_Xd_exp_Xb_rev_agg / D_r_rev;
 		# part 2 Hd_2
 		
 		Xd_exp_Xb = Xd * exp_Xb;
-		Xd_exp_Xb_rev_agg = cumsum (I_rev_all %*% Xd_exp_Xb);
+		Xd_exp_Xb_rev_agg = cumsum (rev(Xd_exp_Xb));
 		Xd_exp_Xb_rev_agg = select %*% Xd_exp_Xb_rev_agg;
 		
 		Hd_2_num = X_exp_Xb_rev_agg * Xd_exp_Xb_rev_agg; # numerator
@@ -292,7 +290,7 @@ while (sum_g2 > exit_g2 & i < maxiter) {
 	# part 2 so_2
 	exp_Xbsb = exp (X %*% (b + sb));
 	exp_Xbsb_agg = aggregate (target = exp_Xbsb, groups = RT, fn = "sum");
-	so_2 = sum (d_r_rev * log (cumsum (I_rev %*% exp_Xbsb_agg)));
+	so_2 = sum (d_r_rev * log (cumsum (rev(exp_Xbsb_agg))));
 	#
 	so = so_1 + so_2;
 	so = so - o; 
@@ -305,10 +303,10 @@ while (sum_g2 > exit_g2 & i < maxiter) {
 		exp_Xb = exp (X %*% b);
 		exp_Xb_agg = aggregate (target = exp_Xb, groups = RT, fn = "sum");
 		X_exp_Xb = X * exp_Xb;
-		X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
+		X_exp_Xb_rev_agg = cumsum (rev(X_exp_Xb));
 		X_exp_Xb_rev_agg = select %*% X_exp_Xb_rev_agg;
 		
-		D_r_rev = cumsum (I_rev %*% exp_Xb_agg); # denominator
+		D_r_rev = cumsum (rev(exp_Xb_agg)); # denominator
 		g_2 = t (colSums ((X_exp_Xb_rev_agg / D_r_rev) * d_r_rev));
 		g = g0_1 + g_2;
 		sum_g2 = sum (g ^ 2);
@@ -325,15 +323,15 @@ print ("COMPUTING HESSIAN...");
 H0 = matrix (0, rows = D, cols = D);
 H = matrix (0, rows = D, cols = D);
 
-X_exp_Xb_rev_2 = I_rev_all %*% X_exp_Xb;
-X_rev_2 = I_rev_all %*% X;
+X_exp_Xb_rev_2 = rev(X_exp_Xb);
+X_rev_2 = rev(X);
 
-X_exp_Xb_rev_agg = cumsum (I_rev_all %*% X_exp_Xb);
+X_exp_Xb_rev_agg = cumsum (rev(X_exp_Xb));
 X_exp_Xb_rev_agg = select %*% X_exp_Xb_rev_agg; 
 
 parfor (i in 1:D, check = 0) {
 	Xi = X[,i];
-	Xi_rev = I_rev_all %*% Xi;
+	Xi_rev = rev(Xi);
 
 	## ----------Start calculating H0--------------	
 	# part 1 H0_1
@@ -344,7 +342,7 @@ parfor (i in 1:D, check = 0) {
 
 	# part 2 H0_2
 	Xi_agg = aggregate (target = Xi, groups = RT, fn = "sum");
-	Xi_agg_rev_agg = cumsum (I_rev %*% Xi_agg);	
+	Xi_agg_rev_agg = cumsum (rev(Xi_agg));	
 	H0_2_num = X_agg[,i:D] * Xi_agg_rev_agg; # numerator
 	H0_2 = H0_2_num / (e_r_rev_agg ^ 2);
 
@@ -362,7 +360,7 @@ parfor (i in 1:D, check = 0) {
 	Xi_exp_Xb = exp_Xb * Xi;
 	Xi_exp_Xb_agg = aggregate (target = Xi_exp_Xb, groups = RT, fn = "sum"); 
 	
-	Xi_exp_Xb_agg_rev_agg = cumsum (I_rev %*% Xi_exp_Xb_agg);
+	Xi_exp_Xb_agg_rev_agg = cumsum (rev(Xi_exp_Xb_agg));
 	H_2_num = X_exp_Xb_rev_agg[,i:D] * Xi_exp_Xb_agg_rev_agg; # numerator
 	H_2 = H_2_num / (D_r_rev ^ 2);
 	H[i,i:D] = colSums ((H_1 - H_2) * d_r_rev);

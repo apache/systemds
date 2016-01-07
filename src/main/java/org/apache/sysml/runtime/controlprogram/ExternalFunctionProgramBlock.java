@@ -98,8 +98,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	{
 		super(prog, inputParams, outputParams);		
 		_baseDir = baseDir;
-		
-		//NOTE: no need to setup nimble queue for CP external functions
 	}
 	
 	public ExternalFunctionProgramBlock(Program prog,
@@ -610,10 +608,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * Method to execute an external function invocation instruction.
 	 * 
+	 * @param ec
 	 * @param inst
-	 * @param dQueue
-	 * @throws NimbleCheckedRuntimeException
-	 * @throws DMLRuntimeException 
+	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
 	public void executeInstruction(ExecutionContext ec, ExternalFunctionInvocationInstruction inst) 

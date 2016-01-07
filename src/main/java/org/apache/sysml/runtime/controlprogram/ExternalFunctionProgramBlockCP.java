@@ -110,18 +110,15 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	}
 	
 	/**
-	 * Executes the external function instruction without the use of NIMBLE tasks.
+	 * Executes the external function instruction.
 	 * 
-	 * @param inst
-	 * @throws DMLRuntimeException 
-	 * @throws NimbleCheckedRuntimeException
 	 */
 	@Override
 	public void executeInstruction(ExecutionContext ec, ExternalFunctionInvocationInstruction inst) 
 		throws DMLRuntimeException 
 	{
-		// After removal of nimble, we moved the code of ExternalFunctionProgramBlockCP to 
-		// ExternalFunctionProgramBlock and hence hence both types of external functions can
+		// After the udf framework rework, we moved the code of ExternalFunctionProgramBlockCP 
+		// to ExternalFunctionProgramBlock and hence hence both types of external functions can
 		// share the same code path here.
 		super.executeInstruction(ec, inst);
 	}

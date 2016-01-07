@@ -70,14 +70,6 @@ public class DMLConfig
 	public static final String CP_PARALLEL_MATRIXMULT = "cp.parallel.matrixmult";
 	public static final String CP_PARALLEL_TEXTIO   = "cp.parallel.textio";
 
-	//obsolete nimble configuration (removed 06/24/2015)
-	//public static final String NUM_MERGE_TASKS      = "NumMergeTasks";
-	//public static final String NUM_SOW_THREADS      = "NumberOfSowThreads";
-	//public static final String NUM_REAP_THREADS     = "NumberOfReapThreads";
-	//public static final String SOWER_WAIT_INTERVAL  = "SowerWaitInterval";
-	//public static final String REAPER_WAIT_INTERVAL = "ReaperWaitInterval";
-	//public static final String NIMBLE_SCRATCH       = "NimbleScratch";
-
 	//internal config
 	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS
 	public static String LOCAL_MR_MODE_STAGING_DIR = null;
@@ -101,12 +93,6 @@ public class DMLConfig
 		_defaultVals.put(YARN_APPMASTERMEM,    "2048" );
 		_defaultVals.put(YARN_MAPREDUCEMEM,    "-1" );
 		_defaultVals.put(YARN_APPQUEUE,    	   "default" );
-		//_defaultVals.put(NUM_MERGE_TASKS,      "4" );
-		//_defaultVals.put(NUM_SOW_THREADS,      "1" );
-		//_defaultVals.put(NUM_REAP_THREADS,     "1" );
-		//_defaultVals.put(SOWER_WAIT_INTERVAL,  "1000" );
-		//_defaultVals.put(REAPER_WAIT_INTERVAL, "1000" );
-		//_defaultVals.put(NIMBLE_SCRATCH,       "nimbleoutput" );	
 		_defaultVals.put(CP_PARALLEL_MATRIXMULT, "true" );
 		_defaultVals.put(CP_PARALLEL_TEXTIO,     "true" );
 	}
@@ -419,9 +405,7 @@ public class DMLConfig
 		String[] tmpConfig = new String[] { 
 				LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
 				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
-				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM,
-				//NUM_MERGE_TASKS, NUM_SOW_THREADS,NUM_REAP_THREADS,
-				//SOWER_WAIT_INTERVAL,REAPER_WAIT_INTERVAL,NIMBLE_SCRATCH 
+				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
 				CP_PARALLEL_MATRIXMULT, CP_PARALLEL_TEXTIO
 		}; 
 		

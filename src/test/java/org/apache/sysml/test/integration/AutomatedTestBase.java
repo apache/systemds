@@ -828,21 +828,7 @@ public abstract class AutomatedTestBase
 			String configTemplate = FileUtils.readFileToString(CONFIG_TEMPLATE_FILE,
 					"UTF-8");
 			
-			// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
-			// Nimble does not accept paths that use backslash as the separator character.
-			// Since some of the tests use Nimble, we use forward slash in the paths that
-			// we put into the config file.
-			String localTempForwardSlash = curLocalTempDir.getPath().replace(File.separator, "/");
-			String configContents = configTemplate.replace("<scratch>scratch_space</scratch>", 
-					String.format("<scratch>%s/scratch_space</scratch>", localTempForwardSlash));
-			configContents = configContents.replace("<localtmpdir>/tmp/systemml</localtmpdir>", 
-					String.format("<localtmpdir>%s/localtmp</localtmpdir>", localTempForwardSlash));
-			configContents = configContents.replace("<NimbleScratch>nimbleoutput</NimbleScratch>", 
-					String.format("<NimbleScratch>%s/nimbleoutput</NimbleScratch>",
-							localTempForwardSlash));
-			// *** END HACK ***
-			
-			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
+			FileUtils.write(getCurConfigFile(), configTemplate, "UTF-8");
 			
 			System.out.printf(
 					"This test case will use SystemML config file %s\n",

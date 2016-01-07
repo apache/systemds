@@ -178,9 +178,7 @@ public class CM extends ValueFunction
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, d/w);
 				double t1=cm1.w/w*d;
 				double lt1=t1*d;
-				_buff2.set(cm1.m2);
-				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
-				cm1.m2.set(_buff2);
+				cm1.m2=(KahanObject) _plus.execute(cm1.m2, lt1);
 				cm1.w=w;
 				break;
 			}

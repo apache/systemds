@@ -44,8 +44,8 @@ public class ColStdDevsTest extends AutomatedTestBase {
 
     private static final int rows = 1234;
     private static final int cols1 = 1;
-    private static final int cols2 = 567;
-    private static final double sparsity1 = 1;
+    private static final int cols2 = 1432;
+    private static final double sparsity1 = 0.7;
     private static final double sparsity2 = 0.2;
     private static final double eps = Math.pow(10, -10);
 
@@ -130,7 +130,7 @@ public class ColStdDevsTest extends AutomatedTestBase {
      * @param platform Selection between CP/Spark/MR platforms.
      */
     private void testColStdDevs(String testName, boolean sparse, boolean vector,
-                            ExecType platform) {
+                                ExecType platform) {
         // Configure settings for this test case
         RUNTIME_PLATFORM platformOld = rtplatform;
         switch (platform) {

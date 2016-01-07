@@ -43,12 +43,13 @@ public class VarianceTest extends AutomatedTestBase {
     private static final String OUTPUT_NAME = "variance";
 
     private static final int rows = 1234;
-    private static final int cols = 567;
-    private static final double sparsity1 = 1;
-    private static final double sparsity2 = 0.2;
+    private static final int cols = 1432;
+    private static final double sparsitySparse = 0.2;
+    private static final double sparsityDense = 0.7;
     private static final double eps = Math.pow(10, -10);
 
-    private enum VectorType {NONE, ROWVECTOR, COLUMNVECTOR}
+    private enum Sparsity {EMPTY, SPARSE, DENSE}
+    private enum DataType {MATRIX, ROWVECTOR, COLUMNVECTOR}
 
     @Override
     public void setUp() {
@@ -60,112 +61,161 @@ public class VarianceTest extends AutomatedTestBase {
     // Dense matrix
     @Test
     public void testVarianceDenseMatrixCP() {
-        testVariance(TEST_NAME, false, VectorType.NONE, ExecType.CP);
+        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.CP);
     }
 
     @Test
     public void testVarianceDenseMatrixSpark() {
-        testVariance(TEST_NAME, false, VectorType.NONE, ExecType.SPARK);
+        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.SPARK);
     }
 
     @Test
     public void testVarianceDenseMatrixMR() {
-        testVariance(TEST_NAME, false, VectorType.NONE, ExecType.MR);
+        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.MR);
     }
 
     // Dense vector
     //  - Row vector
     @Test
     public void testVarianceDenseRowVectorCP() {
-        testVariance(TEST_NAME, false, VectorType.ROWVECTOR, ExecType.CP);
+        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.CP);
     }
 
     @Test
     public void testVarianceDenseRowVectorSpark() {
-        testVariance(TEST_NAME, false, VectorType.ROWVECTOR, ExecType.SPARK);
+        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
     @Test
     public void testVarianceDenseRowVectorMR() {
-        testVariance(TEST_NAME, false, VectorType.ROWVECTOR, ExecType.MR);
+        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.MR);
     }
 
     //  - Column vector
     @Test
     public void testVarianceDenseColVectorCP() {
-        testVariance(TEST_NAME, false, VectorType.COLUMNVECTOR, ExecType.CP);
+        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.CP);
     }
 
     @Test
     public void testVarianceDenseColVectorSpark() {
-        testVariance(TEST_NAME, false, VectorType.COLUMNVECTOR, ExecType.SPARK);
+        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
     }
 
     @Test
     public void testVarianceDenseColVectorMR() {
-        testVariance(TEST_NAME, false, VectorType.COLUMNVECTOR, ExecType.MR);
+        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.MR);
     }
 
     // Sparse matrix
     @Test
     public void testVarianceSparseMatrixCP() {
-        testVariance(TEST_NAME, true, VectorType.NONE, ExecType.CP);
+        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.CP);
     }
 
     @Test
     public void testVarianceSparseMatrixSpark() {
-        testVariance(TEST_NAME, true, VectorType.NONE, ExecType.SPARK);
+        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.SPARK);
     }
 
     @Test
     public void testVarianceSparseMatrixMR() {
-        testVariance(TEST_NAME, true, VectorType.NONE, ExecType.MR);
+        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.MR);
     }
 
     // Sparse vector
     //  - Row vector
     @Test
     public void testVarianceSparseRowVectorCP() {
-        testVariance(TEST_NAME, true, VectorType.ROWVECTOR, ExecType.CP);
+        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.CP);
     }
 
     @Test
     public void testVarianceSparseRowVectorSpark() {
-        testVariance(TEST_NAME, true, VectorType.ROWVECTOR, ExecType.SPARK);
+        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
     @Test
     public void testVarianceSparseRowVectorMR() {
-        testVariance(TEST_NAME, true, VectorType.ROWVECTOR, ExecType.MR);
+        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.MR);
     }
 
     //  - Column vector
     @Test
     public void testVarianceSparseColVectorCP() {
-        testVariance(TEST_NAME, true, VectorType.COLUMNVECTOR, ExecType.CP);
+        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.CP);
     }
 
     @Test
     public void testVarianceSparseColVectorSpark() {
-        testVariance(TEST_NAME, true, VectorType.COLUMNVECTOR, ExecType.SPARK);
+        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
     }
 
     @Test
     public void testVarianceSparseColVectorMR() {
-        testVariance(TEST_NAME, true, VectorType.COLUMNVECTOR, ExecType.MR);
+        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.MR);
     }
-    
+
+    // Empty matrix
+    @Test
+    public void testVarianceEmptyMatrixCP() {
+        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.CP);
+    }
+
+    @Test
+    public void testVarianceEmptyMatrixSpark() {
+        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.SPARK);
+    }
+
+    @Test
+    public void testVarianceEmptyMatrixMR() {
+        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.MR);
+    }
+
+    // Empty vector
+    //  - Row vector
+    @Test
+    public void testVarianceEmptyRowVectorCP() {
+        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.CP);
+    }
+
+    @Test
+    public void testVarianceEmptyRowVectorSpark() {
+        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.SPARK);
+    }
+
+    @Test
+    public void testVarianceEmptyRowVectorMR() {
+        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.MR);
+    }
+
+    //  - Column vector
+    @Test
+    public void testVarianceEmptyColVectorCP() {
+        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.CP);
+    }
+
+    @Test
+    public void testVarianceEmptyColVectorSpark() {
+        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.SPARK);
+    }
+
+    @Test
+    public void testVarianceEmptyColVectorMR() {
+        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.MR);
+    }
+
     /**
      * Test the variance function, "var(X)", on
      * dense/sparse matrices/vectors on the CP/Spark/MR platforms.
      *
      * @param testName The name of this test case.
-     * @param sparse Whether or not the matrix/vector should be sparse.
-     * @param vectorType Selection between a matrix, a row vector, and
-     *                   a column vector.
+     * @param sparsity Selection between empty, sparse, and dense data.
+     * @param dataType Selection between a matrix, a row vector, and a
+     *                 column vector.
      * @param platform Selection between CP/Spark/MR platforms.
      */
-    private void testVariance(String testName, boolean sparse, VectorType vectorType,
+    private void testVariance(String testName, Sparsity sparsity, DataType dataType,
                               ExecType platform) {
         // Configure settings for this test case
         RUNTIME_PLATFORM platformOld = rtplatform;
@@ -196,10 +246,23 @@ public class VarianceTest extends AutomatedTestBase {
             rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
             // Generate data
-            double sparsity = sparse ? sparsity2 : sparsity1;
+            // - sparsity
+            double sparsityVal;
+            switch (sparsity) {
+                case EMPTY:
+                    sparsityVal = 0;
+                    break;
+                case SPARSE:
+                    sparsityVal = sparsitySparse;
+                    break;
+                case DENSE:
+                default:
+                    sparsityVal = sparsityDense;
+            }
+            // - size
             int r;
             int c;
-            switch (vectorType) {
+            switch (dataType) {
                 case ROWVECTOR:
                     r = 1;
                     c = cols;
@@ -208,12 +271,13 @@ public class VarianceTest extends AutomatedTestBase {
                     r = rows;
                     c = 1;
                     break;
-                case NONE:
+                case MATRIX:
                 default:
                     r = rows;
                     c = cols;
             }
-            double[][] X = getRandomMatrix(r, c, -1, 1, sparsity, 7);
+            // - generation
+            double[][] X = getRandomMatrix(r, c, -1, 1, sparsityVal, 7);
             writeInputMatrixWithMTD(INPUT_NAME, X, true);
 
             // Run DML and R scripts

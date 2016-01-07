@@ -220,7 +220,9 @@ public class PartialAggregate extends Lop
 			// output the running variance, the running mean, the
 			// count, a correction term for the squared deviations
 			// from the sample mean (m2), and a correction term for
-			// the mean.
+			// the mean.  These values collectively allow all other
+			// necessary intermediates to be reconstructed, and the
+			// variance will output by our unary aggregate framework.
 			// Thus, our outputs will be:
 			// { var | mean, count, m2 correction, mean correction }
 			switch (direction) {

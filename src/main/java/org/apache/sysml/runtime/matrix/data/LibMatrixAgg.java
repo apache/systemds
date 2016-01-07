@@ -2090,9 +2090,6 @@ public class LibMatrixAgg
 	private static void d_uacvar(double[] a, double[] c, int m, int n, CM_COV_Object cbuff, CM cm,
 	                             int rl, int ru) throws DMLRuntimeException
 	{
-		//init output (base for incremental agg)
-		Arrays.fill(c, 0);
-
 		// calculate variance for each column incrementally
 		for (int i=rl, aix=rl*n; i<ru; i++, aix+=n)
 			varAgg(a, c, aix, 0, n, cbuff, cm);
@@ -2856,13 +2853,11 @@ public class LibMatrixAgg
 	private static void s_uacvar(SparseRow[] a, double[] c, int m, int n, CM_COV_Object cbuff, CM cm,
 	                             int rl, int ru) throws DMLRuntimeException
 	{
-		//init output (base for incremental agg)
-		Arrays.fill(c, 0);
-
-		// compute and store counts of empty cells per column
-		// before aggregation
+		// compute and store counts of empty cells per column before aggregation
 		// note: column results are { var | mean, count, m2 correction, mean correction }
+		// - first, store total possible column counts in 3rd row of output
 		Arrays.fill(c, n*2, n*3, ru-rl); // counts stored in 3rd row
+		// - then subtract one from the column count for each dense value in the column
 		for (int i=rl; i<ru; i++) {
 			SparseRow arow = a[i];
 			if (arow!=null && !arow.isEmpty()) {
@@ -3415,7 +3410,7 @@ public class LibMatrixAgg
 	private static abstract class AggTask implements Callable<Object> {}
 	
 	/**
-	 * 
+	 *
 	 * 
 	 */
 	private static class RowAggTask extends AggTask 

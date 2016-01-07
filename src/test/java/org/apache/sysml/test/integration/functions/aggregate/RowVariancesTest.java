@@ -49,12 +49,13 @@ public class RowVariancesTest extends AutomatedTestBase {
     private static final String rowVarOp = "uarvar";
     private static final String varOp = "uavar";
     private static final int rows = 1234;
-    private static final int cols = 567;
-    private static final double sparsity1 = 1;
-    private static final double sparsity2 = 0.2;
+    private static final int cols = 1432;
+    private static final double sparsitySparse = 0.2;
+    private static final double sparsityDense = 0.7;
     private static final double eps = Math.pow(10, -10);
 
-    private enum VectorType {NONE, ROWVECTOR, COLUMNVECTOR}
+    private enum Sparsity {EMPTY, SPARSE, DENSE}
+    private enum DataType {MATRIX, ROWVECTOR, COLUMNVECTOR}
 
     @Override
     public void setUp() {
@@ -66,197 +67,295 @@ public class RowVariancesTest extends AutomatedTestBase {
     // Dense matrix w/ rewrites
     @Test
     public void testRowVariancesDenseMatrixRewritesCP() {
-        testRowVariances(TEST_NAME, false, VectorType.NONE, true, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.MATRIX, true, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesDenseMatrixRewritesSpark() {
-        testRowVariances(TEST_NAME, false, VectorType.NONE, true, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.MATRIX, true, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesDenseMatrixRewritesMR() {
-        testRowVariances(TEST_NAME, false, VectorType.NONE, true, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.MATRIX, true, ExecType.MR);
     }
 
     // Dense matrix w/o rewrites
     @Test
     public void testRowVariancesDenseMatrixNoRewritesCP() {
-        testRowVariances(TEST_NAME, false, VectorType.NONE, false, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.MATRIX, false, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesDenseMatrixNoRewritesSpark() {
-        testRowVariances(TEST_NAME, false, VectorType.NONE, false, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.MATRIX, false, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesDenseMatrixNoRewritesMR() {
-        testRowVariances(TEST_NAME, false, VectorType.NONE, false, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.MATRIX, false, ExecType.MR);
     }
 
     // Dense vector w/ rewrites
     //  - Row vector
     @Test
     public void testRowVariancesDenseRowVectorRewritesCP() {
-        testRowVariances(TEST_NAME, false, VectorType.ROWVECTOR, true, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.ROWVECTOR, true, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesDenseRowVectorRewritesSpark() {
-        testRowVariances(TEST_NAME, false, VectorType.ROWVECTOR, true, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.ROWVECTOR, true, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesDenseRowVectorRewritesMR() {
-        testRowVariances(TEST_NAME, false, VectorType.ROWVECTOR, true, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.ROWVECTOR, true, ExecType.MR);
     }
 
     //  - Column vector
     @Test
     public void testRowVariancesDenseColVectorRewritesCP() {
-        testRowVariances(TEST_NAME, false, VectorType.COLUMNVECTOR, true, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.COLUMNVECTOR, true, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesDenseColVectorRewritesSpark() {
-        testRowVariances(TEST_NAME, false, VectorType.COLUMNVECTOR, true, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.COLUMNVECTOR, true, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesDenseColVectorRewritesMR() {
-        testRowVariances(TEST_NAME, false, VectorType.COLUMNVECTOR, true, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.COLUMNVECTOR, true, ExecType.MR);
     }
 
     // Dense vector w/o rewrites
     //  - Row vector
     @Test
     public void testRowVariancesDenseRowVectorNoRewritesCP() {
-        testRowVariances(TEST_NAME, false, VectorType.ROWVECTOR, false, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.ROWVECTOR, false, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesDenseRowVectorNoRewritesSpark() {
-        testRowVariances(TEST_NAME, false, VectorType.ROWVECTOR, false, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.ROWVECTOR, false, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesDenseRowVectorNoRewritesMR() {
-        testRowVariances(TEST_NAME, false, VectorType.ROWVECTOR, false, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.ROWVECTOR, false, ExecType.MR);
     }
 
     //  - Column vector
     @Test
     public void testRowVariancesDenseColVectorNoRewritesCP() {
-        testRowVariances(TEST_NAME, false, VectorType.COLUMNVECTOR, false, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.COLUMNVECTOR, false, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesDenseColVectorNoRewritesSpark() {
-        testRowVariances(TEST_NAME, false, VectorType.COLUMNVECTOR, false, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.COLUMNVECTOR, false, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesDenseColVectorNoRewritesMR() {
-        testRowVariances(TEST_NAME, false, VectorType.COLUMNVECTOR, false, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.DENSE, DataType.COLUMNVECTOR, false, ExecType.MR);
     }
 
     // Sparse matrix w/ rewrites
     @Test
     public void testRowVariancesSparseMatrixRewritesCP() {
-        testRowVariances(TEST_NAME, true, VectorType.NONE, true, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.MATRIX, true, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesSparseMatrixRewritesSpark() {
-        testRowVariances(TEST_NAME, true, VectorType.NONE, true, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.MATRIX, true, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesSparseMatrixRewritesMR() {
-        testRowVariances(TEST_NAME, true, VectorType.NONE, true, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.MATRIX, true, ExecType.MR);
     }
 
     // Sparse matrix w/o rewrites
     @Test
     public void testRowVariancesSparseMatrixNoRewritesCP() {
-        testRowVariances(TEST_NAME, true, VectorType.NONE, false, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.MATRIX, false, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesSparseMatrixNoRewritesSpark() {
-        testRowVariances(TEST_NAME, true, VectorType.NONE, false, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.MATRIX, false, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesSparseMatrixNoRewritesMR() {
-        testRowVariances(TEST_NAME, true, VectorType.NONE, false, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.MATRIX, false, ExecType.MR);
     }
 
     // Sparse vector w/ rewrites
     //  - Row vector
     @Test
     public void testRowVariancesSparseRowVectorRewritesCP() {
-        testRowVariances(TEST_NAME, true, VectorType.ROWVECTOR, true, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.ROWVECTOR, true, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesSparseRowVectorRewritesSpark() {
-        testRowVariances(TEST_NAME, true, VectorType.ROWVECTOR, true, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.ROWVECTOR, true, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesSparseRowVectorRewritesMR() {
-        testRowVariances(TEST_NAME, true, VectorType.ROWVECTOR, true, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.ROWVECTOR, true, ExecType.MR);
     }
 
     //  - Column vector
     @Test
     public void testRowVariancesSparseColVectorRewritesCP() {
-        testRowVariances(TEST_NAME, true, VectorType.COLUMNVECTOR, true, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.COLUMNVECTOR, true, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesSparseColVectorRewritesSpark() {
-        testRowVariances(TEST_NAME, true, VectorType.COLUMNVECTOR, true, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.COLUMNVECTOR, true, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesSparseColVectorRewritesMR() {
-        testRowVariances(TEST_NAME, true, VectorType.COLUMNVECTOR, true, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.COLUMNVECTOR, true, ExecType.MR);
     }
 
     // Sparse vector w/o rewrites
     //  - Row vector
     @Test
     public void testRowVariancesSparseRowVectorNoRewritesCP() {
-        testRowVariances(TEST_NAME, true, VectorType.ROWVECTOR, false, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.ROWVECTOR, false, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesSparseRowVectorNoRewritesSpark() {
-        testRowVariances(TEST_NAME, true, VectorType.ROWVECTOR, false, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.ROWVECTOR, false, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesSparseRowVectorNoRewritesMR() {
-        testRowVariances(TEST_NAME, true, VectorType.ROWVECTOR, false, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.ROWVECTOR, false, ExecType.MR);
     }
 
     //  - Column vector
     @Test
     public void testRowVariancesSparseColVectorNoRewritesCP() {
-        testRowVariances(TEST_NAME, true, VectorType.COLUMNVECTOR, false, ExecType.CP);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.COLUMNVECTOR, false, ExecType.CP);
     }
 
     @Test
     public void testRowVariancesSparseColVectorNoRewritesSpark() {
-        testRowVariances(TEST_NAME, true, VectorType.COLUMNVECTOR, false, ExecType.SPARK);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.COLUMNVECTOR, false, ExecType.SPARK);
     }
 
     @Test
     public void testRowVariancesSparseColVectorNoRewritesMR() {
-        testRowVariances(TEST_NAME, true, VectorType.COLUMNVECTOR, false, ExecType.MR);
+        testRowVariances(TEST_NAME, Sparsity.SPARSE, DataType.COLUMNVECTOR, false, ExecType.MR);
+    }
+
+    // Empty matrix w/ rewrites
+    @Test
+    public void testRowVariancesEmptyMatrixRewritesCP() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.MATRIX, true, ExecType.CP);
+    }
+
+    @Test
+    public void testRowVariancesEmptyMatrixRewritesSpark() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.MATRIX, true, ExecType.SPARK);
+    }
+
+    @Test
+    public void testRowVariancesEmptyMatrixRewritesMR() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.MATRIX, true, ExecType.MR);
+    }
+
+    // Empty matrix w/o rewrites
+    @Test
+    public void testRowVariancesEmptyMatrixNoRewritesCP() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.MATRIX, false, ExecType.CP);
+    }
+
+    @Test
+    public void testRowVariancesEmptyMatrixNoRewritesSpark() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.MATRIX, false, ExecType.SPARK);
+    }
+
+    @Test
+    public void testRowVariancesEmptyMatrixNoRewritesMR() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.MATRIX, false, ExecType.MR);
+    }
+
+    // Empty vector w/ rewrites
+    //  - Row vector
+    @Test
+    public void testRowVariancesEmptyRowVectorRewritesCP() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.ROWVECTOR, true, ExecType.CP);
+    }
+
+    @Test
+    public void testRowVariancesEmptyRowVectorRewritesSpark() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.ROWVECTOR, true, ExecType.SPARK);
+    }
+
+    @Test
+    public void testRowVariancesEmptyRowVectorRewritesMR() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.ROWVECTOR, true, ExecType.MR);
+    }
+
+    //  - Column vector
+    @Test
+    public void testRowVariancesEmptyColVectorRewritesCP() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.COLUMNVECTOR, true, ExecType.CP);
+    }
+
+    @Test
+    public void testRowVariancesEmptyColVectorRewritesSpark() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.COLUMNVECTOR, true, ExecType.SPARK);
+    }
+
+    @Test
+    public void testRowVariancesEmptyColVectorRewritesMR() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.COLUMNVECTOR, true, ExecType.MR);
+    }
+
+    // Empty vector w/o rewrites
+    //  - Row vector
+    @Test
+    public void testRowVariancesEmptyRowVectorNoRewritesCP() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.ROWVECTOR, false, ExecType.CP);
+    }
+
+    @Test
+    public void testRowVariancesEmptyRowVectorNoRewritesSpark() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.ROWVECTOR, false, ExecType.SPARK);
+    }
+
+    @Test
+    public void testRowVariancesEmptyRowVectorNoRewritesMR() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.ROWVECTOR, false, ExecType.MR);
+    }
+
+    //  - Column vector
+    @Test
+    public void testRowVariancesEmptyColVectorNoRewritesCP() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.COLUMNVECTOR, false, ExecType.CP);
+    }
+
+    @Test
+    public void testRowVariancesEmptyColVectorNoRewritesSpark() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.COLUMNVECTOR, false, ExecType.SPARK);
+    }
+
+    @Test
+    public void testRowVariancesEmptyColVectorNoRewritesMR() {
+        testRowVariances(TEST_NAME, Sparsity.EMPTY, DataType.COLUMNVECTOR, false, ExecType.MR);
     }
 
     /**
@@ -264,13 +363,13 @@ public class RowVariancesTest extends AutomatedTestBase {
      * dense/sparse matrices/vectors on the CP/Spark/MR platforms.
      *
      * @param testName The name of this test case.
-     * @param sparse Whether or not the matrix/vector should be sparse.
-     * @param vectorType Selection between a matrix, a row vector, and
-     *                   a column vector.
+     * @param sparsity Selection between empty, sparse, and dense data.
+     * @param dataType Selection between a matrix, a row vector, and a
+     *                 column vector.
      * @param rewrites Whether or not to employ algebraic rewrites.
      * @param platform Selection between CP/Spark/MR platforms.
      */
-    private void testRowVariances(String testName, boolean sparse, VectorType vectorType,
+    private void testRowVariances(String testName, Sparsity sparsity, DataType dataType,
                                   boolean rewrites, ExecType platform) {
         // Configure settings for this test case
         boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -304,10 +403,23 @@ public class RowVariancesTest extends AutomatedTestBase {
             rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
             // Generate data
-            double sparsity = sparse ? sparsity2 : sparsity1;
+            // - sparsity
+            double sparsityVal;
+            switch (sparsity) {
+                case EMPTY:
+                    sparsityVal = 0;
+                    break;
+                case SPARSE:
+                    sparsityVal = sparsitySparse;
+                    break;
+                case DENSE:
+                default:
+                    sparsityVal = sparsityDense;
+            }
+            // - size
             int r;
             int c;
-            switch (vectorType) {
+            switch (dataType) {
                 case ROWVECTOR:
                     r = 1;
                     c = cols;
@@ -316,12 +428,13 @@ public class RowVariancesTest extends AutomatedTestBase {
                     r = rows;
                     c = 1;
                     break;
-                case NONE:
+                case MATRIX:
                 default:
                     r = rows;
                     c = cols;
             }
-            double[][] X = getRandomMatrix(r, c, -1, 1, sparsity, 7);
+            // - generation
+            double[][] X = getRandomMatrix(r, c, -1, 1, sparsityVal, 7);
             writeInputMatrixWithMTD(INPUT_NAME, X, true);
 
             // Run DML and R scripts
@@ -341,12 +454,12 @@ public class RowVariancesTest extends AutomatedTestBase {
             //    rewritten to an empty row vector of zeros.
             if (rewrites && (platform == ExecType.SPARK || platform == ExecType.CP)) {
                 String prefix = (platform == ExecType.SPARK) ? Instruction.SP_INST_PREFIX : "";
-                if (vectorType == VectorType.ROWVECTOR) {
+                if (dataType == DataType.ROWVECTOR) {
                     String opcode = prefix + varOp;
                     boolean rewriteApplied = Statistics.getCPHeavyHitterOpCodes().contains(opcode);
                     Assert.assertTrue("Rewrite not applied to row vector case.", rewriteApplied);
 
-                } else if (vectorType == VectorType.COLUMNVECTOR) {
+                } else if (dataType == DataType.COLUMNVECTOR) {
                     String opcode = prefix + rowVarOp;
                     boolean rewriteApplied = !Statistics.getCPHeavyHitterOpCodes().contains(opcode);
                     Assert.assertTrue("Rewrite not applied to column vector case.", rewriteApplied);

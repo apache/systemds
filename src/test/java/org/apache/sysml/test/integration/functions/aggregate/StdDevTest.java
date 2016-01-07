@@ -43,8 +43,8 @@ public class StdDevTest extends AutomatedTestBase {
 
     private static final int rows = 1234;
     private static final int cols1 = 1;
-    private static final int cols2 = 567;
-    private static final double sparsity1 = 1;
+    private static final int cols2 = 1432;
+    private static final double sparsity1 = 0.7;
     private static final double sparsity2 = 0.2;
     private static final double eps = Math.pow(10, -10);
 

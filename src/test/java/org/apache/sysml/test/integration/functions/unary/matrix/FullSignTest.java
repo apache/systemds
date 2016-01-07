@@ -196,7 +196,7 @@ public class FullSignTest extends AutomatedTestBase
 			if( instType == ExecType.CP )
 				Assert.assertTrue("Missing opcode: sign", Statistics.getCPHeavyHitterOpCodes().contains("sign"));
 			else if ( instType == ExecType.SPARK )
-				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"sel+", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"sign"));	
+				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"sign", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"sign"));	
 		}
 		finally
 		{

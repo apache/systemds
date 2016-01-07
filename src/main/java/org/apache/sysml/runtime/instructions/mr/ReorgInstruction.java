@@ -24,9 +24,11 @@ import java.util.ArrayList;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
+import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -41,14 +43,12 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 	//required for diag (size-based type, load-balance-aware output of empty blocks)
 	private MatrixCharacteristics _mcIn = null;
 	private boolean _outputEmptyBlocks = true;
-	private boolean _isDiag = false;
 	
 	public ReorgInstruction(ReorgOperator op, byte in, byte out, String istr)
 	{
 		super(op, in, out);
 		mrtype = MRINSTRUCTION_TYPE.Reorg;
 		instString = istr;
-		_isDiag = (op.fn==DiagIndex.getDiagIndexFnObject());
 	}
 	
 	public void setInputMatrixCharacteristics( MatrixCharacteristics in )
@@ -75,11 +75,12 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 		if ( opcode.equalsIgnoreCase("r'") ) {
 			return new ReorgInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, str);
 		} 
-		
+		else if ( opcode.equalsIgnoreCase("rev") ) {
+			return new ReorgInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, str);
+		} 
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			return new ReorgInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, str);
 		} 
-		
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ReorgInstruction: " + str);
 		}
@@ -102,8 +103,9 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 				int startRow=0, startColumn=0, length=0;
 				
 				//process instruction
-				if( _isDiag ) //special diag handling (overloaded, size-dependent operation; hence decided during runtime)
+				if( ((ReorgOperator)optr).fn instanceof DiagIndex ) 
 				{
+					//special diag handling (overloaded, size-dependent operation; hence decided during runtime)
 					boolean V2M = (_mcIn.getRows()==1 || _mcIn.getCols()==1);
 					long rlen = Math.max(_mcIn.getRows(), _mcIn.getCols()); //input can be row/column vector
 					
@@ -148,6 +150,16 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 							in.getValue().reorgOperations((ReorgOperator)optr, out.getValue(), startRow, startColumn, length);
 						}
 					}	
+				}
+				else if( ((ReorgOperator)optr).fn instanceof RevIndex ) 
+				{
+					//execute reverse operation
+					ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+					LibMatrixReorg.rev(in, _mcIn.getRows(), _mcIn.getRowsPerBlock(), out);
+					
+					//output indexed matrix values
+					for( IndexedMatrixValue outblk : out )
+						cachedValues.add(output, outblk);
 				}
 				else //general case (e.g., transpose)
 				{

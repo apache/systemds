@@ -24,7 +24,6 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -37,6 +36,7 @@ import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.Direction;
+import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.HopsException;
@@ -134,7 +134,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = fuseDatagenAndBinaryOperation(hop, hi, i);      //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
 			hi = fuseDatagenAndMinusOperation(hop, hi, i);       //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
  			hi = simplifyBinaryToUnaryOperation(hop, hi, i);     //e.g., X*X -> X^2 (pow2), X+X -> X*2, (X>0)-(X<0) -> sign(X)
- 			hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
+ 			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
+			hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
  			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
@@ -145,7 +146,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq; 
-			hi = removeUnnecessaryTranspose(hop, hi, i);         //e.g., t(t(X))->X; potentially introduced by diag/trace_MM
+			hi = removeUnnecessaryReorgOperation(hop, hi, i);    //e.g., t(t(X))->X; rev(rev(X))->X potentially introduced by other rewrites
 			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplfiy binary or dyn rewrites
 			hi = simplifyGroupedAggregate(hi);          	     //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
 			hi = fuseMinusNzBinaryOperation(hop, hi, i);         //e.g., X-mean*ppred(X,0,!=) -> X -nz mean
@@ -537,6 +538,50 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
+
+	/**
+	 * NOTE: this would be by definition a dynamic rewrite; however, we apply it as a static
+	 * rewrite in order to apply it before splitting dags which would hide the table information
+	 * if dimensions are not specified.
+	 * 
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyReverseOperation( Hop parent, Hop hi, int pos ) 
+		throws HopsException
+	{
+		if(    hi instanceof AggBinaryOp 
+			&& hi.getInput().get(0) instanceof TernaryOp )
+		{
+			TernaryOp top = (TernaryOp) hi.getInput().get(0);
+			
+			if( top.getOp()==OpOp3.CTABLE
+				&& HopRewriteUtils.isBasic1NSequence(top.getInput().get(0))
+				&& HopRewriteUtils.isBasicN1Sequence(top.getInput().get(1)) 
+				&& top.getInput().get(0).getDim1()==top.getInput().get(1).getDim1())
+			{
+				ReorgOp rop = HopRewriteUtils.createReorg(hi.getInput().get(1), ReOrgOp.REV);
+				
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.removeAllChildReferences(hi);
+				HopRewriteUtils.addChildReference(parent, rop, pos);
+				if( top.getParent().isEmpty() )
+					HopRewriteUtils.removeAllChildReferences(top);
+				
+				hi = rop;
+				
+				LOG.debug("Applied simplifyReverseOperation.");
+			}
+		}
+	
+		return hi;
+	}
+	
+	
 	/**
 	 * 
 	 * @param hi
@@ -751,8 +796,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		   && hi.getInput().get(0) instanceof ReorgOp  ) //reorg operation
 		{
 			ReorgOp rop = (ReorgOp)hi.getInput().get(0);
-			if(   (rop.getOp()==ReOrgOp.TRANSPOSE || rop.getOp()==ReOrgOp.RESHAPE)         //valid reorg
-				&& rop.getParent().size()==1 )                                //uagg only reorg consumer
+			if(   (rop.getOp()==ReOrgOp.TRANSPOSE || rop.getOp()==ReOrgOp.RESHAPE
+					|| rop.getOp() == ReOrgOp.REV )         //valid reorg
+				&& rop.getParent().size()==1 )              //uagg only reorg consumer
 			{
 				Hop input = rop.getInput().get(0);
 				HopRewriteUtils.removeAllChildReferences(hi);
@@ -1271,17 +1317,20 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	}
 	
 	/**
+	 * Pattners: t(t(X)) -> X, rev(rev(X)) -> X
 	 * 
 	 * @param parent
 	 * @param hi
 	 * @param pos
 	 */
-	private Hop removeUnnecessaryTranspose(Hop parent, Hop hi, int pos)
+	private Hop removeUnnecessaryReorgOperation(Hop parent, Hop hi, int pos)
 	{
-		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.TRANSPOSE  ) //first transpose
+		ReOrgOp[] lookup = new ReOrgOp[]{ReOrgOp.TRANSPOSE, ReOrgOp.REV};
+		
+		if( hi instanceof ReorgOp && HopRewriteUtils.isValidOp(((ReorgOp)hi).getOp(), lookup)  ) //first reorg
 		{
 			Hop hi2 = hi.getInput().get(0);
-			if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==ReOrgOp.TRANSPOSE ) //second transpose
+			if( hi2 instanceof ReorgOp && HopRewriteUtils.isValidOp(((ReorgOp)hi2).getOp(), lookup) ) //second reorg
 			{
 				Hop hi3 = hi2.getInput().get(0);
 				//remove unnecessary chain of t(t())
@@ -1295,7 +1344,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				if( hi2.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( hi2 );
 				
-				LOG.debug("Applied removeUnecessaryTranspose");
+				LOG.debug("Applied removeUnecessaryReorgOperation.");
 			}
 		}
 		
@@ -1376,7 +1425,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		return hi;
 	}
-		
+	
+	
 	/**
 	 * 
 	 * @param parent

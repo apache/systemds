@@ -1068,7 +1068,7 @@ public abstract class Hop
 	};
 
 	public enum ReOrgOp {
-		TRANSPOSE, DIAG, RESHAPE, SORT
+		TRANSPOSE, DIAG, RESHAPE, SORT, REV
 		//Note: Diag types are invalid because for unknown sizes this would 
 		//create incorrect plans (now we try to infer it for memory estimates
 		//and rewrites but the final choice is made during runtime)
@@ -1130,6 +1130,7 @@ public abstract class Hop
 	static {
 		HopsTransf2Lops = new HashMap<ReOrgOp, org.apache.sysml.lops.Transform.OperationTypes>();
 		HopsTransf2Lops.put(ReOrgOp.TRANSPOSE, org.apache.sysml.lops.Transform.OperationTypes.Transpose);
+		HopsTransf2Lops.put(ReOrgOp.REV, org.apache.sysml.lops.Transform.OperationTypes.Rev);
 		HopsTransf2Lops.put(ReOrgOp.DIAG, org.apache.sysml.lops.Transform.OperationTypes.Diag);
 		HopsTransf2Lops.put(ReOrgOp.RESHAPE, org.apache.sysml.lops.Transform.OperationTypes.Reshape);
 		HopsTransf2Lops.put(ReOrgOp.SORT, org.apache.sysml.lops.Transform.OperationTypes.Sort);

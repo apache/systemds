@@ -31,6 +31,7 @@ import java.util.Map.Entry;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
+import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -61,6 +62,7 @@ public class LibMatrixReorg
 	
 	private enum ReorgType {
 		TRANSPOSE,
+		REV,
 		DIAG,
 		RESHAPE,
 		SORT,
@@ -101,6 +103,8 @@ public class LibMatrixReorg
 		{
 			case TRANSPOSE: 
 				return transpose(in, out);
+			case REV: 
+				return rev(in, out);
 			case DIAG:      
 				return diag(in, out); 
 			case SORT:      
@@ -141,7 +145,93 @@ public class LibMatrixReorg
 		
 		return out;
 	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock rev( MatrixBlock in, MatrixBlock out ) 
+		throws DMLRuntimeException
+	{
+		//Timing time = new Timing(true);
+	
+		//sparse-safe operation
+		if( in.isEmptyBlock(false) )
+			return out;
+		
+		//special case: row vector
+		if( in.rlen == 1 ) {
+			out.copy(in);
+			return out;
+		}
+		
+		if( in.sparse )
+			reverseSparse( in, out );
+		else
+			reverseDense( in, out );
+		
+		//System.out.println("rev ("+in.rlen+", "+in.clen+", "+in.sparse+") in "+time.stop()+" ms.");
 
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param rows1
+	 * @param brlen
+	 * @param out
+	 * @throws DMLRuntimeException 
+	 * @throws DMLUnsupportedOperationException 
+	 */
+	public static void rev( IndexedMatrixValue in, long rlen, int brlen, ArrayList<IndexedMatrixValue> out ) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException
+	{
+		//input block reverse 
+		MatrixIndexes inix = in.getIndexes();
+		MatrixBlock inblk = (MatrixBlock) in.getValue(); 
+		MatrixBlock tmpblk = rev(inblk, new MatrixBlock(inblk.getNumRows(), inblk.getNumColumns(), inblk.isInSparseFormat()));
+		
+		//split and expand block if necessary (at most 2 blocks)
+		if( rlen % brlen == 0 ) //special case: aligned blocks 
+		{
+			int nrblks = (int)Math.ceil((double)rlen/brlen);
+			out.add(new IndexedMatrixValue(
+					new MatrixIndexes(nrblks-inix.getRowIndex()+1, inix.getColumnIndex()), tmpblk));
+		}
+		else //general case: unaligned blocks
+		{
+			//compute target positions and sizes
+			long pos1 = rlen - UtilFunctions.computeCellIndex(inix.getRowIndex(), brlen, tmpblk.getNumRows()-1) + 1;
+			long pos2 = pos1 + tmpblk.getNumRows() - 1;
+			int ipos1 = UtilFunctions.computeCellInBlock(pos1, brlen);
+			int iposCut = tmpblk.getNumRows() - ipos1 - 1;
+			int blkix1 = (int)UtilFunctions.computeBlockIndex(pos1, brlen);
+			int blkix2 = (int)UtilFunctions.computeBlockIndex(pos2, brlen);
+			int blklen1 = (int)UtilFunctions.computeBlockSize(rlen, blkix1, brlen);
+			int blklen2 = (int)UtilFunctions.computeBlockSize(rlen, blkix2, brlen);
+			
+			//slice first block
+			MatrixIndexes outix1 = new MatrixIndexes(blkix1, inix.getColumnIndex());
+			MatrixBlock outblk1 = new MatrixBlock(blklen1, inblk.getNumColumns(), inblk.isInSparseFormat());
+			MatrixBlock tmp1 = tmpblk.sliceOperations(0, iposCut, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
+			outblk1.leftIndexingOperations(tmp1, ipos1, outblk1.getNumRows()-1, 0, tmpblk.getNumColumns()-1, outblk1, true);
+			out.add(new IndexedMatrixValue(outix1, outblk1));
+			
+			//slice second block (if necessary)
+			if( blkix1 != blkix2 ) {
+				MatrixIndexes outix2 = new MatrixIndexes(blkix2, inix.getColumnIndex());
+				MatrixBlock outblk2 = new MatrixBlock(blklen2, inblk.getNumColumns(), inblk.isInSparseFormat());
+				MatrixBlock tmp2 = tmpblk.sliceOperations(iposCut+1, tmpblk.getNumRows()-1, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
+				outblk2.leftIndexingOperations(tmp2, 0, tmp2.getNumRows()-1, 0, tmpblk.getNumColumns()-1, outblk2, true);
+				out.add(new IndexedMatrixValue(outix2, outblk2));		
+			}
+		}
+	}
+	
 	/**
 	 * 
 	 * @param in
@@ -619,6 +709,9 @@ public class LibMatrixReorg
 		if( op.fn instanceof SwapIndex )  //transpose
 			return ReorgType.TRANSPOSE;
 		
+		else if( op.fn instanceof RevIndex ) //rev
+			return ReorgType.REV;
+		
 		else if( op.fn instanceof DiagIndex ) //diag
 			return ReorgType.DIAG;
 		
@@ -906,6 +999,66 @@ public class LibMatrixReorg
 			c[ cix + 5*n2 ] = a[ aix+5 ];
 			c[ cix + 6*n2 ] = a[ aix+6 ];
 			c[ cix + 7*n2 ] = a[ aix+7 ];	
+		}
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @throws DMLRuntimeException
+	 */
+	private static void reverseDense(MatrixBlock in, MatrixBlock out) 
+		throws DMLRuntimeException
+	{
+		final int m = in.rlen;
+		final int n = in.clen;
+		final int len = m * n;
+		
+		//set basic meta data and allocate output
+		out.sparse = false;
+		out.nonZeros = in.nonZeros;
+		out.allocateDenseBlock(false);
+		
+		double[] a = in.getDenseArray();
+		double[] c = out.getDenseArray();
+		
+		//copy all rows into target positions
+		if( n == 1 ) { //column vector
+			for( int i=0; i<m; i++ )
+				c[m-1-i] = a[i];
+		}
+		else { //general matrix case
+			for( int i=0, aix=0; i<m; i++, aix+=n )
+				System.arraycopy(a, aix, c, len-aix-n, n);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @throws DMLRuntimeException
+	 */
+	private static void reverseSparse(MatrixBlock in, MatrixBlock out) 
+		throws DMLRuntimeException
+	{
+		final int m = in.rlen;
+		
+		//set basic meta data and allocate output
+		out.sparse = true;
+		out.nonZeros = in.nonZeros;
+		
+		out.allocateSparseRowsBlock(false);
+		
+		SparseRow[] a = in.getSparseRows();
+		SparseRow[] c = out.getSparseRows();
+		
+		//copy all rows into target positions
+		for( int i=0; i<m; i++ ) {
+			if( a[i] != null && !a[i].isEmpty() ) {
+				c[m-1-i] = new SparseRow(a[i]);	
+			}
 		}
 	}
 	

@@ -24,7 +24,6 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -880,7 +879,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				Hop hnew = null;
 				if( rhi.getOp() == ReOrgOp.TRANSPOSE )
 					hnew = HopRewriteUtils.createDataGenOp(input, true, input, true, 0);
-				else if( rhi.getOp() == ReOrgOp.DIAG ){
+				else if( rhi.getOp() == ReOrgOp.REV )
+					hnew = HopRewriteUtils.createDataGenOp(input, 0);
+				else if( rhi.getOp() == ReOrgOp.DIAG ) {
 					if( HopRewriteUtils.isDimsKnown(input) ){
 						if( input.getDim1()==1 ) //diagv2m
 							hnew = HopRewriteUtils.createDataGenOp(input, false, input, true, 0);

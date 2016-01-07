@@ -480,6 +480,16 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions (id.getColumnsInBlock(), id.getRowsInBlock());
 			output.setValueType(id.getValueType());
 			break;
+		
+		case REV:
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setDimensions(id.getDim1(), id.getDim2());
+			output.setBlockDimensions (id.getColumnsInBlock(), id.getRowsInBlock());
+			output.setValueType(id.getValueType());
+			break;	
+			
 		case DIAG:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
@@ -1313,6 +1323,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.TRACE;
 		else if (functionName.equals("t"))
 			 bifop = Expression.BuiltinFunctionOp.TRANS;
+		else if (functionName.equals("rev"))
+			 bifop = Expression.BuiltinFunctionOp.REV;		
 		else if (functionName.equals("cbind") || functionName.equals("append"))
 			bifop = Expression.BuiltinFunctionOp.CBIND;
 		else if (functionName.equals("rbind"))

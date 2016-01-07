@@ -200,6 +200,7 @@ public class MRInstructionParser extends InstructionParser
 		
 		// REORG Instruction Opcodes 
 		String2MRInstructionType.put( "r'"     , MRINSTRUCTION_TYPE.Reorg);
+		String2MRInstructionType.put( "rev"     , MRINSTRUCTION_TYPE.Reorg);
 		String2MRInstructionType.put( "rdiag"  , MRINSTRUCTION_TYPE.Reorg);
 		
 		// REPLICATE Instruction Opcodes

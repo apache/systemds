@@ -35,7 +35,6 @@ import java.util.Map;
 
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop.OpOp2;
@@ -58,6 +57,7 @@ import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
+import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
@@ -3597,7 +3597,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length)
 		throws DMLRuntimeException 
 	{
-		if ( !( op.fn instanceof SwapIndex || op.fn instanceof DiagIndex || op.fn instanceof SortIndex) )
+		if ( !( op.fn instanceof SwapIndex || op.fn instanceof DiagIndex 
+			|| op.fn instanceof SortIndex || op.fn instanceof RevIndex ) )
 			throw new DMLRuntimeException("the current reorgOperations cannot support: "+op.fn.getClass()+".");
 		
 		MatrixBlock result = checkType(ret);

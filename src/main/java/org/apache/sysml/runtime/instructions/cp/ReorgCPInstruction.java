@@ -25,6 +25,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
+import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -35,7 +36,6 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 
 public class ReorgCPInstruction extends UnaryCPInstruction
 {
-	
 	//sort-specific attributes (to enable variable attributes)
  	private CPOperand _col = null;
  	private CPOperand _desc = null;
@@ -87,6 +87,10 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgCPInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, str);
 		} 
+		else if ( opcode.equalsIgnoreCase("rev") ) {
+			parseUnaryInstruction(str, in, out); //max 2 operands
+			return new ReorgCPInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
+		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgCPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
@@ -95,13 +99,9 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 			InstructionUtils.checkNumFields(parts, 5);
 			in.split(parts[1]);
 			out.split(parts[5]);
-			CPOperand col = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-			CPOperand desc = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-			CPOperand ixret = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-			col.split(parts[2]);
-			desc.split(parts[3]);
-			ixret.split(parts[4]);
-			
+			CPOperand col = new CPOperand(parts[2]);
+			CPOperand desc = new CPOperand(parts[3]);
+			CPOperand ixret = new CPOperand(parts[4]);
 			return new ReorgCPInstruction(new ReorgOperator(SortIndex.getSortIndexFnObject(1,false,false)), 
 					                      in, col, desc, ixret, out, opcode, str);
 		}

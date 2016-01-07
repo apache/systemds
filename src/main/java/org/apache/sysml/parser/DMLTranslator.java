@@ -2342,6 +2342,11 @@ public class DMLTranslator
 			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(),
 					                    Hop.ReOrgOp.TRANSPOSE, expr);
 			break;
+		
+		case REV:
+			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(),
+					                    Hop.ReOrgOp.REV, expr);
+			break;
 			
 		case CBIND:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), 

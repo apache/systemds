@@ -85,6 +85,7 @@ public abstract class Expression
 		PROD,
 		QUANTILE,
 		RANGE,
+		REV,
 		ROUND,
 		ROWINDEXMAX, 
 		ROWMAX,

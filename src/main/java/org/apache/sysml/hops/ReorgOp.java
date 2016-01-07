@@ -120,6 +120,36 @@ public class ReorgOp extends Hop
 				
 				break;
 			}
+			case REV:
+			{
+				Lop rev = null;
+				
+				if( et == ExecType.MR ) {
+					Lop tmp = new Transform( getInput().get(0).constructLops(), 
+							HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+					setOutputDimensions(tmp);
+					setLineNumbers(tmp);
+						
+					Group group1 = new Group(tmp, Group.OperationTypes.Sort, 
+							DataType.MATRIX, getValueType());
+					setOutputDimensions(group1);
+					setLineNumbers(group1);
+	
+					rev = new Aggregate(group1, Aggregate.OperationTypes.Sum, 
+							DataType.MATRIX, getValueType(), et);
+				}
+				else { //CP/SPARK
+
+					rev = new Transform( getInput().get(0).constructLops(), 
+						HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+				}
+				
+				setOutputDimensions(rev);
+				setLineNumbers(rev);
+				setLops(rev);
+				
+				break;
+			}
 			case RESHAPE:
 			{
 				if( et==ExecType.MR )
@@ -356,7 +386,14 @@ public class ReorgOp extends Hop
 				if( mc.dimsKnown() )
 					ret = new long[]{ mc.getCols(), mc.getRows(), mc.getNonZeros() };
 				break;
-			}	
+			}
+			case REV:
+			{
+				// dims and nnz are exactly the same as in input
+				if( mc.dimsKnown() )
+					ret = new long[]{ mc.getRows(), mc.getCols(), mc.getNonZeros() };
+				break;
+			}
 			case DIAG:
 			{
 				// NOTE: diag is overloaded according to the number of columns of the input
@@ -470,7 +507,15 @@ public class ReorgOp extends Hop
 				setDim2(input1.getDim1());
 				setNnz(input1.getNnz());
 				break;
-			}	
+			}
+			case REV:
+			{
+				// dims and nnz are exactly the same as in input
+				setDim1(input1.getDim1());
+				setDim2(input1.getDim2());
+				setNnz(input1.getNnz());
+				break;
+			}
 			case DIAG:
 			{
 				// NOTE: diag is overloaded according to the number of columns of the input

@@ -34,17 +34,22 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
+import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.IsBlockInRange;
+import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDSortUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.instructions.spark.functions.ReorgMapFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -82,7 +87,11 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		if ( opcode.equalsIgnoreCase("r'") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgSPInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, str);
-		} 
+		}
+		else if ( opcode.equalsIgnoreCase("rev") ) {
+			parseUnaryInstruction(str, in, out); //max 2 operands
+			return new ReorgSPInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
+		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgSPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
@@ -124,6 +133,13 @@ public class ReorgSPInstruction extends UnarySPInstruction
 		{
 			//execute transpose reorg operation
 			out = in1.mapToPair(new ReorgMapFunction(opcode));
+		}
+		else if( opcode.equalsIgnoreCase("rev") ) //REVERSE
+		{
+			//execute reverse reorg operation
+			out = in1.flatMapToPair(new RDDRevFunction(mcIn));
+			if( mcIn.getRows() % mcIn.getRowsPerBlock() != 0 )
+				out = RDDAggregateUtils.mergeByKey(out);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) // DIAG
 		{	
@@ -258,6 +274,37 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			}
 			
 			return ret;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class RDDRevFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	{
+		private static final long serialVersionUID = 1183373828539843938L;
+		
+		private MatrixCharacteristics _mcIn = null;
+		
+		public RDDRevFunction(MatrixCharacteristics mcIn) 
+			throws DMLRuntimeException 
+		{
+			_mcIn = mcIn;
+		}
+		
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
+			throws Exception 
+		{
+			//construct input
+			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(arg0);
+			
+			//execute reverse operation
+			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+			LibMatrixReorg.rev(in, _mcIn.getRows(), _mcIn.getRowsPerBlock(), out);
+			
+			//construct output
+			return SparkUtils.fromIndexedMatrixBlock(out);
 		}
 	}
 

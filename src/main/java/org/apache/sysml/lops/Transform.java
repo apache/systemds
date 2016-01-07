@@ -38,7 +38,8 @@ public class Transform extends Lop
 		Transpose,
 		Diag,
 		Reshape,
-		Sort
+		Sort,
+		Rev
 	};
 	
 	private boolean _bSortIndInMem = false;
@@ -128,6 +129,10 @@ public class Transform extends Lop
 		case Transpose:
 			// Transpose a matrix
 			return "r'";
+		
+		case Rev:
+			// Transpose a matrix
+			return "rev";
 		
 		case Diag:
 			// Transform a vector into a diagonal matrix

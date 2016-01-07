@@ -130,6 +130,7 @@ public class SPInstructionParser extends InstructionParser
 		
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2SPInstructionType.put( "r'"   	   , SPINSTRUCTION_TYPE.Reorg);
+		String2SPInstructionType.put( "rev"   	   , SPINSTRUCTION_TYPE.Reorg);
 		String2SPInstructionType.put( "rdiag"      , SPINSTRUCTION_TYPE.Reorg);
 		String2SPInstructionType.put( "rshape"     , SPINSTRUCTION_TYPE.MatrixReshape);
 		String2SPInstructionType.put( "rsort"      , SPINSTRUCTION_TYPE.Reorg);

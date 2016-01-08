@@ -23,8 +23,6 @@ package org.apache.sysml.runtime.matrix.data;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
@@ -179,15 +177,5 @@ public class WeightedCell extends MatrixCell
 	public void unaryOperationsInPlace(UnaryOperator op)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		value=op.fn.execute(value);
-	}
-
-	@Override
-	public void getCellValues(Collection<Double> ret) {
-		ret.add(value);	
-	}
-
-	@Override
-	public void getCellValues(Map<Double, Integer> ret) {
-		ret.put(value, 1);
 	}
 }

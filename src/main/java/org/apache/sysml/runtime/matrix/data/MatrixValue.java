@@ -21,9 +21,6 @@
 package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.hadoop.io.WritableComparable;
 
@@ -80,62 +77,37 @@ public abstract class MatrixValue implements WritableComparable
 	}
 
 	public MatrixValue() {
-	}
-
-	public MatrixValue(int rl, int cl, boolean sp) {
+		//do nothing
 	}
 
 	public MatrixValue(MatrixValue that) {
 		copy(that);
 	}
-	
-	public MatrixValue(HashMap<CellIndex, Double> map) {
-		
-	}
 
 	public abstract int getNumRows();
-
 	public abstract int getNumColumns();
+	public abstract long getNonZeros();
 
-	public abstract int getMaxRow() throws DMLRuntimeException;;
-	
-	public abstract int getMaxColumn() throws DMLRuntimeException;;
-
-	public abstract void setMaxRow(int _r) throws DMLRuntimeException;
-	
-	public abstract void setMaxColumn(int _c) throws DMLRuntimeException;;
+	public abstract void setValue(int r, int c, double v);
+	public abstract double getValue(int r, int c);
 
 	public abstract boolean isInSparseFormat();
-
 	public abstract boolean isEmpty();
-	
+		
+	public abstract int getMaxRow() throws DMLRuntimeException;;	
+	public abstract int getMaxColumn() throws DMLRuntimeException;;
+	public abstract void setMaxRow(int _r) throws DMLRuntimeException;	
+	public abstract void setMaxColumn(int _c) throws DMLRuntimeException;;
+
 	public abstract void reset();
-
 	public abstract void reset(int rl, int cl);
-
 	public abstract void reset(int rl, int cl, boolean sp);
-	
 	public abstract void reset(int rl, int cl, boolean sp, long nnzs);
-
 	public abstract void resetDenseWithValue(int rl, int cl, double v) throws DMLRuntimeException ;
 
 	public abstract void copy(MatrixValue that);
 	public abstract void copy(MatrixValue that, boolean sp);
-
-	public abstract long getNonZeros();
-
-	public abstract void setValue(int r, int c, double v);
-
-	public abstract void setValue(CellIndex index, double v);
-
-	public abstract void addValue(int r, int c, double v);
-
-	public abstract double getValue(int r, int c);
 	
-	public abstract void getCellValues(Collection<Double> ret);
-	
-	public abstract void getCellValues(Map<Double, Integer> ret);
-
 	public abstract MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) 
 	throws DMLUnsupportedOperationException, DMLRuntimeException;
 	

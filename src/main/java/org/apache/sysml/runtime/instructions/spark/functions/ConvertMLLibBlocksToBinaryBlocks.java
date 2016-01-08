@@ -68,7 +68,7 @@ public class ConvertMLLibBlocksToBinaryBlocks implements PairFunction<Tuple2<Tup
 		for(int i = 0; i < lrlen-1; i++) {
 			for(int j = 0; j < lclen-1; j++) {
 				if(vals[iter] != 0)
-					blk.addValue(i, j, vals[iter]);
+					blk.appendValue(i, j, vals[iter]);
 				iter++;
 			}
 		}

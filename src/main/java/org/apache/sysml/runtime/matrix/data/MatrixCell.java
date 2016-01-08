@@ -25,8 +25,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
 
 import org.apache.hadoop.io.WritableComparable;
 
@@ -167,16 +165,6 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 
 	@Override
-	public void setValue(CellIndex index, double v) {
-		value=v;
-	}
-
-	@Override
-	public void addValue(int r, int c, double v) {
-		value += v;
-	}
-
-	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeDouble(value);
 	}
@@ -284,16 +272,6 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	public void unaryOperationsInPlace(UnaryOperator op)
 			throws DMLUnsupportedOperationException, DMLRuntimeException {
 		value=op.fn.execute(value);
-	}
-
-	@Override
-	public void getCellValues(Collection<Double> ret) {
-		ret.add(value);	
-	}
-
-	@Override
-	public void getCellValues(Map<Double, Integer> ret) {
-		ret.put(value, 1);
 	}
 
 	public int compareTo(MatrixCell o) {

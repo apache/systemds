@@ -24,8 +24,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
 
 import org.apache.hadoop.io.WritableComparable;
 
@@ -46,18 +44,12 @@ import org.apache.sysml.runtime.util.IndexRange;
 
 @SuppressWarnings("rawtypes")
 public class CM_N_COVCell extends MatrixValue implements WritableComparable
-{
-	
+{	
 	private CM_COV_Object cm=new CM_COV_Object();
 	
 	public String toString()
 	{
 		return cm.toString();
-	}
-	
-	@Override
-	public void addValue(int r, int c, double v) {
-		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
@@ -94,16 +86,6 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public void copy(MatrixValue that) {
-		throw new RuntimeException("operation not supported fro WeightedCell");
-	}
-
-	@Override
-	public void getCellValues(Collection<Double> ret) {
-		throw new RuntimeException("operation not supported fro WeightedCell");
-	}
-
-	@Override
-	public void getCellValues(Map<Double, Integer> ret) {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
 
@@ -208,11 +190,6 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public void setValue(int r, int c, double v) {
-		throw new RuntimeException("operation not supported fro WeightedCell");
-	}
-
-	@Override
-	public void setValue(CellIndex index, double v) {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
 

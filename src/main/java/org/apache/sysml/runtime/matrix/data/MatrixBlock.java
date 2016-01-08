@@ -29,9 +29,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
 
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -644,185 +642,23 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	}
 	
 	@Override
-	public void getCellValues(Collection<Double> ret) 
-	{
-		int limit=rlen*clen;
-		if(sparse)
-		{
-			if(sparseRows==null)
-			{
-				for(int i=0; i<limit; i++)
-					ret.add(0.0);
-			}else
-			{
-				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-				{
-					if(sparseRows[r]==null) 
-						continue;
-					double[] container=sparseRows[r].getValueContainer();
-					for(int j=0; j<sparseRows[r].size(); j++)
-						ret.add(container[j]);
-				}
-				int zeros=limit-ret.size();
-				for(int i=0; i<zeros; i++)
-					ret.add(0.0);
-			}
-		}else
-		{
-			if(denseBlock==null)
-			{
-				for(int i=0; i<limit; i++)
-					ret.add(0.0);
-			}else
-			{
-				for(int i=0; i<limit; i++)
-					ret.add(denseBlock[i]);
-			}
-		}
-	}
-
-	@Override
-	public void getCellValues(Map<Double, Integer> ret) 
-	{
-		int limit=rlen*clen;
-		if(sparse)
-		{
-			if(sparseRows==null)
-			{
-				ret.put(0.0, limit);
-			}else
-			{
-				for(int r=0; r<Math.min(rlen, sparseRows.length); r++)
-				{
-					if(sparseRows[r]==null) 
-						continue;
-					double[] container=sparseRows[r].getValueContainer();
-					for(int j=0; j<sparseRows[r].size(); j++)
-					{
-						Double v=container[j];
-						Integer old=ret.get(v);
-						if(old!=null)
-							ret.put(v, old+1);
-						else
-							ret.put(v, 1);
-					}
-				}
-				int zeros=limit-ret.size();
-				Integer old=ret.get(0.0);
-				if(old!=null)
-					ret.put(0.0, old+zeros);
-				else
-					ret.put(0.0, zeros);
-			}
-			
-		}else
-		{
-			if(denseBlock==null)
-			{
-				ret.put(0.0, limit);
-			}else
-			{
-				for(int i=0; i<limit; i++)
-				{
-					double v=denseBlock[i];
-					Integer old=ret.get(v);
-					if(old!=null)
-						ret.put(v, old+1);
-					else
-						ret.put(v, 1);
-				}	
-			}
-		}
-	}
-	
-	@Override
 	public double getValue(int r, int c) 
 	{
-		if(r>rlen || c > clen)
+		//matrix bounds check 
+		if( r>rlen || c > clen )
 			throw new RuntimeException("indexes ("+r+","+c+") out of range ("+rlen+","+clen+")");
 		
-		if(sparse)
-		{
-			if(sparseRows==null || sparseRows.length<=r || sparseRows[r]==null)
-				return 0;
-			return sparseRows[r].get(c);
-		}else
-		{
-			if(denseBlock==null)
-				return 0;
-			return denseBlock[r*clen+c]; 
-		}
+		return quickGetValue(r, c);
 	}
 	
 	@Override
 	public void setValue(int r, int c, double v) 
 	{
-		if(r>rlen || c > clen)
+		//matrix bounds check 
+		if( r>rlen || c > clen )
 			throw new RuntimeException("indexes ("+r+","+c+") out of range ("+rlen+","+clen+")");
-		if(sparse)
-		{
-			if( (sparseRows==null || sparseRows.length<=r || sparseRows[r]==null) && v==0.0)
-				return;
-			//allocation on demand
-			allocateSparseRowsBlock(false);
-			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
-			
-			if(sparseRows[r].set(c, v))
-				nonZeros++;
-			
-		}else
-		{
-			if(denseBlock==null && v==0.0)
-				return;
 
-			//allocate and init dense block (w/o overwriting nnz)
-			allocateDenseBlock(false);
-				
-			int index=r*clen+c;
-			if(denseBlock[index]==0)
-				nonZeros++;
-			denseBlock[index]=v;
-			if(v==0)
-				nonZeros--;
-		}
-		
-	}
-	
-	@Override
-	public void setValue(CellIndex index, double v) 
-	{
-		setValue(index.row, index.column, v);
-	}
-	
-	@Override
-	/**
-	 * If (r,c) \in Block, add v to existing cell
-	 * If not, add a new cell with index (r,c).
-	 * 
-	 * This function intentionally avoids the maintenance of NNZ for efficiency. 
-	 * 
-	 */
-	public void addValue(int r, int c, double v) {
-		if(sparse)
-		{
-			//allocation on demand
-			allocateSparseRowsBlock(false);
-			if(sparseRows[r]==null)
-				sparseRows[r]=new SparseRow(estimatedNNzsPerRow, clen);
-			double curV=sparseRows[r].get(c);
-			curV+=v;
-			sparseRows[r].set(c, curV);
-			
-		}
-		else
-		{
-			//allocate and init dense block (w/o overwriting nnz)
-			allocateDenseBlock(false);
-			
-			int index=r*clen+c;
-			denseBlock[index]+=v;
-		}
+		quickSetValue(r, c, v);
 	}
 	
 	/**

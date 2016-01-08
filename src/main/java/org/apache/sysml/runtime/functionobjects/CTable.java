@@ -123,7 +123,9 @@ public class CTable extends ValueFunction
 			return;
 		}
 		
-		ctableResult.addValue((int)row-1, (int)col-1, w);
+		//add value
+		ctableResult.quickSetValue((int)row-1, (int)col-1,
+				ctableResult.quickGetValue((int)row-1, (int)col-1) + w);
 	}
 	
 	/**

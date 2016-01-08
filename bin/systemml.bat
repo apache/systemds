@@ -36,7 +36,7 @@ popd
 
 SET BUILD_DIR=%PROJECT_ROOT_DIR%\target
 SET HADOOP_LIB_DIR=%BUILD_DIR%\lib
-SET DML_SCRIPT_CLASS=%BUILD_DIR%\classes\com\ibm\bi\dml\api\DMLScript.class
+SET DML_SCRIPT_CLASS=%BUILD_DIR%\classes\org\apache\sysml\api\DMLScript.class
 
 SET BUILD_ERR_MSG=You must build the project before running this script.
 SET BUILD_DIR_ERR_MSG=Could not find target directory "%BUILD_DIR%". %BUILD_ERR_MSG%

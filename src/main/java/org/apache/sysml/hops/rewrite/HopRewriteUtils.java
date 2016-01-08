@@ -25,6 +25,7 @@ import java.util.HashMap;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.AggBinaryOp;
+import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
@@ -32,6 +33,7 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
@@ -547,6 +549,34 @@ public class HopRewriteUtils
 		bop.refreshSizeInformation();	
 		
 		return bop;
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 */
+	public static AggUnaryOp createSum( Hop input ) {
+		return createAggUnaryOp(input, AggOp.SUM, Direction.RowCol);
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @param op
+	 * @param dir
+	 * @return
+	 */
+	public static AggUnaryOp createAggUnaryOp( Hop input, AggOp op, Direction dir )
+	{
+		DataType dt = (dir==Direction.RowCol) ? DataType.SCALAR : input.getDataType();
+		
+		AggUnaryOp auop = new AggUnaryOp(input.getName(), dt, input.getValueType(), op, dir, input);
+		auop.setRowsInBlock(input.getRowsInBlock());
+		auop.setColsInBlock(input.getColsInBlock());
+		auop.refreshSizeInformation();
+		
+		return auop;
 	}
 	
 	/**

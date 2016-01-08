@@ -166,6 +166,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y)); if col vector
 			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
 			hi = pushdownBinaryOperationOnDiag(hop, hi, i);   //e.g., diag(X)*7 -> diag(X*7); if col vector
+			hi = pushdownSumOnAdditiveBinary(hop, hi, i);     //e.g., sum(A+B) -> sum(A)+sum(B); if dims(A)==dims(B)
 			hi = simplifyWeightedSquaredLoss(hop, hi, i);     //e.g., sum(W * (X - U %*% t(V)) ^ 2) -> wsl(X, U, t(V), W, true), 
 			hi = simplifyWeightedSigmoidMMChains(hop, hi, i); //e.g., W * sigmoid(Y%*%t(X)) -> wsigmoid(W, Y, t(X), type)
 			hi = simplifyWeightedDivMM(hop, hi, i);           //e.g., t(U) %*% (X/(U%*%t(V))) -> wdivmm(X, U, t(V), left)
@@ -1349,6 +1350,56 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		return hi;
 	}
 	
+	/**
+	 * patterns: sum(A+B)->sum(A)+sum(B); sum(A-B)->sum(A)-sum(B)
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop pushdownSumOnAdditiveBinary(Hop parent, Hop hi, int pos) 
+	{
+		//all patterns headed by fiull sum over binary operation
+		if(    hi instanceof AggUnaryOp //full sum root over binaryop
+			&& ((AggUnaryOp)hi).getDirection()==Direction.RowCol
+			&& ((AggUnaryOp)hi).getOp() == AggOp.SUM 
+			&& hi.getInput().get(0) instanceof BinaryOp   
+			&& hi.getInput().get(0).getParent().size()==1 ) //single parent
+		{
+			BinaryOp bop = (BinaryOp) hi.getInput().get(0);
+			Hop left = bop.getInput().get(0);
+			Hop right = bop.getInput().get(1);
+			
+			if( HopRewriteUtils.isEqualSize(left, right)  //dims(A) == dims(B)
+				&& left.getDataType() == DataType.MATRIX
+				&& right.getDataType() == DataType.MATRIX )			
+			{
+				OpOp2 applyOp = ( bop.getOp() == OpOp2.PLUS //pattern a: sum(A+B)->sum(A)+sum(B)
+						|| bop.getOp() == OpOp2.MINUS )     //pattern b: sum(A-B)->sum(A)-sum(B)
+						? bop.getOp() : null;
+				
+				if( applyOp != null ) {
+					//create new subdag sum(A) bop sum(B)
+					AggUnaryOp sum1 = HopRewriteUtils.createSum(left);
+					AggUnaryOp sum2 = HopRewriteUtils.createSum(right);					
+					BinaryOp newBin = HopRewriteUtils.createBinary(sum1, sum2, applyOp);
+
+					//rewire new subdag
+					HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);		
+					HopRewriteUtils.removeAllChildReferences(hi);
+					HopRewriteUtils.removeAllChildReferences(bop);
+					HopRewriteUtils.addChildReference(parent, newBin, pos);
+					
+					hi = newBin;
+					
+					LOG.debug("Applied pushdownSumOnAdditiveBinary.");
+				}				
+			}
+		}
+	
+		return hi;
+	}
 
 	/**
 	 * Searches for weighted squared loss expressions and replaces them with a quaternary operator. 

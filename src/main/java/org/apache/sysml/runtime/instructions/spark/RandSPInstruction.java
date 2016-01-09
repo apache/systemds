@@ -19,12 +19,17 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Random;
 
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.random.Well1024a;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.FlatMapFunction;
@@ -36,6 +41,7 @@ import scala.Tuple2;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -48,6 +54,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -60,9 +67,8 @@ import org.apache.sysml.utils.Statistics;
 
 public class RandSPInstruction extends UnarySPInstruction
 {
-	
 	//internal configuration
-	private static final long SEED_PARTITION_SIZE = 1024 * 1024;
+	private static final long INMEMORY_NUMBLOCKS_THRESHOLD = 1024 * 1024;
 	
 	private DataGenMethod method = DataGenMethod.INVALID;
 	
@@ -76,6 +82,7 @@ public class RandSPInstruction extends UnarySPInstruction
 	private String pdf;
 	private String pdfParams;
 	private long seed=0;
+	private String dir;
 	private double seq_from;
 	private double seq_to; 
 	private double seq_incr;
@@ -84,7 +91,7 @@ public class RandSPInstruction extends UnarySPInstruction
 	private boolean replace;
 
 	public RandSPInstruction (Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, long rows, long cols, 
-			int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed,
+			int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed, String dir,
 			String probabilityDensityFunction, String pdfParams, String opcode, String istr) 
 	{
 		super(op, in, out, opcode, istr);
@@ -98,6 +105,7 @@ public class RandSPInstruction extends UnarySPInstruction
 		this.maxValue = maxValue;
 		this.sparsity = sparsity;
 		this.seed = seed;
+		this.dir = dir;
 		this.pdf = probabilityDensityFunction;
 		this.pdfParams = pdfParams;
 
@@ -205,7 +213,7 @@ public class RandSPInstruction extends UnarySPInstruction
 		DataGenMethod method = DataGenMethod.INVALID;
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( str, 11 );
+			InstructionUtils.checkNumFields ( str, 12 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
@@ -249,10 +257,11 @@ public class RandSPInstruction extends UnarySPInstruction
 				seed = Long.parseLong(s[8]);
 			}
 				
-	        String pdf = s[9];
-			String pdfParams = s[10];
+			String dir = s[9];
+	        String pdf = s[10];
+			String pdfParams = s[11];
 			
-			return new RandSPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, pdfParams, opcode, str);
+			return new RandSPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, dir, pdf, pdfParams, opcode, str);
 		}
 		else if ( method == DataGenMethod.SEQ) {
 			// Example Instruction: CP:seq:11:1:1000:1000:1:0:-0.1:scratch_space/_p7932_192.168.1.120//_t0/:mVar1
@@ -309,136 +318,220 @@ public class RandSPInstruction extends UnarySPInstruction
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//process specific datagen operator
-		if ( this.method == DataGenMethod.RAND ) 
-		{
-			// The implementation is in same spirit as MapReduce
-			// We generate seeds similar to org.apache.sysml.runtime.matrix.DataGenMR
-			// and then generate blocks similar to org.apache.sysml.runtime.matrix.mapred.DataGenMapper
-			
-			//generate pseudo-random seed (because not specified) 
-			long lSeed = seed; //seed per invocation
-			if( lSeed == DataGenOp.UNSPECIFIED_SEED ) 
-				lSeed = DataGenOp.generateRandomSeed();
-			
-			if( LOG.isTraceEnabled() )
-				LOG.trace("Process RandSPInstruction rand with seed = "+lSeed+".");
-
-			//Check if there is sufficient memory for matrix to be created and execution platform is not forced Spark
-			if( isMemAvail(rows, cols, sparsity, minValue, maxValue) &&  DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK)
-			{
-				RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
-						pdf, 
-						(int)rows, (int)cols, 
-						rowsInBlock, colsInBlock, 
-						sparsity, minValue, maxValue, 
-						pdfParams);
-				MatrixBlock mb = MatrixBlock.randOperations(rgen, lSeed);
-				
-				sec.setMatrixOutput(output.getName(), mb);
-				Statistics.decrementNoOfExecutedSPInst();
-				return;
-			}
-			
-			// seed generation (partitioned to bound memory requirements)
-			JavaPairRDD<MatrixIndexes, Tuple2<Long, Long>> seedsRDD = null;
-			Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(lSeed);
-			long[] nnz = LibMatrixDatagen.computeNNZperBlock(rows, cols, rowsInBlock, colsInBlock, sparsity);
-			double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-			long numBlocks = nnz.length;
-			long numColBlocks = (long)Math.ceil((double)cols/(double)colsInBlock);
-			
-			for( long p = 0; p < numBlocks; p+=SEED_PARTITION_SIZE )
-			{
-				ArrayList<Tuple2<MatrixIndexes, Tuple2<Long, Long>>> seeds = new ArrayList<Tuple2<MatrixIndexes, Tuple2<Long, Long>>>();
-				double partitionSize = 0;
-				for( long i=p; i<Math.min(p+SEED_PARTITION_SIZE, numBlocks); i++ ) {
-					long r = 1 + i/numColBlocks;
-					long c = 1 + i%numColBlocks;
-					MatrixIndexes indx = new MatrixIndexes(r, c);
-					Long seedForBlock = bigrand.nextLong();
-					seeds.add(new Tuple2<MatrixIndexes, Tuple2<Long, Long>>(indx, new Tuple2<Long, Long>(seedForBlock, nnz[(int)i])));
-					partitionSize += nnz[(int)i] * 8 + 16;
-				}
-			
-				//for load balancing: degree of parallelism such that ~128MB per partition
-				int numPartitions = (int) Math.max(Math.min(partitionSize / hdfsBlockSize, seeds.size()), 1);
-				
-				//combine seeds partitions to seed rdd
-				JavaPairRDD<MatrixIndexes, Tuple2<Long, Long>> seedsRDD2 = 
-						JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(seeds, numPartitions));
-				seedsRDD = ( seedsRDD != null )? seedsRDD.union(seedsRDD2) : seedsRDD2;	
-			}
-			
-			//execute rand instruction over seed input
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = seedsRDD.mapToPair(new GenerateRandomBlock(rows, cols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdf, pdfParams)); 
-			
-			//output handling
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			if(!mcOut.dimsKnown(true)) {
-				//note: we cannot compute the nnz from sparsity because this would not reflect the 
-				//actual number of non-zeros, except for extreme values of sparsity equals 0 or 1.
-				long lnnz = (sparsity==0 || sparsity==1) ? (long) (sparsity*rows*cols) : -1;
-				mcOut.set(rows, cols, rowsInBlock, colsInBlock, lnnz);
-			}
-			sec.setRDDHandleForVariable(output.getName(), out);
+		switch( method ) {
+			case RAND: generateRandData(sec); break;
+			case SEQ: generateSequence(sec); break;
+			case SAMPLE: generateSample(sec); break;				
+			default: 
+				throw new DMLRuntimeException("Invalid datagen method: "+method); 
 		}
-		else if ( this.method == DataGenMethod.SEQ ) 
-		{
-			//sanity check valid increment
-			if(seq_incr == 0) {
-				throw new DMLRuntimeException("ERROR: While performing seq(" + seq_from + "," + seq_to + "," + seq_incr + ")");
-			}
-			
-			//handle default 1 to -1 for special case of from>to
-			seq_incr = LibMatrixDatagen.updateSeqIncr(seq_from, seq_to, seq_incr);
-			
-			if( LOG.isTraceEnabled() )
-				LOG.trace("Process RandSPInstruction seq with seqFrom="+seq_from+", seqTo="+seq_to+", seqIncr"+seq_incr);
-			
-			// offset generation (partitioned to bound memory requirements)
-			JavaRDD<Double> offsetsRDD = null;
-			double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-			long nnz = (long) Math.abs(Math.round((seq_to - seq_from)/seq_incr)) + 1;
-			long numBlocks = (long)Math.ceil(((double)nnz)/rowsInBlock);
+	}
+	
+	/**
+	 * 
+	 * @param sec
+	 * @throws DMLRuntimeException
+	 */
+	private void generateRandData(SparkExecutionContext sec) 
+		throws DMLRuntimeException
+	{
+		//step 1: generate pseudo-random seed (because not specified) 
+		long lSeed = seed; //seed per invocation
+		if( lSeed == DataGenOp.UNSPECIFIED_SEED ) 
+			lSeed = DataGenOp.generateRandomSeed();
 		
-			for( long p = 0; p < numBlocks; p+=SEED_PARTITION_SIZE )
-			{
-				ArrayList<Double> offsets = new ArrayList<Double>();
-				double partitionSize = 0;
-				for( long i=p; i<Math.min(p+SEED_PARTITION_SIZE, numBlocks); i++ ) {
-					double off = seq_from + seq_incr*i*rowsInBlock;
-					offsets.add(off);
-					partitionSize += rowsInBlock * 8 +16;
-				}
-				
-				//for load balancing: degree of parallelism such that ~128MB per partition
-				int numPartitions = (int) Math.max(Math.min(partitionSize / hdfsBlockSize, offsets.size()), 1);
-				
-				//combine seeds partitions to seed rdd
-				JavaRDD<Double> offsetsRDD2 = sec.getSparkContext().parallelize(offsets, numPartitions);
-				
-				offsetsRDD = ( offsetsRDD != null )? offsetsRDD.union(offsetsRDD2) : offsetsRDD2;		
-			}
-			
-			//sanity check number of non-zeros
-			if(nnz != rows && rows != -1) {
-				throw new DMLRuntimeException("Incorrect number of non-zeros: " + nnz + " != " + rows);
-			}
-			
-			//execute seq instruction over offset input
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = offsetsRDD.mapToPair(new GenerateSequenceBlock(rowsInBlock, seq_from, seq_to, seq_incr));
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Process RandSPInstruction rand with seed = "+lSeed+".");
 
-			//output handling
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			if(!mcOut.dimsKnown()) {
-				mcOut.set(nnz, 1, rowsInBlock, colsInBlock, nnz);
-			}
-			sec.setRDDHandleForVariable(output.getName(), out);
-		}
-		else if (this.method == DataGenMethod.SAMPLE)
+		//step 2: potential in-memory rand operations if applicable
+		if( isMemAvail(rows, cols, sparsity, minValue, maxValue) 
+			&&  DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK )
 		{
-			generateSample(sec);
+			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
+					pdf, (int)rows, (int)cols, rowsInBlock, colsInBlock, 
+					sparsity, minValue, maxValue, pdfParams);
+			MatrixBlock mb = MatrixBlock.randOperations(rgen, lSeed);
+			
+			sec.setMatrixOutput(output.getName(), mb);
+			Statistics.decrementNoOfExecutedSPInst();
+			return;
 		}
+		
+		//step 3: seed generation 
+		JavaPairRDD<MatrixIndexes, Tuple2<Long, Long>> seedsRDD = null;
+		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(lSeed);
+		long[] nnz = LibMatrixDatagen.computeNNZperBlock(rows, cols, rowsInBlock, colsInBlock, sparsity);
+		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
+		long numBlocks = nnz.length;
+		long numColBlocks = (long)Math.ceil((double)cols/(double)colsInBlock);
+					
+		//a) in-memory seed rdd construction 
+		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
+		{
+			ArrayList<Tuple2<MatrixIndexes, Tuple2<Long, Long>>> seeds = 
+					new ArrayList<Tuple2<MatrixIndexes, Tuple2<Long, Long>>>();
+			double partSize = 0;
+			for( long i=0; i<numBlocks; i++ ) {
+				long r = 1 + i/numColBlocks;
+				long c = 1 + i%numColBlocks;
+				MatrixIndexes indx = new MatrixIndexes(r, c);
+				Long seedForBlock = bigrand.nextLong();
+				seeds.add(new Tuple2<MatrixIndexes, Tuple2<Long, Long>>(indx, 
+						new Tuple2<Long, Long>(seedForBlock, nnz[(int)i])));
+				partSize += nnz[(int)i] * 8 + 16;
+			}
+			
+			//for load balancing: degree of parallelism such that ~128MB per partition
+			int numPartitions = (int) Math.max(Math.min(partSize/hdfsBlkSize, numBlocks), 1);
+				
+			//create seeds rdd 
+			seedsRDD = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(seeds, numPartitions));				
+		}
+		//b) file-based seed rdd construction (for robustness wrt large number of blocks)
+		else
+		{
+			String path = LibMatrixDatagen.generateUniqueSeedPath(dir);
+			double partSize = 0;
+			
+			try
+			{
+				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+				FSDataOutputStream fsOut = fs.create(new Path(path));
+				PrintWriter pw = new PrintWriter(fsOut);
+				StringBuilder sb = new StringBuilder();
+				for( long i=0; i<numBlocks; i++ ) {
+					sb.append(1 + i/numColBlocks);
+					sb.append(',');
+					sb.append(1 + i%numColBlocks);
+					sb.append(',');
+					sb.append(bigrand.nextLong());
+					sb.append(',');
+					sb.append(nnz[(int)i]);
+					pw.println(sb.toString());
+					sb.setLength(0);
+					partSize += nnz[(int)i] * 8 + 16;
+				}
+				pw.close();
+				fsOut.close();
+			}
+			catch( IOException ex ) {
+				throw new DMLRuntimeException(ex);
+			}
+			
+			//for load balancing: degree of parallelism such that ~128MB per partition
+			int numPartitions = (int) Math.max(Math.min(partSize/hdfsBlkSize, numBlocks), 1);
+			
+			//create seeds rdd 
+			seedsRDD = sec.getSparkContext()
+					.textFile(path, numPartitions)
+					.mapToPair(new ExtractSeedTuple());
+		}
+		
+		//step 4: execute rand instruction over seed input
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = seedsRDD
+				.mapToPair(new GenerateRandomBlock(rows, cols, rowsInBlock, colsInBlock, 
+						sparsity, minValue, maxValue, pdf, pdfParams)); 
+		
+		//step 5: output handling
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown(true)) {
+			//note: we cannot compute the nnz from sparsity because this would not reflect the 
+			//actual number of non-zeros, except for extreme values of sparsity equals 0 or 1.
+			long lnnz = (sparsity==0 || sparsity==1) ? (long) (sparsity*rows*cols) : -1;
+			mcOut.set(rows, cols, rowsInBlock, colsInBlock, lnnz);
+		}
+		sec.setRDDHandleForVariable(output.getName(), out);
+	}
+	
+	/**
+	 * 
+	 * @param sec
+	 * @throws DMLRuntimeException
+	 */
+	private void generateSequence(SparkExecutionContext sec) 
+		throws DMLRuntimeException
+	{
+		//sanity check valid increment
+		if(seq_incr == 0) {
+			throw new DMLRuntimeException("ERROR: While performing seq(" + seq_from + "," + seq_to + "," + seq_incr + ")");
+		}
+		
+		//handle default 1 to -1 for special case of from>to
+		seq_incr = LibMatrixDatagen.updateSeqIncr(seq_from, seq_to, seq_incr);
+		
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Process RandSPInstruction seq with seqFrom="+seq_from+", seqTo="+seq_to+", seqIncr"+seq_incr);
+		
+		//step 1: offset generation 
+		JavaRDD<Double> offsetsRDD = null;
+		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
+		long nnz = (long) Math.abs(Math.round((seq_to - seq_from)/seq_incr)) + 1;
+		long numBlocks = (long)Math.ceil(((double)nnz)/rowsInBlock);
+	
+		//a) in-memory offset rdd construction 
+		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
+		{
+			ArrayList<Double> offsets = new ArrayList<Double>();
+			double partSize = 0;
+			for( long i=0; i<numBlocks; i++ ) {
+				double off = seq_from + seq_incr*i*rowsInBlock;
+				offsets.add(off);
+				partSize += rowsInBlock * 8 +16;
+			}
+				
+			//for load balancing: degree of parallelism such that ~128MB per partition
+			int numPartitions = (int) Math.max(Math.min(partSize/hdfsBlkSize, numBlocks), 1);
+				
+			//create offset rdd
+			offsetsRDD = sec.getSparkContext().parallelize(offsets, numPartitions);
+		}
+		//b) file-based offset rdd construction (for robustness wrt large number of blocks)
+		else
+		{
+			String path = LibMatrixDatagen.generateUniqueSeedPath(dir);
+			double partSize = 0;
+			
+			try
+			{
+				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
+				FSDataOutputStream fsOut = fs.create(new Path(path));
+				PrintWriter pw = new PrintWriter(fsOut);
+				for( long i=0; i<numBlocks; i++ ) {
+					double off = seq_from + seq_incr*i*rowsInBlock;
+					pw.println(off);
+					partSize += rowsInBlock * 8 +16;
+				}
+				pw.close();
+				fsOut.close();
+			}
+			catch( IOException ex ) {
+				throw new DMLRuntimeException(ex);
+			}
+			
+			//for load balancing: degree of parallelism such that ~128MB per partition
+			int numPartitions = (int) Math.max(Math.min(partSize/hdfsBlkSize, numBlocks), 1);
+			
+			//create seeds rdd 
+			offsetsRDD = sec.getSparkContext()
+					.textFile(path, numPartitions)
+					.map(new ExtractOffsetTuple());
+		}
+		
+		//sanity check number of non-zeros
+		if(nnz != rows && rows != -1) {
+			throw new DMLRuntimeException("Incorrect number of non-zeros: " + nnz + " != " + rows);
+		}
+		
+		//step 2: execute seq instruction over offset input
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = offsetsRDD
+				.mapToPair(new GenerateSequenceBlock(rowsInBlock, seq_from, seq_to, seq_incr));
+
+		//step 3: output handling
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		if(!mcOut.dimsKnown()) {
+			mcOut.set(nnz, 1, rowsInBlock, colsInBlock, nnz);
+		}
+		sec.setRDDHandleForVariable(output.getName(), out);
 	}
 	
 	/**
@@ -447,7 +540,8 @@ public class RandSPInstruction extends UnarySPInstruction
 	 * @param sec
 	 * @throws DMLRuntimeException
 	 */
-	private void generateSample(SparkExecutionContext sec) throws DMLRuntimeException 
+	private void generateSample(SparkExecutionContext sec) 
+		throws DMLRuntimeException 
 	{
 		if ( maxValue < rows && !replace )
 			throw new DMLRuntimeException("Sample (size=" + rows + ") larger than population (size=" + maxValue + ") can only be generated with replacement.");
@@ -642,6 +736,38 @@ public class RandSPInstruction extends UnarySPInstruction
 		@Override
 		public Tuple2<Double, Double> call(Double t) throws Exception {
 			return new Tuple2<Double,Double>( r.nextDouble(), t );
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class ExtractSeedTuple implements PairFunction<String, MatrixIndexes, Tuple2<Long,Long>> {
+		private static final long serialVersionUID = 3973794676854157101L;
+
+		@Override
+		public Tuple2<MatrixIndexes, Tuple2<Long, Long>> call(String arg)
+				throws Exception 
+		{
+			String[] parts = IOUtilFunctions.split(arg, ",");
+			MatrixIndexes ix = new MatrixIndexes(
+					Long.parseLong(parts[0]), Long.parseLong(parts[1]));
+			Tuple2<Long,Long> seed = new Tuple2<Long,Long>(
+					Long.parseLong(parts[2]), Long.parseLong(parts[3]));
+			
+			return new Tuple2<MatrixIndexes, Tuple2<Long, Long>>(ix,seed);
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class ExtractOffsetTuple implements Function<String, Double> {
+		private static final long serialVersionUID = -3980257526545002552L;
+
+		@Override
+		public Double call(String arg) throws Exception {
+			return Double.parseDouble(arg);
 		}
 	}
 	

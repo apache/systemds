@@ -208,7 +208,7 @@ public class DataGen extends Lop
 		sb.append(iLop.prepScalarLabel());
 		sb.append(OPERAND_DELIMITOR);
 
-		if ( getExecType() == ExecType.MR ) {
+		if ( getExecType() == ExecType.MR || getExecType() == ExecType.SPARK ) {
 			sb.append(baseDir);
 			sb.append(OPERAND_DELIMITOR);
 		}

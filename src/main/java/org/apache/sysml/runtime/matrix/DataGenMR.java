@@ -40,7 +40,6 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.MRInstructionParser;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.mr.DataGenMRInstruction;
@@ -71,8 +70,6 @@ import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 public class DataGenMR
 {
 	private static final Log LOG = LogFactory.getLog(DataGenMR.class.getName());
-	
-	private static IDSequence _seqRandInput = new IDSequence(); 
 	
 	private DataGenMR() {
 		//prevent instantiation via private constructor
@@ -148,7 +145,7 @@ public class DataGenMR
 			if ( mrtype == MRINSTRUCTION_TYPE.Rand ) 
 			{
 				RandInstruction randInst = (RandInstruction) mrins;
-				inputs[i]=genInst.getBaseDir() + "tmp"+_seqRandInput.getNextID()+".randinput";
+				inputs[i]=LibMatrixDatagen.generateUniqueSeedPath(genInst.getBaseDir());
 				maxsparsity = Math.max(maxsparsity, randInst.getSparsity());
 				
 				FSDataOutputStream fsOut = fs.create(new Path(inputs[i]));

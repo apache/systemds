@@ -1,8 +1,8 @@
 ---
 layout: global
-displayTitle: SystemML Overview
-title: SystemML Overview
-description: SystemML documentation homepage
+displayTitle: SystemML Documentation
+title: SystemML Documentation
+description: SystemML Documentation
 ---
 <!--
 {% comment %}
@@ -23,25 +23,52 @@ limitations under the License.
 {% endcomment %}
 -->
 
-SystemML is a flexible, scalable machine learning (ML) system.
-SystemML's distinguishing characteristics are: (1) algorithm customizability,
-(2) multiple execution modes, including Standalone, Hadoop Batch, and Spark Batch,
-and (3) automatic optimization.
-
 SystemML is now an **Apache Incubator** project! Please see the [**Apache SystemML (incubating)**](http://systemml.apache.org/)
 website for more information.
 
-## SystemML Documentation
+SystemML is a flexible, scalable machine learning system.
+SystemML's distinguishing characteristics are:
+  (1) **Algorithm customizability via R-like and Python-like languages**,
+  (2) **Multiple execution modes**, including Standalone, Hadoop Batch, Spark Batch, MLContext, and JMLC, and
+  (3) **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
 
-For more information about SystemML, please consult the following references:
+The [SystemML GitHub README](https://github.com/apache/incubator-systemml) describes
+building, testing, and running SystemML.
 
-* [SystemML GitHub README](https://github.com/apache/incubator-systemml)
-* [Quick Start Guide](quick-start-guide.html)
+## Running SystemML
+
+* **Standalone** - Standalone mode allows data scientists to rapidly prototype algorithms on a single
+machine in R-like and Python-like declarative languages.
+  * The [SystemML GitHub README](https://github.com/apache/incubator-systemml) describes
+  a linear regression example in Standalone Mode.
+  * The [Quick Start Guide](quick-start-guide.html) provides additional examples of algorithm execution
+  in Standalone Mode.
+* **Hadoop Batch** - Algorithms are automatically optimized when distributed across Hadoop clusters.
+  * See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for detailed information.
+* **Spark Batch** - Algorithms are automatically optimized to run across Spark clusters.
+  * See **Invoking SystemML in Spark Batch Mode** **(Coming soon)**.
+* **MLContext** - MLContext is a programmatic API to SystemML.
+  * See the [MLContext Programming Guide](mlcontext-programming-guide.html) for
+  [**Spark Shell**](mlcontext-programming-guide.html#spark-shell-example),
+  [Java](mlcontext-programming-guide.html#java-example), and
+  [**Zeppelin Notebook**](mlcontext-programming-guide.html#zeppelin-notebook-example---linear-regression-algorithm)
+  examples.
+* **JMLC** - Java Machine Learning Connector.
+
+## Language Guides
+
+* [DML Language Reference](dml-language-reference.html) -
+DML is a high-level R-like declarative language for machine learning.
+* **PyDML Language Reference** **(Coming Soon)** -
+PyDML is a high-level Python-like declarative language for machine learning.
 * [DML and PyDML Programming Guide](dml-and-pydml-programming-guide.html)
-* [MLContext Programming Guide](mlcontext-programming-guide.html)
-* [Hadoop Batch Mode](hadoop-batch-mode.html)
-* Spark Batch Mode - **Coming Soon**
-* [Debugger Guide](debugger-guide.html)
-* [Algorithms Reference](algorithms-reference.html)
-* [DML (R-like Declarative Machine Learning) Language Reference](dml-language-reference.html)
-* PyDML (Python-Like Declarative Machine Learning) Language Reference - **Coming Soon**
+
+## Algorithms
+
+* [Algorithms Reference](algorithms-reference.html) - The Algorithms Reference describes the
+machine learning algorithms included with SystemML in detail.
+
+## Tools
+
+* [Debugger Guide](debugger-guide.html) - SystemML supports DML script-level debugging through a
+command-line interface.

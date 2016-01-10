@@ -29,9 +29,8 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.api.DMLScript;
 
-public class PydmlSyntacticErrorListener {
-	
-	
+public class PydmlSyntacticErrorListener 
+{	
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
 	public static class CustomDmlErrorListener extends BaseErrorListener {

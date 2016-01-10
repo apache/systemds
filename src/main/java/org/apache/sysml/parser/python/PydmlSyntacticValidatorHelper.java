@@ -30,8 +30,8 @@ import org.apache.sysml.parser.python.PydmlParser.ParameterizedExpressionContext
 import org.apache.sysml.parser.python.PydmlSyntacticErrorListener.CustomDmlErrorListener;
 
 
-public class PydmlSyntacticValidatorHelper {
-	
+public class PydmlSyntacticValidatorHelper 
+{	
 	private CustomDmlErrorListener _errorListener = null;
 	public PydmlSyntacticValidatorHelper(CustomDmlErrorListener errorListener) {
 		this._errorListener = errorListener;
@@ -69,33 +69,6 @@ public class PydmlSyntacticValidatorHelper {
 		retVal.add(functionName);
 		return retVal;
 	}
-	
-//	public static void setInfoForArithmeticOp(org.apache.sysml.parser.Expression current, 
-//			org.apache.sysml.parser.Expression left, 
-//			org.apache.sysml.parser.Expression right, String opStr) {
-//		try {
-//			// PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, MATMULT, POW, INVALID
-//			org.apache.sysml.parser.Expression.BinaryOp bop = org.apache.sysml.parser.Expression.getBinaryOp(opStr);
-//			current = new org.apache.sysml.parser.BinaryExpression(bop);
-//			((org.apache.sysml.parser.BinaryExpression)current).setLeft(left);
-//			((org.apache.sysml.parser.BinaryExpression)current).setRight(right);
-//			((org.apache.sysml.parser.BinaryExpression)current).setFilename(DmlSyntacticErrorListener.currentFileName.peek());
-//		}
-//		catch(Exception e) {
-//			System.out.println("In setInfoForArithmeticOp>>");
-//			e.printStackTrace();
-//		}
-//	}
-	
-//	public static void setInfoForBooleanOp(org.apache.sysml.parser.Expression current, 
-//			org.apache.sysml.parser.Expression left, 
-//			org.apache.sysml.parser.Expression right, String opStr) {
-//		org.apache.sysml.parser.Expression.BooleanOp bop = org.apache.sysml.parser.Expression.getBooleanOp(opStr);
-//		current = new org.apache.sysml.parser.BooleanExpression(bop);
-//		((org.apache.sysml.parser.BooleanExpression)current).setLeft(left);
-//		((org.apache.sysml.parser.BooleanExpression)current).setRight(right);
-//		((org.apache.sysml.parser.BooleanExpression)current).setFilename(DmlSyntacticErrorListener.currentFileName.peek());
-//	}
 	
 	public boolean validateBuiltinFunctions(FunctionCallAssignmentStatementContext ctx) {
 		String functionName = ctx.name.getText().replaceAll(" ", "").trim();

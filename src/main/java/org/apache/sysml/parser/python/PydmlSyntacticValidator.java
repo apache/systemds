@@ -380,26 +380,6 @@ public class PydmlSyntacticValidator implements PydmlListener
 	@Override
 	public void exitRelationalExpression(RelationalExpressionContext ctx) {
 		if(ctx.left.info.expr != null && ctx.right.info.expr != null) {
-//			String fileName = helper.getCurrentFileName();
-//			int line = ctx.start.getLine();
-//			int col = ctx.start.getCharPositionInLine();
-//			ArrayList<ParameterExpression> paramExpression = new ArrayList<ParameterExpression>();
-//			paramExpression.add(new ParameterExpression(null, ctx.left.info.expr));
-//			paramExpression.add(new ParameterExpression(null, ctx.right.info.expr));
-//			ParameterExpression operator = new ParameterExpression(null, new StringIdentifier(ctx.op.getText(), fileName, line, col, line, col));
-//			paramExpression.add(operator);
-//			
-//			try {
-//				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression("ppred", paramExpression, fileName, line, col, line, col);
-//				if (bife != null){
-//					// It is a builtin function
-//					ctx.info.expr = bife;
-//					return;
-//				}
-//			}
-//			catch(Exception e) {}
-//			helper.notifyErrorListeners("Cannot parse relational expression", ctx.getStart());
-			
 			Expression.RelationalOp rop = Expression.getRelationalOp(ctx.op.getText());
 			ctx.info.expr = new RelationalExpression(rop);
 			((RelationalExpression)ctx.info.expr).setLeft(ctx.left.info.expr);
@@ -468,25 +448,6 @@ public class PydmlSyntacticValidator implements PydmlListener
 		setFileLineColumn(ctx.info.expr, ctx);
 	}
 	
-//	@Override
-//	public void exitConstBooleanIdExpression(ConstBooleanIdExpressionContext ctx) {
-//		boolean val = false;
-//		if(ctx.getText().compareTo("TRUE") == 0) {
-//			val = true;
-//		}
-//		else if(ctx.getText().compareTo("FALSE") == 0) {
-//			val = false;
-//		}
-//		else {
-//			helper.notifyErrorListeners("cannot parse the boolean value: \'" +  ctx.getText() + "\'", ctx.getStart());
-//			return;
-//		}
-//		int linePosition = ctx.start.getLine();
-//		int charPosition = ctx.start.getCharPositionInLine();
-//		ctx.info.expr = new BooleanIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
-//		setFileLineColumn(ctx.info.expr, ctx);
-//	}
-
 	@Override
 	public void exitConstDoubleIdExpression(ConstDoubleIdExpressionContext ctx) {
 		try {
@@ -497,7 +458,7 @@ public class PydmlSyntacticValidator implements PydmlListener
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 		catch(Exception e) {
-			helper.notifyErrorListeners("cannot parse the double value: \'" +  ctx.getText() + "\'", ctx.getStart());
+			helper.notifyErrorListeners("cannot parse the float value: \'" +  ctx.getText() + "\'", ctx.getStart());
 			return;
 		}
 	}
@@ -512,7 +473,7 @@ public class PydmlSyntacticValidator implements PydmlListener
 			setFileLineColumn(ctx.info.expr, ctx);
 		}
 		catch(Exception e) {
-			helper.notifyErrorListeners("cannot parse the integer value: \'" +  ctx.getText() + "\'", ctx.getStart());
+			helper.notifyErrorListeners("cannot parse the int value: \'" +  ctx.getText() + "\'", ctx.getStart());
 			return;
 		}
 	}
@@ -547,13 +508,6 @@ public class PydmlSyntacticValidator implements PydmlListener
 		int col = ctx.start.getCharPositionInLine();
 		ctx.info.expr.setAllPositions(helper.getCurrentFileName(), line, col, line, col);
 		setFileLineColumn(ctx.info.expr, ctx);
-//		if(ctx.getChild(0) instanceof DataIdentifierContext) {
-//			ctx.info.expr = ctx.dataIdentifier().dataInfo.expr;
-//		}
-//		else {
-//			String msg = "cannot evaluate data expression ... strange";
-//			helper.notifyErrorListeners(msg, ctx.start);
-//		}
 	}
 	
 	@Override
@@ -661,16 +615,14 @@ public class PydmlSyntacticValidator implements PydmlListener
 							}
 						}
 						else {
-							val = text;
 							// the commandline parameters can be passed without any quotes
-//									helper.notifyErrorListeners("something wrong while parsing string ... strange", start);
-//									return null;
+							val = text;
 						}
 						return new StringIdentifier(val, helper.getCurrentFileName(), linePosition, charPosition, linePosition, charPosition);
 					}
 				}
 				catch(Exception e3) {
-					helper.notifyErrorListeners("unable to cast the commandline parameter into int/double/boolean/string", start);
+					helper.notifyErrorListeners("unable to cast the commandline parameter into int/float/bool/str", start);
 					return null;
 				}
 			}
@@ -851,25 +803,21 @@ public class PydmlSyntacticValidator implements PydmlListener
 			return;
 		}
 		if(paramExpression.get(0).getExpr() instanceof DataIdentifier) {
-			//  && paramExpression.get(0).getName() == null
-			// correct usage of identifier
-			// if(paramExpression.get(1).getName() == null) {
-				String fileName = helper.getCurrentFileName();
-				int line = ctx.start.getLine();
-				int col = ctx.start.getCharPositionInLine();
-				HashMap<String, Expression> varParams = new HashMap<String, Expression>();
-				varParams.put(DataExpression.IO_FILENAME, paramExpression.get(1).getExpr());
-				for(int i = 2; i < paramExpression.size(); i++) {
-					// DataExpression.FORMAT_TYPE, DataExpression.DELIM_DELIMITER, DataExpression.DELIM_HAS_HEADER_ROW,  DataExpression.DELIM_SPARSE
-					varParams.put(paramExpression.get(i).getName(), paramExpression.get(i).getExpr());
-				}
-				
-				DataExpression  dataExpression = new DataExpression(DataOp.WRITE, varParams, fileName, line, col, line, col);
-				ctx.info.stmt = new  OutputStatement((DataIdentifier) paramExpression.get(0).getExpr(), DataOp.WRITE, fileName, line, col, line, col);
-				setFileLineColumn(ctx.info.stmt, ctx);
-				((OutputStatement)ctx.info.stmt).setExprParams(dataExpression);
-				return;
-			//}
+			String fileName = helper.getCurrentFileName();
+			int line = ctx.start.getLine();
+			int col = ctx.start.getCharPositionInLine();
+			HashMap<String, Expression> varParams = new HashMap<String, Expression>();
+			varParams.put(DataExpression.IO_FILENAME, paramExpression.get(1).getExpr());
+			for(int i = 2; i < paramExpression.size(); i++) {
+				// DataExpression.FORMAT_TYPE, DataExpression.DELIM_DELIMITER, DataExpression.DELIM_HAS_HEADER_ROW,  DataExpression.DELIM_SPARSE
+				varParams.put(paramExpression.get(i).getName(), paramExpression.get(i).getExpr());
+			}
+			
+			DataExpression  dataExpression = new DataExpression(DataOp.WRITE, varParams, fileName, line, col, line, col);
+			ctx.info.stmt = new  OutputStatement((DataIdentifier) paramExpression.get(0).getExpr(), DataOp.WRITE, fileName, line, col, line, col);
+			setFileLineColumn(ctx.info.stmt, ctx);
+			((OutputStatement)ctx.info.stmt).setExprParams(dataExpression);
+			return;
 		}
 		
 		helper.notifyErrorListeners("incorrect usage of write function", ctx.start);
@@ -1107,7 +1055,7 @@ public class PydmlSyntacticValidator implements PydmlListener
 		}
 		else if(inDefaultNamespace(namespace) && functionName.compareTo("full") == 0) {
 			if(paramExpression.size() != 3) {
-				helper.notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 3 arguments (constant double value, number of rows, number of columns)", fnName);
+				helper.notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 3 arguments (constant float value, number of rows, number of columns)", fnName);
 				return null;
 			}
 			paramExpression.get(1).setName("rows");
@@ -1118,7 +1066,7 @@ public class PydmlSyntacticValidator implements PydmlListener
 		else if(inDefaultNamespace(namespace) && functionName.compareTo("matrix") == 0) {
 			// This can either be string initializer or as.matrix function
 			if(paramExpression.size() != 1) {
-				helper.notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 1 argument (either string or double value)", fnName);
+				helper.notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 1 argument (either str or float value)", fnName);
 				return null;
 			}
 			
@@ -1359,17 +1307,7 @@ public class PydmlSyntacticValidator implements PydmlListener
 				dmlOperator = "%*%";
 			}
 		}
-//		else if(inDefaultNamespace(namespace) && functionName.compareTo("power") == 0) {
-//			if(paramExpression.size() == 2) {
-//				dmlOperator = "^";
-//			}
-//		}
-//		else if(inDefaultNamespace(namespace) && functionName.compareTo("multiply") == 0) {
-//			if(paramExpression.size() == 2) {
-//				dmlOperator = "*";
-//			}
-//		}
-		
+
 		if(dmlOperator != null) {
 			Expression.BinaryOp bop = Expression.getBinaryOp(dmlOperator);
 			Expression expr = new BinaryExpression(bop);
@@ -1421,11 +1359,6 @@ public class PydmlSyntacticValidator implements PydmlListener
 			paramExpression = convertedSyntax.paramExpression;
 		}
 		
-		// Because the user might want to define a corresponding UDF function
-//		else if(inDefaultNamespace(namespace) && functionName.compareTo("seq") == 0) {
-//			helper.notifyErrorListeners("No function with name \'" + functionName + "\' exists for PyDML. Use \'range\' instead.", ctx.name);
-//			return;
-//		}
 		// ===========================================================================================
 		FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
 		try {
@@ -1503,9 +1436,6 @@ public class PydmlSyntacticValidator implements PydmlListener
 	
 	@Override
 	public void exitBuiltinFunctionExpression(BuiltinFunctionExpressionContext ctx) {
-//		if(!helper.validateBuiltinFunctions(ctx)) {
-//			return; // it is a built-in function and validation failed, so donot proceed ahead.
-//		}
 		// Double verification: verify passed function name is a (non-parameterized) built-in function.
 		ArrayList<String> names = helper.getQualifiedNames(ctx.name.getText());
 		if(names == null) {
@@ -1623,9 +1553,6 @@ public class PydmlSyntacticValidator implements PydmlListener
 		
 		if(!functionName.contains(".") || functionName.startsWith(DMLProgram.DEFAULT_NAMESPACE)) {
 			// In global namespace, so it can be a builtin function
-//			if(!helper.validateBuiltinFunctions(ctx)) {
-//				return; // it is a built-in function and validation failed, so donot proceed ahead.
-//			}
 			// Double verification: verify passed function name is a (non-parameterized) built-in function.
 			try {
 				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
@@ -1890,7 +1817,7 @@ public class PydmlSyntacticValidator implements PydmlListener
 				// Empty value allowed
 			}
 			else {
-				helper.notifyErrorListeners("the value of user parameter for external function should be of type string", ctx.start);
+				helper.notifyErrorListeners("the value of user parameter for external function should be of type str", ctx.start);
 				return;
 			}
 			otherParams.put(paramName, val);
@@ -1903,22 +1830,7 @@ public class PydmlSyntacticValidator implements PydmlListener
 			helper.notifyErrorListeners("the parameter \'className\' needs to be passed for defExternal", ctx.start);
 			return;
 		}
-		
-//		if(ctx.body.size() > 0) {
-//			// handle function body
-//			// Create arraylist of one statement block
-//			ArrayList<StatementBlock> body = new ArrayList<StatementBlock>();
-//			for(StatementContext stmtCtx : ctx.body) {
-//				body.add(getStatementBlock(stmtCtx.info.stmt));
-//			}
-//			((ExternalFunctionStatement) functionStmt).setBody(body);
-//			((ExternalFunctionStatement) functionStmt).mergeStatementBlocks();
-//		}
-//		else {
-//			helper.notifyErrorListeners("functions with no statements are not allowed", ctx.start);
-//			return;
-//		}
-		
+				
 		ctx.info.stmt = functionStmt;
 		setFileLineColumn(ctx.info.stmt, ctx);
 		ctx.info.functionName = ctx.name.getText();
@@ -2113,6 +2025,4 @@ public class PydmlSyntacticValidator implements PydmlListener
 			helper.notifyErrorListeners("incorrect valuetype (expected int, str, bool or float)", ctx.start);
 		}
 	}
-	
-		
 }

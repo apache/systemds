@@ -142,17 +142,14 @@ public class PyDMLParserWrapper extends AParserWrapper
 			
 			InputStream stream = new ByteArrayInputStream(dmlScript.getBytes());
 			in = new org.antlr.v4.runtime.ANTLRInputStream(stream);
-//			else {
-//				if(!(new File(fileName)).exists()) {
-//					throw new ParseException("ERROR: Cannot open file:" + fileName);
-//				}
-//				in = new ANTLRInputStream(new FileInputStream(fileName));
-//			}
-		} catch (FileNotFoundException e) {
+		} 
+		catch (FileNotFoundException e) {
 			throw new ParseException("ERROR: Cannot find file:" + fileName, e);
-		} catch (IOException e) {
+		} 
+		catch (IOException e) {
 			throw new ParseException("ERROR: Cannot open file:" + fileName, e);
-		} catch (LanguageException e) {
+		} 
+		catch (LanguageException e) {
 			throw new ParseException("ERROR: " + e.getMessage(), e);
 		}
 
@@ -267,29 +264,6 @@ public class PyDMLParserWrapper extends AParserWrapper
 					// Add the DMLProgram entries into current program
 					for(Map.Entry<String, DMLProgram> entry : stmtCtx.info.namespaces.entrySet()) {
 						dmlPgm.getNamespaces().put(entry.getKey(), entry.getValue());
-//						// Don't add DMLProgram into the current program, just add function statements
-//						// dmlPgm.getNamespaces().put(entry.getKey(), entry.getValue());
-//						// Add function statements to current dml program
-//						DMLProgram importedPgm = entry.getValue();
-//
-//						try {
-//							for(FunctionStatementBlock importedFnBlk : importedPgm.getFunctionStatementBlocks()) {
-//								if(importedFnBlk.getStatements() != null && importedFnBlk.getStatements().size() == 1) {
-//									String functionName = ((FunctionStatement)importedFnBlk.getStatement(0)).getName();
-//									dmlPgm.addFunctionStatementBlock(entry.getKey(), functionName, importedFnBlk);
-//								}
-//								else {
-//									LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " incorrect number of functions in the imported function block .... strange");
-//									return null;
-//								}
-//							}
-//							if(importedPgm.getStatementBlocks() != null && importedPgm.getStatementBlocks().size() > 0) {
-//								LOG.warn("Only the functions can be imported from the namespace " + entry.getKey());
-//							}
-//						} catch (LanguageException e) {
-//							LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " cannot import functions from the file in the import statement");
-//							return null;
-//						}
 					}
 				}
 				else {

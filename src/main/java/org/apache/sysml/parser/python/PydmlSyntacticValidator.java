@@ -21,6 +21,7 @@ package org.apache.sysml.parser.python;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang.StringUtils;
-
 import org.apache.sysml.parser.AssignmentStatement;
 import org.apache.sysml.parser.BinaryExpression;
 import org.apache.sysml.parser.BooleanExpression;
@@ -1455,34 +1455,43 @@ public class PydmlSyntacticValidator implements PydmlListener
 			return;
 		}
 		
-		if(!functionName.contains(".") || functionName.startsWith(DMLProgram.DEFAULT_NAMESPACE)) {
+		//Note: In contrast to the dml parser, namespace and function names are separated by '.' not '::'.  
+		//Hence, we have to include a whitelist of function names to handle builtins like 'as.scalar'.		
+		String[] whitelist = new String[]{"as.matrix","as.scalar","as.double","as.integer","as.logical"};
+		boolean isWhitelisted = Arrays.asList(whitelist).contains(functionName);
+		
+		if(    !functionName.contains(".") || isWhitelisted 
+			|| functionName.startsWith(DMLProgram.DEFAULT_NAMESPACE) ) 
+		{
 			// In global namespace, so it can be a builtin function
 			if(!helper.validateBuiltinFunctions(ctx)) {
 				return; // it is a built-in function and validation failed, so donot proceed ahead.
 			}
 			// Double verification: verify passed function name is a (non-parameterized) built-in function.
-			try {
+			try 
+			{
+				// builtin functions
 				BuiltinFunctionExpression bife = BuiltinFunctionExpression.getBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
-				if (bife != null){
-					// It is a builtin function
+				if (bife != null) {
 					setAssignmentStatement(target, bife, ctx);
 					return;
 				}
 				
+				// parameterized builtin functions
 				ParameterizedBuiltinFunctionExpression pbife = ParameterizedBuiltinFunctionExpression.getParamBuiltinFunctionExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
-				if (pbife != null){
-					// It is a parameterized builtin function
+				if (pbife != null) {
 					setAssignmentStatement(target, pbife, ctx);
 					return;
 				}
 				
-				// built-in read, rand ...
+				// built-in data expressions, e.g. read
 				DataExpression dbife = DataExpression.getDataExpression(functionName, functCall.getParamExprs(), fileName, line, col, line, col);
 				if (dbife != null){
 					setAssignmentStatement(target, dbife, ctx);
 					return;
 				}
-			} catch(Exception e) {
+			} 
+			catch(Exception e) {
 				helper.notifyErrorListeners("unable to process builtin function expression " + functionName  + ":" + e.getMessage(), ctx.start);
 				return ;
 			}

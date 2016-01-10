@@ -31,11 +31,12 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.JSONHelper;
 
@@ -486,7 +487,7 @@ public class DataExpression extends DataIdentifier
 		_varParams.remove(name);
 	}
 	
-	private String processInputFileName(HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
+	private String getInputFileName(HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
 		throws LanguageException 
 	{
 		String filename = null;
@@ -615,15 +616,23 @@ public class DataExpression extends DataIdentifier
 			JSONObject configObject = null;	
 
 			// Process expressions in input filename
-			String inputFileName = processInputFileName(currConstVars, conditional);
+			String inputFileName = getInputFileName(currConstVars, conditional);
 			
 			// Obtain and validate metadata filename
 			String mtdFileName = getMTDFileName(inputFileName);
-			
 
 			// track whether should attempt to read MTD file or not
 			boolean shouldReadMTD = checkMetadata;
-			
+
+			// Check for file existence (before metadata parsing for meaningful error messages)
+			if( shouldReadMTD && REJECT_READ_UNKNOWN_SIZE //skip check for jmlc/mlcontext apis
+				&& !MapReduceTool.existsFileOnHDFS(inputFileName)) 
+			{
+				String fsext = InfrastructureAnalyzer.isLocalMode() ? "FS (local mode)" : "HDFS";
+				raiseValidateError("Read input file does not exist on "+fsext+": " + 
+						inputFileName, conditional, LanguageErrorCodes.INVALID_PARAMETERS);								
+			}
+
 			// track whether format type has been inferred 
 			boolean inferredFormatType = false;
 			

@@ -43,11 +43,13 @@ public class ColStdDevsTest extends AutomatedTestBase {
     private static final String OUTPUT_NAME = "colStdDevs";
 
     private static final int rows = 1234;
-    private static final int cols1 = 1;
-    private static final int cols2 = 1432;
-    private static final double sparsity1 = 0.7;
-    private static final double sparsity2 = 0.2;
+    private static final int cols = 1432;
+    private static final double sparsitySparse = 0.2;
+    private static final double sparsityDense = 0.7;
     private static final double eps = Math.pow(10, -10);
+
+    private enum Sparsity {EMPTY, SPARSE, DENSE}
+    private enum DataType {MATRIX, ROWVECTOR, COLUMNVECTOR}
 
     @Override
     public void setUp() {
@@ -55,69 +57,149 @@ public class ColStdDevsTest extends AutomatedTestBase {
         TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME);
         addTestConfiguration(TEST_NAME, config);
     }
-
+    
     // Dense matrix
     @Test
     public void testColStdDevsDenseMatrixCP() {
-        testColStdDevs(TEST_NAME, false, false, ExecType.CP);
+        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.CP);
     }
 
     @Test
     public void testColStdDevsDenseMatrixSpark() {
-        testColStdDevs(TEST_NAME, false, false, ExecType.SPARK);
+        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.SPARK);
     }
 
     @Test
     public void testColStdDevsDenseMatrixMR() {
-        testColStdDevs(TEST_NAME, false, false, ExecType.MR);
+        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.MR);
     }
 
-    // Dense vector
+    // Dense row vector
     @Test
-    public void testColStdDevsDenseVectorCP() {
-        testColStdDevs(TEST_NAME, false, true, ExecType.CP);
-    }
-
-    @Test
-    public void testColStdDevsDenseVectorSpark() {
-        testColStdDevs(TEST_NAME, false, true, ExecType.SPARK);
+    public void testColStdDevsDenseRowVectorCP() {
+        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.CP);
     }
 
     @Test
-    public void testColStdDevsDenseVectorMR() {
-        testColStdDevs(TEST_NAME, false, true, ExecType.MR);
+    public void testColStdDevsDenseRowVectorSpark() {
+        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.SPARK);
+    }
+
+    @Test
+    public void testColStdDevsDenseRowVectorMR() {
+        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.MR);
+    }
+
+    // Dense column vector
+    @Test
+    public void testColStdDevsDenseColVectorCP() {
+        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.CP);
+    }
+
+    @Test
+    public void testColStdDevsDenseColVectorSpark() {
+        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
+    }
+
+    @Test
+    public void testColStdDevsDenseColVectorMR() {
+        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.MR);
     }
 
     // Sparse matrix
     @Test
     public void testColStdDevsSparseMatrixCP() {
-        testColStdDevs(TEST_NAME, true, false, ExecType.CP);
+        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.CP);
     }
 
     @Test
     public void testColStdDevsSparseMatrixSpark() {
-        testColStdDevs(TEST_NAME, true, false, ExecType.SPARK);
+        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.SPARK);
     }
 
     @Test
     public void testColStdDevsSparseMatrixMR() {
-        testColStdDevs(TEST_NAME, true, false, ExecType.MR);
+        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.MR);
     }
 
-    // Sparse vector
+    // Sparse row vector
     @Test
-    public void testColStdDevsSparseVectorCP() {
-        testColStdDevs(TEST_NAME, true, true, ExecType.CP);
-    }
-
-    @Test
-    public void testColStdDevsSparseVectorSpark() {
-        testColStdDevs(TEST_NAME, true, true, ExecType.SPARK);
+    public void testColStdDevsSparseRowVectorCP() {
+        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.CP);
     }
 
     @Test
-    public void testColStdDevsSparseVectorMR() {
-        testColStdDevs(TEST_NAME, true, true, ExecType.MR);
+    public void testColStdDevsSparseRowVectorSpark() {
+        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.SPARK);
+    }
+
+    @Test
+    public void testColStdDevsSparseRowVectorMR() {
+        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.MR);
+    }
+
+    // Sparse column vector
+    @Test
+    public void testColStdDevsSparseColVectorCP() {
+        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.CP);
+    }
+
+    @Test
+    public void testColStdDevsSparseColVectorSpark() {
+        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
+    }
+
+    @Test
+    public void testColStdDevsSparseColVectorMR() {
+        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.MR);
+    }
+
+    // Empty matrix
+    @Test
+    public void testColStdDevsEmptyMatrixCP() {
+        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.CP);
+    }
+
+    @Test
+    public void testColStdDevsEmptyMatrixSpark() {
+        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.SPARK);
+    }
+
+    @Test
+    public void testColStdDevsEmptyMatrixMR() {
+        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.MR);
+    }
+
+    // Empty row vector
+    @Test
+    public void testColStdDevsEmptyRowVectorCP() {
+        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.CP);
+    }
+
+    @Test
+    public void testColStdDevsEmptyRowVectorSpark() {
+        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.SPARK);
+    }
+
+    @Test
+    public void testColStdDevsEmptyRowVectorMR() {
+        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.MR);
+    }
+
+    // Empty column vector
+    @Test
+    public void testColStdDevsEmptyColVectorCP() {
+        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.CP);
+    }
+
+    @Test
+    public void testColStdDevsEmptyColVectorSpark() {
+        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.SPARK);
+    }
+
+    @Test
+    public void testColStdDevsEmptyColVectorMR() {
+        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.MR);
     }
 
     /**
@@ -125,11 +207,12 @@ public class ColStdDevsTest extends AutomatedTestBase {
      * dense/sparse matrices/vectors on the CP/Spark/MR platforms.
      *
      * @param testName The name of this test case.
-     * @param sparse Whether or not the matrix/vector should be sparse.
-     * @param vector Boolean value choosing between a vector and a matrix.
+     * @param sparsity Selection between empty, sparse, and dense data.
+     * @param dataType Selection between a matrix, a row vector, and a
+     *                 column vector.
      * @param platform Selection between CP/Spark/MR platforms.
      */
-    private void testColStdDevs(String testName, boolean sparse, boolean vector,
+    private void testColStdDevs(String testName, Sparsity sparsity, DataType dataType,
                                 ExecType platform) {
         // Configure settings for this test case
         RUNTIME_PLATFORM platformOld = rtplatform;
@@ -160,9 +243,38 @@ public class ColStdDevsTest extends AutomatedTestBase {
             rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
             // Generate data
-            double sparsity = sparse ? sparsity2 : sparsity1;
-            int cols = vector ? cols1 : cols2;
-            double[][] X = getRandomMatrix(rows, cols, -1, 1, sparsity, 7);
+            // - sparsity
+            double sparsityVal;
+            switch (sparsity) {
+                case EMPTY:
+                    sparsityVal = 0;
+                    break;
+                case SPARSE:
+                    sparsityVal = sparsitySparse;
+                    break;
+                case DENSE:
+                default:
+                    sparsityVal = sparsityDense;
+            }
+            // - size
+            int r;
+            int c;
+            switch (dataType) {
+                case ROWVECTOR:
+                    r = 1;
+                    c = cols;
+                    break;
+                case COLUMNVECTOR:
+                    r = rows;
+                    c = 1;
+                    break;
+                case MATRIX:
+                default:
+                    r = rows;
+                    c = cols;
+            }
+            // - generation
+            double[][] X = getRandomMatrix(r, c, -1, 1, sparsityVal, 7);
             writeInputMatrixWithMTD(INPUT_NAME, X, true);
 
             // Run DML and R scripts

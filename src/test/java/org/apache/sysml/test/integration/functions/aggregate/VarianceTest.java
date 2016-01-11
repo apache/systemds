@@ -74,8 +74,7 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.MR);
     }
 
-    // Dense vector
-    //  - Row vector
+    // Dense row vector
     @Test
     public void testVarianceDenseRowVectorCP() {
         testVariance(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.CP);
@@ -91,7 +90,7 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.MR);
     }
 
-    //  - Column vector
+    // Dense column vector
     @Test
     public void testVarianceDenseColVectorCP() {
         testVariance(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.CP);
@@ -123,8 +122,7 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.MR);
     }
 
-    // Sparse vector
-    //  - Row vector
+    // Sparse row vector
     @Test
     public void testVarianceSparseRowVectorCP() {
         testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.CP);
@@ -140,7 +138,7 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.MR);
     }
 
-    //  - Column vector
+    // Sparse column vector
     @Test
     public void testVarianceSparseColVectorCP() {
         testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.CP);
@@ -172,8 +170,7 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.MR);
     }
 
-    // Empty vector
-    //  - Row vector
+    // Empty row vector
     @Test
     public void testVarianceEmptyRowVectorCP() {
         testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.CP);
@@ -189,7 +186,7 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.MR);
     }
 
-    //  - Column vector
+    // Empty column vector
     @Test
     public void testVarianceEmptyColVectorCP() {
         testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.CP);

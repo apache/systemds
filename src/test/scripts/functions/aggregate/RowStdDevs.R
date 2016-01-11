@@ -27,4 +27,9 @@ library("matrixStats")
 X <- as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
 rowStdDevs <- rowSds(X)
 
+# R outputs the standard deviation of a single number as NA, whereas
+# a more appropriate value would be 0, so replace all NAs with zeros.
+# This is useful in the case of rowStdDevs of a column vector.
+rowStdDevs[is.na(rowStdDevs)] <- 0
+
 writeMM(as(rowStdDevs, "CsparseMatrix"), paste(args[2], "rowStdDevs", sep=""));

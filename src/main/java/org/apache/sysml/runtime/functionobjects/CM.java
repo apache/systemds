@@ -53,14 +53,14 @@ public class CM extends ValueFunction
 		
 		switch( _type ) //helper obj on demand
 		{
-			case COUNT:		
+			case COUNT:
 				break;
 			case CM4:
 			case CM3:
 				_buff3 = new KahanObject(0, 0);
-			case CM2:		
-			case VARIANCE:	
+			case CM2:
 				_buff2 = new KahanObject(0, 0);
+			case VARIANCE:
 			case MEAN:
 				_plus = KahanPlus.getKahanPlusFnObject();
 				break;
@@ -284,9 +284,7 @@ public class CM extends ValueFunction
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, w2*d/w);
 				double t1=cm1.w*w2/w*d;
 				double lt1=t1*d;
-				_buff2.set(cm1.m2);
-				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
-				cm1.m2.set(_buff2);
+				cm1.m2=(KahanObject) _plus.execute(cm1.m2, lt1);
 				cm1.w=w;
 				break;
 			}
@@ -420,10 +418,8 @@ public class CM extends ValueFunction
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, cm2.w*d/w);
 				double t1=cm1.w*cm2.w/w*d;
 				double lt1=t1*d;
-				_buff2.set(cm1.m2);
-				_buff2=(KahanObject) _plus.execute(_buff2, cm2.m2._sum, cm2.m2._correction);
-				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
-				cm1.m2.set(_buff2);
+				cm1.m2=(KahanObject) _plus.execute(cm1.m2, cm2.m2._sum, cm2.m2._correction);
+				cm1.m2=(KahanObject) _plus.execute(cm1.m2, lt1);
 				cm1.w=w;
 				break;
 			}

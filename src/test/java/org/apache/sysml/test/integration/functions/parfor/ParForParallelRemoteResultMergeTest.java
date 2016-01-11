@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.Ignore;
 
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -32,8 +31,7 @@ import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
 
 public class ParForParallelRemoteResultMergeTest extends AutomatedTestBase 
-{
-	
+{	
 	private final static String TEST_NAME1 = "parfor_pr_resultmerge2";
 	private final static String TEST_NAME2 = "parfor_pr_resultmerge32";
 	private final static String TEST_DIR = "functions/parfor/";
@@ -69,14 +67,12 @@ public class ParForParallelRemoteResultMergeTest extends AutomatedTestBase
 	}
 	
 	@Test
-	@Ignore
 	public void testMultipleResultMergeManyDense() 
 	{
 		runParallelRemoteResultMerge(TEST_NAME2, false);
 	}
 	
 	@Test
-	@Ignore
 	public void testMultipleResultMergeManySparse() 
 	{
 		runParallelRemoteResultMerge(TEST_NAME2, true);

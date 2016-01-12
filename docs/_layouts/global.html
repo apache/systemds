@@ -31,20 +31,26 @@
                     <ul class="nav">
                         <li><a href="index.html">Overview</a></li>
 
+                        <li><a href="https://github.com/apache/incubator-systemml">GitHub</a></li>
+
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                            
+                                <li>&nbsp;&nbsp;<b>Running SystemML:</b></li>
                                 <li><a href="https://github.com/apache/incubator-systemml">SystemML GitHub README</a></li>
                                 <li><a href="quick-start-guide.html">Quick Start Guide</a></li>
-                                <li><a href="dml-and-pydml-programming-guide.html">DML and PyDML Programming Guide</a></li>
-                                <li><a href="mlcontext-programming-guide.html">MLContext Programming Guide</a></li>
                                 <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
-                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
-                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
-                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext Programming Guide</a></li>
                                 <li class="divider"></li>
-                                <li>&nbsp;&nbsp;&nbsp;&nbsp; More Coming Soon...</li>
+                                <li>&nbsp;&nbsp;<b>Language Guides:</b></li>
+                                <li><a href="dml-language-reference.html">DML Language Reference</a></li>
+                                <li><a href="beginners-guide-to-dml-and-pydml.html">Beginner's Guide to DML and PyDML</a></li>
+                                <li class="divider"></li>
+                                <li>&nbsp;&nbsp;<b>ML Algorithms:</b></li>
+                                <li><a href="algorithms-reference.html">Algorithms Reference</a></li>
+                                <li class="divider"></li>
+                                <li>&nbsp;&nbsp;<b>Tools:</b></li>
+                                <li><a href="debugger-guide.html">Debugger Guide</a></li>
                             </ul>
                         </li>
 
@@ -68,6 +74,21 @@
         <script src="js/vendor/bootstrap.min.js"></script>
         <script src="js/vendor/anchor.min.js"></script>
         <script src="js/main.js"></script>
+
+{% if site.analytics_on == true %}
+{% case site.analytics_provider %}
+{% when "google_universal" %}
+        <!-- Analytics -->
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', '{{ site.analytics_google_universal_tracking_id }}', 'auto');
+            ga('send', 'pageview');
+        </script>
+{% endcase %}
+{% endif %}
 
         <!-- MathJax Section -->
         <script type="text/x-mathjax-config">

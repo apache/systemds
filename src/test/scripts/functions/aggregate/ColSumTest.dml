@@ -21,8 +21,6 @@
 
 # junit test class: org.apache.sysml.test.integration.functions.aggregate.ColSumTest.java
 
-$$readhelper$$
-
 Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
 VectorColSum = colSums(Vector);
 write(VectorColSum, "$$outdir$$vector_colsum", format="text");

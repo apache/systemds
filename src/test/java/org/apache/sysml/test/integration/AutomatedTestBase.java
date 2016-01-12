@@ -825,10 +825,15 @@ public abstract class AutomatedTestBase
 
 			// Create a SystemML config file for this test case.
 			// Use the canned file under src/test/config as a template
-			String configTemplate = FileUtils.readFileToString(CONFIG_TEMPLATE_FILE,
-					"UTF-8");
+			String configTemplate = FileUtils.readFileToString(CONFIG_TEMPLATE_FILE, "UTF-8");
 			
-			FileUtils.write(getCurConfigFile(), configTemplate, "UTF-8");
+			String localTemp = curLocalTempDir.getPath();
+			String configContents = configTemplate.replace("<scratch>scratch_space</scratch>", 
+					String.format("<scratch>%s/scratch_space</scratch>", localTemp));
+			configContents = configContents.replace("<localtmpdir>/tmp/systemml</localtmpdir>", 
+					String.format("<localtmpdir>%s/localtmp</localtmpdir>", localTemp));
+			
+			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 			
 			System.out.printf(
 					"This test case will use SystemML config file %s\n",

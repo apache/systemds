@@ -1,7 +1,7 @@
 ---
 layout: global
-title: DML and PyDML Programming Guide
-description: DML and PyDML Programming Guide
+title: Beginner's Guide to DML and PyDML
+description: Beginner's Guide to DML and PyDML
 ---
 <!--
 {% comment %}
@@ -41,7 +41,7 @@ SystemML automatically performs advanced
 optimizations based on data and cluster characteristics, so much of the need to manually
 tweak algorithms is largely reduced or eliminated.
 
-This SystemML Programming Guide serves as a starting point for writing DML and PyDML 
+This Beginner's Guide serves as a starting point for writing DML and PyDML
 scripts.
 
 
@@ -73,11 +73,11 @@ Program arguments. A PyDML script requires the addition of a `-python` switch.
 <div class="codetabs2">
 
 <div data-lang="Eclipse Debug Configuration - Main" markdown="1">
-![Eclipse Debug Configuration - Main](img/dml-and-pydml-programming-guide/dmlscript-debug-configuration-hello-world-main-class.png "DMLScript Debug Configuration, Main class")
+![Eclipse Debug Configuration - Main](img/beginners-guide-to-dml-and-pydml/dmlscript-debug-configuration-hello-world-main-class.png "DMLScript Debug Configuration, Main class")
 </div>
 
 <div data-lang="Eclipse Debug Configuration - Arguments" markdown="1">
-![Eclipse Debug Configuration - Arguments](img/dml-and-pydml-programming-guide/dmlscript-debug-configuration-hello-world-program-arguments.png "DMLScript Debug Configuration, Program arguments")
+![Eclipse Debug Configuration - Arguments](img/beginners-guide-to-dml-and-pydml/dmlscript-debug-configuration-hello-world-program-arguments.png "DMLScript Debug Configuration, Program arguments")
 </div>
 
 </div>

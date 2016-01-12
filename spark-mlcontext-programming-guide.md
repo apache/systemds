@@ -1,7 +1,7 @@
 ---
 layout: global
-title: MLContext Programming Guide
-description: MLContext Programming Guide
+title: Spark MLContext Programming Guide
+description: Spark MLContext Programming Guide
 ---
 <!--
 {% comment %}
@@ -30,13 +30,13 @@ limitations under the License.
 
 # Overview
 
-The `MLContext` API offers a programmatic interface for interacting with SystemML from languages
+The Spark `MLContext` API offers a programmatic interface for interacting with SystemML from Spark using languages
 such as Scala and Java. When interacting with `MLContext` from Spark, `DataFrame`s and `RDD`s can be passed
 to SystemML. These data representations are converted to a
 binary-block data format, allowing for SystemML's optimizations to be performed.
 
 
-# Spark Shell Example
+# Spark Shell (Scala) Example
 
 ## Start Spark Shell with SystemML
 
@@ -521,7 +521,7 @@ Next, we'll consider an example of a SystemML linear regression algorithm run fr
 Instructions to clone and build Zeppelin can be found at the [GitHub Apache Zeppelin](https://github.com/apache/incubator-zeppelin)
 site. This example also will look at the Spark ML linear regression algorithm.
 
-This Zeppelin notebook example can be downloaded [here](files/mlcontext-programming-guide/zeppelin-notebook-linear-regression/2AZ2AQ12B.tar.gz).
+This Zeppelin notebook example can be downloaded [here](files/spark-mlcontext-programming-guide/zeppelin-notebook-linear-regression/2AZ2AQ12B.tar.gz).
 Once downloaded and unzipped, place the folder in the Zeppelin `notebook` directory.
 
 A `conf/zeppelin-env.sh` file is created based on `conf/zeppelin-env.sh.template`. For
@@ -539,11 +539,11 @@ Start Zeppelin using the `zeppelin.sh` script:
 After opening Zeppelin in a brower, we see the "SystemML - Linear Regression" note in the list of available
 Zeppelin notes.
 
-![Zeppelin Notebook](img/mlcontext-programming-guide/zeppelin-notebook.png "Zeppelin Notebook")
+![Zeppelin Notebook](img/spark-mlcontext-programming-guide/zeppelin-notebook.png "Zeppelin Notebook")
 
 If we go to the "SystemML - Linear Regression" note, we see that the note consists of several cells of code.
 
-![Zeppelin 'SystemML - Linear Regression' Note](img/mlcontext-programming-guide/zeppelin-notebook-systemml-linear-regression.png "Zeppelin 'SystemML - Linear Regression' Note")
+![Zeppelin 'SystemML - Linear Regression' Note](img/spark-mlcontext-programming-guide/zeppelin-notebook-systemml-linear-regression.png "Zeppelin 'SystemML - Linear Regression' Note")
 
 Let's briefly consider these cells.
 

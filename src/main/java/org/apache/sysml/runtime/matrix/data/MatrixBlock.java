@@ -44,6 +44,7 @@ import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.CTable;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
 import org.apache.sysml.runtime.functionobjects.Divide;
@@ -71,6 +72,7 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
+import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.matrix.operators.COVOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
@@ -3288,6 +3290,82 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 					cor.quickSetValue(r, 1, buffer._correction);
 				}
 		}
+		else if (aggOp.correctionLocation == CorrectionLocationType.LASTFOURROWS
+				&& aggOp.increOp.fn instanceof CM
+				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
+			// create buffers to store results
+			CM_COV_Object cbuff_curr = new CM_COV_Object();
+			CM_COV_Object cbuff_part = new CM_COV_Object();
+
+			// perform incremental aggregation
+			for (int r=0; r<rlen; r++)
+				for (int c=0; c<clen; c++) {
+					// extract current values: { var | mean, count, m2 correction, mean correction }
+					// note: m2 = var * (n - 1)
+					cbuff_curr.w = cor.quickGetValue(1, c); // count
+					cbuff_curr.m2._sum = quickGetValue(r, c) * (cbuff_curr.w - 1); // m2
+					cbuff_curr.mean._sum = cor.quickGetValue(0, c); // mean
+					cbuff_curr.m2._correction = cor.quickGetValue(2, c);
+					cbuff_curr.mean._correction = cor.quickGetValue(3, c);
+
+					// extract partial values: { var | mean, count, m2 correction, mean correction }
+					// note: m2 = var * (n - 1)
+					cbuff_part.w = newWithCor.quickGetValue(r+2, c); // count
+					cbuff_part.m2._sum = newWithCor.quickGetValue(r, c) * (cbuff_part.w - 1); // m2
+					cbuff_part.mean._sum = newWithCor.quickGetValue(r+1, c); // mean
+					cbuff_part.m2._correction = newWithCor.quickGetValue(r+3, c);
+					cbuff_part.mean._correction = newWithCor.quickGetValue(r+4, c);
+
+					// calculate incremental aggregated variance
+					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+
+					// store updated values: { var | mean, count, m2 correction, mean correction }
+					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
+					quickSetValue(r, c, var);
+					cor.quickSetValue(0, c, cbuff_curr.mean._sum); // mean
+					cor.quickSetValue(1, c, cbuff_curr.w); // count
+					cor.quickSetValue(2, c, cbuff_curr.m2._correction);
+					cor.quickSetValue(3, c, cbuff_curr.mean._correction);
+				}
+		}
+		else if (aggOp.correctionLocation == CorrectionLocationType.LASTFOURCOLUMNS
+				&& aggOp.increOp.fn instanceof CM
+				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
+			// create buffers to store results
+			CM_COV_Object cbuff_curr = new CM_COV_Object();
+			CM_COV_Object cbuff_part = new CM_COV_Object();
+
+			// perform incremental aggregation
+			for (int r=0; r<rlen; r++)
+				for (int c=0; c<clen; c++) {
+					// extract current values: { var | mean, count, m2 correction, mean correction }
+					// note: m2 = var * (n - 1)
+					cbuff_curr.w = cor.quickGetValue(r, 1); // count
+					cbuff_curr.m2._sum = quickGetValue(r, c) * (cbuff_curr.w - 1); // m2
+					cbuff_curr.mean._sum = cor.quickGetValue(r, 0); // mean
+					cbuff_curr.m2._correction = cor.quickGetValue(r, 2);
+					cbuff_curr.mean._correction = cor.quickGetValue(r, 3);
+
+					// extract partial values: { var | mean, count, m2 correction, mean correction }
+					// note: m2 = var * (n - 1)
+					cbuff_part.w = newWithCor.quickGetValue(r, c+2); // count
+					cbuff_part.m2._sum = newWithCor.quickGetValue(r, c) * (cbuff_part.w - 1); // m2
+					cbuff_part.mean._sum = newWithCor.quickGetValue(r, c+1); // mean
+					cbuff_part.m2._correction = newWithCor.quickGetValue(r, c+3);
+					cbuff_part.mean._correction = newWithCor.quickGetValue(r, c+4);
+
+					// calculate incremental aggregated variance
+					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+
+					// store updated values: { var | mean, count, m2 correction, mean correction }
+					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
+					quickSetValue(r, c, var);
+					cor.quickSetValue(r, 0, cbuff_curr.mean._sum); // mean
+					cor.quickSetValue(r, 1, cbuff_curr.w); // count
+					cor.quickSetValue(r, 2, cbuff_curr.m2._correction);
+					cor.quickSetValue(r, 3, cbuff_curr.mean._correction);
+				}
+		}
 		else
 			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 	}
@@ -3377,17 +3455,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 						}
 				}
 			}
-		}/*else if(aggOp.correctionLocation==0)
-		{
-			for(int r=0; r<rlen; r++)
-				for(int c=0; c<clen; c++)
-				{
-					//buffer._sum=this.getValue(r, c);
-					//buffer._correction=0;
-					//buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newWithCor.getValue(r, c));
-					setValue(r, c, this.getValue(r, c)+newWithCor.getValue(r, c));
-				}
-		}*/else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
+		}
+		else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
 		{
 			double n, n2, mu2;
 			for(int r=0; r<rlen-2; r++)
@@ -3423,6 +3492,82 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 					quickSetValue(r, c, buffer._sum);
 					quickSetValue(r, c+1, n);
 					quickSetValue(r, c+2, buffer._correction);
+				}
+		}
+		else if (aggOp.correctionLocation == CorrectionLocationType.LASTFOURROWS
+				&& aggOp.increOp.fn instanceof CM
+				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
+			// create buffers to store results
+			CM_COV_Object cbuff_curr = new CM_COV_Object();
+			CM_COV_Object cbuff_part = new CM_COV_Object();
+
+			// perform incremental aggregation
+			for (int r=0; r<rlen-4; r++)
+				for (int c=0; c<clen; c++) {
+					// extract current values: { var | mean, count, m2 correction, mean correction }
+					// note: m2 = var * (n - 1)
+					cbuff_curr.w = quickGetValue(r+2, c); // count
+					cbuff_curr.m2._sum = quickGetValue(r, c) * (cbuff_curr.w - 1); // m2
+					cbuff_curr.mean._sum = quickGetValue(r+1, c); // mean
+					cbuff_curr.m2._correction = quickGetValue(r+3, c);
+					cbuff_curr.mean._correction = quickGetValue(r+4, c);
+
+					// extract partial values: { var | mean, count, m2 correction, mean correction }
+					// note: m2 = var * (n - 1)
+					cbuff_part.w = newWithCor.quickGetValue(r+2, c); // count
+					cbuff_part.m2._sum = newWithCor.quickGetValue(r, c) * (cbuff_part.w - 1); // m2
+					cbuff_part.mean._sum = newWithCor.quickGetValue(r+1, c); // mean
+					cbuff_part.m2._correction = newWithCor.quickGetValue(r+3, c);
+					cbuff_part.mean._correction = newWithCor.quickGetValue(r+4, c);
+
+					// calculate incremental aggregated variance
+					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+
+					// store updated values: { var | mean, count, m2 correction, mean correction }
+					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
+					quickSetValue(r, c, var);
+					quickSetValue(r+1, c, cbuff_curr.mean._sum); // mean
+					quickSetValue(r+2, c, cbuff_curr.w); // count
+					quickSetValue(r+3, c, cbuff_curr.m2._correction);
+					quickSetValue(r+4, c, cbuff_curr.mean._correction);
+				}
+		}
+		else if (aggOp.correctionLocation == CorrectionLocationType.LASTFOURCOLUMNS
+				&& aggOp.increOp.fn instanceof CM
+				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
+			// create buffers to store results
+			CM_COV_Object cbuff_curr = new CM_COV_Object();
+			CM_COV_Object cbuff_part = new CM_COV_Object();
+
+			// perform incremental aggregation
+			for (int r=0; r<rlen; r++)
+				for (int c=0; c<clen-4; c++) {
+					// extract current values: { var | mean, count, m2 correction, mean correction }
+					// note: m2 = var * (n - 1)
+					cbuff_curr.w = quickGetValue(r, c+2); // count
+					cbuff_curr.m2._sum = quickGetValue(r, c) * (cbuff_curr.w - 1); // m2
+					cbuff_curr.mean._sum = quickGetValue(r, c+1); // mean
+					cbuff_curr.m2._correction = quickGetValue(r, c+3);
+					cbuff_curr.mean._correction = quickGetValue(r, c+4);
+
+					// extract partial values: { var | mean, count, m2 correction, mean correction }
+					// note: m2 = var * (n - 1)
+					cbuff_part.w = newWithCor.quickGetValue(r, c+2); // count
+					cbuff_part.m2._sum = newWithCor.quickGetValue(r, c) * (cbuff_part.w - 1); // m2
+					cbuff_part.mean._sum = newWithCor.quickGetValue(r, c+1); // mean
+					cbuff_part.m2._correction = newWithCor.quickGetValue(r, c+3);
+					cbuff_part.mean._correction = newWithCor.quickGetValue(r, c+4);
+
+					// calculate incremental aggregated variance
+					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+
+					// store updated values: { var | mean, count, m2 correction, mean correction }
+					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
+					quickSetValue(r, c, var);
+					quickSetValue(r, c+1, cbuff_curr.mean._sum); // mean
+					quickSetValue(r, c+2, cbuff_curr.w); // count
+					quickSetValue(r, c+3, cbuff_curr.m2._correction);
+					quickSetValue(r, c+4, cbuff_curr.mean._correction);
 				}
 		}
 		else
@@ -4293,6 +4438,12 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				case LASTTWOCOLUMNS: 
 					tempCellIndex.column+=2; 
 					break;
+				case LASTFOURROWS:
+					tempCellIndex.row+=4;
+					break;
+				case LASTFOURCOLUMNS:
+					tempCellIndex.column+=4;
+					break;
 				default:
 					throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	
 			}
@@ -4476,12 +4627,29 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 		
 		//determine number of rows/cols to be removed
-		int step = ( correctionLocation==CorrectionLocationType.LASTTWOROWS 
-				    || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS) ? 2 : 1;
+		int step;
+		switch (correctionLocation) {
+			case LASTROW:
+			case LASTCOLUMN:
+				step = 1;
+				break;
+			case LASTTWOROWS:
+			case LASTTWOCOLUMNS:
+				step = 2;
+				break;
+			case LASTFOURROWS:
+			case LASTFOURCOLUMNS:
+				step = 4;
+				break;
+			default:
+				step = 0;
+		}
+
 		
-		//e.g., colSums, colMeans, colMaxs, colMeans
-		if(   correctionLocation==CorrectionLocationType.LASTROW 
-		   || correctionLocation==CorrectionLocationType.LASTTWOROWS )
+		//e.g., colSums, colMeans, colMaxs, colMeans, colVars
+		if(   correctionLocation==CorrectionLocationType.LASTROW
+		   || correctionLocation==CorrectionLocationType.LASTTWOROWS
+		   || correctionLocation==CorrectionLocationType.LASTFOURROWS )
 		{
 			if( sparse ) //SPARSE
 			{
@@ -4502,9 +4670,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 			rlen -= step;
 		}
 		
-		//e.g., rowSums, rowsMeans, rowsMaxs, rowsMeans
-		if(   correctionLocation==CorrectionLocationType.LASTCOLUMN 
-		   || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS )
+		//e.g., rowSums, rowsMeans, rowsMaxs, rowsMeans, rowVars
+		else if(   correctionLocation==CorrectionLocationType.LASTCOLUMN
+		        || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS
+		        || correctionLocation==CorrectionLocationType.LASTFOURCOLUMNS )
 		{
 			if(sparse) //SPARSE
 			{

@@ -94,7 +94,8 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "a*"    , MRINSTRUCTION_TYPE.Aggregate);
 		String2MRInstructionType.put( "amax"  , MRINSTRUCTION_TYPE.Aggregate);
 		String2MRInstructionType.put( "amin"  , MRINSTRUCTION_TYPE.Aggregate);
-		String2MRInstructionType.put( "amean"  , MRINSTRUCTION_TYPE.Aggregate);
+		String2MRInstructionType.put( "amean" , MRINSTRUCTION_TYPE.Aggregate);
+		String2MRInstructionType.put( "avar"  , MRINSTRUCTION_TYPE.Aggregate);
 		String2MRInstructionType.put( "arimax"  , MRINSTRUCTION_TYPE.Aggregate);
 		String2MRInstructionType.put( "arimin"  , MRINSTRUCTION_TYPE.Aggregate);
 
@@ -116,6 +117,9 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "uamean", MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uarmean",MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uacmean",MRINSTRUCTION_TYPE.AggregateUnary);
+		String2MRInstructionType.put( "uavar",  MRINSTRUCTION_TYPE.AggregateUnary);
+		String2MRInstructionType.put( "uarvar", MRINSTRUCTION_TYPE.AggregateUnary);
+		String2MRInstructionType.put( "uacvar", MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "ua*"   , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uamax" , MRINSTRUCTION_TYPE.AggregateUnary);
 		String2MRInstructionType.put( "uamin" , MRINSTRUCTION_TYPE.AggregateUnary);

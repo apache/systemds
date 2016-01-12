@@ -204,6 +204,18 @@ public class OperationsOnMatrixValues
 					corRow=rlen;
 					corCol=2;
 					break;
+				case LASTFOURROWS:
+					outRow=rlen-4;
+					outCol=clen;
+					corRow=4;
+					corCol=clen;
+					break;
+				case LASTFOURCOLUMNS:
+					outRow=rlen;
+					outCol=clen-4;
+					corRow=rlen;
+					corCol=4;
+					break;
 				default:
 						throw new DMLRuntimeException("unrecognized correctionLocation: "+op.correctionLocation);
 				}

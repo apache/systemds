@@ -357,6 +357,13 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 				else if( _direction == Direction.Row ) //(always dense)
 					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 2, 1.0);
 				break;
+			case VAR:
+				//worst-case correction LASTFOURROWS / LASTFOURCOLUMNS
+				if( _direction == Direction.Col ) //(potentially sparse)
+					val = OptimizerUtils.estimateSizeExactSparsity(4, dim2, sparsity);
+				else if( _direction == Direction.Row ) //(always dense)
+					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 4, 1.0);
+				break;
 			case MAXINDEX:
 			case MININDEX:
 				Hop hop = getInput().get(0);
@@ -700,7 +707,8 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		boolean ret = (_direction == Direction.RowCol) && //full aggregate
 		              (_op == AggOp.SUM || _op == AggOp.SUM_SQ || //valid aggregration functions
 		               _op == AggOp.MIN || _op == AggOp.MAX ||
-		               _op == AggOp.PROD || _op == AggOp.MEAN);
+		               _op == AggOp.PROD || _op == AggOp.MEAN ||
+		               _op == AggOp.VAR);
 		//note: trace and maxindex are not transpose-safe.
 		
 		return ret;	

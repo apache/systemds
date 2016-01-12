@@ -1064,7 +1064,7 @@ public abstract class Hop
 	
 	
 	public enum AggOp {
-		SUM, SUM_SQ, MIN, MAX, TRACE, PROD, MEAN, MAXINDEX, MININDEX
+		SUM, SUM_SQ, MIN, MAX, TRACE, PROD, MEAN, VAR, MAXINDEX, MININDEX
 	};
 
 	public enum ReOrgOp {
@@ -1124,6 +1124,7 @@ public abstract class Hop
 		HopsAgg2Lops.put(AggOp.MININDEX, org.apache.sysml.lops.Aggregate.OperationTypes.MinIndex);
 		HopsAgg2Lops.put(AggOp.PROD, org.apache.sysml.lops.Aggregate.OperationTypes.Product);
 		HopsAgg2Lops.put(AggOp.MEAN, org.apache.sysml.lops.Aggregate.OperationTypes.Mean);
+		HopsAgg2Lops.put(AggOp.VAR, org.apache.sysml.lops.Aggregate.OperationTypes.Var);
 	}
 
 	protected static final HashMap<ReOrgOp, org.apache.sysml.lops.Transform.OperationTypes> HopsTransf2Lops;
@@ -1402,6 +1403,7 @@ public abstract class Hop
 		HopsAgg2String.put(AggOp.MININDEX, "minindex");
 		HopsAgg2String.put(AggOp.TRACE, "trace");
 		HopsAgg2String.put(AggOp.MEAN, "mean");
+		HopsAgg2String.put(AggOp.VAR, "var");
 	}
 
 	protected static final HashMap<Hop.ReOrgOp, String> HopsTransf2String;

@@ -47,8 +47,10 @@ public class PartialAggregate extends Lop
 		LASTROW, 
 		LASTCOLUMN, 
 		LASTTWOROWS, 
-		LASTTWOCOLUMNS, 
-		INVALID 
+		LASTTWOCOLUMNS,
+		LASTFOURROWS,
+		LASTFOURCOLUMNS,
+		INVALID
 	};
 	
 	private Aggregate.OperationTypes operation;
@@ -212,7 +214,35 @@ public class PartialAggregate extends Lop
 							+ "Unknown aggregate direction: " + direction);
 			}
 			break;
-			
+
+		case Var:
+			// Computation of stable variance requires each mapper to
+			// output the running variance, the running mean, the
+			// count, a correction term for the squared deviations
+			// from the sample mean (m2), and a correction term for
+			// the mean.  These values collectively allow all other
+			// necessary intermediates to be reconstructed, and the
+			// variance will output by our unary aggregate framework.
+			// Thus, our outputs will be:
+			// { var | mean, count, m2 correction, mean correction }
+			switch (direction) {
+				case Col:
+					// colVars: { var | mean, count, m2 correction, mean correction },
+					// where each element is a column.
+					loc = CorrectionLocationType.LASTFOURROWS;
+					break;
+				case Row:
+				case RowCol:
+					// var, rowVars: { var | mean, count, m2 correction, mean correction },
+					// where each element is a row.
+					loc = CorrectionLocationType.LASTFOURCOLUMNS;
+					break;
+				default:
+					throw new LopsException("PartialAggregate.getCorrectionLocation() - "
+							+ "Unknown aggregate direction: " + direction);
+			}
+			break;
+
 		case MaxIndex:
 		case MinIndex:
 			loc = CorrectionLocationType.LASTCOLUMN;
@@ -325,16 +355,6 @@ public class PartialAggregate extends Lop
 				break;
 			}
 
-			case Mean: {
-				if( dir == DirectionTypes.RowCol ) 
-					return "uamean";
-				else if( dir == DirectionTypes.Row ) 
-					return "uarmean";
-				else if( dir == DirectionTypes.Col ) 
-					return "uacmean";
-				break;
-			}			
-			
 			case KahanSum: {
 				// instructions that use kahanSum are similar to ua+,uar+,uac+
 				// except that they also produce correction values along with partial
@@ -355,6 +375,26 @@ public class PartialAggregate extends Lop
 					return "uarsqk+";
 				else if( dir == DirectionTypes.Col )
 					return "uacsqk+";
+				break;
+			}
+
+			case Mean: {
+				if( dir == DirectionTypes.RowCol )
+					return "uamean";
+				else if( dir == DirectionTypes.Row )
+					return "uarmean";
+				else if( dir == DirectionTypes.Col )
+					return "uacmean";
+				break;
+			}
+
+			case Var: {
+				if( dir == DirectionTypes.RowCol )
+					return "uavar";
+				else if( dir == DirectionTypes.Row )
+					return "uarvar";
+				else if( dir == DirectionTypes.Col )
+					return "uacvar";
 				break;
 			}
 

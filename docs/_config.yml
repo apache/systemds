@@ -14,3 +14,8 @@ include:
 
 # These allow the documentation to be updated with newer releases
 SYSTEMML_VERSION: 0.8.0
+
+# if 'analytics_on' is true, analytics section will be rendered on the HTML pages
+analytics_on: true
+analytics_provider: google_universal
+analytics_google_universal_tracking_id : UA-71553733-1

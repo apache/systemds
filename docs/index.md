@@ -29,7 +29,7 @@ website for more information.
 SystemML is a flexible, scalable machine learning system.
 SystemML's distinguishing characteristics are:
   (1) **Algorithm customizability via R-like and Python-like languages**,
-  (2) **Multiple execution modes**, including Standalone, Hadoop Batch, Spark Batch, MLContext, and JMLC, and
+  (2) **Multiple execution modes**, including Standalone, Spark Batch, Spark MLContext, Hadoop Batch, and JMLC, and
   (3) **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
 
 The [SystemML GitHub README](https://github.com/apache/incubator-systemml) describes
@@ -43,16 +43,16 @@ machine in R-like and Python-like declarative languages.
   a linear regression example in Standalone Mode.
   * The [Quick Start Guide](quick-start-guide.html) provides additional examples of algorithm execution
   in Standalone Mode.
-* **Hadoop Batch** - Algorithms are automatically optimized when distributed across Hadoop clusters.
-  * See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for detailed information.
 * **Spark Batch** - Algorithms are automatically optimized to run across Spark clusters.
   * See **Invoking SystemML in Spark Batch Mode** **(Coming soon)**.
-* **MLContext** - MLContext is a programmatic API to SystemML.
-  * See the [MLContext Programming Guide](mlcontext-programming-guide.html) for
-  [**Spark Shell**](mlcontext-programming-guide.html#spark-shell-example),
-  [Java](mlcontext-programming-guide.html#java-example), and
-  [**Zeppelin Notebook**](mlcontext-programming-guide.html#zeppelin-notebook-example---linear-regression-algorithm)
+* **Spark MLContext** - Spark MLContext is a programmatic API for running SystemML from Spark via Scala or Java.
+  * See the [Spark MLContext Programming Guide](spark-mlcontext-programming-guide.html) for
+  [**Spark Shell (Scala)**](spark-mlcontext-programming-guide.html#spark-shell-example),
+  [Java](spark-mlcontext-programming-guide.html#java-example), and
+  [**Zeppelin Notebook**](spark-mlcontext-programming-guide.html#zeppelin-notebook-example---linear-regression-algorithm)
   examples.
+* **Hadoop Batch** - Algorithms are automatically optimized when distributed across Hadoop clusters.
+  * See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for detailed information.
 * **JMLC** - Java Machine Learning Connector.
 
 ## Language Guides
@@ -61,9 +61,10 @@ machine in R-like and Python-like declarative languages.
 DML is a high-level R-like declarative language for machine learning.
 * **PyDML Language Reference** **(Coming Soon)** -
 PyDML is a high-level Python-like declarative language for machine learning.
-* [DML and PyDML Programming Guide](dml-and-pydml-programming-guide.html)
+* [Beginner's Guide to DML and PyDML](beginners-guide-to-dml-and-pydml.html) -
+An introduction to the basics of DML and PyDML.
 
-## Algorithms
+## ML Algorithms
 
 * [Algorithms Reference](algorithms-reference.html) - The Algorithms Reference describes the
 machine learning algorithms included with SystemML in detail.

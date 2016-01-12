@@ -88,6 +88,12 @@ public class MLBlock implements Row {
 	}
 
 	@Override
+	public <T> T getAs(String arg0) {
+		// TODO
+		return null;
+	}
+
+	@Override
 	public boolean getBoolean(int arg0) {
 		// TODO
 		return false;
@@ -151,7 +157,19 @@ public class MLBlock implements Row {
 	}
 
 	@Override
+	public int fieldIndex(String arg0) {
+		// TODO
+		return 0;
+	}
+
+	@Override
 	public <K, V> scala.collection.Map<K, V> getMap(int arg0) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <T> scala.collection.immutable.Map<String, T> getValuesMap(Seq<String> arg0) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -216,6 +234,7 @@ public class MLBlock implements Row {
 	public StructType schema() {
 		return getDefaultSchemaForBinaryBlock();
 	}
+
 
 	@Override
 	public int size() {

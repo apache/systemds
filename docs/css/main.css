@@ -2,66 +2,13 @@
    Author's custom styles
    ========================================================================== */
 
-.navbar .brand {
-  height: 50px;
-  width: 530px;
-  margin-left: 1px;
-  padding: 0;
-}
-
-.version {
-  line-height: 30px;
-  vertical-align: bottom;
-  font-size: 12px;
-  padding: 0;
-  margin: 0;
-  font-weight: bold;
-  color: #777;
-}
-
-.navbar-inner {
-  padding-top: 2px;
-  height: 50px;
-  background-color: #152935;
-  background-image: none;
-}
-
-.navbar-inner .nav {
-  margin-top: 5px;
-  font-size: 15px;
-}
-
-.navbar .divider-vertical {
-  border-right-color: lightgray;
-}
-
-.navbar-text .version-text {
-  color: #555555;
-  padding: 5px;
-  margin-left: 10px;
+/* Overall */
+body {
+  padding-top: 51px !important;
 }
 
 body #content {
   line-height: 1.6; /* Inspired by Github's wiki style */
-}
-
-.title {
-  font-size: 32px;
-}
-
-h1 {
-  font-size: 28px;
-  margin-top: 12px;
-}
-
-h2 {
-  font-size: 24px;
-  margin-top: 12px;
-}
-
-h3 {
-  font-size: 21px;
-  margin-top: 10px;
 }
 
 pre {
@@ -89,43 +36,45 @@ a:hover code {
   max-width: 914px;
 }
 
+/* Branding */
+.brand {
+  font-weight: bold !important;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  max-width: 75%;
+}
+
+img.logo {
+  height: 100%;
+  margin-right: 0.2em;
+  display: none;
+}
+
+/* Navigation Bar */
+.navbar {
+  background-color: #152935;
+}
+
+.navbar .container {
+  background-color: #152935;
+  background-image: none;
+}
+
+.navbar .divider-vertical {
+  border-right-color: lightgray;
+}
+
+.navbar-text .version-text {
+  color: #555555;
+}
+
+/* Dropdown menu */
 .dropdown-menu {
   /* Remove the default 2px top margin which causes a small
     gap between the hover trigger area and the popup menu */
   margin-top: 0;
   /* Avoid too much whitespace at the right for shorter menu items */
   min-width: 50px;
-}
-
-/**
- * Make dropdown menus in nav bars show on hover instead of click
- * using solution at http://stackoverflow.com/questions/8878033/how-
- * to-make-twitter-bootstrap-menu-dropdown-on-hover-rather-than-click
- **/
-ul.nav li.dropdown:hover ul.dropdown-menu{
-  display: block;
-}
-
-a.menu:after, .dropdown-toggle:after {
-  content: none;
-}
-
-/** Make the submenus open on hover on the parent menu item */
-ul.nav li.dropdown ul.dropdown-menu li.dropdown-submenu:hover ul.dropdown-menu {
-  display: block;
-}
-
-/** Make the submenus be invisible until the parent menu item is hovered upon */
-ul.nav li.dropdown ul.dropdown-menu li.dropdown-submenu ul.dropdown-menu {
-  display: none;
-}
-
-/**
- * Made the navigation bar buttons not grey out when clicked.
- * Essentially making nav bar buttons not react to clicks, only hover events.
- */
-.navbar .nav li.dropdown.open > .dropdown-toggle {
-  background-color: transparent;
 }
 
 /**
@@ -155,9 +104,8 @@ ul.nav li.dropdown ul.dropdown-menu li.dropdown-submenu ul.dropdown-menu {
 a.anchorjs-link:hover { text-decoration: none; }
 
 /**
-SystemML additions
-*/
-
+ *SystemML additions
+ */
 table td, table th {
   border: 1px solid #333;
   padding: 0 .5em;
@@ -166,11 +114,6 @@ table td, table th {
 table th {
   background: #CCC;
   padding: 0 .5em;
-}
-
-body {
-    padding-top: 60px;
-    padding-bottom: 40px;
 }
 
 .grayboldcell {
@@ -212,7 +155,12 @@ body {
 }
 
 .dropdown-menu a {
-  color: #333;
+  color: #FFF !important;
+}
+
+.dropdown-menu b {
+  color: #FFF !important;
+  margin-left: 0.5em;
 }
 
 .dropdown-menu li > a:focus, .dropdown-menu li > a:hover {
@@ -222,4 +170,66 @@ body {
 
 a {
   color: #0c8672;
+}
+
+/* Media queries */
+@media only screen and (max-device-width: 768px) and (orientation : landscape) {
+  /* landscape mobile */
+  img.logo {
+    display: inline;
+  }
+}
+
+@media only screen and (min-device-width: 768px) {
+  /* >= tablet */
+  img.logo {
+    display: inline;
+  }
+
+  .brand {
+    max-width: initial;
+  }
+
+  .dropdown-menu a {
+    color: #333 !important;
+  }
+
+  .dropdown-menu b {
+    color: #333 !important;
+  }
+}
+
+@media only screen and (min-device-width: 1024px) {
+  /* Desktop */
+
+  /**
+   * Make dropdown menus in nav bars show on hover instead of click
+   * using solution at http://stackoverflow.com/questions/8878033/how-
+   * to-make-twitter-bootstrap-menu-dropdown-on-hover-rather-than-click
+   **/
+  ul.nav li.dropdown:hover ul.dropdown-menu{
+    display: block;
+  }
+
+  a.menu:after, .dropdown-toggle:after {
+    content: none;
+  }
+
+  /** Make the submenus open on hover on the parent menu item */
+  ul.nav li.dropdown ul.dropdown-menu li.dropdown-submenu:hover ul.dropdown-menu {
+    display: block;
+  }
+
+  /** Make the submenus be invisible until the parent menu item is hovered upon */
+  ul.nav li.dropdown ul.dropdown-menu li.dropdown-submenu ul.dropdown-menu {
+    display: none;
+  }
+
+  /**
+   * Made the navigation bar buttons not grey out when clicked.
+   * Essentially making nav bar buttons not react to clicks, only hover events.
+   */
+  .navbar .nav li.dropdown.open > .dropdown-toggle {
+    background-color: transparent;
+  }
 }

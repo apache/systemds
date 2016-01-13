@@ -19,10 +19,12 @@ limitations under the License.
 
 # SystemML
 
-SystemML is a flexible, scalable machine learning (ML) system.
-SystemML's distinguishing characteristics are: (1) algorithm customizability,
-(2) multiple execution modes, including Standalone, Hadoop Batch, Spark Batch,
-JMLC, and MLContext, and (3) automatic optimization.
+SystemML is a flexible, scalable machine learning system.
+SystemML's distinguishing characteristics are:
+
+  1. **Algorithm customizability via R-like and Python-like languages**.
+  2. **Multiple execution modes**, including Standalone, Spark Batch, Spark MLContext, Hadoop Batch, and JMLC.
+  3. **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
 
 [SystemML](http://systemml.apache.org/) is now an Apache Incubator project.
 The latest project documentation can be found at the 
@@ -45,16 +47,17 @@ physical data representations.
 
 SystemML computations can be executed in a variety of different modes. To begin with, SystemML
 can be operated in Standalone mode on a single machine, allowing data scientists to develop
-algorithms locally without need of a distributed cluster. Algorithms can be distributed across Hadoop or Spark.
+algorithms locally without need of a distributed cluster. In order to scale up, algorithms can also be distributed
+across Spark or Hadoop.
 This flexibility allows the utilization of an organization's existing resources and expertise. In addition, SystemML
-can be operated via Java, Scala, and Python. SystemML also features an embedded API for scoring models.
+can be operated via Scala, Java, and Python. SystemML also features an embedded API for scoring models.
 
 
 ### Automatic Optimization
 
 Algorithms specified in DML are dynamically compiled and optimized based on data and cluster characteristics
 using rule-based and cost-based optimization techniques. The optimizer automatically generates hybrid runtime
-execution plans ranging from in-memory single-node execution to distributed computations on Spark or Hadoop.
+execution plans ranging from in-memory, single-node execution, to distributed computations on Spark or Hadoop.
 This ensures both efficiency and scalability. Automatic optimization reduces or eliminates the need to hand-tune
 distributed runtime execution plans and system configurations.
 
@@ -64,7 +67,7 @@ distributed runtime execution plans and system configurations.
 ## Building SystemML
 
 SystemML is built using [Apache Maven](http://maven.apache.org/).
-SystemML will build on Windows, Linux, or MacOS and requires Maven 3 and Java 7 (or higher).
+SystemML will build on Linux, MacOS, or Windows, and requires Maven 3 and Java 7 (or higher).
 To build SystemML, run:
 
     mvn clean package
@@ -82,7 +85,8 @@ SystemML features a comprehensive set of integration tests. To perform these tes
 
     mvn verify 
 
-Note: these tests require [R](https://www.r-project.org/) to be installed and available as part of the PATH variable on the machine on which you are running these tests. 
+Note: these tests require [R](https://www.r-project.org/) to be installed and available as part of the PATH variable on
+the machine on which you are running these tests. 
 
 If required, please install the following packages in R:
 
@@ -93,14 +97,22 @@ If required, please install the following packages in R:
 
 ## Running SystemML in Standalone Mode
 
-SystemML can run in distributed mode as well as in local standalone mode. We'll operate in standalone mode in this guide. 
-After you built SystemML from source (```mvn clean package```) the standalone mode can be executed either on Mac/Unix using the ```./bin/systemml``` script or on Windows using the ```.\bin\systemml.bat``` batch file. 
+SystemML can run in distributed mode as well as in local standalone mode. We'll operate in standalone mode in this
+guide. 
+After you built SystemML from source (```mvn clean package```) the standalone mode can be executed either on Mac/Unix 
+using the ```./bin/systemml``` script or on Windows using the ```.\bin\systemml.bat``` batch file. 
 
-If you run from the script from the project root folder ```./``` or from the ```./bin``` folder, then the output files from running SystemML will be created inside the ```./temp``` folder to keep them separate from the SystemML source files managed by Git. The output files for all of the examples in this guide will be created under the ```./temp``` folder.
+If you run from the script from the project root folder ```./``` or from the ```./bin``` folder, then the output files
+from running SystemML will be created inside the ```./temp``` folder to keep them separate from the SystemML source
+files managed by Git. The output files for all of the examples in this guide will be created under the ```./temp```
+folder.
 
-The runtime behavior and logging behavior of SystemML can be customized by editing the files ```./conf/SystemML-config.xml``` and ```./conf/log4j.properties```. Both files will be created from their corresponding ```*.template``` files during the first execution of the SystemML executable script.
+The runtime behavior and logging behavior of SystemML can be customized by editing the files 
+```./conf/SystemML-config.xml``` and ```./conf/log4j.properties```. Both files will be created from their corresponding
+```*.template``` files during the first execution of the SystemML executable script.
 
-When invoking the ```./bin/systemml``` or ```.\bin\systemml.bat``` with any of the prepackaged DML scripts you can omit the relative path to the DML script file. The following two commands are equivalent:
+When invoking the ```./bin/systemml``` or ```.\bin\systemml.bat``` with any of the prepackaged DML scripts you can omit
+the relative path to the DML script file. The following two commands are equivalent:
 
     ./bin/systemml ./scripts/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
 
@@ -111,7 +123,7 @@ In this guide we invoke the command with the relative folder to make it easier t
 
 * * *
 
-## Algorithms
+## ML Algorithms
 
 SystemML features a suite of algorithms that can be grouped into five broad categories:
 Descriptive Statistics, Classification, Clustering, Regression, and Matrix Factorization. Detailed descriptions of
@@ -124,9 +136,10 @@ these algorithms can be found in the Algorithm Reference packaged with SystemML.
 
 As an example of the capabilities and power of SystemML and DML, let's consider the Linear Regression algorithm.
 We require sets of data to train and test our model. To obtain this data, we can either use real data or
-generate data for our algorithm. The [UCI Machine Learning Repository Datasets](https://archive.ics.uci.edu/ml/datasets.html)
-is one location for real data. Use of real data typically involves some degree of data wrangling. In the following
-example, we will use SystemML to generate random data to train and test our model.
+generate data for our algorithm. The 
+[UCI Machine Learning Repository Datasets](https://archive.ics.uci.edu/ml/datasets.html) is one location for real data.
+Use of real data typically involves some degree of data wrangling. In the following example, we will use SystemML to 
+generate random data to train and test our model.
 
 This example consists of the following parts:
 
@@ -137,14 +150,17 @@ This example consists of the following parts:
   * [Train Model on First Sample](#train-model-on-first-sample)
   * [Test Model on Second Sample](#test-model-on-second-sample)
 
-SystemML is distributed in several packages, including a standalone package. We'll operate in Standalone mode in this example.
+SystemML is distributed in several packages, including a standalone package. We'll operate in Standalone mode in this 
+example.
 
 <a name="run-dml-script-to-generate-random-data" />
 
 ### Run DML Script to Generate Random Data
 
-We can execute the `genLinearRegressionData.dml` script in Standalone mode using either the `systemml` or `systemml.bat` file.
-In this example, we'll generate a matrix of 1000 rows of 50 columns of test data, with sparsity 0.7. In addition to this, a 51<sup>st</sup> column consisting of labels will
+We can execute the `genLinearRegressionData.dml` script in Standalone mode using either the `systemml` or `systemml.bat`
+file.
+In this example, we'll generate a matrix of 1000 rows of 50 columns of test data, with sparsity 0.7. In addition to 
+this, a 51<sup>st</sup> column consisting of labels will
 be appended to the matrix.
 
     ./bin/systemml ./scripts/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
@@ -159,7 +175,8 @@ This generates the following files inside the ```./temp``` folder:
 
 ### Divide Generated Data into Two Sample Groups
 
-Next, we'll create two subsets of the generated data, each of size ~50%. We can accomplish this using the `sample.dml` script.
+Next, we'll create two subsets of the generated data, each of size ~50%. We can accomplish this using the `sample.dml` 
+script.
 This script will randomly sample rows from the `linRegData.csv` file and place them into 2 files.
 
 To do this, we need to create a csv file for the `sv` named argument (see `sample.dml` for more details),
@@ -176,8 +193,8 @@ Now, the `sample.dml` script can be run.
     ./bin/systemml ./scripts/utils/sample.dml -nvargs X=linRegData.csv sv=perc.csv O=linRegDataParts ofmt=csv
 
 
-This script creates two partitions of the original data and places them in a `linRegDataParts` folder. The files created are
-as follows:
+This script creates two partitions of the original data and places them in a `linRegDataParts` folder. The files created
+are as follows:
 
     linRegDataParts/1       # first partition of data, ~50% of rows of linRegData.csv, csv format
     linRegDataParts/1.mtd   # metadata
@@ -229,8 +246,8 @@ This splits column 51 off the data, resulting in the following files:
 ### Train Model on First Sample
 
 Now, we can train our model based on the first sample. To do this, we utilize the `LinearRegDS.dml` (Linear Regression
-Direct Solve) script. Note that SystemML also includes a `LinearRegCG.dml` (Linear Regression Conjugate Gradient) algorithm 
-for situations where the number of features is large.
+Direct Solve) script. Note that SystemML also includes a `LinearRegCG.dml` (Linear Regression Conjugate Gradient) 
+algorithm for situations where the number of features is large.
 
     ./bin/systemml ./scripts/algorithms/LinearRegDS.dml -nvargs X=linRegData.train.data.csv Y=linRegData.train.labels.csv B=betas.csv fmt=csv
 
@@ -321,8 +338,8 @@ For convenience, we can encapsulate our DML invocations in a single script:
 	./bin/systemml ./scripts/algorithms/GLM-predict.dml -nvargs X=linRegData.test.data.csv Y=linRegData.test.labels.csv B=betas.csv fmt=csv
 
 
-In this example, we've seen a small part of the capabilities of SystemML. For more detailed information, please consult the 
-[Apache SystemML (incubating)](http://systemml.apache.org/) website and the
+In this example, we've seen a small part of the capabilities of SystemML. For more detailed information, please 
+consult the [Apache SystemML (incubating)](http://systemml.apache.org/) website and the
 [SystemML Documentation](http://apache.github.io/incubator-systemml/) website on GitHub.
 
 

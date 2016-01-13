@@ -54,3 +54,6 @@ src/test/scripts/**/expected
 
 # Working directory
 temp/*
+
+# Ruby
+Gemfile.lock

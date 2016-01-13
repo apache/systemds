@@ -25,10 +25,10 @@ cmdLine_accuracy = ifdef($accuracy, " ")
 cmdLine_scores = ifdef($scores, " ")
 cmdLine_fmt = ifdef($fmt, "text")
 
-X = read ("./tmp/X", rows=-1, cols=-1);
+X = read ($X);
 N = max(X[,1]);
 
-W = read("./tmp/W", rows=-1, cols=-1);
+W = read($W);
 dimensions = as.scalar(W[nrow(W),1])
 intercept = as.scalar(W[nrow(W)-1,1])
 W = W[1:(nrow(W)-2),]

@@ -46,6 +46,7 @@ import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Expression.DataOp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.FunctionCallIdentifier;
@@ -120,6 +121,10 @@ import org.apache.sysml.parser.python.PydmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.python.PydmlParser.ValueDataTypeCheckContext;
 import org.apache.sysml.parser.python.PydmlParser.WhileStatementContext;
 
+/**
+ * TODO: Refactor duplicated parser code dml/pydml (entire package).
+ *
+ */
 public class PydmlSyntacticValidator implements PydmlListener
 {	
 	private PydmlSyntacticValidatorHelper helper = null;
@@ -664,28 +669,37 @@ public class PydmlSyntacticValidator implements PydmlListener
 	
 	@Override
 	public void exitCommandlineParamExpression(CommandlineParamExpressionContext ctx) {
-		String varName = ctx.getText().trim();
-		fillExpressionInfoCommandLineParameters(varName, ctx.dataInfo, ctx.start);
-		if(ctx.dataInfo.expr == null) {
-			// Check if the parent is ifdef
-			if(!(ctx.parent instanceof IfdefAssignmentStatementContext)) {
-				helper.notifyErrorListeners("the parameter " + varName + " either needs to be passed through commandline or initialized to default value", ctx.start);
-			}
-		}
+		handleCommandlineArgumentExpression(ctx);
 	}
 
 	@Override
 	public void exitCommandlinePositionExpression(CommandlinePositionExpressionContext ctx) {
-		String varName = ctx.getText().trim();
+		handleCommandlineArgumentExpression(ctx);
+	}
+	
+	/**
+	 * 
+	 * @param ctx
+	 */
+	private void handleCommandlineArgumentExpression(DataIdentifierContext ctx)
+	{
+		String varName = ctx.getText().trim();		
 		fillExpressionInfoCommandLineParameters(varName, ctx.dataInfo, ctx.start);
+		
 		if(ctx.dataInfo.expr == null) {
-			// Check if the parent is ifdef
 			if(!(ctx.parent instanceof IfdefAssignmentStatementContext)) {
-				helper.notifyErrorListeners("the parameter " + varName + " either needs to be passed through commandline or initialized to default value", ctx.start);
+				String msg = "The parameter " + varName + " either needs to be passed "
+						+ "through commandline or initialized to default value.";
+				if( AParserWrapper.IGNORE_UNSPECIFIED_ARGS ) {
+					ctx.dataInfo.expr = getConstIdFromString(" ", ctx.start);
+					helper.raiseWarning(msg, ctx.start);
+				}
+				else {
+					helper.notifyErrorListeners(msg, ctx.start);
+				}
 			}
 		}
 	}
-	
 	
 	// --------------------------------------------------------------------
 	

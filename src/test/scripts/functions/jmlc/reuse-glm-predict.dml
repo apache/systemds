@@ -20,6 +20,8 @@
 #-------------------------------------------------------------
 
 # Default values for input parameters:
+fileX = $X;
+fileB = $B;
 fileM = ifdef ($M, " ");
 fileY = ifdef ($Y, " ");
 fileO = ifdef ($O, " ");
@@ -45,13 +47,13 @@ if (dist_type == 3) {
             link_type = 2;
 }}} }
 
-X = read ("./tmp/X", rows=-1, cols=-1);
+X = read(fileX);
 #X = table(X[,1], X[,2], X[,3])
 
 num_records  = nrow (X);
 num_features = ncol (X);
 
-W = read ("./tmp/B", rows=-1, cols=-1);
+W = read (fileB);
 if (dist_type == 3) {
     beta =  W [1 : ncol (X),  ];
     intercept = W [nrow(W),  ];
@@ -77,7 +79,7 @@ if (fileM != " ") {
 }
 
 predicted_y = rowIndexMax(means)
-write(predicted_y, "./tmp/P", format=fmtM)
+write(predicted_y, $P, format=fmtM)
 
 if (fileY != " ")
 {

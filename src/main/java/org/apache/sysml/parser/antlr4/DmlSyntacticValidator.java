@@ -29,7 +29,6 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
-
 import org.apache.sysml.parser.ConditionalPredicate;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
@@ -86,6 +85,7 @@ import org.apache.sysml.parser.antlr4.DmlParser.TypedArgNoAssignContext;
 import org.apache.sysml.parser.antlr4.DmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.antlr4.DmlParser.ValueTypeContext;
 import org.apache.sysml.parser.antlr4.DmlParser.WhileStatementContext;
+import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.AssignmentStatement;
 import org.apache.sysml.parser.BinaryExpression;
 import org.apache.sysml.parser.BooleanExpression;
@@ -117,6 +117,10 @@ import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.StringIdentifier;
 import org.apache.sysml.parser.WhileStatement;
 
+/**
+ * TODO: Refactor duplicated parser code dml/pydml (entire package).
+ *
+ */
 public class DmlSyntacticValidator implements DmlListener
 {	
 	private DmlSyntacticValidatorHelper helper = null;
@@ -654,6 +658,7 @@ public class DmlSyntacticValidator implements DmlListener
 				}
 				
 	}
+	
 	private void fillExpressionInfoCommandLineParameters(String varName, ExpressionInfo dataInfo, Token start) {
 		
 		if(!varName.startsWith("$")) {
@@ -689,28 +694,37 @@ public class DmlSyntacticValidator implements DmlListener
 	
 	@Override
 	public void exitCommandlineParamExpression(CommandlineParamExpressionContext ctx) {
-		String varName = ctx.getText().trim();
-		fillExpressionInfoCommandLineParameters(varName, ctx.dataInfo, ctx.start);
-		if(ctx.dataInfo.expr == null) {
-			// Check if the parent is ifdef
-			if(!(ctx.parent instanceof IfdefAssignmentStatementContext)) {
-				helper.notifyErrorListeners("the parameter " + varName + " either needs to be passed through commandline or initialized to default value", ctx.start);
-			}
-		}
+		handleCommandlineArgumentExpression(ctx);
 	}
 
 	@Override
 	public void exitCommandlinePositionExpression(CommandlinePositionExpressionContext ctx) {
-		String varName = ctx.getText().trim();
+		handleCommandlineArgumentExpression(ctx);
+	}
+	
+	/**
+	 * 
+	 * @param ctx
+	 */
+	private void handleCommandlineArgumentExpression(DataIdentifierContext ctx)
+	{
+		String varName = ctx.getText().trim();		
 		fillExpressionInfoCommandLineParameters(varName, ctx.dataInfo, ctx.start);
+		
 		if(ctx.dataInfo.expr == null) {
-			// Check if the parent is ifdef
 			if(!(ctx.parent instanceof IfdefAssignmentStatementContext)) {
-				helper.notifyErrorListeners("the parameter " + varName + " either needs to be passed through commandline or initialized to default value", ctx.start);
+				String msg = "The parameter " + varName + " either needs to be passed "
+						+ "through commandline or initialized to default value.";
+				if( AParserWrapper.IGNORE_UNSPECIFIED_ARGS ) {
+					ctx.dataInfo.expr = getConstIdFromString(" ", ctx.start);
+					helper.raiseWarning(msg, ctx.start);
+				}
+				else {
+					helper.notifyErrorListeners(msg, ctx.start);
+				}
 			}
 		}
 	}
-	
 	
 	// --------------------------------------------------------------------
 	

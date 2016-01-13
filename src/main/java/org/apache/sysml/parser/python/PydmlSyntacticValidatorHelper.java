@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.Token;
-
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.python.PydmlParser.FunctionCallAssignmentStatementContext;
 import org.apache.sysml.parser.python.PydmlParser.ParameterizedExpressionContext;
@@ -42,6 +41,10 @@ public class PydmlSyntacticValidatorHelper
 	
 	public void notifyErrorListeners(String message, Token op) {
 		this._errorListener.validationError(op.getLine(), op.getCharPositionInLine(), message);
+	}
+
+	public void raiseWarning(String message, Token op) {
+		this._errorListener.validationWarning(op.getLine(), op.getCharPositionInLine(), message);
 	}
 	
 	public String getCurrentFileName() {

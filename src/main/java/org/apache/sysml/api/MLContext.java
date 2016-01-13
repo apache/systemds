@@ -1177,11 +1177,15 @@ public class MLContext {
 				throw new DMLRuntimeException("SystemML (and hence by definition MLContext) doesnot support parallel execute() calls from same or different MLContexts. "
 						+ "As a temporary fix, please do explicit synchronization, i.e. synchronized(MLContext.class) { ml.execute(...) } ");
 			}
-			else {
-				// Set active MLContext.
-				_activeMLContext = this;
-			}
 			
+			// Set active MLContext.
+			_activeMLContext = this;
+			
+			// Setup parser parameters
+			// TODO In the process of hardening mlcontext, we should also reinvestigate if we
+			// could be more restrictive and require known dimensions (rm REJECT_READ_WRITE_UNKNOWNS).  
+			AParserWrapper.IGNORE_UNSPECIFIED_ARGS = true;
+			DataExpression.REJECT_READ_WRITE_UNKNOWNS = false;
 			
 			if(_monitorUtils != null) {
 				_monitorUtils.resetMonitoringData();
@@ -1242,6 +1246,10 @@ public class MLContext {
 		finally {
 			// Reset active MLContext.
 			_activeMLContext = null;
+			
+			// Reset parser parameters
+			AParserWrapper.IGNORE_UNSPECIFIED_ARGS = false;
+			DataExpression.REJECT_READ_WRITE_UNKNOWNS = true;			
 		}
 	}
 	
@@ -1288,17 +1296,12 @@ public class MLContext {
 			_monitorUtils.setDMLString(dmlScriptStr);
 		}
 		
-		DataExpression.REJECT_READ_UNKNOWN_SIZE = false;
-		
 		//simplified compilation chain
 		_rtprog = null;
 		
 		//parsing
 		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
 		DMLProgram prog = parser.parse(dmlScriptFilePath, dmlScriptStr, argVals);
-		if(prog == null) {
-			throw new ParseException("Couldnot parse the file:" + dmlScriptFilePath);
-		}
 		
 		//language validate
 		DMLTranslator dmlt = new DMLTranslator(prog);
@@ -1344,8 +1347,6 @@ public class MLContext {
 		if(inputSymbolTable != null) {
 			ec.setVariables(inputSymbolTable);
 		}
-		
-		// System.out.println(Explain.explain(_rtprog));
 		
 		//core execute runtime program	
 		_rtprog.execute( ec );

@@ -45,6 +45,10 @@ public class DmlSyntacticValidatorHelper {
 		this._errorListener.validationError(op.getLine(), op.getCharPositionInLine(), message);
 	}
 	
+	public void raiseWarning(String message, Token op) {
+		this._errorListener.validationWarning(op.getLine(), op.getCharPositionInLine(), message);
+	}
+	
 	public String getCurrentFileName() {
 		return _errorListener.peekFileName();
 	}

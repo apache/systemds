@@ -30,6 +30,10 @@ import org.apache.sysml.parser.python.PyDMLParserWrapper;
  */
 public abstract class AParserWrapper 
 {
+	//global parser configuration dml/pydml:
+	//1) skip errors on unspecified args (modified by mlcontext / jmlc)
+	public static boolean IGNORE_UNSPECIFIED_ARGS = false; 
+	
 	/**
 	 * 
 	 * @param fileName

@@ -70,7 +70,11 @@ public class Connection
 	public Connection()
 	{
 		//setup basic parameters for embedded execution
-		DataExpression.REJECT_READ_UNKNOWN_SIZE = false;
+		//parser parameters
+		AParserWrapper.IGNORE_UNSPECIFIED_ARGS = true;
+		DataExpression.IGNORE_READ_WRITE_METADATA = true;
+		DataExpression.REJECT_READ_WRITE_UNKNOWNS = false;
+		//runtime parameters
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = false;
 		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = false;
@@ -156,7 +160,14 @@ public class Connection
 	 */
 	public void close()
 	{
-		
+		//reset parameters for embedded execution
+		AParserWrapper.IGNORE_UNSPECIFIED_ARGS = false;
+		DataExpression.IGNORE_READ_WRITE_METADATA = false;
+		DataExpression.REJECT_READ_WRITE_UNKNOWNS = true;
+		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = true;
+		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = true;
+		OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS = true;
+		OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS = true;		
 	}
 	
 	/**

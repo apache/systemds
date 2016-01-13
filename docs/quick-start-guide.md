@@ -1,7 +1,6 @@
 ---
 layout: global
 title: SystemML Quick Start Guide
-author: Christian Kadner
 description: SystemML Quick Start Guide
 displayTitle: SystemML Quick Start Guide
 ---
@@ -30,41 +29,34 @@ limitations under the License.
 <br/>
 
 This tutorial provides a quick introduction to using SystemML by
-running existing SystemML algorithms in standalone mode. More information
-about running SystemML in distributed execution mode (Hadoop, Spark) will 
-be added soon.
-For more in-depth information, please refer to the
-[Algorithms Reference](algorithms-reference.html) and the
-[DML Language Reference](dml-language-reference.html).
+running existing SystemML algorithms in standalone mode.
 
 
 # What is SystemML
 
 SystemML enables large-scale machine learning (ML) via a high-level declarative
-language with R-like syntax called [DML](dml-language-reference.html). 
-This language allows data scientists to 
-express their ML algorithms with full flexibility but without the need to fine-tune 
-distributed runtime execution plans and system configurations. 
-These ML programs are dynamically compiled and optimized based on data 
-and cluster characteristics using rule- and cost-based optimization techniques. 
-The compiler automatically generates hybrid runtime execution plans ranging 
-from in-memory, single node execution to distributed computation for Hadoop M/R 
+language with R-like syntax called [DML](dml-language-reference.html) and
+Python-like syntax called PyDML. DML and PyDML allow data scientists to
+express their ML algorithms with full flexibility but without the need to fine-tune
+distributed runtime execution plans and system configurations.
+These ML programs are dynamically compiled and optimized based on data
+and cluster characteristics using rule-based and cost-based optimization techniques.
+The compiler automatically generates hybrid runtime execution plans ranging
+from in-memory, single node execution to distributed computation for Hadoop
 or Spark Batch execution.
-SystemML features a suite of algorithms for Descriptive Statistics, Classification, 
-Clustering, Regression, Matrix Factorization, and Survival Analysis. Detailed descriptions of these 
+SystemML features a suite of algorithms for Descriptive Statistics, Classification,
+Clustering, Regression, Matrix Factorization, and Survival Analysis. Detailed descriptions of these
 algorithms can be found in the [Algorithms Reference](algorithms-reference.html).
 
 <br/>
 
 # Download SystemML
 
-The pre-incubator binary release of SystemML 0.8.0 is available for download at
-[https://github.com/SparkTC/systemml/releases](https://github.com/SparkTC/systemml/releases).
-Apache incubator binary releases of SystemML will be available from the [Apache SystemML (incubating)](http://systemml.apache.org/) website.
+Apache incubator binary releases of SystemML will be available shortly from the [Apache SystemML (incubating)](http://systemml.apache.org/) website.
 
 The SystemML project is available on GitHub at [https://github.com/apache/incubator-systemml](https://github.com/apache/incubator-systemml).
 SystemML can be downloaded from GitHub and built with Maven. Instructions to build and
-test SystemML can be found in the GitHub README file.
+test SystemML can be found in the [SystemML GitHub README](https://github.com/apache/incubator-systemml).
 
 <br/>
 
@@ -76,52 +68,46 @@ In standalone mode, all operations occur on a single node in a non-Hadoop enviro
 is not appropriate for large datasets.
 
 For large-scale production environments, SystemML algorithm execution can be
-distributed across a multi-node cluster using [Apache Hadoop](https://hadoop.apache.org/) 
-or [Apache Spark](http://spark.apache.org/). 
+distributed across multi-node clusters using [Apache Hadoop](https://hadoop.apache.org/)
+or [Apache Spark](http://spark.apache.org/).
 We will make use of standalone mode throughout this tutorial.
-
-The examples described in `docs/SystemML_Algorithms_Reference.pdf` are written 
-primarily for the hadoop distributed environment. To run those examples in
-standalone mode, modify the commands by replacing "`hadoop jar SystemML.jar -f ...`" 
-with "`./runStandaloneSystemML.sh ...`" on Mac/UNIX or 
-with "`./runStandaloneSystemML.bat ...`" on Windows.
 
 <br/>
 
 # Contents of the SystemML Standalone Package
 
-To follow along with this guide, first build a standalone package of SystemML 
-{% comment %} TODO: Where to download a packaged release of SystemML, ...standalone jar 
-
-    $ wget http://spark.tc/system-ml/system-ml-LATEST-standalone.tar.gz -O - | tar -xz -C ~/systemml-tutorial
-
-
-or build it from source {% endcomment %} using [Apache Maven](http://maven.apache.org)
-and unpack it to your working directory, i.e. ```~/systemml-tutorial```.
+To follow along with this guide, first build a standalone package of SystemML
+using [Apache Maven](http://maven.apache.org)
+and unpack it.
 
     $ git clone https://github.com/apache/incubator-systemml.git
-    $ mvn clean package
-    $ tar -xzf `find . -name 'system-ml*standalone.tar.gz'` -C ~/systemml-tutorial
+    $ cd incubator-systemml
+    $ mvn clean package -P distribution
+    $ tar -xvzf target/system-ml-*-standalone.tar.gz -C ..
+    $ cd ..
 
 The extracted package should have these contents:
 
-    $ ls -lF ~/systemml-tutorial
-    total 56
-    drwxr-xr-x  23   algorithms/
-    drwxr-xr-x   5   docs/
-    drwxr-xr-x  35   lib/
-    -rw-r--r--   1   log4j.properties
-    -rw-r--r--   1   readme.txt
-    -rwxr-xr-x   1   runStandaloneSystemML.bat*
-    -rwxr-xr-x   1   runStandaloneSystemML.sh*
-    -rw-r--r--   1   SystemML-config.xml
+    $ ls -lF system-ml-{{site.SYSTEMML_VERSION}}/
+    total 96
+    -rw-r--r--  LICENSE
+    -rw-r--r--  NOTICE
+    -rw-r--r--  SystemML-config.xml
+    drwxr-xr-x  docs/
+    drwxr-xr-x  lib/
+    -rw-r--r--  log4j.properties
+    -rw-r--r--  readme.txt
+    -rwxr-xr-x  runStandaloneSystemML.bat*
+    -rwxr-xr-x  runStandaloneSystemML.sh*
+    drwxr-xr-x  scripts/
 
-Refer to `docs/SystemML_Algorithms_Reference.pdf` for more information 
-about each algorithm included in the `algorithms` folder.
+For the rest of the tutorial we will switch to the `system-ml-{{site.SYSTEMML_VERSION}}` directory.
 
-For the rest of the tutorial we switch our working directory to ```~/systemml-tutorial```.
+    $ cd  ~/system-ml-{{site.SYSTEMML_VERSION}}
 
-    $ cd  ~/systemml-tutorial
+Note that standalone mode supports both Mac/UNIX and Windows. To run the following examples on
+Windows, the "`./runStandaloneSystemML.sh ...`" commands can be replaced with
+"`./runStandaloneSystemML.bat ...`" commands.
 
 <br/>
 
@@ -143,9 +129,9 @@ has 306 instances and 4 attributes (including the class attribute):
    * `2` = the patient died within 5 year
 
 
-We will need to create a metadata file (MTD) which stores metadata information 
+We will need to create a metadata file (MTD) which stores metadata information
 about the content of the data file. The name of the MTD file associated with the
-data file `<filename>` must be `<filename>.mtd`. 
+data file `<filename>` must be `<filename>.mtd`.
 
     $ echo '{"rows": 306, "cols": 4, "format": "csv"}' > data/haberman.data.mtd
 
@@ -161,21 +147,21 @@ for each feature column using the algorithm `Univar-Stats.dml` which requires 3
 * `TYPES`:  location of the file that contains the feature column types encoded by integer numbers: `1` = scale, `2` = nominal, `3` = ordinal
 * `STATS`:  location of the output matrix of computed statistics will be stored
 
-We need to create a file `types.csv` that describes the type of each column in 
+We need to create a file `types.csv` that describes the type of each column in
 the data along with it's metadata file `types.csv.mtd`.
 
     $ echo '1,1,1,2' > data/types.csv
     $ echo '{"rows": 1, "cols": 4, "format": "csv"}' > data/types.csv.mtd
-    
- 
+
+
 To run the `Univar-Stats.dml` algorithm, issue the following command:
 
-    $ ./runStandaloneSystemML.sh algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx
+    $ ./runStandaloneSystemML.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx
 
-The resulting matrix has one row per each univariate statistic and one column 
-per input feature. The output file `univarOut.mtx` describes that 
-matrix. The elements of the first column denote the number of the statistic, 
-the elements of the second column refer to the number of the feature column in 
+The resulting matrix has one row per each univariate statistic and one column
+per input feature. The output file `univarOut.mtx` describes that
+matrix. The elements of the first column denote the number of the statistic,
+the elements of the second column refer to the number of the feature column in
 the input data, and the elements of the third column show the value of the
 univariate statistic.
 
@@ -225,8 +211,8 @@ univariate statistic.
     17 4 1.0
 
 The following table lists the number and name of each univariate statistic. The row
-numbers below correspond to the elements of the first column in the output 
-matrix above. The signs "+" show applicability to scale or/and to categorical 
+numbers below correspond to the elements of the first column in the output
+matrix above. The signs "+" show applicability to scale or/and to categorical
 features.
 
   | Row | Name of Statistic          | Scale | Categ. |
@@ -255,39 +241,38 @@ features.
 
 # Example 2 - Binary-class Support Vector Machines
 
-Let's take the same `haberman.data` to explore the 
-[binary-class support vector machines](algorithms-classification.html#binary-class-support-vector-machines) algorithm `l2-svm.dml`. 
+Let's take the same `haberman.data` to explore the
+[binary-class support vector machines](algorithms-classification.html#binary-class-support-vector-machines) algorithm `l2-svm.dml`.
 This example also illustrates how to use of the sampling algorithm `sample.dml`
 and the data split algorithm `spliXY.dml`.
 
 ## Sampling the Test Data
 
 First we need to use the `sample.dml` algorithm to separate the input into one
-training data set and one data set for model prediction. 
+training data set and one data set for model prediction.
 
 Parameters:
 
  * `X`       : (input)  input data set: filename of input data set
  * `sv`      : (input)  sampling vector: filename of 1-column vector w/ percentages. sum(sv) must be 1.
  * `O`       : (output) folder name w/ samples generated
- * `ofmt`    : (output) format of O: "csv", "binary" (default) 
+ * `ofmt`    : (output) format of O: "csv", "binary" (default)
 
 
-We will create the file `perc.csv` and `perc.csv.mtd` to define the sampling vector with a sampling rate of 
-50% to generate 2 data sets: 
+We will create the file `perc.csv` and `perc.csv.mtd` to define the sampling vector with a sampling rate of
+50% to generate 2 data sets:
 
     $ printf "0.5\n0.5" > data/perc.csv
     $ echo '{"rows": 2, "cols": 1, "format": "csv"}' > data/perc.csv.mtd
 
 Let's run the sampling algorithm to create the two data samples:
 
-    $ ./runStandaloneSystemML.sh algorithms/utils/sample.dml -nvargs X=data/haberman.data sv=data/perc.csv O=data/haberman.part ofmt="csv"
-
+    $ ./runStandaloneSystemML.sh scripts/utils/sample.dml -nvargs X=data/haberman.data sv=data/perc.csv O=data/haberman.part ofmt="csv"
 
 
 ## Splitting Labels from Features
 
-Next we use the `splitXY.dml` algorithm to separate the feature columns from 
+Next we use the `splitXY.dml` algorithm to separate the feature columns from
 the label column(s).
 
 Parameters:
@@ -301,9 +286,9 @@ Parameters:
 We specify `y=4` as the 4th column contains the labels to be predicted and run
 the `splitXY.dml` algorithm on our training and test data sets.
 
-    $ ./runStandaloneSystemML.sh algorithms/utils/splitXY.dml -nvargs X=data/haberman.part/1 y=4 OX=data/haberman.train.data.csv OY=data/haberman.train.labels.csv ofmt="csv"
+    $ ./runStandaloneSystemML.sh scripts/utils/splitXY.dml -nvargs X=data/haberman.part/1 y=4 OX=data/haberman.train.data.csv OY=data/haberman.train.labels.csv ofmt="csv"
 
-    $ ./runStandaloneSystemML.sh algorithms/utils/splitXY.dml -nvargs X=data/haberman.part/2 y=4 OX=data/haberman.test.data.csv  OY=data/haberman.test.labels.csv  ofmt="csv"
+    $ ./runStandaloneSystemML.sh scripts/utils/splitXY.dml -nvargs X=data/haberman.part/2 y=4 OX=data/haberman.test.data.csv  OY=data/haberman.test.labels.csv  ofmt="csv"
 
 ## Training and Testing the Model
 
@@ -314,17 +299,17 @@ Now we need to train our model using the `l2-svm.dml` algorithm.
  * `X`         : (input)  filename of training data features
  * `Y`         : (input)  filename of training data labels
  * `model`     : (output) filename of model that contains the learnt weights
- * `fmt`       : (output) format of model: "csv", "text" (sparse-matrix) 
+ * `fmt`       : (output) format of model: "csv", "text" (sparse-matrix)
  * `Log`       : (output) log file for metrics and progress while training
  * `confusion` : (output) filename of confusion matrix computed using a held-out test set (optional)
 
 The `l2-svm.dml` algorithm is used on our training data sample to train the model.
 
-    $ ./runStandaloneSystemML.sh algorithms/l2-svm.dml -nvargs X=data/haberman.train.data.csv Y=data/haberman.train.labels.csv model=data/l2-svm-model.csv fmt="csv" Log=data/l2-svm-log.csv
+    $ ./runStandaloneSystemML.sh scripts/algorithms/l2-svm.dml -nvargs X=data/haberman.train.data.csv Y=data/haberman.train.labels.csv model=data/l2-svm-model.csv fmt="csv" Log=data/l2-svm-log.csv
 
 The `l2-svm-predict.dml` algorithm is used on our test data sample to predict the labels based on the trained model.
 
-    $ ./runStandaloneSystemML.sh algorithms/l2-svm-predict.dml -nvargs X=data/haberman.test.data.csv Y=data/haberman.test.labels.csv model=data/l2-svm-model.csv fmt="csv" confusion=data/l2-svm-confusion.csv
+    $ ./runStandaloneSystemML.sh scripts/algorithms/l2-svm-predict.dml -nvargs X=data/haberman.test.data.csv Y=data/haberman.test.labels.csv model=data/l2-svm-model.csv fmt="csv" confusion=data/l2-svm-confusion.csv
 
 The console output should show the accuracy of the trained model in percent, i.e.:
 
@@ -346,7 +331,6 @@ The console output should show the accuracy of the trained model in percent, i.e
     Total execution time:		0.130 sec.
     Number of executed MR Jobs:	0.
 
-
 The generated file `l2-svm-confusion.csv` should contain the following confusion matrix of this form:
 
     |t1 t2|
@@ -357,7 +341,7 @@ The generated file `l2-svm-confusion.csv` should contain the following confusion
  * The model incorrectly predicted label 2 as opposed to label 1 `t3` times
  * The model correctly predicted label 2 `t4` times.
 
-If the confusion matrix looks like this ..
+If the confusion matrix looks like this ...
 
     107.0,38.0
     0.0,2.0
@@ -372,20 +356,13 @@ Refer to the [Algorithms Reference](algorithms-reference.html) for more details.
 
 # Troubleshooting
 
-If you encounter a `"java.lang.OutOfMemoryError"` you can edit the invocation 
+If you encounter a `"java.lang.OutOfMemoryError"` you can edit the invocation
 script (`runStandaloneSystemML.sh` or `runStandaloneSystemML.bat`) to increase
-the memory available to the JVM, i.e: 
+the memory available to the JVM, i.e:
 
     java -Xmx16g -Xms4g -Xmn1g -cp ${CLASSPATH} org.apache.sysml.api.DMLScript \
          -f ${SCRIPT_FILE} -exec singlenode -config=SystemML-config.xml \
          $@
 
 <br/>
-
-# Next Steps
-
-Check out the [Algorithms Reference](algorithms-reference.html) and run
-some of the other pre-packaged algorithms.
-
-Follow the [DML and PyDML Programming Guide](dml-and-pydml-programming-guide.html) to become familiar with DML and PyDML.
 

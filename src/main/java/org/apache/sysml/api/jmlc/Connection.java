@@ -56,7 +56,7 @@ import org.apache.sysml.runtime.util.DataConverter;
  * 
  * NOTES: 
  *   * Currently fused API and implementation in order to reduce complexity. 
- *   * See SystemTMulticlassSVMScoreTest for an usage example. 
+ *   * See JUnit test cases (org.apache.sysml.test.integration.functions.jmlc) for examples. 
  */
 public class Connection 
 {

@@ -19,13 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# Note this script is externalized to customer, please do not change w/o consulting component owner.
-# Invocation command
-# hadoop jar SystemML.jar -f m-svm-score.dml -nvargs DATA=X 
-# 	     		     		     	     NUM_ROWS=<num_rows_in_X>
-#						     MODEL=W 
-#						     PREDICTED=predicted_y
-
 X = read("./tmp/X", rows=-1, cols=-1);
 W = read("./tmp/W", rows=-1, cols=-1);
 
@@ -39,3 +32,4 @@ scores = X %*% W[1:n,] + ones %*% b;
 
 predicted_y = rowIndexMax(scores);
 write(predicted_y, "./tmp", format="text");
+  

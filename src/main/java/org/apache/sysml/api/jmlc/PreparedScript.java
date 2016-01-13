@@ -19,7 +19,11 @@
 
 package org.apache.sysml.api.jmlc;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -31,6 +35,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
+import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
@@ -49,19 +54,19 @@ import org.apache.sysml.runtime.util.DataConverter;
  */
 public class PreparedScript 
 {
-	
 	//input/output specification
 	private HashSet<String> _inVarnames = null;
 	private HashSet<String> _outVarnames = null;
+	private HashMap<String,Data> _inVarReuse = null;
 	
 	//internal state (reused)
 	private Program _prog = null;
 	private LocalVariableMap _vars = null; 
 	
-	/**
-	 * Meant to be invoked only from Connection
+	/** 
+	 * Meant to be invoked only from Connection 
 	 */
-	protected PreparedScript( Program prog, String[] inputs, String[] outputs )
+	protected PreparedScript( Program prog, String[] inputs, String[] outputs ) 
 	{
 		_prog = prog;
 		_vars = new LocalVariableMap();
@@ -73,15 +78,60 @@ public class PreparedScript
 		_outVarnames = new HashSet<String>();
 		for( String var : outputs )
 			_outVarnames.add( var );
+		_inVarReuse = new HashMap<String, Data>();
 	}
 	
+	/** Binds a scalar boolean to a registered input variable. */
+	public void setScalar(String varname, boolean scalar) throws DMLException {
+		setScalar(varname, scalar, false);
+	}
+	
+	/** Binds a scalar boolean to a registered input variable. */
+	public void setScalar(String varname, boolean scalar, boolean reuse) throws DMLException {
+		setScalar(varname, new BooleanObject(varname, scalar), reuse);
+	}
+	
+	/** Binds a scalar long to a registered input variable. */
+	public void setScalar(String varname, long scalar) throws DMLException {
+		setScalar(varname, scalar, false);
+	}
+	
+	/** Binds a scalar long to a registered input variable. */
+	public void setScalar(String varname, long scalar, boolean reuse) throws DMLException {
+		setScalar(varname, new IntObject(varname, scalar), reuse);
+	}
+	
+	/** Binds a scalar double to a registered input variable. */
+	public void setScalar(String varname, double scalar) throws DMLException {
+		setScalar(varname, scalar, false);
+	}
+	
+	/** Binds a scalar double to a registered input variable. */
+	public void setScalar(String varname, double scalar, boolean reuse) throws DMLException {
+		setScalar(varname, new DoubleObject(varname, scalar), reuse);
+	}
+	
+	/** Binds a scalar string to a registered input variable. */
+	public void setScalar(String varname, String scalar) throws DMLException {
+		setScalar(varname, scalar, false);
+	}
+	
+	/** Binds a scalar string to a registered input variable. */
+	public void setScalar(String varname, String scalar, boolean reuse) throws DMLException {
+		setScalar(varname, new StringObject(varname, scalar), reuse);
+	}
+
 	/**
+	 * Binds a scalar object to a registered input variable. 
+	 * If reuse requested, then the input is guaranteed to be 
+	 * preserved over multiple <code>executeScript</code> calls. 
 	 * 
 	 * @param varname
 	 * @param scalar
-	 * @throws DMLException 
+	 * @param reuse
+	 * @throws DMLException
 	 */
-	public void setScalar(String varname, ScalarObject scalar) 
+	public void setScalar(String varname, ScalarObject scalar, boolean reuse) 
 		throws DMLException
 	{
 		if( !_inVarnames.contains(varname) )
@@ -89,69 +139,17 @@ public class PreparedScript
 		
 		_vars.put(varname, scalar);
 	}
-	
+
 	/**
 	 * 
 	 * @param varname
-	 * @param scalar
-	 * @throws DMLException 
+	 * @param matrix
+	 * @throws DMLException
 	 */
-	public void setScalar(String varname, boolean scalar) 
-		throws DMLException
+	public void setMatrix(String varname, double[][] matrix) 
+		throws DMLException 
 	{
-		if( !_inVarnames.contains(varname) )
-			throw new DMLException("Unspecified input variable: "+varname);
-		
-		BooleanObject bo = new BooleanObject(varname, scalar);
-		_vars.put(varname, bo);
-	}
-	
-	/**
-	 * 
-	 * @param varname
-	 * @param scalar
-	 * @throws DMLException 
-	 */
-	public void setScalar(String varname, long scalar) 
-		throws DMLException
-	{
-		if( !_inVarnames.contains(varname) )
-			throw new DMLException("Unspecified input variable: "+varname);
-		
-		IntObject io = new IntObject(varname, scalar);
-		_vars.put(varname, io);
-	}
-	
-	/**
-	 * 
-	 * @param varname
-	 * @param scalar
-	 * @throws DMLException 
-	 */
-	public void setScalar(String varname, double scalar) 
-		throws DMLException
-	{
-		if( !_inVarnames.contains(varname) )
-			throw new DMLException("Unspecified input variable: "+varname);
-		
-		DoubleObject doo = new DoubleObject(varname, scalar);
-		_vars.put(varname, doo);	
-	}
-	
-	/**
-	 * 
-	 * @param varname
-	 * @param scalar
-	 * @throws DMLException 
-	 */
-	public void setScalar(String varname, String scalar) 
-		throws DMLException
-	{
-		if( !_inVarnames.contains(varname) )
-			throw new DMLException("Unspecified input variable: "+varname);
-		
-		StringObject so = new StringObject(varname, scalar);
-		_vars.put(varname, so);
+		setMatrix(varname, matrix, false);
 	}
 	
 	/**
@@ -160,13 +158,27 @@ public class PreparedScript
 	 * @param matrix
 	 * @throws DMLException
 	 */
-	public void setMatrix(String varname, MatrixBlock matrix)
+	public void setMatrix(String varname, double[][] matrix, boolean reuse)
+		throws DMLException
+	{
+		setMatrix(varname, DataConverter.convertToMatrixBlock(matrix), reuse);
+	}
+	
+	/**
+	 * Binds a matrix object to a registered input variable. 
+	 * If reuse requested, then the input is guaranteed to be 
+	 * preserved over multiple <code>executeScript</code> calls. 
+	 * 
+	 * @param varname
+	 * @param matrix
+	 * @throws DMLException
+	 */
+	public void setMatrix(String varname, MatrixBlock matrix, boolean reuse)
 		throws DMLException
 	{
 		if( !_inVarnames.contains(varname) )
 			throw new DMLException("Unspecified input variable: "+varname);
-		
-		
+				
 		DMLConfig conf = ConfigurationManager.getConfig();
 		String scratch_space = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
 		int blocksize = conf.getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
@@ -180,26 +192,14 @@ public class PreparedScript
 		
 		//put create matrix wrapper into symbol table
 		_vars.put(varname, mo);
+		if( reuse ) {
+			mo.enableCleanup(false); //prevent cleanup
+			_inVarReuse.put(varname, mo);
+		}
 	}
 	
 	/**
-	 * 
-	 * @param varname
-	 * @param matrix
-	 * @throws DMLException
-	 */
-	public void setMatrix(String varname, double[][] matrix)
-		throws DMLException
-	{
-		if( !_inVarnames.contains(varname) )
-			throw new DMLException("Unspecified input variable: "+varname);
-		
-		MatrixBlock mb = DataConverter.convertToMatrixBlock(matrix);
-		setMatrix(varname, mb);
-	}
-	
-	
-	/**
+	 * Remove all current values bound to input or output variables.
 	 * 
 	 */
 	public void clearParameters()
@@ -208,6 +208,8 @@ public class PreparedScript
 	}
 	
 	/**
+	 * Executes the prepared script over the bound inputs, creating the
+	 * result variables according to bound and registered outputs. 
 	 * 
 	 * @return
 	 * @throws DMLException 
@@ -215,12 +217,22 @@ public class PreparedScript
 	public ResultVariables executeScript() 
 		throws DMLException
 	{
+		//add reused variables
+		for( Entry<String,Data> e : _inVarReuse.entrySet() )
+			_vars.put(e.getKey(), e.getValue());
+		
 		//create and populate execution context
 		ExecutionContext ec = ExecutionContextFactory.createContext(_prog);	
 		ec.setVariables(_vars);
 		
 		//core execute runtime program	
 		_prog.execute( ec );  
+		
+		//cleanup unnecessary outputs
+		Collection<String> tmpVars = new ArrayList<String>(_vars.keySet());
+		for( String var :  tmpVars )
+			if( !_outVarnames.contains(var) )
+				_vars.remove(var);
 		
 		//construct results
 		ResultVariables rvars = new ResultVariables();

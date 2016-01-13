@@ -33,7 +33,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
-
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
@@ -81,7 +80,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.utils.Explain.ExplainCounts;
-
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
 
@@ -195,6 +193,8 @@ public class MLContext {
 	private LocalVariableMap _variables = null; // temporary symbol table
 	private Program _rtprog = null;
 	
+	private HashMap<String, String> _additionalConfigs = new HashMap<String, String>();
+	
 	// --------------------------------------------------
 	// _monitorUtils is set only when MLContext(sc, true)
 	private SparkMonitoringUtil _monitorUtils = null;
@@ -224,6 +224,15 @@ public class MLContext {
 	 */
 	public MLContext(JavaSparkContext sc) throws DMLRuntimeException {
 		initializeSpark(sc.sc(), false, false);
+	}
+	
+	/**
+	 * Allow users to provide custom named-value configuration.
+	 * @param paramName
+	 * @param paramVal
+	 */
+	public void setConfig(String paramName, String paramVal) {
+		_additionalConfigs.put(paramName, paramVal);
 	}
 	
 	// ====================================================================================
@@ -904,6 +913,7 @@ public class MLContext {
 		_inVarnames = null;
 		_outVarnames = null;
 		_variables = null;
+		_additionalConfigs.clear();
 	}
 	
 	/**
@@ -1260,6 +1270,10 @@ public class MLContext {
 		}
 		else {
 			config = new DMLConfig(configFilePath);
+		}
+		
+		for(Entry<String, String> param : _additionalConfigs.entrySet()) {
+			config.setTextValue(param.getKey(), param.getValue());
 		}
 		
 		ConfigurationManager.setConfig(config);

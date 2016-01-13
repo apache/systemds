@@ -42,7 +42,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -278,6 +277,29 @@ public class DMLConfig
 		if (list != null && list.getLength() > 0) {
 			Element elem = (Element) list.item(0);
 			elem.getFirstChild().setNodeValue(newTextValue);	
+		}
+	}
+	
+	/**
+	 * Method to update the key value
+	 * @param paramName
+	 * @param paramValue
+	 */
+	public void setTextValue(String paramName, String paramValue) throws DMLRuntimeException {
+		if(this.xml_root != null)
+			DMLConfig.setTextValue(this.xml_root, paramName, paramValue);
+		else {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			factory.setIgnoringComments(true); //ignore XML comments
+			DocumentBuilder builder;
+			try {
+				builder = factory.newDocumentBuilder();
+				String configString = "<root><" + paramName + ">"+paramValue+"</" + paramName + "></root>";
+				Document domTree = builder.parse(new ByteArrayInputStream(configString.getBytes("UTF-8")));
+				this.xml_root = domTree.getDocumentElement();
+			} catch (Exception e) {
+				throw new DMLRuntimeException("Unable to set config value", e);
+			}
 		}
 	}
 

@@ -1789,8 +1789,7 @@ public class LibMatrixAgg
 	{
 		//init current row sum/correction arrays w/ neutral 0
 		double[] csums = new double[ 2*n ]; 
-		Arrays.fill(csums, 0); 
-		
+
 		//scan once and compute prefix sums
 		for( int i=0, aix=0; i<m; i++, aix+=n ) {
 			sumAgg( a, csums, aix, 0, n, kbuff, kplus );
@@ -2003,9 +2002,6 @@ public class LibMatrixAgg
 	 */
 	private static void d_uacmean( double[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean, int rl, int ru )
 	{
-		//init output (base for incremental agg)
-		Arrays.fill(c, 0); //including counts
-		
 		//execute builtin aggregate
 		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n )
 			meanAgg( a, c, aix, 0, n, kbuff, kmean );
@@ -2176,9 +2172,6 @@ public class LibMatrixAgg
 	 */
 	private static void s_uackp( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) 
 	{
-		//init result (for empty columns)
-		Arrays.fill(c, 0); 
-				
 		//compute column aggregates
 		for( int i=rl; i<ru; i++ )
 		{
@@ -2275,9 +2268,6 @@ public class LibMatrixAgg
 	private static void s_uacsqkp(SparseRow[] a, double[] c, int m, int n, KahanObject kbuff,
 	                              KahanPlusSq kplusSq, int rl, int ru )
 	{
-		//init result (for empty columns)
-		Arrays.fill(c, 0);
-
 		//compute column aggregates
 		for (int i=rl; i<ru; i++) {
 			SparseRow arow = a[i];
@@ -2304,8 +2294,7 @@ public class LibMatrixAgg
 	{
 		//init current row sum/correction arrays w/ neutral 0
 		double[] csums = new double[ 2*n ]; 
-		Arrays.fill(csums, 0);
-		
+
 		//scan once and compute prefix sums
 		for( int i=0, ix=0; i<m; i++, ix+=n )
 		{
@@ -2338,8 +2327,7 @@ public class LibMatrixAgg
 		
 		//init count arrays (helper, see correction)
 		int[] cnt = new int[ n ]; 
-		Arrays.fill(cnt, 0); //init count array
-				
+
 		//scan once and compute prefix products
 		for( int i=0, ix=0; i<m; i++, ix+=n )
 		{
@@ -2383,8 +2371,7 @@ public class LibMatrixAgg
 				
 		//init count arrays (helper, see correction)
 		int[] cnt = new int[ n ]; 
-		Arrays.fill(cnt, 0); //init count array
-		
+
 		//compute column aggregates min/max
 		for( int i=0, ix=0; i<m; i++, ix+=n )
 		{
@@ -2511,8 +2498,7 @@ public class LibMatrixAgg
 		
 		//init count arrays (helper, see correction)
 		int[] cnt = new int[ n ]; 
-		Arrays.fill(cnt, 0); //init count array
-		
+
 		//compute column aggregates min/max
 		for( int i=rl; i<ru; i++ )
 		{
@@ -2717,9 +2703,6 @@ public class LibMatrixAgg
 	 */
 	private static void s_uacmean( SparseRow[] a, double[] c, int m, int n, KahanObject kbuff, Mean kmean, int rl, int ru ) 
 	{
-		//init output (base for incremental agg)
-		Arrays.fill(c, 0);
-		
 		//correction remaining tuples (not sparse-safe)
 		//note: before aggregate computation in order to
 		//exploit 0 sum (noop) and better numerical stability

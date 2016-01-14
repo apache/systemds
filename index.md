@@ -28,9 +28,10 @@ website for more information.
 
 SystemML is a flexible, scalable machine learning system.
 SystemML's distinguishing characteristics are:
-  (1) **Algorithm customizability via R-like and Python-like languages**,
-  (2) **Multiple execution modes**, including Standalone, Spark Batch, Spark MLContext, Hadoop Batch, and JMLC, and
-  (3) **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
+
+  1. **Algorithm customizability via R-like and Python-like languages**.
+  2. **Multiple execution modes**, including Standalone, Spark Batch, Spark MLContext, Hadoop Batch, and JMLC.
+  3. **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
 
 The [SystemML GitHub README](https://github.com/apache/incubator-systemml) describes
 building, testing, and running SystemML.

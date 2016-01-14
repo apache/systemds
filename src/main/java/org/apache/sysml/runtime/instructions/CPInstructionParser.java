@@ -167,6 +167,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "ucummax", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "stop"  , CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "inverse", CPINSTRUCTION_TYPE.BuiltinUnary);
+		String2CPInstructionType.put( "cholesky",CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "sprop", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "sigmoid", CPINSTRUCTION_TYPE.BuiltinUnary);
 		String2CPInstructionType.put( "sel+", CPINSTRUCTION_TYPE.BuiltinUnary);

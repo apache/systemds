@@ -949,6 +949,24 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(in.getDim1(), in.getDim2());
 			output.setBlockDimensions(in.getRowsInBlock(), in.getColumnsInBlock());
 			break;
+		
+		case CHOLESKY:
+		{
+			// A = L%*%t(L) where L is the lower triangular matrix
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			
+			Identifier inA = getFirstExpr().getOutput();
+			if(inA.dimsKnown() && inA.getDim1() != inA.getDim2()) 
+				raiseValidateError("Input to cholesky() must be square matrix -- given: a " + inA.getDim1() + "x" + inA.getDim2() + " matrix.", conditional);
+			
+			output.setDimensions(inA.getDim1(), inA.getDim2());
+			output.setBlockDimensions(inA.getRowsInBlock(), inA.getColumnsInBlock());
+			break;
+		}	
 			
 		case OUTER:
 			Identifier id2 = this.getSecondExpr().getOutput();
@@ -1424,6 +1442,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.MEDIAN;
 		else if (functionName.equals("inv"))
 			bifop = Expression.BuiltinFunctionOp.INVERSE;
+		else if (functionName.equals("cholesky"))
+			bifop = Expression.BuiltinFunctionOp.CHOLESKY;
 		else if (functionName.equals("sample"))
 			bifop = Expression.BuiltinFunctionOp.SAMPLE;
 		else if ( functionName.equals("outer") )

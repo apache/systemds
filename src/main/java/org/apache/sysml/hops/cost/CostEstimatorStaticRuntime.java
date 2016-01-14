@@ -1005,6 +1005,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 
 					
 				case BuiltinUnary: //opcodes: exp, abs, sin, cos, tan, sign, sqrt, plogp, print, round, sprop, sigmoid
+					//TODO add cost functions for commons math builtins: inverse, cholesky
 					if( optype.equals("print") ) //scalar only
 						return 1;
 					else

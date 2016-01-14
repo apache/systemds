@@ -1026,7 +1026,7 @@ public abstract class Hop
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SIGN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE,
+		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
 		//cumulative sums, products, extreme values
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
 		//fused ML-specific operators for performance 
@@ -1245,6 +1245,7 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.CUMMIN, org.apache.sysml.lops.Unary.OperationTypes.CUMMIN);
 		HopsOpOp1LopsU.put(OpOp1.CUMMAX, org.apache.sysml.lops.Unary.OperationTypes.CUMMAX);
 		HopsOpOp1LopsU.put(OpOp1.INVERSE, org.apache.sysml.lops.Unary.OperationTypes.INVERSE);
+		HopsOpOp1LopsU.put(OpOp1.CHOLESKY, org.apache.sysml.lops.Unary.OperationTypes.CHOLESKY);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.SPROP, org.apache.sysml.lops.Unary.OperationTypes.SPROP);

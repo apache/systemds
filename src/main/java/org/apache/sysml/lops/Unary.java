@@ -40,7 +40,7 @@ public class Unary extends Lop
 		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, MULTIPLY2, DIVIDE, MODULUS, INTDIV, MINUS1_MULTIPLY, 
 		POW, POW2, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SIGN, SQRT, EXP, Over, 
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS, 
-		ROUND, CEIL, FLOOR, MR_IQM, INVERSE,
+		ROUND, CEIL, FLOOR, MR_IQM, INVERSE, CHOLESKY,
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
 		SPROP, SIGMOID, SELP, SUBTRACT_NZ, LOG_NZ,
 		NOTSUPPORTED
@@ -107,27 +107,32 @@ public class Unary extends Lop
 	 * 
 	 * @param input1
 	 * @param op
+	 * @throws LopsException 
 	 */
-	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+		throws LopsException 
+	{
 		super(Lop.Type.UNARY, dt, vt);
 		init(input1, op, dt, vt, et);
 	}
 	
-	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt) {
+	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt) 
+		throws LopsException 
+	{
 		super(Lop.Type.UNARY, dt, vt);
 		init(input1, op, dt, vt, ExecType.MR);
 	}
 	
-	private ExecType forceExecType(OperationTypes op, ExecType et) {
-		if ( op == OperationTypes.INVERSE )
-			return ExecType.CP;
-		return et;
-	}
-	private void init(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		operation = op;
-
-		et = forceExecType(op, et);
+	private void init(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+		throws LopsException 
+	{
+		//sanity check
+		if ( (op == OperationTypes.INVERSE || op == OperationTypes.CHOLESKY)
+			 && (et == ExecType.SPARK || et == ExecType.MR) ) {
+			throw new LopsException("Invalid exection type "+et.toString()+" for operation "+op.toString());
+		}
 		
+		operation = op;
 		valInput = null;
 
 		this.addInput(input1);
@@ -301,7 +306,10 @@ public class Unary extends Lop
 			
 		case INVERSE:
 			return "inverse";
-			
+		
+		case CHOLESKY:
+			return "cholesky";
+		
 		case MR_IQM:
 			return "qpick";
 

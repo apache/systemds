@@ -2708,10 +2708,15 @@ public class DMLTranslator
 			break;
 			
 		case INVERSE:
-			currBuiltinOp=new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 					Hop.OpOp1.INVERSE, expr);
 			break;
 		
+		case CHOLESKY:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+					Hop.OpOp1.CHOLESKY, expr);
+			break;	
+			
 		case OUTER:
 			if( !(expr3 instanceof LiteralOp) )
 				throw new HopsException("Operator for outer builtin function must be a constant: "+expr3);			

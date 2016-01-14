@@ -60,6 +60,7 @@ public abstract class Expression
 		CAST_AS_SCALAR,
 		CBIND, //previously APPEND
 		CEIL,
+		CHOLESKY,
 		COLMAX,
 		COLMEAN,
 		COLMIN,

@@ -795,7 +795,8 @@ public class LibMatrixMult
 			//execute tasks
 			pool.invokeAll(tasks);
 			pool.shutdown();
-			//aggregate partial nnz
+			//aggregate partial nnz 
+			ret.nonZeros = 0;  //reset after execute
 			for( MatrixMultWDivTask task : tasks )
 				ret.nonZeros += task.getPartialNnz();
 		} 

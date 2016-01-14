@@ -416,12 +416,41 @@
 								<exclude>.classpath</exclude>
 								<exclude>.project</exclude>
 								<exclude>docs</exclude>
+								<exclude>**/docs/**</exclude>
 								<exclude>**/*.csv</exclude>
 								<exclude>**/*.json</exclude>
 								<exclude>**/*.mtx</exclude>
 								<exclude>**/*.mtd</exclude>
 								<exclude>**/target/**</exclude>
 								<exclude>**/README.md</exclude>
+								<!-- Generated antlr files -->
+								<exclude>src/main/java/Dml.tokens</exclude>
+								<exclude>src/main/java/DmlLexer.tokens</exclude>
+								<exclude>src/main/java/Pydml.tokens</exclude>
+								<exclude>src/main/java/PydmlLexer.tokens</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/antlr4/DmlBaseListener.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/antlr4/DmlLexer.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/antlr4/DmlListener.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/antlr4/DmlParser.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/python/PydmlBaseListener.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/python/PydmlLexer.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/python/PydmlListener.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/python/PydmlParser.java</exclude>
+								<!-- Test Validation files -->
+								<exclude>src/test/scripts/functions/external/kMeans/kMeansWrapperOutput</exclude>
+								<exclude>src/test/scripts/functions/external/kMeans2/kMeansWrapperOutput1</exclude>
+								<exclude>src/test/scripts/functions/external/kMeans2/kMeansWrapperOutput2</exclude>
+								<exclude>src/test/scripts/functions/external/seqMiner/FreqSeqFile</exclude>
+								<exclude>src/test/scripts/functions/external/seqMiner/FreqSeqSupportFile</exclude>
+								<exclude>src/test/scripts/functions/io/csv/in/transfusion_1.data</exclude>
+								<exclude>src/test/scripts/functions/io/csv/in/transfusion_1.data.single</exclude>
+								<exclude>src/test/scripts/functions/io/csv/in/transfusion_2.data/part-0</exclude>
+								<exclude>src/test/scripts/functions/io/csv/in/transfusion_2.data/part-1</exclude>
+								<exclude>src/test/scripts/functions/io/csv/in/transfusion_2.data.single</exclude>
+								<exclude>src/test/scripts/functions/io/csv/in/transfusion_3.data/part-0</exclude>
+								<exclude>src/test/scripts/functions/io/csv/in/transfusion_3.data/part-1</exclude>
+								<exclude>src/test/scripts/functions/io/csv/in/transfusion_3.data.single</exclude>
+								<exclude>src/test/scripts/functions/transform/input/homes/homesNAN.csv.colnames</exclude>
 							</excludes>
 						</configuration>
 					</plugin>

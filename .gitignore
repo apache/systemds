@@ -52,8 +52,9 @@ src/test/scripts/**/in
 src/test/scripts/**/out
 src/test/scripts/**/expected
 
-# Working directory
+# Working directory and scratch space
 temp/*
+scratch_space/
 
 # Ruby
 Gemfile.lock

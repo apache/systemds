@@ -134,10 +134,23 @@ To verify that Java and Hadoop were on the path, I used the `java -version` and 
 	From source with checksum f9ebb94bf5bf9bec892825ede28baca
 	This command was run using /home/hadoop/hadoop-2.6.2/share/hadoop/common/hadoop-common-2.6.2.jar
 
+<!--
 Next, I downloaded a SystemML binary release and unpacked it.
 
 	[hadoop@host1 ~]$ wget https://github.com/SparkTC/systemml/releases/download/v0.8/system-ml-{{site.SYSTEMML_VERSION}}.tar.gz
 	[hadoop@host1 ~]$ tar -xvzf system-ml-{{site.SYSTEMML_VERSION}}.tar.gz
+-->
+
+Next, I built the SystemML distributed release using [Apache Maven](http://maven.apache.org) and unpacked it.
+Rather than building SystemML,
+it can be downloaded from the [Apache SystemML (incubating)](http://systemml.apache.org/)
+website when the first Apache release is available.
+
+	[hadoop@host1 ~]$ git clone https://github.com/apache/incubator-systemml.git
+	[hadoop@host1 ~]$ cd incubator-systemml
+	[hadoop@host1 incubator-systemml]$ mvn clean package -P distribution
+	[hadoop@host1 incubator-systemml]$ tar -xvzf target/system-ml-*-distrib.tar.gz -C ..
+	[hadoop@host1 ~]$ cd ..
 
 I downloaded the `genLinearRegressionData.dml` script that is used in the SystemML README example.
 

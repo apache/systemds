@@ -655,7 +655,7 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			// check if file is delimited format
-			if (formatTypeString == null) {
+			if (formatTypeString == null && shouldReadMTD ) {
 				boolean isDelimitedFormat = checkHasDelimitedFormat(inputFileName, conditional); 
 				
 				if (isDelimitedFormat){

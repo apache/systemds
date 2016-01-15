@@ -32,7 +32,7 @@
 	</formats>
 
 	<includeBaseDirectory>true</includeBaseDirectory>
-	<baseDirectory>system-ml-${version}</baseDirectory>
+	<baseDirectory>system-ml-${version}-standalone</baseDirectory>
 
 	<fileSets>
 		<fileSet>

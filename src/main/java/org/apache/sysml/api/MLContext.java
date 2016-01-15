@@ -905,6 +905,12 @@ public class MLContext {
 	public void reset() 
 			throws DMLRuntimeException 
 	{
+		reset(true);
+	}
+	
+	public void reset(boolean cleanupConfig) 
+			throws DMLRuntimeException 
+	{
 		//cleanup variables from bufferpool, incl evicted files 
 		//(otherwise memory leak because bufferpool holds references)
 		CacheableData.cleanupCacheDir();
@@ -913,7 +919,8 @@ public class MLContext {
 		_inVarnames = null;
 		_outVarnames = null;
 		_variables = null;
-		_additionalConfigs.clear();
+		if(cleanupConfig)
+			_additionalConfigs.clear();
 	}
 	
 	/**

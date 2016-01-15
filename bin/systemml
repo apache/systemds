@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -29,7 +29,7 @@ Usage: $0 <dml-filename> [arguments] [-help]
 EOF
   exit 1
 }
-#    Script internally invokes 'java -Xmx4g -Xms4g -Xmn400m -jar StandaloneSystemML.jar -f <dml-filename> -exec singlenode -config=SystemML-config.xml [Optional-Arguments]'
+#    Script internally invokes 'java -Xmx4g -Xms4g -Xmn400m [Custom-Java-Options] -jar StandaloneSystemML.jar -f <dml-filename> -exec singlenode -config=SystemML-config.xml [Optional-Arguments]'
 
 while getopts "h:" options; do
   case $options in
@@ -81,7 +81,7 @@ then
 fi
 
 
-# if the SystemML-config.xml does not exis, create it from the template
+# if the SystemML-config.xml does not exist, create it from the template
 if [ ! -f "${PROJECT_ROOT_DIR}/conf/SystemML-config.xml" ]
 then
   cp "${PROJECT_ROOT_DIR}/conf/SystemML-config.xml.template" \
@@ -128,17 +128,37 @@ CLASSPATH=${CLASSPATH}:${SYSTEM_ML_JAR}
 
 echo "================================================================================"
 
-# invoke the jar with options and arguments
-CMD="java -Xmx8g -Xms4g -Xmn1g \
-     -cp $CLASSPATH \
-     -Dlog4j.configuration=file:'$PROJECT_ROOT_DIR/conf/log4j.properties' \
-     -Duser.dir='$USER_DIR' \
-     org.apache.sysml.api.DMLScript \
-     -f '$SCRIPT_FILE' \
-     -exec singlenode \
-     -config='$PROJECT_ROOT_DIR/conf/SystemML-config.xml' \
-     $@"
+# Set default Java options
+SYSTEMML_DEFAULT_JAVA_OPTS="\
+-Xmx8g -Xms4g -Xmn1g \
+-cp $CLASSPATH \
+-Dlog4j.configuration=file:'$PROJECT_ROOT_DIR/conf/log4j.properties' \
+-Duser.dir='$USER_DIR'"
 
+# Add any custom Java options set by the user at command line, overriding defaults as necessary.
+if [ ! -z "${SYSTEMML_JAVA_OPTS}" ]; then
+    SYSTEMML_DEFAULT_JAVA_OPTS+=" ${SYSTEMML_JAVA_OPTS}"
+    unset SYSTEMML_JAVA_OPTS
+fi
+
+# Add any custom Java options set by the user in the environment variables file, overriding defaults as necessary.
+if [ -f "${PROJECT_ROOT_DIR}/conf/systemml-env.sh" ]; then
+    . "${PROJECT_ROOT_DIR}/conf/systemml-env.sh"
+    if [ ! -z "${SYSTEMML_JAVA_OPTS}" ]; then
+        SYSTEMML_DEFAULT_JAVA_OPTS+=" ${SYSTEMML_JAVA_OPTS}"
+    fi
+fi
+
+# Invoke the jar with options and arguments
+CMD="\
+java ${SYSTEMML_DEFAULT_JAVA_OPTS} \
+org.apache.sysml.api.DMLScript \
+-f '$SCRIPT_FILE' \
+-exec singlenode \
+-config='$PROJECT_ROOT_DIR/conf/SystemML-config.xml' \
+$@"
+
+echo ${CMD}
 eval ${CMD}
 
 RETURN_CODE=$?

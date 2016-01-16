@@ -48,7 +48,7 @@ physical data representations.
 SystemML computations can be executed in a variety of different modes. To begin with, SystemML
 can be operated in Standalone mode on a single machine, allowing data scientists to develop
 algorithms locally without need of a distributed cluster. In order to scale up, algorithms can also be distributed
-across Spark or Hadoop.
+across a cluster using Spark or Hadoop.
 This flexibility allows the utilization of an organization's existing resources and expertise.
 In addition, SystemML features a Spark MLContext API that allows for programmatic interaction via Scala and Java.
 SystemML also features an embedded API for scoring models.
@@ -100,8 +100,8 @@ If required, please install the following packages in R:
 
 SystemML can run in distributed mode as well as in local standalone mode. We'll operate in standalone mode in this
 guide.
-After you built SystemML from source (`mvn clean package`), the standalone mode can be executed either on Mac/Unix
-using the `./bin/systemml` script or on Windows using the `.\bin\systemml.bat` batch file.
+After you build SystemML from source (`mvn clean package`), the standalone mode can be executed either on Linux or OS X
+using the `./bin/systemml` script, or on Windows using the `.\bin\systemml.bat` batch file.
 
 If you run from the script from the project root folder `./` or from the `./bin` folder, then the output files
 from running SystemML will be created inside the `./temp` folder to keep them separate from the SystemML source
@@ -335,8 +335,11 @@ For convenience, we can encapsulate our DML invocations in a single script:
 	./bin/systemml ./scripts/algorithms/GLM-predict.dml -nvargs X=linRegData.test.data.csv Y=linRegData.test.labels.csv B=betas.csv fmt=csv
 
 
+* * *
+
+## Conclusion and Next Steps
+
 In this example, we've seen a small part of the capabilities of SystemML. For more detailed information, please
 consult the [Apache SystemML (incubating)](http://systemml.apache.org/) website and the
 [SystemML Documentation](http://apache.github.io/incubator-systemml/) website on GitHub.
-
 

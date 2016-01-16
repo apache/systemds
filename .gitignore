@@ -30,6 +30,7 @@ buildNumber.properties
 # User configuration files
 conf/SystemML-config.xml
 conf/log4j.properties
+conf/systemml-env.sh
 
 # Documentation artifacts
 docs/_site

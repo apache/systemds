@@ -95,13 +95,13 @@ while true ; do
     --executor-memory) executor_memory="--executor-memory "$2 ; shift 2 ;;
     --executor-cores)  executor_cores="--executor-cores "$2 ; shift 2 ;;
     --conf)            conf=${conf}' --conf '$2 ; shift 2 ;;
-     -f)               f=$2 ; shift 2 ;;
+    -f)                if [ -z "$2" ]; then echo "Error: Wrong usage. Try -h" ; exit 1 ; else f=$2 ; shift 2 ; fi ;;
     --stats)           stats="-stats" ; shift 1 ;;
     --explain)         explain="-explain" ; shift 1 ;;
     --explain2)        explain="-explain "$2 ; shift 2 ;;  
     --nvargs)          shift 1 ; nvargs="-nvargs "$@ ; break ;;
     --args)            shift 1 ; args="-args "$@ ; break ;; 
-    *)                 echo "Error: Wrong usage. Try -h" ; exit 1 ;;
+    *)                 if [ -z "$f" ]; then echo "Error: Wrong usage. Try -h" ; exit 1 ; else break ; fi ;;
   esac
 done
 

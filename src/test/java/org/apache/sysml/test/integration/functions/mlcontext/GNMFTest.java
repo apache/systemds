@@ -147,7 +147,7 @@ public class GNMFTest extends AutomatedTestBase
 		
 			MLContext mlCtx = getMLContextForTesting();
 			SparkContext sc = mlCtx.getSparkContext();
-			mlCtx.reset();
+			mlCtx.reset(true); // Cleanup config to ensure future MLContext testcases have correct 'cp.parallel.matrixmult'
 			
 			// Read two matrices through RDD and one through HDFS
 			if(numRegisteredInputs >= 1) {

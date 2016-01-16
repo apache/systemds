@@ -900,12 +900,14 @@ public class MLContext {
 	/**
 	 * Call this method if you want to clear any RDDs set via registerInput, registerOutput.
 	 * This is required if ml.execute(..) has been called earlier and you want to call a new DML script. 
+	 * Note: By default this doesnot clean up configuration set using setConfig method. 
+	 * To clean the configuration as along with registered input/outputs, please use reset(true);
 	 * @throws DMLRuntimeException 
 	 */
 	public void reset() 
 			throws DMLRuntimeException 
 	{
-		reset(true);
+		reset(false);
 	}
 	
 	public void reset(boolean cleanupConfig) 

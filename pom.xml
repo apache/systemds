@@ -527,7 +527,7 @@
 							</execution>
 
 							<execution>
-								<id>create-cluster-binary-distribution-assembly</id>
+								<id>create-binary-distribution-assembly</id>
 								<phase>package</phase>
 								<goals>
 									<goal>single</goal>
@@ -536,11 +536,12 @@
 									<descriptors>
 										<descriptor>src/assembly/distrib.xml</descriptor>
 									</descriptors>
+									<appendAssemblyId>false</appendAssemblyId>
 								</configuration>
 							</execution>
 
 							<execution>
-								<id>create-standalone-assembly</id>
+								<id>create-binary-standalone-distribution-assembly</id>
 								<phase>package</phase>
 								<goals>
 									<goal>single</goal>

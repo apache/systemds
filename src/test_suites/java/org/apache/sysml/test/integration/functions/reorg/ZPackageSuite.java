@@ -27,9 +27,9 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	DiagV2MTest.class,
-	FullTransposeTest.class,
 	FullOrderTest.class,
-	
+	FullReverseTest.class,
+	FullTransposeTest.class,
 	MatrixReshapeTest.class
 })
 

@@ -51,7 +51,9 @@ import org.junit.runners.Suite;
 	FullColAggregateTest.class,
 	FullGroupedAggregateTest.class,
 	FullGroupedAggregateMatrixTest.class,
-	FullRowAggregateTest.class
+	FullRowAggregateTest.class,
+	
+	PushdownSumBinaryTest.class,
 })
 
 

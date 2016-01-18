@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.util.SortUtils;
 
 public class SparseRow implements Serializable 
 {
-
 	private static final long serialVersionUID = 5806895317005796456L;
 
 	//initial capacity of any created sparse row
@@ -39,6 +38,10 @@ public class SparseRow implements Serializable
 	private int size = 0;
 	private double[] values = null;
 	private int[] indexes = null;
+	
+	public SparseRow() {
+		this(initialCapacity);
+	}
 	
 	public SparseRow(int capacity)
 	{
@@ -90,9 +93,19 @@ public class SparseRow implements Serializable
 		return (size == 0);
 	}
 	
+	public double[] values()
+	{
+		return getValueContainer();
+	}
+	
 	public double[] getValueContainer()
 	{
 		return values;
+	}
+	
+	public int[] indexes()
+	{
+		return getIndexContainer();
 	}
 	
 	public int[] getIndexContainer()

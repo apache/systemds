@@ -59,6 +59,47 @@ public class SparseBlockCOO extends SparseBlock
 	}
 	
 	/**
+	 * Copy constructor sparse block abstraction. 
+	 */
+	public SparseBlockCOO(SparseBlock sblock)
+	{
+		long size = sblock.size();
+		if( size > Integer.MAX_VALUE )
+			throw new RuntimeException("SparseBlockCOO supports nnz<=Integer.MAX_VALUE but got "+size);
+		
+		//special case SparseBlockCSR
+		if( sblock instanceof SparseBlockCOO ) { 
+			SparseBlockCOO ocoo = (SparseBlockCOO)sblock;
+			_rlen = ocoo._rlen;
+			_rindexes = Arrays.copyOf(ocoo._rindexes, ocoo._size);
+			_cindexes = Arrays.copyOf(ocoo._cindexes, ocoo._size);
+			_values = Arrays.copyOf(ocoo._values, ocoo._size);
+			_size = ocoo._size;
+		}
+		//general case SparseBlock
+		else {
+			_rlen = sblock.numRows();  
+			_rindexes = new int[(int)size];
+			_cindexes = new int[(int)size];
+			_values = new double[(int)size];
+			_size = (int)size;
+			
+			for( int i=0, pos=0; i<_rlen; i++ ) {
+				int apos = sblock.pos(i);
+				int alen = sblock.size(i);
+				int[] aix = sblock.indexes(i);
+				double[] avals = sblock.values(i);
+				for( int j=apos; j<apos+alen; j++ ) {
+					_rindexes[pos] = i;
+					_cindexes[pos] = aix[j];
+					_values[pos] = avals[j];
+					pos++;
+				}
+			}	
+		}
+	}
+	
+	/**
 	 * Copy constructor old sparse row representation. 
 	 */
 	public SparseBlockCOO(SparseRow[] rows, int nnz)

@@ -61,6 +61,47 @@ public class SparseBlockCSR extends SparseBlock
 	}
 	
 	/**
+	 * Copy constructor sparse block abstraction. 
+	 */
+	public SparseBlockCSR(SparseBlock sblock)
+	{
+		long size = sblock.size();
+		if( size > Integer.MAX_VALUE )
+			throw new RuntimeException("SparseBlockCSR supports nnz<=Integer.MAX_VALUE but got "+size);
+		
+		//special case SparseBlockCSR
+		if( sblock instanceof SparseBlockCSR ) { 
+			SparseBlockCSR ocsr = (SparseBlockCSR)sblock;
+			_ptr = Arrays.copyOf(ocsr._ptr, ocsr.numRows());
+			_indexes = Arrays.copyOf(ocsr._indexes, ocsr._size);
+			_values = Arrays.copyOf(ocsr._values, ocsr._size);
+			_size = ocsr._size;
+		}
+		//general case SparseBlock
+		else {
+			int rlen = sblock.numRows();
+			
+			_ptr = new int[rlen+1];
+			_indexes = new int[(int)size];
+			_values = new double[(int)size];
+			_size = (int)size;
+
+			for( int i=0, pos=0; i<rlen; i++ ) {
+				int apos = sblock.pos(i);
+				int alen = sblock.size(i);
+				int[] aix = sblock.indexes(i);
+				double[] avals = sblock.values(i);
+				for( int j=apos; j<apos+alen; j++ ) {
+					_indexes[pos] = aix[j];
+					_values[pos] = avals[j];
+					pos++;
+				}
+				_ptr[i+1]=pos;
+			}			
+		}
+	}
+	
+	/**
 	 * Copy constructor old sparse row representation. 
 	 */
 	public SparseBlockCSR(SparseRow[] rows, int nnz)

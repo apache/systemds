@@ -36,6 +36,32 @@ public class SparseBlockMCSR extends SparseBlock
 	private SparseRow[] _rows = null;
 	
 	/**
+	 * Copy constructor sparse block abstraction. 
+	 */
+	public SparseBlockMCSR(SparseBlock sblock)
+	{
+		//special case SparseBlockMCSR
+		if( sblock instanceof SparseBlockMCSR ) { 
+			SparseRow[] orows = ((SparseBlockMCSR)sblock)._rows;
+			_rows = new SparseRow[orows.length];
+			for( int i=0; i<_rows.length; i++ )
+				_rows[i] = new SparseRow(orows[i]);		
+		}
+		//general case SparseBlock
+		else { 
+			_rows = new SparseRow[sblock.numRows()];
+			for( int i=0; i<_rows.length; i++ ) {
+				int apos = sblock.pos(i);
+				int alen = sblock.size(i);
+				_rows[i] = new SparseRow(alen);
+				_rows[i].setSize(alen);
+				System.arraycopy(sblock.indexes(i), apos, _rows[i].indexes(), 0, alen);
+				System.arraycopy(sblock.values(i), apos, _rows[i].values(), 0, alen);
+			}
+		}
+	}
+	
+	/**
 	 * Copy constructor old sparse row representation. 
 	 */
 	public SparseBlockMCSR(SparseRow[] rows, boolean deep) {

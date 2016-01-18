@@ -23,6 +23,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -32,14 +33,12 @@ import java.util.concurrent.Future;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
-
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class WriterTextCellParallel extends WriterTextCell
@@ -139,7 +138,7 @@ public class WriterTextCellParallel extends WriterTextCell
 				
 				if( _src.isInSparseFormat() ) //SPARSE
 				{			   
-					SparseRowsIterator iter = _src.getSparseRowsIterator(_rl, _ru);
+					Iterator<IJV> iter = _src.getSparseBlockIterator(_rl, _ru);
 					
 					while( iter.hasNext() )
 					{

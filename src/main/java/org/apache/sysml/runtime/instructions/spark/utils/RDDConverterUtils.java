@@ -280,7 +280,7 @@ public class RDDConverterUtils
 				}
 				else if( tmp.isInSparseFormat() ) //SPARSE ROW
 				{
-					SparseRow row = tmp.getSparseRows()[0]; 
+					SparseRow row = tmp.getSparseBlock()[0]; 
 					int rlen = row.size();
 					int[] rix = row.getIndexContainer();
 					double[] rvals = row.getValueContainer();

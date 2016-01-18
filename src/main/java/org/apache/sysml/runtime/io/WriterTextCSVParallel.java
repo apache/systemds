@@ -172,7 +172,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 				// Write data lines
 				if( sparse ) //SPARSE
 				{	
-					SparseRow[] sparseRows = _src.getSparseRows();
+					SparseRow[] sparseRows = _src.getSparseBlock();
 					for( int i=_rl; i<_ru; i++ )
 					{
 						//write row chunk-wise to prevent OOM on large number of columns

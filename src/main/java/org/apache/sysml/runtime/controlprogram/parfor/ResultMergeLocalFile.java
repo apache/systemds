@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
@@ -39,7 +40,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -58,7 +58,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -955,7 +954,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					{
 						if( mb.isInSparseFormat() )
 						{
-							SparseRowsIterator iter = mb.getSparseRowsIterator();
+							Iterator<IJV> iter = mb.getSparseBlockIterator();
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
@@ -1105,7 +1104,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					{
 						if( mb.isInSparseFormat() )
 						{
-							SparseRowsIterator iter = mb.getSparseRowsIterator();
+							Iterator<IJV> iter = mb.getSparseBlockIterator();
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();

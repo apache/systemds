@@ -24,17 +24,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputCollector;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.AdaptivePartialBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.PartialBlock;
-import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
 import org.apache.sysml.runtime.matrix.data.TaggedAdaptivePartialBlock;
 
 /**
@@ -106,7 +105,7 @@ public class ReblockBuffer
 	{
 		if( inBlk.isInSparseFormat() ) //SPARSE
 		{
-			SparseRowsIterator iter = inBlk.getSparseRowsIterator();
+			Iterator<IJV> iter = inBlk.getSparseBlockIterator();
 			while( iter.hasNext() )
 			{
 				IJV cell = iter.next();

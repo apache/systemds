@@ -365,8 +365,8 @@ public class LibMatrixReorg
 				out.allocateSparseRowsBlock(false);
 				for( int i=0; i<rlen; i++ ) {
 					int ix = vix[i];
-					if( in.sparseRows[ix]!=null && !in.sparseRows[ix].isEmpty() ) {
-						out.sparseRows[i] = new SparseRow(in.sparseRows[ix]);
+					if( in.sparseBlock[ix]!=null && !in.sparseBlock[ix].isEmpty() ) {
+						out.sparseBlock[i] = new SparseRow(in.sparseBlock[ix]);
 					}
 				}
 			}
@@ -751,8 +751,8 @@ public class LibMatrixReorg
 		//allocate output arrays (if required)
 		out.allocateDenseBlock(false);
 		
-		double[] a = in.getDenseArray();
-		double[] c = out.getDenseArray();
+		double[] a = in.getDenseBlock();
+		double[] c = out.getDenseBlock();
 		
 		if( m==1 || n==1 ) //VECTOR TRANSPOSE
 		{
@@ -798,8 +798,8 @@ public class LibMatrixReorg
 		out.reset(m2, n2, true); //always sparse
 		out.allocateSparseRowsBlock();
 				
-		double[] a = in.getDenseArray();
-		SparseRow[] c = out.getSparseRows();
+		double[] a = in.getDenseBlock();
+		SparseRow[] c = out.getSparseBlock();
 		
 		//blocking according to typical L2 cache sizes 
 		final int blocksizeI = 128;
@@ -841,8 +841,8 @@ public class LibMatrixReorg
 		out.reset(m2, n2, true); //always sparse
 		out.allocateSparseRowsBlock();
 		
-		SparseRow[] a = in.getSparseRows();
-		SparseRow[] c = out.getSparseRows();
+		SparseRow[] a = in.getSparseBlock();
+		SparseRow[] c = out.getSparseBlock();
 
 		//initial pass to determine capacity (this helps to prevent
 		//sparse row reallocations and mem inefficiency w/ skew
@@ -920,8 +920,8 @@ public class LibMatrixReorg
 		out.reset(m2, n2, false); //always dense
 		out.allocateDenseBlock();
 		
-		SparseRow[] a = in.getSparseRows();
-		double[] c = out.getDenseArray();
+		SparseRow[] a = in.getSparseBlock();
+		double[] c = out.getDenseBlock();
 		
 		if( m==1 ) //ROW VECTOR TRANSPOSE
 		{
@@ -1020,8 +1020,8 @@ public class LibMatrixReorg
 		out.nonZeros = in.nonZeros;
 		out.allocateDenseBlock(false);
 		
-		double[] a = in.getDenseArray();
-		double[] c = out.getDenseArray();
+		double[] a = in.getDenseBlock();
+		double[] c = out.getDenseBlock();
 		
 		//copy all rows into target positions
 		if( n == 1 ) { //column vector
@@ -1051,8 +1051,8 @@ public class LibMatrixReorg
 		
 		out.allocateSparseRowsBlock(false);
 		
-		SparseRow[] a = in.getSparseRows();
-		SparseRow[] c = out.getSparseRows();
+		SparseRow[] a = in.getSparseBlock();
+		SparseRow[] c = out.getSparseBlock();
 		
 		//copy all rows into target positions
 		for( int i=0; i<m; i++ ) {
@@ -1200,8 +1200,8 @@ public class LibMatrixReorg
 		int estnnz = (int) (in.nonZeros/rows);
 		
 		//sparse reshape
-		SparseRow[] aRows = in.sparseRows;
-		SparseRow[] cRows = out.sparseRows;
+		SparseRow[] aRows = in.sparseBlock;
+		SparseRow[] cRows = out.sparseBlock;
 		
 		if( rowwise )
 		{
@@ -1323,13 +1323,13 @@ public class LibMatrixReorg
 			return;
 		
 		//allocate block if necessary
-		if(out.sparseRows==null)
-			out.sparseRows=new SparseRow[rows];
+		if(out.sparseBlock==null)
+			out.sparseBlock=new SparseRow[rows];
 		int estnnz = (int) (in.nonZeros/rows);
 		
 		//sparse reshape
 		double[] a = in.denseBlock;
-		SparseRow[] cRows = out.sparseRows;
+		SparseRow[] cRows = out.sparseBlock;
 		
 		if( rowwise )
 		{
@@ -1403,14 +1403,14 @@ public class LibMatrixReorg
 		int clen = in.clen;
 		
 		//reshape empty block
-		if( in.sparseRows == null )
+		if( in.sparseBlock == null )
 			return;
 		
 		//allocate block if necessary
 		out.allocateDenseBlock(false);
 		
 		//sparse/dense reshape
-		SparseRow[] aRows = in.sparseRows;
+		SparseRow[] aRows = in.sparseBlock;
 		double[] c = out.denseBlock;
 		
 		if( rowwise )
@@ -1699,7 +1699,7 @@ public class LibMatrixReorg
 			return;
 		
 		int rlen = in.rlen;
-		SparseRow[] aRows = in.sparseRows;
+		SparseRow[] aRows = in.sparseBlock;
 		
 		//append all values to right blocks
 		MatrixIndexes ixtmp = new MatrixIndexes();
@@ -1831,7 +1831,7 @@ public class LibMatrixReorg
 			
 			if( in.sparse ) //SPARSE 
 			{
-				SparseRow[] a = in.sparseRows;
+				SparseRow[] a = in.sparseBlock;
 				
 				for ( int i=0; i < m; i++ )
 					if ( a[i] != null && !a[i].isEmpty() ) {
@@ -1872,7 +1872,7 @@ public class LibMatrixReorg
 			//note: output dense or sparse
 			for( int i=0, cix=0; i<m; i++ )
 				if( flags[i] )
-					ret.appendRow(cix++, in.sparseRows[i]);
+					ret.appendRow(cix++, in.sparseBlock[i]);
 		}
 		else if( !in.sparse && !ret.sparse )  //DENSE <- DENSE
 		{
@@ -1930,7 +1930,7 @@ public class LibMatrixReorg
 			flags = new boolean[ n ]; //false
 			if( in.sparse ) //SPARSE 
 			{
-				SparseRow[] a = in.sparseRows;
+				SparseRow[] a = in.sparseBlock;
 				
 				for( int i=0; i<m; i++ ) 
 					if ( a[i] != null && !a[i].isEmpty() ) {
@@ -1978,7 +1978,7 @@ public class LibMatrixReorg
 		if( in.sparse ) //* <- SPARSE 
 		{
 			//note: output dense or sparse
-			SparseRow[] a = in.sparseRows;
+			SparseRow[] a = in.sparseBlock;
 			
 			for( int i=0; i<m; i++ ) 
 				if ( a[i] != null && !a[i].isEmpty() ) {

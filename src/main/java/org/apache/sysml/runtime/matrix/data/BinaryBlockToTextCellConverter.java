@@ -21,18 +21,18 @@
 package org.apache.sysml.runtime.matrix.data;
 
 
+import java.util.Iterator;
+
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 
 public class BinaryBlockToTextCellConverter implements 
 Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
-{
-	
-	private SparseRowsIterator sparseIterator=null;
+{	
+	private Iterator<IJV> sparseIterator=null;
 	private double[] denseArray=null;
 	private int denseArraySize=0;
 	private int nextInDenseArray=-1;
@@ -68,13 +68,13 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 		thisBlockWidth=v1.getNumColumns();
 		if(sparse)
 		{
-			sparseIterator=v1.getSparseRowsIterator();
+			sparseIterator=v1.getSparseBlockIterator();
 		}
 		else
 		{
-			if(v1.getDenseArray()==null)
+			if(v1.getDenseBlock()==null)
 				return;
-			denseArray=v1.getDenseArray();
+			denseArray=v1.getDenseBlock();
 			nextInDenseArray=0;
 			denseArraySize=v1.getNumRows()*v1.getNumColumns();
 		}

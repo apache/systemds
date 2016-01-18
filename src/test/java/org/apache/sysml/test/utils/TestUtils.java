@@ -40,6 +40,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Random;
 import java.util.StringTokenizer;
@@ -53,14 +54,12 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
-
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
-import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
 import org.apache.sysml.test.integration.BinaryMatrixCharacteristics;
 
 
@@ -1965,7 +1964,7 @@ public class TestUtils
 					}
 
 					if (value.isInSparseFormat()) {
-						SparseRowsIterator iter = value.getSparseRowsIterator();
+						Iterator<IJV> iter = value.getSparseBlockIterator();
 						while( iter.hasNext() )
 						{
 							IJV cell = iter.next();
@@ -1974,7 +1973,7 @@ public class TestUtils
 						}
 						
 					} else {
-						double[] valuesInBlock = value.getDenseArray();
+						double[] valuesInBlock = value.getDenseBlock();
 						for (int i = 0; i < value.getNumRows(); i++) {
 							for (int j = 0; j < value.getNumColumns(); j++) {
 								valueMap.put(new MatrixIndexes(((indexes.getRowIndex() - 1) * rowsInBlock + i),

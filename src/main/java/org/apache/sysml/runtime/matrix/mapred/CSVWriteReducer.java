@@ -38,7 +38,6 @@ import org.apache.sysml.runtime.instructions.mr.CSVWriteInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
 import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
 import org.apache.sysml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput;
 import org.apache.sysml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput.Situation;
@@ -324,7 +323,7 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 				}
 				else if( _data.isInSparseFormat() ) //SPARSE BLOCK
 				{
-					SparseRowsIterator iter = _data.getSparseRowsIterator();
+					Iterator<IJV> iter = _data.getSparseBlockIterator();
 					int j = -1;
 					while( iter.hasNext() )
 					{

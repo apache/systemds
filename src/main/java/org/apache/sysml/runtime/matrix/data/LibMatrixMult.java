@@ -1170,7 +1170,7 @@ public class LibMatrixMult
 			final int blocksizeK = 32; 
 			//note: in contrast to dense-dense, no blocking over j (would require maintaining blocksizeK indexes, counter-productive on skew)
 			
-			SparseRow[] b = m2.sparseRows;
+			SparseRow[] b = m2.sparseBlock;
 			
 			if( pm2 && m==1 )          //VECTOR-MATRIX
 			{
@@ -1219,7 +1219,7 @@ public class LibMatrixMult
 					double val = a[aix];
 					if( val!=0 )
 					{
-						SparseRow brow = m2.sparseRows[ k ];
+						SparseRow brow = m2.sparseBlock[ k ];
 						if( brow != null && !brow.isEmpty() ) 
 						{
 							int blen = brow.size();
@@ -1253,7 +1253,7 @@ public class LibMatrixMult
 		{
 			if( m==1 && n==1 )         //DOT PRODUCT
 			{
-				SparseRow arow = m1.sparseRows[0];
+				SparseRow arow = m1.sparseBlock[0];
 				if( arow != null && !arow.isEmpty() )
 				{
 					int alen = arow.size();
@@ -1265,9 +1265,9 @@ public class LibMatrixMult
 			}
 			else if( n==1 )            //MATRIX-VECTOR
 			{
-				for( int i=rl; i<Math.min(ru, m1.sparseRows.length); i++ )
+				for( int i=rl; i<Math.min(ru, m1.sparseBlock.length); i++ )
 				{
-					SparseRow arow = m1.sparseRows[i];
+					SparseRow arow = m1.sparseBlock[i];
 					if( arow != null && !arow.isEmpty() ) 
 					{
 						int alen = arow.size();
@@ -1281,7 +1281,7 @@ public class LibMatrixMult
 			else if( pm2 && m==1 )     //VECTOR-MATRIX
 			{
 				//parallelization over rows in rhs matrix
-				SparseRow arow = m1.sparseRows[0];
+				SparseRow arow = m1.sparseBlock[0];
 				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
@@ -1300,7 +1300,7 @@ public class LibMatrixMult
 			}
 			else if( pm2 && m<=16 )    //MATRIX-MATRIX (short lhs) 
 			{
-				SparseRow[] a = m1.sparseRows;
+				SparseRow[] a = m1.sparseBlock;
 				for( int i=0, cix=0; i<a.length; i++, cix+=n )
 					if( a[i] != null && !a[i].isEmpty() ) 
 					{
@@ -1330,9 +1330,9 @@ public class LibMatrixMult
 			}
 			else                       //MATRIX-MATRIX
 			{
-				for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseRows.length); i++, cix+=n )
+				for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseBlock.length); i++, cix+=n )
 				{
-					SparseRow arow = m1.sparseRows[i];
+					SparseRow arow = m1.sparseBlock[i];
 					if( arow != null && !arow.isEmpty() ) 
 					{
 						int alen = arow.size();
@@ -1366,9 +1366,9 @@ public class LibMatrixMult
 		}
 		else
 		{
-			for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseRows.length); i++, cix+=n )
+			for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseBlock.length); i++, cix+=n )
 			{
-				SparseRow arow = m1.sparseRows[i];
+				SparseRow arow = m1.sparseBlock[i];
 				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
@@ -1396,7 +1396,7 @@ public class LibMatrixMult
 	private static void matrixMultSparseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) 
 		throws DMLRuntimeException
 	{	
-		SparseRow[] b = m2.sparseRows;
+		SparseRow[] b = m2.sparseBlock;
 		double[] c = ret.denseBlock;
 		int m = m1.rlen;
 		int n = m2.clen;
@@ -1407,7 +1407,7 @@ public class LibMatrixMult
 			if( pm2 && m==1 )          //VECTOR-MATRIX
 			{
 				//parallelization over rows in rhs matrix
-				SparseRow arow = m1.sparseRows[0];
+				SparseRow arow = m1.sparseBlock[0];
 				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
@@ -1428,9 +1428,9 @@ public class LibMatrixMult
 			}	
 			else                       //MATRIX-MATRIX
 			{
-				for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseRows.length); i++, cix+=n )
+				for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseBlock.length); i++, cix+=n )
 				{
-					SparseRow arow = m1.sparseRows[i];
+					SparseRow arow = m1.sparseBlock[i];
 					if( arow != null && !arow.isEmpty() ) 
 					{
 						int alen = arow.size();
@@ -1456,9 +1456,9 @@ public class LibMatrixMult
 		}
 		else
 		{
-			for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseRows.length); i++, cix+=n )
+			for( int i=rl, cix=rl*n; i<Math.min(ru, m1.sparseBlock.length); i++, cix+=n )
 			{
-				SparseRow arow = m1.sparseRows[i];
+				SparseRow arow = m1.sparseBlock[i];
 				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
@@ -1468,7 +1468,7 @@ public class LibMatrixMult
 					for(int k = 0; k < alen; k++) 
 					{
 						double val = avals[k];
-						SparseRow brow = m2.sparseRows[ aix[k] ];
+						SparseRow brow = m2.sparseBlock[ aix[k] ];
 						if( brow != null && !brow.isEmpty() ) 
 						{
 							int blen = brow.size();
@@ -1510,7 +1510,7 @@ public class LibMatrixMult
 			
 			for( int i=rl; i<ru; i++ )
 			{
-				SparseRow arow = m1.sparseRows[ i ];
+				SparseRow arow = m1.sparseBlock[ i ];
 				if( arow != null && !arow.isEmpty() ) 
 				{
 					int alen = arow.size();
@@ -1521,11 +1521,11 @@ public class LibMatrixMult
 					{
 						int aix = aixs[0];
 						if( rightSparse ) { //sparse right matrix (full row copy)
-							if( m2.sparseRows!=null && m2.sparseRows[aix]!=null ) {
+							if( m2.sparseBlock!=null && m2.sparseBlock[aix]!=null ) {
 								ret.rlen=m;
 								ret.allocateSparseRowsBlock(false); //allocation on demand
-								ret.sparseRows[i] = new SparseRow(m2.sparseRows[aix]); 
-								ret.nonZeros += ret.sparseRows[i].size();
+								ret.sparseBlock[i] = new SparseRow(m2.sparseBlock[aix]); 
+								ret.nonZeros += ret.sparseBlock[i].size();
 							}
 						}
 						else { //dense right matrix (append all values)
@@ -1555,7 +1555,7 @@ public class LibMatrixMult
 		{
 			for(int k = 0; k < cd; k++ ) 
 			{			
-				SparseRow brow = m2.sparseRows[ k ];
+				SparseRow brow = m2.sparseBlock[ k ];
 				if( brow != null && !brow.isEmpty() ) 
 				{
 					int blen = brow.size();
@@ -1647,7 +1647,7 @@ public class LibMatrixMult
 	 */
 	private static void matrixMultChainSparse(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int rl, int ru) 
 	{
-		SparseRow[] a = mX.sparseRows;
+		SparseRow[] a = mX.sparseBlock;
 		double[] b = mV.denseBlock;
 		double[] w = (mW!=null) ? mW.denseBlock : null;
 		double[] c = ret.denseBlock;
@@ -1858,7 +1858,7 @@ public class LibMatrixMult
 			//algorithm: scan rows, foreach row self join (KIJ)
 			if( LOW_LEVEL_OPTIMIZATION )
 			{
-				for( SparseRow arow : m1.sparseRows )
+				for( SparseRow arow : m1.sparseBlock )
 					if( arow != null && !arow.isEmpty() ) 
 					{
 						int alen = arow.size();
@@ -1879,7 +1879,7 @@ public class LibMatrixMult
 			}
 			else
 			{
-				for( SparseRow arow : m1.sparseRows )
+				for( SparseRow arow : m1.sparseBlock )
 					if( arow != null && !arow.isEmpty() ) 
 					{
 						int alen = arow.size();
@@ -1902,7 +1902,7 @@ public class LibMatrixMult
 		{
 			if( m==1 ) //VECTOR 
 			{
-				SparseRow arow = m1.sparseRows[0];
+				SparseRow arow = m1.sparseBlock[0];
 				if( arow !=null && !arow.isEmpty() )
 				{
 					int alen = arow.size();
@@ -1921,7 +1921,7 @@ public class LibMatrixMult
 				//algorithm: scan rows, foreach row self join (KIJ)
 				if( LOW_LEVEL_OPTIMIZATION )
 				{
-					for( SparseRow arow : m1.sparseRows )
+					for( SparseRow arow : m1.sparseBlock )
 						if( arow != null && !arow.isEmpty() ) 
 						{
 							int alen = arow.size();
@@ -1942,7 +1942,7 @@ public class LibMatrixMult
 				}
 				else
 				{
-					for( SparseRow arow : m1.sparseRows )
+					for( SparseRow arow : m1.sparseBlock )
 						if( arow != null && !arow.isEmpty() ) 
 						{
 							int alen = arow.size();
@@ -2023,7 +2023,7 @@ public class LibMatrixMult
 	{
 		double[] a = pm1.denseBlock;
 		double[] b = m2.denseBlock;
-		SparseRow[] c = ret1.sparseRows;
+		SparseRow[] c = ret1.sparseBlock;
 
 		final int n = m2.clen;
 		final int brlen = ret1.getNumRows();
@@ -2044,7 +2044,7 @@ public class LibMatrixMult
 					ret2.sparse = true;
 					ret2.rlen=ret1.rlen;
 					ret2.allocateSparseRowsBlock();
-					c = ret2.sparseRows;		
+					c = ret2.sparseBlock;		
 				}
 		
 				//append entire dense row into sparse target position
@@ -2069,8 +2069,8 @@ public class LibMatrixMult
 	private static void matrixMultPermuteSparse( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2, int rl, int ru)
 	{
 		double[] a = pm1.denseBlock;
-		SparseRow[] b = m2.sparseRows;
-		SparseRow[] c = ret1.sparseRows;
+		SparseRow[] b = m2.sparseBlock;
+		SparseRow[] c = ret1.sparseBlock;
 
 		final int brlen = ret1.getNumRows();
 		
@@ -2089,7 +2089,7 @@ public class LibMatrixMult
 				if( lastblk!=-1 && lastblk<blk ){ 
 					ret2.sparse = true;
 					ret2.allocateSparseRowsBlock();
-					c = ret2.sparseRows;		
+					c = ret2.sparseBlock;		
 				}
 		
 				//memcopy entire sparse row into target position
@@ -2198,8 +2198,8 @@ public class LibMatrixMult
 	 */
 	private static void matrixMultWSLossSparseDense(MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, WeightsType wt, int rl, int ru)
 	{
-		SparseRow[] x = mX.sparseRows;
-		SparseRow[] w = (mW!=null)? mW.sparseRows : null;
+		SparseRow[] x = mX.sparseBlock;
+		SparseRow[] w = (mW!=null)? mW.sparseBlock : null;
 		double[] u = mU.denseBlock;
 		double[] v = mV.denseBlock;
 		final int n = mX.clen; 
@@ -2316,7 +2316,7 @@ public class LibMatrixMult
 			// approach: iterate over W, point-wise in order to exploit sparsity
 			if( mW.sparse ) //SPARSE
 			{
-				SparseRow[] wrows = mW.sparseRows;
+				SparseRow[] wrows = mW.sparseBlock;
 				
 				for( int i=rl; i<ru; i++ )
 					if( wrows[i] != null && !wrows[i].isEmpty() ){
@@ -2349,7 +2349,7 @@ public class LibMatrixMult
 			// approach: iterate over W, point-wise in order to exploit sparsity
 			if( mW.sparse ) //SPARSE
 			{
-				SparseRow[] xrows = mX.sparseRows;
+				SparseRow[] xrows = mX.sparseBlock;
 				
 				for( int i=rl; i<ru; i++ )
 					if( xrows[i] != null && !xrows[i].isEmpty() ){
@@ -2469,8 +2469,8 @@ public class LibMatrixMult
 	private static void matrixMultWSigmoidSparseDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int rl, int ru) 
 		throws DMLRuntimeException
 	{
-		SparseRow[] w = mW.sparseRows;
-		SparseRow[] c = ret.sparseRows;
+		SparseRow[] w = mW.sparseBlock;
+		SparseRow[] c = ret.sparseBlock;
 		double[] u = mU.denseBlock;
 		double[] v = mV.denseBlock;
 		final int n = mW.clen; 
@@ -2519,8 +2519,8 @@ public class LibMatrixMult
 		if( mW.sparse ) //SPARSE
 		{
 			//w and c always in same representation
-			SparseRow[] w = mW.sparseRows;
-			SparseRow[] c = ret.sparseRows;
+			SparseRow[] w = mW.sparseBlock;
+			SparseRow[] c = ret.sparseBlock;
 			
 			for( int i=rl; i<ru; i++ )
 				if( w[i] != null && !w[i].isEmpty() ) {
@@ -2622,7 +2622,7 @@ public class LibMatrixMult
 		final boolean minus = wt.isMinus();
 		final int cd = mU.clen;
 		
-		SparseRow[] w = mW.sparseRows;
+		SparseRow[] w = mW.sparseBlock;
 		double[] u = mU.denseBlock;
 		double[] v = mV.denseBlock;
 		double[] c = ret.denseBlock;
@@ -2676,7 +2676,7 @@ public class LibMatrixMult
 		//approach: iterate over non-zeros of w, selective mm computation
 		if( mW.sparse ) //SPARSE
 		{
-			SparseRow[] w = mW.sparseRows;
+			SparseRow[] w = mW.sparseBlock;
 			
 			for( int i=rl; i<ru; i++ ) {
 				if( w[i] != null && !w[i].isEmpty() ) {
@@ -2769,7 +2769,7 @@ public class LibMatrixMult
 	 */
 	private static void matrixMultWCeMMSparseDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt, int rl, int ru)
 	{
-		SparseRow[] w = mW.sparseRows;
+		SparseRow[] w = mW.sparseBlock;
 		double[] u = mU.denseBlock;
 		double[] v = mV.denseBlock;
 		final int cd = mU.clen;
@@ -2811,7 +2811,7 @@ public class LibMatrixMult
 		//approach: iterate over non-zeros of w, selective mm computation
 		if( mW.sparse ) //SPARSE
 		{
-			SparseRow[] w = mW.sparseRows;
+			SparseRow[] w = mW.sparseBlock;
 			
 			for( int i=rl; i<ru; i++ )
 				if( w[i] != null && !w[i].isEmpty() ) {
@@ -2905,8 +2905,8 @@ public class LibMatrixMult
 	private static void matrixMultWuMMSparseDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WUMMType wt, ValueFunction fn, int rl, int ru) 
 		throws DMLRuntimeException
 	{
-		SparseRow[] w = mW.sparseRows;
-		SparseRow[] c = ret.sparseRows;
+		SparseRow[] w = mW.sparseBlock;
+		SparseRow[] c = ret.sparseBlock;
 		double[] u = mU.denseBlock;
 		double[] v = mV.denseBlock;
 		final int n = mW.clen; 
@@ -2953,8 +2953,8 @@ public class LibMatrixMult
 		if( mW.sparse ) //SPARSE
 		{
 			//w and c always in same representation
-			SparseRow[] w = mW.sparseRows;
-			SparseRow[] c = ret.sparseRows;
+			SparseRow[] w = mW.sparseBlock;
+			SparseRow[] c = ret.sparseBlock;
 			
 			for( int i=rl; i<ru; i++ )
 				if( w[i] != null && !w[i].isEmpty() ) {

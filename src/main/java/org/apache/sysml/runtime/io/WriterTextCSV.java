@@ -138,7 +138,7 @@ public class WriterTextCSV extends MatrixWriter
 			// Write data lines
 			if( sparse ) //SPARSE
 			{	
-				SparseRow[] sparseRows = src.getSparseRows();
+				SparseRow[] sparseRows = src.getSparseBlock();
 				for(int i=0; i < rlen; i++) 
 	            {
 					//write row chunk-wise to prevent OOM on large number of columns

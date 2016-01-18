@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark.functions;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.mllib.linalg.DenseMatrix;
@@ -31,7 +32,6 @@ import scala.Tuple2;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class GetMLLibBlocks implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>, Tuple2<Object, Object>, Matrix> {
@@ -51,7 +51,7 @@ public class GetMLLibBlocks implements PairFunction<Tuple2<MatrixIndexes,MatrixB
 			return (int) blk.getNonZeros();
 		}
 		else if(blk.isInSparseFormat()) {
-			SparseRowsIterator iter = blk.getSparseRowsIterator();
+			Iterator<IJV> iter = blk.getSparseBlockIterator();
 			int nnz = 0;
 			while( iter.hasNext() ) {
 				nnz++;
@@ -59,7 +59,7 @@ public class GetMLLibBlocks implements PairFunction<Tuple2<MatrixIndexes,MatrixB
 			return nnz;
 		}
 		else {
-			return blk.getDenseArray().length;
+			return blk.getDenseBlock().length;
 		}
 	}
 	
@@ -88,7 +88,7 @@ public class GetMLLibBlocks implements PairFunction<Tuple2<MatrixIndexes,MatrixB
 		// ------------------------------------------------------------------
 				
 		if(blk.isInSparseFormat()) {
-			SparseRowsIterator iter = blk.getSparseRowsIterator();
+			Iterator<IJV> iter = blk.getSparseBlockIterator();
 			int nnz = getNNZ(blk);
 			double [] values = new double[nnz];
 			int [] rowIndices = new int[nnz];
@@ -115,7 +115,7 @@ public class GetMLLibBlocks implements PairFunction<Tuple2<MatrixIndexes,MatrixB
 			mllibBlock = new SparseMatrix(lrlen, lclen, colPtrs, rowIndices, values);
 		}
 		else {
-			mllibBlock = new DenseMatrix(lrlen, lclen, blk.getDenseArray());
+			mllibBlock = new DenseMatrix(lrlen, lclen, blk.getDenseBlock());
 		}
 		return new Tuple2<Tuple2<Object,Object>, Matrix>(new Tuple2<Object,Object>(blockRowIndex, blockColIndex), mllibBlock);
 	}

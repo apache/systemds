@@ -22,11 +22,11 @@ package org.apache.sysml.runtime.util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -43,7 +43,6 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
 import org.apache.sysml.udf.Matrix;
 
 
@@ -318,7 +317,7 @@ public class DataConverter
 		{
 			if( mb.isInSparseFormat() )
 			{
-				SparseRowsIterator iter = mb.getSparseRowsIterator();
+				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
@@ -351,7 +350,7 @@ public class DataConverter
 		{
 			if( mb.isInSparseFormat() )
 			{
-				SparseRowsIterator iter = mb.getSparseRowsIterator();
+				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
@@ -386,7 +385,7 @@ public class DataConverter
 		{
 			if( mb.isInSparseFormat() )
 			{
-				SparseRowsIterator iter = mb.getSparseRowsIterator();
+				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
@@ -420,7 +419,7 @@ public class DataConverter
 		{
 			if( mb.isInSparseFormat() )
 			{
-				SparseRowsIterator iter = mb.getSparseRowsIterator();
+				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
@@ -430,7 +429,7 @@ public class DataConverter
 			else
 			{
 				//memcopy row major representation if at least 1 non-zero
-				System.arraycopy(mb.getDenseArray(), 0, ret, 0, rows*cols);
+				System.arraycopy(mb.getDenseBlock(), 0, ret, 0, rows*cols);
 			}
 		}
 		
@@ -451,7 +450,7 @@ public class DataConverter
 		
 		if( mb.isInSparseFormat() )
 		{
-			SparseRowsIterator iter = mb.getSparseRowsIterator();
+			Iterator<IJV> iter = mb.getSparseBlockIterator();
 			while( iter.hasNext() )
 			{
 				IJV cell = iter.next();
@@ -640,7 +639,7 @@ public class DataConverter
 			//cache-friendly sequential read/append
 			if( !mb.isEmptyBlock(false) ) {
 				if( sparse ){ //SPARSE
-					SparseRowsIterator iter = mb.getSparseRowsIterator();
+					Iterator<IJV> iter = mb.getSparseBlockIterator();
 					while( iter.hasNext() ) {
 						IJV cell = iter.next();
 						ret[cell.j].appendValue(cell.i, 0, cell.v);

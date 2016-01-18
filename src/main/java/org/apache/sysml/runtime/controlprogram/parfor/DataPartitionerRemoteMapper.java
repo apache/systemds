@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
@@ -27,7 +28,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
@@ -37,7 +37,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.data.SparseRowsIterator;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -466,7 +465,7 @@ public class DataPartitionerRemoteMapper
 					case ROW_WISE:
 						if( sparse )
 						{
-							SparseRowsIterator iter = value2.getSparseRowsIterator();
+							Iterator<IJV> iter = value2.getSparseBlockIterator();
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
@@ -500,7 +499,7 @@ public class DataPartitionerRemoteMapper
 						longKey.set((row_offset/_brlen+1));
 						if( sparse )
 						{
-							SparseRowsIterator iter = value2.getSparseRowsIterator();
+							Iterator<IJV> iter = value2.getSparseBlockIterator();
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
@@ -534,7 +533,7 @@ public class DataPartitionerRemoteMapper
 							rowBlockIndex = ((row_offset%_n)/_brlen)+1;
 						if( sparse )
 						{
-							SparseRowsIterator iter = value2.getSparseRowsIterator();
+							Iterator<IJV> iter = value2.getSparseBlockIterator();
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
@@ -563,7 +562,7 @@ public class DataPartitionerRemoteMapper
 					case COLUMN_WISE:
 						if( sparse )
 						{
-							SparseRowsIterator iter = value2.getSparseRowsIterator();
+							Iterator<IJV> iter = value2.getSparseBlockIterator();
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
@@ -597,7 +596,7 @@ public class DataPartitionerRemoteMapper
 						longKey.set(col_offset/_bclen+1);
 						if( sparse )
 						{
-							SparseRowsIterator iter = value2.getSparseRowsIterator();
+							Iterator<IJV> iter = value2.getSparseBlockIterator();
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
@@ -631,7 +630,7 @@ public class DataPartitionerRemoteMapper
 							colBlockIndex = ((col_offset%_n)/_bclen)+1;
 						if( sparse )
 						{
-							SparseRowsIterator iter = value2.getSparseRowsIterator();
+							Iterator<IJV> iter = value2.getSparseBlockIterator();
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();

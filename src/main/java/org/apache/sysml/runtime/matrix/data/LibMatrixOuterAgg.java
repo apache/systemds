@@ -894,14 +894,14 @@ public class LibMatrixOuterAgg
 
 		//allocate and initialize output values (not indices) 
 		out.allocateDenseBlock(true);
-		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
+		Arrays.fill(out.getDenseBlock(), 0, out.getNumColumns(), agg0);
 		if(agg0 != 0.0)
 			out.setNonZeros(out.getNumColumns());
 		
 		if( in.isEmptyBlock(false) )
 			return;
 			
-		SparseRow[] aSparseRows = in.getSparseRows();		
+		SparseRow[] aSparseRows = in.getSparseBlock();		
 		for (int j = 0; j < aSparseRows.length; ++j)
 		if( aSparseRows[j]!=null && !aSparseRows[j].isEmpty() )
 		{
@@ -954,14 +954,14 @@ public class LibMatrixOuterAgg
 
 		//allocate and initialize output values (not indices) 
 		out.allocateDenseBlock(true);
-		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
+		Arrays.fill(out.getDenseBlock(), 0, out.getNumColumns(), agg0);
 		if(agg0 != 0.0)
 			out.setNonZeros(out.getNumColumns());
 		
 		if( in.isEmptyBlock(false) )
 			return;
 			
-		SparseRow[] aSparseRows = in.getSparseRows();		
+		SparseRow[] aSparseRows = in.getSparseBlock();		
 		for (int j = 0; j < aSparseRows.length; ++j)
 		if( aSparseRows[j]!=null && !aSparseRows[j].isEmpty() )
 		{
@@ -1014,14 +1014,14 @@ public class LibMatrixOuterAgg
 
 		//allocate and initialize output values (not indices) 
 		out.allocateDenseBlock(true);
-		Arrays.fill(out.getDenseArray(), 0, out.getNumColumns(), agg0);
+		Arrays.fill(out.getDenseBlock(), 0, out.getNumColumns(), agg0);
 		if(agg0 != 0.0)
 			out.setNonZeros(out.getNumColumns());
 		
 		if( in.isEmptyBlock(false) )
 			return;
 			
-		SparseRow[] aSparseRows = in.getSparseRows();		
+		SparseRow[] aSparseRows = in.getSparseBlock();		
 		for (int j = 0; j < aSparseRows.length; ++j)
 		if( aSparseRows[j]!=null && !aSparseRows[j].isEmpty() )
 		{

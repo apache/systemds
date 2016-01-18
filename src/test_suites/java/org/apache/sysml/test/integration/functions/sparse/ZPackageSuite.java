@@ -33,6 +33,7 @@ import org.junit.runners.Suite;
 	SparseBlockIndexRange.class,
 	SparseBlockIterator.class,
 	SparseBlockScan.class,
+	SparseBlockSize.class,
 })
 
 

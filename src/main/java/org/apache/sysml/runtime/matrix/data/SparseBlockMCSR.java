@@ -71,6 +71,13 @@ public class SparseBlockMCSR extends SparseBlock
 	public boolean isThreadSafe() {
 		return true;
 	}
+
+	@Override 
+	public void reset() {
+		for( SparseRow row : _rows )
+			if( row != null )
+				row.reset(row.size(), -1);
+	}
 	
 	@Override
 	public long size() {
@@ -86,6 +93,26 @@ public class SparseBlockMCSR extends SparseBlock
 	public int size(int r) {
 		//prior check with isEmpty(r) expected
 		return _rows[r].size();
+	}
+	
+	@Override
+	public long size(int rl, int ru) {
+		int ret = 0;
+		for( int i=rl; i<ru; i++ )
+			ret += (_rows[i]!=null) ? _rows[i].size() : 0;		
+		return ret;
+	}
+	
+	@Override
+	public long size(int rl, int ru, int cl, int cu) {
+		long nnz = 0;
+		for(int i=rl; i<ru; i++)
+			if( !isEmpty(i) ) {
+				int start = posFIndexGTE(i, cl);
+				int end = posFIndexGTE(i, cu);
+				nnz += (start!=-1) ? (end-start) : 0;
+			}
+		return nnz;
 	}
 
 	@Override

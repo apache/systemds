@@ -78,6 +78,12 @@ public abstract class SparseBlock implements Serializable
 	 * @return
 	 */
 	public abstract boolean isThreadSafe();
+
+	/**
+	 * Clears the sparse block by deleting non-zero values. After this call
+	 * size() is guaranteed to return 0.
+	 */
+	public abstract void reset();
 	
 	/**
 	 * Get the number of non-zero values in the sparse block.
@@ -93,6 +99,28 @@ public abstract class SparseBlock implements Serializable
 	 * @return
 	 */
 	public abstract int size(int r);
+	
+	/**
+	 * Get the number of non-zeros values in the row range
+	 * of [rl, ru). 
+	 * 
+	 * @param rl  row index starting at 0
+	 * @param ru  column index starting at 0
+	 * @return
+	 */
+	public abstract long size(int rl, int ru);
+	
+	/**
+	 * Get the number of non-zeros values in the row and column
+	 * range of [rl/cl, ru/cu);
+	 * 
+	 * @param rl
+	 * @param ru
+	 * @param cl
+	 * @param cu
+	 * @return
+	 */
+	public abstract long size(int rl, int ru, int cl, int cu);
 	
 	/**
 	 * Get information if row r is empty, i.e., does not contain non-zero 

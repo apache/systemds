@@ -98,6 +98,11 @@ public class SparseBlockCOO extends SparseBlock
 		return false;
 	}
 	
+	@Override 
+	public void reset() {
+		_size = 0;
+	}
+	
 	@Override
 	public long size() {
 		return _size;
@@ -115,6 +120,22 @@ public class SparseBlockCOO extends SparseBlock
 		while( pos<_size && rix0 == _rindexes[pos++] )
 			cnt ++;		
 		return cnt;
+	}
+	
+	@Override
+	public long size(int rl, int ru) {
+		return pos(ru) - pos(rl);
+	}
+	
+	public long size(int rl, int ru, int cl, int cu) {
+		long nnz = 0;
+		for(int i=rl; i<ru; i++)
+			if( !isEmpty(i) ) {
+				int start = posFIndexGTE(i, cl);
+				int end = posFIndexGTE(i, cu);
+				nnz += (start!=-1) ? (end-start) : 0;
+			}
+		return nnz;
 	}
 
 	@Override

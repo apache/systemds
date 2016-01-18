@@ -100,6 +100,11 @@ public class SparseBlockCSR extends SparseBlock
 		return false;
 	}
 	
+	@Override 
+	public void reset() {
+		_size = 0;
+	}
+	
 	@Override
 	public long size() {
 		return _size;
@@ -109,7 +114,24 @@ public class SparseBlockCSR extends SparseBlock
 	public int size(int r) {
 		return _ptr[r+1] - _ptr[r];
 	}
+	
+	@Override
+	public long size(int rl, int ru) {
+		return _ptr[ru] - _ptr[rl];
+	}
 
+	@Override
+	public long size(int rl, int ru, int cl, int cu) {
+		long nnz = 0;
+		for(int i=rl; i<ru; i++)
+			if( !isEmpty(i) ) {
+				int start = posFIndexGTE(i, cl);
+				int end = posFIndexGTE(i, cu);
+				nnz += (start!=-1) ? (end-start) : 0;
+			}
+		return nnz;
+	}
+	
 	@Override
 	public boolean isEmpty(int r) {
 		return (_ptr[r+1] - _ptr[r] == 0);

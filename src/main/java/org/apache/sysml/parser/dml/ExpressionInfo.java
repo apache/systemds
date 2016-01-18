@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.parser.antlr4;
+package org.apache.sysml.parser.dml;
 
 
 public class ExpressionInfo {

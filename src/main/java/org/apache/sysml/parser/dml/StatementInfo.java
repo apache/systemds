@@ -17,16 +17,20 @@
  * under the License.
  */
 
-package org.apache.sysml.parser.python;
+package org.apache.sysml.parser.dml;
 
-/**
- * This class exists solely to prevent compiler warnings.
- * 
- * <p>
- * The ExpressionInfo and StatementInfo classes are shared among both parsers
- * (R-like and Python-like dialects), and Antlr-generated code assumes that
- * these classes are present in the parser's namespace.
- */
-class StatementInfo extends org.apache.sysml.parser.antlr4.StatementInfo {
+import java.util.HashMap;
+import org.apache.sysml.parser.DMLProgram;
+
+public class StatementInfo {
+
+	public org.apache.sysml.parser.Statement stmt = null;
+	
+	// Valid only for import statements
+	public HashMap<String,DMLProgram> namespaces = null;
+	
+	// Valid only for function statement
+	//public String namespace = DMLProgram.DEFAULT_NAMESPACE;
+	public String functionName = "";
 
 }

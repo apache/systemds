@@ -22,8 +22,8 @@ grammar Pydml;
 @header
 {
     // package org.apache.sysml.python;
-    //import org.apache.sysml.parser.antlr4.StatementInfo;
-    //import org.apache.sysml.parser.antlr4.ExpressionInfo;
+    //import org.apache.sysml.parser.dml.StatementInfo;
+    //import org.apache.sysml.parser.dml.ExpressionInfo;
 }
 
 // This antlr grammar is based on Python 3.3 language reference: https://docs.python.org/3.3/reference/grammar.html

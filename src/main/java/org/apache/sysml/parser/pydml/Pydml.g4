@@ -21,7 +21,7 @@ grammar Pydml;
 
 @header
 {
-    // package org.apache.sysml.python;
+    // package org.apache.sysml.parser.pydml;
     //import org.apache.sysml.parser.dml.StatementInfo;
     //import org.apache.sysml.parser.dml.ExpressionInfo;
 }

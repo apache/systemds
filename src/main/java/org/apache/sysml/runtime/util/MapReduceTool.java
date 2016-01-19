@@ -440,72 +440,72 @@ public class MapReduceTool
 		writeMetaDataFile(mtdfile, v, mc, outinfo, null);
 	}
 	
-	public static void writeMetaDataFile( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo, FileFormatProperties formatProperties ) 
-		throws IOException 
+	public static void writeMetaDataFile( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo, FileFormatProperties formatProperties )
+		throws IOException
 	{
 		Path pt = new Path(mtdfile);
         FileSystem fs = FileSystem.get(_rJob);
-        BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
-        formatProperties = (formatProperties==null && outinfo==OutputInfo.CSVOutputInfo) ? 
+        BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
+        formatProperties = (formatProperties==null && outinfo==OutputInfo.CSVOutputInfo) ?
         		           new CSVFileFormatProperties() : formatProperties;
 
         String line = "";
         
         try {
           line += "{ \n" +
-          "    \"" +  DataExpression.DATATYPEPARAM         +  "\": \"matrix\"\n" +
-          "    ,\"" +  DataExpression.VALUETYPEPARAM        +  "\": ";
+          "    \"" +  DataExpression.DATATYPEPARAM         +  "\": \"matrix\",\n" +
+          "    \"" +  DataExpression.VALUETYPEPARAM        +  "\": ";
         
           switch (v) {
-	          case DOUBLE:
-				line += "\"double\"\n";
+			  case DOUBLE:
+				line += "\"double\",\n";
 				break;
-		  	  case INT:
-				line += "\"int\"\n";
+			  case INT:
+				line += "\"int\",\n";
 				break;
 			  case BOOLEAN:
-				line += "\"boolean\"\n";
+				line += "\"boolean\",\n";
 				break;
 			  case STRING:
-				line += "\"string\"\n";
+				line += "\"string\",\n";
 				break;
 			  case UNKNOWN:
-				line += "\"unknown\"\n";
-				break;		
+				line += "\"unknown\",\n";
+				break;
 			  case OBJECT:
-				line += "\"object\"\n"; 
+				line += "\"object\",\n";
 				break;
           };
         
           line += 
-          "    ,\"" +  DataExpression.READROWPARAM 			+  "\": " + mc.getRows() + "\n" + 
-		  "    ,\"" + DataExpression.READCOLPARAM 			+  "\": " + mc.getCols() + "\n";
+          "    \"" + DataExpression.READROWPARAM 			+  "\": " + mc.getRows() + ",\n" +
+		  "    \"" + DataExpression.READCOLPARAM 			+  "\": " + mc.getCols() + ",\n";
           // only output rows_in_block and cols_in_block for binary format 
           if ( outinfo == OutputInfo.BinaryBlockOutputInfo)  {
-         	 line += "    ,\"" + DataExpression.ROWBLOCKCOUNTPARAM	+  "\": " + mc.getRowsPerBlock() + "\n" + 
-		            "    ,\"" + DataExpression.COLUMNBLOCKCOUNTPARAM +  "\": " + mc.getColsPerBlock() + "\n";
+         	 line += "    \"" + DataExpression.ROWBLOCKCOUNTPARAM    +  "\": " + mc.getRowsPerBlock() + ",\n" +
+		             "    \"" + DataExpression.COLUMNBLOCKCOUNTPARAM +  "\": " + mc.getColsPerBlock() + ",\n";
           }
         
-          line += "    ,\"" +	DataExpression.READNUMNONZEROPARAM	+  "\": " + mc.getNonZeros() + "\n" +
-		          "    ,\"" + DataExpression.FORMAT_TYPE	+  "\": "; 
+          line += "    \"" + DataExpression.READNUMNONZEROPARAM +  "\": " + mc.getNonZeros() + ",\n" +
+		          "    \"" + DataExpression.FORMAT_TYPE +  "\": ";
         
           if ( outinfo == OutputInfo.TextCellOutputInfo ) {
-        	line += "\"text\"\n";
+        	line += "\"text\",\n";
           } else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo ) {
-        	line += "\"binary\"\n"; // currently, there is no way to differentiate between them
+        	line += "\"binary\",\n"; // currently, there is no way to differentiate between them
           } else if (outinfo == OutputInfo.CSVOutputInfo ) {
-        	line += "\"csv\"\n"; 
+        	line += "\"csv\",\n";
           } else {
-        	line += "\"specialized\"\n"; 
+        	line += "\"specialized\",\n";
           }
           
           if ( outinfo == OutputInfo.CSVOutputInfo) {
         	  CSVFileFormatProperties csvProperties = (CSVFileFormatProperties) formatProperties;
-              line += "    ,\"" +  DataExpression.DELIM_HAS_HEADER_ROW 	+  "\": " + csvProperties.hasHeader() + "\n";
-              line += "    ,\"" +  DataExpression.DELIM_DELIMITER 	+  "\": \"" + csvProperties.getDelim() + "\"\n";
+              line += "    \"" +  DataExpression.DELIM_HAS_HEADER_ROW 	+  "\": " + csvProperties.hasHeader() + ",\n";
+              line += "    \"" +  DataExpression.DELIM_DELIMITER 	+  "\": \"" + csvProperties.getDelim() + "\",\n";
           }
         
-		line += "    ,\"description\": { \"author\": \"SystemML\" } \n" + "}" ;
+		line += "    \"description\": { \"author\": \"SystemML\" } \n" + "}" ;
         
         br.write(line);
         
@@ -514,42 +514,42 @@ public class MapReduceTool
 			throw new IOException(e);
 		}
 	}
-	
-	
+
+
 	public static void writeScalarMetaDataFile ( String mtdfile, ValueType v ) throws IOException {
-		
+
         Path pt=new Path(mtdfile);
         FileSystem fs = FileSystem.get(_rJob);
         BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
-		
+
         try {
           String line = "";
           line += "{ \n" +
-                  "    \"" +  DataExpression.DATATYPEPARAM         +  "\": \"scalar\"\n" +
-        		  "    ,\"" +  DataExpression.VALUETYPEPARAM        +  "\": ";
-        		        
+                  "    \"" +  DataExpression.DATATYPEPARAM         +  "\": \"scalar\",\n" +
+        		  "    \"" +  DataExpression.VALUETYPEPARAM        +  "\": ";
+
           switch (v) {
         	case DOUBLE:
-        		line += "\"double\"\n";
+        		line += "\"double\",\n";
         		break;
         	case INT:
-        		line += "\"int\"\n";
+        		line += "\"int\",\n";
         		break;
         	case BOOLEAN:
-        		line += "\"boolean\"\n";
+        		line += "\"boolean\",\n";
         		break;
         	case STRING:
-        		line += "\"string\"\n";
+        		line += "\"string\",\n";
         		break;
         	case UNKNOWN:
-        		line += "\"unknown\"\n";
+        		line += "\"unknown\",\n";
         		break;
         	case OBJECT:
         		throw new IOException("Write of generic object types not supported.");
           };
           
-          line += "    ,\"" + DataExpression.FORMAT_TYPE	+  "\": \"text\"\n" + 
-                  "    ,\"description\": { \"author\": \"SystemML\" } \n" +" }" ;
+          line += "    \"" + DataExpression.FORMAT_TYPE	+  "\": \"text\",\n" +
+                  "    \"description\": { \"author\": \"SystemML\" } \n" +" }" ;
         
         br.write(line);
         

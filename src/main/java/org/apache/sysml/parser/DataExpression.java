@@ -78,8 +78,9 @@ public class DataExpression extends DataIdentifier
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
 	public static final String DATATYPEPARAM = "data_type";
 	public static final String VALUETYPEPARAM = "value_type";
-	public static final String DESCRIPTIONPARAM = "description"; 
-	
+	public static final String DESCRIPTIONPARAM = "description";
+	public static final String AUTHORPARAM = "author";
+
 	// Parameter names relevant to reading/writing delimited/csv files
 	public static final String DELIM_DELIMITER = "sep";
 	public static final String DELIM_HAS_HEADER_ROW = "header";

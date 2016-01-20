@@ -424,7 +424,7 @@ public class MRJobConfiguration
 			String uniqueSubdir = tmp.toString();
 			
 			//unique local dir
-			String[] dirlist = job.get("mapred.local.dir","/tmp").split(",");
+			String[] dirlist = job.get("mapreduce.cluster.local.dir","/tmp").split(",");
 			StringBuilder sb2 = new StringBuilder();
 			for( String dir : dirlist ) {
 				if( sb2.length()>0 )
@@ -432,10 +432,10 @@ public class MRJobConfiguration
 				sb2.append(dir);
 				sb2.append( uniqueSubdir );
 			}
-			job.set("mapred.local.dir", sb2.toString() );			
+			job.set("mapreduce.cluster.local.dir", sb2.toString() );
 			
 			//unique system dir 
-			job.set("mapred.system.dir", job.get("mapred.system.dir") + uniqueSubdir);
+			job.set("mapreduce.jobtracker.system.dir", job.get("mapreduce.jobtracker.system.dir") + uniqueSubdir);
 			
 			//unique staging dir 
 			job.set( "mapreduce.jobtracker.staging.root.dir",  job.get("mapreduce.jobtracker.staging.root.dir") + uniqueSubdir );
@@ -444,12 +444,12 @@ public class MRJobConfiguration
 	
 	public static String getLocalWorkingDirPrefix(JobConf job)
 	{
-		return job.get("mapred.local.dir");
+		return job.get("mapreduce.cluster.local.dir");
 	}
 	
 	public static String getSystemWorkingDirPrefix(JobConf job)
 	{
-		return job.get("mapred.system.dir");
+		return job.get("mapreduce.jobtracker.system.dir");
 	}
 	
 	public static String getStagingWorkingDirPrefix(JobConf job)

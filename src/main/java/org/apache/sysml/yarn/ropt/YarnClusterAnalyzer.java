@@ -676,7 +676,7 @@ public class YarnClusterAnalyzer
 				throw new YarnException("There are no available nodes in the yarn cluster");
 			
 			// Now get the default cluster settings
-			_remoteMRSortMem = (1024*1024) * conf.getLong("io.sort.mb",100); //100MB
+			_remoteMRSortMem = (1024*1024) * conf.getLong("mapreduce.task.io.sort.mb",100); //100MB
 
 			//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
 			//(for robustness we probe both: child and map configuration parameters)

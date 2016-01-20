@@ -182,7 +182,7 @@ public class RemoteParForMR
 				job.setNumTasksToExecutePerJvm(-1); //unlimited
 			
 			//set sort io buffer (reduce unnecessary large io buffer, guaranteed memory consumption)
-			job.setInt("io.sort.mb", 8); //8MB
+			job.setInt("mapreduce.task.io.sort.mb", 8); //8MB
 			
 			//set the replication factor for the results
 			job.setInt("dfs.replication", replication);

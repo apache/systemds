@@ -22,9 +22,8 @@ package org.apache.sysml.runtime.controlprogram.caching;
 import java.io.DataOutput;
 import java.io.IOException;
 
-
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataOutput;
-import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
 /**
  * Customer DataOutput to serialize directly into the given byte array.
@@ -158,24 +157,24 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 	}
 	
 	@Override
-	public void writeSparseRows(int rlen, SparseRow[] rows) 
+	public void writeSparseRows(int rlen, SparseBlock rows) 
 		throws IOException
 	{
-		int lrlen = Math.min(rows.length, rlen);
+		int lrlen = Math.min(rows.numRows(), rlen);
 		
 		//process existing rows
 		for( int i=0; i<lrlen; i++ )
 		{
-			SparseRow arow = rows[i];
-			if( arow!=null && !arow.isEmpty() )
+			if( !rows.isEmpty(i) )
 			{
-				int alen = arow.size();
-				int[] aix = arow.getIndexContainer();
-				double[] avals = arow.getValueContainer();
+				int apos = rows.pos(i);
+				int alen = rows.size(i);
+				int[] aix = rows.indexes(i);
+				double[] avals = rows.values(i);
 				
 				writeInt( alen );
 
-				for( int j=0; j<alen; j++ )
+				for( int j=apos; j<apos+alen; j++ )
 				{
 					intToBa(aix[j], _buff, _count);
 					long tmp2 = Double.doubleToRawLongBits(avals[j]);

@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataInput;
-import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
 /**
  * 
@@ -202,7 +202,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	}
 
 	@Override
-	public long readSparseRows(int rlen, SparseRow[] rows) 
+	public long readSparseRows(int rlen, SparseBlock rows) 
 		throws IOException 
 	{
 		//counter for non-zero elements
@@ -216,9 +216,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 			if( lnnz > 0 ) //non-zero row
 			{
 				//get handle to sparse (allocate if necessary)
-				if( rows[i] == null )
-					rows[i] = new SparseRow(lnnz);
-				SparseRow arow = rows[i];
+				rows.allocate(i, lnnz);
 				
 				//read single sparse row
 				//note: cast to long to prevent overflows w/ lnnz*12
@@ -232,7 +230,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 						int aix = baToInt(_buff, j);
 						long tmp = baToLong(_buff, j+4);
 						double aval = Double.longBitsToDouble( tmp );
-						arow.append(aix, aval);
+						rows.append(i, aix, aval);
 					}
 				}
 				else
@@ -243,7 +241,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 						int aix = baToInt(_buff, 0);
 						long tmp = baToLong(_buff, 4);
 						double aval = Double.longBitsToDouble(tmp);
-						arow.append(aix, aval);
+						rows.append(i, aix, aval);
 					}
 				}
 				

@@ -52,6 +52,6 @@ public interface MatrixBlockDataOutput
 	 * @param rows
 	 * @throws IOException
 	 */
-	public void writeSparseRows(int rlen, SparseRow[] rows) 
+	public void writeSparseRows(int rlen, SparseBlock rows) 
 		throws IOException;
 }

@@ -54,6 +54,6 @@ public interface MatrixBlockDataInput
 	 * @param rows
 	 * @throws IOException
 	 */
-	public long readSparseRows(int rlen, SparseRow[] rows) 
+	public long readSparseRows(int rlen, SparseBlock rows) 
 		throws IOException;
 }

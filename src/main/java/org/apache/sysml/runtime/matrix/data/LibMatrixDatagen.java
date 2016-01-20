@@ -671,7 +671,7 @@ public class LibMatrixDatagen
 				// irrelevant but we need to ensure consistency with MR)
 				boolean localSparse = MatrixBlock.evalSparseFormatInMemory(blockrows, blockcols, nnzInBlocks[blockID] ); //(long)(sparsity*blockrows*blockcols));  
 				if ( localSparse ) {
-					SparseRow[] c = out.sparseBlock;
+					SparseBlock c = out.sparseBlock;
 					
 					int idx = 0;  // takes values in range [1, brlen*bclen] (both ends including)
 					int ridx=0, cidx=0; // idx translates into (ridx, cidx) entry within the block
@@ -692,9 +692,8 @@ public class LibMatrixDatagen
 						ridx = (idx-1)/blockcols;
 						cidx = (idx-1)%blockcols;
 						double val = min + (range * valuePRNG.nextDouble());
-						if( c[rowoffset+ridx]==null )
-							c[rowoffset+ridx]=new SparseRow(estimatedNNzsPerRow, clen);
-						c[rowoffset+ridx].append(coloffset+cidx, val);
+						c.allocate(rowoffset+ridx, estimatedNNzsPerRow, clen);
+						c.append(rowoffset+ridx, coloffset+cidx, val);
 					}
 				}
 				else {
@@ -716,14 +715,13 @@ public class LibMatrixDatagen
 							 * 
 							 */
 							// In this case, entire matrix is in sparse format but the current block is dense
-							SparseRow[] c = out.sparseBlock;
+							SparseBlock c = out.sparseBlock;
 							for(int ii=0; ii < blockrows; ii++) {
 								for(int jj=0; jj < blockcols; jj++) {
 									if(nnzPRNG.nextDouble() <= sparsity) {
 										double val = min + (range * valuePRNG.nextDouble());
-										if( c[ii+rowoffset]==null )
-											c[ii+rowoffset]=new SparseRow(estimatedNNzsPerRow, clen);
-										c[ii+rowoffset].append(jj+coloffset, val);
+										c.allocate(ii+rowoffset, estimatedNNzsPerRow, clen);
+										c.append(ii+rowoffset, jj+coloffset, val);
 									}
 								}
 							}

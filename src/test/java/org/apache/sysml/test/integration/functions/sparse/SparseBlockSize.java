@@ -26,7 +26,6 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlockCOO;
 import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
 import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
-import org.apache.sysml.runtime.matrix.data.SparseRow;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
@@ -115,11 +114,11 @@ public class SparseBlockSize extends AutomatedTestBase
 			//init sparse block
 			SparseBlock sblock = null;
 			MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
-			SparseRow[] srtmp = mbtmp.getSparseBlock();			
+			SparseBlock srtmp = mbtmp.getSparseBlock();			
 			switch( btype ) {
-				case MCSR: sblock = new SparseBlockMCSR(srtmp,true); break;
-				case CSR: sblock = new SparseBlockCSR(srtmp, (int)mbtmp.getNonZeros()); break;
-				case COO: sblock = new SparseBlockCOO(srtmp, (int)mbtmp.getNonZeros()); break;
+				case MCSR: sblock = new SparseBlockMCSR(srtmp); break;
+				case CSR: sblock = new SparseBlockCSR(srtmp); break;
+				case COO: sblock = new SparseBlockCOO(srtmp); break;
 			}
 			
 			//prepare summary statistics nnz

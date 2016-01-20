@@ -901,17 +901,17 @@ public class LibMatrixOuterAgg
 		if( in.isEmptyBlock(false) )
 			return;
 			
-		SparseRow[] aSparseRows = in.getSparseBlock();		
-		for (int j = 0; j < aSparseRows.length; ++j)
-		if( aSparseRows[j]!=null && !aSparseRows[j].isEmpty() )
-		{
-			double [] aValues = aSparseRows[j].getValueContainer();
-			int [] aIndexes = aSparseRows[j].getIndexContainer();
+		SparseBlock sblock = in.getSparseBlock();		
+		for( int j = 0; j < sblock.numRows(); j++)
+		if( !sblock.isEmpty(j) ) {
+			int apos = sblock.pos(j);
+			int alen = sblock.size(j);
+			int[] aix = sblock.indexes(j);
+			double [] avals = sblock.values(j);
 			
-			for (int i=0; i < aValues.length; ++i)
-			{
-				int cnt = sumRowSumGtLeColSumLtGe(aValues[i], bv, bOp);
-				out.quickSetValue(0, aIndexes[i], cnt);
+			for (int i=apos; i < apos+alen; i++) {
+				int cnt = sumRowSumGtLeColSumLtGe(avals[i], bv, bOp);
+				out.quickSetValue(0, aix[i], cnt);
 			}
 		}		
 	}
@@ -961,17 +961,17 @@ public class LibMatrixOuterAgg
 		if( in.isEmptyBlock(false) )
 			return;
 			
-		SparseRow[] aSparseRows = in.getSparseBlock();		
-		for (int j = 0; j < aSparseRows.length; ++j)
-		if( aSparseRows[j]!=null && !aSparseRows[j].isEmpty() )
-		{
-			double [] aValues = aSparseRows[j].getValueContainer();
-			int [] aIndexes = aSparseRows[j].getIndexContainer();
+		SparseBlock sblock = in.getSparseBlock();		
+		for (int j = 0; j < sblock.numRows(); j++)
+		if( !sblock.isEmpty(j) ) {
+			int apos = sblock.pos(j);
+			int alen = sblock.size(j);
+			int[] aix = sblock.indexes(j);
+			double [] avals = sblock.values(j);
 			
-			for (int i=0; i < aValues.length; ++i)
-			{
-				int cnt = sumRowSumLtGeColSumGtLe(aValues[i], bv, bOp);
-				out.quickSetValue(0, aIndexes[i], cnt);
+			for (int i=apos; i < apos+alen; i++) {
+				int cnt = sumRowSumLtGeColSumGtLe(avals[i], bv, bOp);
+				out.quickSetValue(0, aix[i], cnt);
 			}
 		}		
 	}
@@ -1021,17 +1021,17 @@ public class LibMatrixOuterAgg
 		if( in.isEmptyBlock(false) )
 			return;
 			
-		SparseRow[] aSparseRows = in.getSparseBlock();		
-		for (int j = 0; j < aSparseRows.length; ++j)
-		if( aSparseRows[j]!=null && !aSparseRows[j].isEmpty() )
-		{
-			double [] aValues = aSparseRows[j].getValueContainer();
-			int [] aIndexes = aSparseRows[j].getIndexContainer();
+		SparseBlock sblock = in.getSparseBlock();		
+		for (int j = 0; j < sblock.numRows(); j++)
+		if( !sblock.isEmpty(j) ) {
+			int apos = sblock.pos(j);
+			int alen = sblock.size(j);
+			int[] aix = sblock.indexes(j);
+			double [] avals = sblock.values(j);
 			
-			for (int i=0; i < aValues.length; ++i)
-			{
-				int cnt = sumEqNe(aValues[i], bv, bOp);
-				out.quickSetValue(0, aIndexes[i], cnt);
+			for (int i=apos; i < apos+alen; ++i) {
+				int cnt = sumEqNe(avals[i], bv, bOp);
+				out.quickSetValue(0, aix[i], cnt);
 			}
 		}		
 	}

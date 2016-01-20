@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataOutput;
-import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
 /**
  * This buffered output stream is essentially a merged version of
@@ -236,21 +236,21 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 	}
 
 	@Override
-	public void writeSparseRows(int rlen, SparseRow[] rows) 
+	public void writeSparseRows(int rlen, SparseBlock rows) 
 		throws IOException
 	{
-		int lrlen = Math.min(rows.length, rlen);
+		int lrlen = Math.min(rows.numRows(), rlen);
 		
 		//process existing rows
 		for( int i=0; i<lrlen; i++ )
 		{
-			SparseRow arow = rows[i];
-			if( arow!=null && !arow.isEmpty() )
+			if( !rows.isEmpty(i) )
 			{
-				int alen = arow.size();
+				int apos = rows.pos(i);
+				int alen = rows.size(i);
 				int alen2 = alen*12;
-				int[] aix = arow.getIndexContainer();
-				double[] avals = arow.getValueContainer();
+				int[] aix = rows.indexes(i);
+				double[] avals = rows.values(i);
 				
 				writeInt( alen );
 				
@@ -259,7 +259,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 					if (_count+alen2 > _bufflen) 
 					    flushBuffer();
 					
-					for( int j=0; j<alen; j++ )
+					for( int j=apos; j<apos+alen; j++ )
 					{
 						long tmp2 = Double.doubleToRawLongBits(avals[j]);
 						intToBa(aix[j], _buff, _count);
@@ -270,7 +270,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 				else
 				{
 					//row does not fit in buffer
-					for( int j=0; j<alen; j++ )
+					for( int j=apos; j<apos+alen; j++ )
 					{
 						if (_count+12 > _bufflen) 
 						    flushBuffer();

@@ -48,7 +48,7 @@ import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.ReblockBuffer;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -280,11 +280,9 @@ public class RDDConverterUtils
 				}
 				else if( tmp.isInSparseFormat() ) //SPARSE ROW
 				{
-					SparseRow row = tmp.getSparseBlock()[0]; 
-					int rlen = row.size();
-					int[] rix = row.getIndexContainer();
-					double[] rvals = row.getValueContainer();
-					ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), Vectors.sparse(rlen, rix, rvals)));
+					SparseBlock sblock = tmp.getSparseBlock();
+					ret.add(new LabeledPoint(arg0.getValue(i, arg0.getNumColumns()-1), 
+							Vectors.sparse(sblock.size(0), sblock.indexes(0), sblock.values(0))));
 				}
 				else // DENSE ROW
 				{

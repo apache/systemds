@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.IOException;
 
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataInput;
-import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
 public class CacheDataInput implements DataInput, MatrixBlockDataInput
 {
@@ -163,7 +163,7 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 	}
 
 	@Override
-	public long readSparseRows(int rlen, SparseRow[] rows) 
+	public long readSparseRows(int rlen, SparseBlock rows) 
 		throws IOException 
 	{
 		//counter for non-zero elements
@@ -177,9 +177,7 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 			if( lnnz > 0 ) //non-zero row
 			{
 				//get handle to sparse (allocate if necessary)
-				if( rows[i] == null )
-					rows[i] = new SparseRow(lnnz);
-				SparseRow arow = rows[i];
+				rows.allocate(i, lnnz);
 				
 				//read single sparse row
 				for( int j=0; j<lnnz; j++ ) 
@@ -187,7 +185,7 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 					int aix = baToInt(_buff, _count);
 					long tmp = baToLong(_buff, _count+4);
 					double aval = Double.longBitsToDouble( tmp );
-					arow.append(aix, aval);
+					rows.append(i, aix, aval);
 					_count+=12;
 				}
 				

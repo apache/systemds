@@ -34,14 +34,13 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.JobConf;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
 /**
@@ -138,20 +137,20 @@ public class WriterTextCSV extends MatrixWriter
 			// Write data lines
 			if( sparse ) //SPARSE
 			{	
-				SparseRow[] sparseRows = src.getSparseBlock();
+				SparseBlock sblock = src.getSparseBlock();
 				for(int i=0; i < rlen; i++) 
 	            {
 					//write row chunk-wise to prevent OOM on large number of columns
 					int prev_jix = -1;
-					if(    sparseRows!=null && i<sparseRows.length 
-						&& sparseRows[i]!=null && !sparseRows[i].isEmpty() )
+					if(    sblock!=null && i<sblock.numRows() 
+						&& !sblock.isEmpty(i) )
 					{
-						SparseRow arow = sparseRows[i];
-						int alen = arow.size();
-						int[] aix = arow.getIndexContainer();
-						double[] avals = arow.getValueContainer();
+						int pos = sblock.pos(i);
+						int alen = sblock.size(i);
+						int[] aix = sblock.indexes(i);
+						double[] avals = sblock.values(i);
 						
-						for(int j=0; j < alen; j++) 
+						for(int j=pos; j<pos+alen; j++) 
 						{
 							int jix = aix[j];
 							

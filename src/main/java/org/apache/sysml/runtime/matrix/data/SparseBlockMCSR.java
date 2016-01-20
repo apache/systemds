@@ -89,6 +89,18 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 	
 	@Override
+	public void allocate(int r, int nnz) {
+		if( _rows[r] == null )
+			_rows[r] = new SparseRow(nnz);
+	}
+	
+	@Override
+	public void allocate(int r, int ennz, int maxnnz) {
+		if( _rows[r] == null )
+			_rows[r] = new SparseRow(ennz, maxnnz);
+	}
+	
+	@Override
 	public int numRows() {
 		return _rows.length;
 	}
@@ -102,7 +114,20 @@ public class SparseBlockMCSR extends SparseBlock
 	public void reset() {
 		for( SparseRow row : _rows )
 			if( row != null )
-				row.reset(row.size(), -1);
+				row.reset(row.size(), Integer.MAX_VALUE);
+	}
+	
+	@Override 
+	public void reset(int ennz, int maxnnz) {
+		for( SparseRow row : _rows )
+			if( row != null )
+				row.reset(ennz, maxnnz);
+	}
+	
+	@Override 
+	public void reset(int r, int ennz, int maxnnz) {
+		if( _rows[r] != null )
+			_rows[r].reset(ennz, maxnnz);
 	}
 	
 	@Override
@@ -118,14 +143,15 @@ public class SparseBlockMCSR extends SparseBlock
 	@Override
 	public int size(int r) {
 		//prior check with isEmpty(r) expected
-		return _rows[r].size();
+		//TODO perf sparse block
+		return (_rows[r]!=null) ? _rows[r].size() : 0;
 	}
 	
 	@Override
 	public long size(int rl, int ru) {
 		int ret = 0;
 		for( int i=rl; i<ru; i++ )
-			ret += (_rows[i]!=null) ? _rows[i].size() : 0;		
+			ret += (_rows[i]!=null) ? _rows[i].size() : 0;	
 		return ret;
 	}
 	
@@ -172,6 +198,11 @@ public class SparseBlockMCSR extends SparseBlock
 	}
 
 	@Override
+	public void set(int r, SparseRow row) {
+		_rows[r] = row;
+	}
+	
+	@Override
 	public void append(int r, int c, double v) {
 		if( _rows[r] == null )
 			_rows[r] = new SparseRow();
@@ -208,8 +239,14 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public double get(int r, int c) {
-		//prior check with isEmpty(r) expected
+		if( _rows[r] == null )
+			return 0;
 		return _rows[r].get(c); 
+	}
+	
+	@Override
+	public SparseRow get(int r) {
+		return _rows[r]; 
 	}
 
 	@Override
@@ -228,5 +265,24 @@ public class SparseBlockMCSR extends SparseBlock
 	public int posFIndexGT(int r, int c) {
 		//prior check with isEmpty(r) expected
 		return _rows[r].searchIndexesFirstGT(c);
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("SparseBlockMCSR: rlen=");
+		sb.append(numRows());
+		sb.append(", nnz=");
+		sb.append(size());
+		sb.append("\n");
+		for( int i=0; i<numRows(); i++ ) {
+			sb.append("row +");
+			sb.append(i);
+			sb.append(": ");
+			sb.append(_rows[i]);
+			sb.append("\n");
+		}		
+		
+		return sb.toString();
 	}
 }

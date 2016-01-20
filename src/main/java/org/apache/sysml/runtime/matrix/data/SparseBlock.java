@@ -61,6 +61,25 @@ public abstract class SparseBlock implements Serializable
 	 */
 	public abstract void allocate(int r);
 	
+	/**
+	 * Allocate the underlying data structure holding non-zero values
+	 * of row r if necessary, w/ given size. 
+	 * 
+	 * @param r
+	 */
+	public abstract void allocate(int r, int nnz);
+	
+	/**
+	 * Allocate the underlying data structure holding non-zero values
+	 * of row r w/ the specified estimated nnz and max nnz.
+	 * 
+	 * @param r
+	 * @param ennz
+	 * @param maxnnz
+	 */
+	public abstract void allocate(int r, int ennz, int maxnnz);
+	
+	
 	////////////////////////
 	//obtain basic meta data
 	
@@ -81,9 +100,22 @@ public abstract class SparseBlock implements Serializable
 
 	/**
 	 * Clears the sparse block by deleting non-zero values. After this call
-	 * size() is guaranteed to return 0.
+	 * all size() calls are guaranteed to return 0.
 	 */
 	public abstract void reset();
+	
+	/**
+	 * Clears the sparse block by deleting non-zero values. After this call
+	 * all size() calls are guaranteed to return 0.
+	 */
+	public abstract void reset(int ennz, int maxnnz);
+	
+	/**
+	 * Clears row r of the sparse block by deleting non-zero values. 
+	 * After this call size(r) is guaranteed to return 0.
+	 */
+	public abstract void reset(int r, int ennz, int maxnnz);
+	
 	
 	/**
 	 * Get the number of non-zero values in the sparse block.
@@ -183,6 +215,19 @@ public abstract class SparseBlock implements Serializable
 	public abstract boolean set(int r, int c, double v);
 	
 	/**
+	 * Set the values of row r to the given sparse row. This might update 
+	 * existing non-zero values, insert a new row, or delete a row.
+	 * 
+	 * NOTE: This method exists for incremental runtime integration and might
+	 * be deleted in the future.
+	 * 
+	 * @param r  row index starting at 0
+	 * @param row
+	 * @return
+	 */
+	public abstract void set(int r, SparseRow row);
+	
+	/**
 	 * Append a value to the end of the physical representation. This should 
 	 * only be used for operations with sequential write pattern or if followed
 	 * by a sort() operation. Note that this operation does not perform any 
@@ -245,6 +290,17 @@ public abstract class SparseBlock implements Serializable
 	public abstract double get(int r, int c);
 	
 	/**
+	 * Get values of row r in the format of a sparse row. 
+	 * 
+	 * NOTE: This method exists for incremental runtime integration and might
+	 * be deleted in the future.
+	 * 
+	 * @param r  row index starting at 0
+	 * @return
+	 */
+	public abstract SparseRow get(int r);
+	
+	/**
 	 * Get position of first column index lower than or equal column c 
 	 * in row r. The position is relative to the indexes/values arrays 
 	 * returned by indexes(r) and values(r). If no such value exists, 
@@ -297,6 +353,19 @@ public abstract class SparseBlock implements Serializable
 	}
 	
 	/**
+	 * Get a non-zero iterator over the partial sparse block [0,ru). Note 
+	 * that the returned IJV object is reused across next calls and should 
+	 * be directly consumed or deep copied. 
+	 * 
+	 * @param ru   exclusive upper row index starting at 0
+	 * @return
+	 */
+	public Iterator<IJV> getIterator(int ru) {
+		//default generic iterator, override if necessary
+		return new SparseBlockIterator(ru);
+	}
+	
+	/**
 	 * Get a non-zero iterator over the subblock [rl, ru). Note that
 	 * the returned IJV object is reused across next calls and should 
 	 * be directly consumed or deep copied. 
@@ -309,8 +378,10 @@ public abstract class SparseBlock implements Serializable
 		//default generic iterator, override if necessary
 		return new SparseBlockIterator(rl, Math.min(ru,numRows()));
 	}
-
-
+	
+	@Override 
+	public abstract String toString();
+	
 	/**
 	 * Default sparse block iterator implemented against the sparse block
 	 * api in an implementation-agnostic manner.

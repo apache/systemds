@@ -113,8 +113,8 @@ public class SparseBlockCOO extends SparseBlock
 		
 		for( int i=0, pos=0; i<_rlen; i++ ) {
 			int alen = rows[i].size();
-			int[] aix = rows[i].getIndexContainer();
-			double[] avals = rows[i].getValueContainer();
+			int[] aix = rows[i].indexes();
+			double[] avals = rows[i].values();
 			for( int j=0; j<alen; j++ ) {
 				_rindexes[pos] = i;
 				_cindexes[pos] = aix[j];
@@ -126,6 +126,16 @@ public class SparseBlockCOO extends SparseBlock
 	
 	@Override
 	public void allocate(int r) {
+		//do nothing everything preallocated
+	}
+	
+	@Override
+	public void allocate(int r, int nnz) {
+		//do nothing everything preallocated
+	}
+	
+	@Override
+	public void allocate(int r, int ennz, int maxnnz) {
 		//do nothing everything preallocated
 	}
 
@@ -142,6 +152,23 @@ public class SparseBlockCOO extends SparseBlock
 	@Override 
 	public void reset() {
 		_size = 0;
+	}
+	
+	@Override 
+	public void reset(int ennz, int maxnnz) {
+		_size = 0;
+	}
+	
+	@Override 
+	public void reset(int r, int ennz, int maxnnz) {
+		int pos = pos(r);
+		int len = size(r);
+		
+		//overlapping array copy (shift rhs values left)
+		System.arraycopy(_rindexes, pos+len, _rindexes, pos, _size-(pos+len));
+		System.arraycopy(_cindexes, pos+len, _cindexes, pos, _size-(pos+len));
+		System.arraycopy(_values, pos+len, _values, pos, _size-(pos+len));
+		_size -= len;				
 	}
 	
 	@Override
@@ -240,6 +267,20 @@ public class SparseBlockCOO extends SparseBlock
 			shiftRightAndInsert(index, r, c, v);
 		return true; // nnz++
 	}
+	
+	@Override
+	public void set(int r, SparseRow row) {
+		int pos = pos(r);
+		int alen = row.size();
+		int[] aix = row.indexes();
+		double[] avals = row.values();
+		deleteIndexRange(r, aix[0], aix[alen-1]+1);
+		shiftRightByN(pos, alen);
+		Arrays.fill(_rindexes, pos, pos+alen, r);
+		System.arraycopy(aix, 0, _cindexes, pos, alen);
+		System.arraycopy(avals, 0, _values, pos, alen);
+		_size+=alen;
+	}
 
 	@Override
 	public void append(int r, int c, double v) {
@@ -331,6 +372,19 @@ public class SparseBlockCOO extends SparseBlock
 		int index = Arrays.binarySearch(_cindexes, pos, pos+len, c);		
 		return (index >= 0) ? _values[index] : 0;
 	}
+	
+	@Override 
+	public SparseRow get(int r) {
+		int pos = pos(r);
+		int len = size(r);
+		
+		SparseRow row = new SparseRow(len);
+		System.arraycopy(_cindexes, pos, row.indexes(), 0, len);
+		System.arraycopy(_values, pos, row.values(), 0, len);
+		row.setSize(len);
+		
+		return row;
+	}
 
 	@Override
 	public int posFIndexLTE(int r, int c) {
@@ -380,6 +434,11 @@ public class SparseBlockCOO extends SparseBlock
 	@Override
 	public Iterator<IJV> getIterator() {
 		return new SparseBlockCOOIterator(0, _size);
+	}
+	
+	@Override
+	public Iterator<IJV> getIterator(int ru) {
+		return new SparseBlockCOOIterator(0, pos(ru));
 	}
 
 	@Override

@@ -115,8 +115,8 @@ public class SparseBlockCSR extends SparseBlock
 		
 		for( int i=0, pos=0; i<rlen; i++ ) {
 			int alen = rows[i].size();
-			int[] aix = rows[i].getIndexContainer();
-			double[] avals = rows[i].getValueContainer();
+			int[] aix = rows[i].indexes();
+			double[] avals = rows[i].values();
 			for( int j=0; j<alen; j++ ) {
 				_indexes[pos] = aix[j];
 				_values[pos] = avals[j];
@@ -128,6 +128,16 @@ public class SparseBlockCSR extends SparseBlock
 	
 	@Override
 	public void allocate(int r) {
+		//do nothing everything preallocated
+	}
+	
+	@Override
+	public void allocate(int r, int nnz) {
+		//do nothing everything preallocated
+	}
+	
+	@Override
+	public void allocate(int r, int ennz, int maxnnz) {
 		//do nothing everything preallocated
 	}
 
@@ -144,6 +154,22 @@ public class SparseBlockCSR extends SparseBlock
 	@Override 
 	public void reset() {
 		_size = 0;
+	}
+
+	@Override 
+	public void reset(int ennz, int maxnnz) {
+		_size = 0;
+	}
+	
+	@Override 
+	public void reset(int r, int ennz, int maxnnz) {
+		int pos = pos(r);
+		int len = size(r);
+		
+		//overlapping array copy (shift rhs values left)
+		System.arraycopy(_indexes, pos+len, _indexes, pos, _size-(pos+len));
+		System.arraycopy(_values, pos+len, _values, pos, _size-(pos+len));
+		_size -= len;				
 	}
 	
 	@Override
@@ -227,6 +253,19 @@ public class SparseBlockCSR extends SparseBlock
 		return true; // nnz++
 	}
 
+	@Override
+	public void set(int r, SparseRow row) {
+		int pos = pos(r);
+		int alen = row.size();
+		int[] aix = row.indexes();
+		double[] avals = row.values();
+		deleteIndexRange(r, aix[0], aix[alen-1]+1);
+		shiftRightByN(pos, alen);
+		System.arraycopy(aix, 0, _indexes, pos, alen);
+		System.arraycopy(avals, 0, _values, pos, alen);
+		_size+=alen;
+	}
+	
 	@Override
 	public void append(int r, int c, double v) {
 		//early abort on zero 
@@ -321,7 +360,20 @@ public class SparseBlockCSR extends SparseBlock
 		int index = Arrays.binarySearch(_indexes, pos, pos+len, c);		
 		return (index >= 0) ? _values[index] : 0;
 	}
-
+	
+	@Override 
+	public SparseRow get(int r) {
+		int pos = pos(r);
+		int len = size(r);
+		
+		SparseRow row = new SparseRow(len);
+		System.arraycopy(_indexes, pos, row.indexes(), 0, len);
+		System.arraycopy(_values, pos, row.values(), 0, len);
+		row.setSize(len);
+		
+		return row;
+	}
+	
 	@Override
 	public int posFIndexLTE(int r, int c) {
 		int pos = pos(r);
@@ -365,6 +417,33 @@ public class SparseBlockCSR extends SparseBlock
 		//search gt col index (see binary search)
 		index = Math.abs( index+1 );
 		return (index < pos+len) ? index : -1;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("SparseBlockCSR: rlen=");
+		sb.append(numRows());
+		sb.append(", nnz=");
+		sb.append(size());
+		sb.append("\n");
+		for( int i=0; i<numRows(); i++ ) {
+			sb.append("row +");
+			sb.append(i);
+			sb.append(": ");
+			//append row
+			int pos = pos(i);
+			int len = size(i);
+			for(int j=pos; j<pos+len; j++) {
+				sb.append(_indexes[j]);
+				sb.append(": ");
+				sb.append(_values[j]);
+				sb.append("\t");
+			}
+			sb.append("\n");
+		}		
+		
+		return sb.toString();
 	}
 	
 	///////////////////////////

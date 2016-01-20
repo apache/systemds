@@ -78,51 +78,35 @@ public class SparseRow implements Serializable
 		size = newsize;
 	}
 	
-	public int size()
-	{
+	public int size() {
 		return size;
 	}
 	
-	public void setSize(int newsize)
-	{
+	public void setSize(int newsize) {
 		size = newsize;
 	}
 	
-	public boolean isEmpty()
-	{
+	public boolean isEmpty() {
 		return (size == 0);
 	}
 	
-	public double[] values()
-	{
-		return getValueContainer();
-	}
-	
-	public double[] getValueContainer()
-	{
+	public double[] values() {
 		return values;
 	}
 	
-	public int[] indexes()
-	{
-		return getIndexContainer();
-	}
-	
-	public int[] getIndexContainer()
-	{
+	public int[] indexes() {
 		return indexes;
 	}
 	
-	public void setValueContainer(double[] d) {
+	public void setValues(double[] d) {
 		values = d;
 	}
 	
-	public void setIndexContainer(int[] i) {
+	public void setIndexes(int[] i) {
 		indexes = i;
 	}
 	
-	public int capacity()
-	{
+	public int capacity() {
 		return values.length;
 	}
 	

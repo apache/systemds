@@ -1862,7 +1862,7 @@ public class LibMatrixMult
 							double val = avals[i];
 							if( val != 0 ) {
 								int ix2 = aix[i]*n;
-								vectMultiplyAdd(val, avals, c, aix, i, ix2, alen);
+								vectMultiplyAdd(val, avals, c, aix, i, ix2, alen-i);
 							}
 						}
 					}
@@ -1925,7 +1925,7 @@ public class LibMatrixMult
 								double val = avals[i];
 								if( val != 0 ) {
 									int ix2 = aix[i]*m;
-									vectMultiplyAdd(val, avals, c, aix, i, ix2, alen);
+									vectMultiplyAdd(val, avals, c, aix, i, ix2, alen-i);
 								}
 							}
 						}
@@ -3277,16 +3277,26 @@ public class LibMatrixMult
 		}
 	}
 	
+	/**
+	 * 
+	 * @param aval
+	 * @param b
+	 * @param c
+	 * @param bix
+	 * @param bi
+	 * @param ci
+	 * @param len
+	 */
 	private static void vectMultiplyAdd( final double aval, double[] b, double[] c, int[] bix, final int bi, final int ci, final int len )
 	{
-		final int bn = (len-bi)%8;
+		final int bn = len%8;
 		
 		//rest, not aligned to 8-blocks
 		for( int j = bi; j < bi+bn; j++ )
 			c[ ci + bix[j] ] += aval * b[ j ];
 		
 		//unrolled 8-block (for better instruction-level parallelism)
-		for( int j = bi+bn; j < len; j+=8 )
+		for( int j = bi+bn; j < bi+len; j+=8 )
 		{
 			//read 64B cacheline of b
 			//read 64B of c via 'gather'
@@ -3302,9 +3312,7 @@ public class LibMatrixMult
 			c[ ci+bix[j+7] ] += aval * b[ j+7 ];
 		}
 	}
-	
-	
-	
+		
 	/**
 	 * 
 	 * @param aval

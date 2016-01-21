@@ -24,7 +24,6 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -341,6 +340,7 @@ public abstract class Hop
 	 * 
 	 * @throws HopsException
 	 */
+	@SuppressWarnings("unused") //see CHECKPOINT_SPARSE_CSR
 	private void constructAndSetCheckpointLopIfRequired() 
 		throws HopsException
 	{
@@ -373,13 +373,13 @@ public abstract class Hop
 				//investigate need for serialized storage of large sparse matrices
 				//(compile- instead of runtime-level for better debugging)
 				boolean serializedStorage = false;
-				if( dimsKnown(true) ) {
+				if( dimsKnown(true) && !Checkpoint.CHECKPOINT_SPARSE_CSR ) {
 					double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(_dim1, _dim2, _rows_in_block, _cols_in_block, _nnz);
 					double dataCache = SparkExecutionContext.getConfiguredTotalDataMemory(true);
 					serializedStorage = (MatrixBlock.evalSparseFormatInMemory(_dim1, _dim2, _nnz)
 							             && matrixPSize > dataCache ); //sparse in-memory does not fit in agg mem 
 				}
-				else {
+				else if( !dimsKnown(true) ) {
 					setRequiresRecompile();
 				}
 			

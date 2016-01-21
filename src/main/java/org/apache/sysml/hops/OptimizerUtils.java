@@ -1102,6 +1102,10 @@ public class OptimizerUtils
 		return ret; 
 	}
 	
+	public static double getSparsity( MatrixCharacteristics mc ) {
+		return getSparsity(mc.getRows(), mc.getCols(), mc.getNonZeros());
+	}
+	
 	public static double getSparsity( long dim1, long dim2, long nnz )
 	{
 		if( dim1<=0 || dim2<=0 || nnz<0 )

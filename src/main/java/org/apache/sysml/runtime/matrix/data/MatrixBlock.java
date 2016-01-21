@@ -175,6 +175,22 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		this.copy(that);
 	}
 	
+	public MatrixBlock(MatrixBlock that, SparseBlock.Type stype)
+	{
+		//sanity check sparse matrix block
+		if( !that.isInSparseFormat() )
+			throw new RuntimeException("Sparse matrix block expected.");
+		
+		//deep copy and change sparse block type
+		rlen = that.rlen;
+		clen = that.clen;
+		sparse = that.sparse;
+		nonZeros = that.nonZeros;
+		estimatedNNzsPerRow = that.estimatedNNzsPerRow;
+		sparseBlock = SparseBlockFactory
+				.copySparseBlock(stype, that.sparseBlock, true);
+	}
+	
 	////////
 	// Initialization methods
 	// (reset, init, allocate, etc)

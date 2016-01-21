@@ -45,4 +45,42 @@ public abstract class SparseBlockFactory
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}
 	}
+	
+	/**
+	 * 
+	 * @param type
+	 * @param sblock
+	 * @return
+	 */
+	public static SparseBlock copySparseBlock( SparseBlock.Type type, SparseBlock sblock ) {
+		return copySparseBlock(type, sblock, false);
+	}
+	
+	/**
+	 * 
+	 * @param type
+	 * @param sblock
+	 * @param forceCopy
+	 * @return
+	 */
+	public static SparseBlock copySparseBlock( SparseBlock.Type type, SparseBlock sblock, boolean forceCopy )
+	{
+		//check for existing target type
+		if( !forceCopy && 
+			( (sblock instanceof SparseBlockMCSR && type == SparseBlock.Type.MCSR)
+			||(sblock instanceof SparseBlockCSR && type == SparseBlock.Type.CSR)
+			||(sblock instanceof SparseBlockCOO && type == SparseBlock.Type.COO))  )
+		{
+			return sblock;
+		}
+		
+		//create target sparse block
+		switch( type ) {
+			case MCSR: return new SparseBlockMCSR(sblock);
+			case CSR: return new SparseBlockCSR(sblock);
+			case COO: return new SparseBlockCOO(sblock);
+			default:
+				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
+		}
+	}
 }

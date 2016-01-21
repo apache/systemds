@@ -21,8 +21,8 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
-
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -34,9 +34,11 @@ import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.CreateSparseBlockFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 
@@ -110,7 +112,14 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 				//apply a narrow shallow copy to allow for short-circuit collects 
 				out = in.mapValues(new CopyBlockFunction(false));	
 			}
-				
+		
+			//convert mcsr into memory-efficient csr if potentially sparse
+			if( OptimizerUtils.getSparsity(mcIn) < MatrixBlock.SPARSITY_TURN_POINT
+				&& Checkpoint.CHECKPOINT_SPARSE_CSR )
+			{				
+				out = out.mapValues(new CreateSparseBlockFunction(SparseBlock.Type.CSR));
+			}
+			
 			//actual checkpoint into given storage level
 			out = out.persist( _level );
 		}

@@ -51,12 +51,14 @@ public class SparseBlockMCSR extends SparseBlock
 		else { 
 			_rows = new SparseRow[sblock.numRows()];
 			for( int i=0; i<_rows.length; i++ ) {
-				int apos = sblock.pos(i);
-				int alen = sblock.size(i);
-				_rows[i] = new SparseRow(alen);
-				_rows[i].setSize(alen);
-				System.arraycopy(sblock.indexes(i), apos, _rows[i].indexes(), 0, alen);
-				System.arraycopy(sblock.values(i), apos, _rows[i].values(), 0, alen);
+				if( !sblock.isEmpty(i) ) {
+					int apos = sblock.pos(i);
+					int alen = sblock.size(i);
+					_rows[i] = new SparseRow(alen);
+					_rows[i].setSize(alen);
+					System.arraycopy(sblock.indexes(i), apos, _rows[i].indexes(), 0, alen);
+					System.arraycopy(sblock.values(i), apos, _rows[i].values(), 0, alen);
+				}
 			}
 		}
 	}

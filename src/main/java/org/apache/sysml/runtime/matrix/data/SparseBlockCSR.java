@@ -87,14 +87,16 @@ public class SparseBlockCSR extends SparseBlock
 			_size = (int)size;
 
 			for( int i=0, pos=0; i<rlen; i++ ) {
-				int apos = sblock.pos(i);
-				int alen = sblock.size(i);
-				int[] aix = sblock.indexes(i);
-				double[] avals = sblock.values(i);
-				for( int j=apos; j<apos+alen; j++ ) {
-					_indexes[pos] = aix[j];
-					_values[pos] = avals[j];
-					pos++;
+				if( !sblock.isEmpty(i) ) {
+					int apos = sblock.pos(i);
+					int alen = sblock.size(i);
+					int[] aix = sblock.indexes(i);
+					double[] avals = sblock.values(i);
+					for( int j=apos; j<apos+alen; j++ ) {
+						_indexes[pos] = aix[j];
+						_values[pos] = avals[j];
+						pos++;
+					}
 				}
 				_ptr[i+1]=pos;
 			}			

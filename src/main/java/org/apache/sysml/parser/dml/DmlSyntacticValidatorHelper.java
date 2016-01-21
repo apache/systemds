@@ -17,24 +17,26 @@
  * under the License.
  */
 
-package org.apache.sysml.parser.python;
+package org.apache.sysml.parser.dml;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.Token;
+
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.python.PydmlParser.FunctionCallAssignmentStatementContext;
-import org.apache.sysml.parser.python.PydmlParser.ParameterizedExpressionContext;
-import org.apache.sysml.parser.python.PydmlSyntacticErrorListener.CustomDmlErrorListener;
+import org.apache.sysml.parser.dml.DmlParser.FunctionCallAssignmentStatementContext;
+import org.apache.sysml.parser.dml.DmlParser.ParameterizedExpressionContext;
+import org.apache.sysml.parser.dml.DmlSyntacticErrorListener.CustomDmlErrorListener;
 
-
-public class PydmlSyntacticValidatorHelper 
-{	
+public class DmlSyntacticValidatorHelper {
+	
 	private CustomDmlErrorListener _errorListener = null;
-	public PydmlSyntacticValidatorHelper(CustomDmlErrorListener errorListener) {
+	
+	public DmlSyntacticValidatorHelper(CustomDmlErrorListener errorListener) {
 		this._errorListener = errorListener;
 	}
+	
 	public void notifyErrorListeners(String message, int line, int charPositionInLine) {
 		this._errorListener.validationError(line, charPositionInLine, message);
 	}
@@ -42,7 +44,7 @@ public class PydmlSyntacticValidatorHelper
 	public void notifyErrorListeners(String message, Token op) {
 		this._errorListener.validationError(op.getLine(), op.getCharPositionInLine(), message);
 	}
-
+	
 	public void raiseWarning(String message, Token op) {
 		this._errorListener.validationWarning(op.getLine(), op.getCharPositionInLine(), message);
 	}
@@ -51,31 +53,36 @@ public class PydmlSyntacticValidatorHelper
 		return _errorListener.peekFileName();
 	}
 	
-	// Returns list of two elements <namespace, function names>, else null
-	public ArrayList<String> getQualifiedNames(String fullyQualifiedFunctionName) {
-		String [] fnNames = fullyQualifiedFunctionName.split("\\."); // instead of ::
-		String functionName = "";
-		String namespace = "";
-		if(fnNames.length == 1) {
-			namespace = DMLProgram.DEFAULT_NAMESPACE;
-			functionName = fnNames[0].trim();
-		}
-		else if(fnNames.length == 2) {
-			namespace = fnNames[0].trim();
-			functionName = fnNames[1].trim();
-		}
-		else
-			return null;
-		
-		ArrayList<String> retVal = new ArrayList<String>();
-		retVal.add(namespace);
-		retVal.add(functionName);
-		return retVal;
-	}
+//	public static void setInfoForArithmeticOp(org.apache.sysml.parser.Expression current, 
+//			org.apache.sysml.parser.Expression left, 
+//			org.apache.sysml.parser.Expression right, String opStr) {
+//		try {
+//			// PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, MATMULT, POW, INVALID
+//			org.apache.sysml.parser.Expression.BinaryOp bop = org.apache.sysml.parser.Expression.getBinaryOp(opStr);
+//			current = new org.apache.sysml.parser.BinaryExpression(bop);
+//			((org.apache.sysml.parser.BinaryExpression)current).setLeft(left);
+//			((org.apache.sysml.parser.BinaryExpression)current).setRight(right);
+//			((org.apache.sysml.parser.BinaryExpression)current).setFilename(DmlSyntacticErrorListener.currentFileName.peek());
+//		}
+//		catch(Exception e) {
+//			System.out.println("In setInfoForArithmeticOp>>");
+//			e.printStackTrace();
+//		}
+//	}
+	
+//	public static void setInfoForBooleanOp(org.apache.sysml.parser.Expression current, 
+//			org.apache.sysml.parser.Expression left, 
+//			org.apache.sysml.parser.Expression right, String opStr) {
+//		org.apache.sysml.parser.Expression.BooleanOp bop = org.apache.sysml.parser.Expression.getBooleanOp(opStr);
+//		current = new org.apache.sysml.parser.BooleanExpression(bop);
+//		((org.apache.sysml.parser.BooleanExpression)current).setLeft(left);
+//		((org.apache.sysml.parser.BooleanExpression)current).setRight(right);
+//		((org.apache.sysml.parser.BooleanExpression)current).setFilename(DmlSyntacticErrorListener.currentFileName.peek());
+//	}
 	
 	public boolean validateBuiltinFunctions(FunctionCallAssignmentStatementContext ctx) {
 		String functionName = ctx.name.getText().replaceAll(" ", "").trim();
-		if(functionName.compareTo("write") == 0 || functionName.compareTo(DMLProgram.DEFAULT_NAMESPACE + ".write") == 0) {
+		if(functionName.compareTo("write") == 0 || functionName.compareTo(DMLProgram.DEFAULT_NAMESPACE + "::write") == 0) {
 			return validateBuiltinWriteFunction(ctx);
 		}
 		return true;

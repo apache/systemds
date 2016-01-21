@@ -474,14 +474,14 @@
 								<exclude>src/main/java/DmlLexer.tokens</exclude>
 								<exclude>src/main/java/Pydml.tokens</exclude>
 								<exclude>src/main/java/PydmlLexer.tokens</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/antlr4/DmlBaseListener.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/antlr4/DmlLexer.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/antlr4/DmlListener.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/antlr4/DmlParser.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/python/PydmlBaseListener.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/python/PydmlLexer.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/python/PydmlListener.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/python/PydmlParser.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/dml/DmlBaseListener.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/dml/DmlLexer.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/dml/DmlListener.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/dml/DmlParser.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/pydml/PydmlBaseListener.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/pydml/PydmlLexer.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/pydml/PydmlListener.java</exclude>
+								<exclude>src/main/java/org/apache/sysml/parser/pydml/PydmlParser.java</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/external/kMeans/kMeansWrapperOutput</exclude>
 								<exclude>src/test/scripts/functions/external/kMeans2/kMeansWrapperOutput1</exclude>

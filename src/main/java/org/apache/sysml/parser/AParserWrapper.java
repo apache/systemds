@@ -21,8 +21,8 @@ package org.apache.sysml.parser;
 
 import java.util.HashMap;
 
-import org.apache.sysml.parser.antlr4.DMLParserWrapper;
-import org.apache.sysml.parser.python.PyDMLParserWrapper;
+import org.apache.sysml.parser.dml.DMLParserWrapper;
+import org.apache.sysml.parser.pydml.PyDMLParserWrapper;
 
 /**
  * Base class for all dml parsers in order to make the various compilation chains

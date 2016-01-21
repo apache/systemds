@@ -17,9 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.parser.python;
-
-import java.util.Stack;
+package org.apache.sysml.parser.dml;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
@@ -29,12 +27,15 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.api.DMLScript;
 
-public class PydmlSyntacticErrorListener 
-{	
+import java.util.Stack;
+
+public class DmlSyntacticErrorListener {
+	
+	
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
 	public static class CustomDmlErrorListener extends BaseErrorListener {
-	
+		
 		private boolean atleastOneError = false;
 		private Stack<String> currentFileName = new Stack<String>();
 		

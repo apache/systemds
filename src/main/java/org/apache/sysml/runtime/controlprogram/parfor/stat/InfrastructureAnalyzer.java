@@ -265,7 +265,7 @@ public class InfrastructureAnalyzer
 		// Due to a bug in HDP related to fetching the "mode" of execution within mappers,
 		// we explicitly probe the relevant properties instead of relying on results from 
 		// analyzeHadoopCluster().
-		String jobTracker = job.get("mapreduce.jobtracker.address", "local");
+		String jobTracker = job.get(MRConfigurationNames.MAPREDUCE_JOBTRACKER_ADDRESS, "local");
 		String framework = job.get("mapreduce.framework.name", "local");
 		boolean isYarnEnabled = (framework!=null && framework.equals("yarn"));
 		
@@ -509,7 +509,7 @@ public class InfrastructureAnalyzer
 	{
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		
-		_remoteMRSortMem = (1024*1024) * job.getLong("mapreduce.task.io.sort.mb",100); //1MB
+		_remoteMRSortMem = (1024*1024) * job.getLong(MRConfigurationNames.MAPREDUCE_TASK_IO_SORT_MB,100); //1MB
 			
 		//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
 		//(for robustness we probe both: child and map configuration parameters)
@@ -546,7 +546,7 @@ public class InfrastructureAnalyzer
 	{
 		//analyze if local mode (if yarn enabled, we always assume cluster mode
 		//in order to workaround configuration issues on >=Hadoop 2.6)
-		String jobTracker = job.get("mapreduce.jobtracker.address", "local");
+		String jobTracker = job.get(MRConfigurationNames.MAPREDUCE_JOBTRACKER_ADDRESS, "local");
 		return "local".equals(jobTracker)
 			   & !isYarnEnabled();
 	}

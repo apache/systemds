@@ -37,11 +37,11 @@ public abstract class MRConfigurationNames {
 	public static String DFS_BLOCK_SIZE = INVALID;
 	public static String DFS_METRICS_SESSION_ID = INVALID;
 	public static String DFS_PERMISSIONS = INVALID;
-	public static String MAPREDUCE_CLUSTER_LOCAL_DIR = INVALID;
-	public static String MAPREDUCE_JOBTRACKER_ADDRESS = INVALID;
-	public static String MAPREDUCE_JOBTRACKER_SYSTEM_DIR = INVALID;
-	public static String MAPREDUCE_TASK_IO_SORT_MB = INVALID;
-	public static String MAPREDUCE_TASKTRACKER_TASKCONTROLLER = INVALID;
+	public static String MR_CLUSTER_LOCAL_DIR = INVALID;
+	public static String MR_JOBTRACKER_ADDRESS = INVALID;
+	public static String MR_JOBTRACKER_SYSTEM_DIR = INVALID;
+	public static String MR_TASK_IO_SORT_MB = INVALID;
+	public static String MR_TASKTRACKER_TASKCONTROLLER = INVALID;
 
 	// initialize to currently used cluster
 	static {
@@ -58,22 +58,22 @@ public abstract class MRConfigurationNames {
 			DFS_BLOCK_SIZE = "dfs.blocksize";
 			DFS_METRICS_SESSION_ID = "dfs.metrics.session-id";
 			DFS_PERMISSIONS = "dfs.permissions.enabled";
-			MAPREDUCE_CLUSTER_LOCAL_DIR = "mapreduce.cluster.local.dir";
-			MAPREDUCE_JOBTRACKER_ADDRESS = "mapreduce.jobtracker.address";
-			MAPREDUCE_JOBTRACKER_SYSTEM_DIR = "mapreduce.jobtracker.system.dir";
-			MAPREDUCE_TASK_IO_SORT_MB = "mapreduce.task.io.sort.mb";
-			MAPREDUCE_TASKTRACKER_TASKCONTROLLER = "mapreduce.tasktracker.taskcontroller";
+			MR_CLUSTER_LOCAL_DIR = "mapreduce.cluster.local.dir";
+			MR_JOBTRACKER_ADDRESS = "mapreduce.jobtracker.address";
+			MR_JOBTRACKER_SYSTEM_DIR = "mapreduce.jobtracker.system.dir";
+			MR_TASK_IO_SORT_MB = "mapreduce.task.io.sort.mb";
+			MR_TASKTRACKER_TASKCONTROLLER = "mapreduce.tasktracker.taskcontroller";
 		} else // any older version
 		{
 			LOG.debug("Using hadoop 1.x configuration properties.");
 			DFS_BLOCK_SIZE = "dfs.block.size";
 			DFS_METRICS_SESSION_ID = "session.id";
 			DFS_PERMISSIONS = "dfs.permissions";
-			MAPREDUCE_CLUSTER_LOCAL_DIR = "mapred.local.dir";
-			MAPREDUCE_JOBTRACKER_ADDRESS = "mapred.job.tracker";
-			MAPREDUCE_JOBTRACKER_SYSTEM_DIR = "mapred.system.dir";
-			MAPREDUCE_TASK_IO_SORT_MB = "io.sort.mb";
-			MAPREDUCE_TASKTRACKER_TASKCONTROLLER = "mapred.task.tracker.task-controller";
+			MR_CLUSTER_LOCAL_DIR = "mapred.local.dir";
+			MR_JOBTRACKER_ADDRESS = "mapred.job.tracker";
+			MR_JOBTRACKER_SYSTEM_DIR = "mapred.system.dir";
+			MR_TASK_IO_SORT_MB = "io.sort.mb";
+			MR_TASKTRACKER_TASKCONTROLLER = "mapred.task.tracker.task-controller";
 		}
 	}
 }

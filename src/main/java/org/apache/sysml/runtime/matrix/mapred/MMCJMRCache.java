@@ -90,7 +90,7 @@ public abstract class MMCJMRCache
 	protected void constructLocalFilePrefix(String fname)
 	{
 		//get random localdir (to spread load across available disks)
-		String[] localDirs = _job.get(MRConfigurationNames.MAPREDUCE_CLUSTER_LOCAL_DIR).split(",");
+		String[] localDirs = _job.get(MRConfigurationNames.MR_CLUSTER_LOCAL_DIR).split(",");
 		Random rand = new Random();
 		int randPos = rand.nextInt(localDirs.length);
 				

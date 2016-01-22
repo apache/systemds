@@ -17,13 +17,11 @@
  * under the License.
 -->
 <assembly
-	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-
+		xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
 	<!-- Assembly file for the "standalone" SystemML release for running on a
 		standalone machine. -->
-
 	<id>standalone</id>
 
 	<formats>
@@ -35,23 +33,6 @@
 	<baseDirectory>system-ml-${version}-standalone</baseDirectory>
 
 	<fileSets>
-		<fileSet>
-			<directory>${basedir}/src/assembly/standalone</directory>
-			<includes>
-				<include>LICENSE</include>
-				<include>NOTICE</include>
-			</includes>
-			<outputDirectory>.</outputDirectory>
-		</fileSet>
-
-		<fileSet>
-			<directory>${basedir}</directory>
-			<includes>
-				<include>SystemML-config.xml</include>
-			</includes>
-			<outputDirectory>.</outputDirectory>
-		</fileSet>
-
 		<fileSet>
 			<directory>${basedir}/scripts/algorithms</directory>
 			<includes>
@@ -90,16 +71,16 @@
 			</includes>
 			<outputDirectory>./scripts/algorithms</outputDirectory>
 		</fileSet>
-		
+
 		<fileSet>
 			<directory>${basedir}/scripts/datagen</directory>
 			<includes>
 				<include>genLinearRegressionData.dml</include>
 			</includes>
 			<outputDirectory>./scripts/datagen</outputDirectory>
-		</fileSet>	
-    
-    <fileSet>
+		</fileSet>
+
+		<fileSet>
 			<directory>${basedir}/scripts/utils</directory>
 			<includes>
 				<include>cbind.dml</include>
@@ -115,23 +96,6 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>${basedir}/docs/Language Reference</directory>
-			<includes>
-				<include>SystemML_Language_Reference.html</include>
-				<include>README.txt</include>
-			</includes>
-			<outputDirectory>./docs</outputDirectory>
-		</fileSet>
-
-		<fileSet>
-			<directory>${basedir}/docs/Algorithms Reference</directory>
-			<includes>
-				<include>SystemML_Algorithms_Reference.pdf</include>
-			</includes>
-			<outputDirectory>./docs</outputDirectory>
-		</fileSet>
-
-		<fileSet>
 			<directory>${basedir}/src/main/standalone</directory>
 			<includes>
 				<include>log4j.properties</include>
@@ -140,7 +104,7 @@
 			</includes>
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
-		
+
 		<fileSet>
 			<directory>${basedir}/src/test/config/hadoop_bin_windows/bin</directory>
 			<includes>
@@ -148,7 +112,7 @@
 			</includes>
 			<outputDirectory>./lib/hadoop/bin</outputDirectory>
 		</fileSet>
-		
+
 		<!--  Make scripts executable. -->
 		<fileSet>
 			<directory>${basedir}/src/main/standalone</directory>
@@ -159,22 +123,35 @@
 			<outputDirectory>.</outputDirectory>
 			<fileMode>0755</fileMode>
 		</fileSet>
+
+		<fileSet>
+			<directory>${basedir}/src/assembly/standalone</directory>
+			<includes>
+				<include>LICENSE</include>
+				<include>NOTICE</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+
+		<fileSet>
+			<directory>${basedir}</directory>
+			<includes>
+				<include>DISCLAIMER</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
 	</fileSets>
 
-	<!-- 
-	<files>
+	<!--files>
 		<file>
-			<source>target/${artifactId}-${project.version}.jar</source>
+			<source>target/${artifactId}-${project.version}-standalone.jar</source>
 			<outputDirectory>.</outputDirectory>
-			<destName>SystemML.jar</destName> 
+			<destName>SystemML-standalone.jar</destName>
 		</file>
-	</files>
-	-->
-	
-	<!--  Include all the libraries needed to run in standalone mode. -->
-	
+	</files-->
+
+	<!-- Include all the libraries needed to run in standalone mode. -->
 	<dependencySets>
-	
 		<dependencySet>
 			<includes>
 				<include>*:JSON4J*</include>
@@ -183,7 +160,7 @@
 			<outputDirectory>./lib</outputDirectory>
 			<scope>compile</scope>
 		</dependencySet>
-	
+
 		<dependencySet>
 			<includes>
 				<include>*:avro*</include>
@@ -212,5 +189,4 @@
 			<scope>provided</scope>
 		</dependencySet>
 	</dependencySets>
-
 </assembly>

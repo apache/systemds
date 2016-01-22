@@ -1,0 +1,89 @@
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+<assembly
+		xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+	<!-- Assembly file for the "in-memory" SystemML release. -->
+	<id>standalone</id>
+
+	<formats>
+		<format>jar</format>
+	</formats>
+
+	<includeBaseDirectory>false</includeBaseDirectory>
+
+	<fileSets>
+		<fileSet>
+			<directory>${project.build.directory}/hadoop-test</directory>
+			<includes>
+				<include>**/*</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+
+		<fileSet>
+			<directory>${basedir}/src/main/standalone</directory>
+			<includes>
+				<include>log4j.properties</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+	</fileSets>
+
+	<!-- Include all the libraries needed to run in standalone mode. -->
+	<dependencySets>
+		<dependencySet>
+			<includes>
+				<include>*:JSON4J*</include>
+				<include>*:antlr*</include>
+			</includes>
+			<scope>compile</scope>
+			<unpack>true</unpack>
+		</dependencySet>
+
+		<dependencySet>
+			<includes>
+				<include>*:avro*</include>
+				<include>*:commons-math3*</include>
+				<include>*:log4j*</include>
+				<include>*:opencsv*</include>
+				<include>*:hadoop-auth*</include>
+				<include>*:hadoop-client*</include>
+				<include>*:hadoop-common*</include>
+				<include>*:hadoop-hdfs*</include>
+				<include>*:hadoop-mapreduce-client*</include>
+				<include>*:hadoop-yarn*</include>
+				<include>*:commons-configuration*</include>
+				<include>*:commons-lang</include>
+				<include>*:commons-logging*</include>
+				<include>*:commons-httpclient*</include>
+				<include>*:commons-cli*</include>
+				<include>*:commons-collections*</include>
+				<include>*:jackson-core-asl*</include>
+				<include>*:jackson-mapper-asl*</include>
+				<include>*:slf4j-api*</include>
+				<include>*:slf4j-log4j*</include>
+				<include>*:system-ml*</include>
+			</includes>
+			<scope>provided</scope>
+			<unpack>true</unpack>
+		</dependencySet>
+	</dependencySets>
+</assembly>

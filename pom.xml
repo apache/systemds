@@ -545,6 +545,25 @@
 							</execution>
 
 							<execution>
+								<id>create-standalone-jar</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/standalone-jar.xml</descriptor>
+									</descriptors>
+									<archive>
+										<index>true</index>
+										<manifest>
+											<mainClass>org.apache.sysml.api.DMLScript</mainClass>
+										</manifest>
+									</archive>
+								</configuration>
+							</execution>
+
+							<execution>
 								<id>create-binary-standalone-distribution-assembly</id>
 								<phase>package</phase>
 								<goals>

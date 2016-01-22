@@ -22,7 +22,7 @@ grammar Dml;
 @header
 {
 	// Commenting the package name and explicitly passing it in build.xml to maintain compatibility with maven plugin
-    // package org.apache.sysml.antlr4;
+    // package org.apache.sysml.parser.dml;
 }
 
 // DML Program is a list of expression

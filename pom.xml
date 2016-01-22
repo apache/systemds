@@ -513,6 +513,9 @@
 					<plugin>
 						<artifactId>maven-assembly-plugin</artifactId>
 						<version>2.4</version><!--$NO-MVN-MAN-VER$-->
+						<configuration>
+							<tarLongFileMode>gnu</tarLongFileMode>
+						</configuration>
 						<executions>
 							<execution>
 								<id>create-source-distribution-assembly</id>

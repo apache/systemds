@@ -615,6 +615,15 @@
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
 						<version>2.10.3</version>
+						<configuration>
+							<!-- Need to include the following packages, so exclude others:
+								org.apache.sysml.api
+								org.apache.sysml.runtime.instructions.spark.utils (for RDDConverterUtils, etc)
+								org.apache.sysml.runtime.matrix (for MatrixCharacteristics, etc)
+								org.apache.sysml.runtime.matrix.data (for MatrixIndexes, MatrixBlock, etc)
+							-->
+							<excludePackageNames>org.apache.sysml.conf:org.apache.sysml.debug:org.apache.sysml.hops:org.apache.sysml.lops:org.apache.sysml.parser:org.apache.sysml.runtime.controlprogram:org.apache.sysml.runtime.functionobjects:org.apache.sysml.runtime.instructions.cp:org.apache.sysml.runtime.instructions.cpfile:org.apache.sysml.runtime.instructions.mr:org.apache.sysml.runtime.instructions.spark.data:org.apache.sysml.runtime.instructions.spark.functions:org.apache.sysml.runtime.io:org.apache.sysml.runtime.matrix.data.hadoopfix:org.apache.sysml.runtime.matrix.mapred:org.apache.sysml.runtime.matrix.operators:org.apache.sysml.runtime.matrix.sort:org.apache.sysml.runtime.transform:org.apache.sysml.runtime.util:org.apache.sysml.udf:org.apache.sysml.utils:org.apache.sysml.yarn</excludePackageNames>
+						</configuration>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>

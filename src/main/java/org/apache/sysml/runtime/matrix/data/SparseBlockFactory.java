@@ -65,6 +65,10 @@ public abstract class SparseBlockFactory
 	 */
 	public static SparseBlock copySparseBlock( SparseBlock.Type type, SparseBlock sblock, boolean forceCopy )
 	{
+		//sanity check for empty inputs
+		if( sblock == null )
+			return null;
+		
 		//check for existing target type
 		if( !forceCopy && 
 			( (sblock instanceof SparseBlockMCSR && type == SparseBlock.Type.MCSR)

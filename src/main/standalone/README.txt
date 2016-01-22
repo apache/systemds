@@ -21,10 +21,15 @@ distinguishing characteristics are:
 SystemML in Standalone Mode
 -------------------------------------------------------------------------------
 
-Standalone mode can be run on a single machine, allowing data scientists to
-develop algorithms locally without need of a distributed cluster. OSX and
-Linux users can use the runStandaloneSystemML.sh script to run in Standalone
-mode, while Windows users can use the runStandaloneSystemML.bat script.
+Standalone mode can be run on a single machine in a non-Hadoop environment,
+allowing data scientists to develop algorithms locally without need of a
+distributed cluster. The Standalone release packages all required libraries
+into a single distribution. Standalone mode is not appropriate for large
+datasets.
+
+OSX and Linux users can use the runStandaloneSystemML.sh script to run in
+Standalone mode, while Windows users can use the runStandaloneSystemML.bat
+script.
 
 
 -------------------------------------------------------------------------------

@@ -27,7 +27,7 @@ distributed cluster. The Standalone release packages all required libraries
 into a single distribution. Standalone mode is not appropriate for large
 datasets.
 
-OSX and Linux users can use the runStandaloneSystemML.sh script to run in
+OS X and Linux users can use the runStandaloneSystemML.sh script to run in
 Standalone mode, while Windows users can use the runStandaloneSystemML.bat
 script.
 

@@ -166,11 +166,13 @@ public class SparseBlockCOO extends SparseBlock
 		int pos = pos(r);
 		int len = size(r);
 		
-		//overlapping array copy (shift rhs values left)
-		System.arraycopy(_rindexes, pos+len, _rindexes, pos, _size-(pos+len));
-		System.arraycopy(_cindexes, pos+len, _cindexes, pos, _size-(pos+len));
-		System.arraycopy(_values, pos+len, _values, pos, _size-(pos+len));
-		_size -= len;				
+		if( len > 0 ) {
+			//overlapping array copy (shift rhs values left)
+			System.arraycopy(_rindexes, pos+len, _rindexes, pos, _size-(pos+len));
+			System.arraycopy(_cindexes, pos+len, _cindexes, pos, _size-(pos+len));
+			System.arraycopy(_values, pos+len, _values, pos, _size-(pos+len));
+			_size -= len;	
+		}
 	}
 	
 	@Override

@@ -1962,21 +1962,13 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 		else //default deserialize
 		{
-			//TODO perf sparse block
-			
-			for(int r=0; r<rlen; r++)
-			{
-				int nr=in.readInt();
-				if(nr==0)
-				{
-					if(!sparseBlock.isEmpty(r))
-						sparseBlock.reset(r, estimatedNNzsPerRow, clen);
-					continue;
+			for(int r=0; r<rlen; r++) {
+				int rnnz = in.readInt(); //row nnz
+				if( rnnz > 0 ) {
+					sparseBlock.reset(r, rnnz, clen);
+					for(int j=0; j<rnnz; j++) //col index/value pairs
+						sparseBlock.append(r, in.readInt(), in.readDouble());		
 				}
-				
-				sparseBlock.reset(r, nr, clen);
-				for(int j=0; j<nr; j++)
-					sparseBlock.append(r, in.readInt(), in.readDouble());
 			}
 		}
 	}

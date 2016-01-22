@@ -1435,7 +1435,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				double val = that.denseBlock[ix++];
 				if( val != 0 ) {
 					//create sparse row only if required
-					sparseBlock.allocate(1, estimatedNNzsPerRow, clen);
+					sparseBlock.allocate(i, estimatedNNzsPerRow, clen);
 					sparseBlock.append(i, j, val);
 				}
 			}

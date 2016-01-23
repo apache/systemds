@@ -87,4 +87,22 @@ public abstract class SparseBlockFactory
 				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
 		}
 	}
+	
+	/**
+	 * 
+	 * @param type
+	 * @param nrows
+	 * @param ncols
+	 * @param sparsity
+	 * @return
+	 */
+	public static long estimateSizeSparseInMemory(SparseBlock.Type type, long nrows, long ncols, double sparsity) {
+		switch( type ) {
+			case MCSR: return SparseBlockMCSR.estimateMemory(nrows, ncols, sparsity);
+			case CSR: return SparseBlockCSR.estimateMemory(nrows, ncols, sparsity);
+			case COO: return SparseBlockCOO.estimateMemory(nrows, ncols, sparsity);
+			default:
+				throw new RuntimeException("Unexpected sparse block type: "+type.toString());
+		}
+	}
 }

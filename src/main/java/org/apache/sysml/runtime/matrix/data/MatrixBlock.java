@@ -2556,18 +2556,9 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		// basic variables and references sizes
 		double size = 44;
 		
-		//NOTES:
-		// * Each sparse row has a fixed overhead of 8B (reference) + 32B (object) +
-		//   12B (3 int members), 32B (overhead int array), 32B (overhead double array),
-		// * Each non-zero value requires 12B for the column-index/value pair.
-		// * Overheads for arrays, objects, and references refer to 64bit JVMs
-		// * If nnz < than rows we have only also empty rows.
-		
-		// account for sparsity and initial capacity
-		double cnnz = Math.max(SparseRow.initialCapacity, Math.ceil(sparsity*ncols));
-		double rlen = Math.min(nrows, Math.ceil(sparsity*nrows*ncols));
-		size += rlen * ( 116 + 12 * cnnz ); //sparse row
-		size += nrows * 8d; //empty rows
+		// delegate memory estimate to individual sparse blocks
+		size += SparseBlockFactory.estimateSizeSparseInMemory(
+			DEFAULT_SPARSEBLOCK, nrows, ncols, sparsity);
 		
 		// robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);

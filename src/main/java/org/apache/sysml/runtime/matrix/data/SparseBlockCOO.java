@@ -125,6 +125,31 @@ public class SparseBlockCOO extends SparseBlock
 			}
 		}
 	}
+		
+	/**
+	 * Get the estimated in-memory size of the sparse block in COO 
+	 * with the given dimensions w/o accounting for overallocation. 
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @param sparsity
+	 * @return
+	 */
+	public static long estimateMemory(long nrows, long ncols, double sparsity) {
+		double lnnz = Math.max(INIT_CAPACITY, Math.ceil(sparsity*nrows*ncols));
+		
+		//32B overhead per array, int/int/double arr in nnz 
+		double size = 16 + 8;   //object + 2 int fields
+		size += 32 + lnnz * 4d; //rindexes array (row indexes)
+		size += 32 + lnnz * 4d; //cindexes array (column indexes)
+		size += 32 + lnnz * 8d; //values array (non-zero values)
+		
+		//robustness for long overflows
+		return (long) Math.min(size, Long.MAX_VALUE);
+	}
+	
+	///////////////////
+	//SparseBlock implementation
 	
 	@Override
 	public void allocate(int r) {

@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -42,6 +41,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseRow;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
@@ -73,7 +73,10 @@ public class OptimizerUtils
 	public static final double BIT_SIZE = (double)1/8;
 	public static final double INVALID_SIZE = -1d; // memory estimate not computed
 
+	//constants for valid CP matrix dimension sizes / nnz (dense/sparse)
 	public static final long MAX_NUMCELLS_CP_DENSE = Integer.MAX_VALUE;
+	public static final long MAX_NNZ_CP_SPARSE = (MatrixBlock.DEFAULT_SPARSEBLOCK == 
+			SparseBlock.Type.MCSR) ? Long.MAX_VALUE : Integer.MAX_VALUE;
 	
 	/**
 	 * Enables/disables dynamic re-compilation of lops/instructions.
@@ -862,8 +865,8 @@ public class OptimizerUtils
 		
 		if( sparse ) //SPARSE
 		{
-			//check max nnz
-			ret = (nnz <= Long.MAX_VALUE);
+			//check max nnz (dependent on sparse block format)
+			ret = (nnz <= MAX_NNZ_CP_SPARSE);
 		}
 		else //DENSE
 		{

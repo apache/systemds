@@ -128,6 +128,31 @@ public class SparseBlockCSR extends SparseBlock
 		}
 	}
 	
+	/**
+	 * Get the estimated in-memory size of the sparse block in CSR 
+	 * with the given dimensions w/o accounting for overallocation. 
+	 * 
+	 * @param nrows
+	 * @param ncols
+	 * @param sparsity
+	 * @return
+	 */
+	public static long estimateMemory(long nrows, long ncols, double sparsity) {
+		double lnnz = Math.max(INIT_CAPACITY, Math.ceil(sparsity*nrows*ncols));
+		
+		//32B overhead per array, int arr in nrows, int/double arr in nnz 
+		double size = 16 + 4;        //object + int field
+		size += 32 + (nrows+1) * 4d; //ptr array (row pointers)
+		size += 32 + lnnz * 4d;      //indexes array (column indexes)
+		size += 32 + lnnz * 8d;      //values array (non-zero values)
+		
+		//robustness for long overflows
+		return (long) Math.min(size, Long.MAX_VALUE);
+	}
+	
+	///////////////////
+	//SparseBlock implementation
+
 	@Override
 	public void allocate(int r) {
 		//do nothing everything preallocated

@@ -135,7 +135,7 @@
 			<directory>${basedir}/src/main/standalone</directory>
 			<includes>
 				<include>log4j.properties</include>
-				<include>readme.txt</include>
+				<include>README.txt</include>
 				<include>SystemML-config.xml</include>
 			</includes>
 			<outputDirectory>.</outputDirectory>

@@ -924,7 +924,7 @@ public class LibMatrixBincell
 			SparseBlock a = m1.sparseBlock;
 			SparseBlock c = ret.sparseBlock;
 			
-			for(int r=0; r<Math.min(m1.rlen, m1.sparseBlock.numRows()); r++) {
+			for(int r=0; r<Math.min(m1.rlen, a.numRows()); r++) {
 				if( !a.isEmpty(r) )
 				{
 					int apos = a.pos(r);
@@ -955,12 +955,10 @@ public class LibMatrixBincell
 						if( op.fn instanceof Multiply || op.fn instanceof Multiply2 
 							|| op.fn instanceof Power2  )
 						{
-							c.allocate(r, alen, -1);
-							//TODO perf sparse block
-							//c[r] = new SparseRow(alen);
+							c.allocate(r, alen, ret.clen);
 						}
 						
-						for(int j=0; j<alen; j++) {
+						for(int j=apos; j<apos+alen; j++) {
 							double val = op.executeScalar(avals[j]);
 							ret.appendValue(r, aix[j], val);
 						}

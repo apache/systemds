@@ -127,19 +127,22 @@ public class LibMatrixDatagen
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static long[] computeNNZperBlock(long nrow, long ncol, int brlen, int bclen, double sparsity) throws DMLRuntimeException {
-		int numBlocks = (int) (Math.ceil((double)nrow/brlen) * Math.ceil((double)ncol/bclen));
+	public static long[] computeNNZperBlock(long nrow, long ncol, int brlen, int bclen, double sparsity) 
+		throws DMLRuntimeException 
+	{
+		long lnumBlocks = (long) (Math.ceil((double)nrow/brlen) * Math.ceil((double)ncol/bclen));
 		
-		// CURRENT: 
-		// 		Total #of NNZ is set to the expected value (nrow*ncol*sparsity).
-		// TODO: 
-		//		Instead of using the expected value, one should actually 
-		// 		treat NNZ as a random variable and accordingly generate a random value.
-		long nnz = (long) Math.ceil (nrow * (ncol*sparsity));
-
-		if ( numBlocks > Integer.MAX_VALUE ) {
-			throw new DMLRuntimeException("A random matrix of size [" + nrow + "," + ncol + "] can not be created. Number of blocks (" +  numBlocks + ") exceeds the maximum integer size. Try to increase the block size.");
+		//sanity check max number of blocks (before cast to avoid overflow)
+		if ( lnumBlocks > Integer.MAX_VALUE ) {
+			throw new DMLRuntimeException("A random matrix of size [" + nrow + "," + ncol + "] can not be created. "
+					+ "Number of blocks ("+lnumBlocks+") exceeds the maximum integer size. Try to increase the block size.");
 		}
+
+		// NOTE: Total #of NNZ is set to the expected value (nrow*ncol*sparsity).
+		// TODO: Instead of using the expected value, NNZ should be random variable 
+		
+		int numBlocks = (int) lnumBlocks;
+		long nnz = (long) Math.ceil (nrow * (ncol*sparsity));
 		
 		// Compute block-level NNZ
 		long[] ret  = new long[numBlocks];

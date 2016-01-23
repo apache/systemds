@@ -53,6 +53,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
+import org.apache.sysml.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -195,6 +196,12 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		long clen = inMc.getCols();
 		int brlen = inMc.getRowsPerBlock();
 		int bclen = inMc.getColsPerBlock();
+		
+		//pre-filter empty blocks (ultra-sparse matrices) for full aggregates
+		//(map/redwsloss, map/redwcemm); safe because theses ops produce a scalar
+		if( qop.wtype1 != null || qop.wtype4 != null ) {
+			in = in.filter(new FilterNonEmptyBlocksFunction());
+		}
 		
 		//map-side only operation (one rdd input, two broadcasts)
 		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(getOpcode())  

@@ -72,7 +72,7 @@ public class SparseBlockCSR extends SparseBlock
 		//special case SparseBlockCSR
 		if( sblock instanceof SparseBlockCSR ) { 
 			SparseBlockCSR ocsr = (SparseBlockCSR)sblock;
-			_ptr = Arrays.copyOf(ocsr._ptr, ocsr.numRows());
+			_ptr = Arrays.copyOf(ocsr._ptr, ocsr.numRows()+1);
 			_indexes = Arrays.copyOf(ocsr._indexes, ocsr._size);
 			_values = Arrays.copyOf(ocsr._values, ocsr._size);
 			_size = ocsr._size;
@@ -260,11 +260,22 @@ public class SparseBlockCSR extends SparseBlock
 	@Override
 	public void set(int r, SparseRow row) {
 		int pos = pos(r);
+		int len = size(r);		
 		int alen = row.size();
 		int[] aix = row.indexes();
 		double[] avals = row.values();
-		deleteIndexRange(r, aix[0], aix[alen-1]+1);
+		
+		//delete existing values if necessary
+		if( len > 0 )
+			deleteIndexRange(r, aix[0], aix[alen-1]+1);
+		
+		//prepare free space (allocate and shift)
+		int lsize = _size+alen;
+		if( _values.length < lsize )
+			resize(lsize);				
 		shiftRightByN(pos, alen);
+		
+		//copy input row into internal representation
 		System.arraycopy(aix, 0, _indexes, pos, alen);
 		System.arraycopy(avals, 0, _values, pos, alen);
 		_size+=alen;

@@ -57,6 +57,7 @@ import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.CreateSparseBlockFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -65,6 +66,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Statistics;
@@ -1037,8 +1039,15 @@ public class SparkExecutionContext extends ExecutionContext
 				in = in.coalesce( numPartitions );
 		}
 		
-		//repartition and persist rdd (force creation of shuffled rdd via merge)
+		//repartition rdd (force creation of shuffled rdd via merge)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDAggregateUtils.mergeByKey(in);
+		
+		//convert mcsr into memory-efficient csr if potentially sparse
+		if( OptimizerUtils.checkSparseBlockCSRConversion(mcIn) ) {				
+			out = out.mapValues(new CreateSparseBlockFunction(SparseBlock.Type.CSR));
+		}
+		
+		//persist rdd in default storage level 
 		out.persist( Checkpoint.DEFAULT_STORAGE_LEVEL )
 		   .count(); //trigger caching to prevent contention
 		

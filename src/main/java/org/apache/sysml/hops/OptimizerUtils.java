@@ -31,6 +31,7 @@ import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -505,6 +506,16 @@ public class OptimizerUtils
 		
 		//check if both output matrix and partitioned matrix fit into local mem budget
 		return (memPinned + memMatrix + memPMatrix < getLocalMemBudget());
+	}
+	
+	/**
+	 * 
+	 * @param mcIn
+	 * @return
+	 */
+	public static boolean checkSparseBlockCSRConversion( MatrixCharacteristics mcIn ) {
+		return Checkpoint.CHECKPOINT_SPARSE_CSR
+			&& OptimizerUtils.getSparsity(mcIn) < MatrixBlock.SPARSITY_TURN_POINT;
 	}
 	
 	/**

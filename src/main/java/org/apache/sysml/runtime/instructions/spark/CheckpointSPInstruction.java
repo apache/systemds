@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -114,9 +113,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 			}
 		
 			//convert mcsr into memory-efficient csr if potentially sparse
-			if( OptimizerUtils.getSparsity(mcIn) < MatrixBlock.SPARSITY_TURN_POINT
-				&& Checkpoint.CHECKPOINT_SPARSE_CSR )
-			{				
+			if( OptimizerUtils.checkSparseBlockCSRConversion(mcIn) ) {				
 				out = out.mapValues(new CreateSparseBlockFunction(SparseBlock.Type.CSR));
 			}
 			

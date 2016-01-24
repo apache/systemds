@@ -99,6 +99,15 @@ public abstract class SparseBlock implements Serializable
 	public abstract boolean isThreadSafe();
 
 	/**
+	 * Indicates if the underlying data structures returned by values 
+	 * and indexes are contiguous arrays, which can be exploited for 
+	 * more efficient operations.
+	 * 
+	 * @return
+	 */
+	public abstract boolean isContiguous();
+	
+	/**
 	 * Clears the sparse block by deleting non-zero values. After this call
 	 * all size() calls are guaranteed to return 0.
 	 */

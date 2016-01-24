@@ -137,6 +137,11 @@ public class SparseBlockMCSR extends SparseBlock
 	public boolean isThreadSafe() {
 		return true;
 	}
+	
+	@Override
+	public boolean isContiguous() {
+		return false;
+	}
 
 	@Override 
 	public void reset() {

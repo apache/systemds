@@ -176,6 +176,11 @@ public class SparseBlockCOO extends SparseBlock
 		return false;
 	}
 	
+	@Override
+	public boolean isContiguous() {
+		return true;
+	}
+	
 	@Override 
 	public void reset() {
 		_size = 0;

@@ -366,7 +366,7 @@ public class LibMatrixReorg
 				for( int i=0; i<rlen; i++ ) {
 					int ix = vix[i];
 					if( !in.sparseBlock.isEmpty(ix) ) {
-						out.sparseBlock.set(i, in.sparseBlock.get(ix));
+						out.sparseBlock.set(i, in.sparseBlock.get(ix), true);
 					}
 				}
 			}
@@ -1052,7 +1052,7 @@ public class LibMatrixReorg
 		//copy all rows into target positions
 		for( int i=0; i<m; i++ ) {
 			if( !a.isEmpty(i) ) {
-				c.set(m-1-i, a.get(i));	
+				c.set(m-1-i, a.get(i), true);	
 			}
 		}
 	}

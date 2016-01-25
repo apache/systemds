@@ -966,7 +966,7 @@ public class LibMatrixBincell
 						double[] cvals = crow.values();
 						for(int j=0; j<alen; j++)
 							cvals[j] = (avals[apos+j] != 0) ? 1 : 0;
-						c.set(r, crow);
+						c.set(r, crow, false);
 						ret.nonZeros+=alen;
 					}
 					else //GENERAL CASE
@@ -975,7 +975,7 @@ public class LibMatrixBincell
 						if( op.fn instanceof Multiply || op.fn instanceof Multiply2 
 							|| op.fn instanceof Power2  )
 						{
-							c.allocate(r, alen, ret.clen);
+							c.allocate(r, alen);
 						}
 						
 						for(int j=apos; j<apos+alen; j++) {
@@ -1136,7 +1136,7 @@ public class LibMatrixBincell
 						
 						//temp
 						SparseRow thisRow = c.get(r);
-						c.set(r, new SparseRow(estimateSize, clen));
+						c.set(r, new SparseRow(estimateSize, clen), false);
 						
 						if(thisRow!=null)
 						{
@@ -1161,7 +1161,7 @@ public class LibMatrixBincell
 					if( !b.isEmpty(r) ) {
 						SparseRow tmp = new SparseRow( b.size(r), clen );
 						appendRightForSparseBinary(op, b.values(r), b.indexes(r), b.pos(r), b.size(r), 0, r, m1ret);
-						m1ret.sparseBlock.set(r, tmp);
+						m1ret.sparseBlock.set(r, tmp, false);
 					}
 				}				
 			}
@@ -1177,7 +1177,7 @@ public class LibMatrixBincell
 							for( int j=0; j<alen; j++ )
 								avals[j] = op.fn.execute(avals[j], 0);
 							tmp.compact(); //handle removed entries (e.g., mult, and)
-							c.set(r, tmp);
+							c.set(r, tmp, false);
 							
 							//NOTE: for left in-place, we cannot use append because it would create duplicates
 							//appendLeftForSparseBinary(op, arow.getValueContainer(), arow.getIndexContainer(), arow.size(), 0, r, m1ret);

@@ -288,9 +288,9 @@ public abstract class SparseBlock implements Serializable
 	 * 
 	 * @param r  row index starting at 0
 	 * @param row
-	 * @return
+	 * @param deep  indicator to create deep copy of sparse row
 	 */
-	public abstract void set(int r, SparseRow row);
+	public abstract void set(int r, SparseRow row, boolean deep);
 	
 	/**
 	 * Append a value to the end of the physical representation. This should 

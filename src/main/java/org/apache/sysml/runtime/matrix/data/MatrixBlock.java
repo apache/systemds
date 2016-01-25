@@ -792,30 +792,26 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		}
 	}
 	
-	public void appendRow(int r, SparseRow values)
+	/**
+	 * 
+	 * @param r
+	 * @param row
+	 */
+	public void appendRow(int r, SparseRow row)
 	{
-		if(values==null)
+		if(row == null)
 			return;
-		if(sparse)
-		{
+		
+		if(sparse) {
 			//allocation on demand
 			allocateSparseRowsBlock(false);
-			sparseBlock.allocate(r, values.size(), -1);
-			
-			//TODO perf sparse block
-			int[] cols=values.indexes();
-			double[] vals=values.values();
-			for(int i=0; i<values.size(); i++)
-				sparseBlock.append(r, cols[i], vals[i]);
-			
-			nonZeros+=values.size();
-			
+			sparseBlock.set(r, row, true);
+			nonZeros += row.size();
 		}
-		else
-		{
-			int[] cols=values.indexes();
-			double[] vals=values.values();
-			for(int i=0; i<values.size(); i++)
+		else {
+			int[] cols = row.indexes();
+			double[] vals = row.values();
+			for(int i=0; i<row.size(); i++)
 				quickSetValue(r, cols[i], vals[i]);
 		}
 	}
@@ -1358,7 +1354,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		for(int i=0; i<Math.min(that.sparseBlock.numRows(), rlen); i++)
 		{
 			if(!that.sparseBlock.isEmpty(i)) {
-				sparseBlock.set(i, new SparseRow(that.sparseBlock.get(i)));				
+				sparseBlock.set(i, that.sparseBlock.get(i), true);				
 			}
 			else if(!this.sparseBlock.isEmpty(i)) {
 				this.sparseBlock.reset(i,estimatedNNzsPerRow, clen);
@@ -1797,7 +1793,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				{
 					if( a.isEmpty(i) ) {
 						//copy entire sparse row (no sort required)
-						a.set(i, new SparseRow(b.get(i))); 
+						a.set(i, b.get(i), true); 
 					}
 					else
 					{

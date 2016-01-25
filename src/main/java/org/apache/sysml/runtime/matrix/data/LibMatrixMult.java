@@ -1512,7 +1512,7 @@ public class LibMatrixMult
 							if( !m2.sparseBlock.isEmpty(aix) ) {
 								ret.rlen=m;
 								ret.allocateSparseRowsBlock(false); //allocation on demand
-								ret.sparseBlock.set(i, new SparseRow(m2.sparseBlock.get(aix))); 
+								ret.sparseBlock.set(i, m2.sparseBlock.get(aix), true); 
 								ret.nonZeros += ret.sparseBlock.size(i);
 							}
 						}
@@ -2083,7 +2083,7 @@ public class LibMatrixMult
 				}
 		
 				//memcopy entire sparse row into target position
-				c.set(bpos, new SparseRow( b.get(i) ));
+				c.set(bpos, b.get(i), true);
 				lastblk = blk;
 			}
 		}

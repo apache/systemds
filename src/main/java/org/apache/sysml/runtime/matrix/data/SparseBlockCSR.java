@@ -288,7 +288,7 @@ public class SparseBlockCSR extends SparseBlock
 	}
 
 	@Override
-	public void set(int r, SparseRow row) {
+	public void set(int r, SparseRow row, boolean deep) {
 		int pos = pos(r);
 		int len = size(r);		
 		int alen = row.size();

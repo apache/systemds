@@ -169,28 +169,14 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 			fullRScriptName = S_HOME + "Scale" + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-			long seed1 = System.currentTimeMillis();
-			long seed2 = System.currentTimeMillis();
-			double[][] vector = getRandomMatrix(sz.size, 1, rng.min, rng.max,
-					sp.sparsity, seed1);
-			double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, seed2);
-			System.out.println("seeds: " + seed1 + " " + seed2);
+			double[][] vector = getRandomMatrix(sz.size, 1, rng.min, rng.max, sp.sparsity, 20160124165501L);
+			double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, 20160124165502L);
 
 			writeInputMatrix("vector", vector, true);
 			writeInputMatrix("prob", prob, true);
 
-			// Expected number of jobs:
-			// Reblock - 1 job
-			// While loop iteration - 10 jobs
-			// Final output write - 1 job
-			//
-			// boolean exceptionExpected = false;
-			// int expectedNumberOfJobs = 12;
-			// runTest(exceptionExpected, null, expectedNumberOfJobs);
 			runTest(true, false, null, -1);
-
 			runRScript(true);
-			// disableOutAndExpectedDeletion();
 
 			for (String file : config.getOutputFiles()) {
 				// NOte that some files do not contain matrix, but just a single
@@ -262,28 +248,17 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			createHelperMatrix();
-			double[][] vector = getRandomMatrix(sz.size, 1, rng.min, rng.max,
-					sp.sparsity, System.currentTimeMillis());
-			double[][] weight = getRandomMatrix(sz.size, 1, 1, 10, 1,
-					System.currentTimeMillis());
+			double[][] vector = getRandomMatrix(sz.size, 1, rng.min, rng.max, sp.sparsity, 20160124165503L);
+			double[][] weight = getRandomMatrix(sz.size, 1, 1, 10, 1, 20160124165504L);
 			OrderStatisticsTest.round(weight);
-			double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1,
-					System.currentTimeMillis());
+			double[][] prob = getRandomMatrix(rows2, 1, 0, 1, 1, 20160124165505L);
 
 			writeInputMatrix("vector", vector, true);
 			writeInputMatrix("weight", weight, true);
 			writeInputMatrix("prob", prob, true);
 
-			//
-			// Expected number of jobs:
-			// Reblock - 1 job
-			// While loop iteration - 10 jobs
-			// Final output write - 1 job
-
 			runTest(true, false, null, -1);
-
 			runRScript(true);
-			// disableOutAndExpectedDeletion();
 
 			for (String file : config.getOutputFiles()) {
 				// NOte that some files do not contain matrix, but just a single
@@ -306,5 +281,4 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 			rtplatform = oldrt;
 		}
 	}
-
 }

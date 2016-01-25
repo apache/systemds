@@ -424,7 +424,7 @@ public class MRJobConfiguration
 			String uniqueSubdir = tmp.toString();
 			
 			//unique local dir
-			String[] dirlist = job.get(MRProp.MR_CLUSTER_LOCAL_DIR,"/tmp").split(",");
+			String[] dirlist = job.get(MRConfigurationNames.MR_CLUSTER_LOCAL_DIR,"/tmp").split(",");
 			StringBuilder sb2 = new StringBuilder();
 			for( String dir : dirlist ) {
 				if( sb2.length()>0 )
@@ -432,10 +432,10 @@ public class MRJobConfiguration
 				sb2.append(dir);
 				sb2.append( uniqueSubdir );
 			}
-			job.set(MRProp.MR_CLUSTER_LOCAL_DIR, sb2.toString() );
+			job.set(MRConfigurationNames.MR_CLUSTER_LOCAL_DIR, sb2.toString() );
 			
 			//unique system dir 
-			job.set(MRProp.MR_JOBTRACKER_SYSTEM_DIR, job.get(MRProp.MR_JOBTRACKER_SYSTEM_DIR) + uniqueSubdir);
+			job.set(MRConfigurationNames.MR_JOBTRACKER_SYSTEM_DIR, job.get(MRConfigurationNames.MR_JOBTRACKER_SYSTEM_DIR) + uniqueSubdir);
 			
 			//unique staging dir 
 			job.set( "mapreduce.jobtracker.staging.root.dir",  job.get("mapreduce.jobtracker.staging.root.dir") + uniqueSubdir );
@@ -444,12 +444,12 @@ public class MRJobConfiguration
 	
 	public static String getLocalWorkingDirPrefix(JobConf job)
 	{
-		return job.get(MRProp.MR_CLUSTER_LOCAL_DIR);
+		return job.get(MRConfigurationNames.MR_CLUSTER_LOCAL_DIR);
 	}
 	
 	public static String getSystemWorkingDirPrefix(JobConf job)
 	{
-		return job.get(MRProp.MR_JOBTRACKER_SYSTEM_DIR);
+		return job.get(MRConfigurationNames.MR_JOBTRACKER_SYSTEM_DIR);
 	}
 	
 	public static String getStagingWorkingDirPrefix(JobConf job)

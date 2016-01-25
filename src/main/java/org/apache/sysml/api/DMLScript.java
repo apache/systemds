@@ -76,7 +76,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.matrix.CleanupMR;
-import org.apache.sysml.runtime.matrix.mapred.MRProp;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -834,9 +834,9 @@ public class DMLScript
 		//analyze hadoop configuration
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		boolean localMode     = InfrastructureAnalyzer.isLocalMode(job);
-		String taskController = job.get(MRProp.MR_TASKTRACKER_TASKCONTROLLER, "org.apache.hadoop.mapred.DefaultTaskController");
+		String taskController = job.get(MRConfigurationNames.MR_TASKTRACKER_TASKCONTROLLER, "org.apache.hadoop.mapred.DefaultTaskController");
 		String ttGroupName    = job.get("mapreduce.tasktracker.group","null");
-		String perm           = job.get(MRProp.DFS_PERMISSIONS_ENABLED,"null"); //note: job.get("dfs.permissions.supergroup",null);
+		String perm           = job.get(MRConfigurationNames.DFS_PERMISSIONS_ENABLED,"null"); //note: job.get("dfs.permissions.supergroup",null);
 		URI fsURI             = FileSystem.getDefaultUri(job);
 
 		//determine security states
@@ -849,11 +849,11 @@ public class DMLScript
 		LOG.debug("SystemML security check: "
 				+ "local.user.name = " + userName + ", "
 				+ "local.user.groups = " + ProgramConverter.serializeStringCollection(groupNames) + ", "
-				+ MRProp.MR_JOBTRACKER_ADDRESS + " = " + job.get(MRProp.MR_JOBTRACKER_ADDRESS) + ", "
-				+ MRProp.MR_TASKTRACKER_TASKCONTROLLER + " = " + taskController + ","
+				+ MRConfigurationNames.MR_JOBTRACKER_ADDRESS + " = " + job.get(MRConfigurationNames.MR_JOBTRACKER_ADDRESS) + ", "
+				+ MRConfigurationNames.MR_TASKTRACKER_TASKCONTROLLER + " = " + taskController + ","
 				+ "mapreduce.tasktracker.group = " + ttGroupName + ", "
 				+ "fs.default.name = " + ((fsURI!=null) ? fsURI.getScheme() : "null") + ", "
-				+ MRProp.DFS_PERMISSIONS_ENABLED + " = " + perm );
+				+ MRConfigurationNames.DFS_PERMISSIONS_ENABLED + " = " + perm );
 
 		//print warning if permission issues possible
 		if( flagDiffUser && ( flagLocalFS || flagSecurity ) )

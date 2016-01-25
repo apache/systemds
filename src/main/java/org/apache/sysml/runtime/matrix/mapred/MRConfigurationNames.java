@@ -28,9 +28,9 @@ import org.apache.hadoop.util.VersionInfo;
  * 1.x and 2.x and automatically map to the currently used cluster.
  * 
  */
-public abstract class MRProp {
+public abstract class MRConfigurationNames {
 
-	protected static final Log LOG = LogFactory.getLog(MRProp.class.getName());
+	protected static final Log LOG = LogFactory.getLog(MRConfigurationNames.class.getName());
 
 	public static final String DFS_BLOCKSIZE;
 	public static final String DFS_METRICS_SESSION_ID;

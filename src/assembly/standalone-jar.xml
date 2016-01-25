@@ -51,7 +51,7 @@
 	<dependencySets>
 		<dependencySet>
 			<includes>
-				<include>*:JSON4J*</include>
+				<include>*:wink-json4j*</include>
 				<include>*:antlr*</include>
 			</includes>
 			<scope>compile</scope>
@@ -80,7 +80,7 @@
 				<include>*:jackson-mapper-asl*</include>
 				<include>*:slf4j-api*</include>
 				<include>*:slf4j-log4j*</include>
-				<include>*:system-ml*</include>
+				<include>*:${artifactId}*</include>
 			</includes>
 			<scope>provided</scope>
 			<unpack>true</unpack>

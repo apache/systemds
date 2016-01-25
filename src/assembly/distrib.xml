@@ -22,7 +22,7 @@
 		xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
 	<!-- Assembly file for the "distributed" SystemML release for running on a
 		cluster with Spark or Hadoop. -->
-	<id>cluster</id>
+	<id>distrib</id>
 
 	<formats>
 		<format>tar.gz</format>
@@ -30,7 +30,7 @@
 	</formats>
 
 	<includeBaseDirectory>true</includeBaseDirectory>
-	<baseDirectory>system-ml-${version}-cluster</baseDirectory>
+	<baseDirectory>${artifactId}-${version}</baseDirectory>
 
 	<fileSets>
 		<fileSet>

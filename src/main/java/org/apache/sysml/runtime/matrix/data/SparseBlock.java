@@ -107,6 +107,62 @@ public abstract class SparseBlock implements Serializable
 	 */
 	public abstract boolean isContiguous();
 	
+
+	/**
+	 * Indicates if all non-zero values are aligned with the given
+	 * second sparse block instance, which can be exploited for 
+	 * more efficient operations. Two non-zeros are aligned if they 
+	 * have the same column index and reside in the same array position.
+	 * 
+	 * @param that
+	 * @return
+	 */
+	public boolean isAligned(SparseBlock that)
+	{
+		//step 1: cheap meta data comparisons
+		if( numRows() != that.numRows() ) //num rows check
+			return false;
+		
+		//step 2: check column indexes per row
+		int rlen = numRows();
+		for( int i=0; i<rlen; i++ )
+			if( !isAligned(i, that) )
+				return false;
+		
+		return true;
+	}
+	
+	/**
+	 * Indicates if all non-zero values of row r are aligned with 
+	 * the same row of the given second sparse block instance, which 
+	 * can be exploited for more efficient operations. Two non-zeros
+	 * are aligned if they have the same column index and reside in
+	 * the same array position.
+	 * 
+	 * @param r  row index starting at 0
+	 * @param that
+	 * @return
+	 */
+	public boolean isAligned(int r, SparseBlock that)
+	{
+		//step 1: cheap meta data comparisons
+		if( size(r) != that.size(r) || pos(r) != that.pos(r) ) 
+			return false;
+		
+		//step 2: check column indexes per row
+		if( !isEmpty(r) ) {
+			int alen = size(r);
+			int apos = pos(r);
+			int[] aix = indexes(r);
+			int[] bix = that.indexes(r);
+			for( int j=apos; j<apos+alen; j++ )
+				if( aix[j] != bix[j] )
+					return false;
+		}
+		
+		return true;
+	}
+	
 	/**
 	 * Clears the sparse block by deleting non-zero values. After this call
 	 * all size() calls are guaranteed to return 0.

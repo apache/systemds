@@ -36,7 +36,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
+import org.apache.sysml.runtime.matrix.mapred.MRProp;
 
 /**
  * Central place for analyzing and obtaining static infrastructure properties
@@ -676,7 +676,7 @@ public class YarnClusterAnalyzer
 				throw new YarnException("There are no available nodes in the yarn cluster");
 			
 			// Now get the default cluster settings
-			_remoteMRSortMem = (1024*1024) * conf.getLong(MRConfigurationNames.MR_TASK_IO_SORT_MB,100); //100MB
+			_remoteMRSortMem = (1024*1024) * conf.getLong(MRProp.MR_TASK_IO_SORT_MB,100); //100MB
 
 			//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
 			//(for robustness we probe both: child and map configuration parameters)
@@ -693,7 +693,7 @@ public class YarnClusterAnalyzer
 				_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts1);
 			
 			//HDFS blocksize
-			String blocksize = conf.get(MRConfigurationNames.DFS_BLOCK_SIZE, "134217728");
+			String blocksize = conf.get(MRProp.DFS_BLOCKSIZE, "134217728");
 			_blocksize = Long.parseLong(blocksize);
 			
 			minimalPhyAllocate = (long) 1024 * 1024 * conf.getInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 

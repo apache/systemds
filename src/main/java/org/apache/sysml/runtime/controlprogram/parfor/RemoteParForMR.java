@@ -51,7 +51,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
+import org.apache.sysml.runtime.matrix.mapred.MRProp;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Statistics;
@@ -182,7 +182,7 @@ public class RemoteParForMR
 				job.setNumTasksToExecutePerJvm(-1); //unlimited
 			
 			//set sort io buffer (reduce unnecessary large io buffer, guaranteed memory consumption)
-			job.setInt(MRConfigurationNames.MR_TASK_IO_SORT_MB, 8); //8MB
+			job.setInt(MRProp.MR_TASK_IO_SORT_MB, 8); //8MB
 			
 			//set the replication factor for the results
 			job.setInt("dfs.replication", replication);

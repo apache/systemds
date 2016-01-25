@@ -28,47 +28,41 @@ import org.apache.hadoop.util.VersionInfo;
  * 1.x and 2.x and automatically map to the currently used cluster.
  * 
  */
-public abstract class MRConfigurationNames {
+public abstract class MRProp {
 
-	protected static final Log LOG = LogFactory.getLog(MRConfigurationNames.class.getName());
+	protected static final Log LOG = LogFactory.getLog(MRProp.class.getName());
 
-	// name definitions
-	public static final String INVALID = "null";
-	public static String DFS_BLOCK_SIZE = INVALID;
-	public static String DFS_METRICS_SESSION_ID = INVALID;
-	public static String DFS_PERMISSIONS = INVALID;
-	public static String MR_CLUSTER_LOCAL_DIR = INVALID;
-	public static String MR_JOBTRACKER_ADDRESS = INVALID;
-	public static String MR_JOBTRACKER_SYSTEM_DIR = INVALID;
-	public static String MR_TASK_IO_SORT_MB = INVALID;
-	public static String MR_TASKTRACKER_TASKCONTROLLER = INVALID;
+	public static final String DFS_BLOCKSIZE;
+	public static final String DFS_METRICS_SESSION_ID;
+	public static final String DFS_PERMISSIONS_ENABLED;
+	public static final String MR_CLUSTER_LOCAL_DIR;
+	public static final String MR_JOBTRACKER_ADDRESS;
+	public static final String MR_JOBTRACKER_SYSTEM_DIR;
+	public static final String MR_TASK_IO_SORT_MB;
+	public static final String MR_TASKTRACKER_TASKCONTROLLER;
 
 	// initialize to currently used cluster
 	static {
-
 		// determine hadoop version
-		// e.g., 2.0.4-alpha from 0a11e32419bd4070f28c6d96db66c2abe9fd6d91 by jenkins source checksum
-		// f3c1bf36ae3aa5a6f6d3447fcfadbba
 		String version = VersionInfo.getBuildVersion();
 		boolean hadoopVersion2 = version.startsWith("2");
 		LOG.debug("Hadoop build version: " + version);
 
 		if (hadoopVersion2) {
 			LOG.debug("Using hadoop 2.x configuration properties.");
-			DFS_BLOCK_SIZE = "dfs.blocksize";
+			DFS_BLOCKSIZE = "dfs.blocksize";
 			DFS_METRICS_SESSION_ID = "dfs.metrics.session-id";
-			DFS_PERMISSIONS = "dfs.permissions.enabled";
+			DFS_PERMISSIONS_ENABLED = "dfs.permissions.enabled";
 			MR_CLUSTER_LOCAL_DIR = "mapreduce.cluster.local.dir";
 			MR_JOBTRACKER_ADDRESS = "mapreduce.jobtracker.address";
 			MR_JOBTRACKER_SYSTEM_DIR = "mapreduce.jobtracker.system.dir";
 			MR_TASK_IO_SORT_MB = "mapreduce.task.io.sort.mb";
 			MR_TASKTRACKER_TASKCONTROLLER = "mapreduce.tasktracker.taskcontroller";
-		} else // any older version
-		{
+		} else { // any older version
 			LOG.debug("Using hadoop 1.x configuration properties.");
-			DFS_BLOCK_SIZE = "dfs.block.size";
+			DFS_BLOCKSIZE = "dfs.block.size";
 			DFS_METRICS_SESSION_ID = "session.id";
-			DFS_PERMISSIONS = "dfs.permissions";
+			DFS_PERMISSIONS_ENABLED = "dfs.permissions";
 			MR_CLUSTER_LOCAL_DIR = "mapred.local.dir";
 			MR_JOBTRACKER_ADDRESS = "mapred.job.tracker";
 			MR_JOBTRACKER_SYSTEM_DIR = "mapred.system.dir";

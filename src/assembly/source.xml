@@ -28,7 +28,7 @@
     </formats>
 
     <includeBaseDirectory>true</includeBaseDirectory>
-    <baseDirectory>system-ml-${version}-src</baseDirectory>
+    <baseDirectory>${artifactId}-${version}-src</baseDirectory>
 
     <fileSets>
         <fileSet>

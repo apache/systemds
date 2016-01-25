@@ -267,22 +267,42 @@ public class LibMatrixBincell
 					SparseBlock lsblock = m1.sparseBlock;
 					SparseBlock rsblock = m2.sparseBlock;
 					
-					for(int r=0; r<rlen; r++)
+					if( ret.sparse && lsblock.isAligned(rsblock) )
 					{
-						if( !lsblock.isEmpty(r) && !rsblock.isEmpty(r) ) {
-							mergeForSparseBinary(op, lsblock.values(r), lsblock.indexes(r), lsblock.pos(r), lsblock.size(r),
-									rsblock.values(r), rsblock.indexes(r), rsblock.pos(r), rsblock.size(r), r, ret);	
+						SparseBlock c = ret.sparseBlock;
+						for(int r=0; r<rlen; r++) 
+							if( !lsblock.isEmpty(r) ) {
+								int alen = lsblock.size(r);
+								int apos = lsblock.pos(r);
+								int[] aix = lsblock.indexes(r);
+								double[] avals = lsblock.values(r);
+								double[] bvals = rsblock.values(r);
+								c.allocate(r, alen);
+								for( int j=apos; j<apos+alen; j++ ) {
+									double tmp = op.fn.execute(avals[j], bvals[j]);
+									c.append(r, aix[j], tmp);
+								}
+								ret.nonZeros += c.size(r);
+							}
+					}
+					else //general case
+					{	
+						for(int r=0; r<rlen; r++)
+						{
+							if( !lsblock.isEmpty(r) && !rsblock.isEmpty(r) ) {
+								mergeForSparseBinary(op, lsblock.values(r), lsblock.indexes(r), lsblock.pos(r), lsblock.size(r),
+										rsblock.values(r), rsblock.indexes(r), rsblock.pos(r), rsblock.size(r), r, ret);	
+							}
+							else if( !rsblock.isEmpty(r) ) {
+								appendRightForSparseBinary(op, rsblock.values(r), rsblock.indexes(r), 
+										rsblock.pos(r), rsblock.size(r), 0, r, ret);
+							}
+							else if( !lsblock.isEmpty(r) ){
+								appendLeftForSparseBinary(op, lsblock.values(r), lsblock.indexes(r), 
+										lsblock.pos(r), lsblock.size(r), 0, r, ret);
+							}
+							// do nothing if both not existing
 						}
-						else if( !rsblock.isEmpty(r) ) {
-							appendRightForSparseBinary(op, rsblock.values(r), rsblock.indexes(r), 
-									rsblock.pos(r), rsblock.size(r), 0, r, ret);
-						}
-						else if( !lsblock.isEmpty(r) ){
-							appendLeftForSparseBinary(op, lsblock.values(r), lsblock.indexes(r), 
-									lsblock.pos(r), lsblock.size(r), 0, r, ret);
-						}
-						
-						// do nothing if both not existing
 					}
 				}
 				//right sparse block existing

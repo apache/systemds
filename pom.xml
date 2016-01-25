@@ -25,11 +25,11 @@
 		<version>17</version>
 	</parent>
 	<groupId>org.apache.systemml</groupId>
-    <version>0.9.0-incubating-SNAPSHOT</version>
-	<artifactId>system-ml</artifactId>
+	<version>0.10.0-incubating-SNAPSHOT</version>
+	<artifactId>systemml</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemML</name>
-	<description>Declarative machine learning</description>
+	<description>Declarative Machine Learning</description>
 	<url>http://systemml.apache.org/</url>
 	<licenses>
 		<license>
@@ -530,7 +530,7 @@
 							</execution>
 
 							<execution>
-								<id>create-binary-distribution-assembly</id>
+								<id>create-binary-cluster-distribution-assembly</id>
 								<phase>package</phase>
 								<goals>
 									<goal>single</goal>
@@ -540,6 +540,25 @@
 										<descriptor>src/assembly/distrib.xml</descriptor>
 									</descriptors>
 									<appendAssemblyId>false</appendAssemblyId>
+								</configuration>
+							</execution>
+
+							<execution>
+								<id>create-standalone-jar</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/standalone-jar.xml</descriptor>
+									</descriptors>
+									<archive>
+										<index>true</index>
+										<manifest>
+											<mainClass>org.apache.sysml.api.DMLScript</mainClass>
+										</manifest>
+									</archive>
 								</configuration>
 							</execution>
 

@@ -19,7 +19,12 @@ limitations under the License.
 
 # SystemML
 
-SystemML is now an **Apache Incubator** project! Please see the [**Apache SystemML (incubating)**](http://systemml.apache.org/)
+**Documentation:** [SystemML Documentation](http://apache.github.io/incubator-systemml/)<br/>
+**Mailing List:** [User and Dev Mailing List](http://systemml.apache.org/community.html)<br/>
+**Build Status:** [![Build Status](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest/badge/icon)](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest)<br/>
+**Issue Tracker:** [JIRA](https://issues.apache.org/jira/browse/SYSTEMML)<br/>
+
+**SystemML** is now an **Apache Incubator** project! Please see the [**Apache SystemML (incubating)**](http://systemml.apache.org/)
 website for more information. The latest project documentation can be found at the
 [**SystemML Documentation**](http://apache.github.io/incubator-systemml/) website on GitHub.
 

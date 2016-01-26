@@ -505,6 +505,17 @@
 		</profile>
 
 		<profile>
+			<!-- Need to ignore doclint warnings for javadocs generated on Java 8 until warnings are fixed -->
+			<id>ignore-doclint-warnings-for-javadocs-on-java-8</id>
+			<activation>
+			<jdk>[1.8,)</jdk>
+			</activation>
+			<properties>
+				<javadoc.opts>-Xdoclint:none</javadoc.opts>
+			</properties>
+		</profile>
+
+		<profile>
 			<!-- Profile to create binary distributions.
 				Execute with `mvn clean package -P distribution` -->
 			<id>distribution</id>
@@ -623,6 +634,7 @@
 								org.apache.sysml.runtime.matrix.data (for MatrixIndexes, MatrixBlock, etc)
 							-->
 							<excludePackageNames>org.apache.sysml.conf:org.apache.sysml.debug:org.apache.sysml.hops:org.apache.sysml.lops:org.apache.sysml.parser:org.apache.sysml.runtime.controlprogram:org.apache.sysml.runtime.functionobjects:org.apache.sysml.runtime.instructions.cp:org.apache.sysml.runtime.instructions.cpfile:org.apache.sysml.runtime.instructions.mr:org.apache.sysml.runtime.instructions.spark.data:org.apache.sysml.runtime.instructions.spark.functions:org.apache.sysml.runtime.io:org.apache.sysml.runtime.matrix.data.hadoopfix:org.apache.sysml.runtime.matrix.mapred:org.apache.sysml.runtime.matrix.operators:org.apache.sysml.runtime.matrix.sort:org.apache.sysml.runtime.transform:org.apache.sysml.runtime.util:org.apache.sysml.udf:org.apache.sysml.utils:org.apache.sysml.yarn</excludePackageNames>
+							<additionalparam>${javadoc.opts}</additionalparam>
 						</configuration>
 						<executions>
 							<execution>

@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.terms.ScalarMatrixUnaryBinaryTest.java
+# junit test class: org.apache.sysml.test.integration.functions.misc.ScalarMatrixUnaryBinaryTest.java
 
 A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 

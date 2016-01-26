@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.terms;
+package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
 
@@ -27,7 +27,7 @@ import org.apache.sysml.test.integration.TestConfiguration;
 
 public class ScalarToMatrixInLoopTest extends AutomatedTestBase 
 {
-	private static final String TEST_DIR = "functions/terms/";
+	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ScalarToMatrixInLoopTest.class.getSimpleName() + "/";
 	private static final String TEST_NAME = "ScalarToMatrixInLoop";
 	

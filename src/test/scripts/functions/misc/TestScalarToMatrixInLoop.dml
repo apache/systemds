@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.terms.ScalarToMatrixInLoop.java
+# junit test class: org.apache.sysml.test.integration.functions.misc.ScalarToMatrixInLoop.java
 
 A = Rand(cols=$$cols$$, rows=$$rows$$);
 W = 5;

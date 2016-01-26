@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions.mr;
 import java.util.ArrayList;
 
 import org.apache.sysml.lops.WeightedCrossEntropy.WCeMMType;
+import org.apache.sysml.lops.WeightedDivMM;
 import org.apache.sysml.lops.WeightedDivMM.WDivMMType;
 import org.apache.sysml.lops.WeightedDivMMR;
 import org.apache.sysml.lops.WeightedSigmoid.WSigmoidType;
@@ -200,36 +201,56 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			
 			return new QuaternaryInstruction(new QuaternaryOperator(wtype,uopcode), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);	
 		}
-		else //wsigmoid / wdivmm / wcemm
+		else if(    WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)  //wdivmm
+				|| WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode) )
 		{
 			boolean isRed = opcode.startsWith("red");
 			
 			//check number of fields (3 inputs, output, type)
-			if( WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode) )
-				InstructionUtils.checkNumFields ( str, 7, 8 );
-			else if( isRed )
+			if( isRed )
+				InstructionUtils.checkNumFields ( str, 8 );
+			else
+				InstructionUtils.checkNumFields ( str, 6 );
+				
+			//parse instruction parts (without exec type)
+			String[] parts = InstructionUtils.getInstructionParts(str);
+			
+			byte in1 = Byte.parseByte(parts[1]);
+			byte in2 = Byte.parseByte(parts[2]);
+			byte in3 = Byte.parseByte(parts[3]);
+			byte in4 = Byte.parseByte(parts[4]);
+			byte out = Byte.parseByte(parts[5]);
+			
+			//in mappers always through distcache, in reducers through distcache/shuffle
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[8]) : true;
+			
+			return new QuaternaryInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[6])), in1, in2, in3, in4, out, cacheU, cacheV, str);
+		}
+		else //wsigmoid / wcemm
+		{
+			boolean isRed = opcode.startsWith("red");
+			
+			//check number of fields (3 inputs, output, type)
+			if( isRed )
 				InstructionUtils.checkNumFields ( str, 7 );
 			else
 				InstructionUtils.checkNumFields ( str, 5 );
 				
 			//parse instruction parts (without exec type)
 			String[] parts = InstructionUtils.getInstructionParts(str);
-			boolean wdivmmMinus = (parts.length==9);
 			
 			byte in1 = Byte.parseByte(parts[1]);
 			byte in2 = Byte.parseByte(parts[2]);
 			byte in3 = Byte.parseByte(parts[3]);
-			byte in4 = wdivmmMinus?Byte.parseByte(parts[4]):-1;
-			byte out = Byte.parseByte(parts[wdivmmMinus?5:4]);
+			byte out = Byte.parseByte(parts[4]);
 			
 			//in mappers always through distcache, in reducers through distcache/shuffle
-			boolean cacheU = isRed ? Boolean.parseBoolean(parts[wdivmmMinus?7:6]) : true;
-			boolean cacheV = isRed ? Boolean.parseBoolean(parts[wdivmmMinus?8:7]) : true;
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
 			
 			if( opcode.endsWith("wsigmoid") )
 				return new QuaternaryInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
-			else if( opcode.endsWith("wdivmm") )
-				return new QuaternaryInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[wdivmmMinus?6:5])), in1, in2, in3, in4, out, cacheU, cacheV, str);
 			else if( opcode.endsWith("wcemm") )
 				return new QuaternaryInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
 		}
@@ -265,20 +286,20 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 	public byte[] getInputIndexes() 
 	{
 		QuaternaryOperator qop = (QuaternaryOperator)optr;
-		if( qop.wtype1 == null || !qop.wtype1.hasFourInputs() )
-			return new byte[]{_input1, _input2, _input3};
+		if( qop.hasFourInputs() )
+			return new byte[]{_input1, _input2, _input3, _input4};		
 		else
-			return new byte[]{_input1, _input2, _input3, _input4};
+			return new byte[]{_input1, _input2, _input3};
 	}
 
 	@Override
 	public byte[] getAllIndexes() 
 	{
 		QuaternaryOperator qop = (QuaternaryOperator)optr;
-		if( qop.wtype1 == null || !qop.wtype1.hasFourInputs() )
-			return new byte[]{_input1, _input2, _input3, output};
-		else
+		if( qop.hasFourInputs() )
 			return new byte[]{_input1, _input2, _input3, _input4, output};		
+		else
+			return new byte[]{_input1, _input2, _input3, output};
 	}
 
 	@Override

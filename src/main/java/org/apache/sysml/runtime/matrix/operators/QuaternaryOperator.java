@@ -96,4 +96,13 @@ public class QuaternaryOperator extends Operator
 		else
 			fn = Builtin.getBuiltinFnObject(op);
 	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean hasFourInputs() {
+		return (wtype1 != null && wtype1.hasFourInputs())
+			|| (wtype3 != null && wtype3.hasFourInputs());
+	}
 }

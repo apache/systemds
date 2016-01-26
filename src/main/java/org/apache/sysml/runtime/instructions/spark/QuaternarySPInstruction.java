@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 
@@ -35,6 +34,7 @@ import scala.Tuple2;
 import org.apache.sysml.lops.WeightedCrossEntropy;
 import org.apache.sysml.lops.WeightedDivMM;
 import org.apache.sysml.lops.WeightedDivMM.WDivMMType;
+import org.apache.sysml.lops.WeightedDivMMR;
 import org.apache.sysml.lops.WeightedSigmoid;
 import org.apache.sysml.lops.WeightedSquaredLoss;
 import org.apache.sysml.lops.WeightedSquaredLossR;
@@ -147,7 +147,30 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 			return new QuaternarySPInstruction(new QuaternaryOperator(wtype, uopcode), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);	
 		}
-		else //map/redwsigmoid, map/redwdivmm, map/redwcemm
+		else if(    WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)    //wdivmm
+				|| WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode) )
+		{
+			boolean isRed = opcode.startsWith("red");
+			
+			//check number of fields (3 inputs, output, type)
+			if( isRed )
+				InstructionUtils.checkNumFields( parts, 8 );
+			else
+				InstructionUtils.checkNumFields( parts, 6 );
+			
+			CPOperand in1 = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand in4 = new CPOperand(parts[4]);
+			CPOperand out = new CPOperand(parts[5]);
+			
+			//in mappers always through distcache, in reducers through distcache/shuffle
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[8]) : true;
+		
+			return new QuaternarySPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[6])), in1, in2, in3, in4, out, cacheU, cacheV, opcode, str);
+		} 
+		else //map/redwsigmoid, map/redwcemm
 		{
 			boolean isRed = opcode.startsWith("red");
 			
@@ -168,8 +191,6 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		
 			if( opcode.endsWith("wsigmoid") )
 				return new QuaternarySPInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
-			else if( opcode.endsWith("wdivmm") )
-				return new QuaternarySPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[5])), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
 			else if( opcode.endsWith("wcemm") )
 				return new QuaternarySPInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
 		}
@@ -228,7 +249,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			PartitionedBroadcastMatrix bc2 = _cacheV ? sec.getBroadcastForVariable( input3.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inU = (!_cacheU) ? sec.getBinaryBlockRDDHandleForVariable( input2.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inV = (!_cacheV) ? sec.getBinaryBlockRDDHandleForVariable( input3.getName() ) : null;
-			JavaPairRDD<MatrixIndexes,MatrixBlock> inW = (qop.wtype1!=null && qop.wtype1.hasFourInputs()) ? 
+			JavaPairRDD<MatrixIndexes,MatrixBlock> inW = qop.hasFourInputs() ? 
 					sec.getBinaryBlockRDDHandleForVariable( _input4.getName() ) : null;
 
 			//preparation of transposed and replicated U
@@ -261,9 +282,9 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 				out = in.join(inV).join(inW)
 				        .mapToPair(new RDDQuaternaryFunction3(qop, bc1, bc2));
 			//function call w/ four rdd inputs
-			else 
+			else //need keys in case of wdivmm 
 				out = in.join(inU).join(inV).join(inW)
-				        .mapValues(new RDDQuaternaryFunction4(qop));
+				        .mapToPair(new RDDQuaternaryFunction4(qop));
 			
 			//keep variable names for lineage maintenance
 			if( inU == null ) bcVars.add(input2.getName()); else rddVars.add(input2.getName());
@@ -424,13 +445,13 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 			MatrixBlock mbU = (_pmU!=null)?_pmU.getMatrixBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
 			MatrixBlock mbV = (_pmV!=null)?_pmV.getMatrixBlock((int)ixIn.getColumnIndex(), 1) : blkIn2;
-			MatrixBlock mbW = (_qop.wtype1!=null && _qop.wtype1.hasFourInputs()) ? blkIn2 : null;
+			MatrixBlock mbW = (_qop.hasFourInputs()) ? blkIn2 : null;
 			
 			//execute core operation
 			blkIn1.quaternaryOperations(_qop, mbU, mbV, mbW, blkOut);
 			
 			//create return tuple
-			MatrixIndexes ixOut = createOutputIndexes(ixIn);
+			MatrixIndexes ixOut = createOutputIndexes(ixIn);			
 			return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
 		}
 	}
@@ -463,7 +484,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			MatrixBlock mbU = (_pmU!=null)?_pmU.getMatrixBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
 			MatrixBlock mbV = (_pmV!=null)?_pmV.getMatrixBlock((int)ixIn.getColumnIndex(), 1) : 
 				              (_pmU!=null)? blkIn2 : blkIn3;
-			MatrixBlock mbW = (_qop.wtype1!=null && _qop.wtype1.hasFourInputs())? blkIn3 : null;
+			MatrixBlock mbW = (_qop.hasFourInputs())? blkIn3 : null;
 			
 			//execute core operation
 			blkIn1.quaternaryOperations(_qop, mbU, mbV, mbW, blkOut);
@@ -478,31 +499,33 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 	 * Note: never called for wsigmoid/wdivmm (only wsloss)
 	 */
 	private static class RDDQuaternaryFunction4 extends RDDQuaternaryBaseFunction //four rdd input
-		implements Function<Tuple2<Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>,MatrixBlock>,MatrixBlock>
+		implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>,MatrixBlock>>,MatrixIndexes,MatrixBlock>
 	{
 		private static final long serialVersionUID = 7328911771600289250L;
 		
 		public RDDQuaternaryFunction4( QuaternaryOperator qop ) 
 			throws DMLRuntimeException, DMLUnsupportedOperationException
-		{
+		{ 
 			super(qop, null, null);		
 		}
-	
+
 		@Override
-		public MatrixBlock call(Tuple2<Tuple2<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock>, MatrixBlock> arg0)
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Tuple2<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock>, MatrixBlock>> arg0)
 			throws Exception 
 		{
-			MatrixBlock blkIn1 = arg0._1()._1()._1();
-			MatrixBlock mbU = arg0._1()._1()._2();
-			MatrixBlock mbV = arg0._1()._2();
-			MatrixBlock mbW = arg0._2();
+			MatrixIndexes ixIn1 = arg0._1();
+			MatrixBlock blkIn1 = arg0._2()._1()._1()._1();
+			MatrixBlock mbU = arg0._2()._1()._1()._2();
+			MatrixBlock mbV = arg0._2()._1()._2();
+			MatrixBlock mbW = arg0._2()._2();
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//execute core operation
 			blkIn1.quaternaryOperations(_qop, mbU, mbV, mbW, blkOut);
 			
 			//create return tuple
-			return blkOut;
+			MatrixIndexes ixOut = createOutputIndexes(ixIn1);
+			return new Tuple2<MatrixIndexes,MatrixBlock>(ixOut, blkOut);
 		}
 	}
 	

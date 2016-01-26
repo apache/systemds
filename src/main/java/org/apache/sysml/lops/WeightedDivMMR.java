@@ -37,17 +37,19 @@ public class WeightedDivMMR extends Lop
 	private boolean _cacheU = false;
 	private boolean _cacheV = false;
 	
-	public WeightedDivMMR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WDivMMType wt, boolean cacheU, boolean cacheV, ExecType et) 
+	public WeightedDivMMR(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WDivMMType wt, boolean cacheU, boolean cacheV, ExecType et) 
 		throws LopsException 
 	{
 		super(Lop.Type.WeightedDivMM, dt, vt);		
 		addInput(input1); //W
 		addInput(input2); //U
 		addInput(input3); //V
+		addInput(input4); //X
 		input1.addOutput(this); 
 		input2.addOutput(this);
 		input3.addOutput(this);
-			
+		input4.addOutput(this);	
+		
 		_weightsType = wt;
 		_cacheU = cacheU;
 		_cacheV = cacheV;
@@ -89,18 +91,19 @@ public class WeightedDivMMR extends Lop
 	
 	/* MR instruction generation */
 	@Override 
-	public String getInstructions(int input1, int input2, int input3, int output)
+	public String getInstructions(int input1, int input2, int input3, int input4, int output)
 	{
 		return getInstructions(
 				String.valueOf(input1), 
 				String.valueOf(input2), 
-				String.valueOf(input3), 
+				String.valueOf(input3),
+				String.valueOf(input4),
 				String.valueOf(output));
 	}
 	
 	/* CP/SPARK instruction generation */
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String output)
+	public String getInstructions(String input1, String input2, String input3, String input4, String output)
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -117,6 +120,9 @@ public class WeightedDivMMR extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(2).prepInputOperand(input3));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append( getInputs().get(3).prepInputOperand(input4));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output));

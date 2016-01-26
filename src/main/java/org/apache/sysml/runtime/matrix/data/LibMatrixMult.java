@@ -2641,12 +2641,20 @@ public class LibMatrixMult
 						ret.appendValue( i, wix[k], wval[k] * dotProduct(u, v, uix, wix[k]*cd, cd));
 				}
 				else if( four ) { //left/right
-					//TODO perf: check for aligment and avoid binary search on X
 					int k = (cl==0) ? wpos : w.posFIndexGTE(i,cl);
 					k = (k>=0) ? k : wpos+wlen;
-					for( ; k<wpos+wlen && wix[k]<cu; k++ ) {
-						double xij = x.get(i, wix[k]);
-						wdivmm(wval[k], xij, u, v, c, uix, wix[k]*cd, left, cd);
+					//checking alignment per row is ok because early abort if false, 
+					//row nnz likely fit in L1/L2 cache, and asymptotically better if aligned
+					if( w.isAligned(i, x) ) {
+						//O(n) where n is nnz in w/x 
+						double[] xvals = x.values(i);
+						for( ; k<wpos+wlen && wix[k]<cu; k++ )
+							wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, cd);
+					}
+					else {
+						//O(n log m) where n/m are nnz in w/x
+						for( ; k<wpos+wlen && wix[k]<cu; k++ )
+							wdivmm(wval[k], x.get(i, wix[k]), u, v, c, uix, wix[k]*cd, left, cd);
 					}
 				}
 				else { //left/right minus default

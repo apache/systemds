@@ -834,9 +834,9 @@ public class DMLScript
 		//analyze hadoop configuration
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		boolean localMode     = InfrastructureAnalyzer.isLocalMode(job);
-		String taskController = job.get("mapred.task.tracker.task-controller", "org.apache.hadoop.mapred.DefaultTaskController");
+		String taskController = job.get(MRConfigurationNames.MR_TASKTRACKER_TASKCONTROLLER, "org.apache.hadoop.mapred.DefaultTaskController");
 		String ttGroupName    = job.get("mapreduce.tasktracker.group","null");
-		String perm           = job.get(MRConfigurationNames.DFS_PERMISSIONS,"null"); //note: job.get("dfs.permissions.supergroup",null);
+		String perm           = job.get(MRConfigurationNames.DFS_PERMISSIONS_ENABLED,"null"); //note: job.get("dfs.permissions.supergroup",null);
 		URI fsURI             = FileSystem.getDefaultUri(job);
 
 		//determine security states
@@ -846,9 +846,14 @@ public class DMLScript
 		boolean flagLocalFS = fsURI==null || fsURI.getScheme().equals("file");
 		boolean flagSecurity = perm.equals("yes"); 
 		
-		LOG.debug("SystemML security check: " + "local.user.name = " + userName + ", " + "local.user.groups = " + ProgramConverter.serializeStringCollection(groupNames) + ", "
-				        + "mapred.job.tracker = " + job.get("mapred.job.tracker") + ", " + "mapred.task.tracker.task-controller = " + taskController + "," + "mapreduce.tasktracker.group = " + ttGroupName + ", "
-				        + "fs.default.name = " + ((fsURI!=null)?fsURI.getScheme():"null") + ", " + MRConfigurationNames.DFS_PERMISSIONS+" = " + perm );
+		LOG.debug("SystemML security check: "
+				+ "local.user.name = " + userName + ", "
+				+ "local.user.groups = " + ProgramConverter.serializeStringCollection(groupNames) + ", "
+				+ MRConfigurationNames.MR_JOBTRACKER_ADDRESS + " = " + job.get(MRConfigurationNames.MR_JOBTRACKER_ADDRESS) + ", "
+				+ MRConfigurationNames.MR_TASKTRACKER_TASKCONTROLLER + " = " + taskController + ","
+				+ "mapreduce.tasktracker.group = " + ttGroupName + ", "
+				+ "fs.default.name = " + ((fsURI!=null) ? fsURI.getScheme() : "null") + ", "
+				+ MRConfigurationNames.DFS_PERMISSIONS_ENABLED + " = " + perm );
 
 		//print warning if permission issues possible
 		if( flagDiffUser && ( flagLocalFS || flagSecurity ) )

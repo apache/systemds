@@ -47,10 +47,7 @@
                 <exclude>**/temp/**/*</exclude>
                 <exclude>**/maven-eclipse.xml</exclude>
                 <exclude>**/dependency-reduced-pom.xml</exclude>
-                <exclude>modules/web-javascript-dojo/src/main/resources/dojo/**</exclude>
-                <exclude>samples/learning-more/binding-jsonrpc/calculator-webapp/src/main/webapp/dojo/**</exclude>
-                <exclude>unreleased</exclude>
-                <exclude>unreleased/**</exclude>
+                <exclude>src/test/config/hadoop_bin_windows/**</exclude>
             </excludes>
         </fileSet>
     </fileSets>

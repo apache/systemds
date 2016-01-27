@@ -2205,10 +2205,21 @@ public class LibMatrixMult
 					int wlen = w.size(i);
 					int[] wix = w.indexes(i);
 					double[] wval = w.values(i);
-					for( int k=wpos; k<wpos+wlen; k++ ) {
-						double xi = mX.quickGetValue(i, wix[k]);
-						double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
-						wsloss += wval[k]*(xi-uvij)*(xi-uvij);
+					if( w.isAligned(i, x) ) {
+						//O(n) where n is nnz in w/x 
+						double[] xval = x.values(i);
+						for( int k=wpos; k<wpos+wlen; k++ ) {
+							double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
+							wsloss += wval[k]*(xval[k]-uvij)*(xval[k]-uvij);
+						}		
+					}
+					else {
+						//O(n log m) where n/m is nnz in w/x 
+						for( int k=wpos; k<wpos+wlen; k++ ) {
+							double xi = mX.quickGetValue(i, wix[k]);
+							double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
+							wsloss += wval[k]*(xi-uvij)*(xi-uvij);
+						}	
 					}
 				}	
 		}

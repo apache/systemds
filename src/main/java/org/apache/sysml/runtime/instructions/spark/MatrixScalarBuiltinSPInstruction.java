@@ -39,8 +39,8 @@ public class MatrixScalarBuiltinSPInstruction extends BuiltinBinarySPInstruction
 	{	
 		//sanity check opcode
 		String opcode = getOpcode();
-		if ( !(opcode.equalsIgnoreCase("max") || opcode.equalsIgnoreCase("min"))
-			 ||opcode.equalsIgnoreCase("log") || opcode.equalsIgnoreCase("log_nz") ) 
+		if (!(opcode.equalsIgnoreCase("max") || opcode.equalsIgnoreCase("min")
+			 ||opcode.equalsIgnoreCase("log") || opcode.equalsIgnoreCase("log_nz")) ) 
 		{
 			throw new DMLRuntimeException("Unknown opcode in instruction: " + opcode);
 		}

@@ -852,7 +852,7 @@ public class DMLScript
 				+ MRConfigurationNames.MR_JOBTRACKER_ADDRESS + " = " + job.get(MRConfigurationNames.MR_JOBTRACKER_ADDRESS) + ", "
 				+ MRConfigurationNames.MR_TASKTRACKER_TASKCONTROLLER + " = " + taskController + ","
 				+ MRConfigurationNames.MR_TASKTRACKER_GROUP + " = " + ttGroupName + ", "
-				+ "fs.default.name = " + ((fsURI!=null) ? fsURI.getScheme() : "null") + ", "
+				+ MRConfigurationNames.FS_DEFAULTFS + " = " + ((fsURI!=null) ? fsURI.getScheme() : "null") + ", "
 				+ MRConfigurationNames.DFS_PERMISSIONS_ENABLED + " = " + perm );
 
 		//print warning if permission issues possible

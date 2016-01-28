@@ -47,11 +47,11 @@ public abstract class MRConfigurationNames {
 	// deprecated properties replaced by new props, new prop names used for constants
 	// see https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/DeprecatedProperties.html
 	public static final String DFS_BLOCKSIZE; // hdfs-default.xml
-	public static final String DFS_DATANODE_DATA_DIR; // hdfs-default.xml
-	public static final String DFS_METRICS_SESSION_ID; // N/A
+//	public static final String DFS_DATANODE_DATA_DIR; // hdfs-default.xml
+//	public static final String DFS_METRICS_SESSION_ID; // N/A
 	public static final String DFS_PERMISSIONS_ENABLED; // hdfs-default.xml
-	public static final String MR_CLUSTER_LOCAL_DIR; // mapred-default.xml
 	public static final String FS_DEFAULTFS; // core-default.xml
+	public static final String MR_CLUSTER_LOCAL_DIR; // mapred-default.xml
 	public static final String MR_INPUT_FILEINPUTFORMAT_SPLIT_MAXSIZE; // N/A
 	public static final String MR_INPUT_MULTIPLEINPUTS_DIR_FORMATS; // N/A
 	public static final String MR_INPUT_MULTIPLEINPUTS_DIR_MAPPERS; // N/A
@@ -87,8 +87,8 @@ public abstract class MRConfigurationNames {
 		if (hadoopVersion2) {
 			LOG.debug("Using hadoop 2.x configuration properties.");
 			DFS_BLOCKSIZE = "dfs.blocksize";
-			DFS_DATANODE_DATA_DIR = "dfs.datanode.data.dir";
-			DFS_METRICS_SESSION_ID = "dfs.metrics.session-id";
+//			DFS_DATANODE_DATA_DIR = "dfs.datanode.data.dir";
+//			DFS_METRICS_SESSION_ID = "dfs.metrics.session-id";
 			DFS_PERMISSIONS_ENABLED = "dfs.permissions.enabled";
 			FS_DEFAULTFS = "fs.defaultFS";
 			MR_CLUSTER_LOCAL_DIR = "mapreduce.cluster.local.dir";
@@ -117,8 +117,8 @@ public abstract class MRConfigurationNames {
 		} else { // any older version
 			LOG.debug("Using hadoop 1.x configuration properties.");
 			DFS_BLOCKSIZE = "dfs.block.size";
-			DFS_DATANODE_DATA_DIR = "dfs.data.dir";
-			DFS_METRICS_SESSION_ID = "session.id";
+//			DFS_DATANODE_DATA_DIR = "dfs.data.dir";
+//			DFS_METRICS_SESSION_ID = "session.id";
 			DFS_PERMISSIONS_ENABLED = "dfs.permissions";
 			FS_DEFAULTFS = "fs.default.name";
 			MR_CLUSTER_LOCAL_DIR = "mapred.local.dir";

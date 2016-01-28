@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
@@ -208,7 +207,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	@SuppressWarnings("unchecked")
 	private void vectorizeLeftIndexing( Hop hop )
 		throws HopsException
-	{
+	{		
 		if( hop instanceof LeftIndexingOp ) //left indexing
 		{
 			LeftIndexingOp ihop0 = (LeftIndexingOp) hop;
@@ -251,12 +250,14 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					HopRewriteUtils.removeChildReference(current, input); //input data
 					HopRewriteUtils.addChildReference(current, newRix, 0);
 					
-					//reset row index all candidates
-					for( Hop c : ihops ) {
+					//reset row index all candidates and refresh sizes (bottom-up)
+					for( int i=ihops.size()-1; i>=0; i-- ) {
+						Hop c = ihops.get(i);
 						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(2), 2); //row lower expr
 						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 2);
 						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(3), 3); //row upper expr
 						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 3);
+						((LeftIndexingOp)c).setRowLowerEqualsUpper(true);
 						c.refreshSizeInformation();
 					}
 					
@@ -289,6 +290,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 			
 			if( isSingleRow && isSingleCol && !appliedRow )
 			{
+				
 				//collect simple chains (w/o multiple consumers) of left indexing ops
 				ArrayList<Hop> ihops = new ArrayList<Hop>();
 				ihops.add(ihop0);
@@ -305,6 +307,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					ihops.add( tmp );
 					current = tmp;
 				}
+				
 				//apply rewrite if found candidates
 				if( ihops.size() > 1 ){
 					Hop input = current.getInput().get(0);
@@ -321,12 +324,14 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					HopRewriteUtils.removeChildReference(current, input); //input data
 					HopRewriteUtils.addChildReference(current, newRix, 0);
 					
-					//reset row index all candidates
-					for( Hop c : ihops ) {
+					//reset col index all candidates and refresh sizes (bottom-up)
+					for( int i=ihops.size()-1; i>=0; i-- ) {
+						Hop c = ihops.get(i);
 						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(4), 4); //col lower expr
 						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 4);
 						HopRewriteUtils.removeChildReferenceByPos(c, c.getInput().get(5), 5); //col upper expr
 						HopRewriteUtils.addChildReference(c, new LiteralOp(1), 5);
+						((LeftIndexingOp)c).setColLowerEqualsUpper(true);
 						c.refreshSizeInformation();
 					}
 					

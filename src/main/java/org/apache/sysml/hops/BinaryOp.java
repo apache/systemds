@@ -1438,9 +1438,13 @@ public class BinaryOp extends Hop
 				//ensure both columns are known, otherwise dangerous underestimation due to +(-1)
 				if( input1.getDim2()>0 && input2.getDim2()>0 )
 					setDim2( input1.getDim2() + input2.getDim2() );
+				else
+					setDim2(-1);
 				//ensure both nnz are known, otherwise dangerous underestimation due to +(-1)
 				if( input1.getNnz()>0 && input2.getNnz()>0 )
 					setNnz( input1.getNnz() + input2.getNnz() );
+				else
+					setNnz(-1);
 			}
 			else if( op == OpOp2.RBIND )
 			{
@@ -1449,9 +1453,13 @@ public class BinaryOp extends Hop
 				//ensure both rows are known, otherwise dangerous underestimation due to +(-1)
 				if( input1.getDim1()>0 && input2.getDim1()>0 )
 					setDim1( input1.getDim1() + input2.getDim1() );
+				else
+					setDim1(-1);
 				//ensure both nnz are known, otherwise dangerous underestimation due to +(-1)
 				if( input1.getNnz()>0 && input2.getNnz()>0 )
 					setNnz( input1.getNnz() + input2.getNnz() );
+				else
+					setNnz(-1);
 			}
 			else if ( op == OpOp2.SOLVE )
 			{

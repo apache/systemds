@@ -31,7 +31,6 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -48,6 +47,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixBlock;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixCell;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -309,7 +309,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 			//job.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.GzipCodec");
 			
 			//set the replication factor for the results
-			job.setInt("dfs.replication", _replication);
+			job.setInt(MRConfigurationNames.DFS_REPLICATION, _replication);
 			
 			//set the max number of retries per map task
 		    //  disabled job-level configuration to respect cluster configuration

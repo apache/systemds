@@ -835,7 +835,7 @@ public class DMLScript
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		boolean localMode     = InfrastructureAnalyzer.isLocalMode(job);
 		String taskController = job.get(MRConfigurationNames.MR_TASKTRACKER_TASKCONTROLLER, "org.apache.hadoop.mapred.DefaultTaskController");
-		String ttGroupName    = job.get("mapreduce.tasktracker.group","null");
+		String ttGroupName    = job.get(MRConfigurationNames.MR_TASKTRACKER_GROUP,"null");
 		String perm           = job.get(MRConfigurationNames.DFS_PERMISSIONS_ENABLED,"null"); //note: job.get("dfs.permissions.supergroup",null);
 		URI fsURI             = FileSystem.getDefaultUri(job);
 
@@ -851,7 +851,7 @@ public class DMLScript
 				+ "local.user.groups = " + ProgramConverter.serializeStringCollection(groupNames) + ", "
 				+ MRConfigurationNames.MR_JOBTRACKER_ADDRESS + " = " + job.get(MRConfigurationNames.MR_JOBTRACKER_ADDRESS) + ", "
 				+ MRConfigurationNames.MR_TASKTRACKER_TASKCONTROLLER + " = " + taskController + ","
-				+ "mapreduce.tasktracker.group = " + ttGroupName + ", "
+				+ MRConfigurationNames.MR_TASKTRACKER_GROUP + " = " + ttGroupName + ", "
 				+ "fs.default.name = " + ((fsURI!=null) ? fsURI.getScheme() : "null") + ", "
 				+ MRConfigurationNames.DFS_PERMISSIONS_ENABLED + " = " + perm );
 

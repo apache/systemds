@@ -33,8 +33,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
-
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
 /**
@@ -67,7 +67,7 @@ public class GenTfMtdMR {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(LongWritable.class);
 		
-		job.setInt("dfs.replication", replication);
+		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 
 		FileInputFormat.addInputPath(job, new Path(inputPath));
 		// delete outputPath, if exists already.

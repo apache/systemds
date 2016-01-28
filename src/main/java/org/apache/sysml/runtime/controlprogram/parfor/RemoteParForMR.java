@@ -162,7 +162,7 @@ public class RemoteParForMR
 			}
 			
 			//set jvm memory size (if require)
-			String memKey = "mapred.child.java.opts";
+			String memKey = MRConfigurationNames.MR_CHILD_JAVA_OPTS;
 			if( minMem > 0 && minMem > InfrastructureAnalyzer.extractMaxMemoryOpt(job.get(memKey)) )
 			{
 				InfrastructureAnalyzer.setMaxMemoryOpt(job, memKey, minMem);
@@ -185,7 +185,7 @@ public class RemoteParForMR
 			job.setInt(MRConfigurationNames.MR_TASK_IO_SORT_MB, 8); //8MB
 			
 			//set the replication factor for the results
-			job.setInt("dfs.replication", replication);
+			job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 			
 			//set the max number of retries per map task
 			//  disabled job-level configuration to respect cluster configuration

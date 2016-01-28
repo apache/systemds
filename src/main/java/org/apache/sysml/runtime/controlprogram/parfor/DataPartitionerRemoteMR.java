@@ -25,7 +25,6 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -36,6 +35,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Statistics;
@@ -181,7 +181,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			//job.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.GzipCodec");
 			
 			//set the replication factor for the results
-			job.setInt("dfs.replication", _replication);
+			job.setInt(MRConfigurationNames.DFS_REPLICATION, _replication);
 			
 			//set up map/reduce memory configurations (if in AM context)
 			DMLConfig config = ConfigurationManager.getConfig();

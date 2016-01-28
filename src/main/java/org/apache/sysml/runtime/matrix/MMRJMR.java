@@ -23,11 +23,10 @@ import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.mapred.Counters.Group;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
-import org.apache.hadoop.mapred.Counters.Group;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
@@ -38,6 +37,7 @@ import org.apache.sysml.runtime.matrix.data.TaggedMatrixCell;
 import org.apache.sysml.runtime.matrix.data.TripleIndexes;
 import org.apache.sysml.runtime.matrix.mapred.MMRJMRMapper;
 import org.apache.sysml.runtime.matrix.mapred.MMRJMRReducer;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
@@ -116,7 +116,7 @@ public class MMRJMR
 		MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
 
 		//set up the replication factor for the results
-		job.setInt("dfs.replication", replication);
+		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 
 		//set up map/reduce memory configurations (if in AM context)
 		DMLConfig config = ConfigurationManager.getConfig();

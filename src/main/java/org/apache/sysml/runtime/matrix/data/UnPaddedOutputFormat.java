@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 
 public class UnPaddedOutputFormat<K extends Writable, V extends Writable> extends FileOutputFormat<K, V>
 {	
@@ -60,7 +61,7 @@ public class UnPaddedOutputFormat<K extends Writable, V extends Writable> extend
 			String name, Progressable progress) throws IOException {
 		Path file = FileOutputFormat.getTaskOutputPath(job, name);
 	    FileSystem fs = file.getFileSystem(job);
-	    FSDataOutputStream fileOut = fs.create(file, true, job.getInt("io.file.buffer.size", 4096), progress);
+	    FSDataOutputStream fileOut = fs.create(file, true, job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096), progress);
 		return new UnpaddedRecordWriter<K, V>(fileOut);
 	}
 }

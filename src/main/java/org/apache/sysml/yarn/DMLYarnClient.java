@@ -509,7 +509,7 @@ public class DMLYarnClient
 		
 		//setup mapreduce appmaster environment (for robustness if not included in default environment)
 		//for example, by default HDP 2.2 did not include mapred client libraries in this configuration
-		//note: we cannot use mapreduce.application.classpath because it refers to HDFS and $PWD that needs to be setup 		
+		//note: we cannot use MRConfigurationNames.MR_APPLICATION_CLASSPATH because it refers to HDFS and $PWD that needs to be setup
 		Map<String, String> env = System.getenv();
 		String mapred_home = null;
 		//get mapred home via alternative environment variables

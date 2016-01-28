@@ -29,6 +29,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.lib.DelegatingMapper;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 
 /**
  * This class supports MapReduce jobs that have multiple input paths with
@@ -49,8 +50,8 @@ public class MultipleInputs {
 
     String inputFormatMapping = path.toString() + ";"
        + inputFormatClass.getName();
-    String inputFormats = conf.get("mapred.input.dir.formats");
-    conf.set("mapred.input.dir.formats",
+    String inputFormats = conf.get(MRConfigurationNames.MR_INPUT_MULTIPLEINPUTS_DIR_FORMATS);
+    conf.set(MRConfigurationNames.MR_INPUT_MULTIPLEINPUTS_DIR_FORMATS,
        inputFormats == null ? inputFormatMapping : inputFormats + ","
            + inputFormatMapping);
 
@@ -73,8 +74,8 @@ public class MultipleInputs {
     addInputPath(conf, path, inputFormatClass);
 
     String mapperMapping = path.toString() + ";" + mapperClass.getName();
-    String mappers = conf.get("mapred.input.dir.mappers");
-    conf.set("mapred.input.dir.mappers", mappers == null ? mapperMapping
+    String mappers = conf.get(MRConfigurationNames.MR_INPUT_MULTIPLEINPUTS_DIR_MAPPERS);
+    conf.set(MRConfigurationNames.MR_INPUT_MULTIPLEINPUTS_DIR_MAPPERS, mappers == null ? mapperMapping
        : mappers + "," + mapperMapping);
 
     conf.setMapperClass(DelegatingMapper.class);
@@ -90,7 +91,7 @@ public class MultipleInputs {
    */
   static Map<Path, InputFormat> getInputFormatMap(JobConf conf) {
     Map<Path, InputFormat> m = new HashMap<Path, InputFormat>();
-    String[] pathMappings = conf.get("mapred.input.dir.formats").split(",");
+    String[] pathMappings = conf.get(MRConfigurationNames.MR_INPUT_MULTIPLEINPUTS_DIR_FORMATS).split(",");
     for (String pathMapping : pathMappings) {
       String[] split = pathMapping.split(";");
       InputFormat inputFormat;
@@ -115,11 +116,11 @@ public class MultipleInputs {
    */
   @SuppressWarnings("unchecked")
   static Map<Path, Class<? extends Mapper>> getMapperTypeMap(JobConf conf) {
-    if (conf.get("mapred.input.dir.mappers") == null) {
+    if (conf.get(MRConfigurationNames.MR_INPUT_MULTIPLEINPUTS_DIR_MAPPERS) == null) {
       return Collections.emptyMap();
     }
     Map<Path, Class<? extends Mapper>> m = new HashMap<Path, Class<? extends Mapper>>();
-    String[] pathMappings = conf.get("mapred.input.dir.mappers").split(",");
+    String[] pathMappings = conf.get(MRConfigurationNames.MR_INPUT_MULTIPLEINPUTS_DIR_MAPPERS).split(",");
     for (String pathMapping : pathMappings) {
       String[] split = pathMapping.split(";");
       Class<? extends Mapper> mapClass;

@@ -1194,7 +1194,7 @@ public class MRJobConfiguration
 			double spillPercent = job.getDouble("mapreduce.map.sort.spill.percent", 1.0);
 			int numPMap = OptimizerUtils.getNumMappers();
 			if( numPMap < totalInputSize/newSplitSize && sizeSortBuff*spillPercent >= newSplitSize && lpaths.size()==1 ) {
-				job.setLong("mapreduce.input.fileinputformat.split.maxsize", newSplitSize);	
+				job.setLong(MRConfigurationNames.MR_INPUT_FILEINPUTFORMAT_SPLIT_MAXSIZE, newSplitSize);
 				combineInputFormat = true;
 			}
 		}

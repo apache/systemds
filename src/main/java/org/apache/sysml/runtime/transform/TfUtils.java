@@ -38,7 +38,6 @@ import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -46,6 +45,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -103,7 +103,7 @@ public class TfUtils implements Serializable{
 	
 	public static String getPartFileName(JobConf job) throws IOException {
 		FileSystem fs = FileSystem.get(job);
-		Path thisPath=new Path(job.get("map.input.file")).makeQualified(fs);
+		Path thisPath=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
 		return thisPath.toString();
 	}
 	
@@ -369,7 +369,7 @@ public class TfUtils implements Serializable{
 		
 		FileSystem fs;
 		fs = FileSystem.get(_rJob);
-		Path thisPath=new Path(_rJob.get("map.input.file")).makeQualified(fs);
+		Path thisPath=new Path(_rJob.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
 		String thisfile=thisPath.toString();
 			
 		Path smallestFilePath=new Path(_rJob.get(MRJobConfiguration.TF_SMALLEST_FILE)).makeQualified(fs);

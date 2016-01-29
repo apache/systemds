@@ -37,6 +37,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 
 /**
  * An {@link InputFormat} that delegates behaviour of paths to multiple other
@@ -127,9 +128,9 @@ public class DelegatingInputFormat<K, V> implements InputFormat<K, V> {
     InputSplit inputSplit = taggedInputSplit.getInputSplit();
     if (inputSplit instanceof FileSplit) {
 	      FileSplit fileSplit = (FileSplit) inputSplit;
-	      conf.set("map.input.file", fileSplit.getPath().toString());
-	      conf.setLong("map.input.start", fileSplit.getStart());
-	      conf.setLong("map.input.length", fileSplit.getLength());
+	      conf.set(MRConfigurationNames.MR_MAP_INPUT_FILE, fileSplit.getPath().toString());
+	      conf.setLong(MRConfigurationNames.MR_MAP_INPUT_START, fileSplit.getStart());
+	      conf.setLong(MRConfigurationNames.MR_MAP_INPUT_LENGTH, fileSplit.getLength());
 	    }
     
     return inputFormat.getRecordReader(taggedInputSplit.getInputSplit(), conf,

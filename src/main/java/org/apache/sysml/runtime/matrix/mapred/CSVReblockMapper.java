@@ -34,7 +34,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
@@ -154,7 +153,7 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 		try 
 		{
 			FileSystem fs = FileSystem.get(job);
-			Path thisPath=new Path(job.get("map.input.file")).makeQualified(fs);
+			Path thisPath=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
 			String filename=thisPath.toString();
 			Path headerPath=new Path(job.getStrings(CSVReblockMR.SMALLEST_FILE_NAME_PER_INPUT)[matrixIndex]).makeQualified(fs);
 			if(headerPath.toString().equals(filename))

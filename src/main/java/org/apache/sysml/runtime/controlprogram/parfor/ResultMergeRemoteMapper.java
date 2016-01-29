@@ -26,13 +26,13 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixBlock;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixCell;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -60,7 +60,7 @@ public class ResultMergeRemoteMapper
 		InputInfo ii = MRJobConfiguration.getResultMergeInputInfo(job);
 		long[] tmp = MRJobConfiguration.getResultMergeMatrixCharacteristics( job );
 		String compareFname = MRJobConfiguration.getResultMergeInfoCompareFilename(job);
-		String currentFname = job.get("map.input.file");
+		String currentFname = job.get(MRConfigurationNames.MR_MAP_INPUT_FILE);
 		
 		byte tag = 0;
 		//startsWith comparison in order to account for part names in currentFname

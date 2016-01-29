@@ -825,7 +825,7 @@ public class MRJobConfiguration
 			matrices[i]=new Path(matrices[i]).toString();
 		
 		FileSystem fs=FileSystem.get(job);
-		Path thisFile=new Path(job.get("map.input.file")).makeQualified(fs);
+		Path thisFile=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
 		
 		//Path p=new Path(thisFileName);
 		

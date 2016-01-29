@@ -149,10 +149,10 @@ public class RemoteDPParForMR
 			//set optimization parameters
 
 			//set the number of mappers and reducers 
-			job.setNumReduceTasks( numReducers );			
+			job.setNumReduceTasks( numReducers );
 			
 			//disable automatic tasks timeouts and speculative task exec
-			job.setInt("mapred.task.timeout", 0);			
+			job.setInt(MRConfigurationNames.MR_TASK_TIMEOUT, 0);
 			job.setMapSpeculativeExecution(false);
 			
 			//set up preferred custom serialization framework for binary block format

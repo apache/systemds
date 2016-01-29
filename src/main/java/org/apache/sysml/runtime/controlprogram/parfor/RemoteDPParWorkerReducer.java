@@ -29,7 +29,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -46,6 +45,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.utils.Statistics;
@@ -151,7 +151,7 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			_partition = new MatrixBlock((int)_rlen, _clen, false);
 
 		//Step 1: configure parworker
-		String taskID = job.get("mapred.tip.id");		
+		String taskID = job.get(MRConfigurationNames.MR_TASK_ID);
 		LOG.trace("configure RemoteDPParWorkerReducer "+taskID);
 			
 		try

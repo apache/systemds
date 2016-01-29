@@ -153,11 +153,11 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 		
 		if( requiresConfigure )
 		{
-			LOG.trace("configure RemoteParWorkerMapper "+job.get("mapred.tip.id"));
+			LOG.trace("configure RemoteParWorkerMapper "+job.get(MRConfigurationNames.MR_TASK_ID));
 			
 			try
 			{
-				_stringID = job.get("mapred.tip.id"); //task ID
+				_stringID = job.get(MRConfigurationNames.MR_TASK_ID); //task ID
 				_workerID = IDHandler.extractIntID(_stringID); //int task ID
 
 				//use the given job configuration as source for all new job confs 

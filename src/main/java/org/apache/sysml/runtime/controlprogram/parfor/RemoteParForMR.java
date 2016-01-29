@@ -170,7 +170,7 @@ public class RemoteParForMR
 			}
 			
 			//disable automatic tasks timeouts and speculative task exec
-			job.setInt("mapred.task.timeout", 0);			
+			job.setInt(MRConfigurationNames.MR_TASK_TIMEOUT, 0);
 			job.setMapSpeculativeExecution(false);
 			
 			//set up map/reduce memory configurations (if in AM context)

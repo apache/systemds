@@ -772,7 +772,7 @@ public class MRJobConfiguration
 	
 	public static String getResultMergeStagingDir( JobConf job )
 	{
-		return job.get(RESULTMERGE_STAGING_DIR_CONFIG) + job.get("mapred.tip.id");
+		return job.get(RESULTMERGE_STAGING_DIR_CONFIG) + job.get(MRConfigurationNames.MR_TASK_ID);
 	}
 	
 	public static long[] getResultMergeMatrixCharacteristics( JobConf job )

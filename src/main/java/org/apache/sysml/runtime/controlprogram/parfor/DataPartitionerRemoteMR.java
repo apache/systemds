@@ -177,8 +177,8 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 				job.setNumTasksToExecutePerJvm(-1); //unlimited
 			
 			//enables compression - not conclusive for different codecs (empirically good compression ratio, but significantly slower)
-			//job.set("mapred.compress.map.output", "true");
-			//job.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.GzipCodec");
+			//job.set(MRConfigurationNames.MR_MAP_OUTPUT_COMPRESS, "true");
+			//job.set(MRConfigurationNames.MR_MAP_OUTPUT_COMPRESS_CODEC, "org.apache.hadoop.io.compress.GzipCodec");
 			
 			//set the replication factor for the results
 			job.setInt(MRConfigurationNames.DFS_REPLICATION, _replication);
@@ -190,7 +190,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			//set the max number of retries per map task
 			//  disabled job-level configuration to respect cluster configuration
 			//  note: this refers to hadoop2, hence it never had effect on mr1
-			//job.setInt("mapreduce.map.maxattempts", _max_retry);
+			//job.setInt(MRConfigurationNames.MR_MAP_MAXATTEMPTS, _max_retry);
 			
 			//set unique working dir
 			MRJobConfiguration.setUniqueWorkingDir(job);

@@ -1191,7 +1191,7 @@ public class MRJobConfiguration
 			long sizeSortBuff = InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
 			long sizeHDFSBlk = InfrastructureAnalyzer.getHDFSBlockSize();
 			long newSplitSize = sizeHDFSBlk * 2;
-			double spillPercent = job.getDouble("mapreduce.map.sort.spill.percent", 1.0);
+			double spillPercent = job.getDouble(MRConfigurationNames.MR_MAP_SORT_SPILL_PERCENT, 1.0);
 			int numPMap = OptimizerUtils.getNumMappers();
 			if( numPMap < totalInputSize/newSplitSize && sizeSortBuff*spillPercent >= newSplitSize && lpaths.size()==1 ) {
 				job.setLong(MRConfigurationNames.MR_INPUT_FILEINPUTFORMAT_SPLIT_MAXSIZE, newSplitSize);

@@ -171,7 +171,7 @@ public class RemoteDPParForMR
 			
 			//set the max number of retries per map task
 			//note: currently disabled to use cluster config
-			//job.setInt("mapreduce.map.maxattempts", max_retry);
+			//job.setInt(MRConfigurationNames.MR_MAP_MAXATTEMPTS, max_retry);
 			
 			//set unique working dir
 			MRJobConfiguration.setUniqueWorkingDir(job);

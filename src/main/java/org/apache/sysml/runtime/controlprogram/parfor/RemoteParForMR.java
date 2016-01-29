@@ -190,7 +190,7 @@ public class RemoteParForMR
 			//set the max number of retries per map task
 			//  disabled job-level configuration to respect cluster configuration
 			//  note: this refers to hadoop2, hence it never had effect on mr1
-			//job.setInt("mapreduce.map.maxattempts", max_retry);
+			//job.setInt(MRConfigurationNames.MR_MAP_MAXATTEMPTS, max_retry);
 			
 			//set unique working dir
 			MRJobConfiguration.setUniqueWorkingDir(job);

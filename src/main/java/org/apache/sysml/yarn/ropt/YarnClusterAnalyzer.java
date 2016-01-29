@@ -681,7 +681,7 @@ public class YarnClusterAnalyzer
 			//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
 			//(for robustness we probe both: child and map configuration parameters)
 			String javaOpts1 = conf.get(MRConfigurationNames.MR_CHILD_JAVA_OPTS); //internally mapred/mapreduce synonym
-			String javaOpts2 = conf.get("mapreduce.map.java.opts", null); //internally mapred/mapreduce synonym
+			String javaOpts2 = conf.get(MRConfigurationNames.MR_MAP_JAVA_OPTS, null); //internally mapred/mapreduce synonym
 			String javaOpts3 = conf.get("mapreduce.reduce.java.opts", null); //internally mapred/mapreduce synonym
 			if( javaOpts2 != null ) //specific value overrides generic
 				_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts2); 

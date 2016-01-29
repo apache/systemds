@@ -166,14 +166,8 @@ arguments to the DML script were specified following the `-nvargs` option.
 	15/11/11 15:56:21 INFO api.DMLScript: HADOOP_HOME: /home/hadoop/hadoop-2.6.2
 	15/11/11 15:56:21 WARN conf.DMLConfig: No default SystemML config file (./SystemML-config.xml) found
 	15/11/11 15:56:21 WARN conf.DMLConfig: Using default settings in DMLConfig
-	15/11/11 15:56:22 INFO Configuration.deprecation: session.id is deprecated. Instead, use dfs.metrics.session-id
 	15/11/11 15:56:22 INFO jvm.JvmMetrics: Initializing JVM Metrics with processName=JobTracker, sessionId=
-	15/11/11 15:56:22 INFO Configuration.deprecation: io.sort.mb is deprecated. Instead, use mapreduce.task.io.sort.mb
-	15/11/11 15:56:22 INFO Configuration.deprecation: mapred.job.tracker is deprecated. Instead, use mapreduce.jobtracker.address
 	15/11/11 15:56:22 WARN hops.OptimizerUtils: Auto-disable multi-threaded text read for 'text' and 'csv' due to thread contention on JRE < 1.8 (java.version=1.7.0_79).
-	15/11/11 15:56:22 INFO Configuration.deprecation: mapred.task.tracker.task-controller is deprecated. Instead, use mapreduce.tasktracker.taskcontroller
-	15/11/11 15:56:22 INFO Configuration.deprecation: mapred.local.dir is deprecated. Instead, use mapreduce.cluster.local.dir
-	15/11/11 15:56:22 INFO Configuration.deprecation: mapred.system.dir is deprecated. Instead, use mapreduce.jobtracker.system.dir
 	15/11/11 15:56:22 INFO api.DMLScript: SystemML Statistics:
 	Total execution time:		0.288 sec.
 	Number of executed MR Jobs:	0.
@@ -347,14 +341,8 @@ Let's go ahead and execute the `genLinearRegressionData.dml` script in Hadoop Ps
 	15/11/11 18:16:33 INFO api.DMLScript: HADOOP_HOME: /home/hadoop/hadoop-2.6.2
 	15/11/11 18:16:33 WARN conf.DMLConfig: No default SystemML config file (./SystemML-config.xml) found
 	15/11/11 18:16:33 WARN conf.DMLConfig: Using default settings in DMLConfig
-	15/11/11 18:16:33 INFO Configuration.deprecation: session.id is deprecated. Instead, use dfs.metrics.session-id
 	15/11/11 18:16:33 INFO jvm.JvmMetrics: Initializing JVM Metrics with processName=JobTracker, sessionId=
-	15/11/11 18:16:33 INFO Configuration.deprecation: io.sort.mb is deprecated. Instead, use mapreduce.task.io.sort.mb
-	15/11/11 18:16:33 INFO Configuration.deprecation: mapred.job.tracker is deprecated. Instead, use mapreduce.jobtracker.address
 	15/11/11 18:16:33 WARN hops.OptimizerUtils: Auto-disable multi-threaded text read for 'text' and 'csv' due to thread contention on JRE < 1.8 (java.version=1.7.0_79).
-	15/11/11 18:16:33 INFO Configuration.deprecation: mapred.task.tracker.task-controller is deprecated. Instead, use mapreduce.tasktracker.taskcontroller
-	15/11/11 18:16:34 INFO Configuration.deprecation: mapred.local.dir is deprecated. Instead, use mapreduce.cluster.local.dir
-	15/11/11 18:16:34 INFO Configuration.deprecation: mapred.system.dir is deprecated. Instead, use mapreduce.jobtracker.system.dir
 	15/11/11 18:16:35 INFO api.DMLScript: SystemML Statistics:
 	Total execution time:		1.484 sec.
 	Number of executed MR Jobs:	0.
@@ -477,10 +465,7 @@ I'll execute the `genLinearRegressionData.dml` example that we've previously con
 	15/11/12 11:57:04 WARN conf.DMLConfig: No default SystemML config file (./SystemML-config.xml) found
 	15/11/12 11:57:04 WARN conf.DMLConfig: Using default settings in DMLConfig
 	15/11/12 11:57:05 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032
-	15/11/12 11:57:06 INFO Configuration.deprecation: io.sort.mb is deprecated. Instead, use mapreduce.task.io.sort.mb
-	15/11/12 11:57:06 INFO Configuration.deprecation: mapred.job.tracker is deprecated. Instead, use mapreduce.jobtracker.address
 	15/11/12 11:57:06 WARN hops.OptimizerUtils: Auto-disable multi-threaded text read for 'text' and 'csv' due to thread contention on JRE < 1.8 (java.version=1.7.0_79).
-	15/11/12 11:57:06 INFO Configuration.deprecation: mapred.task.tracker.task-controller is deprecated. Instead, use mapreduce.tasktracker.taskcontroller
 	15/11/12 11:57:07 INFO api.DMLScript: SystemML Statistics:
 	Total execution time:		1.265 sec.
 	Number of executed MR Jobs:	0.

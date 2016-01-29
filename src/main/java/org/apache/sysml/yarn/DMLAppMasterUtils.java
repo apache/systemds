@@ -175,8 +175,8 @@ public class DMLAppMasterUtils
 				job.set( MRConfigurationNames.MR_MAP_MEMORY_MB, String.valueOf(DMLYarnClient.computeMemoryAllocation(memMB)) );
 				
 				//set reducer heapsizes
-				job.set( "mapreduce.reduce.java.opts", memOpts );
-				job.set( "mapreduce.reduce.memory.mb", String.valueOf(DMLYarnClient.computeMemoryAllocation(memMB)) );
+				job.set( MRConfigurationNames.MR_REDUCE_JAVA_OPTS, memOpts );
+				job.set( MRConfigurationNames.MR_REDUCE_MEMORY_MB, String.valueOf(DMLYarnClient.computeMemoryAllocation(memMB)) );
 			}
 		}
 	}

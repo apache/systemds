@@ -132,7 +132,7 @@ public class ReblockMR
 		job.setNumReduceTasks(numRed);
 		
 		//setup in-memory reduce buffers budget (reblock reducer dont need much memory)
-		//job.set("mapred.job.reduce.input.buffer.percent", "0.70");
+		//job.set(MRConfigurationNames.MR_REDUCE_INPUT_BUFFER_PERCENT, "0.70");
 		
 		// Print the complete instruction
 		if (LOG.isTraceEnabled())

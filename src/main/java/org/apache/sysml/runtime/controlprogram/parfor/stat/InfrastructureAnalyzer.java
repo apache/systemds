@@ -515,7 +515,7 @@ public class InfrastructureAnalyzer
 		//(for robustness we probe both: child and map configuration parameters)
 		String javaOpts1 = job.get(MRConfigurationNames.MR_CHILD_JAVA_OPTS); //internally mapred/mapreduce synonym
 		String javaOpts2 = job.get(MRConfigurationNames.MR_MAP_JAVA_OPTS, null); //internally mapred/mapreduce synonym
-		String javaOpts3 = job.get("mapreduce.reduce.java.opts", null); //internally mapred/mapreduce synonym
+		String javaOpts3 = job.get(MRConfigurationNames.MR_REDUCE_JAVA_OPTS, null); //internally mapred/mapreduce synonym
 		if( javaOpts2 != null ) //specific value overrides generic
 			_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts2); 
 		else

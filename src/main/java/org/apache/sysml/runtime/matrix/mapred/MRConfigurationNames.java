@@ -132,7 +132,6 @@ public abstract class MRConfigurationNames {
 			MR_MAP_INPUT_LENGTH = "map.input.length";
 			MR_MAP_INPUT_START = "map.input.start";
 			MR_MAP_JAVA_OPTS = "mapred.map.child.java.opts";
-			MR_REDUCE_MEMORY_MB = "mapred.job.reduce.memory.mb";
 			MR_MAP_MAXATTEMPTS = "mapred.map.max.attempts";
 			MR_MAP_MEMORY_MB = "mapred.job.map.memory.mb";
 			MR_MAP_OUTPUT_COMPRESS = "mapred.compress.map.output";
@@ -140,6 +139,7 @@ public abstract class MRConfigurationNames {
 			MR_MAP_SORT_SPILL_PERCENT = "io.sort.spill.percent";
 			MR_REDUCE_INPUT_BUFFER_PERCENT = "mapred.job.reduce.input.buffer.percent";
 			MR_REDUCE_JAVA_OPTS = "mapred.reduce.child.java.opts";
+			MR_REDUCE_MEMORY_MB = "mapred.job.reduce.memory.mb";
 			MR_TASK_ID = "mapred.tip.id";
 			MR_TASK_IO_SORT_MB = "io.sort.mb";
 			MR_TASK_TIMEOUT = "mapred.task.timeout";

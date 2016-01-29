@@ -59,13 +59,16 @@ import org.apache.sysml.parser.Expression.ValueType;
  * 
  */
 public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
-{
-	
+{	
 	private static final Log LOG = LogFactory.getLog(RewriteAlgebraicSimplificationStatic.class.getName());
 	
+	//valid aggregation operation types for rowOp to colOp conversions and vice versa
+	private static AggOp[] LOOKUP_VALID_ROW_COL_AGGREGATE = new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN, AggOp.VAR};
+	
+	//valid binary operations for distributive and associate reorderings
 	private static OpOp2[] LOOKUP_VALID_DISTRIBUTIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MINUS}; 
 	private static OpOp2[] LOOKUP_VALID_ASSOCIATIVE_BINARY = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT}; 
-	
+		
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
 		throws HopsException
@@ -139,6 +142,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
  			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
  			hi = simplifyBushyBinaryOperation(hop, hi, i);       //e.g., (X*(Y*(Z%*%v))) -> (X*Y)*(Z%*%v)
  			hi = simplifyUnaryAggReorgOperation(hop, hi, i);     //e.g., sum(t(X)) -> sum(X)
+ 			hi = pushdownUnaryAggTransposeOperation(hop, hi, i); //e.g., colSums(t(X)) -> t(rowSums(X))
 			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor
  			hi = simplifyTransposedAppend(hop, hi, i);           //e.g., t(cbind(t(A),t(B))) -> rbind(A,B);
  			hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
@@ -807,6 +811,51 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				LOG.debug("Applied simplifyUnaryAggReorgOperation");
 			}
+		}
+		
+		return hi;
+	}
+	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 */
+	private Hop pushdownUnaryAggTransposeOperation( Hop parent, Hop hi, int pos )
+	{
+		if( hi instanceof AggUnaryOp && hi.getParent().size()==1 
+			&& (((AggUnaryOp) hi).getDirection()==Direction.Row || ((AggUnaryOp) hi).getDirection()==Direction.Col)	
+			&& hi.getInput().get(0) instanceof ReorgOp && hi.getInput().get(0).getParent().size()==1
+			&& ((ReorgOp)hi.getInput().get(0)).getOp()==ReOrgOp.TRANSPOSE
+			&& HopRewriteUtils.isValidOp(((AggUnaryOp) hi).getOp(), LOOKUP_VALID_ROW_COL_AGGREGATE) )
+		{
+			AggUnaryOp uagg = (AggUnaryOp) hi;
+			
+			//get input rewire existing operators (remove inner transpose)
+			Hop input = uagg.getInput().get(0).getInput().get(0);
+			HopRewriteUtils.removeAllChildReferences(hi.getInput().get(0));
+			HopRewriteUtils.removeAllChildReferences(hi);
+			HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+			
+			//pattern 1: row-aggregate to col aggregate, e.g., rowSums(t(X))->t(colSums(X))
+			if( uagg.getDirection()==Direction.Row ) {
+				uagg.setDirection(Direction.Col); 
+				LOG.debug("Applied pushdownUnaryAggTransposeOperation1 (line "+hi.getBeginLine()+").");						
+			}
+			//pattern 2: col-aggregate to row aggregate, e.g., colSums(t(X))->t(rowSums(X))
+			else if( uagg.getDirection()==Direction.Col ) {
+				uagg.setDirection(Direction.Row); 
+				LOG.debug("Applied pushdownUnaryAggTransposeOperation2 (line "+hi.getBeginLine()+").");
+			}
+			
+			//create outer transpose operation and rewire operators
+			HopRewriteUtils.addChildReference(uagg, input); uagg.refreshSizeInformation();
+			Hop trans = HopRewriteUtils.createTranspose(uagg); //incl refresh size
+			HopRewriteUtils.addChildReference(parent, trans, pos); //by def, same size
+			
+			hi = trans;	
 		}
 		
 		return hi;

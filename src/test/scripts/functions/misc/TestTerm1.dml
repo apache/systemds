@@ -19,16 +19,12 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.terms.ScalarToMatrixInLoop.java
+# junit test class: org.apache.sysml.test.integration.functions.misc.ScalarMatrixUnaryBinaryTest.java
 
-A = Rand(cols=$$cols$$, rows=$$rows$$);
-W = 5;
-i = 0;
-W = A + W; #otherwise rejected because loop has conditional type change.
-while( i < 1)
-{
-	W = A + W;
-	i = i + 1;
-}
+A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
+
+W = 1;
+W = W + A;
+W = W + W;
 
 write(W, "$$outdir$$w", format="text"); 

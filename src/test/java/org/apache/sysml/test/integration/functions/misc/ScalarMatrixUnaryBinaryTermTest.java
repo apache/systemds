@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.terms;
+package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
 
@@ -28,7 +28,7 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class ScalarMatrixUnaryBinaryTermTest extends AutomatedTestBase 
 {
-	private static final String TEST_DIR = "functions/terms/";
+	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ScalarMatrixUnaryBinaryTermTest.class.getSimpleName() + "/";
 	private static final String TEST_NAME = "TestTerm1";
 	

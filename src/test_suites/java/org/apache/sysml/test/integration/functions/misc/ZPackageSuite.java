@@ -45,6 +45,8 @@ import org.junit.runners.Suite;
 	RewriteSlicedMatrixMultTest.class,
 	ScalarAssignmentTest.class,
 	ScalarFunctionTest.class,
+	ScalarMatrixUnaryBinaryTermTest.class,
+	ScalarToMatrixInLoopTest.class,
 	SetWorkingDirTest.class,
 	ValueTypeAutoCastingTest.class,
 	ValueTypeCastingTest.class

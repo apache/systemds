@@ -693,7 +693,7 @@ public class MapReduceTool
 		}
 		
 		//NOTE: we depend on the configured umask, setting umask in job or fspermission has no effect
-		//similarly setting dfs.datanode.data.dir.perm as no effect either.
+		//similarly setting MRConfigurationNames.DFS_DATANODE_DATA_DIR_PERM as no effect either.
 	}
 	
 	

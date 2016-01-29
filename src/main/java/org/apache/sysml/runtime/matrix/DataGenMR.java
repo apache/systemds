@@ -30,11 +30,10 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapred.Counters.Group;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
-import org.apache.hadoop.mapred.Counters.Group;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.lops.Lop;
@@ -44,18 +43,19 @@ import org.apache.sysml.runtime.instructions.MRInstructionParser;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.mr.DataGenMRInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
+import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.mr.RandInstruction;
 import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixBlock;
+import org.apache.sysml.runtime.matrix.mapred.DataGenMapper;
 import org.apache.sysml.runtime.matrix.mapred.GMRCombiner;
 import org.apache.sysml.runtime.matrix.mapred.GMRReducer;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
-import org.apache.sysml.runtime.matrix.mapred.DataGenMapper;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -294,7 +294,7 @@ public class DataGenMR
 			MRJobConfiguration.setInstructionsInReducer(job, otherInstructionsInReducer);
 			
 			//set up the replication factor for the results
-			job.setInt("dfs.replication", replication);
+			job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 			
 			//set up map/reduce memory configurations (if in AM context)
 			DMLConfig config = ConfigurationManager.getConfig();

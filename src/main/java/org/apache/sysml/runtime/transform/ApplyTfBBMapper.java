@@ -34,13 +34,13 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
 import org.apache.sysml.runtime.matrix.data.TaggedFirstSecondIndexes;
 import org.apache.sysml.runtime.matrix.mapred.CSVReblockMapper;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.CSVReblockMapper.IndexedBlockRow;
 import org.apache.sysml.runtime.matrix.mapred.MapperBase;
 
@@ -72,7 +72,7 @@ public class ApplyTfBBMapper extends MapperBase implements Mapper<LongWritable, 
 			Path p=new Path(job.get(CSVReblockMR.ROWID_FILE_NAME));
 			
 			FileSystem fs = FileSystem.get(job);
-			Path thisPath=new Path(job.get("map.input.file")).makeQualified(fs);
+			Path thisPath=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
 			String thisfile=thisPath.toString();
 
 			SequenceFile.Reader reader = new SequenceFile.Reader(fs, p, job);

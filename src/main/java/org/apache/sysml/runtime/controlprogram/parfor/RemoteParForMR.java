@@ -162,7 +162,7 @@ public class RemoteParForMR
 			}
 			
 			//set jvm memory size (if require)
-			String memKey = "mapred.child.java.opts";
+			String memKey = MRConfigurationNames.MR_CHILD_JAVA_OPTS;
 			if( minMem > 0 && minMem > InfrastructureAnalyzer.extractMaxMemoryOpt(job.get(memKey)) )
 			{
 				InfrastructureAnalyzer.setMaxMemoryOpt(job, memKey, minMem);
@@ -170,7 +170,7 @@ public class RemoteParForMR
 			}
 			
 			//disable automatic tasks timeouts and speculative task exec
-			job.setInt("mapred.task.timeout", 0);			
+			job.setInt(MRConfigurationNames.MR_TASK_TIMEOUT, 0);
 			job.setMapSpeculativeExecution(false);
 			
 			//set up map/reduce memory configurations (if in AM context)
@@ -185,12 +185,12 @@ public class RemoteParForMR
 			job.setInt(MRConfigurationNames.MR_TASK_IO_SORT_MB, 8); //8MB
 			
 			//set the replication factor for the results
-			job.setInt("dfs.replication", replication);
+			job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 			
 			//set the max number of retries per map task
 			//  disabled job-level configuration to respect cluster configuration
 			//  note: this refers to hadoop2, hence it never had effect on mr1
-			//job.setInt("mapreduce.map.maxattempts", max_retry);
+			//job.setInt(MRConfigurationNames.MR_MAP_MAXATTEMPTS, max_retry);
 			
 			//set unique working dir
 			MRJobConfiguration.setUniqueWorkingDir(job);

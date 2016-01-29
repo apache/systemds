@@ -266,7 +266,7 @@ public class InfrastructureAnalyzer
 		// we explicitly probe the relevant properties instead of relying on results from 
 		// analyzeHadoopCluster().
 		String jobTracker = job.get(MRConfigurationNames.MR_JOBTRACKER_ADDRESS, "local");
-		String framework = job.get("mapreduce.framework.name", "local");
+		String framework = job.get(MRConfigurationNames.MR_FRAMEWORK_NAME, "local");
 		boolean isYarnEnabled = (framework!=null && framework.equals("yarn"));
 		
 		return ("local".equals(jobTracker) & !isYarnEnabled);
@@ -513,9 +513,9 @@ public class InfrastructureAnalyzer
 			
 		//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
 		//(for robustness we probe both: child and map configuration parameters)
-		String javaOpts1 = job.get("mapred.child.java.opts"); //internally mapred/mapreduce synonym
-		String javaOpts2 = job.get("mapreduce.map.java.opts", null); //internally mapred/mapreduce synonym
-		String javaOpts3 = job.get("mapreduce.reduce.java.opts", null); //internally mapred/mapreduce synonym
+		String javaOpts1 = job.get(MRConfigurationNames.MR_CHILD_JAVA_OPTS); //internally mapred/mapreduce synonym
+		String javaOpts2 = job.get(MRConfigurationNames.MR_MAP_JAVA_OPTS, null); //internally mapred/mapreduce synonym
+		String javaOpts3 = job.get(MRConfigurationNames.MR_REDUCE_JAVA_OPTS, null); //internally mapred/mapreduce synonym
 		if( javaOpts2 != null ) //specific value overrides generic
 			_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts2); 
 		else
@@ -530,7 +530,7 @@ public class InfrastructureAnalyzer
 		_blocksize = Long.parseLong(blocksize);
 		
 		//is yarn enabled
-		String framework = job.get("mapreduce.framework.name");
+		String framework = job.get(MRConfigurationNames.MR_FRAMEWORK_NAME);
 		_yarnEnabled = (framework!=null && framework.equals("yarn"));
 		
 		//analyze if local mode (internally requires yarn_enabled)

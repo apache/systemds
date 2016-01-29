@@ -34,7 +34,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.RunningJob;
-
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.mr.CombineBinaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.CombineTernaryInstruction;
@@ -49,10 +48,11 @@ import org.apache.sysml.runtime.matrix.data.TaggedMatrixValue;
 import org.apache.sysml.runtime.matrix.data.WeightedPair;
 import org.apache.sysml.runtime.matrix.mapred.GMRMapper;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
-import org.apache.sysml.runtime.matrix.mapred.ReduceBase;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.ConvertTarget;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration.MatrixChar_N_ReducerGroups;
+import org.apache.sysml.runtime.matrix.mapred.ReduceBase;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
@@ -327,7 +327,7 @@ public class CombineMR
 		MRJobConfiguration.setCombineInstructions(job, combineInstructions);
 		
 		//set up the replication factor for the results
-		job.setInt("dfs.replication", replication);
+		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 		
 		//set up what matrices are needed to pass from the mapper to reducer
 		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, inputIndexes, null, null, combineInstructions, 

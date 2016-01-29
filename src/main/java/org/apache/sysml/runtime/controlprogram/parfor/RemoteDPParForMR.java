@@ -36,7 +36,6 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -55,6 +54,7 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Statistics;
@@ -149,10 +149,10 @@ public class RemoteDPParForMR
 			//set optimization parameters
 
 			//set the number of mappers and reducers 
-			job.setNumReduceTasks( numReducers );			
+			job.setNumReduceTasks( numReducers );
 			
 			//disable automatic tasks timeouts and speculative task exec
-			job.setInt("mapred.task.timeout", 0);			
+			job.setInt(MRConfigurationNames.MR_TASK_TIMEOUT, 0);
 			job.setMapSpeculativeExecution(false);
 			
 			//set up preferred custom serialization framework for binary block format
@@ -167,11 +167,11 @@ public class RemoteDPParForMR
 			job.setNumTasksToExecutePerJvm( 1 ); //-1 for unlimited 
 			
 			//set the replication factor for the results
-			job.setInt("dfs.replication", replication);
+			job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 			
 			//set the max number of retries per map task
 			//note: currently disabled to use cluster config
-			//job.setInt("mapreduce.map.maxattempts", max_retry);
+			//job.setInt(MRConfigurationNames.MR_MAP_MAXATTEMPTS, max_retry);
 			
 			//set unique working dir
 			MRJobConfiguration.setUniqueWorkingDir(job);

@@ -25,7 +25,6 @@ import java.util.HashMap;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.HopsException;
@@ -38,6 +37,7 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.yarn.ropt.ResourceConfig;
 import org.apache.sysml.yarn.ropt.ResourceOptimizer;
 import org.apache.sysml.yarn.ropt.YarnClusterConfig;
@@ -171,12 +171,12 @@ public class DMLAppMasterUtils
 				String memOpts = "-Xmx"+memMB+"m -Xms"+memMB+"m -Xmn"+(int)(memMB/10)+"m";
 						
 				//set mapper heapsizes
-				job.set( "mapreduce.map.java.opts", memOpts );
-				job.set( "mapreduce.map.memory.mb", String.valueOf(DMLYarnClient.computeMemoryAllocation(memMB)) );
+				job.set( MRConfigurationNames.MR_MAP_JAVA_OPTS, memOpts );
+				job.set( MRConfigurationNames.MR_MAP_MEMORY_MB, String.valueOf(DMLYarnClient.computeMemoryAllocation(memMB)) );
 				
 				//set reducer heapsizes
-				job.set( "mapreduce.reduce.java.opts", memOpts );
-				job.set( "mapreduce.reduce.memory.mb", String.valueOf(DMLYarnClient.computeMemoryAllocation(memMB)) );
+				job.set( MRConfigurationNames.MR_REDUCE_JAVA_OPTS, memOpts );
+				job.set( MRConfigurationNames.MR_REDUCE_MEMORY_MB, String.valueOf(DMLYarnClient.computeMemoryAllocation(memMB)) );
 			}
 		}
 	}

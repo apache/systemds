@@ -33,7 +33,6 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
@@ -102,7 +101,7 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 			thisIndex=MRJobConfiguration.getInputMatrixIndexesInMapper(job).get(0);
 			outKey.set(thisIndex);
 			FileSystem fs=FileSystem.get(job);
-			Path thisPath=new Path(job.get("map.input.file")).makeQualified(fs);
+			Path thisPath=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
 			filename=thisPath.toString();
 			String[] strs=job.getStrings(CSVReblockMR.SMALLEST_FILE_NAME_PER_INPUT);
 			Path headerPath=new Path(strs[thisIndex]).makeQualified(fs);

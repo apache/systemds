@@ -31,7 +31,6 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -48,6 +47,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixBlock;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixCell;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -293,7 +293,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 			}
 			
 			//disable automatic tasks timeouts and speculative task exec
-			job.setInt("mapred.task.timeout", 0);			
+			job.setInt(MRConfigurationNames.MR_TASK_TIMEOUT, 0);
 			job.setMapSpeculativeExecution(false);
 			
 			//set up preferred custom serialization framework for binary block format
@@ -305,16 +305,16 @@ public class ResultMergeRemoteMR extends ResultMerge
 				job.setNumTasksToExecutePerJvm(-1); //unlimited
 			
 			//enables compression - not conclusive for different codecs (empirically good compression ratio, but significantly slower)
-			//job.set("mapred.compress.map.output", "true");
-			//job.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.GzipCodec");
+			//job.set(MRConfigurationNames.MR_MAP_OUTPUT_COMPRESS, "true");
+			//job.set(MRConfigurationNames.MR_MAP_OUTPUT_COMPRESS_CODEC, "org.apache.hadoop.io.compress.GzipCodec");
 			
 			//set the replication factor for the results
-			job.setInt("dfs.replication", _replication);
+			job.setInt(MRConfigurationNames.DFS_REPLICATION, _replication);
 			
 			//set the max number of retries per map task
 		    //  disabled job-level configuration to respect cluster configuration
 			//  note: this refers to hadoop2, hence it never had effect on mr1
-			//job.setInt("mapreduce.map.maxattempts", _max_retry);
+			//job.setInt(MRConfigurationNames.MR_MAP_MAXATTEMPTS, _max_retry);
 			
 			//set unique working dir
 			MRJobConfiguration.setUniqueWorkingDir(job);

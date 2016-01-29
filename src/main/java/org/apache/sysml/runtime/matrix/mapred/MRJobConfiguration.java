@@ -42,7 +42,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.lib.CombineSequenceFileInputFormat;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -273,12 +272,12 @@ public class MRJobConfiguration
 	
 	public static final int getMiscMemRequired(JobConf job)
 	{
-		return job.getInt("io.file.buffer.size", 4096);
+		return job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096);
 	}
 	
 	public static final int getJVMMaxMemSize(JobConf job)
 	{
-		String str=job.get("mapred.child.java.opts");
+		String str=job.get(MRConfigurationNames.MR_CHILD_JAVA_OPTS);
 		int start=str.indexOf("-Xmx");
 		if(start<0)
 			return 209715200; //default 200MB
@@ -438,7 +437,7 @@ public class MRJobConfiguration
 			job.set(MRConfigurationNames.MR_JOBTRACKER_SYSTEM_DIR, job.get(MRConfigurationNames.MR_JOBTRACKER_SYSTEM_DIR) + uniqueSubdir);
 			
 			//unique staging dir 
-			job.set( "mapreduce.jobtracker.staging.root.dir",  job.get("mapreduce.jobtracker.staging.root.dir") + uniqueSubdir );
+			job.set( MRConfigurationNames.MR_JOBTRACKER_STAGING_ROOT_DIR,  job.get(MRConfigurationNames.MR_JOBTRACKER_STAGING_ROOT_DIR) + uniqueSubdir );
 		}
 	}
 	
@@ -454,7 +453,7 @@ public class MRJobConfiguration
 	
 	public static String getStagingWorkingDirPrefix(JobConf job)
 	{
-		return job.get("mapreduce.jobtracker.staging.root.dir");
+		return job.get(MRConfigurationNames.MR_JOBTRACKER_STAGING_ROOT_DIR);
 	}
 	
 	/**
@@ -465,7 +464,7 @@ public class MRJobConfiguration
 	{
 		String dir = DMLConfig.LOCAL_MR_MODE_STAGING_DIR + 
 		             Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR;
-		job.set( "mapreduce.jobtracker.staging.root.dir", dir );
+		job.set( MRConfigurationNames.MR_JOBTRACKER_STAGING_ROOT_DIR, dir );
 	}
 
 	public static void setInputInfo(JobConf job, byte input, InputInfo inputinfo, 
@@ -773,7 +772,7 @@ public class MRJobConfiguration
 	
 	public static String getResultMergeStagingDir( JobConf job )
 	{
-		return job.get(RESULTMERGE_STAGING_DIR_CONFIG) + job.get("mapred.tip.id");
+		return job.get(RESULTMERGE_STAGING_DIR_CONFIG) + job.get(MRConfigurationNames.MR_TASK_ID);
 	}
 	
 	public static long[] getResultMergeMatrixCharacteristics( JobConf job )
@@ -826,7 +825,7 @@ public class MRJobConfiguration
 			matrices[i]=new Path(matrices[i]).toString();
 		
 		FileSystem fs=FileSystem.get(job);
-		Path thisFile=new Path(job.get("map.input.file")).makeQualified(fs);
+		Path thisFile=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
 		
 		//Path p=new Path(thisFileName);
 		
@@ -1192,10 +1191,10 @@ public class MRJobConfiguration
 			long sizeSortBuff = InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
 			long sizeHDFSBlk = InfrastructureAnalyzer.getHDFSBlockSize();
 			long newSplitSize = sizeHDFSBlk * 2;
-			double spillPercent = job.getDouble("mapreduce.map.sort.spill.percent", 1.0);
+			double spillPercent = job.getDouble(MRConfigurationNames.MR_MAP_SORT_SPILL_PERCENT, 1.0);
 			int numPMap = OptimizerUtils.getNumMappers();
 			if( numPMap < totalInputSize/newSplitSize && sizeSortBuff*spillPercent >= newSplitSize && lpaths.size()==1 ) {
-				job.setLong("mapreduce.input.fileinputformat.split.maxsize", newSplitSize);	
+				job.setLong(MRConfigurationNames.MR_INPUT_FILEINPUTFORMAT_SPLIT_MAXSIZE, newSplitSize);
 				combineInputFormat = true;
 			}
 		}
@@ -1919,8 +1918,8 @@ public class MRJobConfiguration
 	
 	public static void addBinaryBlockSerializationFramework( Configuration job )
 	{
-		String frameworkList = job.get("io.serializations");
+		String frameworkList = job.get(MRConfigurationNames.IO_SERIALIZATIONS);
 		String frameworkClassBB = BinaryBlockSerialization.class.getCanonicalName();
-		job.set("io.serializations", frameworkClassBB+","+frameworkList);
+		job.set(MRConfigurationNames.IO_SERIALIZATIONS, frameworkClassBB+","+frameworkList);
 	}
 }

@@ -181,7 +181,7 @@ implements Mapper<Writable, Writable, Writable, Writable>
 	{
 		super.configure(job);
 		
-		mapperID = job.get("mapred.task.id");
+		mapperID = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
 		dimsUnknownFilePrefix = job.get("dims.unknown.file.prefix");
 		
 		_filterEmptyInputBlocks = allowsFilterEmptyInputBlocks();

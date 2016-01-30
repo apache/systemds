@@ -28,8 +28,8 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
-
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 
 
 public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, DistinctValue>{
@@ -51,7 +51,7 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 	 */
 	@Override
 	public void configure(JobConf job) {
-		String[] parts = job.get("mapred.task.id").split("_");
+		String[] parts = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID).split("_");
 		if ( parts[0].equalsIgnoreCase("task")) {
 			_mapTaskID = Integer.parseInt(parts[parts.length-1]);
 		}
@@ -59,7 +59,7 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 			_mapTaskID = Integer.parseInt(parts[parts.length-2]);
 		}
 		else {
-			throw new RuntimeException("Unrecognized format for taskID: " + job.get("mapred.task.id"));
+			throw new RuntimeException("Unrecognized format for taskID: " + job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID));
 		}
 
 		try {

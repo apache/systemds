@@ -155,14 +155,6 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 		    }
 		    job.setNumReduceTasks( (int)Math.min( _numReducers, reducerGroups) ); 	
 
-			//use FLEX scheduler configuration properties
-			/*if( ParForProgramBlock.USE_FLEX_SCHEDULER_CONF )
-			{
-				job.setInt("flex.map.min", 0);
-				job.setInt("flex.map.max", _numMappers);
-				job.setInt("flex.reduce.min", 0);
-				job.setInt("flex.reduce.max", _numMappers);
-			}*/
 			
 			//disable automatic tasks timeouts and speculative task exec
 			job.setInt(MRConfigurationNames.MR_TASK_TIMEOUT, 0);

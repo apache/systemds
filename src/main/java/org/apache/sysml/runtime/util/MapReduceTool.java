@@ -38,7 +38,6 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -52,6 +51,7 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.sort.ReadWithZeros;
 import org.apache.wink.json4j.OrderedJSONObject;
 
@@ -68,10 +68,10 @@ public class MapReduceTool
 	
 	public static String getUniqueKeyPerTask(JobConf job, boolean inMapper) {
 		//TODO: investigate ID pattern, required for parallel jobs
-		/*String nodePrefix = job.get("mapred.task.id");
+		/*String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
 		return String.valueOf(IDHandler.extractLongID(nodePrefix));*/
 		
-		String nodePrefix = job.get("mapred.task.id");
+		String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
 		int i;
 		if (inMapper)
 			i = nodePrefix.indexOf("_m_");
@@ -85,7 +85,7 @@ public class MapReduceTool
 	
 	@Deprecated
 	public static String getUniqueKeyPerTaskWithLeadingZros(JobConf job, boolean inMapper) {
-		String nodePrefix = job.get("mapred.task.id");
+		String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
 		int i;
 		if (inMapper)
 			i = nodePrefix.indexOf("_m_");
@@ -99,10 +99,10 @@ public class MapReduceTool
 	
 	public static int getUniqueTaskId(JobConf job) {
 		//TODO: investigate ID pattern, required for parallel jobs
-		/*String nodePrefix = job.get("mapred.task.id"); 
+		/*String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID); 
 		return IDHandler.extractIntID(nodePrefix);*/
 		
-		String nodePrefix = job.get("mapred.task.id");
+		String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
 		int j = nodePrefix.lastIndexOf("_");
 		int i=nodePrefix.lastIndexOf("_", j-1);
 		nodePrefix = nodePrefix.substring(i+1, j);
@@ -111,7 +111,7 @@ public class MapReduceTool
 	}
 
 	public static String getGloballyUniqueName(JobConf job) {
-		return job.get("mapred.task.id");
+		return job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
 	}
 
 	public static boolean existsFileOnHDFS(String fname){

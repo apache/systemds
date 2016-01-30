@@ -72,6 +72,7 @@ public abstract class MRConfigurationNames {
 	// NOTE: mapreduce.reduce.java.opts commented out in mapred-default.xml so as to not override mapred.child.java.opts
 	public static final String MR_REDUCE_JAVA_OPTS;
 	public static final String MR_REDUCE_MEMORY_MB; // mapred-default.xml
+	public static final String MR_TASK_ATTEMPT_ID; // N/A
 	public static final String MR_TASK_ID; // N/A
 	public static final String MR_TASK_IO_SORT_MB; // mapred-default.xml
 	public static final String MR_TASK_TIMEOUT; // N/A
@@ -110,6 +111,7 @@ public abstract class MRConfigurationNames {
 			MR_REDUCE_INPUT_BUFFER_PERCENT = "mapreduce.reduce.input.buffer.percent";
 			MR_REDUCE_JAVA_OPTS = "mapreduce.reduce.java.opts";
 			MR_REDUCE_MEMORY_MB = "mapreduce.reduce.memory.mb";
+			MR_TASK_ATTEMPT_ID = "mapreduce.task.attempt.id";
 			MR_TASK_ID = "mapreduce.task.id";
 			MR_TASK_IO_SORT_MB = "mapreduce.task.io.sort.mb";
 			MR_TASK_TIMEOUT = "mapreduce.task.timeout";
@@ -140,6 +142,7 @@ public abstract class MRConfigurationNames {
 			MR_REDUCE_INPUT_BUFFER_PERCENT = "mapred.job.reduce.input.buffer.percent";
 			MR_REDUCE_JAVA_OPTS = "mapred.reduce.child.java.opts";
 			MR_REDUCE_MEMORY_MB = "mapred.job.reduce.memory.mb";
+			MR_TASK_ATTEMPT_ID = "mapred.task.id";
 			MR_TASK_ID = "mapred.tip.id";
 			MR_TASK_IO_SORT_MB = "io.sort.mb";
 			MR_TASK_TIMEOUT = "mapred.task.timeout";

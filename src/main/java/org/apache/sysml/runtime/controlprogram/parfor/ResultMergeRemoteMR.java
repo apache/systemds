@@ -35,7 +35,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.StagingFileUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -283,14 +282,6 @@ public class ResultMergeRemoteMR extends ResultMerge
 		    	reducerGroups = Math.max((rlen*clen)/StagingFileUtils.CELL_BUFFER_SIZE, 1);
 			job.setNumReduceTasks( (int)Math.min( _numReducers, reducerGroups) ); 	
 
-			//use FLEX scheduler configuration properties
-			if( ParForProgramBlock.USE_FLEX_SCHEDULER_CONF )
-			{
-				job.setInt("flex.map.min", 0);
-				job.setInt("flex.map.max", _numMappers);
-				job.setInt("flex.reduce.min", 0);
-				job.setInt("flex.reduce.max", _numMappers);
-			}
 			
 			//disable automatic tasks timeouts and speculative task exec
 			job.setInt(MRConfigurationNames.MR_TASK_TIMEOUT, 0);

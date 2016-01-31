@@ -29,7 +29,6 @@ import java.util.Iterator;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Plus;
@@ -100,7 +99,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	{	
 		super.configure(job);
 		
-		reducerID = job.get("mapred.task.id");
+		reducerID = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
 		dimsUnknownFilePrefix = job.get("dims.unknown.file.prefix");
 
 		

@@ -150,16 +150,6 @@ public class RemoteParForMR
 			//job.setInt("mapred.tasktracker.tasks.maximum",1); //system property
 			//job.setInt("mapred.jobtracker.maxtasks.per.job",1); //system property
 
-			//use FLEX scheduler configuration properties
-			if( ParForProgramBlock.USE_FLEX_SCHEDULER_CONF )
-			{
-				job.setInt("flex.priority",0); //highest
-				
-				job.setInt("flex.map.min", 0);
-				job.setInt("flex.map.max", numMappers);
-				job.setInt("flex.reduce.min", 0);
-				job.setInt("flex.reduce.max", numMappers);
-			}
 			
 			//set jvm memory size (if require)
 			String memKey = MRConfigurationNames.MR_CHILD_JAVA_OPTS;

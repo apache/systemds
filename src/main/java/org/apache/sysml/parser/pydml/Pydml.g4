@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,6 +39,8 @@ grammar Pydml;
  * specific language governing permissions and limitations
  * under the License.
  */
+    import org.apache.sysml.parser.common.ExpressionInfo;
+    import org.apache.sysml.parser.common.StatementInfo;
 }
 
 // This antlr grammar is based on Python 3.3 language reference: https://docs.python.org/3.3/reference/grammar.html
@@ -148,7 +150,7 @@ tokens { INDENT, DEDENT }
 
 // DML Program is a list of expression
 // For now, we only allow global function definitions (not nested or inside a while block)
-pmlprogram: (blocks+=statement | functionBlocks+=functionStatement)*  NEWLINE* EOF;
+programroot: (blocks+=statement | functionBlocks+=functionStatement)*  NEWLINE* EOF;
 
 
 
@@ -163,19 +165,19 @@ statement returns [ StatementInfo info ]
     | 'setwd'  OPEN_PAREN pathValue = STRING CLOSE_PAREN NEWLINE                     # PathStatement
     // ------------------------------------------
     // AssignmentStatement
-    | targetList+=dataIdentifier '=' 'ifdef' OPEN_PAREN commandLineParam=dataIdentifier ','  source=expression CLOSE_PAREN NEWLINE   # IfdefAssignmentStatement
+    | targetList=dataIdentifier '=' 'ifdef' OPEN_PAREN commandLineParam=dataIdentifier ','  source=expression CLOSE_PAREN NEWLINE   # IfdefAssignmentStatement
     // ------------------------------------------
     // Treat function call as AssignmentStatement or MultiAssignmentStatement
     // For backward compatibility and also since the behavior of foo() * A + foo() ... where foo returns A
     // Convert FunctionCallIdentifier(paramExprs, ..) -> source
     | // TODO: Throw an informative error if user doesnot provide the optional assignment
-    ( targetList+=dataIdentifier '=' )? name=ID OPEN_PAREN (paramExprs+=parameterizedExpression (',' paramExprs+=parameterizedExpression)* )? CLOSE_PAREN NEWLINE  # FunctionCallAssignmentStatement
+    ( targetList=dataIdentifier '=' )? name=ID OPEN_PAREN (paramExprs+=parameterizedExpression (',' paramExprs+=parameterizedExpression)* )? CLOSE_PAREN NEWLINE  # FunctionCallAssignmentStatement
     | OPEN_BRACK targetList+=dataIdentifier (',' targetList+=dataIdentifier)* CLOSE_BRACK '=' name=ID OPEN_PAREN (paramExprs+=parameterizedExpression (',' paramExprs+=parameterizedExpression)* )? CLOSE_PAREN  NEWLINE  # FunctionCallMultiAssignmentStatement
     // {notifyErrorListeners("Too many parentheses");}
     // We don't support block statement
     // | '{' body+=expression ';'* ( body+=expression ';'* )*  '}' # BlockStatement
     // ------------------------------------------
-    | targetList+=dataIdentifier '=' source=expression NEWLINE   # AssignmentStatement
+    | targetList=dataIdentifier '=' source=expression NEWLINE   # AssignmentStatement
     // IfStatement
     // | 'if' OPEN_PAREN predicate=expression CLOSE_PAREN (ifBody+=statement ';'* |  NEWLINE INDENT (ifBody+=statement)+  DEDENT )  ('else' (elseBody+=statement ';'* | '{' (elseBody+=statement ';'*)*  '}'))?  # IfStatement
     | 'if' (OPEN_PAREN predicate=expression CLOSE_PAREN | predicate=expression) ':'  NEWLINE INDENT (ifBody+=statement)+  DEDENT   ('else'  ':'  NEWLINE INDENT (elseBody+=statement)+  DEDENT )?  # IfStatement

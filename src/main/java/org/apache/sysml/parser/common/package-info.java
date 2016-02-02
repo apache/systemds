@@ -17,15 +17,9 @@
  * under the License.
  */
 
-package org.apache.sysml.parser.dml;
-
-
-public class ExpressionInfo {
-	
-	public org.apache.sysml.parser.Expression expr = null;
-
-	// For parfor and for
-	public org.apache.sysml.parser.Expression from = null;
-	public org.apache.sysml.parser.Expression to = null;
-	public org.apache.sysml.parser.Expression increment = null;
-}
+/**
+ * SYSTEMML-456
+ * This package contains code common to the Dml & PyDml parser visitors (That implement DmlListener & PydmlListener). 
+ * 
+ */
+package org.apache.sysml.parser.common;

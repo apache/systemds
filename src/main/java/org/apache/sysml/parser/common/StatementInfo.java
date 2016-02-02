@@ -17,7 +17,11 @@
  * under the License.
  */
 
-package org.apache.sysml.parser.pydml;
+package org.apache.sysml.parser.common;
+
+import java.util.HashMap;
+
+import org.apache.sysml.parser.DMLProgram;
 
 /**
  * This class exists solely to prevent compiler warnings.
@@ -27,6 +31,16 @@ package org.apache.sysml.parser.pydml;
  * (R-like and Python-like dialects), and Antlr-generated code assumes that
  * these classes are present in the parser's namespace.
  */
-class StatementInfo extends org.apache.sysml.parser.dml.StatementInfo {
+
+public class StatementInfo {
+
+	public org.apache.sysml.parser.Statement stmt = null;
+	
+	// Valid only for import statements
+	public HashMap<String,DMLProgram> namespaces = null;
+	
+	// Valid only for function statement
+	//public String namespace = DMLProgram.DEFAULT_NAMESPACE;
+	public String functionName = "";
 
 }

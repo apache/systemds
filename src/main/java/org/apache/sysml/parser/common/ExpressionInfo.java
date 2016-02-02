@@ -17,7 +17,9 @@
  * under the License.
  */
 
-package org.apache.sysml.parser.pydml;
+package org.apache.sysml.parser.common;
+
+import org.apache.sysml.parser.Expression;
 
 /**
  * This class exists solely to prevent compiler warnings.
@@ -27,6 +29,12 @@ package org.apache.sysml.parser.pydml;
  * (R-like and Python-like dialects), and Antlr-generated code assumes that
  * these classes are present in the parser's namespace.
  */
-class ExpressionInfo extends org.apache.sysml.parser.dml.ExpressionInfo {
+public class ExpressionInfo {
+	
+	public Expression expr = null;
 
+	// For parfor and for
+	public Expression from = null;
+	public Expression to = null;
+	public Expression increment = null;
 }

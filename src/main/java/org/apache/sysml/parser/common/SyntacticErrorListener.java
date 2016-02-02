@@ -17,49 +17,45 @@
  * under the License.
  */
 
-package org.apache.sysml.parser.dml;
+package org.apache.sysml.parser.common;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.api.DMLScript;
 
-import java.util.Stack;
-
-public class DmlSyntacticErrorListener {
-	
+public class SyntacticErrorListener {
 	
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
-	public static class CustomDmlErrorListener extends BaseErrorListener {
+	public static class CustomErrorListener extends BaseErrorListener {
 		
 		private boolean atleastOneError = false;
-		private Stack<String> currentFileName = new Stack<String>();
+		private String currentFileName = null;
 		
-		public void pushCurrentFileName(String currentFilePath) {
-			currentFileName.push(currentFilePath);
+		public void setCurrentFileName(String currentFilePath) {
+			currentFileName = currentFilePath;
 		}
 		
-		public String peekFileName() {
-			return currentFileName.peek();
+		public String getCurrentFileName() {
+			return currentFileName;
 		}
 		
-		public String popFileName() {
-			return currentFileName.pop();
+		public void unsetCurrentFileName() {
+			currentFileName = null;
 		}
-		
+
 		public void validationError(int line, int charPositionInLine, String msg) {
 			try {
 				setAtleastOneError(true);
 				// Print error messages with file name
-				if(currentFileName == null || currentFileName.empty()) {
+				if(currentFileName == null) {
 					LOG.error("line "+line+":"+charPositionInLine+" "+msg);
 				}
 				else {
-					String fileName = currentFileName.peek();
+					String fileName = currentFileName;
 					LOG.error(fileName + " line "+line+":"+charPositionInLine+" "+msg);
 				}
 			}
@@ -72,10 +68,10 @@ public class DmlSyntacticErrorListener {
 			try {
 				//atleastOneError = true; ---> not an error, just warning
 				// Print error messages with file name
-				if(currentFileName == null || currentFileName.empty())
+				if(currentFileName == null)
 					LOG.warn("line "+line+":"+charPositionInLine+" "+msg);
 				else {
-					String fileName = currentFileName.peek();
+					String fileName = currentFileName;
 					LOG.warn(fileName + " line "+line+":"+charPositionInLine+" "+msg);
 				}
 			}
@@ -92,10 +88,10 @@ public class DmlSyntacticErrorListener {
 			try {
 				setAtleastOneError(true);
 				// Print error messages with file name
-				if(currentFileName == null || currentFileName.empty())
+				if(currentFileName == null)
 					LOG.error("line "+line+":"+charPositionInLine+" "+msg);
 				else {
-					String fileName = currentFileName.peek();
+					String fileName = currentFileName;
 					LOG.error(fileName + " line "+line+":"+charPositionInLine+" "+msg);
 				}
 			}

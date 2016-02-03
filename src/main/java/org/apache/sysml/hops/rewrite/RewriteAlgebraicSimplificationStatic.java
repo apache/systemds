@@ -1378,8 +1378,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		if( hi instanceof ReorgOp && HopRewriteUtils.isValidOp(((ReorgOp)hi).getOp(), lookup)  ) //first reorg
 		{
+			ReOrgOp firstOp = ((ReorgOp)hi).getOp();
 			Hop hi2 = hi.getInput().get(0);
-			if( hi2 instanceof ReorgOp && HopRewriteUtils.isValidOp(((ReorgOp)hi2).getOp(), lookup) ) //second reorg
+			if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==firstOp ) //second reorg w/ same type
 			{
 				Hop hi3 = hi2.getInput().get(0);
 				//remove unnecessary chain of t(t())

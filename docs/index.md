@@ -33,8 +33,9 @@ SystemML's distinguishing characteristics are:
   2. **Multiple execution modes**, including Standalone, Spark Batch, Spark MLContext, Hadoop Batch, and JMLC.
   3. **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
 
-The [SystemML GitHub README](https://github.com/apache/incubator-systemml) describes
-building, testing, and running SystemML.
+The [**SystemML GitHub README**](https://github.com/apache/incubator-systemml) describes
+building, testing, and running SystemML. Please read [**Contributing to SystemML**](contributing-to-systemml.html)
+to find out how to help make SystemML even better!
 
 ## Running SystemML
 
@@ -74,3 +75,4 @@ machine learning algorithms included with SystemML in detail.
 
 * [Debugger Guide](debugger-guide.html) - SystemML supports DML script-level debugging through a
 command-line interface.
+

@@ -31,13 +31,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.FunctionOp.FunctionType;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.HopsException;
@@ -1169,6 +1169,7 @@ public class InterProceduralAnalysis
 		for( Hop root : roots )
 			if( root instanceof DataOp && ((DataOp)root).getDataOpType()==DataOpTypes.TRANSIENTWRITE
 			   && root.getInput().get(0) instanceof DataGenOp
+			   && ((DataGenOp)root.getInput().get(0)).getOp()==DataGenMethod.RAND
 			   && ((DataGenOp)root.getInput().get(0)).hasConstantValue(1.0)) 
 			{
 				mOnes.put(root.getName(),root.getInput().get(0));

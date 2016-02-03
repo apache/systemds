@@ -461,6 +461,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//check for column replication
 			if(    right instanceof AggBinaryOp //matrix mult with datagen
 				&& right.getInput().get(1) instanceof DataGenOp 
+				&& ((DataGenOp)right.getInput().get(1)).getOp()==DataGenMethod.RAND
 				&& ((DataGenOp)right.getInput().get(1)).hasConstantValue(1d)
 				&& right.getInput().get(1).getDim1() == 1 //row vector for replication
 				&& right.getInput().get(0).getDim2() == 1 ) //column vector for mv binary
@@ -1064,7 +1065,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			
 			// X %*% y -> X
 			if( HopRewriteUtils.isDimsKnown(right) && right.getDim1()==1 && right.getDim2()==1 && //scalar right
-				right instanceof DataGenOp && ((DataGenOp)right).hasConstantValue(1.0)) //matrix(1,)
+				right instanceof DataGenOp && ((DataGenOp)right).getOp()==DataGenMethod.RAND
+				&& ((DataGenOp)right).hasConstantValue(1.0)) //matrix(1,)
 			{
 				HopRewriteUtils.removeChildReference(parent, hi);			
 				HopRewriteUtils.addChildReference(parent, left, pos);			

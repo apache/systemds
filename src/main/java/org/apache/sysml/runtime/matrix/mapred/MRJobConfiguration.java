@@ -1190,8 +1190,8 @@ public class MRJobConfiguration
 			//(the single input constraint stems from internal runtime assumptions used to relate meta data to inputs)
 			long sizeSortBuff = InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
 			long sizeHDFSBlk = InfrastructureAnalyzer.getHDFSBlockSize();
-			long newSplitSize = sizeHDFSBlk * 2;
-			double spillPercent = job.getDouble(MRConfigurationNames.MR_MAP_SORT_SPILL_PERCENT, 1.0);
+			long newSplitSize = sizeHDFSBlk * 2; //use generic config api for backwards compatibility
+			double spillPercent = Double.parseDouble(job.get(MRConfigurationNames.MR_MAP_SORT_SPILL_PERCENT, "1.0"));
 			int numPMap = OptimizerUtils.getNumMappers();
 			if( numPMap < totalInputSize/newSplitSize && sizeSortBuff*spillPercent >= newSplitSize && lpaths.size()==1 ) {
 				job.setLong(MRConfigurationNames.MR_INPUT_FILEINPUTFORMAT_SPLIT_MAXSIZE, newSplitSize);

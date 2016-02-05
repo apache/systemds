@@ -526,6 +526,35 @@ public class DataOp extends Hop
 	@Override
 	public boolean compare( Hop that )
 	{
-		return false;
+		if( !(that instanceof DataOp) )
+			return false;
+		
+		//common subexpression elimination for redundant persistent reads, in order
+		//to avoid unnecessary read and reblocks as well as to prevent specific anomalies, e.g., 
+		//with multiple piggybacked csvreblock of the same input w/ unknown input sizes
+		
+		DataOp that2 = (DataOp)that;	
+		boolean ret = (  _dataop == that2._dataop
+				      && _dataop == DataOpTypes.PERSISTENTREAD
+					  && _fileName.equals(that2._fileName)
+					  && _inFormat == that2._inFormat
+					  && _inRowsInBlock == that2._inRowsInBlock
+					  && _inColsInBlock == that2._inColsInBlock
+					  && _paramIndexMap!=null && that2._paramIndexMap!=null );
+		
+		//above conditions also ensure consistency with regard to 
+		//(1) checkpointing, (2) reblock and (3) recompile.
+		
+		if( ret ) {
+			for( Entry<String,Integer> e : _paramIndexMap.entrySet() ) {
+				String key1 = e.getKey();
+				int pos1 = e.getValue();
+				int pos2 = that2._paramIndexMap.get(key1);
+				ret &= (   that2.getInput().get(pos2)!=null
+					    && getInput().get(pos1) == that2.getInput().get(pos2) );
+			}
+		}
+		
+		return ret;
 	}
 }

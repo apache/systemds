@@ -17,11 +17,10 @@
  * under the License.
 -->
 <assembly
-		xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-	<!-- Assembly file for the "standalone" SystemML release for running on a
-		standalone machine. -->
+	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+	<!-- Assembly file for the "standalone" SystemML release for running on a standalone machine. -->
 	<id>standalone</id>
 
 	<formats>
@@ -36,38 +35,37 @@
 		<fileSet>
 			<directory>${basedir}/scripts/algorithms</directory>
 			<includes>
-				<include>GLM-predict.dml</include>
-				<include>GLM.dml</include>
-				<include>Kmeans-predict.dml</include>
-				<include>Kmeans.dml</include>
-				<include>LinearRegCG.dml</include>
-				<include>LinearRegDS.dml</include>
-				<include>MultiLogReg.dml</include>
-				<include>Univar-Stats.dml</include>
-				<include>bivar-stats.dml</include>
-				<include>l2-svm-predict.dml</include>
-				<include>l2-svm.dml</include>
-				<include>m-svm-predict.dml</include>
-				<include>m-svm.dml</include>
-				<include>naive-bayes-predict.dml</include>
-				<include>naive-bayes.dml</include>
-				<include>stratstats.dml</include>
-				<include>transform.dml</include>
-				<include>apply-transform.dml</include>
-				<include>decision-tree.dml</include>
-				<include>decision-tree-predict.dml</include>
-				<!-- -->
-				<include>ALS.dml</include>
 				<include>ALS_predict.dml</include>
 				<include>ALS_topk_predict.dml</include>
-				<include>Cox.dml</include>
+				<include>ALS.dml</include>
+				<include>apply-transform.dml</include>
+				<include>bivar-stats.dml</include>
 				<include>Cox-predict.dml</include>
+				<include>Cox.dml</include>
+				<include>decision-tree-predict.dml</include>
+				<include>decision-tree.dml</include>
+				<include>GLM-predict.dml</include>
+				<include>GLM.dml</include>
 				<include>KM.dml</include>
+				<include>Kmeans-predict.dml</include>
+				<include>Kmeans.dml</include>
+				<include>l2-svm-predict.dml</include>
+				<include>l2-svm.dml</include>
+				<include>LinearRegCG.dml</include>
+				<include>LinearRegDS.dml</include>
+				<include>m-svm-predict.dml</include>
+				<include>m-svm.dml</include>
+				<include>MultiLogReg.dml</include>
+				<include>naive-bayes-predict.dml</include>
+				<include>naive-bayes.dml</include>
 				<include>PCA.dml</include>
-				<include>random-forest.dml</include>
 				<include>random-forest-predict.dml</include>
+				<include>random-forest.dml</include>
 				<include>StepGLM.dml</include>
 				<include>StepLinearRegDS.dml</include>
+				<include>stratstats.dml</include>
+				<include>transform.dml</include>
+				<include>Univar-Stats.dml</include>
 			</includes>
 			<outputDirectory>./scripts/algorithms</outputDirectory>
 		</fileSet>
@@ -84,13 +82,14 @@
 			<directory>${basedir}/scripts/utils</directory>
 			<includes>
 				<include>cbind.dml</include>
+				<include>csv2bin.dml</include>
 				<include>head.dml</include>
 				<include>project.dml</include>
+				<include>rowIndexMax.dml</include>
+				<include>sample.dml</include>
+				<include>splitXY-dummy.dml</include>
 				<include>splitXY.dml</include>
 				<include>write.dml</include>
-				<include>csv2bin.dml</include>
-				<include>sample.dml</include>
-				<include>rowIndexMax.dml</include>
 			</includes>
 			<outputDirectory>./scripts/utils</outputDirectory>
 		</fileSet>
@@ -117,8 +116,8 @@
 		<fileSet>
 			<directory>${basedir}/src/main/standalone</directory>
 			<includes>
-				<include>*.sh</include>
 				<include>*.bat</include>
+				<include>*.sh</include>
 			</includes>
 			<outputDirectory>.</outputDirectory>
 			<fileMode>0755</fileMode>
@@ -154,8 +153,8 @@
 	<dependencySets>
 		<dependencySet>
 			<includes>
-				<include>*:wink-json4j*</include>
 				<include>*:antlr*</include>
+				<include>*:wink-json4j*</include>
 			</includes>
 			<outputDirectory>./lib</outputDirectory>
 			<scope>compile</scope>
@@ -163,27 +162,27 @@
 
 		<dependencySet>
 			<includes>
+				<include>*:${artifactId}*</include>
 				<include>*:avro*</include>
+				<include>*:commons-cli*</include>
+				<include>*:commons-collections*</include>
+				<include>*:commons-configuration*</include>
+				<include>*:commons-httpclient*</include>
+				<include>*:commons-lang</include>
+				<include>*:commons-logging*</include>
 				<include>*:commons-math3*</include>
-				<include>*:log4j*</include>
-				<include>*:opencsv*</include>
 				<include>*:hadoop-auth*</include>
 				<include>*:hadoop-client*</include>
 				<include>*:hadoop-common*</include>
 				<include>*:hadoop-hdfs*</include>
 				<include>*:hadoop-mapreduce-client*</include>
 				<include>*:hadoop-yarn*</include>
-				<include>*:commons-configuration*</include>
-				<include>*:commons-lang</include>
-				<include>*:commons-logging*</include>
-				<include>*:commons-httpclient*</include>
-				<include>*:commons-cli*</include>
-				<include>*:commons-collections*</include>
 				<include>*:jackson-core-asl*</include>
 				<include>*:jackson-mapper-asl*</include>
+				<include>*:log4j*</include>
+				<include>*:opencsv*</include>
 				<include>*:slf4j-api*</include>
 				<include>*:slf4j-log4j*</include>
-				<include>*:${artifactId}*</include>
 			</includes>
 			<outputDirectory>./lib</outputDirectory>
 			<scope>provided</scope>

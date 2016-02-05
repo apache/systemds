@@ -17,41 +17,36 @@
  * under the License.
 -->
 <assembly
-        xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-    <!-- Assembly file for the "source" SystemML release containing all source files. -->
-    <id>src</id>
-    <formats>
-        <format>tar.gz</format>
-        <format>zip</format>
-    </formats>
+	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+	<!-- Assembly file for the "source" SystemML release containing all source files. -->
+	<id>src</id>
 
-    <includeBaseDirectory>true</includeBaseDirectory>
-    <baseDirectory>${artifactId}-${version}-src</baseDirectory>
+	<formats>
+		<format>tar.gz</format>
+		<format>zip</format>
+	</formats>
 
-    <fileSets>
-        <fileSet>
-            <directory>${basedir}</directory>
-            <outputDirectory></outputDirectory>
-            <excludes>
-                <exclude>**/.*</exclude>
-                <exclude>**/.*/**</exclude>
-                <exclude>**/*.iml</exclude>
-                <exclude>**/*.log</exclude>
-                <exclude>**/conf/*.properties</exclude>
-                <exclude>**/conf/*.xml</exclude>
-                <exclude>**/target</exclude>
-                <exclude>**/target/**/*</exclude>
-                <exclude>**/temp</exclude>
-                <exclude>**/temp/**/*</exclude>
-                <exclude>**/maven-eclipse.xml</exclude>
-                <exclude>**/dependency-reduced-pom.xml</exclude>
-                <exclude>modules/web-javascript-dojo/src/main/resources/dojo/**</exclude>
-                <exclude>samples/learning-more/binding-jsonrpc/calculator-webapp/src/main/webapp/dojo/**</exclude>
-                <exclude>unreleased</exclude>
-                <exclude>unreleased/**</exclude>
-            </excludes>
-        </fileSet>
-    </fileSets>
+	<includeBaseDirectory>true</includeBaseDirectory>
+	<baseDirectory>${artifactId}-${version}-src</baseDirectory>
+
+	<fileSets>
+		<fileSet>
+			<directory>${basedir}</directory>
+			<outputDirectory></outputDirectory>
+			<excludes>
+				<exclude>**/.*</exclude>
+				<exclude>**/.*/**</exclude>
+				<exclude>**/*.log</exclude>
+				<exclude>**/conf/*.properties</exclude>
+				<exclude>**/conf/*.xml</exclude>
+				<exclude>**/dependency-reduced-pom.xml</exclude>
+				<exclude>**/target</exclude>
+				<exclude>**/target/**/*</exclude>
+				<exclude>**/temp</exclude>
+				<exclude>**/temp/**/*</exclude>
+			</excludes>
+		</fileSet>
+	</fileSets>
 </assembly>

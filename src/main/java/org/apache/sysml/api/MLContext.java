@@ -1150,14 +1150,40 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException
 	 */
-	public MLOutput executeScript(String dmlScript) throws IOException, DMLException, ParseException {
+	public MLOutput executeScript(String dmlScript)
+			throws IOException, DMLException, ParseException {
 		return compileAndExecuteScript(dmlScript, null, false, false, false, null);
 	}
 	
-	public MLOutput executeScript(String dmlScript, String configFilePath) throws IOException, DMLException, ParseException {
+	public MLOutput executeScript(String dmlScript, String configFilePath)
+			throws IOException, DMLException, ParseException {
 		return compileAndExecuteScript(dmlScript, null, false, false, false, configFilePath);
 	}
-	
+
+	public MLOutput executeScript(String dmlScript, scala.collection.immutable.Map<String, String> namedArgs)
+			throws IOException, DMLException, ParseException {
+		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), null);
+	}
+
+	public MLOutput executeScript(String dmlScript, scala.collection.immutable.Map<String, String> namedArgs, String configFilePath)
+			throws IOException, DMLException, ParseException {
+		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), configFilePath);
+	}
+
+	public MLOutput executeScript(String dmlScript, HashMap<String, String> namedArgs, String configFilePath)
+			throws IOException, DMLException, ParseException {
+		String [] args = new String[namedArgs.size()];
+		int i = 0;
+		for(Entry<String, String> entry : namedArgs.entrySet()) {
+			if(entry.getValue().trim().compareTo("") == 0)
+				args[i] = entry.getKey() + "=\"" + entry.getValue() + "\"";
+			else
+				args[i] = entry.getKey() + "=" + entry.getValue();
+			i++;
+		}
+		return compileAndExecuteScript(dmlScript, args, false, true, false, configFilePath);
+	}
+
 	private void checkIfRegisteringInputAllowed() throws DMLRuntimeException {
 		if(!(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)) {
 			throw new DMLRuntimeException("ERROR: registerInput is only allowed for spark execution mode");

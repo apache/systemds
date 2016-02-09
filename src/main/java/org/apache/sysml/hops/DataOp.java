@@ -79,6 +79,12 @@ public class DataOp extends Hop
 			setInputFormatType(FileFormatTypes.BINARY);
 	}
 
+	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
+			String fname, long dim1, long dim2, long nnz, boolean updateInPlace, long rowsPerBlock, long colsPerBlock) {
+		this(l, dt, vt, dop, fname, dim1, dim2, nnz, rowsPerBlock, colsPerBlock);
+		setUpdateInPlace(updateInPlace);
+	}
+
 	/**
 	 * READ operation for Matrix
 	 * This constructor supports expressions in parameters
@@ -178,10 +184,11 @@ public class DataOp extends Hop
 		_dataop = type;
 	}
 	
-	public void setOutputParams(long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
+	public void setOutputParams(long dim1, long dim2, long nnz, boolean updateInPlace, long rowsPerBlock, long colsPerBlock) {
 		setDim1(dim1);
 		setDim2(dim2);
 		setNnz(nnz);
+		setUpdateInPlace(updateInPlace);
 		setRowsInBlock(rowsPerBlock);
 		setColsInBlock(colsPerBlock);
 	}
@@ -229,7 +236,7 @@ public class DataOp extends Hop
 			case PERSISTENTREAD:
 				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, 
 						getDataType(), getValueType(), false, getInputFormatType());
-				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inRowsInBlock, _inColsInBlock, getNnz());
+				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inRowsInBlock, _inColsInBlock, getNnz(), getUpdateInPlace());
 				break;
 				
 			case PERSISTENTWRITE:

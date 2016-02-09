@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.cp;
 import java.io.IOException;
 
 import org.apache.commons.lang.StringUtils;
-
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
@@ -47,6 +46,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.Statistics;
 
 
 public class VariableCPInstruction extends CPInstruction 
@@ -97,6 +97,7 @@ public class VariableCPInstruction extends CPInstruction
 	private CPOperand input3;
 	private CPOperand output;
 	private MetaData metadata;
+	private boolean updateInPlace;
 	
 	// CSV related members (used only in createvar instructions)
 	private FileFormatProperties formatProperties;
@@ -183,17 +184,19 @@ public class VariableCPInstruction extends CPInstruction
 	}
 
 	// This version of the constructor is used only in case of CreateVariable
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, int _arity, String sopcode, String istr)
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, boolean updateInPlace, int _arity, String sopcode, String istr)
 	{
 		this(op, in1, in2, in3, (CPOperand)null, _arity, sopcode, istr);
 		metadata = md;
+		this.updateInPlace = updateInPlace;		
 	}
 	
 	// This version of the constructor is used only in case of CreateVariable
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, int _arity, FileFormatProperties formatProperties, String sopcode, String istr)
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, boolean updateInPlace, int _arity, FileFormatProperties formatProperties, String sopcode, String istr)
 	{
 		this(op, in1, in2, in3, (CPOperand)null, _arity, sopcode, istr);
 		metadata = md;
+		this.updateInPlace = updateInPlace;  
 		this.formatProperties = formatProperties;
 	}
 	
@@ -284,11 +287,11 @@ public class VariableCPInstruction extends CPInstruction
 				 * 13 inputs: createvar corresponding to WRITE -- includes properties hasHeader, delim, and sparse
 				 * 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
 				 */
-				if ( parts.length < 13 || parts.length > 15 )
+				if ( parts.length < 14 || parts.length > 16 )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			else {
-				if ( parts.length != 5 && parts.length != 10 )
+				if ( parts.length != 5 && parts.length != 11 )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
@@ -309,6 +312,9 @@ public class VariableCPInstruction extends CPInstruction
 				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			MatrixFormatMetaData iimd = new MatrixFormatMetaData(mc, oi, ii);
+			boolean updateInPlace = false;
+			if ( parts.length >= 11 )
+				updateInPlace = Boolean.parseBoolean(parts[10]);
 			
 			if ( fmt.equalsIgnoreCase("csv") ) {
 				/*
@@ -317,26 +323,26 @@ public class VariableCPInstruction extends CPInstruction
 				 * 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
 				 */
 				FileFormatProperties fmtProperties = null;
-				if ( parts.length == 13 ) {
-					boolean hasHeader = Boolean.parseBoolean(parts[10]);
-					String delim = parts[11];
-					boolean sparse = Boolean.parseBoolean(parts[12]);
+				if ( parts.length == 14 ) {
+					boolean hasHeader = Boolean.parseBoolean(parts[11]);
+					String delim = parts[12];
+					boolean sparse = Boolean.parseBoolean(parts[13]);
 					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, sparse) ;
 				}
 				else {
-					boolean hasHeader = Boolean.parseBoolean(parts[10]);
-					String delim = parts[11];
-					boolean fill = Boolean.parseBoolean(parts[12]);
-					double fillValue = UtilFunctions.parseToDouble(parts[13]);
+					boolean hasHeader = Boolean.parseBoolean(parts[11]);
+					String delim = parts[12];
+					boolean fill = Boolean.parseBoolean(parts[13]);
+					double fillValue = UtilFunctions.parseToDouble(parts[14]);
 					String naStrings = null;
-					if ( parts.length == 15 )
-						naStrings = parts[14];
+					if ( parts.length == 16 )
+						naStrings = parts[15];
 					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, fill, fillValue, naStrings) ;
 				}
-				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, fmtProperties, opcode, str);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateInPlace, parts.length, fmtProperties, opcode, str);
 			}
 			else {
-				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, parts.length, opcode, str);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateInPlace, parts.length, opcode, str);
 			}
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
@@ -438,8 +444,12 @@ public class VariableCPInstruction extends CPInstruction
 				//is potential for hidden side effects between variables.
 				mobj.setMetaData((MetaData)metadata.clone());
 				mobj.setFileFormatProperties(formatProperties);
-				
+				mobj.enableUpdateInPlace(updateInPlace);
 				ec.setVariable(input1.getName(), mobj);
+				if(updateInPlace)
+					Statistics.incrementTotUpdateInPlace();
+				else
+					Statistics.incrementTotNonUpdateInPlace();
 			}
 			else if ( input1.getDataType() == DataType.SCALAR ){
 				ScalarObject sobj = null;
@@ -932,7 +942,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}	
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean hasHeader, String delim, boolean sparse) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean updateInPlace) throws DMLRuntimeException, DMLUnsupportedOperationException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 		
@@ -946,6 +956,30 @@ public class VariableCPInstruction extends CPInstruction
 		sb.append(mc.getColsPerBlock());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getNonZeros());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(updateInPlace);
+		
+		String str = sb.toString();
+
+		return parseInstruction(str);
+	}	
+	
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean updateInPlace, boolean hasHeader, String delim, boolean sparse) throws DMLRuntimeException, DMLUnsupportedOperationException {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(mc.getRows());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(mc.getCols());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(mc.getRowsPerBlock());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(mc.getColsPerBlock());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(mc.getNonZeros());
+		sb.append(Lop.OPERAND_DELIMITOR);
+		sb.append(updateInPlace);
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(hasHeader);

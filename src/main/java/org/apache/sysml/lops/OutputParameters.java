@@ -37,6 +37,7 @@ public class OutputParameters
 	private long _num_rows = -1;
 	private long _num_cols = -1;
 	private long _nnz = -1;	
+	private boolean _updateInPlace = false;
 	private long _num_rows_in_block = -1;
 	private long _num_cols_in_block = -1;
 	private String _file_name = null;
@@ -81,6 +82,11 @@ public class OutputParameters
 		}
 	}
 
+	public void setDimensions(long rows, long cols, long rows_per_block, long cols_per_block, long nnz, boolean updateInPlace) throws HopsException {
+		_updateInPlace = updateInPlace;
+		setDimensions(rows, cols, rows_per_block, cols_per_block, nnz);
+	}
+	
 	public Format getFormat() {
 		return matrix_format;
 	}
@@ -126,6 +132,15 @@ public class OutputParameters
 	{
 		_nnz = nnz;
 	}
+	
+	public boolean getUpdateInPlace() {
+		return _updateInPlace;
+	}
+	
+	public void setUpdateInPlace(boolean updateInPlace)
+	{
+		_updateInPlace = updateInPlace;
+	}
 
 	public long getRowsInBlock() {
 		return _num_rows_in_block;
@@ -149,6 +164,7 @@ public class OutputParameters
 		sb.append("rows=" + getNumRows() + Lop.VALUETYPE_PREFIX);
 		sb.append("cols=" + getNumCols() + Lop.VALUETYPE_PREFIX);
 		sb.append("nnz=" + getNnz() + Lop.VALUETYPE_PREFIX);
+		sb.append("updateInPlace=" + getUpdateInPlace() + Lop.VALUETYPE_PREFIX);
 		sb.append("rowsInBlock=" + getRowsInBlock() + Lop.VALUETYPE_PREFIX);
 		sb.append("colsInBlock=" + getColsInBlock() + Lop.VALUETYPE_PREFIX);
 		sb.append("isBlockedRepresentation=" + isBlocked() + Lop.VALUETYPE_PREFIX);

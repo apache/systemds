@@ -88,6 +88,9 @@ public class Statistics
 	private static HashMap<String,Long> _cpInstTime   =  new HashMap<String, Long>();
 	private static HashMap<String,Long> _cpInstCounts =  new HashMap<String, Long>();
 	
+	private static AtomicLong lTotUpdateInPlace = new AtomicLong(0);
+	private static AtomicLong lTotNonUpdateInPlace = new AtomicLong(0);
+	
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
 	}
@@ -142,6 +145,14 @@ public class Statistics
 
 	public static synchronized void incrementNoOfCompiledSPInst() {
 		iNoOfCompiledSPInst ++;
+	}
+	
+	public static synchronized void incrementTotUpdateInPlace() {
+		lTotUpdateInPlace.incrementAndGet();
+	}
+
+	public static synchronized void incrementTotNonUpdateInPlace() {
+		lTotNonUpdateInPlace.incrementAndGet();
 	}
 	
 	/**
@@ -544,6 +555,7 @@ public class Statistics
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(10));
+			sb.append("Total Non UpdateInPlace = " + lTotNonUpdateInPlace + " Total UpdateInPlace Matrices = " + lTotUpdateInPlace);
 		}
 		
 		return sb.toString();

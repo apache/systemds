@@ -173,9 +173,19 @@ public class OptNode
 		return ret;
 	}
 	
+	public int getBeginLine()
+	{
+		return _beginLine;
+	}
+	
 	public void setBeginLine( int line )
 	{
 		_beginLine = line;
+	}
+	
+	public int getEndLine()
+	{
+		return _endLine;
 	}
 	
 	public void setEndLine( int line )

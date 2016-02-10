@@ -38,7 +38,6 @@ parfor (j in 1:m, log=DEBUG){
 
 testUIP = function (matrix[double] in_m_data)
 	return (double sumInData) {
-  	if(1 == 1) {}
   	if(min(in_m_data) > 20)
   		X = testUIP(in_m_data);
 	sumInData = sum(in_m_data);

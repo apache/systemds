@@ -147,11 +147,11 @@ public class Statistics
 		iNoOfCompiledSPInst ++;
 	}
 	
-	public static synchronized void incrementTotUpdateInPlace() {
+	public static void incrementTotUpdateInPlace() {
 		lTotUpdateInPlace.incrementAndGet();
 	}
 
-	public static synchronized void incrementTotNonUpdateInPlace() {
+	public static void incrementTotNonUpdateInPlace() {
 		lTotNonUpdateInPlace.incrementAndGet();
 	}
 	
@@ -555,7 +555,10 @@ public class Statistics
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(10));
-			sb.append("Total Non UpdateInPlace = " + lTotNonUpdateInPlace + " Total UpdateInPlace Matrices = " + lTotUpdateInPlace);
+			if( parforOptCount>0 ){
+				sb.append("ParFor Total Non UpdateInPlace = " + lTotNonUpdateInPlace);
+				sb.append(" Total UpdateInPlace Matrices = " + lTotUpdateInPlace);
+			}
 		}
 		
 		return sb.toString();

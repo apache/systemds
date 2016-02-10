@@ -37,6 +37,60 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	private final static String TEST_NAME = "updateinplace";
 	private final static String TEST_CLASS_DIR = TEST_DIR + UpdateInPlaceTest.class.getSimpleName() + "/";
 	
+	/* Test cases to test following scenarios
+	 * 
+	 * Test scenarios										Test case
+	 * ------------------------------------------------------------------------------------
+	 * 
+	 * Positive case::
+	 * ===============
+	 * 
+	 * Candidate UIP applicable								testUIP
+	 * 
+	 * Interleave Operalap::
+	 * =====================
+	 * 
+	 * Various loop types::
+	 * --------------------
+	 * 
+	 * Overlap for Consumer	within while loop				testUIPNAConsUsed
+	 * Overlap for Consumer	outside loop					testUIPNAConsUsedOutsideDAG
+	 * Overlap for Consumer	within loop(not used)			testUIPNAConsUsed
+	 * Overlap for Consumer	within for loop					testUIPNAConsUsedForLoop
+	 * Overlap for Consumer	within inner parfor loop		testUIPNAParFor
+	 * Overlap for Consumer	inside loop						testUIPNAConsUsedInsideDAG
+	 * 
+	 * Complex Statement:: 
+	 * -------------------
+	 * 
+	 * Overlap for Consumer	within complex statement		testUIPNAComplexConsUsed
+	 * 		(Consumer in complex statement)
+	 * Overlap for Consumer	within complex statement		testUIPNAComplexCandUsed
+	 * 		(Candidate in complex statement)
+	 * 
+	 * Else and Predicate case::
+	 * -------------------------
+	 * 
+	 * Overlap for Consumer	within else clause				testUIPNAConsUsedElse
+	 * Overlap with consumer in predicate					testUIPNACandInPredicate
+	 * 
+	 * Multiple LIX for same object with interleave::
+	 * ----------------------------------------------
+	 * 
+	 * Overlap for Consumer	with multiple lix				testUIPNAMultiLIX
+	 * 
+	 * 
+	 * Function Calls::
+	 * ================ 
+	 * 
+	 * Overlap for candidate used in function call 			testUIPNACandInFuncCall
+	 * Overlap for consumer used in function call 			testUIPNAConsInFuncCall
+	 * Function call without consumer/candidate 			testUIPFuncCall
+	 * 
+	 */
+	
+	
+	
 	//Note: In order to run these tests against ParFor loop, parfor's DEBUG flag needs to be set in the script.
 	
 	@Override
@@ -188,12 +242,6 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + TEST_NAME + iTestNumber + ".dml";
 			programArgs = new String[]{}; //new String[]{"-args", input("A"), output("B") };
 			
-//			fullRScriptName = HOME + TEST_NAME + ".R";
-//			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
-//			
-//	        double[][] A = new double[][]{{2.0},{3.0}};
-//			writeInputMatrixWithMTD("A", A, false);
-	
 			runTest(true, false, null, -1);
 
 			List<String> listUIPRes = OptimizerRuleBased.getUIPList();
@@ -222,11 +270,6 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 						" does not match with the # of matrix objects " + "0" + " from optimization result.", 
 						(listUIPRes == null || listUIPRes.size() == 0));
 			}
-
-			
-			//compare matrices
-//			HashMap<CellIndex, Double> dmlout = readDMLMatrixFromHDFS("B");
-//			Assert.assertTrue( dmlout.size()>=1 );
 		}
 		finally{
 		}

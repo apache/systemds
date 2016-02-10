@@ -155,6 +155,8 @@ public class OptimizerRuleBased extends Optimizer
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";
 	
+	public static final boolean APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE = true;
+	
 	public static final double PAR_K_FACTOR        = OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
 	public static final double PAR_K_MR_FACTOR     = 1.0 * OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
 	
@@ -176,9 +178,10 @@ public class OptimizerRuleBased extends Optimizer
 	
 	protected CostEstimator _cost = null;
 	
-	protected static List<String> listUIPRes = null;
+	protected static ThreadLocal<ArrayList<String>> listUIPRes = new ThreadLocal<ArrayList<String>>() {
+		@Override protected ArrayList<String> initialValue() { return new ArrayList<String>(); }
+	};
 
-	
 	@Override
 	public CostModelType getCostModelType() 
 	{
@@ -1904,15 +1907,8 @@ public class OptimizerRuleBased extends Optimizer
 			}
 		}
 		
-		if(LOG.isDebugEnabled())
-			if(listUIPRes == null)
-			{
-				listUIPRes = new ArrayList<String>();
-			} 
-			else 
-			{
-				listUIPRes.removeAll(listUIPRes);
-			}
+		if(APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE && LOG.isDebugEnabled())
+			listUIPRes.remove();
 
 		//modify result variable meta data, if rewrite applied
 		if( apply ) 
@@ -1926,39 +1922,41 @@ public class OptimizerRuleBased extends Optimizer
 			}
 			inPlaceResultVars.addAll(retVars);
 
-			isUpdateInPlaceApplicable(pn, uipCandHopHM);
-
-			boolean bAnyUIPApplicable = false;
-			for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
+			if(APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE)
 			{
-				ArrayList <UIPCandidateHop> uipCandHopList = entry.getValue();
-				
-				if (uipCandHopList != null) {
-					for (UIPCandidateHop uipCandHop: uipCandHopList)
-						if(uipCandHop.isLoopApplicable() && uipCandHop.isUpdateInPlace())
-						{
-							uipCandHop.getHop().setUpdateInPlace(true);
-							bAnyUIPApplicable = true;
-							
-							if(LOG.isDebugEnabled())
-								listUIPRes.add(uipCandHop.getHop().getName());
-
-						}
+				isUpdateInPlaceApplicable(pn, uipCandHopHM);
+	
+				boolean bAnyUIPApplicable = false;
+				for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
+				{
+					ArrayList <UIPCandidateHop> uipCandHopList = entry.getValue();
+					
+					if (uipCandHopList != null) {
+						for (UIPCandidateHop uipCandHop: uipCandHopList)
+							if(uipCandHop.isLoopApplicable() && uipCandHop.isUpdateInPlace())
+							{
+								uipCandHop.getHop().setUpdateInPlace(true);
+								bAnyUIPApplicable = true;
+								
+								if(LOG.isDebugEnabled())
+									listUIPRes.get().add(uipCandHop.getHop().getName());
+							}
+					}
 				}
+				if(bAnyUIPApplicable)
+					try {
+						//Recompile this block if there is any update in place applicable.
+						Recompiler.recompileProgramBlockInstructions(pfpb);		//TODO: Recompile @ very high level ok?
+					}
+					catch(Exception ex){
+						throw new DMLRuntimeException(ex);
+					}
 			}
-			if(bAnyUIPApplicable)
-				try {
-					//guaranteed to be a last-level block (see hop change)
-					Recompiler.recompileProgramBlockInstructions(pfpb);		//TODO: Recompile @ very high level ok?
-				}
-				catch(Exception ex){
-					throw new DMLRuntimeException(ex);
-				}
 		}
 
-		if(LOG.isDebugEnabled())
+		if(APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE && LOG.isDebugEnabled())
 		{
-			LOG.debug("UpdateInPlace = " + apply + " for lines between " + pn.getBeginLine() + " and " + pn.getEndLine());
+			LOG.trace("UpdateInPlace = " + apply + " for lines between " + pn.getBeginLine() + " and " + pn.getEndLine());
 			for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
 			{
 				ArrayList <UIPCandidateHop> uipCandHopList = entry.getValue();
@@ -1966,7 +1964,7 @@ public class OptimizerRuleBased extends Optimizer
 				if (uipCandHopList != null) {
 					for (UIPCandidateHop uipCandHop: uipCandHopList)
 					{
-						LOG.debug("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ ">, InLoop:"
+						LOG.trace("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ ">, InLoop:"
 								+ uipCandHop.isLoopApplicable() + ", UIPApplicable:" + uipCandHop.isUpdateInPlace() + ", HopUIPApplicable:" + uipCandHop.getHop().getUpdateInPlace());	
 					}
 				}
@@ -2021,10 +2019,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param uipCandHopHM:		Hashmap of UIPCandidateHop with name as a key.		
 	 * @throws DMLRuntimeException
 	 */
-	void isUpdateInPlaceApplicable(OptNode pn, HashMap <String, ArrayList <UIPCandidateHop>> uipCandHopHM)
+	private void isUpdateInPlaceApplicable(OptNode pn, HashMap <String, ArrayList <UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException 
 	{
-		isInLoop(pn, uipCandHopHM, false);
+		rIsInLoop(pn, uipCandHopHM, false);
 		
 		// Prune candidate list based on non-existance of candidate in the loop
 		Iterator<Map.Entry<String, ArrayList <UIPCandidateHop>>> uipCandHopHMIter = uipCandHopHM.entrySet().iterator();
@@ -2041,20 +2039,20 @@ public class OptimizerRuleBased extends Optimizer
 					{
 						uipCandHopListIter.remove();
 						if(LOG.isDebugEnabled())
-							LOG.debug("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ 
+							LOG.trace("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ 
 									">, removed from the candidate list as it does not have loop criteria applicable.");
 					}
 				}
-				if(uipCandHopList.size() == 0)
+				if(uipCandHopList.isEmpty())
 					uipCandHopHMIter.remove();
 			}
 		}
 		
-		if(uipCandHopHM.size() > 0)
+		if(!uipCandHopHM.isEmpty())
 		{
 			// Get consumer list
-			resetVisitStatus(pn);
-			getUIPConsumerList(pn, uipCandHopHM);
+			rResetVisitStatus(pn);
+			rGetUIPConsumerList(pn, uipCandHopHM);
 			
 			
 			// Prune candidate list if consumer is in function call.
@@ -2077,20 +2075,20 @@ public class OptimizerRuleBased extends Optimizer
 								{
 									uipCandHopListIter.remove();
 									if(LOG.isDebugEnabled())
-										LOG.debug("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ 
+										LOG.trace("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ 
 												">, removed from the candidate list as one of the consumer is FunctionOp.");
 									break;
 								}
 							}
 					}
-					if(uipCandHopList.size() == 0)
+					if(uipCandHopList.isEmpty())
 						uipCandHopHMIter.remove();
 				}
 			}
 
 			//Validate the consumer list
-			resetVisitStatus(pn);
-			validateUIPConsumerList(pn, uipCandHopHM);
+			rResetVisitStatus(pn);
+			rValidateUIPConsumerList(pn, uipCandHopHM);
 		}
 	}
 	
@@ -2103,7 +2101,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param uipCandHopHM:		Hashmap of UIPCandidateHop with name as a key.		
 	 * @throws DMLRuntimeException
 	 */
-	void isInLoop(OptNode pn, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM, boolean bInLoop)
+	private void rIsInLoop(OptNode pn, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM, boolean bInLoop)
 			throws DMLRuntimeException 
 	{
 		if(!pn.isLeaf())  
@@ -2128,15 +2126,14 @@ public class OptimizerRuleBased extends Optimizer
 				return;
 
 			boolean bLoop = false;
-			if(	(bInLoop) ||	
-					(pb instanceof WhileProgramBlock || 
-					(pb instanceof ParForProgramBlock && ((ParForProgramBlock)pb).getDegreeOfParallelism() == 1) ||
-					(pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock))))
+			if(	bInLoop || pb instanceof WhileProgramBlock || 
+				(pb instanceof ParForProgramBlock && ((ParForProgramBlock)pb).getDegreeOfParallelism() == 1) ||
+				(pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock)))
 				bLoop = true;
 
 			for (OptNode optNode: pn.getChilds())
 			{
-				isInLoop(optNode, uipCandHopHM, bLoop);
+				rIsInLoop(optNode, uipCandHopHM, bLoop);
 			}
 		}
 		else if(bInLoop)
@@ -2170,7 +2167,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param uipCandHopHM:		Hashmap of UIPCandidateHop with name as a key.		
 	 * @throws DMLRuntimeException
 	 */
-	void getUIPConsumerList(OptNode pn, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
+	private void rGetUIPConsumerList(OptNode pn, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException 
 	{
 		if(!pn.isLeaf())
@@ -2198,7 +2195,7 @@ public class OptimizerRuleBased extends Optimizer
 				return;
 			
 			for (OptNode optNode: pn.getChilds())
-				getUIPConsumerList(optNode, uipCandHopHM);
+				rGetUIPConsumerList(optNode, uipCandHopHM);
 		}
 		else
 		{
@@ -2208,16 +2205,16 @@ public class OptimizerRuleBased extends Optimizer
 			ProgramBlock pb = (ProgramBlock) o[1];
 			
 			Hop hop = (Hop) OptTreeConverter.getAbstractPlanMapping().getMappedHop(pn.getID());
-			getUIPConsumerList(hop, uipCandHopHM);
+			rGetUIPConsumerList(hop, uipCandHopHM);
 
 			if(pb instanceof IfProgramBlock || pb instanceof WhileProgramBlock || 
 				(pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock)))  //TODO
-				getUIPConsumerList(pb, uipCandHopHM);
+				rGetUIPConsumerList(pb, uipCandHopHM);
 		} 
 	}
 	
 	
-	void getUIPConsumerList(ProgramBlock pb, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
+	private void rGetUIPConsumerList(ProgramBlock pb, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException
 	{
 		ArrayList<ProgramBlock> childBlocks = null;
@@ -2238,10 +2235,10 @@ public class OptimizerRuleBased extends Optimizer
 		if(childBlocks != null)
 			for (ProgramBlock childBlock: childBlocks)
 			{
-				getUIPConsumerList(childBlock, uipCandHopHM);
+				rGetUIPConsumerList(childBlock, uipCandHopHM);
 				try 
 				{
-					getUIPConsumerList(childBlock.getStatementBlock().get_hops(), uipCandHopHM);
+					rGetUIPConsumerList(childBlock.getStatementBlock().get_hops(), uipCandHopHM);
 				}
 				catch (Exception e) {
 					throw new DMLRuntimeException(e);
@@ -2249,21 +2246,21 @@ public class OptimizerRuleBased extends Optimizer
 			}
 	}	
 		
-	void getUIPConsumerList(ArrayList<Hop> hops, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
+	private void rGetUIPConsumerList(ArrayList<Hop> hops, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException
 	{
 		if(hops != null)
 			for (Hop hop: hops)
-				getUIPConsumerList(hop, uipCandHopHM);
+				rGetUIPConsumerList(hop, uipCandHopHM);
 	}
 
 		
-	void getUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
+	private void rGetUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 		throws DMLRuntimeException
 	{
 		if(hop.getVisited() != Hop.VisitStatus.DONE)
 		{
-			if ((!(hop.getParent().size() > 0 && hop.getParent().get(0) instanceof LeftIndexingOp)) &&
+			if ((!(!hop.getParent().isEmpty() && hop.getParent().get(0) instanceof LeftIndexingOp)) &&
 				   ((hop instanceof DataOp && ((DataOp)hop).getDataOpType() == DataOpTypes.TRANSIENTREAD ) ||
 					(hop instanceof ReorgOp && (((ReorgOp)hop).getOp() == ReOrgOp.RESHAPE || ((ReorgOp)hop).getOp() == ReOrgOp.TRANSPOSE)) ||
 					(hop instanceof FunctionOp)))
@@ -2288,7 +2285,7 @@ public class OptimizerRuleBased extends Optimizer
 			
 			for(Hop hopIn: hop.getInput())
 			{
-				getUIPConsumerList(hopIn, uipCandHopHM);
+				rGetUIPConsumerList(hopIn, uipCandHopHM);
 			}
 			
 			hop.setVisited(Hop.VisitStatus.DONE);
@@ -2296,13 +2293,13 @@ public class OptimizerRuleBased extends Optimizer
 	}
 	
 
-	Hop getRootHop(Hop hop)
+	private Hop getRootHop(Hop hop)
 	{
-		return (hop.getParent().size() > 0)?getRootHop(hop.getParent().get(0)):hop;
+		return (!hop.getParent().isEmpty())?getRootHop(hop.getParent().get(0)):hop;
 	}
 	
 	
-	void resetVisitStatus(OptNode pn)
+	private void rResetVisitStatus(OptNode pn)
 		throws DMLRuntimeException
 	{
 		
@@ -2347,7 +2344,7 @@ public class OptimizerRuleBased extends Optimizer
 			
 			for (OptNode optNode: pn.getChilds())
 			{
-				resetVisitStatus(optNode);
+				rResetVisitStatus(optNode);
 			}
 		}
 		else
@@ -2370,7 +2367,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @throws DMLRuntimeException
 	 */
 	
-	void validateUIPConsumerList(OptNode pn, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
+	private void rValidateUIPConsumerList(OptNode pn, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException 
 	{
 		if(!pn.isLeaf())
@@ -2378,7 +2375,7 @@ public class OptimizerRuleBased extends Optimizer
 			if(pn.getNodeType() == OptNode.NodeType.FUNCCALL)
 			{
 				Hop hop = (Hop) OptTreeConverter.getAbstractPlanMapping().getMappedHop(pn.getID());
-				validateUIPConsumerList(hop.getInput(), uipCandHopHM);
+				rValidateUIPConsumerList(hop.getInput(), uipCandHopHM);
 				return;
 			}
 
@@ -2415,7 +2412,7 @@ public class OptimizerRuleBased extends Optimizer
 				return;
 
 			for (OptNode optNode: pn.getChilds())
-					validateUIPConsumerList(optNode, uipCandHopHM);
+					rValidateUIPConsumerList(optNode, uipCandHopHM);
 		}
 		else
 		{
@@ -2426,17 +2423,17 @@ public class OptimizerRuleBased extends Optimizer
 
 			if(pb instanceof IfProgramBlock || pb instanceof WhileProgramBlock || 
 				(pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock)))	//TODO
-				validateUIPConsumerList(pb, uipCandHopHM);
+				rValidateUIPConsumerList(pb, uipCandHopHM);
 
 			long pid = map.getMappedParentID(pn.getID());
 			o = map.getMappedProg(pid);
 			pb = (ProgramBlock) o[1];
 			Hop hop = map.getMappedHop(pn.getID());
-			validateUIPConsumerList(hop, uipCandHopHM, pb.getStatementBlock().variablesRead());
+			rValidateUIPConsumerList(hop, uipCandHopHM, pb.getStatementBlock().variablesRead());
 		}
 	}
 	
-	void validateUIPConsumerList(ProgramBlock pb, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
+	private void rValidateUIPConsumerList(ProgramBlock pb, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException
 	{
 		ArrayList<ProgramBlock> childBlocks = null;
@@ -2457,10 +2454,10 @@ public class OptimizerRuleBased extends Optimizer
 		if(childBlocks != null)
 			for (ProgramBlock childBlock: childBlocks)
 			{
-				validateUIPConsumerList(childBlock, uipCandHopHM);
+				rValidateUIPConsumerList(childBlock, uipCandHopHM);
 				try 
 				{
-					validateUIPConsumerList(childBlock.getStatementBlock(), uipCandHopHM);
+					rValidateUIPConsumerList(childBlock.getStatementBlock(), uipCandHopHM);
 				}
 				catch (Exception e) {
 					throw new DMLRuntimeException(e);
@@ -2469,7 +2466,7 @@ public class OptimizerRuleBased extends Optimizer
 	}	
 		
 
-	void validateUIPConsumerList(StatementBlock sb, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
+	private void rValidateUIPConsumerList(StatementBlock sb, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException 
 	{
 		VariableSet readVariables = sb.variablesRead();
@@ -2498,16 +2495,16 @@ public class OptimizerRuleBased extends Optimizer
 	}
 	
 
-	void validateUIPConsumerList(ArrayList<Hop> hops, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
+	private void rValidateUIPConsumerList(ArrayList<Hop> hops, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException
 	{
 		if(hops != null)
 			for (Hop hop: hops)
-				validateUIPConsumerList(hop, uipCandHopHM);
+				rValidateUIPConsumerList(hop, uipCandHopHM);
 	}
 
 
-	void validateUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
+	private void rValidateUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM)
 			throws DMLRuntimeException 
 	{
 		if(hop.getVisited() != Hop.VisitStatus.DONE)
@@ -2537,7 +2534,7 @@ public class OptimizerRuleBased extends Optimizer
 		}
 	}
 
-	void validateUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM, VariableSet readVariables)
+	private void rValidateUIPConsumerList(Hop hop, HashMap <String, ArrayList<UIPCandidateHop>> uipCandHopHM, VariableSet readVariables)
 			throws DMLRuntimeException 
 	{
 		if(hop.getVisited() != Hop.VisitStatus.DONE)
@@ -2570,7 +2567,7 @@ public class OptimizerRuleBased extends Optimizer
 	
 	public static List<String> getUIPList()
 	{
-		return listUIPRes;
+		return listUIPRes.get();
 	}
 	
 	/**

@@ -26,86 +26,83 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 
-public class SyntacticErrorListener {
+public class CustomErrorListener extends BaseErrorListener {
 	
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
-	public static class CustomErrorListener extends BaseErrorListener {
-		
-		private boolean atleastOneError = false;
-		private String currentFileName = null;
-		
-		public void setCurrentFileName(String currentFilePath) {
-			currentFileName = currentFilePath;
-		}
-		
-		public String getCurrentFileName() {
-			return currentFileName;
-		}
-		
-		public void unsetCurrentFileName() {
-			currentFileName = null;
-		}
+	private boolean atleastOneError = false;
+	private String currentFileName = null;
+	
+	public void setCurrentFileName(String currentFilePath) {
+		currentFileName = currentFilePath;
+	}
+	
+	public String getCurrentFileName() {
+		return currentFileName;
+	}
+	
+	public void unsetCurrentFileName() {
+		currentFileName = null;
+	}
 
-		public void validationError(int line, int charPositionInLine, String msg) {
-			try {
-				setAtleastOneError(true);
-				// Print error messages with file name
-				if(currentFileName == null) {
-					LOG.error("line "+line+":"+charPositionInLine+" "+msg);
-				}
-				else {
-					String fileName = currentFileName;
-					LOG.error(fileName + " line "+line+":"+charPositionInLine+" "+msg);
-				}
+	public void validationError(int line, int charPositionInLine, String msg) {
+		try {
+			setAtleastOneError(true);
+			// Print error messages with file name
+			if(currentFileName == null) {
+				LOG.error("line "+line+":"+charPositionInLine+" "+msg);
 			}
-			catch(Exception e1) {
-				LOG.error("ERROR: while customizing error message:" + e1);
+			else {
+				String fileName = currentFileName;
+				LOG.error(fileName + " line "+line+":"+charPositionInLine+" "+msg);
 			}
 		}
-		
-		public void validationWarning(int line, int charPositionInLine, String msg) {
-			try {
-				//atleastOneError = true; ---> not an error, just warning
-				// Print error messages with file name
-				if(currentFileName == null)
-					LOG.warn("line "+line+":"+charPositionInLine+" "+msg);
-				else {
-					String fileName = currentFileName;
-					LOG.warn(fileName + " line "+line+":"+charPositionInLine+" "+msg);
-				}
-			}
-			catch(Exception e1) {
-				LOG.warn("ERROR: while customizing error message:" + e1);
+		catch(Exception e1) {
+			LOG.error("ERROR: while customizing error message:" + e1);
+		}
+	}
+	
+	public void validationWarning(int line, int charPositionInLine, String msg) {
+		try {
+			//atleastOneError = true; ---> not an error, just warning
+			// Print error messages with file name
+			if(currentFileName == null)
+				LOG.warn("line "+line+":"+charPositionInLine+" "+msg);
+			else {
+				String fileName = currentFileName;
+				LOG.warn(fileName + " line "+line+":"+charPositionInLine+" "+msg);
 			}
 		}
-		
-		@Override
-		public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
-				int line, int charPositionInLine,
-				String msg, RecognitionException e)
-		{	
-			try {
-				setAtleastOneError(true);
-				// Print error messages with file name
-				if(currentFileName == null)
-					LOG.error("line "+line+":"+charPositionInLine+" "+msg);
-				else {
-					String fileName = currentFileName;
-					LOG.error(fileName + " line "+line+":"+charPositionInLine+" "+msg);
-				}
-			}
-			catch(Exception e1) {
-				LOG.error("ERROR: while customizing error message:" + e1);
+		catch(Exception e1) {
+			LOG.warn("ERROR: while customizing error message:" + e1);
+		}
+	}
+	
+	@Override
+	public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
+			int line, int charPositionInLine,
+			String msg, RecognitionException e)
+	{	
+		try {
+			setAtleastOneError(true);
+			// Print error messages with file name
+			if(currentFileName == null)
+				LOG.error("line "+line+":"+charPositionInLine+" "+msg);
+			else {
+				String fileName = currentFileName;
+				LOG.error(fileName + " line "+line+":"+charPositionInLine+" "+msg);
 			}
 		}
+		catch(Exception e1) {
+			LOG.error("ERROR: while customizing error message:" + e1);
+		}
+	}
 
-		public boolean isAtleastOneError() {
-			return atleastOneError;
-		}
+	public boolean isAtleastOneError() {
+		return atleastOneError;
+	}
 
-		public void setAtleastOneError(boolean atleastOneError) {
-			this.atleastOneError = atleastOneError;
-		}
+	public void setAtleastOneError(boolean atleastOneError) {
+		this.atleastOneError = atleastOneError;
 	}
 }

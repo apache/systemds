@@ -22,6 +22,7 @@ package org.apache.sysml.parser.common;
 import java.util.HashMap;
 
 import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.Statement;
 
 /**
  * This class exists solely to prevent compiler warnings.
@@ -34,7 +35,7 @@ import org.apache.sysml.parser.DMLProgram;
 
 public class StatementInfo {
 
-	public org.apache.sysml.parser.Statement stmt = null;
+	public Statement stmt = null;
 	
 	// Valid only for import statements
 	public HashMap<String,DMLProgram> namespaces = null;

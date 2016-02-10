@@ -32,7 +32,6 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.AssignmentStatement;
-import org.apache.sysml.parser.BooleanIdentifier;
 import org.apache.sysml.parser.ConditionalPredicate;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
@@ -56,9 +55,9 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
+import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.common.ExpressionInfo;
 import org.apache.sysml.parser.common.StatementInfo;
-import org.apache.sysml.parser.common.SyntacticErrorListener.CustomErrorListener;
 import org.apache.sysml.parser.dml.DmlParser.AddSubExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.AssignmentStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.AtomicExpressionContext;
@@ -108,10 +107,7 @@ import org.apache.sysml.parser.dml.DmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ValueTypeContext;
 import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
-/**
- * TODO: Refactor duplicated parser code dml/pydml (entire package).
- *
- */
+
 public class DmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
 
 	public DmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
@@ -123,7 +119,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	@Override public String falseStringLiteral() { return "FALSE"; }
 
 	protected ArrayList<ParameterExpression> getParameterExpressionList(List<ParameterizedExpressionContext> paramExprs) {
-		ArrayList<org.apache.sysml.parser.ParameterExpression> retVal = new ArrayList<ParameterExpression>();
+		ArrayList<ParameterExpression> retVal = new ArrayList<ParameterExpression>();
 		for(ParameterizedExpressionContext ctx : paramExprs) {
 			String paramName = null;
 			if(ctx.paramName != null && ctx.paramName.getText() != null && !ctx.paramName.getText().isEmpty()) {
@@ -158,7 +154,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			}
 		}
 	}
-	
+
 	// -----------------------------------------------------------------
 	// 			Binary, Unary & Relational Expressions
 	// -----------------------------------------------------------------
@@ -223,28 +219,20 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	// -----------------------------------------------------------------
 	// 			Constant Expressions
 	// -----------------------------------------------------------------
-	
+
 	@Override
 	public void exitConstFalseExpression(ConstFalseExpressionContext ctx) {
-		boolean val = false;
-		int linePosition = ctx.start.getLine();
-		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new BooleanIdentifier(val, currentFile, linePosition, charPosition, linePosition, charPosition);
-		setFileLineColumn(ctx.info.expr, ctx);
+		booleanIdentifierHelper(ctx, false, ctx.info);
 	}
 
 	@Override
 	public void exitConstTrueExpression(ConstTrueExpressionContext ctx) {
-		boolean val = true;
-		int linePosition = ctx.start.getLine();
-		int charPosition = ctx.start.getCharPositionInLine();
-		ctx.info.expr = new BooleanIdentifier(val, currentFile, linePosition, charPosition, linePosition, charPosition);
-		setFileLineColumn(ctx.info.expr, ctx);
+		booleanIdentifierHelper(ctx, true, ctx.info);
 	}
-	
+
 	@Override
 	public void exitConstDoubleIdExpression(ConstDoubleIdExpressionContext ctx) {
-		constoubleIdExpressionHelper(ctx, ctx.info);
+		constDoubleIdExpressionHelper(ctx, ctx.info);
 	}
 
 	@Override
@@ -257,11 +245,11 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		constStringIdExpressionHelper(ctx, ctx.info);
 	}
 
-	
+
 	// -----------------------------------------------------------------
 	//          Identifier Based Expressions
 	// -----------------------------------------------------------------
-	
+
 	@Override
 	public void exitDataIdExpression(DataIdExpressionContext ctx) {
 		exitDataIdExpressionHelper(ctx, ctx.info, ctx.dataIdentifier().dataInfo);
@@ -289,11 +277,11 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				isColUpper ? ctx.colUpper.info : null);
 	}
 
-	
+
 	// -----------------------------------------------------------------
 	//          Command line parameters (begin with a '$')
 	// -----------------------------------------------------------------
-	
+
 	@Override
 	public void exitCommandlineParamExpression(CommandlineParamExpressionContext ctx) {
 		handleCommandlineArgumentExpression(ctx);
@@ -324,7 +312,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		}
 	}
 
-	
+
 	// -----------------------------------------------------------------
 	// 			"src" statment
 	// -----------------------------------------------------------------
@@ -371,7 +359,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	// -----------------------------------------------------------------
 	// 			Assignment Statement
 	// -----------------------------------------------------------------
-	
+
 	@Override
 	public void exitAssignmentStatement(AssignmentStatementContext ctx) {
 		if(ctx.targetList == null) {
@@ -381,7 +369,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		exitAssignmentStatementHelper(ctx, ctx.targetList.getText(), ctx.targetList.dataInfo, ctx.targetList.start, ctx.source.info, ctx.info);
 	}
 
-	
+
 	// -----------------------------------------------------------------
 	// 			Control Statements - Guards & Loops
 	// -----------------------------------------------------------------
@@ -442,7 +430,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		ConvertedDMLSyntax convertedSyntax = convertToDMLSyntax(ctx, namespace, functionName, paramExpression, ctx.name);
 		if(convertedSyntax == null) {
 			return;
-		} else {
+		}
+		else {
 			functionName = convertedSyntax.functionName;
 			paramExpression = convertedSyntax.paramExpression;
 		}
@@ -473,33 +462,30 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		ConvertedDMLSyntax convertedSyntax = convertToDMLSyntax(ctx, namespace, functionName, paramExpression, ctx.name);
 		if(convertedSyntax == null) {
 			return;
-		} else {
+		}
+		else {
 			namespace = convertedSyntax.namespace;
 			functionName = convertedSyntax.functionName;
 			paramExpression = convertedSyntax.paramExpression;
 		}
 
 		FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
-		try {
-			functCall.setFunctionName(functionName);
-			functCall.setFunctionNamespace(namespace);
-		} catch (ParseException e1) {
-			notifyErrorListeners("unable to process function " + functionName, ctx.start);
-			return;
-		}
+		functCall.setFunctionName(functionName);
+		functCall.setFunctionNamespace(namespace);
+
 
 		final ArrayList<DataIdentifier> targetList = new ArrayList<DataIdentifier>();
 		for(DataIdentifierContext dataCtx : ctx.targetList) {
 			if(dataCtx.dataInfo.expr instanceof DataIdentifier) {
 				targetList.add((DataIdentifier) dataCtx.dataInfo.expr);
-			} else {
-				notifyErrorListeners("incorrect lvalue ... strange", dataCtx.start);
-				//target = new DataIdentifier(); // so as not to avoid null pointer
+			}
+			else {
+				notifyErrorListeners("incorrect type for variable ", dataCtx.start);
 				return;
 			}
 		}
 
-		if(namespace.compareTo(DMLProgram.DEFAULT_NAMESPACE) == 0) {
+		if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE)) {
 			final FunctionCallMultiAssignmentStatementContext fctx = ctx;
 			Action f = new Action() {
 				@Override public void execute(Expression e) { setMultiAssignmentStatement(targetList, e, fctx, fctx.info); }
@@ -511,8 +497,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 		setMultiAssignmentStatement(targetList, functCall, ctx, ctx.info);
 	}
-	
-	
+
+
 	// -----------------------------------------------------------------
 	// 			Control Statements - Guards & Loops
 	// -----------------------------------------------------------------
@@ -640,11 +626,11 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				dataType = paramCtx.paramType.dataType().getText();
 			}
 
-			if(dataType.compareTo("matrix") == 0 || dataType.compareTo("Matrix") == 0) {
+			if(dataType.equals("matrix") || dataType.equals("Matrix")) {
 				// matrix
 				dataId.setDataType(DataType.MATRIX);
 			}
-			else if(dataType.compareTo("scalar") == 0 || dataType.compareTo("Scalar") == 0) {
+			else if(dataType.equals("scalar") || dataType.equals("Scalar")) {
 				// scalar
 				dataId.setDataType(DataType.SCALAR);
 			}
@@ -654,20 +640,20 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			}
 
 			valueType = paramCtx.paramType.valueType().getText();
-			if(valueType.compareTo("int") == 0 || valueType.compareTo("integer") == 0
-				|| valueType.compareTo("Int") == 0 || valueType.compareTo("Integer") == 0) {
+			if(valueType.equals("int") || valueType.equals("integer")
+				|| valueType.equals("Int") || valueType.equals("Integer")) {
 				dataId.setValueType(ValueType.INT);
 			}
-			else if(valueType.compareTo("string") == 0 || valueType.compareTo("String") == 0) {
+			else if(valueType.equals("string") || valueType.equals("String")) {
 				dataId.setValueType(ValueType.STRING);
 			}
-			else if(valueType.compareTo("boolean") == 0 || valueType.compareTo("Boolean") == 0) {
+			else if(valueType.equals("boolean") || valueType.equals("Boolean")) {
 				dataId.setValueType(ValueType.BOOLEAN);
 			}
-			else if(valueType.compareTo("double") == 0 || valueType.compareTo("Double") == 0) {
+			else if(valueType.equals("double") || valueType.equals("Double")) {
 				dataId.setValueType(ValueType.DOUBLE);
 			}
-			else if(valueType.compareTo("bool") == 0) {
+			else if(valueType.equals("bool")) {
 				notifyErrorListeners("invalid valuetype " + valueType + " (Quickfix: use \'boolean\' instead)", paramCtx.start);
 				return null;
 			}
@@ -679,7 +665,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		}
 		return retVal;
 	}
-	
+
 	@Override
 	public void exitIterablePredicateColonExpression(IterablePredicateColonExpressionContext ctx) {
 		ctx.info.from = ctx.from.info.expr;
@@ -689,7 +675,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 	@Override
 	public void exitIterablePredicateSeqExpression(IterablePredicateSeqExpressionContext ctx) {
-		if(ctx.ID().getText().compareTo("seq") != 0) {
+		if(!ctx.ID().getText().equals("seq")) {
 			notifyErrorListeners("incorrect function:\'" + ctx.ID().getText() + "\'. expected \'seq\'", ctx.start);
 			return;
 		}
@@ -697,12 +683,12 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		ctx.info.to = ctx.to.info.expr;
 		ctx.info.increment = ctx.increment.info.expr;
 	}
-	
-	
+
+
 	// -----------------------------------------------------------------
 	// 				Internal & External Functions Definitions
 	// -----------------------------------------------------------------
-	
+
 	@Override
 	public void exitInternalFunctionDefExpression(InternalFunctionDefExpressionContext ctx) {
 		FunctionStatement functionStmt = new FunctionStatement();
@@ -772,7 +758,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				return;
 			}
 			otherParams.put(paramName, val);
-			if(paramName.compareTo("classname") == 0) {
+			if(paramName.equals("classname")) {
 				atleastOneClassName = true;
 			}
 		}
@@ -809,7 +795,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		}
 
 		if(ctx.targetList == null) {
-			notifyErrorListeners("incorrect parsing for ifdef function", ctx.start);
+			notifyErrorListeners("ifdef assignment needs an lvalue ", ctx.start);
 			return;
 		}
 		String targetListText = ctx.targetList.getText();
@@ -845,30 +831,27 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 		}
 		else {
-			notifyErrorListeners("incorrect lvalue in ifdef function... strange", ctx.targetList.start);
+			notifyErrorListeners("incorrect lvalue in ifdef function ", ctx.targetList.start);
 			return;
 		}
 	}
 
 	@Override
 	public void exitMatrixDataTypeCheck(MatrixDataTypeCheckContext ctx) {
-		if(		ctx.ID().getText().compareTo("matrix") == 0
-				|| ctx.ID().getText().compareTo("Matrix") == 0
-				|| ctx.ID().getText().compareTo("Scalar") == 0
-				|| ctx.ID().getText().compareTo("scalar") == 0
-				) {
-			// Do nothing
-		}
-		else {
+		boolean validMatrixType = ctx.ID().getText().equals("matrix")
+								|| ctx.ID().getText().equals("Matrix")
+								|| ctx.ID().getText().equals("Scalar")
+								|| ctx.ID().getText().equals("scalar");
+		if(!validMatrixType	) {
 			notifyErrorListeners("incorrect datatype (expected matrix or scalar)", ctx.start);
 		}
 	}
 
-	
+
 	// -----------------------------------------------------------------
-	// 			Not overridden 
+	// 			Not overridden
 	// -----------------------------------------------------------------
-	
+
 	@Override public void visitTerminal(TerminalNode node) {}
 
 	@Override public void visitErrorNode(ErrorNode node) {}

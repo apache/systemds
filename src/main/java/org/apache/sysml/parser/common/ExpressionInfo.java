@@ -19,6 +19,8 @@
 
 package org.apache.sysml.parser.common;
 
+import org.apache.sysml.parser.Expression;
+
 /**
  * This class exists solely to prevent compiler warnings.
  * 
@@ -29,10 +31,10 @@ package org.apache.sysml.parser.common;
  */
 public class ExpressionInfo {
 	
-	public org.apache.sysml.parser.Expression expr = null;
+	public Expression expr = null;
 
 	// For parfor and for
-	public org.apache.sysml.parser.Expression from = null;
-	public org.apache.sysml.parser.Expression to = null;
-	public org.apache.sysml.parser.Expression increment = null;
+	public Expression from = null;
+	public Expression to = null;
+	public Expression increment = null;
 }

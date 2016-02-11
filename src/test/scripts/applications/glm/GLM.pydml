@@ -159,7 +159,7 @@ eps = eps + 0.0
 
 # Default values for output statistics:
 
-termination_code     = 0.0
+termination_code     = 0
 min_beta             = 0.0 / 0.0
 i_min_beta           = 0.0 / 0.0
 max_beta             = 0.0 / 0.0
@@ -301,7 +301,8 @@ if (is_supported == 1):
         else:
             log_str = " "
         
-        
+        # set w to avoid 'Initialization of w depends on if-else/while execution' warnings
+        w = full (0.0, rows=1, cols=1)
         while (termination_code == 0):
             accept_new_beta = 1
             

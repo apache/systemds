@@ -1954,7 +1954,7 @@ public class OptimizerRuleBased extends Optimizer
 			}
 		}
 
-		if(APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE && LOG.isDebugEnabled())
+		if(APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE && LOG.isTraceEnabled())
 		{
 			LOG.trace("UpdateInPlace = " + apply + " for lines between " + pn.getBeginLine() + " and " + pn.getEndLine());
 			for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
@@ -2038,7 +2038,7 @@ public class OptimizerRuleBased extends Optimizer
 					if (!uipCandHop.isLoopApplicable())	//If Loop is not applicable then remove it from the list. 
 					{
 						uipCandHopListIter.remove();
-						if(LOG.isDebugEnabled())
+						if(LOG.isTraceEnabled())
 							LOG.trace("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ 
 									">, removed from the candidate list as it does not have loop criteria applicable.");
 					}
@@ -2074,7 +2074,7 @@ public class OptimizerRuleBased extends Optimizer
 								if(hop instanceof FunctionOp)
 								{
 									uipCandHopListIter.remove();
-									if(LOG.isDebugEnabled())
+									if(LOG.isTraceEnabled())
 										LOG.trace("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ 
 												">, removed from the candidate list as one of the consumer is FunctionOp.");
 									break;

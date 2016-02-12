@@ -550,15 +550,13 @@ public class Statistics
 				sb.append("ParFor optimize time:\t\t" + String.format("%.3f", ((double)getParforOptTime())/1000) + " sec.\n");	
 				sb.append("ParFor initialize time:\t\t" + String.format("%.3f", ((double)getParforInitTime())/1000) + " sec.\n");	
 				sb.append("ParFor result merge time:\t" + String.format("%.3f", ((double)getParforMergeTime())/1000) + " sec.\n");	
+				sb.append("ParFor Total Non UpdateInPlace = " + lTotNonUpdateInPlace);
+				sb.append(" Total UpdateInPlace Matrices = " + lTotUpdateInPlace);
 			}
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			sb.append("Heavy hitter instructions (name, time, count):\n" + getHeavyHitters(10));
-			if( parforOptCount>0 ){
-				sb.append("ParFor Total Non UpdateInPlace = " + lTotNonUpdateInPlace);
-				sb.append(" Total UpdateInPlace Matrices = " + lTotUpdateInPlace);
-			}
 		}
 		
 		return sb.toString();

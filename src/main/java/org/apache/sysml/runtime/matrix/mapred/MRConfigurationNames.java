@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.matrix.mapred;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.util.VersionInfo;
+import org.apache.sysml.conf.ConfigurationManager;
 
 /**
  * This class provides a central local for used hadoop configuration properties. For portability, we support both hadoop
@@ -81,17 +82,34 @@ public abstract class MRConfigurationNames {
 	// initialize constants based on hadoop version
 	static {
 		// determine hadoop version
-		String version = VersionInfo.getBuildVersion();
-		boolean hadoopVersion2 = version.startsWith("2");
-		LOG.debug("Hadoop build version: " + version);
-
-		if (hadoopVersion2) {
+		String hversion = VersionInfo.getBuildVersion();
+		boolean hadoop2 = hversion.startsWith("2");
+		LOG.debug("Hadoop build version: " + hversion);
+		
+		// determine mapreduce version
+		String mrversion = ConfigurationManager.getCachedJobConf().get(MR_FRAMEWORK_NAME);
+		boolean mrv2 = !(mrversion == null || mrversion.equals("classic")); 
+		
+		//handle hadoop configurations
+		if( hadoop2 ) {
 			LOG.debug("Using hadoop 2.x configuration properties.");
 			DFS_BLOCKSIZE = "dfs.blocksize";
 			// DFS_DATANODE_DATA_DIR = "dfs.datanode.data.dir";
 			// DFS_METRICS_SESSION_ID = "dfs.metrics.session-id";
 			DFS_PERMISSIONS_ENABLED = "dfs.permissions.enabled";
 			FS_DEFAULTFS = "fs.defaultFS";
+		}
+		else {
+			LOG.debug("Using hadoop 1.x configuration properties.");
+			DFS_BLOCKSIZE = "dfs.block.size";
+			// DFS_DATANODE_DATA_DIR = "dfs.data.dir";
+			// DFS_METRICS_SESSION_ID = "session.id";
+			DFS_PERMISSIONS_ENABLED = "dfs.permissions";
+			FS_DEFAULTFS = "fs.default.name";			
+		}
+			
+		//handle mapreduce configurations
+		if( mrv2 ) {	
 			MR_CLUSTER_LOCAL_DIR = "mapreduce.cluster.local.dir";
 			MR_INPUT_FILEINPUTFORMAT_SPLIT_MAXSIZE = "mapreduce.input.fileinputformat.split.maxsize";
 			MR_INPUT_MULTIPLEINPUTS_DIR_FORMATS = "mapreduce.input.multipleinputs.dir.formats";
@@ -116,13 +134,8 @@ public abstract class MRConfigurationNames {
 			MR_TASK_IO_SORT_MB = "mapreduce.task.io.sort.mb";
 			MR_TASK_TIMEOUT = "mapreduce.task.timeout";
 			MR_TASKTRACKER_TASKCONTROLLER = "mapreduce.tasktracker.taskcontroller";
-		} else { // any older version
-			LOG.debug("Using hadoop 1.x configuration properties.");
-			DFS_BLOCKSIZE = "dfs.block.size";
-			// DFS_DATANODE_DATA_DIR = "dfs.data.dir";
-			// DFS_METRICS_SESSION_ID = "session.id";
-			DFS_PERMISSIONS_ENABLED = "dfs.permissions";
-			FS_DEFAULTFS = "fs.default.name";
+		} 
+		else { // mrv1
 			MR_CLUSTER_LOCAL_DIR = "mapred.local.dir";
 			MR_INPUT_FILEINPUTFORMAT_SPLIT_MAXSIZE = "mapred.max.split.size";
 			MR_INPUT_MULTIPLEINPUTS_DIR_FORMATS = "mapred.input.dir.formats";

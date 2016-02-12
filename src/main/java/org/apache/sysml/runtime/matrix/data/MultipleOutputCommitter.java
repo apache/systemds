@@ -31,14 +31,12 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobContext;
 import org.apache.hadoop.mapred.TaskAttemptContext;
 import org.apache.hadoop.mapred.TaskAttemptID;
-
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
 
 public class MultipleOutputCommitter extends FileOutputCommitter 
-{
-	
-	// maintain the map of matrix index to its final output dir
+{	
+	// maintain the map of matrix index to its destination output dir
 	// private HashMap<Byte, String> outputmap=new HashMap<Byte, String>();
 	private String[] outputs;
 
@@ -83,17 +81,17 @@ public class MultipleOutputCommitter extends FileOutputCommitter
 		// get the mapping between index to output filename
 		outputs = MRJobConfiguration.getOutputs(conf);
 		
-		//get temp task output path (compatible with hadoop1 and hadoop2)
+		// get temp task output path (compatible with hadoop1 and hadoop2)
 		Path taskOutPath = FileOutputFormat.getWorkOutputPath(conf);
 		FileSystem fs = taskOutPath.getFileSystem(conf);
 		if( !fs.exists(taskOutPath) )
 			throw new IOException("Task output path "+ taskOutPath.toString() + "does not exist.");
 		
-		// Move the task outputs to their final places
+		// move the task outputs to their final places
 		context.getProgressible().progress();
 		moveFinalTaskOutputs(context, fs, taskOutPath);
 		
-		// Delete the temporary task-specific output directory
+		// delete the temporary task-specific output directory
 		if( !fs.delete(taskOutPath, true) ) 
 			LOG.debug("Failed to delete the temporary output directory of task: " + attemptId + " - " + taskOutPath);
 	}
@@ -110,8 +108,7 @@ public class MultipleOutputCommitter extends FileOutputCommitter
 	{
 		context.getProgressible().progress();
 		
-		if( fs.getFileStatus(taskOutput).isDirectory() ) 
-		{
+		if( fs.getFileStatus(taskOutput).isDirectory() ) {
 			FileStatus[] files = fs.listStatus(taskOutput);
 			if (files != null)
 				for (FileStatus file : files) //for all files
@@ -130,24 +127,19 @@ public class MultipleOutputCommitter extends FileOutputCommitter
 	private void moveFileToDestination(TaskAttemptContext context, FileSystem fs, Path file) 
 		throws IOException 
 	{
-		JobConf conf = context.getJobConf();
 		TaskAttemptID attemptId = context.getTaskAttemptID();
 		
-		//get output index and final destination
-		String taskType = (conf.getBoolean(JobContext.TASK_ISMAP, true)) ? "m" : "r";
-		String name =  file.getName(); 
-		int charIx = name.indexOf("-"+taskType+"-");
-		int index = Integer.parseInt(name.substring(0, charIx));
-		Path finalPath = new Path(outputs[index], file.getName());
+		// get output index and final destination 
+		String name =  file.getName(); //e.g., 0-r-00000 
+		int index = Integer.parseInt(name.substring(0, name.indexOf("-")));
+		Path dest = new Path(outputs[index], name); //e.g., outX/0-r-00000
 		
-		//move file from 'file' to 'finalPath'
-		if( !fs.rename(file, finalPath) ) 
-		{
-			if (!fs.delete(finalPath, true))
-				throw new IOException("Failed to delete earlier output " + finalPath + " for rename of " + file + " in task " + attemptId);
-			if (!fs.rename(file, finalPath)) 
-				throw new IOException("Failed to save output " + finalPath + " for rename of " + file + " in task: " + attemptId);
+		// move file from 'file' to 'finalPath'
+		if( !fs.rename(file, dest) ) {
+			if (!fs.delete(dest, true))
+				throw new IOException("Failed to delete earlier output " + dest + " for rename of " + file + " in task " + attemptId);
+			if (!fs.rename(file, dest)) 
+				throw new IOException("Failed to save output " + dest + " for rename of " + file + " in task: " + attemptId);
 		}
 	}
-
 }

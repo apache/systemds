@@ -2047,14 +2047,13 @@ public class OptimizerRuleBased extends Optimizer
 					uipCandHopHMIter.remove();
 			}
 		}
-		
+
 		if(!uipCandHopHM.isEmpty())
 		{
 			// Get consumer list
 			rResetVisitStatus(pn);
 			rGetUIPConsumerList(pn, uipCandHopHM);
-			
-			
+
 			// Prune candidate list if consumer is in function call.
 			uipCandHopHMIter = uipCandHopHM.entrySet().iterator();
 			while(uipCandHopHMIter.hasNext())
@@ -2218,6 +2217,7 @@ public class OptimizerRuleBased extends Optimizer
 			throws DMLRuntimeException
 	{
 		ArrayList<ProgramBlock> childBlocks = null;
+		ArrayList<ProgramBlock> elseBlocks = null;
 		if (pb instanceof WhileProgramBlock)
 			childBlocks = ((WhileProgramBlock)pb).getChildBlocks();
 		else if (pb instanceof ForProgramBlock)
@@ -2225,15 +2225,23 @@ public class OptimizerRuleBased extends Optimizer
 		else if (pb instanceof IfProgramBlock) 
 		{
 			childBlocks = ((IfProgramBlock)pb).getChildBlocksIfBody();
-			ArrayList<ProgramBlock> elseBlocks = ((IfProgramBlock)pb).getChildBlocksElseBody();
-			if(childBlocks != null && elseBlocks != null)
-				childBlocks.addAll(elseBlocks);
-			else if (childBlocks == null)
-				childBlocks = elseBlocks;
+			elseBlocks = ((IfProgramBlock)pb).getChildBlocksElseBody();
 		}
 
 		if(childBlocks != null)
 			for (ProgramBlock childBlock: childBlocks)
+			{
+				rGetUIPConsumerList(childBlock, uipCandHopHM);
+				try 
+				{
+					rGetUIPConsumerList(childBlock.getStatementBlock().get_hops(), uipCandHopHM);
+				}
+				catch (Exception e) {
+					throw new DMLRuntimeException(e);
+				}
+			}
+		if(elseBlocks != null)
+			for (ProgramBlock childBlock: elseBlocks)
 			{
 				rGetUIPConsumerList(childBlock, uipCandHopHM);
 				try 
@@ -2312,24 +2320,34 @@ public class OptimizerRuleBased extends Optimizer
 				return;
 			}
 			ProgramBlock pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
-
 			ArrayList<ProgramBlock> childBlocks = null;
+			ArrayList<ProgramBlock> elseBlocks = null;
 			if (pb instanceof WhileProgramBlock)
 				childBlocks = ((WhileProgramBlock)pb).getChildBlocks();
 			else if (pb instanceof ForProgramBlock)
 				childBlocks = ((ForProgramBlock)pb).getChildBlocks();
 			else if (pb instanceof IfProgramBlock) {
 				childBlocks = ((IfProgramBlock)pb).getChildBlocksIfBody();
-				ArrayList<ProgramBlock> elseBlocks = ((IfProgramBlock)pb).getChildBlocksElseBody();
-				if(childBlocks != null && elseBlocks != null)
-					childBlocks.addAll(elseBlocks);
-				else if (childBlocks == null)
-					childBlocks = elseBlocks;
+				elseBlocks = ((IfProgramBlock)pb).getChildBlocksElseBody();
 			}
 				
 			if(childBlocks != null)
 			{
 				for (ProgramBlock childBlock: childBlocks)
+				{
+					try 
+					{
+						Hop.resetVisitStatus(childBlock.getStatementBlock().get_hops());
+					}
+					catch (Exception e)
+					{
+						throw new DMLRuntimeException(e);
+					}
+				}
+			}
+			if(elseBlocks != null)
+			{
+				for (ProgramBlock childBlock: elseBlocks)
 				{
 					try 
 					{

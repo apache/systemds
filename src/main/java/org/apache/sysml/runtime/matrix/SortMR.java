@@ -196,13 +196,19 @@ public class SortMR
 	    Path outpath = new Path(tmpOutput);
 	    FileOutputFormat.setOutputPath(job, outpath);	    
 	    MapReduceTool.deleteFileIfExistOnHDFS(outpath, job);
-	    
+
 	    //set number of reducers (1 if local mode)
-	    if( InfrastructureAnalyzer.isLocalMode(job) )
-	    	job.setNumReduceTasks(1);
-	    else
+		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
 	    	MRJobConfiguration.setNumReducers(job, numReducers, numReducers);
-	    
+	    	//ensure partition size <= 10M records to avoid scalability bottlenecks
+	    	//on cp-side qpick instructions for quantile/iqm/median (~128MB)
+	    	if( !(getSortInstructionType(sortInst)==SortKeys.OperationTypes.Indexes) )
+	    		job.setNumReduceTasks((int)Math.max(job.getNumReduceTasks(), rlen/10000000));
+	    }
+	    else //in case of local mode
+	    	job.setNumReduceTasks(1);
+	    	
+	    	
 	    //setup input/output format
 	    job.setInputFormat(SamplingSortMRInputFormat.class);
 	    SamplingSortMRInputFormat.setTargetKeyValueClasses(job, (Class<? extends WritableComparable>) outputInfo.outputKeyClass, outputInfo.outputValueClass);

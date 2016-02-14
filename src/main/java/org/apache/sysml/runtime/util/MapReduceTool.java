@@ -620,7 +620,8 @@ public class MapReduceTool
 		if(fileToRead==null)
 			throw new RuntimeException("cannot read partition "+currentPart);
 		
-		FSDataInputStream currentStream=fs.open(fileToRead);
+		int buffsz = 64 * 1024;
+		FSDataInputStream currentStream=fs.open(fileToRead, buffsz);
 	    DoubleWritable readKey=new DoubleWritable();
 	    IntWritable readValue=new IntWritable();
 	    

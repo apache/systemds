@@ -28,9 +28,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 
 public class ReadWithZeros 
-{
-
-	
+{	
 	private boolean contain0s=false;
 	private long numZeros=0;
 	private FSDataInputStream currentStream;
@@ -46,8 +44,11 @@ public class ReadWithZeros
 		numZeros=num0;
 	}
 	
-	public void readNextKeyValuePairs(DoubleWritable readKey, IntWritable readValue)throws IOException 
+	public boolean readNextKeyValuePairs(DoubleWritable readKey, IntWritable readValue)
+		throws IOException 
 	{
+		boolean ret = true;
+		
 		try {
 			if(contain0s && justFound0)
 			{
@@ -68,7 +69,7 @@ public class ReadWithZeros
 				readValue.set((int)numZeros);
 			}
 			else {
-				throw e;
+				ret = false;
 			}
 		}
 		
@@ -80,5 +81,7 @@ public class ReadWithZeros
 			readKey.set(0);
 			readValue.set((int)numZeros);
 		}
+		
+		return ret;
 	}
 }

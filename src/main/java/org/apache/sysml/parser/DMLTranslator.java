@@ -1009,7 +1009,7 @@ public class DMLTranslator
 				ae.setInputFormatType(Expression.convertFormatType(formatName));
 
 				if (ae.getDataType() == DataType.SCALAR ) {
-					ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), -1, -1);
+					ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateInPlace(), -1, -1);
 				}
 				else {
 					switch(ae.getInputFormatType()) {
@@ -1017,12 +1017,12 @@ public class DMLTranslator
 					case MM:
 					case CSV:
 						// write output in textcell format
-						ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), -1, -1);
+						ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateInPlace(), -1, -1);
 						break;
 						
 					case BINARY:
 						// write output in binary block format
-					    ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+					    ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateInPlace(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
 					    break;
 						
 						default:
@@ -1075,7 +1075,7 @@ public class DMLTranslator
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
-							transientwrite.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getRowsInBlock(), ae.getColsInBlock());
+							transientwrite.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateInPlace(), ae.getRowsInBlock(), ae.getColsInBlock());
 							transientwrite.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndLine());
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);
@@ -1107,7 +1107,7 @@ public class DMLTranslator
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
-							transientwrite.setOutputParams(origDim1, origDim2, ae.getNnz(), ae.getRowsInBlock(), ae.getColsInBlock());
+							transientwrite.setOutputParams(origDim1, origDim2, ae.getNnz(), ae.getUpdateInPlace(), ae.getRowsInBlock(), ae.getColsInBlock());
 							transientwrite.setAllPositions(target.getBeginLine(), target.getBeginColumn(), target.getEndLine(), target.getEndColumn());
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);

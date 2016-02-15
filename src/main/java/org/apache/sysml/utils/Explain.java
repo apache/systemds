@@ -28,7 +28,9 @@ import java.util.Map.Entry;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -682,7 +684,12 @@ public class Explain
 		               + hop.getDim2() + "," 
 				       + hop.getRowsInBlock() + "," 
 		               + hop.getColsInBlock() + "," 
-				       + hop.getNnz() + "]");
+				       + hop.getNnz());
+		
+		if (hop instanceof DataOp && ((DataOp)hop).getDataOpType() == DataOpTypes.TRANSIENTREAD && hop.getUpdateInPlace())
+			sb.append("," + hop.getUpdateInPlace());
+		
+		sb.append("]");
 		
 		//memory estimates
 		sb.append(" [" + showMem(hop.getInputMemEstimate(), false) + "," 

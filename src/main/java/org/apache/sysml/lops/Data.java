@@ -221,7 +221,7 @@ public class Data extends Lop
 		return getID() + ":" + "File_Name: " + this.getOutputParameters().getFile_name() + " " + 
 		"Label: " + this.getOutputParameters().getLabel() + " " + "Operation: = " + operation + " " + 
 		"Format: " + this.outParams.getFormat() +  " Datatype: " + getDataType() + " Valuetype: " + getValueType() + " num_rows = " + this.getOutputParameters().getNumRows() + " num_cols = " + 
-		this.getOutputParameters().getNumCols();
+		this.getOutputParameters().getNumCols() + " UpdateInPlace: " + this.getOutputParameters().getUpdateInPlace();
 	}
 
 	/**
@@ -550,6 +550,8 @@ public class Data extends Lop
 			sb.append( oparams.getColsInBlock() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( oparams.getNnz() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( oparams.getUpdateInPlace() );
 			
 			/* Format-specific properties */
 			if ( oparams.getFormat() == Format.CSV ) {

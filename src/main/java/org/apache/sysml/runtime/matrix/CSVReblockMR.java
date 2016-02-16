@@ -314,6 +314,10 @@ public class CSVReblockMR
 		
 		//set up the replication factor for the results
 		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
+
+		//set up custom map/reduce configurations 
+		DMLConfig config = ConfigurationManager.getConfig();
+		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		//set up the number of reducers
 		job.setNumReduceTasks(1);
@@ -406,6 +410,10 @@ public class CSVReblockMR
 		//set up preferred custom serialization framework for binary block format
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+
+		//set up custom map/reduce configurations 
+		DMLConfig config = ConfigurationManager.getConfig();
+		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		//set up what matrices are needed to pass from the mapper to reducer
 		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes,  null, 
@@ -418,7 +426,7 @@ public class CSVReblockMR
 		MatrixCharacteristics[] stats=ret.stats;
 		
 		//set up the number of reducers
-		int numRed = WriteCSVMR.determineNumReducers(rlens, clens, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), ret.numReducerGroups);
+		int numRed = WriteCSVMR.determineNumReducers(rlens, clens, config.getIntValue(DMLConfig.NUM_REDUCERS), ret.numReducerGroups);
 		job.setNumReduceTasks( numRed );
 		
 		// Print the complete instruction

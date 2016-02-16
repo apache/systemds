@@ -179,6 +179,9 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			DMLConfig config = ConfigurationManager.getConfig();
 			DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
 			
+			//set up custom map/reduce configurations 
+			MRJobConfiguration.setupCustomMRConfigurations(job, config);
+			
 			//set the max number of retries per map task
 			//  disabled job-level configuration to respect cluster configuration
 			//  note: this refers to hadoop2, hence it never had effect on mr1

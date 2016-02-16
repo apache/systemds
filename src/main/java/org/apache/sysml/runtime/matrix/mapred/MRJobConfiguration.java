@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -1921,5 +1922,19 @@ public class MRJobConfiguration
 		String frameworkList = job.get(MRConfigurationNames.IO_SERIALIZATIONS);
 		String frameworkClassBB = BinaryBlockSerialization.class.getCanonicalName();
 		job.set(MRConfigurationNames.IO_SERIALIZATIONS, frameworkClassBB+","+frameworkList);
+	}
+	
+	/**
+	 * Set all configurations with prefix mapred or mapreduce that exist in the given
+	 * DMLConfig into the given JobConf.
+	 * 
+	 * @param job
+	 * @param config
+	 */
+	public static void setupCustomMRConfigurations( JobConf job, DMLConfig config ) {
+		Map<String,String> map = config.getCustomMRConfig();
+		for( Entry<String,String> e : map.entrySet() ) {
+			job.set(e.getKey(), e.getValue());
+		}
 	}
 }

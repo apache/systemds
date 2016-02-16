@@ -214,7 +214,10 @@ public class GMR
 		//set up map/reduce memory configurations (if in AM context)
 		DMLConfig config = ConfigurationManager.getConfig();
 		DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
-			
+		
+		//set up custom map/reduce configurations 
+		MRJobConfiguration.setupCustomMRConfigurations(job, config);
+		
 		//set up jvm reuse (incl. reuse of loaded dist cache matrices)
 		if( jvmReuse )
 			job.setNumTasksToExecutePerJvm(-1);

@@ -212,6 +212,9 @@ public class MMCJMR
 		//set up map/reduce memory configurations (if in AM context)
 		DMLConfig config = ConfigurationManager.getConfig();
 		DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
+
+		//set up custom map/reduce configurations 
+		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		byte[] resultIndexes=new byte[]{MRInstructionParser.parseSingleInstruction(aggBinInstrction).output};
 		byte[] resultDimsUnknown_Array = new byte[]{resultDimsUnknown};

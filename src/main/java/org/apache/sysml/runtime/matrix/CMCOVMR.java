@@ -27,6 +27,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.matrix.data.CM_N_COVCell;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -86,6 +88,10 @@ public class CMCOVMR
 		
 		//set up the replication factor for the results
 		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
+		
+		//set up custom map/reduce configurations 
+		DMLConfig config = ConfigurationManager.getConfig();
+		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		//set up what matrices are needed to pass from the mapper to reducer
 		HashSet<Byte> mapoutputIndexes=MRJobConfiguration.setUpOutputIndexesForMapper(job, realIndexes, instructionsInMapper, null, 

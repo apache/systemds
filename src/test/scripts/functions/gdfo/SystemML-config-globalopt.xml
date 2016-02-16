@@ -53,4 +53,8 @@
    
    <!-- enables multi-threaded read/write of text formats in singlenode control program -->
    <cp.parallel.textio>true</cp.parallel.textio>
+   
+   
+   <!-- piggybacked test for custom mapred/mapreduce configurations -->
+   <mapreduce.task.io.sort.mb>50</mapreduce.task.io.sort.mb>
 </root>

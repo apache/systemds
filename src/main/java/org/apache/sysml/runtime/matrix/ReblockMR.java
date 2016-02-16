@@ -113,6 +113,10 @@ public class ReblockMR
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 		
+		//set up custom map/reduce configurations 
+		DMLConfig config = ConfigurationManager.getConfig();
+		MRJobConfiguration.setupCustomMRConfigurations(job, config);
+		
 		//enable jvm reuse (based on SystemML configuration)
 		if( jvmReuse )
 			job.setNumTasksToExecutePerJvm(-1);
@@ -128,7 +132,7 @@ public class ReblockMR
 		MatrixCharacteristics[] stats=ret.stats;
 		
 		//set up the number of reducers (according to output size)
-		int numRed = determineNumReducers(rlens, clens, nnz, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), ret.numReducerGroups);
+		int numRed = determineNumReducers(rlens, clens, nnz, config.getIntValue(DMLConfig.NUM_REDUCERS), ret.numReducerGroups);
 		job.setNumReduceTasks(numRed);
 		
 		//setup in-memory reduce buffers budget (reblock reducer dont need much memory)

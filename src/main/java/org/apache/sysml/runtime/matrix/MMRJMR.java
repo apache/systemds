@@ -122,6 +122,9 @@ public class MMRJMR
 		DMLConfig config = ConfigurationManager.getConfig();
 		DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
 				
+		//set up custom map/reduce configurations 
+		MRJobConfiguration.setupCustomMRConfigurations(job, config);
+		
 		// byte[] resultIndexes=new byte[]{AggregateBinaryInstruction.parseMRInstruction(aggBinInstrction).output};
 		
 		//set up what matrices are needed to pass from the mapper to reducer

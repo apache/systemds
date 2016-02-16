@@ -24,6 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -69,6 +70,10 @@ public class DMLConfig
 	public static final String CP_PARALLEL_MATRIXMULT = "cp.parallel.matrixmult";
 	public static final String CP_PARALLEL_TEXTIO   = "cp.parallel.textio";
 
+	// supported prefixes for custom map/reduce configurations
+	public static final String PREFIX_MAPRED = "mapred";
+	public static final String PREFIX_MAPREDUCE = "mapreduce";
+	
 	//internal config
 	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS
 	public static String LOCAL_MR_MODE_STAGING_DIR = null;
@@ -303,6 +308,36 @@ public class DMLConfig
 		}
 	}
 
+	/**
+	 * Get a map of key/value pairs of all configurations w/ the prefix 'mapred'
+	 * or 'mapreduce'. 
+	 * 
+	 * @return
+	 */
+	public Map<String, String> getCustomMRConfig()
+	{
+		HashMap<String, String> ret = new HashMap<String, String>();
+	
+		//check for non-existing config xml tree
+		if( xml_root == null )
+			return ret;
+		
+		//get all mapred.* and mapreduce.* tag / value pairs		
+		NodeList list = xml_root.getElementsByTagName("*");
+		for( int i=0; list!=null && i<list.getLength(); i++ ) {
+			if( list.item(i) instanceof Element &&
+				(  ((Element)list.item(i)).getNodeName().startsWith(PREFIX_MAPRED) 
+				|| ((Element)list.item(i)).getNodeName().startsWith(PREFIX_MAPREDUCE)) )
+			{
+				Element elem = (Element) list.item(i);
+				ret.put(elem.getNodeName(), 
+						elem.getFirstChild().getNodeValue());
+			}
+		}
+		
+		return ret;
+	}
+	
 	/**
 	 * 
 	 * @return

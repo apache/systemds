@@ -83,13 +83,17 @@ public class WriteCSVMR
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 		
+		//set up custom map/reduce configurations 
+		DMLConfig config = ConfigurationManager.getConfig();
+		MRJobConfiguration.setupCustomMRConfigurations(job, config);
+		
 		long maxRlen=0;
 		for(long rlen: rlens)
 			if(rlen>maxRlen)
 				maxRlen=rlen;
 		
 		//set up the number of reducers (according to output size)
-		int numRed = determineNumReducers(rlens, clens, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), (int)maxRlen);
+		int numRed = determineNumReducers(rlens, clens, config.getIntValue(DMLConfig.NUM_REDUCERS), (int)maxRlen);
 		job.setNumReduceTasks(numRed);
 		
 		byte[] resultDimsUnknown = new byte[resultIndexes.length];

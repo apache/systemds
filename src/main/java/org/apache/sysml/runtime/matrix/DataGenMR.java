@@ -300,6 +300,9 @@ public class DataGenMR
 			DMLConfig config = ConfigurationManager.getConfig();
 			DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
 			
+			//set up custom map/reduce configurations 
+			MRJobConfiguration.setupCustomMRConfigurations(job, config);
+			
 			//determine degree of parallelism (nmappers: 1<=n<=capacity)
 			//TODO use maxsparsity whenever we have a way of generating sparse rand data
 			int capacity = InfrastructureAnalyzer.getRemoteParallelMapTasks();

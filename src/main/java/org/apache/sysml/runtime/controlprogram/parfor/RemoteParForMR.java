@@ -167,6 +167,9 @@ public class RemoteParForMR
 			DMLConfig config = ConfigurationManager.getConfig();
 			DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
 			
+			//set up custom map/reduce configurations 
+			MRJobConfiguration.setupCustomMRConfigurations(job, config);
+			
 			//enables the reuse of JVMs (multiple tasks per MR task)
 			if( jvmReuse )
 				job.setNumTasksToExecutePerJvm(-1); //unlimited

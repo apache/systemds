@@ -795,7 +795,7 @@ public class DataTransform {
 		// Parse transform instruction (the first instruction) to obtain relevant fields
 		TransformOperands oprnds = new TransformOperands(insts[0], inputMatrices[0]);
 		
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		JobConf job = new JobConf(DataTransform.class); // ConfigurationManager.getCachedJobConf());
 		FileSystem fs = FileSystem.get(job);
 		
 		// find the first file in alphabetical ordering of partfiles in directory inputPath 

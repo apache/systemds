@@ -96,7 +96,11 @@ public class GTFMTDMapper implements Mapper<LongWritable, Text, IntWritable, Dis
 		
 		// Output part-file offsets to create OFFSETS_FILE, which is to be used in csv reblocking.
 		// OffsetCount is denoted as a DistinctValue by concatenating parfile name and offset within partfile.
-		_collector.collect(new IntWritable((int)_agents.getNumCols()+1), new DistinctValue(new OffsetCount(_partFileName, _offsetInPartFile, _agents.getValid())));
+		if(_collector != null) {
+			IntWritable key = new IntWritable((int)_agents.getNumCols()+1);
+			DistinctValue val = new DistinctValue(new OffsetCount(_partFileName, _offsetInPartFile, _agents.getValid())); 
+			_collector.collect(key, val);
+		}
 		
 		// reset global variables, required when the jvm is reused.
 		_firstRecordInSplit = true;

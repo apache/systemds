@@ -116,6 +116,10 @@ table th {
   padding: 0 .5em;
 }
 
+table {
+  margin-bottom: 20px;
+}
+
 .grayboldcell {
   background: #CCC;
   font-weight: bold;

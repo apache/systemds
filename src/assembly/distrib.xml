@@ -17,11 +17,10 @@
  * under the License.
 -->
 <assembly
-		xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-	<!-- Assembly file for the "distributed" SystemML release for running on a
-		cluster with Spark or Hadoop. -->
+	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+	<!-- Assembly file for the "distributed" SystemML release for running on a cluster with Spark or Hadoop. -->
 	<id>distrib</id>
 
 	<formats>
@@ -52,38 +51,37 @@
 		<fileSet>
 			<directory>${basedir}/scripts/algorithms</directory>
 			<includes>
-				<include>GLM-predict.dml</include>
-				<include>GLM.dml</include>
-				<include>Kmeans-predict.dml</include>
-				<include>Kmeans.dml</include>
-				<include>LinearRegCG.dml</include>
-				<include>LinearRegDS.dml</include>
-				<include>MultiLogReg.dml</include>
-				<include>Univar-Stats.dml</include>
-				<include>bivar-stats.dml</include>
-				<include>l2-svm-predict.dml</include>
-				<include>l2-svm.dml</include>
-				<include>m-svm-predict.dml</include>
-				<include>m-svm.dml</include>
-				<include>naive-bayes-predict.dml</include>
-				<include>naive-bayes.dml</include>
-				<include>stratstats.dml</include>
-				<include>transform.dml</include>
-				<include>apply-transform.dml</include>
-				<include>decision-tree.dml</include>
-				<include>decision-tree-predict.dml</include>
-				<!-- -->
-				<include>ALS.dml</include>
 				<include>ALS_predict.dml</include>
 				<include>ALS_topk_predict.dml</include>
-				<include>Cox.dml</include>
+				<include>ALS.dml</include>
+				<include>apply-transform.dml</include>
+				<include>bivar-stats.dml</include>
 				<include>Cox-predict.dml</include>
+				<include>Cox.dml</include>
+				<include>decision-tree-predict.dml</include>
+				<include>decision-tree.dml</include>
+				<include>GLM-predict.dml</include>
+				<include>GLM.dml</include>
 				<include>KM.dml</include>
+				<include>Kmeans-predict.dml</include>
+				<include>Kmeans.dml</include>
+				<include>l2-svm-predict.dml</include>
+				<include>l2-svm.dml</include>
+				<include>LinearRegCG.dml</include>
+				<include>LinearRegDS.dml</include>
+				<include>m-svm-predict.dml</include>
+				<include>m-svm.dml</include>
+				<include>MultiLogReg.dml</include>
+				<include>naive-bayes-predict.dml</include>
+				<include>naive-bayes.dml</include>
 				<include>PCA.dml</include>
-				<include>random-forest.dml</include>
 				<include>random-forest-predict.dml</include>
+				<include>random-forest.dml</include>
 				<include>StepGLM.dml</include>
 				<include>StepLinearRegDS.dml</include>
+				<include>stratstats.dml</include>
+				<include>transform.dml</include>
+				<include>Univar-Stats.dml</include>
 			</includes>
 			<outputDirectory>./algorithms</outputDirectory>
 		</fileSet>
@@ -92,15 +90,14 @@
 			<directory>${basedir}/scripts/utils</directory>
 			<includes>
 				<include>cbind.dml</include>
+				<include>csv2bin.dml</include>
 				<include>head.dml</include>
 				<include>project.dml</include>
+				<include>rowIndexMax.dml</include>
+				<include>sample.dml</include>
+				<include>splitXY-dummy.dml</include>
 				<include>splitXY.dml</include>
 				<include>write.dml</include>
-				<include>csv2bin.dml</include>
-				<include>sample.dml</include>
-				<include>rowIndexMax.dml</include>
-				<!-- -->
-				<include>splitXY-dummy.dml</include>
 			</includes>
 			<outputDirectory>./algorithms/utils</outputDirectory>
 		</fileSet>

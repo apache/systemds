@@ -26,11 +26,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 
-public class SyntacticErrorListener {
+public class CustomErrorListener {
 	
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
-	public static class CustomErrorListener extends BaseErrorListener {
+	public static class CustomErrorListenerInner extends BaseErrorListener {
 		
 		private boolean atleastOneError = false;
 		private String currentFileName = null;

@@ -795,7 +795,7 @@ public class DataTransform {
 		// Parse transform instruction (the first instruction) to obtain relevant fields
 		TransformOperands oprnds = new TransformOperands(insts[0], inputMatrices[0]);
 		
-		JobConf job = new JobConf(DataTransform.class); // ConfigurationManager.getCachedJobConf());
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		FileSystem fs = FileSystem.get(job);
 		
 		// find the first file in alphabetical ordering of partfiles in directory inputPath 
@@ -825,6 +825,8 @@ public class DataTransform {
 		boolean isCSV = (csvoutputs.size() > 0);
 		boolean isBB  = (bboutputs.size()  > 0);
 		String tmpPath = MRJobConfiguration.constructTempOutputFilename();
+		
+		checkIfOutputOverlapsWithTxMtd(outputMatrices, oprnds, isCSV, isBB, csvoutputs, bboutputs);
 		
 		JobReturn retCSV = null, retBB = null;
 		
@@ -1096,6 +1098,8 @@ public class DataTransform {
 		}
 		boolean isCSV = (csvoutputs.size() > 0);
 		boolean isBB  = (bboutputs.size()  > 0);
+		
+		checkIfOutputOverlapsWithTxMtd(outputMatrices, oprnds, isCSV, isBB, csvoutputs, bboutputs);
 		
 		JobReturn ret = null;
 		
@@ -1397,12 +1401,31 @@ public class DataTransform {
 		br.close();
 	}
 	
+	private static void checkIfOutputOverlapsWithTxMtd(MatrixObject[] outputMatrices, TransformOperands oprnds,
+			boolean isCSV, boolean isBB, ArrayList<Integer> csvoutputs, ArrayList<Integer> bboutputs) throws DMLRuntimeException {
+		if(isCSV) {
+			checkIfOutputOverlapsWithTxMtd(oprnds.txMtdPath, outputMatrices[csvoutputs.get(0)].getFileName());
+		}
+		else if(isBB) {
+			checkIfOutputOverlapsWithTxMtd(oprnds.txMtdPath, outputMatrices[bboutputs.get(0)].getFileName());
+		}
+	}
+	
+	private static void checkIfOutputOverlapsWithTxMtd(String txMtdPath, String outputPath) throws DMLRuntimeException {
+		if(txMtdPath.startsWith(outputPath) || outputPath.startsWith(txMtdPath)) {
+			throw new DMLRuntimeException("The transform path \'" + txMtdPath 
+					+ "\' cannot overlap with the output path \'" + outputPath + "\'");
+		}
+	}
+	
 	public static void spDataTransform(ParameterizedBuiltinSPInstruction inst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices, ExecutionContext ec) throws Exception {
 		
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		// Parse transform instruction (the first instruction) to obtain relevant fields
 		TransformOperands oprnds = new TransformOperands(inst, inputMatrices[0]);
+		
+		checkIfOutputOverlapsWithTxMtd(oprnds.txMtdPath, outputMatrices[0].getFileName());
 		
 		JobConf job = new JobConf();
 		FileSystem fs = FileSystem.get(job);

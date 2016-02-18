@@ -1,4 +1,6 @@
-package org.apache.spark.ml.systemml
+package org.apache.sysml.api.ml.scala
+
+import java.io.File
 
 object ScriptsUtils {
   var systemmlHome = System.getenv("SYSTEMML_HOME")

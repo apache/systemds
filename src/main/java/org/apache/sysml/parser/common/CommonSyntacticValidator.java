@@ -51,7 +51,7 @@ import org.apache.sysml.parser.PrintStatement;
 import org.apache.sysml.parser.RelationalExpression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StringIdentifier;
-import org.apache.sysml.parser.common.SyntacticErrorListener.CustomErrorListener;
+import org.apache.sysml.parser.common.CustomErrorListener.CustomErrorListenerInner;
 import org.apache.sysml.parser.dml.DmlParser.BuiltinFunctionExpressionContext;
 import org.apache.sysml.parser.dml.DmlSyntacticValidator;
 import org.apache.sysml.parser.pydml.PydmlSyntacticValidator;
@@ -64,12 +64,12 @@ import com.google.common.primitives.Longs;
  */
 public abstract class CommonSyntacticValidator {
 
-	protected final CustomErrorListener errorListener;
+	protected final CustomErrorListenerInner errorListener;
 	protected final String currentFile;
 	protected String _workingDir = ".";   //current working directory
 	protected HashMap<String,String> argVals = null;
 
-	public CommonSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
+	public CommonSyntacticValidator(CustomErrorListenerInner errorListener, HashMap<String,String> argVals) {
 		this.errorListener = errorListener;
 		currentFile = errorListener.getCurrentFileName();
 		this.argVals = argVals;

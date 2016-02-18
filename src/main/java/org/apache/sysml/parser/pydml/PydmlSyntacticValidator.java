@@ -58,7 +58,7 @@ import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.StringIdentifier;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
-import org.apache.sysml.parser.common.SyntacticErrorListener.CustomErrorListener;
+import org.apache.sysml.parser.common.CustomErrorListener.CustomErrorListenerInner;
 import org.apache.sysml.parser.common.ExpressionInfo;
 import org.apache.sysml.parser.common.StatementInfo;
 import org.apache.sysml.parser.dml.DmlParser.MatrixMulExpressionContext;
@@ -118,7 +118,7 @@ import org.apache.sysml.parser.pydml.PydmlParser.WhileStatementContext;
  */
 public class PydmlSyntacticValidator extends CommonSyntacticValidator implements PydmlListener {
 
-	public PydmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
+	public PydmlSyntacticValidator(CustomErrorListenerInner errorListener, HashMap<String,String> argVals) {
 		super(errorListener, argVals);
 	}
 

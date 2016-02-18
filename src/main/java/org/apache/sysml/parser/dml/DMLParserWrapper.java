@@ -43,7 +43,7 @@ import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.parser.common.SyntacticErrorListener.CustomErrorListener;
+import org.apache.sysml.parser.common.CustomErrorListener.CustomErrorListenerInner;
 import org.apache.sysml.parser.dml.DmlParser.FunctionStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.ProgramrootContext;
 import org.apache.sysml.parser.dml.DmlParser.StatementContext;
@@ -62,7 +62,7 @@ import org.apache.sysml.parser.dml.DmlParser.StatementContext;
  * 
  * To separate logic of semantic validation, DmlSyntaticValidatorHelper contains functions that do semantic validation. Currently, there is no semantic validation as most of it is delegated to subsequent validation phase. 
  * 
- * Whenever there is a parse error, it goes through SyntacticErrorListener. This allows us to pipe the error messages to any future pipeline as well as control the format in an elegant manner. 
+ * Whenever there is a parse error, it goes through CustomErrorListener. This allows us to pipe the error messages to any future pipeline as well as control the format in an elegant manner.
  * There are three types of messages passed:
  * - Syntactic errors: When passed DML script doesnot conform to syntatic structure enforced by Dml.g4
  * - Validation errors: Errors due to translation of AST to  DMLProgram
@@ -125,7 +125,7 @@ public class DMLParserWrapper extends AParserWrapper
 		}
 
 		ProgramrootContext ast = null;
-		CustomErrorListener errorListener = new CustomErrorListener();
+		CustomErrorListenerInner errorListener = new CustomErrorListenerInner();
 		
 		try {
 			DmlLexer lexer = new DmlLexer(in);
@@ -149,11 +149,11 @@ public class DMLParserWrapper extends AParserWrapper
 					antlr4Parser.reset();
 					if(fileName != null) {
 						errorListener.setCurrentFileName(fileName);
-						// SyntacticErrorListener.currentFileName.push(fileName);
+						// CustomErrorListener.currentFileName.push(fileName);
 					}
 					else {
 						errorListener.setCurrentFileName("MAIN_SCRIPT");
-						// SyntacticErrorListener.currentFileName.push("MAIN_SCRIPT");
+						// CustomErrorListener.currentFileName.push("MAIN_SCRIPT");
 					}
 					// Set our custom error listener
 					antlr4Parser.addErrorListener(errorListener);

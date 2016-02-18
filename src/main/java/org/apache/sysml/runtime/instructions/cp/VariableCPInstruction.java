@@ -447,9 +447,7 @@ public class VariableCPInstruction extends CPInstruction
 				mobj.enableUpdateInPlace(updateInPlace);
 				ec.setVariable(input1.getName(), mobj);
 				if(updateInPlace)
-					Statistics.incrementTotUpdateInPlace();
-				else
-					Statistics.incrementTotNonUpdateInPlace();
+					Statistics.incrementTotalUIPVar();
 			}
 			else if ( input1.getDataType() == DataType.SCALAR ){
 				ScalarObject sobj = null;

@@ -88,8 +88,9 @@ public class Statistics
 	private static HashMap<String,Long> _cpInstTime   =  new HashMap<String, Long>();
 	private static HashMap<String,Long> _cpInstCounts =  new HashMap<String, Long>();
 	
-	private static AtomicLong lTotUpdateInPlace = new AtomicLong(0);
-	private static AtomicLong lTotNonUpdateInPlace = new AtomicLong(0);
+	private static AtomicLong lTotalUIPVar = new AtomicLong(0);
+	private static AtomicLong lTotalLix = new AtomicLong(0);
+	private static AtomicLong lTotalLixUIP = new AtomicLong(0);
 	
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
@@ -147,12 +148,16 @@ public class Statistics
 		iNoOfCompiledSPInst ++;
 	}
 	
-	public static void incrementTotUpdateInPlace() {
-		lTotUpdateInPlace.incrementAndGet();
+	public static void incrementTotalUIPVar() {
+		lTotalUIPVar.incrementAndGet();
 	}
 
-	public static void incrementTotNonUpdateInPlace() {
-		lTotNonUpdateInPlace.incrementAndGet();
+	public static void incrementTotalLixUIP() {
+		lTotalLixUIP.incrementAndGet();
+	}
+
+	public static void incrementTotalLix() {
+		lTotalLix.incrementAndGet();
 	}
 	
 	/**
@@ -550,7 +555,7 @@ public class Statistics
 				sb.append("ParFor optimize time:\t\t" + String.format("%.3f", ((double)getParforOptTime())/1000) + " sec.\n");	
 				sb.append("ParFor initialize time:\t\t" + String.format("%.3f", ((double)getParforInitTime())/1000) + " sec.\n");	
 				sb.append("ParFor result merge time:\t" + String.format("%.3f", ((double)getParforMergeTime())/1000) + " sec.\n");	
-				sb.append("ParFor total update in-place:\t" + lTotUpdateInPlace + "/" + (lTotUpdateInPlace.get()+lTotNonUpdateInPlace.get()) + "\n");
+				sb.append("ParFor total update in-place:\t" + lTotalUIPVar + "/" + lTotalLixUIP + "/" + lTotalLix + "\n");
 			}
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");

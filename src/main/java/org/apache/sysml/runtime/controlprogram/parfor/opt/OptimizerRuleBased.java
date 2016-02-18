@@ -155,7 +155,7 @@ public class OptimizerRuleBased extends Optimizer
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";
 	
-	public static final boolean APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE = true;
+	public static final boolean APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE = false;
 	
 	public static final double PAR_K_FACTOR        = OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
 	public static final double PAR_K_MR_FACTOR     = 1.0 * OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 

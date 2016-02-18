@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -30,6 +31,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.util.IndexRange;
+import org.apache.sysml.utils.Statistics;
 
 public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 {
@@ -165,6 +167,14 @@ public class MatrixIndexingCPInstruction extends UnaryCPInstruction
 		else if ( opcode.equalsIgnoreCase("leftIndex"))
 		{
 			boolean inplace = mo.isUpdateInPlaceEnabled();
+			if(DMLScript.STATISTICS)
+			{
+				if(inplace)
+					Statistics.incrementTotalLixUIP();
+				Statistics.incrementTotalLix();
+			}
+
+			
 			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 			MatrixBlock resultBlock = null;
 			

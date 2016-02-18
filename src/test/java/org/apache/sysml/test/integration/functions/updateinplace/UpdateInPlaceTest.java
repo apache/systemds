@@ -240,35 +240,38 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 			// This is for running the junit test the new way, i.e., construct the arguments directly 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + iTestNumber + ".dml";
-			programArgs = new String[]{}; //new String[]{"-args", input("A"), output("B") };
+			programArgs = new String[]{"-stats"}; //new String[]{"-args", input("A"), output("B") };
 			
 			runTest(true, false, null, -1);
 
-			List<String> listUIPRes = OptimizerRuleBased.getUIPList();
-			int iUIPResCount = 0;
-			
-			// If UpdateInPlace list specified in the argument, verify the list.
-			if (listUIPExp != null)
+			if(OptimizerRuleBased.APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE)
 			{
-				if(listUIPRes != null)
+				List<String> listUIPRes = OptimizerRuleBased.getUIPList();
+				int iUIPResCount = 0;
+				
+				// If UpdateInPlace list specified in the argument, verify the list.
+				if (listUIPExp != null)
 				{
-					for (String strUIPMatName: listUIPExp)
-						Assert.assertTrue("Expected UpdateInPlace matrix " + strUIPMatName 
-								+ " does not exist in the result UpdateInPlace matrix list.", 
-								listUIPRes.contains(strUIPMatName));
-					
-					iUIPResCount = listUIPRes.size();
+					if(listUIPRes != null)
+					{
+						for (String strUIPMatName: listUIPExp)
+							Assert.assertTrue("Expected UpdateInPlace matrix " + strUIPMatName 
+									+ " does not exist in the result UpdateInPlace matrix list.", 
+									listUIPRes.contains(strUIPMatName));
+						
+						iUIPResCount = listUIPRes.size();
+					}
+	
+					Assert.assertTrue("Expected # of UpdateInPlace matrix object/s " + listUIPExp.size() + 
+						" does not match with the # of matrix objects " + iUIPResCount + " from optimization result.", 
+						(iUIPResCount == listUIPExp.size()));
 				}
-
-				Assert.assertTrue("Expected # of UpdateInPlace matrix object/s " + listUIPExp.size() + 
-					" does not match with the # of matrix objects " + iUIPResCount + " from optimization result.", 
-					(iUIPResCount == listUIPExp.size()));
-			}
-			else
-			{
-				Assert.assertTrue("Expected # of UpdateInPlace matrix object/s " + "0" + 
-						" does not match with the # of matrix objects " + "0" + " from optimization result.", 
-						(listUIPRes == null || listUIPRes.size() == 0));
+				else
+				{
+					Assert.assertTrue("Expected # of UpdateInPlace matrix object/s " + "0" + 
+							" does not match with the # of matrix objects " + "0" + " from optimization result.", 
+							(listUIPRes == null || listUIPRes.size() == 0));
+				}
 			}
 		}
 		finally{

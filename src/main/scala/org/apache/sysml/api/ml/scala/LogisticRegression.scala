@@ -1,5 +1,10 @@
 package org.apache.sysml.api.ml.scala
 
+import org.apache.sysml.api.{MLContext, MLOutput}
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics
+import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
+import org.apache.sysml.runtime.instructions.spark.utils.{RDDConverterUtilsExt => RDDConverterUtils}
+
 import org.apache.spark.{ SparkContext }
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
@@ -7,14 +12,9 @@ import org.apache.spark.ml.{ Model, Estimator }
 import org.apache.spark.ml.classification._
 import org.apache.spark.ml.param.{ Params, Param, ParamMap,DoubleParam }
 import org.apache.spark.ml.param.shared._
-import org.apache.sysml.api.{ MLContext, MLOutput }
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics
-import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
 import org.apache.spark.SparkConf
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.sysml.runtime.instructions.spark.utils.{RDDConverterUtilsExt => RDDConverterUtils}
-
 
 trait HasIcpt extends Params {
   final val icpt: Param[Int] = new Param[Int](this, "icpt", "Intercept presence, shifting and rescaling X columns")

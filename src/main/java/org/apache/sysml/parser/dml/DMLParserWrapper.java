@@ -43,7 +43,7 @@ import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.parser.common.CustomErrorListener.CustomErrorListenerInner;
+import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.dml.DmlParser.FunctionStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.ProgramrootContext;
 import org.apache.sysml.parser.dml.DmlParser.StatementContext;
@@ -125,7 +125,7 @@ public class DMLParserWrapper extends AParserWrapper
 		}
 
 		ProgramrootContext ast = null;
-		CustomErrorListenerInner errorListener = new CustomErrorListenerInner();
+		CustomErrorListener errorListener = new CustomErrorListener();
 		
 		try {
 			DmlLexer lexer = new DmlLexer(in);
@@ -149,11 +149,9 @@ public class DMLParserWrapper extends AParserWrapper
 					antlr4Parser.reset();
 					if(fileName != null) {
 						errorListener.setCurrentFileName(fileName);
-						// CustomErrorListener.currentFileName.push(fileName);
 					}
 					else {
 						errorListener.setCurrentFileName("MAIN_SCRIPT");
-						// CustomErrorListener.currentFileName.push("MAIN_SCRIPT");
 					}
 					// Set our custom error listener
 					antlr4Parser.addErrorListener(errorListener);

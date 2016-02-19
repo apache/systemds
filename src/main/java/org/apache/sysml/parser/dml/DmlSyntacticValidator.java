@@ -55,7 +55,7 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
-import org.apache.sysml.parser.common.CustomErrorListener.CustomErrorListenerInner;
+import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.common.ExpressionInfo;
 import org.apache.sysml.parser.common.StatementInfo;
 import org.apache.sysml.parser.dml.DmlParser.AddSubExpressionContext;
@@ -110,7 +110,7 @@ import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class DmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
 
-	public DmlSyntacticValidator(CustomErrorListenerInner errorListener, HashMap<String,String> argVals) {
+	public DmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
 		super(errorListener, argVals);
 	}
 

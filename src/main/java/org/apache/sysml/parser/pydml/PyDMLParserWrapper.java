@@ -44,7 +44,7 @@ import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.Statement;
-import org.apache.sysml.parser.common.CustomErrorListener.CustomErrorListenerInner;
+import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ProgramrootContext;
@@ -112,7 +112,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 		}
 
 		ProgramrootContext ast = null;
-		CustomErrorListenerInner errorListener = new CustomErrorListenerInner();
+		CustomErrorListener errorListener = new CustomErrorListener();
 		
 		try {
 			PydmlLexer lexer = new PydmlLexer(in);

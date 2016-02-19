@@ -39,25 +39,16 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.ForStatement;
-import org.apache.sysml.parser.ForStatementBlock;
 import org.apache.sysml.parser.FunctionStatementBlock;
-import org.apache.sysml.parser.IfStatement;
-import org.apache.sysml.parser.IfStatementBlock;
 import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.parser.ParForStatement;
-import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.Statement;
-import org.apache.sysml.parser.StatementBlock;
-import org.apache.sysml.parser.WhileStatement;
-import org.apache.sysml.parser.WhileStatementBlock;
+import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionStatementContext;
-import org.apache.sysml.parser.pydml.PydmlParser.PmlprogramContext;
+import org.apache.sysml.parser.pydml.PydmlParser.ProgramrootContext;
 import org.apache.sysml.parser.pydml.PydmlParser.StatementContext;
-import org.apache.sysml.parser.pydml.PydmlSyntacticErrorListener.CustomDmlErrorListener;
 
 /**
  * Logic of this wrapper is similar to DMLParserWrapper.
@@ -68,37 +59,6 @@ import org.apache.sysml.parser.pydml.PydmlSyntacticErrorListener.CustomDmlErrorL
 public class PyDMLParserWrapper extends AParserWrapper
 {
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
-
-	/**
-	 * Custom wrapper to convert statement into statement blocks. Called by doParse and in PydmlSyntacticValidator for for, parfor, while, ...
-	 * @param current a statement
-	 * @return corresponding statement block
-	 */
-	public static StatementBlock getStatementBlock(org.apache.sysml.parser.Statement current) {
-		StatementBlock blk = null;
-		if(current instanceof ParForStatement) {
-			blk = new ParForStatementBlock();
-			blk.addStatement(current);
-		}
-		else if(current instanceof ForStatement) {
-			blk = new ForStatementBlock();
-			blk.addStatement(current);
-		}
-		else if(current instanceof IfStatement) {
-			blk = new IfStatementBlock();
-			blk.addStatement(current);
-		}
-		else if(current instanceof WhileStatement) {
-			blk = new WhileStatementBlock();
-			blk.addStatement(current);
-		}
-		else {
-			// This includes ImportStatement
-			blk = new StatementBlock();
-			blk.addStatement(current);
-		}
-		return blk;
-	}
 
 	/**
 	 * Parses the passed file with command line parameters. You can either pass both (local file) or just dmlScript (hdfs) or just file name (import command)
@@ -116,16 +76,14 @@ public class PyDMLParserWrapper extends AParserWrapper
 			throw new ParseException("Incorrect usage of parse. Please pass dmlScript not just filename");
 		}
 		
-		// Set the pipeline required for ANTLR parsing
-		PyDMLParserWrapper parser = new PyDMLParserWrapper();
-		prog = parser.doParse(fileName, dmlScript, argVals);
+		prog = doParse(fileName, dmlScript, argVals);
 		
 		if(prog == null) {
-			throw new ParseException("One or more errors found during parsing. (could not construct AST for file: " + fileName + "). Cannot proceed ahead.");
+			throw new ParseException("One or more errors found during parsing (could not construct AST for file: " + fileName + "). Cannot proceed ahead.");
 		}
 		return prog;
 	}
-
+	
 	/**
 	 * This function is supposed to be called directly only from PydmlSyntacticValidator when it encounters 'import'
 	 * @param fileName
@@ -137,7 +95,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 		ANTLRInputStream in;
 		try {
 			if(dmlScript == null) {
-				dmlScript = DMLParserWrapper.readDMLScript(fileName);
+				dmlScript = DMLParserWrapper.readDMLScript(fileName, LOG);
 			}
 			
 			InputStream stream = new ByteArrayInputStream(dmlScript.getBytes());
@@ -153,8 +111,8 @@ public class PyDMLParserWrapper extends AParserWrapper
 			throw new ParseException("ERROR: " + e.getMessage(), e);
 		}
 
-		PmlprogramContext ast = null;
-		CustomDmlErrorListener errorListener = new CustomDmlErrorListener();
+		ProgramrootContext ast = null;
+		CustomErrorListener errorListener = new CustomErrorListener();
 		
 		try {
 			PydmlLexer lexer = new PydmlLexer(in);
@@ -169,7 +127,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 				antlr4Parser.removeErrorListeners();
 				antlr4Parser.setErrorHandler(new BailErrorStrategy());
 				try{
-					ast = antlr4Parser.pmlprogram();
+					ast = antlr4Parser.programroot();
 					// If successful, no need to try out full LL(*) ... SLL was enough
 				}
 				catch(ParseCancellationException ex) {
@@ -177,26 +135,26 @@ public class PyDMLParserWrapper extends AParserWrapper
 					tokens.reset();
 					antlr4Parser.reset();
 					if(fileName != null) {
-						errorListener.pushCurrentFileName(fileName);
+						errorListener.setCurrentFileName(fileName);
 					}
 					else {
-						errorListener.pushCurrentFileName("MAIN_SCRIPT");
+						errorListener.setCurrentFileName("MAIN_SCRIPT");
 					}
 					// Set our custom error listener
 					antlr4Parser.addErrorListener(errorListener);
 					antlr4Parser.setErrorHandler(new DefaultErrorStrategy());
 					antlr4Parser.getInterpreter().setPredictionMode(PredictionMode.LL);
-					ast = antlr4Parser.pmlprogram();
+					ast = antlr4Parser.programroot();
 				}
 			}
 			else {
 				// Set our custom error listener
 				antlr4Parser.removeErrorListeners();
 				antlr4Parser.addErrorListener(errorListener);
-				errorListener.pushCurrentFileName(fileName);
+				errorListener.setCurrentFileName(fileName);
 	
 				// Now do the parsing
-				ast = antlr4Parser.pmlprogram();
+				ast = antlr4Parser.programroot();
 			}
 		}
 		catch(Exception e) {
@@ -210,10 +168,9 @@ public class PyDMLParserWrapper extends AParserWrapper
 			ParseTree tree = ast;
 			// And also do syntactic validation
 			ParseTreeWalker walker = new ParseTreeWalker();
-			PydmlSyntacticValidatorHelper helper = new PydmlSyntacticValidatorHelper(errorListener);
-			PydmlSyntacticValidator validator = new PydmlSyntacticValidator(helper, fileName, argVals);
+			PydmlSyntacticValidator validator = new PydmlSyntacticValidator(errorListener, argVals);
 			walker.walk(validator, tree);
-			errorListener.popFileName();
+			errorListener.unsetCurrentFileName();
 			if(errorListener.isAtleastOneError()) {
 				return null;
 			}
@@ -227,7 +184,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 	}
 
 
-	private DMLProgram createDMLProgram(PmlprogramContext ast) {
+	private DMLProgram createDMLProgram(ProgramrootContext ast) {
 
 		DMLProgram dmlPgm = new DMLProgram();
 

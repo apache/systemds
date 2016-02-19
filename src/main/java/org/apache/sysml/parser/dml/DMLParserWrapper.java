@@ -19,48 +19,34 @@
 
 package org.apache.sysml.parser.dml;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.DefaultErrorStrategy;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.ForStatement;
-import org.apache.sysml.parser.ForStatementBlock;
 import org.apache.sysml.parser.FunctionStatementBlock;
-import org.apache.sysml.parser.IfStatement;
-import org.apache.sysml.parser.IfStatementBlock;
 import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.parser.ParForStatement;
-import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.parser.Statement;
-import org.apache.sysml.parser.StatementBlock;
-import org.apache.sysml.parser.WhileStatement;
-import org.apache.sysml.parser.WhileStatementBlock;
-import org.apache.sysml.parser.dml.DmlParser.DmlprogramContext;
+import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.dml.DmlParser.FunctionStatementContext;
+import org.apache.sysml.parser.dml.DmlParser.ProgramrootContext;
 import org.apache.sysml.parser.dml.DmlParser.StatementContext;
-import org.apache.sysml.parser.dml.DmlSyntacticErrorListener.CustomDmlErrorListener;
-import org.apache.sysml.runtime.util.LocalFileUtils;
 
 /**
  * This is the main entry point for the Antlr4 parser.
@@ -76,7 +62,7 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
  * 
  * To separate logic of semantic validation, DmlSyntaticValidatorHelper contains functions that do semantic validation. Currently, there is no semantic validation as most of it is delegated to subsequent validation phase. 
  * 
- * Whenever there is a parse error, it goes through DmlSyntacticErrorListener. This allows us to pipe the error messages to any future pipeline as well as control the format in an elegant manner. 
+ * Whenever there is a parse error, it goes through SyntacticErrorListener. This allows us to pipe the error messages to any future pipeline as well as control the format in an elegant manner. 
  * There are three types of messages passed:
  * - Syntactic errors: When passed DML script doesnot conform to syntatic structure enforced by Dml.g4
  * - Validation errors: Errors due to translation of AST to  DMLProgram
@@ -91,37 +77,6 @@ public class DMLParserWrapper extends AParserWrapper
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 
 	/**
-	 * Custom wrapper to convert statement into statement blocks. Called by doParse and in DmlSyntacticValidator for for, parfor, while, ...
-	 * @param current a statement
-	 * @return corresponding statement block
-	 */
-	public static StatementBlock getStatementBlock(Statement current) {
-		StatementBlock blk = null;
-		if(current instanceof ParForStatement) {
-			blk = new ParForStatementBlock();
-			blk.addStatement(current);
-		}
-		else if(current instanceof ForStatement) {
-			blk = new ForStatementBlock();
-			blk.addStatement(current);
-		}
-		else if(current instanceof IfStatement) {
-			blk = new IfStatementBlock();
-			blk.addStatement(current);
-		}
-		else if(current instanceof WhileStatement) {
-			blk = new WhileStatementBlock();
-			blk.addStatement(current);
-		}
-		else {
-			// This includes ImportStatement
-			blk = new StatementBlock();
-			blk.addStatement(current);
-		}
-		return blk;
-	}
-
-	/**
 	 * Parses the passed file with command line parameters. You can either pass both (local file) or just dmlScript (hdfs) or just file name (import command)
 	 * @param fileName either full path or null --> only used for better error handling
 	 * @param dmlScript required
@@ -130,25 +85,21 @@ public class DMLParserWrapper extends AParserWrapper
 	 * @throws ParseException
 	 */
 	@Override
-	public DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) 
-		throws ParseException 
-	{
+	public DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
 		DMLProgram prog = null;
 		
 		if(dmlScript == null || dmlScript.trim().isEmpty()) {
 			throw new ParseException("Incorrect usage of parse. Please pass dmlScript not just filename");
 		}
 		
-		// Set the pipeline required for ANTLR parsing
-		DMLParserWrapper parser = new DMLParserWrapper();
-		prog = parser.doParse(fileName, dmlScript, argVals);
+		prog = doParse(fileName, dmlScript, argVals);
 		
 		if(prog == null) {
 			throw new ParseException("One or more errors found during parsing (could not construct AST for file: " + fileName + "). Cannot proceed ahead.");
 		}
 		return prog;
 	}
-
+	
 	/**
 	 * This function is supposed to be called directly only from DmlSyntacticValidator when it encounters 'import'
 	 * @param fileName
@@ -157,20 +108,14 @@ public class DMLParserWrapper extends AParserWrapper
 	public DMLProgram doParse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
 		DMLProgram dmlPgm = null;
 		
-		org.antlr.v4.runtime.ANTLRInputStream in;
+		ANTLRInputStream in;
 		try {
 			if(dmlScript == null) {
-				dmlScript = readDMLScript(fileName);
+				dmlScript = readDMLScript(fileName, LOG);
 			}
 			
 			InputStream stream = new ByteArrayInputStream(dmlScript.getBytes());
-			in = new org.antlr.v4.runtime.ANTLRInputStream(stream);
-//			else {
-//				if(!(new File(fileName)).exists()) {
-//					throw new ParseException("ERROR: Cannot open file:" + fileName);
-//				}
-//				in = new org.antlr.v4.runtime.ANTLRInputStream(new java.io.FileInputStream(fileName));
-//			}
+			in = new ANTLRInputStream(stream);
 		} catch (FileNotFoundException e) {
 			throw new ParseException("ERROR: Cannot find file:" + fileName, e);
 		} catch (IOException e) {
@@ -179,12 +124,12 @@ public class DMLParserWrapper extends AParserWrapper
 			throw new ParseException("ERROR: " + e.getMessage(), e);
 		}
 
-		DmlprogramContext ast = null;
-		CustomDmlErrorListener errorListener = new CustomDmlErrorListener();
+		ProgramrootContext ast = null;
+		CustomErrorListener errorListener = new CustomErrorListener();
 		
 		try {
 			DmlLexer lexer = new DmlLexer(in);
-			org.antlr.v4.runtime.CommonTokenStream tokens = new org.antlr.v4.runtime.CommonTokenStream(lexer);
+			CommonTokenStream tokens = new CommonTokenStream(lexer);
 			DmlParser antlr4Parser = new DmlParser(tokens);
 			
 			boolean tryOptimizedParsing = false; // For now no optimization, since it is not able to parse integer value. 
@@ -195,7 +140,7 @@ public class DMLParserWrapper extends AParserWrapper
 				antlr4Parser.removeErrorListeners();
 				antlr4Parser.setErrorHandler(new BailErrorStrategy());
 				try{
-					ast = antlr4Parser.dmlprogram();
+					ast = antlr4Parser.programroot();
 					// If successful, no need to try out full LL(*) ... SLL was enough
 				}
 				catch(ParseCancellationException ex) {
@@ -203,28 +148,28 @@ public class DMLParserWrapper extends AParserWrapper
 					tokens.reset();
 					antlr4Parser.reset();
 					if(fileName != null) {
-						errorListener.pushCurrentFileName(fileName);
-						// DmlSyntacticErrorListener.currentFileName.push(fileName);
+						errorListener.setCurrentFileName(fileName);
+						// SyntacticErrorListener.currentFileName.push(fileName);
 					}
 					else {
-						errorListener.pushCurrentFileName("MAIN_SCRIPT");
-						// DmlSyntacticErrorListener.currentFileName.push("MAIN_SCRIPT");
+						errorListener.setCurrentFileName("MAIN_SCRIPT");
+						// SyntacticErrorListener.currentFileName.push("MAIN_SCRIPT");
 					}
 					// Set our custom error listener
 					antlr4Parser.addErrorListener(errorListener);
 					antlr4Parser.setErrorHandler(new DefaultErrorStrategy());
 					antlr4Parser.getInterpreter().setPredictionMode(PredictionMode.LL);
-					ast = antlr4Parser.dmlprogram();
+					ast = antlr4Parser.programroot();
 				}
 			}
 			else {
 				// Set our custom error listener
 				antlr4Parser.removeErrorListeners();
 				antlr4Parser.addErrorListener(errorListener);
-				errorListener.pushCurrentFileName(fileName);
+				errorListener.setCurrentFileName(fileName);
 	
 				// Now do the parsing
-				ast = antlr4Parser.dmlprogram();
+				ast = antlr4Parser.programroot();
 			}
 		}
 		catch(Exception e) {
@@ -235,13 +180,12 @@ public class DMLParserWrapper extends AParserWrapper
 		try {
 			// Now convert the parse tree into DMLProgram
 			// Do syntactic validation while converting 
-			org.antlr.v4.runtime.tree.ParseTree tree = ast;
+			ParseTree tree = ast;
 			// And also do syntactic validation
-			org.antlr.v4.runtime.tree.ParseTreeWalker walker = new ParseTreeWalker();
-			DmlSyntacticValidatorHelper helper = new DmlSyntacticValidatorHelper(errorListener);
-			DmlSyntacticValidator validator = new DmlSyntacticValidator(helper, errorListener.peekFileName(), argVals);
+			ParseTreeWalker walker = new ParseTreeWalker();
+			DmlSyntacticValidator validator = new DmlSyntacticValidator(errorListener, argVals);
 			walker.walk(validator, tree);
-			errorListener.popFileName();
+			errorListener.unsetCurrentFileName();
 			if(errorListener.isAtleastOneError()) {
 				return null;
 			}
@@ -254,7 +198,7 @@ public class DMLParserWrapper extends AParserWrapper
 		return dmlPgm;
 	}
 	
-	private DMLProgram createDMLProgram(DmlprogramContext ast) {
+	private DMLProgram createDMLProgram(ProgramrootContext ast) {
 
 		DMLProgram dmlPgm = new DMLProgram();
 
@@ -328,58 +272,5 @@ public class DMLParserWrapper extends AParserWrapper
 		return dmlPgm;
 	}
 	
-	public static String readDMLScript( String script ) 
-			throws IOException, LanguageException
-	{
-		String dmlScriptStr = null;
-		
-		//read DML script from file
-		if(script == null)
-			throw new LanguageException("DML script path was not specified!");
-		
-		StringBuilder sb = new StringBuilder();
-		BufferedReader in = null;
-		try 
-		{
-			//read from hdfs or gpfs file system
-			if(    script.startsWith("hdfs:") 
-				|| script.startsWith("gpfs:") ) 
-			{ 
-				if( !LocalFileUtils.validateExternalFilename(script, true) )
-					throw new LanguageException("Invalid (non-trustworthy) hdfs filename.");
-				FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
-				Path scriptPath = new Path(script);
-				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
-			}
-			// from local file system
-			else 
-			{ 
-				if( !LocalFileUtils.validateExternalFilename(script, false) )
-					throw new LanguageException("Invalid (non-trustworthy) local filename.");
-				in = new BufferedReader(new FileReader(script));
-			}
-			
-			//core script reading
-			String tmp = null;
-			while ((tmp = in.readLine()) != null)
-			{
-				sb.append( tmp );
-				sb.append( "\n" );
-			}
-		}
-		catch (IOException ex)
-		{
-			LOG.error("Failed to read the script from the file system", ex);
-			throw ex;
-		}
-		finally 
-		{
-			if( in != null )
-				in.close();
-		}
-		
-		dmlScriptStr = sb.toString();
-		
-		return dmlScriptStr;
-	}
+	
 }

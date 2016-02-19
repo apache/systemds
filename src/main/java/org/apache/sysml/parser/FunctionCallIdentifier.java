@@ -36,11 +36,11 @@ public class FunctionCallIdentifier extends DataIdentifier
 	 * @param functionName the (optional) namespace information and name of function.  If both namespace and name are specified, they are concatinated with "::"
 	 * @throws ParseException 
 	 */
-	public void setFunctionName(String functionName) throws ParseException{
+	public void setFunctionName(String functionName) {
 		_name = functionName;
 	}
 	
-	public void setFunctionNamespace(String passed) throws ParseException{
+	public void setFunctionNamespace(String passed) {
 		_namespace 	= passed;
 	}
 	

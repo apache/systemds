@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,11 +39,13 @@ grammar Dml;
  * specific language governing permissions and limitations
  * under the License.
  */
+    import org.apache.sysml.parser.common.ExpressionInfo;
+    import org.apache.sysml.parser.common.StatementInfo;
 }
 
 // DML Program is a list of expression
 // For now, we only allow global function definitions (not nested or inside a while block)
-dmlprogram: (blocks+=statement | functionBlocks+=functionStatement)* EOF;
+programroot: (blocks+=statement | functionBlocks+=functionStatement)* EOF;
 
 statement returns [ StatementInfo info ]
 @init {
@@ -59,13 +61,13 @@ statement returns [ StatementInfo info ]
     // For backward compatibility and also since the behavior of foo() * A + foo() ... where foo returns A
     // Convert FunctionCallIdentifier(paramExprs, ..) -> source
     | // TODO: Throw an informative error if user doesnot provide the optional assignment
-    ( targetList+=dataIdentifier ('='|'<-') )? name=ID '(' (paramExprs+=parameterizedExpression (',' paramExprs+=parameterizedExpression)* )? ')' ';'*  # FunctionCallAssignmentStatement
+    ( targetList=dataIdentifier ('='|'<-') )? name=ID '(' (paramExprs+=parameterizedExpression (',' paramExprs+=parameterizedExpression)* )? ')' ';'*  # FunctionCallAssignmentStatement
     | '[' targetList+=dataIdentifier (',' targetList+=dataIdentifier)* ']' ('='|'<-') name=ID '(' (paramExprs+=parameterizedExpression (',' paramExprs+=parameterizedExpression)* )? ')' ';'*  # FunctionCallMultiAssignmentStatement
     // {notifyErrorListeners("Too many parentheses");}
     // ------------------------------------------
     // AssignmentStatement
-    | targetList+=dataIdentifier op=('<-'|'=') 'ifdef' '(' commandLineParam=dataIdentifier ','  source=expression ')' ';'*   # IfdefAssignmentStatement
-    | targetList+=dataIdentifier op=('<-'|'=') source=expression ';'*   # AssignmentStatement
+    | targetList=dataIdentifier op=('<-'|'=') 'ifdef' '(' commandLineParam=dataIdentifier ','  source=expression ')' ';'*   # IfdefAssignmentStatement
+    | targetList=dataIdentifier op=('<-'|'=') source=expression ';'*   # AssignmentStatement
     // ------------------------------------------
     // We don't support block statement
     // | '{' body+=expression ';'* ( body+=expression ';'* )*  '}' # BlockStatement

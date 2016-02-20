@@ -361,7 +361,7 @@ The syntax and semantics of a `parfor` (parallel `for`) statement are equivalent
 	<task_size>                   is an arbitrary integer number
 	<data_partitioning_mode>      is one of the following tokens: NONE LOCAL REMOTE_MR
 	<result_merge_mode>           is one of the following tokens: LOCAL_MEM LOCAL_FILE LOCAL_AUTOMATIC REMOTE_MR
-	<optimization_mode>           is one of the following tokens: NONE RULEBASED HEURISTIC GREEDY FULL_DP
+	<optimization_mode>           is one of the following tokens: NONE CONSTRAINED RULEBASED HEURISTIC GREEDY FULL_DP
 
 If any of these parameters is not specified, the following respective defaults are used: `check = 1`, `par = [number of virtual processors on master node]`, `mode = LOCAL`, `taskpartitioner = FIXED`, `tasksize = 1`, `datapartitioner = NONE`, `resultmerge = LOCAL_AUTOMATIC`, `opt = RULEBASED`.
 
@@ -393,6 +393,14 @@ the `check = 0` option.
 	    mv = matrix(v, rows=2, cols=3)
 	    ms[,(v-1)*3+1:v*3] = mv
 	}
+
+While developing DML scripts or debugging, it can be useful to **turn off `parfor` parallelization**. This can be accomplished in the following
+three ways:
+
+1. Replace `parfor()` with `for()`. Since `parfor` is derived from `for`, you can always use `for` wherever you can use `parfor`.
+2. `parfor(opt = NONE, par = 1, ...)`. This disables optimization, uses defaults, and overwrites the specified parameters.
+3. `parfor(opt = CONSTRAINED, par = 1, ...)`. This optimizes using the specified parameters.
+
 
 
 ### User-Defined Function (UDF)

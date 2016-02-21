@@ -2576,6 +2576,7 @@ public class LibMatrixMult
 		final boolean mult = wt.isMult();
 		final boolean minus = wt.isMinus();
 		final boolean four = wt.hasFourInputs();
+		final boolean scalar = wt.hasScalar();
 		final int n = mW.clen;
 		final int cd = mU.clen;
 		
@@ -2604,7 +2605,13 @@ public class LibMatrixMult
 							if( basic ) 
 								c[ix+j] = w[ix+j] * dotProduct(u, v, uix, vix, cd);	
 							else if( four ) //left/right 
-								wdivmm(w[ix+j], x[ix+j], u, v, c, uix, vix, left, cd);
+								if (scalar)
+									if (null != x)
+										wdivmm(w[ix+j], x[0], u, v, c, uix, vix, left, scalar, cd);
+									else
+										wdivmm(w[ix+j],    0, u, v, c, uix, vix, left, scalar, cd);
+								else
+									wdivmm(w[ix+j], x[ix+j], u, v, c, uix, vix, left, scalar, cd);
 							else //left/right minus/default
 								wdivmm(w[ix+j], u, v, c, uix, vix, left, mult, minus, cd);
 						}
@@ -2631,6 +2638,7 @@ public class LibMatrixMult
 		final boolean mult = wt.isMult();
 		final boolean minus = wt.isMinus();
 		final boolean four = wt.hasFourInputs();
+		final boolean scalar = wt.hasScalar();
 		final int cd = mU.clen;
 		
 		SparseBlock w = mW.sparseBlock;
@@ -2660,12 +2668,12 @@ public class LibMatrixMult
 						//O(n) where n is nnz in w/x 
 						double[] xvals = x.values(i);
 						for( ; k<wpos+wlen && wix[k]<cu; k++ )
-							wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, cd);
+							wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
 					}
 					else {
 						//O(n log m) where n/m are nnz in w/x
 						for( ; k<wpos+wlen && wix[k]<cu; k++ )
-							wdivmm(wval[k], x.get(i, wix[k]), u, v, c, uix, wix[k]*cd, left, cd);
+							wdivmm(wval[k], x.get(i, wix[k]), u, v, c, uix, wix[k]*cd, left, scalar, cd);
 					}
 				}
 				else { //left/right minus default
@@ -2698,6 +2706,7 @@ public class LibMatrixMult
 		final boolean mult = wt.isMult();
 		final boolean minus = wt.isMinus();
 		final boolean four = wt.hasFourInputs();
+		final boolean scalar = wt.hasScalar();
 		final int n = mW.clen; 
 		final int cd = mU.clen;
 
@@ -2723,8 +2732,8 @@ public class LibMatrixMult
 							ret.appendValue(i, wix[k], uvij);
 						}
 						else if( four ) { //left/right
-							double xij = mX.quickGetValue(i, wix[k]);
-							wdivmm(wval[k], xij, mU, mV, c, i, wix[k], left, cd);
+							double xij = scalar ? mX.quickGetValue(0, 0): mX.quickGetValue(i, wix[k]);
+							wdivmm(wval[k], xij, mU, mV, c, i, wix[k], left, scalar, cd);
 						}
 						else { //left/right minus/default
 							wdivmm(wval[k], mU, mV, c, i, wix[k], left, mult, minus, cd);
@@ -2744,8 +2753,8 @@ public class LibMatrixMult
 							c[ix+j] = dotProductGeneric(mU,mV, i, j, cd);
 						}
 						else if( four ) { //left/right
-							double xij = mX.quickGetValue(i, j);
-							wdivmm(w[ix+j], xij, mU, mV, c, i, j, left, cd);
+							double xij = scalar ? mX.quickGetValue(0, 0): mX.quickGetValue(i, j);
+							wdivmm(w[ix+j], xij, mU, mV, c, i, j, left, scalar, cd);
 						}
 						else { //left/right minus/default
 							wdivmm(w[ix+j], mU, mV, c, i, j, left, mult, minus, cd);
@@ -3654,13 +3663,13 @@ public class LibMatrixMult
 	 * @param left
 	 * @param len
 	 */
-	private static void wdivmm( final double wij, final double xij, double[] u, double[] v, double[] c, final int uix, final int vix, final boolean left, final int len )
+	private static void wdivmm( final double wij, final double xij, double[] u, double[] v, double[] c, final int uix, final int vix, final boolean left, final boolean scalar, final int len )
 	{
 		//compute dot product over ui vj 
 		double uvij = dotProduct(u, v, uix, vix, len);
 		
 		//compute core wdivmm  
-		double tmpval = wij * (uvij - xij);
+		double tmpval = scalar ? wij / (uvij + xij) : wij * (uvij - xij);
 		
 		//prepare inputs for final mm
 		int bix = left ? uix : vix;
@@ -3714,13 +3723,13 @@ public class LibMatrixMult
 	 * @param left
 	 * @param len
 	 */
-	private static void wdivmm( final double wij, final double xij, MatrixBlock u, MatrixBlock v, double[] c, final int uix, final int vix, final boolean left, final int len )
+	private static void wdivmm( final double wij, final double xij, MatrixBlock u, MatrixBlock v, double[] c, final int uix, final int vix, final boolean left, final boolean scalar, final int len )
 	{
 		//compute dot product over ui vj 
 		double uvij = dotProductGeneric(u, v, uix, vix, len);
 		
 		//compute core wdivmm
-		double wtmp = wij * (uvij - xij);
+		double wtmp = scalar ? wij / (uvij + xij) : wij * (uvij - xij);
 		
 		//prepare inputs for final mm
 		int bix = left ? uix : vix;

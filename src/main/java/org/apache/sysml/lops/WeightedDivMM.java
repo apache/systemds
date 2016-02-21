@@ -38,6 +38,8 @@ public class WeightedDivMM extends Lop
 	public enum WDivMMType {
 		DIV_LEFT,			//t(t(U) %*% (W / U%*%t(V)))
 		DIV_RIGHT,			//(W / U%*%t(V)) %*% V
+		DIV_LEFT_EPS,		//t(t(U) %*% (W / (U%*%t(V) + x)))
+		DIV_RIGHT_EPS,		//(W / (U%*%t(V) + x)) %*% V
 		MULT_BASIC,			//(W * U%*%t(V))
 		MULT_LEFT,			//t(t(U) %*% (W * U%*%t(V)))
 		MULT_RIGHT,			//(W * U%*%t(V)) %*% V
@@ -51,7 +53,7 @@ public class WeightedDivMM extends Lop
 			return (this == MULT_BASIC);
 		}
 		public boolean isLeft() {
-			return (this == DIV_LEFT || this == MULT_LEFT 
+			return (this == DIV_LEFT || this == DIV_LEFT_EPS || this == MULT_LEFT 
 					|| this == MULT_MINUS_LEFT || this == MULT_MINUS_4_LEFT);
 		}
 		public boolean isRight() {
@@ -66,7 +68,11 @@ public class WeightedDivMM extends Lop
 					|| this == MULT_MINUS_4_LEFT || this == MULT_MINUS_4_RIGHT);
 		}
 		public boolean hasFourInputs() {
-			return (this == MULT_MINUS_4_LEFT || this == MULT_MINUS_4_RIGHT);
+			return (this == MULT_MINUS_4_LEFT || this == MULT_MINUS_4_RIGHT 
+					|| this == DIV_LEFT_EPS || this == DIV_RIGHT_EPS);
+		}
+		public boolean hasScalar() {
+			return (this == DIV_LEFT_EPS || this == DIV_RIGHT_EPS);
 		}
 		
 		public MatrixCharacteristics computeOutputCharacteristics(long Xrlen, long Xclen, long rank) {
@@ -163,7 +169,12 @@ public class WeightedDivMM extends Lop
 		sb.append( getInputs().get(2).prepInputOperand(input3));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(3).prepInputOperand(input4));
+		if ( (getExecType() != ExecType.CP) && (getInputs().get(3).getDataType() == DataType.SCALAR) ) {
+			sb.append(getInputs().get(3).prepScalarInputOperand(getExecType()));
+		}
+		else {
+			sb.append( getInputs().get(3).prepInputOperand(input4));
+		}
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output));

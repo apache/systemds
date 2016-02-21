@@ -861,7 +861,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 			setLineNumbers(grpW);
 			
 			Lop grpX = X.constructLops();
-			if( wtype.hasFourInputs() )
+			if( wtype.hasFourInputs() && (X.getDataType() != DataType.SCALAR) )
 				grpX = new Group(grpX, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
 			grpX.getOutputParameters().setDimensions(X.getDim1(), X.getDim2(), X.getRowsInBlock(), X.getColsInBlock(), X.getNnz());
 			setLineNumbers(grpX);
@@ -973,7 +973,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		boolean isMapWsloss = (!wtype.hasFourInputs() && m1Size+m2Size < memBudgetExec
 				&& 2*m1Size<memBudgetLocal && 2*m2Size<memBudgetLocal); 
 		
-		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		if( !FORCE_REPLICATION && isMapWsloss || wtype.hasScalar() ) //broadcast
 		{
 			//map-side wsloss always with broadcast
 			Lop wdivmm = new WeightedDivMM( W.constructLops(), U.constructLops(), V.constructLops(), 
@@ -1507,7 +1507,11 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				else if( _minus )
 					return WDivMMType.MULT_MINUS_RIGHT;
 				else
-					return _mult ? WDivMMType.MULT_RIGHT : WDivMMType.DIV_RIGHT;		
+					return _mult ? WDivMMType.MULT_RIGHT : WDivMMType.DIV_RIGHT;
+			case 3: //LEFT w/EPS
+				return WDivMMType.DIV_LEFT_EPS;
+			case 4: //RIGHT w/EPS
+				return WDivMMType.DIV_RIGHT_EPS;
 		}
 		
 		return null;
@@ -1561,7 +1565,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 					MatrixCharacteristics mcW = memo.getAllInputStats(getInput().get(0));
 					ret = new long[]{mcW.getRows(), mcW.getCols(), mcW.getNonZeros()};	
 				}
-				if( _baseType == 1 ) { //left (w/ transpose)
+				if( _baseType == 1 || _baseType == 3 ) { //left (w/ transpose or w/ epsilon)
 					MatrixCharacteristics mcV = memo.getAllInputStats(getInput().get(2));
 					ret = new long[]{mcV.getRows(), mcV.getCols(), -1};
 				}
@@ -1639,7 +1643,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 					setDim2( inW.getDim2() );
 					setNnz( inW.getNnz() );	
 				}
-				else if( _baseType == 1 ){ //left (w/ transpose)
+				else if( _baseType == 1 || _baseType == 3 ){ //left (w/ transpose or w/ epsilon)
 					Hop inV = getInput().get(2);
 					setDim1( inV.getDim1() );
 					setDim2( inV.getDim2() );				

@@ -168,7 +168,9 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			boolean cacheU = isRed ? Boolean.parseBoolean(parts[7]) : true;
 			boolean cacheV = isRed ? Boolean.parseBoolean(parts[8]) : true;
 		
-			return new QuaternarySPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[6])), in1, in2, in3, in4, out, cacheU, cacheV, opcode, str);
+			final WDivMMType wt = WDivMMType.valueOf(parts[6]);
+			QuaternaryOperator qop = (wt.hasScalar() ? new QuaternaryOperator(wt, Double.parseDouble(in4.getName())) : new QuaternaryOperator(wt));
+			return new QuaternarySPInstruction(qop, in1, in2, in3, in4, out, cacheU, cacheV, opcode, str);
 		} 
 		else //map/redwsigmoid, map/redwcemm
 		{

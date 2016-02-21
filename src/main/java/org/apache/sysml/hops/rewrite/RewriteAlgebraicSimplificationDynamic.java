@@ -1871,6 +1871,40 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				}
 			}	
 			
+			//Pattern 1e) t(U) %*% (W/(U%*%t(V) + x))
+			if( !appliedPattern
+				&& right instanceof BinaryOp && HopRewriteUtils.isValidOp(((BinaryOp)right).getOp(),LOOKUP_VALID_WDIVMM_BINARY)	
+				&& HopRewriteUtils.isEqualSize(right.getInput().get(0), right.getInput().get(1)) //prevent mv
+				&& right.getInput().get(1) instanceof BinaryOp
+				&& ((BinaryOp) right.getInput().get(1)).getOp() == Hop.OpOp2.PLUS
+				&& right.getInput().get(1).getInput().get(1).getDataType() == DataType.SCALAR
+				&& HopRewriteUtils.isSingleBlock(right.getInput().get(1).getInput().get(0).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
+			{
+				Hop W = right.getInput().get(0); 
+				Hop U = right.getInput().get(1).getInput().get(0).getInput().get(0);
+				Hop V = right.getInput().get(1).getInput().get(0).getInput().get(1);
+				Hop X = right.getInput().get(1).getInput().get(1);
+				
+				if( HopRewriteUtils.isTransposeOfItself(left, U) ) 
+				{
+					if( !HopRewriteUtils.isTransposeOperation(V) )
+						V = HopRewriteUtils.createTranspose(V);
+					else 
+						V = V.getInput().get(0);
+					
+					boolean mult = ((BinaryOp)right).getOp() == OpOp2.MULT;
+					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
+							  OpOp4.WDIVMM, W, U, V, X, 3, mult, false); // 3=>DIV_LEFT_EPS
+					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
+					
+					//add output transpose for efficient target indexing (redundant t() removed by other rewrites)
+					hnew = HopRewriteUtils.createTranspose(hnew);
+					
+					appliedPattern = true;
+					LOG.debug("Applied simplifyWeightedDivMM1 (line "+hi.getBeginLine()+")");					
+				}
+			}	
+			
 			//Pattern 2) (W/(U%*%t(V))) %*% V
 			//alternative pattern: (W*(U%*%t(V))) %*% V
 			if( !appliedPattern
@@ -1893,6 +1927,37 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					boolean mult = ((BinaryOp)left).getOp() == OpOp2.MULT;
 					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 							  OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 2, mult, false);
+					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
+
+					appliedPattern = true;
+					LOG.debug("Applied simplifyWeightedDivMM2 (line "+hi.getBeginLine()+")");	
+				}
+			}
+			
+			//Pattern 2e) (W/(U%*%t(V) + x)) %*% V
+			if( !appliedPattern
+				&& left instanceof BinaryOp && HopRewriteUtils.isValidOp(((BinaryOp)left).getOp(), LOOKUP_VALID_WDIVMM_BINARY)	
+				&& HopRewriteUtils.isEqualSize(left.getInput().get(0), left.getInput().get(1)) //prevent mv
+				&& left.getInput().get(1) instanceof BinaryOp
+				&& ((BinaryOp) left.getInput().get(1)).getOp() == Hop.OpOp2.PLUS
+				&& left.getInput().get(1).getInput().get(1).getDataType() == DataType.SCALAR
+				&& HopRewriteUtils.isSingleBlock(left.getInput().get(1).getInput().get(0).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
+			{
+				Hop W = left.getInput().get(0); 
+				Hop U = left.getInput().get(1).getInput().get(0).getInput().get(0);
+				Hop V = left.getInput().get(1).getInput().get(0).getInput().get(1);
+				Hop X = left.getInput().get(1).getInput().get(1);
+				
+				if( HopRewriteUtils.isTransposeOfItself(right, V) ) 
+				{
+					if( !HopRewriteUtils.isTransposeOperation(V) )
+						V = right;
+					else 
+						V = V.getInput().get(0);
+					
+					boolean mult = ((BinaryOp)left).getOp() == OpOp2.MULT;
+					hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
+							  OpOp4.WDIVMM, W, U, V, X, 4, mult, false); // 4=>DIV_RIGHT_EPS
 					HopRewriteUtils.setOutputBlocksizes(hnew, W.getRowsInBlock(), W.getColsInBlock());
 
 					appliedPattern = true;

@@ -56,10 +56,13 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	private final static String TEST_NAME7 = "WeightedDivMMMultMinusRight";
 	private final static String TEST_NAME8 = "WeightedDivMM4MultMinusLeft";
 	private final static String TEST_NAME9 = "WeightedDivMM4MultMinusRight";
+	private final static String TEST_NAME10 = "WeightedDivMMLeftEps";
+	private final static String TEST_NAME11 = "WeightedDivMMRightEps";
 	private final static String TEST_DIR = "functions/quaternary/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + WeightedDivMatrixMultTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-6;
+	private final static double div_eps = 1e-17;
 	
 	private final static int rows = 1201;
 	private final static int cols = 1103;
@@ -80,6 +83,8 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME7,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME8,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME9,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME10,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME11,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11,new String[]{"R"}));
 	
 		if (TEST_CACHE_ENABLED) {
 			setOutAndExpectedDeletionDisabled(true);
@@ -465,6 +470,68 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 		runWeightedDivMMTest(TEST_NAME9, false, true, true, ExecType.SPARK);
 	}
 	
+	//c) testcases for wdivmm w/ DIVIDE LEFT/RIGHT with Epsilon
+	
+	@Test
+	public void testWeightedDivMMLeftEpsDenseCP() {
+		runWeightedDivMMTest(TEST_NAME10, false, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testWeightedDivMMLeftEpsSparseCP() {
+		runWeightedDivMMTest(TEST_NAME10, true, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testWeightedDivMMRightEpsDenseCP() {
+		runWeightedDivMMTest(TEST_NAME11, false, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testWeightedDivMMRightEpsSparseCP() {
+		runWeightedDivMMTest(TEST_NAME11, true, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testWeightedDivMMLeftEpsDenseMR() {
+		runWeightedDivMMTest(TEST_NAME10, false, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMLeftEpsSparseMR() {
+		runWeightedDivMMTest(TEST_NAME10, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMRightEpsDenseMR() {
+		runWeightedDivMMTest(TEST_NAME11, false, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMRightEpsSparseMR() {
+		runWeightedDivMMTest(TEST_NAME11, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMLeftEpsDenseSP() {
+		runWeightedDivMMTest(TEST_NAME10, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testWeightedDivMMLeftEpsSparseSP() {
+		runWeightedDivMMTest(TEST_NAME10, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testWeightedDivMMRightEpsDenseSP() {
+		runWeightedDivMMTest(TEST_NAME11, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testWeightedDivMMRightEpsSparseSP() {
+		runWeightedDivMMTest(TEST_NAME11, true, true, false, ExecType.SPARK);
+	}
+
 	/**
 	 * 
 	 * @param sparseM1
@@ -494,7 +561,8 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 		{
 			boolean basic = testname.equals(TEST_NAME3);
 			boolean left = testname.equals(TEST_NAME1) || testname.equals(TEST_NAME4) 
-					|| testname.equals(TEST_NAME6) || testname.equals(TEST_NAME8);
+					|| testname.equals(TEST_NAME6) || testname.equals(TEST_NAME8)
+					|| testname.equals(TEST_NAME10);
 			double sparsity = (sparse) ? spSparse : spDense;
 			String TEST_NAME = testname;
 			String TEST_CACHE_DIR = TEST_CACHE_ENABLED ? 
@@ -507,10 +575,10 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-stats", "-explain", "runtime", "-args",
-				input("W"), input("U"), input("V"), output("R") };
+				input("W"), input("U"), input("V"), output("R"), Double.toString(div_eps) };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + div_eps;
 	
 			//generate actual dataset 
 			double[][] W = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 

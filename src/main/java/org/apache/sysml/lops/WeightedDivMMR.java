@@ -124,13 +124,12 @@ public class WeightedDivMMR extends Lop
 		sb.append( getInputs().get(2).prepInputOperand(input3));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		if ( (et != ExecType.CP) && (getInputs().get(3).getDataType() == DataType.SCALAR) ) {
+		if ( (et == ExecType.MR) && (getInputs().get(3).getDataType() == DataType.SCALAR) ) {
 			sb.append( getInputs().get(3).prepScalarInputOperand(et));
 		}
 		else {
 			sb.append( getInputs().get(3).prepInputOperand(input4));
 		}
-		
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output));

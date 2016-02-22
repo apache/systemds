@@ -62,7 +62,7 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + WeightedDivMatrixMultTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-6;
-	private final static double div_eps = 1e-17;
+	private final static double div_eps = 0.1;
 	
 	private final static int rows = 1201;
 	private final static int cols = 1103;

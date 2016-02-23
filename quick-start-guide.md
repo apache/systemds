@@ -52,7 +52,7 @@ algorithms can be found in the [Algorithms Reference](algorithms-reference.html)
 
 # Download SystemML
 
-Apache incubator binary releases of SystemML will be available shortly from the [Apache SystemML (incubating)](http://systemml.apache.org/) website.
+Apache incubator releases of SystemML are available from the [downloads](http://systemml.apache.org/download.html) page.
 
 The SystemML project is available on GitHub at [https://github.com/apache/incubator-systemml](https://github.com/apache/incubator-systemml).
 SystemML can be downloaded from GitHub and built with Maven. Instructions to build and
@@ -83,12 +83,12 @@ and unpack it.
     $ git clone https://github.com/apache/incubator-systemml.git
     $ cd incubator-systemml
     $ mvn clean package -P distribution
-    $ tar -xvzf target/system-ml-*-standalone.tar.gz -C ..
+    $ tar -xvzf target/systemml-*-standalone.tar.gz -C ..
     $ cd ..
 
 The extracted package should have these contents:
 
-    $ ls -lF system-ml-{{site.SYSTEMML_VERSION}}/
+    $ ls -lF systemml-{{site.SYSTEMML_VERSION}}/
     total 96
     -rw-r--r--  LICENSE
     -rw-r--r--  NOTICE
@@ -101,9 +101,9 @@ The extracted package should have these contents:
     -rwxr-xr-x  runStandaloneSystemML.sh*
     drwxr-xr-x  scripts/
 
-For the rest of the tutorial we will switch to the `system-ml-{{site.SYSTEMML_VERSION}}` directory.
+For the rest of the tutorial we will switch to the `systemml-{{site.SYSTEMML_VERSION}}` directory.
 
-    $ cd  ~/system-ml-{{site.SYSTEMML_VERSION}}
+    $ cd  ~/systemml-{{site.SYSTEMML_VERSION}}
 
 Note that standalone mode supports both Mac/UNIX and Windows. To run the following examples on
 Windows, the "`./runStandaloneSystemML.sh ...`" commands can be replaced with

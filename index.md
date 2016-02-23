@@ -37,6 +37,9 @@ The [**SystemML GitHub README**](https://github.com/apache/incubator-systemml) d
 building, testing, and running SystemML. Please read [**Contributing to SystemML**](contributing-to-systemml.html)
 to find out how to help make SystemML even better!
 
+To download SystemML, visit the [downloads](http://systemml.apache.org/download.html) page.
+
+
 ## Running SystemML
 
 * **Standalone** - Standalone mode allows data scientists to rapidly prototype algorithms on a single

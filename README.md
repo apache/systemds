@@ -23,6 +23,7 @@ limitations under the License.
 **Mailing List:** [Dev Mailing List](http://systemml.apache.org/community.html)<br/>
 **Build Status:** [![Build Status](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest/badge/icon)](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest)<br/>
 **Issue Tracker:** [JIRA](https://issues.apache.org/jira/browse/SYSTEMML)<br/>
+**Download:** [Download SystemML](http://systemml.apache.org/download.html)<br/>
 
 **SystemML** is now an **Apache Incubator** project! Please see the [**Apache SystemML (incubating)**](http://systemml.apache.org/)
 website for more information. The latest project documentation can be found at the

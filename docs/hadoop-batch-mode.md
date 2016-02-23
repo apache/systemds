@@ -62,12 +62,12 @@ to be deprecated. All the primary algorithm scripts included with SystemML use n
 
 **Example #1: DML Invocation with Named Arguments**
 
-    hadoop jar system-ml/SystemML.jar -f system-ml/algorithms/Kmeans.dml -nvargs X=X.mtx k=5
+    hadoop jar systemml/SystemML.jar -f systemml/algorithms/Kmeans.dml -nvargs X=X.mtx k=5
 
 
 **Example #2: DML Invocation with Positional Arguments**
 
-	hadoop jar system-ml/SystemML.jar -f example/test/LinearRegression.dml -args "v" "y" 0.00000001 "w"
+	hadoop jar systemml/SystemML.jar -f example/test/LinearRegression.dml -args "v" "y" 0.00000001 "w"
 
 In a clustered environment, it is *highly* recommended that SystemML configuration settings are specified
 in a `SystemML-config.xml` file. By default, SystemML will look for this file in the current working
@@ -75,7 +75,7 @@ directory (`./SystemML-config.xml`). This location can be overridden by the `-co
 
 **Example #3: DML Invocation with Configuration File Explicitly Specified and Named Arguments**
 
-	hadoop jar system-ml/SystemML.jar -f system-ml/algorithms/Kmeans.dml -config=/conf/SystemML-config.xml -nvargs X=X.mtx k=5
+	hadoop jar systemml/SystemML.jar -f systemml/algorithms/Kmeans.dml -config=/conf/SystemML-config.xml -nvargs X=X.mtx k=5
 
 For recommended SystemML configuration settings in a clustered environment, please see
 [Recommended Hadoop Cluster Configuration Settings](hadoop-batch-mode.html#recommended-hadoop-cluster-configuration-settings).
@@ -134,22 +134,18 @@ To verify that Java and Hadoop were on the path, I used the `java -version` and 
 	From source with checksum f9ebb94bf5bf9bec892825ede28baca
 	This command was run using /home/hadoop/hadoop-2.6.2/share/hadoop/common/hadoop-common-2.6.2.jar
 
-<!--
-Next, I downloaded a SystemML binary release and unpacked it.
+Next, I downloaded a SystemML release from the [downloads](http://systemml.apache.org/download.html) page.
+Following this, I unpacked it.
 
-	[hadoop@host1 ~]$ wget https://github.com/SparkTC/systemml/releases/download/v0.8/system-ml-{{site.SYSTEMML_VERSION}}.tar.gz
-	[hadoop@host1 ~]$ tar -xvzf system-ml-{{site.SYSTEMML_VERSION}}.tar.gz
--->
+	[hadoop@host1 ~]$ tar -xvzf systemml-{{site.SYSTEMML_VERSION}}.tar.gz
 
-Next, I built the SystemML distributed release using [Apache Maven](http://maven.apache.org) and unpacked it.
-Rather than building SystemML,
-it can be downloaded from the [Apache SystemML (incubating)](http://systemml.apache.org/)
-website when the first Apache release is available.
+
+**Alternatively**, we could have built the SystemML distributed release using [Apache Maven](http://maven.apache.org) and unpacked it.
 
 	[hadoop@host1 ~]$ git clone https://github.com/apache/incubator-systemml.git
 	[hadoop@host1 ~]$ cd incubator-systemml
 	[hadoop@host1 incubator-systemml]$ mvn clean package -P distribution
-	[hadoop@host1 incubator-systemml]$ tar -xvzf target/system-ml-*-distrib.tar.gz -C ..
+	[hadoop@host1 incubator-systemml]$ tar -xvzf target/systemml-{{site.SYSTEMML_VERSION}}.tar.gz -C ..
 	[hadoop@host1 ~]$ cd ..
 
 I downloaded the `genLinearRegressionData.dml` script that is used in the SystemML README example.
@@ -161,7 +157,7 @@ Hadoop was executed with the `SystemML.jar` file specified by the hadoop `jar` o
 The `genLinearRegressionData.dml` was specified using the `-f` option. Named input
 arguments to the DML script were specified following the `-nvargs` option.
 
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
 	15/11/11 15:56:21 INFO api.DMLScript: BEGIN DML run 11/11/2015 15:56:21
 	15/11/11 15:56:21 INFO api.DMLScript: HADOOP_HOME: /home/hadoop/hadoop-2.6.2
 	15/11/11 15:56:21 WARN conf.DMLConfig: No default SystemML config file (./SystemML-config.xml) found
@@ -194,8 +190,8 @@ along with their corresponding metadata files. The `scratch_space` directory is 
 	drwxrwxrwx 2 hadoop hadoop      4096 Nov 11 15:56 perc.csv
 	-rw-r--r-- 1 hadoop hadoop       206 Nov 11 15:56 perc.csv.mtd
 	drwxrwxrwx 2 hadoop hadoop      4096 Nov 11 15:56 scratch_space
-	drwxrwxr-x 4 hadoop hadoop      4096 Nov 11 15:42 system-ml-{{site.SYSTEMML_VERSION}}
-	-rw-rw-r-- 1 hadoop hadoop   6683281 Oct 27 21:13 system-ml-{{site.SYSTEMML_VERSION}}.tar.gz
+	drwxrwxr-x 4 hadoop hadoop      4096 Nov 11 15:42 systemml-{{site.SYSTEMML_VERSION}}
+	-rw-rw-r-- 1 hadoop hadoop   6683281 Oct 27 21:13 systemml-{{site.SYSTEMML_VERSION}}.tar.gz
 
 To clean things up, I'll delete the files that were generated.
 
@@ -336,7 +332,7 @@ If we look at our HDFS file system, we see that it currently doesn't contain any
 
 Let's go ahead and execute the `genLinearRegressionData.dml` script in Hadoop Pseudo-Distributed mode.
 
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
 	15/11/11 18:16:33 INFO api.DMLScript: BEGIN DML run 11/11/2015 18:16:33
 	15/11/11 18:16:33 INFO api.DMLScript: HADOOP_HOME: /home/hadoop/hadoop-2.6.2
 	15/11/11 18:16:33 WARN conf.DMLConfig: No default SystemML config file (./SystemML-config.xml) found
@@ -353,7 +349,7 @@ If we list the contents of the current directory in our regular file system, we 
 to the regular file system.
 
 	[hadoop@host1 ~]$ ls
-	genLinearRegressionData.dml  hadoop-2.6.2  hadoop-2.6.2.tar.gz  system-ml-{{site.SYSTEMML_VERSION}}  system-ml-{{site.SYSTEMML_VERSION}}.tar.gz
+	genLinearRegressionData.dml  hadoop-2.6.2  hadoop-2.6.2.tar.gz  systemml-{{site.SYSTEMML_VERSION}}  systemml-{{site.SYSTEMML_VERSION}}.tar.gz
 
 If we list the contents of the HDFS file system, we see that HDFS contains our data files and the corresponding metadata files.
 
@@ -459,7 +455,7 @@ We can now view YARN information via the web interface on port 8088 (http://host
 I'll execute the `genLinearRegressionData.dml` example that we've previously considered.
 
 	[hadoop@host1 hadoop]$ cd ~
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
 	15/11/12 11:57:04 INFO api.DMLScript: BEGIN DML run 11/12/2015 11:57:04
 	15/11/12 11:57:04 INFO api.DMLScript: HADOOP_HOME: /home/hadoop/hadoop-2.6.2
 	15/11/12 11:57:04 WARN conf.DMLConfig: No default SystemML config file (./SystemML-config.xml) found
@@ -747,15 +743,15 @@ If we look at the Hadoop (on port 50070) and YARN (on port 8088) web interfaces,
 
 Let's go ahead and run the SystemML example from the GitHub README.
 
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
 	
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f system-ml-{{site.SYSTEMML_VERSION}}/algorithms/utils/sample.dml -nvargs X=linRegData.csv sv=perc.csv O=linRegDataParts ofmt=csv
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/sample.dml -nvargs X=linRegData.csv sv=perc.csv O=linRegDataParts ofmt=csv
 	
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f system-ml-{{site.SYSTEMML_VERSION}}/algorithms/utils/splitXY.dml -nvargs X=linRegDataParts/1 y=51 OX=linRegData.train.data.csv OY=linRegData.train.labels.csv ofmt=csv
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/splitXY.dml -nvargs X=linRegDataParts/1 y=51 OX=linRegData.train.data.csv OY=linRegData.train.labels.csv ofmt=csv
 	
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f system-ml-{{site.SYSTEMML_VERSION}}/algorithms/utils/splitXY.dml -nvargs X=linRegDataParts/2 y=51 OX=linRegData.test.data.csv OY=linRegData.test.labels.csv ofmt=csv
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/splitXY.dml -nvargs X=linRegDataParts/2 y=51 OX=linRegData.test.data.csv OY=linRegData.test.labels.csv ofmt=csv
 	
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f system-ml-{{site.SYSTEMML_VERSION}}/algorithms/LinearRegDS.dml -nvargs X=linRegData.train.data.csv Y=linRegData.train.labels.csv B=betas.csv fmt=csv
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/LinearRegDS.dml -nvargs X=linRegData.train.data.csv Y=linRegData.train.labels.csv B=betas.csv fmt=csv
 	...
 	BEGIN LINEAR REGRESSION SCRIPT
 	Reading X and Y...
@@ -778,7 +774,7 @@ Let's go ahead and run the SystemML example from the GitHub README.
 	Total execution time:		0.480 sec.
 	...
 	
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f system-ml-{{site.SYSTEMML_VERSION}}/algorithms/GLM-predict.dml -nvargs X=linRegData.test.data.csv Y=linRegData.test.labels.csv B=betas.csv fmt=csv
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/GLM-predict.dml -nvargs X=linRegData.test.data.csv Y=linRegData.test.labels.csv B=betas.csv fmt=csv
 	...
 	LOGLHOOD_Z,,FALSE,NaN
 	LOGLHOOD_Z_PVAL,,FALSE,NaN
@@ -865,7 +861,7 @@ A description of the named arguments that can be passed in to this script can be
 `genRandData4Kmeans.dml` file. For data, I'll generate a matrix `X.mtx` consisting of 1 million rows and 100 features. I'll explicitly reference my `SystemML-config.xml` file, since I'm
 executing SystemML in Hadoop from my home directory rather than from the SystemML project root directory.
 
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genRandData4Kmeans.dml -config=system-ml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs nr=1000000 nf=100 nc=10 dc=10.0 dr=1.0 fbf=100.0 cbf=100.0 X=X.mtx C=C.mtx Y=Y.mtx YbyC=YbyC.mtx
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genRandData4Kmeans.dml -config=systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs nr=1000000 nf=100 nc=10 dc=10.0 dr=1.0 fbf=100.0 cbf=100.0 X=X.mtx C=C.mtx Y=Y.mtx YbyC=YbyC.mtx
 
 After the data generation has finished, I'll check HDFS for the amount of space used. The 1M-row matrix `X.mtx` 
 requires about 2.8GB of space.
@@ -901,7 +897,7 @@ Here we can see the `X.mtx` data files.
 
 Next, I'll run the `Kmeans.dml` algorithm on the 1M-row matrix `X.mtx`. 
 
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f system-ml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans.dml -config=/system-ml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx k=5 C=Centroids.mtx
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans.dml -config=/systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx k=5 C=Centroids.mtx
 
 We can see the `Centroids.mtx` data file has been written to HDFS.
 
@@ -922,7 +918,7 @@ We can see the `Centroids.mtx` data file has been written to HDFS.
 Now that we have trained our model, next we will test our model. We can do this with
 the `Kmeans-predict.dml` script.
 
-	[hadoop@host1 ~]$ hadoop jar system-ml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f system-ml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans-predict.dml -config=system-ml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx C=Centroids.mtx prY=PredY.mtx O=stats.txt
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans-predict.dml -config=systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx C=Centroids.mtx prY=PredY.mtx O=stats.txt
 
 In the file system, we can see that the `PredY.mtx` matrix was created. 
 The `stats.txt` file lists statistics about the results.

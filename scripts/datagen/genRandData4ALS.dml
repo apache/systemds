@@ -27,6 +27,7 @@ n = $cols; # no. of cols of X
 r = $rank; # rank of factorization
 nnz = $nnz; # no. of nonzeros in X
 sigma = ifdef ($sigma, 0.01); # variance of Gaussian noise
+fmt = ifdef ($fmt, "binary"); # output format
 
 # generate original factors by sampling from a normal(0,1.0) distribution
 W = rand(rows = m, cols = r, pdf = "normal", seed = 123);
@@ -38,6 +39,6 @@ X = rand(rows = nnz, cols = 1, pdf = "normal") * sqrt(sigma);
 N = table(I, J, X);
 T = ppred(N, 0, "!=");
 X = T * (W %*% H) + T * N;
-write(X, Xfile, format = "binary");
-write(W, Wfile, format = "binary");
-write(H, Hfile, format = "binary");
+write(X, Xfile, format = fmt);
+write(W, Wfile, format = fmt);
+write(H, Hfile, format = fmt);

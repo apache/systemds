@@ -2606,10 +2606,7 @@ public class LibMatrixMult
 								c[ix+j] = w[ix+j] * dotProduct(u, v, uix, vix, cd);	
 							else if( four ) //left/right 
 								if (scalar)
-									if (null != x)
-										wdivmm(w[ix+j], x[0], u, v, c, uix, vix, left, scalar, cd);
-									else
-										wdivmm(w[ix+j],    0, u, v, c, uix, vix, left, scalar, cd);
+									wdivmm(w[ix+j], x[0], u, v, c, uix, vix, left, scalar, cd);
 								else
 									wdivmm(w[ix+j], x[ix+j], u, v, c, uix, vix, left, scalar, cd);
 							else //left/right minus/default
@@ -2639,6 +2636,7 @@ public class LibMatrixMult
 		final boolean minus = wt.isMinus();
 		final boolean four = wt.hasFourInputs();
 		final boolean scalar = wt.hasScalar();
+		final double eps = scalar ? mX.quickGetValue(0, 0) : 0;
 		final int cd = mU.clen;
 		
 		SparseBlock w = mW.sparseBlock;
@@ -2668,12 +2666,18 @@ public class LibMatrixMult
 						//O(n) where n is nnz in w/x 
 						double[] xvals = x.values(i);
 						for( ; k<wpos+wlen && wix[k]<cu; k++ )
-							wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
+							if (scalar)
+								wdivmm(wval[k], eps, u, v, c, uix, wix[k]*cd, left, scalar, cd);
+							else
+								wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
 					}
 					else {
 						//O(n log m) where n/m are nnz in w/x
 						for( ; k<wpos+wlen && wix[k]<cu; k++ )
-							wdivmm(wval[k], x.get(i, wix[k]), u, v, c, uix, wix[k]*cd, left, scalar, cd);
+							if (scalar)
+								wdivmm(wval[k], eps, u, v, c, uix, wix[k]*cd, left, scalar, cd);
+							else
+								wdivmm(wval[k], x.get(i, wix[k]), u, v, c, uix, wix[k]*cd, left, scalar, cd);
 					}
 				}
 				else { //left/right minus default
@@ -2707,6 +2711,7 @@ public class LibMatrixMult
 		final boolean minus = wt.isMinus();
 		final boolean four = wt.hasFourInputs();
 		final boolean scalar = wt.hasScalar();
+		final double eps = scalar ? mX.quickGetValue(0, 0) : 0;
 		final int n = mW.clen; 
 		final int cd = mU.clen;
 
@@ -2732,7 +2737,7 @@ public class LibMatrixMult
 							ret.appendValue(i, wix[k], uvij);
 						}
 						else if( four ) { //left/right
-							double xij = scalar ? mX.quickGetValue(0, 0): mX.quickGetValue(i, wix[k]);
+							double xij = scalar ? eps : mX.quickGetValue(i, wix[k]);
 							wdivmm(wval[k], xij, mU, mV, c, i, wix[k], left, scalar, cd);
 						}
 						else { //left/right minus/default
@@ -2753,7 +2758,7 @@ public class LibMatrixMult
 							c[ix+j] = dotProductGeneric(mU,mV, i, j, cd);
 						}
 						else if( four ) { //left/right
-							double xij = scalar ? mX.quickGetValue(0, 0): mX.quickGetValue(i, j);
+							double xij = scalar ? eps : mX.quickGetValue(i, j);
 							wdivmm(w[ix+j], xij, mU, mV, c, i, j, left, scalar, cd);
 						}
 						else { //left/right minus/default

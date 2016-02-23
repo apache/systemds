@@ -151,10 +151,12 @@ public class WeightedDivMM extends Lop
 	{
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append(getExecType());
+		final ExecType et = getExecType();
+		
+		sb.append(et);
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		if( getExecType() == ExecType.CP )
+		if( et == ExecType.CP )
 			sb.append(OPCODE_CP);
 		else
 			sb.append(OPCODE);
@@ -169,7 +171,12 @@ public class WeightedDivMM extends Lop
 		sb.append( getInputs().get(2).prepInputOperand(input3));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(3).prepInputOperand(input4));
+		if ( (et == ExecType.MR) && (getInputs().get(3).getDataType() == DataType.SCALAR) ) {
+			sb.append( getInputs().get(3).prepScalarInputOperand(et));
+		}
+		else {
+			sb.append( getInputs().get(3).prepInputOperand(input4));
+		}
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output));
@@ -178,7 +185,7 @@ public class WeightedDivMM extends Lop
 		sb.append(_weightsType);
 		
 		//append degree of parallelism
-		if( getExecType()==ExecType.CP ) {
+		if( et == ExecType.CP ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
 		}

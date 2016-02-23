@@ -2577,6 +2577,7 @@ public class LibMatrixMult
 		final boolean minus = wt.isMinus();
 		final boolean four = wt.hasFourInputs();
 		final boolean scalar = wt.hasScalar();
+		final double eps = scalar ? mX.quickGetValue(0, 0) : 0;
 		final int n = mW.clen;
 		final int cd = mU.clen;
 		
@@ -2606,7 +2607,7 @@ public class LibMatrixMult
 								c[ix+j] = w[ix+j] * dotProduct(u, v, uix, vix, cd);	
 							else if( four ) //left/right 
 								if (scalar)
-									wdivmm(w[ix+j], x[0], u, v, c, uix, vix, left, scalar, cd);
+									wdivmm(w[ix+j], eps, u, v, c, uix, vix, left, scalar, cd);
 								else
 									wdivmm(w[ix+j], x[ix+j], u, v, c, uix, vix, left, scalar, cd);
 							else //left/right minus/default

@@ -20,26 +20,27 @@
 #-------------------------------------------------------------
 
 #
-# DML Script to compute univariate statistics for all attributes 
-# in a given data set
+# DML Script to compute univariate statistics for all attributes in a given data set
 #
-# Three inputs:
-#     $1) X - input data
-#     $2) TYPES - row matrix that denotes the "kind"/"type" of all attributes
-#             kind=1 for scale, 
-#             kind=2 for nominal,
-#             kind=3 for ordinal
+# INPUT PARAMETERS:
+# -------------------------------------------------------------------------------------------------
+# NAME           TYPE     DEFAULT  MEANING
+# -------------------------------------------------------------------------------------------------
+# X              String   ---      Location of INPUT data matrix
+# TYPES          String   ---      Location of INPUT matrix that lists the types of the features:
+#                                     1 for scale, 2 for nominal, 3 for ordinal
+# CONSOLE_OUTPUT Boolean  FALSE    If TRUE, print summary statistics to console
+# STATS          String   ---      Location of OUTPUT matrix with summary statistics computed for
+#                                  all features (17 statistics - 14 scale, 3 categorical)
+# -------------------------------------------------------------------------------------------------
+# OUTPUT: Matrix of summary statistics
 #
-# One output:
-#     $STATS) output directory in which following three statistics 
-#         files are created
-#         + base.stats - matrix with all 17 statistics (14 scale, 
-#         3 categorical) computed for all attributes
-#         + categorical.counts - matrix in which each column 
-#         gives the category-wise counts for all categories in 
-#         that attribute
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv
+#    STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
 #
-#
+
+consoleOutput = ifdef($CONSOLE_OUTPUT, FALSE);
 
 A = read($X); # data file
 K = read($TYPES); # attribute kind file
@@ -62,7 +63,6 @@ baseStats = matrix(0, rows=numBaseStats, cols=n);
 maxs = colMaxs(A);
 maxDomainSize = max( ppred(K, 1, ">") * maxs );
 maxDomain = as.integer(maxDomainSize);
-
 
 parfor(i in 1:n, check=0) {
 
@@ -146,5 +146,39 @@ parfor(i in 1:n, check=0) {
 	}
 }
 
-write(baseStats, $STATS);
+if (consoleOutput == TRUE) {
+	for(i in 1:n) {
+		print("-------------------------------------------------");
+		kind = castAsScalar(K[1,i]);
+		if (kind == 1) {
+			print("Feature [" + i + "]: Scale");
+			print(" (01) Minimum             | " + as.scalar(baseStats[1,i]));
+			print(" (02) Maximum             | " + as.scalar(baseStats[2,i]));
+			print(" (03) Range               | " + as.scalar(baseStats[3,i]));
+			print(" (04) Mean                | " + as.scalar(baseStats[4,i]));
+			print(" (05) Variance            | " + as.scalar(baseStats[5,i]));
+			print(" (06) Std deviation       | " + as.scalar(baseStats[6,i]));
+			print(" (07) Std err of mean     | " + as.scalar(baseStats[7,i]));
+			print(" (08) Coeff of variation  | " + as.scalar(baseStats[8,i]));
+			print(" (09) Skewness            | " + as.scalar(baseStats[9,i]));
+			print(" (10) Kurtosis            | " + as.scalar(baseStats[10,i]));
+			print(" (11) Std err of skewness | " + as.scalar(baseStats[11,i]));
+			print(" (12) Std err of kurtosis | " + as.scalar(baseStats[12,i]));
+			print(" (13) Median              | " + as.scalar(baseStats[13,i]));
+			print(" (14) Interquartile mean  | " + as.scalar(baseStats[14,i]));
+		} else {
+			if (kind == 2 | kind == 3) {
+				if (kind == 2) {
+					print("Feature [" + i + "]: Categorical (Nominal)");
+				} else {
+					print("Feature [" + i + "]: Categorical (Ordinal)");
+				}
+				print(" (15) Num of categories   | " + as.integer(as.scalar(baseStats[15,i])));
+				print(" (16) Mode                | " + as.integer(as.scalar(baseStats[16,i])));
+				print(" (17) Num of modes        | " + as.integer(as.scalar(baseStats[17,i])));
+			}
+		}
+	}
+}
 
+write(baseStats, $STATS);

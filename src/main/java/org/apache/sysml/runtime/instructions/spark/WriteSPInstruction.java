@@ -47,6 +47,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.utils.Statistics;
 
 public class WriteSPInstruction extends SPInstruction 
 {	
@@ -163,7 +164,11 @@ public class WriteSPInstruction extends SPInstruction
 							// output number of rows, number of columns and number of nnz
 							mc.getRows() + " " + mc.getCols() + " " + mc.getNonZeros();
 					headerContainer.add(headerStr);
+					
+					long t0 = System.nanoTime();
 					header = sec.getSparkContext().parallelize(headerContainer);
+					Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
+					Statistics.spark.incParallelizeCount(1);
 				}
 				
 				JavaRDD<String> ijv = in1.flatMap(new ConvertMatrixBlockToIJVLines(mc.getRowsPerBlock(), mc.getColsPerBlock()));
@@ -211,7 +216,10 @@ public class WriteSPInstruction extends SPInstruction
 			    		}
 			    		ArrayList<String> headerContainer = new ArrayList<String>(1);
 			    		headerContainer.add(0, buf.toString());
+			    		long t0 = System.nanoTime();
 			    		JavaRDD<String> header = sec.getSparkContext().parallelize(headerContainer);
+			    		Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
+			    		Statistics.spark.incParallelizeCount(1);
 			    		out = header.union(out);
 					}
 				}

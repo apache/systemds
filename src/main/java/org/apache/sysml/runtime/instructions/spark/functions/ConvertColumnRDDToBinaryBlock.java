@@ -30,6 +30,7 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.Statistics;
 
 public class ConvertColumnRDDToBinaryBlock {
 
@@ -65,6 +66,11 @@ public class ConvertColumnRDDToBinaryBlock {
 		// Now insert last block
 		retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(brIndex, 1), blk));
 		
-		return JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(retVal));
+		long t0 = System.nanoTime();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> result = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(retVal));
+		Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
+		Statistics.spark.incParallelizeCount(1);
+		
+		return result;
 	}
 }

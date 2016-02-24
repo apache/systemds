@@ -56,6 +56,7 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * Two types of broadcast variables used -- 1. Array of type double. 2.PartitionedMatrixBlock
@@ -148,11 +149,20 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			
 			if(_uaggOp.aggOp.increOp.fn instanceof Builtin) {
 				int[] vix = LibMatrixOuterAgg.prepareRowIndices(mb.getNumColumns(), vmb, _bOp, _uaggOp);
-				bvi = sec.getSparkContext().broadcast(vix);
+				
+				long t0 = System.nanoTime();
+				Broadcast<int[]> broadcastVar = sec.getSparkContext().broadcast(vix);
+				Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
+				Statistics.spark.incBroadcastCount(1);
+				
+				bvi = broadcastVar;
 			} else
 				Arrays.sort(vmb);
 			
+			long t0 = System.nanoTime();
 			Broadcast<double[]> bv = sec.getSparkContext().broadcast(vmb);
+			Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
+			Statistics.spark.incBroadcastCount(1);
 			
 			//partitioning-preserving map-to-pair (under constraints)
 			out = in1.mapPartitionsToPair( new RDDMapUAggOuterChainFunction(bv, bvi, _bOp, _uaggOp), noKeyChange );

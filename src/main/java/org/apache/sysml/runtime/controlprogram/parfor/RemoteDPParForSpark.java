@@ -95,11 +95,16 @@ public class RemoteDPParForSpark
 		DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf);
 		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, matrixvar, itervar, 
 				          enableCPCaching, mc, tSparseCol, dpf, oi, aTasks, aIters);
-		List<Tuple2<Long,String>> out = 
+		
+		JavaPairRDD<Long, String> parforTasksRDD = 
 				in.flatMapToPair(dpfun)         //partition the input blocks
 		          .groupByKey(numReducers)      //group partition blocks 		          
-		          .mapPartitionsToPair( efun )  //execute parfor tasks, incl cleanup
-		          .collect();                   //get output handles
+		          .mapPartitionsToPair( efun );  //execute parfor tasks, incl cleanup
+		
+		long ts0 = System.nanoTime();
+		List<Tuple2<Long,String>> out = parforTasksRDD.collect(); //get output handles
+		Statistics.spark.accCollectTime(System.nanoTime() - ts0);
+		Statistics.spark.incCollectCount(1);
 		
 		//de-serialize results
 		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);

@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.Accumulator;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import scala.Tuple2;
@@ -83,8 +84,13 @@ public class RemoteParForSpark
 		//run remote_spark parfor job 
 		//(w/o lazy evaluation to fit existing parfor framework, e.g., result merge)
 		RemoteParForSparkWorker func = new RemoteParForSparkWorker(program, cpCaching, aTasks, aIters);
-		List<Tuple2<Long,String>> out = 
-				sc.parallelize( tasks, numMappers )  //create rdd of parfor tasks
+		
+		long ts0 = System.nanoTime();
+		JavaRDD<Task> parforRDD = sc.parallelize( tasks, numMappers );  //create rdd of parfor tasks
+		Statistics.spark.accParallelizeTime(System.nanoTime() - ts0);
+		Statistics.spark.incParallelizeCount(1);
+
+		List<Tuple2<Long,String>> out = parforRDD
 		          .flatMapToPair( func )             //execute parfor tasks 
 		          .collect();                        //get output handles
 		

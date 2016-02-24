@@ -388,11 +388,22 @@ public class SparkExecutionContext extends ExecutionContext
 					int offset = i * numPerPart;
 					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
 					PartitionedMatrixBlock tmp = pmb.createPartition(offset, numBlks);
-					ret[i] = getSparkContext().broadcast(tmp);
+					
+					long t0 = System.nanoTime();
+					Broadcast<PartitionedMatrixBlock> broadCastVar = getSparkContext().broadcast(tmp);
+					Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
+					Statistics.spark.incBroadcastCount(1);
+					
+					ret[i] = broadCastVar;
 				}
 			}
 			else { //single partition
-				ret[0] = getSparkContext().broadcast( pmb);
+				long t0 = System.nanoTime();
+				Broadcast<PartitionedMatrixBlock> broadCastVar = getSparkContext().broadcast(pmb);
+				Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
+				Statistics.spark.incBroadcastCount(1);
+				
+				ret[0] = broadCastVar;
 			}
 		
 			bret = new PartitionedBroadcastMatrix(ret);
@@ -485,7 +496,12 @@ public class SparkExecutionContext extends ExecutionContext
 				}
 		}
 		
-		return sc.parallelizePairs(list);
+		long t0 = System.nanoTime();
+		JavaPairRDD<MatrixIndexes,MatrixBlock> result = sc.parallelizePairs(list);
+		Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
+		Statistics.spark.incParallelizeCount(1);
+		
+		return result;
 	}
 	
 	/**
@@ -528,7 +544,11 @@ public class SparkExecutionContext extends ExecutionContext
 		if( rlen <= brlen && clen <= bclen ) //SINGLE BLOCK
 		{
 			//special case without copy and nnz maintenance
+			long t0 = System.nanoTime();
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
+			Statistics.spark.accCollectTime(System.nanoTime() - t0);
+			Statistics.spark.incCollectCount(1);
+			
 			if( list.size()>1 )
 				throw new DMLRuntimeException("Expecting no more than one result block.");
 			else if( list.size()==1 )
@@ -544,7 +564,11 @@ public class SparkExecutionContext extends ExecutionContext
 			
 			//create output matrix block (w/ lazy allocation)
 			out = new MatrixBlock(rlen, clen, sparse);
+			
+			long t0 = System.nanoTime();
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
+			Statistics.spark.accCollectTime(System.nanoTime() - t0);
+			Statistics.spark.incCollectCount(1);
 			
 			//copy blocks one-at-a-time into output matrix block
 			for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
@@ -611,7 +635,11 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		//create output matrix block (w/ lazy allocation)
 		out = new MatrixBlock(rlen, clen, sparse);
+		
+		long t0 = System.nanoTime();
 		List<Tuple2<MatrixIndexes,MatrixCell>> list = rdd.collect();
+		Statistics.spark.accCollectTime(System.nanoTime() - t0);
+		Statistics.spark.incCollectCount(1);
 		
 		//copy blocks one-at-a-time into output matrix block
 		for( Tuple2<MatrixIndexes,MatrixCell> keyval : list )
@@ -650,7 +678,10 @@ public class SparkExecutionContext extends ExecutionContext
 	{
 		PartitionedMatrixBlock out = new PartitionedMatrixBlock(rlen, clen, brlen, bclen);
 		
+		long t0 = System.nanoTime();
 		List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
+		Statistics.spark.accCollectTime(System.nanoTime() - t0);
+		Statistics.spark.incCollectCount(1);
 		
 		//copy blocks one-at-a-time into output matrix block
 		for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )

@@ -47,6 +47,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * 
@@ -279,8 +280,12 @@ public class RDDSortUtils
 			sortedIxSrc.quickSetValue((int)sortedIx.quickGetValue(i,0)-1, 0, i+1);			
 
 		//broadcast index vector
-		PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(sortedIxSrc, brlen, bclen);		
-		Broadcast<PartitionedMatrixBlock> _pmb = sec.getSparkContext().broadcast(pmb);	
+		PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(sortedIxSrc, brlen, bclen);	
+		
+		long t0 = System.nanoTime();
+		Broadcast<PartitionedMatrixBlock> _pmb = sec.getSparkContext().broadcast(pmb);
+		Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
+		Statistics.spark.incBroadcastCount(1);
 
 		//sort data with broadcast index vector
 		JavaPairRDD<MatrixIndexes, RowMatrixBlock> ret = data

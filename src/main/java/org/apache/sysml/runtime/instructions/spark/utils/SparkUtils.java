@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
@@ -43,6 +44,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.Statistics;
 
 public class SparkUtils 
 {	
@@ -178,11 +180,21 @@ public class SparkUtils
 		// Now take care of empty blocks
 		// This is done as non-rdd operation due to complexity involved in "not in" operations
 		// Since this deals only with keys and not blocks, it might not be that bad.
+		
+		long t0 = System.nanoTime();
 		List<MatrixIndexes> indexes = binaryBlocksWithoutEmptyBlocks.keys().collect();
+		Statistics.spark.accCollectTime(System.nanoTime() - t0);
+		Statistics.spark.incCollectCount(1);
+		
 		ArrayList<Tuple2<MatrixIndexes, MatrixBlock> > emptyBlocksList = getEmptyBlocks(indexes, numRows, numColumns, brlen, bclen);
 		if(emptyBlocksList != null && emptyBlocksList.size() > 0) {
 			// Empty blocks needs to be inserted
-			binaryBlocksWithEmptyBlocks = JavaPairRDD.fromJavaRDD(sc.parallelize(emptyBlocksList))
+			
+			long ts0 = System.nanoTime();
+			JavaRDD<Tuple2<MatrixIndexes, MatrixBlock>> ebRDD = sc.parallelize(emptyBlocksList);
+			Statistics.spark.accParallelizeTime(System.nanoTime() - ts0);
+			Statistics.spark.incParallelizeCount(1);
+			binaryBlocksWithEmptyBlocks = JavaPairRDD.fromJavaRDD(ebRDD)
 					.union(binaryBlocksWithoutEmptyBlocks);
 		}
 		else {
@@ -266,7 +278,13 @@ public class SparkUtils
 			}
 		
 		//create rdd of in-memory list
-		return sc.parallelizePairs(list);
+		
+		long t0 = System.nanoTime();
+		JavaPairRDD<MatrixIndexes, MatrixBlock> result = sc.parallelizePairs(list);
+		Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
+		Statistics.spark.incParallelizeCount(1);
+		
+		return result;
 	}
 	
 	/**

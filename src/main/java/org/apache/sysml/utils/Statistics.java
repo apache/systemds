@@ -92,6 +92,33 @@ public class Statistics
 	private static AtomicLong lTotalLix = new AtomicLong(0);
 	private static AtomicLong lTotalLixUIP = new AtomicLong(0);
 	
+	/**
+	 * Spark specific stats
+	 */
+	public static class Spark 
+	{
+		long parallelize = 0L;
+		long parallelizeCount = 0L;
+
+		long collect = 0L;
+		long collectCount = 0L;
+		
+		long broadcast = 0L;
+		long broadcastCount = 0L;
+		
+		public void accParallelizeTime(long t)	{ parallelize += t; 	}
+		public void incParallelizeCount(long c)	{ parallelizeCount += c;}
+		
+		public void accCollectTime(long t)		{ collect += t; 		}
+		public void incCollectCount(long c)		{ collectCount += c;	}
+		
+		public void accBroadCastTime(long t)	{ broadcast += t; 		}
+		public void incBroadcastCount(long c)	{ broadcastCount += c;	}
+		
+	}
+	
+	public static Spark spark = new Spark();
+	
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
 	}
@@ -549,6 +576,12 @@ public class Statistics
 				String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";
 				sb.append("Spark ctx create time "+lazy+":\t"+
 						String.format("%.3f", ((double)sparkCtxCreateTime)*1e-9)  + " sec.\n" ); // nanoSec --> sec
+				sb.append("Spark parallelize time:\t\t" +  
+						String.format("%.3f sec, invoked %d times\n", ((double)spark.parallelize)*1e-9, spark.parallelizeCount));
+				sb.append("Spark broadcast time:\t\t" +  
+						String.format("%.3f sec, invoked %d times\n", ((double)spark.broadcast)*1e-9, spark.broadcastCount));
+				sb.append("Spark collect time:\t\t" +  
+						String.format("%.3f sec, invoked %d times\n", ((double)spark.collect)*1e-9, spark.collectCount));
 			}
 			if( parforOptCount>0 ){
 				sb.append("ParFor loops optimized:\t\t" + getParforOptCount() + ".\n");

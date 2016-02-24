@@ -49,6 +49,7 @@ import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * This pmapmm matrix multiplication instruction is still experimental
@@ -117,7 +118,11 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 			
 			int rlen = (int)Math.min(mc1.getRows()-i, NUM_ROWBLOCKS*mc1.getRowsPerBlock());
 			PartitionedMatrixBlock pmb = SparkExecutionContext.toPartitionedMatrixBlock(rdd, rlen, (int)mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1L);
+			
+			long t0 = System.nanoTime();
 			Broadcast<PartitionedMatrixBlock> bpmb = sec.getSparkContext().broadcast(pmb);
+			Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
+			Statistics.spark.incBroadcastCount(1);
 			
 			//matrix multiplication
 			JavaPairRDD<MatrixIndexes,MatrixBlock> rdd2 = in2

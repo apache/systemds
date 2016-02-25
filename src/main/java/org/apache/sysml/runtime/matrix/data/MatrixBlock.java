@@ -5792,7 +5792,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		else if( qop.wtype3 != null ){ //wdivmm
 			//note: for wdivmm-minus X and W interchanged because W always present 
 			MatrixBlock W = qop.wtype3.hasFourInputs() ? checkType(wm) : null;
-			if (null == W && (qop.wtype3.hasScalar() && qop.hasScalar() > 0)) {
+			if( qop.hasScalar() != 0 ) {
 				W = new MatrixBlock(1, 1, false);
 				W.quickSetValue(0, 0, qop.hasScalar());
 			}

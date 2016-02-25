@@ -251,7 +251,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			PartitionedBroadcastMatrix bc2 = _cacheV ? sec.getBroadcastForVariable( input3.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inU = (!_cacheU) ? sec.getBinaryBlockRDDHandleForVariable( input2.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inV = (!_cacheV) ? sec.getBinaryBlockRDDHandleForVariable( input3.getName() ) : null;
-			JavaPairRDD<MatrixIndexes,MatrixBlock> inW = qop.hasFourInputs() ? 
+			JavaPairRDD<MatrixIndexes,MatrixBlock> inW = (qop.hasFourInputs() && !_input4.isLiteral()) ? 
 					sec.getBinaryBlockRDDHandleForVariable( _input4.getName() ) : null;
 
 			//preparation of transposed and replicated U
@@ -283,6 +283,9 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			else if( inU == null && inV != null && inW != null )
 				out = in.join(inV).join(inW)
 				        .mapToPair(new RDDQuaternaryFunction3(qop, bc1, bc2));
+			else if( inU == null && inV == null && inW == null ) {
+				out = in.mapPartitionsToPair(new RDDQuaternaryFunction1(qop, bc1, bc2), false);
+			}
 			//function call w/ four rdd inputs
 			else //need keys in case of wdivmm 
 				out = in.join(inU).join(inV).join(inW)

@@ -503,6 +503,11 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testWeightedDivMMLeftEpsDenseMRRep() {
+		runWeightedDivMMTest(TEST_NAME10, false, true, true, ExecType.MR);
+	}
+	
+	@Test
 	public void testWeightedDivMMRightEpsDenseMR() {
 		runWeightedDivMMTest(TEST_NAME11, false, true, false, ExecType.MR);
 	}
@@ -510,6 +515,11 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	@Test
 	public void testWeightedDivMMRightEpsSparseMR() {
 		runWeightedDivMMTest(TEST_NAME11, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testWeightedDivMMRightEpsDenseMRRep() {
+		runWeightedDivMMTest(TEST_NAME11, false, true, true, ExecType.MR);
 	}
 	
 	@Test
@@ -523,6 +533,11 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testWeightedDivMMLeftEpsDenseSPRep() {
+		runWeightedDivMMTest(TEST_NAME10, false, true, true, ExecType.SPARK);
+	}
+	
+	@Test
 	public void testWeightedDivMMRightEpsDenseSP() {
 		runWeightedDivMMTest(TEST_NAME11, false, true, false, ExecType.SPARK);
 	}
@@ -530,6 +545,11 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	@Test
 	public void testWeightedDivMMRightEpsSparseSP() {
 		runWeightedDivMMTest(TEST_NAME11, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testWeightedDivMMRightEpsDenseSPRep() {
+		runWeightedDivMMTest(TEST_NAME11, false, true, true, ExecType.SPARK);
 	}
 
 	/**

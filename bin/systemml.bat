@@ -60,7 +60,7 @@ IF "%USER_DIR%" == "%PROJECT_ROOT_DIR%\bin" (
 )
 
 
-:: if the SystemML-config.xml does not exis, create it from the template
+:: if the SystemML-config.xml does not exist, create it from the template
 IF NOT EXIST "%PROJECT_ROOT_DIR%\conf\SystemML-config.xml" (
   copy "%PROJECT_ROOT_DIR%\conf\SystemML-config.xml.template" ^
        "%PROJECT_ROOT_DIR%\conf\SystemML-config.xml" > nul

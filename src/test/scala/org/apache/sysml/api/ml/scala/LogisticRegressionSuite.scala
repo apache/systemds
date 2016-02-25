@@ -41,7 +41,10 @@ class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Mat
       LabeledPoint(2.0, Vectors.dense(1.2, 0.0, 3.5))))    
     val lr = new LogisticRegression("log",sc)
     val lrmodel = lr.fit(training.toDF)
+    lrmodel.transform(testing.toDF).show
     
     lr.getIcpt shouldBe 0
+    lrmodel.getIcpt shouldBe lr.getIcpt
+    lrmodel.getMaxInnerIter shouldBe lr.getMaxInnerIter
   }
 }

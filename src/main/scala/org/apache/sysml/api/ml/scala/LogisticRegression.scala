@@ -105,7 +105,8 @@ object LogisticRegressionModel{
 }
 class LogisticRegressionModel(
     override val uid: String)(
-        val mloutput: MLOutput) extends Model[LogisticRegressionModel] {
+        val mloutput: MLOutput) extends Model[LogisticRegressionModel]  with HasIcpt
+    with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter {
   override def copy(extra: ParamMap): LogisticRegressionModel = defaultCopy(extra)
   override def transformSchema(schema: StructType): StructType = schema
   override def transform(df: DataFrame): DataFrame = {

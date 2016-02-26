@@ -26,11 +26,11 @@ printUsageExit()
 cat << EOF
 Usage: $0 <dml-filename> [arguments] [-help]
     -help     - Print this usage message and exit
-Default Java options (-Xmx4g -Xms4g -Xmn400m) can be overridden by setting SYSTEMML_JAVA_OPTS.
+Default Java options (-Xmx4g -Xms4g -Xmn400m) can be overridden by setting SYSTEMML_STANDALONE_OPTS.
 EOF
   exit 1
 }
-#    Script internally invokes 'java [SYSTEMML_JAVA_OPTS] -jar StandaloneSystemML.jar -f <dml-filename> -exec singlenode -config=SystemML-config.xml [arguments]'
+#    Script internally invokes 'java [SYSTEMML_STANDALONE_OPTS] -jar StandaloneSystemML.jar -f <dml-filename> -exec singlenode -config=SystemML-config.xml [arguments]'
 
 while getopts "h:" options; do
   case $options in
@@ -64,13 +64,13 @@ done
 LOG4JPROP=log4j.properties
 
 # set default java opts if none supplied
-if [ -z "$SYSTEMML_JAVA_OPTS" ] ; then
-  SYSTEMML_JAVA_OPTS="-Xmx4g -Xms4g -Xmn400m"
+if [ -z "$SYSTEMML_STANDALONE_OPTS" ] ; then
+  SYSTEMML_STANDALONE_OPTS="-Xmx4g -Xms4g -Xmn400m"
 fi;
 
 # invoke the jar with options and arguments
 CMD="\
-java ${SYSTEMML_JAVA_OPTS} \
+java ${SYSTEMML_STANDALONE_OPTS} \
 -cp ${CLASSPATH} \
 -Dlog4j.configuration=file:${LOG4JPROP} \
 org.apache.sysml.api.DMLScript \

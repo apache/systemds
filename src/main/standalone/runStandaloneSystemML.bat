@@ -35,12 +35,12 @@ set LOG4JPROP=log4j.properties
 
 for /f "tokens=1,* delims= " %%a in ("%*") do set ALLBUTFIRST=%%b
 
-IF "%SYSTEMML_JAVA_OPTS%" == "" (
-  SET SYSTEMML_JAVA_OPTS=-Xmx4g -Xms4g -Xmn400m
+IF "%SYSTEMML_STANDALONE_OPTS%" == "" (
+  SET SYSTEMML_STANDALONE_OPTS=-Xmx4g -Xms4g -Xmn400m
 )
 
 :: construct the java command with options and arguments
-set CMD=java %SYSTEMML_JAVA_OPTS% ^
+set CMD=java %SYSTEMML_STANDALONE_OPTS% ^
      -cp %CLASSPATH% ^
      -Dlog4j.configuration=file:%LOG4JPROP% ^
      org.apache.sysml.api.DMLScript ^
@@ -71,7 +71,7 @@ GOTO Msg
 
 :Msg
 ECHO Usage: runStandaloneSystemML.bat ^<dml-filename^> [arguments] [-help]
-ECHO Default Java options (-Xmx4g -Xms4g -Xmn400m) can be overridden by setting SYSTEMML_JAVA_OPTS.
-ECHO Script internally invokes 'java [SYSTEMML_JAVA_OPTS] -cp ./lib/* -Dlog4j.configuration=file:log4j.properties org.apache.sysml.api.DMLScript -f ^<dml-filename^> -exec singlenode -config=SystemML-config.xml [arguments]'
+ECHO Default Java options (-Xmx4g -Xms4g -Xmn400m) can be overridden by setting SYSTEMML_STANDALONE_OPTS.
+ECHO Script internally invokes 'java [SYSTEMML_STANDALONE_OPTS] -cp ./lib/* -Dlog4j.configuration=file:log4j.properties org.apache.sysml.api.DMLScript -f ^<dml-filename^> -exec singlenode -config=SystemML-config.xml [arguments]'
 
 :End

@@ -826,7 +826,7 @@ public class DataTransform {
 		boolean isBB  = (bboutputs.size()  > 0);
 		String tmpPath = MRJobConfiguration.constructTempOutputFilename();
 		
-		checkIfOutputOverlapsWithTxMtd(outputMatrices, oprnds, isCSV, isBB, csvoutputs, bboutputs);
+		checkIfOutputOverlapsWithTxMtd(outputMatrices, oprnds, isCSV, isBB, csvoutputs, bboutputs, fs);
 		
 		JobReturn retCSV = null, retBB = null;
 		
@@ -1099,7 +1099,7 @@ public class DataTransform {
 		boolean isCSV = (csvoutputs.size() > 0);
 		boolean isBB  = (bboutputs.size()  > 0);
 		
-		checkIfOutputOverlapsWithTxMtd(outputMatrices, oprnds, isCSV, isBB, csvoutputs, bboutputs);
+		checkIfOutputOverlapsWithTxMtd(outputMatrices, oprnds, isCSV, isBB, csvoutputs, bboutputs, fs);
 		
 		JobReturn ret = null;
 		
@@ -1402,17 +1402,30 @@ public class DataTransform {
 	}
 	
 	private static void checkIfOutputOverlapsWithTxMtd(MatrixObject[] outputMatrices, TransformOperands oprnds,
-			boolean isCSV, boolean isBB, ArrayList<Integer> csvoutputs, ArrayList<Integer> bboutputs) throws DMLRuntimeException {
+			boolean isCSV, boolean isBB, ArrayList<Integer> csvoutputs, ArrayList<Integer> bboutputs, FileSystem fs) throws DMLRuntimeException {
 		if(isCSV) {
-			checkIfOutputOverlapsWithTxMtd(oprnds.txMtdPath, outputMatrices[csvoutputs.get(0)].getFileName());
+			checkIfOutputOverlapsWithTxMtd(oprnds.txMtdPath, outputMatrices[csvoutputs.get(0)].getFileName(), fs);
 		}
 		else if(isBB) {
-			checkIfOutputOverlapsWithTxMtd(oprnds.txMtdPath, outputMatrices[bboutputs.get(0)].getFileName());
+			checkIfOutputOverlapsWithTxMtd(oprnds.txMtdPath, outputMatrices[bboutputs.get(0)].getFileName(), fs);
 		}
 	}
 	
-	private static void checkIfOutputOverlapsWithTxMtd(String txMtdPath, String outputPath) throws DMLRuntimeException {
-		if(txMtdPath.startsWith(outputPath) || outputPath.startsWith(txMtdPath)) {
+	private static void checkIfOutputOverlapsWithTxMtd(String txMtdPath, String outputPath, FileSystem fs) throws DMLRuntimeException {
+		Path path1 = new Path(txMtdPath).makeQualified(fs);
+		Path path2 = new Path(outputPath).makeQualified(fs);
+		
+		String fullTxMtdPath = path1.toString();
+		String fullOutputPath = path2.toString();
+		
+		if(path1.getParent().toString().compareTo(path2.getParent().toString()) == 0) {
+			// Both txMtdPath and outputPath are in same folder, but outputPath can have suffix 
+			if(fullTxMtdPath.compareTo(fullOutputPath) == 0) {
+				throw new DMLRuntimeException("The transform path \'" + txMtdPath 
+						+ "\' cannot overlap with the output path \'" + outputPath + "\'");
+			}
+		}
+		else if(fullTxMtdPath.startsWith(fullOutputPath) || fullOutputPath.startsWith(fullTxMtdPath)) {
 			throw new DMLRuntimeException("The transform path \'" + txMtdPath 
 					+ "\' cannot overlap with the output path \'" + outputPath + "\'");
 		}
@@ -1425,10 +1438,10 @@ public class DataTransform {
 		// Parse transform instruction (the first instruction) to obtain relevant fields
 		TransformOperands oprnds = new TransformOperands(inst, inputMatrices[0]);
 		
-		checkIfOutputOverlapsWithTxMtd(oprnds.txMtdPath, outputMatrices[0].getFileName());
-		
 		JobConf job = new JobConf();
 		FileSystem fs = FileSystem.get(job);
+		
+		checkIfOutputOverlapsWithTxMtd(oprnds.txMtdPath, outputMatrices[0].getFileName(), fs);
 		
 		// find the first file in alphabetical ordering of partfiles in directory inputPath 
 		String smallestFile = CSVReblockMR.findSmallestFile(job, oprnds.inputPath);

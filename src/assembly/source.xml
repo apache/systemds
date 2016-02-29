@@ -42,6 +42,7 @@
 				<exclude>**/conf/*.properties</exclude>
 				<exclude>**/conf/*.xml</exclude>
 				<exclude>**/dependency-reduced-pom.xml</exclude>
+				<exclude>LICENSE</exclude> <!-- exclude from root dir -->
 				<exclude>**/scratch_space</exclude>
 				<exclude>**/scratch_space/**/*</exclude>
 				<exclude>**/target</exclude>
@@ -49,6 +50,15 @@
 				<exclude>**/temp</exclude>
 				<exclude>**/temp/**/*</exclude>
 			</excludes>
+		</fileSet>
+
+		<!--  add source version of license to root dir-->
+		<fileSet>
+			<directory>${basedir}/src/assembly/source</directory>
+			<includes>
+				<include>LICENSE</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
 		</fileSet>
 	</fileSets>
 </assembly>

@@ -175,7 +175,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		this.copy(that);
 	}
 	
-	public MatrixBlock(MatrixBlock that, SparseBlock.Type stype)
+	public MatrixBlock(MatrixBlock that, SparseBlock.Type stype, boolean deep)
 	{
 		//sanity check sparse matrix block
 		if( !that.isInSparseFormat() )
@@ -188,7 +188,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		nonZeros = that.nonZeros;
 		estimatedNNzsPerRow = that.estimatedNNzsPerRow;
 		sparseBlock = SparseBlockFactory
-				.copySparseBlock(stype, that.sparseBlock, true);
+				.copySparseBlock(stype, that.sparseBlock, deep);
 	}
 	
 	////////

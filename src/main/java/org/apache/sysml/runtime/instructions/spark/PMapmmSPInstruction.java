@@ -30,6 +30,7 @@ import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.PMapMult;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
@@ -119,10 +120,12 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 			int rlen = (int)Math.min(mc1.getRows()-i, NUM_ROWBLOCKS*mc1.getRowsPerBlock());
 			PartitionedMatrixBlock pmb = SparkExecutionContext.toPartitionedMatrixBlock(rdd, rlen, (int)mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1L);
 			
-			long t0 = System.nanoTime();
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			Broadcast<PartitionedMatrixBlock> bpmb = sec.getSparkContext().broadcast(pmb);
-			Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
-			Statistics.spark.incBroadcastCount(1);
+			if (DMLScript.STATISTICS) {
+				Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+				Statistics.incSparkBroadcastCount(1);
+			}
 			
 			//matrix multiplication
 			JavaPairRDD<MatrixIndexes,MatrixBlock> rdd2 = in2

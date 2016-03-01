@@ -387,21 +387,25 @@ public class SparkExecutionContext extends ExecutionContext
 				for( int i=0; i<numParts; i++ ) {
 					int offset = i * numPerPart;
 					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
-					PartitionedMatrixBlock tmp = pmb.createPartition(offset, numBlks);
 					
-					long t0 = System.nanoTime();
+					long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+					PartitionedMatrixBlock tmp = pmb.createPartition(offset, numBlks);
 					Broadcast<PartitionedMatrixBlock> broadCastVar = getSparkContext().broadcast(tmp);
-					Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
-					Statistics.spark.incBroadcastCount(1);
+					if (DMLScript.STATISTICS) {
+						Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+						Statistics.incSparkBroadcastCount(1);
+					}
 					
 					ret[i] = broadCastVar;
 				}
 			}
 			else { //single partition
-				long t0 = System.nanoTime();
+				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 				Broadcast<PartitionedMatrixBlock> broadCastVar = getSparkContext().broadcast(pmb);
-				Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
-				Statistics.spark.incBroadcastCount(1);
+				if (DMLScript.STATISTICS) {
+					Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+					Statistics.incSparkBroadcastCount(1);
+				}
 				
 				ret[0] = broadCastVar;
 			}
@@ -496,10 +500,12 @@ public class SparkExecutionContext extends ExecutionContext
 				}
 		}
 		
-		long t0 = System.nanoTime();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> result = sc.parallelizePairs(list);
-		Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
-		Statistics.spark.incParallelizeCount(1);
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkParallelizeTime(System.nanoTime() - t0);
+			Statistics.incSparkParallelizeCount(1);
+		}
 		
 		return result;
 	}
@@ -544,10 +550,12 @@ public class SparkExecutionContext extends ExecutionContext
 		if( rlen <= brlen && clen <= bclen ) //SINGLE BLOCK
 		{
 			//special case without copy and nnz maintenance
-			long t0 = System.nanoTime();
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
-			Statistics.spark.accCollectTime(System.nanoTime() - t0);
-			Statistics.spark.incCollectCount(1);
+			if (DMLScript.STATISTICS) {
+				Statistics.accSparkCollectTime(System.nanoTime() - t0);
+				Statistics.incSparkCollectCount(1);
+			}
 			
 			if( list.size()>1 )
 				throw new DMLRuntimeException("Expecting no more than one result block.");
@@ -562,13 +570,12 @@ public class SparkExecutionContext extends ExecutionContext
 			long lnnz = (nnz >= 0) ? nnz : (long)rlen * clen;
 			boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, lnnz);
 			
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			
 			//create output matrix block (w/ lazy allocation)
 			out = new MatrixBlock(rlen, clen, sparse);
 			
-			long t0 = System.nanoTime();
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
-			Statistics.spark.accCollectTime(System.nanoTime() - t0);
-			Statistics.spark.incCollectCount(1);
 			
 			//copy blocks one-at-a-time into output matrix block
 			for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
@@ -592,6 +599,11 @@ public class SparkExecutionContext extends ExecutionContext
 					out.copy( row_offset, row_offset+rows-1, 
 							  col_offset, col_offset+cols-1, block, false );	
 				}
+			}
+			
+			if (DMLScript.STATISTICS) {
+				Statistics.accSparkCollectTime(System.nanoTime() - t0);
+				Statistics.incSparkCollectCount(1);
 			}
 			
 			//post-processing output matrix
@@ -633,13 +645,12 @@ public class SparkExecutionContext extends ExecutionContext
 		long lnnz = (nnz >= 0) ? nnz : (long)rlen * clen;
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, lnnz);
 		
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		
 		//create output matrix block (w/ lazy allocation)
 		out = new MatrixBlock(rlen, clen, sparse);
 		
-		long t0 = System.nanoTime();
 		List<Tuple2<MatrixIndexes,MatrixCell>> list = rdd.collect();
-		Statistics.spark.accCollectTime(System.nanoTime() - t0);
-		Statistics.spark.incCollectCount(1);
 		
 		//copy blocks one-at-a-time into output matrix block
 		for( Tuple2<MatrixIndexes,MatrixCell> keyval : list )
@@ -651,6 +662,11 @@ public class SparkExecutionContext extends ExecutionContext
 			//append cell to dense/sparse target in order to avoid shifting for sparse
 			//note: this append requires a final sort of sparse rows
 			out.appendValue((int)ix.getRowIndex()-1, (int)ix.getColumnIndex()-1, cell.getValue());
+		}
+		
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkCollectTime(System.nanoTime() - t0);
+			Statistics.incSparkCollectCount(1);
 		}
 		
 		//post-processing output matrix
@@ -676,12 +692,11 @@ public class SparkExecutionContext extends ExecutionContext
 	public static PartitionedMatrixBlock toPartitionedMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen, long nnz) 
 		throws DMLRuntimeException
 	{
-		PartitionedMatrixBlock out = new PartitionedMatrixBlock(rlen, clen, brlen, bclen);
 		
-		long t0 = System.nanoTime();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
+		PartitionedMatrixBlock out = new PartitionedMatrixBlock(rlen, clen, brlen, bclen);
 		List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
-		Statistics.spark.accCollectTime(System.nanoTime() - t0);
-		Statistics.spark.incCollectCount(1);
 		
 		//copy blocks one-at-a-time into output matrix block
 		for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
@@ -690,6 +705,11 @@ public class SparkExecutionContext extends ExecutionContext
 			MatrixIndexes ix = keyval._1();
 			MatrixBlock block = keyval._2();
 			out.setMatrixBlock((int)ix.getRowIndex(), (int)ix.getColumnIndex(), block);
+		}
+		
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkCollectTime(System.nanoTime() - t0);
+			Statistics.incSparkCollectCount(1);
 		}
 				
 		return out;

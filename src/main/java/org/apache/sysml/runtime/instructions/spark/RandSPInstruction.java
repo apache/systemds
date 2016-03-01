@@ -385,10 +385,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			int numPartitions = (int) Math.max(Math.min(partSize/hdfsBlkSize, numBlocks), 1);
 				
 			//create seeds rdd 
-			long t0 = System.nanoTime();
-			seedsRDD = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(seeds, numPartitions));
-			Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
-			Statistics.spark.incParallelizeCount(1);
+			seedsRDD = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(seeds, numPartitions));				
 		}
 		//b) file-based seed rdd construction (for robustness wrt large number of blocks)
 		else
@@ -486,10 +483,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			int numPartitions = (int) Math.max(Math.min(partSize/hdfsBlkSize, numBlocks), 1);
 				
 			//create offset rdd
-			long t0 = System.nanoTime();
 			offsetsRDD = sec.getSparkContext().parallelize(offsets, numPartitions);
-			Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
-			Statistics.spark.incParallelizeCount(1);
 		}
 		//b) file-based offset rdd construction (for robustness wrt large number of blocks)
 		else
@@ -576,10 +570,7 @@ public class RandSPInstruction extends UnarySPInstruction
 			offsets.add(s);
 			st = st + partitionSize;
 		}
-		long t0 = System.nanoTime();
 		JavaRDD<SampleTask> offsetRDD = sec.getSparkContext().parallelize(offsets, numPartitions);
-		Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
-		Statistics.spark.incParallelizeCount(1);
 		
 		// Construct the sample in a distributed manner
 		JavaRDD<Double> rdd = offsetRDD.flatMap( (new GenerateSampleBlock(replace, fraction, (long)maxValue, partitionSize)) );

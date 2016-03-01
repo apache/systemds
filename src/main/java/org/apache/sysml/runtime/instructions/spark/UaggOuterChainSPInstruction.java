@@ -29,6 +29,7 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.lops.UAggOuterChain;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -150,19 +151,23 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			if(_uaggOp.aggOp.increOp.fn instanceof Builtin) {
 				int[] vix = LibMatrixOuterAgg.prepareRowIndices(mb.getNumColumns(), vmb, _bOp, _uaggOp);
 				
-				long t0 = System.nanoTime();
+				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 				Broadcast<int[]> broadcastVar = sec.getSparkContext().broadcast(vix);
-				Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
-				Statistics.spark.incBroadcastCount(1);
+				if (DMLScript.STATISTICS) {
+					Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+					Statistics.incSparkBroadcastCount(1);
+				}
 				
 				bvi = broadcastVar;
 			} else
 				Arrays.sort(vmb);
 			
-			long t0 = System.nanoTime();
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			Broadcast<double[]> bv = sec.getSparkContext().broadcast(vmb);
-			Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
-			Statistics.spark.incBroadcastCount(1);
+			if (DMLScript.STATISTICS) {
+				Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+				Statistics.incSparkBroadcastCount(1);
+			}
 			
 			//partitioning-preserving map-to-pair (under constraints)
 			out = in1.mapPartitionsToPair( new RDDMapUAggOuterChainFunction(bv, bvi, _bOp, _uaggOp), noKeyChange );

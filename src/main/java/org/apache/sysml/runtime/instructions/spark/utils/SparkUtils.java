@@ -33,6 +33,7 @@ import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
@@ -181,19 +182,23 @@ public class SparkUtils
 		// This is done as non-rdd operation due to complexity involved in "not in" operations
 		// Since this deals only with keys and not blocks, it might not be that bad.
 		
-		long t0 = System.nanoTime();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		List<MatrixIndexes> indexes = binaryBlocksWithoutEmptyBlocks.keys().collect();
-		Statistics.spark.accCollectTime(System.nanoTime() - t0);
-		Statistics.spark.incCollectCount(1);
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkCollectTime(System.nanoTime() - t0);
+			Statistics.incSparkCollectCount(1);
+		}
 		
 		ArrayList<Tuple2<MatrixIndexes, MatrixBlock> > emptyBlocksList = getEmptyBlocks(indexes, numRows, numColumns, brlen, bclen);
 		if(emptyBlocksList != null && emptyBlocksList.size() > 0) {
 			// Empty blocks needs to be inserted
 			
-			long ts0 = System.nanoTime();
+			long ts0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			JavaRDD<Tuple2<MatrixIndexes, MatrixBlock>> ebRDD = sc.parallelize(emptyBlocksList);
-			Statistics.spark.accParallelizeTime(System.nanoTime() - ts0);
-			Statistics.spark.incParallelizeCount(1);
+			if (DMLScript.STATISTICS) {
+				Statistics.accSparkParallelizeTime(System.nanoTime() - ts0);
+				Statistics.incSparkParallelizeCount(1);
+			}
 			binaryBlocksWithEmptyBlocks = JavaPairRDD.fromJavaRDD(ebRDD)
 					.union(binaryBlocksWithoutEmptyBlocks);
 		}
@@ -279,10 +284,12 @@ public class SparkUtils
 		
 		//create rdd of in-memory list
 		
-		long t0 = System.nanoTime();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		JavaPairRDD<MatrixIndexes, MatrixBlock> result = sc.parallelizePairs(list);
-		Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
-		Statistics.spark.incParallelizeCount(1);
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkParallelizeTime(System.nanoTime() - t0);
+			Statistics.incSparkParallelizeCount(1);
+		}
 		
 		return result;
 	}

@@ -34,6 +34,7 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -282,10 +283,12 @@ public class RDDSortUtils
 		//broadcast index vector
 		PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(sortedIxSrc, brlen, bclen);	
 		
-		long t0 = System.nanoTime();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		Broadcast<PartitionedMatrixBlock> _pmb = sec.getSparkContext().broadcast(pmb);
-		Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
-		Statistics.spark.incBroadcastCount(1);
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+			Statistics.incSparkBroadcastCount(1);
+		}
 
 		//sort data with broadcast index vector
 		JavaPairRDD<MatrixIndexes, RowMatrixBlock> ret = data

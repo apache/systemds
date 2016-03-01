@@ -101,10 +101,12 @@ public class RemoteDPParForSpark
 		          .groupByKey(numReducers)      //group partition blocks 		          
 		          .mapPartitionsToPair( efun );  //execute parfor tasks, incl cleanup
 		
-		long ts0 = System.nanoTime();
+		long ts0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		List<Tuple2<Long,String>> out = parforTasksRDD.collect(); //get output handles
-		Statistics.spark.accCollectTime(System.nanoTime() - ts0);
-		Statistics.spark.incCollectCount(1);
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkCollectTime(System.nanoTime() - ts0);
+			Statistics.incSparkCollectCount(1);
+		}
 		
 		//de-serialize results
 		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);

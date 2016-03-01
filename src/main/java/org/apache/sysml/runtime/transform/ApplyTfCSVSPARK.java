@@ -39,7 +39,6 @@ import scala.Tuple2;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
-import org.apache.sysml.utils.Statistics;
 
 
 public class ApplyTfCSVSPARK {
@@ -65,11 +64,8 @@ public class ApplyTfCSVSPARK {
 		TfUtils _tfmapper = new TfUtils(headerLine, prop.hasHeader(), prop.getDelim(), naStrings, spec, numCols, tfMtdPath, null, tmpPath);
 		
 		_tfmapper.loadTfMetadata();
-		
-		long t0 = System.nanoTime();
+
 		Broadcast<TfUtils> bcast_tf = sec.getSparkContext().broadcast(_tfmapper);
-		Statistics.spark.accBroadCastTime(System.nanoTime() - t0);
-		Statistics.spark.incBroadcastCount(1);
 		
 		/*
 		 * Construct transformation metadata (map-side) -- the logic is similar

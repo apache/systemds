@@ -26,6 +26,7 @@ import org.apache.spark.api.java.JavaRDD;
 
 import scala.Tuple2;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -66,10 +67,12 @@ public class ConvertColumnRDDToBinaryBlock {
 		// Now insert last block
 		retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(brIndex, 1), blk));
 		
-		long t0 = System.nanoTime();
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> result = JavaPairRDD.fromJavaRDD(sec.getSparkContext().parallelize(retVal));
-		Statistics.spark.accParallelizeTime(System.nanoTime() - t0);
-		Statistics.spark.incParallelizeCount(1);
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkParallelizeTime(System.nanoTime() - t0);
+			Statistics.incSparkParallelizeCount(1);
+		}
 		
 		return result;
 	}

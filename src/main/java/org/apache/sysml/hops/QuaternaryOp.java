@@ -819,7 +819,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWdivmm = (!(wtype.hasFourInputs() && !wtype.hasScalar()) &&
+		boolean isMapWdivmm = ((!wtype.hasFourInputs() || wtype.hasScalar()) &&
 				m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
 		
 		if( !FORCE_REPLICATION && isMapWdivmm ) //broadcast
@@ -970,7 +970,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWdivmm = (!(wtype.hasFourInputs() && !wtype.hasScalar()) && m1Size+m2Size < memBudgetExec
+		boolean isMapWdivmm = ((!wtype.hasFourInputs() || wtype.hasScalar()) && m1Size+m2Size < memBudgetExec
 				&& 2*m1Size<memBudgetLocal && 2*m2Size<memBudgetLocal); 
 		
 		if( !FORCE_REPLICATION && isMapWdivmm ) //broadcast

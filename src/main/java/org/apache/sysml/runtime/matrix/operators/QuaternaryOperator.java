@@ -120,9 +120,9 @@ public class QuaternaryOperator extends Operator
 	
 	/**
 	 * 
-	 * @return
+	 * @return epsilon
 	 */
-	public double hasScalar() {
+	public double getScalar() {
 		return eps;
 	}
 

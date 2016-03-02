@@ -220,13 +220,6 @@
 					<goal>testCompile</goal>
 				  </goals>
 				</execution>
-				<execution>
-				  <id>attach-scaladocs</id>
-				  <phase>verify</phase>
-				  <goals>
-					<goal>doc-jar</goal>
-				  </goals>
-				</execution>
 			  </executions>
 			</plugin>
 			<plugin>

@@ -353,7 +353,9 @@ public class SparkExecutionContext extends ExecutionContext
 	@SuppressWarnings("unchecked")
 	public PartitionedBroadcastMatrix getBroadcastForVariable( String varname ) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
-	{
+	{		
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
 		MatrixObject mo = getMatrixObject(varname);
 		
 		PartitionedBroadcastMatrix bret = null;
@@ -387,32 +389,22 @@ public class SparkExecutionContext extends ExecutionContext
 				for( int i=0; i<numParts; i++ ) {
 					int offset = i * numPerPart;
 					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
-					
-					long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 					PartitionedMatrixBlock tmp = pmb.createPartition(offset, numBlks);
-					Broadcast<PartitionedMatrixBlock> broadCastVar = getSparkContext().broadcast(tmp);
-					if (DMLScript.STATISTICS) {
-						Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
-						Statistics.incSparkBroadcastCount(1);
-					}
-					
-					ret[i] = broadCastVar;
+					ret[i] = getSparkContext().broadcast(tmp);
 				}
 			}
 			else { //single partition
-				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				Broadcast<PartitionedMatrixBlock> broadCastVar = getSparkContext().broadcast(pmb);
-				if (DMLScript.STATISTICS) {
-					Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
-					Statistics.incSparkBroadcastCount(1);
-				}
-				
-				ret[0] = broadCastVar;
+				ret[0] = getSparkContext().broadcast( pmb);
 			}
 		
 			bret = new PartitionedBroadcastMatrix(ret);
 			BroadcastObject bchandle = new BroadcastObject(bret, varname);
 			mo.setBroadcastHandle(bchandle);
+		}
+		
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+			Statistics.incSparkBroadcastCount(1);
 		}
 		
 		return bret;
@@ -466,7 +458,8 @@ public class SparkExecutionContext extends ExecutionContext
 	 */
 	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int brlen, int bclen) 
 		throws DMLRuntimeException, DMLUnsupportedOperationException
-	{
+	{	
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		LinkedList<Tuple2<MatrixIndexes,MatrixBlock>> list = new LinkedList<Tuple2<MatrixIndexes,MatrixBlock>>();
 		
 		if(    src.getNumRows() <= brlen 
@@ -500,7 +493,6 @@ public class SparkExecutionContext extends ExecutionContext
 				}
 		}
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> result = sc.parallelizePairs(list);
 		if (DMLScript.STATISTICS) {
 			Statistics.accSparkParallelizeTime(System.nanoTime() - t0);
@@ -545,17 +537,15 @@ public class SparkExecutionContext extends ExecutionContext
 	public static MatrixBlock toMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen, long nnz) 
 		throws DMLRuntimeException
 	{
+		
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
 		MatrixBlock out = null;
 		
 		if( rlen <= brlen && clen <= bclen ) //SINGLE BLOCK
 		{
 			//special case without copy and nnz maintenance
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
-			if (DMLScript.STATISTICS) {
-				Statistics.accSparkCollectTime(System.nanoTime() - t0);
-				Statistics.incSparkCollectCount(1);
-			}
 			
 			if( list.size()>1 )
 				throw new DMLRuntimeException("Expecting no more than one result block.");
@@ -569,9 +559,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//determine target sparse/dense representation
 			long lnnz = (nnz >= 0) ? nnz : (long)rlen * clen;
 			boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, lnnz);
-			
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			
+						
 			//create output matrix block (w/ lazy allocation)
 			out = new MatrixBlock(rlen, clen, sparse);
 			
@@ -601,16 +589,16 @@ public class SparkExecutionContext extends ExecutionContext
 				}
 			}
 			
-			if (DMLScript.STATISTICS) {
-				Statistics.accSparkCollectTime(System.nanoTime() - t0);
-				Statistics.incSparkCollectCount(1);
-			}
-			
 			//post-processing output matrix
 			if( sparse )
 				out.sortSparseRows();
 			out.recomputeNonZeros();
 			out.examSparsity();
+		}
+		
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkCollectTime(System.nanoTime() - t0);
+			Statistics.incSparkCollectCount(1);
 		}
 		
 		return out;
@@ -638,15 +626,15 @@ public class SparkExecutionContext extends ExecutionContext
 	 */
 	public static MatrixBlock toMatrixBlock(JavaPairRDD<MatrixIndexes, MatrixCell> rdd, int rlen, int clen, long nnz) 
 		throws DMLRuntimeException
-	{
+	{	
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
 		MatrixBlock out = null;
 		
 		//determine target sparse/dense representation
 		long lnnz = (nnz >= 0) ? nnz : (long)rlen * clen;
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, lnnz);
-		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		
+				
 		//create output matrix block (w/ lazy allocation)
 		out = new MatrixBlock(rlen, clen, sparse);
 		
@@ -664,16 +652,16 @@ public class SparkExecutionContext extends ExecutionContext
 			out.appendValue((int)ix.getRowIndex()-1, (int)ix.getColumnIndex()-1, cell.getValue());
 		}
 		
-		if (DMLScript.STATISTICS) {
-			Statistics.accSparkCollectTime(System.nanoTime() - t0);
-			Statistics.incSparkCollectCount(1);
-		}
-		
 		//post-processing output matrix
 		if( sparse )
 			out.sortSparseRows();
 		out.recomputeNonZeros();
 		out.examSparsity();
+		
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkCollectTime(System.nanoTime() - t0);
+			Statistics.incSparkCollectCount(1);
+		}
 		
 		return out;
 	}

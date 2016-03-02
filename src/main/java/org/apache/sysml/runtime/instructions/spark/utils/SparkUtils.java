@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
@@ -33,7 +32,6 @@ import org.apache.spark.storage.StorageLevel;
 
 import scala.Tuple2;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
@@ -45,7 +43,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.Statistics;
 
 public class SparkUtils 
 {	
@@ -181,25 +178,11 @@ public class SparkUtils
 		// Now take care of empty blocks
 		// This is done as non-rdd operation due to complexity involved in "not in" operations
 		// Since this deals only with keys and not blocks, it might not be that bad.
-		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		List<MatrixIndexes> indexes = binaryBlocksWithoutEmptyBlocks.keys().collect();
-		if (DMLScript.STATISTICS) {
-			Statistics.accSparkCollectTime(System.nanoTime() - t0);
-			Statistics.incSparkCollectCount(1);
-		}
-		
 		ArrayList<Tuple2<MatrixIndexes, MatrixBlock> > emptyBlocksList = getEmptyBlocks(indexes, numRows, numColumns, brlen, bclen);
 		if(emptyBlocksList != null && emptyBlocksList.size() > 0) {
 			// Empty blocks needs to be inserted
-			
-			long ts0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			JavaRDD<Tuple2<MatrixIndexes, MatrixBlock>> ebRDD = sc.parallelize(emptyBlocksList);
-			if (DMLScript.STATISTICS) {
-				Statistics.accSparkParallelizeTime(System.nanoTime() - ts0);
-				Statistics.incSparkParallelizeCount(1);
-			}
-			binaryBlocksWithEmptyBlocks = JavaPairRDD.fromJavaRDD(ebRDD)
+			binaryBlocksWithEmptyBlocks = JavaPairRDD.fromJavaRDD(sc.parallelize(emptyBlocksList))
 					.union(binaryBlocksWithoutEmptyBlocks);
 		}
 		else {
@@ -283,15 +266,7 @@ public class SparkUtils
 			}
 		
 		//create rdd of in-memory list
-		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		JavaPairRDD<MatrixIndexes, MatrixBlock> result = sc.parallelizePairs(list);
-		if (DMLScript.STATISTICS) {
-			Statistics.accSparkParallelizeTime(System.nanoTime() - t0);
-			Statistics.incSparkParallelizeCount(1);
-		}
-		
-		return result;
+		return sc.parallelizePairs(list);
 	}
 	
 	/**

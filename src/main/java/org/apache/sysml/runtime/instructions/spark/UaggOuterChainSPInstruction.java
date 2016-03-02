@@ -29,7 +29,6 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.lops.UAggOuterChain;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -57,7 +56,6 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.utils.Statistics;
 
 /**
  * Two types of broadcast variables used -- 1. Array of type double. 2.PartitionedMatrixBlock
@@ -150,24 +148,11 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction
 			
 			if(_uaggOp.aggOp.increOp.fn instanceof Builtin) {
 				int[] vix = LibMatrixOuterAgg.prepareRowIndices(mb.getNumColumns(), vmb, _bOp, _uaggOp);
-				
-				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				Broadcast<int[]> broadcastVar = sec.getSparkContext().broadcast(vix);
-				if (DMLScript.STATISTICS) {
-					Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
-					Statistics.incSparkBroadcastCount(1);
-				}
-				
-				bvi = broadcastVar;
+				bvi = sec.getSparkContext().broadcast(vix);
 			} else
 				Arrays.sort(vmb);
 			
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			Broadcast<double[]> bv = sec.getSparkContext().broadcast(vmb);
-			if (DMLScript.STATISTICS) {
-				Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
-				Statistics.incSparkBroadcastCount(1);
-			}
 			
 			//partitioning-preserving map-to-pair (under constraints)
 			out = in1.mapPartitionsToPair( new RDDMapUAggOuterChainFunction(bv, bvi, _bOp, _uaggOp), noKeyChange );

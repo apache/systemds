@@ -588,7 +588,7 @@ public class Statistics
 				
 				sb.append("Spark trans counts (par,bc,col):" +
 						String.format("%d/%d/%d.\n", sparkParallelizeCount.get(), sparkBroadcastCount.get(), sparkCollectCount.get()));
-				sb.append("Spark trans times  (par,bc,col):" +
+				sb.append("Spark trans times (par,bc,col):\t" +
 						String.format("%.3f/%.3f/%.3f secs.\n", 
 								 ((double)sparkParallelize.get())*1e-9,
 								 ((double)sparkBroadcast.get())*1e-9,

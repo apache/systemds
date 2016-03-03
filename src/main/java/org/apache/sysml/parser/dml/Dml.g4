@@ -39,18 +39,16 @@ grammar Dml;
  * specific language governing permissions and limitations
  * under the License.
  */
-    import org.apache.sysml.parser.common.ExpressionInfo;
-    import org.apache.sysml.parser.common.StatementInfo;
 }
 
 // DML Program is a list of expression
 // For now, we only allow global function definitions (not nested or inside a while block)
 programroot: (blocks+=statement | functionBlocks+=functionStatement)* EOF;
 
-statement returns [ StatementInfo info ]
+statement returns [ org.apache.sysml.parser.common.StatementInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $info = new StatementInfo();
+       $info = new org.apache.sysml.parser.common.StatementInfo();
 } :
     // ------------------------------------------
     // ImportStatement
@@ -83,19 +81,19 @@ statement returns [ StatementInfo info ]
     // ------------------------------------------
 ;
 
-iterablePredicate returns [ ExpressionInfo info ]
+iterablePredicate returns [ org.apache.sysml.parser.common.ExpressionInfo info ]
   @init {
          // This actions occurs regardless of how many alternatives in this rule
-         $info = new ExpressionInfo();
+         $info = new org.apache.sysml.parser.common.ExpressionInfo();
   } :
     from=expression ':' to=expression #IterablePredicateColonExpression
     | ID '(' from=expression ',' to=expression ',' increment=expression ')' #IterablePredicateSeqExpression
     ;
 
-functionStatement returns [ StatementInfo info ]
+functionStatement returns [ org.apache.sysml.parser.common.StatementInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $info = new StatementInfo();
+       $info = new org.apache.sysml.parser.common.StatementInfo();
 } :
     // ------------------------------------------
     // FunctionStatement & ExternalFunctionStatement
@@ -107,10 +105,10 @@ functionStatement returns [ StatementInfo info ]
 
 
 // Other data identifiers are typedArgNoAssign, parameterizedExpression and strictParameterizedExpression
-dataIdentifier returns [ ExpressionInfo dataInfo ]
+dataIdentifier returns [ org.apache.sysml.parser.common.ExpressionInfo dataInfo ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $dataInfo = new ExpressionInfo();
+       $dataInfo = new org.apache.sysml.parser.common.ExpressionInfo();
        // $dataInfo.expr = new org.apache.sysml.parser.DataIdentifier();
 } :
     // ------------------------------------------
@@ -121,10 +119,10 @@ dataIdentifier returns [ ExpressionInfo dataInfo ]
     | COMMANDLINE_NAMED_ID                          # CommandlineParamExpression
     | COMMANDLINE_POSITION_ID                       # CommandlinePositionExpression
 ;
-expression returns [ ExpressionInfo info ]
+expression returns [ org.apache.sysml.parser.common.ExpressionInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $info = new ExpressionInfo();
+       $info = new org.apache.sysml.parser.common.ExpressionInfo();
        // $info.expr = new org.apache.sysml.parser.BinaryExpression(org.apache.sysml.parser.Expression.BinaryOp.INVALID);
 } :
     // ------------------------------------------

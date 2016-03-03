@@ -1,6 +1,6 @@
 #####################################################################
 # TITLE: An Overview of Matrix Multiplication Operators in SystemML #
-# DATE MODIFIED: 11/21/2015                                         #
+# DATE MODIFIED: 02/20/2016                                         #
 #####################################################################
 
 In the following, we give an overview of backend-specific physical matrix multiplication operators in SystemML as well as their internally used matrix multiplication block operations.
@@ -115,7 +115,8 @@ C) CORE MATRIX MULT PRIMITIVES LibMatrixMult (incl related script patterns)
                (c) t(t(U)%*%(W*(U%*%t(V)))), (d) (W*(U%*%t(V)))%*%V, 
                (e) W*(U%*%t(V)), (f) t(t(U)%*%((X!=0)*(U%*%t(V)-X))),
                (g) (X!=0)*(U%*%t(V)-X)%*%V, (h) t(t(U)%*%(W*(U%*%t(V)-X))),  
-               (i) (W*(U%*%t(V)-X)%*%V
+               (i) (W*(U%*%t(V)-X)%*%V,
+               (j) t(t(U)%*%(W/(U%*%t(V)+x))), (k) (W/(U%*%t(V)+x))%*%V
   - sequential / multi-threaded (same block ops, par over rows in X)                 
   - all dense, sparse-dense factors, sparse/dense-* x 9 patterns
 

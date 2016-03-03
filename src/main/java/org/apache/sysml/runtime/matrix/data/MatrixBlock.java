@@ -5792,6 +5792,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		else if( qop.wtype3 != null ){ //wdivmm
 			//note: for wdivmm-minus X and W interchanged because W always present 
 			MatrixBlock W = qop.wtype3.hasFourInputs() ? checkType(wm) : null;
+			if( qop.getScalar() != 0 ) {
+				W = new MatrixBlock(1, 1, false);
+				W.quickSetValue(0, 0, qop.getScalar());
+			}
 			if( k > 1 )
 				LibMatrixMult.matrixMultWDivMM(X, U, V, W, R, qop.wtype3, k);
 			else

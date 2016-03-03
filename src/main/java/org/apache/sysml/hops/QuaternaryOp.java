@@ -819,10 +819,10 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (!wtype.hasFourInputs() &&
+		boolean isMapWdivmm = ((!wtype.hasFourInputs() || wtype.hasScalar()) &&
 				m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
 		
-		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		if( !FORCE_REPLICATION && isMapWdivmm ) //broadcast
 		{
 			//partitioning of U
 			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
@@ -842,7 +842,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				setLineNumbers(lV);	
 			}
 			
-			//map-side wsloss always with broadcast
+			//map-side wdivmm always with broadcast
 			Lop wdivmm = new WeightedDivMM( W.constructLops(), lU, lV, X.constructLops(), 
 					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.MR);
 			setOutputDimensions(wdivmm);
@@ -861,7 +861,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 			setLineNumbers(grpW);
 			
 			Lop grpX = X.constructLops();
-			if( wtype.hasFourInputs() )
+			if( wtype.hasFourInputs() && (X.getDataType() != DataType.SCALAR) )
 				grpX = new Group(grpX, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
 			grpX.getOutputParameters().setDimensions(X.getDim1(), X.getDim2(), X.getRowsInBlock(), X.getColsInBlock(), X.getNnz());
 			setLineNumbers(grpX);
@@ -921,7 +921,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				lV = grpV;
 			}
 			
-			//reduce-side wsloss w/ or without broadcast
+			//reduce-side wdivmm w/ or without broadcast
 			Lop wdivmm = new WeightedDivMMR( grpW, lU, lV, grpX, 
 					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.MR);
 			setOutputDimensions(wdivmm);
@@ -970,12 +970,12 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (!wtype.hasFourInputs() && m1Size+m2Size < memBudgetExec
+		boolean isMapWdivmm = ((!wtype.hasFourInputs() || wtype.hasScalar()) && m1Size+m2Size < memBudgetExec
 				&& 2*m1Size<memBudgetLocal && 2*m2Size<memBudgetLocal); 
 		
-		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		if( !FORCE_REPLICATION && isMapWdivmm ) //broadcast
 		{
-			//map-side wsloss always with broadcast
+			//map-side wdivmm always with broadcast
 			Lop wdivmm = new WeightedDivMM( W.constructLops(), U.constructLops(), V.constructLops(), 
 					X.constructLops(), DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.SPARK);
 			setOutputDimensions(wdivmm);
@@ -989,7 +989,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudgetExec ) 
 					        || (cacheU && m1Size+m2Size < memBudgetExec)) && 2*m2Size < memBudgetLocal;
 			
-			//reduce-side wsloss w/ or without broadcast
+			//reduce-side wdivmm w/ or without broadcast
 			Lop wdivmm = new WeightedDivMMR( 
 					W.constructLops(), U.constructLops(), V.constructLops(), X.constructLops(),
 					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
@@ -1507,7 +1507,11 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				else if( _minus )
 					return WDivMMType.MULT_MINUS_RIGHT;
 				else
-					return _mult ? WDivMMType.MULT_RIGHT : WDivMMType.DIV_RIGHT;		
+					return _mult ? WDivMMType.MULT_RIGHT : WDivMMType.DIV_RIGHT;
+			case 3: //LEFT w/EPS
+				return WDivMMType.DIV_LEFT_EPS;
+			case 4: //RIGHT w/EPS
+				return WDivMMType.DIV_RIGHT_EPS;
 		}
 		
 		return null;
@@ -1561,7 +1565,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 					MatrixCharacteristics mcW = memo.getAllInputStats(getInput().get(0));
 					ret = new long[]{mcW.getRows(), mcW.getCols(), mcW.getNonZeros()};	
 				}
-				if( _baseType == 1 ) { //left (w/ transpose)
+				if( _baseType == 1 || _baseType == 3 ) { //left (w/ transpose or w/ epsilon)
 					MatrixCharacteristics mcV = memo.getAllInputStats(getInput().get(2));
 					ret = new long[]{mcV.getRows(), mcV.getCols(), -1};
 				}
@@ -1639,7 +1643,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 					setDim2( inW.getDim2() );
 					setNnz( inW.getNnz() );	
 				}
-				else if( _baseType == 1 ){ //left (w/ transpose)
+				else if( _baseType == 1 || _baseType == 3 ){ //left (w/ transpose or w/ epsilon)
 					Hop inV = getInput().get(2);
 					setDim1( inV.getDim1() );
 					setDim2( inV.getDim2() );				

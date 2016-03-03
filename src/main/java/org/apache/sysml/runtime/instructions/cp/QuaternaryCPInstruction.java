@@ -24,6 +24,7 @@ import org.apache.sysml.lops.WeightedSigmoid.WSigmoidType;
 import org.apache.sysml.lops.WeightedSquaredLoss.WeightsType;
 import org.apache.sysml.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -124,7 +125,14 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		MatrixBlock matBlock3 = ec.getMatrixInput(input3.getName());
 		MatrixBlock matBlock4 = null;
 		if( qop.hasFourInputs() ) {
-			matBlock4 = ec.getMatrixInput(input4.getName());
+			if (input4.getDataType() == DataType.SCALAR) {
+				matBlock4 = new MatrixBlock(1, 1, false);
+				final double eps = ec.getScalarInput(input4.getName(), input4.getValueType(), input4.isLiteral()).getDoubleValue();
+				matBlock4.quickSetValue(0, 0, eps);
+			}
+			else {
+				matBlock4 = ec.getMatrixInput(input4.getName());
+			}
 		}
 		
 		//core execute
@@ -136,12 +144,16 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		ec.releaseMatrixInput(input3.getName());
 		if( qop.wtype1 != null || qop.wtype4 != null ) { //wsloss/wcemm
 			if( qop.wtype1 != null && qop.wtype1.hasFourInputs() )
-				ec.releaseMatrixInput(input4.getName());
+				if (input4.getDataType() == DataType.MATRIX) {
+					ec.releaseMatrixInput(input4.getName());
+				}
 			ec.setVariable(output.getName(), new DoubleObject(out.getValue(0, 0)));
 		}
 		else { //wsigmoid / wdivmm / wumm
 			if( qop.wtype3 != null && qop.wtype3.hasFourInputs() )
-				ec.releaseMatrixInput(input4.getName());
+				if (input4.getDataType() == DataType.MATRIX) {
+					ec.releaseMatrixInput(input4.getName());
+				}
 			ec.setMatrixOutput(output.getName(), (MatrixBlock)out);
 		}
 	}	

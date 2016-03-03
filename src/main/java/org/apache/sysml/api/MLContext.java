@@ -1143,6 +1143,11 @@ public class MLContext {
 		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), configFilePath);
 	}
 
+	public MLOutput executeScript(String dmlScript, HashMap<String, String> namedArgs)
+			throws IOException, DMLException, ParseException {
+		return executeScript(dmlScript, namedArgs, null);
+	}
+
 	public MLOutput executeScript(String dmlScript, HashMap<String, String> namedArgs, String configFilePath)
 			throws IOException, DMLException, ParseException {
 		String [] args = new String[namedArgs.size()];

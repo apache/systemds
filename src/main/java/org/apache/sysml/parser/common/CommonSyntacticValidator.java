@@ -56,9 +56,6 @@ import org.apache.sysml.parser.dml.DmlParser.BuiltinFunctionExpressionContext;
 import org.apache.sysml.parser.dml.DmlSyntacticValidator;
 import org.apache.sysml.parser.pydml.PydmlSyntacticValidator;
 
-import com.google.common.primitives.Doubles;
-import com.google.common.primitives.Longs;
-
 /**
  * Contains fields and (helper) methods common to {@link DmlSyntacticValidator} and {@link PydmlSyntacticValidator}
  */
@@ -389,15 +386,26 @@ public abstract class CommonSyntacticValidator {
 			return new BooleanIdentifier(false, currentFile, linePosition, charPosition, linePosition, charPosition);
 
 		// Check for long literal
-		Long l = Longs.tryParse(varValue);
-		if (l != null)
-			return new IntIdentifier(l.longValue(), currentFile, linePosition, charPosition, linePosition, charPosition);
+		// NOTE: we use exception handling instead of Longs.tryParse for backwards compatibility with guava <14.1
+		// Also the alternative of Ints.tryParse and falling back to double would not be lossless in all cases. 
+		try {
+			long lval = Long.parseLong(varValue);
+			return new IntIdentifier(lval, currentFile, linePosition, charPosition, linePosition, charPosition);
+		}
+		catch(Exception ex) {
+			//continue
+		}
 		
 		// Check for double literal
-		Double d = Doubles.tryParse(varValue);
-		if (d != null)
-			return new DoubleIdentifier(d.doubleValue(), currentFile, linePosition, charPosition, linePosition, charPosition);
-
+		// NOTE: we use exception handling instead of Doubles.tryParse for backwards compatibility with guava <14.0
+		try {
+			double dval = Double.parseDouble(varValue);
+			return new DoubleIdentifier(dval, currentFile, linePosition, charPosition, linePosition, charPosition);
+		}
+		catch(Exception ex) {
+			//continue
+		}
+			
 		// Otherwise it is a string literal (optionally enclosed within single or double quotes)
 		String val = "";
 		String text = varValue;

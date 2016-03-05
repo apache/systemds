@@ -1411,7 +1411,10 @@ public class DataTransform {
 		}
 	}
 	
-	private static void checkIfOutputOverlapsWithTxMtd(String txMtdPath, String outputPath, FileSystem fs) throws DMLRuntimeException {
+	@SuppressWarnings("deprecation")
+	private static void checkIfOutputOverlapsWithTxMtd(String txMtdPath, String outputPath, FileSystem fs) 
+		throws DMLRuntimeException 
+	{
 		Path path1 = new Path(txMtdPath).makeQualified(fs);
 		Path path2 = new Path(outputPath).makeQualified(fs);
 		

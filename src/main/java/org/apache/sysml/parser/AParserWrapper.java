@@ -54,7 +54,6 @@ public abstract class AParserWrapper
 	 * @param pydml true if a PyDML parser is needed
 	 * @return
 	 */
-	@SuppressWarnings("rawtypes")
 	public static AParserWrapper createParser(boolean pydml)
 	{
 		AParserWrapper ret = null;

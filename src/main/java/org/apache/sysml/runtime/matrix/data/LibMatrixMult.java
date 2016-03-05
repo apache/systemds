@@ -1255,12 +1255,9 @@ public class LibMatrixMult
 			}
 			else if( n==1 )            //MATRIX-VECTOR
 			{
-				for( int i=rl; i<Math.min(ru, a.numRows()); i++ )
-				{
-					if( !a.isEmpty(i) ) {
+				for( int i=rl; i<ru; i++ )
+					if( !a.isEmpty(i) )
 						c[i] = dotProduct(a.values(i), b, a.indexes(i), a.pos(i), 0, a.size(i));							
-					}
-				}
 			}
 			else if( pm2 && m==1 )     //VECTOR-MATRIX
 			{
@@ -1283,7 +1280,8 @@ public class LibMatrixMult
 			}
 			else if( pm2 && m<=16 )    //MATRIX-MATRIX (short lhs) 
 			{
-				for( int i=0, cix=0; i<a.numRows(); i++, cix+=n )
+				int arlen = a.numRows();
+				for( int i=0, cix=0; i<arlen; i++, cix+=n )
 					if( !a.isEmpty(i) ) 
 					{
 						int apos = a.pos(i);
@@ -1313,7 +1311,7 @@ public class LibMatrixMult
 			}
 			else                       //MATRIX-MATRIX
 			{
-				for( int i=rl, cix=rl*n; i<Math.min(ru, a.numRows()); i++, cix+=n )
+				for( int i=rl, cix=rl*n; i<ru; i++, cix+=n )
 				{
 					if( !a.isEmpty(i) ) 
 					{
@@ -1350,7 +1348,7 @@ public class LibMatrixMult
 		else
 		{
 			SparseBlock a = m1.sparseBlock;
-			for( int i=rl, cix=rl*n; i<Math.min(ru, a.numRows()); i++, cix+=n )
+			for( int i=rl, cix=rl*n; i<ru; i++, cix+=n )
 			{
 				if( !a.isEmpty(i) ) 
 				{
@@ -1413,7 +1411,7 @@ public class LibMatrixMult
 			}	
 			else                       //MATRIX-MATRIX
 			{
-				for( int i=rl, cix=rl*n; i<Math.min(ru, a.numRows()); i++, cix+=n )
+				for( int i=rl, cix=rl*n; i<ru; i++, cix+=n )
 				{
 					if( !a.isEmpty(i) ) 
 					{
@@ -1847,7 +1845,8 @@ public class LibMatrixMult
 			//algorithm: scan rows, foreach row self join (KIJ)
 			if( LOW_LEVEL_OPTIMIZATION )
 			{
-				for( int r=0; r<a.numRows(); r++ )
+				int arlen = a.numRows();
+				for( int r=0; r<arlen; r++ )
 					if( !a.isEmpty(r) ) 
 					{
 						int apos = a.pos(r);
@@ -1910,7 +1909,8 @@ public class LibMatrixMult
 				//algorithm: scan rows, foreach row self join (KIJ)
 				if( LOW_LEVEL_OPTIMIZATION )
 				{
-					for( int r=0; r<a.numRows(); r++ )
+					int arlen = a.numRows();
+					for( int r=0; r<arlen; r++ )
 						if( !a.isEmpty(r) ) 
 						{
 							int apos = a.pos(r);

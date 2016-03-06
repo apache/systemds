@@ -727,9 +727,10 @@ public class LibMatrixMult
 		ret.allocateDenseOrSparseBlock();
 		
 		//core weighted div mm computation
-		if( !mW.sparse && !mU.sparse && !mV.sparse && (mX==null || !mX.sparse) && !mU.isEmptyBlock() && !mV.isEmptyBlock() )
+		boolean scalarX = wt.hasScalar();
+		if( !mW.sparse && !mU.sparse && !mV.sparse && (mX==null || !mX.sparse || scalarX) && !mU.isEmptyBlock() && !mV.isEmptyBlock() )
 			matrixMultWDivMMDense(mW, mU, mV, mX, ret, wt, 0, mW.rlen, 0, mW.clen);
-		else if( mW.sparse && !mU.sparse && !mV.sparse && (mX==null || mX.sparse) && !mU.isEmptyBlock() && !mV.isEmptyBlock())
+		else if( mW.sparse && !mU.sparse && !mV.sparse && (mX==null || mX.sparse || scalarX) && !mU.isEmptyBlock() && !mV.isEmptyBlock())
 			matrixMultWDivMMSparseDense(mW, mU, mV, mX, ret, wt, 0, mW.rlen, 0, mW.clen);
 		else
 			matrixMultWDivMMGeneric(mW, mU, mV, mX, ret, wt, 0, mW.rlen, 0, mW.clen);
@@ -2663,17 +2664,14 @@ public class LibMatrixMult
 					k = (k>=0) ? k : wpos+wlen;
 					//checking alignment per row is ok because early abort if false, 
 					//row nnz likely fit in L1/L2 cache, and asymptotically better if aligned
-					if( w.isAligned(i, x) ) {
+					if( !scalar && w.isAligned(i, x) ) {
 						//O(n) where n is nnz in w/x 
 						double[] xvals = x.values(i);
 						for( ; k<wpos+wlen && wix[k]<cu; k++ )
-							if (scalar)
-								wdivmm(wval[k], eps, u, v, c, uix, wix[k]*cd, left, scalar, cd);
-							else
-								wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
+							wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
 					}
 					else {
-						//O(n log m) where n/m are nnz in w/x
+						//scalar or O(n log m) where n/m are nnz in w/x
 						for( ; k<wpos+wlen && wix[k]<cu; k++ )
 							if (scalar)
 								wdivmm(wval[k], eps, u, v, c, uix, wix[k]*cd, left, scalar, cd);
@@ -4333,9 +4331,10 @@ public class LibMatrixMult
 		public Object call() throws DMLRuntimeException
 		{
 			//core weighted div mm computation
-			if( !_mW.sparse && !_mU.sparse && !_mV.sparse && (_mX==null || !_mX.sparse) && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() )
+			boolean scalarX = _wt.hasScalar();
+			if( !_mW.sparse && !_mU.sparse && !_mV.sparse && (_mX==null || !_mX.sparse || scalarX) && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() )
 				matrixMultWDivMMDense(_mW, _mU, _mV, _mX, _ret, _wt, _rl, _ru, _cl, _cu);
-			else if( _mW.sparse && !_mU.sparse && !_mV.sparse && (_mX==null || _mX.sparse) && !_mU.isEmptyBlock() && !_mV.isEmptyBlock())
+			else if( _mW.sparse && !_mU.sparse && !_mV.sparse && (_mX==null || _mX.sparse || scalarX) && !_mU.isEmptyBlock() && !_mV.isEmptyBlock())
 				matrixMultWDivMMSparseDense(_mW, _mU, _mV, _mX, _ret, _wt, _rl, _ru, _cl, _cu);
 			else
 				matrixMultWDivMMGeneric(_mW, _mU, _mV, _mX, _ret, _wt, _rl, _ru, _cl, _cu);

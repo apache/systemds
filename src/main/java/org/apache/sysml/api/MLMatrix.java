@@ -122,7 +122,7 @@ public class MLMatrix extends DataFrame {
 	}
 	
 	private double getScalarBuiltinFunctionResult(String fn) throws IOException, DMLException, ParseException {
-		if(fn.compareTo("nrow") == 0 || fn.compareTo("ncol") == 0) {
+		if(fn.equals("nrow") || fn.equals("ncol")) {
 			ml.reset();
 			ml.registerInput("left", getRDDLazily(this), mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
 			ml.registerOutput("output");
@@ -212,7 +212,7 @@ public class MLMatrix extends DataFrame {
 			throw new DMLRuntimeException("Incompatible block sizes: brlen:" + mc.getRowsPerBlock() + "!=" +  that.mc.getRowsPerBlock() + " || bclen:" + mc.getColsPerBlock() + "!=" + that.mc.getColsPerBlock());
 		}
 		
-		if(op.compareTo("%*%") == 0) {
+		if(op.equals("%*%")) {
 			if(mc.getCols() != that.mc.getRows()) {
 				throw new DMLRuntimeException("Dimensions mismatch:" + mc.getCols() + "!=" +  that.mc.getRows());
 			}

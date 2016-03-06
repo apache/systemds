@@ -63,7 +63,7 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if(opcode.compareTo("rblk") != 0) {
+		if(!opcode.equals("rblk")) {
 			throw new DMLRuntimeException("Incorrect opcode for ReblockSPInstruction:" + opcode);
 		}
 		

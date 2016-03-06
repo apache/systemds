@@ -280,10 +280,10 @@ public class DMLDebugger
     	    			if(infoOptions == null || infoOptions.length == 0) {
     	    				System.err.println("The command \"info\" requires option. Try \"info break\" or \"info frame\".");
     	    			}
-    	    			else if(infoOptions[0].trim().compareTo("break") == 0) {
+    	    			else if(infoOptions[0].trim().equals("break")) {
     	    				dbFunctions.listBreakpoints(DMLBreakpointManager.getBreakpoints());
     	    			}
-    	    			else if(infoOptions[0].trim().compareTo("frame") == 0) {
+    	    			else if(infoOptions[0].trim().equals("frame")) {
     	    				if (!runtime.isAlive())
         	    				System.err.println("Runtime has not been started. Try \"r\" or \"s\" to start DML runtime execution.");
         	    			else 
@@ -324,10 +324,10 @@ public class DMLDebugger
     	    							}
     	    							int rowIndex = -1;
     	    							int colIndex = -1;
-    	    							if(rowIndexStr.compareTo("") != 0) {
+    	    							if(!rowIndexStr.isEmpty()) {
     	    								rowIndex = Integer.parseInt(rowIndexStr);
     	    							}
-    	    							if(colIndexStr.compareTo("") != 0) {
+    	    							if(!colIndexStr.isEmpty()) {
     	    								colIndex = Integer.parseInt(colIndexStr);
     	    							}
     	    							//System.out.println("" + rowIndex + " " + colIndex);
@@ -396,11 +396,11 @@ public class DMLDebugger
     	    				// Print first 10 lines
     	    				range = new IntRange(currentPC, Math.min(lines.length, currentPC+10));
     	    			}
-    	    			else if(pOptions.length == 1 && pOptions[0].trim().toLowerCase().compareTo("all") == 0) {
+    	    			else if(pOptions.length == 1 && pOptions[0].trim().toLowerCase().equals("all")) {
     	    				// Print entire program
     	    				range = new IntRange(1, lines.length);
     	    			}
-    	    			else if(pOptions.length == 2 && pOptions[0].trim().toLowerCase().compareTo("next") == 0) {
+    	    			else if(pOptions.length == 2 && pOptions[0].trim().toLowerCase().equals("next")) {
     	    				int numLines = 10;
     	    				try {
     	    					numLines = Integer.parseInt(pOptions[1]);
@@ -412,7 +412,7 @@ public class DMLDebugger
     	    				range = dbFunctions.getRange(argsForRange, lines.length);
     	    				
     	    			}
-    	    			else if(pOptions.length == 2 && pOptions[0].trim().toLowerCase().compareTo("prev") == 0) {
+    	    			else if(pOptions.length == 2 && pOptions[0].trim().toLowerCase().equals("prev")) {
     	    				int numLines = 10;
     	    				try {
     	    					numLines = Integer.parseInt(pOptions[1]);
@@ -460,11 +460,11 @@ public class DMLDebugger
     	    				// Print first 10 lines
     	    				range = new IntRange(currentPC, Math.min(lines.length, currentPC+10));
     	    			}
-    	    			else if(pOptions.length == 1 && pOptions[0].trim().toLowerCase().compareTo("all") == 0) {
+    	    			else if(pOptions.length == 1 && pOptions[0].trim().toLowerCase().equals("all")) {
     	    				// Print entire program
     	    				range = new IntRange(1, lines.length);
     	    			}
-    	    			else if(pOptions.length == 2 && pOptions[0].trim().toLowerCase().compareTo("next") == 0) {
+    	    			else if(pOptions.length == 2 && pOptions[0].trim().toLowerCase().equals("next")) {
     	    				int numLines = 10;
     	    				try {
     	    					numLines = Integer.parseInt(pOptions[1]);
@@ -476,7 +476,7 @@ public class DMLDebugger
     	    				range = dbFunctions.getRange(argsForRange, lines.length);
     	    				
     	    			}
-    	    			else if(pOptions.length == 2 && pOptions[0].trim().toLowerCase().compareTo("prev") == 0) {
+    	    			else if(pOptions.length == 2 && pOptions[0].trim().toLowerCase().equals("prev")) {
     	    				int numLines = 10;
     	    				try {
     	    					numLines = Integer.parseInt(pOptions[1]);

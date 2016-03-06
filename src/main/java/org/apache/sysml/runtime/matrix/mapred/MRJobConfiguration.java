@@ -835,7 +835,7 @@ public class MRJobConfiguration
 		for(int i=0; i<matrices.length; i++)
 		{
 			Path p = new Path(matrices[i]).makeQualified(fs);
-			if(thisFile.toUri().compareTo(p.toUri())==0 || thisDir.toUri().compareTo(p.toUri())==0)
+			if(thisFile.toUri().equals(p.toUri()) || thisDir.toUri().equals(p.toUri()))
 				representativeMatrixes.add(indexes[i]);
 		}
 		return representativeMatrixes;

@@ -179,14 +179,11 @@ public class MLOutput {
 	}
 	
 	public JavaRDD<String> getStringRDD(String varName, String format) throws DMLRuntimeException {
-		if(format.compareTo("text") == 0) {
+		if(format.equals("text")) {
 			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryRDD = getBinaryBlockedRDD(varName);
 			MatrixCharacteristics mcIn = getMatrixCharacteristics(varName); 
 			return RDDConverterUtilsExt.binaryBlockToStringRDD(binaryRDD, mcIn, format);
 		}
-//		else if(format.compareTo("csv") == 0) {
-//			
-//		}
 		else {
 			throw new DMLRuntimeException("The output format:" + format + " is not implemented yet.");
 		}

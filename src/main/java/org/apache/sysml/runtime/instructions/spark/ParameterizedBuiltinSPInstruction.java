@@ -150,7 +150,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			{
 				boolean bRmEmptyBC = false; 
 				if(parts.length > 6)
-					bRmEmptyBC = (parts[5].compareTo("true") == 0)?true:false;
+					bRmEmptyBC = Boolean.parseBoolean(parts[5]);
 									
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, bRmEmptyBC);

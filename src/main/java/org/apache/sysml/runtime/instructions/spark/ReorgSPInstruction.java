@@ -107,7 +107,7 @@ public class ReorgSPInstruction extends UnarySPInstruction
 			boolean bSortIndInMem = false;		
 			
 			if(parts.length > 5)
-				bSortIndInMem = (parts[6].compareTo("true") == 0)?true:false;
+				bSortIndInMem = Boolean.parseBoolean(parts[6]);
 						
 			return new ReorgSPInstruction(new ReorgOperator(SortIndex.getSortIndexFnObject(1,false,false)), 
 					                      in, col, desc, ixret, out, opcode, bSortIndInMem, str);

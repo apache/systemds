@@ -486,18 +486,18 @@ public class MLContext {
 			_inVarnames = new ArrayList<String>();
 		
 		MatrixObject mo = null;
-		if(format.compareTo("csv") == 0) {
+		if( format.equals("csv") ) {
 			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, nnz);
 			mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
 		}
-		else if(format.compareTo("text") == 0) {
+		else if( format.equals("text") ) {
 			if(rlen == -1 || clen == -1) {
 				throw new DMLRuntimeException("The metadata is required in registerInput for format:" + format);
 			}
 			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, nnz);
 			mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
 		}
-		else if(format.compareTo("mm") == 0) {
+		else if( format.equals("mm") ) {
 			// TODO: Handle matrix market
 			throw new DMLRuntimeException("Matrixmarket format is not yet implemented in registerInput: " + format);
 		}
@@ -631,7 +631,7 @@ public class MLContext {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
 		for(Entry<String, String> entry : namedArgs.entrySet()) {
-			if(entry.getValue().trim().compareTo("") == 0)
+			if(entry.getValue().trim().isEmpty())
 				args[i] = entry.getKey() + "=\"" + entry.getValue() + "\"";
 			else
 				args[i] = entry.getKey() + "=" + entry.getValue();
@@ -653,7 +653,7 @@ public class MLContext {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
 		for(Entry<String, String> entry : namedArgs.entrySet()) {
-			if(entry.getValue().trim().compareTo("") == 0)
+			if(entry.getValue().trim().isEmpty())
 				args[i] = entry.getKey() + "=\"" + entry.getValue() + "\"";
 			else
 				args[i] = entry.getKey() + "=" + entry.getValue();
@@ -1066,7 +1066,7 @@ public class MLContext {
 	private boolean isRegisteredAsInput(String varName) {
 		if(_inVarnames != null) {
 			for(String v : _inVarnames) {
-				if(v.compareTo(varName) == 0) {
+				if(v.equals(varName)) {
 					return true;
 				}
 			}
@@ -1175,7 +1175,7 @@ public class MLContext {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
 		for(Entry<String, String> entry : namedArgs.entrySet()) {
-			if(entry.getValue().trim().compareTo("") == 0)
+			if(entry.getValue().trim().isEmpty())
 				args[i] = entry.getKey() + "=\"" + entry.getValue() + "\"";
 			else
 				args[i] = entry.getKey() + "=" + entry.getValue();

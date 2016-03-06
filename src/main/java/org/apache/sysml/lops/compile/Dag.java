@@ -1013,7 +1013,7 @@ public class Dag<N extends Lop>
 						if ( dnode.isTransient() 
 								&& input.getExecLocation() == ExecLocation.Data 
 								&& ((Data)input).isTransient() 
-								&& dnode.getOutputParameters().getLabel().compareTo(input.getOutputParameters().getLabel()) == 0 ) {
+								&& dnode.getOutputParameters().getLabel().equals(input.getOutputParameters().getLabel()) ) {
 							// do nothing, <code>node</code> must not processed any further.
 							;
 						}
@@ -2867,8 +2867,8 @@ public class Dag<N extends Lop>
 					// no computation, just a copy
 					if (rnode.getInputs().get(0).getExecLocation() == ExecLocation.Data
 							&& ((Data) rnode.getInputs().get(0)).isTransient()
-							&& rnode.getOutputParameters().getLabel().compareTo(
-								rnode.getInputs().get(0).getOutputParameters().getLabel()) == 0) 
+							&& rnode.getOutputParameters().getLabel().equals(
+								rnode.getInputs().get(0).getOutputParameters().getLabel())) 
 					{
 						markedNodes.add(rnode);
 					}

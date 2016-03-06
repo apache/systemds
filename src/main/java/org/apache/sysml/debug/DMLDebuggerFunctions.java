@@ -334,7 +334,7 @@ public class DMLDebuggerFunctions {
 							return;
 						}
 						
-						if(displayFunction.compareTo("value") == 0) {
+						if(displayFunction.equals("value")) {
 							MatrixBlock mb = null;
 							try {
 								// Only read the MatrixBlock when asked to print, but not for whatis
@@ -347,14 +347,14 @@ public class DMLDebuggerFunctions {
 								return;
 							}
 						}
-						else if(displayFunction.compareTo("metadata") == 0) {
+						else if(displayFunction.equals("metadata")) {
 							System.out.println("Metadata of " + varname + ": matrix"+variables.get(varname).getMetaData().toString());
 						}
 						
 												
 					} catch (Exception e) {
 						String command = "";
-						if(displayFunction.compareTo("value") == 0) {
+						if(displayFunction.equals("value")) {
 							command = "print";
 						}
 						else {
@@ -365,10 +365,10 @@ public class DMLDebuggerFunctions {
 					}
 				}
 				else if (variables.get(varname).getDataType() == DataType.SCALAR) {
-					if(displayFunction.compareTo("value") == 0) {
+					if(displayFunction.equals("value")) {
 						System.out.println(varname + " = " + variables.get(varname).toString());
 					}
-					else if(displayFunction.compareTo("metadata") == 0) {
+					else if(displayFunction.equals("metadata")) {
 						System.out.println("Metadata of " + varname + ": DataType.SCALAR");
 					}
 				}

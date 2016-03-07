@@ -148,12 +148,24 @@ public class Statistics
 		iNoOfCompiledSPInst ++;
 	}
 	
+	public static long getTotalUIPVar() {
+		return lTotalUIPVar.get();
+	}
+
 	public static void incrementTotalUIPVar() {
 		lTotalUIPVar.incrementAndGet();
 	}
 
+	public static long getTotalLixUIP() {
+		return lTotalLixUIP.get();
+	}
+
 	public static void incrementTotalLixUIP() {
 		lTotalLixUIP.incrementAndGet();
+	}
+
+	public static long getTotalLix() {
+		return lTotalLix.get();
 	}
 
 	public static void incrementTotalLix() {
@@ -308,6 +320,10 @@ public class Statistics
 		parforOptTime = 0;
 		parforInitTime = 0;
 		parforMergeTime = 0;
+		
+		lTotalLix.set(0);
+		lTotalLixUIP.set(0);
+		lTotalUIPVar.set(0);
 		
 		resetJITCompileTime();
 		resetJVMgcTime();

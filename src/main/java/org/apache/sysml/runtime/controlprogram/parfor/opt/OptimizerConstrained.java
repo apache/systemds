@@ -162,7 +162,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		
 			//rewrite 14:
 			HashSet<String> inplaceResultVars = new HashSet<String>();
-			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
+			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 			
 			//rewrite 15:
 			super.rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
@@ -178,7 +178,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 
 			// rewrite 14: set in-place result indexing
 			HashSet<String> inplaceResultVars = new HashSet<String>();
-			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
+			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 			
 			if( !OptimizerUtils.isSparkExecutionMode() ) {
 				// rewrite 16: runtime piggybacking

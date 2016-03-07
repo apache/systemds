@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions.cp;
 import java.io.IOException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
@@ -446,7 +447,7 @@ public class VariableCPInstruction extends CPInstruction
 				mobj.setFileFormatProperties(formatProperties);
 				mobj.enableUpdateInPlace(updateInPlace);
 				ec.setVariable(input1.getName(), mobj);
-				if(updateInPlace)
+				if(DMLScript.STATISTICS && updateInPlace)
 					Statistics.incrementTotalUIPVar();
 			}
 			else if ( input1.getDataType() == DataType.SCALAR ){

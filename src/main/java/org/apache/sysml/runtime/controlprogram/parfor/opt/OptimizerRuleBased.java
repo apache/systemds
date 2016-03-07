@@ -35,6 +35,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
+import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
@@ -101,6 +102,7 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.SparseRow;
+import org.apache.sysml.utils.Explain;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
 /**
@@ -155,7 +157,7 @@ public class OptimizerRuleBased extends Optimizer
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";
 	
-	public static final boolean APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE = false;
+	public static final boolean APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE = true;
 	
 	public static final double PAR_K_FACTOR        = OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
 	public static final double PAR_K_MR_FACTOR     = 1.0 * OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
@@ -290,7 +292,7 @@ public class OptimizerRuleBased extends Optimizer
 			
 			// rewrite 14: set in-place result indexing
 			HashSet<String> inplaceResultVars = new HashSet<String>();
-			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
+			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 			
 			// rewrite 15: disable caching
 			rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
@@ -305,7 +307,7 @@ public class OptimizerRuleBased extends Optimizer
 			
 			// rewrite 14: set in-place result indexing
 			HashSet<String> inplaceResultVars = new HashSet<String>();
-			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
+			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 			
 			if( !OptimizerUtils.isSparkExecutionMode() ) {
 				// rewrite 16: runtime piggybacking
@@ -1863,7 +1865,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param inPlaceResultVars
 	 * @throws DMLRuntimeException
 	 */
-	protected void rewriteSetInPlaceResultIndexing(OptNode pn, double M, LocalVariableMap vars, HashSet<String> inPlaceResultVars) 
+	protected void rewriteSetInPlaceResultIndexing(OptNode pn, double M, LocalVariableMap vars, HashSet<String> inPlaceResultVars, ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
@@ -1933,11 +1935,11 @@ public class OptimizerRuleBased extends Optimizer
 					
 					if (uipCandHopList != null) {
 						for (UIPCandidateHop uipCandHop: uipCandHopList)
-							if(uipCandHop.isLoopApplicable() && uipCandHop.isUpdateInPlace())
+							if(uipCandHop.isIntermediate() && uipCandHop.isLoopApplicable() && uipCandHop.isUpdateInPlace())
 							{
 								uipCandHop.getHop().setUpdateInPlace(true);
 								bAnyUIPApplicable = true;
-								
+
 								if(LOG.isDebugEnabled())
 									listUIPRes.get().add(uipCandHop.getHop().getName());
 							}
@@ -1945,8 +1947,9 @@ public class OptimizerRuleBased extends Optimizer
 				}
 				if(bAnyUIPApplicable)
 					try {
-						//Recompile this block if there is any update in place applicable.
-						Recompiler.recompileProgramBlockInstructions(pfpb);		//TODO: Recompile @ very high level ok?
+						//Recompile this block recursively if there is any update in place applicable.
+						LocalVariableMap localVaraibleMap = (LocalVariableMap) ec.getVariables().clone();
+						Recompiler.recompileProgramBlockHierarchy(pfpb.getChildBlocks(), localVaraibleMap, 0L, true);
 					}
 					catch(Exception ex){
 						throw new DMLRuntimeException(ex);
@@ -1956,7 +1959,9 @@ public class OptimizerRuleBased extends Optimizer
 
 		if(APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE && LOG.isTraceEnabled())
 		{
-			LOG.trace("UpdateInPlace = " + apply + " for lines between " + pn.getBeginLine() + " and " + pn.getEndLine());
+			LOG.trace("UpdateInPlace = " + apply + " for lines between " + pn.getBeginLine() + " and " + pn.getEndLine()
+					+ " for " + uipCandHopHM.size() + " intermediate matrix objects:" + uipCandHopHM.keySet().toString());
+				
 			for(Entry<String, ArrayList <UIPCandidateHop>> entry: uipCandHopHM.entrySet())
 			{
 				ArrayList <UIPCandidateHop> uipCandHopList = entry.getValue();
@@ -1964,8 +1969,18 @@ public class OptimizerRuleBased extends Optimizer
 				if (uipCandHopList != null) {
 					for (UIPCandidateHop uipCandHop: uipCandHopList)
 					{
-						LOG.trace("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ ">, InLoop:"
-								+ uipCandHop.isLoopApplicable() + ", UIPApplicable:" + uipCandHop.isUpdateInPlace() + ", HopUIPApplicable:" + uipCandHop.getHop().getUpdateInPlace());	
+						if(uipCandHop.getHop() != null)
+						{
+							LOG.trace("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ ">, InLoop:"
+								+ uipCandHop.isLoopApplicable() + ", UIPApplicable:" + uipCandHop.isUpdateInPlace() + ", HopUIPApplicable:" + uipCandHop.getHop().getUpdateInPlace());
+							LOG.trace("Explain Candidate HOP after recompile");
+							LOG.trace(Explain.explain(uipCandHop.getHop()));
+						}
+						else
+						{
+							LOG.trace("Matrix Object: Name: " + uipCandHop.getLixHop().getName() + "<" + uipCandHop.getLixHop().getBeginLine() + "," + uipCandHop.getLixHop().getEndLine()+ ">, InLoop:"
+									+ uipCandHop.isLoopApplicable() + ", Not an Intermediate matrix object");
+						}
 					}
 				}
 			}
@@ -2024,7 +2039,7 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		rIsInLoop(pn, uipCandHopHM, false);
 		
-		// Prune candidate list based on non-existance of candidate in the loop
+		// Prune candidate list based on non-existance of intermediate candidate in the loop
 		Iterator<Map.Entry<String, ArrayList <UIPCandidateHop>>> uipCandHopHMIter = uipCandHopHM.entrySet().iterator();
 		while(uipCandHopHMIter.hasNext())
 		{
@@ -2035,12 +2050,18 @@ public class OptimizerRuleBased extends Optimizer
 				for (Iterator<UIPCandidateHop> uipCandHopListIter = uipCandHopList.iterator(); uipCandHopListIter.hasNext();) 
 				{
 					UIPCandidateHop uipCandHop = uipCandHopListIter.next();
-					if (!uipCandHop.isLoopApplicable())	//If Loop is not applicable then remove it from the list. 
+					if (!uipCandHop.isIntermediate() || !uipCandHop.isLoopApplicable())	//If Loop is not applicable then remove it from the list. 
 					{
 						uipCandHopListIter.remove();
 						if(LOG.isTraceEnabled())
-							LOG.trace("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ 
-									">, removed from the candidate list as it does not have loop criteria applicable.");
+						{
+							if (!uipCandHop.isIntermediate())
+								LOG.trace("Matrix Object: Name: " + uipCandHop.getLixHop().getName() + "<" + uipCandHop.getLixHop().getBeginLine() + "," + uipCandHop.getLixHop().getEndLine()+ 
+										">, removed from the candidate list as it is not an intermediate matrix object.");
+							else
+								LOG.trace("Matrix Object: Name: " + uipCandHop.getLixHop().getName() + "<" + uipCandHop.getLixHop().getBeginLine() + "," + uipCandHop.getLixHop().getEndLine()+ 
+										">, removed from the candidate list as it does not have loop criteria applicable.");
+						}
 					}
 				}
 				if(uipCandHopList.isEmpty())
@@ -2074,7 +2095,7 @@ public class OptimizerRuleBased extends Optimizer
 								{
 									uipCandHopListIter.remove();
 									if(LOG.isTraceEnabled())
-										LOG.trace("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ 
+										LOG.trace("Matrix Object: Name: " + uipCandHop.getLixHop().getName() + "<" + uipCandHop.getLixHop().getBeginLine() + "," + uipCandHop.getLixHop().getEndLine()+ 
 												">, removed from the candidate list as one of the consumer is FunctionOp.");
 									break;
 								}
@@ -2135,7 +2156,7 @@ public class OptimizerRuleBased extends Optimizer
 				rIsInLoop(optNode, uipCandHopHM, bLoop);
 			}
 		}
-		else if(bInLoop)
+		else 
 		{
 			Hop hop = (Hop) OptTreeConverter.getAbstractPlanMapping().getMappedHop(pn.getID());
 
@@ -2147,8 +2168,16 @@ public class OptimizerRuleBased extends Optimizer
 				{
 					for (UIPCandidateHop uipCandHop: uipCandHopList)
 					{
+						//Identify where intermediate object has been defined.
+						if (hop instanceof DataGenOp && hop.getName().equals(uipCandHop.getLixHop().getName()))
+						{
+							uipCandHop.setHop(hop);
+							uipCandHop.setLocation(hop.getBeginLine());
+							uipCandHop.setIntermediate(true);
+						}
+							
 						//Update if candiate hop defined outside this loop, and leftindexing is within this loop.
-						if (uipCandHop.getLocation() <= hop.getBeginLine() && uipCandHop.getHop().getBeginLine() <= hop.getEndLine())
+						if ((bInLoop) && (uipCandHop.getLocation() <= hop.getBeginLine() && uipCandHop.getLixHop().getBeginLine() <= hop.getEndLine()))
 							uipCandHop.setIsLoopApplicable(true);
 					}
 				}
@@ -2725,8 +2754,8 @@ public class OptimizerRuleBased extends Optimizer
 				uipCandidateHM.put(uipCandiateID, uipCandiHopList);
 
 				StatementBlock sb = (StatementBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID()))[0];
-				if(LOG.isDebugEnabled())
-					LOG.debug("Candidate Hop:" + h.getName() + "<" + h.getBeginLine() + "," + h.getEndLine() + ">,<" + 
+				if(LOG.isTraceEnabled())
+					LOG.trace("Candidate Hop:" + h.getName() + "<" + h.getBeginLine() + "," + h.getEndLine() + ">,<" + 
 						h.getBeginColumn() + "," + h.getEndColumn() + "> PB:" + "<" + pb.getBeginLine() + "," + pb.getEndLine() + ">,<" + 
 						pb.getBeginColumn() + "," + pb.getEndColumn() + "> SB:" + "<" + sb.getBeginLine() + "," + sb.getEndLine() + ">,<" + 
 						sb.getBeginColumn() + "," + sb.getEndColumn() + ">");
@@ -3894,22 +3923,32 @@ public class OptimizerRuleBased extends Optimizer
 	 * as location, flag to indicate if its in loop (for, parfor, while), flag to indicate if hop can be marked as "UpdateInPlace".
 	 */
 	class UIPCandidateHop {
-		Hop hop;
+		Hop hopCandidate, hopLix;
 		int iLocation = -1;
 		ProgramBlock pb;
-		Boolean bIsLoopApplicable = false, bUpdateInPlace = true;
+		Boolean bIntermediate = false, bIsLoopApplicable = false, bUpdateInPlace = true;
 		ArrayList<Hop> consumerHops = null;
 		
 		
-		UIPCandidateHop(Hop hop, ProgramBlock pb)
+		UIPCandidateHop(Hop hopLix, ProgramBlock pb)
 		{
-			this.hop = hop;
+			this.hopLix = hopLix;
 			this.pb = pb;
+		}
+		
+		Hop getLixHop()
+		{
+			return hopLix;
 		}
 		
 		Hop getHop()
 		{
-			return hop;
+			return hopCandidate;
+		}
+		
+		void setHop(Hop hopCandidate)
+		{
+			this.hopCandidate = hopCandidate;
 		}
 		
 		ProgramBlock getProgramBlock()
@@ -3925,6 +3964,16 @@ public class OptimizerRuleBased extends Optimizer
 		void setLocation(int iLocation)
 		{
 			this.iLocation = iLocation;
+		}
+		
+		boolean isIntermediate()
+		{
+			return(bIntermediate);
+		}
+		
+		void setIntermediate(boolean bIntermediate)
+		{
+			this.bIntermediate = bIntermediate;
 		}
 		
 		boolean isLoopApplicable()

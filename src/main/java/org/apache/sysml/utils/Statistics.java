@@ -77,6 +77,15 @@ public class Statistics
 	
 	//Spark-specific stats
 	private static long sparkCtxCreateTime = 0; 
+	private static AtomicLong sparkParallelize = new AtomicLong(0L);
+	private static AtomicLong sparkParallelizeCount = new AtomicLong(0L);
+	private static AtomicLong sparkCollect = new AtomicLong(0L);
+	private static AtomicLong sparkCollectCount = new AtomicLong(0L);
+	private static AtomicLong sparkBroadcast = new AtomicLong(0L);
+	private static AtomicLong sparkBroadcastCount = new AtomicLong(0L);
+	
+
+	
 
 	//PARFOR optimization stats 
 	private static long parforOptTime = 0; //in milli sec
@@ -91,6 +100,8 @@ public class Statistics
 	private static AtomicLong lTotalUIPVar = new AtomicLong(0);
 	private static AtomicLong lTotalLix = new AtomicLong(0);
 	private static AtomicLong lTotalLixUIP = new AtomicLong(0);
+	
+	
 	
 	public static synchronized void setNoOfExecutedMRJobs(int iNoOfExecutedMRJobs) {
 		Statistics.iNoOfExecutedMRJobs = iNoOfExecutedMRJobs;
@@ -346,6 +357,31 @@ public class Statistics
 		sparkCtxCreateTime = ns;
 	}
 	
+	public static void accSparkParallelizeTime(long t) {
+		sparkParallelize.addAndGet(t);
+	}
+
+	public static void incSparkParallelizeCount(long c) {
+		sparkParallelizeCount.addAndGet(c);
+	}
+
+	public static void accSparkCollectTime(long t) {
+		sparkCollect.addAndGet(t);
+	}
+
+	public static void incSparkCollectCount(long c) {
+		sparkCollectCount.addAndGet(c);
+	}
+
+	public static void accSparkBroadCastTime(long t) {
+		sparkBroadcast.addAndGet(t);
+	}
+
+	public static void incSparkBroadcastCount(long c) {
+		sparkBroadcastCount.addAndGet(c);
+	}
+	
+	
 	public static String getCPHeavyHitterCode( Instruction inst )
 	{
 		String opcode = null;
@@ -549,6 +585,14 @@ public class Statistics
 				String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";
 				sb.append("Spark ctx create time "+lazy+":\t"+
 						String.format("%.3f", ((double)sparkCtxCreateTime)*1e-9)  + " sec.\n" ); // nanoSec --> sec
+				
+				sb.append("Spark trans counts (par,bc,col):" +
+						String.format("%d/%d/%d.\n", sparkParallelizeCount.get(), sparkBroadcastCount.get(), sparkCollectCount.get()));
+				sb.append("Spark trans times (par,bc,col):\t" +
+						String.format("%.3f/%.3f/%.3f secs.\n", 
+								 ((double)sparkParallelize.get())*1e-9,
+								 ((double)sparkBroadcast.get())*1e-9,
+								 ((double)sparkCollect.get())*1e-9));
 			}
 			if( parforOptCount>0 ){
 				sb.append("ParFor loops optimized:\t\t" + getParforOptCount() + ".\n");

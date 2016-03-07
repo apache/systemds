@@ -26,10 +26,11 @@ import java.util.LinkedList;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
 /**
@@ -98,7 +99,7 @@ public abstract class MatrixReader
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 */
-	protected static MatrixBlock createOutputMatrixBlock( long rlen, long clen, long estnnz, boolean mallocDense, boolean mallocSparse ) 
+	protected static MatrixBlock createOutputMatrixBlock( long rlen, long clen, int bclen, int brlen, long estnnz, boolean mallocDense, boolean mallocSparse ) 
 		throws IOException, DMLRuntimeException
 	{
 		//check input dimension
@@ -112,8 +113,16 @@ public abstract class MatrixReader
 		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, estnnz);
 		if( !sparse && mallocDense )
 			ret.allocateDenseBlockUnsafe((int)rlen, (int)clen);
-		else if( sparse && mallocSparse  )
+		else if( sparse && mallocSparse  ) {
 			ret.allocateSparseRowsBlock();
+			SparseBlock sblock = ret.getSparseBlock();
+			//create synchronization points for MCSR (start row per block row)
+			if( sblock instanceof SparseBlockMCSR && clen > bclen      //multiple col blocks 
+				&& clen > 0 && bclen > 0 && rlen > 0 && brlen > 0 ) {  //all dims known
+				for( int i=0; i<rlen; i+=brlen )
+					ret.getSparseBlock().allocate(i, Math.min((int)(estnnz/rlen),1), (int)clen);
+			}
+		}
 		
 		return ret;
 	}

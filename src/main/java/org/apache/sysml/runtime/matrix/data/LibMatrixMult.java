@@ -22,9 +22,11 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.commons.math3.util.FastMath;
 import org.apache.sysml.lops.MapMultChain.ChainType;
@@ -769,7 +771,7 @@ public class LibMatrixMult
 			ret.examSparsity(); //turn empty dense into sparse
 			return; 
 		}
-
+		
 		//Timing time = new Timing(true);
 
 		//pre-processing
@@ -793,16 +795,16 @@ public class LibMatrixMult
 					tasks.add(new MatrixMultWDivTask(mW, mU, mV, mX, ret, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen), 0, mW.clen));
 			}
 			//execute tasks
-			pool.invokeAll(tasks);
+			List<Future<Object>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
-			//aggregate partial nnz 
+			//aggregate partial nnz and check for errors
 			ret.nonZeros = 0;  //reset after execute
-			for( MatrixMultWDivTask task : tasks )
-				ret.nonZeros += task.getPartialNnz();
+			for( Future<Object> task : taskret )
+				ret.nonZeros += (Long)task.get();
 		} 
-		catch (InterruptedException e) {
+		catch (Exception e) {
 			throw new DMLRuntimeException(e);
-		}
+		} 
 
 		//post-processing
 		ret.examSparsity();
@@ -2648,42 +2650,64 @@ public class LibMatrixMult
 		SparseBlock x = (mX==null) ? null : mX.sparseBlock;
 		
 		//approach: iterate over non-zeros of w, selective mm computation
-		for( int i=rl, uix=rl*cd; i<ru; i++, uix+=cd ) {
-			if( !w.isEmpty(i) ) {
-				int wpos = w.pos(i);
-				int wlen = w.size(i);
-				int[] wix = w.indexes(i);
-				double[] wval = w.values(i);
-			
-				if( basic ) {
-					for( int k=wpos; k<wpos+wlen; k++ )
-						ret.appendValue( i, wix[k], wval[k] * dotProduct(u, v, uix, wix[k]*cd, cd));
-				}
-				else if( four ) { //left/right
-					int k = (cl==0) ? wpos : w.posFIndexGTE(i,cl);
-					k = (k>=0) ? k : wpos+wlen;
-					//checking alignment per row is ok because early abort if false, 
-					//row nnz likely fit in L1/L2 cache, and asymptotically better if aligned
-					if( !scalar && w.isAligned(i, x) ) {
-						//O(n) where n is nnz in w/x 
-						double[] xvals = x.values(i);
-						for( ; k<wpos+wlen && wix[k]<cu; k++ )
-							wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
+		//blocked over ij, while maintaining font of column indexes, where the
+		//blocksize is chosen such that we reuse each vector on average 8 times.
+		final int blocksizeIJ = (int) (8L*mW.rlen*mW.clen/mW.nonZeros); 
+		int[] curk = new int[blocksizeIJ];		
+		boolean[] aligned = (four&&!scalar) ? new boolean[blocksizeIJ] : null;
+		
+		for( int bi = rl; bi < ru; bi+=blocksizeIJ ) 
+		{
+			int bimin = Math.min(ru, bi+blocksizeIJ);
+			//prepare starting indexes for block row
+			for( int i=bi; i<bimin; i++ ) {
+				int k = (cl==0||w.isEmpty(i)) ? 0 : w.posFIndexGTE(i,cl);
+				curk[i-bi] = (k>=0) ? k : mW.clen;
+			}
+			//prepare alignment info if necessary
+			if( four && !scalar )
+				for( int i=bi; i<bimin; i++ )
+					aligned[i-bi] = w.isAligned(i-bi, x);
+			//blocked execution over column blocks
+			for( int bj = cl; bj < cu; bj+=blocksizeIJ ) 
+			{
+				int bjmin = Math.min(cu, bj+blocksizeIJ);
+				for( int i=bi, uix=bi*cd; i<bimin; i++, uix+=cd ) {
+					if( !w.isEmpty(i) ) {
+						int wpos = w.pos(i);
+						int wlen = w.size(i);
+						int[] wix = w.indexes(i);
+						double[] wval = w.values(i);				
+						
+						int k = wpos + curk[i-bi];
+						if( basic ) {
+							for( ; k<wpos+wlen && wix[k]<bjmin; k++ )
+								ret.appendValue( i, wix[k], wval[k] * dotProduct(u, v, uix, wix[k]*cd, cd));
+						}
+						else if( four ) { //left/right
+							//checking alignment per row is ok because early abort if false, 
+							//row nnz likely fit in L1/L2 cache, and asymptotically better if aligned
+							if( !scalar && w.isAligned(i, x) ) {
+								//O(n) where n is nnz in w/x 
+								double[] xvals = x.values(i);
+								for( ; k<wpos+wlen && wix[k]<bjmin; k++ )
+									wdivmm(wval[k], xvals[k], u, v, c, uix, wix[k]*cd, left, scalar, cd);
+							}
+							else {
+								//scalar or O(n log m) where n/m are nnz in w/x
+								for( ; k<wpos+wlen && wix[k]<bjmin; k++ )
+									if (scalar)
+										wdivmm(wval[k], eps, u, v, c, uix, wix[k]*cd, left, scalar, cd);
+									else
+										wdivmm(wval[k], x.get(i, wix[k]), u, v, c, uix, wix[k]*cd, left, scalar, cd);
+							}
+						}
+						else { //left/right minus default
+							for( ; k<wpos+wlen && wix[k]<bjmin; k++ )
+								wdivmm(wval[k], u, v, c, uix, wix[k]*cd, left, mult, minus, cd);
+						}
+						curk[i-bi] = k - wpos;
 					}
-					else {
-						//scalar or O(n log m) where n/m are nnz in w/x
-						for( ; k<wpos+wlen && wix[k]<cu; k++ )
-							if (scalar)
-								wdivmm(wval[k], eps, u, v, c, uix, wix[k]*cd, left, scalar, cd);
-							else
-								wdivmm(wval[k], x.get(i, wix[k]), u, v, c, uix, wix[k]*cd, left, scalar, cd);
-					}
-				}
-				else { //left/right minus default
-					int k = (cl==0) ? wpos : w.posFIndexGTE(i,cl);
-					k = (k>=0) ? k : wpos+wlen;
-					for( ; k<wpos+wlen && wix[k]<cu; k++ )
-						wdivmm(wval[k], u, v, c, uix, wix[k]*cd, left, mult, minus, cd);
 				}
 			}
 		}
@@ -4310,7 +4334,6 @@ public class LibMatrixMult
 		private int _ru = -1;
 		private int _cl = -1;
 		private int _cu = -1;
-		private long _nnz = -1;
 		
 		protected MatrixMultWDivTask(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock mX, MatrixBlock ret, WDivMMType wt, int rl, int ru, int cl, int cu) 
 			throws DMLRuntimeException
@@ -4342,17 +4365,7 @@ public class LibMatrixMult
 			//maintain partial nnz for right (upper bounds inclusive)
 			int rl = _wt.isLeft() ? _cl : _rl;
 			int ru = _wt.isLeft() ? _cu : _ru;
-			_nnz = _ret.recomputeNonZeros(rl, ru-1, 0, _ret.getNumColumns()-1);
-				
-			return null;
-		}
-		
-		/**
-		 * For wdivmm right.
-		 * @return
-		 */
-		public long getPartialNnz(){
-			return _nnz;
+			return _ret.recomputeNonZeros(rl, ru-1, 0, _ret.getNumColumns()-1);
 		}
 	}
 	

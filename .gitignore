@@ -26,6 +26,7 @@ dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
 .metadata
+.cache*
 
 # User configuration files
 conf/SystemML-config.xml

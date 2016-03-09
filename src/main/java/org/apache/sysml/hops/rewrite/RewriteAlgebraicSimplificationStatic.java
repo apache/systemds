@@ -571,8 +571,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				ReorgOp rop = HopRewriteUtils.createReorg(hi.getInput().get(1), ReOrgOp.REV);
 				
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
-				HopRewriteUtils.removeAllChildReferences(hi);
 				HopRewriteUtils.addChildReference(parent, rop, pos);
+				if( hi.getParent().isEmpty() ) 
+					HopRewriteUtils.removeAllChildReferences(hi);
 				if( top.getParent().isEmpty() )
 					HopRewriteUtils.removeAllChildReferences(top);
 				

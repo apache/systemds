@@ -63,7 +63,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
-import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDProperties;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
@@ -980,34 +979,8 @@ public class MLContext {
 	 * @return
 	 */
 	ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> tmp) {
-		String [] outputs = null;
-		if(_outVarnames != null) {
-			outputs = _outVarnames.toArray(new String[0]);
-		}
-		else {
-			outputs = new String[0];
-		}
-		
-		// No need to clean up entire program as this method is only called for last level program block
-//		JMLCUtils.cleanupRuntimeProgram(_rtprog, outputs);
-		
-		for( int i=0; i<tmp.size(); i++ )
-		{
-			Instruction linst = tmp.get(i);
-			if( linst instanceof VariableCPInstruction && ((VariableCPInstruction)linst).isRemoveVariable() )
-			{
-				VariableCPInstruction varinst = (VariableCPInstruction) linst;
-				for( String var : outputs )
-					if( varinst.isRemoveVariable(var) )
-					{
-						tmp.remove(i);
-						i--;
-						break;
-					}
-			}
-		}
-		
-		return tmp;
+		String [] outputs = (_outVarnames != null) ? _outVarnames.toArray(new String[0]) : new String[0];
+		return JMLCUtils.cleanupRuntimeInstructions(tmp, outputs);
 	}
 	
 	// -------------------------------- Utility methods ends ----------------------------------------------------------

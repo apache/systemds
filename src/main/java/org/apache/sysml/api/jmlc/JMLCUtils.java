@@ -34,8 +34,6 @@ import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 
 public class JMLCUtils 
 {
-	
-	
 	/**
 	 * Removes rmvar instructions that would remove any of the given outputs.
 	 * This is important for keeping registered outputs after the program terminates.
@@ -64,7 +62,7 @@ public class JMLCUtils
 	 * @param pb
 	 * @param outputs
 	 */
-	private static void rCleanupRuntimeProgram( ProgramBlock pb, String[] outputs )
+	public static void rCleanupRuntimeProgram( ProgramBlock pb, String[] outputs )
 	{
 		if( pb instanceof WhileProgramBlock )
 		{
@@ -89,21 +87,34 @@ public class JMLCUtils
 		else
 		{
 			ArrayList<Instruction> tmp = pb.getInstructions();
-			for( int i=0; i<tmp.size(); i++ )
+			cleanupRuntimeInstructions(tmp, outputs);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param insts
+	 * @param outputs
+	 * @return
+	 */
+	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, String[] outputs )
+	{		
+		for( int i=0; i<insts.size(); i++ )
+		{
+			Instruction linst = insts.get(i);
+			if( linst instanceof VariableCPInstruction && ((VariableCPInstruction)linst).isRemoveVariable() )
 			{
-				Instruction linst = tmp.get(i);
-				if( linst instanceof VariableCPInstruction && ((VariableCPInstruction)linst).isRemoveVariable() )
-				{
-					VariableCPInstruction varinst = (VariableCPInstruction) linst;
-					for( String var : outputs )
-						if( varinst.isRemoveVariable(var) )
-						{
-							tmp.remove(i);
-							i--;
-							break;
-						}
-				}
+				VariableCPInstruction varinst = (VariableCPInstruction) linst;
+				for( String var : outputs )
+					if( varinst.isRemoveVariable(var) )
+					{
+						insts.remove(i);
+						i--;
+						break;
+					}
 			}
 		}
+		
+		return insts;
 	}
 }

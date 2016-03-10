@@ -1203,8 +1203,9 @@ public class LibMatrixOuterAgg
 			return ixMax;
 		
 		int ix = Arrays.binarySearch(bv, value);
-		ix = Math.abs(ix)-1;
-		ixMax = bvi[ix-1]+1; 
+		if(ix < 0)
+			ix = Math.abs(ix)-2;
+		ixMax = bvi[ix]+1; 
 		
 		return ixMax;
 	}
@@ -1228,8 +1229,8 @@ public class LibMatrixOuterAgg
 		
 		int ix = Arrays.binarySearch(bv, value);
 		if (ix < 0) 
-			ix = Math.abs(ix)-1;
-		ixMax = bvi[ix-1]+1; 
+			ix = Math.abs(ix)-2;
+		ixMax = bvi[ix]+1; 
 		
 		return ixMax;
 	}
@@ -1247,12 +1248,13 @@ public class LibMatrixOuterAgg
 	{
 		int ixMax = bv.length;
 		
-		if(value < bv[0] || value > bv[bv.length-1]) 
+		if(value <= bv[0] || value > bv[bv.length-1]) 
 			return ixMax;
 		
 		int ix = Arrays.binarySearch(bv, value);
-		ix = Math.abs(ix);
-		ixMax = bvi[ix-1]+1; 
+		if(ix < 0)
+			ix = Math.abs(ix)-1;
+		ixMax = bvi[ix]+1; 
 		
 		return ixMax;
 	}
@@ -1363,8 +1365,8 @@ public class LibMatrixOuterAgg
 		
 		int ix = Arrays.binarySearch(bv, value);
 		if (ix < 0) 
-			ix = Math.abs(ix)-1;
-		ixMin = bvi[ix-1]+1; 
+			ix = Math.abs(ix)-2;
+		ixMin = bvi[ix]+1; 
 		
 		return ixMin;
 	}

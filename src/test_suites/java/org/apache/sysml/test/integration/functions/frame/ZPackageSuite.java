@@ -27,6 +27,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	FrameAppendTest.class,
+	FrameCastingTest.class,
 	FrameGetSetTest.class,
 	FrameIndexingTest.class,
 	FrameSerializationTest.class,

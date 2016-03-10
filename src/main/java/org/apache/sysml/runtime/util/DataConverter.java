@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -38,11 +39,13 @@ import org.apache.sysml.runtime.io.ReadProperties;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.udf.Matrix;
 
 
@@ -610,6 +613,103 @@ public class DataConverter
 	public static MatrixBlock convertToMatrixBlock( CTableMap map, int rlen, int clen )
 	{
 		return map.toMatrixBlock(rlen, clen);
+	}
+	
+	/**
+	 * Converts a frame block with arbitrary schema into a matrix block. 
+	 * Since matrix block only supports value type double, we do a best 
+	 * effort conversion of non-double types which might result in errors 
+	 * for non-numerical data.
+	 * 
+	 * @param frame
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public static MatrixBlock convertToMatrixBlock(FrameBlock frame) 
+		throws DMLRuntimeException
+	{
+		MatrixBlock mb = new MatrixBlock(frame.getNumRows(), frame.getNumColumns(), false);
+		
+		List<ValueType> schema = frame.getSchema();
+		for( int i=0; i<frame.getNumRows(); i++ ) 
+			for( int j=0; j<frame.getNumColumns(); j++ ) {
+				mb.appendValue(i, j, UtilFunctions.objectToDouble(
+						schema.get(j), frame.get(i, j)));
+			}
+		mb.examSparsity();
+		
+		return mb;
+	}
+	
+	/**
+	 * Converts a matrix block into a frame block of value type double.
+	 * 
+	 * @param mb
+	 * @return
+	 */
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb) {
+		return convertToFrameBlock(mb, ValueType.DOUBLE);
+	}
+	
+	/**
+	 * Converts a matrix block into a frame block of a given value type.
+	 * 
+	 * @param mb
+	 * @param vt
+	 * @return
+	 */
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType vt) {
+		//construct temporary schema 
+		List<ValueType> schema = new ArrayList<ValueType>();
+		for( int j=0; j<mb.getNumColumns(); j++ )
+			schema.add(vt);
+		
+		return convertToFrameBlock(mb, schema);
+	}
+	
+	/**
+	 * 
+	 * @param mb
+	 * @param schema
+	 * @return
+	 */
+	public static FrameBlock convertToFrameBlock(MatrixBlock mb, List<ValueType> schema)
+	{
+		FrameBlock frame = new FrameBlock(schema);
+		Object[] row = new Object[mb.getNumColumns()];
+		
+		if( mb.isInSparseFormat() ) //SPARSE
+		{
+			SparseBlock sblock = mb.getSparseBlock();			
+			for( int i=0; i<mb.getNumRows(); i++ ) {
+				Arrays.fill(row, null); //reset
+				if( !sblock.isEmpty(i) ) {
+					int apos = sblock.pos(i);
+					int alen = sblock.size(i);
+					int[] aix = sblock.indexes(i);
+					double[] aval = sblock.values(i);
+					for( int j=apos; j<apos+alen; j++ ) {
+						row[aix[j]] = UtilFunctions.doubleToObject(
+								schema.get(aix[j]), aval[j]);					
+					}
+				}
+				frame.appendRow(row);
+			}
+		}
+		else //DENSE
+		{
+			for( int i=0; i<mb.getNumRows(); i++ ) {
+				Arrays.fill(row, null); //reset
+				for( int j=0; j<mb.getNumColumns(); j++ ) {
+					row[j] = UtilFunctions.doubleToObject(
+							schema.get(j), 
+							mb.quickGetValue(i, j));
+				}
+				frame.appendRow(row);
+			}
+		}
+		
+		return frame;
 	}
 	
 	/**

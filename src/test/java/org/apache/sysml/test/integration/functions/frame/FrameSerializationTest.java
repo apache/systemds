@@ -94,7 +94,8 @@ public class FrameSerializationTest extends AutomatedTestBase
 			Object[] row = new Object[lschema.size()];
 			for( int i=0; i<rows; i++ ) {
 				for( int j=0; j<lschema.size(); j++ )
-					A[i][j] = fromObject(lschema.get(j), row[j] = toObject(lschema.get(j), A[i][j]));
+					A[i][j] = UtilFunctions.objectToDouble(lschema.get(j), 
+							row[j] = UtilFunctions.doubleToObject(lschema.get(j), A[i][j]));
 				frame.appendRow(row);
 			}			
 			
@@ -130,7 +131,7 @@ public class FrameSerializationTest extends AutomatedTestBase
 			//check correct values			
 			for( int i=0; i<rows; i++ ) 
 				for( int j=0; j<lschema.size(); j++ )	{
-					double tmp = fromObject(lschema.get(j), frame.get(i, j));
+					double tmp = UtilFunctions.objectToDouble(lschema.get(j), frame.get(i, j));
 					if( tmp != A[i][j] )
 						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
 				}		
@@ -138,38 +139,6 @@ public class FrameSerializationTest extends AutomatedTestBase
 		catch(Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
-	private Object toObject(ValueType vt, double in) {
-		switch( vt ) {
-			case STRING: return String.valueOf(in);
-			case BOOLEAN: return (in!=0);
-			case INT: return UtilFunctions.toLong(in);
-			case DOUBLE: return in;
-			default: throw new RuntimeException("Unsupported value type: "+vt);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
-	private double fromObject(ValueType vt, Object in) {
-		switch( vt ) {
-			case STRING: return Double.parseDouble((String)in);
-			case BOOLEAN: return ((Boolean)in)?1d:0d;
-			case INT: return (Long)in;
-			case DOUBLE: return (Double)in;
-			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
 }

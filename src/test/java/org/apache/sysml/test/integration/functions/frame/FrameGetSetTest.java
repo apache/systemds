@@ -104,25 +104,25 @@ public class FrameGetSetTest extends AutomatedTestBase
 						case STRING: 
 							String[] tmp1 = new String[rows];
 							for( int i=0; i<rows; i++ )
-								tmp1[i] = (String)toObject(vt, A[i][j]);
+								tmp1[i] = (String)UtilFunctions.doubleToObject(vt, A[i][j]);
 							frame.appendColumn(tmp1);
 							break;
 						case BOOLEAN:
 							boolean[] tmp2 = new boolean[rows];
 							for( int i=0; i<rows; i++ )
-								A[i][j] = (tmp2[i] = (Boolean)toObject(vt, A[i][j]))?1:0;
+								A[i][j] = (tmp2[i] = (Boolean)UtilFunctions.doubleToObject(vt, A[i][j]))?1:0;
 							frame.appendColumn(tmp2);
 							break;
 						case INT:
 							long[] tmp3 = new long[rows];
 							for( int i=0; i<rows; i++ )
-								A[i][j] = tmp3[i] = (Long)toObject(vt, A[i][j]);
+								A[i][j] = tmp3[i] = (Long)UtilFunctions.doubleToObject(vt, A[i][j]);
 							frame.appendColumn(tmp3);
 							break;
 						case DOUBLE:
 							double[] tmp4 = new double[rows];
 							for( int i=0; i<rows; i++ )
-								tmp4[i] = (Double)toObject(vt, A[i][j]);
+								tmp4[i] = (Double)UtilFunctions.doubleToObject(vt, A[i][j]);
 							frame.appendColumn(tmp4);
 							break;
 						default:
@@ -134,7 +134,8 @@ public class FrameGetSetTest extends AutomatedTestBase
 				Object[] row = new Object[lschema.size()];
 				for( int i=0; i<rows; i++ ) {
 					for( int j=0; j<lschema.size(); j++ )
-						A[i][j] = fromObject(lschema.get(j), row[j] = toObject(lschema.get(j), A[i][j]));
+						A[i][j] = UtilFunctions.objectToDouble(lschema.get(j), 
+								row[j] = UtilFunctions.doubleToObject(lschema.get(j), A[i][j]));
 					frame.appendRow(row);
 				}			
 			}
@@ -142,8 +143,8 @@ public class FrameGetSetTest extends AutomatedTestBase
 				String[] row = new String[lschema.size()];
 				for( int i=0; i<rows; i++ ) {
 					for( int j=0; j<lschema.size(); j++ ) {
-						Object obj = toObject(lschema.get(j), A[i][j]);
-						A[i][j] = fromObject(lschema.get(j), obj);
+						Object obj = UtilFunctions.doubleToObject(lschema.get(j), A[i][j]);
+						A[i][j] = UtilFunctions.objectToDouble(lschema.get(j), obj);
 						row[j] = obj.toString();
 					}
 					frame.appendRow(row);
@@ -153,7 +154,7 @@ public class FrameGetSetTest extends AutomatedTestBase
 			//some updates via set
 			for( int i=7; i<13; i++ )
 				for( int j=0; j<=2; j++ ) {
-					frame.set(i, j, toObject(lschema.get(j), (double)i*j));
+					frame.set(i, j, UtilFunctions.doubleToObject(lschema.get(j), (double)i*j));
 					A[i][j] = (double)i*j;
 				}
 			
@@ -164,7 +165,7 @@ public class FrameGetSetTest extends AutomatedTestBase
 			//check correct values			
 			for( int i=0; i<rows; i++ ) 
 				for( int j=0; j<lschema.size(); j++ )	{
-					double tmp = fromObject(lschema.get(j), frame.get(i, j));
+					double tmp = UtilFunctions.objectToDouble(lschema.get(j), frame.get(i, j));
 					if( tmp != A[i][j] )
 						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
 				}		
@@ -172,38 +173,6 @@ public class FrameGetSetTest extends AutomatedTestBase
 		catch(Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
-	private Object toObject(ValueType vt, double in) {
-		switch( vt ) {
-			case STRING: return String.valueOf(in);
-			case BOOLEAN: return (in!=0);
-			case INT: return UtilFunctions.toLong(in);
-			case DOUBLE: return in;
-			default: throw new RuntimeException("Unsupported value type: "+vt);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
-	private double fromObject(ValueType vt, Object in) {
-		switch( vt ) {
-			case STRING: return Double.parseDouble((String)in);
-			case BOOLEAN: return ((Boolean)in)?1d:0d;
-			case INT: return (Long)in;
-			case DOUBLE: return (Double)in;
-			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
 }

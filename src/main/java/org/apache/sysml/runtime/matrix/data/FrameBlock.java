@@ -32,6 +32,7 @@ import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.DMLRuntimeException;
 
 /**
  * 
@@ -68,7 +69,7 @@ public class FrameBlock implements Writable, Externalizable
 	}
 	
 	/**
-	 * Get the number of rows of the data frame.
+	 * Get the number of rows of the frame block.
 	 * 
 	 * @return 
 	 */
@@ -77,13 +78,22 @@ public class FrameBlock implements Writable, Externalizable
 	}
 	
 	/**
-	 * Get the number of columns of the data frame, that is
+	 * Get the number of columns of the frame block, that is
 	 * the number of columns defined in the schema.
 	 * 
 	 * @return
 	 */
 	public int getNumColumns() {
 		return _schema.size();
+	}
+	
+	/**
+	 * Returns the schema of the frame block.
+	 * 
+	 * @return
+	 */
+	public List<ValueType> getSchema() {
+		return _schema;
 	}
 	
 	/**
@@ -297,6 +307,154 @@ public class FrameBlock implements Writable, Externalizable
 	}
 	
 	///////
+	// indexing and append operations
+	
+	/**
+	 * 
+	 * @param rhsFrame
+	 * @param rl
+	 * @param ru
+	 * @param cl
+	 * @param cu
+	 * @param ret
+	 * @return
+	 */
+	public FrameBlock leftIndexingOperations(FrameBlock rhsFrame, int rl, int ru, int cl, int cu, FrameBlock ret)
+		throws DMLRuntimeException
+	{
+		// check the validity of bounds
+		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
+			|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
+			throw new DMLRuntimeException("Invalid values for frame indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " +
+							"must be within frame dimensions ["+getNumRows()+","+getNumColumns()+"].");
+		}		
+		if ( (ru-rl+1) < rhsFrame.getNumRows() || (cu-cl+1) < rhsFrame.getNumColumns()) {
+			throw new DMLRuntimeException("Invalid values for frame indexing: " +
+					"dimensions of the source frame ["+rhsFrame.getNumRows()+"x" + rhsFrame.getNumColumns() + "] " +
+					"do not match the shape of the frame specified by indices [" +
+					(rl+1) +":" + (ru+1) + ", " + (cl+1) + ":" + (cu+1) + "].");
+		}
+		
+		//allocate output frame (incl deep copy schema)
+		if( ret == null )
+			ret = new FrameBlock(_schema);
+		else
+			ret._schema = new ArrayList<ValueType>(_schema);
+		ret._numRows = _numRows;
+		
+		//copy data to output and partial overwrite w/ rhs
+		for( int j=0; j<getNumColumns(); j++ ) {
+			Array tmp = _coldata.get(j).clone();
+			if( j>=cl && j<=cu )
+				tmp.set(rl, ru, rhsFrame._coldata.get(j-cl));
+			ret._coldata.add(tmp);
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Right indexing operations to slice a subframe out of this frame block. 
+	 * Note that the existing column value types are preserved.
+	 * 
+	 * @param rl row lower index, inclusive, 0-based
+	 * @param ru row upper index, inclusive, 0-based
+	 * @param cl column lower index, inclusive, 0-based
+	 * @param cu column upper index, inclusive, 0-based
+	 * @param ret
+	 * @return
+	 */
+	public FrameBlock sliceOperations(int rl, int ru, int cl, int cu, FrameBlock ret) 
+		throws DMLRuntimeException
+	{
+		// check the validity of bounds
+		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
+			|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
+			throw new DMLRuntimeException("Invalid values for frame indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " +
+							"must be within frame dimensions ["+getNumRows()+","+getNumColumns()+"]");
+		}
+		
+		//allocate output frame
+		if( ret == null )
+			ret = new FrameBlock();
+		ret._numRows = ru-rl+1;
+		
+		//copy output schema
+		for( int j=cl; j<=cu; j++ )
+			ret._schema.add(_schema.get(j));
+		
+		//copy output data
+		for( int j=cl; j<=cu; j++ )
+			ret._coldata.add(_coldata.get(j).slice(rl,ru));
+		
+		return ret;
+	}
+	
+	/**
+	 * Appends the given argument frameblock 'that' to this frameblock by 
+	 * creating a deep copy to prevent side effects. For cbind, the frames
+	 * are appended column-wise (same number of rows), while for rbind the 
+	 * frames are appended row-wise (same number of columns).   
+	 * 
+	 * @param that
+	 * @param ret
+	 * @param cbind
+	 * @return
+	 */
+	public FrameBlock appendOperations( FrameBlock that, FrameBlock ret, boolean cbind )
+		throws DMLRuntimeException
+	{
+		if( cbind ) //COLUMN APPEND
+		{
+			//sanity check row dimension mismatch
+			if( getNumRows() != that.getNumRows() ) {
+				throw new DMLRuntimeException("Incompatible number of rows for cbind: "+
+						that.getNumRows()+" (expected: "+getNumRows()+")");
+			}
+			
+			//allocate output frame
+			if( ret == null )
+				ret = new FrameBlock();
+			ret._numRows = _numRows;
+			
+			//concatenate schemas (w/ deep copy to prevent side effects)
+			ret._schema = new ArrayList<ValueType>(_schema);
+			ret._schema.addAll(that._schema);
+			
+			//concatenate column data (w/ deep copy to prevent side effects)
+			for( Array tmp : _coldata )
+				ret._coldata.add(tmp.clone());
+			for( Array tmp : that._coldata )
+				ret._coldata.add(tmp.clone());	
+		}
+		else //ROW APPEND
+		{
+			//sanity check column dimension mismatch
+			if( getNumColumns() != that.getNumColumns() ) {
+				throw new DMLRuntimeException("Incompatible number of columns for rbind: "+
+						that.getNumColumns()+" (expected: "+getNumColumns()+")");
+			}
+			
+			//allocate output frame (incl deep copy schema)
+			if( ret == null )
+				ret = new FrameBlock(_schema);
+			else
+				ret._schema = new ArrayList<ValueType>(_schema);
+			ret._numRows = _numRows;
+			
+			//concatenate data (deep copy first, append second)
+			for( Array tmp : _coldata )
+				ret._coldata.add(tmp.clone());
+			Iterator<Object[]> iter = that.getObjectRowIterator();
+			while( iter.hasNext() )
+				ret.appendRow(iter.next());
+		}
+		
+		return ret;
+	}
+	
+	
+	///////
 	// row iterators (over strings and boxed objects)
 	
 	/**
@@ -375,8 +533,11 @@ public class FrameBlock implements Writable, Externalizable
 		}
 		public abstract T get(int index);
 		public abstract void set(int index, T value);
+		public abstract void set(int rl, int ru, Array value);
 		public abstract void append(String value);
 		public abstract void append(T value);
+		public abstract Array clone();
+		public abstract Array slice(int rl, int ru);
 	}
 	
 	/**
@@ -395,21 +556,28 @@ public class FrameBlock implements Writable, Externalizable
 		public void set(int index, String value) {
 			_data[index] = value;
 		}
+		public void set(int rl, int ru, Array value) {
+			System.arraycopy(((StringArray)value)._data, 0, _data, rl, ru-rl+1);
+		}
 		public void append(String value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
 			_data[_size++] = value;
 		}
-		@Override
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
 				out.writeUTF(_data[i]);
 		}
-		@Override
 		public void readFields(DataInput in) throws IOException {
 			_size = _data.length;
 			for( int i=0; i<_size; i++ )
 				_data[i] = in.readUTF();
+		}
+		public Array clone() {
+			return new StringArray(Arrays.copyOf(_data, _size));
+		}
+		public Array slice(int rl, int ru) {
+			return new StringArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
 	}
 	
@@ -429,6 +597,9 @@ public class FrameBlock implements Writable, Externalizable
 		public void set(int index, Boolean value) {
 			_data[index] = value;
 		}
+		public void set(int rl, int ru, Array value) {
+			System.arraycopy(((BooleanArray)value)._data, 0, _data, rl, ru-rl+1);
+		}
 		public void append(String value) {
 			append(Boolean.parseBoolean(value));
 		}
@@ -437,16 +608,20 @@ public class FrameBlock implements Writable, Externalizable
 				_data = Arrays.copyOf(_data, newSize());
 			_data[_size++] = value;
 		}
-		@Override
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
 				out.writeBoolean(_data[i]);
 		}
-		@Override
 		public void readFields(DataInput in) throws IOException {
 			_size = _data.length;
 			for( int i=0; i<_size; i++ )
 				_data[i] = in.readBoolean();
+		}
+		public Array clone() {
+			return new BooleanArray(Arrays.copyOf(_data, _size));
+		}
+		public Array slice(int rl, int ru) {
+			return new BooleanArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
 	}
 	
@@ -466,6 +641,9 @@ public class FrameBlock implements Writable, Externalizable
 		public void set(int index, Long value) {
 			_data[index] = value;
 		}
+		public void set(int rl, int ru, Array value) {
+			System.arraycopy(((LongArray)value)._data, 0, _data, rl, ru-rl+1);
+		}
 		public void append(String value) {
 			append(Long.parseLong(value));
 		}
@@ -474,16 +652,20 @@ public class FrameBlock implements Writable, Externalizable
 				_data = Arrays.copyOf(_data, newSize());
 			_data[_size++] = value;
 		}
-		@Override
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
 				out.writeLong(_data[i]);
 		}
-		@Override
 		public void readFields(DataInput in) throws IOException {
 			_size = _data.length;
 			for( int i=0; i<_size; i++ )
 				_data[i] = in.readLong();
+		}
+		public Array clone() {
+			return new LongArray(Arrays.copyOf(_data, _size));
+		}
+		public Array slice(int rl, int ru) {
+			return new LongArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
 	}
 	
@@ -503,6 +685,9 @@ public class FrameBlock implements Writable, Externalizable
 		public void set(int index, Double value) {
 			_data[index] = value;
 		}
+		public void set(int rl, int ru, Array value) {
+			System.arraycopy(((DoubleArray)value)._data, 0, _data, rl, ru-rl+1);
+		}
 		public void append(String value) {
 			append(Double.parseDouble(value));
 		}
@@ -511,16 +696,20 @@ public class FrameBlock implements Writable, Externalizable
 				_data = Arrays.copyOf(_data, newSize());
 			_data[_size++] = value;
 		}
-		@Override
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
 				out.writeDouble(_data[i]);
 		}
-		@Override
 		public void readFields(DataInput in) throws IOException {
 			_size = _data.length;
 			for( int i=0; i<_size; i++ )
 				_data[i] = in.readDouble();
+		}
+		public Array clone() {
+			return new DoubleArray(Arrays.copyOf(_data, _size));
+		}
+		public Array slice(int rl, int ru) {
+			return new DoubleArray(Arrays.copyOfRange(_data,rl,ru+1));
 		}
 	}
 }

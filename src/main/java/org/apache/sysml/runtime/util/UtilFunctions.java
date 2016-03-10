@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.util;
 
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -281,6 +282,38 @@ public class UtilFunctions
 			return ((Long)obj).intValue();
 		else
 			return ((Integer)obj).intValue();
+	}
+
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @return
+	 */
+	public static Object doubleToObject(ValueType vt, double in) {
+		switch( vt ) {
+			case STRING:  return String.valueOf(in);
+			case BOOLEAN: return (in!=0);
+			case INT:     return UtilFunctions.toLong(in);
+			case DOUBLE:  return in;
+			default: throw new RuntimeException("Unsupported value type: "+vt);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @return
+	 */
+	public static double objectToDouble(ValueType vt, Object in) {
+		switch( vt ) {
+			case STRING:  return Double.parseDouble((String)in);
+			case BOOLEAN: return ((Boolean)in)?1d:0d;
+			case INT:     return (Long)in;
+			case DOUBLE:  return (Double)in;
+			default: throw new RuntimeException("Unsupported value type: "+vt);
+		}
 	}
 	
 	public static boolean isIntegerNumber( String str )

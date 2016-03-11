@@ -21,10 +21,11 @@
 
 
 raw = read($DATA);
+specJson = read($TFSPEC, data_type="scalar", value_type="string");
 
 A = transform(target = raw, 
               transformPath = $TFMTD, 
-              transformSpec = $TFSPEC);
+              spec = specJson);
 
 write(A, $TFDATA, format=$OFMT);
 

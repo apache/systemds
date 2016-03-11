@@ -168,12 +168,12 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			else if ( opcode.equalsIgnoreCase("transform") ) 
 			{
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-				String specFile = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC);
+				String specJson = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_SPEC);
 				String applyTxPath = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
-				if ( specFile != null && applyTxPath != null)
+				if ( specJson != null && applyTxPath != null)
 					throw new DMLRuntimeException(
 							"Invalid parameters to transform(). Only one of '"
-									+ ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC
+									+ ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_SPEC
 									+ "' or '"
 									+ ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD
 									+ "' can be specified.");

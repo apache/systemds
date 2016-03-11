@@ -48,11 +48,15 @@ public class FrameBlock implements Writable, Externalizable
 	/** The schema of the data frame as an ordered list of value types */
 	private List<ValueType> _schema = null; 
 	
+	/** The column names of the data frame as an ordered list of strings */
+	private List<String> _colnames = null;
+	
 	/** The data frame data as an ordered list of columns */
 	private List<Array> _coldata = null;
 	
 	public FrameBlock() {
 		_schema = new ArrayList<ValueType>();
+		_colnames = new ArrayList<String>();
 		_coldata = new ArrayList<Array>();
 	}
 	
@@ -60,9 +64,18 @@ public class FrameBlock implements Writable, Externalizable
 		this(schema, new String[0][]);
 	}
 	
+	public FrameBlock(List<ValueType> schema, List<String> names) {
+		this(schema, names, new String[0][]);
+	}
+	
 	public FrameBlock(List<ValueType> schema, String[][] data) {
+		this(schema, createColNames(schema.size()), data);
+	}
+	
+	public FrameBlock(List<ValueType> schema, List<String> names, String[][] data) {
 		_numRows = data.length;
 		_schema = new ArrayList<ValueType>(schema);
+		_colnames = new ArrayList<String>(names);
 		_coldata = new ArrayList<Array>();
 		for( int i=0; i<data.length; i++ )
 			appendRow(data[i]);
@@ -97,6 +110,15 @@ public class FrameBlock implements Writable, Externalizable
 	}
 	
 	/**
+	 * Returns the column names of the frame block.
+	 * 
+	 * @return
+	 */
+	public List<String> getColumnNames() {
+		return _colnames;
+	}
+	
+	/**
 	 * Allocate column data structures if necessary, i.e., if schema specified
 	 * but not all column data structures created yet.
 	 */
@@ -125,6 +147,18 @@ public class FrameBlock implements Writable, Externalizable
 	public void ensureColumnCompatibility(int newlen) {
 		if( _coldata.size() > 0 && _numRows != newlen )
 			throw new RuntimeException("Mismatch in number of rows: "+newlen+" (expected: "+_numRows+")");
+	}
+	
+	/**
+	 * 
+	 * @param size
+	 * @return
+	 */
+	private static List<String> createColNames(int size) {
+		ArrayList<String> ret = new ArrayList<String>(size);
+		for( int i=1; i<=size; i++ )
+			ret.add("C"+i);
+		return ret;
 	}
 	
 	///////
@@ -266,6 +300,7 @@ public class FrameBlock implements Writable, Externalizable
 		//write columns (value type, data)
 		for( int j=0; j<getNumColumns(); j++ ) {
 			out.writeByte(_schema.get(j).ordinal());
+			out.writeUTF(_colnames.get(j));
 			_coldata.get(j).write(out);
 		}
 	}
@@ -280,6 +315,7 @@ public class FrameBlock implements Writable, Externalizable
 		_coldata.clear();
 		for( int j=0; j<numCols; j++ ) {
 			ValueType vt = ValueType.values()[in.readByte()];
+			String name = in.readUTF();
 			Array arr = null;
 			switch( vt ) {
 				case STRING:  arr = new StringArray(new String[_numRows]); break;
@@ -290,6 +326,7 @@ public class FrameBlock implements Writable, Externalizable
 			}
 			arr.readFields(in);
 			_schema.add(vt);
+			_colnames.add(name);
 			_coldata.add(arr);
 		}
 	}
@@ -337,10 +374,10 @@ public class FrameBlock implements Writable, Externalizable
 		
 		//allocate output frame (incl deep copy schema)
 		if( ret == null )
-			ret = new FrameBlock(_schema);
-		else
-			ret._schema = new ArrayList<ValueType>(_schema);
+			ret = new FrameBlock();
 		ret._numRows = _numRows;
+		ret._schema = new ArrayList<ValueType>(_schema);
+		ret._colnames = new ArrayList<String>(_colnames);
 		
 		//copy data to output and partial overwrite w/ rhs
 		for( int j=0; j<getNumColumns(); j++ ) {
@@ -379,9 +416,11 @@ public class FrameBlock implements Writable, Externalizable
 			ret = new FrameBlock();
 		ret._numRows = ru-rl+1;
 		
-		//copy output schema
-		for( int j=cl; j<=cu; j++ )
+		//copy output schema and colnames
+		for( int j=cl; j<=cu; j++ ) {
 			ret._schema.add(_schema.get(j));
+			ret._colnames.add(_colnames.get(j));
+		}
 		
 		//copy output data
 		for( int j=cl; j<=cu; j++ )
@@ -420,6 +459,8 @@ public class FrameBlock implements Writable, Externalizable
 			//concatenate schemas (w/ deep copy to prevent side effects)
 			ret._schema = new ArrayList<ValueType>(_schema);
 			ret._schema.addAll(that._schema);
+			ret._colnames = new ArrayList<String>(_colnames);
+			ret._colnames.addAll(that._colnames);
 			
 			//concatenate column data (w/ deep copy to prevent side effects)
 			for( Array tmp : _coldata )
@@ -437,10 +478,10 @@ public class FrameBlock implements Writable, Externalizable
 			
 			//allocate output frame (incl deep copy schema)
 			if( ret == null )
-				ret = new FrameBlock(_schema);
-			else
-				ret._schema = new ArrayList<ValueType>(_schema);
+				ret = new FrameBlock();
 			ret._numRows = _numRows;
+			ret._schema = new ArrayList<ValueType>(_schema);
+			ret._colnames = new ArrayList<String>(_colnames);
 			
 			//concatenate data (deep copy first, append second)
 			for( Array tmp : _coldata )

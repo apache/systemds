@@ -198,6 +198,11 @@ public class PreparedScript
 	}
 	
 	/** Binds a frame object to a registered input variable. */
+	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames) throws DMLException {
+		setFrame(varname, frame, schema, colnames, false);
+	}
+	
+	/** Binds a frame object to a registered input variable. */
 	public void setFrame(String varname, String[][] frame, boolean reuse) throws DMLException {
 		setFrame(varname, DataConverter.convertToFrameBlock(frame), reuse);
 	}
@@ -205,6 +210,11 @@ public class PreparedScript
 	/** Binds a frame object to a registered input variable. */
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema, boolean reuse) throws DMLException {
 		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema), reuse);
+	}
+	
+	/** Binds a frame object to a registered input variable. */
+	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames, boolean reuse) throws DMLException {
+		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema, colnames), reuse);
 	}
 	
 	/**

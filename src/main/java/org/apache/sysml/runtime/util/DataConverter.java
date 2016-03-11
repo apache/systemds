@@ -700,6 +700,22 @@ public class DataConverter
 	}
 	
 	/**
+	 * 
+	 * @param data
+	 * @param schema
+	 * @param colnames
+	 * @return
+	 */
+	public static FrameBlock convertToFrameBlock(String[][] data, List<ValueType> schema, List<String> colnames) {
+		//check for empty frame block 
+		if( data == null || data.length==0 )
+			return new FrameBlock();
+		
+		//create frame block
+		return new FrameBlock(schema, colnames, data);
+	}
+	
+	/**
 	 * Converts a matrix block into a frame block of value type double.
 	 * 
 	 * @param mb

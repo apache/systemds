@@ -19,8 +19,6 @@
 
 package org.apache.sysml.runtime.controlprogram.caching;
 
-import java.util.List;
-
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -40,7 +38,7 @@ public class FrameObject extends CacheableData
 		super(DataType.FRAME, ValueType.UNKNOWN);
 	}
 	
-	public FrameObject(String fname, List<ValueType> schema, FrameBlock data) {
+	public FrameObject(String fname, FrameBlock data) {
 		this();
 		setFileName(fname);
 		setData(data);

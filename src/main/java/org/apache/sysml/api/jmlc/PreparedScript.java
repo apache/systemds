@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.sysml.api.DMLException;
@@ -31,6 +32,7 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
@@ -42,6 +44,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -140,27 +143,13 @@ public class PreparedScript
 		_vars.put(varname, scalar);
 	}
 
-	/**
-	 * 
-	 * @param varname
-	 * @param matrix
-	 * @throws DMLException
-	 */
-	public void setMatrix(String varname, double[][] matrix) 
-		throws DMLException 
-	{
+	/** Binds a matrix object to a registered input variable. */
+	public void setMatrix(String varname, double[][] matrix) throws DMLException {
 		setMatrix(varname, matrix, false);
 	}
 	
-	/**
-	 * 
-	 * @param varname
-	 * @param matrix
-	 * @throws DMLException
-	 */
-	public void setMatrix(String varname, double[][] matrix, boolean reuse)
-		throws DMLException
-	{
+	/** Binds a matrix object to a registered input variable. */
+	public void setMatrix(String varname, double[][] matrix, boolean reuse) throws DMLException {
 		setMatrix(varname, DataConverter.convertToMatrixBlock(matrix), reuse);
 	}
 	
@@ -195,6 +184,58 @@ public class PreparedScript
 		if( reuse ) {
 			mo.enableCleanup(false); //prevent cleanup
 			_inVarReuse.put(varname, mo);
+		}
+	}
+
+	/** Binds a frame object to a registered input variable. */
+	public void setFrame(String varname, String[][] frame) throws DMLException {
+		setFrame(varname, frame, false);
+	}
+	
+	/** Binds a frame object to a registered input variable. */
+	public void setFrame(String varname, String[][] frame, List<ValueType> schema) throws DMLException {
+		setFrame(varname, frame, schema, false);
+	}
+	
+	/** Binds a frame object to a registered input variable. */
+	public void setFrame(String varname, String[][] frame, boolean reuse) throws DMLException {
+		setFrame(varname, DataConverter.convertToFrameBlock(frame), reuse);
+	}
+	
+	/** Binds a frame object to a registered input variable. */
+	public void setFrame(String varname, String[][] frame, List<ValueType> schema, boolean reuse) throws DMLException {
+		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema), reuse);
+	}
+	
+	/**
+	 * Binds a frame object to a registered input variable. 
+	 * If reuse requested, then the input is guaranteed to be 
+	 * preserved over multiple <code>executeScript</code> calls. 
+	 * 
+	 * @param varname
+	 * @param frame
+	 * @param reuse
+	 * @throws DMLException
+	 */
+	public void setFrame(String varname, FrameBlock frame, boolean reuse)
+		throws DMLException
+	{
+		if( !_inVarnames.contains(varname) )
+			throw new DMLException("Unspecified input variable: "+varname);
+				
+		DMLConfig conf = ConfigurationManager.getConfig();
+		String scratch_space = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
+		
+		//create new frame object
+		String fname = scratch_space+"/"+varname;
+		FrameObject fo = new FrameObject(fname, frame);
+		
+		//put create matrix wrapper into symbol table
+		_vars.put(varname, fo);
+		if( reuse ) {
+			//TODO buffer pool integration
+			//mo.enableCleanup(false); //prevent cleanup
+			_inVarReuse.put(varname, fo);
 		}
 	}
 	

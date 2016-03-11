@@ -642,6 +642,64 @@ public class DataConverter
 	}
 	
 	/**
+	 * Converts a frame block with arbitrary schema into a two dimensional
+	 * string array. 
+	 * 
+	 * @param frame
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static String[][] convertToStringFrame(FrameBlock frame) 
+		throws DMLRuntimeException
+	{
+		String[][] ret = new String[frame.getNumRows()][];
+		Iterator<String[]> iter = frame.getStringRowIterator();		
+		for( int i=0; iter.hasNext(); i++ ) {
+			//deep copy output rows due to internal reuse
+			ret[i] = iter.next().clone();
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Converts a two dimensions string array into a frame block of 
+	 * value type string. If the given array is null or of length 0, 
+	 * we return an empty frame block.
+	 * 
+	 * @param data
+	 * @return
+	 */
+	public static FrameBlock convertToFrameBlock(String[][] data) {
+		//check for empty frame block 
+		if( data == null || data.length==0 )
+			return new FrameBlock();
+		
+		//construct temporary schema 
+		List<ValueType> schema = new ArrayList<ValueType>();
+		for( int j=0; j<data[0].length; j++ )
+			schema.add(ValueType.STRING);
+		
+		//create frame block
+		return convertToFrameBlock(data, schema);
+	}
+	
+	/**
+	 * 
+	 * @param data
+	 * @param schema
+	 * @return
+	 */
+	public static FrameBlock convertToFrameBlock(String[][] data, List<ValueType> schema) {
+		//check for empty frame block 
+		if( data == null || data.length==0 )
+			return new FrameBlock();
+		
+		//create frame block
+		return new FrameBlock(schema, data);
+	}
+	
+	/**
 	 * Converts a matrix block into a frame block of value type double.
 	 * 
 	 * @param mb

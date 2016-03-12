@@ -126,7 +126,7 @@ public abstract class Expression
 		GROUPEDAGG, RMEMPTY, REPLACE, ORDER, 
 		// Distribution Functions
 		CDF, INVCDF, PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
-		TRANSFORM, 
+		TRANSFORM, TRANSFORMAPPLY, 
 		INVALID
 	};
 	

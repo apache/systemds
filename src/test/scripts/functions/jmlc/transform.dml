@@ -19,10 +19,11 @@
 #
 #-------------------------------------------------------------
 
-X = read($X, data_type="frame", format="csv");
+X = read($X, data_type="frame", format="csv"); #new data
+M = read($M, data_type="frame", format="csv"); #existing recode maps
 specJson = $TRANSFORM_SPEC
 
-Xt = transform(target=X, transformPath=$TRANSFORM_PATH, spec=specJson);
+Xt = transformapply(target=X, meta=M, spec=specJson);
 
 V = matrix(Xt, rows=nrow(Xt)*ncol(Xt), cols=1);
 Y = as.matrix(sum(table(V, 1) != 0))

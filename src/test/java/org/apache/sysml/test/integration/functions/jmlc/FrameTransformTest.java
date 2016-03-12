@@ -22,12 +22,15 @@ package org.apache.sysml.test.integration.functions.jmlc;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.junit.Assert;
+import org.junit.Test;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -46,7 +49,7 @@ public class FrameTransformTest extends AutomatedTestBase
 	private final static int rows = 700;
 	private final static int cols = 3;
 	
-	private final static int nRuns = 10;
+	private final static int nRuns = 2;
 	
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
@@ -57,7 +60,6 @@ public class FrameTransformTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Y" }) ); 
 	}
 	
-	/*
 	@Test
 	public void testJMLCTransformDense() throws IOException {
 		runJMLCReuseTest(TEST_NAME1, false, false);
@@ -77,7 +79,6 @@ public class FrameTransformTest extends AutomatedTestBase
 	public void testJMLCTransformSparseReuse() throws IOException {
 		runJMLCReuseTest(TEST_NAME1, true, true);
 	}
-	*/
 
 	/**
 	 * 
@@ -86,7 +87,6 @@ public class FrameTransformTest extends AutomatedTestBase
 	 * @param instType
 	 * @throws IOException 
 	 */
-	@SuppressWarnings("unused")
 	private void runJMLCReuseTest( String testname, boolean sparse, boolean modelReuse ) 
 		throws IOException
 	{	
@@ -98,13 +98,14 @@ public class FrameTransformTest extends AutomatedTestBase
 		//generate inputs
 		double[][] Xd = TestUtils.round(getRandomMatrix(rows, cols, 0.51, 7.49, sparse?sparsity2:sparsity1, 1234));
 		String[][] Xs = createFrameData(Xd);
+		String[][] Ms = createRecodeMaps(Xs);
 		
 		//run DML via JMLC
-		ArrayList<double[][]> Yset = execDMLScriptviaJMLC( TEST_NAME, Xs, modelReuse );
+		ArrayList<double[][]> Yset = execDMLScriptviaJMLC( TEST_NAME, Xs, Ms, modelReuse );
 		
-		//check non-empty y
+		//check correct result (nnz 7 + 0 -> 8 distinct vals)
 		for( double[][] data : Yset )
-			Assert.assertEquals("Wrong result: "+data[0][0]+".", new Double(7), new Double(data[0][0]));
+			Assert.assertEquals("Wrong result: "+data[0][0]+".", new Double(8), new Double(data[0][0]));
 	}
 
 	/**
@@ -114,7 +115,7 @@ public class FrameTransformTest extends AutomatedTestBase
 	 * @throws DMLException
 	 * @throws IOException
 	 */
-	private ArrayList<double[][]> execDMLScriptviaJMLC( String testname, String[][] X, boolean modelReuse) 
+	private ArrayList<double[][]> execDMLScriptviaJMLC( String testname, String[][] X, String[][] M, boolean modelReuse) 
 		throws IOException
 	{
 		Timing time = new Timing(true);
@@ -128,22 +129,22 @@ public class FrameTransformTest extends AutomatedTestBase
 		{
 			//prepare input arguments
 			HashMap<String,String> args = new HashMap<String,String>();
-			args.put("$TRANSFORM_PATH", SCRIPT_DIR + TEST_DIR + "/tfmtd");
 			args.put("$TRANSFORM_SPEC", "{ \"ids\": true ,\"recode\": [ 1, 2, 3] }");
 			
 			//read and precompile script
 			String script = conn.readScript(SCRIPT_DIR + TEST_DIR + testname + ".dml");	
-			PreparedScript pstmt = conn.prepareScript(script, args, new String[]{"X"}, new String[]{"Y"}, false);
+			PreparedScript pstmt = conn.prepareScript(script, args, new String[]{"X","M"}, new String[]{"Y"}, false);
 			
 			if( modelReuse )
-				pstmt.setFrame("X", X);
+				pstmt.setFrame("M", M, true);
 			
 			//execute script multiple times
 			for( int i=0; i<nRuns; i++ )
 			{
 				//bind input parameters
 				if( !modelReuse )
-					pstmt.setFrame("X", X);
+					pstmt.setFrame("M", M);
+				pstmt.setFrame("X", X);
 				
 				//execute script
 				ResultVariables rs = pstmt.executeScript();
@@ -181,6 +182,37 @@ public class FrameTransformTest extends AutomatedTestBase
 			for( int j=0; j<data[i].length; j++ )
 				row[j] = "V"+String.valueOf(data[i][j]);
 			ret[i] = row;
+		}
+		
+		return ret;
+	}
+	
+	private String[][] createRecodeMaps(String[][] data) {
+		//create maps per column
+		ArrayList<HashMap<String,Integer>> map = new ArrayList<HashMap<String,Integer>>(); 
+		for( int j=0; j<data[0].length; j++ )
+			map.add(new HashMap<String,Integer>());
+		//create recode maps per column
+		for( int i=0; i<data.length; i++ ) {
+			for( int j=0; j<data[i].length; j++ )
+				if( !map.get(j).containsKey(data[i][j]) )
+					map.get(j).put(data[i][j], map.get(j).size()+1);
+		}
+		//determine max recode map size
+		int max = 0;
+		for( int j=0; j<data[0].length; j++ )
+			max = Math.max(max, map.get(j).size());
+		
+		//allocate output
+		String[][] ret = new String[max][];
+		for( int i=0; i<max; i++ )
+			ret[i] = new String[data[0].length];
+		
+		//create frame of recode maps
+		for( int j=0; j<data[0].length; j++) {
+			int i = 0;
+			for( Entry<String, Integer> e : map.get(j).entrySet() )
+				ret[i++][j] = e.getKey()+Lop.DATATYPE_PREFIX+e.getValue();
 		}
 		
 		return ret;

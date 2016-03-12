@@ -19,14 +19,13 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import java.io.IOException;
 import java.util.HashMap;
 
-import org.apache.wink.json4j.JSONException;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.ParameterizedBuiltin;
@@ -120,7 +119,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if ( opcode.equals("transform")) {
+		else if (   opcode.equals("transform")
+				 || opcode.equals("transformapply")) 
+		{
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
 		else {
@@ -226,18 +227,26 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		}
 		else if ( opcode.equalsIgnoreCase("transform")) {
 			MatrixObject mo = (MatrixObject) ec.getVariable(params.get("target"));
-			MatrixObject out = (MatrixObject) ec.getVariable(output.getName());
-			
+			MatrixObject out = (MatrixObject) ec.getVariable(output.getName());			
 			try {
 				JobReturn jt = DataTransform.cpDataTransform(this, new MatrixObject[] { mo } , new MatrixObject[] {out} );
 				out.updateMatrixCharacteristics(jt.getMatrixCharacteristics(0));
-			} catch (IllegalArgumentException e) {
-				throw new DMLRuntimeException(e);
-			} catch (IOException e) {
-				throw new DMLRuntimeException(e);
-			} catch (JSONException e) {
+			} catch (Exception e) {
 				throw new DMLRuntimeException(e);
 			}
+		}
+		else if ( opcode.equalsIgnoreCase("transformapply")) {
+			//sanity checks valid inputs
+			if( !(ec.getVariable(params.get("target")) instanceof FrameObject) )
+				throw new DMLRuntimeException("Transformapply requires FrameObject input for 'target'.");
+			if( !(ec.getVariable(params.get("meta")) instanceof FrameObject) )
+				throw new DMLRuntimeException("Transformapply requires FrameObject input for 'meta'.");
+			
+			FrameObject dataobj = (FrameObject) ec.getVariable(params.get("target"));
+			FrameObject metaobj = (FrameObject) ec.getVariable(params.get("meta"));
+			
+			MatrixBlock mbout = DataTransform.cpDataTransform(getParameterMap(), dataobj.getData(), metaobj.getData() );
+			ec.setMatrixOutput(output.getName(), mbout);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

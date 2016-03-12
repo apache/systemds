@@ -1983,6 +1983,14 @@ public class DMLTranslator
 									target.getValueType(), ParamBuiltinOp.TRANSFORM, 
 									paramHops);
 			break;	
+		
+		case TRANSFORMAPPLY:
+			currBuiltinOp = new ParameterizedBuiltinOp(
+									target.getName(), target.getDataType(), 
+									target.getValueType(), ParamBuiltinOp.TRANSFORMAPPLY, 
+									paramHops);
+			break;	
+			
 			
 		default:
 			

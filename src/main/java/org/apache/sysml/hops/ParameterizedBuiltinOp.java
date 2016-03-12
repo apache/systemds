@@ -217,6 +217,15 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			pbilop.getOutputParameters().setFormat(Format.CSV);
 			setLops(pbilop);
 		}
+		else if ( _op == ParamBuiltinOp.TRANSFORMAPPLY ) 
+		{
+			ExecType et = optFindExecType();			
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
+			setOutputDimensions(pbilop);
+			setLineNumbers(pbilop);
+			setLops(pbilop);
+		}
 
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
@@ -979,11 +988,12 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		}
 		else 
 		{
-			if( _op == ParamBuiltinOp.TRANSFORM )
-			{
-				// force remote execution type here.
-				// At runtime, cp-side transform is triggered for small files.
+			if( _op == ParamBuiltinOp.TRANSFORM ) {
+				// force remote, at runtime cp transform triggered for small files.
 				return REMOTE;
+			}
+			else if( _op == ParamBuiltinOp.TRANSFORMAPPLY ) {
+				return ExecType.CP;
 			}
 			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
@@ -1080,6 +1090,10 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				}
 				
 				break;	
+			}
+			case TRANSFORMAPPLY: {
+				Hop target = getInput().get(_paramIndexMap.get("target"));
+				setDim1( target.getDim1() ); //rows remain unchanged
 			}
 			default:
 				//do nothing

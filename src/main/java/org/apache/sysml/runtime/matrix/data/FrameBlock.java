@@ -27,8 +27,10 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -73,7 +75,7 @@ public class FrameBlock implements Writable, Externalizable
 	}
 	
 	public FrameBlock(List<ValueType> schema, List<String> names, String[][] data) {
-		_numRows = data.length;
+		_numRows = 0; //maintained on append
 		_schema = new ArrayList<ValueType>(schema);
 		_colnames = new ArrayList<String>(names);
 		_coldata = new ArrayList<Array>();
@@ -116,6 +118,19 @@ public class FrameBlock implements Writable, Externalizable
 	 */
 	public List<String> getColumnNames() {
 		return _colnames;
+	}
+	
+	/**
+	 * Creates a mapping from column names to column IDs, i.e., 
+	 * 1-based column indexes
+	 * 
+	 * @return
+	 */
+	public Map<String,Integer> getColumnNameIDMap() {
+		Map<String, Integer> ret = new HashMap<String, Integer>();
+		for( int j=0; j<getNumColumns(); j++ )
+			ret.put(_colnames.get(j), j+1);
+		return ret;	
 	}
 	
 	/**

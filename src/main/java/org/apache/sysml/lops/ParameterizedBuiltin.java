@@ -20,6 +20,7 @@
 package org.apache.sysml.lops;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.lops.LopProperties.ExecLocation;
@@ -40,7 +41,7 @@ public class ParameterizedBuiltin extends Lop
 	public enum OperationTypes { 
 		INVALID, CDF, INVCDF, RMEMPTY, REPLACE, REXPAND, 
 		PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
-		TRANSFORM
+		TRANSFORM, TRANSFORMAPPLY,
 	};
 	
 	private OperationTypes _operation;
@@ -211,24 +212,12 @@ public class ParameterizedBuiltin extends Lop
 				
 				break;
 			
-			case REPLACE:
+			case REPLACE: {
 				sb.append( "replace" );
 				sb.append( OPERAND_DELIMITOR );
-				
-				for ( String s : _inputParams.keySet() ) 
-				{	
-					sb.append( s );
-					sb.append( NAME_VALUE_SEPARATOR );
-					
-					// get the value/label of the scalar input associated with name "s"
-					Lop iLop = _inputParams.get(s);
-					if( s.equals("target") )
-						sb.append(iLop.getOutputParameters().getLabel());
-					else
-						sb.append( iLop.prepScalarLabel() );
-					sb.append( OPERAND_DELIMITOR );
-				}
+				sb.append(compileGenericParamMap(_inputParams));
 				break;
+			}
 			
 			case REXPAND:
 				sb.append("rexpand");
@@ -252,23 +241,16 @@ public class ParameterizedBuiltin extends Lop
 				
 				break;
 				
-			case TRANSFORM:
-			{
+			case TRANSFORM: {
 				sb.append("transform");
 				sb.append(OPERAND_DELIMITOR);
-				
-				for ( String s : _inputParams.keySet() ) {
-					sb.append(s);
-					sb.append(NAME_VALUE_SEPARATOR);
-					
-					Lop iLop = _inputParams.get(s);
-					if( iLop.getDataType() != DataType.SCALAR )
-						sb.append( iLop.getOutputParameters().getLabel());
-					else
-						sb.append( iLop.prepScalarLabel() );
-					
-					sb.append(OPERAND_DELIMITOR);
-				}
+				sb.append(compileGenericParamMap(_inputParams));
+				break;
+			}			
+			case TRANSFORMAPPLY: {
+				sb.append("transformapply");
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(compileGenericParamMap(_inputParams));
 				break;
 			}
 				
@@ -512,5 +494,24 @@ public class ParameterizedBuiltin extends Lop
 		sb.append(" ; blocked=" + this.getOutputParameters().isBlocked());
 		return sb.toString();
 	}
-
+	
+	/**
+	 * 
+	 * @param params
+	 * @return
+	 */
+	private static String compileGenericParamMap(HashMap<String, Lop> params) {
+		StringBuilder sb = new StringBuilder();		
+		for ( Entry<String, Lop> e : params.entrySet() ) {
+			sb.append(e.getKey());
+			sb.append(NAME_VALUE_SEPARATOR);
+			if( e.getValue().getDataType() != DataType.SCALAR )
+				sb.append( e.getValue().getOutputParameters().getLabel());
+			else
+				sb.append( e.getValue().prepScalarLabel() );
+			sb.append(OPERAND_DELIMITOR);
+		}
+		
+		return sb.toString();
+	}
 }

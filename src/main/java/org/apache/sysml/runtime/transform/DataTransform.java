@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -72,6 +73,7 @@ import org.apache.sysml.runtime.matrix.JobReturn;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -1047,6 +1049,48 @@ public class DataTransform
 			String specFileWithIDs = oprnds.txMtdPath + "/" + "spec.json";
 			
 			ret = performTransform(job, fs, oprnds.inputPath, colNamesToIds.size(), oprnds.inputCSVProperties, specFileWithIDs,  oprnds.txMtdPath, oprnds.isApply, outputMatrices[0], outHeader, isBB, isCSV );
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Apply given transform metadata (incl recode maps) over an in-memory frame input in order to
+	 * create a transformed numerical matrix. Note: The number of rows always remains unchanged, 
+	 * whereas the number of column might increase or decrease. 
+	 * 
+	 * @param params
+	 * @param input
+	 * @param meta
+	 * @param spec
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws  
+	 */
+	public static MatrixBlock cpDataTransform(HashMap<String,String> params, FrameBlock input, FrameBlock meta) 
+		throws DMLRuntimeException
+	{
+		MatrixBlock ret = null;
+		
+		try
+		{
+			//initialize transform encoders
+			JSONObject spec = new JSONObject(params.get("spec"));
+			TfUtils agents = new TfUtils(spec, input.getNumColumns());		
+			agents.getRecodeAgent().initRecodeMaps(meta);
+			
+			//core transform apply over input frame and append to output
+			//FIXME number of output columns after encoder creation
+			ret = new MatrixBlock(input.getNumRows(), input.getNumColumns(), false);
+			Iterator<String[]> iter = input.getStringRowIterator();
+			for( int i=0; iter.hasNext(); i++ ) {
+				String[] tmp = agents.apply(iter.next(), true);
+				for( int j=0; j<tmp.length; j++ )
+					ret.appendValue(i, j, UtilFunctions.parseToDouble(tmp[j]));
+			}
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
 		}
 		
 		return ret;

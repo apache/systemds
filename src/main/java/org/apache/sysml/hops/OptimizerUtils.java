@@ -107,6 +107,13 @@ public class OptimizerUtils
 	public static boolean ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = true;
 
 	/**
+	 * Enables common subexpression elimination in dags for persistent reads based on filenames
+	 * and other relevant read meta data. Disabled for jmlc to allow binding of in-memory objects
+	 * without specifying read properties.
+	 */
+	public static boolean ALLOW_CSE_PERSISTENT_READS = ALLOW_COMMON_SUBEXPRESSION_ELIMINATION && true;
+	
+	/**
 	 * Enables constant folding in dags. Constant folding computes simple expressions of binary 
 	 * operations and literals and replaces the hop sub-DAG with a new literal operator. 
 	 */

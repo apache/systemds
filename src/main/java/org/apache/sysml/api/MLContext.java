@@ -1194,6 +1194,7 @@ public class MLContext {
 			// could be more restrictive and require known dimensions (rm REJECT_READ_WRITE_UNKNOWNS).  
 			AParserWrapper.IGNORE_UNSPECIFIED_ARGS = true;
 			DataExpression.REJECT_READ_WRITE_UNKNOWNS = false;
+			OptimizerUtils.ALLOW_CSE_PERSISTENT_READS = false;
 			
 			if(_monitorUtils != null) {
 				_monitorUtils.resetMonitoringData();
@@ -1257,7 +1258,9 @@ public class MLContext {
 			
 			// Reset parser parameters
 			AParserWrapper.IGNORE_UNSPECIFIED_ARGS = false;
-			DataExpression.REJECT_READ_WRITE_UNKNOWNS = true;			
+			DataExpression.REJECT_READ_WRITE_UNKNOWNS = true;		
+			OptimizerUtils.ALLOW_CSE_PERSISTENT_READS = 
+					OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION;			
 		}
 	}
 	

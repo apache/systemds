@@ -76,6 +76,7 @@ public class Connection
 		DataExpression.REJECT_READ_WRITE_UNKNOWNS = false;
 		//runtime parameters
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		OptimizerUtils.ALLOW_CSE_PERSISTENT_READS = false;
 		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = false;
 		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = false;
 		OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS = false;
@@ -164,6 +165,8 @@ public class Connection
 		AParserWrapper.IGNORE_UNSPECIFIED_ARGS = false;
 		DataExpression.IGNORE_READ_WRITE_METADATA = false;
 		DataExpression.REJECT_READ_WRITE_UNKNOWNS = true;
+		OptimizerUtils.ALLOW_CSE_PERSISTENT_READS = 
+				OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION;
 		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = true;
 		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = true;
 		OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS = true;

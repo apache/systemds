@@ -541,8 +541,9 @@ public class DataOp extends Hop
 		//with multiple piggybacked csvreblock of the same input w/ unknown input sizes
 		
 		DataOp that2 = (DataOp)that;	
-		boolean ret = (  _dataop == that2._dataop
-				      && _dataop == DataOpTypes.PERSISTENTREAD
+		boolean ret = ( OptimizerUtils.ALLOW_CSE_PERSISTENT_READS 
+					  &&_dataop == that2._dataop
+					  && _dataop == DataOpTypes.PERSISTENTREAD
 					  && _fileName.equals(that2._fileName)
 					  && _inFormat == that2._inFormat
 					  && _inRowsInBlock == that2._inRowsInBlock

@@ -271,6 +271,37 @@ naiveKNNsearch = function(
         }   
     }   
 }
+#naive knn search for predict value only implement
+naiveKNNsearchForPredict = function(
+    matrix[double] P,
+    matrix[double] Q,
+	matrix[double] L,
+    integer K
+)return(
+	matrix[double] OL
+){
+    num_records = nrow (P);
+    num_features = ncol (P);
+    num_queries = nrow (Q);
+    Qt = t(Q);
+    PQt = P %*% Qt;
+    P2 = rowSums (P ^ 2);
+    D = -2 * PQt + P2;
+    if (K == 1) {
+        Dt = t(D);
+        O = rowIndexMin (Dt);
+		OL = matrix (0, rows = num_queries, cols = 1)
+		parfor( i in 1:num_queries){
+			OL[i,] = L[as.scalar(O[i,1]),1]
+		}
+    } else {
+		OL = matrix (0, rows = num_queries, cols = K);
+        parfor (i in 1:num_queries) {
+            D_sorted=order(target=cbind(D[,i],L), by=1, decreasing=FALSE, index.return=FALSE);
+            OL[i,] = t(D_sorted[1:K,2]);
+        }   
+    }   
+}
 # prepareKNNData:
 #   Do data prepare - [-1,1] transform for continues variable 
 # Argument:
@@ -289,36 +320,29 @@ return(
 
 getKNeighbor = function (  matrix[double] in_m_data,
         matrix[double] in_m_test_data,
+		matrix[double] in_m_cl, 
         integer in_i_k_max   ) 
-    return (  matrix[double] out_m_neighbor_index  ) {
+    return (  matrix[double] out_m_neighbor_value  ) {
     #to naive
-    m_search_result = naiveKNNsearch(in_m_data,in_m_test_data,in_i_k_max + 1)
-    out_m_neighbor_index = m_search_result[ ,2:in_i_k_max + 1]
+    m_search_result = naiveKNNsearchForPredict(in_m_data,in_m_test_data,in_m_cl,in_i_k_max + 1)
+    out_m_neighbor_value = m_search_result[ ,2:in_i_k_max + 1]
 }
 
-getErr_k = function (  matrix[double] in_m_neighbor_index, 
-        matrix[double] in_m_cl, 
+getErr_k = function (  matrix[double] in_m_neighbor_value,
+		matrix[double] in_m_cl,
         integer in_i_cl_type , 
         integer in_i_k_min  ) 
     return (  matrix[double] out_m_err  ){
-    i_col = ncol( in_m_neighbor_index  );
-    i_row  = nrow( in_m_neighbor_index  );  
-    m_neighbor_value = matrix( 0,i_row,i_col  );
-    
-    #parfor
-    for( i in 1:i_col  ){
-        for( j in 1:i_row  ){
-            m_neighbor_value[j,i] = in_m_cl[as.scalar( in_m_neighbor_index[j,i]  ),1];
-        }
-    }
+    i_col = ncol( in_m_neighbor_value  );
+    i_row  = nrow( in_m_neighbor_value  );  
     
     out_m_err = matrix( 0,i_row,i_col - in_i_k_min + 1  );
     if( in_i_cl_type == 2  ){
         #category
-        m_correct = ppred( m_neighbor_value,in_m_cl[1:i_row,],"!="  );
+        m_correct = ppred( in_m_neighbor_value,in_m_cl[1:i_row,],"!="  );
     }else{
         #continues
-        m_correct = m_neighbor_value - in_m_cl[1:i_row,];#ppred( m_neighbor_value,in_m_cl,"-"  );
+        m_correct = in_m_neighbor_value - in_m_cl[1:i_row,];#ppred( in_m_neighbor_value,in_m_cl,"-"  );
     }
     parfor( i in 1:i_col-in_i_k_min+1 ,check = 0 ){
         out_m_err[,i] = 
@@ -388,9 +412,9 @@ return(
             b_continue_loop = FALSE;
         }
         
-        m_neighbor_index = getKNeighbor( in_m_data,in_m_data[1:i_process_item,],k_max  );
+        m_neighbor_value = getKNeighbor( in_m_data,in_m_data[1:i_process_item,],in_m_data_target,k_max  );
         # 3.get matrix of err from k_min to k_max 
-        m_err = getErr_k( m_neighbor_index,in_m_data_target,in_i_is_categorical,k_min  );
+        m_err = getErr_k( m_neighbor_value,in_m_data_target,in_i_is_categorical,k_min  );
 
         # 4.check this matrix to drop unnessary record
         m_active_flag_tmp = matrix( 0,1,ncol( m_err  )  );
@@ -445,27 +469,19 @@ return(
     }
 }
 
-getErr = function (  matrix[double] in_m_neighbor_index, 
-        matrix[double] in_m_cl, 
+getErr = function (  matrix[double] in_m_neighbor_value,
+		matrix[double] in_m_cl,
         integer in_i_cl_type ) 
     return (  matrix[double] out_m_err ){
-    i_col = ncol( in_m_neighbor_index );
-    i_row  = nrow( in_m_neighbor_index );   
-    m_neighbor_value = matrix( 0,i_row,i_col );
-    
-    #parfor
-    for( i in 1:i_col,check=0 ){
-        for( j in 1:i_row ){
-            m_neighbor_value[j,i] = in_m_cl[as.scalar( in_m_neighbor_index[j,i] ),1];
-        }
-    }
+    i_col = ncol( in_m_neighbor_value );
+    i_row  = nrow( in_m_neighbor_value );   
     
     if( in_i_cl_type == 2 ){
         #category
-        m_correct = ppred( m_neighbor_value,in_m_cl[1:i_row,],"!=" );
+        m_correct = ppred( in_m_neighbor_value,in_m_cl[1:i_row,],"!=" );
     }else{
         #continues
-        m_correct = m_neighbor_value - in_m_cl[1:i_row,];#ppred( m_neighbor_value,in_m_cl,"-" );
+        m_correct = in_m_neighbor_value - in_m_cl[1:i_row,];#ppred( in_m_neighbor_value,in_m_cl,"-" );
     }
     out_m_err = ( rowSums( m_correct[,1:i_col] )/( i_col ) )^2;
 }
@@ -528,10 +544,11 @@ return(
                 for( i in 1:i_n_column ){
                     if( as.scalar( m_feature_selected_flag[1,i] ) != 1 ){
                         m_tmp_process_data = in_m_data[,i];
-                        m_neighbor_index = getKNeighbor( 
-                            m_tmp_process_data,m_tmp_process_data[1:i_process_item,],k_value );                            
+                        m_neighbor_value = getKNeighbor( 
+                            m_tmp_process_data,m_tmp_process_data[1:i_process_item,],
+							in_m_data_target,k_value );                            
                         m_tmp_err = getErr( 
-                            m_neighbor_index,in_m_data_target ,in_i_is_categorical );
+                            m_neighbor_value,in_m_data_target,in_i_is_categorical );
                         m_err[,i] = m_tmp_err;
                     }
                 }
@@ -541,19 +558,19 @@ return(
                 # m_feature_selected_flag: which feature are dropped & init selected
                 m_tmp_data = removeEmpty( target=in_m_data * m_main_selected_flag,margin="cols" );
                 if( m_this_model_selected_flag == TRUE ){
-                    m_neighbor_index = getKNeighbor( 
-                        m_tmp_data,m_tmp_data[1:i_process_item,],k_value );
-                    m_tmp_err = getErr( m_neighbor_index,in_m_data_target ,in_i_is_categorical );
+                    m_neighbor_value = getKNeighbor( 
+                        m_tmp_data,m_tmp_data[1:i_process_item,],in_m_data_target, k_value );
+                    m_tmp_err = getErr( m_neighbor_value,in_m_data_target,in_i_is_categorical );
                     m_err[,i_n_column+1] = m_tmp_err;
                 }
                 for( i in 1:i_n_column ){
                     if( as.scalar( m_feature_selected_flag[1,i] ) != 1 ){
                         m_tmp_process_data = append( m_tmp_data,in_m_data[,i] );
-                        m_neighbor_index = getKNeighbor( 
-                            m_tmp_process_data,m_tmp_process_data[1:i_process_item,],k_value );
-                        
+                        m_neighbor_value = getKNeighbor( 
+                            m_tmp_process_data,m_tmp_process_data[1:i_process_item,],in_m_data_target,k_value );
+
                         m_tmp_err = getErr( 
-                            m_neighbor_index,in_m_data_target ,in_i_is_categorical );
+                            m_neighbor_value,in_m_data_target,in_i_is_categorical );
                         m_err[,i] = m_tmp_err;
                     }
                 }
@@ -696,8 +713,8 @@ return(
         m_feature_select[1,i_feature] = 0;
         #m_in_tmp_data = removeEmpty(target=in_m_data,margin="cols",select=m_feature_select)
         m_in_tmp_data = removeEmpty(target=in_m_data * m_feature_select,margin="cols")
-        m_neighbor_index = getKNeighbor( m_in_tmp_data,m_in_tmp_data,k_value);
-        m_tmp_err = getErr( m_neighbor_index,in_m_data_target ,in_i_is_categorical );
+        m_neighbor_value = getKNeighbor( m_in_tmp_data,m_in_tmp_data,in_m_data_target,k_value);
+        m_tmp_err = getErr( m_neighbor_value,in_m_data_target ,in_i_is_categorical );
         m_err[,i_feature] = m_tmp_err
     }
     out_m_feature_importance = colSums( m_err );

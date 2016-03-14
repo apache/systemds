@@ -79,9 +79,10 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 		// (checkpoints are generated for all read only variables in loops; due to unbounded scoping and 
 		// conditional control flow they to not necessarily exist in the symbol table during runtime - 
 		// this is valid if relevant branches are never entered)
-		if( sec.getVariable( input1.getName() ) == null ) {
+		if( sec.getVariable( input1.getName() ) == null || sec.getVariable( input1.getName() ) instanceof BooleanObject) {
 			//add a dummy entry to the input, which will be immediately overwritten by the null output.
 			sec.setVariable( input1.getName(), new BooleanObject(false));
+			sec.setVariable( output.getName(), new BooleanObject(false));
 			return;
 		}
 		

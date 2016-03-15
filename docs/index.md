@@ -59,6 +59,7 @@ machine in R-like and Python-like declarative languages.
 * **Hadoop Batch** - Algorithms are automatically optimized when distributed across Hadoop clusters.
   * See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for detailed information.
 * **JMLC** - Java Machine Learning Connector.
+  * See [Java Machine Learning Connector (JMLC)](jmlc.html) for more information.
 
 ## Language Guides
 

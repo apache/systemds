@@ -79,4 +79,5 @@ machine learning algorithms included with SystemML in detail.
 
 * [Debugger Guide](debugger-guide.html) - SystemML supports DML script-level debugging through a
 command-line interface.
+* [IDE Guide](developer-tools-systemml.html) - Useful IDE Guide for Developing SystemML.
 

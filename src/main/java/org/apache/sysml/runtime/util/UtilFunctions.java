@@ -306,6 +306,22 @@ public class UtilFunctions
 	 * @param in
 	 * @return
 	 */
+	public static Object stringToObject(ValueType vt, String in) {
+		switch( vt ) {
+			case STRING:  return in;
+			case BOOLEAN: return Boolean.parseBoolean(in);
+			case INT:     return Integer.parseInt(in);
+			case DOUBLE:  return Double.parseDouble(in);
+			default: throw new RuntimeException("Unsupported value type: "+vt);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @return
+	 */
 	public static double objectToDouble(ValueType vt, Object in) {
 		switch( vt ) {
 			case STRING:  return Double.parseDouble((String)in);

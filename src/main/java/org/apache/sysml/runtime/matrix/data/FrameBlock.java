@@ -57,9 +57,16 @@ public class FrameBlock implements Writable, Externalizable
 	private List<Array> _coldata = null;
 	
 	public FrameBlock() {
+		_numRows = 0;
 		_schema = new ArrayList<ValueType>();
 		_colnames = new ArrayList<String>();
 		_coldata = new ArrayList<Array>();
+	}
+	
+	public FrameBlock(int ncols, ValueType vt) {
+		this();
+		for( int j=0; j<ncols; j++ )
+			_schema.add(vt);
 	}
 	
 	public FrameBlock(List<ValueType> schema) {
@@ -137,21 +144,22 @@ public class FrameBlock implements Writable, Externalizable
 	 * Allocate column data structures if necessary, i.e., if schema specified
 	 * but not all column data structures created yet.
 	 */
-	public void ensureAllocatedColumns() {
-		//early abort if already 
+	public void ensureAllocatedColumns(int numRows) {
+		//early abort if already allocated
 		if( _schema.size() == _coldata.size() ) 
 			return;		
 		//allocate columns if necessary
 		for( int j=0; j<_schema.size(); j++ ) {
 			if( j >= _coldata.size() )
 				switch( _schema.get(j) ) {
-					case STRING:  _coldata.add(new StringArray(new String[0])); break;
-					case BOOLEAN: _coldata.add(new BooleanArray(new boolean[0])); break;
-					case INT:     _coldata.add(new LongArray(new long[0])); break;
-					case DOUBLE:  _coldata.add(new DoubleArray(new double[0])); break;
+					case STRING:  _coldata.add(new StringArray(new String[numRows])); break;
+					case BOOLEAN: _coldata.add(new BooleanArray(new boolean[numRows])); break;
+					case INT:     _coldata.add(new LongArray(new long[numRows])); break;
+					case DOUBLE:  _coldata.add(new DoubleArray(new double[numRows])); break;
 					default: throw new RuntimeException("Unsupported value type: "+_schema.get(j));
 				}
 		}
+		_numRows = numRows;
 	}
 	
 	/**
@@ -209,7 +217,7 @@ public class FrameBlock implements Writable, Externalizable
 	 * @param row
 	 */
 	public void appendRow(Object[] row) {
-		ensureAllocatedColumns();
+		ensureAllocatedColumns(0);
 		for( int j=0; j<row.length; j++ )
 			_coldata.get(j).append(row[j]);
 		_numRows++;
@@ -222,7 +230,7 @@ public class FrameBlock implements Writable, Externalizable
 	 * @param row
 	 */
 	public void appendRow(String[] row) {
-		ensureAllocatedColumns();
+		ensureAllocatedColumns(0);
 		for( int j=0; j<row.length; j++ )
 			_coldata.get(j).append(row[j]);
 		_numRows++;

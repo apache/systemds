@@ -61,7 +61,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  * {@link MatrixBlock} object without informing its {@link MatrixObject} object.
  * 
  */
-public class MatrixObject extends CacheableData
+public class MatrixObject extends CacheableData<MatrixBlock>
 {
 	private static final long serialVersionUID = 6374712373206495637L;
 
@@ -119,7 +119,6 @@ public class MatrixObject extends CacheableData
 	private String _cacheFileName = null; //local eviction file name
 	private boolean _requiresLocalWrite = false; //flag if local write for read obj
 	private boolean _isAcquireFromEmpty = false; //flag if read from status empty 
-	private boolean _cleanupFlag = true; //flag if obj unpinned (cleanup enabled)
 	private boolean _updateInPlaceFlag = false; //flag if in-place update
 	
 	//spark-specific handles
@@ -179,7 +178,8 @@ public class MatrixObject extends CacheableData
 	 */
 	public MatrixObject( MatrixObject mo )
 	{
-		super(mo.getDataType(), mo.getValueType());
+		//base copy constructor
+		super(mo);
 
 		_hdfsFileName = mo._hdfsFileName;
 		_hdfsFileExists = mo._hdfsFileExists;
@@ -189,7 +189,6 @@ public class MatrixObject extends CacheableData
 				                             metaOld.getOutputInfo(), metaOld.getInputInfo());
 		
 		_varName = mo._varName;
-		_cleanupFlag = mo._cleanupFlag;
 		_updateInPlaceFlag = mo._updateInPlaceFlag;
 		_partitioned = mo._partitioned;
 		_partitionFormat = mo._partitionFormat;
@@ -465,6 +464,7 @@ public class MatrixObject extends CacheableData
 	 * @return the matrix data reference
 	 * @throws CacheException 
 	 */
+	@Override
 	public synchronized MatrixBlock acquireRead()
 		throws CacheException
 	{
@@ -551,6 +551,7 @@ public class MatrixObject extends CacheableData
 	 * @return the matrix data reference
 	 * @throws CacheException 
 	 */
+	@Override
 	public synchronized MatrixBlock acquireModify() 
 		throws CacheException
 	{
@@ -609,6 +610,7 @@ public class MatrixObject extends CacheableData
 	 * @return the matrix data reference, which is the same as the argument
 	 * @throws CacheException 
 	 */
+	@Override
 	public synchronized MatrixBlock acquireModify(MatrixBlock newData)
 		throws CacheException
 	{
@@ -653,6 +655,7 @@ public class MatrixObject extends CacheableData
 	 * 
 	 * @throws CacheStatusException
 	 */
+	@Override
 	public synchronized void release() 
 		throws CacheException
 	{
@@ -721,6 +724,7 @@ public class MatrixObject extends CacheableData
 	 * Out-Status: EMPTY.
 	 * @throws CacheException 
 	 */
+	@Override
 	public synchronized void clearData() 
 		throws CacheException
 	{
@@ -728,7 +732,7 @@ public class MatrixObject extends CacheableData
 			LOG.trace("Clear data "+_varName);
 		
 		// check if cleanup enabled and possible 
-		if( !_cleanupFlag ) 
+		if( !isCleanupEnabled() ) 
 			return; // do nothing
 		if( !isAvailableToModify() )
 			throw new CacheStatusException ("MatrixObject (" + this.getDebugName() + ") not available to modify. Status = " + this.getStatusAsString() + ".");
@@ -753,6 +757,7 @@ public class MatrixObject extends CacheableData
 		setEmpty();
 	}
 	
+	@Override
 	public synchronized void exportData()
 		throws CacheException
 	{
@@ -1642,26 +1647,6 @@ public class MatrixObject extends CacheableData
 			size += (add ? 1 : -1) * _data.getSizeInMemory();
 			sizePinned.set( Math.max(size,0) );
 		}
-	}
-	
-	/**
-	 * see clear data
-	 * 
-	 * @param flag
-	 */
-	public void enableCleanup(boolean flag) 
-	{
-		_cleanupFlag = flag;
-	}
-
-	/**
-	 * see clear data
-	 * 
-	 * @return
-	 */
-	public boolean isCleanupEnabled() 
-	{
-		return _cleanupFlag;
 	}
 	
 	/**

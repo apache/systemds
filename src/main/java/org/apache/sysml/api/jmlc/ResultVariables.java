@@ -104,9 +104,10 @@ public class ResultVariables
 		
 		//convert output matrix to double array	
 		FrameObject fo = (FrameObject)dat;
-		FrameBlock frame = fo.getData();
+		FrameBlock frame = fo.acquireRead();
 		ret = DataConverter.convertToStringFrame(frame);
-	
+		fo.release();
+		
 		return ret;
 	}
 	

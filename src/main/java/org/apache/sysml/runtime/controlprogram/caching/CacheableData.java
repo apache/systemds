@@ -24,7 +24,6 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -32,7 +31,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
 
@@ -50,9 +48,8 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
  * must dispose of all references prior to giving the permission for eviction. 
  * 
  */
-public abstract class CacheableData extends Data
+public abstract class CacheableData<T> extends Data
 {
-
 	private static final long serialVersionUID = -413810592207212835L;
 
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
@@ -115,14 +112,99 @@ public abstract class CacheableData extends Data
 	private CacheStatus _cacheStatus = null;
 	private int         _numReadThreads = 0;
 	
-	protected CacheableData (DataType dt, ValueType vt)
-	{
-		super (dt, vt);
-		
-		_uniqueID = (int)_seq.getNextID();
-		
+	//additional status flags
+	private boolean _cleanupFlag = true; //flag if obj unpinned (cleanup enabled)
+	
+	
+	/**
+	 * Basic constructor for any cacheable data.
+	 * 
+	 * @param dt
+	 * @param vt
+	 */
+	protected CacheableData(DataType dt, ValueType vt) {
+		super (dt, vt);		
+		_uniqueID = (int)_seq.getNextID();		
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
+	}
+	
+	/**
+	 * Copy constructor for cacheable data (of same type).
+	 * 
+	 * @param that
+	 */
+	protected CacheableData(CacheableData<T> that) {
+		this( that.getDataType(), that.getValueType() );
+		_cleanupFlag = that._cleanupFlag;
+	}
+
+	// --------- ABSTRACT HIGH-LEVEL CACHE I/O OPERATIONS ----------
+
+	/**
+	 * 
+	 * @return
+	 * @throws CacheException
+	 */
+	public abstract T acquireRead() 
+		throws CacheException;
+
+	/**
+	 * 
+	 * @return
+	 * @throws CacheException
+	 */
+	public abstract T acquireModify()
+		throws CacheException;
+		
+	/**
+	 * 
+	 * @param newData
+	 * @return
+	 * @throws CacheException
+	 */
+	public abstract T acquireModify(T newData)
+		throws CacheException;
+
+	/**
+	 * 
+	 * @throws CacheException
+	 */
+	public abstract void release()
+		throws CacheException;
+
+	/**
+	 * 
+	 * @throws CacheException
+	 */
+	public abstract void clearData()
+		throws CacheException;
+		
+	/**
+	 * 
+	 * @throws CacheException
+	 */
+	public abstract void exportData() 
+		throws CacheException;
+	
+	/**
+	 * Enables or disables the cleanup of the associated 
+	 * data object on clearData().
+	 * 
+	 * @param flag
+	 */
+	public void enableCleanup(boolean flag) {
+		_cleanupFlag = flag;
+	}
+
+	/**
+	 * Indicates if cleanup of the associated data object 
+	 * is enabled on clearData().
+	 * 
+	 * @return
+	 */
+	public boolean isCleanupEnabled() {
+		return _cleanupFlag;
 	}
 	
 	// --------- ABSTRACT LOW-LEVEL CACHE I/O OPERATIONS ----------
@@ -141,12 +223,13 @@ public abstract class CacheableData extends Data
 	/**
 	 * Low-level cache I/O method that physically evicts the data blob from
 	 * main memory.  Must be defined by a subclass, never called by users.
-	 * @param mb 
+	 * 
+	 * @param data 
 	 * 
 	 * @throws CacheIOException if the eviction fails, the data blob
 	 *     remains as it was at the start.
 	 */
-	protected abstract void evictBlobFromMemory(MatrixBlock mb) 
+	protected abstract void evictBlobFromMemory(T data) 
 		throws CacheIOException;
 	
 	/**

@@ -22,9 +22,8 @@ package org.apache.sysml.runtime.controlprogram.caching;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-public class FrameObject extends CacheableData
+public class FrameObject extends CacheableData<FrameBlock>
 {
 	private static final long serialVersionUID = 1755082174281927785L;
 
@@ -34,14 +33,30 @@ public class FrameObject extends CacheableData
 	/** The name of HDFS file in which the data is backed up. */
 	private String _hdfsFileName = null; // file name and path
 
+	/**
+	 * 
+	 */
 	protected FrameObject() {
 		super(DataType.FRAME, ValueType.UNKNOWN);
 	}
 	
-	public FrameObject(String fname, FrameBlock data) {
+	/**
+	 * 
+	 * @param fname
+	 */
+	public FrameObject(String fname) {
 		this();
 		setFileName(fname);
-		setData(data);
+	}
+	
+	/**
+	 * Copy constructor that copies meta data but NO data.
+	 * 
+	 * @param fo
+	 */
+	public FrameObject(FrameObject fo) {
+		super(fo);
+		_hdfsFileName = fo._hdfsFileName;
 	}
 	
 	public void setFileName(String fname) {
@@ -52,24 +67,57 @@ public class FrameObject extends CacheableData
 		return _hdfsFileName;
 	}
 	
-	/**
-	 * NOTE: temporary API until integrated into caching.
-	 * 
-	 * @param block
-	 */
-	public void setData(FrameBlock data) {
-		_data = data;
-	}
-	
-	/**
-	 * NOTE: temporary API until integrated into caching.
-	 * 
-	 * @return
-	 */
-	public FrameBlock getData() {
+	////////////////////////////////////
+	// high-level cache API (pseudo-integrated)
+
+
+	@Override
+	public FrameBlock acquireRead() 
+		throws CacheException 
+	{
+		//read in=memory frame if necessary
+		if( _data == null ) {
+			// TODO @Arvind: please integrate readers here for now
+		}
+		
 		return _data;
 	}
-	
+
+	@Override
+	public FrameBlock acquireModify() 
+		throws CacheException 
+	{
+		return _data;
+	}
+
+	@Override
+	public FrameBlock acquireModify(FrameBlock newData) 
+		throws CacheException 
+	{
+		return _data = newData;
+	}
+
+	@Override
+	public void release() 
+		throws CacheException 
+	{
+		//do nothing
+	}
+
+	@Override
+	public void clearData() 
+		throws CacheException 
+	{
+		if( isCleanupEnabled() )
+			_data = null;
+	}
+
+	@Override
+	public void exportData() 
+		throws CacheException 
+	{
+		// TODO @Arvind: please integrate writers here for now	
+	}
 	
 	////////////////////////////////////
 	// currently unsupported caching api
@@ -80,8 +128,7 @@ public class FrameObject extends CacheableData
 	}
 
 	@Override
-	protected void evictBlobFromMemory(MatrixBlock mb) throws CacheIOException {
-		//TODO refactoring api (no dependence on matrixblock)
+	protected void evictBlobFromMemory(FrameBlock mb) throws CacheIOException {
 		throw new RuntimeException("Caching not implemented yet for FrameObject.");
 	}
 

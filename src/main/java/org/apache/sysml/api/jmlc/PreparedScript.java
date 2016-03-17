@@ -237,14 +237,14 @@ public class PreparedScript
 		String scratch_space = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
 		
 		//create new frame object
-		String fname = scratch_space+"/"+varname;
-		FrameObject fo = new FrameObject(fname, frame);
+		FrameObject fo = new FrameObject(scratch_space+"/"+varname);
+		fo.acquireModify(frame);
+		fo.release();
 		
 		//put create matrix wrapper into symbol table
 		_vars.put(varname, fo);
 		if( reuse ) {
-			//TODO buffer pool integration
-			//mo.enableCleanup(false); //prevent cleanup
+			fo.enableCleanup(false); //prevent cleanup
 			_inVarReuse.put(varname, fo);
 		}
 	}

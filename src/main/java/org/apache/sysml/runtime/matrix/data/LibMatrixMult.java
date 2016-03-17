@@ -188,15 +188,16 @@ public class LibMatrixMult
 			int blklen = (int)(Math.ceil((double)ru/k));
 			for( int i=0; i<k & i*blklen<ru; i++ )
 				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2, i*blklen, Math.min((i+1)*blklen, ru)));
-			pool.invokeAll(tasks);	
+			//execute tasks
+			List<Future<Object>> taskret = pool.invokeAll(tasks);	
 			pool.shutdown();
 			//aggregate partial results (nnz, ret for vector/matrix)
 			ret.nonZeros = 0; //reset after execute
-			for( MatrixMultTask task : tasks ) {
+			for( Future<Object> task : taskret ) {
 				if( pm2 )
-					vectAdd(task.getResult().denseBlock, ret.denseBlock, 0, 0, ret.rlen*ret.clen);
+					vectAdd((double[])task.get(), ret.denseBlock, 0, 0, ret.rlen*ret.clen);
 				else
-					ret.nonZeros += task.getPartialNnz();
+					ret.nonZeros += (Long)task.get();
 			}
 			if( pm2 )
 				ret.recomputeNonZeros();
@@ -304,11 +305,12 @@ public class LibMatrixMult
 			blklen += (blklen%24 != 0)?24-blklen%24:0;
 			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
 				tasks.add(new MatrixMultChainTask(mX, mV, mW, ret, ct, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
-			pool.invokeAll(tasks);	
+			//execute tasks
+			List<Future<double[]>> taskret = pool.invokeAll(tasks);	
 			pool.shutdown();
 			//aggregate partial results
-			for( MatrixMultChainTask task : tasks )
-				vectAdd(task.getResult().denseBlock, ret.denseBlock, 0, 0, mX.clen);
+			for( Future<double[]> task : taskret )
+				vectAdd(task.get(), ret.denseBlock, 0, 0, mX.clen);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -680,13 +682,15 @@ public class LibMatrixMult
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 				tasks.add(new MatrixMultWSigmoidTask(mW, mU, mV, ret, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
-			pool.invokeAll(tasks);
+			//execute tasks
+			List<Future<Long>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
+			//aggregate partial nnz and check for errors
 			ret.nonZeros = 0; //reset after execute
-			for( MatrixMultWSigmoidTask task : tasks )
-				ret.nonZeros += task.getPartialNnz();
+			for( Future<Long> task : taskret )
+				ret.nonZeros += task.get();
 		} 
-		catch (InterruptedException e) {
+		catch (Exception e) {
 			throw new DMLRuntimeException(e);
 		}
 
@@ -973,13 +977,15 @@ public class LibMatrixMult
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
 				tasks.add(new MatrixMultWuTask(mW, mU, mV, ret, wt, fn, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
-			pool.invokeAll(tasks);
+			//execute tasks
+			List<Future<Long>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
+			//aggregate partial nnz and check for errors
 			ret.nonZeros = 0; //reset after execute
-			for( MatrixMultWuTask task : tasks )
-				ret.nonZeros += task.getPartialNnz();
+			for( Future<Long> task : taskret )
+				ret.nonZeros += task.get();
 		} 
-		catch (InterruptedException e) {
+		catch (Exception e) {
 			throw new DMLRuntimeException(e);
 		}
 
@@ -4059,7 +4065,6 @@ public class LibMatrixMult
 		private boolean _pm2 = false; //par over m2
 		private int _rl = -1;
 		private int _ru = -1;
-		private long _nnz = -1;
 
 		protected MatrixMultTask( MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, boolean pm2, int rl, int ru )
 		{
@@ -4100,17 +4105,9 @@ public class LibMatrixMult
 			
 			//maintain block nnz (upper bounds inclusive)
 			if( !_pm2 )
-				_nnz = _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
-			
-			return null;
-		}
-		
-		public long getPartialNnz(){
-			return _nnz;
-		}
-		
-		public MatrixBlock getResult(){
-			return _ret;
+				return _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
+			else
+				return _ret.getDenseBlock();
 		}
 	}
 	
@@ -4118,7 +4115,7 @@ public class LibMatrixMult
 	 * 
 	 * 
 	 */
-	private static class MatrixMultChainTask implements Callable<Object> 
+	private static class MatrixMultChainTask implements Callable<double[]> 
 	{
 		private MatrixBlock _m1  = null;
 		private MatrixBlock _m2  = null;
@@ -4144,7 +4141,7 @@ public class LibMatrixMult
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
+		public double[] call() throws DMLRuntimeException
 		{
 			if( _m1.sparse )
 				matrixMultChainSparse(_m1, _m2, _m3, _ret, _ct, _rl, _ru);
@@ -4155,11 +4152,7 @@ public class LibMatrixMult
 			//to prevent synchronization (sequential aggregation led to better 
 			//performance after JIT)
 			
-			return null;
-		}
-		
-		public MatrixBlock getResult() {
-			return _ret;
+			return _ret.getDenseBlock();
 		}
 	}
 
@@ -4282,7 +4275,7 @@ public class LibMatrixMult
 	 * 
 	 * 
 	 */
-	private static class MatrixMultWSigmoidTask implements Callable<Object> 
+	private static class MatrixMultWSigmoidTask implements Callable<Long> 
 	{
 		private MatrixBlock _mW = null;
 		private MatrixBlock _mU = null;
@@ -4291,7 +4284,6 @@ public class LibMatrixMult
 		private WSigmoidType _wt = null;
 		private int _rl = -1;
 		private int _ru = -1;
-		private long _nnz = -1;
 		
 		protected MatrixMultWSigmoidTask(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int rl, int ru) 
 			throws DMLRuntimeException
@@ -4306,7 +4298,7 @@ public class LibMatrixMult
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
+		public Long call() throws DMLRuntimeException
 		{
 			//core weighted square sum mm computation
 			if( !_mW.sparse && !_mU.sparse && !_mV.sparse && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() )
@@ -4317,13 +4309,7 @@ public class LibMatrixMult
 				matrixMultWSigmoidGeneric(_mW, _mU, _mV, _ret, _wt, _rl, _ru);
 			
 			//maintain block nnz (upper bounds inclusive)
-			_nnz = _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
-			
-			return null;
-		}
-		
-		public long getPartialNnz(){
-			return _nnz;
+			return _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
 		}
 	}
 	
@@ -4422,7 +4408,7 @@ public class LibMatrixMult
 	/**
 	 * 
 	 */
-	private static class MatrixMultWuTask implements Callable<Object> 
+	private static class MatrixMultWuTask implements Callable<Long> 
 	{
 		private MatrixBlock _mW = null;
 		private MatrixBlock _mU = null;
@@ -4432,7 +4418,6 @@ public class LibMatrixMult
 		private ValueFunction _fn = null;
 		private int _rl = -1;
 		private int _ru = -1;
-		private long _nnz = -1;
 		
 		protected MatrixMultWuTask(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WUMMType wt, ValueFunction fn, int rl, int ru) 
 			throws DMLRuntimeException
@@ -4448,7 +4433,7 @@ public class LibMatrixMult
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
+		public Long call() throws DMLRuntimeException
 		{
 			//core weighted square sum mm computation
 			if( !_mW.sparse && !_mU.sparse && !_mV.sparse && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() )
@@ -4459,13 +4444,7 @@ public class LibMatrixMult
 				matrixMultWuMMGeneric(_mW, _mU, _mV, _ret, _wt, _fn, _rl, _ru);
 			
 			//maintain block nnz (upper bounds inclusive)
-			_nnz = _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
-			
-			return null;
-		}
-		
-		public long getPartialNnz() {
-			return _nnz;
+			return _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
 		}
 	}
 }

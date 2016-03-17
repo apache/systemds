@@ -20,6 +20,7 @@
 package org.apache.sysml.hops;
 
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,6 +34,7 @@ import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -859,6 +861,20 @@ public class OptimizerUtils
 		//are integers since we use a single matrixblock to represent the
 		//entire matrix
 		return (rows <= Integer.MAX_VALUE && cols<=Integer.MAX_VALUE);
+	}
+	
+	/**
+	 * Returns false if schema and names are not properly specified; other true
+	 * Length to be > 0, and length of both to be equal.
+	 * 
+	 * @param schema
+	 * @param names
+	 * @return
+	 */
+	public static boolean isValidCPDimensions( List<ValueType> schema, List<String> names )
+	{
+		// Length of schema and names to be same, and > 0.
+		return (schema != null && names != null && schema.size() > 0 && schema.size() == names.size());
 	}
 	
 	/**

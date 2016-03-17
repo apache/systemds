@@ -23,6 +23,7 @@ import java.util.HashMap;
 
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Statement;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
@@ -33,10 +34,13 @@ import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
 import org.apache.sysml.runtime.matrix.JobReturn;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.transform.DataTransform;
+import org.apache.sysml.runtime.transform.decode.Decoder;
+import org.apache.sysml.runtime.transform.decode.DecoderFactory;
 
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
@@ -120,7 +124,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
 		else if (   opcode.equals("transform")
-				 || opcode.equals("transformapply")) 
+				 || opcode.equals("transformapply")
+				 || opcode.equals("transformdecode")) 
 		{
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
@@ -247,6 +252,20 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			
 			MatrixBlock mbout = DataTransform.cpDataTransform(getParameterMap(), dataobj.getData(), metaobj.getData() );
 			ec.setMatrixOutput(output.getName(), mbout);
+		}
+		else if ( opcode.equalsIgnoreCase("transformdecode")) {
+			//sanity checks valid inputs
+			if( !(ec.getVariable(params.get("target")) instanceof MatrixObject) )
+				throw new DMLRuntimeException("Transformdecode requires MatrixObject input for 'target'.");
+			if( !(ec.getVariable(params.get("meta")) instanceof FrameObject) )
+				throw new DMLRuntimeException("Transformdecode requires FrameObject input for 'meta'.");
+			
+			MatrixBlock dataobj = ec.getMatrixInput(params.get("target"));
+			FrameObject metaobj = (FrameObject) ec.getVariable(params.get("meta"));
+			Decoder decoder = DecoderFactory.createDecoder(getParameterMap().get("spec"), null, metaobj.getData());
+			FrameBlock ret = decoder.decode(dataobj, new FrameBlock(dataobj.getNumColumns(), ValueType.STRING));
+			ec.setVariable(output.getName(), new FrameObject(output.getName(), ret));
+			ec.releaseMatrixInput(params.get("target"));
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

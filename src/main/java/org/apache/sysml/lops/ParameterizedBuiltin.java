@@ -41,7 +41,7 @@ public class ParameterizedBuiltin extends Lop
 	public enum OperationTypes { 
 		INVALID, CDF, INVCDF, RMEMPTY, REPLACE, REXPAND, 
 		PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
-		TRANSFORM, TRANSFORMAPPLY,
+		TRANSFORM, TRANSFORMAPPLY, TRANSFORMDECODE,
 	};
 	
 	private OperationTypes _operation;
@@ -249,6 +249,12 @@ public class ParameterizedBuiltin extends Lop
 			}			
 			case TRANSFORMAPPLY: {
 				sb.append("transformapply");
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(compileGenericParamMap(_inputParams));
+				break;
+			}
+			case TRANSFORMDECODE: {
+				sb.append("transformdecode");
 				sb.append(OPERAND_DELIMITOR);
 				sb.append(compileGenericParamMap(_inputParams));
 				break;

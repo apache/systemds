@@ -1990,6 +1990,13 @@ public class DMLTranslator
 									target.getValueType(), ParamBuiltinOp.TRANSFORMAPPLY, 
 									paramHops);
 			break;	
+		
+		case TRANSFORMDECODE:
+			currBuiltinOp = new ParameterizedBuiltinOp(
+									target.getName(), target.getDataType(), 
+									target.getValueType(), ParamBuiltinOp.TRANSFORMDECODE, 
+									paramHops);
+			break;	
 			
 			
 		default:

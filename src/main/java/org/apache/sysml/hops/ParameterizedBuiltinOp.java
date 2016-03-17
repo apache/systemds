@@ -160,73 +160,54 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 					.constructLops());
 		}
 
-		if ( _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF ) 
-		{
-			// simply pass the hashmap of parameters to the lop
-			// set the lop for the function call (always CP)
-			
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(),
-					getValueType());
-			
-			setOutputDimensions(pbilop);
-			setLineNumbers(pbilop);
-			setLops(pbilop);
-		} 
-		else if (_op == ParamBuiltinOp.GROUPEDAGG) 
-		{
-			ExecType et = optFindExecType();
-			
-			constructLopsGroupedAggregate(inputlops, et);
+		switch( _op ) {		
+			case GROUPEDAGG: { 
+				ExecType et = optFindExecType();
+				constructLopsGroupedAggregate(inputlops, et);
+				break;
+			}
+			case RMEMPTY: {
+				ExecType et = optFindExecType();
+				et = (et == ExecType.MR && !COMPILE_PARALLEL_REMOVEEMPTY ) ? ExecType.CP_FILE : et;
+				constructLopsRemoveEmpty(inputlops, et);
+				break;
+			} 
+			case REXPAND: {
+				ExecType et = optFindExecType();
+				constructLopsRExpand(inputlops, et);
+				break;
+			} 
+			case TRANSFORM: {
+				ExecType et = optFindExecType();
+				
+				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
+						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
+				setOutputDimensions(pbilop);
+				setLineNumbers(pbilop);
+				// output of transform is always in CSV format
+				// to produce a blocked output, this lop must be 
+				// fed into CSV Reblock lop.
+				pbilop.getOutputParameters().setFormat(Format.CSV);
+				setLops(pbilop);
+				break;
+			}
+			case CDF:
+			case INVCDF: 
+			case REPLACE:
+			case TRANSFORMAPPLY: 
+			case TRANSFORMDECODE: { 
+				ExecType et = optFindExecType();			
+				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
+						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
+				setOutputDimensions(pbilop);
+				setLineNumbers(pbilop);
+				setLops(pbilop);
+				break;
+			}
+			default:
+				throw new HopsException("Unknown ParamBuiltinOp: "+_op);
 		}
-		else if( _op == ParamBuiltinOp.RMEMPTY ) 
-		{
-			ExecType et = optFindExecType();
-			et = (et == ExecType.MR && !COMPILE_PARALLEL_REMOVEEMPTY ) ? ExecType.CP_FILE : et;
-			
-			constructLopsRemoveEmpty(inputlops, et);
-		} 
-		else if(   _op == ParamBuiltinOp.REPLACE ) 
-		{
-			ExecType et = optFindExecType();
-			
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
-			
-			setOutputDimensions(pbilop);
-			setLineNumbers(pbilop);
-			setLops(pbilop);
-		}
-		else if( _op == ParamBuiltinOp.REXPAND ) 
-		{
-			ExecType et = optFindExecType();
-			
-			constructLopsRExpand(inputlops, et);
-		} 
-		else if ( _op == ParamBuiltinOp.TRANSFORM ) 
-		{
-			ExecType et = optFindExecType();
-			
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
-			setOutputDimensions(pbilop);
-			setLineNumbers(pbilop);
-			// output of transform is always in CSV format
-			// to produce a blocked output, this lop must be 
-			// fed into CSV Reblock lop.
-			pbilop.getOutputParameters().setFormat(Format.CSV);
-			setLops(pbilop);
-		}
-		else if ( _op == ParamBuiltinOp.TRANSFORMAPPLY ) 
-		{
-			ExecType et = optFindExecType();			
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
-			setOutputDimensions(pbilop);
-			setLineNumbers(pbilop);
-			setLops(pbilop);
-		}
-
+		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
 				

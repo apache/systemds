@@ -823,11 +823,12 @@ public class LibMatrixMult
 	 * @param mW
 	 * @param mU
 	 * @param mV
+	 * @param mX
 	 * @param ret
 	 * @param wt
 	 * @throws DMLRuntimeException
 	 */
-	public static void matrixMultWCeMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt) 
+	public static void matrixMultWCeMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock mX, MatrixBlock ret, WCeMMType wt) 
 		throws DMLRuntimeException 
 	{
 		//check for empty result 
@@ -842,13 +843,14 @@ public class LibMatrixMult
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 		
-		//core weighted div mm computation
-		if( !mW.sparse && !mU.sparse && !mV.sparse && !mU.isEmptyBlock() && !mV.isEmptyBlock() )
-			matrixMultWCeMMDense(mW, mU, mV, ret, wt, 0, mW.rlen);
-		else if( mW.sparse && !mU.sparse && !mV.sparse && !mU.isEmptyBlock() && !mV.isEmptyBlock())
-			matrixMultWCeMMSparseDense(mW, mU, mV, ret, wt, 0, mW.rlen);
+		//core weighted cross entropy mm computation
+		boolean scalarX = wt.hasFourInputs();
+		if( !mW.sparse && !mU.sparse && (mX==null || !mX.sparse || scalarX) && !mV.sparse && !mU.isEmptyBlock() && !mV.isEmptyBlock() )
+			matrixMultWCeMMDense(mW, mU, mV, mX, ret, wt, 0, mW.rlen);
+		else if( mW.sparse && !mU.sparse && (mX==null || mX.sparse || scalarX) && !mV.sparse && !mU.isEmptyBlock() && !mV.isEmptyBlock())
+			matrixMultWCeMMSparseDense(mW, mU, mV, mX, ret, wt, 0, mW.rlen);
 		else
-			matrixMultWCeMMGeneric(mW, mU, mV, ret, wt, 0, mW.rlen);
+			matrixMultWCeMMGeneric(mW, mU, mV, mX, ret, wt, 0, mW.rlen);
 		
 		//System.out.println("MMWCe "+wt.toString()+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
 		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
@@ -856,15 +858,16 @@ public class LibMatrixMult
 	
 	/**
 	 * 
-	 * @param mX
+	 * @param mW
 	 * @param mU
 	 * @param mV
+	 * @param mX
 	 * @param ret
 	 * @param wt
 	 * @param k
 	 * @throws DMLRuntimeException
 	 */
-	public static void matrixMultWCeMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt, int k) 
+	public static void matrixMultWCeMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock mX, MatrixBlock ret, WCeMMType wt, int k) 
 		throws DMLRuntimeException 
 	{
 		//check for empty result 
@@ -885,7 +888,7 @@ public class LibMatrixMult
 			ArrayList<MatrixMultWCeTask> tasks = new ArrayList<MatrixMultWCeTask>();
 			int blklen = (int)(Math.ceil((double)mW.rlen/k));
 			for( int i=0; i<k & i*blklen<mW.rlen; i++ )
-				tasks.add(new MatrixMultWCeTask(mW, mU, mV, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
+				tasks.add(new MatrixMultWCeTask(mW, mU, mV, mX, wt, i*blklen, Math.min((i+1)*blklen, mW.rlen)));
 			List<Future<Double>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
 			//aggregate partial results
@@ -2820,12 +2823,13 @@ public class LibMatrixMult
 	 * @param mW
 	 * @param mU
 	 * @param mV
+	 * @param mX
 	 * @param ret
 	 * @param wt
 	 * @param rl
 	 * @param ru
 	 */
-	private static void matrixMultWCeMMDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt, int rl, int ru)
+	private static void matrixMultWCeMMDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock mX, MatrixBlock ret, WCeMMType wt, int rl, int ru)
 	{
 		double[] w = mW.denseBlock;
 		double[] u = mU.denseBlock;
@@ -2833,6 +2837,7 @@ public class LibMatrixMult
 		final int n = mW.clen;
 		final int cd = mU.clen;
 		double wceval = 0;
+		final double eps = wt.hasFourInputs() ? mX.quickGetValue(0, 0) : 0;
 		
 		// approach: iterate over all cells of X 
 		//cache-conscious blocking: due to blocksize constraint (default 1000),
@@ -2850,7 +2855,7 @@ public class LibMatrixMult
 						double wij = w[ix+j];
 						if( wij != 0 ) {
 							double uvij = dotProduct(u, v, uix, vix, cd);
-							wceval += wij * FastMath.log(uvij);
+							wceval += wij * FastMath.log(uvij + eps);
 						}
 					}
 		}
@@ -2863,18 +2868,20 @@ public class LibMatrixMult
 	 * @param mW
 	 * @param mU
 	 * @param mV
+	 * @param mX
 	 * @param ret
 	 * @param wt
 	 * @param rl
 	 * @param ru
 	 */
-	private static void matrixMultWCeMMSparseDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt, int rl, int ru)
+	private static void matrixMultWCeMMSparseDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock mX, MatrixBlock ret, WCeMMType wt, int rl, int ru)
 	{
 		SparseBlock w = mW.sparseBlock;
 		double[] u = mU.denseBlock;
 		double[] v = mV.denseBlock;
 		final int cd = mU.clen;
 		double wceval = 0; 
+		final double eps = wt.hasFourInputs() ? mX.quickGetValue(0, 0) : 0;
 		
 		// approach: iterate over all cells of X and 
 		for( int i=rl, uix=rl*cd; i<ru; i++, uix+=cd ) {
@@ -2885,7 +2892,7 @@ public class LibMatrixMult
 				double[] wval = w.values(i);
 				for( int k=wpos; k<wpos+wlen; k++ ) {
 					double uvij = dotProduct(u, v, uix, wix[k]*cd, cd);
-					wceval += wval[k] * FastMath.log(uvij);					
+					wceval += wval[k] * FastMath.log(uvij + eps);					
 				}
 			}
 		}
@@ -2904,12 +2911,13 @@ public class LibMatrixMult
 	 * @param rl
 	 * @param ru
 	 */
-	private static void matrixMultWCeMMGeneric(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WCeMMType wt, int rl, int ru)
+	private static void matrixMultWCeMMGeneric(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock mX, MatrixBlock ret, WCeMMType wt, int rl, int ru)
 	{
 		final int n = mW.clen; 
 		final int cd = mU.clen;
 		double wceval = 0; 
-		
+		final double eps = wt.hasFourInputs() ? mX.quickGetValue(0, 0) : 0;
+
 		//approach: iterate over non-zeros of w, selective mm computation
 		if( mW.sparse ) //SPARSE
 		{
@@ -2923,7 +2931,7 @@ public class LibMatrixMult
 					double[] wval = w.values(i);
 					for( int k=wpos; k<wpos+wlen; k++ ) {
 						double uvij = dotProductGeneric(mU, mV, i, wix[k], cd);
-						wceval += wval[k] * FastMath.log(uvij);	
+						wceval += wval[k] * FastMath.log(uvij + eps);	
 					}
 				}	
 		}
@@ -2936,7 +2944,7 @@ public class LibMatrixMult
 					double wij = w[ix];
 					if( wij != 0 ) {
 						double uvij = dotProductGeneric(mU, mV, i, j, cd);
-						wceval += wij * FastMath.log(uvij);	
+						wceval += wij * FastMath.log(uvij + eps);	
 					}
 				}
 		}
@@ -4369,17 +4377,19 @@ public class LibMatrixMult
 		private MatrixBlock _mW = null;
 		private MatrixBlock _mU = null;
 		private MatrixBlock _mV = null;
+		private MatrixBlock _mX = null;
 		private MatrixBlock _ret = null;
 		private WCeMMType _wt = null;
 		private int _rl = -1;
 		private int _ru = -1;
 
-		protected MatrixMultWCeTask(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, WCeMMType wt, int rl, int ru) 
+		protected MatrixMultWCeTask(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock mX, WCeMMType wt, int rl, int ru) 
 			throws DMLRuntimeException
 		{
 			_mW = mW;
 			_mU = mU;
 			_mV = mV;
+			_mX = mX;
 			_wt = wt;
 			_rl = rl;
 			_ru = ru;
@@ -4392,13 +4402,14 @@ public class LibMatrixMult
 		@Override
 		public Double call() throws DMLRuntimeException
 		{
-			//core weighted div mm computation
-			if( !_mW.sparse && !_mU.sparse && !_mV.sparse && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() )
-				matrixMultWCeMMDense(_mW, _mU, _mV, _ret, _wt, _rl, _ru);
-			else if( _mW.sparse && !_mU.sparse && !_mV.sparse && !_mU.isEmptyBlock() && !_mV.isEmptyBlock())
-				matrixMultWCeMMSparseDense(_mW, _mU, _mV, _ret, _wt, _rl, _ru);
+			//core weighted cross entropy mm computation
+			boolean scalarX = _wt.hasFourInputs();
+			if( !_mW.sparse && !_mU.sparse && !_mV.sparse && (_mX==null || !_mX.sparse || scalarX) && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() )
+				matrixMultWCeMMDense(_mW, _mU, _mV, _mX, _ret, _wt, _rl, _ru);
+			else if( _mW.sparse && !_mU.sparse && !_mV.sparse && (_mX==null || _mX.sparse || scalarX) && !_mU.isEmptyBlock() && !_mV.isEmptyBlock())
+				matrixMultWCeMMSparseDense(_mW, _mU, _mV, _mX, _ret, _wt, _rl, _ru);
 			else
-				matrixMultWCeMMGeneric(_mW, _mU, _mV, _ret, _wt, _rl, _ru);
+				matrixMultWCeMMGeneric(_mW, _mU, _mV, _mX, _ret, _wt, _rl, _ru);
 			
 			
 			return _ret.quickGetValue(0, 0);

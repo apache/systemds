@@ -93,6 +93,16 @@ public class QuaternaryOperator extends Operator
 	}
 	
 	/**
+	 * wcemm w/epsilon
+	 * 
+	 * @param wt
+	 */
+	public QuaternaryOperator( WCeMMType wt, double epsilon) {
+		wtype4 = wt;
+		eps = epsilon;
+	}
+	
+	/**
 	 * wumm
 	 * 
 	 * @param wt
@@ -115,7 +125,8 @@ public class QuaternaryOperator extends Operator
 	 */
 	public boolean hasFourInputs() {
 		return (wtype1 != null && wtype1.hasFourInputs())
-			|| (wtype3 != null && wtype3.hasFourInputs());
+			|| (wtype3 != null && wtype3.hasFourInputs())
+			|| (wtype4 != null && wtype4.hasFourInputs());
 	}
 	
 	/**

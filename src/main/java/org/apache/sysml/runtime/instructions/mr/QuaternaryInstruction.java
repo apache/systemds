@@ -206,7 +206,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 		{
 			boolean isRed = opcode.startsWith("red");
 			
-			//check number of fields (3 inputs, output, type)
+			//check number of fields (4 inputs, output, type)
 			if( isRed )
 				InstructionUtils.checkNumFields ( str, 8 );
 			else
@@ -232,12 +232,13 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 		else //wsigmoid / wcemm
 		{
 			boolean isRed = opcode.startsWith("red");
+			int addInput4 = (opcode.endsWith("wcemm")) ? 1 : 0;
 			
-			//check number of fields (3 inputs, output, type)
+			//check number of fields (3 or 4 inputs, output, type)
 			if( isRed )
-				InstructionUtils.checkNumFields ( str, 7 );
+				InstructionUtils.checkNumFields ( str, 7 + addInput4 );
 			else
-				InstructionUtils.checkNumFields ( str, 5 );
+				InstructionUtils.checkNumFields ( str, 5 + addInput4 );
 				
 			//parse instruction parts (without exec type)
 			String[] parts = InstructionUtils.getInstructionParts(str);
@@ -245,16 +246,16 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			byte in1 = Byte.parseByte(parts[1]);
 			byte in2 = Byte.parseByte(parts[2]);
 			byte in3 = Byte.parseByte(parts[3]);
-			byte out = Byte.parseByte(parts[4]);
+			byte out = Byte.parseByte(parts[4 + addInput4]);
 			
 			//in mappers always through distcache, in reducers through distcache/shuffle
-			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
-			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6 + addInput4]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7 + addInput4]) : true;
 			
 			if( opcode.endsWith("wsigmoid") )
 				return new QuaternaryInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
 			else if( opcode.endsWith("wcemm") )
-				return new QuaternaryInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
+				return new QuaternaryInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[6])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
 		}
 		
 		return null;

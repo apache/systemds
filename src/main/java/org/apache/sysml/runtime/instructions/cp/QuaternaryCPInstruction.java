@@ -65,7 +65,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		String opcode = parts[0];
 		
-		if( opcode.equalsIgnoreCase("wsloss") || opcode.equalsIgnoreCase("wdivmm") ) 
+		if( opcode.equalsIgnoreCase("wsloss") || opcode.equalsIgnoreCase("wdivmm") || opcode.equalsIgnoreCase("wcemm") ) 
 		{
 			InstructionUtils.checkNumFields ( parts, 7 );
 			
@@ -80,8 +80,10 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WeightsType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);	
 			else if( opcode.equalsIgnoreCase("wdivmm") )
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);				
+			else if( opcode.equalsIgnoreCase("wcemm") ) 		
+				return new QuaternaryCPInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);
 		}
-		else if( opcode.equalsIgnoreCase("wsigmoid") || opcode.equalsIgnoreCase("wcemm") )
+		else if( opcode.equalsIgnoreCase("wsigmoid") )
 		{
 			InstructionUtils.checkNumFields ( parts, 6 );
 			
@@ -93,8 +95,6 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 			
 			if( opcode.equalsIgnoreCase("wsigmoid") )
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
-			else if( opcode.equalsIgnoreCase("wcemm") ) 		
-				return new QuaternaryCPInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
 		}
 		else if( opcode.equalsIgnoreCase("wumm") )
 		{
@@ -143,7 +143,8 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction
 		ec.releaseMatrixInput(input2.getName());
 		ec.releaseMatrixInput(input3.getName());
 		if( qop.wtype1 != null || qop.wtype4 != null ) { //wsloss/wcemm
-			if( qop.wtype1 != null && qop.wtype1.hasFourInputs() )
+			if( (qop.wtype1 != null && qop.wtype1.hasFourInputs()) ||
+				(qop.wtype4 != null && qop.wtype4.hasFourInputs()) )
 				if (input4.getDataType() == DataType.MATRIX) {
 					ec.releaseMatrixInput(input4.getName());
 				}

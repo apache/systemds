@@ -43,12 +43,15 @@ public class FrameReaderTextCSV extends FrameReader
 	 * @param fname
 	 * @param schema
 	 * @param names
+	 * @param rlen
+	 * @param clen
 	 * @return
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 */
 	@Override
-	public FrameBlock readFrameFromHDFS(String fname, List<ValueType> schema, List<String> names)
+	public FrameBlock readFrameFromHDFS(String fname, List<ValueType> schema, List<String> names,
+			long rlen, long clen)
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output frame block
@@ -57,17 +60,4 @@ public class FrameReaderTextCSV extends FrameReader
 		return ret;
 	}
 	
-	/**
-	 * 
-	 * @param schema
-	 * @return
-	 */
-	@Override
-	public List<ValueType> getSchema( String fname )
-		throws IOException, DMLRuntimeException
-	{
-		List<ValueType> schema = null;	//TODO: Need to implement this function
-		return schema;
-	}
-
 }

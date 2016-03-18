@@ -48,54 +48,65 @@ public abstract class FrameReader
 	 * @param fname
 	 * @param schema
 	 * @param names
+	 * @param rlen
+	 * @param clen
 	 * @return
 	 */
-	public abstract FrameBlock readFrameFromHDFS( String fname, List<ValueType> schema, List<String> names )
+	public abstract FrameBlock readFrameFromHDFS( String fname, List<ValueType> schema, List<String> names,
+			long rlen, long clen)
 		throws IOException, DMLRuntimeException;
 	
 	/**
 	 * 
 	 * @param fname
 	 * @param schema
-	 * @param names
+	 * @param rlen
+	 * @param clen
 	 * @return
 	 */
-	public FrameBlock readFrameFromHDFS( String fname, List<ValueType> schema )
+	public FrameBlock readFrameFromHDFS( String fname, List<ValueType> schema, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
-		return readFrameFromHDFS(fname, schema, getDefColNames(schema.size()));
+		return readFrameFromHDFS(fname, schema, getDefColNames(schema.size()), rlen, clen);
 	}
 	
 	/**
 	 * 
 	 * @param fname
+	 * @param rlen
+	 * @param clen
 	 * @return
 	 */
-	public FrameBlock readFrameFromHDFS( String fname )
+	public FrameBlock readFrameFromHDFS( String fname, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
-		List<ValueType> schema = getSchema(fname);
-		return readFrameFromHDFS(fname, schema, getDefColNames(schema.size()));
+		return readFrameFromHDFS(fname, getDefSchema(clen), getDefColNames(clen), rlen, clen);
 	}
 	
 	/**
 	 * 
-	 * @param schema
+	 * @param iNumColumns
 	 * @return
 	 */
-	public abstract List<ValueType> getSchema( String fname )
-		throws IOException, DMLRuntimeException;
+	public List<ValueType> getDefSchema( long lNumColumns )
+		throws IOException, DMLRuntimeException
+	{
+		List<ValueType> schema = new ArrayList<ValueType>();
+		for (int i=0; i < lNumColumns; ++i)
+			schema.add(ValueType.STRING);
+		return schema;
+	}
 
 	/**
 	 * 
 	 * @param iNumColumns
 	 * @return
 	 */
-	public List<String> getDefColNames( int iNumColumns )
+	public List<String> getDefColNames( long lNumColumns )
 		throws IOException, DMLRuntimeException
 	{
 		List<String> colNames = new ArrayList<String>();
-		for (int i=0; i < iNumColumns; ++i)
+		for (int i=0; i < lNumColumns; ++i)
 			colNames.add("C"+i);
 		return colNames;
 	}

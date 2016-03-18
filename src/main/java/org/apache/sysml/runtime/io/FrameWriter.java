@@ -39,29 +39,15 @@ public abstract class FrameWriter
 
 	/**
 	 * 
+	 * @param src
 	 * @param fname
-	 * @param schema
-	 * @param names
 	 * @return
 	 * @throws IOException
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
-	public abstract void writeFrameToHDFS( FrameBlock src, String fname, List<ValueType> schema, List<String> names )
+	public abstract void writeFrameToHDFS( FrameBlock src, String fname )
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException;
-	
-	/**
-	 * Writes a minimal entry to represent an empty matrix on hdfs.
-	 * 
-	 * @param fname
-	 * @param schema
-	 * @param names
-	 * @return
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 */
-	public abstract void writeEmptyFrameToHDFS( String fname, List<ValueType> schema, List<String> names )
-		throws IOException, DMLRuntimeException;
 	
 	/**
 	 * 

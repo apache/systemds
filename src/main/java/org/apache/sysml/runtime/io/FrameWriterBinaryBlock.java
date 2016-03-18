@@ -20,52 +20,25 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
-import java.util.List;
 
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 
 public class FrameWriterBinaryBlock extends FrameWriter
 {
-	protected int _replication = -1;
-	
-	public FrameWriterBinaryBlock( int replication )
-	{
-		_replication  = replication;
-	}
-
 	/**
 	 * @param src
 	 * @param fname
-	 * @param schema
-	 * @param names
 	 * @return
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 * @throws DMLUnsupportedOperationException 
 	 */
 	@Override
-	public void writeFrameToHDFS( FrameBlock src, String fname, List<ValueType> schema, List<String> names )
+	public void writeFrameToHDFS( FrameBlock src, String fname )
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
 	{
 	}
 
-	/**
-	 * @param fname
-	 * @param schema
-	 * @param names
-	 * @return
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 */
-	@Override
-//	@SuppressWarnings("deprecation")
-	public void writeEmptyFrameToHDFS( String fname, List<ValueType> schema, List<String> names )
-		throws IOException, DMLRuntimeException 
-		
-	{
-	}
-	
 }

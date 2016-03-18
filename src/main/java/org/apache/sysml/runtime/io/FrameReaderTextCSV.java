@@ -56,5 +56,18 @@ public class FrameReaderTextCSV extends FrameReader
 		
 		return ret;
 	}
+	
+	/**
+	 * 
+	 * @param schema
+	 * @return
+	 */
+	@Override
+	public List<ValueType> getSchema( String fname )
+		throws IOException, DMLRuntimeException
+	{
+		List<ValueType> schema = null;	//TODO: Need to implement this function
+		return schema;
+	}
 
 }

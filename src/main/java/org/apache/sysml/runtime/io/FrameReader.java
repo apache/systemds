@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.io;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -52,6 +53,53 @@ public abstract class FrameReader
 	public abstract FrameBlock readFrameFromHDFS( String fname, List<ValueType> schema, List<String> names )
 		throws IOException, DMLRuntimeException;
 	
+	/**
+	 * 
+	 * @param fname
+	 * @param schema
+	 * @param names
+	 * @return
+	 */
+	public FrameBlock readFrameFromHDFS( String fname, List<ValueType> schema )
+		throws IOException, DMLRuntimeException
+	{
+		return readFrameFromHDFS(fname, schema, getDefColNames(schema.size()));
+	}
+	
+	/**
+	 * 
+	 * @param fname
+	 * @return
+	 */
+	public FrameBlock readFrameFromHDFS( String fname )
+		throws IOException, DMLRuntimeException
+	{
+		List<ValueType> schema = getSchema(fname);
+		return readFrameFromHDFS(fname, schema, getDefColNames(schema.size()));
+	}
+	
+	/**
+	 * 
+	 * @param schema
+	 * @return
+	 */
+	public abstract List<ValueType> getSchema( String fname )
+		throws IOException, DMLRuntimeException;
+
+	/**
+	 * 
+	 * @param iNumColumns
+	 * @return
+	 */
+	public List<String> getDefColNames( int iNumColumns )
+		throws IOException, DMLRuntimeException
+	{
+		List<String> colNames = new ArrayList<String>();
+		for (int i=0; i < iNumColumns; ++i)
+			colNames.add("C"+i);
+		return colNames;
+	}
+
 	/**
 	 * 
 	 * @param fs

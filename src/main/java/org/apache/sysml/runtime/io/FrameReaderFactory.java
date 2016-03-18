@@ -42,14 +42,14 @@ public class FrameReaderFactory
 		
 		if( iinfo == InputInfo.TextCellInputInfo )
 		{
-			reader = new FrameReaderTextCell( iinfo );	
+			reader = new FrameReaderTextCell();	
 		}
 		else if( iinfo == InputInfo.CSVInputInfo )
 		{
 			reader = new FrameReaderTextCSV(new CSVFileFormatProperties());
 		}
 		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
-			reader = new FrameReaderBinaryBlock( false );
+			reader = new FrameReaderBinaryBlock();
 		}
 		else {
 			throw new DMLRuntimeException("Failed to create frame reader for unknown input info: "
@@ -76,13 +76,13 @@ public class FrameReaderFactory
 		InputInfo iinfo = props.inputInfo;
 
 		if( iinfo == InputInfo.TextCellInputInfo ) {
-			reader = new FrameReaderTextCell( iinfo );
+			reader = new FrameReaderTextCell();
 		}
 		else if( iinfo == InputInfo.CSVInputInfo ) {
 			reader = new FrameReaderTextCSV( props.formatProperties!=null ? (CSVFileFormatProperties)props.formatProperties : new CSVFileFormatProperties());
 		}
 		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
-			reader = new FrameReaderBinaryBlock( props.localFS );
+			reader = new FrameReaderBinaryBlock();
 		}
 		else {
 			throw new DMLRuntimeException("Failed to create frame reader for unknown input info: "

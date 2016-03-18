@@ -41,7 +41,7 @@ public class FrameWriterFactory
 	public static FrameWriter createFrameWriter( OutputInfo oinfo ) 
 			throws DMLRuntimeException
 	{
-		return createFrameWriter(oinfo, -1, null);
+		return createFrameWriter(oinfo, null);
 	}
 	
 	/**
@@ -51,7 +51,7 @@ public class FrameWriterFactory
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static FrameWriter createFrameWriter( OutputInfo oinfo, int replication, FileFormatProperties props ) 
+	public static FrameWriter createFrameWriter( OutputInfo oinfo, FileFormatProperties props ) 
 		throws DMLRuntimeException
 	{
 		FrameWriter writer = null;
@@ -65,7 +65,7 @@ public class FrameWriterFactory
 			writer = new FrameWriterTextCSV((CSVFileFormatProperties)props);
 		}
 		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
-			writer = new FrameWriterBinaryBlock(replication);
+			writer = new FrameWriterBinaryBlock();
 		}
 		else {
 			throw new DMLRuntimeException("Failed to create frame writer for unknown output info: "

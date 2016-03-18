@@ -28,17 +28,6 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 
 public class FrameReaderBinaryBlock extends FrameReader
 {
-	protected boolean _localFS = false;
-	
-	public FrameReaderBinaryBlock( boolean localFS )
-	{
-		_localFS = localFS;
-	}
-	
-	public void setLocalFS(boolean flag) {
-		_localFS = flag;
-	}
-	
 	/**
 	 * 
 	 * @param fname
@@ -57,4 +46,18 @@ public class FrameReaderBinaryBlock extends FrameReader
 		
 		return ret;
 	}
+
+	/**
+	 * 
+	 * @param schema
+	 * @return
+	 */
+	@Override
+	public List<ValueType> getSchema( String fname )
+		throws IOException, DMLRuntimeException
+	{
+		List<ValueType> schema = null;	//TODO: Need to implement this function
+		return schema;
+	}
+
 }

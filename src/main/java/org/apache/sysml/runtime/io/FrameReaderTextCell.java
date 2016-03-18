@@ -25,18 +25,10 @@ import java.util.List;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 
 public class FrameReaderTextCell extends FrameReader
 {
 
-	private boolean _isMMFile = false;
-	
-	public FrameReaderTextCell(InputInfo info)
-	{
-		_isMMFile = (info == InputInfo.MatrixMarketInputInfo);
-	}
-	
 	/**
 	 * 
 	 * @param fname
@@ -54,6 +46,19 @@ public class FrameReaderTextCell extends FrameReader
 		FrameBlock ret = null;
 		
 		return ret;
+	}
+
+	/**
+	 * 
+	 * @param schema
+	 * @return
+	 */
+	@Override
+	public List<ValueType> getSchema( String fname )
+		throws IOException, DMLRuntimeException
+	{
+		List<ValueType> schema = null;	//TODO: Need to implement this function
+		return schema;
 	}
 
 }

@@ -26,11 +26,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
@@ -39,6 +38,8 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.JSONHelper;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
 
 public class DataExpression extends DataIdentifier 
@@ -655,11 +656,20 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 			
+			// check if csv extension, since csv is allowed to be read without a corresponding metadata file.
+			boolean hasCSVExtension = false;
+			String extension = FilenameUtils.getExtension(inputFileName);
+			if (extension != null) {
+				if (FORMAT_TYPE_VALUE_CSV.equalsIgnoreCase(extension)) {
+					hasCSVExtension = true;
+				}
+			}
+			
 			// check if file is delimited format
 			if (formatTypeString == null && shouldReadMTD ) {
 				boolean isDelimitedFormat = checkHasDelimitedFormat(inputFileName, conditional); 
 				
-				if (isDelimitedFormat){
+				if (isDelimitedFormat || hasCSVExtension) {
 					addVarParam(FORMAT_TYPE,new StringIdentifier(FORMAT_TYPE_VALUE_CSV,
 							this.getFilename(), this.getBeginLine(), this.getBeginColumn(),
 							this.getBeginLine(), this.getBeginColumn()));
@@ -926,27 +936,19 @@ public class DataExpression extends DataIdentifier
 				// initialize block dimensions to UNKNOWN 
 				getOutput().setBlockDimensions(-1, -1);
 				
-				// find "format": 1=text, 2=binary
-				int format = 1; // default is "text"
-				String fmt =  (getVarParam(FORMAT_TYPE) == null ? null : getVarParam(FORMAT_TYPE).toString());
-				
-				if (fmt == null || fmt.equalsIgnoreCase("text")){
+				boolean isBinaryFormat = false;
+				String fmt = (getVarParam(FORMAT_TYPE) == null ? null : getVarParam(FORMAT_TYPE).toString());
+				if (fmt == null || fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_TEXT)) {
 					getOutput().setFormatType(FormatType.TEXT);
-					format = 1;
-				} else if ( fmt.equalsIgnoreCase("binary") ) {
+				} else if (fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_BINARY)) {
 					getOutput().setFormatType(FormatType.BINARY);
-					format = 2;
-				} else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) 
-				{
+					isBinaryFormat = true;
+				} else if (fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) {
 					getOutput().setFormatType(FormatType.CSV);
-					format = 1;
-				} 
-				else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) )
-				{
+				} else if (fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET)) {
 					getOutput().setFormatType(FormatType.MM);
-					format = 1;
 				} else {
-					raiseValidateError("Invalid format '" + fmt+ "' in statement: " + this.toString(), conditional);
+					raiseValidateError("Invalid format '" + fmt + "' in statement: " + this.toString(), conditional);
 				}
 				
 				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
@@ -966,7 +968,7 @@ public class DataExpression extends DataIdentifier
 				// block dimensions must be -1x-1 when format="text"
 				// NOTE MB: disabled validate of default blocksize for inputs w/ format="binary"
 				// because we automatically introduce reblocks if blocksizes don't match
-				if ( ( (format == 1 || !isMatrix) 
+				if ( ( (!isBinaryFormat || !isMatrix)
 						&& (getOutput().getRowsInBlock() != -1 || getOutput().getColumnsInBlock() != -1)
 					 ) ){
 					raiseValidateError("Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".", conditional);

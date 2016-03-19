@@ -958,14 +958,14 @@ public class OptimizerRuleBased extends Optimizer
 		boolean isCPOnly = n.isCPOnly();
 		boolean isCPOnlyPossible = isCPOnly || isCPOnlyPossible(n, _rm);
 
-
 		String datapartitioner = n.getParam(ParamType.DATA_PARTITIONER);
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		PDataPartitioner REMOTE_DP = OptimizerUtils.isSparkExecutionMode() ? PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
 
 		//deciding on the execution strategy
-		if(    (isCPOnly && M <= _rm )   //Required: all instruction can be be executed in CP
-			|| (isCPOnlyPossible && M2 <= _rm) )  //Required: cp inst fit into remote JVM mem 
+		if( OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR     //allowed remote parfor execution
+			&& ( (isCPOnly && M <= _rm )    //Required: all instruction can be be executed in CP
+			   ||(isCPOnlyPossible && M2 <= _rm)) )  //Required: cp inst fit into remote JVM mem 
 		{
 			//at this point all required conditions for REMOTE_MR given, now its an opt decision
 			int cpk = (int) Math.min( _lk, Math.floor( _lm / M ) ); //estimated local exploited par  
@@ -1436,11 +1436,8 @@ public class OptimizerRuleBased extends Optimizer
 		if( type == ExecType.CP ) 
 		{
 			//determine local max parallelism constraint
-			int kMax = -1;
-			if( n.isCPOnly() )
-				kMax = _lkmaxCP;
-			else
-				kMax = _lkmaxMR;
+			int kMax = OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR ?
+					(n.isCPOnly() ? _lkmaxCP : _lkmaxMR) : 1;
 			
 			//ensure local memory constraint (for spark more conservative in order to 
 			//prevent unnecessary guarded collect)
@@ -1538,7 +1535,7 @@ public class OptimizerRuleBased extends Optimizer
 				{
 					//set degree of parallelism for multi-threaded leaf nodes
 					Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(c.getID());
-					if(    OptimizerUtils.PARALLEL_CP_MATRIX_MULTIPLY 
+					if(    OptimizerUtils.PARALLEL_CP_MATRIX_OPERATIONS 
 						&& h instanceof MultiThreadedHop //abop, datagenop, qop, paramop
 						&& !( h instanceof ParameterizedBuiltinOp //only paramop-grpagg
 							 && ((ParameterizedBuiltinOp)h).getOp()!=ParamBuiltinOp.GROUPEDAGG) )

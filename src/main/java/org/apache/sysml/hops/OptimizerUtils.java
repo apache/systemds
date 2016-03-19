@@ -210,10 +210,17 @@ public class OptimizerUtils
 	public static final double PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER = 1.0;
 
 	/**
-	 * Enables multi-threaded matrix multiply for mm, mmchain, and tsmm.
+	 * Enables multi-threaded operations for mm, mmchain, and tsmm, 
+	 * rand, wdivmm, wsloss, wumm, wcemm, uagg, tak, and groupedaggregate.
 	 * 
 	 */
-	public static boolean PARALLEL_CP_MATRIX_MULTIPLY = true;
+	public static boolean PARALLEL_CP_MATRIX_OPERATIONS = true;
+	
+	/**
+	 * Enables multi-threaded local or distributed remote parfor operators.
+	 * Otherwise parfor is restricted to parfor local with par=1.
+	 */
+	public static boolean PARALLEL_LOCAL_OR_REMOTE_PARFOR = true;
 	
 	/**
 	 * Enables the use of CombineSequenceFileInputFormat with splitsize = 2x hdfs blocksize, 
@@ -380,7 +387,7 @@ public class OptimizerUtils
 
 		//handle parallel matrix mult / rand configuration
 		if (!ConfigurationManager.getConfig().getBooleanValue(DMLConfig.CP_PARALLEL_MATRIXMULT)) {
-			PARALLEL_CP_MATRIX_MULTIPLY = false;
+			PARALLEL_CP_MATRIX_OPERATIONS = false;
 		}	
 	}
 	
@@ -947,7 +954,7 @@ public class OptimizerUtils
 		}
 		
 		//apply global multi-threading constraint
-		if( !PARALLEL_CP_MATRIX_MULTIPLY ) {
+		if( !PARALLEL_CP_MATRIX_OPERATIONS ) {
 			ret = 1;
 		}
 			

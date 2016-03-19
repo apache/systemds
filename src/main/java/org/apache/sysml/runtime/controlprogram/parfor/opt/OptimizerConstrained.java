@@ -265,7 +265,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		boolean ret = false;
 				
 		// constraint awareness
-		if( n.getExecType() != null  )
+		if( n.getExecType() != null && OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
                     .getAbstractPlanMapping().getMappedProg(n.getID())[1];
@@ -298,7 +298,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		throws DMLRuntimeException 
 	{
 		// constraint awareness
-		if( n.getK()>0 )
+		if( n.getK() > 0 && OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 					.getAbstractPlanMapping().getMappedProg(n.getID())[1];

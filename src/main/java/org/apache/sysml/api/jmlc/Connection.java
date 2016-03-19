@@ -77,10 +77,13 @@ public class Connection
 		//runtime parameters
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 		OptimizerUtils.ALLOW_CSE_PERSISTENT_READS = false;
+		OptimizerUtils.PARALLEL_CP_MATRIX_OPERATIONS = false;
+		OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR = false;
 		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = false;
 		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = false;
 		OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS = false;
 		OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS = false;
+		OptimizerUtils.ALLOW_DYN_RECOMPILATION = false;
 		CacheableData.disableCaching();
 		
 		//create default configuration
@@ -167,10 +170,13 @@ public class Connection
 		DataExpression.REJECT_READ_WRITE_UNKNOWNS = true;
 		OptimizerUtils.ALLOW_CSE_PERSISTENT_READS = 
 				OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION;
+		OptimizerUtils.PARALLEL_CP_MATRIX_OPERATIONS = true;
+		OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR = true;
 		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = true;
 		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = true;
 		OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS = true;
-		OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS = true;		
+		OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS = true;
+		OptimizerUtils.ALLOW_DYN_RECOMPILATION = true;
 	}
 	
 	/**

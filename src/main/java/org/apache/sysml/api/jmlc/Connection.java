@@ -29,19 +29,18 @@ import java.util.HashMap;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.CompilerConfig;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
-import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -59,9 +58,9 @@ import org.apache.sysml.runtime.util.DataConverter;
  *   * See JUnit test cases (org.apache.sysml.test.integration.functions.jmlc) for examples. 
  */
 public class Connection 
-{
-	
-	private DMLConfig _conf = null;
+{	
+	private DMLConfig _dmlconf = null;
+	private CompilerConfig _cconf = null;
 	
 	/**
 	 * Connection constructor, starting point for any other JMLC API calls.
@@ -69,26 +68,31 @@ public class Connection
 	 */
 	public Connection()
 	{
-		//setup basic parameters for embedded execution
-		//parser parameters
-		AParserWrapper.IGNORE_UNSPECIFIED_ARGS = true;
-		DataExpression.IGNORE_READ_WRITE_METADATA = true;
-		DataExpression.REJECT_READ_WRITE_UNKNOWNS = false;
-		//runtime parameters
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-		OptimizerUtils.ALLOW_CSE_PERSISTENT_READS = false;
-		OptimizerUtils.PARALLEL_CP_MATRIX_OPERATIONS = false;
-		OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR = false;
-		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = false;
-		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = false;
-		OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS = false;
-		OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS = false;
-		OptimizerUtils.ALLOW_DYN_RECOMPILATION = false;
+		
+		//setup basic parameters for embedded execution
+		//(parser, compiler, and runtime parameters)
+		_cconf = new CompilerConfig();
+		_cconf.set(ConfigType.IGNORE_UNSPECIFIED_ARGS, true);
+		_cconf.set(ConfigType.IGNORE_READ_WRITE_METADATA, true);
+		_cconf.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
+		_cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
+		_cconf.set(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, false);
+		_cconf.set(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, false);
+		_cconf.set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
+		_cconf.set(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, false);
+		_cconf.set(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR, false);
+		_cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, false);
+		_cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
+		_cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
+		ConfigurationManager.setLocalConfig(_cconf);
+		
+		//disable caching globally 
 		CacheableData.disableCaching();
 		
-		//create default configuration
-		_conf = new DMLConfig();
-		ConfigurationManager.setConfig(_conf);
+		//create thread-local default configuration
+		_dmlconf = new DMLConfig();
+		ConfigurationManager.setLocalConfig(_dmlconf);
 	}
 	
 	/**
@@ -143,7 +147,7 @@ public class Connection
 			
 			//lop construct and runtime prog generation
 			dmlt.constructLops(prog);
-			rtprog = prog.getRuntimeProgram(_conf);
+			rtprog = prog.getRuntimeProgram(_dmlconf);
 			
 			//final cleanup runtime prog
 			JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
@@ -162,21 +166,9 @@ public class Connection
 	/**
 	 * 
 	 */
-	public void close()
-	{
-		//reset parameters for embedded execution
-		AParserWrapper.IGNORE_UNSPECIFIED_ARGS = false;
-		DataExpression.IGNORE_READ_WRITE_METADATA = false;
-		DataExpression.REJECT_READ_WRITE_UNKNOWNS = true;
-		OptimizerUtils.ALLOW_CSE_PERSISTENT_READS = 
-				OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION;
-		OptimizerUtils.PARALLEL_CP_MATRIX_OPERATIONS = true;
-		OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR = true;
-		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = true;
-		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = true;
-		OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS = true;
-		OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS = true;
-		OptimizerUtils.ALLOW_DYN_RECOMPILATION = true;
+	public void close() {
+		//clear thread-local dml / compiler configs
+		ConfigurationManager.clearLocalConfigs();
 	}
 	
 	/**
@@ -250,7 +242,7 @@ public class Connection
 			//read input matrix
 			InputStream is = new ByteArrayInputStream(input.getBytes("UTF-8"));
 			ReaderTextCell reader = (ReaderTextCell)MatrixReaderFactory.createMatrixReader(InputInfo.TextCellInputInfo);
-			MatrixBlock mb = reader.readMatrixFromInputStream(is, rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, (long)rows*cols);
+			MatrixBlock mb = reader.readMatrixFromInputStream(is, rows, cols, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), (long)rows*cols);
 		
 			//convert to double array
 			ret = DataConverter.convertToDoubleMatrix( mb );

@@ -367,7 +367,7 @@ public class LocalFileUtils
 	{
 		//create local tmp dir if not existing
 		String dirRoot = null;
-		DMLConfig conf = ConfigurationManager.getConfig();
+		DMLConfig conf = ConfigurationManager.getDMLConfig();
 		if( conf != null ) 
 			dirRoot = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR);
 		else 

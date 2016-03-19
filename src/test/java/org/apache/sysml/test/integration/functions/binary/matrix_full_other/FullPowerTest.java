@@ -25,10 +25,9 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -233,7 +232,7 @@ public class FullPowerTest extends AutomatedTestBase
 			//generate dataset A
 			if( dt1 == DataType.MATRIX ){
 				double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 7); 
-				MatrixCharacteristics mcA = new MatrixCharacteristics(rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, (long) (rows*cols*sparsity));
+				MatrixCharacteristics mcA = new MatrixCharacteristics(rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, (long) (rows*cols*sparsity));
 				writeInputMatrixWithMTD("A", A, true, mcA);
 			}
 			else{
@@ -243,7 +242,7 @@ public class FullPowerTest extends AutomatedTestBase
 			
 			//generate dataset B
 			if( dt2 == DataType.MATRIX ){
-				MatrixCharacteristics mcB = new MatrixCharacteristics(rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, (long) (rows*cols*sparsity));
+				MatrixCharacteristics mcB = new MatrixCharacteristics(rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, (long) (rows*cols*sparsity));
 				double[][] B = getRandomMatrix(rows, cols, min, max, sparsity, 3); 
 				writeInputMatrixWithMTD("B", B, true, mcB);
 			}

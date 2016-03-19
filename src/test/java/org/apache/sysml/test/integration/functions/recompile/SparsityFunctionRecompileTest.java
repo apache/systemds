@@ -23,9 +23,8 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -166,7 +165,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 	
 	private void runRecompileTest( String testname, boolean recompile, boolean IPA )
 	{	
-		boolean oldFlagRecompile = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
+		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		boolean oldFlagBranchRemoval = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
 		
@@ -180,12 +179,12 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			programArgs = new String[]{"-args",
 				input("V"), Double.toString(val), output("R") };
 
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
+			CompilerConfig.FLAG_DYN_RECOMPILE = recompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = false;
 			
 			MatrixBlock mb = MatrixBlock.randOperations((int)rows, (int)cols, sparsity, 0, 1, "uniform", 732);
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows,cols,DMLTranslator.DMLBlockSize,DMLTranslator.DMLBlockSize,(long)(rows*cols*sparsity));
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows,cols,OptimizerUtils.DEFAULT_BLOCKSIZE,OptimizerUtils.DEFAULT_BLOCKSIZE,(long)(rows*cols*sparsity));
 			
 			DataConverter.writeMatrixToHDFS(mb, input("V"), OutputInfo.TextCellOutputInfo, mc);
 			MapReduceTool.writeMetaDataFile(input("V.mtd"), ValueType.DOUBLE, mc, OutputInfo.TextCellOutputInfo);
@@ -221,7 +220,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 		}
 		finally
 		{
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlagRecompile;
+			CompilerConfig.FLAG_DYN_RECOMPILE = oldFlagRecompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagBranchRemoval;
 		}

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
@@ -31,7 +32,6 @@ import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression.DataType;
 
 /**
@@ -52,11 +52,11 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		
 		//maintain rewrite status
 		if( isReblockValid() )
-			state.setBlocksize(DMLTranslator.DMLBlockSize);
+			state.setBlocksize(ConfigurationManager.getBlocksize());
 		
 		//perform reblock and blocksize rewrite
 		for( Hop h : roots ) 
-			rule_BlockSizeAndReblock(h, DMLTranslator.DMLBlockSize);
+			rule_BlockSizeAndReblock(h, ConfigurationManager.getBlocksize());
 		
 		return roots;
 	}
@@ -70,10 +70,10 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		
 		//maintain rewrite status
 		if( isReblockValid() )
-			state.setBlocksize(DMLTranslator.DMLBlockSize);
+			state.setBlocksize(ConfigurationManager.getBlocksize());
 		
 		//perform reblock and blocksize rewrite
-		rule_BlockSizeAndReblock(root, DMLTranslator.DMLBlockSize);
+		rule_BlockSizeAndReblock(root, ConfigurationManager.getBlocksize());
 		
 		return root;
 	}

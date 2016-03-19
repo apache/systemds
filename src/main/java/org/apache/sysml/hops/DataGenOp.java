@@ -25,14 +25,12 @@ import java.util.Map.Entry;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
@@ -109,7 +107,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 			_sparsity = Double.valueOf(((LiteralOp)inputParameters.get(DataExpression.RAND_SPARSITY)).getName());
 		
 		//generate base dir
-		String scratch = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+		String scratch = ConfigurationManager.getScratchSpace();
 		_baseDir = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR + 
 	               Lop.FILE_SEPARATOR + ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR;
 		
@@ -165,8 +163,8 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		rnd.getOutputParameters().setDimensions(
 				getDim1(), getDim2(),
 				//robust handling for blocksize (important for -exec singlenode; otherwise incorrect results)
-				(getRowsInBlock()>0)?getRowsInBlock():DMLTranslator.DMLBlockSize, 
-				(getColsInBlock()>0)?getColsInBlock():DMLTranslator.DMLBlockSize,  
+				(getRowsInBlock()>0)?getRowsInBlock():ConfigurationManager.getBlocksize(), 
+				(getColsInBlock()>0)?getColsInBlock():ConfigurationManager.getBlocksize(),  
 				//actual rand nnz might differ (in cp/mr they are corrected after execution)
 				(_op==DataGenMethod.RAND && et==ExecType.SPARK && getNnz()!=0) ? -1 : getNnz(),
 				getUpdateInPlace());
@@ -225,7 +223,8 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
 		if ( _op == DataGenMethod.RAND && dimsKnown() ) {
-			long numBlocks = (long) (Math.ceil((double)dim1/DMLTranslator.DMLBlockSize) * Math.ceil((double)dim2/DMLTranslator.DMLBlockSize));
+			long numBlocks = (long) (Math.ceil((double)dim1/ConfigurationManager.getBlocksize()) 
+					* Math.ceil((double)dim2/ConfigurationManager.getBlocksize()));
 			return 32 + numBlocks*8.0; // 32 bytes of overhead for an array of long & numBlocks long values.
 		}
 		else 
@@ -296,7 +295,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		}
 
 		//mark for recompile (forever)
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
+		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
 			setRequiresRecompile();
 
 		//always force string initialization into CP (not supported in MR)

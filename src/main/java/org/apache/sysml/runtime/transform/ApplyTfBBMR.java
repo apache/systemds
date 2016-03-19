@@ -27,7 +27,6 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.instructions.InstructionParser;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
@@ -100,7 +99,7 @@ public class ApplyTfBBMR {
 				null, rblkInst, null, null, null, resultIndexes, mapoutputIndexes, false);
 
 		//set up the number of reducers
-		int numRed = WriteCSVMR.determineNumReducers(rlens, clens, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), ret.numReducerGroups);
+		int numRed = WriteCSVMR.determineNumReducers(rlens, clens, ConfigurationManager.getNumReducers(), ret.numReducerGroups);
 		job.setNumReduceTasks( numRed );
 
 		//set up the multiple output files, and their format information

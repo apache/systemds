@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
@@ -43,11 +44,6 @@ import org.apache.sysml.utils.JSONHelper;
 
 public class DataExpression extends DataIdentifier 
 {
-	//internal configuration (modified by mlcontext, jmlc apis) 
-	//no read of meta data on mlcontext (local) /jmlc (global); ignore unknowns on jmlc
-	public static boolean IGNORE_READ_WRITE_METADATA = false; // global skip meta data reads
-	public static boolean REJECT_READ_WRITE_UNKNOWNS = true;  // ignore missing meta data
-	
 	public static final String RAND_ROWS 	=  "rows";	 
 	public static final String RAND_COLS 	=  "cols";
 	public static final String RAND_MIN  	=  "min";
@@ -624,7 +620,8 @@ public class DataExpression extends DataIdentifier
 			String mtdFileName = getMTDFileName(inputFileName);
 
 			// track whether should attempt to read MTD file or not
-			boolean shouldReadMTD = _checkMetadata && !IGNORE_READ_WRITE_METADATA;
+			boolean shouldReadMTD = _checkMetadata && !ConfigurationManager
+					.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA);
 
 			// Check for file existence (before metadata parsing for meaningful error messages)
 			if( shouldReadMTD //skip check for jmlc/mlcontext
@@ -894,7 +891,8 @@ public class DataExpression extends DataIdentifier
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if ( !isCSV && REJECT_READ_WRITE_UNKNOWNS //skip check for csv format / jmlc api
+				if ( !isCSV && ConfigurationManager.getCompilerConfig()
+						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv format / jmlc api
 					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
 						raiseValidateError("Missing or incomplete dimension information in read statement: " 
 								+ mtdFileName, conditional, LanguageErrorCodes.INVALID_PARAMETERS);				
@@ -906,7 +904,8 @@ public class DataExpression extends DataIdentifier
 					// these are strings that are long values
 					Long dim1 = (getVarParam(READROWPARAM) == null) ? null : Long.valueOf( getVarParam(READROWPARAM).toString());
 					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : Long.valueOf( getVarParam(READCOLPARAM).toString());					
-					if ( !isCSV && (dim1 <= 0 || dim2 <= 0) && REJECT_READ_WRITE_UNKNOWNS ) {
+					if ( !isCSV && (dim1 <= 0 || dim2 <= 0) && ConfigurationManager
+							.getCompilerConfig().getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) ) {
 						raiseValidateError("Invalid dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
 					
@@ -1065,7 +1064,7 @@ public class DataExpression extends DataIdentifier
 			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text"))
 				getOutput().setBlockDimensions(-1, -1);
 			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
-				getOutput().setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+				getOutput().setBlockDimensions(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) || (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)))
 				getOutput().setBlockDimensions(-1, -1);
 			

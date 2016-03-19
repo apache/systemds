@@ -31,7 +31,8 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang.StringUtils;
-import org.apache.sysml.parser.AParserWrapper;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.AssignmentStatement;
 import org.apache.sysml.parser.BinaryExpression;
 import org.apache.sysml.parser.ConditionalPredicate;
@@ -349,7 +350,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			if(!(ctx.parent instanceof IfdefAssignmentStatementContext)) {
 				String msg = "The parameter " + varName + " either needs to be passed "
 						+ "through commandline or initialized to default value.";
-				if( AParserWrapper.IGNORE_UNSPECIFIED_ARGS ) {
+				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_UNSPECIFIED_ARGS) ) {
 					ctx.dataInfo.expr = getConstIdFromString(" ", ctx.start);
 					raiseWarning(msg, ctx.start);
 				}

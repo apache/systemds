@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.parser.ParForStatementBlock;
@@ -265,7 +266,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		boolean ret = false;
 				
 		// constraint awareness
-		if( n.getExecType() != null && OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR )
+		if( n.getExecType() != null && ConfigurationManager.isParallelParFor() )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
                     .getAbstractPlanMapping().getMappedProg(n.getID())[1];
@@ -298,7 +299,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		throws DMLRuntimeException 
 	{
 		// constraint awareness
-		if( n.getK() > 0 && OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR )
+		if( n.getK() > 0 && ConfigurationManager.isParallelParFor() )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 					.getAbstractPlanMapping().getMappedProg(n.getID())[1];

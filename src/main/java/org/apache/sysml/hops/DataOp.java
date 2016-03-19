@@ -19,6 +19,8 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
@@ -461,14 +463,14 @@ public class DataOp extends Hop
 			}
 			
 			//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE ) {
+			if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE ) {
 				setRequiresRecompile();
 			}
 		}
 	    else //READ
 		{
 	    	//mark for recompile (forever)
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && letype==REMOTE 
+			if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && letype==REMOTE 
 				&& (_recompileRead || _requiresCheckpoint) ) 
 			{
 				setRequiresRecompile();
@@ -541,7 +543,8 @@ public class DataOp extends Hop
 		//with multiple piggybacked csvreblock of the same input w/ unknown input sizes
 		
 		DataOp that2 = (DataOp)that;	
-		boolean ret = ( OptimizerUtils.ALLOW_CSE_PERSISTENT_READS 
+		boolean ret = ( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION 
+					  && ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_CSE_PERSISTENT_READS) 
 					  &&_dataop == that2._dataop
 					  && _dataop == DataOpTypes.PERSISTENTREAD
 					  && _fileName.equals(that2._fileName)

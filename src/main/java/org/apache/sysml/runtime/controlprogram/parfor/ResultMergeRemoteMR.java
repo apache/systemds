@@ -294,7 +294,7 @@ public class ResultMergeRemoteMR extends ResultMerge
 				MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 			
 			//set up custom map/reduce configurations 
-			DMLConfig config = ConfigurationManager.getConfig();
+			DMLConfig config = ConfigurationManager.getDMLConfig();
 			MRJobConfiguration.setupCustomMRConfigurations(job, config);
 			
 			//enables the reuse of JVMs (multiple tasks per MR task)

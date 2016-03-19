@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.io.ReaderBinaryBlock;
 import org.apache.sysml.runtime.io.ReaderTextCSV;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
@@ -666,13 +665,13 @@ public class TransformTest extends AutomatedTestBase
 					ReaderBinaryBlock bbReader = new ReaderBinaryBlock(false);
 					out = bbReader.readMatrixFromHDFS(
 							output("tfout"), exp.getNumRows(), exp.getNumColumns(), 
-							ConfigurationManager.getConfig().getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE ), 
-							ConfigurationManager.getConfig().getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE ),
+							ConfigurationManager.getBlocksize(), 
+							ConfigurationManager.getBlocksize(),
 							-1);
 					out2 = bbReader.readMatrixFromHDFS(
 							output("test_tfout"), exp.getNumRows(), exp.getNumColumns(), 
-							ConfigurationManager.getConfig().getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE ), 
-							ConfigurationManager.getConfig().getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE ),
+							ConfigurationManager.getBlocksize(), 
+							ConfigurationManager.getBlocksize(),
 							-1);
 				}
 				

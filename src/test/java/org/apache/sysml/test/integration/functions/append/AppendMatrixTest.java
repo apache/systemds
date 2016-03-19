@@ -24,12 +24,11 @@ import java.util.Random;
 
 import org.junit.Assert;
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.BinaryOp.AppendMethod;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -55,7 +54,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 	private final static int cols1b = 1059;
 	private final static int cols2b = 1010;
 	//usecase c: outblock blocksize 
-	private final static int cols1c = 2*DMLTranslator.DMLBlockSize;
+	private final static int cols1c = 2*OptimizerUtils.DEFAULT_BLOCKSIZE;
 	private final static int cols2c = 1010;
 	//usecase d: outblock blocksize 
 	private final static int cols1d = 1460;

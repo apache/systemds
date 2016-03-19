@@ -27,7 +27,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.lops.CSVReBlock;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.lops.Data;
@@ -414,7 +413,7 @@ public abstract class Hop
 	{
 		Lop offset = null;
 		
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && hop.dimsKnown() )
+		if( ConfigurationManager.isDynamicRecompilation() && hop.dimsKnown() )
 		{
 			// If dynamic recompilation is enabled and dims are known, we can replace the ncol with 
 			// a literal in order to increase the piggybacking potential. This is safe because append 
@@ -1798,7 +1797,7 @@ public abstract class Hop
 	public String constructBaseDir()
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append( ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE) );
+		sb.append( ConfigurationManager.getScratchSpace() );
 		sb.append( Lop.FILE_SEPARATOR );
 		sb.append( Lop.PROCESS_PREFIX );
 		sb.append( DMLScript.getUUID() );

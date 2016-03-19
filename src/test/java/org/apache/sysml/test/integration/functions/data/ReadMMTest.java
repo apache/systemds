@@ -24,9 +24,8 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLException;
-import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -226,8 +225,8 @@ public class ReadMMTest extends AutomatedTestBase
 	public void testBinaryWrongRowDimension() throws IOException {
 		int rows = 5;
 		int cols = 10;
-		int rowsInBlock = DMLTranslator.DMLBlockSize;
-		int colsInBlock = DMLTranslator.DMLBlockSize;
+		int rowsInBlock = OptimizerUtils.DEFAULT_BLOCKSIZE;
+		int colsInBlock = OptimizerUtils.DEFAULT_BLOCKSIZE;
 
 		TestConfiguration config = availableTestConfigurations.get("BinaryWrongRowDimensionTest");
 		config.addVariable("rows", rows);
@@ -246,8 +245,8 @@ public class ReadMMTest extends AutomatedTestBase
 	public void testBinaryWrongColDimension() throws IOException {
 		int rows = 10;
 		int cols = 5;
-		int rowsInBlock = DMLTranslator.DMLBlockSize;
-		int colsInBlock = DMLTranslator.DMLBlockSize;
+		int rowsInBlock = OptimizerUtils.DEFAULT_BLOCKSIZE;
+		int colsInBlock = OptimizerUtils.DEFAULT_BLOCKSIZE;
 
 		TestConfiguration config = availableTestConfigurations.get("BinaryWrongColDimensionTest");
 		config.addVariable("rows", rows);
@@ -274,8 +273,8 @@ public class ReadMMTest extends AutomatedTestBase
 	public void testBinaryWrongDimensions() throws IOException {
 		int rows = 3;
 		int cols = 2;
-		int rowsInBlock = DMLTranslator.DMLBlockSize;
-		int colsInBlock = DMLTranslator.DMLBlockSize;
+		int rowsInBlock = OptimizerUtils.DEFAULT_BLOCKSIZE;
+		int colsInBlock = OptimizerUtils.DEFAULT_BLOCKSIZE;
 
 		TestConfiguration config = availableTestConfigurations.get("TextWrongDimensionsTest");
 		config.addVariable("rows", rows);
@@ -359,7 +358,7 @@ public class ReadMMTest extends AutomatedTestBase
 			MapReduceTool.deleteFileIfExistOnHDFS(fname);
 			MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtd");
 			TestUtils.createFile(fname + "/in");
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
 			MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("binaryblock"));
 			runTest(true, DMLException.class);
 		} catch (IOException e) {

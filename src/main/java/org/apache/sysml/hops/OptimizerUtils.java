@@ -26,6 +26,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.CompilerConfig;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop.DataOpTypes;
@@ -62,12 +64,20 @@ public class OptimizerUtils
 	 */
 	public static double MEM_UTIL_FACTOR = 0.7d;
 	
+	/** Default blocksize if unspecified or for testing purposes */
+	public static final int DEFAULT_BLOCKSIZE = 1000;
+	
+	/** Default optimization level if unspecified */
+	public static final OptimizationLevel DEFAULT_OPTLEVEL = 
+			OptimizationLevel.O2_LOCAL_MEMORY_DEFAULT;
+	
 	/**
-	 * Default memory size, which is used the actual estimate can not be computed 
-	 * -- for example, when input/output dimensions are unknown. In case of ROBUST,
-	 * the default is set to a large value so that operations are scheduled on MR.  
+	 * Default memory size, which is used if the actual estimate can not be computed 
+	 * e.g., when input/output dimensions are unknown. The default is set to a large 
+	 * value so that operations are scheduled on MR while avoiding overflows as well.  
 	 */
-	public static double DEFAULT_SIZE;	
+	public static double DEFAULT_SIZE = getDefaultSize();	
+	
 	
 	public static final long DOUBLE_SIZE = 8;
 	public static final long INT_SIZE = 4;
@@ -80,26 +90,6 @@ public class OptimizerUtils
 	public static final long MAX_NUMCELLS_CP_DENSE = Integer.MAX_VALUE;
 	public static final long MAX_NNZ_CP_SPARSE = (MatrixBlock.DEFAULT_SPARSEBLOCK == 
 			SparseBlock.Type.MCSR) ? Long.MAX_VALUE : Integer.MAX_VALUE;
-	
-	/**
-	 * Enables/disables dynamic re-compilation of lops/instructions.
-	 * If enabled, we recompile each program block that contains at least
-	 * one hop that requires re-compilation (e.g., unknown statistics 
-	 * during compilation, or program blocks in functions).  
-	 */
-	public static boolean ALLOW_DYN_RECOMPILATION = true;
-	public static boolean ALLOW_PARALLEL_DYN_RECOMPILATION = ALLOW_DYN_RECOMPILATION && true;
-	
-	/**
-	 * Enables/disables to put operations with data-dependent output
-	 * size into individual statement blocks / program blocks.
-	 * Since recompilation is done on the granularity of program blocks
-	 * this enables recompilation of subsequent operations according
-	 * to the actual output size. This rewrite might limit the opportunity
-	 * for piggybacking and therefore should only be applied if 
-	 * dyanmic recompilation is enabled as well.
-	 */
-	public static boolean ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS = ALLOW_DYN_RECOMPILATION && true;
 
 	/**
 	 * Enables common subexpression elimination in dags. There is however, a potential tradeoff
@@ -108,13 +98,6 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = true;
 
-	/**
-	 * Enables common subexpression elimination in dags for persistent reads based on filenames
-	 * and other relevant read meta data. Disabled for jmlc to allow binding of in-memory objects
-	 * without specifying read properties.
-	 */
-	public static boolean ALLOW_CSE_PERSISTENT_READS = ALLOW_COMMON_SUBEXPRESSION_ELIMINATION && true;
-	
 	/**
 	 * Enables constant folding in dags. Constant folding computes simple expressions of binary 
 	 * operations and literals and replaces the hop sub-DAG with a new literal operator. 
@@ -188,17 +171,6 @@ public class OptimizerUtils
 	public static boolean ALLOW_SPLIT_HOP_DAGS = true;
 	
 	
-	/**
-	 * Enables parallel read/write of all text formats (textcell, csv, mm)
-	 * and binary formats (binary block). 
-	 * 
-	 */
-	public static boolean PARALLEL_CP_READ_TEXTFORMATS = true;
-	public static boolean PARALLEL_CP_WRITE_TEXTFORMATS = true;
-	public static boolean PARALLEL_CP_READ_BINARYFORMATS = true;
-	public static boolean PARALLEL_CP_WRITE_BINARYFORMATS = true;
-	
-	
 	
 	/**
 	 * Specifies a multiplier computing the degree of parallelism of parallel
@@ -209,19 +181,6 @@ public class OptimizerUtils
 	public static final double PARALLEL_CP_READ_PARALLELISM_MULTIPLIER = 1.0;
 	public static final double PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER = 1.0;
 
-	/**
-	 * Enables multi-threaded operations for mm, mmchain, and tsmm, 
-	 * rand, wdivmm, wsloss, wumm, wcemm, uagg, tak, and groupedaggregate.
-	 * 
-	 */
-	public static boolean PARALLEL_CP_MATRIX_OPERATIONS = true;
-	
-	/**
-	 * Enables multi-threaded local or distributed remote parfor operators.
-	 * Otherwise parfor is restricted to parfor local with par=1.
-	 */
-	public static boolean PARALLEL_LOCAL_OR_REMOTE_PARFOR = true;
-	
 	/**
 	 * Enables the use of CombineSequenceFileInputFormat with splitsize = 2x hdfs blocksize, 
 	 * if sort buffer size large enough and parallelism not hurt. This solves to issues: 
@@ -236,8 +195,6 @@ public class OptimizerUtils
 	// Optimizer levels //
 	//////////////////////
 
-	private static OptimizationLevel _optLevel = OptimizationLevel.O2_LOCAL_MEMORY_DEFAULT;
-	
 	/**
 	 * Optimization Types for Compilation
 	 * 
@@ -284,15 +241,16 @@ public class OptimizerUtils
 	};
 		
 	public static OptimizationLevel getOptLevel() {
-		return _optLevel;
+		int optlevel = ConfigurationManager.getCompilerConfig().getInt(ConfigType.OPT_LEVEL);
+		return OptimizationLevel.values()[optlevel];
 	}
 	
 	public static boolean isMemoryBasedOptLevel() {
-		return (_optLevel != OptimizationLevel.O0_LOCAL_STATIC);
+		return (getOptLevel() != OptimizationLevel.O0_LOCAL_STATIC);
 	}
 	
 	public static boolean isOptLevel( OptimizationLevel level ){
-		return (_optLevel == level);
+		return (getOptLevel() == level);
 	}
 	
 	/**
@@ -300,9 +258,17 @@ public class OptimizerUtils
 	 * @param optlevel
 	 * @throws DMLRuntimeException
 	 */
-	public static void setOptimizationLevel( int optlevel ) 
+	public static CompilerConfig constructCompilerConfig( DMLConfig dmlconf ) 
 		throws DMLRuntimeException
 	{
+		//create default compiler configuration
+		CompilerConfig cconf = new CompilerConfig();
+		
+		//each script sets its own block size, opt level etc
+		cconf.set(ConfigType.BLOCK_SIZE, dmlconf.getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE ));
+
+		//handle optimization level
+		int optlevel = dmlconf.getIntValue(DMLConfig.OPTIMIZATION_LEVEL);
 		if( optlevel < 0 || optlevel > 5 )
 			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-5).");
 	
@@ -317,7 +283,7 @@ public class OptimizerUtils
 		{
 			// opt level 0: static dimensionality
 			case 0:
-				_optLevel = OptimizationLevel.O0_LOCAL_STATIC;
+				cconf.set(ConfigType.OPT_LEVEL, OptimizationLevel.O0_LOCAL_STATIC.ordinal());
 				ALLOW_CONSTANT_FOLDING = false;
 				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
 				ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
@@ -328,7 +294,7 @@ public class OptimizerUtils
 				break;
 			// opt level 1: memory-based (no advanced rewrites)	
 			case 1:
-				_optLevel = OptimizationLevel.O1_LOCAL_MEMORY_MIN;
+				cconf.set(ConfigType.OPT_LEVEL, OptimizationLevel.O1_LOCAL_MEMORY_MIN.ordinal());
 				ALLOW_CONSTANT_FOLDING = false;
 				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
 				ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
@@ -339,68 +305,71 @@ public class OptimizerUtils
 				break;
 			// opt level 2: memory-based (all advanced rewrites)
 			case 2:
-				_optLevel = OptimizationLevel.O2_LOCAL_MEMORY_DEFAULT;
+				cconf.set(ConfigType.OPT_LEVEL, OptimizationLevel.O2_LOCAL_MEMORY_DEFAULT.ordinal());
 				break;
 			// opt level 3: resource optimization, time- and memory-based (2 w/ resource optimizat)
 			case 3:
-				_optLevel = OptimizationLevel.O3_LOCAL_RESOURCE_TIME_MEMORY;
+				cconf.set(ConfigType.OPT_LEVEL, OptimizationLevel.O3_LOCAL_RESOURCE_TIME_MEMORY.ordinal());
 			break;
 							
 			// opt level 3: global, time- and memory-based (all advanced rewrites)
 			case 4:
-				_optLevel = OptimizationLevel.O4_GLOBAL_TIME_MEMORY;
+				cconf.set(ConfigType.OPT_LEVEL, OptimizationLevel.O4_GLOBAL_TIME_MEMORY.ordinal());
 				break;
 			// opt level 4: debug mode (no interfering rewrites)
 			case 5:				
-				_optLevel = OptimizationLevel.O5_DEBUG_MODE;
+				cconf.set(ConfigType.OPT_LEVEL, OptimizationLevel.O5_DEBUG_MODE.ordinal());
 				ALLOW_CONSTANT_FOLDING = false;
 				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
 				ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
 				ALLOW_BRANCH_REMOVAL = false;
-				ALLOW_DYN_RECOMPILATION = false;
 				ALLOW_SIZE_EXPRESSION_EVALUATION = false;
 				ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = false;
 				ALLOW_RAND_JOB_RECOMPILE = false;
 				ALLOW_SUM_PRODUCT_REWRITES = false;
 				ALLOW_SPLIT_HOP_DAGS = false;
+				cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, false);
+				cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
 				break;
 		}
-		setDefaultSize();
 		
 		//handle parallel text io (incl awareness of thread contention in <jdk8)
-		if (!ConfigurationManager.getConfig().getBooleanValue(DMLConfig.CP_PARALLEL_TEXTIO)) {
-			PARALLEL_CP_READ_TEXTFORMATS = false;
-			PARALLEL_CP_WRITE_TEXTFORMATS = false;
-			PARALLEL_CP_READ_BINARYFORMATS = false;
-			PARALLEL_CP_WRITE_BINARYFORMATS = false;
+		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_TEXTIO)) {
+			cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
+			cconf.set(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, false);
+			cconf.set(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, false);
+			cconf.set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
 		}
 		else if(   InfrastructureAnalyzer.isJavaVersionLessThanJDK8() 
 			    && InfrastructureAnalyzer.getLocalParallelism() > 1   )
 		{
 			LOG.warn("Auto-disable multi-threaded text read for 'text' and 'csv' due to thread contention on JRE < 1.8"
-					+ " (java.version="+ System.getProperty("java.version")+").");
-			
-			//disable parallel text read
-			PARALLEL_CP_READ_TEXTFORMATS = false;
+					+ " (java.version="+ System.getProperty("java.version")+").");			
+			cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
 		}
 
 		//handle parallel matrix mult / rand configuration
-		if (!ConfigurationManager.getConfig().getBooleanValue(DMLConfig.CP_PARALLEL_MATRIXMULT)) {
-			PARALLEL_CP_MATRIX_OPERATIONS = false;
+		if (!dmlconf.getBooleanValue(DMLConfig.CP_PARALLEL_MATRIXMULT)) {
+			cconf.set(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, false);
 		}	
+		
+		return cconf;
 	}
 	
 	/**
 	 * 
 	 */
-	public static void setDefaultSize() 
-	{
+	public static long getDefaultSize() {
 		//we need to set default_size larger than any execution context
 		//memory budget, however, it should not produce overflows on sum
-		DEFAULT_SIZE = Math.max( InfrastructureAnalyzer.getLocalMaxMemory(),
-				                 Math.max(InfrastructureAnalyzer.getRemoteMaxMemoryMap(),
-				                		  InfrastructureAnalyzer.getRemoteMaxMemoryReduce()));
+		return Math.max( InfrastructureAnalyzer.getLocalMaxMemory(),
+					Math.max(InfrastructureAnalyzer.getRemoteMaxMemoryMap(),
+				          InfrastructureAnalyzer.getRemoteMaxMemoryReduce()));
+	}
+	
+	public static void resetDefaultSize() {
+		DEFAULT_SIZE = getDefaultSize();
 	}
 	
 	/**
@@ -544,7 +513,7 @@ public class OptimizerUtils
 	 */
 	public static int getNumReducers( boolean configOnly )
 	{
-		int ret = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+		int ret = ConfigurationManager.getNumReducers();
 		if( !configOnly ) {
 			ret = Math.min(ret,InfrastructureAnalyzer.getRemoteParallelReduceTasks());
 			
@@ -599,7 +568,7 @@ public class OptimizerUtils
 	 */
 	public static int getParallelTextReadParallelism()
 	{
-		if( !PARALLEL_CP_READ_TEXTFORMATS )
+		if( !ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) )
 			return 1; // sequential execution
 			
 		//compute degree of parallelism for parallel text read
@@ -614,7 +583,7 @@ public class OptimizerUtils
 	 */
 	public static int getParallelBinaryReadParallelism()
 	{
-		if( !PARALLEL_CP_READ_BINARYFORMATS )
+		if( !ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) )
 			return 1; // sequential execution
 			
 		//compute degree of parallelism for parallel text read
@@ -633,7 +602,7 @@ public class OptimizerUtils
 	 */
 	public static int getParallelTextWriteParallelism()
 	{
-		if( !PARALLEL_CP_WRITE_TEXTFORMATS )
+		if( !ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
 			return 1; // sequential execution
 
 		//compute degree of parallelism for parallel text read
@@ -648,7 +617,7 @@ public class OptimizerUtils
 	 */
 	public static int getParallelBinaryWriteParallelism()
 	{
-		if( !PARALLEL_CP_WRITE_BINARYFORMATS )
+		if( !ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )
 			return 1; // sequential execution
 
 		//compute degree of parallelism for parallel text read
@@ -954,7 +923,7 @@ public class OptimizerUtils
 		}
 		
 		//apply global multi-threading constraint
-		if( !PARALLEL_CP_MATRIX_OPERATIONS ) {
+		if( !ConfigurationManager.isParallelMatrixOperations() ) {
 			ret = 1;
 		}
 			

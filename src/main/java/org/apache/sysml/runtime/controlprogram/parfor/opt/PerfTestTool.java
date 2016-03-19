@@ -49,10 +49,10 @@ import au.com.bytecode.opencsv.CSVWriter;
 
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.ParseException;
@@ -1118,7 +1118,7 @@ public class PerfTestTool
 		
 		MapReduceTool.deleteFileIfExistOnHDFS(fname);
 
-		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE,fname,md);
 		mo.acquireModify(mb);
@@ -1170,7 +1170,7 @@ public class PerfTestTool
 		
 		MapReduceTool.deleteFileIfExistOnHDFS(fname);
 		
-		MatrixCharacteristics mc = new MatrixCharacteristics(d1, d2, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+		MatrixCharacteristics mc = new MatrixCharacteristics(d1, d2, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE,fname,md);
 		mo.acquireModify(mb);
@@ -1205,8 +1205,8 @@ public class PerfTestTool
 				mb = new MatrixBlock(dim,dim,true);
 				break;
 		}*/
-		
-		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+	
+		MatrixCharacteristics mc = new MatrixCharacteristics(dim, dim, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE,fname,md);
 		
@@ -1241,7 +1241,7 @@ public class PerfTestTool
 				break;
 		}*/
 		
-		MatrixCharacteristics mc = new MatrixCharacteristics(d1, d2, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+		MatrixCharacteristics mc = new MatrixCharacteristics(d1, d2, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 		MatrixFormatMetaData md = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE,fname,md);
 		

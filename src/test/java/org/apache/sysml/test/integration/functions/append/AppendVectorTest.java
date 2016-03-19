@@ -24,10 +24,9 @@ import java.util.Random;
 
 import org.junit.Assert;
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -36,8 +35,6 @@ import org.apache.sysml.utils.Statistics;
 
 public class AppendVectorTest extends AutomatedTestBase
 {
-
-	
 	private final static String TEST_NAME = "AppendVectorTest";
 	private final static String TEST_DIR = "functions/append/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AppendVectorTest.class.getSimpleName() + "/";
@@ -46,7 +43,7 @@ public class AppendVectorTest extends AutomatedTestBase
 	private final static int rows1 = 1279;
 	private final static int cols1 = 1059;
 	private final static int rows2 = 2021;
-	private final static int cols2 = DMLTranslator.DMLBlockSize;
+	private final static int cols2 = OptimizerUtils.DEFAULT_BLOCKSIZE;
 	private final static int min=0;
 	private final static int max=100;
 	

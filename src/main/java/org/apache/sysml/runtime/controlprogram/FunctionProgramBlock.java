@@ -22,7 +22,7 @@ package org.apache.sysml.runtime.controlprogram;
 import java.util.ArrayList;
 
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -84,7 +84,7 @@ public class FunctionProgramBlock extends ProgramBlock
 	{	
 		//dynamically recompile entire function body (according to function inputs)
 		try {
-			if( OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+			if( ConfigurationManager.isDynamicRecompilation() 
 				&& isRecompileOnce() 
 				&& ParForProgramBlock.RESET_RECOMPILATION_FLAGs )
 			{

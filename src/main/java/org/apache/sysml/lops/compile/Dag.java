@@ -202,8 +202,7 @@ public class Dag<N extends Lop>
 		IDMap = new HashMap<Long, Integer>();
 
 		// get number of reducers from dml config
-		DMLConfig conf = ConfigurationManager.getConfig();
-		total_reducers = conf.getIntValue(DMLConfig.NUM_REDUCERS);
+		total_reducers = ConfigurationManager.getNumReducers();
 	}
 
 	/**

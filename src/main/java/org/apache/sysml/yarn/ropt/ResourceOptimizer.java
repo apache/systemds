@@ -220,7 +220,7 @@ public class ResourceOptimizer
 			InfrastructureAnalyzer.setLocalMaxMemory( (long)cp );
 			InfrastructureAnalyzer.setRemoteMaxMemoryMap( (long)mr );
 			InfrastructureAnalyzer.setRemoteMaxMemoryReduce( (long)mr );	
-			OptimizerUtils.setDefaultSize(); //dependent on cp, mr
+			OptimizerUtils.resetDefaultSize(); //dependent on cp, mr
 		}
 		
 		for( ProgramBlock pb : prog )
@@ -349,7 +349,7 @@ public class ResourceOptimizer
 		InfrastructureAnalyzer.setLocalMaxMemory( cp );
 		InfrastructureAnalyzer.setRemoteMaxMemoryMap( mr );
 		InfrastructureAnalyzer.setRemoteMaxMemoryReduce( mr );
-		OptimizerUtils.setDefaultSize(); //dependent on cp, mr
+		OptimizerUtils.resetDefaultSize(); //dependent on cp, mr
 		
 		//recompile instructions (incl predicates)
 		if (pb instanceof WhileProgramBlock)

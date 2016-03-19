@@ -42,7 +42,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -326,14 +325,14 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						
 						if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE )
 						{
-							appendCellBufferToStagingArea(stagingDir, buffer, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+							appendCellBufferToStagingArea(stagingDir, buffer, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 							buffer.clear();
 						}
 					}
 					
 					if( !buffer.isEmpty() )
 					{
-						appendCellBufferToStagingArea(stagingDir, buffer, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+						appendCellBufferToStagingArea(stagingDir, buffer, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 						buffer.clear();
 					}
 				}
@@ -383,14 +382,14 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 						
 						if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE )
 						{
-							appendCellBufferToStagingArea(stagingDir, buffer, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+							appendCellBufferToStagingArea(stagingDir, buffer, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 							buffer.clear();
 						}
 					}
 					
 					if( !buffer.isEmpty() )
 					{
-						appendCellBufferToStagingArea(stagingDir, buffer, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+						appendCellBufferToStagingArea(stagingDir, buffer, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 						buffer.clear();
 					}
 				}

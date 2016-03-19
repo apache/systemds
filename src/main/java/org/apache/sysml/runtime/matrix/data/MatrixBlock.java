@@ -34,13 +34,11 @@ import java.util.Iterator;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
@@ -5856,11 +5854,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed, int k) 
 		throws DMLRuntimeException
 	{
-		DMLConfig conf = ConfigurationManager.getConfig();
-		int blocksize = (conf!=null) ? ConfigurationManager.getConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE)
-				                     : DMLTranslator.DMLBlockSize;
-		
-		RandomMatrixGenerator rgen = new RandomMatrixGenerator(pdf, rows, cols, blocksize, blocksize, sparsity, min, max);
+		RandomMatrixGenerator rgen = new RandomMatrixGenerator(pdf, rows, cols, 
+				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), sparsity, min, max);
 		
 		if (k > 1)
 			return randOperations(rgen, seed, k);

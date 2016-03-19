@@ -19,7 +19,8 @@
 
 package org.apache.sysml.runtime.io;
 
-import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
@@ -58,7 +59,7 @@ public class MatrixWriterFactory
 		MatrixWriter writer = null;
 		
 		if( oinfo == OutputInfo.TextCellOutputInfo ) {
-			if( OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
 				writer = new WriterTextCellParallel();
 			else
 				writer = new WriterTextCell();
@@ -75,7 +76,7 @@ public class MatrixWriterFactory
 		else if( oinfo == OutputInfo.CSVOutputInfo ) {
 			if( props!=null && !(props instanceof CSVFileFormatProperties) )
 				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
-			if( OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
 				writer = new WriterTextCSVParallel((CSVFileFormatProperties)props);
 			else
 				writer = new WriterTextCSV((CSVFileFormatProperties)props);
@@ -84,7 +85,7 @@ public class MatrixWriterFactory
 			writer = new WriterBinaryCell();
 		}
 		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
-			if( OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )
 				writer = new WriterBinaryBlockParallel(replication);
 			else
 				writer = new WriterBinaryBlock(replication);

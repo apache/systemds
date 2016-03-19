@@ -796,7 +796,7 @@ public class DataTransform
 			
 			if(isBB)
 			{
-				DMLConfig conf = ConfigurationManager.getConfig();
+				DMLConfig conf = ConfigurationManager.getDMLConfig();
 				int blockSize = conf.getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
 				CSVReblockInstruction rblk = prepDummyReblockInstruction(oprnds.inputCSVProperties, blockSize);
 				
@@ -835,7 +835,7 @@ public class DataTransform
 			
 			if (isCSV) 
 			{
-				DMLConfig conf = ConfigurationManager.getConfig();
+				DMLConfig conf = ConfigurationManager.getDMLConfig();
 				int blockSize = conf.getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
 				CSVReblockInstruction rblk = prepDummyReblockInstruction(oprnds.inputCSVProperties, blockSize);
 				

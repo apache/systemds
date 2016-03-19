@@ -316,7 +316,7 @@ public class CSVReblockMR
 		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 
 		//set up custom map/reduce configurations 
-		DMLConfig config = ConfigurationManager.getConfig();
+		DMLConfig config = ConfigurationManager.getDMLConfig();
 		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		//set up the number of reducers
@@ -412,7 +412,7 @@ public class CSVReblockMR
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 
 		//set up custom map/reduce configurations 
-		DMLConfig config = ConfigurationManager.getConfig();
+		DMLConfig config = ConfigurationManager.getDMLConfig();
 		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		//set up what matrices are needed to pass from the mapper to reducer

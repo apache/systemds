@@ -28,14 +28,13 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
@@ -373,7 +372,7 @@ public abstract class CostEstimator
 			String varname = iinst.output.getName();
 			long rlen = iinst.getRows();
 			long clen = iinst.getCols();
-			VarStats vs = new VarStats(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, rlen*clen, true);
+			VarStats vs = new VarStats(rlen, clen, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), rlen*clen, true);
 			stats.put(varname, vs);	
 		}
 		else if( inst instanceof FunctionCallCPInstruction )

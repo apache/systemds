@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.AppendGAlignedSP;
@@ -766,7 +767,7 @@ public class BinaryOp extends Hop
 		if( dimsKnown() && _nnz<0 ) //never after inference
 			nnz = -1; 
 		
-		if((op==OpOp2.CBIND || op==OpOp2.RBIND) && !OptimizerUtils.ALLOW_DYN_RECOMPILATION && !(getDataType()==DataType.SCALAR) ) {	
+		if((op==OpOp2.CBIND || op==OpOp2.RBIND) && !ConfigurationManager.isDynamicRecompilation() && !(getDataType()==DataType.SCALAR) ) {	
 			ret = OptimizerUtils.DEFAULT_SIZE;
 		}
 		else
@@ -997,7 +998,7 @@ public class BinaryOp extends Hop
 		}
 
 		//mark for recompile (forever)
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE ) {
+		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE ) {
 			setRequiresRecompile();
 		}
 		

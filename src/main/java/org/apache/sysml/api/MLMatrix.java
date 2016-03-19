@@ -34,7 +34,7 @@ import org.apache.spark.sql.types.StructType;
 
 import scala.Tuple2;
 
-import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.functions.GetMIMBFromRow;
@@ -91,7 +91,8 @@ public class MLMatrix extends DataFrame {
 		this.ml = ml;
 	}
 	
-	static String writeStmt = "write(output, \"tmp\", format=\"binary\", rows_in_block=" + DMLTranslator.DMLBlockSize + ", cols_in_block=" + DMLTranslator.DMLBlockSize + ");";
+	//TODO replace default blocksize
+	static String writeStmt = "write(output, \"tmp\", format=\"binary\", rows_in_block=" + OptimizerUtils.DEFAULT_BLOCKSIZE + ", cols_in_block=" + OptimizerUtils.DEFAULT_BLOCKSIZE + ");";
 	
 	// ------------------------------------------------------------------------------------------------
 	

@@ -23,9 +23,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 
@@ -325,7 +325,7 @@ public class WhileStatementBlock extends StatementBlock
 	public void updatePredicateRecompilationFlag() 
 		throws HopsException
 	{
-		_requiresPredicateRecompile =  OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+		_requiresPredicateRecompile =  ConfigurationManager.isDynamicRecompilation() 
 			                           && Recompiler.requiresRecompilation(getPredicateHops());
 	}
 	

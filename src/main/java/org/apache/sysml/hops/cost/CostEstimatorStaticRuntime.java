@@ -23,14 +23,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.MapMult;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.lops.compile.JobType;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -167,7 +165,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		boolean localJob = InfrastructureAnalyzer.isLocalMode();
 		int maxPMap = InfrastructureAnalyzer.getRemoteParallelMapTasks(); 	
 		int maxPRed = Math.min( InfrastructureAnalyzer.getRemoteParallelReduceTasks(),
-				        ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS) );
+				        ConfigurationManager.getNumReducers() );
 		double blocksize = ((double)InfrastructureAnalyzer.getHDFSBlockSize())/(1024*1024);
 		
 		//correction max number of mappers/reducers on yarn clusters
@@ -633,8 +631,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			default: {
 				for( int i=0; i<mapOutIx.length; i++ )
 				{
-					int lret =  (int) Math.ceil((double)vs[mapOutIx[i]]._rlen/DMLTranslator.DMLBlockSize)
-					           *(int) Math.ceil((double)vs[mapOutIx[i]]._clen/DMLTranslator.DMLBlockSize);
+					int lret =  (int) Math.ceil((double)vs[mapOutIx[i]]._rlen/ConfigurationManager.getBlocksize())
+					           *(int) Math.ceil((double)vs[mapOutIx[i]]._clen/ConfigurationManager.getBlocksize());
 					ret = Math.max(lret, ret);
 				}
 				break;

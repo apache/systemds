@@ -39,12 +39,16 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
  */
 public abstract class AParserWrapper 
 {
-	//global parser configuration dml/pydml:
-	//1) skip errors on unspecified args (modified by mlcontext / jmlc)
-	public static boolean IGNORE_UNSPECIFIED_ARGS = false; 
-	
-	
-	public abstract DMLProgram parse(String fileName, String dmlScript, HashMap<String, String> argVals) throws ParseException;
+	/**
+	 * 
+	 * @param fileName
+	 * @param dmlScript
+	 * @param argVals
+	 * @return
+	 * @throws ParseException
+	 */
+	public abstract DMLProgram parse(String fileName, String dmlScript, HashMap<String, String> argVals) 
+		throws ParseException;
 
 	
 	/**

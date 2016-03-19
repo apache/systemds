@@ -31,9 +31,9 @@ import java.util.List;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Level;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -314,7 +314,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		super(prog, iterPredVars);
 
 		//init internal flags according to DML config
-		initInternalConfigurations(ConfigurationManager.getConfig());
+		initInternalConfigurations(ConfigurationManager.getDMLConfig());
 		
 		//ID generation and setting 
 		setParForProgramBlockIDs( ID );
@@ -1404,8 +1404,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		try
 		{
-			//create deep copies of required elements
-			//child blocks
+			//create deep copies of required elements child blocks
 			ArrayList<ProgramBlock> cpChildBlocks = null;	
 			HashSet<String> fnNames = new HashSet<String>();
 			if( USE_PB_CACHE )
@@ -1425,12 +1424,15 @@ public class ParForProgramBlock extends ForProgramBlock
 				cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), fnNames, false, false); 
 			}             
 			
-			// Deep copy Execution Context
+			//deep copy execution context
 			ExecutionContext cpEc = ProgramConverter.createDeepCopyExecutionContext(ec);
+			
+			//copy compiler configuration (for jmlc w/o global config)
+			CompilerConfig cconf = ConfigurationManager.getCompilerConfig();
 			
 			//create the actual parallel worker
 			ParForBody body = new ParForBody( cpChildBlocks, _resultVars, cpEc );
-			pw = new LocalParWorker( pwID, queue, body, MAX_RETRYS_ON_ERROR, _monitor );
+			pw = new LocalParWorker( pwID, queue, body, cconf, MAX_RETRYS_ON_ERROR, _monitor );
 			pw.setFunctionNames(fnNames);
 		}
 		catch(Exception ex)
@@ -1506,7 +1508,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		DataPartitioner dp = null;
 		
 		//determine max degree of parallelism
-		int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+		int numReducers = ConfigurationManager.getNumReducers();
 		int maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
 		//correction max number of reducers on yarn clusters
 		if( InfrastructureAnalyzer.isYarnEnabled() )
@@ -1550,7 +1552,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		ResultMerge rm = null;
 		
 		//determine degree of parallelism
-		int numReducers = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+		int numReducers = ConfigurationManager.getNumReducers();
 		int maxMap = InfrastructureAnalyzer.getRemoteParallelMapTasks();
 		int maxRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
 		//correction max number of reducers on yarn clusters
@@ -1920,8 +1922,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private String constructTaskFileName()
 	{
-		String scratchSpaceLoc = ConfigurationManager.getConfig()
-        							.getTextValue(DMLConfig.SCRATCH_SPACE);
+		String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
 	
 		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);
@@ -1941,8 +1942,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private String constructResultFileName()
 	{
-		String scratchSpaceLoc = ConfigurationManager.getConfig()
-									.getTextValue(DMLConfig.SCRATCH_SPACE);
+		String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(scratchSpaceLoc);
@@ -1960,8 +1960,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private String constructResultMergeFileName()
 	{
-		String scratchSpaceLoc = ConfigurationManager.getConfig()
-		                             .getTextValue(DMLConfig.SCRATCH_SPACE);
+		String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
 		
 		String fname = PARFOR_MR_RESULTMERGE_FNAME;
 		fname = fname.replaceAll("%ID%", String.valueOf(_ID)); //replace workerID
@@ -1983,8 +1982,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private String constructDataPartitionsFileName()
 	{
-		String scratchSpaceLoc = ConfigurationManager.getConfig()
-		                             .getTextValue(DMLConfig.SCRATCH_SPACE);
+		String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
 		
 		String fname = PARFOR_DATAPARTITIONS_FNAME;
 		fname = fname.replaceAll("%ID%", String.valueOf(_ID)); //replace workerID

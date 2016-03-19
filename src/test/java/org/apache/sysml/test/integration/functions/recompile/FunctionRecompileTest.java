@@ -22,9 +22,8 @@ package org.apache.sysml.test.integration.functions.recompile;
 import java.util.HashMap;
 
 import org.junit.Assert;
-
 import org.junit.Test;
-
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -80,7 +79,7 @@ public class FunctionRecompileTest extends AutomatedTestBase
 
 	private void runFunctionTest( boolean recompile, boolean IPA )
 	{	
-		boolean oldFlagRecompile = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
+		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try
@@ -103,7 +102,7 @@ public class FunctionRecompileTest extends AutomatedTestBase
 	        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
 			writeInputMatrix("V", V, true);
 	
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
+			CompilerConfig.FLAG_DYN_RECOMPILE = recompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 			
 			boolean exceptionExpected = false;
@@ -133,7 +132,7 @@ public class FunctionRecompileTest extends AutomatedTestBase
 		}
 		finally
 		{
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlagRecompile;
+			CompilerConfig.FLAG_DYN_RECOMPILE = oldFlagRecompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 		}
 	}

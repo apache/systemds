@@ -24,7 +24,6 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -95,10 +94,8 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	//Note: In order to run these tests against ParFor loop, parfor's DEBUG flag needs to be set in the script.
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		OptimizerUtils.ALLOW_DYN_RECOMPILATION = true;
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, null));
 	}
 

@@ -256,7 +256,7 @@ public class SortMR
 	    job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 	    
 		//set up custom map/reduce configurations 
-		DMLConfig config = ConfigurationManager.getConfig();
+		DMLConfig config = ConfigurationManager.getDMLConfig();
 		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 	    
 		MatrixCharacteristics[] s = new MatrixCharacteristics[1];

@@ -24,7 +24,7 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
@@ -44,7 +44,6 @@ import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -579,8 +578,8 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 		if( hop!=null ) 
 		{
 			hop.setForcedExecType(null);
-			hop.setRowsInBlock(DMLTranslator.DMLBlockSize);
-			hop.setColsInBlock(DMLTranslator.DMLBlockSize);
+			hop.setRowsInBlock(ConfigurationManager.getBlocksize());
+			hop.setColsInBlock(ConfigurationManager.getBlocksize());
 			if( !HopRewriteUtils.alwaysRequiresReblock(hop) ) {
 				hop.setRequiresReblock(false);
 			}

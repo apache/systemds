@@ -1360,7 +1360,7 @@ public class MRJobConfiguration
 		//correction max number of reducers on yarn clusters
 		if( InfrastructureAnalyzer.isYarnEnabled() )
 			n = (int)Math.max( n, YarnClusterAnalyzer.getNumCores()/2 );
-		n=Math.min(n, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS));
+		n=Math.min(n, ConfigurationManager.getNumReducers());
 		n=Math.min(n, numFromCompiler);
 		if(numReducerGroups>0)
 			n=(int) Math.min(n, numReducerGroups);
@@ -1876,7 +1876,7 @@ public class MRJobConfiguration
 	public static String constructTempOutputFilename() 
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
+		sb.append(ConfigurationManager.getScratchSpace());
 		sb.append(Lop.FILE_SEPARATOR);
 		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
@@ -1893,7 +1893,7 @@ public class MRJobConfiguration
 	private static String constructPartitionFilename() 
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
+		sb.append(ConfigurationManager.getScratchSpace());
 		sb.append(Lop.FILE_SEPARATOR);
 		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());

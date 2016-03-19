@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -168,9 +167,8 @@ public class PreparedScript
 		if( !_inVarnames.contains(varname) )
 			throw new DMLException("Unspecified input variable: "+varname);
 				
-		DMLConfig conf = ConfigurationManager.getConfig();
-		String scratch_space = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
-		int blocksize = conf.getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE);
+		String scratch_space = ConfigurationManager.getScratchSpace();
+		int blocksize = ConfigurationManager.getBlocksize();
 		
 		//create new matrix object
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.getNumRows(), matrix.getNumColumns(), blocksize, blocksize);
@@ -233,8 +231,7 @@ public class PreparedScript
 		if( !_inVarnames.contains(varname) )
 			throw new DMLException("Unspecified input variable: "+varname);
 				
-		DMLConfig conf = ConfigurationManager.getConfig();
-		String scratch_space = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
+		String scratch_space = ConfigurationManager.getScratchSpace();
 		
 		//create new frame object
 		FrameObject fo = new FrameObject(scratch_space+"/"+varname);

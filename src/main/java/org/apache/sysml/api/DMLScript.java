@@ -46,7 +46,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.xml.sax.SAXException;
-
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.debug.DMLDebugger;
@@ -571,13 +571,15 @@ public class DMLScript
 		printStartExecInfo( dmlScriptStr );
 		
 		//Step 1: parse configuration files
-		DMLConfig conf = DMLConfig.readAndMergeConfigurationFiles(fnameOptConfig);
-		ConfigurationManager.setConfig(conf);
-		LOG.debug("\nDML config: \n" + conf.getConfigInfo());
+		DMLConfig dmlconf = DMLConfig.readAndMergeConfigurationFiles(fnameOptConfig);
+		ConfigurationManager.setGlobalConfig(dmlconf);		
+		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
+		ConfigurationManager.setGlobalConfig(cconf);
+		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
 		
 		//Step 2: set local/remote memory if requested (for compile in AM context) 
-		if( conf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
-			DMLAppMasterUtils.setupConfigRemoteMaxMemory(conf); 
+		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
+			DMLAppMasterUtils.setupConfigRemoteMaxMemory(dmlconf); 
 		}
 		
 		//Step 3: parse dml script
@@ -621,7 +623,7 @@ public class DMLScript
 		}
 		
 		//Step 7: generate runtime program
-		Program rtprog = prog.getRuntimeProgram(conf);
+		Program rtprog = prog.getRuntimeProgram(dmlconf);
 
 		if (LOG.isDebugEnabled()) {
 			LOG.info("********************** Instructions *******************");
@@ -638,8 +640,8 @@ public class DMLScript
 		}
 		
 		//launch SystemML appmaster (if requested and not already in launched AM)
-		if( conf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
-			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, conf, allArgs, rtprog) )
+		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
+			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, dmlconf, allArgs, rtprog) )
 				return; //if AM launch unsuccessful, fall back to normal execute
 			if( isActiveAM() ) //in AM context (not failed AM launch)
 				DMLAppMasterUtils.setupProgramMappingRemoteMaxMemory(rtprog);
@@ -669,7 +671,7 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try 
 		{  
-			initHadoopExecution( conf );
+			initHadoopExecution( dmlconf );
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
 			ec = ExecutionContextFactory.createContext(rtprog);
@@ -688,7 +690,7 @@ public class DMLScript
 			LOG.info("END DML run " + getDateTime() );
 			
 			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution( conf );		
+			cleanupHadoopExecution( dmlconf );		
 		}	
 	}		
 	
@@ -755,7 +757,7 @@ public class DMLScript
 		
 		//Step 1: parse configuration files
 		dbprog.conf = DMLConfig.readAndMergeConfigurationFiles(fnameOptConfig);
-		ConfigurationManager.setConfig(dbprog.conf);
+		ConfigurationManager.setGlobalConfig(dbprog.conf);
 	
 		//Step 2: parse dml script
 		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);

@@ -28,11 +28,9 @@ import java.util.TreeMap;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.lops.compile.JobType;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -361,7 +359,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			String reblock = "";
 			String reblockStr = ""; //Keep a copy of a single MR reblock instruction
 	
-			String scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+			String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
 			
 			try {
 				// create a RBLK job that transforms each output matrix from cell to block
@@ -380,14 +378,14 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					reblock += "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + 
 									i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
 									i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
-									DMLTranslator.DMLBlockSize + ReBlock.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize + ReBlock.OPERAND_DELIMITOR + "true";
+									ConfigurationManager.getBlocksize() + ReBlock.OPERAND_DELIMITOR + ConfigurationManager.getBlocksize() + ReBlock.OPERAND_DELIMITOR + "true";
 					
 					if(DMLScript.ENABLE_DEBUG_MODE) {
 						//Create a copy of reblock instruction but as a single instruction (FOR DEBUGGER)
 						reblockStr = "MR" + ReBlock.OPERAND_DELIMITOR + "rblk" + ReBlock.OPERAND_DELIMITOR + 
 										i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
 										i + ReBlock.DATATYPE_PREFIX + matrices.get(i).getDataType() + ReBlock.VALUETYPE_PREFIX + matrices.get(i).getValueType() + ReBlock.OPERAND_DELIMITOR + 
-										DMLTranslator.DMLBlockSize + ReBlock.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize  + ReBlock.OPERAND_DELIMITOR + "true";					
+										ConfigurationManager.getBlocksize() + ReBlock.OPERAND_DELIMITOR + ConfigurationManager.getBlocksize()  + ReBlock.OPERAND_DELIMITOR + "true";					
 						//Set MR reblock instruction line number (FOR DEBUGGER)
 						if (!MRJobLineNumbers.containsKey(matrices.get(i).getBeginLine())) {
 							MRJobLineNumbers.put(matrices.get(i).getBeginLine(), new ArrayList<String>()); 
@@ -487,7 +485,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			String[] outputs = new String[matrices.size()];
 			byte[] resultIndex = new byte[matrices.size()];
 	
-			String scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+			String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
 			
 			
 			try {
@@ -514,7 +512,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 						gmrStr = "MR" + Lop.OPERAND_DELIMITOR + "gmr" + Lop.OPERAND_DELIMITOR + 
 										i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
 										i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
-										DMLTranslator.DMLBlockSize + Lop.OPERAND_DELIMITOR + DMLTranslator.DMLBlockSize;
+										ConfigurationManager.getBlocksize() + Lop.OPERAND_DELIMITOR + ConfigurationManager.getBlocksize();
 						
 						//Set MR gmr instruction line number (FOR DEBUGGER)
 						if (!MRJobLineNumbers.containsKey(matrices.get(i).getBeginLine())) {
@@ -579,7 +577,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			
 			for( int i=0; i<matricesNoReblock.size(); i++ )
 			{
-				String scratchSpaceLoc = ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE);
+				String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
 				
 				try{
 					String filename = scratchSpaceLoc +
@@ -765,7 +763,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	protected MatrixObject createOutputMatrixObject( Matrix m ) 
 		throws CacheException 
 	{
-		MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+		MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo);		
 		return new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
 	}

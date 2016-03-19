@@ -22,6 +22,7 @@ package org.apache.sysml.hops;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
@@ -995,7 +996,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		}
 		
 		//mark for recompile (forever)
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
+		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
 			setRequiresRecompile();
 		
 		return _etype;

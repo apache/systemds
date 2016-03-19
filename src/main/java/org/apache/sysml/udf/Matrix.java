@@ -21,7 +21,7 @@ package org.apache.sysml.udf;
 
 import java.io.IOException;
 
-import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
@@ -216,8 +216,8 @@ public class Matrix extends FunctionParameter
 		_rows = mb.getNumRows();
 		_cols = mb.getNumColumns();
 		long nnz = mb.getNonZeros();
-		int rblen = DMLTranslator.DMLBlockSize;
-		int cblen = DMLTranslator.DMLBlockSize;
+		int rblen = ConfigurationManager.getBlocksize();
+		int cblen = ConfigurationManager.getBlocksize();
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen, nnz);
 		MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, oinfo, iinfo);

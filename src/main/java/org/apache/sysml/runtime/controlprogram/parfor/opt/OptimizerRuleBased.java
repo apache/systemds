@@ -963,7 +963,7 @@ public class OptimizerRuleBased extends Optimizer
 		PDataPartitioner REMOTE_DP = OptimizerUtils.isSparkExecutionMode() ? PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
 
 		//deciding on the execution strategy
-		if( OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR     //allowed remote parfor execution
+		if( ConfigurationManager.isParallelParFor()            //allowed remote parfor execution
 			&& ( (isCPOnly && M <= _rm )    //Required: all instruction can be be executed in CP
 			   ||(isCPOnlyPossible && M2 <= _rm)) )  //Required: cp inst fit into remote JVM mem 
 		{
@@ -1436,7 +1436,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( type == ExecType.CP ) 
 		{
 			//determine local max parallelism constraint
-			int kMax = OptimizerUtils.PARALLEL_LOCAL_OR_REMOTE_PARFOR ?
+			int kMax = ConfigurationManager.isParallelParFor() ?
 					(n.isCPOnly() ? _lkmaxCP : _lkmaxMR) : 1;
 			
 			//ensure local memory constraint (for spark more conservative in order to 
@@ -1535,7 +1535,7 @@ public class OptimizerRuleBased extends Optimizer
 				{
 					//set degree of parallelism for multi-threaded leaf nodes
 					Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(c.getID());
-					if(    OptimizerUtils.PARALLEL_CP_MATRIX_OPERATIONS 
+					if(    ConfigurationManager.isParallelMatrixOperations() 
 						&& h instanceof MultiThreadedHop //abop, datagenop, qop, paramop
 						&& !( h instanceof ParameterizedBuiltinOp //only paramop-grpagg
 							 && ((ParameterizedBuiltinOp)h).getOp()!=ParamBuiltinOp.GROUPEDAGG) )
@@ -1583,7 +1583,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( flagNested && flagLIX )
 			LOG.warn(getOptMode()+" OPT: Task partitioner decision has conflicting input from rewrites 'nested parallelism' and 'result partitioning'.");
 		
-		boolean jvmreuse = ConfigurationManager.getConfig().getBooleanValue(DMLConfig.JVM_REUSE); 
+		boolean jvmreuse = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.JVM_REUSE); 
 		
 		//set task partitioner
 		if( flagNested )

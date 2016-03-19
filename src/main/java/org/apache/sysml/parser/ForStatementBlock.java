@@ -23,9 +23,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
@@ -420,8 +420,7 @@ public class ForStatementBlock extends StatementBlock
 	public void updatePredicateRecompilationFlags() 
 		throws HopsException
 	{
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION )
-		{
+		if( ConfigurationManager.isDynamicRecompilation() ) {
 			_requiresFromRecompile = Recompiler.requiresRecompilation(getFromHops());
 			_requiresToRecompile = Recompiler.requiresRecompilation(getToHops());
 			_requiresIncrementRecompile = Recompiler.requiresRecompilation(getIncrementHops());

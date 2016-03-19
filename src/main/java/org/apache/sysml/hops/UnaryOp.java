@@ -21,6 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
 import org.apache.sysml.lops.CombineUnary;
@@ -670,7 +671,7 @@ public class UnaryOp extends Hop
 		}
 		
 		//mark for recompile (forever)
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
+		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
 			setRequiresRecompile();
 
 		//ensure cp exec type for single-node operations

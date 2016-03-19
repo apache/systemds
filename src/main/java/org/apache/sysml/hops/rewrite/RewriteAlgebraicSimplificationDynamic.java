@@ -24,6 +24,7 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -44,7 +45,6 @@ import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.lops.MapMultChain.ChainType;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -612,7 +612,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						//create cast to keep same output datatype
 						UnaryOp cast = new UnaryOp(uhi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 				                   OpOp1.CAST_AS_MATRIX, uhi);
-						HopRewriteUtils.setOutputParameters(cast, 1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
+						HopRewriteUtils.setOutputParameters(cast, 1, 1, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), -1);
 						
 						//rehang cast under all parents
 						for( Hop p : parents ) {
@@ -700,7 +700,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						//create cast to keep same output datatype
 						UnaryOp cast = new UnaryOp(uhi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
 				                   OpOp1.CAST_AS_MATRIX, uhi);
-						HopRewriteUtils.setOutputParameters(cast, 1, 1, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, -1);
+						HopRewriteUtils.setOutputParameters(cast, 1, 1, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), -1);
 						
 						//rehang cast under all parents
 						for( Hop p : parents ) {

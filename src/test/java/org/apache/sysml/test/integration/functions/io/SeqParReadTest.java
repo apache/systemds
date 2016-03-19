@@ -22,10 +22,8 @@ package org.apache.sysml.test.integration.functions.io;
 import java.io.IOException;
 
 import org.junit.Assert;
-
 import org.junit.Test;
-
-import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -212,11 +210,11 @@ public class SeqParReadTest extends AutomatedTestBase {
 	
 	private void runReadTypeFormatSparsitySizeTest(boolean parallel, OutputInfo fmt, boolean dense, boolean big ) {
 		
-		boolean oldpar = OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS;
+		boolean oldpar = CompilerConfig.FLAG_PARREAD_TEXT;
 
 		try
 		{
-			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = parallel;
+			CompilerConfig.FLAG_PARREAD_TEXT = parallel;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
@@ -252,7 +250,7 @@ public class SeqParReadTest extends AutomatedTestBase {
 		}
 		finally
 		{
-			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = oldpar;		
+			CompilerConfig.FLAG_PARREAD_TEXT = oldpar;		
 		}
 	}
 	

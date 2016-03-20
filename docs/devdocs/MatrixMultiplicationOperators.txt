@@ -1,6 +1,6 @@
 #####################################################################
 # TITLE: An Overview of Matrix Multiplication Operators in SystemML #
-# DATE MODIFIED: 02/20/2016                                         #
+# DATE MODIFIED: 03/18/2016                                         #
 #####################################################################
 
 In the following, we give an overview of backend-specific physical matrix multiplication operators in SystemML as well as their internally used matrix multiplication block operations.

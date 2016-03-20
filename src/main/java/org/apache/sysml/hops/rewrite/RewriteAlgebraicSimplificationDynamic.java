@@ -2168,7 +2168,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					V = V.getInput().get(0);
 					
 				hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, OpOp4.WCEMM, X, U, V,
-						new LiteralOp(-1), 0, false, false);
+						new LiteralOp(0.0), 0, false, false);
 				HopRewriteUtils.setOutputBlocksizes(hnew, X.getRowsInBlock(), X.getColsInBlock());
 				appliedPattern = true;
 				

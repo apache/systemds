@@ -39,17 +39,21 @@ public class ConfigurationManager
 	private static DMLConfig _dmlconf = null; 
 	
 	/** Local DML configuration for thread-local config updates */
-	private static ThreadLocalDMLConfig _ldmlconf = new ThreadLocalDMLConfig(null);
+	private static ThreadLocalDMLConfig _ldmlconf = new ThreadLocalDMLConfig();
 	
     /** Global compiler configuration (defaults) */
     private static CompilerConfig _cconf = null;
 	
     /** Local compiler configuration for thead-local config updates */
-    private static ThreadLocalCompilerConfig _lcconf = new ThreadLocalCompilerConfig(null);
+    private static ThreadLocalCompilerConfig _lcconf = new ThreadLocalCompilerConfig();
     
     //global static initialization
 	static {
 		_rJob = new JobConf();
+		
+		//initialization after job conf in order to prevent cyclic initialization issues 
+		//ConfigManager -> OptimizerUtils -> InfrastructureAnalyer -> ConfigManager 
+ 		_dmlconf = new DMLConfig();
 		_cconf = new CompilerConfig();
 	}
 	
@@ -83,8 +87,8 @@ public class ConfigurationManager
 	public synchronized static void setGlobalConfig( DMLConfig conf ) {
 		_dmlconf = conf;
 		
-		//reinitialize thread-local dml configs
-		_ldmlconf = new ThreadLocalDMLConfig(_dmlconf);
+		//reinitialize thread-local dml configs w/ _dmlconf
+		_ldmlconf = new ThreadLocalDMLConfig();
 	}
 	
 	/**
@@ -112,8 +116,8 @@ public class ConfigurationManager
 	public synchronized static void setGlobalConfig( CompilerConfig conf ) {
 		_cconf = conf;
 		
-		//reinitialize thread-local compiler configs
-		_lcconf = new ThreadLocalCompilerConfig(_cconf);
+		//reinitialize thread-local compiler configs w/ _cconf
+		_lcconf = new ThreadLocalCompilerConfig();
 	}
 	
 	/**
@@ -190,17 +194,11 @@ public class ConfigurationManager
 	 * 
 	 */
 	private static class ThreadLocalDMLConfig extends ThreadLocal<DMLConfig> {
-		private DMLConfig _source = null;
-		
-		private ThreadLocalDMLConfig( DMLConfig source ) {
-			_source = source;
-		}
-		
 		@Override 
         protected DMLConfig initialValue() { 
 			//currently initialize by reference to avoid unnecessary deep copy via clone.
-	        if( _source != null )
-	        	return _source; 
+	        if( _dmlconf != null )
+	        	return _dmlconf; 
 	        return null;
         }
     }
@@ -209,16 +207,10 @@ public class ConfigurationManager
 	 * 
 	 */
 	private static class ThreadLocalCompilerConfig extends ThreadLocal<CompilerConfig> {
-		private CompilerConfig _source = null;
-		
-		private ThreadLocalCompilerConfig( CompilerConfig source ) {
-			_source = source;
-		}
-		
 		@Override 
 		protected CompilerConfig initialValue() { 
-			if( _source != null )
-				return _source.clone();
+			if( _cconf != null )
+				return _cconf.clone();
 			return null;
 		}
     };

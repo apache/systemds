@@ -1251,6 +1251,12 @@ public class MLContext {
 		
 		}
 		finally {
+			// Remove global dml config and all thread-local configs
+			// TODO enable cleanup whenever invalid GNMF MLcontext is fixed 
+			// (the test is invalid because it assumes that status of previous execute is kept)
+			//ConfigurationManager.setGlobalConfig(new DMLConfig());
+			//ConfigurationManager.clearLocalConfigs();
+			
 			// Reset active MLContext.
 			_activeMLContext = null;	
 		}

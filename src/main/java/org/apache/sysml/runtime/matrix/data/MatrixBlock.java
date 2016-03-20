@@ -1227,66 +1227,77 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		sparseBlock = null;
 	}
 
+	/**
+	 * Recomputes and materializes the number of non-zero values
+	 * of the entire matrix block.
+	 * 
+	 */
 	public void recomputeNonZeros()
 	{
-		nonZeros=0;
-		if( sparse && sparseBlock!=null )
+		if( sparse && sparseBlock!=null ) //SPARSE (max long)
 		{
 			//note: rlen might be <= sparseBlock.numRows()
 			nonZeros = sparseBlock.size(0, rlen);
 		}
-		else if( !sparse && denseBlock!=null )
+		else if( !sparse && denseBlock!=null ) //DENSE (max int)
 		{
-			int limit=rlen*clen;
-			for(int i=0; i<limit; i++) {
-				//HotSpot JVM bug causes crash in presence of NaNs 
-				//nonZeros += (denseBlock[i]!=0) ? 1 : 0;
-				if( denseBlock[i]!=0 )
-					nonZeros++;
-			}
+			double[] a = denseBlock;
+			final int limit=rlen*clen;
+			int nnz = 0;
+			for(int i=0; i<limit; i++)
+				nnz += (a[i]!=0) ? 1 : 0;
+			nonZeros = nnz;
 		}
 	}
 	
+	/**
+	 * Recomputes the number of non-zero values of a specified 
+	 * range of the matrix block. NOTE: This call does not materialize
+	 * the compute result in any form.
+	 * 
+	 * @param rl 	row lower index, 0-based, inclusive
+	 * @param ru 	row upper index, 0-based, inclusive
+	 * @param cl 	column lower index, 0-based, inclusive
+	 * @param cu 	column upper index, 0-based, inclusive
+	 * @return
+	 */
 	protected long recomputeNonZeros(int rl, int ru, int cl, int cu)
 	{
-		long nnz = 0;
-		if(sparse)
+		if( sparse && sparseBlock!=null ) //SPARSE (max long)
 		{
-			if(sparseBlock!=null)
-			{
-				int rlimit = Math.min( ru+1, rlen);
-				if( cl==0 && cu==clen-1 ) //specific case: all cols
-				{
-					nnz = sparseBlock.size(rl, ru+1);
-				}
-				else if( cl==cu ) //specific case: one column
-				{
-					for(int i=rl; i<rlimit; i++)
-						if(!sparseBlock.isEmpty(i))
-							nnz += (sparseBlock.get(i, cl)!=0) ? 1 : 0;
-				}
-				else //general case
-				{
-					nnz = sparseBlock.size(rl, ru+1, cl, cu+1);
-				}
+			long nnz = 0;
+			if( cl==0 && cu==clen-1 ) { //specific case: all cols
+				nnz = sparseBlock.size(rl, ru+1);
 			}
+			else if( cl==cu ) { //specific case: one column
+				final int rlimit = Math.min( ru+1, rlen);
+				for(int i=rl; i<rlimit; i++)
+					if(!sparseBlock.isEmpty(i))
+						nnz += (sparseBlock.get(i, cl)!=0) ? 1 : 0;
+			}
+			else { //general case
+				nnz = sparseBlock.size(rl, ru+1, cl, cu+1);
+			}
+			return nnz;
 		}
-		else
+		else if( !sparse && denseBlock!=null ) //DENSE (max int)
 		{
-			if(denseBlock!=null)
-			{
-				for( int i=rl, ix=rl*clen; i<=ru; i++, ix+=clen )
+			double[] a = denseBlock;
+			final int n = clen;
+			int nnz = 0;
+			if( cl==0 && cu==n-1 ) { //specific case: all cols
+				for( int i=rl*n; i<(ru+1)*n; i++ )
+					nnz += (a[i]!=0) ? 1 : 0;
+			}
+			else {
+				for( int i=rl, ix=rl*n; i<=ru; i++, ix+=n )
 					for( int j=cl; j<=cu; j++ )
-					{
-						//HotSpot JVM bug causes crash in presence of NaNs 
-						//nnz += (denseBlock[ix+j]!=0) ? 1 : 0;
-						if( denseBlock[ix+j]!=0 )
-							nnz++;
-					}
+						nnz += (a[ix+j]!=0) ? 1 : 0;
 			}
+			return nnz;
 		}
-
-		return nnz;
+		
+		return 0; //empty block
 	}
 	
 	/**

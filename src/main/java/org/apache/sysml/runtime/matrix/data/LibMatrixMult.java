@@ -185,8 +185,9 @@ public class LibMatrixMult
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
 			ArrayList<MatrixMultTask> tasks = new ArrayList<MatrixMultTask>();
-			int blklen = (int)(Math.ceil((double)ru/k));
-			for( int i=0; i<k & i*blklen<ru; i++ )
+			int nk = pm2 ? k : Math.max(Math.min(8*k,ru/8), k);
+			int blklen = (int)(Math.ceil((double)ru/nk));
+			for( int i=0; i<nk & i*blklen<ru; i++ )
 				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2, i*blklen, Math.min((i+1)*blklen, ru)));
 			//execute tasks
 			List<Future<Object>> taskret = pool.invokeAll(tasks);	

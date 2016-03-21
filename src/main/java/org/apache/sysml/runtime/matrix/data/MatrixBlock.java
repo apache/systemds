@@ -41,6 +41,7 @@ import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.CTable;
@@ -84,7 +85,7 @@ import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
-public class MatrixBlock extends MatrixValue implements Externalizable
+public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable
 {
 	private static final long serialVersionUID = 7319972089143154056L;
 	
@@ -2752,6 +2753,21 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	{
 		long ennz = Math.min(groups, rlen);
 		return evalSparseFormatInMemory(groups, 1, ennz);
+	}
+	
+	////////
+	// CacheBlock implementation
+	
+	@Override
+	public long getExactSerializedSize() {
+		return getExactSizeOnDisk();
+	}
+	
+	@Override
+	public boolean isShallowSerialize() {
+		//shallow serialize if dense in serialized form or already in CSR
+		return !evalSparseFormatOnDisk()
+			|| (sparse && sparseBlock instanceof SparseBlockCSR);
 	}
 	
 	////////

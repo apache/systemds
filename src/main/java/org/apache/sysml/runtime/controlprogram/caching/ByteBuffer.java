@@ -26,18 +26,18 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
 /**
- * Wrapper for WriteBuffer byte array per matrix in order to
- * support matrix serialization outside global lock.
+ * Wrapper for WriteBuffer byte array per matrix/frame in order to
+ * support matrix/frame serialization outside global lock.
  * 
  */
 public class ByteBuffer
 {
 	private boolean _serialized;	
-	private boolean _sparse;
+	private boolean _shallow;
 	private long _size;
 	
-	protected byte[]       _bdata = null; //sparse matrix
-	protected MatrixBlock  _mdata = null; //dense matrix
+	protected byte[]     _bdata = null; //sparse matrix
+	protected CacheBlock _cdata = null; //dense matrix/frame
 	
 	public ByteBuffer( long size )
 	{
@@ -50,16 +50,14 @@ public class ByteBuffer
 	 * @param mb
 	 * @throws IOException
 	 */
-	public void serializeMatrix( MatrixBlock mb ) 
+	public void serializeBlock( CacheBlock cb ) 
 		throws IOException
 	{	
-		boolean sparseSrc = mb.isInSparseFormat(); //current representation
-		boolean sparseTrgt = mb.evalSparseFormatOnDisk(); //intended target representation
-		_sparse = sparseTrgt;
+		_shallow = cb.isShallowSerialize();
 		
 		try
 		{
-			if( _sparse ) //SPARSE/DENSE -> SPARSE
+			if( !_shallow ) //SPARSE/DENSE -> SPARSE
 			{
 				//deep serialize (for compression)
 				if( CacheableData.CACHING_BUFFER_PAGECACHE )
@@ -67,23 +65,22 @@ public class ByteBuffer
 				if( _bdata==null )
 					_bdata = new byte[(int)_size];
 				DataOutput dout = new CacheDataOutput(_bdata);
-				mb.write(dout);
+				cb.write(dout);
 			}
 			else //SPARSE/DENSE -> DENSE
 			{
-				//change representation (if required), incl. free sparse
-				//(in-memory representation, if dense on disk than if will
-				//be guaranteed to be dense in memory as well)
-				if( sparseSrc ) 
-					mb.examSparsity(); 
+				//special handling sparse matrix blocks whose serialized representation
+				//is dense; change representation (if required), incl. free sparse
+				if( cb instanceof MatrixBlock && ((MatrixBlock)cb).isInSparseFormat() )
+					((MatrixBlock)cb).examSparsity();
 				
 				//shallow serialize
-				_mdata = mb;
+				_cdata = cb;
 			}
 		}
 		catch(Exception ex)
 		{
-			throw new IOException("Failed to serialize matrix block.", ex);
+			throw new IOException("Failed to serialize cache block.", ex);
 		}
 		
 		_serialized = true;
@@ -94,22 +91,18 @@ public class ByteBuffer
 	 * @return
 	 * @throws IOException
 	 */
-	public MatrixBlock deserializeMatrix() 
+	public CacheBlock deserializeBlock() 
 		throws IOException
 	{
-		MatrixBlock ret = null;
+		CacheBlock ret = null;
 		
-		if( _sparse )
-		{
-			//ByteArrayInputStream bis = new ByteArrayInputStream(_bdata);
-			//DataInputStream din = new DataInputStream(bis); 
+		if( !_shallow ) { //sparse matrix 
 			CacheDataInput din = new CacheDataInput(_bdata);
 			ret = new MatrixBlock();
 			ret.readFields(din);
 		}
-		else
-		{
-			ret = _mdata;
+		else { //dense matrix/frame
+			ret = _cdata;
 		}
 		
 		return ret;
@@ -123,15 +116,13 @@ public class ByteBuffer
 	public void evictBuffer( String fname ) 
 		throws IOException
 	{
-		if( _sparse )
-		{
+		if( !_shallow ) {
 			//write out byte serialized array
 			LocalFileUtils.writeByteArrayToLocal(fname, _bdata);
 		}
-		else
-		{
-			//serialize matrix to output stream
-			LocalFileUtils.writeMatrixBlockToLocal(fname, _mdata);
+		else {
+			//serialize cache block to output stream
+			LocalFileUtils.writeCacheBlockToLocal(fname, _cdata);
 		}
 	}
 	
@@ -140,8 +131,7 @@ public class ByteBuffer
 	 * 
 	 * @return
 	 */
-	public long getSize()
-	{
+	public long getSize() {
 		return _size;
 	}
 	
@@ -149,23 +139,20 @@ public class ByteBuffer
 	 * 
 	 * @return
 	 */
-	public boolean isInSparseFormat()
-	{
-		return _sparse;
+	public boolean isShallow() {
+		return _shallow;
 	}
 	
 	public void freeMemory()
 	{
 		//clear strong references to buffer/matrix
-		if( _sparse )
-		{
+		if( !_shallow ) {
 			if( CacheableData.CACHING_BUFFER_PAGECACHE )
 				PageCache.putPage(_bdata);
 			_bdata = null;
 		}
-		else
-		{
-			_mdata = null;
+		else {
+			_cdata = null;
 		}
 	}
 	
@@ -174,36 +161,33 @@ public class ByteBuffer
 	 */
 	public void checkSerialized()
 	{
+		//check if already serialized
 		if( _serialized )
 			return;
 		
-		while( !_serialized )
-		{
+		//robust checking until serialized
+		while( !_serialized ) {
 			try{Thread.sleep(1);} catch(Exception e) {}
 		}
 	}
 	
 	/**
-	 * Determines if byte buffer can hold the given size given this specific matrix block.
-	 * This call is consistent with 'serializeMatrix' and allows for internal optimization
+	 * Determines if byte buffer can hold the given size given this specific cache block.
+	 * This call is consistent with 'serializeBlock' and allows for internal optimization
 	 * according to dense/sparse representation.
 	 * 
 	 * @param size
 	 * @param mb
 	 * @return
 	 */
-	public static boolean isValidCapacity( long size, MatrixBlock mb )
+	public static boolean isValidCapacity( long size, CacheBlock cb )
 	{
-		boolean sparseTrgt = mb.evalSparseFormatOnDisk(); //intended target representation
-		
-		if( sparseTrgt ) //SPARSE
-		{
-			// since sparse matrix blocks are serialized into a byte representation
+		if( !cb.isShallowSerialize() ) { //SPARSE matrix blocks
+			// since cache blocks are serialized into a byte representation
 			// the buffer buffer can hold at most 2GB in size 
-			return ( size <= Integer.MAX_VALUE );
+			return ( size <= Integer.MAX_VALUE );	
 		}
-		else //DENSE
-		{
+		else {//DENSE matrix / frame blocks
 			// since for dense matrix blocks we use a shallow serialize (strong reference), 
 			// the byte buffer can hold any size (currently upper bounded by 16GB) 
 			return true;

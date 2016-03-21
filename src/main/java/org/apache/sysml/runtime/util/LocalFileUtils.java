@@ -25,13 +25,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 
+import org.apache.hadoop.io.Writable;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -51,72 +55,93 @@ public class LocalFileUtils
 	public static final String CATEGORY_RESULTMERGE  = "resultmerge";
 	public static final String CATEGORY_WORK         = "work";
 	
-	static
-	{
+	static {
 		_seq = new IDSequence();
 	}
 	
-	/**
-	 * 
-	 * @param filePathAndName
-	 * @return
-	 * @throws IOException
-	 */
-	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName)
-		throws IOException
-	{
-		return readMatrixBlockFromLocal(filePathAndName, new MatrixBlock());
+	/** Reads a matrix block from local file system. */
+	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName) throws IOException {
+		return (MatrixBlock) readWritableFromLocal(filePathAndName, new MatrixBlock());
+	}
+	
+	/** Reads a matrix block from local file system. */
+	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName, MatrixBlock reuse) throws IOException {
+		return (MatrixBlock) readWritableFromLocal(filePathAndName, reuse);
+	}
+	
+	/** Reads a frame block from local file system. */
+	public static FrameBlock readFrameBlockFromLocal(String filePathAndName) throws IOException {
+		return (FrameBlock) readWritableFromLocal(filePathAndName, new FrameBlock());
+	}
+	
+	/** Reads a frame block from local file system. */
+	public static FrameBlock readFrameBlockFromLocal(String filePathAndName, FrameBlock reuse) throws IOException {
+		return (FrameBlock) readWritableFromLocal(filePathAndName, reuse);
+	}
+	
+	/** Reads a matrix/frame block from local file system. */
+	public static CacheBlock readCacheBlockFromLocal(String filePathAndName, boolean matrix) throws IOException {
+		return (CacheBlock) readWritableFromLocal(filePathAndName, matrix?new MatrixBlock():new FrameBlock());
 	}
 	
 	/**
+	 * Reads an arbitrary writable from local file system, using a fused buffered reader
+	 * with special support for matrix blocks.
 	 * 
 	 * @param filePathAndName
 	 * @return
 	 * @throws IOException
 	 */
-	public static MatrixBlock readMatrixBlockFromLocal(String filePathAndName, MatrixBlock ret)
+	public static Writable readWritableFromLocal(String filePathAndName, Writable ret)
 		throws IOException
 	{
 		FileInputStream fis = new FileInputStream( filePathAndName );
-		//BufferedInputStream bis = new BufferedInputStream( fis, BUFFER_SIZE );
-		//DataInputStream in = new DataInputStream( bis );
 		FastBufferedDataInputStream in = new FastBufferedDataInputStream(fis, BUFFER_SIZE);
 		
-		try
-		{
+		try {
 			ret.readFields(in);
 		}
-		finally
-		{
-			if( in != null )
-				in.close();
+		finally {
+			IOUtilFunctions.closeSilently(in);
 		}
 			
 		return ret;
 	}
 	
+	/** Writes a matrix block to local file system. */
+	public static void writeMatrixBlockToLocal(String filePathAndName, MatrixBlock mb) throws IOException {
+		writeWritableToLocal(filePathAndName, mb);
+	}
+	
+	/** Writes a matrix block to local file system. */
+	public static void writeFrameBlockToLocal(String filePathAndName, FrameBlock fb) throws IOException {
+		writeWritableToLocal(filePathAndName, fb);
+	}
+	
+	/** Writes a matrix/frame block to local file system. */
+	public static void writeCacheBlockToLocal(String filePathAndName, CacheBlock cb) throws IOException {
+		writeWritableToLocal(filePathAndName, cb);
+	}
+	
 	/**
+	 * Writes an arbitrary writable to local file system, using a fused buffered writer
+	 * with special support for matrix blocks.
 	 * 
 	 * @param filePathAndName
 	 * @param mb
 	 * @throws IOException
 	 */
-	public static void writeMatrixBlockToLocal (String filePathAndName, MatrixBlock mb)
+	public static void writeWritableToLocal(String filePathAndName, Writable mb)
 		throws IOException
 	{	
 		FileOutputStream fos = new FileOutputStream( filePathAndName );
-		//BufferedOutputStream bos = new BufferedOutputStream( fos, BUFFER_SIZE );
-		//DataOutputStream out = new DataOutputStream( bos );
 		FastBufferedDataOutputStream out = new FastBufferedDataOutputStream(fos, BUFFER_SIZE);
 		
-		try 
-		{
+		try {
 			mb.write(out);
 		}
-		finally
-		{
-			if( out != null )
-				out.close();	
+		finally {
+			IOUtilFunctions.closeSilently(out);
 		}	
 	}
 	
@@ -132,15 +157,12 @@ public class LocalFileUtils
 	{		
 		FileOutputStream fos = new FileOutputStream( filePathAndName );
 		
-		try 
-		{
+		try {
 			fos.write( data );
 		}
-		finally
-		{
-			if( fos != null )
-				fos.close ();	
-		}	
+		finally {
+			IOUtilFunctions.closeSilently(fos);
+		}
 	}
 	
 	/**
@@ -154,17 +176,14 @@ public class LocalFileUtils
 	{		
 		FileOutputStream fos = new FileOutputStream( filePathAndName );
 		
-		try 
-		{
+		try {
 			for( int i=0; i<data.length; i++ )
 				if( data[i]!=null )
 					fos.write( data[i] );
 		}
-		finally
-		{
-			if( fos != null )
-				fos.close ();	
-		}	
+		finally {
+			IOUtilFunctions.closeSilently(fos);
+		}
 	}
 
 	/**
@@ -184,8 +203,7 @@ public class LocalFileUtils
 		try
 		{
 			int len = in.readInt();
-			for( int i=0; i<len; i++ )
-			{
+			for( int i=0; i<len; i++ ) {
 				outValues[i].getKey().readFields(in);
 				outValues[i].getValue().readFields(in);
 				if( outMap!=null )
@@ -193,10 +211,8 @@ public class LocalFileUtils
 			}
 			bufferSize = len;
 		}
-		finally
-		{
-			if( in != null )
-				in.close();
+		finally {
+			IOUtilFunctions.closeSilently(in);
 		}
 			
 		return bufferSize;
@@ -221,16 +237,13 @@ public class LocalFileUtils
 		try 
 		{
 			out.writeInt(len);
-			for( int i=0; i<len; i++ )
-			{
+			for( int i=0; i<len; i++ ) {
 				inValues[i].getKey().write(out);
 				inValues[i].getValue().write(out);
 			}
 		}
-		finally
-		{
-			if( out != null )
-				out.close ();	
+		finally{
+			IOUtilFunctions.closeSilently(out);	
 		}	
 	}
 
@@ -240,14 +253,11 @@ public class LocalFileUtils
 	 * @param dir
 	 * @return
 	 */
-	public static boolean createLocalFileIfNotExist(String dir) 
-	{
-		boolean ret = true;
-		
+	public static boolean createLocalFileIfNotExist(String dir) {
+		boolean ret = true;		
 		File fdir = new File(dir);
-		if( !fdir.exists() ) {
+		if( !fdir.exists() )
 			ret = fdir.mkdirs();
-		}
 		
 		return ret;
 	}
@@ -256,8 +266,7 @@ public class LocalFileUtils
 	 * 
 	 * @param dir
 	 */
-	public static void deleteFileIfExists(String dir) 
-	{
+	public static void deleteFileIfExists(String dir) {
 		deleteFileIfExists(dir, false);
 	}
 	
@@ -284,8 +293,7 @@ public class LocalFileUtils
 	 * @param dir
 	 * @return
 	 */
-	public static boolean isExisting(String dir) 
-	{
+	public static boolean isExisting(String dir) {
 		File fdir = new File(dir);
 		return fdir.exists();
 	}
@@ -337,8 +345,7 @@ public class LocalFileUtils
 	 * @param dir
 	 * @return
 	 */
-	public static String checkAndCreateStagingDir(String dir) 
-	{
+	public static String checkAndCreateStagingDir(String dir) {
 		File f =  new File(dir);		
 		if( !f.exists() )
 			f.mkdirs();
@@ -351,9 +358,7 @@ public class LocalFileUtils
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public static String createWorkingDirectory() 
-		throws DMLRuntimeException 
-	{
+	public static String createWorkingDirectory() throws DMLRuntimeException {
 		return createWorkingDirectoryWithUUID( DMLScript.getUUID() );
 	}
 	
@@ -398,8 +403,7 @@ public class LocalFileUtils
 	/**
 	 * 
 	 */
-	public static void cleanupWorkingDirectory() 
-	{
+	public static void cleanupWorkingDirectory() {
 		if( _workingDir != null )
 			cleanupWorkingDirectory( _workingDir );
 	}
@@ -409,17 +413,19 @@ public class LocalFileUtils
 	 * @param dir
 	 * @return
 	 */
-	public static void cleanupWorkingDirectory(String dir) 
-	{
+	public static void cleanupWorkingDirectory(String dir) {
 		File f =  new File(dir);
 		if( f.exists() )
 			rDelete(f);
 	}
 	
-	public static int cleanupRcWorkingDirectory(String dir) 
-	{
-		int ret = 0;
-		
+	/**
+	 * 
+	 * @param dir
+	 * @return
+	 */
+	public static int cleanupRcWorkingDirectory(String dir) {
+		int ret = 0;		
 		File f =  new File(dir);
 		if( f.exists() )
 			ret += rcDelete(f);

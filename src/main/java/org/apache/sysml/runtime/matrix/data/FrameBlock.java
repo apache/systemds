@@ -35,12 +35,13 @@ import java.util.Map;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 
 /**
  * 
  */
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
-public class FrameBlock implements Writable, Externalizable
+public class FrameBlock implements Writable, CacheBlock, Externalizable
 {
 	private static final long serialVersionUID = -3993450030207130665L;
 	
@@ -364,6 +365,21 @@ public class FrameBlock implements Writable, Externalizable
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		//redirect deserialization to writable impl
 		readFields(in);
+	}
+	
+	////////
+	// CacheBlock implementation
+	
+	@Override
+	public long getExactSerializedSize() {
+		//TODO implement getExactSizeOnDisk();
+		return 1;
+	}
+	
+	@Override
+	public boolean isShallowSerialize() {
+		//shallow serialize since frames always dense
+		return true;
 	}
 	
 	///////

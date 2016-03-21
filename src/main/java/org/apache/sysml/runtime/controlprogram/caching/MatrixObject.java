@@ -1255,7 +1255,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			begin = System.currentTimeMillis();
 		}
 		
-		LazyWriteBuffer.deleteMatrix(cacheFilePathAndName);
+		LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
 		
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");		
@@ -1315,7 +1315,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private MatrixBlock readMatrix (String filePathAndName)
 		throws IOException
 	{
-		return LazyWriteBuffer.readMatrix(filePathAndName);
+		return (MatrixBlock)LazyWriteBuffer.readBlock(filePathAndName, true);
 	}
 	
 	/**
@@ -1467,7 +1467,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private void writeMatrix (String filePathAndName)
 		throws DMLRuntimeException, IOException
 	{
-		LazyWriteBuffer.writeMatrix(filePathAndName, _data);
+		LazyWriteBuffer.writeBlock(filePathAndName, _data);
 	}
 
 	/**

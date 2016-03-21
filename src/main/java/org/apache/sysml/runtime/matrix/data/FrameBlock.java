@@ -65,6 +65,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_coldata = new ArrayList<Array>();
 	}
 	
+	public FrameBlock(FrameBlock that) {
+		copy(that);
+	}
+	
 	public FrameBlock(int ncols, ValueType vt) {
 		this();
 		_schema.addAll(Collections.nCopies(ncols, vt));
@@ -533,6 +537,35 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return ret;
 	}
 	
+	private void copy(FrameBlock that)
+	{
+		int limit = that.getNumRows()*that.getNumColumns();
+		
+		//allocate 
+		ensureAllocatedColumns(that.getNumRows());
+		
+		//actual copy 
+		System.arraycopy(that._coldata, 0, _coldata, 0, limit);
+	}
+
+	
+	public void copy(int rl, int ru, int cl, int cu, FrameBlock src, int rlen, int clen) 
+		throws DMLRuntimeException
+	{
+		if(_coldata==null)
+			ensureAllocatedColumns(rlen);
+		
+		//copy values
+		int rowLen = cu-cl+1;				
+		if(clen == src.getNumColumns()) //optimization for equal width
+			System.arraycopy(src._coldata, 0, _coldata, rl*clen+cl, src._numRows*src.getNumColumns());
+		else
+			for( int i=0, ix1=0, ix2=rl*clen+cl; i<src.getNumRows(); i++, ix1+=src.getNumColumns(), ix2+=clen ) {
+				System.arraycopy(src._coldata, ix1, _coldata, ix2, rowLen);
+			}
+	}
+		
+
 	
 	///////
 	// row iterators (over strings and boxed objects)

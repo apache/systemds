@@ -150,7 +150,7 @@ public abstract class FrameReader
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 */
-	protected static FrameBlock createOutputFrameBlock(List<ValueType> schema, List<String> names)
+	protected static FrameBlock createOutputFrameBlock(List<ValueType> schema, List<String> names, long nrow)
 		throws IOException, DMLRuntimeException
 	{
 		//check schema and column names
@@ -159,7 +159,7 @@ public abstract class FrameReader
 		
 		//prepare result frame block
 		FrameBlock ret = new FrameBlock(schema, names);
-		
+		ret.ensureAllocatedColumns((int)nrow);
 		return ret;
 	}
 	

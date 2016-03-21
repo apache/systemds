@@ -2140,8 +2140,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		throws HopsException
 	{
 		Hop hnew = null;
+		boolean appliedPattern = false;
 		
-		//Pattern 1) sum( X * log(U %*% t(V)))
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol
 			&& ((AggUnaryOp)hi).getOp() == AggOp.SUM     //pattern rooted by sum()
 			&& hi.getInput().get(0) instanceof BinaryOp  //pattern subrooted by binary op
@@ -2151,6 +2151,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			Hop left = bop.getInput().get(0);
 			Hop right = bop.getInput().get(1);
 			
+			//Pattern 1) sum( X * log(U %*% t(V)))
 			if( bop.getOp()==OpOp2.MULT && left.getDataType()==DataType.MATRIX		
 				&& HopRewriteUtils.isEqualSize(left, right)  //prevent mb
 				&& right instanceof UnaryOp	&& ((UnaryOp)right).getOp()==OpOp1.LOG
@@ -2166,10 +2167,41 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				else 
 					V = V.getInput().get(0);
 					
-				hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, OpOp4.WCEMM, X, U, V);
+				hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, OpOp4.WCEMM, X, U, V,
+						new LiteralOp(0.0), 0, false, false);
+				HopRewriteUtils.setOutputBlocksizes(hnew, X.getRowsInBlock(), X.getColsInBlock());
+				appliedPattern = true;
+				
+				LOG.debug("Applied simplifyWeightedCEMM (line "+hi.getBeginLine()+")");					
+			}
+			
+			//Pattern 2) sum( X * log(U %*% t(V) + eps))
+			if( !appliedPattern
+				&& bop.getOp()==OpOp2.MULT && left.getDataType()==DataType.MATRIX		
+				&& HopRewriteUtils.isEqualSize(left, right)
+				&& right instanceof UnaryOp	&& ((UnaryOp)right).getOp()==OpOp1.LOG
+				&& right.getInput().get(0) instanceof BinaryOp
+				&& ((BinaryOp)right.getInput().get(0)).getOp() == OpOp2.PLUS
+				&& right.getInput().get(0).getInput().get(0) instanceof AggBinaryOp
+				&& right.getInput().get(0).getInput().get(1) instanceof LiteralOp
+				&& right.getInput().get(0).getInput().get(1).getDataType() == DataType.SCALAR
+				&& HopRewriteUtils.isSingleBlock(right.getInput().get(0).getInput().get(0).getInput().get(0),true))
+			{
+				Hop X = left; 
+				Hop U = right.getInput().get(0).getInput().get(0).getInput().get(0);
+				Hop V = right.getInput().get(0).getInput().get(0).getInput().get(1);
+				Hop eps = right.getInput().get(0).getInput().get(1);
+				
+				if( !HopRewriteUtils.isTransposeOperation(V) )
+					V = HopRewriteUtils.createTranspose(V);
+				else 
+					V = V.getInput().get(0);
+					
+				hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR, ValueType.DOUBLE, 
+						OpOp4.WCEMM, X, U, V, eps, 1, false, false); // 1 => BASIC_EPS
 				HopRewriteUtils.setOutputBlocksizes(hnew, X.getRowsInBlock(), X.getColsInBlock());
 					
-				LOG.debug("Applied simplifyWeightedCEMM (line "+hi.getBeginLine()+")");					
+				LOG.debug("Applied simplifyWeightedCEMMEps (line "+hi.getBeginLine()+")");					
 			}
 		}
 		

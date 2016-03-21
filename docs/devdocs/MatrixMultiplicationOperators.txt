@@ -1,6 +1,6 @@
 #####################################################################
 # TITLE: An Overview of Matrix Multiplication Operators in SystemML #
-# DATE MODIFIED: 02/20/2016                                         #
+# DATE MODIFIED: 03/18/2016                                         #
 #####################################################################
 
 In the following, we give an overview of backend-specific physical matrix multiplication operators in SystemML as well as their internally used matrix multiplication block operations.
@@ -120,7 +120,7 @@ C) CORE MATRIX MULT PRIMITIVES LibMatrixMult (incl related script patterns)
   - sequential / multi-threaded (same block ops, par over rows in X)                 
   - all dense, sparse-dense factors, sparse/dense-* x 9 patterns
 
-* 8) wcemm    (sum(X*log(U%*%t(V))))  
+* 8) wcemm    ((a) sum(X*log(U%*%t(V))), (b) sum(X*log(U%*%t(V) + epsilon)))
   - sequential / multi-threaded (same block ops, par over rows in X)                 
   - all dense, sparse-dense factors, sparse/dense-*, 1 pattern
 

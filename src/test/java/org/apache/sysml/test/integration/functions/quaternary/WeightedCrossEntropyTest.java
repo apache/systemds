@@ -48,10 +48,12 @@ import org.apache.sysml.utils.Statistics;
 public class WeightedCrossEntropyTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME = "WeightedCeMM";
+	private final static String TEST_NAME2 = "WeightedCeMMEps";
 	private final static String TEST_DIR = "functions/quaternary/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + WeightedCrossEntropyTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-6;
+	private final static double log_eps = 0.1;
 	
 	private final static int rows = 1201;
 	private final static int cols = 1103;
@@ -64,6 +66,7 @@ public class WeightedCrossEntropyTest extends AutomatedTestBase
 	{
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
 		
 		if (TEST_CACHE_ENABLED) {
 			setOutAndExpectedDeletionDisabled(true);
@@ -124,6 +127,48 @@ public class WeightedCrossEntropyTest extends AutomatedTestBase
 		runWeightedCrossEntropyTest(TEST_NAME, false, true, true, ExecType.MR);
 	}
 	
+	// test cases for wcemm with Epsilon (sum(X*log(U%*%t(V) + eps)))
+	
+	@Test
+	public void testCrossEntropyEpsDenseCP() {
+		runWeightedCrossEntropyTest(TEST_NAME2, false, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testCrossEntropyEpsSparseCP() {
+		runWeightedCrossEntropyTest(TEST_NAME2, true, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testCrossEntropyEpsDenseMR() {
+		runWeightedCrossEntropyTest(TEST_NAME2, false, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testCrossEntropyEpsSparseMR() {
+		runWeightedCrossEntropyTest(TEST_NAME2, true, true, false, ExecType.MR);
+	}
+	
+	@Test
+	public void testCrossEntropyEpsDenseMRRep() {
+		runWeightedCrossEntropyTest(TEST_NAME2, false, true, true, ExecType.MR);
+	}
+	
+	@Test
+	public void testCrossEntropyEpsDenseSP() {
+		runWeightedCrossEntropyTest(TEST_NAME2, false, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCrossEntropyEpsSparseSP() {
+		runWeightedCrossEntropyTest(TEST_NAME2, true, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testCrossEntropyEpsDenseSPRep() {
+		runWeightedCrossEntropyTest(TEST_NAME2, false, true, true, ExecType.SPARK);
+	}
+	
 	
 	/**
 	 * 
@@ -162,7 +207,8 @@ public class WeightedCrossEntropyTest extends AutomatedTestBase
 			String TEST_CACHE_DIR = "";
 			if (TEST_CACHE_ENABLED)
 			{
-				TEST_CACHE_DIR = sparsity + "/";
+				String eps = (TEST_NAME2.equals(testname)) ? "_" + log_eps : "";
+				TEST_CACHE_DIR = sparsity + eps + "/";
 			}
 			
 			loadTestConfiguration(config, TEST_CACHE_DIR);
@@ -171,10 +217,10 @@ public class WeightedCrossEntropyTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-stats", "-explain", "runtime", "-args", 
-				input("X"), input("U"), input("V"), output("R") };
+				input("X"), input("U"), input("V"), output("R"), Double.toString(log_eps) };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + log_eps;
 	
 			//generate actual dataset 
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 

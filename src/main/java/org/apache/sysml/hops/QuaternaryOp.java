@@ -261,7 +261,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				}
 				
 				case WCEMM:{
-					WCeMMType wtype = WCeMMType.BASIC;
+					WCeMMType wtype = checkWCeMMType();
 					
 					if( et == ExecType.CP )
 						constructCPLopsWeightedCeMM(wtype);
@@ -602,7 +602,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	{
 		//NOTE: the common case for wsigmoid are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+		//by applying the hop rewrite for Weighted Sigmoid only if this constraint holds. 
 		
 		Hop X = getInput().get(0);
 		Hop U = getInput().get(1);
@@ -611,9 +611,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
+		boolean isMapWsig = (m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
 		
-		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		if( !FORCE_REPLICATION && isMapWsig ) //broadcast
 		{
 			//partitioning of U
 			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
@@ -633,7 +633,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				setLineNumbers(lV);	
 			}
 			
-			//map-side wsloss always with broadcast
+			//map-side wsig always with broadcast
 			Lop wsigmoid = new WeightedSigmoid( X.constructLops(), lU, lV,  
 					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.MR);
 			setOutputDimensions(wsigmoid);
@@ -708,7 +708,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				lV = grpV;
 			}
 			
-			//reduce-side wsloss w/ or without broadcast
+			//reduce-side wsig w/ or without broadcast
 			Lop wsigmoid = new WeightedSigmoidR( 
 					grpX, lU, lV, DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.MR);
 			setOutputDimensions(wsigmoid);
@@ -730,7 +730,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	{
 		//NOTE: the common case for wsigmoid are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+		//by applying the hop rewrite for Weighted Sigmoid only if this constraint holds. 
 
 		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
 		//and needs to fit once in executor broadcast memory. The 2GB broadcast constraint is no longer
@@ -745,12 +745,12 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (m1Size+m2Size < memBudgetExec
+		boolean isMapWsig = (m1Size+m2Size < memBudgetExec
 				&& 2*m1Size<memBudgetLocal && 2*m2Size<memBudgetLocal); 
 		
-		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		if( !FORCE_REPLICATION && isMapWsig ) //broadcast
 		{
-			//map-side wsloss always with broadcast
+			//map-side wsig always with broadcast
 			Lop wsigmoid = new WeightedSigmoid( X.constructLops(), U.constructLops(), V.constructLops(),  
 					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.SPARK);
 			setOutputDimensions(wsigmoid);
@@ -764,7 +764,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudgetExec ) 
 					        || (cacheU && m1Size+m2Size < memBudgetExec)) && 2*m2Size < memBudgetLocal;
 			
-			//reduce-side wsloss w/ or without broadcast
+			//reduce-side wsig w/ or without broadcast
 			Lop wsigmoid = new WeightedSigmoidR( 
 					X.constructLops(), U.constructLops(), V.constructLops(), 
 					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
@@ -810,7 +810,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	{
 		//NOTE: the common case for wdivmm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+		//by applying the hop rewrite for Weighted DivMM only if this constraint holds. 
 		
 		Hop W = getInput().get(0);
 		Hop U = getInput().get(1);
@@ -1013,6 +1013,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				getInput().get(0).constructLops(),
 				getInput().get(1).constructLops(),
 				getInput().get(2).constructLops(),
+				getInput().get(3).constructLops(),
 				getDataType(), getValueType(), wtype, ExecType.CP);
 		
 		//set degree of parallelism
@@ -1033,20 +1034,21 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	private void constructMRLopsWeightedCeMM(WCeMMType wtype) 
 		throws HopsException, LopsException
 	{
-		//NOTE: the common case for wsloss are factors U/V with a rank of 10s to 100s; the current runtime only
+		//NOTE: the common case for wcemm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+		//by applying the hop rewrite for Weighted Cross Entropy only if this constraint holds. 
 		
 		Hop X = getInput().get(0);
 		Hop U = getInput().get(1);
 		Hop V = getInput().get(2);
+		Hop eps = getInput().get(3);
 		
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
+		boolean isMapWcemm = (m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
 		
-		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		if( !FORCE_REPLICATION && isMapWcemm ) //broadcast
 		{
 			//partitioning of U
 			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
@@ -1066,8 +1068,8 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				setLineNumbers(lV);	
 			}
 			
-			//map-side wsloss always with broadcast
-			Lop wcemm = new WeightedCrossEntropy( X.constructLops(), lU, lV, 
+			//map-side wcemm always with broadcast
+			Lop wcemm = new WeightedCrossEntropy( X.constructLops(), lU, lV, eps.constructLops(),
 					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.MR);
 			wcemm.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
 			setLineNumbers(wcemm);
@@ -1152,9 +1154,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				lV = grpV;
 			}
 			
-			//reduce-side wsloss w/ or without broadcast
-			Lop wcemm = new WeightedCrossEntropyR( 
-					grpX, lU, lV, DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.MR);
+			//reduce-side wcemm w/ or without broadcast
+			Lop wcemm = new WeightedCrossEntropyR( grpX, lU, lV, eps.constructLops(),
+					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.MR);
 			wcemm.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
 			setLineNumbers(wcemm);
 			
@@ -1183,9 +1185,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	private void constructSparkLopsWeightedCeMM(WCeMMType wtype) 
 		throws HopsException, LopsException
 	{
-		//NOTE: the common case for wsloss are factors U/V with a rank of 10s to 100s; the current runtime only
+		//NOTE: the common case for wcemm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+		//by applying the hop rewrite for Weighted Cross Entropy only if this constraint holds. 
 		
 		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
 		//and needs to fit once in executor broadcast memory. The 2GB broadcast constraint is no longer
@@ -1196,21 +1198,22 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		Hop X = getInput().get(0);
 		Hop U = getInput().get(1);
 		Hop V = getInput().get(2);
+		Hop eps = getInput().get(3);
 		
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (m1Size+m2Size < memBudgetExec
+		boolean isMapWcemm = (m1Size+m2Size < memBudgetExec
 				&& 2*m1Size < memBudgetLocal && 2*m2Size < memBudgetLocal); 
 		
-		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		if( !FORCE_REPLICATION && isMapWcemm ) //broadcast
 		{
-			//map-side wsloss always with broadcast
-			Lop wsloss = new WeightedCrossEntropy( X.constructLops(), U.constructLops(), V.constructLops(),  
+			//map-side wcemm always with broadcast
+			Lop wcemm = new WeightedCrossEntropy( X.constructLops(), U.constructLops(), V.constructLops(), eps.constructLops(),
 					DataType.SCALAR, ValueType.DOUBLE, wtype, ExecType.SPARK);
-			setOutputDimensions(wsloss);
-			setLineNumbers(wsloss);
-			setLops(wsloss);
+			setOutputDimensions(wcemm);
+			setLineNumbers(wcemm);
+			setLops(wcemm);
 		}
 		else //general case
 		{
@@ -1219,9 +1222,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudgetExec ) 
 					        || (cacheU && m1Size+m2Size < memBudgetExec)) && 2*m2Size < memBudgetLocal;
 			
-			//reduce-side wsloss w/ or without broadcast
+			//reduce-side wcemm w/ or without broadcast
 			Lop wcemm = new WeightedCrossEntropyR( 
-					X.constructLops(), U.constructLops(), V.constructLops(), 
+					X.constructLops(), U.constructLops(), V.constructLops(), eps.constructLops(),
 					DataType.SCALAR, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wcemm);
 			setLineNumbers(wcemm);
@@ -1242,7 +1245,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				HopsOpOp1LopsU.get(_uop) : _sop==OpOp2.POW ? 
 				Unary.OperationTypes.POW2 : Unary.OperationTypes.MULTIPLY2;	
 		
-		WeightedUnaryMM wsig = new WeightedUnaryMM(
+		WeightedUnaryMM wumm = new WeightedUnaryMM(
 				getInput().get(0).constructLops(),
 				getInput().get(1).constructLops(),
 				getInput().get(2).constructLops(),
@@ -1250,11 +1253,11 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		
 		//set degree of parallelism
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-		wsig.setNumThreads(k);
+		wumm.setNumThreads(k);
 		
-		setOutputDimensions( wsig );
-		setLineNumbers( wsig );
-		setLops( wsig );
+		setOutputDimensions( wumm );
+		setLineNumbers( wumm );
+		setLops( wumm );
 	}
 	
 	/**
@@ -1266,9 +1269,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	private void constructMRLopsWeightedUMM( WUMMType wtype ) 
 		throws HopsException, LopsException
 	{
-		//NOTE: the common case for wsigmoid are factors U/V with a rank of 10s to 100s; the current runtime only
+		//NOTE: the common case for wumm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+		//by applying the hop rewrite for Weighted UnaryMM  only if this constraint holds. 
 		
 		Unary.OperationTypes uop = _uop!=null ? 
 				HopsOpOp1LopsU.get(_uop) : _sop==OpOp2.POW ? 
@@ -1281,9 +1284,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		//MR operator selection, part1
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
+		boolean isMapWumm = (m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
 		
-		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		if( !FORCE_REPLICATION && isMapWumm ) //broadcast
 		{
 			//partitioning of U
 			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
@@ -1303,7 +1306,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				setLineNumbers(lV);	
 			}
 			
-			//map-side wsloss always with broadcast
+			//map-side wumm always with broadcast
 			Lop wumm = new WeightedUnaryMM( X.constructLops(), lU, lV,  
 					DataType.MATRIX, ValueType.DOUBLE, wtype, uop, ExecType.MR);
 			setOutputDimensions(wumm);
@@ -1378,7 +1381,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 				lV = grpV;
 			}
 			
-			//reduce-side wsloss w/ or without broadcast
+			//reduce-side wumm w/ or without broadcast
 			Lop wumm = new WeightedUnaryMMR( 
 					grpX, lU, lV, DataType.MATRIX, ValueType.DOUBLE, wtype, uop, cacheU, cacheV, ExecType.MR);
 			setOutputDimensions(wumm);
@@ -1398,9 +1401,9 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	private void constructSparkLopsWeightedUMM( WUMMType wtype ) 
 		throws HopsException, LopsException
 	{
-		//NOTE: the common case for wsigmoid are factors U/V with a rank of 10s to 100s; the current runtime only
+		//NOTE: the common case for wumm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+		//by applying the hop rewrite for Weighted UnaryMM only if this constraint holds. 
 
 		Unary.OperationTypes uop = _uop!=null ? 
 				HopsOpOp1LopsU.get(_uop) : _sop==OpOp2.POW ? 
@@ -1424,12 +1427,12 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		
 		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
 		{
-			//map-side wsloss always with broadcast
-			Lop wsigmoid = new WeightedUnaryMM( X.constructLops(), U.constructLops(), V.constructLops(),  
+			//map-side wumm always with broadcast
+			Lop wumm = new WeightedUnaryMM( X.constructLops(), U.constructLops(), V.constructLops(),  
 					DataType.MATRIX, ValueType.DOUBLE, wtype, uop, ExecType.SPARK);
-			setOutputDimensions(wsigmoid);
-			setLineNumbers(wsigmoid);
-			setLops( wsigmoid );
+			setOutputDimensions(wumm);
+			setLineNumbers(wumm);
+			setLops( wumm );
 		}
 		else //general case
 		{
@@ -1438,13 +1441,13 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudgetExec ) 
 					        || (cacheU && m1Size+m2Size < memBudgetExec)) && 2*m2Size < memBudgetLocal;
 			
-			//reduce-side wsloss w/ or without broadcast
-			Lop wsigmoid = new WeightedUnaryMMR( 
+			//reduce-side wumm w/ or without broadcast
+			Lop wumm = new WeightedUnaryMMR( 
 					X.constructLops(), U.constructLops(), V.constructLops(), 
 					DataType.MATRIX, ValueType.DOUBLE, wtype, uop, cacheU, cacheV, ExecType.SPARK);
-			setOutputDimensions(wsigmoid);
-			setLineNumbers(wsigmoid);
-			setLops(wsigmoid);
+			setOutputDimensions(wumm);
+			setLineNumbers(wumm);
+			setLops(wumm);
 		}
 	}
 	
@@ -1516,6 +1519,15 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		}
 		
 		return null;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	private WCeMMType checkWCeMMType()
+	{
+		return _baseType == 1 ? WCeMMType.BASIC_EPS : WCeMMType.BASIC;
 	}
 	
 	@Override

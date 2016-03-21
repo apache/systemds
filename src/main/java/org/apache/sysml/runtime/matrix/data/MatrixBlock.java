@@ -5811,10 +5811,13 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				LibMatrixMult.matrixMultWDivMM(X, U, V, W, R, qop.wtype3);	
 		}
 		else if( qop.wtype4 != null ){ //wcemm
+			MatrixBlock W = qop.wtype4.hasFourInputs() ? checkType(wm) : null;
+			double eps = (W != null && W.getNumRows() == 1 && W.getNumColumns() == 1) ? W.quickGetValue(0, 0) : qop.getScalar();
+			
 			if( k > 1 )
-				LibMatrixMult.matrixMultWCeMM(X, U, V, R, qop.wtype4, k);
+				LibMatrixMult.matrixMultWCeMM(X, U, V, eps, R, qop.wtype4, k);
 			else
-				LibMatrixMult.matrixMultWCeMM(X, U, V, R, qop.wtype4);	
+				LibMatrixMult.matrixMultWCeMM(X, U, V, eps, R, qop.wtype4);
 		}
 		else if( qop.wtype5 != null ){ //wumm
 			if( k > 1 )

@@ -26,7 +26,7 @@ limitations under the License.
 # Overview
 
 The `Java Machine Learning Connector (JMLC)` API is a programmatic interface for interacting with SystemML
-in an embedded fashion. To use JMLC, the SystemML jar file needs to be included on the
+in an embedded fashion. To use JMLC, the small footprint "in-memory" SystemML jar file needs to be included on the
 classpath of the Java application, since JMLC invokes SystemML in an existing Java Virtual Machine. Because
 of this, JMLC allows access to SystemML's optimizations and fast linear algebra, but the bulk performance
 gain from running SystemML on a large Spark or Hadoop cluster is not available. However, this embeddable nature
@@ -83,8 +83,7 @@ W = read("./tmp/W", rows=-1, cols=-1);
 numRows = nrow(X);
 numCols = ncol(X);
 b = W[numCols+1,]
-ones = matrix(1, rows=numRows, cols=1)
-scores = X %*% W[1:numCols,] + ones %*% b;
+scores = X %*% W[1:numCols,] + b;
 predicted_y = rowIndexMax(scores);
 
 write(predicted_y, "./tmp", format="text");

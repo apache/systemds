@@ -21,11 +21,15 @@ package org.apache.sysml.api.jmlc;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -38,17 +42,29 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.io.ReaderTextCell;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.transform.TransformationAgent;
+import org.apache.sysml.runtime.transform.TransformationAgent.TX_METHOD;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
+
+import scala.actors.threadpool.Arrays;
 
 /**
  * JMLC (Java Machine Learning Connector) API:
@@ -255,4 +271,91 @@ public class Connection
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param spec
+	 * @param metapath
+	 * @return
+	 * @throws IOException 
+	 */
+	@SuppressWarnings("unchecked")
+	public FrameBlock readTransformMetaData(String spec, String metapath) 
+		throws IOException 
+	{
+		//read column names
+		String colStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+"column.names");
+		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colStr.trim(), ","));
+		
+		//read meta data (currently only recode supported, without parsing spec)
+		HashMap<String,String> meta = new HashMap<String,String>();
+		int rows = 0;
+		for( String colName : colnames ) {
+			String name = metapath+File.separator+"Recode"+File.separator+colName;
+			if( MapReduceTool.existsFileOnHDFS(name+".map") ) {
+				meta.put(colName, MapReduceTool.readStringFromHDFSFile(name+".map"));
+				String ndistinct = MapReduceTool.readStringFromHDFSFile(name+".ndistinct");
+				rows = Math.max(rows, Integer.parseInt(ndistinct));
+			}
+		}
+		
+		//create frame block from in-memory strings
+		return readTransformMetaData(spec, rows, colnames, meta);
+	}
+	
+	/**
+	 * 
+	 * @param spec
+	 * @param meta
+	 * @return
+	 * @throws IOException 
+	 */
+	public FrameBlock readTransformMetaData(String spec, int rows, List<String> colnames, HashMap<String,String> meta) 
+		throws IOException 
+	{
+		//create frame block w/ pure string schema
+		List<ValueType> schema = Collections.nCopies(colnames.size(), ValueType.STRING);
+		FrameBlock ret = new FrameBlock(schema, colnames);
+		ret.ensureAllocatedColumns(rows);
+		
+		try
+		{
+			ArrayList<Integer> specRecodeIDs = new ArrayList<Integer>();
+			
+			//parse json transform specification
+			JSONObject jSpec = new JSONObject(spec);
+			if ( jSpec.containsKey(TX_METHOD.RECODE.toString()))  {
+				JSONArray attrs = null; //TODO simplify once json spec consolidated
+				if( jSpec.get(TX_METHOD.RECODE.toString()) instanceof JSONObject ) {
+					JSONObject obj = (JSONObject) jSpec.get(TX_METHOD.RECODE.toString());
+					attrs = (JSONArray) obj.get(TransformationAgent.JSON_ATTRS);
+				}
+				else
+					attrs = (JSONArray)jSpec.get(TX_METHOD.RECODE.toString());				
+				for(int j=0; j<attrs.length(); j++) 
+					specRecodeIDs.add(UtilFunctions.toInt(attrs.get(j)));
+			}	
+			
+			//encode recode maps into frame
+			for( Integer colID : specRecodeIDs ) {
+				String name = colnames.get(colID-1);
+				String map = meta.get(name);
+				if( map == null )
+					throw new IOException("Recode map for column '"+name+"' (id="+colID+") not existing.");
+				
+				InputStream is = new ByteArrayInputStream(map.getBytes("UTF-8"));
+				BufferedReader br = new BufferedReader(new InputStreamReader(is));
+				String line = null; int rpos = 0;
+				while( (line = br.readLine()) != null ) {
+					String parts[] = IOUtilFunctions.split(line.trim(), ",");
+					String pair = parts[0] + Lop.DATATYPE_PREFIX + parts[1]; //sval.code
+					ret.set(rpos++, colID-1, pair);
+				}
+			}
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+		
+		return ret;
+	}
 }

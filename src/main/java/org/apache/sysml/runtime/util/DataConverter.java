@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -675,12 +676,8 @@ public class DataConverter
 		if( data == null || data.length==0 )
 			return new FrameBlock();
 		
-		//construct temporary schema 
-		List<ValueType> schema = new ArrayList<ValueType>();
-		for( int j=0; j<data[0].length; j++ )
-			schema.add(ValueType.STRING);
-		
-		//create frame block
+		//create schema and frame block
+		List<ValueType> schema = Collections.nCopies(data[0].length, ValueType.STRING);
 		return convertToFrameBlock(data, schema);
 	}
 	
@@ -733,11 +730,8 @@ public class DataConverter
 	 * @return
 	 */
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb, ValueType vt) {
-		//construct temporary schema 
-		List<ValueType> schema = new ArrayList<ValueType>();
-		for( int j=0; j<mb.getNumColumns(); j++ )
-			schema.add(vt);
-		
+		//create schema and frame block
+		List<ValueType> schema = Collections.nCopies(mb.getNumColumns(), vt);
 		return convertToFrameBlock(mb, schema);
 	}
 	

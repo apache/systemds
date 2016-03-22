@@ -27,6 +27,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -66,8 +67,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	
 	public FrameBlock(int ncols, ValueType vt) {
 		this();
-		for( int j=0; j<ncols; j++ )
-			_schema.add(vt);
+		_schema.addAll(Collections.nCopies(ncols, vt));
 	}
 	
 	public FrameBlock(List<ValueType> schema) {
@@ -573,8 +573,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		@Override
 		public String[] next( ) {
-			for( int j=0; j<getNumColumns(); j++ )
-				_curRow[j] = get(_curPos, j).toString();
+			for( int j=0; j<getNumColumns(); j++ ) {
+				Object tmp = get(_curPos, j);
+				_curRow[j] = (tmp!=null) ? tmp.toString() : null;
+			}
 			_curPos++;			
 			return _curRow;
 		}

@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.transform.decode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
@@ -54,9 +55,7 @@ public class DecoderFactory
 		
 			//create default schema if unspecified
 			if( schema == null ) {
-				schema = new ArrayList<ValueType>();
-				for( int j=0; j<meta.getNumColumns(); j++ )
-					schema.add(ValueType.STRING);
+				schema = Collections.nCopies(meta.getNumColumns(), ValueType.STRING);
 			}
 			
 			//create decoder 'recode'

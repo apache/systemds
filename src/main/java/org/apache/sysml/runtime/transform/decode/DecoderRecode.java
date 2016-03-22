@@ -48,6 +48,8 @@ public class DecoderRecode extends Decoder
 		for( int j=0; j<_rcCols.length; j++ ) {
 			HashMap<Long, Object> map = new HashMap<Long, Object>();
 			for( int i=0; i<meta.getNumRows(); i++ ) {
+				if( meta.get(i, _rcCols[j])==null )
+					break; //reached end of recode map
 				String[] tmp = meta.get(i, _rcCols[j]).toString().split(Lop.DATATYPE_PREFIX);				
 				Object obj = UtilFunctions.stringToObject(schema.get(_rcCols[j]), tmp[0]);
 				map.put(Long.parseLong(tmp[1]), obj);				

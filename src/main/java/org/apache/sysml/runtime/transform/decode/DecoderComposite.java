@@ -19,7 +19,7 @@
 
 package org.apache.sysml.runtime.transform.decode;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
@@ -43,9 +43,7 @@ public class DecoderComposite extends Decoder
 	
 	protected DecoderComposite(List<ValueType> schema, Decoder[] decoders) {
 		super(schema);
-		_decoders = new ArrayList<Decoder>(decoders.length);
-		for( Decoder decoder : decoders )
-			_decoders.add(decoder);
+		_decoders = Arrays.asList(decoders);
 	}
 
 	@Override

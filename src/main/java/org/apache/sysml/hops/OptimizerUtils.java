@@ -76,7 +76,7 @@ public class OptimizerUtils
 	 * e.g., when input/output dimensions are unknown. The default is set to a large 
 	 * value so that operations are scheduled on MR while avoiding overflows as well.  
 	 */
-	public static double DEFAULT_SIZE = getDefaultSize();	
+	public static double DEFAULT_SIZE;	
 	
 	
 	public static final long DOUBLE_SIZE = 8;

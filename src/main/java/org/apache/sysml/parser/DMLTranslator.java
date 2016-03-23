@@ -76,6 +76,8 @@ public class DMLTranslator
 	{
 		_dmlProg = dmlp;
 		
+		//setup default size for unknown dimensions
+		OptimizerUtils.resetDefaultSize();
 		//reinit rewriter according to opt level flags
 		Recompiler.reinitRecompiler(); 
 	}

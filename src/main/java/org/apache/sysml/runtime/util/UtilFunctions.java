@@ -291,6 +291,18 @@ public class UtilFunctions
 	 * @return
 	 */
 	public static Object doubleToObject(ValueType vt, double in) {
+		return doubleToObject(vt, in, true);
+	}
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @param sparse
+	 * @return
+	 */
+	public static Object doubleToObject(ValueType vt, double in, boolean sparse) {
+		if( in == 0 && sparse) return null;
 		switch( vt ) {
 			case STRING:  return String.valueOf(in);
 			case BOOLEAN: return (in!=0);
@@ -307,6 +319,7 @@ public class UtilFunctions
 	 * @return
 	 */
 	public static Object stringToObject(ValueType vt, String in) {
+		if( in == null )  return null;
 		switch( vt ) {
 			case STRING:  return in;
 			case BOOLEAN: return Boolean.parseBoolean(in);
@@ -323,6 +336,7 @@ public class UtilFunctions
 	 * @return
 	 */
 	public static double objectToDouble(ValueType vt, Object in) {
+		if( in == null )  return 0;
 		switch( vt ) {
 			case STRING:  return Double.parseDouble((String)in);
 			case BOOLEAN: return ((Boolean)in)?1d:0d;

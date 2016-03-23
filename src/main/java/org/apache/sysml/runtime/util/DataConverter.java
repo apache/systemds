@@ -767,11 +767,9 @@ public class DataConverter
 		else //DENSE
 		{
 			for( int i=0; i<mb.getNumRows(); i++ ) {
-				Arrays.fill(row, null); //reset
 				for( int j=0; j<mb.getNumColumns(); j++ ) {
-					row[j] = UtilFunctions.doubleToObject(
-							schema.get(j), 
-							mb.quickGetValue(i, j));
+						row[j] = UtilFunctions.doubleToObject(
+								schema.get(j), mb.quickGetValue(i, j));
 				}
 				frame.appendRow(row);
 			}

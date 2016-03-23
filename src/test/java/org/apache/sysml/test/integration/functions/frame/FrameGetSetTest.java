@@ -110,19 +110,19 @@ public class FrameGetSetTest extends AutomatedTestBase
 						case BOOLEAN:
 							boolean[] tmp2 = new boolean[rows];
 							for( int i=0; i<rows; i++ )
-								A[i][j] = (tmp2[i] = (Boolean)UtilFunctions.doubleToObject(vt, A[i][j]))?1:0;
+								A[i][j] = (tmp2[i] = (Boolean)UtilFunctions.doubleToObject(vt, A[i][j], false))?1:0;
 							frame.appendColumn(tmp2);
 							break;
 						case INT:
 							long[] tmp3 = new long[rows];
 							for( int i=0; i<rows; i++ )
-								A[i][j] = tmp3[i] = (Long)UtilFunctions.doubleToObject(vt, A[i][j]);
+								A[i][j] = tmp3[i] = (Long)UtilFunctions.doubleToObject(vt, A[i][j], false);
 							frame.appendColumn(tmp3);
 							break;
 						case DOUBLE:
 							double[] tmp4 = new double[rows];
 							for( int i=0; i<rows; i++ )
-								tmp4[i] = (Double)UtilFunctions.doubleToObject(vt, A[i][j]);
+								tmp4[i] = (Double)UtilFunctions.doubleToObject(vt, A[i][j], false);
 							frame.appendColumn(tmp4);
 							break;
 						default:
@@ -145,7 +145,7 @@ public class FrameGetSetTest extends AutomatedTestBase
 					for( int j=0; j<lschema.size(); j++ ) {
 						Object obj = UtilFunctions.doubleToObject(lschema.get(j), A[i][j]);
 						A[i][j] = UtilFunctions.objectToDouble(lschema.get(j), obj);
-						row[j] = obj.toString();
+						row[j] = (obj!=null) ? obj.toString() : null;
 					}
 					frame.appendRow(row);
 				}

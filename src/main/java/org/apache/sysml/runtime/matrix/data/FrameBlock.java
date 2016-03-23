@@ -648,12 +648,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
-				out.writeUTF(_data[i]);
+				out.writeUTF((_data[i]!=null)?_data[i]:"");
 		}
 		public void readFields(DataInput in) throws IOException {
 			_size = _data.length;
-			for( int i=0; i<_size; i++ )
-				_data[i] = in.readUTF();
+			for( int i=0; i<_size; i++ ) {
+				String tmp = in.readUTF();
+				_data[i] = (!tmp.isEmpty()) ? tmp : null;
+			}
 		}
 		public Array clone() {
 			return new StringArray(Arrays.copyOf(_data, _size));
@@ -677,7 +679,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return _data[index];
 		}
 		public void set(int index, Boolean value) {
-			_data[index] = value;
+			_data[index] = (value!=null) ? value : false;
 		}
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((BooleanArray)value)._data, 0, _data, rl, ru-rl+1);
@@ -688,7 +690,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public void append(Boolean value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = value;
+			_data[_size++] = (value!=null) ? value : false;
 		}
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
@@ -721,18 +723,18 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return _data[index];
 		}
 		public void set(int index, Long value) {
-			_data[index] = value;
+			_data[index] = (value!=null) ? value : 0L;
 		}
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((LongArray)value)._data, 0, _data, rl, ru-rl+1);
 		}
 		public void append(String value) {
-			append(Long.parseLong(value));
+			append((value!=null)?Long.parseLong(value):null);
 		}
 		public void append(Long value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = value;
+			_data[_size++] = (value!=null) ? value : 0L;
 		}
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
@@ -765,18 +767,18 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return _data[index];
 		}
 		public void set(int index, Double value) {
-			_data[index] = value;
+			_data[index] = (value!=null) ? value : 0d;
 		}
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((DoubleArray)value)._data, 0, _data, rl, ru-rl+1);
 		}
 		public void append(String value) {
-			append(Double.parseDouble(value));
+			append((value!=null)?Double.parseDouble(value):null);
 		}
 		public void append(Double value) {
 			if( _data.length <= _size )
 				_data = Arrays.copyOf(_data, newSize());
-			_data[_size++] = value;
+			_data[_size++] = (value!=null) ? value : 0d;
 		}
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )

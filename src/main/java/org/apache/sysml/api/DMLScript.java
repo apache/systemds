@@ -714,72 +714,45 @@ public class DMLScript
 	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
 	{		
-		//produce debugging information (parse, compile and generate runtime program for a given DML script)
-		DMLDebuggerProgramInfo p = compileForDebug(dmlScriptStr, fnameOptConfig, argVals, parsePyDML);
+		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
+		
+		//Step 1: parse configuration files
+		DMLConfig conf = DMLConfig.readAndMergeConfigurationFiles(fnameOptConfig);
+		ConfigurationManager.setGlobalConfig(conf);
+	
+		//Step 2: parse dml script
+		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
+		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+		
+		//Step 3: construct HOP DAGs (incl LVA and validate)
+		DMLTranslator dmlt = new DMLTranslator(prog);
+		dmlt.liveVariableAnalysis(prog);
+		dmlt.validateParseTree(prog);
+		dmlt.constructHops(prog);
+
+		//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)
+		dmlt.rewriteHopsDAG(prog);
+
+		//Step 5: construct LOP DAGs
+		dmlt.constructLops(prog);
+	
+		//Step 6: generate runtime program
+		dbprog.rtprog = prog.getRuntimeProgram(conf);
 		
 		try {
 			//set execution environment
-			initHadoopExecution(p.conf);
+			initHadoopExecution(conf);
 		
 			//initialize an instance of SystemML debugger
-			DMLDebugger SystemMLdb = new DMLDebugger(p, dmlScriptStr, argVals);
+			DMLDebugger SystemMLdb = new DMLDebugger(dbprog, dmlScriptStr);
 			//run SystemML debugger
 			SystemMLdb.runSystemMLDebugger();
 		}
 		finally {
 			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution(p.conf);
+			cleanupHadoopExecution(conf);
 		}
 	}
-	
-	/**
-	 * compile: Compile DML script and generate hops, lops and runtime program for debugger. 
-	 * This method should be called after execution and debug properties have been set, and 
-	 * customized parameters have been put into _argVals
-	 * @param  dmlScriptStr DML script contents (including new lines)
-	 * @param  fnameOptConfig Full path of configuration file for SystemML
-	 * @param  argVals Key-value pairs defining arguments of DML script
-	 * @return dbprog Class containing parsed and compiled DML script w/ hops, lops and runtime program   
-	 * @throws ParseException
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 * @throws LanguageException
-	 * @throws HopsException
-	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
-	 */
-	//TODO: MB: remove this redundant compile and execute (or at least remove from DMLScript)
-	//TODO: This method should be private once debugger infrastructure is on top of the programmatic API  
-	public static DMLDebuggerProgramInfo compileForDebug(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, boolean parsePyDML)
-			throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException
-	{					
-		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
-		
-		//Step 1: parse configuration files
-		dbprog.conf = DMLConfig.readAndMergeConfigurationFiles(fnameOptConfig);
-		ConfigurationManager.setGlobalConfig(dbprog.conf);
-	
-		//Step 2: parse dml script
-		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
-		dbprog.prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-		
-		//Step 3: construct HOP DAGs (incl LVA and validate)
-		dbprog.dmlt = new DMLTranslator(dbprog.prog);
-		dbprog.dmlt.liveVariableAnalysis(dbprog.prog);
-		dbprog.dmlt.validateParseTree(dbprog.prog);
-		dbprog.dmlt.constructHops(dbprog.prog);
-
-		//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)
-		dbprog.dmlt.rewriteHopsDAG(dbprog.prog);
-
-		//Step 5: construct LOP DAGs
-		dbprog.dmlt.constructLops(dbprog.prog);
-	
-		//Step 6: generate runtime program
-		dbprog.rtprog = dbprog.prog.getRuntimeProgram(dbprog.conf);
-		
-		return dbprog;
-	}	
 
 	/**
 	 * @throws ParseException 

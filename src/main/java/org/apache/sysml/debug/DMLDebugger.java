@@ -20,7 +20,6 @@
 package org.apache.sysml.debug;
 
 import java.io.PrintStream;
-import java.util.HashMap;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang.math.IntRange;
@@ -36,17 +35,8 @@ import org.apache.sysml.runtime.instructions.cp.BreakPointInstruction.BPINSTRUCT
  */
 public class DMLDebugger
 {
-
-
-	// This will be supported in subsquent release. turning off the -debug 'optimize' feature for current release.
-	//public static boolean ENABLE_DEBUG_OPTIMIZER = false; //default debug mode
-	//public static boolean ENABLE_SERVER_SIDE_DEBUG_MODE = false; //default debug mode
-		
-	//public static final String DEBUGGER_SYSTEMML_CONFIG_FILEPATH = "./DebuggerSystemML-config.xml";
-	
-	
 	private DMLDebuggerProgramInfo dbprog; //parsed and compiled DML script w/ hops, lops and runtime program
-	public DMLDebuggerInterface debuggerUI; //debugger command line interface
+	private DMLDebuggerInterface debuggerUI; //debugger command line interface
 	private DMLDebuggerFunctions dbFunctions; //debugger functions interface
 	private CommandLine cmd; //debugger function command
 	
@@ -54,22 +44,18 @@ public class DMLDebugger
 	private PrintStream originalOut = null;
 	private PrintStream originalErr = null; 
 
-	private String dmlScriptStr; //DML script contents (including new lines)
-	HashMap<String,String> argVals; //key-value pairs defining arguments of DML script
-	ExecutionContext preEC = null;
-	ExecutionContext currEC = null;
-	String [] lines;
-	volatile boolean quit=false;
+	private ExecutionContext preEC = null;
+	private ExecutionContext currEC = null;
+	private String [] lines;
+	private volatile boolean quit=false;
 	
 	/**
 	 * Constructor for DML debugger CLI
 	 */
-	public DMLDebugger(DMLDebuggerProgramInfo p, String dmlScript, HashMap<String,String> args) 
+	public DMLDebugger(DMLDebuggerProgramInfo p, String dmlScript) 
 	{
 		dbprog = p;
-		dmlScriptStr = dmlScript;
-		lines = dmlScriptStr.split("\n");
-		argVals = args;		
+		lines = dmlScript.split("\n");
 		debuggerUI = new DMLDebuggerInterface();
 		dbFunctions = new DMLDebuggerFunctions();		
 		preEC = ExecutionContextFactory.createContext(dbprog.rtprog);
@@ -143,9 +129,7 @@ public class DMLDebugger
 	{
 		public void run() {
 			try {
-				// System.out.println("Starting DML script ...");
 				dbprog.rtprog.execute(currEC);
-				// System.out.println("DML script has finished execution.");
 				synchronized(DMLDebugger.class) {
 					quit = true;
 				}
@@ -213,41 +197,21 @@ public class DMLDebugger
     	    				currEC = preEC;
 							runtime.start();
 							isRuntimeInstruction = true;
-    	    				// System.out.println("Runtime must be started before single stepping can be enabled. Try \"r\" to start DML runtime execution.");
     	    			}
-    	    			//else {
-    	    				preEC.getDebugState().setCommand("step_instruction");
-    	    				runtime.resume();
-    	    				isRuntimeInstruction = true;
-    	    			//}
+	    				preEC.getDebugState().setCommand("step_instruction");
+	    				runtime.resume();
+	    				isRuntimeInstruction = true;
     	    		}
     	    		else if (cmd.hasOption("s")) {
     	    			if (!runtime.isAlive()) {
     	    				currEC = preEC;
 							runtime.start();
 							isRuntimeInstruction = true;
-    	    				//System.out.println("Runtime must be started before step over can be enabled. Try \"r\" to start DML runtime execution.");
     	    			}
-    	    			//else {
-    	    				preEC.getDebugState().setCommand("step_line");
-    	    				runtime.resume();
-    	    				isRuntimeInstruction = true;
-    	    			//}
+	    				preEC.getDebugState().setCommand("step_line");
+	    				runtime.resume();
+	    				isRuntimeInstruction = true;
     	    		}
-//    	    		else if (cmd.hasOption("step_return")) {
-//    	    			if (!runtime.isAlive()) {
-//    	    				System.out.println("Runtime must be started before step return can be enabled. Try \"r\" to start DML runtime execution.");
-//    	    			}
-//    	    			else {
-//    	    				String fname = dbFunctions.getValue(cmd.getOptionValues("step_return"));
-//    	    				dbprog.rtprog.setCommand("step return");
-//    	    				if (fname != null) {
-//    	    					dbprog.rtprog.setCommandArg(fname);
-//    	    				}
-//    	    				runtime.resume();
-//    	    				isRuntimeInstruction = true;
-//    	    			}
-//    	    		}
     	    		else if (cmd.hasOption("b")) {
        	    			int lineNumber = dbFunctions.getValue(cmd.getOptionValues("b"), lines.length);
     	    			if (lineNumber > 0) {
@@ -268,7 +232,6 @@ public class DMLDebugger
     	    			if (lineNumber > 0 && DMLBreakpointManager.getBreakpoint(lineNumber) != null && 
 	    						DMLBreakpointManager.getBreakpoint(lineNumber).getBPInstructionStatus() != BPINSTRUCTION_STATUS.INVISIBLE) {
     	    				dbprog.accessBreakpoint(lineNumber, 1, BPINSTRUCTION_STATUS.INVISIBLE);
-    	    				//dbprog.accessBreakpoint(lineNumber, 1, BPINSTRUCTION_STATUS.DISABLED);
 	    				}
     	    			else {
     	    				System.out.println("Sorry, a breakpoint cannot be deleted at line " + lineNumber + ". Please try a different line number.");
@@ -304,11 +267,8 @@ public class DMLDebugger
     	    					if(varName.contains("[")) {
         	    					// matrix with index: can be cell or column or row
     	    						try {
-    	    							//System.out.println("" + varName);
     	    							String variableNameWithoutIndices = varName.split("\\[")[0].trim();
-    	    							//System.out.println("" + variableNameWithoutIndices);
     	    							String indexString = (varName.split("\\[")[1].trim()).split("\\]")[0].trim();
-    	    							//System.out.println(">>" + indexString + "<<");
     	    							String rowIndexStr = "";
     	    							String colIndexStr = "";
     	    							if(indexString.startsWith(",")) {
@@ -330,7 +290,6 @@ public class DMLDebugger
     	    							if(!colIndexStr.isEmpty()) {
     	    								colIndex = Integer.parseInt(colIndexStr);
     	    							}
-    	    							//System.out.println("" + rowIndex + " " + colIndex);
     	    							dbFunctions.print(currEC.getDebugState().getVariables(), variableNameWithoutIndices, "value", rowIndex, colIndex);
     	    						}
     	    						catch(Exception indicesException) {
@@ -436,14 +395,6 @@ public class DMLDebugger
     	    					System.err.println("Sorry no lines that can be printed. Try \"l\" or \"l all\" or \"l next 5\" or \"l prev 5\".");
     	    				}
     	    			}
-    	    			
-    	    			
-    	    			
-    	    			// Old code:
-    	    			// IntRange range = dbFunctions.getRange(cmd.getOptionValues("p"), lines.length);
-    	    			//if (range.getMinimumInteger() > 0) {
-    	    			//	dbFunctions.printLines(lines, range);
-    	    			// }
     	    		}
     	    		else if (cmd.hasOption("li")) {
     	    			
@@ -500,14 +451,6 @@ public class DMLDebugger
     	    					System.err.println("Sorry no lines that can be printed. Try \"li\" or \"li all\" or \"li next 5\" or \"li prev 5\".");
     	    				}
     	    			}
-    	    			
-    	    			
-    	    			
-    	    			// Old code:
-    	    			// IntRange range = dbFunctions.getRange(cmd.getOptionValues("p"), lines.length);
-    	    			//if (range.getMinimumInteger() > 0) {
-    	    			//	dbFunctions.printLines(lines, range);
-    	    			// }
     	    		}
     	    		else if (cmd.hasOption("set_scalar")) {
 						if (!runtime.isAlive())
@@ -551,7 +494,6 @@ public class DMLDebugger
 							wait(300); //wait
 						}
 					}
-					//System.out.println(">> After while");
 				}
 				wait(300);
 			} catch (Exception e) {
@@ -559,53 +501,4 @@ public class DMLDebugger
     		}
 		}
 	}
-	    
-
-//	Since the recompile option is disabled in the debugger to make the interface much cleaner
-//	/**
-//	 * compile: Compile DML script and generate hops, lops and runtime program for debugger. 
-//	 * @param  dmlScriptStr DML script contents (including new lines)
-//	 * @param  argVals Key-value pairs defining arguments of DML script  
-//	 * @throws ParseException
-//	 * @throws IOException
-//	 * @throws DMLRuntimeException
-//	 * @throws LanguageException
-//	 * @throws HopsException
-//	 * @throws LopsException
-//	 * @throws DMLUnsupportedOperationException
-//	 * @throws Exception 
-//	 */
-//	private void recompile(String dmlScriptStr, HashMap<String,String> argVals)
-//			throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException, Exception
-//	{
-//		dbprog = new DMLDebuggerProgramInfo();
-//			
-//		//Step 1: parse dml script
-//		if(DMLScript.ENABLE_PYTHON_PARSING) {
-//			PyDMLParserWrapper parser = new PyDMLParserWrapper();
-//			dbprog.prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-//		}
-//		else {
-//			DMLParserWrapper parser = new DMLParserWrapper();
-//			dbprog.prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-//		}
-//			
-//		//Step 3: construct HOP DAGs (incl LVA and validate)
-//		dbprog.dmlt = new DMLTranslator(dbprog.prog);
-//		dbprog.dmlt.liveVariableAnalysis(dbprog.prog);
-//		dbprog.dmlt.validateParseTree(dbprog.prog);
-//		dbprog.dmlt.constructHops(dbprog.prog);		
-//		
-//		//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)
-//		dbprog.dmlt.rewriteHopsDAG(dbprog.prog); 
-//
-//		//Step 5: construct LOP DAGs
-//		dbprog.dmlt.constructLops(dbprog.prog);
-//	
-//		//Step 6: generate runtime program
-//		dbprog.rtprog = dbprog.prog.getRuntimeProgram(dbprog.conf);
-//		
-//		//Set debug mode flag
-//		setupDMLRuntime();
-//	}
 }

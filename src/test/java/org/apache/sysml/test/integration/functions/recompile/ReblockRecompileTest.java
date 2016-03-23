@@ -45,39 +45,52 @@ public class ReblockRecompileTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + ReblockRecompileTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = 20;   
+	private final static int rows = 2000;   
 	
 	
 	@Override
-	public void setUp() 
-	{
-		addTestConfiguration(TEST_NAME1, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
-		addTestConfiguration(TEST_NAME2, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Rout" }) );
-		addTestConfiguration(TEST_NAME3, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "Rout" }) );
+	public void setUp() {
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Rout" }) );
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "Rout" }) );
 	}
 	
 	@Test
-	public void testReblockPWrite() 
-	{
-		runReblockTest(1);
+	public void testReblockPWriteRand() {
+		runReblockTest(1, System.nanoTime());
+	}
+	
+	@Test
+	public void testReblockPWriteFixed() {
+		runReblockTest(1, 296304710250949L);
 	}
 
 	@Test
-	public void testReblockCTable() 
-	{
-		runReblockTest(2);
+	public void testReblockCTableRand() {
+		runReblockTest(2, System.nanoTime());
+	}
+	
+	@Test //failed before for this particular seed
+	public void testReblockCTableFixed() {
+		runReblockTest(2, 296304710250949L);
 	}
 	
 	@Test
-	public void testReblockGroupedAggregate() 
-	{
-		runReblockTest(3);
+	public void testReblockGroupedAggregateRand() {
+		runReblockTest(3, System.nanoTime());
 	}
 	
-	private void runReblockTest(int scriptNum)
+	@Test //failed before for this particular seed
+	public void testReblockGroupedAggregateFixed() {
+		runReblockTest(3, 296304710250949L);
+	}
+	
+	/**
+	 * 
+	 * @param scriptNum
+	 * @param seed
+	 */
+	private void runReblockTest(int scriptNum, long seed)
 	{
 		String TEST_NAME = null;
 		switch(scriptNum) 
@@ -99,8 +112,7 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-		long seed = System.nanoTime();
-        double[][] V = getRandomMatrix(rows, 1, 1, 5, 1.0d, seed);
+		double[][] V = getRandomMatrix(rows, 1, 1, 5, 1.0d, seed);
 		writeInputMatrix("V", V, true);
 		
 		//cleanup previous executions

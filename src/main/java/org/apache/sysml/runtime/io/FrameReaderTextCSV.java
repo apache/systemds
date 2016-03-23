@@ -36,6 +36,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class FrameReaderTextCSV extends FrameReader
 {
@@ -147,13 +148,7 @@ public class FrameReaderTextCSV extends FrameReader
 							emptyValuesFound = true;
 						}
 						else {
-							switch( schema.get(col) ) {
-								case STRING:  dest.set(row, col, part); break;
-								case BOOLEAN: dest.set(row, col, Boolean.valueOf(part)); break;
-								case INT:     dest.set(row, col, Integer.valueOf(part)); break;
-								case DOUBLE:  dest.set(row, col, Double.valueOf(part)); break;
-								default: throw new RuntimeException("Unsupported value type: " + schema.get(col));
-							}
+							dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), part));
 						}
 						col++;
 					}

@@ -66,6 +66,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	public FrameBlock(FrameBlock that) {
+		this(that.getSchema());
 		copy(that);
 	}
 	
@@ -537,32 +538,25 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return ret;
 	}
 	
-	private void copy(FrameBlock that)
+	public void copy(FrameBlock src)
 	{
-		int limit = that.getNumRows()*that.getNumColumns();
-		
 		//allocate 
-		ensureAllocatedColumns(that.getNumRows());
+		ensureAllocatedColumns(src.getNumRows());
 		
 		//actual copy 
-		System.arraycopy(that._coldata, 0, _coldata, 0, limit);
+		for( int i=0; i<src.getNumColumns(); i++ )
+			_coldata.get(i).set(0, src.getNumRows()-1, src._coldata.get(i));
 	}
 
 	
 	public void copy(int rl, int ru, int cl, int cu, FrameBlock src, int rlen, int clen) 
 		throws DMLRuntimeException
 	{
-		if(_coldata==null)
-			ensureAllocatedColumns(rlen);
+		ensureAllocatedColumns(rlen);
 		
 		//copy values
-		int rowLen = cu-cl+1;				
-		if(clen == src.getNumColumns()) //optimization for equal width
-			System.arraycopy(src._coldata, 0, _coldata, rl*clen+cl, src._numRows*src.getNumColumns());
-		else
-			for( int i=0, ix1=0, ix2=rl*clen+cl; i<src.getNumRows(); i++, ix1+=src.getNumColumns(), ix2+=clen ) {
-				System.arraycopy(src._coldata, ix1, _coldata, ix2, rowLen);
-			}
+		for( int i=cl; i<cu; i++ )
+			_coldata.get(i).set(rl, ru-rl-1, src._coldata.get(i));
 	}
 		
 
@@ -649,6 +643,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public abstract T get(int index);
 		public abstract void set(int index, T value);
 		public abstract void set(int rl, int ru, Array value);
+		public abstract void set(int rl, int ru, Array value, int rlSrc);
 		public abstract void append(String value);
 		public abstract void append(T value);
 		public abstract Array clone();
@@ -673,6 +668,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((StringArray)value)._data, 0, _data, rl, ru-rl+1);
+		}
+		public void set(int rl, int ru, Array value, int rlSrc) {
+			System.arraycopy(((StringArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
 		public void append(String value) {
 			if( _data.length <= _size )
@@ -714,6 +712,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((BooleanArray)value)._data, 0, _data, rl, ru-rl+1);
+		}
+		public void set(int rl, int ru, Array value, int rlSrc) {
+			System.arraycopy(((BooleanArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
 		public void append(String value) {
 			append(Boolean.parseBoolean(value));
@@ -759,6 +760,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((LongArray)value)._data, 0, _data, rl, ru-rl+1);
 		}
+		public void set(int rl, int ru, Array value, int rlSrc) {
+			System.arraycopy(((LongArray)value)._data, rlSrc, _data, rl, ru-rl+1);
+		}
 		public void append(String value) {
 			append(Long.parseLong(value));
 		}
@@ -802,6 +806,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		public void set(int rl, int ru, Array value) {
 			System.arraycopy(((DoubleArray)value)._data, 0, _data, rl, ru-rl+1);
+		}
+		public void set(int rl, int ru, Array value, int rlSrc) {
+			System.arraycopy(((DoubleArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
 		public void append(String value) {
 			append(Double.parseDouble(value));

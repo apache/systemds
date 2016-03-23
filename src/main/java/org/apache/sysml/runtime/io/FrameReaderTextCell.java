@@ -40,6 +40,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class FrameReaderTextCell extends FrameReader
 {
@@ -145,13 +146,7 @@ public class FrameReaderTextCell extends FrameReader
 						st.reset( value.toString() ); //reinit tokenizer
 						row = st.nextInt()-1;
 						col = st.nextInt()-1;
-						switch( schema.get(col) ) {
-							case STRING:  dest.set(row, col, st.nextToken()); break;
-							case BOOLEAN: dest.set(row, col, Boolean.valueOf(st.nextToken())); break;
-							case INT:     dest.set(row, col, st.nextInt()); break;
-							case DOUBLE:  dest.set(row, col, st.nextDouble()); break;
-							default: throw new RuntimeException("Unsupported value type: " + schema.get(col));
-						}
+						dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), st.nextToken()));
 					}
 				}
 				finally
@@ -230,13 +225,7 @@ public class FrameReaderTextCell extends FrameReader
 				st.reset( value ); //reinit tokenizer
 				row = st.nextInt()-1;
 				col = st.nextInt()-1;	
-				switch( schema.get(col) ) {
-					case STRING:  dest.set(row, col, st.nextToken()); break;
-					case BOOLEAN: dest.set(row, col, Boolean.valueOf(st.nextToken())); break;
-					case INT:     dest.set(row, col, st.nextInt()); break;
-					case DOUBLE:  dest.set(row, col, st.nextDouble()); break;
-					default: throw new RuntimeException("Unsupported value type: " + schema.get(col));
-				}
+				dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), st.nextToken()));
 			}
 		}
 		catch(Exception ex)

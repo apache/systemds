@@ -332,6 +332,24 @@ public class UtilFunctions
 		}
 	}
 	
+	/**
+	 * 
+	 * @param vt
+	 * @param in1
+	 * @param in2
+	 * @return
+	 */
+	public static int compareTo(ValueType vt, Object in1, Object in2) {
+		switch( vt ) {
+		
+			case STRING:  return ((String)in1).compareTo((String)in2);
+			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
+			case INT:     return ((Long)in1).compareTo((Long)in2);
+			case DOUBLE:  return ((Double)in1).compareTo((Double)in2);
+			default: throw new RuntimeException("Unsupported value type: "+vt);
+		}
+	}
+	
 	public static boolean isIntegerNumber( String str )
 	{
 		byte[] c = str.getBytes();

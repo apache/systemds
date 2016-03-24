@@ -2543,8 +2543,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * NOTE: in this rewrite we need to modify the links to all parents because we 
 	 * remove existing links of subdags and hence affect all consumers.
 	 * 
-	 * TODO select up or down based on size
-	 * 
 	 * @param parent
 	 * @param hi
 	 * @param pos
@@ -2562,7 +2560,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			
 			if( hileft instanceof BinaryOp && ((BinaryOp)hileft).getOp()==OpOp2.MINUS  //X=-Z
 				&& hileft.getInput().get(0) instanceof LiteralOp 
-				&& HopRewriteUtils.getDoubleValue((LiteralOp)hileft.getInput().get(0))==0.0 ) 
+				&& HopRewriteUtils.getDoubleValue((LiteralOp)hileft.getInput().get(0))==0.0 
+				&& hi.dimsKnown() && hileft.getInput().get(1).dimsKnown()   //size comparison
+				&& HopRewriteUtils.compareSize(hi, hileft.getInput().get(1)) < 0 ) 
 			{
 				Hop hi2 = hileft.getInput().get(1);
 				
@@ -2593,11 +2593,13 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				hi = minus;
 				
-				LOG.debug("Applied reorderMinusMatrixMult");
+				LOG.debug("Applied reorderMinusMatrixMult (line "+hi.getBeginLine()+").");
 			}
 			else if( hiright instanceof BinaryOp && ((BinaryOp)hiright).getOp()==OpOp2.MINUS  //X=-Z
 					&& hiright.getInput().get(0) instanceof LiteralOp 
-					&& HopRewriteUtils.getDoubleValue((LiteralOp)hiright.getInput().get(0))==0.0 ) 
+					&& HopRewriteUtils.getDoubleValue((LiteralOp)hiright.getInput().get(0))==0.0
+					&& hi.dimsKnown() && hiright.getInput().get(1).dimsKnown()     //size comparison
+					&& HopRewriteUtils.compareSize(hi, hiright.getInput().get(1)) < 0 ) 
 			{
 				Hop hi2 = hiright.getInput().get(1);
 				
@@ -2628,7 +2630,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				
 				hi = minus;
 				
-				LOG.debug("Applied reorderMinusMatrixMult");
+				LOG.debug("Applied reorderMinusMatrixMult (line "+hi.getBeginLine()+").");
 			}	
 		}
 		

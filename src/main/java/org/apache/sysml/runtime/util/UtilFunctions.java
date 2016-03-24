@@ -354,8 +354,11 @@ public class UtilFunctions
 	 * @return
 	 */
 	public static int compareTo(ValueType vt, Object in1, Object in2) {
+		if(in1 == null && in2 == null) return 0;
+		else if(in1 == null) return -1;
+		else if(in2 == null) return 1;
+ 
 		switch( vt ) {
-		
 			case STRING:  return ((String)in1).compareTo((String)in2);
 			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
 			case INT:     return ((Long)in1).compareTo((Long)in2);

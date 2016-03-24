@@ -993,4 +993,134 @@ Training time per iter: 0.2334166666666667 seconds
 {% endhighlight %}
 
 
+* * *
 
+# Jupyter (PySpark) Notebook Example - Poisson Nonnegative Matrix Factorization
+
+Here, we'll explore the use of SystemML via PySpark in a [Jupyter notebook](http://jupyter.org/).
+This Jupyter notebook example can be downloaded [here]() to a directory of your choice.
+
+From the directory with the downloaded notebook, start Jupyter with PySpark:
+
+    PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" $SPARK_HOME/bin/pyspark --master local[*] --jars $SYSTEMML_HOME/target/SystemML.jar --py-files $SYSTEMML_HOME/src/main/java/org/apache/sysml/api/python/SystemML.py --driver-class-path $SYSTEMML_HOME/target/SystemML.jar
+
+This will open Jupyter in a browser:
+
+![Jupyter Notebook](img/spark-mlcontext-programming-guide/jupyter1.png "Jupyter Notebook")
+
+We can then open up the `SystemML-PySpark-Recommendation-Demo` notebook:
+
+![Jupyter Notebook](img/spark-mlcontext-programming-guide/jupyter2.png "Jupyter Notebook")
+
+## Set up the notebook and download the data
+
+{% highlight python %}
+%load_ext autoreload
+%autoreload 2
+%matplotlib inline
+
+import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['figure.figsize'] = (10, 6)
+{% endhighlight %}
+
+{% highlight python %}
+%%sh
+# Download dataset
+curl -O http://snap.stanford.edu/data/amazon0601.txt.gz
+gunzip amazon0601.txt.gz
+{% endhighlight %}
+
+## Use PySpark to load the data in as a Spark DataFrame
+
+{% highlight python %}
+# Load data
+import pyspark.sql.functions as F
+dataPath = "amazon0601.txt"
+
+X_train = (sc.textFile(dataPath)
+    .filter(lambda l: not l.startswith("#"))
+    .map(lambda l: l.split("\t"))
+    .map(lambda prods: (int(prods[0]), int(prods[1]), 1.0))
+    .toDF(("prod_i", "prod_j", "x_ij"))
+    .filter("prod_i < 500 AND prod_j < 500") # Filter for memory constraints
+    .cache())
+
+max_prod_i = X_train.select(F.max("prod_i")).first()[0]
+max_prod_j = X_train.select(F.max("prod_i")).first()[0]
+numProducts = max(max_prod_i, max_prod_j) + 1 # 0-based indexing
+print("Total number of products: {}".format(numProducts))
+{% endhighlight %}
+
+## Create a SystemML MLContext object
+
+{% highlight python %}
+# Create SystemML MLContext
+from SystemML import MLContext
+ml = MLContext(sc)
+{% endhighlight %}
+
+## Define a kernel for Poisson nonnegative matrix factorization (PNMF) in DML
+
+{% highlight python %}
+# Define PNMF kernel in SystemML's DSL using the R-like syntax for PNMF
+pnmf = """
+# data & args
+X = read($X)
+X = X+1 # change product IDs to be 1-based, rather than 0-based
+V = table(X[,1], X[,2])
+size = ifdef($size, -1)
+if(size > -1) {
+    V = V[1:size,1:size]
+}
+max_iteration = as.integer($maxiter)
+rank = as.integer($rank)
+
+n = nrow(V)
+m = ncol(V)
+range = 0.01
+W = Rand(rows=n, cols=rank, min=0, max=range, pdf="uniform")
+H = Rand(rows=rank, cols=m, min=0, max=range, pdf="uniform")
+losses = matrix(0, rows=max_iteration, cols=1)
+
+# run PNMF
+i=1
+while(i <= max_iteration) {
+  # update params
+  H = (H * (t(W) %*% (V/(W%*%H))))/t(colSums(W)) 
+  W = (W * ((V/(W%*%H)) %*% t(H)))/t(rowSums(H))
+  
+  # compute loss
+  losses[i,] = -1 * (sum(V*log(W%*%H)) - as.scalar(colSums(W)%*%rowSums(H)))
+  i = i + 1;
+}
+
+# write outputs
+write(losses, $lossout)
+write(W, $Wout)
+write(H, $Hout)
+"""
+{% endhighlight %}
+
+## Execute the algorithm
+
+{% highlight python %}
+# Run the PNMF script on SystemML with Spark
+ml.reset()
+outputs = ml.executeScript(pnmf, {"X": X_train, "maxiter": 100, "rank": 10}, ["W", "H", "losses"])
+{% endhighlight %}
+
+## Retrieve the losses during training and plot them
+
+{% highlight python %}
+# Plot training loss over time
+losses = outputs.getDF(sqlContext, "losses")
+xy = losses.sort(losses.ID).map(lambda r: (r[0], r[1])).collect()
+x, y = zip(*xy)
+plt.plot(x, y)
+plt.xlabel('Iteration')
+plt.ylabel('Loss')
+plt.title('PNMF Training Loss')
+{% endhighlight %}
+
+![Jupyter Loss Graph](img/spark-mlcontext-programming-guide/jupyter_loss_graph.png "Jupyter Loss Graph")

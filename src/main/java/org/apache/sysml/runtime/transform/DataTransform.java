@@ -586,14 +586,8 @@ public class DataTransform
 			outputSpec.put(TX_METHOD.MVRCD.toString(), mvrcd);
 		}
 		
-		// write out the spec with IDs
-		// TODO return JSON object in order to prevent write in CP
-		String specFileWithIDs = MRJobConfiguration.constructTempOutputFilename();
-		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(new Path(specFileWithIDs),true)));
-		out.write(outputSpec.toString());
-		out.close();
-		
-		return specFileWithIDs;
+		// return output spec with IDs
+		return outputSpec.toString();
 	}
 	
 	private static JSONArray toJSONArray(int[] list) 
@@ -764,7 +758,7 @@ public class DataTransform
 		
 		if (!oprnds.isApply) {
 			// build specification file with column IDs insteadof column names
-			String specFileWithIDs = processSpecFile(fs, oprnds.inputPath, 
+			String specWithIDs = processSpecFile(fs, oprnds.inputPath, 
 							smallestFile, colNamesToIds, oprnds.inputCSVProperties, oprnds.spec);
 			colNamesToIds = null; // enable GC on colNamesToIds
 
@@ -772,27 +766,22 @@ public class DataTransform
 			// Also, generate part offsets file (counters file), which is to be used in csv-reblock
 			
 			String partOffsetsFile =  MRJobConfiguration.constructTempOutputFilename();
-			numRowsTf = GenTfMtdMR.runJob(oprnds.inputPath, 
-												oprnds.txMtdPath, specFileWithIDs, 
-												smallestFile, partOffsetsFile, 
-												oprnds.inputCSVProperties, numColumns, 
-												replication, outHeader);
+			numRowsTf = GenTfMtdMR.runJob(oprnds.inputPath, oprnds.txMtdPath, specWithIDs, smallestFile, 
+					partOffsetsFile, oprnds.inputCSVProperties, numColumns, replication, outHeader);
 			
 			if ( numRowsTf == 0 )
 				throw new DMLRuntimeException(ERROR_MSG_ZERO_ROWS);
 			
 			// store the specFileWithIDs as transformation metadata
-			MapReduceTool.copyFileOnHDFS(specFileWithIDs, oprnds.txMtdPath + "/" + "spec.json");
+			MapReduceTool.writeStringToHDFS(specWithIDs, oprnds.txMtdPath + "/" + "spec.json");
 			
 			numColumnsTf = getNumColumnsTf(fs, outHeader, oprnds.inputCSVProperties.getDelim(), oprnds.txMtdPath);
 			
 			// Apply transformation metadata, and perform actual transformation 
 			if(isCSV)
-				retCSV = ApplyTfCSVMR.runJob(oprnds.inputPath, specFileWithIDs, 
-												oprnds.txMtdPath, tmpPath, 
-												outputMatrices[csvoutputs.get(0)].getFileName(), 
-												partOffsetsFile, oprnds.inputCSVProperties, numColumns, 
-												replication, outHeader);
+				retCSV = ApplyTfCSVMR.runJob(oprnds.inputPath, specWithIDs, oprnds.txMtdPath, tmpPath, 
+					outputMatrices[csvoutputs.get(0)].getFileName(), partOffsetsFile, 
+					oprnds.inputCSVProperties, numColumns, replication, outHeader);
 			
 			if(isBB)
 			{
@@ -801,20 +790,16 @@ public class DataTransform
 				CSVReblockInstruction rblk = prepDummyReblockInstruction(oprnds.inputCSVProperties, blockSize);
 				
 				AssignRowIDMRReturn ret1 = CSVReblockMR.runAssignRowIDMRJob(new String[]{oprnds.inputPath}, 
-																			new InputInfo[]{InputInfo.CSVInputInfo}, 
-																			new int[]{blockSize}, new int[]{blockSize}, 
-																			rblk.toString(), replication, new String[]{smallestFile},
-																			true, oprnds.inputCSVProperties.getNAStrings(), specFileWithIDs);
+							new InputInfo[]{InputInfo.CSVInputInfo}, new int[]{blockSize}, new int[]{blockSize}, 
+							rblk.toString(), replication, new String[]{smallestFile}, true, 
+							oprnds.inputCSVProperties.getNAStrings(), specWithIDs);
 				if ( ret1.rlens[0] == 0 )
 					throw new DMLRuntimeException(ERROR_MSG_ZERO_ROWS);
 					
-				retBB = ApplyTfBBMR.runJob(oprnds.inputPath, 
-											insts[1], otherInst, 
-											specFileWithIDs, oprnds.txMtdPath, 
-											tmpPath, outputMatrices[bboutputs.get(0)].getFileName(), 
-											ret1.counterFile.toString(), oprnds.inputCSVProperties, 
-											numRowsTf, numColumns, numColumnsTf, 
-											replication, outHeader);
+				retBB = ApplyTfBBMR.runJob(oprnds.inputPath, insts[1], otherInst, 
+							specWithIDs, oprnds.txMtdPath, tmpPath, outputMatrices[bboutputs.get(0)].getFileName(), 
+							ret1.counterFile.toString(), oprnds.inputCSVProperties, numRowsTf, numColumns, 
+							numColumnsTf, replication, outHeader);
 			}
 			
 			MapReduceTool.deleteFileIfExistOnHDFS(new Path(partOffsetsFile), job);
@@ -828,7 +813,8 @@ public class DataTransform
 			MapReduceTool.copyFileOnHDFS(oprnds.applyTxPath, oprnds.txMtdPath);
 			
 			// path to specification file
-			String specFileWithIDs = oprnds.txMtdPath + "/" + "spec.json";
+			String specWithIDs = (oprnds.spec != null) ? oprnds.spec : 
+				MapReduceTool.readStringFromHDFSFile(oprnds.txMtdPath + "/" + "spec.json");
 			numColumnsTf = getNumColumnsTf(fs, outHeader, 
 												oprnds.inputCSVProperties.getDelim(), 
 												oprnds.txMtdPath);
@@ -840,21 +826,18 @@ public class DataTransform
 				CSVReblockInstruction rblk = prepDummyReblockInstruction(oprnds.inputCSVProperties, blockSize);
 				
 				AssignRowIDMRReturn ret1 = CSVReblockMR.runAssignRowIDMRJob(new String[]{oprnds.inputPath}, 
-																			new InputInfo[]{InputInfo.CSVInputInfo}, 
-																			new int[]{blockSize}, new int[]{blockSize}, 
-																			rblk.toString(), replication, new String[]{smallestFile},
-																			true, oprnds.inputCSVProperties.getNAStrings(), specFileWithIDs);
+							new InputInfo[]{InputInfo.CSVInputInfo}, new int[]{blockSize}, new int[]{blockSize}, 
+							rblk.toString(), replication, new String[]{smallestFile}, true, 
+							oprnds.inputCSVProperties.getNAStrings(), specWithIDs);
 				numRowsTf = ret1.rlens[0];
 				
 				if ( ret1.rlens[0] == 0 )
 					throw new DMLRuntimeException(ERROR_MSG_ZERO_ROWS);
 					
 				// Apply transformation metadata, and perform actual transformation 
-				retCSV = ApplyTfCSVMR.runJob(oprnds.inputPath, specFileWithIDs, 
-												oprnds.applyTxPath, tmpPath, 
-												outputMatrices[csvoutputs.get(0)].getFileName(), 
-												ret1.counterFile.toString(), oprnds.inputCSVProperties, numColumns, 
-												replication, outHeader);
+				retCSV = ApplyTfCSVMR.runJob(oprnds.inputPath, specWithIDs, oprnds.applyTxPath, tmpPath, 
+							outputMatrices[csvoutputs.get(0)].getFileName(), ret1.counterFile.toString(), 
+							oprnds.inputCSVProperties, numColumns, replication, outHeader);
 			}
 			
 			if(isBB) 
@@ -863,24 +846,19 @@ public class DataTransform
 				CSVReblockInstruction rblk = (CSVReblockInstruction) InstructionParser.parseSingleInstruction(insts[1]);
 				CSVReblockInstruction newrblk = (CSVReblockInstruction) rblk.clone((byte)0);
 				AssignRowIDMRReturn ret1 = CSVReblockMR.runAssignRowIDMRJob(new String[]{oprnds.inputPath}, 
-																			new InputInfo[]{InputInfo.CSVInputInfo}, 
-																			new int[]{newrblk.brlen}, new int[]{newrblk.bclen}, 
-																			newrblk.toString(), replication, new String[]{smallestFile},
-																			true, oprnds.inputCSVProperties.getNAStrings(), specFileWithIDs);
+							new InputInfo[]{InputInfo.CSVInputInfo}, new int[]{newrblk.brlen}, new int[]{newrblk.bclen}, 
+							newrblk.toString(), replication, new String[]{smallestFile}, true, 
+							oprnds.inputCSVProperties.getNAStrings(), specWithIDs);
 				numRowsTf = ret1.rlens[0];
 				
 				if ( ret1.rlens[0] == 0 )
 					throw new DMLRuntimeException(ERROR_MSG_ZERO_ROWS);
 				
 				// apply transformation metadata, as well as reblock the resulting data
-				retBB = ApplyTfBBMR.runJob(oprnds.inputPath, 
-													insts[1], otherInst, specFileWithIDs, 
-													oprnds.txMtdPath, tmpPath, 
-													outputMatrices[bboutputs.get(0)].getFileName(), 
-													ret1.counterFile.toString(), 
-													oprnds.inputCSVProperties, 
-													ret1.rlens[0], ret1.clens[0], numColumnsTf, 
-													replication, outHeader);
+				retBB = ApplyTfBBMR.runJob(oprnds.inputPath, insts[1], otherInst, specWithIDs, 
+							oprnds.txMtdPath, tmpPath, outputMatrices[bboutputs.get(0)].getFileName(), 
+							ret1.counterFile.toString(), oprnds.inputCSVProperties, ret1.rlens[0], 
+							ret1.clens[0], numColumnsTf, replication, outHeader);
 			}
 		}
 		
@@ -1035,20 +1013,21 @@ public class DataTransform
 		
 		if (!oprnds.isApply) {
 			// build specification file with column IDs insteadof column names
-			String specFileWithIDs = processSpecFile(fs, oprnds.inputPath, smallestFile, colNamesToIds, oprnds.inputCSVProperties, oprnds.spec);
-			MapReduceTool.copyFileOnHDFS(specFileWithIDs, oprnds.txMtdPath + "/" + "spec.json");
+			String specWithIDs = processSpecFile(fs, oprnds.inputPath, smallestFile, colNamesToIds, oprnds.inputCSVProperties, oprnds.spec);
+			MapReduceTool.writeStringToHDFS(specWithIDs, oprnds.txMtdPath + "/" + "spec.json");
 	
-			ret = performTransform(job, fs, oprnds.inputPath, colNamesToIds.size(), oprnds.inputCSVProperties, specFileWithIDs, oprnds.txMtdPath, oprnds.isApply, outputMatrices[0], outHeader, isBB, isCSV );
+			ret = performTransform(job, fs, oprnds.inputPath, colNamesToIds.size(), oprnds.inputCSVProperties, specWithIDs, oprnds.txMtdPath, oprnds.isApply, outputMatrices[0], outHeader, isBB, isCSV );
 		}
 		else {
 			// copy given transform metadata (applyTxPath) to specified location (txMtdPath)
 			MapReduceTool.deleteFileIfExistOnHDFS(new Path(oprnds.txMtdPath), job);
 			MapReduceTool.copyFileOnHDFS(oprnds.applyTxPath, oprnds.txMtdPath);
 			
-			// path to specification file
-			String specFileWithIDs = oprnds.txMtdPath + "/" + "spec.json";
+			// path to specification file (optionally specified)
+			String specWithIDs = (oprnds.spec != null) ? 
+				oprnds.spec : MapReduceTool.readStringFromHDFSFile(oprnds.txMtdPath + "/" + "spec.json");
 			
-			ret = performTransform(job, fs, oprnds.inputPath, colNamesToIds.size(), oprnds.inputCSVProperties, specFileWithIDs,  oprnds.txMtdPath, oprnds.isApply, outputMatrices[0], outHeader, isBB, isCSV );
+			ret = performTransform(job, fs, oprnds.inputPath, colNamesToIds.size(), oprnds.inputCSVProperties, specWithIDs,  oprnds.txMtdPath, oprnds.isApply, outputMatrices[0], outHeader, isBB, isCSV );
 		}
 		
 		return ret;
@@ -1194,11 +1173,11 @@ public class DataTransform
 	 * @throws JSONException 
 	 * @throws IllegalArgumentException 
 	 */
-	private static JobReturn performTransform(JobConf job, FileSystem fs, String inputPath, int ncols, CSVFileFormatProperties prop, String specFileWithIDs, String tfMtdPath, boolean isApply, MatrixObject result, String headerLine, boolean isBB, boolean isCSV ) throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException {
+	private static JobReturn performTransform(JobConf job, FileSystem fs, String inputPath, int ncols, CSVFileFormatProperties prop, String specWithIDs, String tfMtdPath, boolean isApply, MatrixObject result, String headerLine, boolean isBB, boolean isCSV ) throws IOException, DMLRuntimeException, IllegalArgumentException, JSONException {
 		
 		String[] na = TfUtils.parseNAStrings(prop.getNAStrings());
 		
-		JSONObject spec = TfUtils.readSpec(fs, specFileWithIDs);
+		JSONObject spec = new JSONObject(specWithIDs);
 		TfUtils agents = new TfUtils(headerLine, prop.hasHeader(), prop.getDelim(), na, spec, ncols, tfMtdPath, null, null );
 		
 		MVImputeAgent _mia = agents.getMVImputeAgent();
@@ -1439,7 +1418,7 @@ public class DataTransform
 		
 		if (!oprnds.isApply) {
 			// build specification file with column IDs insteadof column names
-			String specFileWithIDs = processSpecFile(fs, oprnds.inputPath, smallestFile,
+			String specWithIDs = processSpecFile(fs, oprnds.inputPath, smallestFile,
 						colNamesToIds, oprnds.inputCSVProperties, oprnds.spec);
 			colNamesToIds = null; // enable GC on colNamesToIds
 
@@ -1447,18 +1426,17 @@ public class DataTransform
 			// Also, generate part offsets file (counters file), which is to be used in csv-reblock (if needed)
 			String partOffsetsFile =  MRJobConfiguration.constructTempOutputFilename();
 			numRowsTf = GenTfMtdSPARK.runSparkJob(sec, csvLines, oprnds.txMtdPath,  
-													specFileWithIDs,partOffsetsFile, 
+													specWithIDs,partOffsetsFile, 
 													oprnds.inputCSVProperties, numColumns, 
 													outHeader);
 			
 			// store the specFileWithIDs as transformation metadata
-			MapReduceTool.copyFileOnHDFS(specFileWithIDs, oprnds.txMtdPath + "/" + "spec.json");
+			MapReduceTool.writeStringToHDFS(specWithIDs, oprnds.txMtdPath + "/" + "spec.json");
 			
 			numColumnsTf = getNumColumnsTf(fs, outHeader, oprnds.inputCSVProperties.getDelim(), oprnds.txMtdPath);
 			
-			tfPairRDD = ApplyTfCSVSPARK.runSparkJob(sec, csvLines, 
-													oprnds.txMtdPath, specFileWithIDs, tmpPath, 
-													oprnds.inputCSVProperties, numColumns, outHeader);
+			tfPairRDD = ApplyTfCSVSPARK.runSparkJob(sec, csvLines, oprnds.txMtdPath, 
+					specWithIDs, tmpPath, oprnds.inputCSVProperties, numColumns, outHeader);
 
 			
 			MapReduceTool.deleteFileIfExistOnHDFS(new Path(partOffsetsFile), job);
@@ -1471,15 +1449,15 @@ public class DataTransform
 			MapReduceTool.copyFileOnHDFS(oprnds.applyTxPath, oprnds.txMtdPath);
 			
 			// path to specification file
-			String specFileWithIDs = oprnds.txMtdPath + "/" + "spec.json";
+			String specWithIDs = (oprnds.spec != null) ? oprnds.spec :
+					MapReduceTool.readStringFromHDFSFile(oprnds.txMtdPath + "/" + "spec.json");
 			numColumnsTf = getNumColumnsTf(fs, outHeader, 
 												oprnds.inputCSVProperties.getDelim(), 
 												oprnds.txMtdPath);
 			
 			// Apply transformation metadata, and perform actual transformation 
-			tfPairRDD = ApplyTfCSVSPARK.runSparkJob(sec, csvLines, 
-													oprnds.txMtdPath, specFileWithIDs, tmpPath, 
-													oprnds.inputCSVProperties, numColumns, outHeader);
+			tfPairRDD = ApplyTfCSVSPARK.runSparkJob(sec, csvLines, oprnds.txMtdPath, 
+					specWithIDs, tmpPath, oprnds.inputCSVProperties, numColumns, outHeader);
 			
 		}
 		
@@ -1519,14 +1497,17 @@ public class DataTransform
 		private CSVFileFormatProperties inputCSVProperties = null;
 		
 		private TransformOperands(String inst, MatrixObject inputMatrix) {
-			String[] instParts = inst.split(Instruction.OPERAND_DELIM);
 			inputPath = inputMatrix.getFileName();
-			txMtdPath = instParts[3];
-			isApply = Boolean.parseBoolean(instParts[5]);
-			applyTxPath = isApply ? instParts[4] : null;
-			spec = isApply ? null : instParts[4];
-			outNamesFile = (instParts.length==8) ? instParts[6] : null;
 			inputCSVProperties = (CSVFileFormatProperties)inputMatrix.getFileFormatProperties();
+			String[] instParts = inst.split(Instruction.OPERAND_DELIM);
+			txMtdPath = instParts[3];
+			applyTxPath = instParts[4].startsWith("applymtd=") ? instParts[4].substring(9) : null;
+			isApply = (applyTxPath != null);
+			int pos = (applyTxPath != null) ? 5 : 4;
+			if( pos<instParts.length )
+				spec = instParts[pos].startsWith("spec=") ? instParts[pos++].substring(5) : null;
+			if( pos<instParts.length )
+				outNamesFile = instParts[pos].startsWith("outnames=") ? instParts[pos].substring(9) : null;
 		}
 		
 		private TransformOperands(HashMap<String, String> params, MatrixObject inputMatrix) {

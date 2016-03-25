@@ -249,7 +249,7 @@ public class MRJobConfiguration
 	public static final String TF_DELIM 		= "transform.field.delimiter";
 	public static final String TF_NA_STRINGS 	= "transform.na.strings";
 	public static final String TF_HEADER		= "transform.header.line";
-	public static final String TF_SPEC_FILE 	= "transform.specification.file";
+	public static final String TF_SPEC 	        = "transform.specification";
 	public static final String TF_TMP_LOC    	= "transform.temp.location";
 	public static final String TF_TRANSFORM     = "transform.omit.na.rows";
 	

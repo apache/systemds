@@ -46,7 +46,7 @@ import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 @SuppressWarnings("deprecation")
 public class ApplyTfCSVMR {
 	
-	public static JobReturn runJob(String inputPath, String specPath, String mapsPath, String tmpPath, String outputPath, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numCols, int replication, String headerLine) throws IOException, ClassNotFoundException, InterruptedException {
+	public static JobReturn runJob(String inputPath, String spec, String mapsPath, String tmpPath, String outputPath, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numCols, int replication, String headerLine) throws IOException, ClassNotFoundException, InterruptedException {
 		JobConf job = new JobConf(ApplyTfCSVMR.class);
 		job.setJobName("ApplyTfCSV");
 
@@ -89,7 +89,7 @@ public class ApplyTfCSVMR {
 		if ( inputDataProperties.getNAStrings() != null)
 			// Adding "dummy" string to handle the case of na_strings = ""
 			job.set(MRJobConfiguration.TF_NA_STRINGS, TfUtils.prepNAStrings(inputDataProperties.getNAStrings()) );
-		job.set(MRJobConfiguration.TF_SPEC_FILE, 	specPath);
+		job.set(MRJobConfiguration.TF_SPEC, spec);
 		job.set(MRJobConfiguration.TF_SMALLEST_FILE, CSVReblockMR.findSmallestFile(job, inputPath));
 		job.set(MRJobConfiguration.OUTPUT_MATRICES_DIRS_CONFIG, outputPath);
 		job.setLong(MRJobConfiguration.TF_NUM_COLS, numCols);

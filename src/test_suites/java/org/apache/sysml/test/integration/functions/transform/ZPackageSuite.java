@@ -26,9 +26,10 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-	TransformTest.class,
+	RunTest.class,
 	ScalingTest.class,
-	RunTest.class
+	TransformAndApplyTest.class,
+	TransformTest.class,
 })
 
 

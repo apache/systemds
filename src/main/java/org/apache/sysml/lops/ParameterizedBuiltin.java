@@ -435,10 +435,9 @@ public class ParameterizedBuiltin extends Lop
 
 		if(_operation== OperationTypes.TRANSFORM) 
 		{
-			// int inputIndex = getInputIndex("target");
-			
 			sb.append( "transform" );
 			sb.append( OPERAND_DELIMITOR );
+			
 			Lop iLop = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
 			sb.append(iLop.prepInputOperand(getInputIndex("target")));
 			sb.append( OPERAND_DELIMITOR );
@@ -447,33 +446,31 @@ public class ParameterizedBuiltin extends Lop
 			sb.append(iLop2.prepScalarLabel());
 			sb.append( OPERAND_DELIMITOR );
 			
-			// either applyTransformPath or transformSpec should be specified
-			boolean isApply = false;
-			Lop iLop3 = null;
-			if ( _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD) != null ) {
-				// apply transform
-				isApply = true;
-				iLop3 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
+			// apply transform
+			Lop iLop3a = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
+			if ( iLop3a != null ) {
+				sb.append("applymtd=");
+				sb.append(iLop3a.prepScalarLabel());
+				sb.append( OPERAND_DELIMITOR );
 			}
-			else {
-				iLop3 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_SPEC);
-			}
-			sb.append(iLop3.prepScalarLabel());
-			sb.append( OPERAND_DELIMITOR );
 			
-			sb.append(isApply);
-			sb.append( OPERAND_DELIMITOR );
+			// transform specification (transform: mandatory, transformapply: optional)
+			Lop iLop3b = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_SPEC);
+			if ( iLop3b != null ) {
+				sb.append("spec=");
+				sb.append(iLop3b.prepScalarLabel());
+				sb.append( OPERAND_DELIMITOR );
+			}
 			
 			Lop iLop4 = _inputParams.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_OUTNAMES);
-			if( iLop4 != null ) 
-			{
+			if( iLop4 != null ) {
+				sb.append("outnames=");
 				sb.append(iLop4.prepScalarLabel());
 				sb.append( OPERAND_DELIMITOR );
 			}
 			
 			sb.append( prepOutputOperand(output_index));
 		}
-			//return getTransformInstructions(""+getInputIndex("target"), ""+output_index);
 		else
 			throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
 	

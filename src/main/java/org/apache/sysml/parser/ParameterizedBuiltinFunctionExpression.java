@@ -276,9 +276,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Apply transformation metadata file'" + TF_FN_PARAM_APPLYMTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
-			if(txspec != null ) {
-				raiseValidateError("Only one of '" + TF_FN_PARAM_APPLYMTD + "' or '" + TF_FN_PARAM_SPEC + "' can be specified in transform().", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
+			//NOTE: txspec can still be optionally specified; if specified it takes precedence over 
+			// specification persisted in txmtd during transform.
 		}
 		
 		Expression outNames = getVarParam(TF_FN_PARAM_OUTNAMES);

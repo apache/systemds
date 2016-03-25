@@ -246,6 +246,14 @@ public class Data extends Lop
 		return _inputParams.get(name);
 	}
 	
+	public Lop getNamedInputLop(String name, String defaultVal) 
+		throws LopsException {
+		if( _inputParams.containsKey(name) )
+			return _inputParams.get(name);
+		else
+			return Data.createLiteralLop(ValueType.STRING, defaultVal);
+	}
+	
 	/**
 	 * method to check if this data lop represents a literal.
 	 * @return

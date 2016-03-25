@@ -30,7 +30,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -2391,8 +2390,9 @@ public class Dag<N extends Lop>
 					oparams.setLabel(Lop.MATRIX_VAR_NAME_PREFIX + var_index.getNextID());
 
 					// generate an instruction that creates a symbol table entry for the new variable in CSV format
-					Data delimLop = (Data) dataInput.getNamedInputLop(DataExpression.DELIM_DELIMITER);
-
+					Data delimLop = (Data) dataInput.getNamedInputLop(
+							DataExpression.DELIM_DELIMITER, DataExpression.DEFAULT_DELIM_DELIMITER);
+					
 					Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 					        oparams.getLabel(),
 							oparams.getFile_name(), 

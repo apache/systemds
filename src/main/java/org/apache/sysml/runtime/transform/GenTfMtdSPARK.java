@@ -43,30 +43,24 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 
-public class GenTfMtdSPARK {
-
+public class GenTfMtdSPARK 
+{
 	/**
 	 * Spark code to Generate Transform Metadata based on the given transformation
 	 * specification file (JSON format).
 	 * 
 	 */
-
 	public static long runSparkJob(SparkExecutionContext sec, JavaRDD<Tuple2<LongWritable, Text>> inputRDD, 
-									String tfMtdPath, String specFile, 
-									String partOffsetsFile, CSVFileFormatProperties prop, 
-									long numCols, String headerLine
-								) throws IOException, ClassNotFoundException, InterruptedException, IllegalArgumentException, JSONException {
-		
+									String tfMtdPath, String spec, String partOffsetsFile, 
+									CSVFileFormatProperties prop, long numCols, String headerLine) 
+		throws IOException, ClassNotFoundException, InterruptedException, IllegalArgumentException, JSONException 
+	{	
 		// Construct transformation metadata (map-side)
 		// Note: logic is similar to GTFMTDMapper
 		JavaRDD<Tuple2<Integer,DistinctValue>> tfMapOutput 
 			= inputRDD.mapPartitionsWithIndex(
-					new GenTfMtdMap(prop.hasHeader(), 
-									prop.getDelim(), 
-									prop.getNAStrings(), 
-									specFile, 
-									numCols, 
-									headerLine), 
+					new GenTfMtdMap(prop.hasHeader(), prop.getDelim(), prop.getNAStrings(), 
+									spec, numCols, headerLine), 
 					true );
 		
 		// Shuffle to group by DistinctValue
@@ -75,14 +69,8 @@ public class GenTfMtdSPARK {
 		// Construct transformation metadata (Reduce-side)
 		// Note: logic is similar to GTFMTDReducer
 		JavaRDD<Long> out 
-			= rdd.flatMap(new GenTfMtdReduce(prop.hasHeader(), 
-												prop.getDelim(), 
-												prop.getNAStrings(), 
-												headerLine, 
-												tfMtdPath, 
-												partOffsetsFile, 
-												specFile, 
-												numCols)  );
+			= rdd.flatMap(new GenTfMtdReduce(prop.hasHeader(), prop.getDelim(), prop.getNAStrings(), 
+									headerLine, tfMtdPath, partOffsetsFile, spec, numCols)  );
 		
 		// Compute the total number of transformed rows
 		long numRows = out.reduce(new Function2<Long,Long,Long>() {
@@ -91,8 +79,7 @@ public class GenTfMtdSPARK {
 			@Override
 			public Long call(Long v1, Long v2) throws Exception {
 				return v1+v2;
-			}
-			
+			}			
 		});
 		
 		return numRows;
@@ -100,21 +87,18 @@ public class GenTfMtdSPARK {
 	
 	// ----------------------------------------------------------------------------------------------------------------------
 	
-	public static class GenTfMtdMap implements Function2<Integer, Iterator<Tuple2<LongWritable, Text>>, Iterator<Tuple2<Integer,DistinctValue>>> {
-
+	private  static class GenTfMtdMap implements Function2<Integer, Iterator<Tuple2<LongWritable, Text>>, Iterator<Tuple2<Integer,DistinctValue>>> 
+	{
 		private static final long serialVersionUID = -5622745445470598215L;
 		
-		TfUtils _agents = null;
+		private TfUtils _agents = null;
 		
-		GenTfMtdMap(boolean hasHeader, String delim, String naStrings, String specFile, long numCols, String headerLine) throws IllegalArgumentException, IOException, JSONException {
+		public GenTfMtdMap(boolean hasHeader, String delim, String naStrings, String spec, long numCols, String headerLine) throws IllegalArgumentException, IOException, JSONException {
 			
 			// Setup Transformation Agents
-			JobConf job = new JobConf();
-			FileSystem fs = FileSystem.get(job);
 			String[] nas = TfUtils.parseNAStrings(naStrings);
-			
-			JSONObject spec = TfUtils.readSpec(fs, specFile);
-			_agents = new TfUtils(headerLine, hasHeader, delim, nas, spec, numCols, null, null, null);
+			JSONObject jspec = new JSONObject(spec);
+			_agents = new TfUtils(headerLine, hasHeader, delim, nas, jspec, numCols, null, null, null);
 
 		}
 		
@@ -162,17 +146,15 @@ public class GenTfMtdSPARK {
 	
 	// ------------------------------------------------------------------------------------------------
 	
-	public static class GenTfMtdReduce implements FlatMapFunction<Tuple2<Integer, Iterable<DistinctValue>>, Long> {
-		
+	private static class GenTfMtdReduce implements FlatMapFunction<Tuple2<Integer, Iterable<DistinctValue>>, Long> 
+	{	
 		private static final long serialVersionUID = -2733233671193035242L;
-		TfUtils _agents = null;
+		private TfUtils _agents = null;
 		
-		GenTfMtdReduce(boolean hasHeader, String delim, String naStrings, String headerLine, String tfMtdDir, String offsetFile, String specFile, long numCols) throws IOException, JSONException {
+		public GenTfMtdReduce(boolean hasHeader, String delim, String naStrings, String headerLine, String tfMtdDir, String offsetFile, String spec, long numCols) throws IOException, JSONException {
 			String[] nas = TfUtils.parseNAStrings(naStrings); 
-			FileSystem fs = FileSystem.get(new JobConf());
-
-			JSONObject spec = TfUtils.readSpec(fs, specFile);
-			_agents = new TfUtils(headerLine, hasHeader, delim, nas, spec, numCols, tfMtdDir, offsetFile, null);
+			JSONObject jspec = new JSONObject(spec);
+			_agents = new TfUtils(headerLine, hasHeader, delim, nas, jspec, numCols, tfMtdDir, offsetFile, null);
 		}
 
 		@SuppressWarnings("unchecked")
@@ -228,8 +210,5 @@ public class GenTfMtdSPARK {
 			
 			return numRows;
 		}
-
 	}
-
-	
 }

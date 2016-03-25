@@ -323,7 +323,7 @@ public class UtilFunctions
 		switch( vt ) {
 			case STRING:  return in;
 			case BOOLEAN: return Boolean.parseBoolean(in);
-			case INT:     return Integer.parseInt(in);
+			case INT:     return Long.parseLong(in);
 			case DOUBLE:  return Double.parseDouble(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
@@ -340,7 +340,7 @@ public class UtilFunctions
 		switch( vt ) {
 			case STRING:  return (String)in;
 			case BOOLEAN: return Boolean.toString((Boolean)in);
-			case INT:     return Integer.toString((Integer)in);
+			case INT:     return Long.toString((Long)in);
 			case DOUBLE:  return Double.toString((Double)in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}

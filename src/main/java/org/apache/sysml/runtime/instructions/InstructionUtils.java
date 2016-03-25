@@ -538,11 +538,11 @@ public class InstructionUtils
 		if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMSUM ) 
 			return parseBasicAggregateUnaryOperator("uack+") ;
 		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMPROD ) 
-			return parseCumulativeAggregateUnaryOperator("uac*") ;
+			return parseBasicAggregateUnaryOperator("uac*") ;
 		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMIN ) 
-			return parseCumulativeAggregateUnaryOperator("uacmin") ;
+			return parseBasicAggregateUnaryOperator("uacmin") ;
 		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMAX ) 
-			return parseCumulativeAggregateUnaryOperator("uacmax" ) ;
+			return parseBasicAggregateUnaryOperator("uacmax" ) ;
 		
 		throw new RuntimeException("Unsupported cumulative aggregate unary operator: "+f.getBuiltinFunctionCode());
 	}

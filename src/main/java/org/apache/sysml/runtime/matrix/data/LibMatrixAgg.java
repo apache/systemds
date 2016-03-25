@@ -339,9 +339,11 @@ public class LibMatrixAgg
 	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop, int k) 
 		throws DMLRuntimeException
 	{
-		//fall back to sequential version if necessary
+		AggregateUnaryOperator uaop = InstructionUtils.parseBasicCumulativeAggregateUnaryOperator(uop);
+		
+		//fall back to sequential if necessary or agg not supported
 		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD || in.rlen <= k
-			|| out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD ) {
+			|| out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD || uaop == null ) {
 			return cumaggregateUnaryMatrix(in, out, uop);
 		}
 		
@@ -370,7 +372,6 @@ public class LibMatrixAgg
 			int blklen = (int)(Math.ceil((double)m/k));
 			
 			//step 1: compute aggregates per row partition
-			AggregateUnaryOperator uaop = InstructionUtils.parseBasicCumulativeAggregateUnaryOperator(uop);
 			AggType uaoptype = getAggType(uaop);
 			ArrayList<PartialAggTask> tasks = new ArrayList<PartialAggTask>();
 			for( int i=0; i<k & i*blklen<m; i++ )
@@ -392,7 +393,7 @@ public class LibMatrixAgg
 			//step 3: compute final cumulative aggregate
 			ArrayList<CumAggTask> tasks2 = new ArrayList<CumAggTask>();
 			for( int i=0; i<k & i*blklen<m; i++ ) {
-				double[] agg = (i==0)? new double[n2] : 
+				double[] agg = (i==0)? null : 
 					DataConverter.convertToDoubleVector(tmp2.sliceOperations(i-1, i-1, 0, n2-1, new MatrixBlock()));
 				tasks2.add( new CumAggTask(in, agg, out, aggtype, uop, i*blklen, Math.min((i+1)*blklen, m)) );
 			}
@@ -2554,7 +2555,7 @@ public class LibMatrixAgg
 		int[] cnt = new int[ n ]; 
 
 		//compute column aggregates min/max
-		for( int i=0, ix=0; i<m; i++, ix+=n )
+		for( int i=rl, ix=rl*n; i<ru; i++, ix+=n )
 		{
 			if( !a.isEmpty(i) ) {
 				int apos = a.pos(i);

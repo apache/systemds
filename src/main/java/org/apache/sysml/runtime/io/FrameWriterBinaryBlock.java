@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.io;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -29,12 +28,17 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 import org.apache.sysml.runtime.util.MapReduceTool;
+
+
+/*
+ * This write uses fixed size blocks with block-encoded keys.
+ * 
+ * 
+ */
 
 public class FrameWriterBinaryBlock extends FrameWriter
 {
@@ -139,131 +143,4 @@ public class FrameWriterBinaryBlock extends FrameWriter
 			IOUtilFunctions.closeSilently(writer);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param pformat
-	 * @return 
-	 * @throws IOException
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
-	 */
-	@SuppressWarnings("deprecation")
-	public void writePartitionedBinaryBlockFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen, PDataPartitionFormat pformat )
-			throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
-	{
-		FileSystem fs = FileSystem.get(job);
-		int brlen = ConfigurationManager.getBlocksize();
-		int bclen = ConfigurationManager.getBlocksize();
-		
-		//initialize blocks for reuse 
-		FrameBlock[] blocks = createFrameBlocksForReuse(src.getSchema(), src.getColumnNames(), rlen);  
-		
-		switch( pformat )
-		{
-			case ROW_BLOCK_WISE_N:
-			{
-				long numBlocks = ((rlen-1)/brlen)+1;
-				long numPartBlocks = (long)Math.ceil(((double)DistributedCacheInput.PARTITION_SIZE)/clen/brlen);
-						
-				int count = 0;		
-				for( int k = 0; k<numBlocks; k+=numPartBlocks )
-				{
-					// 1) create sequence file writer, with right replication factor 
-					// (config via MRConfigurationNames.DFS_REPLICATION not possible since sequence file internally calls fs.getDefaultReplication())
-					Path path2 = new Path(path.toString()+File.separator+(++count));
-					SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path2, MatrixIndexes.class, FrameBlock.class);
-					
-					//3) reblock and write
-					try
-					{
-						MatrixIndexes indexes = new MatrixIndexes();
-			
-						//create and write subblocks of frame
-						for(int blockRow = k; blockRow < Math.min((int)Math.ceil(src.getNumRows()/(double)brlen),k+numPartBlocks); blockRow++)
-							for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)bclen); blockCol++)
-							{
-								int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
-								int maxCol = (blockCol*bclen + bclen < src.getNumColumns()) ? bclen : src.getNumColumns() - blockCol*bclen;
-						
-								int row_offset = blockRow*brlen;
-								int col_offset = blockCol*bclen;
-								
-								//get reuse frame block
-								FrameBlock block = getFrameBlockForReuse(blocks);
-			
-								//copy subpart to block
-								src.sliceOperations( row_offset, row_offset+maxRow-1, 
-										             col_offset, col_offset+maxCol-1, block );
-								
-								//append block to sequence file
-								indexes.setIndexes(blockRow+1, blockCol+1);
-								writer.append(indexes, block);
-							}
-					}
-					finally
-					{
-						IOUtilFunctions.closeSilently(writer);
-					}
-				}
-				break;
-			}
-			case COLUMN_BLOCK_WISE_N:
-			{
-				long numBlocks = ((clen-1)/bclen)+1;
-				long numPartBlocks = (long)Math.ceil(((double)DistributedCacheInput.PARTITION_SIZE)/rlen/bclen);
-				
-				int count = 0;		
-				for( int k = 0; k<numBlocks; k+=numPartBlocks )
-				{
-					// 1) create sequence file writer, with right replication factor 
-					// (config via MRConfigurationNames.DFS_REPLICATION not possible since sequence file internally calls fs.getDefaultReplication())
-					Path path2 = new Path(path.toString()+File.separator+(++count));
-					SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path2, MatrixIndexes.class, FrameBlock.class);
-					
-					//3) reblock and write
-					try
-					{
-						MatrixIndexes indexes = new MatrixIndexes();
-			
-						//create and write subblocks of frame
-						for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)brlen); blockRow++)
-							for(int blockCol = k; blockCol < Math.min((int)Math.ceil(src.getNumColumns()/(double)bclen),k+numPartBlocks); blockCol++)
-							{
-								int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
-								int maxCol = (blockCol*bclen + bclen < src.getNumColumns()) ? bclen : src.getNumColumns() - blockCol*bclen;
-						
-								int row_offset = blockRow*brlen;
-								int col_offset = blockCol*bclen;
-								
-								//get reuse frame block
-								FrameBlock block = getFrameBlockForReuse(blocks);
-			
-								//copy subpart to block
-								src.sliceOperations( row_offset, row_offset+maxRow-1, 
-										             col_offset, col_offset+maxCol-1, block );
-								
-								//append block to sequence file
-								indexes.setIndexes(blockRow+1, blockCol+1);
-								writer.append(indexes, block);
-							}
-					}
-					finally
-					{
-						IOUtilFunctions.closeSilently(writer);
-					}
-				}
-				break;
-			}
-				
-			default:
-				throw new DMLRuntimeException("Unsupported partition format for distributed cache input: "+pformat);
-		}
-	}
-
 }

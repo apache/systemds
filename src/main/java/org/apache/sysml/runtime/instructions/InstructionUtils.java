@@ -43,6 +43,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.And;
 import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.Divide;
 import org.apache.sysml.runtime.functionobjects.Equals;
@@ -79,6 +80,7 @@ import org.apache.sysml.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 
 public class InstructionUtils 
@@ -501,6 +503,48 @@ public class InstructionUtils
 		}
 
 		return agg;
+	}
+	
+	/**
+	 * 
+	 * @param uop
+	 * @return
+	 */
+	public static AggregateUnaryOperator parseCumulativeAggregateUnaryOperator(UnaryOperator uop)
+	{
+		Builtin f = (Builtin)uop.fn;
+		
+		if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMSUM ) 
+			return parseCumulativeAggregateUnaryOperator("ucumack+") ;
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMPROD ) 
+			return parseCumulativeAggregateUnaryOperator("ucumac*") ;
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMIN ) 
+			return parseCumulativeAggregateUnaryOperator("ucumacmin") ;
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMAX ) 
+			return parseCumulativeAggregateUnaryOperator("ucumacmax" ) ;
+		
+		throw new RuntimeException("Unsupported cumulative aggregate unary operator: "+f.getBuiltinFunctionCode());
+	}
+	
+	/**
+	 * 
+	 * @param uop
+	 * @return
+	 */
+	public static AggregateUnaryOperator parseBasicCumulativeAggregateUnaryOperator(UnaryOperator uop)
+	{
+		Builtin f = (Builtin)uop.fn;
+		
+		if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMSUM ) 
+			return parseBasicAggregateUnaryOperator("uack+") ;
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMPROD ) 
+			return parseCumulativeAggregateUnaryOperator("uac*") ;
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMIN ) 
+			return parseCumulativeAggregateUnaryOperator("uacmin") ;
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMAX ) 
+			return parseCumulativeAggregateUnaryOperator("uacmax" ) ;
+		
+		throw new RuntimeException("Unsupported cumulative aggregate unary operator: "+f.getBuiltinFunctionCode());
 	}
 	
 	/**

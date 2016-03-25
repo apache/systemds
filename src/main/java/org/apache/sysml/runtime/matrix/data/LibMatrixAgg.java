@@ -21,9 +21,11 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -42,6 +44,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceDiag;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
@@ -50,7 +53,9 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
+
 
 /**
  * MB:
@@ -288,7 +293,7 @@ public class LibMatrixAgg
 	 * @param uop
 	 * @throws DMLRuntimeException
 	 */
-	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop) 
+	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop) 
 		throws DMLRuntimeException
 	{
 		//prepare meta data 
@@ -299,8 +304,7 @@ public class LibMatrixAgg
 		
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
 		if( in.isEmptyBlock(false) ){
-			aggregateUnaryMatrixEmpty(in, out, aggtype, null);
-			return;
+			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
 		}	
 		
 		//allocate output arrays (if required)
@@ -310,15 +314,106 @@ public class LibMatrixAgg
 		//Timing time = new Timing(true);
 		
 		if( !in.sparse )
-			aggregateUnaryMatrixDense(in, out, aggtype, uop.fn, null, 0, m);
+			cumaggregateUnaryMatrixDense(in, out, aggtype, uop.fn, null, 0, m);
 		else
-			aggregateUnaryMatrixSparse(in, out, aggtype, uop.fn, null, 0, m);
+			cumaggregateUnaryMatrixSparse(in, out, aggtype, uop.fn, null, 0, m);
 		
 		//cleanup output and change representation (if necessary)
 		out.recomputeNonZeros();
 		out.examSparsity();
 		
 		//System.out.println("uop ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
+		
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @param uop
+	 * @param k
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop, int k) 
+		throws DMLRuntimeException
+	{
+		//fall back to sequential version if necessary
+		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD || in.rlen <= k
+			|| out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD ) {
+			return cumaggregateUnaryMatrix(in, out, uop);
+		}
+		
+		//prepare meta data 
+		AggType aggtype = getAggType(uop);
+		final int m = in.rlen;
+		final int m2 = out.rlen;
+		final int n2 = out.clen;
+		final int mk = aggtype==AggType.CUM_KAHAN_SUM?2:1;
+		
+		//filter empty input blocks (incl special handling for sparse-unsafe operations)
+		if( in.isEmptyBlock(false) ){
+			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
+		}	
+
+		//Timing time = new Timing(true);
+		
+		//allocate output arrays (if required)
+		out.reset(m2, n2, false); //always dense
+		out.allocateDenseBlock();
+		
+		//core multi-threaded unary aggregate computation
+		//(currently: always parallelization over number of rows)
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			int blklen = (int)(Math.ceil((double)m/k));
+			
+			//step 1: compute aggregates per row partition
+			AggregateUnaryOperator uaop = InstructionUtils.parseBasicCumulativeAggregateUnaryOperator(uop);
+			AggType uaoptype = getAggType(uaop);
+			ArrayList<PartialAggTask> tasks = new ArrayList<PartialAggTask>();
+			for( int i=0; i<k & i*blklen<m; i++ )
+				tasks.add( new PartialAggTask(in, new MatrixBlock(mk,n2,false), uaoptype, uaop, i*blklen, Math.min((i+1)*blklen, m)) );
+			List<Future<Object>> taskret = pool.invokeAll(tasks);	
+			for( Future<Object> task : taskret )
+				task.get(); //check for errors
+			
+			//step 2: cumulative aggregate of partition aggregates
+			MatrixBlock tmp = new MatrixBlock(tasks.size(), n2, false);
+			for( int i=0; i<tasks.size(); i++ ) {
+				MatrixBlock row = tasks.get(i).getResult();
+				if( uaop.aggOp.correctionExists )
+					row.dropLastRowsOrColums(uaop.aggOp.correctionLocation);
+				tmp.leftIndexingOperations(row, i, i, 0, n2-1, tmp, true);
+			}
+			MatrixBlock tmp2 = cumaggregateUnaryMatrix(tmp, new MatrixBlock(tasks.size(), n2, false), uop);
+			
+			//step 3: compute final cumulative aggregate
+			ArrayList<CumAggTask> tasks2 = new ArrayList<CumAggTask>();
+			for( int i=0; i<k & i*blklen<m; i++ ) {
+				double[] agg = (i==0)? new double[n2] : 
+					DataConverter.convertToDoubleVector(tmp2.sliceOperations(i-1, i-1, 0, n2-1, new MatrixBlock()));
+				tasks2.add( new CumAggTask(in, agg, out, aggtype, uop, i*blklen, Math.min((i+1)*blklen, m)) );
+			}
+			List<Future<Long>> taskret2 = pool.invokeAll(tasks2);	
+			pool.shutdown();
+			
+			//step 4: aggregate nnz
+			out.nonZeros = 0; 
+			for( Future<Long> task : taskret2 )
+				out.nonZeros += task.get();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		
+		//cleanup output and change representation (if necessary)
+		out.examSparsity();
+		
+		//System.out.println("uop k="+k+" ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
+		
+		return out;
 	}
 	
 	/**
@@ -1360,19 +1455,19 @@ public class LibMatrixAgg
 			{
 				KahanObject kbuff = new KahanObject(0, 0);
 				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
-				d_ucumkp(a, c, m, n, kbuff, kplus);
+				d_ucumkp(a, null, c, m, n, kbuff, kplus, rl, ru);
 				break;
 			}
 			case CUM_PROD: //CUMPROD
 			{
-				d_ucumm(a, c, m, n);
+				d_ucumm(a, null, c, m, n, rl, ru);
 				break;
 			}
 			case CUM_MIN:
 			case CUM_MAX:
 			{
 				double init = Double.MAX_VALUE * ((optype==AggType.CUM_MAX)?-1:1);
-				d_ucummxx(a, c, m, n, init, (Builtin)vFn);
+				d_ucummxx(a, null, c, m, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MIN: 
@@ -1490,19 +1585,19 @@ public class LibMatrixAgg
 			{
 				KahanObject kbuff = new KahanObject(0, 0);
 				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
-				s_ucumkp(a, c, m, n, kbuff, kplus);
+				s_ucumkp(a, null, c, m, n, kbuff, kplus, rl, ru);
 				break;
 			}
 			case CUM_PROD: //CUMPROD
 			{
-				s_ucumm(a, c, m, n);
+				s_ucumm(a, null, c, m, n, rl, ru);
 				break;
 			}
 			case CUM_MIN:
 			case CUM_MAX:
 			{
 				double init = Double.MAX_VALUE * ((optype==AggType.CUM_MAX)?-1:1);
-				s_ucummxx(a, c, m, n, init, (Builtin)vFn);
+				s_ucummxx(a, null, c, m, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MIN:
@@ -1569,6 +1664,100 @@ public class LibMatrixAgg
 				throw new DMLRuntimeException("Unsupported aggregation type: "+optype);
 		}
 	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @param optype
+	 * @param vFn
+	 * @param agg
+	 * @param rl
+	 * @param ru
+	 * @throws DMLRuntimeException
+	 */
+	private static void cumaggregateUnaryMatrixDense(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, double[] agg, int rl, int ru) 
+			throws DMLRuntimeException
+	{
+		final int m = in.rlen;
+		final int n = in.clen;
+		
+		double[] a = in.getDenseBlock();
+		double[] c = out.getDenseBlock();		
+		
+		switch( optype )
+		{
+			case CUM_KAHAN_SUM: //CUMSUM
+			{
+				KahanObject kbuff = new KahanObject(0, 0);
+				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				d_ucumkp(a, agg, c, m, n, kbuff, kplus, rl, ru);
+				break;
+			}
+			case CUM_PROD: //CUMPROD
+			{
+				d_ucumm(a, agg, c, m, n, rl, ru);
+				break;
+			}
+			case CUM_MIN:
+			case CUM_MAX:
+			{
+				double init = Double.MAX_VALUE * ((optype==AggType.CUM_MAX)?-1:1);
+				d_ucummxx(a, agg, c, m, n, init, (Builtin)vFn, rl, ru);
+				break;
+			}
+			
+			default:
+				throw new DMLRuntimeException("Unsupported cumulative aggregation type: "+optype);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @param optype
+	 * @param vFn
+	 * @param ixFn
+	 * @param rl
+	 * @param ru
+	 * @throws DMLRuntimeException
+	 */
+	private static void cumaggregateUnaryMatrixSparse(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, double[] agg, int rl, int ru) 
+			throws DMLRuntimeException
+	{
+		final int m = in.rlen;
+		final int n = in.clen;
+		
+		SparseBlock a = in.getSparseBlock();
+		double[] c = out.getDenseBlock();
+		
+		switch( optype )
+		{
+			case CUM_KAHAN_SUM: //CUMSUM
+			{
+				KahanObject kbuff = new KahanObject(0, 0);
+				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				s_ucumkp(a, agg, c, m, n, kbuff, kplus, rl, ru);
+				break;
+			}
+			case CUM_PROD: //CUMPROD
+			{
+				s_ucumm(a, agg, c, m, n, rl, ru);
+				break;
+			}
+			case CUM_MIN:
+			case CUM_MAX:
+			{
+				double init = Double.MAX_VALUE * ((optype==AggType.CUM_MAX)?-1:1);
+				s_ucummxx(a, agg, c, m, n, init, (Builtin)vFn, rl, ru);
+				break;
+			}
+
+			default:
+				throw new DMLRuntimeException("Unsupported cumulative aggregation type: "+optype);
+		}
+	}
 
 	/**
 	 * 
@@ -1578,7 +1767,7 @@ public class LibMatrixAgg
 	 * @param ixFn
 	 * @throws DMLRuntimeException 
 	 */
-	private static void aggregateUnaryMatrixEmpty(MatrixBlock in, MatrixBlock out, AggType optype, IndexFunction ixFn) 
+	private static MatrixBlock aggregateUnaryMatrixEmpty(MatrixBlock in, MatrixBlock out, AggType optype, IndexFunction ixFn) 
 		throws DMLRuntimeException
 	{
 		//do nothing for pseudo sparse-safe operations
@@ -1587,7 +1776,7 @@ public class LibMatrixAgg
 				|| optype == AggType.CUM_KAHAN_SUM || optype == AggType.CUM_PROD
 				|| optype == AggType.CUM_MIN || optype == AggType.CUM_MAX)
 		{
-			return;
+			return out;
 		}
 		
 		//compute result based on meta data only
@@ -1639,6 +1828,8 @@ public class LibMatrixAgg
 			default:
 				throw new DMLRuntimeException("Unsupported aggregation type: "+optype);
 		}
+		
+		return out;
 	}
 	
 	
@@ -1785,13 +1976,15 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void d_ucumkp( double[] a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus ) 
+	private static void d_ucumkp( double[] a, double[] agg, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) 
 	{
 		//init current row sum/correction arrays w/ neutral 0
-		double[] csums = new double[ 2*n ]; 
+		double[] csums = new double[ 2*n ];
+		if( agg != null )
+			System.arraycopy(agg, 0, csums, 0, n);
 
 		//scan once and compute prefix sums
-		for( int i=0, aix=0; i<m; i++, aix+=n ) {
+		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n ) {
 			sumAgg( a, csums, aix, 0, n, kbuff, kplus );
 			System.arraycopy(csums, 0, c, aix, n);	
 		}
@@ -1807,14 +2000,15 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void d_ucumm( double[] a, double[] c, int m, int n ) 
+	private static void d_ucumm( double[] a, double[] agg, double[] c, int m, int n, int rl, int ru ) 
 	{	
 		//init current row product array w/ neutral 1
-		double[] cprods = new double[ n ]; 
-		Arrays.fill(cprods, 1);
+		double[] cprods = (agg!=null) ? agg : new double[ n ]; 
+		if( agg == null )
+			Arrays.fill(cprods, 1);
 		
 		//scan once and compute prefix products
-		for( int i=0, aix=0; i<m; i++, aix+=n ) {
+		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n ) {
 			productAgg( a, cprods, aix, 0, n );
 			System.arraycopy(cprods, 0, c, aix, n);
 		}			
@@ -1829,14 +2023,15 @@ public class LibMatrixAgg
 	 * @param n
 	 * @param builtin
 	 */
-	private static void d_ucummxx( double[] a, double[] c, int m, int n, double init, Builtin builtin )
+	private static void d_ucummxx( double[] a, double[] agg, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru )
 	{
 		//init current row min/max array w/ extreme value 
-		double[] cmxx = new double[ n ]; 
-		Arrays.fill(cmxx, init);
+		double[] cmxx = (agg!=null) ? agg : new double[ n ]; 
+		if( agg == null )
+			Arrays.fill(cmxx, init);
 				
 		//scan once and compute prefix min/max
-		for( int i=0, aix=0; i<m; i++, aix+=n ) {
+		for( int i=rl, aix=rl*n; i<ru; i++, aix+=n ) {
 			builtinAgg( a, cmxx, aix, n, builtin );
 			System.arraycopy(cmxx, 0, c, aix, n);
 		}
@@ -2279,13 +2474,15 @@ public class LibMatrixAgg
 	 * @param kbuff
 	 * @param kplus
 	 */
-	private static void s_ucumkp( SparseBlock a, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus )
+	private static void s_ucumkp( SparseBlock a, double[] agg, double[] c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru )
 	{
 		//init current row sum/correction arrays w/ neutral 0
 		double[] csums = new double[ 2*n ]; 
-
+		if( agg != null )
+			System.arraycopy(agg, 0, csums, 0, n);
+		
 		//scan once and compute prefix sums
-		for( int i=0, ix=0; i<m; i++, ix+=n ) {
+		for( int i=rl, ix=rl*n; i<ru; i++, ix+=n ) {
 			if( !a.isEmpty(i) )
 				sumAgg( a.values(i), csums, a.indexes(i), a.pos(i), a.size(i), n, kbuff, kplus );
 
@@ -2302,17 +2499,18 @@ public class LibMatrixAgg
 	 * @param m
 	 * @param n
 	 */
-	private static void s_ucumm( SparseBlock a, double[] c, int m, int n )
+	private static void s_ucumm( SparseBlock a, double[] agg, double[] c, int m, int n, int rl, int ru )
 	{
 		//init current row prod arrays w/ neutral 1
-		double[] cprod = new double[ n ]; 
-		Arrays.fill(cprod, 1);
+		double[] cprod = (agg!=null) ? agg : new double[ n ]; 
+		if( agg == null )
+			Arrays.fill(cprod, 1);
 		
 		//init count arrays (helper, see correction)
 		int[] cnt = new int[ n ]; 
 
 		//scan once and compute prefix products
-		for( int i=0, ix=0; i<m; i++, ix+=n )
+		for( int i=rl, ix=rl*n; i<ru; i++, ix+=n )
 		{
 			//multiply row of non-zero elements
 			if( !a.isEmpty(i) ) {
@@ -2345,11 +2543,12 @@ public class LibMatrixAgg
 	 * @param init
 	 * @param builtin
 	 */
-	private static void s_ucummxx( SparseBlock a, double[] c, int m, int n, double init, Builtin builtin ) 
+	private static void s_ucummxx( SparseBlock a, double[] agg, double[] c, int m, int n, double init, Builtin builtin, int rl, int ru ) 
 	{
 		//init current row min/max array w/ extreme value 
-		double[] cmxx = new double[ n ]; 
-		Arrays.fill(cmxx, init);
+		double[] cmxx = (agg!=null) ? agg : new double[ n ]; 
+		if( agg == null )
+			Arrays.fill(cmxx, init);
 				
 		//init count arrays (helper, see correction)
 		int[] cnt = new int[ n ]; 
@@ -3433,6 +3632,45 @@ public class LibMatrixAgg
 		public MatrixBlock getResult() {
 			return _ret;
 		}
+	}
+
+	/**
+	 * 
+	 */
+	private static class CumAggTask implements Callable<Long> 
+	{
+		private MatrixBlock _in  = null;
+		private double[] _agg = null;
+		private MatrixBlock _ret = null;
+		private AggType _aggtype = null;
+		private UnaryOperator _uop = null;		
+		private int _rl = -1;
+		private int _ru = -1;
+
+		protected CumAggTask( MatrixBlock in, double[] agg, MatrixBlock ret, AggType aggtype, UnaryOperator uop, int rl, int ru ) 
+			throws DMLRuntimeException
+		{
+			_in = in;			
+			_agg = agg;
+			_ret = ret;
+			_aggtype = aggtype;
+			_uop = uop;
+			_rl = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public Long call() throws DMLRuntimeException
+		{
+			//compute partial cumulative aggregate
+			if( !_in.sparse )
+				cumaggregateUnaryMatrixDense(_in, _ret, _aggtype, _uop.fn, _agg, _rl, _ru);
+			else
+				cumaggregateUnaryMatrixSparse(_in, _ret, _aggtype, _uop.fn, _agg, _rl, _ru);
+			
+			//recompute partial non-zeros (ru exlusive)
+			return _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
+		}		
 	}
 	
 	/**

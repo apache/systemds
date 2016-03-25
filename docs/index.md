@@ -48,14 +48,15 @@ machine in R-like and Python-like declarative languages.
   a linear regression example in Standalone Mode.
   * The [Quick Start Guide](quick-start-guide.html) provides additional examples of algorithm execution
   in Standalone Mode.
-* **Spark Batch** - Algorithms are automatically optimized to run across Spark clusters.
-  * See **Invoking SystemML in Spark Batch Mode** **(Coming soon)**.
-* **Spark MLContext** - Spark MLContext is a programmatic API for running SystemML from Spark via Scala or Java.
+* **Spark MLContext** - Spark MLContext is a programmatic API for running SystemML from Spark via Scala, Python, or Java.
   * See the [Spark MLContext Programming Guide](spark-mlcontext-programming-guide.html) for
   [**Spark Shell (Scala)**](spark-mlcontext-programming-guide.html#spark-shell-example),
-  [Java](spark-mlcontext-programming-guide.html#java-example), and
-  [**Zeppelin Notebook**](spark-mlcontext-programming-guide.html#zeppelin-notebook-example---linear-regression-algorithm)
+  [Java](spark-mlcontext-programming-guide.html#java-example), 
+  [**Zeppelin Notebook**](spark-mlcontext-programming-guide.html#zeppelin-notebook-example---linear-regression-algorithm),
+  and [**Jupyter Notebook (PySpark)**](spark-mlcontext-programming-guide.html#jupyter-pyspark-notebook-example---poisson-nonnegative-matrix-factorization)
   examples.
+* **Spark Batch** - Algorithms are automatically optimized to run across Spark clusters.
+  * See **Invoking SystemML in Spark Batch Mode** **(Coming soon)**.
 * **Hadoop Batch** - Algorithms are automatically optimized when distributed across Hadoop clusters.
   * See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for detailed information.
 * **JMLC** - Java Machine Learning Connector.

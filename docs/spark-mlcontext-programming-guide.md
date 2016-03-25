@@ -998,7 +998,9 @@ Training time per iter: 0.2334166666666667 seconds
 # Jupyter (PySpark) Notebook Example - Poisson Nonnegative Matrix Factorization
 
 Here, we'll explore the use of SystemML via PySpark in a [Jupyter notebook](http://jupyter.org/).
-This Jupyter notebook example can be downloaded [here]() to a directory of your choice.
+This Jupyter notebook example can be nicely viewed in a rendered state
+[on GitHub](https://github.com/apache/incubator-systemml/blob/master/samples/jupyter-notebooks/SystemML-PySpark-Recommendation-Demo.ipynb),
+and can be [downloaded here](https://raw.githubusercontent.com/apache/incubator-systemml/master/samples/jupyter-notebooks/SystemML-PySpark-Recommendation-Demo.ipynb) to a directory of your choice.
 
 From the directory with the downloaded notebook, start Jupyter with PySpark:
 
@@ -1047,7 +1049,7 @@ X_train = (sc.textFile(dataPath)
     .cache())
 
 max_prod_i = X_train.select(F.max("prod_i")).first()[0]
-max_prod_j = X_train.select(F.max("prod_i")).first()[0]
+max_prod_j = X_train.select(F.max("prod_j")).first()[0]
 numProducts = max(max_prod_i, max_prod_j) + 1 # 0-based indexing
 print("Total number of products: {}".format(numProducts))
 {% endhighlight %}

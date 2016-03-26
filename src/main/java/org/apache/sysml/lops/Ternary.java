@@ -221,10 +221,6 @@ public class Ternary extends Lop
 				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation + " \n");
 			}
 			
-			// parse the third input (scalar)
-			// if it is a literal, copy val, else surround with the label with
-			// ## symbols. these will be replaced at runtime.
-			
 			int scalarIndex = 2; // index of the scalar input
 			
 			sb.append( "ctabletransformscalarweight" );
@@ -247,10 +243,6 @@ public class Ternary extends Lop
 			if ( input_index3 != -1 ) {
 				throw new LopsException(this.printErrorLocation() + "In Tertiary Lop, Unexpected input while computing the instructions for op: " + operation + " \n");
 			}
-			
-			// parse the third input (scalar)
-			// if it is a literal, copy val, else surround with the label with
-			// ## symbols. these will be replaced at runtime.
 			
 			int scalarIndex2 = 1; // index of the scalar input
 			int scalarIndex3 = 2; // index of the scalar input

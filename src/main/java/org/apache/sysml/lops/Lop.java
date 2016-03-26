@@ -77,13 +77,15 @@ public abstract class Lop
 	public static final String FILE_SEPARATOR = "/";
 	public static final String PROCESS_PREFIX = "_p";
 	
-	public static final String INSTRUCTION_DELIMITOR = "\u2021"; // "\u002c"; //",";
-	public static final String OPERAND_DELIMITOR = "\u00b0"; //\u2021"; //00ea"; //"::#::";
-	public static final String VALUETYPE_PREFIX = "\u00b7" ; //":#:";
-	public static final String DATATYPE_PREFIX = VALUETYPE_PREFIX; //":#:";
-	public static final String LITERAL_PREFIX = VALUETYPE_PREFIX; //":#:";
+	//special delimiters w/ extended ASCII characters to avoid collisions 
+	public static final String INSTRUCTION_DELIMITOR = "\u2021";
+	public static final String OPERAND_DELIMITOR = "\u00b0"; 
+	public static final String VALUETYPE_PREFIX = "\u00b7" ; 
+	public static final String DATATYPE_PREFIX = VALUETYPE_PREFIX; 
+	public static final String LITERAL_PREFIX = VALUETYPE_PREFIX; 
+	public static final String VARIABLE_NAME_PLACEHOLDER = "\u00b6"; 
+	
 	public static final String NAME_VALUE_SEPARATOR = "="; // e.g., used in parameterized builtins
-	public static final String VARIABLE_NAME_PLACEHOLDER = "##"; //TODO: use in LOPs 
 	public static final String MATRIX_VAR_NAME_PREFIX = "_mVar";
 	public static final String SCALAR_VAR_NAME_PREFIX = "_Var";
 	

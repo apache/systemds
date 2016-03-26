@@ -492,12 +492,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 				// create a GMR job that transforms each of these matrices from block to cell
 				for (int i = 0; i < matrices.size(); i++) {
 					
-					//inputs[i] = "##" + matrices.get(i).getName() + "##";
-					//inputInfo[i] = binBlockInputInfo;
-					//outputInfo[i] = textCellOutputInfo;
-					//numRows[i] = numCols[i] = numRowsPerBlock[i] = numColsPerBlock[i] = -1;
-					//resultDimsUnknown[i] = 1;
-	
 					inLabels.add(matrices.get(i).getName());
 					outLabels.add(matrices.get(i).getName()+"_extFnInput");
 					resultIndex[i] = (byte) i; //(matrices.size()+i);

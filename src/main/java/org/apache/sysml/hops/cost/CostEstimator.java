@@ -419,8 +419,8 @@ public abstract class CostEstimator
 			{				
 				String[] parts = InstructionUtils.getInstructionParts(st.nextToken());
 				byte outIndex = Byte.parseByte(parts[2]);
-				long rlen = parts[3].contains("##")?-1:UtilFunctions.parseToLong(parts[3]);
-				long clen = parts[4].contains("##")?-1:UtilFunctions.parseToLong(parts[4]);
+				long rlen = parts[3].contains(Lop.VARIABLE_NAME_PLACEHOLDER)?-1:UtilFunctions.parseToLong(parts[3]);
+				long clen = parts[4].contains(Lop.VARIABLE_NAME_PLACEHOLDER)?-1:UtilFunctions.parseToLong(parts[4]);
 				long brlen = Long.parseLong(parts[5]);
 				long bclen = Long.parseLong(parts[6]);
 				long nnz = (long) (Double.parseDouble(parts[9]) * rlen * clen);
@@ -501,9 +501,9 @@ public abstract class CostEstimator
 	protected String replaceInstructionPatch( String inst )
 	{
 		String ret = inst;
-		while( ret.contains("##") ) {
-			int index1 = ret.indexOf("##");
-			int index2 = ret.indexOf("##", index1+3);
+		while( ret.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
+			int index1 = ret.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER);
+			int index2 = ret.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER, index1+3);
 			String replace = ret.substring(index1,index2+2);
 			ret = ret.replaceAll(replace, "1");
 		}
@@ -622,7 +622,7 @@ public abstract class CostEstimator
 				attr = new String[]{String.valueOf(paramsMap.get("margin").equals("rows")?0:1)};
 			}
 				
-			vs[0] = stats.get( parts[1].substring(7).replaceAll("##", "") );
+			vs[0] = stats.get( parts[1].substring(7).replaceAll(Lop.VARIABLE_NAME_PLACEHOLDER, "") );
 			vs[1] = _unknownStats; //TODO
 			vs[2] = stats.get( parts[parts.length-1] );
 			

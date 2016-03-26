@@ -335,23 +335,6 @@ public class UtilFunctions
 	 * @param in
 	 * @return
 	 */
-	public static String objectToString(ValueType vt, Object in) {
-		if( in == null )  return null;
-		switch( vt ) {
-			case STRING:  return (String)in;
-			case BOOLEAN: return Boolean.toString((Boolean)in);
-			case INT:     return Long.toString((Long)in);
-			case DOUBLE:  return Double.toString((Double)in);
-			default: throw new RuntimeException("Unsupported value type: "+vt);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
 	public static double objectToDouble(ValueType vt, Object in) {
 		if( in == null )  return 0;
 		switch( vt ) {

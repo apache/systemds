@@ -31,7 +31,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class FrameWriterTextCell extends FrameWriter
 {
@@ -101,9 +100,9 @@ public class FrameWriterTextCell extends FrameWriter
 				String rowIndex = Integer.toString(i+1);					
 				for( int j=0; j<cols; j++ )
 				{
-					String lvalue = UtilFunctions.objectToString(src.getSchema().get(j), src.get(i, j));
-					if(lvalue != null)
+					if(src.get(i, j) != null)
 					{
+						String lvalue = src.get(i, j).toString();
 						sb.append(rowIndex);
 						sb.append(' ');
 						sb.append( j+1 );

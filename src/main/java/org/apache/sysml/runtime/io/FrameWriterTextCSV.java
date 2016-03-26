@@ -32,7 +32,6 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * 
@@ -132,9 +131,8 @@ public class FrameWriterTextCSV extends FrameWriter
 				{
 					for( int j=bj; j<Math.min(clen,bj+BLOCKSIZE_J); j++ )
 					{
-						String lvalue = UtilFunctions.objectToString(src.getSchema().get(j), src.get(i, j));
-						if(lvalue != null)
-							sb.append(lvalue);
+						if(src.get(i, j) != null)
+							sb.append(src.get(i, j).toString());
 						
 						if( j != clen-1 )
 							sb.append(delim);

@@ -1323,39 +1323,48 @@ public class LibMatrixMult
 					}
 			}
 			else                       //MATRIX-MATRIX
-			{
-				for( int i=rl, cix=rl*n; i<ru; i++, cix+=n )
-				{
-					if( !a.isEmpty(i) ) 
-					{
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);					
-						
-						if( alen==1 && avals[0]==1 ) //ROW SELECTION 
-						{
-							//plain memcopy for permutation matrices
-							System.arraycopy(b, aix[0]*n, c, cix, n);
-						}
-						else //GENERAL CASE
-						{
-							//rest not aligned to blocks of 4 rows
-			    			final int bn = alen % 4;
-			    			switch( bn ){
-				    			case 1: vectMultiplyAdd(avals[apos], b, c, aix[apos]*n, cix, n); break;
-				    	    	case 2: vectMultiplyAdd2(avals[apos],avals[apos+1], b, c, aix[apos]*n, aix[apos+1]*n, cix, n); break;
-				    			case 3: vectMultiplyAdd3(avals[apos],avals[apos+1],avals[apos+2], b, c, aix[apos]*n, aix[apos+1]*n, aix[apos+2]*n, cix, n); break;
-			    			}
-			    			
-			    			//compute blocks of 4 rows (core inner loop)
-			    			for( int k = apos+bn; k<apos+alen; k+=4 ) {
-			    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
-			    						          aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
-			    			}
+			{							
+				//blocksizes to fit blocks of B (dense) and several rows of A/C in common L2 cache size, 
+				//while blocking A/C for L1/L2 yet allowing long scans (2 pages) in the inner loop over j
+				final int blocksizeI = 32;
+				final int blocksizeK = 24; 
+				final int blocksizeJ = 1024; 
+				
+				//temporary array of current sparse positions
+				int[] curk = new int[blocksizeI];
+				
+				//blocked execution over IKJ 
+				for( int bi = rl; bi < ru; bi+=blocksizeI ) {
+					Arrays.fill(curk, 0); //reset positions
+					for( int bk = 0, bimin = Math.min(ru, bi+blocksizeI); bk < cd; bk+=blocksizeK ) {
+						for( int bj = 0, bkmin = Math.min(cd, bk+blocksizeK); bj < n; bj+=blocksizeJ ) {
+							int bjlen = Math.min(n, bj+blocksizeJ)-bj;
+							
+							//core sub block matrix multiplication
+							for( int i=bi, cix=bi*n+bj; i<bimin; i++, cix+=n ) {
+								if( !a.isEmpty(i) ) {
+									int apos = a.pos(i);
+									int alen = a.size(i);
+									int[] aix = a.indexes(i);
+									double[] avals = a.values(i);					
+									
+									int k = curk[i-bi] + apos;									
+					    			//rest not aligned to blocks of 4 rows
+									int bn = alen%4;
+									for( ; k<apos+bn && aix[k]<bkmin; k++ )
+					    				vectMultiplyAdd(avals[k], b, c, aix[k]*n+bj, cix, bjlen); 
+					    			//compute blocks of 4 rows (core inner loop), allowed to exceed bkmin
+					    			for( ; k<apos+alen && aix[k]<bkmin; k+=4 )
+					    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
+					    					aix[k]*n+bj, aix[k+1]*n+bj, aix[k+2]*n+bj, aix[k+3]*n+bj, cix, bjlen );
+					    			//update positions on last bj block
+					    			if( bj+bjlen==n )
+					    				curk[i-bi] = k - apos;
+								}
+							}
 						}
 					}
-				}					
+				}
 			}
 		}
 		else

@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 
 /**
- * Base class for all format-specific matrix writers. Every writer is required to implement the basic 
+ * Base class for all format-specific frame writers. Every writer is required to implement the basic 
  * write functionality but might provide additional custom functionality. Any non-default parameters
  * (e.g., CSV read properties) should be passed into custom constructors. There is also a factory
  * for creating format-specific writers. 
@@ -41,12 +41,14 @@ public abstract class FrameWriter
 	 * 
 	 * @param src
 	 * @param fname
+	 * @param rlen
+	 * @param clen
 	 * @return
 	 * @throws IOException
 	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
-	public abstract void writeFrameToHDFS( FrameBlock src, String fname )
+	public abstract void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
 		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException;
 	
 	/**
@@ -56,12 +58,13 @@ public abstract class FrameWriter
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public static FrameBlock[] createFrameBlocksForReuse( List<ValueType> schema, List<String> names ) 
+	public static FrameBlock[] createFrameBlocksForReuse( List<ValueType> schema, List<String> names, long rlen ) 
 		throws DMLRuntimeException
 	{
 		FrameBlock frameBlock[] = new FrameBlock[1];
 		frameBlock[0] = new FrameBlock(schema, names);
 
+		frameBlock[0].ensureAllocatedColumns((int)rlen);
 		return frameBlock;
 	}
 	
@@ -70,7 +73,7 @@ public abstract class FrameWriter
 	 * @param blocks
 	 * @return
 	 */
-	public static FrameBlock getMatrixBlockForReuse( FrameBlock[] blocks) //TODO do we need this function?
+	public static FrameBlock getFrameBlockForReuse( FrameBlock[] blocks) //TODO do we need this function?
 	{
 		return blocks[ 0 ];
 	}

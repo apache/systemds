@@ -952,7 +952,7 @@ public class SparkExecutionContext extends ExecutionContext
 					mo.clearData(); 
 					
 					//clean hdfs data if no pending rdd operations on it
-					if( mo.isFileExists() && mo.getFileName()!=null ) {
+					if( mo.isHDFSFileExists() && mo.getFileName()!=null ) {
 						if( mo.getRDDHandle()==null ) {
 							MapReduceTool.deleteFileWithMTDIfExistOnHDFS(mo.getFileName());
 						}

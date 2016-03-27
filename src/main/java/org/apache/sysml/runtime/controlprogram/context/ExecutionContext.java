@@ -414,7 +414,7 @@ public class ExecutionContext
 				if ( !getVariables().hasReferences(mo) ) {
 					//clean cached data	
 					mo.clearData(); 
-					if( mo.isFileExists() )
+					if( mo.isHDFSFileExists() )
 					{
 						//clean hdfs data
 						String fpath = mo.getFileName();

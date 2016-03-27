@@ -70,38 +70,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private static ThreadLocal<Long> sizePinned = new ThreadLocal<Long>() {
         @Override protected Long initialValue() { return 0L; }
     };
-	
-	/**
-	 * Cache for actual data, evicted by garbage collector.
-	 */
-	private SoftReference<MatrixBlock> _cache = null;
 
-	/**
-	 * Container object that holds the actual data.
-	 */
-	private MatrixBlock _data = null;
-
-	/**
-	 * The name of HDFS file in which the data is backed up.
-	 */
-	private String _hdfsFileName = null; // file name and path
-	
-	/** 
-	 * Flag that indicates whether or not hdfs file exists.
-	 * It is used for improving the performance of "rmvar" instruction.
-	 * When it has value <code>false</code>, one can skip invocations to
-	 * utility functions such as MapReduceTool.deleteFileIfExistOnHDFS(),
-	 * which can be potentially expensive.
-	 */
-	private boolean _hdfsFileExists = false; 
-	
-	/**
-	 * <code>true</code> if the in-memory or evicted matrix may be different from
-	 * the matrix located at {@link #_hdfsFileName}; <code>false</code> if the two
-	 * matrices should be the same.
-	 */
-	private boolean _dirtyFlag = false;
-	
 	/**
 	 * Object that holds the metadata associated with the matrix, which
 	 * includes: 1) Matrix dimensions, if available 2) Number of non-zeros, if
@@ -114,8 +83,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private MetaData _metaData = null;
 	
 	//additional names and flags
-	private String _varName = ""; //plan variable name
-	private String _cacheFileName = null; //local eviction file name
 	private boolean _requiresLocalWrite = false; //flag if local write for read obj
 	private boolean _isAcquireFromEmpty = false; //flag if read from status empty 
 	private boolean _updateInPlaceFlag = false; //flag if in-place update
@@ -135,11 +102,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
-	
-	/**
-	 * Information relevant to specific external file formats
-	 */
-	FileFormatProperties _formatProperties = null;
 	
 	public RDDProperties getRddProperties() {
 		return _rddProperties;
@@ -180,52 +142,34 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		//base copy constructor
 		super(mo);
 
-		_hdfsFileName = mo._hdfsFileName;
-		_hdfsFileExists = mo._hdfsFileExists;
-		
 		MatrixFormatMetaData metaOld = (MatrixFormatMetaData)mo.getMetaData();
 		_metaData = new MatrixFormatMetaData(new MatrixCharacteristics(metaOld.getMatrixCharacteristics()),
 				                             metaOld.getOutputInfo(), metaOld.getInputInfo());
 		
-		_varName = mo._varName;
 		_updateInPlaceFlag = mo._updateInPlaceFlag;
 		_partitioned = mo._partitioned;
 		_partitionFormat = mo._partitionFormat;
 		_partitionSize = mo._partitionSize;
 		_partitionCacheName = mo._partitionCacheName;
 	}
-
-	public void setVarName(String s) 
-	{
-		_varName = s;
-	}
-	
-	public String getVarName() 
-	{
-		return _varName;
-	}
 	
 	@Override
-	public void setMetaData(MetaData md)
-	{
+	public void setMetaData(MetaData md) {
 		_metaData = md;
 	}
 	
 	@Override
-	public MetaData getMetaData()
-	{
+	public MetaData getMetaData() {
 		return _metaData;
 	}
 
 	@Override
-	public void removeMetaData()
-	{
+	public void removeMetaData() {
 		_metaData = null;
 	}
 	
 	@Override
-	public void updateMatrixCharacteristics (MatrixCharacteristics mc)
-	{
+	public void updateMatrixCharacteristics (MatrixCharacteristics mc) {
 		((MatrixDimensionsMetaData)_metaData).setMatrixCharacteristics( mc );
 	}
 
@@ -244,39 +188,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		mc.setDimension( _data.getNumRows(),
 						 _data.getNumColumns() );
 		mc.setNonZeros( _data.getNonZeros() );		
-	}
-
-	public void setFileFormatProperties(FileFormatProperties formatProperties) {
-		_formatProperties = formatProperties;
-	}
-	
-	public FileFormatProperties getFileFormatProperties() {
-		return _formatProperties;
-	}
-	
-	public boolean isFileExists() 
-	{
-		return _hdfsFileExists;
-	}
-	
-	public void setFileExists( boolean flag ) 
-	{
-		_hdfsFileExists = flag;
-	}
-	
-	public String getFileName()
-	{
-		return _hdfsFileName;
-	}
-
-	public synchronized void setFileName( String file )
-	{
-		if (!_hdfsFileName.equals (file))
-		{
-			_hdfsFileName = file;
-			if( ! isEmpty(true) )
-				_dirtyFlag = true;
-		}
 	}
 
 	/**
@@ -355,23 +266,13 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
 		return meta.getMatrixCharacteristics();
 	}
-
-	/**
-	 * <code>true</code> if the in-memory or evicted matrix may be different from
-	 * the matrix located at {@link #_hdfsFileName}; <code>false</code> if the two
-	 * matrices are supposed to be the same.
-	 */
-	public boolean isDirty ()
-	{
-		return _dirtyFlag;
-	}
 	
 	public String toString()
 	{ 
 		StringBuilder str = new StringBuilder();
 		str.append("Matrix: ");
 		str.append(_hdfsFileName + ", ");
-		//System.out.println(_hdfsFileName);
+		
 		if ( _metaData instanceof NumItemsByEachReducerMetaData ) {
 			str.append("NumItemsByEachReducerMetaData");
 		} 
@@ -468,7 +369,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Acquire read "+_varName);
+			LOG.trace("Acquire read "+getVarName());
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !isAvailableToRead() )
@@ -512,11 +413,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						_requiresLocalWrite = true;
 				}
 				
-				_dirtyFlag = false;
+				setDirty(false);
 			}
 			catch (IOException e)
 			{
-				throw new CacheIOException("Reading of " + _hdfsFileName + " ("+_varName+") failed.", e);
+				throw new CacheIOException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
 			}
 			
 			_isAcquireFromEmpty = true;
@@ -555,7 +456,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Acquire modify "+_varName);
+			LOG.trace("Acquire modify "+getVarName());
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !isAvailableToModify() )
@@ -579,14 +480,14 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			}
 			catch (IOException e)
 			{
-				throw new CacheIOException("Reading of " + _hdfsFileName + " ("+_varName+") failed.", e);
+				throw new CacheIOException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
 			}
 		}
 
 		//cache status maintenance
 		super.acquire( true, _data==null );
 		updateStatusPinned(true);
-		_dirtyFlag = true;
+		setDirty(true);
 		_isAcquireFromEmpty = false;
 		
 		if( DMLScript.STATISTICS ){
@@ -614,7 +515,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Acquire modify newdata "+_varName);
+			LOG.trace("Acquire modify newdata "+getVarName());
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if (! isAvailableToModify ())
@@ -625,7 +526,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		//cache status maintenance
 		super.acquire (true, false); //no need to load evicted matrix
-		_dirtyFlag = true;
+		setDirty(true);
 		_isAcquireFromEmpty = false;
 		
 		//set references to new data
@@ -659,7 +560,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Release "+_varName);
+			LOG.trace("Release "+getVarName());
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		boolean write = false;
@@ -667,7 +568,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		{
 			//set flags for write
 			write = true;
-			_dirtyFlag = true;
+			setDirty(true);
 			
 			//update meta data
 			refreshMetaData();
@@ -691,11 +592,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				//evict blob
 				String filePath = getCacheFilePathAndName();
 				try {
-					writeMatrix (filePath);
+					LazyWriteBuffer.writeBlock(filePath, _data);
 				}
 				catch (Exception e)
 				{
-					throw new CacheException("Eviction to local path " + filePath + " ("+_varName+") failed.", e);
+					throw new CacheException("Eviction to local path " + filePath + " ("+getVarName()+") failed.", e);
 				}
 				_requiresLocalWrite = false;
 			}
@@ -705,7 +606,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			_data = null;			
 		}
 		else if( LOG.isTraceEnabled() ){
-			LOG.trace("Var "+_varName+" not subject to caching: rows="+_data.getNumRows()+", cols="+_data.getNumColumns()+", state="+getStatusAsString());
+			LOG.trace("Var "+getVarName()+" not subject to caching: rows="+_data.getNumRows()+", cols="+_data.getNumColumns()+", state="+getStatusAsString());
 		}
 
 		if( DMLScript.STATISTICS ){
@@ -728,7 +629,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Clear data "+_varName);
+			LOG.trace("Clear data "+getVarName());
 		
 		// check if cleanup enabled and possible 
 		if( !isCleanupEnabled() ) 
@@ -752,55 +653,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			_bcHandle.setBackReference(null);
 		
 		// change object state EMPTY
-		_dirtyFlag = false;
+		setDirty(false);
 		setEmpty();
-	}
-	
-	@Override
-	public synchronized void exportData()
-		throws CacheException
-	{
-		exportData( -1 );
-	}
-	
-	/**
-	 * Writes, or flushes, the matrix data to HDFS.
-	 * 
-	 * In-Status:  EMPTY, EVICTABLE, EVICTED, READ;
-	 * Out-Status: EMPTY, EVICTABLE, EVICTED, READ.
-	 * 
-	 * @throws CacheException 
-	 */
-	public synchronized void exportData( int replication )
-		throws CacheException
-	{
-		exportData(_hdfsFileName, null, replication, null);
-		_hdfsFileExists = true;
-	}
-	
-	/**
-	 * 
-	 * @param fName
-	 * @param outputFormat
-	 * @param formatProperties
-	 * @throws CacheException
-	 */
-	public synchronized void exportData (String fName, String outputFormat, FileFormatProperties formatProperties)
-		throws CacheException
-	{
-		exportData(fName, outputFormat, -1, formatProperties);
-	}
-	
-	/**
-	 * 
-	 * @param fName
-	 * @param outputFormat
-	 * @throws CacheException
-	 */
-	public synchronized void exportData (String fName, String outputFormat)
-		throws CacheException
-	{
-		exportData(fName, outputFormat, -1, null);
 	}
 	
 	/**
@@ -818,11 +672,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * @param outputFormat
 	 * @throws CacheException
 	 */
+	@Override
 	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties)
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Export data "+_varName+" "+fName);
+			LOG.trace("Export data "+getVarName()+" "+fName);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		//prevent concurrent modifications
@@ -833,7 +688,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				
 		boolean pWrite = false; // !fName.equals(_hdfsFileName); //persistent write flag
 		if ( fName.equals(_hdfsFileName) ) {
-			_hdfsFileExists = true;
+			setHDFSFileExists(true);
 			pWrite = false;
 		}
 		else {
@@ -856,11 +711,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						_data = readMatrixFromHDFS( _hdfsFileName );
 					else
 						_data = readMatrixFromRDD( getRDDHandle(), new MutableBoolean() );
-					_dirtyFlag = false;
+					setDirty(false);
 				}
 				catch (IOException e)
 				{
-				    throw new CacheIOException("Reading of " + _hdfsFileName + " ("+_varName+") failed.", e);
+				    throw new CacheIOException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
 				}
 			}
 			//get object from cache
@@ -874,7 +729,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				writeMetaData( fName, outputFormat, formatProperties );
 				writeMatrixToHDFS( fName, outputFormat, replication, formatProperties );
 				if ( !pWrite )
-					_dirtyFlag = false;
+					setDirty(false);
 			}
 			catch (Exception e)
 			{
@@ -1038,7 +893,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws CacheException
 	{
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Acquire partition "+_varName+" "+pred);
+			LOG.trace("Acquire partition "+getVarName()+" "+pred);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !_partitioned )
@@ -1214,14 +1069,14 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		long begin = 0;
 		
 		if( LOG.isTraceEnabled() ) {
-			LOG.trace("RESTORE of Matrix "+_varName+", "+_hdfsFileName);
+			LOG.trace("RESTORE of Matrix "+getVarName()+", "+_hdfsFileName);
 			begin = System.currentTimeMillis();
 		}
 		
 		String filePath = getCacheFilePathAndName();
 		
 		if( LOG.isTraceEnabled() )
-			LOG.trace ("CACHE: Restoring matrix...  " + _varName + "  HDFS path: " + 
+			LOG.trace ("CACHE: Restoring matrix...  " + getVarName() + "  HDFS path: " + 
 						(_hdfsFileName == null ? "null" : _hdfsFileName) + ", Restore from path: " + filePath);
 				
 		if (_data != null)
@@ -1250,7 +1105,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		String cacheFilePathAndName = getCacheFilePathAndName();
 		long begin = 0;
 		if( LOG.isTraceEnabled() ){
-			LOG.trace("CACHE: Freeing evicted matrix...  " + _varName + "  HDFS path: " + 
+			LOG.trace("CACHE: Freeing evicted matrix...  " + getVarName() + "  HDFS path: " + 
 						(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
 			begin = System.currentTimeMillis();
 		}
@@ -1285,25 +1140,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private boolean isUpdateInPlace()
 	{
 		return _updateInPlaceFlag;
-	}
-	
-	/**
-	 * 
-	 */
-	private String getCacheFilePathAndName ()
-	{
-		if( _cacheFileName==null )
-		{
-			StringBuilder sb = new StringBuilder();
-			sb.append(CacheableData.cacheEvictionLocalFilePath); 
-			sb.append(CacheableData.cacheEvictionLocalFilePrefix);
-			sb.append(String.format ("%09d", getUniqueCacheID()));
-			sb.append(CacheableData.cacheEvictionLocalFileExtension);
-			
-			_cacheFileName = sb.toString();
-		}
-		
-		return _cacheFileName;
 	}
 	
 	/**
@@ -1438,14 +1274,14 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		
 		if( LOG.isTraceEnabled() ){
-			LOG.trace("Reading matrix from HDFS...  " + _varName + "  Path: " + filePathAndName 
+			LOG.trace("Reading matrix from HDFS...  " + getVarName() + "  Path: " + filePathAndName 
 					+ ", dimensions: [" + mc.getRows() + ", " + mc.getCols() + ", " + mc.getNonZeros() + "]");
 			begin = System.currentTimeMillis();
 		}
 			
 		double sparsity = ( mc.getNonZeros() >= 0 ? ((double)mc.getNonZeros())/(mc.getRows()*mc.getCols()) : 1.0d) ; //expected sparsity
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(filePathAndName, iimd.getInputInfo(),
-				                           rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), sparsity, _formatProperties);
+				rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), sparsity, getFileFormatProperties());
 		
 		//sanity check correct output
 		if( newData == null ) {
@@ -1456,18 +1292,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			LOG.trace("Reading Completed: " + (System.currentTimeMillis()-begin) + " msec.");
 		
 		return newData;
-	}
-	
-	/**
-	 * 
-	 * @param filePathAndName
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
-	private void writeMatrix (String filePathAndName)
-		throws DMLRuntimeException, IOException
-	{
-		LazyWriteBuffer.writeBlock(filePathAndName, _data);
 	}
 
 	/**
@@ -1481,7 +1305,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	{
 		long begin = 0;
 		if( LOG.isTraceEnabled() ){
-			LOG.trace (" Writing matrix to HDFS...  " + _varName + "  Path: " + filePathAndName + ", Format: " +
+			LOG.trace (" Writing matrix to HDFS...  " + getVarName() + "  Path: " + filePathAndName + ", Format: " +
 						(outputFormat != null ? outputFormat : "inferred from metadata"));
 			begin = System.currentTimeMillis();
 		}
@@ -1593,7 +1417,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		String debugNameEnding = (_hdfsFileName == null ? "null" : 
 			(_hdfsFileName.length() < maxLength ? _hdfsFileName : "..." + 
 				_hdfsFileName.substring (_hdfsFileName.length() - maxLength + 3)));
-		return _varName + " " + debugNameEnding;
+		return getVarName() + " " + debugNameEnding;
 	}
 
 	
@@ -1603,38 +1427,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	// ***       FOR SOFTREFERENCE CACHE       ***
 	// ***                                     ***
 	// *******************************************
-	
-	/**
-	 * 
-	 */
-	private void createCache( ) 
-	{
-		_cache = new SoftReference<MatrixBlock>( _data );	
-	}
-
-	/**
-	 * 
-	 */
-	private void getCache()
-	{
-		if( _cache !=null )
-		{
-			_data = _cache.get();
-			clearCache();
-		}
-	}
-
-	/**
-	 * 
-	 */
-	private void clearCache()
-	{
-		if( _cache != null )
-		{
-			_cache.clear();
-			_cache = null;
-		}
-	}
 	
 	/**
 	 * 

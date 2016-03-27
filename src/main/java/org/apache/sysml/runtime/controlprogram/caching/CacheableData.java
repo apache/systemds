@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.controlprogram.caching;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,44 +32,36 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
 
 /**
  * Each object of this class is a cache envelope for some large piece of data
- * called "data blob". (I prefer "blob" to "block" to avoid ambiguity.)  For
- * example, the body of a matrix can be the data blob.  The term "data blob"
- * refers strictly to the cacheable portion of the data object, often excluding
- * metadata and auxiliary parameters, as defined in the subclasses.
+ * called "cache block". For example, the body of a matrix can be the cache block.  
+ * The term cache block refers strictly to the cacheable portion of the data object, 
+ * often excluding metadata and auxiliary parameters, as defined in the subclasses.
  * Under the protection of the envelope, the data blob may be evicted to
  * the file system; then the subclass must set its reference to <code>null</code>
- * to allow Java garbage collection.  If other parts of the system continue
+ * to allow Java garbage collection. If other parts of the system continue
  * keep references to the data blob, its eviction will not release any memory.
- * To make the eviction meaningful, the rest of the system
- * must dispose of all references prior to giving the permission for eviction. 
- * 
+ * To make the eviction meaningful, the rest of the system must dispose all references. 
  */
-public abstract class CacheableData<T> extends Data
+public abstract class CacheableData<T extends CacheBlock> extends Data
 {
 	private static final long serialVersionUID = -413810592207212835L;
 
+	/** Global logging instance for all subclasses of CacheableData */
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
     
+	// global constant configuration parameters
 	public static final long 	CACHING_THRESHOLD = 4*1024; //obj not s.t. caching if below threshold [in bytes]
 	public static final double 	CACHING_BUFFER_SIZE = 0.15; 
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO; 
 	public static final boolean CACHING_BUFFER_PAGECACHE = false; 
-	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;
-	
+	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;	
 	public static final String CACHING_COUNTER_GROUP_NAME    = "SystemML Caching Counters";
-	
-	
-	//flag indicating if caching is turned on (eviction writes only happen if activeFlag is true)
-	private static boolean _activeFlag = false;
-	
-    public static String cacheEvictionLocalFilePath = null; //set during init
-    public static String cacheEvictionLocalFilePrefix = "cache";
-    public static final String cacheEvictionLocalFileExtension = ".dat";
+	public static final String CACHEING_EVICTION_FILEEXTENSION = ".dat";
     
 	/**
 	 * Defines all possible cache status types for a data blob.
@@ -92,30 +85,64 @@ public abstract class CacheableData<T> extends Data
     	CACHED,
     	CACHED_NOWRITE,
     };
-	    
-	private static IDSequence _seq = null;   
 	
-	static
-	{
+	/** Global flag indicating if caching is enabled (controls eviction) */
+	private static boolean _activeFlag = false;
+	
+	/** Global sequence for generating unique ids. */
+	private static IDSequence _seq = null;   
+
+	// Global eviction path and prefix (prefix used for isolation purposes)
+    public static String cacheEvictionLocalFilePath = null; //set during init
+    public static String cacheEvictionLocalFilePrefix = "cache";
+
+	static {
 		_seq = new IDSequence();
 	}
-	
+		
 	/**
 	 * The unique (JVM-wide) ID of a cacheable data object; to ensure unique IDs across JVMs, we
 	 * concatenate filenames with a unique prefix (map task ID). 
 	 */
 	private final int _uniqueID;
 	
-	/**
-	 * The cache status of the data blob (whether it can be or is evicted, etc.)
-	 */
+	/** The cache status of the data blob (whether it can be or is evicted, etc. */
 	private CacheStatus _cacheStatus = null;
-	private int         _numReadThreads = 0;
 	
-	//additional status flags
-	private boolean _cleanupFlag = true; //flag if obj unpinned (cleanup enabled)
+	/** Cache for actual data, evicted by garbage collector. */
+	protected SoftReference<T> _cache = null;
+	
+	/** Container object that holds the actual data. */
+	protected T _data = null;
+
+	/** The name of HDFS file in which the data is backed up. */
+	protected String _hdfsFileName = null; // file name and path
+	
+	/** 
+	 * Flag that indicates whether or not hdfs file exists.It is used 
+	 * for improving the performance of "rmvar" instruction. When it has 
+	 * value <code>false</code>, one can skip file system existence 
+	 * checks which can be expensive.
+	 */
+	private boolean _hdfsFileExists = false; 
+
+	/** Information relevant to specific external file formats. */
+	private FileFormatProperties _formatProps = null;
+	
+	/**
+	 * <code>true</code> if the in-memory or evicted matrix may be different from
+	 * the matrix located at {@link #_hdfsFileName}; <code>false</code> if the two
+	 * matrices should be the same.
+	 */
+	private boolean _dirtyFlag = false;
 	
 	
+	// additional private flags and meta data
+	private int     _numReadThreads = 0;   //number of threads for read from HDFS
+	private boolean _cleanupFlag = true;   //flag if obj unpinned (cleanup enabled)	
+	private String  _varName = "";         //plan variable name
+	private String  _cacheFileName = null; //local eviction file name
+		
 	/**
 	 * Basic constructor for any cacheable data.
 	 * 
@@ -137,8 +164,117 @@ public abstract class CacheableData<T> extends Data
 	protected CacheableData(CacheableData<T> that) {
 		this( that.getDataType(), that.getValueType() );
 		_cleanupFlag = that._cleanupFlag;
+		_hdfsFileName = that._hdfsFileName;
+		_hdfsFileExists = that._hdfsFileExists; 
+		_varName = that._varName;
 	}
 
+	
+	/**
+	 * Enables or disables the cleanup of the associated 
+	 * data object on clearData().
+	 * 
+	 * @param flag
+	 */
+	public void enableCleanup(boolean flag) {
+		_cleanupFlag = flag;
+	}
+
+	/**
+	 * Indicates if cleanup of the associated data object 
+	 * is enabled on clearData().
+	 * 
+	 * @return
+	 */
+	public boolean isCleanupEnabled() {
+		return _cleanupFlag;
+	}
+	
+	/**
+	 * 
+	 * @param s
+	 */
+	public void setVarName(String s) {
+		_varName = s;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public String getVarName() {
+		return _varName;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isHDFSFileExists() {
+		return _hdfsFileExists;
+	}
+	
+	/**
+	 * 
+	 * @param flag
+	 */
+	public void setHDFSFileExists( boolean flag )  {
+		_hdfsFileExists = flag;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public String getFileName() {
+		return _hdfsFileName;
+	}
+
+	/**
+	 * 
+	 * @param file
+	 */
+	public synchronized void setFileName( String file ) {
+		if (!_hdfsFileName.equals( file )) {
+			_hdfsFileName = file;
+			if( !isEmpty(true) )
+				_dirtyFlag = true;
+		}
+	}
+	
+	/**
+	 * <code>true</code> if the in-memory or evicted matrix may be different from
+	 * the matrix located at {@link #_hdfsFileName}; <code>false</code> if the two
+	 * matrices are supposed to be the same.
+	 */
+	public boolean isDirty() {
+		return _dirtyFlag;
+	}
+	
+	/**
+	 * 
+	 * @param flag
+	 */
+	public void setDirty(boolean flag) {
+		_dirtyFlag = flag;
+	}
+	
+	/**
+	 * 
+	 * @param props
+	 */
+	public void setFileFormatProperties(FileFormatProperties props) {
+		_formatProps = props;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public FileFormatProperties getFileFormatProperties() {
+		return _formatProps;
+	}
+	
 	// --------- ABSTRACT HIGH-LEVEL CACHE I/O OPERATIONS ----------
 
 	/**
@@ -179,33 +315,68 @@ public abstract class CacheableData<T> extends Data
 	 */
 	public abstract void clearData()
 		throws CacheException;
-		
+	
 	/**
 	 * 
 	 * @throws CacheException
 	 */
-	public abstract void exportData() 
-		throws CacheException;
+	public synchronized void exportData() 
+		throws CacheException 
+	{
+		exportData( -1 );
+	}
 	
 	/**
-	 * Enables or disables the cleanup of the associated 
-	 * data object on clearData().
+	 * Writes, or flushes, the matrix data to HDFS.
 	 * 
-	 * @param flag
+	 * In-Status:  EMPTY, EVICTABLE, EVICTED, READ;
+	 * Out-Status: EMPTY, EVICTABLE, EVICTED, READ.
+	 * 
+	 * @throws CacheException 
 	 */
-	public void enableCleanup(boolean flag) {
-		_cleanupFlag = flag;
+	public synchronized void exportData( int replication )
+		throws CacheException
+	{
+		exportData(_hdfsFileName, null, replication, null);
+		_hdfsFileExists = true;
 	}
 
 	/**
-	 * Indicates if cleanup of the associated data object 
-	 * is enabled on clearData().
 	 * 
-	 * @return
+	 * @param fName
+	 * @param outputFormat
+	 * @throws CacheException
 	 */
-	public boolean isCleanupEnabled() {
-		return _cleanupFlag;
+	public synchronized void exportData(String fName, String outputFormat)
+		throws CacheException
+	{
+		exportData(fName, outputFormat, -1, null);
 	}
+	
+	/**
+	 * 
+	 * @param fName
+	 * @param outputFormat
+	 * @param formatProperties
+	 * @throws CacheException
+	 */
+	public synchronized void exportData(String fName, String outputFormat, FileFormatProperties formatProperties)
+		throws CacheException
+	{
+		exportData(fName, outputFormat, -1, formatProperties);
+	}
+	
+	/**
+	 * 
+	 * @param fName
+	 * @param outputFormat
+	 * @param replication
+	 * @param formatProperties
+	 * @throws CacheException
+	 */
+	public abstract void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties)
+		throws CacheException;
+
 	
 	// --------- ABSTRACT LOW-LEVEL CACHE I/O OPERATIONS ----------
 
@@ -259,9 +430,24 @@ public abstract class CacheableData<T> extends Data
 	
 	// ------------- IMPLEMENTED CACHE LOGIC METHODS --------------	
 	
-	protected int getUniqueCacheID()
-	{
+	protected int getUniqueCacheID() {
 		return _uniqueID;
+	}
+	
+	/**
+	 * 
+	 */
+	protected String getCacheFilePathAndName () {
+		if( _cacheFileName==null ) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(CacheableData.cacheEvictionLocalFilePath); 
+			sb.append(CacheableData.cacheEvictionLocalFilePrefix);
+			sb.append(String.format ("%09d", getUniqueCacheID()));
+			sb.append(CacheableData.CACHEING_EVICTION_FILEEXTENSION);			
+			_cacheFileName = sb.toString();
+		}
+		
+		return _cacheFileName;
 	}
 	
 	/**
@@ -438,8 +624,35 @@ public abstract class CacheableData<T> extends Data
 				|| _cacheStatus == CacheStatus.CACHED_NOWRITE);
 	}
 
-	// --------- STATIC CACHE INIT/CLEANUP OPERATIONS ----------
+	/**
+	 * Creates a new cache soft reference to the currently
+	 * referenced cache block.  
+	 */
+	protected void createCache( ) {
+		_cache = new SoftReference<T>( _data );	
+	}
+
+	/**
+	 * Tries to get the cache block from the cache soft reference
+	 * and subsequently clears the cache soft reference if existing.
+	 */
+	protected void getCache() {
+		if( _cache !=null ) {
+			_data = _cache.get();
+			clearCache();
+		}
+	}
 	
+	/** Clears the cache soft reference if existing. */
+	protected void clearCache() {
+		if( _cache != null ) {
+			_cache.clear();
+			_cache = null;
+		}
+	}
+	
+	
+	// --------- STATIC CACHE INIT/CLEANUP OPERATIONS ----------
 	
 	/**
 	 * 
@@ -531,5 +744,4 @@ public abstract class CacheableData<T> extends Data
 	{
 		_activeFlag = true;
 	}
-
 }

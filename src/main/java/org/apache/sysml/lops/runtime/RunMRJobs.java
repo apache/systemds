@@ -360,7 +360,7 @@ public class RunMRJobs
 									              mc.getRowsPerBlock(), mc.getColsPerBlock());
 						}
 						
-						outputMatrices[i].setFileExists(true);
+						outputMatrices[i].setHDFSFileExists(true);
 						
 						if ( inst.getJobType() != JobType.CSV_WRITE && inst.getJobType() != JobType.TRANSFORM) {
 							// write out metadata file

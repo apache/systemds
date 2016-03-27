@@ -19,19 +19,15 @@
 
 package org.apache.sysml.runtime.controlprogram.caching;
 
+
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
 	private static final long serialVersionUID = 1755082174281927785L;
-
-	/** Container object that holds the actual data.*/
-	private FrameBlock _data = null;
-
-	/** The name of HDFS file in which the data is backed up. */
-	private String _hdfsFileName = null; // file name and path
 
 	/**
 	 * 
@@ -56,15 +52,6 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 */
 	public FrameObject(FrameObject fo) {
 		super(fo);
-		_hdfsFileName = fo._hdfsFileName;
-	}
-	
-	public void setFileName(String fname) {
-		_hdfsFileName = fname;
-	}
-	
-	public String getFileName() {
-		return _hdfsFileName;
 	}
 	
 	////////////////////////////////////
@@ -113,10 +100,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 
 	@Override
-	public void exportData() 
+	public void exportData(String fName, String outputFormat, int replication, FileFormatProperties formatProperties) 
 		throws CacheException 
 	{
-		// TODO @Arvind: please integrate writers here for now	
+		// TODO @Arvind: please integrate writers here for now		
 	}
 	
 	////////////////////////////////////

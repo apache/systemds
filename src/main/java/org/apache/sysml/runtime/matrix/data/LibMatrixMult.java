@@ -1403,9 +1403,8 @@ public class LibMatrixMult
 		SparseBlock b = m2.sparseBlock;
 		double[] c = ret.denseBlock;
 		int m = m1.rlen;
+		int cd = m1.clen;
 		int n = m2.clen;
-		
-		//TODO perf sparse block
 		
 		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
 		if(LOW_LEVEL_OPTIMIZATION)
@@ -1433,28 +1432,37 @@ public class LibMatrixMult
 			}	
 			else                       //MATRIX-MATRIX
 			{
-				for( int i=rl, cix=rl*n; i<ru; i++, cix+=n )
-				{
-					if( !a.isEmpty(i) ) 
-					{
-						int apos = a.pos(i);
-						int alen = a.size(i);
-						int[] aix = a.indexes(i);
-						double[] avals = a.values(i);					
-						
-						for(int k = apos; k < apos+alen; k++) 
-						{
-							double val = avals[k];
-							if( !b.isEmpty(aix[k]) ) 
-							{
-								int bpos = b.pos(aix[k]);
-								int blen = b.size(aix[k]);
-								int[] bix = b.indexes(aix[k]);
-								double[] bvals = b.values(aix[k]);	
+				//block sizes for best-effort blocking w/ sufficient row reuse in B yet small overhead
+				final int blocksizeI = 32;
+				final int blocksizeK = (int)Math.max(32, UtilFunctions.nextIntPow2(
+						(int)Math.pow((double)m*cd/m1.nonZeros,2)));
+				
+				//temporary array of current sparse positions
+				int[] curk = new int[blocksizeI];
+				
+				//blocked execution over IK 
+				for( int bi = rl; bi < ru; bi+=blocksizeI ) {
+					Arrays.fill(curk, 0); //reset positions
+					for( int bk = 0, bimin = Math.min(ru, bi+blocksizeI); bk < cd; bk+=blocksizeK ) {
+						final int bkmin = Math.min(cd, bk+blocksizeK); 
+				
+						//core sub block matrix multiplication
+						for( int i=bi, cix=bi*n; i<bimin; i++, cix+=n ) {
+							if( !a.isEmpty(i) ) {
+								final int apos = a.pos(i);
+								final int alen = a.size(i);
+								int[] aix = a.indexes(i);
+								double[] avals = a.values(i);	
 								
-								vectMultiplyAdd(val, bvals, c, bix, bpos, cix, blen);
+								int k = curk[i-bi] + apos;									
+				    			for(; k < apos+alen && aix[k]<bkmin; k++) {
+									if( !b.isEmpty(aix[k]) )
+										vectMultiplyAdd(avals[k], b.values(aix[k]), c, 
+											b.indexes(aix[k]), b.pos(aix[k]), cix, b.size(aix[k]));
+								}
+								curk[i-bi] = k - apos;
 							}
-						}						
+						}
 					}
 				}
 			}

@@ -32,9 +32,14 @@ public class UtilFunctions
 	public static double DOUBLE_EPS = Math.pow(2, -53);
 	
 	
-	public static int longHashFunc(long v)
-	{
+	public static int longHashFunc(long v) {
 		return (int)(v^(v>>>32));
+	}
+	
+	public static int nextIntPow2( int in ) {
+		int expon = (in==0) ? 0 : 32-Integer.numberOfLeadingZeros(in-1);
+		long pow2 = (long) Math.pow(2, expon);
+		return (int)((pow2>Integer.MAX_VALUE)?Integer.MAX_VALUE : pow2);	
 	}
 	
 	//return one block index given the index in cell format and block size

@@ -58,7 +58,7 @@ public class BinaryBlockToRowBlockConverter implements Converter<MatrixIndexes, 
 	@Override
 	public void convert(MatrixIndexes k1, MatrixBlock v1) {
 		reset();
-		_startRowID = UtilFunctions.cellIndexCalculation(k1.getRowIndex(), _srcBrlen, 0);
+		_startRowID = UtilFunctions.computeCellIndex(k1.getRowIndex(), _srcBrlen, 0);
 		_colID = k1.getColumnIndex();
 		_destBlock.reset(1, v1.getNumColumns());
 		_srcRlen = v1.getNumRows();

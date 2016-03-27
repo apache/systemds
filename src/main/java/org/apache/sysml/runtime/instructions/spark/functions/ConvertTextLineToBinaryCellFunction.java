@@ -69,10 +69,10 @@ public class ConvertTextLineToBinaryCellFunction implements PairFunction<String,
 			// Get appropriate indexes for blockIndexes and cell
 			// For line: 1020 704 2.362153706180234 (assuming default block size: 1000 X 1000),
 			// blockRowIndex = 2, blockColIndex = 1, rowIndexInBlock = 19, colIndexInBlock = 703 ... TODO: double check this !!!
-			long blockRowIndex = UtilFunctions.blockIndexCalculation(retVal.getKey().getRowIndex(), (int) brlen);
-			long blockColIndex = UtilFunctions.blockIndexCalculation(retVal.getKey().getColumnIndex(), (int) bclen);
-			long rowIndexInBlock = UtilFunctions.cellInBlockCalculation(retVal.getKey().getRowIndex(), brlen);
-			long colIndexInBlock = UtilFunctions.cellInBlockCalculation(retVal.getKey().getColumnIndex(), bclen);
+			long blockRowIndex = UtilFunctions.computeBlockIndex(retVal.getKey().getRowIndex(), (int) brlen);
+			long blockColIndex = UtilFunctions.computeBlockIndex(retVal.getKey().getColumnIndex(), (int) bclen);
+			long rowIndexInBlock = UtilFunctions.computeCellInBlock(retVal.getKey().getRowIndex(), brlen);
+			long colIndexInBlock = UtilFunctions.computeCellInBlock(retVal.getKey().getColumnIndex(), bclen);
 			// Perform sanity check
 			if(blockRowIndex <= 0 || blockColIndex <= 0 || rowIndexInBlock < 0 || colIndexInBlock < 0) {
 				throw new Exception("Error computing indexes for the line:" + line);

@@ -75,8 +75,8 @@ public class CSVReblockMapper extends MapperBase implements Mapper<LongWritable,
 	{
 		int start=0;
 		row.getIndexes().setTag(outTag);
-		long rowIndex=UtilFunctions.blockIndexCalculation(rowOffset+num+1, brlen);
-		row.getRow().indexInBlock=UtilFunctions.cellInBlockCalculation(rowOffset+num+1, brlen);
+		long rowIndex=UtilFunctions.computeBlockIndex(rowOffset+num+1, brlen);
+		row.getRow().indexInBlock=UtilFunctions.computeCellInBlock(rowOffset+num+1, brlen);
 		
 		long col=0;
 		for(; col<cells.length/bclen; col++)

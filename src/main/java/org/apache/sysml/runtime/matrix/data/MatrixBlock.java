@@ -4520,7 +4520,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				        || ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX) 
 				        ){
 					double currMaxValue = result.quickGetValue(i, 1);
-					long newMaxIndex = UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), blockingFactorCol, j);
+					long newMaxIndex = UtilFunctions.computeCellIndex(indexesIn.getColumnIndex(), blockingFactorCol, j);
 					double newMaxValue = quickGetValue(i, j);
 					double update = op.aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
 						   

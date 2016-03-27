@@ -280,7 +280,7 @@ public class TernarySPInstruction extends ComputationSPInstruction
 			for( int i=0; i<mb.getNumRows(); i++ )
 			{
 				//compute global target indexes (via ctable obj for error handling consistency)
-				long row = UtilFunctions.cellIndexCalculation(ix.getRowIndex(), _brlen, i);
+				long row = UtilFunctions.computeCellIndex(ix.getRowIndex(), _brlen, i);
 				double v2 = mb.quickGetValue(i, 0);
 				Pair<MatrixIndexes,Double> p = ctab.execute(row, v2, 1.0);
 				

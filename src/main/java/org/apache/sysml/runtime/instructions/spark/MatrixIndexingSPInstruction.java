@@ -294,10 +294,10 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 			long end_lhs_globalRowIndex = start_lhs_globalRowIndex + rightKV._2.getNumRows() - 1;
 			long end_lhs_globalColIndex = start_lhs_globalColIndex + rightKV._2.getNumColumns() - 1;
 			
-			long start_lhs_rowIndex = UtilFunctions.blockIndexCalculation(start_lhs_globalRowIndex, brlen);
-			long end_lhs_rowIndex = UtilFunctions.blockIndexCalculation(end_lhs_globalRowIndex, brlen);
-			long start_lhs_colIndex = UtilFunctions.blockIndexCalculation(start_lhs_globalColIndex, bclen);
-			long end_lhs_colIndex = UtilFunctions.blockIndexCalculation(end_lhs_globalColIndex, bclen);
+			long start_lhs_rowIndex = UtilFunctions.computeBlockIndex(start_lhs_globalRowIndex, brlen);
+			long end_lhs_rowIndex = UtilFunctions.computeBlockIndex(end_lhs_globalRowIndex, brlen);
+			long start_lhs_colIndex = UtilFunctions.computeBlockIndex(start_lhs_globalColIndex, bclen);
+			long end_lhs_colIndex = UtilFunctions.computeBlockIndex(end_lhs_globalColIndex, bclen);
 			
 			for(long leftRowIndex = start_lhs_rowIndex; leftRowIndex <= end_lhs_rowIndex; leftRowIndex++) {
 				for(long leftColIndex = start_lhs_colIndex; leftColIndex <= end_lhs_colIndex; leftColIndex++) {
@@ -308,20 +308,20 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 					long lhs_cl = Math.max((leftColIndex-1)*bclen+1, start_lhs_globalColIndex);
 					long lhs_cu = Math.min(leftColIndex*bclen, end_lhs_globalColIndex);
 					
-					int lhs_lrl = UtilFunctions.cellInBlockCalculation(lhs_rl, brlen);
-					int lhs_lru = UtilFunctions.cellInBlockCalculation(lhs_ru, brlen);
-					int lhs_lcl = UtilFunctions.cellInBlockCalculation(lhs_cl, bclen);
-					int lhs_lcu = UtilFunctions.cellInBlockCalculation(lhs_cu, bclen);
+					int lhs_lrl = UtilFunctions.computeCellInBlock(lhs_rl, brlen);
+					int lhs_lru = UtilFunctions.computeCellInBlock(lhs_ru, brlen);
+					int lhs_lcl = UtilFunctions.computeCellInBlock(lhs_cl, bclen);
+					int lhs_lcu = UtilFunctions.computeCellInBlock(lhs_cu, bclen);
 					
 					long rhs_rl = lhs_rl - rl + 1;
 					long rhs_ru = rhs_rl + (lhs_ru - lhs_rl);
 					long rhs_cl = lhs_cl - cl + 1;
 					long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
 					
-					int rhs_lrl = UtilFunctions.cellInBlockCalculation(rhs_rl, brlen);
-					int rhs_lru = UtilFunctions.cellInBlockCalculation(rhs_ru, brlen);
-					int rhs_lcl = UtilFunctions.cellInBlockCalculation(rhs_cl, bclen);
-					int rhs_lcu = UtilFunctions.cellInBlockCalculation(rhs_cu, bclen);
+					int rhs_lrl = UtilFunctions.computeCellInBlock(rhs_rl, brlen);
+					int rhs_lru = UtilFunctions.computeCellInBlock(rhs_ru, brlen);
+					int rhs_lcl = UtilFunctions.computeCellInBlock(rhs_cl, bclen);
+					int rhs_lcu = UtilFunctions.computeCellInBlock(rhs_cu, bclen);
 					
 					MatrixBlock slicedRHSBlk = rightKV._2.sliceOperations(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new MatrixBlock());
 					
@@ -440,10 +440,10 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				MatrixBlock slicedRHSMatBlock = _binput.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
 				
 				// Provide local zero-based index to leftIndexingOperations
-				int lhs_lrl = UtilFunctions.cellInBlockCalculation(lhs_rl, _brlen);
-				int lhs_lru = UtilFunctions.cellInBlockCalculation(lhs_ru, _brlen);
-				int lhs_lcl = UtilFunctions.cellInBlockCalculation(lhs_cl, _bclen);
-				int lhs_lcu = UtilFunctions.cellInBlockCalculation(lhs_cu, _bclen);
+				int lhs_lrl = UtilFunctions.computeCellInBlock(lhs_rl, _brlen);
+				int lhs_lru = UtilFunctions.computeCellInBlock(lhs_ru, _brlen);
+				int lhs_lcl = UtilFunctions.computeCellInBlock(lhs_cl, _bclen);
+				int lhs_lcu = UtilFunctions.computeCellInBlock(lhs_cu, _bclen);
 				MatrixBlock ret = arg._2.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new MatrixBlock(), false);
 				return new Tuple2<MatrixIndexes, MatrixBlock>(arg._1, ret);
 			}

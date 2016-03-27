@@ -305,10 +305,10 @@ public class OperationsOnMatrixValues
 	public static void performSlice(IndexedMatrixValue in, IndexRange ixrange, int brlen, int bclen, ArrayList<IndexedMatrixValue> outlist) 
 		throws DMLUnsupportedOperationException, DMLRuntimeException
 	{
-		long cellIndexTopRow = UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), brlen, 0);
-		long cellIndexBottomRow = UtilFunctions.cellIndexCalculation(in.getIndexes().getRowIndex(), brlen, in.getValue().getNumRows()-1);
-		long cellIndexLeftCol = UtilFunctions.cellIndexCalculation(in.getIndexes().getColumnIndex(), bclen, 0);
-		long cellIndexRightCol = UtilFunctions.cellIndexCalculation(in.getIndexes().getColumnIndex(), bclen, in.getValue().getNumColumns()-1);
+		long cellIndexTopRow = UtilFunctions.computeCellIndex(in.getIndexes().getRowIndex(), brlen, 0);
+		long cellIndexBottomRow = UtilFunctions.computeCellIndex(in.getIndexes().getRowIndex(), brlen, in.getValue().getNumRows()-1);
+		long cellIndexLeftCol = UtilFunctions.computeCellIndex(in.getIndexes().getColumnIndex(), bclen, 0);
+		long cellIndexRightCol = UtilFunctions.computeCellIndex(in.getIndexes().getColumnIndex(), bclen, in.getValue().getNumColumns()-1);
 		
 		long cellIndexOverlapTop = Math.max(cellIndexTopRow, ixrange.rowStart);
 		long cellIndexOverlapBottom = Math.min(cellIndexBottomRow, ixrange.rowEnd);
@@ -321,13 +321,13 @@ public class OperationsOnMatrixValues
 		}
 		
 		IndexRange tmpRange = new IndexRange(
-			UtilFunctions.cellInBlockCalculation(cellIndexOverlapTop, brlen), 
-			UtilFunctions.cellInBlockCalculation(cellIndexOverlapBottom, brlen), 
-			UtilFunctions.cellInBlockCalculation(cellIndexOverlapLeft, bclen), 
-			UtilFunctions.cellInBlockCalculation(cellIndexOverlapRight, bclen));
+			UtilFunctions.computeCellInBlock(cellIndexOverlapTop, brlen), 
+			UtilFunctions.computeCellInBlock(cellIndexOverlapBottom, brlen), 
+			UtilFunctions.computeCellInBlock(cellIndexOverlapLeft, bclen), 
+			UtilFunctions.computeCellInBlock(cellIndexOverlapRight, bclen));
 		
-		int rowCut=UtilFunctions.cellInBlockCalculation(ixrange.rowStart, brlen);
-		int colCut=UtilFunctions.cellInBlockCalculation(ixrange.colStart, bclen);
+		int rowCut=UtilFunctions.computeCellInBlock(ixrange.rowStart, brlen);
+		int colCut=UtilFunctions.computeCellInBlock(ixrange.colStart, bclen);
 		
 		int rowsInLastBlock = (int)((ixrange.rowEnd-ixrange.rowStart+1)%brlen);
 		if(rowsInLastBlock==0) 
@@ -336,15 +336,15 @@ public class OperationsOnMatrixValues
 		if(colsInLastBlock==0) 
 			colsInLastBlock=bclen;
 		
-		long resultBlockIndexTop=UtilFunctions.blockIndexCalculation(cellIndexOverlapTop-ixrange.rowStart+1, brlen);
-		long resultBlockIndexBottom=UtilFunctions.blockIndexCalculation(cellIndexOverlapBottom-ixrange.rowStart+1, brlen);
-		long resultBlockIndexLeft=UtilFunctions.blockIndexCalculation(cellIndexOverlapLeft-ixrange.colStart+1, bclen);
-		long resultBlockIndexRight=UtilFunctions.blockIndexCalculation(cellIndexOverlapRight-ixrange.colStart+1, bclen);
+		long resultBlockIndexTop=UtilFunctions.computeBlockIndex(cellIndexOverlapTop-ixrange.rowStart+1, brlen);
+		long resultBlockIndexBottom=UtilFunctions.computeBlockIndex(cellIndexOverlapBottom-ixrange.rowStart+1, brlen);
+		long resultBlockIndexLeft=UtilFunctions.computeBlockIndex(cellIndexOverlapLeft-ixrange.colStart+1, bclen);
+		long resultBlockIndexRight=UtilFunctions.computeBlockIndex(cellIndexOverlapRight-ixrange.colStart+1, bclen);
 		
 		int boundaryRlen = brlen;
 		int boundaryClen = bclen;
-		long finalBlockIndexBottom=UtilFunctions.blockIndexCalculation(ixrange.rowEnd-ixrange.rowStart+1, brlen);
-		long finalBlockIndexRight=UtilFunctions.blockIndexCalculation(ixrange.colEnd-ixrange.colStart+1, bclen);
+		long finalBlockIndexBottom=UtilFunctions.computeBlockIndex(ixrange.rowEnd-ixrange.rowStart+1, brlen);
+		long finalBlockIndexRight=UtilFunctions.computeBlockIndex(ixrange.colEnd-ixrange.colStart+1, bclen);
 		if(resultBlockIndexBottom==finalBlockIndexBottom)
 			boundaryRlen=rowsInLastBlock;
 		if(resultBlockIndexRight==finalBlockIndexRight)

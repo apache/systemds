@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.io;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.Iterator;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -107,10 +108,8 @@ public class FrameWriterTextCSV extends FrameWriter
 			if( props.hasHeader() ) 
 			{
 				//write row chunk-wise to prevent OOM on large number of columns
-				for( int bj=0; bj<clen; bj+=BLOCKSIZE_J )
-				{
-					for( int j=bj; j < Math.min(clen,bj+BLOCKSIZE_J); j++) 
-					{
+				for( int bj=0; bj<clen; bj+=BLOCKSIZE_J ) {
+					for( int j=bj; j < Math.min(clen,bj+BLOCKSIZE_J); j++) {
 						sb.append("C"+ (j+1));
 						if ( j < clen-1 )
 							sb.append(delim);
@@ -124,16 +123,14 @@ public class FrameWriterTextCSV extends FrameWriter
 			}
 			
 			// Write data lines
-			for( int i=0; i<rlen; i++ ) 
-			{
+			Iterator<String[]> iter = src.getStringRowIterator();
+			while( iter.hasNext() ) {
 				//write row chunk-wise to prevent OOM on large number of columns
-				for( int bj=0; bj<clen; bj+=BLOCKSIZE_J )
-				{
-					for( int j=bj; j<Math.min(clen,bj+BLOCKSIZE_J); j++ )
-					{
-						if(src.get(i, j) != null)
-							sb.append(src.get(i, j).toString());
-						
+				String[] row = iter.next();
+				for( int bj=0; bj<clen; bj+=BLOCKSIZE_J ) {
+					for( int j=bj; j<Math.min(clen,bj+BLOCKSIZE_J); j++ ) {
+						if(row[j] != null)
+							sb.append(row[j]);					
 						if( j != clen-1 )
 							sb.append(delim);
 					}
@@ -142,14 +139,12 @@ public class FrameWriterTextCSV extends FrameWriter
 				}
 				
 				sb.append('\n');
-				br.write( sb.toString() ); //same as append
+				br.write( sb.toString() );
 				sb.setLength(0); 
 			}
 		}
-		finally
-		{
+		finally {
 			IOUtilFunctions.closeSilently(br);
 		}
 	}
-
 }

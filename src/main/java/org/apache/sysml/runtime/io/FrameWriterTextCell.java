@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.io;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.Iterator;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -84,8 +85,7 @@ public class FrameWriterTextCell extends FrameWriter
 		int cols = src.getNumColumns();
 
 		//bound check per block
-		if( rows > rlen || cols > clen )
-		{
+		if( rows > rlen || cols > clen ) {
 			throw new IOException("Frame block [1:"+rows+",1:"+cols+"] " +
 					              "out of overall frame range [1:"+rlen+",1:"+clen+"].");
 		}
@@ -95,21 +95,19 @@ public class FrameWriterTextCell extends FrameWriter
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
 			
-			for( int i=0; i<rows; i++ )
-			{
-				String rowIndex = Integer.toString(i+1);					
-				for( int j=0; j<cols; j++ )
-				{
-					if(src.get(i, j) != null)
-					{
-						String lvalue = src.get(i, j).toString();
+			Iterator<String[]> iter = src.getStringRowIterator();
+			for( int i=0; iter.hasNext(); i++ ) { //for all rows
+				String rowIndex = Integer.toString(i+1);
+				String[] row = iter.next();
+				for( int j=0; j<cols; j++ ) {
+					if( row[j] != null ) {
 						sb.append(rowIndex);
 						sb.append(' ');
 						sb.append( j+1 );
 						sb.append(' ');
-						sb.append( lvalue );
+						sb.append( row[j] );
 						sb.append('\n');
-						br.write( sb.toString() ); //same as append
+						br.write( sb.toString() );
 						sb.setLength(0); 
 						entriesWritten = true;
 					}
@@ -121,10 +119,8 @@ public class FrameWriterTextCell extends FrameWriter
 				br.write("1 1 0\n");
 			}
 		}
-		finally
-		{
+		finally {
 			IOUtilFunctions.closeSilently(br);
 		}
 	}	
-
 }

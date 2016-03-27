@@ -167,7 +167,7 @@ public class SparkUtils
 	
 	// len = {clen or rlen}, blen = {brlen or bclen}
 	public static long getStartGlobalIndex(long blockIndex, int blen, long len) {
-		return UtilFunctions.cellIndexCalculation(blockIndex, blen, 0);
+		return UtilFunctions.computeCellIndex(blockIndex, blen, 0);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getRDDWithEmptyBlocks(JavaSparkContext sc, 

@@ -503,8 +503,8 @@ public abstract class CostEstimator
 		String ret = inst;
 		while( ret.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
 			int index1 = ret.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER);
-			int index2 = ret.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER, index1+3);
-			String replace = ret.substring(index1,index2+2);
+			int index2 = ret.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER, index1+1);
+			String replace = ret.substring(index1,index2+1);
 			ret = ret.replaceAll(replace, "1");
 		}
 		

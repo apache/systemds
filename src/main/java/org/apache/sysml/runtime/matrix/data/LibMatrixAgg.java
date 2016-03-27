@@ -610,7 +610,7 @@ public class LibMatrixAgg
 			int m = out.rlen;
 			double[] c = out.getDenseBlock();
 			for( int i=0, cix=0; i<m; i++, cix+=2 )
-				c[cix] = UtilFunctions.cellIndexCalculation(ix.getColumnIndex(), bclen, (int)c[cix]-1);
+				c[cix] = UtilFunctions.computeCellIndex(ix.getColumnIndex(), bclen, (int)c[cix]-1);
 		}
 	}	
 	

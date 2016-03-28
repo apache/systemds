@@ -66,7 +66,6 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
-import org.apache.sysml.runtime.instructions.spark.data.RDDProperties;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
@@ -74,6 +73,8 @@ import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -296,12 +297,12 @@ public class MLContext {
 	 * @param hasHeader
 	 * @param delim
 	 * @param fill
-	 * @param missingValue
+	 * @param fillValue
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, JavaRDD<String> rdd, String format, boolean hasHeader, 
-			String delim, boolean fill, double missingValue) throws DMLRuntimeException {
-		registerInput(varName, rdd, format, hasHeader, delim, fill, missingValue, -1, -1, -1);
+			String delim, boolean fill, double fillValue) throws DMLRuntimeException {
+		registerInput(varName, rdd, format, hasHeader, delim, fill, fillValue, -1, -1, -1);
 	}
 	
 	/**
@@ -316,12 +317,12 @@ public class MLContext {
 	 * @param hasHeader
 	 * @param delim
 	 * @param fill
-	 * @param missingValue
+	 * @param fillValue
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, RDD<String> rdd, String format, boolean hasHeader, 
-			String delim, boolean fill, double missingValue) throws DMLRuntimeException {
-		registerInput(varName, rdd.toJavaRDD(), format, hasHeader, delim, fill, missingValue, -1, -1, -1);
+			String delim, boolean fill, double fillValue) throws DMLRuntimeException {
+		registerInput(varName, rdd.toJavaRDD(), format, hasHeader, delim, fill, fillValue, -1, -1, -1);
 	}
 	
 	/**
@@ -336,15 +337,15 @@ public class MLContext {
 	 * @param hasHeader
 	 * @param delim
 	 * @param fill
-	 * @param missingValue
+	 * @param fillValue
 	 * @param rlen
 	 * @param clen
 	 * @param nnz
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, RDD<String> rdd, String format, boolean hasHeader, 
-			String delim, boolean fill, double missingValue, long rlen, long clen, long nnz) throws DMLRuntimeException {
-		registerInput(varName, rdd.toJavaRDD(), format, hasHeader, delim, fill, missingValue, -1, -1, -1);
+			String delim, boolean fill, double fillValue, long rlen, long clen, long nnz) throws DMLRuntimeException {
+		registerInput(varName, rdd.toJavaRDD(), format, hasHeader, delim, fill, fillValue, -1, -1, -1);
 	}
 	
 	/**
@@ -359,20 +360,16 @@ public class MLContext {
 	 * @param hasHeader
 	 * @param delim
 	 * @param fill
-	 * @param missingValue
+	 * @param fillValue
 	 * @param rlen
 	 * @param clen
 	 * @param nnz
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, JavaRDD<String> rdd, String format, boolean hasHeader, 
-			String delim, boolean fill, double missingValue, long rlen, long clen, long nnz) throws DMLRuntimeException {
-		RDDProperties properties = new RDDProperties();
-		properties.setHasHeader(hasHeader);
-		properties.setFill(fill);
-		properties.setDelim(delim);
-		properties.setMissingValue(missingValue);
-		registerInput(varName, rdd.mapToPair(new ConvertStringToLongTextPair()), format, rlen, clen, nnz, properties);
+			String delim, boolean fill, double fillValue, long rlen, long clen, long nnz) throws DMLRuntimeException {
+		CSVFileFormatProperties props = new CSVFileFormatProperties(hasHeader, delim, fill, fillValue, "");
+		registerInput(varName, rdd.mapToPair(new ConvertStringToLongTextPair()), format, rlen, clen, nnz, props);
 	} 
 	
 	/**
@@ -476,7 +473,7 @@ public class MLContext {
 	}
 	
 	// All CSV related methods call this ... It provides access to dimensions, nnz, file properties.
-	private void registerInput(String varName, JavaPairRDD<LongWritable, Text> textOrCsv_rdd, String format, long rlen, long clen, long nnz, RDDProperties properties) throws DMLRuntimeException {
+	private void registerInput(String varName, JavaPairRDD<LongWritable, Text> textOrCsv_rdd, String format, long rlen, long clen, long nnz, FileFormatProperties props) throws DMLRuntimeException {
 		if(!(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)) {
 			throw new DMLRuntimeException("The registerInput functionality only supported for spark runtime. Please use MLContext(sc) instead of default constructor.");
 		}
@@ -510,9 +507,8 @@ public class MLContext {
 		}
 		
 		JavaPairRDD<LongWritable, Text> rdd = textOrCsv_rdd.mapToPair(new CopyTextInputFunction());
-		if(properties != null) {
-			mo.setRddProperties(properties);
-		}
+		if(props != null)
+			mo.setFileFormatProperties(props);
 		mo.setRDDHandle(new RDDObject(rdd, varName));
 		_variables.put(varName, mo);
 		_inVarnames.add(varName);

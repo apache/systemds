@@ -46,11 +46,11 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 	private boolean _hasHeader;
 	private String _delim;
 	private boolean _fill;
-	private double _missingValue;
+	private double _fillValue;
 
 	public CSVReblockSPInstruction(Operator op, CPOperand in, CPOperand out,
 			int br, int bc, boolean hasHeader, String delim, boolean fill,
-			double missingValue, String opcode, String instr) 
+			double fillValue, String opcode, String instr) 
 	{
 		super(op, in, out, opcode, instr);
 		_brlen = br;
@@ -58,17 +58,15 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 		_hasHeader = hasHeader;
 		_delim = delim;
 		_fill = fill;
-		_missingValue = missingValue;
+		_fillValue = fillValue;
 	}
 
 	public static CSVReblockSPInstruction parseInstruction(String str)
 			throws DMLRuntimeException 
 	{
 		String opcode = InstructionUtils.getOpCode(str);
-		if( !opcode.equals("csvrblk") ) {
-			throw new DMLRuntimeException(
-					"Incorrect opcode for CSVReblockSPInstruction:" + opcode);
-		}
+		if( !opcode.equals("csvrblk") )
+			throw new DMLRuntimeException("Incorrect opcode for CSVReblockSPInstruction:" + opcode);
 
 		// Example parts of CSVReblockSPInstruction:
 		// [csvrblk, pREADmissing_val_maps·MATRIX·DOUBLE, _mVar37·MATRIX·DOUBLE,
@@ -82,10 +80,10 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 		boolean hasHeader = Boolean.parseBoolean(parts[5]);
 		String delim = parts[6];
 		boolean fill = Boolean.parseBoolean(parts[7]);
-		double missingValue = Double.parseDouble(parts[8]);
+		double fillValue = Double.parseDouble(parts[8]);
 
 		return new CSVReblockSPInstruction(null, in, out, brlen, bclen,
-				hasHeader, delim, fill, missingValue, opcode, str);
+				hasHeader, delim, fill, fillValue, opcode, str);
 	}
 
 	@Override
@@ -124,7 +122,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 			
 		//reblock csv to binary block
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.csvToBinaryBlock(
-				sec.getSparkContext(), in, mcOut, _hasHeader, _delim, _fill, _missingValue);
+				sec.getSparkContext(), in, mcOut, _hasHeader, _delim, _fill, _fillValue);
 		
 		// put output RDD handle into symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);

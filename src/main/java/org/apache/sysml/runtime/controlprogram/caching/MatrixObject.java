@@ -35,7 +35,6 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartition
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
-import org.apache.sysml.runtime.instructions.spark.data.RDDProperties;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
@@ -92,7 +91,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject _bcHandle = null; //Broadcast handle
-	private RDDProperties _rddProperties = null;
 	
 	/**
 	 * Information relevant to partitioned matrices.
@@ -102,14 +100,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
-	
-	public RDDProperties getRddProperties() {
-		return _rddProperties;
-	}
-
-	public void setRddProperties(RDDProperties _rddProperties) {
-		this._rddProperties = _rddProperties;
-	}
 
 	/**
 	 * Constructor that takes only the HDFS filename.

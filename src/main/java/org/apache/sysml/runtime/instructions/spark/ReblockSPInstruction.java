@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.spark;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
-
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
@@ -31,12 +30,12 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.spark.data.RDDProperties;
 import org.apache.sysml.runtime.instructions.spark.functions.ExtractBlockForBinaryReblock;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
@@ -123,20 +122,22 @@ public class ReblockSPInstruction extends UnarySPInstruction
 		else if(iimd.getInputInfo() == InputInfo.CSVInputInfo) {
 			// HACK ALERT: Until we introduces the rewrite to insert csvrblock for non-persistent read
 			// throw new DMLRuntimeException("CSVInputInfo is not supported for ReblockSPInstruction");
-			RDDProperties properties = mo.getRddProperties();
 			CSVReblockSPInstruction csvInstruction = null;
 			boolean hasHeader = false;
 			String delim = ",";
 			boolean fill = false;
-			double missingValue = 0;
-			if(properties != null) {
-				hasHeader = properties.isHasHeader();
-				delim = properties.getDelim();
-				fill = properties.isFill();
-				missingValue = properties.getMissingValue();
+			double fillValue = 0;
+			if(mo.getFileFormatProperties() instanceof CSVFileFormatProperties 
+			   && mo.getFileFormatProperties() != null ) 
+			{
+				CSVFileFormatProperties props = (CSVFileFormatProperties) mo.getFileFormatProperties();
+				hasHeader = props.hasHeader();
+				delim = props.getDelim();
+				fill = props.isFill();
+				fillValue = props.getFillValue();
 			}
 			
-			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), hasHeader, delim, fill, missingValue, "csvrblk", instString);
+			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), hasHeader, delim, fill, fillValue, "csvrblk", instString);
 			csvInstruction.processInstruction(sec);
 			return;
 		}

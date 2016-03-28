@@ -98,8 +98,8 @@ Test = read ( TestPath );
 #data prepare
 if( trans_continuous == 1 ){
     print( "Do data prepare to transfer continuous variable to [-1,1] ..." );
-    Train = prepareKNNData( Train,Train_type,trans_continuous );
-    Test  = prepareKNNData( Test,Train_type,trans_continuous );
+    Train = prepareKNNData( Train);
+    Test  = prepareKNNData( Test);
 }
 
 n_records = nrow( Train );
@@ -223,7 +223,7 @@ if( CLPath != " " ){
 }
 CL_matrix = matrix( 0,nrow( Test ),1 );
 if( CLPath != " " ){
-    parfor( i in 1:nrow( NNR_matrix ) ,check=0){
+    for( i in 1:nrow( NNR_matrix ) ,check=0){
         NNR_tmp_matrix = matrix( 0,k_value,1 );
         for( j in 1:k_value ){
             NNR_tmp_matrix[j,1] = CL[as.scalar( NNR_matrix[i,j] ),1] ;
@@ -297,7 +297,7 @@ naiveKNNsearchForPredict = function(
     } else {
 		OL = matrix (0, rows = num_queries, cols = K);
         parfor (i in 1:num_queries) {
-            D_sorted=order(target=cbind(D[,i],L), by=1, decreasing=FALSE, index.return=FALSE);
+            D_sorted=order(target=append(D[,i],L), by=1, decreasing=FALSE, index.return=FALSE);
             OL[i,] = t(D_sorted[1:K,2]);
         }   
     }   
@@ -342,15 +342,15 @@ getErr_k = function (  matrix[double] in_m_neighbor_value,
         m_correct = ppred( in_m_neighbor_value,in_m_cl[1:i_row,],"!="  );
     }else{
         #continues
-        m_correct = in_m_neighbor_value - in_m_cl[1:i_row,];#ppred( in_m_neighbor_value,in_m_cl,"-"  );
+        m_correct = (in_m_neighbor_value - in_m_cl[1:i_row,])^2;#ppred( in_m_neighbor_value,in_m_cl,"-"  );
     }
     parfor( i in 1:i_col-in_i_k_min+1 ,check = 0 ){
         out_m_err[,i] = 
-            ( rowSums( m_correct[,1:in_i_k_min + i - 1]  ) / ( in_i_k_min + i - 1  )  )^2;
+            ( rowSums( m_correct[,1:in_i_k_min + i - 1]  ) / ( in_i_k_min + i - 1  )  );
     }
     #return err for each record and each k ( belong to range 1~max  );
 }
-
+/*
 eliminateModel = function (  matrix[double] in_j_err, matrix[double] in_j1_err   )
     return(  boolean out_b_inactived   ){
     out_b_inactived = FALSE;
@@ -365,6 +365,22 @@ eliminateModel = function (  matrix[double] in_j_err, matrix[double] in_j1_err  
     
     tmp_d_delta = cdf(  
         target = ( -d_gamma - m_err_mean  ) / m_err_variance, dist="t",df=i_row-1  );
+    #print( "m_err_mean=" + m_err_mean + ",m_err_variance=" + 
+    #   m_err_variance + ",tmp_d_delta=" + tmp_d_delta  );
+    if( tmp_d_delta < d_delta  ){
+        out_b_inactived = TRUE;
+    }
+
+}*/
+eliminateModel = function (  double s_err_mean, double s_err_vars, integer i_row  )
+    return(  boolean out_b_inactived   ){
+    out_b_inactived = FALSE;
+    #alpha, beta, gamma, delta
+    d_gamma = 0.001;
+    d_delta = 0.001;
+    
+    tmp_d_delta = cdf(  
+        target = ( -d_gamma - s_err_mean  ) / s_err_vars, dist="t",df=i_row-1  );
     #print( "m_err_mean=" + m_err_mean + ",m_err_variance=" + 
     #   m_err_variance + ",tmp_d_delta=" + tmp_d_delta  );
     if( tmp_d_delta < d_delta  ){
@@ -402,7 +418,9 @@ return(
 
     m_active_flag = matrix( 0,1,k_max-k_min+1  );
     i_active_model_number = k_max - k_min + 1;
-    
+	
+    m_iter_err_sum = matrix( 0,1,k_max-k_min+1);
+	m_iter_err_sum_squared = matrix( 0,1,k_max-k_min+1);
     while( b_continue_loop  ){
         # 1.build k-d tree? , or use hash method
         # 2.search data to get k_max nearest neighbor
@@ -411,14 +429,31 @@ return(
             i_process_item = i_record;
             b_continue_loop = FALSE;
         }
-        
-        m_neighbor_value = getKNeighbor( in_m_data,in_m_data[1:i_process_item,],in_m_data_target,k_max  );
+ 		#i_process_begin_item = (i_iter - 1)*interval + 1
+		i_process_begin_item = 1
+		i_process_end_item = i_process_item 
+		
+        m_neighbor_value = getKNeighbor( in_m_data,in_m_data[i_process_begin_item:i_process_end_item,],in_m_data_target,k_max  );
         # 3.get matrix of err from k_min to k_max 
-        m_err = getErr_k( m_neighbor_value,in_m_data_target,in_i_is_categorical,k_min  );
+        m_err = getErr_k( m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical,k_min  );
 
         # 4.check this matrix to drop unnessary record
         m_active_flag_tmp = matrix( 0,1,ncol( m_err  )  );
-        for( i in 1:ncol( m_err  )  ){
+		
+		s_rows_number = i_process_item#nrow(m_err);
+			
+		m_iter_err_sum = colSums(m_err)# + m_iter_err_sum
+		m_iter_err_sum_squared = colSums(m_err ^ 2)# + m_iter_err_sum_squared
+		
+		m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number
+		m_err_vars = ( m_err_mean ^2 * s_rows_number -
+			2 * m_err_mean * m_iter_err_sum  + m_iter_err_sum_squared) / (s_rows_number-1)
+		m_err_vars = sqrt(m_err_vars)
+		
+        parfor( i in 1:ncol( m_err  )  ){
+			#m_err_i = m_err - m_err[,i];
+			#m_err_i_mean = colMeans(m_err_i);
+			#m_err_i_vars = colVars(m_err_i);
             for( j in 1:ncol( m_err  )  ){
                 b_execute_block = TRUE;
                 if( j==i  ) b_execute_block = FALSE;
@@ -427,7 +462,7 @@ return(
                 if( as.scalar( m_active_flag_tmp[1,j]  ) == 1  )  b_execute_block = FALSE; 
                 #j has dropped, ignore this case
                 if( b_execute_block  ){
-                    b_flag = eliminateModel( m_err[,i],m_err[,j]  );
+                    b_flag = eliminateModel( as.scalar(m_err_mean[i,j]),as.scalar(m_err_vars[i,j]),s_rows_number);
                     if(  b_flag == TRUE  ){
                         m_active_flag_tmp[1,i] = 1;
                     }
@@ -443,8 +478,8 @@ return(
         if( i_active_model_number <= 1  ){
             b_continue_loop = FALSE;
         }
-        
         i_iter = i_iter + 1;
+		print("i_iter" + i_iter)
     }
 
     k = 0;
@@ -456,7 +491,7 @@ return(
         print( "Get k, which value is " + k  );
     }else{
         m_err_for_order = 
-            append( t( colMeans( m_err  )  ), matrix( seq( k_min,k_max,1  ),k_max-k_min+1,1  )  );
+            append( t( colMeans(m_err)  ), matrix( seq( k_min,k_max,1  ),k_max-k_min+1,1  )  );
         m_err_for_order = removeEmpty( 
             target=m_err_for_order * t( ppred( m_active_flag,0,"=="  )  ),margin="rows"  );
         for( i in 1:nrow( m_err_for_order  )  ){
@@ -481,9 +516,9 @@ getErr = function (  matrix[double] in_m_neighbor_value,
         m_correct = ppred( in_m_neighbor_value,in_m_cl[1:i_row,],"!=" );
     }else{
         #continues
-        m_correct = in_m_neighbor_value - in_m_cl[1:i_row,];#ppred( in_m_neighbor_value,in_m_cl,"-" );
+        m_correct = (in_m_neighbor_value - in_m_cl[1:i_row,])^2;#ppred( in_m_neighbor_value,in_m_cl,"-" );
     }
-    out_m_err = ( rowSums( m_correct[,1:i_col] )/( i_col ) )^2;
+    out_m_err = ( rowSums( m_correct[,1:i_col] )/( i_col ) );
 }
 
 # getSelectedFeature:
@@ -532,6 +567,8 @@ return(
         b_selected_morethan_one = FALSE;
         b_continue_loop = TRUE; #level 2 while loop flag
         i_iter = 1;
+		m_iter_err_sum = matrix( 0,1,i_n_column+1 );
+		m_iter_err_sum_squared = matrix( 0,1,i_n_column+1 );
         while( b_continue_loop ){
             #print( "*************" + i_iter + "*************" );
             i_process_item = i_iter*interval;
@@ -539,16 +576,19 @@ return(
                 i_process_item = i_n_record;
                 b_continue_loop = FALSE;
             }
-            m_err = matrix( d_max_err_value,i_process_item,i_n_column+1 );
+			i_process_begin_item = (i_iter - 1)*interval + 1
+			#i_process_begin_item = 1
+			i_process_end_item = i_process_item
+            m_err = matrix( d_max_err_value,i_process_end_item - i_process_begin_item + 1,i_n_column+1 );
             if( b_no_feature_selected == TRUE ){
-                for( i in 1:i_n_column ){
+                for( i in 1:i_n_column ,check=0){
                     if( as.scalar( m_feature_selected_flag[1,i] ) != 1 ){
                         m_tmp_process_data = in_m_data[,i];
                         m_neighbor_value = getKNeighbor( 
-                            m_tmp_process_data,m_tmp_process_data[1:i_process_item,],
+                            m_tmp_process_data,m_tmp_process_data[i_process_begin_item:i_process_end_item,],
 							in_m_data_target,k_value );                            
                         m_tmp_err = getErr( 
-                            m_neighbor_value,in_m_data_target,in_i_is_categorical );
+                            m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical );
                         m_err[,i] = m_tmp_err;
                     }
                 }
@@ -556,21 +596,21 @@ return(
                 #Use m_main_selected_flag but not m_feature_selected_flag,
                 # m_main_selected_flag: which feature are init selected
                 # m_feature_selected_flag: which feature are dropped & init selected
-                m_tmp_data = removeEmpty( target=in_m_data * m_main_selected_flag,margin="cols" );
+                m_tmp_data = removeEmpty( target=in_m_data ,margin="cols", select = m_main_selected_flag);
                 if( m_this_model_selected_flag == TRUE ){
                     m_neighbor_value = getKNeighbor( 
-                        m_tmp_data,m_tmp_data[1:i_process_item,],in_m_data_target, k_value );
-                    m_tmp_err = getErr( m_neighbor_value,in_m_data_target,in_i_is_categorical );
+                        m_tmp_data,m_tmp_data[i_process_begin_item:i_process_end_item,],in_m_data_target, k_value );
+					
+                    m_tmp_err = getErr( m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical );
                     m_err[,i_n_column+1] = m_tmp_err;
                 }
-                for( i in 1:i_n_column ){
+                parfor( i in 1:i_n_column ,check=0){
                     if( as.scalar( m_feature_selected_flag[1,i] ) != 1 ){
                         m_tmp_process_data = append( m_tmp_data,in_m_data[,i] );
                         m_neighbor_value = getKNeighbor( 
-                            m_tmp_process_data,m_tmp_process_data[1:i_process_item,],in_m_data_target,k_value );
-
+                            m_tmp_process_data,m_tmp_process_data[i_process_begin_item:i_process_end_item,],in_m_data_target,k_value );
                         m_tmp_err = getErr( 
-                            m_neighbor_value,in_m_data_target,in_i_is_categorical );
+                            m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical );
                         m_err[,i] = m_tmp_err;
                     }
                 }
@@ -580,7 +620,24 @@ return(
             }else{
                 m_active_flag_tmp = append( m_feature_selected_flag,matrix( 1,1,1 ) );
             }
-            for( i in 1:ncol( m_err ) ){
+			
+			s_rows_number = i_process_item#nrow(m_err);
+			
+			m_iter_err_sum = colSums(m_err) + m_iter_err_sum
+			m_iter_err_sum_squared = colSums(m_err ^ 2) + m_iter_err_sum_squared
+			
+			m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number
+			m_err_vars = ( m_err_mean ^2 * s_rows_number -
+					2 * m_err_mean * m_iter_err_sum  + m_iter_err_sum_squared) / (s_rows_number-1)
+			m_err_vars = sqrt(m_err_vars)
+			
+            parfor( i in 1:ncol( m_err ) ){
+				#m_err_i_mean = (m_iter_err_sum - m_iter_err_sum[,i])/s_rows_number
+				#m_err_i_vars = (m_iter_err_sum_squared + m_err_i_mean ^2 * s_rows_number -
+				#	2 * m_iter_err_sum * m_err_i_mean) / (s_rows_number-1)
+				#m_err_i_vars = sqrt(m_err_i_vars)
+				#m_err_i_mean = m_err_mean[i,]
+				#m_err_i_vars = m_err_vars[i,]
                 for( j in 1:ncol( m_err ) ){
                     b_execute_block = TRUE;
                     if( j==i ) b_execute_block = FALSE;
@@ -590,8 +647,8 @@ return(
                     #j has dropped, ignore this case
                     if( b_execute_block ){
                         #print( "i=" + i + ",j=" + j );
-                        b_flag = eliminateModel( m_err[,i],m_err[,j] );
-                        if(  b_flag == TRUE ){
+                        b_flag = eliminateModel( as.scalar(m_err_mean[i,j]),as.scalar(m_err_vars[i,j]),s_rows_number);
+						if(  b_flag == TRUE ){
                             m_active_flag_tmp[1,i] = 1;
                         }
                     }
@@ -603,7 +660,7 @@ return(
             if( sum( ppred( m_active_flag_tmp,1,"!=" ) ) > 1 ){
                 b_selected_morethan_one = TRUE;
             }
-            m_col_sums_err = colSums( m_err );
+            m_col_sums_err = m_iter_err_sum #colSums( m_err );
             i_index_min_LOOCV = as.scalar( rowIndexMin( m_col_sums_err ) );
             d_min_LOOCV = as.scalar( m_col_sums_err[1,i_index_min_LOOCV] );
             i_index_min_LOOCV = i_index_min_LOOCV%% ( i_n_column+1 )
@@ -620,9 +677,9 @@ return(
         #select current model, jump out.
         if( i_index_min_LOOCV == 0 ){
             b_continue_main_loop = FALSE;
-            #print( "Select Current model" );
+            print( "Select Current model" );
         }else{
-            #print( "select feature " + i_index_min_LOOCV + ", change bit value to 1" );
+            print( "select feature " + i_index_min_LOOCV + ", change bit value to 1" );
             m_main_selected_flag[1,i_index_min_LOOCV] = 1;
             b_no_feature_selected = FALSE;
         }
@@ -711,8 +768,7 @@ return(
     parfor(i_feature in 1:n_feature, check=0){
         m_feature_select = matrix(1,1,n_feature)
         m_feature_select[1,i_feature] = 0;
-        #m_in_tmp_data = removeEmpty(target=in_m_data,margin="cols",select=m_feature_select)
-        m_in_tmp_data = removeEmpty(target=in_m_data * m_feature_select,margin="cols")
+        m_in_tmp_data = removeEmpty(target=in_m_data,margin="cols", select= m_feature_select)
         m_neighbor_value = getKNeighbor( m_in_tmp_data,m_in_tmp_data,in_m_data_target,k_value);
         m_tmp_err = getErr( m_neighbor_value,in_m_data_target ,in_i_is_categorical );
         m_err[,i_feature] = m_tmp_err

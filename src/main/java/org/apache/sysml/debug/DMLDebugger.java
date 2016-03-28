@@ -293,7 +293,7 @@ public class DMLDebugger
     	    							dbFunctions.print(currEC.getDebugState().getVariables(), variableNameWithoutIndices, "value", rowIndex, colIndex);
     	    						}
     	    						catch(Exception indicesException) {
-    	    							System.err.println("Incorrect fomat for \"p\". If you are trying to print matrix variable M, you can use M[1,] or M[,1] or M[1,1] (without spaces).");
+    	    							System.err.println("Incorrect format for \"p\". If you are trying to print matrix variable M, you can use M[1,] or M[,1] or M[1,1] (without spaces).");
     	    						}
         	    				}
         	    				else {

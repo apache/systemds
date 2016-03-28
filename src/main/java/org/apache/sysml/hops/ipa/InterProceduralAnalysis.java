@@ -31,6 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
@@ -692,7 +693,7 @@ public class InterProceduralAnalysis
 				MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
 				MatrixCharacteristics mc = new MatrixCharacteristics( 
 											input.getDim1(), input.getDim2(), 
-											DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize,
+											ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
 											inputSafeNNZ.contains(input.getHopID())?input.getNnz():-1 );
 				MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
 				mo.setMetaData(meta);	
@@ -873,7 +874,7 @@ public class InterProceduralAnalysis
 		MatrixObject moOut = new MatrixObject(ValueType.DOUBLE, null);
 		MatrixCharacteristics mc = new MatrixCharacteristics( 
 									dim1, dim2,
-									DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize,
+									ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
 									nnz);
 		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
 		moOut.setMetaData(meta);

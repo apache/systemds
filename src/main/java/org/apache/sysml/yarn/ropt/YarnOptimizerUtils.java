@@ -20,7 +20,6 @@
 package org.apache.sysml.yarn.ropt;
 
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 
 public class YarnOptimizerUtils 
@@ -73,7 +72,7 @@ public class YarnOptimizerUtils
 	 */
 	public static int getNumReducers(boolean configOnly, long jobLookupId)
 	{
-		int ret = ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS);
+		int ret = ConfigurationManager.getNumReducers();
 		if( !configOnly )
 			ret = Math.min(ret,YarnClusterAnalyzer.getRemoteParallelReduceTasks(jobLookupId));
 		

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.junit.runners.Parameterized.Parameters;
-
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -280,7 +280,7 @@ public abstract class GLMTest extends AutomatedTestBase
             
         }
         
-        int defaultBlockSize = org.apache.sysml.parser.DMLTranslator.DMLBlockSize;
+        int defaultBlockSize = OptimizerUtils.DEFAULT_BLOCKSIZE;
 
         MatrixCharacteristics mc_X = new MatrixCharacteristics (rows, cols, defaultBlockSize, defaultBlockSize, nnz_in_X);
         writeInputMatrixWithMTD ("X", X, true, mc_X);

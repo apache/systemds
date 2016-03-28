@@ -28,14 +28,13 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
@@ -373,7 +372,7 @@ public abstract class CostEstimator
 			String varname = iinst.output.getName();
 			long rlen = iinst.getRows();
 			long clen = iinst.getCols();
-			VarStats vs = new VarStats(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, rlen*clen, true);
+			VarStats vs = new VarStats(rlen, clen, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), rlen*clen, true);
 			stats.put(varname, vs);	
 		}
 		else if( inst instanceof FunctionCallCPInstruction )
@@ -420,8 +419,8 @@ public abstract class CostEstimator
 			{				
 				String[] parts = InstructionUtils.getInstructionParts(st.nextToken());
 				byte outIndex = Byte.parseByte(parts[2]);
-				long rlen = parts[3].contains("##")?-1:UtilFunctions.parseToLong(parts[3]);
-				long clen = parts[4].contains("##")?-1:UtilFunctions.parseToLong(parts[4]);
+				long rlen = parts[3].contains(Lop.VARIABLE_NAME_PLACEHOLDER)?-1:UtilFunctions.parseToLong(parts[3]);
+				long clen = parts[4].contains(Lop.VARIABLE_NAME_PLACEHOLDER)?-1:UtilFunctions.parseToLong(parts[4]);
 				long brlen = Long.parseLong(parts[5]);
 				long bclen = Long.parseLong(parts[6]);
 				long nnz = (long) (Double.parseDouble(parts[9]) * rlen * clen);
@@ -502,10 +501,10 @@ public abstract class CostEstimator
 	protected String replaceInstructionPatch( String inst )
 	{
 		String ret = inst;
-		while( ret.contains("##") ) {
-			int index1 = ret.indexOf("##");
-			int index2 = ret.indexOf("##", index1+3);
-			String replace = ret.substring(index1,index2+2);
+		while( ret.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
+			int index1 = ret.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER);
+			int index2 = ret.indexOf(Lop.VARIABLE_NAME_PLACEHOLDER, index1+1);
+			String replace = ret.substring(index1,index2+1);
 			ret = ret.replaceAll(replace, "1");
 		}
 		
@@ -623,7 +622,7 @@ public abstract class CostEstimator
 				attr = new String[]{String.valueOf(paramsMap.get("margin").equals("rows")?0:1)};
 			}
 				
-			vs[0] = stats.get( parts[1].substring(7).replaceAll("##", "") );
+			vs[0] = stats.get( parts[1].substring(7).replaceAll(Lop.VARIABLE_NAME_PLACEHOLDER, "") );
 			vs[1] = _unknownStats; //TODO
 			vs[2] = stats.get( parts[parts.length-1] );
 			

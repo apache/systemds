@@ -958,14 +958,9 @@ public class LibMatrixBincell
 						SparseRow crow = new SparseRow(alen);
 						crow.setSize(alen);
 						
-						//memcopy/memset of indexes and values
-						//note: currently we do a safe copy of values because in special cases there
-						//might exist zeros in a sparserow and we need to ensure result correctness
+						//memcopy/memset of indexes/values (sparseblock guarantees absence of 0s) 
 						System.arraycopy(aix, apos, crow.indexes(), 0, alen);
-						//Arrays.fill(crow.getValueContainer(), 0, alen, 1);
-						double[] cvals = crow.values();
-						for(int j=0; j<alen; j++)
-							cvals[j] = (avals[apos+j] != 0) ? 1 : 0;
+						Arrays.fill(crow.values(), 0, alen, 1);
 						c.set(r, crow, false);
 						ret.nonZeros+=alen;
 					}

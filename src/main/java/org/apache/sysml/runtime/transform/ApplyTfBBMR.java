@@ -27,7 +27,6 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.instructions.InstructionParser;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
@@ -56,7 +55,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 @SuppressWarnings("deprecation")
 public class ApplyTfBBMR {
 	
-	public static JobReturn runJob(String inputPath, String rblkInst, String otherInst, String specPath, String mapsPath, String tmpPath, String outputPath, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numRows, long numColsBefore, long numColsAfter, int replication, String headerLine) throws Exception {
+	public static JobReturn runJob(String inputPath, String rblkInst, String otherInst, String spec, String mapsPath, String tmpPath, String outputPath, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numRows, long numColsBefore, long numColsAfter, int replication, String headerLine) throws Exception {
 		
 		CSVReblockInstruction rblk = (CSVReblockInstruction) InstructionParser.parseSingleInstruction(rblkInst);
 		
@@ -100,7 +99,7 @@ public class ApplyTfBBMR {
 				null, rblkInst, null, null, null, resultIndexes, mapoutputIndexes, false);
 
 		//set up the number of reducers
-		int numRed = WriteCSVMR.determineNumReducers(rlens, clens, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS), ret.numReducerGroups);
+		int numRed = WriteCSVMR.determineNumReducers(rlens, clens, ConfigurationManager.getNumReducers(), ret.numReducerGroups);
 		job.setNumReduceTasks( numRed );
 
 		//set up the multiple output files, and their format information
@@ -130,10 +129,10 @@ public class ApplyTfBBMR {
 		
 		job.set(MRJobConfiguration.TF_HAS_HEADER, 	Boolean.toString(inputDataProperties.hasHeader()));
 		job.set(MRJobConfiguration.TF_DELIM, 		inputDataProperties.getDelim());
-		if ( inputDataProperties.getNAStrings() != null)
-			// Adding "dummy" string to handle the case of na_strings = ""
+		// Adding "dummy" string to handle the case of na_strings = ""
+		if( inputDataProperties.getNAStrings() != null )
 			job.set(MRJobConfiguration.TF_NA_STRINGS, TfUtils.prepNAStrings(inputDataProperties.getNAStrings()) );
-		job.set(MRJobConfiguration.TF_SPEC_FILE, 	specPath);
+		job.set(MRJobConfiguration.TF_SPEC, spec);
 		job.set(MRJobConfiguration.TF_SMALLEST_FILE, CSVReblockMR.findSmallestFile(job, inputPath));
 		job.set(MRJobConfiguration.OUTPUT_MATRICES_DIRS_CONFIG, outputPath);
 		job.setLong(MRJobConfiguration.TF_NUM_COLS, numColsBefore);

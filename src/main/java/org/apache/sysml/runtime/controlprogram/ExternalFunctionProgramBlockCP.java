@@ -22,7 +22,7 @@ package org.apache.sysml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -164,7 +164,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		
 		if( ret == null ) //otherwise, pass in-memory matrix from extfunct back to invoking program
 		{
-			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+			MatrixCharacteristics mc = new MatrixCharacteristics(m.getNumRows(),m.getNumCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 			MatrixFormatMetaData mfmd = new MatrixFormatMetaData(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			ret = new MatrixObject(ValueType.DOUBLE, m.getFilePath(), mfmd);
 		}

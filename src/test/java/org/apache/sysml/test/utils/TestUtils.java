@@ -44,8 +44,6 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Random;
 import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -87,9 +85,6 @@ public class TestUtils
 	/** internal buffer to store assertion information */
 	private static ArrayList<String> _AssertInfos = new ArrayList<String>();
 	private static boolean _AssertOccured = false;
-
-	/** String used to replace variables in scripts */
-	private static String _RS = "\\$\\$";
 
 	/**
 	 * <p>
@@ -1630,65 +1625,6 @@ public class TestUtils
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to write test matrix: " + e.getMessage());
-		}
-	}
-
-	/**
-	 * <p>
-	 * Replaces variables in a DML or R script with the specified values. A
-	 * variable of format ##name## will be replaced where the name is used to
-	 * identify the variable in the hashmap containing the belonging value.
-	 * </p>
-	 * 
-	 * @param strScriptDirectory
-	 *            directory which contains the DML script
-	 * @param strScriptFile
-	 *            filename of the DML script
-	 * @param variables
-	 *            hashmap containing all the variables and their replacements
-	 * @deprecated Use ParameterBuilder.setVariablesInScript instead
-	 */
-	public static void setVariablesInScript(String strScriptDirectory, String strScriptFile,
-			HashMap<String, String> variables) {
-		try {
-			String strScript = strScriptDirectory + strScriptFile;
-			String strTmpScript = strScript + "t";
-
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(strScript)));
-			FileOutputStream out = new FileOutputStream(strTmpScript);
-			PrintWriter pw = new PrintWriter(out);
-			String content;
-			Pattern unresolvedVars = Pattern.compile(_RS + ".*" + _RS);
-			/**
-			 * sothat variables, which were not assigned, are replaced by an
-			 * empty string
-			 */
-			while ((content = in.readLine()) != null) {
-				for (String variable : variables.keySet()) {
-					Pattern pattern = Pattern.compile(_RS + variable + _RS);
-					Matcher matcher = pattern.matcher(content);
-					while (matcher.find()) {
-						content = content.replaceFirst(matcher.group().replace("$", "\\$"), variables.get(variable));
-					}
-				}
-				Matcher matcher = unresolvedVars.matcher(content);
-				content = matcher.replaceAll("");
-				pw.println(content);
-			}
-			pw.close();
-			out.close();
-			in.close();
-
-			/*
-			 * // remove checksum files if created Path crcFile = new
-			 * Path(dmlScriptDirectory + "." + dmlScriptFile + ".crc"); if
-			 * (fs.exists(crcFile)) fs.delete(crcFile, false); crcFile = new
-			 * Path(dmlScriptDirectory + "." + dmlScriptFile + "t.crc"); if
-			 * (fs.exists(crcFile)) fs.delete(crcFile, false);
-			 */
-		} catch (IOException e) {
-			e.printStackTrace();
-			fail("unable to set variables in dml script: " + e.getMessage());
 		}
 	}
 

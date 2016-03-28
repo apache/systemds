@@ -184,7 +184,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 			loadTestConfiguration(testConfig);
 			
 			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
-			ConfigurationManager.setConfig(conf);
+			ConfigurationManager.setLocalConfig(conf);
 			
 			String dmlScriptString="";
 			HashMap<String, String> argVals = new HashMap<String,String>();

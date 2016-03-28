@@ -270,32 +270,26 @@ public class DMLDebuggerFunctions {
 			if (variables.get(varname) != null) {
 				if (variables.get(varname).getDataType() == DataType.SCALAR) {
 					Data value;
-					//try {
-						switch(variables.get(varname).getValueType()) {
-							case DOUBLE:
-								double d = Double.parseDouble(args[1]);
-								value = (ScalarObject) new DoubleObject(d);
-								break;
-							case INT:
-								long i = Long.parseLong(args[1]);
-								value = (ScalarObject) new IntObject(i);
-								break;
-							case BOOLEAN:
-								boolean b = Boolean.parseBoolean(args[1]);
-								value = (ScalarObject) new BooleanObject(b);
-								break;
-							case STRING:
-								value = (ScalarObject) new StringObject(args[1]);
-								break;
-							default:
-								System.err.println("Invalid scalar value type.");
-								return;
-						}
-					//} 
-//					catch (Exception e) {
-//						System.err.println("Error processing set scalar value command for variable"+varname+".");
-//						return;
-//					}
+					switch(variables.get(varname).getValueType()) {
+						case DOUBLE:
+							double d = Double.parseDouble(args[1]);
+							value = (ScalarObject) new DoubleObject(d);
+							break;
+						case INT:
+							long i = Long.parseLong(args[1]);
+							value = (ScalarObject) new IntObject(i);
+							break;
+						case BOOLEAN:
+							boolean b = Boolean.parseBoolean(args[1]);
+							value = (ScalarObject) new BooleanObject(b);
+							break;
+						case STRING:
+							value = (ScalarObject) new StringObject(args[1]);
+							break;
+						default:
+							System.err.println("Invalid scalar value type.");
+							return;
+					}
 					variables.put(varname, value);
 					System.out.println(varname + " = " + variables.get(varname).toString());
 				}
@@ -334,7 +328,7 @@ public class DMLDebuggerFunctions {
 							return;
 						}
 						
-						if(displayFunction.compareTo("value") == 0) {
+						if(displayFunction.equals("value")) {
 							MatrixBlock mb = null;
 							try {
 								// Only read the MatrixBlock when asked to print, but not for whatis
@@ -347,14 +341,14 @@ public class DMLDebuggerFunctions {
 								return;
 							}
 						}
-						else if(displayFunction.compareTo("metadata") == 0) {
+						else if(displayFunction.equals("metadata")) {
 							System.out.println("Metadata of " + varname + ": matrix"+variables.get(varname).getMetaData().toString());
 						}
 						
 												
 					} catch (Exception e) {
 						String command = "";
-						if(displayFunction.compareTo("value") == 0) {
+						if(displayFunction.equals("value")) {
 							command = "print";
 						}
 						else {
@@ -365,10 +359,10 @@ public class DMLDebuggerFunctions {
 					}
 				}
 				else if (variables.get(varname).getDataType() == DataType.SCALAR) {
-					if(displayFunction.compareTo("value") == 0) {
+					if(displayFunction.equals("value")) {
 						System.out.println(varname + " = " + variables.get(varname).toString());
 					}
-					else if(displayFunction.compareTo("metadata") == 0) {
+					else if(displayFunction.equals("metadata")) {
 						System.out.println("Metadata of " + varname + ": DataType.SCALAR");
 					}
 				}
@@ -637,17 +631,15 @@ public class DMLDebuggerFunctions {
 		}
 		else if(rowIndex >= 0) {
 			// Print a row
-			//for(int i=0; i<min(mb.getNumRows(), DISPLAY_MAX_ROWS); i++) {
-				for(int j=0; j<min(mb.getNumColumns(), DISPLAY_MAX_COLUMNS); j++) {
-					System.out.format("%.4f\t", mb.quickGetValue(rowIndex-1, j));
-				}
-				System.out.println();
-				if (mb.getNumColumns() > DISPLAY_MAX_COLUMNS) {
-					System.out.format("WARNING: the row of given DML matrix/vector is too large to display on the screen."
-							+ "\nOnly a snapshot of %d column(s) is being displayed.\n", 
-							min(mb.getNumColumns(), DISPLAY_MAX_COLUMNS));
-				}
-			//}
+			for(int j=0; j<min(mb.getNumColumns(), DISPLAY_MAX_COLUMNS); j++) {
+				System.out.format("%.4f\t", mb.quickGetValue(rowIndex-1, j));
+			}
+			System.out.println();
+			if (mb.getNumColumns() > DISPLAY_MAX_COLUMNS) {
+				System.out.format("WARNING: the row of given DML matrix/vector is too large to display on the screen."
+						+ "\nOnly a snapshot of %d column(s) is being displayed.\n", 
+						min(mb.getNumColumns(), DISPLAY_MAX_COLUMNS));
+			}
 		}
 		else if(colIndex >= 0) {
 			// Print a column

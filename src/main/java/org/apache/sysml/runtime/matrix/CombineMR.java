@@ -196,8 +196,8 @@ public class CombineMR
 					{
 						Pair<Integer, Integer> blockSize=outputBlockSizes.get(ins.output);
 						keyBuff.setIndexes(
-								UtilFunctions.cellIndexCalculation(in1.getIndexes().getRowIndex(), blockSize.getKey(), r),
-								UtilFunctions.cellIndexCalculation(in1.getIndexes().getColumnIndex(), blockSize.getValue(), c)
+								UtilFunctions.computeCellIndex(in1.getIndexes().getRowIndex(), blockSize.getKey(), r),
+								UtilFunctions.computeCellIndex(in1.getIndexes().getColumnIndex(), blockSize.getValue(), c)
 								);
 						valueBuff.setValue(in1.getValue().getValue(r, c));
 						valueBuff.setOtherValue(in2.getValue().getValue(r, c));
@@ -259,8 +259,8 @@ public class CombineMR
 					{
 						Pair<Integer, Integer> blockSize=outputBlockSizes.get(ins.output);
 						keyBuff.setIndexes(
-								UtilFunctions.cellIndexCalculation(indexes.getRowIndex(), blockSize.getKey(), r),
-								UtilFunctions.cellIndexCalculation(indexes.getColumnIndex(), blockSize.getValue(), c)
+								UtilFunctions.computeCellIndex(indexes.getRowIndex(), blockSize.getKey(), r),
+								UtilFunctions.computeCellIndex(indexes.getColumnIndex(), blockSize.getValue(), c)
 								);
 						valueBuff.setValue(in1.getValue().getValue(r, c));
 						double temp=in2.getValue().getValue(r, c);
@@ -332,7 +332,7 @@ public class CombineMR
 		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 
 		//set up custom map/reduce configurations 
-		DMLConfig config = ConfigurationManager.getConfig();
+		DMLConfig config = ConfigurationManager.getDMLConfig();
 		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		//set up what matrices are needed to pass from the mapper to reducer

@@ -22,8 +22,10 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
+import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
 /**
  * General purpose copy function for binary block rdds. This function can be used in
@@ -51,8 +53,13 @@ public class CopyBlockPairFunction implements PairFunction<Tuple2<MatrixIndexes,
 	{	
 		if( _deepCopy ) {
 			MatrixIndexes ix = new MatrixIndexes(arg0._1());
-			MatrixBlock block = new MatrixBlock();
-			block.copy(arg0._2());
+			MatrixBlock block = null;
+			//always create deep copies in more memory-efficient CSR representation 
+			//if block is already in sparse format			
+			if( Checkpoint.CHECKPOINT_SPARSE_CSR && arg0._2.isInSparseFormat() )
+				block = new MatrixBlock(arg0._2, SparseBlock.Type.CSR, true);
+			else
+				block = new MatrixBlock(arg0._2());
 			return new Tuple2<MatrixIndexes,MatrixBlock>(ix,block);
 		}
 		else {

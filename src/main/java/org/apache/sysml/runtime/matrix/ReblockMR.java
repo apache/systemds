@@ -114,7 +114,7 @@ public class ReblockMR
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 		
 		//set up custom map/reduce configurations 
-		DMLConfig config = ConfigurationManager.getConfig();
+		DMLConfig config = ConfigurationManager.getDMLConfig();
 		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		//enable jvm reuse (based on SystemML configuration)

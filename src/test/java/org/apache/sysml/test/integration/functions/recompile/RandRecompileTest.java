@@ -21,7 +21,7 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import org.junit.Assert;
 import org.junit.Test;
-
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -113,7 +113,7 @@ public class RandRecompileTest extends AutomatedTestBase
 	
 	private void runRandTest( String testName, boolean recompile, boolean IPA )
 	{	
-		boolean oldFlagRecompile = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
+		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		boolean oldFlagRand1 = OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE;
@@ -132,7 +132,7 @@ public class RandRecompileTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + testName + ".dml";
 			programArgs = new String[]{"-args", Integer.toString(rows), Integer.toString(cols) };
 			
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
+			CompilerConfig.FLAG_DYN_RECOMPILE = recompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 			
 			//disable rand specific recompile
@@ -160,7 +160,7 @@ public class RandRecompileTest extends AutomatedTestBase
 		}
 		finally
 		{
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlagRecompile;
+			CompilerConfig.FLAG_DYN_RECOMPILE = oldFlagRecompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 			
 			OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE = oldFlagRand1;

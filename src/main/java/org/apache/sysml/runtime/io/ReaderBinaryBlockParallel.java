@@ -31,12 +31,13 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
-
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 
 
@@ -55,7 +56,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		throws IOException, DMLRuntimeException 
 	{	
 		//allocate output matrix block (incl block allocation for parallel)
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, estnnz, true, true);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, brlen, bclen, estnnz, true, true);
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
@@ -112,7 +113,6 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 
 			//wait until all tasks have been executed
 			List<Future<Object>> rt = pool.invokeAll(tasks);	
-			pool.shutdown();
 			
 			//check for exceptions and aggregate nnz
 			long lnnz = 0;
@@ -121,10 +121,16 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			
 			//post-processing
 			dest.setNonZeros( lnnz );
-			if( dest.isInSparseFormat() && clen>bclen ){
-				//no need to sort if 1 column block since always sorted
-				dest.sortSparseRows();
-			}			
+			if( dest.isInSparseFormat() && clen>bclen ) {
+				//need to sort if multiple column block; otherwise always sorted
+				ArrayList<SortRowsTask> tasks2 = new ArrayList<SortRowsTask>();
+				int blklen = (int)(Math.ceil((double)rlen/_numThreads));
+				for( int i=0; i<_numThreads & i*blklen<rlen; i++ )
+					tasks2.add(new SortRowsTask(dest, i*blklen, Math.min((i+1)*blklen, (int)rlen)));
+				pool.invokeAll(tasks2);
+			}
+			
+			pool.shutdown();
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of binary block input.", e);
@@ -196,18 +202,29 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 					{
 						//note: append requires final sort
 						if (cols < _clen ) {
-							synchronized( _dest ){ //sparse requires lock, when matrix is wider than one block
-								_dest.appendToSparse(value, row_offset, col_offset);
+							//sparse requires lock, when matrix is wider than one block
+							//(fine-grained locking of block rows instead of the entire matrix)
+							//NOTE: fine-grained locking depends on MCSR SparseRow objects 
+							SparseBlock sblock = _dest.getSparseBlock();
+							if( sblock instanceof SparseBlockMCSR && sblock.get(row_offset) != null ) {
+								synchronized( sblock.get(row_offset) ){ 
+									_dest.appendToSparse(value, row_offset, col_offset);
+								}
+							}
+							else {
+								synchronized( _dest ){ 
+									_dest.appendToSparse(value, row_offset, col_offset);
+								}
 							}
 						}
-						else
+						else { //quickpath (no synchronization)
 							_dest.appendToSparse(value, row_offset, col_offset);
+						}
 					} 
 					else
 					{
 						_dest.copy( row_offset, row_offset+rows-1, 
-								   col_offset, col_offset+cols-1,
-								   value, false );
+								   col_offset, col_offset+cols-1, value, false );
 					}
 					
 					//aggregate nnz
@@ -220,6 +237,29 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			}
 			
 			return lnnz;
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private static class SortRowsTask implements Callable<Object> 
+	{
+		private MatrixBlock _dest = null;
+		private int _rl = -1;
+		private int _ru = -1;
+		
+		public SortRowsTask(MatrixBlock dest, int rl, int ru) {
+			_dest = dest;
+			_rl = rl;
+			_ru = ru;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			for( int i=_rl; i<_ru; i++ )
+				_dest.getSparseBlock().sort(i);
+			return null;
 		}
 	}
 }

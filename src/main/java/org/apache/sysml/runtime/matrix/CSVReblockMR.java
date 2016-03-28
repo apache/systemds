@@ -291,7 +291,7 @@ public class CSVReblockMR
 
 		
 	public static AssignRowIDMRReturn runAssignRowIDMRJob(String[] inputs, InputInfo[] inputInfos, int[] brlens, int[] bclens, 
-			String reblockInstructions, int replication, String[] smallestFiles, boolean transform, String naStrings, String specFile) 
+			String reblockInstructions, int replication, String[] smallestFiles, boolean transform, String naStrings, String spec) 
 	throws Exception
 	{
 		AssignRowIDMRReturn ret=new AssignRowIDMRReturn();
@@ -316,7 +316,7 @@ public class CSVReblockMR
 		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 
 		//set up custom map/reduce configurations 
-		DMLConfig config = ConfigurationManager.getConfig();
+		DMLConfig config = ConfigurationManager.getDMLConfig();
 		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		//set up the number of reducers
@@ -354,7 +354,7 @@ public class CSVReblockMR
 			if ( naStrings != null)
 				// Adding "dummy" string to handle the case of na_strings = ""
 				job.set(MRJobConfiguration.TF_NA_STRINGS, TfUtils.prepNAStrings(naStrings) );
-			job.set(MRJobConfiguration.TF_SPEC_FILE, specFile);
+			job.set(MRJobConfiguration.TF_SPEC, spec);
 		}
 		
 		RunningJob runjob=JobClient.runJob(job);
@@ -412,7 +412,7 @@ public class CSVReblockMR
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 
 		//set up custom map/reduce configurations 
-		DMLConfig config = ConfigurationManager.getConfig();
+		DMLConfig config = ConfigurationManager.getDMLConfig();
 		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		//set up what matrices are needed to pass from the mapper to reducer

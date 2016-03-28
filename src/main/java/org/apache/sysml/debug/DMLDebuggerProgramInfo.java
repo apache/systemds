@@ -24,9 +24,7 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
@@ -48,17 +46,10 @@ import org.apache.sysml.runtime.instructions.spark.SPInstruction;
  */
 public class DMLDebuggerProgramInfo 
 {
-	
-	public DMLConfig conf; //DML configuration information
-	public DMLProgram prog; //DML program representation 
-	public DMLTranslator dmlt; //DML program hops and lops, rewrites
 	public Program rtprog; //DML runtime program
-
 	private TreeMap<Integer, ArrayList<Instruction>> disassembler; //map between DML program line numbers and corresponding runtime instruction(s)
-	
 	private int prevLineNum = 0; //used for approximating line numbers for instructions (if necessary)  
-	private long instID = 1; //runtime instruction ID
-	
+	private long instID = 1; //runtime instruction ID	
 	private String location=null; //DML program namespace and function name
 	
 	/**

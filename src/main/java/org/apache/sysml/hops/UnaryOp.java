@@ -21,6 +21,8 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
 import org.apache.sysml.lops.CombineUnary;
@@ -47,11 +49,12 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
  * 		Semantic: given a value, perform the operation (independent of other values)
  */
 
-public class UnaryOp extends Hop 
+public class UnaryOp extends Hop implements MultiThreadedHop
 {
-
 	private OpOp1 _op = null;
-
+	
+	private int _maxNumThreads = -1; //-1 for unlimited
+	
 	
 	private UnaryOp() {
 		//default constructor for clone
@@ -96,6 +99,16 @@ public class UnaryOp extends Hop
 		return s;
 	}
 
+	@Override
+	public void setMaxNumThreads( int k ) {
+		_maxNumThreads = k;
+	}
+	
+	@Override
+	public int getMaxNumThreads() {
+		return _maxNumThreads;
+	}
+	
 	@Override
 	public Lop constructLops()
 		throws HopsException, LopsException 
@@ -149,8 +162,9 @@ public class UnaryOp extends Hop
 				}
 				else //default unary 
 				{
+					int k = isCumulativeUnaryOperation() ? OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;					
 					Unary unary1 = new Unary(input.constructLops(), HopsOpOp1LopsU.get(_op), 
-							                 getDataType(), getValueType(), et);
+							                 getDataType(), getValueType(), et, k);
 					setOutputDimensions(unary1);
 					setLineNumbers(unary1);
 					setLops(unary1);
@@ -397,8 +411,9 @@ public class UnaryOp extends Hop
 		}
 		
 		//in-memory cum sum (of partial aggregates)
-		if( TEMP.getOutputParameters().getNumRows()!=1 ){
-			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP);
+		if( TEMP.getOutputParameters().getNumRows()!=1 ) {
+			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );					
+			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP, k);
 			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;
@@ -472,7 +487,8 @@ public class UnaryOp extends Hop
 		
 		//in-memory cum sum (of partial aggregates)
 		if( TEMP.getOutputParameters().getNumRows()!=1 ){
-			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP);
+			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );					
+			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP, k);
 			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;
@@ -670,7 +686,7 @@ public class UnaryOp extends Hop
 		}
 		
 		//mark for recompile (forever)
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
+		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
 			setRequiresRecompile();
 
 		//ensure cp exec type for single-node operations

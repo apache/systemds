@@ -26,9 +26,7 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -70,31 +68,18 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 
 public class DMLTranslator 
 {
-	
-	public static int DMLBlockSize = 1000;
-	
 	private static final Log LOG = LogFactory.getLog(DMLTranslator.class.getName());
 	private DMLProgram _dmlProg = null;
-	
 	
 	public DMLTranslator(DMLProgram dmlp) 
 		throws DMLRuntimeException 
 	{
 		_dmlProg = dmlp;
 		
-		//each script sets its own block size, opt level etc
-		DMLConfig conf = ConfigurationManager.getConfig();
-		DMLTranslator.setDMLBlockSize( conf.getIntValue( DMLConfig.DEFAULT_BLOCK_SIZE ) );	
-		OptimizerUtils.setOptimizationLevel( conf.getIntValue(DMLConfig.OPTIMIZATION_LEVEL) );
-		Recompiler.reinitRecompiler(); //reinit rewriter according to opt level flags
-	}
-
-	/**
-	 * 
-	 * @param blocksize
-	 */
-	public static void setDMLBlockSize(int blocksize) {
-		DMLBlockSize = blocksize;
+		//setup default size for unknown dimensions
+		OptimizerUtils.resetDefaultSize();
+		//reinit rewriter according to opt level flags
+		Recompiler.reinitRecompiler(); 
 	}
 	
 	/**
@@ -1022,7 +1007,7 @@ public class DMLTranslator
 						
 					case BINARY:
 						// write output in binary block format
-					    ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateInPlace(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+					    ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateInPlace(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 					    break;
 						
 						default:
@@ -1097,11 +1082,10 @@ public class DMLTranslator
 						
 						// preserve data type matrix of any index identifier
 						// (required for scalar input to left indexing)					
-						// TODO Doug, please verify this (required for scalar assignments, otherwise TWrite of LIX target becomes scalar as well)
 						if( target.getDataType() != DataType.MATRIX ) {
 							target.setDataType(DataType.MATRIX);
 							target.setValueType(ValueType.DOUBLE);
-							target.setBlockDimensions(DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+							target.setBlockDimensions(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 						}
 						
 						Integer statementId = liveOutToTemp.get(target.getName());
@@ -1983,6 +1967,21 @@ public class DMLTranslator
 									target.getValueType(), ParamBuiltinOp.TRANSFORM, 
 									paramHops);
 			break;	
+		
+		case TRANSFORMAPPLY:
+			currBuiltinOp = new ParameterizedBuiltinOp(
+									target.getName(), target.getDataType(), 
+									target.getValueType(), ParamBuiltinOp.TRANSFORMAPPLY, 
+									paramHops);
+			break;	
+		
+		case TRANSFORMDECODE:
+			currBuiltinOp = new ParameterizedBuiltinOp(
+									target.getName(), target.getDataType(), 
+									target.getValueType(), ParamBuiltinOp.TRANSFORMDECODE, 
+									paramHops);
+			break;	
+			
 			
 		default:
 			

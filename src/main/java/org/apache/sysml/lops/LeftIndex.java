@@ -137,41 +137,6 @@ public class LeftIndex extends Lop
 		return sb.toString();
 	}
 
-/*	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int output_index)
-			throws LopsException {
-		
-		 * Example: B = A[row_l:row_u, col_l:col_u]
-		 * A - input matrix (input_index1)
-		 * row_l - lower bound in row dimension
-		 * row_u - upper bound in row dimension
-		 * col_l - lower bound in column dimension
-		 * col_u - upper bound in column dimension
-		 * 
-		 * Since row_l,row_u,col_l,col_u are scalars, values for input_index(2,3,4,5) 
-		 * will be equal to -1. They should be ignored and the scalar value labels must
-		 * be derived from input lops.
-		 
-		String rowl = this.getInputs().get(1).getOutputParameters().getLabel();
-		if (this.getInputs().get(1).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(1)).isLiteral())
-			rowl = "##" + rowl + "##";
-		String rowu = this.getInputs().get(2).getOutputParameters().getLabel();
-		if (this.getInputs().get(2).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(2)).isLiteral())
-			rowu = "##" + rowu + "##";
-		String coll = this.getInputs().get(3).getOutputParameters().getLabel();
-		if (this.getInputs().get(3).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(3)).isLiteral())
-			coll = "##" + coll + "##";
-		String colu = this.getInputs().get(4).getOutputParameters().getLabel();
-		if (this.getInputs().get(4).getExecLocation() != ExecLocation.Data
-				|| !((Data) this.getInputs().get(4)).isLiteral())
-			colu = "##" + colu + "##";
-		
-		return getInstructions(Integer.toString(input_index1), rowl, rowu, coll, colu, Integer.toString(output_index));
-	}
-*/
 	@Override
 	public String toString() {
 		return "leftIndex";

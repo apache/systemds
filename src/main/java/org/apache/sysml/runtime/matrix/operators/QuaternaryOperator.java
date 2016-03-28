@@ -43,6 +43,8 @@ public class QuaternaryOperator extends Operator
 	
 	public ValueFunction fn;
 	
+	private double eps = 0;
+
 	/**
 	 * wsloss
 	 * 
@@ -72,12 +74,32 @@ public class QuaternaryOperator extends Operator
 	}
 	
 	/**
+	 * wdivmm w/epsilon
+	 * 
+	 * @param wt
+	 */
+	public QuaternaryOperator( WDivMMType wt, double epsilon) {
+		wtype3 = wt;
+		eps = epsilon;
+	}
+	
+	/**
 	 * wcemm
 	 * 
 	 * @param wt
 	 */
 	public QuaternaryOperator( WCeMMType wt ) {
 		wtype4 = wt;
+	}
+	
+	/**
+	 * wcemm w/epsilon
+	 * 
+	 * @param wt
+	 */
+	public QuaternaryOperator( WCeMMType wt, double epsilon) {
+		wtype4 = wt;
+		eps = epsilon;
 	}
 	
 	/**
@@ -103,6 +125,16 @@ public class QuaternaryOperator extends Operator
 	 */
 	public boolean hasFourInputs() {
 		return (wtype1 != null && wtype1.hasFourInputs())
-			|| (wtype3 != null && wtype3.hasFourInputs());
+			|| (wtype3 != null && wtype3.hasFourInputs())
+			|| (wtype4 != null && wtype4.hasFourInputs());
 	}
+	
+	/**
+	 * 
+	 * @return epsilon
+	 */
+	public double getScalar() {
+		return eps;
+	}
+
 }

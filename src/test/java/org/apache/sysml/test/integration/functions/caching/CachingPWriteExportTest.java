@@ -21,9 +21,8 @@ package org.apache.sysml.test.integration.functions.caching;
 
 import org.junit.Assert;
 import org.junit.Test;
-
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -97,7 +96,7 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 			else
 				ii = InputInfo.TextCellInputInfo;
 			
-			MatrixBlock mb = DataConverter.readMatrixFromHDFS(output("V"), ii, rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, sparsity);
+			MatrixBlock mb = DataConverter.readMatrixFromHDFS(output("V"), ii, rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, sparsity);
 			Vp = DataConverter.convertToDoubleMatrix(mb);
 		}
 		catch(Exception ex)

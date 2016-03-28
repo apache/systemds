@@ -177,8 +177,8 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 	 */
 	private double lookupKey(JavaPairRDD<MatrixIndexes,MatrixBlock> in, long key, int brlen)
 	{
-		long rix = UtilFunctions.blockIndexCalculation(key, brlen);
-		long pos = UtilFunctions.cellInBlockCalculation(key, brlen);		
+		long rix = UtilFunctions.computeBlockIndex(key, brlen);
+		long pos = UtilFunctions.computeCellInBlock(key, brlen);		
 				
 		List<MatrixBlock> val = in.lookup(new MatrixIndexes(rix,1));
 		return val.get(0).quickGetValue((int)pos, 0);
@@ -211,8 +211,8 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 		
 		public FilterFunction(long key25, long key75, int brlen)
 		{
-			_minRowIndex = UtilFunctions.blockIndexCalculation(key25, brlen);
-			_maxRowIndex = UtilFunctions.blockIndexCalculation(key75, brlen);
+			_minRowIndex = UtilFunctions.computeBlockIndex(key25, brlen);
+			_maxRowIndex = UtilFunctions.computeBlockIndex(key75, brlen);
 		}
 
 		@Override
@@ -239,10 +239,10 @@ public class QuantilePickSPInstruction extends BinarySPInstruction
 		
 		public ExtractAndSumFunction(long key25, long key75, int brlen)
 		{
-			_minRowIndex = UtilFunctions.blockIndexCalculation(key25, brlen);
-			_maxRowIndex = UtilFunctions.blockIndexCalculation(key75, brlen);
-			_minPos = UtilFunctions.cellInBlockCalculation(key25, brlen);
-			_maxPos = UtilFunctions.cellInBlockCalculation(key75, brlen);
+			_minRowIndex = UtilFunctions.computeBlockIndex(key25, brlen);
+			_maxRowIndex = UtilFunctions.computeBlockIndex(key75, brlen);
+			_minPos = UtilFunctions.computeCellInBlock(key25, brlen);
+			_maxPos = UtilFunctions.computeCellInBlock(key75, brlen);
 		}
 		
 		@Override

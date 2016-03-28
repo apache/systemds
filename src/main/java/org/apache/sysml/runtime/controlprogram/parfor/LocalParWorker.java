@@ -21,6 +21,8 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.util.Collection;
 
+import org.apache.sysml.conf.CompilerConfig;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
@@ -41,16 +43,18 @@ public class LocalParWorker extends ParWorker implements Runnable
 	
 	protected Collection<String> _fnNames = null;
 	
+	protected CompilerConfig _cconf  = null;
 	protected boolean   _stopped     = false;
 	protected int 		_max_retry   = -1;
 	
-	public LocalParWorker( long ID, LocalTaskQueue<Task> q, ParForBody body, int max_retry, boolean monitor )	
+	public LocalParWorker( long ID, LocalTaskQueue<Task> q, ParForBody body, CompilerConfig cconf, int max_retry, boolean monitor )	
 	{
 		super(ID, body, monitor);
 
 		_taskQueue = q;
-		_stopped   = false;
 		
+		_cconf = cconf;
+		_stopped   = false;
 		_max_retry = max_retry;
 	}
 	
@@ -81,6 +85,9 @@ public class LocalParWorker extends ParWorker implements Runnable
 			SparkExecutionContext sec = (SparkExecutionContext)_ec;
 			sec.setThreadLocalSchedulerPool("parforPool"+_workerID);
 		}
+		
+		//setup compiler config for worker thread
+		ConfigurationManager.setLocalConfig(_cconf);
 		
 		// continuous execution (execute tasks until (1) stopped or (2) no more tasks)
 		Task lTask = null; 

@@ -178,7 +178,7 @@ public class RunMRJobs
 			String shuffleInst = inst.getIv_shuffleInstructions();
 			String aggInst = inst.getIv_aggInstructions();
 			String otherInst = inst.getIv_otherInstructions();
-			boolean jvmReuse = ConfigurationManager.getConfig().getBooleanValue(DMLConfig.JVM_REUSE);
+			boolean jvmReuse = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.JVM_REUSE);
 			
 			switch(inst.getJobType()) {
 			
@@ -193,7 +193,7 @@ public class RunMRJobs
 				 break;
 
 			case DATAGEN:
-				if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION
+				if(    ConfigurationManager.isDynamicRecompilation()
 					&& OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE
 					&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
 					&& Recompiler.checkCPDataGen( inst, rdInst ) ) 
@@ -229,7 +229,7 @@ public class RunMRJobs
 			
 			case REBLOCK:
 			case CSV_REBLOCK:
-				if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION 
+				if(    ConfigurationManager.isDynamicRecompilation() 
 					&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
 					&& Recompiler.checkCPReblock( inst, inputMatrices ) ) 
 				{
@@ -310,7 +310,7 @@ public class RunMRJobs
 				
 			case TRANSFORM:
 				
-				if(    OptimizerUtils.ALLOW_DYN_RECOMPILATION
+				if(    ConfigurationManager.isDynamicRecompilation()
 						&& OptimizerUtils.ALLOW_TRANSFORM_RECOMPILE
 						&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
 						&& Recompiler.checkCPTransform( inst, inputMatrices ) ) 

@@ -140,7 +140,7 @@ public class DMLAppMaster
 	private void writeMessageToHDFSWorkingDir(String msg)
 	{
 		//construct working directory (consistent with client)
-		DMLConfig conf = ConfigurationManager.getConfig();
+		DMLConfig conf = ConfigurationManager.getDMLConfig();
 		String hdfsWD = DMLAppMasterUtils.constructHDFSWorkingDir(conf, _appId);
 		Path msgPath = new Path(hdfsWD, DMLYarnClient.DML_STOPMSG_NAME);
 		

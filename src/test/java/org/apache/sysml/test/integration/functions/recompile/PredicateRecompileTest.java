@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -278,7 +278,7 @@ public class PredicateRecompileTest extends AutomatedTestBase
 	
 	private void runRecompileTest( String testname, boolean recompile, boolean evalExpr, boolean constFold, boolean IPA )
 	{	
-		boolean oldFlagRecompile = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
+		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagEval = OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION;
 		boolean oldFlagFold = OptimizerUtils.ALLOW_CONSTANT_FOLDING;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
@@ -301,7 +301,7 @@ public class PredicateRecompileTest extends AutomatedTestBase
 				Integer.toString(val),
 				output("R") };
 
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
+			CompilerConfig.FLAG_DYN_RECOMPILE = recompile;
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = evalExpr;
 			OptimizerUtils.ALLOW_CONSTANT_FOLDING = constFold;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
@@ -350,7 +350,7 @@ public class PredicateRecompileTest extends AutomatedTestBase
 		}
 		finally
 		{
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = oldFlagRecompile;
+			CompilerConfig.FLAG_DYN_RECOMPILE = oldFlagRecompile;
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = oldFlagEval;
 			OptimizerUtils.ALLOW_CONSTANT_FOLDING = oldFlagFold;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

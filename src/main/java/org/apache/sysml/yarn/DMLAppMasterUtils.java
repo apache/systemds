@@ -26,6 +26,8 @@ import java.util.HashMap;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.CompilerConfig;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -77,8 +79,9 @@ public class DMLAppMasterUtils
 		if( DMLScript.isActiveAM() ){
 			
 			//set optimization level (for awareness of resource optimization)
-			OptimizerUtils.setOptimizationLevel( conf.getIntValue(DMLConfig.OPTIMIZATION_LEVEL) );
-	 		
+			CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(conf);
+			ConfigurationManager.setGlobalConfig(cconf);
+			
 			if( isResourceOptimizerEnabled() )
 			{
 				//handle optimized memory (mr memory budget per program block)
@@ -144,7 +147,7 @@ public class DMLAppMasterUtils
 				long mem = _rcMap.get(pb);
 				InfrastructureAnalyzer.setRemoteMaxMemoryMap(mem);
 				InfrastructureAnalyzer.setRemoteMaxMemoryReduce(mem);			
-				OptimizerUtils.setDefaultSize();
+				OptimizerUtils.resetDefaultSize();
 			}
 		}	
 	}

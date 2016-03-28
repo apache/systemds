@@ -51,10 +51,10 @@ public abstract class TransformationAgent implements Serializable {
 		}
 	}
 	
-	protected static String JSON_ATTRS 	= "attributes"; 
-	protected static String JSON_MTHD 	= "methods"; 
-	protected static String JSON_CONSTS = "constants"; 
-	protected static String JSON_NBINS 	= "numbins"; 
+	public static final String JSON_ATTRS 	= "attributes"; 
+	public static final String JSON_MTHD 	= "methods"; 
+	public static final String JSON_CONSTS = "constants"; 
+	public static final String JSON_NBINS 	= "numbins"; 
 	
 	protected static final String MV_FILE_SUFFIX 		= ".impute";
 	protected static final String RCD_MAP_FILE_SUFFIX 	= ".map";

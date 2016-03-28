@@ -25,14 +25,20 @@ import org.apache.sysml.runtime.functionobjects.ValueFunction;
 
 public class UnaryOperator extends Operator 
 {
-
 	private static final long serialVersionUID = 2441990876648978637L;
 
 	public ValueFunction fn;
-	public UnaryOperator(ValueFunction p)
+	private int k; //num threads
+
+	public UnaryOperator(ValueFunction p) {
+		this(p, 1); //default single-threaded
+	}
+	
+	public UnaryOperator(ValueFunction p, int numThreads)
 	{
 		fn = p;
 		sparseSafe = false;
+		k = numThreads;
 		
 		if(fn instanceof Builtin)
 		{
@@ -46,5 +52,9 @@ public class UnaryOperator extends Operator
 				sparseSafe = true;
 			}
 		}
+	}
+	
+	public int getNumThreads() {
+		return k;
 	}
 }

@@ -35,21 +35,28 @@ public class WeightedCrossEntropy extends Lop
 	private int _numThreads = 1;
 
 	public enum WCeMMType {
-		BASIC,
+		BASIC,			//(sum(X*log(U%*%t(V))))
+		BASIC_EPS;		//(sum(X*log(U%*%t(V) + eps)))
+		
+		public boolean hasFourInputs() {
+			return (this == BASIC_EPS);
+		}
 	}
 	
 	private WCeMMType _wcemmType = null;
 	
-	public WeightedCrossEntropy(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WCeMMType wt, ExecType et) 
+	public WeightedCrossEntropy(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WCeMMType wt, ExecType et) 
 		throws LopsException 
 	{
 		super(Lop.Type.WeightedCeMM, dt, vt);		
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
+		addInput(input4); // optional
 		input1.addOutput(this); 
 		input2.addOutput(this);
 		input3.addOutput(this);
+		input4.addOutput(this);
 		
 		//setup mapmult parameters
 		_wcemmType = wt;
@@ -88,17 +95,18 @@ public class WeightedCrossEntropy extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input1, int input2, int input3, int output)
+	public String getInstructions(int input1, int input2, int input3, int input4, int output)
 	{
 		return getInstructions(
 				String.valueOf(input1),
 				String.valueOf(input2),
 				String.valueOf(input3),
+				String.valueOf(input4),
 				String.valueOf(output));
 	}
 
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String output)
+	public String getInstructions(String input1, String input2, String input3, String input4, String output)
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -118,6 +126,14 @@ public class WeightedCrossEntropy extends Lop
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(2).prepInputOperand(input3));
+		
+		sb.append(Lop.OPERAND_DELIMITOR);
+		if ( (getExecType() == ExecType.MR) && (getInputs().get(3).getDataType() == DataType.SCALAR) ) {
+			sb.append( getInputs().get(3).prepScalarInputOperand(getExecType()));
+		}
+		else {
+			sb.append( getInputs().get(3).prepInputOperand(input4));
+		}
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output));

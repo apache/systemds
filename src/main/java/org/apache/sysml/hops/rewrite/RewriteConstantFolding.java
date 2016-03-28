@@ -208,7 +208,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		Recompiler.rClearLops(tmpWrite); //prevent lops reuse
 		Lop lops = tmpWrite.constructLops(); //reconstruct lops
 		lops.addToDag( dag );	
-		ArrayList<Instruction> inst = dag.getJobs(null, ConfigurationManager.getConfig());
+		ArrayList<Instruction> inst = dag.getJobs(null, ConfigurationManager.getDMLConfig());
 		
 		//execute instructions
 		ExecutionContext ec = getExecutionContext();

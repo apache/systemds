@@ -33,8 +33,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private HashMap<String,Expression> _varParams;
 	
 	public static final String TF_FN_PARAM_DATA = "target";
-	public static final String TF_FN_PARAM_TXMTD = "transformPath";
-	public static final String TF_FN_PARAM_TXSPEC = "transformSpec";
+	public static final String TF_FN_PARAM_MTD2 = "meta";
+	public static final String TF_FN_PARAM_SPEC = "spec";
+	public static final String TF_FN_PARAM_MTD = "transformPath"; //NOTE MB: for backwards compatibility
 	public static final String TF_FN_PARAM_APPLYMTD = "applyTransformPath";
 	public static final String TF_FN_PARAM_OUTNAMES = "outputNames";
 	
@@ -64,6 +65,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		// data transformation functions
 		opcodeMap.put("transform",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORM);
+		opcodeMap.put("transformapply",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORMAPPLY);
+		opcodeMap.put("transformdecode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMDECODE);
 	}
 	
 	public static HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp> pbHopMap;
@@ -230,7 +233,15 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case TRANSFORM:
 			validateTransform(output, conditional);
 			break;
+		
+		case TRANSFORMAPPLY:
+			validateTransformApply(output, conditional);
+			break;
 			
+		case TRANSFORMDECODE:
+			validateTransformDecode(output, conditional);
+			break;	
+		
 		default: //always unconditional (because unsupported operation)
 			raiseValidateError("Unsupported parameterized function "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
@@ -239,30 +250,25 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	
 	// example: A = transform(data=D, txmtd="", txspec="")
 	private void validateTransform(DataIdentifier output, boolean conditional) throws LanguageException {
-		Expression data = getVarParam(TF_FN_PARAM_DATA);
-		if( data==null ) {				
-			raiseValidateError("Named parameter '" + TF_FN_PARAM_DATA + "' missing. Please specify the input data set.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}
-		else if( data.getOutput().getDataType() != DataType.FRAME ){
-			raiseValidateError("Input to tansform() must be of type 'frame'. It is of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-		}	
+		//validate data
+		checkDataType("transform", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 		
-		Expression txmtd = getVarParam(TF_FN_PARAM_TXMTD);
+		Expression txmtd = getVarParam(TF_FN_PARAM_MTD);
 		if( txmtd==null ) {
-			raiseValidateError("Named parameter '" + TF_FN_PARAM_TXMTD + "' missing. Please specify the transformation metadata file path.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			raiseValidateError("Named parameter '" + TF_FN_PARAM_MTD + "' missing. Please specify the transformation metadata file path.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		else if( txmtd.getOutput().getDataType() != DataType.SCALAR || txmtd.getOutput().getValueType() != ValueType.STRING ){				
-			raiseValidateError("Transformation metadata file '" + TF_FN_PARAM_TXMTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			raiseValidateError("Transformation metadata file '" + TF_FN_PARAM_MTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		
-		Expression txspec = getVarParam(TF_FN_PARAM_TXSPEC);
+		Expression txspec = getVarParam(TF_FN_PARAM_SPEC);
 		Expression applyMTD = getVarParam(TF_FN_PARAM_APPLYMTD);
 		if( txspec==null ) {
 			if ( applyMTD == null )
-				raiseValidateError("Named parameter '" + TF_FN_PARAM_TXSPEC + "' missing. Please specify the transformation specification file (in JSON format).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Named parameter '" + TF_FN_PARAM_SPEC + "' missing. Please specify the transformation specification (JSON string).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		else if( txspec.getOutput().getDataType() != DataType.SCALAR  || txspec.getOutput().getValueType() != ValueType.STRING ){	
-			raiseValidateError("Transformation specification file '" + TF_FN_PARAM_TXSPEC + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			raiseValidateError("Transformation specification '" + TF_FN_PARAM_SPEC + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}	
 		
 		if ( applyMTD != null ) {
@@ -270,15 +276,14 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Apply transformation metadata file'" + TF_FN_PARAM_APPLYMTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
-			if(txspec != null ) {
-				raiseValidateError("Only one of '" + TF_FN_PARAM_APPLYMTD + "' or '" + TF_FN_PARAM_TXSPEC + "' can be specified in transform().", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
+			//NOTE: txspec can still be optionally specified; if specified it takes precedence over 
+			// specification persisted in txmtd during transform.
 		}
 		
 		Expression outNames = getVarParam(TF_FN_PARAM_OUTNAMES);
 		if ( outNames != null ) {
 			if( outNames.getOutput().getDataType() != DataType.SCALAR || outNames.getOutput().getValueType() != ValueType.STRING )				
-				raiseValidateError("The parameter specifying column names in the output file '" + TF_FN_PARAM_TXMTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("The parameter specifying column names in the output file '" + TF_FN_PARAM_MTD + "' must be a string value (a scalar).", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			if ( applyMTD != null)
 				raiseValidateError("Only one of '" + TF_FN_PARAM_APPLYMTD + "' or '" + TF_FN_PARAM_OUTNAMES + "' can be specified in transform().", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
@@ -288,6 +293,45 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setFormatType(FormatType.CSV);
 		output.setValueType(ValueType.DOUBLE);
 		// Output dimensions may not be known at compile time, for example when dummycoding.
+		output.setDimensions(-1, -1);
+	}
+	
+	// example: A = transformapply(target=X, meta=M, spec=s)
+	private void validateTransformApply(DataIdentifier output, boolean conditional) 
+		throws LanguageException 
+	{
+		//validate data / metadata (recode maps)
+		checkDataType("transformapply", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
+		checkDataType("transformapply", TF_FN_PARAM_MTD2, DataType.FRAME, conditional);
+		
+		//validate specification
+		checkDataValueType("transformapply", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		
+		//set output dimensions
+		output.setDataType(DataType.MATRIX);
+		output.setValueType(ValueType.DOUBLE);
+		output.setDimensions(-1, -1);
+	}
+	
+	/**
+	 * 
+	 * @param output
+	 * @param conditional
+	 * @throws LanguageException
+	 */
+	private void validateTransformDecode(DataIdentifier output, boolean conditional) 
+		throws LanguageException 
+	{
+		//validate data / metadata (recode maps) 
+		checkDataType("transformdecode", TF_FN_PARAM_DATA, DataType.MATRIX, conditional);
+		checkDataType("transformdecode", TF_FN_PARAM_MTD2, DataType.FRAME, conditional);
+		
+		//validate specification
+		checkDataValueType("transformdecode", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		
+		//set output dimensions
+		output.setDataType(DataType.FRAME);
+		output.setValueType(ValueType.STRING);
 		output.setDimensions(-1, -1);
 	}
 	
@@ -596,6 +640,46 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setValueType(ValueType.DOUBLE);
 		output.setDimensions(0, 0);
 		return;
+	}
+	
+
+	/**
+	 * 
+	 * @param fname
+	 * @param pname
+	 * @param dt
+	 * @param conditional
+	 * @throws LanguageException
+	 */
+	private void checkDataType( String fname, String pname, DataType dt, boolean conditional ) 
+		throws LanguageException 
+	{
+		Expression data = getVarParam(pname);
+		if( data==null )				
+			raiseValidateError("Named parameter '" + pname + "' missing. Please specify the input.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		else if( data.getOutput().getDataType() != dt )
+			raiseValidateError("Input to "+fname+"::"+pname+" must be of type '"+dt.toString()+"'. It is of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);		
+	}
+	
+
+	/**
+	 * 
+	 * @param fname
+	 * @param pname
+	 * @param dt
+	 * @param vt
+	 * @param conditional
+	 * @throws LanguageException
+	 */
+	private void checkDataValueType( String fname, String pname, DataType dt, ValueType vt, boolean conditional ) 
+		throws LanguageException 
+	{
+		Expression data = getVarParam(pname);
+		if( data==null )				
+			raiseValidateError("Named parameter '" + pname + "' missing. Please specify the input.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		else if( data.getOutput().getDataType() != dt || data.getOutput().getValueType() != vt )
+			raiseValidateError("Input to "+fname+"::"+pname+" must be of type '"+dt.toString()+"', '"+vt.toString()+"'. "
+					+ "It is of type '"+data.getOutput().getDataType().toString()+"', '"+data.getOutput().getValueType().toString()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);		
 	}
 
 	public String toString() {

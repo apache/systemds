@@ -36,6 +36,8 @@ import org.apache.spark.rdd.RDD;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
+import org.apache.sysml.conf.CompilerConfig;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -63,7 +65,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
-import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDProperties;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
@@ -486,18 +487,20 @@ public class MLContext {
 			_inVarnames = new ArrayList<String>();
 		
 		MatrixObject mo = null;
-		if(format.compareTo("csv") == 0) {
-			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, nnz);
+		if( format.equals("csv") ) {
+			//TODO replace default block size
+			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
 			mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo));
 		}
-		else if(format.compareTo("text") == 0) {
+		else if( format.equals("text") ) {
 			if(rlen == -1 || clen == -1) {
 				throw new DMLRuntimeException("The metadata is required in registerInput for format:" + format);
 			}
-			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, nnz);
+			//TODO replace default block size
+			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
 			mo = new MatrixObject(ValueType.DOUBLE, null, new MatrixFormatMetaData(mc, OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo));
 		}
-		else if(format.compareTo("mm") == 0) {
+		else if( format.equals("mm") ) {
 			// TODO: Handle matrix market
 			throw new DMLRuntimeException("Matrixmarket format is not yet implemented in registerInput: " + format);
 		}
@@ -533,7 +536,8 @@ public class MLContext {
 	 * @throws DMLRuntimeException
 	 */
 	public void registerInput(String varName, JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, long rlen, long clen) throws DMLRuntimeException {
-		registerInput(varName, rdd, rlen, clen, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);
+		//TODO replace default blocksize
+		registerInput(varName, rdd, rlen, clen, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
 	}
 	
 	/**
@@ -631,7 +635,7 @@ public class MLContext {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
 		for(Entry<String, String> entry : namedArgs.entrySet()) {
-			if(entry.getValue().trim().compareTo("") == 0)
+			if(entry.getValue().trim().isEmpty())
 				args[i] = entry.getKey() + "=\"" + entry.getValue() + "\"";
 			else
 				args[i] = entry.getKey() + "=" + entry.getValue();
@@ -653,7 +657,7 @@ public class MLContext {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
 		for(Entry<String, String> entry : namedArgs.entrySet()) {
-			if(entry.getValue().trim().compareTo("") == 0)
+			if(entry.getValue().trim().isEmpty())
 				args[i] = entry.getKey() + "=\"" + entry.getValue() + "\"";
 			else
 				args[i] = entry.getKey() + "=" + entry.getValue();
@@ -980,34 +984,8 @@ public class MLContext {
 	 * @return
 	 */
 	ArrayList<Instruction> performCleanupAfterRecompilation(ArrayList<Instruction> tmp) {
-		String [] outputs = null;
-		if(_outVarnames != null) {
-			outputs = _outVarnames.toArray(new String[0]);
-		}
-		else {
-			outputs = new String[0];
-		}
-		
-		// No need to clean up entire program as this method is only called for last level program block
-//		JMLCUtils.cleanupRuntimeProgram(_rtprog, outputs);
-		
-		for( int i=0; i<tmp.size(); i++ )
-		{
-			Instruction linst = tmp.get(i);
-			if( linst instanceof VariableCPInstruction && ((VariableCPInstruction)linst).isRemoveVariable() )
-			{
-				VariableCPInstruction varinst = (VariableCPInstruction) linst;
-				for( String var : outputs )
-					if( varinst.isRemoveVariable(var) )
-					{
-						tmp.remove(i);
-						i--;
-						break;
-					}
-			}
-		}
-		
-		return tmp;
+		String [] outputs = (_outVarnames != null) ? _outVarnames.toArray(new String[0]) : new String[0];
+		return JMLCUtils.cleanupRuntimeInstructions(tmp, outputs);
 	}
 	
 	// -------------------------------- Utility methods ends ----------------------------------------------------------
@@ -1066,7 +1044,7 @@ public class MLContext {
 	private boolean isRegisteredAsInput(String varName) {
 		if(_inVarnames != null) {
 			for(String v : _inVarnames) {
-				if(v.compareTo(varName) == 0) {
+				if(v.equals(varName)) {
 					return true;
 				}
 			}
@@ -1170,12 +1148,17 @@ public class MLContext {
 		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), configFilePath);
 	}
 
+	public MLOutput executeScript(String dmlScript, HashMap<String, String> namedArgs)
+			throws IOException, DMLException, ParseException {
+		return executeScript(dmlScript, namedArgs, null);
+	}
+
 	public MLOutput executeScript(String dmlScript, HashMap<String, String> namedArgs, String configFilePath)
 			throws IOException, DMLException, ParseException {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
 		for(Entry<String, String> entry : namedArgs.entrySet()) {
-			if(entry.getValue().trim().compareTo("") == 0)
+			if(entry.getValue().trim().isEmpty())
 				args[i] = entry.getKey() + "=\"" + entry.getValue() + "\"";
 			else
 				args[i] = entry.getKey() + "=" + entry.getValue();
@@ -1215,12 +1198,6 @@ public class MLContext {
 			
 			// Set active MLContext.
 			_activeMLContext = this;
-			
-			// Setup parser parameters
-			// TODO In the process of hardening mlcontext, we should also reinvestigate if we
-			// could be more restrictive and require known dimensions (rm REJECT_READ_WRITE_UNKNOWNS).  
-			AParserWrapper.IGNORE_UNSPECIFIED_ARGS = true;
-			DataExpression.REJECT_READ_WRITE_UNKNOWNS = false;
 			
 			if(_monitorUtils != null) {
 				_monitorUtils.resetMonitoringData();
@@ -1279,12 +1256,14 @@ public class MLContext {
 		
 		}
 		finally {
-			// Reset active MLContext.
-			_activeMLContext = null;
+			// Remove global dml config and all thread-local configs
+			// TODO enable cleanup whenever invalid GNMF MLcontext is fixed 
+			// (the test is invalid because it assumes that status of previous execute is kept)
+			//ConfigurationManager.setGlobalConfig(new DMLConfig());
+			//ConfigurationManager.clearLocalConfigs();
 			
-			// Reset parser parameters
-			AParserWrapper.IGNORE_UNSPECIFIED_ARGS = false;
-			DataExpression.REJECT_READ_WRITE_UNKNOWNS = true;			
+			// Reset active MLContext.
+			_activeMLContext = null;	
 		}
 	}
 	
@@ -1306,27 +1285,25 @@ public class MLContext {
 	 * @throws ParseException
 	 */
 	private ExecutionContext executeUsingSimplifiedCompilationChain(String dmlScriptFilePath, boolean isFile, HashMap<String, String> argVals, boolean parsePyDML, 
-			String[] inputs, String[] outputs, LocalVariableMap inputSymbolTable, String configFilePath) throws IOException, DMLException, ParseException {
-		DMLConfig config = null;
-		if(configFilePath == null) {
-			config = new DMLConfig();
-		}
-		else {
-			config = new DMLConfig(configFilePath);
-		}
-		
+			String[] inputs, String[] outputs, LocalVariableMap inputSymbolTable, String configFilePath) 
+		throws IOException, DMLException, ParseException 
+	{
+		//construct dml configuration
+		DMLConfig config = (configFilePath == null) ? new DMLConfig() : new DMLConfig(configFilePath);
 		for(Entry<String, String> param : _additionalConfigs.entrySet()) {
 			config.setTextValue(param.getKey(), param.getValue());
 		}
 		
-		ConfigurationManager.setConfig(config);
+		//set global dml and specialized compiler configurations
+		ConfigurationManager.setGlobalConfig(config);
+		CompilerConfig cconf = new CompilerConfig();
+		cconf.set(ConfigType.IGNORE_UNSPECIFIED_ARGS, true);
+		cconf.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
+		cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
+		ConfigurationManager.setGlobalConfig(cconf);
 		
-		String dmlScriptStr = null;
-		if(isFile)
-			dmlScriptStr = DMLScript.readDMLScript("-f", dmlScriptFilePath);
-		else 
-			dmlScriptStr = DMLScript.readDMLScript("-s", dmlScriptFilePath);
-			
+		//read dml script string
+		String dmlScriptStr = DMLScript.readDMLScript( isFile?"-f":"-s", dmlScriptFilePath);
 		if(_monitorUtils != null) {
 			_monitorUtils.setDMLString(dmlScriptStr);
 		}

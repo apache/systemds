@@ -42,6 +42,9 @@ import org.apache.wink.json4j.JSONObject;
 import scala.Tuple2;
 
 import com.google.common.collect.Ordering;
+
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.transform.MVImputeAgent.MVMethod;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -62,8 +65,14 @@ public class RecodeAgent extends TransformationAgent {
 		
 		if ( parsedSpec.containsKey(TX_METHOD.RECODE.toString())) 
 		{
-			JSONObject obj = (JSONObject) parsedSpec.get(TX_METHOD.RECODE.toString());
-			JSONArray attrs = (JSONArray) obj.get(JSON_ATTRS);
+			//TODO consolidate external and internal json spec definitions
+			JSONArray attrs = null;
+			if( parsedSpec.get(TX_METHOD.RECODE.toString()) instanceof JSONObject ) {
+				JSONObject obj = (JSONObject) parsedSpec.get(TX_METHOD.RECODE.toString());
+				attrs = (JSONArray) obj.get(JSON_ATTRS);
+			}
+			else
+				attrs = (JSONArray)parsedSpec.get(TX_METHOD.RECODE.toString());
 			
 			_rcdList = new int[attrs.size()];
 			for(int i=0; i < _rcdList.length; i++) 
@@ -93,6 +102,24 @@ public class RecodeAgent extends TransformationAgent {
 			if(_mvrcdList != null)
 				for(int i=0; i < _mvrcdList.length; i++)
 					_fullrcdList[++idx] = _mvrcdList[i]; 
+		}
+	}
+	
+	/**
+	 * Construct the recodemaps from the given input frame for all 
+	 * columns registered for recode.
+	 * 
+	 * @param frame
+	 */
+	public void initRecodeMaps( FrameBlock frame ) {
+		for( int j=0; j<_rcdList.length; j++ ) {
+			int colID = _rcdList[j]; //1-based
+			HashMap<String,Long> map = new HashMap<String,Long>();
+			for( int i=0; i<frame.getNumRows(); i++ ) {
+				String[] tmp = frame.get(i, colID-1).toString().split(Lop.DATATYPE_PREFIX);
+				map.put(tmp[0], Long.parseLong(tmp[1]));
+			}
+			_rcdMaps.put(colID, map);
 		}
 	}
 	

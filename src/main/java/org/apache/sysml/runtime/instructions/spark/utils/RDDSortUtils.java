@@ -432,8 +432,8 @@ public class RDDSortUtils
 			{
 				Tuple2<Double,Long> val = arg0.next();
 				long valix = val._2 + 1;
-				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
-				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
+				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
 				
 				if( ix == null || ix.getRowIndex() != rix )
 				{
@@ -483,8 +483,8 @@ public class RDDSortUtils
 			{
 				Tuple2<DoublePair,Long> val = arg0.next();
 				long valix = val._2 + 1;
-				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
-				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
+				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
 				
 				if( ix == null || ix.getRowIndex() != rix )
 				{
@@ -535,8 +535,8 @@ public class RDDSortUtils
 			{
 				Tuple2<ValueIndexPair,Long> val = arg0.next();
 				long valix = val._2 + 1;
-				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
-				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
+				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
 				
 				if( ix == null || ix.getRowIndex() != rix )
 				{
@@ -586,8 +586,8 @@ public class RDDSortUtils
 			{
 				Tuple2<Long,Long> val = arg0.next();
 				long valix = val._1;
-				long rix = UtilFunctions.blockIndexCalculation(valix, _brlen);
-				int pos = UtilFunctions.cellInBlockCalculation(valix, _brlen);
+				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
 				
 				if( ix == null || ix.getRowIndex() != rix )
 				{

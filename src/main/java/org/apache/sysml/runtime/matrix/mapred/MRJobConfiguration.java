@@ -249,7 +249,7 @@ public class MRJobConfiguration
 	public static final String TF_DELIM 		= "transform.field.delimiter";
 	public static final String TF_NA_STRINGS 	= "transform.na.strings";
 	public static final String TF_HEADER		= "transform.header.line";
-	public static final String TF_SPEC_FILE 	= "transform.specification.file";
+	public static final String TF_SPEC 	        = "transform.specification";
 	public static final String TF_TMP_LOC    	= "transform.temp.location";
 	public static final String TF_TRANSFORM     = "transform.omit.na.rows";
 	
@@ -835,7 +835,7 @@ public class MRJobConfiguration
 		for(int i=0; i<matrices.length; i++)
 		{
 			Path p = new Path(matrices[i]).makeQualified(fs);
-			if(thisFile.toUri().compareTo(p.toUri())==0 || thisDir.toUri().compareTo(p.toUri())==0)
+			if(thisFile.toUri().equals(p.toUri()) || thisDir.toUri().equals(p.toUri()))
 				representativeMatrixes.add(indexes[i]);
 		}
 		return representativeMatrixes;
@@ -1360,7 +1360,7 @@ public class MRJobConfiguration
 		//correction max number of reducers on yarn clusters
 		if( InfrastructureAnalyzer.isYarnEnabled() )
 			n = (int)Math.max( n, YarnClusterAnalyzer.getNumCores()/2 );
-		n=Math.min(n, ConfigurationManager.getConfig().getIntValue(DMLConfig.NUM_REDUCERS));
+		n=Math.min(n, ConfigurationManager.getNumReducers());
 		n=Math.min(n, numFromCompiler);
 		if(numReducerGroups>0)
 			n=(int) Math.min(n, numReducerGroups);
@@ -1876,7 +1876,7 @@ public class MRJobConfiguration
 	public static String constructTempOutputFilename() 
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
+		sb.append(ConfigurationManager.getScratchSpace());
 		sb.append(Lop.FILE_SEPARATOR);
 		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
@@ -1893,7 +1893,7 @@ public class MRJobConfiguration
 	private static String constructPartitionFilename() 
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append(ConfigurationManager.getConfig().getTextValue(DMLConfig.SCRATCH_SPACE));
+		sb.append(ConfigurationManager.getScratchSpace());
 		sb.append(Lop.FILE_SEPARATOR);
 		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());

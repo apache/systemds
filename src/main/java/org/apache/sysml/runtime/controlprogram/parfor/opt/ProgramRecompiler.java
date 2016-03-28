@@ -82,7 +82,7 @@ public class ProgramRecompiler
 		throws LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException, HopsException
 	{
 		ArrayList<ProgramBlock> ret = new ArrayList<ProgramBlock>();
-		DMLConfig config = ConfigurationManager.getConfig();
+		DMLConfig config = ConfigurationManager.getDMLConfig();
 		
 		//construct lops from hops if not existing
 		DMLTranslator dmlt = new DMLTranslator(sbs.get(0).getDMLProg());
@@ -599,7 +599,7 @@ public class ProgramRecompiler
 			}
 			
 			//construct new instructions
-			ArrayList<Instruction> newInst = dag.getJobs(sbOld, ConfigurationManager.getConfig());
+			ArrayList<Instruction> newInst = dag.getJobs(sbOld, ConfigurationManager.getDMLConfig());
 			
 			
 			//exchange instructions
@@ -654,7 +654,7 @@ public class ProgramRecompiler
 				}
 				
 				//construct new instructions
-				ArrayList<Instruction> newInst = dag.getJobs(sbOld, ConfigurationManager.getConfig());
+				ArrayList<Instruction> newInst = dag.getJobs(sbOld, ConfigurationManager.getDMLConfig());
 				
 				//exchange instructions
 				pbNew = new ProgramBlock(pbOld.getProgram());

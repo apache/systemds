@@ -18,14 +18,13 @@
  */
 
 package org.apache.sysml.runtime.transform;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function2;
@@ -50,18 +49,14 @@ public class ApplyTfCSVSPARK {
 
 	public static JavaPairRDD<Long, String> runSparkJob(
 			SparkExecutionContext sec, JavaRDD<Tuple2<LongWritable, Text>> inputRDD, 
-			String tfMtdPath, String specFile, 
-			String tmpPath, CSVFileFormatProperties prop, 
-			int numCols, String headerLine
-		) throws IOException, ClassNotFoundException, InterruptedException, IllegalArgumentException, JSONException {
-
+			String tfMtdPath, String spec, String tmpPath, CSVFileFormatProperties prop, 
+			int numCols, String headerLine) 
+		throws IOException, ClassNotFoundException, InterruptedException, IllegalArgumentException, JSONException 
+	{
 		// Load transformation metadata and broadcast it
-		JobConf job = new JobConf();
-		FileSystem fs = FileSystem.get(job);
-		
 		String[] naStrings = TfUtils.parseNAStrings(prop.getNAStrings());
-		JSONObject spec = TfUtils.readSpec(fs, specFile);
-		TfUtils _tfmapper = new TfUtils(headerLine, prop.hasHeader(), prop.getDelim(), naStrings, spec, numCols, tfMtdPath, null, tmpPath);
+		JSONObject jspec = new JSONObject(spec);
+		TfUtils _tfmapper = new TfUtils(headerLine, prop.hasHeader(), prop.getDelim(), naStrings, jspec, numCols, tfMtdPath, null, tmpPath);
 		
 		_tfmapper.loadTfMetadata();
 

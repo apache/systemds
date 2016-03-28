@@ -164,7 +164,7 @@ public class RemoteParForMR
 			job.setMapSpeculativeExecution(false);
 			
 			//set up map/reduce memory configurations (if in AM context)
-			DMLConfig config = ConfigurationManager.getConfig();
+			DMLConfig config = ConfigurationManager.getDMLConfig();
 			DMLAppMasterUtils.setupMRJobRemoteMaxMemory(job, config);
 			
 			//set up custom map/reduce configurations 

@@ -248,7 +248,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 
 		// allocate target matrix block based on given size; 
 		// need to allocate sparse as well since lock-free insert into target
-		return createOutputMatrixBlock(nrow, ncol, estnnz, true, true);
+		return createOutputMatrixBlock(nrow, ncol, nrow, ncol, estnnz, true, true);
 	}
 
 	/**

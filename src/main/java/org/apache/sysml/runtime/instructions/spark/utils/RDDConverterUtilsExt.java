@@ -131,13 +131,10 @@ public class RDDConverterUtilsExt
 	
 	// Useful for printing, testing binary blocked RDD and also for external use.
 	public static JavaRDD<String> binaryBlockToStringRDD(JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn, String format) throws DMLRuntimeException {
-		if(format.compareTo("text") == 0) {
+		if(format.equals("text")) {
 			JavaRDD<String> ijv = input.flatMap(new ConvertMatrixBlockToIJVLines(mcIn.getRowsPerBlock(), mcIn.getColsPerBlock()));
 			return ijv;
 		}
-//		else if(format.compareTo("csv") == 0) {
-//			
-//		}
 		else {
 			throw new DMLRuntimeException("The output format:" + format + " is not implemented yet.");
 		}
@@ -194,7 +191,7 @@ public class RDDConverterUtilsExt
 		String firstCol = null;
 		boolean colPresent = false;
 		for(String col : df.columns()) {
-			if(col.compareTo(column) == 0) {
+			if(col.equals(column)) {
 				colPresent = true;
 			}
 			else if(firstCol == null) {

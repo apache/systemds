@@ -46,9 +46,12 @@ public class Unary extends Lop
 		NOTSUPPORTED
 	};
 
-	OperationTypes operation;
+	private OperationTypes operation;
+	private Lop valInput;
+	
+	//cp-specific parameters
+	private int _numThreads = 1;
 
-	Lop valInput;
 
 	/**
 	 * Constructor to perform a unary operation with 2 inputs
@@ -109,11 +112,12 @@ public class Unary extends Lop
 	 * @param op
 	 * @throws LopsException 
 	 */
-	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et, int numThreads) 
 		throws LopsException 
 	{
 		super(Lop.Type.UNARY, dt, vt);
 		init(input1, op, dt, vt, et);
+		_numThreads = numThreads;
 	}
 	
 	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt) 
@@ -327,28 +331,46 @@ public class Unary extends Lop
 					"Instruction not defined for Unary operation: " + op);
 		}
 	}
+	
+	/**
+	 * 
+	 * @param op
+	 * @return
+	 */
+	public static boolean isCumulativeOp(OperationTypes op) {
+		return op==OperationTypes.CUMSUM
+			|| op==OperationTypes.CUMPROD
+			|| op==OperationTypes.CUMMIN
+			|| op==OperationTypes.CUMMAX;
+	}
+	
+	@Override
 	public String getInstructions(String input1, String output) 
 		throws LopsException 
 	{
-		// Unary operators with one input
-		if (this.getInputs().size() == 1) {
-			
-			StringBuilder sb = new StringBuilder();
-			sb.append( getExecType() );
-			sb.append( Lop.OPERAND_DELIMITOR );
-			sb.append( getOpcode() );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(0).prepInputOperand(input1));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( this.prepOutputOperand(output));
-			
-			return sb.toString();
-
-		} else {
-			throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("
-					+ this.getInputs().size() + ") for an Unary opration: "
-					+ operation);
+		//sanity check number of operands
+		if( getInputs().size() != 1 ) {
+			throw new LopsException(printErrorLocation() + "Invalid number of operands ("
+					+ getInputs().size() + ") for an Unary opration: " + operation);		
 		}
+		
+		// Unary operators with one input
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( getOpcode() );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( getInputs().get(0).prepInputOperand(input1) );
+		sb.append( OPERAND_DELIMITOR );
+		sb.append( prepOutputOperand(output) );
+		
+		//num threads for cumulative cp ops
+		if( getExecType() == ExecType.CP && isCumulativeOp(operation) ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
+		
+		return sb.toString();
 	}
 	
 	@Override

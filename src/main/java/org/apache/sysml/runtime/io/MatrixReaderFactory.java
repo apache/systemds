@@ -19,7 +19,8 @@
 
 package org.apache.sysml.runtime.io;
 
-import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -43,14 +44,14 @@ public class MatrixReaderFactory
 		
 		if( iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo )
 		{
-			if( OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) )
 				reader = new ReaderTextCellParallel( iinfo );
 			else
 				reader = new ReaderTextCell( iinfo );	
 		}
 		else if( iinfo == InputInfo.CSVInputInfo )
 		{
-			if( OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) )
 				reader = new ReaderTextCSVParallel(new CSVFileFormatProperties());
 			else
 				reader = new ReaderTextCSV(new CSVFileFormatProperties());
@@ -58,7 +59,7 @@ public class MatrixReaderFactory
 		else if( iinfo == InputInfo.BinaryCellInputInfo ) 
 			reader = new ReaderBinaryCell();
 		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
-			if( OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) )
 				reader = new ReaderBinaryBlockParallel( false );
 			else
 				reader = new ReaderBinaryBlock( false );
@@ -88,13 +89,13 @@ public class MatrixReaderFactory
 		InputInfo iinfo = props.inputInfo;
 
 		if( iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo ) {
-			if( OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) )
 				reader = new ReaderTextCellParallel( iinfo );
 			else
 				reader = new ReaderTextCell( iinfo );
 		}
 		else if( iinfo == InputInfo.CSVInputInfo ) {
-			if( OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) )
 				reader = new ReaderTextCSVParallel( props.formatProperties!=null ? (CSVFileFormatProperties)props.formatProperties : new CSVFileFormatProperties());
 			else
 				reader = new ReaderTextCSV( props.formatProperties!=null ? (CSVFileFormatProperties)props.formatProperties : new CSVFileFormatProperties());
@@ -102,7 +103,7 @@ public class MatrixReaderFactory
 		else if( iinfo == InputInfo.BinaryCellInputInfo ) 
 			reader = new ReaderBinaryCell();
 		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
-			if( OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS )
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) )
 				reader = new ReaderBinaryBlockParallel( props.localFS );
 			else
 				reader = new ReaderBinaryBlock( props.localFS );

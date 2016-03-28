@@ -22,10 +22,8 @@ package org.apache.sysml.test.integration.functions.parfor;
 import java.util.HashMap;
 
 import org.junit.Assert;
-
 import org.junit.Test;
-
-import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -67,14 +65,14 @@ public class ParForReplaceThreadIDRecompileTest extends AutomatedTestBase
 	 */
 	private void runThreadIDReplaceTest( String TEST_NAME, boolean recompile )
 	{
-		boolean flag = OptimizerUtils.ALLOW_DYN_RECOMPILATION;
+		boolean flag = CompilerConfig.FLAG_DYN_RECOMPILE;
 		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = recompile;
+			CompilerConfig.FLAG_DYN_RECOMPILE = recompile;
 			
 			// This is for running the junit test the new way, i.e., construct the arguments directly 
 			String HOME = SCRIPT_DIR + TEST_DIR;
@@ -94,7 +92,7 @@ public class ParForReplaceThreadIDRecompileTest extends AutomatedTestBase
 			Assert.assertTrue( dmlout.size()>=1 );
 		}
 		finally{
-			OptimizerUtils.ALLOW_DYN_RECOMPILATION = flag;
+			CompilerConfig.FLAG_DYN_RECOMPILE = flag;
 		}
 	}
 	

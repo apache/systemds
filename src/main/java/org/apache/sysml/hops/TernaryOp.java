@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.CentralMoment;
@@ -784,7 +785,7 @@ public class TernaryOp extends Hop
 		// Necessary condition for recompilation is unknown dimensions.
 		// When execType=CP, it is marked for recompilation only when additional
 		// dimension inputs are provided (and those values are unknown at initial compile time).
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) ) {
+		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) ) {
 			if ( _etype==REMOTE || (_etype == ExecType.CP && _dimInputsPresent))
 				setRequiresRecompile();
 		}

@@ -34,7 +34,8 @@ X_scale = rand (rows = num_records, cols = num_scale_features, min = 0, max = 10
 
 # transform categorical features
 XCF = read (XCatFile);
-X_cat_transformed = transform (target = XCF, transformSpec = transformSpec, transformPath = transformPath);
+specJson = read(transformSpec, data_type="scalar", value_type="string");
+X_cat_transformed = transform (target = XCF, spec = specJson, transformPath = transformPath);
 
 X = append (X_scale, X_cat_transformed);
 write (X, XFile, format = fmt);

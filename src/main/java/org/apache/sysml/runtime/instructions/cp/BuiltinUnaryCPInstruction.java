@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import java.util.Arrays;
+
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -57,14 +59,18 @@ public abstract class BuiltinUnaryCPInstruction extends UnaryCPInstruction
 		String opcode = null;
 		ValueFunction func = null;
 		
-		if( parts.length==4 ) //print or stop
+		//print or stop or cumulative aggregates
+		if( parts.length==4 ) 
 		{
 			opcode = parts[0];
 			in.split(parts[1]);
 			out.split(parts[2]);
 			func = Builtin.getBuiltinFnObject(opcode);
 			
-			return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
+			if( Arrays.asList(new String[]{"ucumk+","ucum*","ucummin","ucummax"}).contains(opcode) )
+				return new MatrixBuiltinCPInstruction(new UnaryOperator(func,Integer.parseInt(parts[3])), in, out, opcode, str); 
+			else
+				return new ScalarBuiltinCPInstruction(new SimpleOperator(func), in, out, opcode, str);
 		}
 		else //2+1, general case
 		{

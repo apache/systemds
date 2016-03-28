@@ -96,7 +96,7 @@ public class GroupedAggMR
 		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
 		
 		//set up custom map/reduce configurations 
-		DMLConfig config = ConfigurationManager.getConfig();
+		DMLConfig config = ConfigurationManager.getDMLConfig();
 		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		//set up what matrices are needed to pass from the mapper to reducer

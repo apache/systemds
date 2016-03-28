@@ -84,7 +84,7 @@ public class WriteCSVMR
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 		
 		//set up custom map/reduce configurations 
-		DMLConfig config = ConfigurationManager.getConfig();
+		DMLConfig config = ConfigurationManager.getDMLConfig();
 		MRJobConfiguration.setupCustomMRConfigurations(job, config);
 		
 		long maxRlen=0;

@@ -33,6 +33,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
@@ -45,6 +46,7 @@ import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -168,25 +170,58 @@ public class ExecutionContext
 		return dims.getMatrixCharacteristics();
 	}
 	
+	/**
+	 * Pins a matrix variable into memory and returns the internal matrix block.
+	 * 
+	 * @param varName
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public MatrixBlock getMatrixInput(String varName) 
 		throws DMLRuntimeException 
 	{	
-		try {
-			MatrixObject mobj = (MatrixObject) getVariable(varName);
-			return mobj.acquireRead();
-		} catch (CacheException e) {
-			throw new DMLRuntimeException( e );
-		}
+		MatrixObject mo = (MatrixObject) getVariable(varName);
+		return mo.acquireRead();
 	}
 	
+	/**
+	 * Unpins a currently pinned matrix variable. 
+	 * 
+	 * @param varName
+	 * @throws DMLRuntimeException
+	 */
 	public void releaseMatrixInput(String varName) 
 		throws DMLRuntimeException 
 	{
-		try {
-			((MatrixObject)getVariable(varName)).release();
-		} catch (CacheException e) {
-			throw new DMLRuntimeException(e);
-		}
+		MatrixObject mo = (MatrixObject) getVariable(varName);
+		mo.release();
+	}
+	
+	/**
+	 * Pins a frame variable into memory and returns the internal frame block.
+	 * 
+	 * @param varName
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public FrameBlock getFrameInput(String varName) 
+		throws DMLRuntimeException 
+	{	
+		FrameObject fo = (FrameObject) getVariable(varName);
+		return fo.acquireRead();
+	}
+	
+	/**
+	 * Unpins a currently pinned frame variable. 
+	 * 
+	 * @param varName
+	 * @throws DMLRuntimeException
+	 */
+	public void releaseFrameInput(String varName) 
+		throws DMLRuntimeException 
+	{
+		FrameObject fo = (FrameObject) getVariable(varName);
+		fo.release();
 	}
 	
 	public ScalarObject getScalarInput(String name, ValueType vt, boolean isLiteral)
@@ -222,28 +257,26 @@ public class ExecutionContext
 		}
 	}
 
-	
 	public void setScalarOutput(String varName, ScalarObject so) 
 		throws DMLRuntimeException 
 	{
 		setVariable(varName, so);
 	}
 	
+	/**
+	 * 
+	 * @param varName
+	 * @param outputData
+	 * @throws DMLRuntimeException
+	 */
 	public void setMatrixOutput(String varName, MatrixBlock outputData) 
 		throws DMLRuntimeException 
 	{
-		MatrixObject sores = (MatrixObject) this.getVariable (varName);
-        
-		try 
-		{
-			sores.acquireModify (outputData);
-	        sores.release();
+		MatrixObject mo = (MatrixObject) getVariable(varName);
+        mo.acquireModify(outputData);
+	    mo.release();
 	        
-	        setVariable (varName, sores);
-		} 
-		catch ( CacheException e ) {
-			throw new DMLRuntimeException( e );
-		}
+	    setVariable(varName, mo);
 	}
 	
 	/**
@@ -264,6 +297,24 @@ public class ExecutionContext
 		
 		//default case
 		setMatrixOutput(varName, outputData);
+	}
+	
+	/**
+	 * 
+	 * @param varName
+	 * @param outputData
+	 * @throws DMLRuntimeException
+	 */
+	public void setFrameOutput(String varName, FrameBlock outputData) 
+		throws DMLRuntimeException 
+	{
+		//TODO: fix createvar instructions generation for frame handles
+		//FrameObject fo = (FrameObject) getVariable(varName);
+		FrameObject fo = new FrameObject(varName);
+		fo.acquireModify(outputData);
+	    fo.release();
+		    
+	    setVariable(varName, fo);
 	}
 	
 	/**

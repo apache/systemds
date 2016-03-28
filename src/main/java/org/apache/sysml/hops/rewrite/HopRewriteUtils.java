@@ -1141,4 +1141,18 @@ public class HopRewriteUtils
 		return -1;
 	}
 	
+	/**
+	 * Compares the size of outputs from hop1 and hop2, in terms of number
+	 * of matrix cells. Note that this methods throws a RuntimeException
+	 * if either hop has unknown dimensions. 
+	 * 
+	 * @param hop1
+	 * @param hop2
+	 * @return 0 if sizes are equal, <0 for hop1<hop2, >0 for hop1>hop2.  
+	 */
+	public static int compareSize( Hop hop1, Hop hop2 ) {
+		long size1 = hop1.getDim1() * hop1.getDim2();
+		long size2 = hop2.getDim1() * hop2.getDim2();
+		return Long.compare(size1, size2);
+	}
 }

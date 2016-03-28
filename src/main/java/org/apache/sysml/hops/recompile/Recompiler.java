@@ -32,7 +32,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.wink.json4j.JSONObject;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
@@ -62,7 +61,6 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.lops.compile.Dag;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -125,15 +123,18 @@ public class Recompiler
 	private static final long CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE = (long)256*1024*1024;
 	private static final long CP_TRANSFORM_UNKNOWN_THRESHOLD_SIZE = (long)1024*1024*1024;
 	
-	//reused rewriter for dynamic rewrites during recompile
-	private static ProgramRewriter rewriter = new ProgramRewriter(false, true);
+	/** Local reused rewriter for dynamic rewrites during recompile */
+
+	/** Local DML configuration for thread-local config updates */
+	private static ThreadLocal<ProgramRewriter> _rewriter = new ThreadLocal<ProgramRewriter>() {
+		@Override protected ProgramRewriter initialValue() { return new ProgramRewriter(false, true); }
+    };
 	
 	/**
 	 * Re-initializes the recompiler according to the current optimizer flags.
 	 */
-	public static void reinitRecompiler()
-	{
-		rewriter = new ProgramRewriter(false, true);
+	public static void reinitRecompiler() {
+		_rewriter.set(new ProgramRewriter(false, true));
 	}
 	
 	/**
@@ -190,7 +191,7 @@ public class Recompiler
 			
 			// dynamic hop rewrites
 			if( !inplace )
-				rewriter.rewriteHopDAGs( hops, null );
+				_rewriter.get().rewriteHopDAGs( hops, null );
 			
 			// refresh memory estimates (based on updated stats,
 			// before: init memo table with propagated worst-case estimates,
@@ -211,7 +212,7 @@ public class Recompiler
 			}		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(sb, ConfigurationManager.getConfig());	
+			newInst = dag.getJobs(sb, ConfigurationManager.getDMLConfig());	
 		}
 		
 		// replace thread ids in new instructions
@@ -286,7 +287,7 @@ public class Recompiler
 			
 			// dynamic hop rewrites
 			if( !inplace )
-				rewriter.rewriteHopDAG( hops, null );
+				_rewriter.get().rewriteHopDAG( hops, null );
 			
 			// refresh memory estimates (based on updated stats)
 			MemoTable memo = new MemoTable();
@@ -301,7 +302,7 @@ public class Recompiler
 			lops.addToDag(dag);		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(null, ConfigurationManager.getConfig());
+			newInst = dag.getJobs(null, ConfigurationManager.getDMLConfig());
 		}
 		
 		// replace thread ids in new instructions
@@ -363,7 +364,7 @@ public class Recompiler
 			}		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(sb, ConfigurationManager.getConfig());			
+			newInst = dag.getJobs(sb, ConfigurationManager.getDMLConfig());			
 		}
 		
 		// replace thread ids in new instructions
@@ -415,7 +416,7 @@ public class Recompiler
 			lops.addToDag(dag);		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(null, ConfigurationManager.getConfig());
+			newInst = dag.getJobs(null, ConfigurationManager.getDMLConfig());
 		}
 		
 		// replace thread ids in new instructions
@@ -461,7 +462,7 @@ public class Recompiler
 			}		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(sb, ConfigurationManager.getConfig());	
+			newInst = dag.getJobs(sb, ConfigurationManager.getDMLConfig());	
 		}
 		
 		// explain recompiled hops / instructions
@@ -508,7 +509,7 @@ public class Recompiler
 			lops.addToDag(dag);		
 			
 			// generate runtime instructions (incl piggybacking)
-			newInst = dag.getJobs(null, ConfigurationManager.getConfig());
+			newInst = dag.getJobs(null, ConfigurationManager.getDMLConfig());
 		}
 
 		// explain recompiled instructions
@@ -905,7 +906,7 @@ public class Recompiler
 		
 	}
 	
-
+	
 	/**
 	 * 
 	 * @param oldCallVars
@@ -1164,7 +1165,7 @@ public class Recompiler
 		MatrixObject moOut = new MatrixObject(ValueType.DOUBLE, null);
 		MatrixCharacteristics mc = new MatrixCharacteristics( 
 									dim1, dim2,
-									DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize,
+									ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
 									nnz);
 		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
 		moOut.setMetaData(meta);
@@ -1482,7 +1483,7 @@ public class Recompiler
 					MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
 					MatrixCharacteristics mc = new MatrixCharacteristics( 
 												hop.getDim1(), hop.getDim2(), 
-												DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize,
+												ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
 												hop.getNnz());
 					MatrixFormatMetaData meta = new MatrixFormatMetaData(mc,null,null);
 					mo.setMetaData(meta);	
@@ -1925,7 +1926,7 @@ public class Recompiler
 		long nnz = mc.getNonZeros();
 		
 		//check valid cp reblock recompilation hook
-		if(    !OptimizerUtils.ALLOW_DYN_RECOMPILATION
+		if(    !ConfigurationManager.isDynamicRecompilation()
 			|| !OptimizerUtils.isHybridExecutionMode() )
 		{
 			return false;

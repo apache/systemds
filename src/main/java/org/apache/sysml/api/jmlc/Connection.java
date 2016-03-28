@@ -21,35 +21,50 @@ package org.apache.sysml.api.jmlc;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.CompilerConfig;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
-import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.io.ReaderTextCell;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.transform.TransformationAgent;
+import org.apache.sysml.runtime.transform.TransformationAgent.TX_METHOD;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
+
+import scala.actors.threadpool.Arrays;
 
 /**
  * JMLC (Java Machine Learning Connector) API:
@@ -59,9 +74,9 @@ import org.apache.sysml.runtime.util.DataConverter;
  *   * See JUnit test cases (org.apache.sysml.test.integration.functions.jmlc) for examples. 
  */
 public class Connection 
-{
-	
-	private DMLConfig _conf = null;
+{	
+	private DMLConfig _dmlconf = null;
+	private CompilerConfig _cconf = null;
 	
 	/**
 	 * Connection constructor, starting point for any other JMLC API calls.
@@ -69,22 +84,31 @@ public class Connection
 	 */
 	public Connection()
 	{
-		//setup basic parameters for embedded execution
-		//parser parameters
-		AParserWrapper.IGNORE_UNSPECIFIED_ARGS = true;
-		DataExpression.IGNORE_READ_WRITE_METADATA = true;
-		DataExpression.REJECT_READ_WRITE_UNKNOWNS = false;
-		//runtime parameters
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = false;
-		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = false;
-		OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS = false;
-		OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS = false;
+		
+		//setup basic parameters for embedded execution
+		//(parser, compiler, and runtime parameters)
+		_cconf = new CompilerConfig();
+		_cconf.set(ConfigType.IGNORE_UNSPECIFIED_ARGS, true);
+		_cconf.set(ConfigType.IGNORE_READ_WRITE_METADATA, true);
+		_cconf.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
+		_cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
+		_cconf.set(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, false);
+		_cconf.set(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, false);
+		_cconf.set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
+		_cconf.set(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, false);
+		_cconf.set(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR, false);
+		_cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, false);
+		_cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
+		_cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
+		ConfigurationManager.setLocalConfig(_cconf);
+		
+		//disable caching globally 
 		CacheableData.disableCaching();
 		
-		//create default configuration
-		_conf = new DMLConfig();
-		ConfigurationManager.setConfig(_conf);
+		//create thread-local default configuration
+		_dmlconf = new DMLConfig();
+		ConfigurationManager.setLocalConfig(_dmlconf);
 	}
 	
 	/**
@@ -139,7 +163,7 @@ public class Connection
 			
 			//lop construct and runtime prog generation
 			dmlt.constructLops(prog);
-			rtprog = prog.getRuntimeProgram(_conf);
+			rtprog = prog.getRuntimeProgram(_dmlconf);
 			
 			//final cleanup runtime prog
 			JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
@@ -158,16 +182,9 @@ public class Connection
 	/**
 	 * 
 	 */
-	public void close()
-	{
-		//reset parameters for embedded execution
-		AParserWrapper.IGNORE_UNSPECIFIED_ARGS = false;
-		DataExpression.IGNORE_READ_WRITE_METADATA = false;
-		DataExpression.REJECT_READ_WRITE_UNKNOWNS = true;
-		OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = true;
-		OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS = true;
-		OptimizerUtils.PARALLEL_CP_READ_BINARYFORMATS = true;
-		OptimizerUtils.PARALLEL_CP_WRITE_BINARYFORMATS = true;		
+	public void close() {
+		//clear thread-local dml / compiler configs
+		ConfigurationManager.clearLocalConfigs();
 	}
 	
 	/**
@@ -241,7 +258,7 @@ public class Connection
 			//read input matrix
 			InputStream is = new ByteArrayInputStream(input.getBytes("UTF-8"));
 			ReaderTextCell reader = (ReaderTextCell)MatrixReaderFactory.createMatrixReader(InputInfo.TextCellInputInfo);
-			MatrixBlock mb = reader.readMatrixFromInputStream(is, rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, (long)rows*cols);
+			MatrixBlock mb = reader.readMatrixFromInputStream(is, rows, cols, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), (long)rows*cols);
 		
 			//convert to double array
 			ret = DataConverter.convertToDoubleMatrix( mb );
@@ -254,4 +271,91 @@ public class Connection
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param spec
+	 * @param metapath
+	 * @return
+	 * @throws IOException 
+	 */
+	@SuppressWarnings("unchecked")
+	public FrameBlock readTransformMetaData(String spec, String metapath) 
+		throws IOException 
+	{
+		//read column names
+		String colStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+"column.names");
+		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colStr.trim(), ","));
+		
+		//read meta data (currently only recode supported, without parsing spec)
+		HashMap<String,String> meta = new HashMap<String,String>();
+		int rows = 0;
+		for( String colName : colnames ) {
+			String name = metapath+File.separator+"Recode"+File.separator+colName;
+			if( MapReduceTool.existsFileOnHDFS(name+".map") ) {
+				meta.put(colName, MapReduceTool.readStringFromHDFSFile(name+".map"));
+				String ndistinct = MapReduceTool.readStringFromHDFSFile(name+".ndistinct");
+				rows = Math.max(rows, Integer.parseInt(ndistinct));
+			}
+		}
+		
+		//create frame block from in-memory strings
+		return readTransformMetaData(spec, rows, colnames, meta);
+	}
+	
+	/**
+	 * 
+	 * @param spec
+	 * @param meta
+	 * @return
+	 * @throws IOException 
+	 */
+	public FrameBlock readTransformMetaData(String spec, int rows, List<String> colnames, HashMap<String,String> meta) 
+		throws IOException 
+	{
+		//create frame block w/ pure string schema
+		List<ValueType> schema = Collections.nCopies(colnames.size(), ValueType.STRING);
+		FrameBlock ret = new FrameBlock(schema, colnames);
+		ret.ensureAllocatedColumns(rows);
+		
+		try
+		{
+			ArrayList<Integer> specRecodeIDs = new ArrayList<Integer>();
+			
+			//parse json transform specification
+			JSONObject jSpec = new JSONObject(spec);
+			if ( jSpec.containsKey(TX_METHOD.RECODE.toString()))  {
+				JSONArray attrs = null; //TODO simplify once json spec consolidated
+				if( jSpec.get(TX_METHOD.RECODE.toString()) instanceof JSONObject ) {
+					JSONObject obj = (JSONObject) jSpec.get(TX_METHOD.RECODE.toString());
+					attrs = (JSONArray) obj.get(TransformationAgent.JSON_ATTRS);
+				}
+				else
+					attrs = (JSONArray)jSpec.get(TX_METHOD.RECODE.toString());				
+				for(int j=0; j<attrs.length(); j++) 
+					specRecodeIDs.add(UtilFunctions.toInt(attrs.get(j)));
+			}	
+			
+			//encode recode maps into frame
+			for( Integer colID : specRecodeIDs ) {
+				String name = colnames.get(colID-1);
+				String map = meta.get(name);
+				if( map == null )
+					throw new IOException("Recode map for column '"+name+"' (id="+colID+") not existing.");
+				
+				InputStream is = new ByteArrayInputStream(map.getBytes("UTF-8"));
+				BufferedReader br = new BufferedReader(new InputStreamReader(is));
+				String line = null; int rpos = 0;
+				while( (line = br.readLine()) != null ) {
+					String parts[] = IOUtilFunctions.split(line.trim(), ",");
+					String pair = parts[0] + Lop.DATATYPE_PREFIX + parts[1]; //sval.code
+					ret.set(rpos++, colID-1, pair);
+				}
+			}
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+		
+		return ret;
+	}
 }

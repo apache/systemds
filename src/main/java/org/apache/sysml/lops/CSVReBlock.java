@@ -97,10 +97,10 @@ public class CSVReBlock extends Lop
 			dataInput = (Data) ((ParameterizedBuiltin)getInputs().get(0)).getNamedInput(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_DATA);
 		}
 		
-		Lop headerLop = dataInput.getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
-		Lop delimLop = dataInput.getNamedInputLop(DataExpression.DELIM_DELIMITER);
-		Lop fillLop = dataInput.getNamedInputLop(DataExpression.DELIM_FILL); 
-		Lop fillValueLop = dataInput.getNamedInputLop(DataExpression.DELIM_FILL_VALUE);
+		Lop headerLop = dataInput.getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW, String.valueOf(DataExpression.DEFAULT_DELIM_HAS_HEADER_ROW));
+		Lop delimLop = dataInput.getNamedInputLop(DataExpression.DELIM_DELIMITER, DataExpression.DEFAULT_DELIM_DELIMITER);
+		Lop fillLop = dataInput.getNamedInputLop(DataExpression.DELIM_FILL, String.valueOf(DataExpression.DEFAULT_DELIM_FILL)); 
+		Lop fillValueLop = dataInput.getNamedInputLop(DataExpression.DELIM_FILL_VALUE, String.valueOf(DataExpression.DEFAULT_DELIM_FILL_VALUE));
 		
 		if (headerLop.isVariable())
 			throw new LopsException(this.printErrorLocation()

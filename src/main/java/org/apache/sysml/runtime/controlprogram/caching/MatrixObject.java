@@ -23,12 +23,11 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -61,7 +60,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  * {@link MatrixBlock} object without informing its {@link MatrixObject} object.
  * 
  */
-public class MatrixObject extends CacheableData
+public class MatrixObject extends CacheableData<MatrixBlock>
 {
 	private static final long serialVersionUID = 6374712373206495637L;
 
@@ -119,7 +118,6 @@ public class MatrixObject extends CacheableData
 	private String _cacheFileName = null; //local eviction file name
 	private boolean _requiresLocalWrite = false; //flag if local write for read obj
 	private boolean _isAcquireFromEmpty = false; //flag if read from status empty 
-	private boolean _cleanupFlag = true; //flag if obj unpinned (cleanup enabled)
 	private boolean _updateInPlaceFlag = false; //flag if in-place update
 	
 	//spark-specific handles
@@ -179,7 +177,8 @@ public class MatrixObject extends CacheableData
 	 */
 	public MatrixObject( MatrixObject mo )
 	{
-		super(mo.getDataType(), mo.getValueType());
+		//base copy constructor
+		super(mo);
 
 		_hdfsFileName = mo._hdfsFileName;
 		_hdfsFileExists = mo._hdfsFileExists;
@@ -189,7 +188,6 @@ public class MatrixObject extends CacheableData
 				                             metaOld.getOutputInfo(), metaOld.getInputInfo());
 		
 		_varName = mo._varName;
-		_cleanupFlag = mo._cleanupFlag;
 		_updateInPlaceFlag = mo._updateInPlaceFlag;
 		_partitioned = mo._partitioned;
 		_partitionFormat = mo._partitionFormat;
@@ -465,6 +463,7 @@ public class MatrixObject extends CacheableData
 	 * @return the matrix data reference
 	 * @throws CacheException 
 	 */
+	@Override
 	public synchronized MatrixBlock acquireRead()
 		throws CacheException
 	{
@@ -551,6 +550,7 @@ public class MatrixObject extends CacheableData
 	 * @return the matrix data reference
 	 * @throws CacheException 
 	 */
+	@Override
 	public synchronized MatrixBlock acquireModify() 
 		throws CacheException
 	{
@@ -609,6 +609,7 @@ public class MatrixObject extends CacheableData
 	 * @return the matrix data reference, which is the same as the argument
 	 * @throws CacheException 
 	 */
+	@Override
 	public synchronized MatrixBlock acquireModify(MatrixBlock newData)
 		throws CacheException
 	{
@@ -653,6 +654,7 @@ public class MatrixObject extends CacheableData
 	 * 
 	 * @throws CacheStatusException
 	 */
+	@Override
 	public synchronized void release() 
 		throws CacheException
 	{
@@ -721,6 +723,7 @@ public class MatrixObject extends CacheableData
 	 * Out-Status: EMPTY.
 	 * @throws CacheException 
 	 */
+	@Override
 	public synchronized void clearData() 
 		throws CacheException
 	{
@@ -728,7 +731,7 @@ public class MatrixObject extends CacheableData
 			LOG.trace("Clear data "+_varName);
 		
 		// check if cleanup enabled and possible 
-		if( !_cleanupFlag ) 
+		if( !isCleanupEnabled() ) 
 			return; // do nothing
 		if( !isAvailableToModify() )
 			throw new CacheStatusException ("MatrixObject (" + this.getDebugName() + ") not available to modify. Status = " + this.getStatusAsString() + ".");
@@ -753,6 +756,7 @@ public class MatrixObject extends CacheableData
 		setEmpty();
 	}
 	
+	@Override
 	public synchronized void exportData()
 		throws CacheException
 	{
@@ -1251,7 +1255,7 @@ public class MatrixObject extends CacheableData
 			begin = System.currentTimeMillis();
 		}
 		
-		LazyWriteBuffer.deleteMatrix(cacheFilePathAndName);
+		LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
 		
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");		
@@ -1311,7 +1315,7 @@ public class MatrixObject extends CacheableData
 	private MatrixBlock readMatrix (String filePathAndName)
 		throws IOException
 	{
-		return LazyWriteBuffer.readMatrix(filePathAndName);
+		return (MatrixBlock)LazyWriteBuffer.readBlock(filePathAndName, true);
 	}
 	
 	/**
@@ -1463,7 +1467,7 @@ public class MatrixObject extends CacheableData
 	private void writeMatrix (String filePathAndName)
 		throws DMLRuntimeException, IOException
 	{
-		LazyWriteBuffer.writeMatrix(filePathAndName, _data);
+		LazyWriteBuffer.writeBlock(filePathAndName, _data);
 	}
 
 	/**
@@ -1495,9 +1499,9 @@ public class MatrixObject extends CacheableData
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 
 			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE &&
-				(mc.getRowsPerBlock() != DMLTranslator.DMLBlockSize || mc.getColsPerBlock() != DMLTranslator.DMLBlockSize) ) 
+				(mc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || mc.getColsPerBlock() != ConfigurationManager.getBlocksize()) ) 
 			{
-				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros()), replication, formatProperties);
+				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros()), replication, formatProperties);
 			}
 			else {
 				DataConverter.writeMatrixToHDFS(_data, filePathAndName, oinfo, mc, replication, formatProperties);
@@ -1540,9 +1544,9 @@ public class MatrixObject extends CacheableData
 				// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 				// note: this is only required if singlenode (due to binarycell default) 
 				if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE &&
-					(mc.getRowsPerBlock() != DMLTranslator.DMLBlockSize || mc.getColsPerBlock() != DMLTranslator.DMLBlockSize) ) 
+					(mc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || mc.getColsPerBlock() != ConfigurationManager.getBlocksize()) ) 
 				{
-					mc = new MatrixCharacteristics(mc.getRows(), mc.getCols(), DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, mc.getNonZeros());
+					mc = new MatrixCharacteristics(mc.getRows(), mc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros());
 				}
 				MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, mc, oinfo, formatProperties);
 			}
@@ -1642,26 +1646,6 @@ public class MatrixObject extends CacheableData
 			size += (add ? 1 : -1) * _data.getSizeInMemory();
 			sizePinned.set( Math.max(size,0) );
 		}
-	}
-	
-	/**
-	 * see clear data
-	 * 
-	 * @param flag
-	 */
-	public void enableCleanup(boolean flag) 
-	{
-		_cleanupFlag = flag;
-	}
-
-	/**
-	 * see clear data
-	 * 
-	 * @return
-	 */
-	public boolean isCleanupEnabled() 
-	{
-		return _cleanupFlag;
 	}
 	
 	/**

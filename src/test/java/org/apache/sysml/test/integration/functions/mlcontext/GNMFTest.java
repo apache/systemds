@@ -178,7 +178,7 @@ public class GNMFTest extends AutomatedTestBase
 			MLOutput out = mlCtx.execute(fullDMLScriptName, programArgs);
 			
 			if(numRegisteredOutputs >= 2) {
-				String configStr = ConfigurationManager.getConfig().getConfigInfo();
+				String configStr = ConfigurationManager.getDMLConfig().getConfigInfo();
 				if(configStr.contains("cp.parallel.matrixmult: true"))
 					Assert.fail("Configuration not updated via setConfig");
 			}

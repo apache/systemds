@@ -29,12 +29,11 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
-
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
@@ -625,7 +624,7 @@ public class ProgramConverter
 		
 		try
 		{
-			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) 
 				&& sb != null  //forced deep copy for function recompilation
 				&& (Recompiler.requiresRecompilation( sb.get_hops() ) || forceDeepCopy)  )
 			{
@@ -673,7 +672,7 @@ public class ProgramConverter
 		
 		try
 		{
-			if(    OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
+			if(    ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) 
 				&& sb != null //forced deep copy for function recompile
 				&& (Recompiler.requiresRecompilation( sb.getPredicateHops() ) || forceDeepCopy)  )
 			{
@@ -722,7 +721,7 @@ public class ProgramConverter
 		
 		try
 		{
-			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) 
 				&& sb != null  //forced deep copy for function recompile
 				&& (Recompiler.requiresRecompilation( sb.getPredicateHops() ) || forceDeepCopy)  )
 			{
@@ -771,7 +770,7 @@ public class ProgramConverter
 		
 		try
 		{
-			if( OptimizerUtils.ALLOW_PARALLEL_DYN_RECOMPILATION 
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) 
 				&& sb != null 
 				&& ( Recompiler.requiresRecompilation(sb.getFromHops()) ||
 					 Recompiler.requiresRecompilation(sb.getToHops()) ||
@@ -852,7 +851,7 @@ public class ProgramConverter
 		sb.append( NEWLINE );		
 		
 		//handle DML config
-		sb.append( ConfigurationManager.getConfig().serializeDMLConfig() );
+		sb.append( ConfigurationManager.getDMLConfig().serializeDMLConfig() );
 		sb.append( COMPONENTS_DELIM );
 		sb.append( NEWLINE );
 		
@@ -1558,7 +1557,7 @@ public class ProgramConverter
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
 			DMLConfig config = DMLConfig.parseDMLConfig(confStr);
-			ConfigurationManager.setConfig(config);
+			ConfigurationManager.setLocalConfig(config);
 			ParForProgramBlock.initInternalConfigurations(config);
 		}
 		

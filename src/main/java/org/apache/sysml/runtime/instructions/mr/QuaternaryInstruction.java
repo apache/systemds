@@ -97,7 +97,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 	}
 	
 	public byte getInput4() {
-		return _input3;
+		return _input4;
 	}
 
 	/**
@@ -206,7 +206,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 		{
 			boolean isRed = opcode.startsWith("red");
 			
-			//check number of fields (3 inputs, output, type)
+			//check number of fields (4 inputs, output, type)
 			if( isRed )
 				InstructionUtils.checkNumFields ( str, 8 );
 			else
@@ -215,27 +215,30 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			//parse instruction parts (without exec type)
 			String[] parts = InstructionUtils.getInstructionParts(str);
 			
+			final WDivMMType wtype = WDivMMType.valueOf(parts[6]);
+			
 			byte in1 = Byte.parseByte(parts[1]);
 			byte in2 = Byte.parseByte(parts[2]);
 			byte in3 = Byte.parseByte(parts[3]);
-			byte in4 = Byte.parseByte(parts[4]);
+			byte in4 = wtype.hasScalar() ? -1 : Byte.parseByte(parts[4]);
 			byte out = Byte.parseByte(parts[5]);
 			
 			//in mappers always through distcache, in reducers through distcache/shuffle
 			boolean cacheU = isRed ? Boolean.parseBoolean(parts[7]) : true;
 			boolean cacheV = isRed ? Boolean.parseBoolean(parts[8]) : true;
 			
-			return new QuaternaryInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[6])), in1, in2, in3, in4, out, cacheU, cacheV, str);
+			return new QuaternaryInstruction(new QuaternaryOperator(wtype), in1, in2, in3, in4, out, cacheU, cacheV, str);
 		}
 		else //wsigmoid / wcemm
 		{
 			boolean isRed = opcode.startsWith("red");
+			int addInput4 = (opcode.endsWith("wcemm")) ? 1 : 0;
 			
-			//check number of fields (3 inputs, output, type)
+			//check number of fields (3 or 4 inputs, output, type)
 			if( isRed )
-				InstructionUtils.checkNumFields ( str, 7 );
+				InstructionUtils.checkNumFields ( str, 7 + addInput4 );
 			else
-				InstructionUtils.checkNumFields ( str, 5 );
+				InstructionUtils.checkNumFields ( str, 5 + addInput4 );
 				
 			//parse instruction parts (without exec type)
 			String[] parts = InstructionUtils.getInstructionParts(str);
@@ -243,16 +246,16 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 			byte in1 = Byte.parseByte(parts[1]);
 			byte in2 = Byte.parseByte(parts[2]);
 			byte in3 = Byte.parseByte(parts[3]);
-			byte out = Byte.parseByte(parts[4]);
+			byte out = Byte.parseByte(parts[4 + addInput4]);
 			
 			//in mappers always through distcache, in reducers through distcache/shuffle
-			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
-			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6 + addInput4]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7 + addInput4]) : true;
 			
 			if( opcode.endsWith("wsigmoid") )
 				return new QuaternaryInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
 			else if( opcode.endsWith("wcemm") )
-				return new QuaternaryInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
+				return new QuaternaryInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[6])), in1, in2, in3, (byte)-1, out, cacheU, cacheV, str);
 		}
 		
 		return null;
@@ -333,8 +336,14 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 				MatrixValue Xij = inVal;
 				
 				//get Wij if existing (null of WeightsType.NONE or WSigmoid any type)
-				IndexedMatrixValue iWij = cachedValues.getFirst(_input4); 
+				IndexedMatrixValue iWij = (_input4 != -1) ? cachedValues.getFirst(_input4) : null; 
 				MatrixValue Wij = (iWij!=null) ? iWij.getValue() : null;
+				if (null == Wij && qop.hasFourInputs()) {
+					MatrixBlock mb = new MatrixBlock(1, 1, false);
+					String[] parts = InstructionUtils.getInstructionParts(instString);
+					mb.quickSetValue(0, 0, Double.valueOf(parts[4]));
+					Wij = mb;
+				}
 				
 				//get Ui and Vj, potentially through distributed cache
 				MatrixValue Ui = (!_cacheU) ? cachedValues.getFirst(_input2).getValue()     //U

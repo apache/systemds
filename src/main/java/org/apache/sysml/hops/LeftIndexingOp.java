@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Binary;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.LeftIndex;
@@ -29,7 +30,6 @@ import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.lops.ZeroOut;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.UnaryCP.OperationTypes;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -133,8 +133,8 @@ public class LeftIndexingOp  extends Hop
 							                 OperationTypes.CAST_AS_MATRIX, 
 							                 DataType.MATRIX, ValueType.DOUBLE);
 					rightInput.getOutputParameters().setDimensions( (long)1, (long)1,
-																	(long)DMLTranslator.DMLBlockSize, 
-							                                        (long)DMLTranslator.DMLBlockSize,
+																	(long)ConfigurationManager.getBlocksize(), 
+							                                        (long)ConfigurationManager.getBlocksize(),
 							                                        (long)-1);
 				} 
 				else 
@@ -194,7 +194,7 @@ public class LeftIndexingOp  extends Hop
 				Lop rightInput = right.constructLops();
 				if (isRightHandSideScalar()) {
 					rightInput = new UnaryCP(rightInput, OperationTypes.CAST_AS_MATRIX, DataType.MATRIX, ValueType.DOUBLE);
-					long bsize = (long)DMLTranslator.DMLBlockSize;
+					long bsize = ConfigurationManager.getBlocksize();
 					rightInput.getOutputParameters().setDimensions( 1, 1, bsize, bsize, -1);
 				} 
 
@@ -391,7 +391,7 @@ public class LeftIndexingOp  extends Hop
 		}
 		
 		//mark for recompile (forever)
-		if( OptimizerUtils.ALLOW_DYN_RECOMPILATION && !dimsKnown(true) && _etype==REMOTE )
+		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
 			setRequiresRecompile();
 	
 		return _etype;

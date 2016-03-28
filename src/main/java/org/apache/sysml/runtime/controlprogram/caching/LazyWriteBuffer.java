@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 
 /**
@@ -35,10 +34,9 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
  */
 public class LazyWriteBuffer 
 {
-	
-	public enum RPolicy{
-		FIFO,
-		LRU
+	public enum RPolicy {
+		FIFO, //first-in, first-out eviction
+		LRU   //least recently used eviction
 	}
 	
 	//global size limit in bytes
@@ -51,8 +49,7 @@ public class LazyWriteBuffer
 	//for (1) queue semantics and (2) constant time get/insert/delete operations)
 	private static EvictionQueue _mQueue;
 	
-	static 
-	{
+	static {
 		//obtain the logical buffer size in bytes
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		_limit = (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
@@ -64,14 +61,16 @@ public class LazyWriteBuffer
 	 * @param mb
 	 * @throws IOException
 	 */
-	public static void writeMatrix( String fname, MatrixBlock mb ) 
+	public static void writeBlock( String fname, CacheBlock cb ) 
 		throws IOException
 	{	
-		long lSize = mb.getExactSizeOnDisk(); 
+		//obtain basic meta data of cache block
+		long lSize = cb.getExactSerializedSize();  
 		boolean requiresWrite = (   lSize > _limit  //global buffer limit
-				                 || !ByteBuffer.isValidCapacity(lSize, mb) ); //local buffer limit
+			|| !ByteBuffer.isValidCapacity(lSize, cb) ); //local buffer limit
 	
-		if( !requiresWrite ) //if it fits in writebuffer
+		//handle caching/eviction if it fits in writebuffer
+		if( !requiresWrite ) 
 		{			
 			ByteBuffer bbuff = null;
 			
@@ -86,7 +85,7 @@ public class LazyWriteBuffer
 					String ftmp = entry.getKey();
 					ByteBuffer tmp = entry.getValue();
 					
-					if( tmp != null )
+					if( tmp != null ) 
 					{
 						//wait for pending serialization
 						tmp.checkSerialized();
@@ -110,7 +109,7 @@ public class LazyWriteBuffer
 			}
 			
 			//serialize matrix (outside synchronized critical path)
-			bbuff.serializeMatrix(mb);
+			bbuff.serializeBlock(cb); 
 			
 			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSBuffWrites();
@@ -118,7 +117,7 @@ public class LazyWriteBuffer
 		else
 		{
 			//write directly to local FS (bypass buffer if too large)
-			LocalFileUtils.writeMatrixBlockToLocal(fname, mb);
+			LocalFileUtils.writeCacheBlockToLocal(fname, cb);
 			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSWrites();
 		}	
@@ -128,7 +127,7 @@ public class LazyWriteBuffer
 	 * 
 	 * @param fname
 	 */
-	public static void deleteMatrix( String fname )
+	public static void deleteBlock( String fname )
 	{
 		boolean requiresDelete = true;
 		
@@ -136,8 +135,7 @@ public class LazyWriteBuffer
 		{
 			//remove queue entry 
 			ByteBuffer ldata = _mQueue.remove(fname);
-			if( ldata != null )
-			{
+			if( ldata != null ) {
 				_size -= ldata.getSize(); 
 				requiresDelete = false;
 				ldata.freeMemory(); //cleanup
@@ -155,10 +153,10 @@ public class LazyWriteBuffer
 	 * @return
 	 * @throws IOException
 	 */
-	public static MatrixBlock readMatrix( String fname ) 
+	public static CacheBlock readBlock( String fname, boolean matrix ) 
 		throws IOException
 	{
-		MatrixBlock mb = null;
+		CacheBlock cb = null;
 		ByteBuffer ldata = null;
 		
 		//probe write buffer
@@ -179,25 +177,24 @@ public class LazyWriteBuffer
 		//deserialize or read from FS if required
 		if( ldata != null )
 		{
-			mb = ldata.deserializeMatrix();
+			cb = ldata.deserializeBlock();
 			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSBuffHits();
 		}
 		else
 		{
-			mb = LocalFileUtils.readMatrixBlockFromLocal(fname); //read from FS
+			cb = LocalFileUtils.readCacheBlockFromLocal(fname, matrix); 
 			if( DMLScript.STATISTICS )
 				CacheStatistics.incrementFSHits();
 		}
 		
-		return mb;
+		return cb;
 	}
 		
 	/**
 	 * 
 	 */
-	public static void init()
-	{
+	public static void init() {
 		_mQueue = new EvictionQueue();		
 		_size = 0;
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
@@ -207,8 +204,7 @@ public class LazyWriteBuffer
 	/**
 	 * 
 	 */
-	public static void cleanup()
-	{
+	public static void cleanup() {
 		if( _mQueue!=null )
 			_mQueue.clear();
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
@@ -219,8 +215,7 @@ public class LazyWriteBuffer
 	 * 
 	 * @return
 	 */
-	public static long getWriteBufferSize()
-	{
+	public static long getWriteBufferSize() {
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		return (long)(CacheableData.CACHING_BUFFER_SIZE * maxMem);
 	}
@@ -245,7 +240,7 @@ public class LazyWriteBuffer
 			String fname = entry.getKey();
 			ByteBuffer bbuff = entry.getValue();
 			
-			System.out.println("\tWB: buffer element ("+count+"): "+fname+", "+bbuff.getSize()+", "+bbuff.isInSparseFormat());
+			System.out.println("\tWB: buffer element ("+count+"): "+fname+", "+bbuff.getSize()+", "+bbuff.isShallow());
 			count--;
 		}
 	}
@@ -259,8 +254,7 @@ public class LazyWriteBuffer
 	{
 		private static final long serialVersionUID = -5208333402581364859L;
 		
-		public void addLast( String fname, ByteBuffer bbuff )
-		{
+		public void addLast( String fname, ByteBuffer bbuff ) {
 			//put entry into eviction queue w/ 'addLast' semantics
 			put(fname, bbuff);
 		}

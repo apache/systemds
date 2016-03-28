@@ -24,11 +24,11 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.apache.sysml.utils.Statistics;
 
 public class UpdateInPlaceTest extends AutomatedTestBase 
 {
@@ -94,20 +94,17 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	//Note: In order to run these tests against ParFor loop, parfor's DEBUG flag needs to be set in the script.
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		OptimizerUtils.ALLOW_DYN_RECOMPILATION = true;
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, null));
 	}
 
-	//public void testUIPOverlapStatement(1)
 	@Test
 	public void testUIP() 
 	{
 		List<String> listUIPRes = Arrays.asList("A");
 
-		runUpdateInPlaceTest(TEST_NAME, 1, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 1, listUIPRes, 2, 4, 4);
 	}
 	
 	@Test
@@ -115,7 +112,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 2, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 2, listUIPRes, 0, 0, 4);
 	}
 	
 	@Test
@@ -123,7 +120,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 3, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 3, listUIPRes, 0, 0, 4);
 	}
 	
 	@Test
@@ -131,7 +128,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList("A");
 
-		runUpdateInPlaceTest(TEST_NAME, 4, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 4, listUIPRes, 2, 4, 4);
 	}
 	
 	@Test
@@ -139,7 +136,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 5, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 5, listUIPRes, 0, 0, 4);
 	}
 	
 	@Test
@@ -147,7 +144,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 6, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 6, listUIPRes, 0, 0, 4);
 	}
 	
 	@Test
@@ -155,7 +152,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 7, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 7, listUIPRes, 0, 0, 4);
 	}
 	
 	@Test
@@ -163,7 +160,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 8, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 8, listUIPRes, 0, 0, 4);
 	}
 	
 	@Test
@@ -171,7 +168,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 9, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 9, listUIPRes, 0, 0, 4);
 	}
 	
 	@Test
@@ -179,7 +176,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 10, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 10, listUIPRes, 0, 0, 12);
 	}
 	
 	@Test
@@ -187,7 +184,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 11, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 11, listUIPRes, 0, 0, 8);
 	}
 	
 	@Test
@@ -195,7 +192,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 12, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 12, listUIPRes, 0, 0, 4);
 	}
 	
 	@Test
@@ -203,7 +200,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 13, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 13, listUIPRes, 0, 0, 4);
 	}
 	
 	@Test
@@ -211,7 +208,7 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList("A");
 
-		runUpdateInPlaceTest(TEST_NAME, 14, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 14, listUIPRes, 2, 4, 8);
 	}
 		
 	@Test
@@ -219,17 +216,16 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	{
 		List<String> listUIPRes = Arrays.asList();
 
-		runUpdateInPlaceTest(TEST_NAME, 15, listUIPRes);
+		runUpdateInPlaceTest(TEST_NAME, 15, listUIPRes, 0, 0, 4);
 	}
 	
-
 	/**
 	 * 
 	 * @param TEST_NAME
 	 * @param iTestNumber
 	 * @param listUIPRes
 	 */
-	private void runUpdateInPlaceTest( String TEST_NAME, int iTestNumber, List<String> listUIPExp )
+	private void runUpdateInPlaceTest( String TEST_NAME, int iTestNumber, List<String> listUIPExp, long lTotalUIPVar, long lTotalLixUIP, long lTotalLix)
 	{
 		try
 		{
@@ -272,6 +268,19 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 							" does not match with the # of matrix objects " + "0" + " from optimization result.", 
 							(listUIPRes == null || listUIPRes.size() == 0));
 				}
+				
+				Assert.assertTrue("Expected # of UpdateInPlace create variables of type matrix " + lTotalUIPVar + 
+						" does not match with the # of UpdateInPlace create variables of type matrix objects " + Statistics.getTotalUIPVar() + " from optimization result.", 
+						(Statistics.getTotalUIPVar() == lTotalUIPVar));
+				
+				Assert.assertTrue("Expected # of UpdateInPlace LeftIndexing " + lTotalLixUIP + 
+						" does not match with the # of UpdateInPlace LeftIndexing " + Statistics.getTotalLixUIP() + " from optimization result.", 
+						(Statistics.getTotalLixUIP() == lTotalLixUIP));
+				
+				Assert.assertTrue("Expected # of total LeftIndexing " + lTotalLix + 
+						" does not match with the # of total LeftIndexing " + Statistics.getTotalLix() + " from optimization result.", 
+						(Statistics.getTotalLix() == lTotalLix));
+				
 			}
 		}
 		finally{

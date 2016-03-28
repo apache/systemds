@@ -19,7 +19,7 @@
 
 package org.apache.sysml.udf.lib;
 
-import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -78,7 +78,7 @@ public class DynamicReadMatrixRcCP extends PackageFunction
 			String fnameTmp = createOutputFilePathAndName("TMP");
 			_ret = new Matrix(fnameTmp, m, n, ValueType.Double);
 
-			MatrixBlock mbTmp = DataConverter.readMatrixFromHDFS(fname, ii, m, n, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize);			
+			MatrixBlock mbTmp = DataConverter.readMatrixFromHDFS(fname, ii, m, n, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());			
 			_ret.setMatrixDoubleArray(mbTmp, oi, ii);
 			_rc = new Scalar(ScalarValueType.Integer, "0");
 			

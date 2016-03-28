@@ -31,7 +31,6 @@ import scala.Tuple2;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
@@ -150,33 +149,16 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			{
 				boolean bRmEmptyBC = false; 
 				if(parts.length > 6)
-					bRmEmptyBC = (parts[5].compareTo("true") == 0)?true:false;
+					bRmEmptyBC = Boolean.parseBoolean(parts[5]);
 									
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, bRmEmptyBC);
 			}
-			else if(   opcode.equalsIgnoreCase("rexpand") ) 
+			else if(   opcode.equalsIgnoreCase("rexpand") 
+					|| opcode.equalsIgnoreCase("replace")
+					|| opcode.equalsIgnoreCase("transform") ) 
 			{
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
-			}
-			else if(   opcode.equalsIgnoreCase("replace") ) 
-			{
-				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
-			}
-			else if ( opcode.equalsIgnoreCase("transform") ) 
-			{
-				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-				String specFile = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC);
-				String applyTxPath = paramsMap.get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD);
-				if ( specFile != null && applyTxPath != null)
-					throw new DMLRuntimeException(
-							"Invalid parameters to transform(). Only one of '"
-									+ ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_TXSPEC
-									+ "' or '"
-									+ ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_APPLYMTD
-									+ "' can be specified.");
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
 			}
 			else {

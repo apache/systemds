@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.parser.ParForStatementBlock;
@@ -162,7 +163,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		
 			//rewrite 14:
 			HashSet<String> inplaceResultVars = new HashSet<String>();
-			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
+			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 			
 			//rewrite 15:
 			super.rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
@@ -178,7 +179,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 
 			// rewrite 14: set in-place result indexing
 			HashSet<String> inplaceResultVars = new HashSet<String>();
-			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars);
+			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
 			
 			if( !OptimizerUtils.isSparkExecutionMode() ) {
 				// rewrite 16: runtime piggybacking
@@ -265,7 +266,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		boolean ret = false;
 				
 		// constraint awareness
-		if( n.getExecType() != null  )
+		if( n.getExecType() != null && ConfigurationManager.isParallelParFor() )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
                     .getAbstractPlanMapping().getMappedProg(n.getID())[1];
@@ -298,7 +299,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		throws DMLRuntimeException 
 	{
 		// constraint awareness
-		if( n.getK()>0 )
+		if( n.getK() > 0 && ConfigurationManager.isParallelParFor() )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 					.getAbstractPlanMapping().getMappedProg(n.getID())[1];

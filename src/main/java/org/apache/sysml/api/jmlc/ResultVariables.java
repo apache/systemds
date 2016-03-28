@@ -23,8 +23,10 @@ import java.util.HashMap;
 import java.util.Set;
 
 import org.apache.sysml.api.DMLException;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
 
@@ -55,7 +57,7 @@ public class ResultVariables
 	
 	/**
 	 * 
-	 * @param var
+	 * @param varname
 	 * @return
 	 * @throws DMLException
 	 */
@@ -78,6 +80,34 @@ public class ResultVariables
 		ret = DataConverter.convertToDoubleMatrix(mb);
 		mo.release();
 	
+		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param varname
+	 * @return
+	 * @throws DMLException
+	 */
+	public String[][] getFrame(String varname) 
+		throws DMLException
+	{
+		if( !_out.containsKey(varname) )
+			throw new DMLException("Non-existing output variable: "+varname);
+		
+		String[][] ret = null;
+		Data dat = _out.get(varname);
+		
+		//basic checks for data type	
+		if( !(dat instanceof FrameObject) )
+			throw new DMLException("Expected frame result '"+varname+"' not a frame.");
+		
+		//convert output matrix to double array	
+		FrameObject fo = (FrameObject)dat;
+		FrameBlock frame = fo.acquireRead();
+		ret = DataConverter.convertToStringFrame(frame);
+		fo.release();
+		
 		return ret;
 	}
 	

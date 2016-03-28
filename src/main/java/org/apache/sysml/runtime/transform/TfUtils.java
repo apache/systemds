@@ -19,10 +19,8 @@
 
 package org.apache.sysml.runtime.transform;
 
-import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -49,8 +47,6 @@ import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.JSONHelper;
-
 
 @SuppressWarnings("deprecation")
 public class TfUtils implements Serializable{
@@ -77,10 +73,63 @@ public class TfUtils implements Serializable{
 	private long _numInputCols = -1;
 	
 	private String _tfMtdDir = null;
-	private String _specFile = null;
+	private String _spec = null;
 	private String _offsetFile = null;
 	private String _tmpDir = null;
 	private String _outputPath = null;
+	
+	public TfUtils(JobConf job, boolean minimal) 
+		throws IOException, JSONException 
+	{
+		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
+			ConfigurationManager.setCachedJobConf(job);
+		}		
+		_NAstrings = TfUtils.parseNAStrings(job);
+		_spec = job.get(MRJobConfiguration.TF_SPEC);
+		_oa = new OmitAgent(new JSONObject(_spec));
+	}
+	
+	// called from GenTFMtdMapper, ApplyTf (Hadoop)
+	public TfUtils(JobConf job) 
+		throws IOException, JSONException 
+	{
+		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
+			ConfigurationManager.setCachedJobConf(job);
+		}
+		
+		boolean hasHeader = Boolean.parseBoolean(job.get(MRJobConfiguration.TF_HAS_HEADER));
+		String[] naStrings = TfUtils.parseNAStrings(job);
+		long numCols = UtilFunctions.parseToLong( job.get(MRJobConfiguration.TF_NUM_COLS) ); // #cols input data
+		String spec = job.get(MRJobConfiguration.TF_SPEC);
+		String offsetFile = job.get(MRJobConfiguration.TF_OFFSETS_FILE);
+		String tmpPath = job.get(MRJobConfiguration.TF_TMP_LOC);
+		String outputPath = FileOutputFormat.getOutputPath(job).toString();
+		JSONObject jspec = new JSONObject(spec);
+		
+		init(job.get(MRJobConfiguration.TF_HEADER), hasHeader, job.get(MRJobConfiguration.TF_DELIM), naStrings, jspec, numCols, offsetFile, tmpPath, outputPath);
+	}
+	
+	// called from GenTfMtdReducer 
+	public TfUtils(JobConf job, String tfMtdDir) throws IOException, JSONException 
+	{
+		this(job);
+		_tfMtdDir = tfMtdDir;
+	}
+	
+	// called from GenTFMtdReducer and ApplyTf (Spark)
+	public TfUtils(String headerLine, boolean hasHeader, String delim, String[] naStrings, JSONObject spec, long ncol, String tfMtdDir, String offsetFile, String tmpPath) throws IOException, JSONException {
+		init (headerLine, hasHeader, delim, naStrings, spec, ncol, offsetFile, tmpPath, null);
+		_tfMtdDir = tfMtdDir;
+	}
+	
+	//called from cp frame transformapply
+	public TfUtils(JSONObject spec, long inNcol) 
+		throws IOException, JSONException 
+	{
+		//TODO recodemaps handover
+		_numInputCols = inNcol;
+		createAgents(spec);
+	}
 	
 	protected static boolean checkValidInputFile(FileSystem fs, Path path, boolean err)
 			throws IOException {
@@ -117,13 +166,6 @@ public class TfUtils implements Serializable{
 			return true;
 		else
 			return false;
-	}
-	
-	public static JSONObject readSpec(FileSystem fs, String specFile) throws IOException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(new Path(specFile))));
-		JSONObject obj = JSONHelper.parse(br);
-		br.close();
-		return obj;
 	}
 	
 	/**
@@ -193,59 +235,6 @@ public class TfUtils implements Serializable{
 		createAgents(spec);
 	}
 	
-	public TfUtils(JobConf job, boolean minimal) 
-		throws IOException, JSONException 
-	{
-		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
-			ConfigurationManager.setCachedJobConf(job);
-		}
-		
-		_NAstrings = TfUtils.parseNAStrings(job);
-		_specFile = job.get(MRJobConfiguration.TF_SPEC_FILE);
-		
-		FileSystem fs = FileSystem.get(job);
-		JSONObject spec = TfUtils.readSpec(fs, _specFile);
-		
-		_oa = new OmitAgent(spec);
-	}
-	
-	// called from GenTFMtdMapper, ApplyTf (Hadoop)
-	public TfUtils(JobConf job) 
-		throws IOException, JSONException 
-	{
-		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
-			ConfigurationManager.setCachedJobConf(job);
-		}
-		
-		boolean hasHeader = Boolean.parseBoolean(job.get(MRJobConfiguration.TF_HAS_HEADER));
-		//Pattern delim = Pattern.compile(Pattern.quote(job.get(MRJobConfiguration.TF_DELIM)));
-		String[] naStrings = TfUtils.parseNAStrings(job);
-		
-		long numCols = UtilFunctions.parseToLong( job.get(MRJobConfiguration.TF_NUM_COLS) );		// #of columns in input data
-			
-		String specFile = job.get(MRJobConfiguration.TF_SPEC_FILE);
-		String offsetFile = job.get(MRJobConfiguration.TF_OFFSETS_FILE);
-		String tmpPath = job.get(MRJobConfiguration.TF_TMP_LOC);
-		String outputPath = FileOutputFormat.getOutputPath(job).toString();
-		FileSystem fs = FileSystem.get(job);
-		JSONObject spec = TfUtils.readSpec(fs, specFile);
-		
-		init(job.get(MRJobConfiguration.TF_HEADER), hasHeader, job.get(MRJobConfiguration.TF_DELIM), naStrings, spec, numCols, offsetFile, tmpPath, outputPath);
-	}
-	
-	// called from GenTfMtdReducer 
-	public TfUtils(JobConf job, String tfMtdDir) throws IOException, JSONException 
-	{
-		this(job);
-		_tfMtdDir = tfMtdDir;
-	}
-	
-	// called from GenTFMtdReducer and ApplyTf (Spark)
-	public TfUtils(String headerLine, boolean hasHeader, String delim, String[] naStrings, JSONObject spec, long ncol, String tfMtdDir, String offsetFile, String tmpPath) throws IOException, JSONException {
-		init (headerLine, hasHeader, delim, naStrings, spec, ncol, offsetFile, tmpPath, null);
-		_tfMtdDir = tfMtdDir;
-	}
-	
 	public void incrValid() { _numValidRecords++; }
 	public long getValid()  { return _numValidRecords; }
 	public long getTotal()  { return _numRecordsInPartFile; }
@@ -259,7 +248,7 @@ public class TfUtils implements Serializable{
 	public String[] getNAStrings() 	{ return _NAstrings; }
 	public long getNumCols() 		{ return _numInputCols; }
 	
-	public String getSpecFile() 	{ return _specFile; }
+	public String getSpec() 	{ return _spec; }
 	public String getTfMtdDir() 	{ return _tfMtdDir; }
 	public String getOffsetFile() 	{ return _offsetFile; }
 	public String getTmpDir() 		{ return _tmpDir; }
@@ -424,8 +413,7 @@ public class TfUtils implements Serializable{
 			words = getRecodeAgent().apply(words, this);
 
 		words = getBinAgent().apply(words, this);
-		words = getDummycodeAgent().apply(words, this);
-		
+		words = getDummycodeAgent().apply(words, this);		
 		_numTransformedRows++;
 		
 		return words;

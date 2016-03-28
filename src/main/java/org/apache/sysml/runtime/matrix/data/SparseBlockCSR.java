@@ -186,11 +186,13 @@ public class SparseBlockCSR extends SparseBlock
 	@Override 
 	public void reset() {
 		_size = 0;
+		Arrays.fill(_ptr, 0);
 	}
 
 	@Override 
 	public void reset(int ennz, int maxnnz) {
 		_size = 0;
+		Arrays.fill(_ptr, 0);
 	}
 	
 	@Override 
@@ -203,6 +205,7 @@ public class SparseBlockCSR extends SparseBlock
 			System.arraycopy(_indexes, pos+len, _indexes, pos, _size-(pos+len));
 			System.arraycopy(_values, pos+len, _values, pos, _size-(pos+len));
 			_size -= len;	
+			decrPtr(r+1, len);
 		}
 	}
 	

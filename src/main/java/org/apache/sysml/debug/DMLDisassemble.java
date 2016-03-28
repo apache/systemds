@@ -42,9 +42,9 @@ import org.apache.sysml.runtime.instructions.cp.CPInstruction;
  */
 public class DMLDisassemble 
 {
-	Program _prog;
+	private Program _prog;
 	//Map between DML program line numbers and corresponding runtime instruction(s)
-	TreeMap<Integer, ArrayList<Instruction>> DMLInstMap; 
+	private TreeMap<Integer, ArrayList<Instruction>> DMLInstMap; 
 	
 	/**
 	 * Constructor for DML disassembler class 

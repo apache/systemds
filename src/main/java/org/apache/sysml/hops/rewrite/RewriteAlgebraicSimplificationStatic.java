@@ -151,6 +151,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq; 
 			hi = removeUnnecessaryReorgOperation(hop, hi, i);    //e.g., t(t(X))->X; rev(rev(X))->X potentially introduced by other rewrites
+			hi = simplifyTransposeAggBinBinaryChains(hop, hi, i);//e.g., t(t(A)%*%t(B)+C) -> B%*%A+t(C)
 			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplfiy binary or dyn rewrites
 			hi = simplifyGroupedAggregate(hi);          	     //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
 			hi = fuseMinusNzBinaryOperation(hop, hi, i);         //e.g., X-mean*ppred(X,0,!=) -> X -nz mean
@@ -571,8 +572,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				ReorgOp rop = HopRewriteUtils.createReorg(hi.getInput().get(1), ReOrgOp.REV);
 				
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
-				HopRewriteUtils.removeAllChildReferences(hi);
 				HopRewriteUtils.addChildReference(parent, rop, pos);
+				if( hi.getParent().isEmpty() ) 
+					HopRewriteUtils.removeAllChildReferences(hi);
 				if( top.getParent().isEmpty() )
 					HopRewriteUtils.removeAllChildReferences(top);
 				
@@ -1360,6 +1362,50 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					}
 				}
 			}	   
+		}
+		
+		return hi;
+	}
+
+	/**
+	 * Patterns: t(t(A)%*%t(B)+C) -> B%*%A+t(C)
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyTransposeAggBinBinaryChains(Hop parent, Hop hi, int pos) 
+		throws HopsException
+	{
+		if( hi instanceof ReorgOp && ((ReorgOp)hi).getOp()==ReOrgOp.TRANSPOSE //transpose
+			&& hi.getInput().get(0) instanceof BinaryOp                       //basic binary
+			&& ((BinaryOp)hi.getInput().get(0)).supportsMatrixScalarOperations()) 
+		{
+			Hop left = hi.getInput().get(0).getInput().get(0);
+			Hop C = hi.getInput().get(0).getInput().get(1);
+			
+			//check matrix mult and both inputs transposes w/ single consumer
+			if( left instanceof AggBinaryOp && C.getDataType().isMatrix()
+				&& left.getInput().get(0).getParent().size()==1 && left.getInput().get(0) instanceof ReorgOp
+				&& ((ReorgOp)left.getInput().get(0)).getOp()==ReOrgOp.TRANSPOSE     
+				&& left.getInput().get(1).getParent().size()==1 && left.getInput().get(1) instanceof ReorgOp
+				&& ((ReorgOp)left.getInput().get(1)).getOp()==ReOrgOp.TRANSPOSE )
+			{
+				Hop A = left.getInput().get(0).getInput().get(0);
+				Hop B = left.getInput().get(1).getInput().get(0);
+				
+				AggBinaryOp abop = HopRewriteUtils.createMatrixMultiply(B, A);
+				ReorgOp rop = HopRewriteUtils.createTranspose(C);
+				BinaryOp bop = HopRewriteUtils.createBinary(abop, rop, OpOp2.PLUS);
+				
+				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+				HopRewriteUtils.addChildReference(parent, bop, pos);
+				
+				hi = bop;
+				LOG.debug("Applied simplifyTransposeAggBinBinaryChains (line "+hi.getBeginLine()+").");						
+			}  
 		}
 		
 		return hi;

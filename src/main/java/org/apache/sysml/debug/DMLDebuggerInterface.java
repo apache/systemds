@@ -172,50 +172,22 @@ public class DMLDebuggerInterface
 	public void writeToStandardOutput(String outputStr) {
 		System.out.print(outputStr);
 		System.out.flush();
-//		if(!DMLScript.ENABLE_SERVER_SIDE_DEBUG_MODE) {
-//			System.out.print(outputStr);
-//			System.out.flush();
-//		}
-//		else {
-//			// TODO: Write to client socket that was created by server socket
-//		}
 	}
 	
 	public void writelnToStandardOutput(String outputStr) {
 		System.out.println(outputStr);
 		System.out.flush();
-//		if(!DMLScript.ENABLE_SERVER_SIDE_DEBUG_MODE) {
-//			System.out.println(outputStr);
-//			System.out.flush();
-//		}
-//		else {
-//			// TODO: Write to client socket that was created by server socket
-//		}
 	}
 	
 	public void writeToStandardError(String errStr) {
 		System.err.print(errStr);
 		System.err.flush();
-//		if(!DMLScript.ENABLE_SERVER_SIDE_DEBUG_MODE) {
-//			System.err.print(errStr);
-//			System.err.flush();
-//		}
-//		else {
-//			// TODO: Write to client socket that was created by server socket
-//		}
 	}
 
 	
 	public void writelnToStandardError(String errStr) {
 		System.err.println(errStr);
 		System.err.flush();
-//		if(!DMLScript.ENABLE_SERVER_SIDE_DEBUG_MODE) {
-//			System.err.println(errStr);
-//			System.err.flush();
-//		}
-//		else {
-//			// TODO: Write to client socket that was created by server socket
-//		}
 	}
 	
 	
@@ -224,48 +196,40 @@ public class DMLDebuggerInterface
 	 */
 	public void getDebuggerCLI()
 	{
-		// if(!DMLScript.ENABLE_SERVER_SIDE_DEBUG_MODE) {
-			// Not using formatter because it outputs -h, -s commands. But, I still want to use GnuParser
-			// HelpFormatter debuggerUsage = new HelpFormatter();
-			// debuggerUsage.setLongOptPrefix("-"); //Eliminates the use of "--" for alternate commands
-			// debuggerUsage.setWidth(125); //Enables readability of commands description
-			// debuggerUsage.printHelp( "SystemMLdb <command> ", "\nSystemMLdb commands:\n", options, 
-			// "\n\nSystemMLdb is a prototype debugger for SystemML. There is NO warranty as "
-			//		+ "it is still in experimental state.\n\n" );
-			String helpString = "SystemMLdb commands:"
-					// "usage: SystemMLdb <command>\n\nSystemMLdb commands:\n"
-					 + "\nh,help                                                 list debugger functions"
-					 + "\nr,run                                                  start your DML script"
-					 + "\nq,quit                                                 exit debug mode"
-					 + "\nc,continue                                             continue running your DML script"
-					 //
-					 + "\nl,list <[next numlines] | [prev numlines] | [all]>     display DML script source lines. Default: numlines = 10"
-					 + "\nb,break <line-number>                                  set breakpoint at given line number"
-					 + "\nd,delete <line-number>                                 delete breakpoint at given line number"
-					 + "\ns,step                                                 next line, stepping into function calls"
-					 + "\ni,info <break | frame>                                 show all breakpoints or frames (info <break | frame>)"
-					 //
-					 + "\np,print <varName>                                      display contents of a scalar or matrix variable or"
-					 + "\n                                                       rows/columns/cell of matrix. (Eg: \'p alpha\' or \'p A\' or \'p A[1,]\')"
-					 + "\nset <varName value>                                    set value of a scalar or specified cell of a matrix variable. (Eg:"
-					 + "\n                                                       \'set alpha 0.1\' or \'set A[1,2] 20\')"
-					 + "\nwhatis <varName>                                       display the type (and metadata) of a variable. (Eg: \'whatis alpha\'"
-					 + "\n                                                       or \'whatis A\')"
-					 + "\nli,listi <[next numlines] | [prev numlines] | [all]>   display corresponding instructions for DML script source lines."
-					 + "\n                                                       Default: numlines = 10  (for advanced users)"
-					 + "\nsi,stepi                                               next runtime instruction rather than DML source lines (for advanced"
-					 + "\n                                                       users)"
-					 //
-					+ "\n"
-					;
-			writelnToStandardOutput(helpString);
-			
-//		}
-//		else {
-//			// TODO: Write to client socket that was created by server socket
-//			// printHelp(PrintWriter pw, int width, String cmdLineSyntax, String header, Options options, int leftPad, int descPad, String footer)
-//		}
-		
+		// Not using formatter because it outputs -h, -s commands. But, I still want to use GnuParser
+		// HelpFormatter debuggerUsage = new HelpFormatter();
+		// debuggerUsage.setLongOptPrefix("-"); //Eliminates the use of "--" for alternate commands
+		// debuggerUsage.setWidth(125); //Enables readability of commands description
+		// debuggerUsage.printHelp( "SystemMLdb <command> ", "\nSystemMLdb commands:\n", options, 
+		// "\n\nSystemMLdb is a prototype debugger for SystemML. There is NO warranty as "
+		//		+ "it is still in experimental state.\n\n" );
+		String helpString = "SystemMLdb commands:"
+				// "usage: SystemMLdb <command>\n\nSystemMLdb commands:\n"
+				 + "\nh,help                                                 list debugger functions"
+				 + "\nr,run                                                  start your DML script"
+				 + "\nq,quit                                                 exit debug mode"
+				 + "\nc,continue                                             continue running your DML script"
+				 //
+				 + "\nl,list <[next numlines] | [prev numlines] | [all]>     display DML script source lines. Default: numlines = 10"
+				 + "\nb,break <line-number>                                  set breakpoint at given line number"
+				 + "\nd,delete <line-number>                                 delete breakpoint at given line number"
+				 + "\ns,step                                                 next line, stepping into function calls"
+				 + "\ni,info <break | frame>                                 show all breakpoints or frames (info <break | frame>)"
+				 //
+				 + "\np,print <varName>                                      display contents of a scalar or matrix variable or"
+				 + "\n                                                       rows/columns/cell of matrix. (Eg: \'p alpha\' or \'p A\' or \'p A[1,]\')"
+				 + "\nset <varName value>                                    set value of a scalar or specified cell of a matrix variable. (Eg:"
+				 + "\n                                                       \'set alpha 0.1\' or \'set A[1,2] 20\')"
+				 + "\nwhatis <varName>                                       display the type (and metadata) of a variable. (Eg: \'whatis alpha\'"
+				 + "\n                                                       or \'whatis A\')"
+				 + "\nli,listi <[next numlines] | [prev numlines] | [all]>   display corresponding instructions for DML script source lines."
+				 + "\n                                                       Default: numlines = 10  (for advanced users)"
+				 + "\nsi,stepi                                               next runtime instruction rather than DML source lines (for advanced"
+				 + "\n                                                       users)"
+				 //
+				+ "\n"
+				;
+		writelnToStandardOutput(helpString);		
 	}
 	
 	/**
@@ -279,33 +243,27 @@ public class DMLDebuggerInterface
 		CommandLine cmd = null;
 		String [] args = null;
 		
-//		if(!DMLScript.ENABLE_SERVER_SIDE_DEBUG_MODE) {
-			//Display input prompt
-	        writeToStandardOutput("(SystemMLdb) ");
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-			try {
-				//read command line argument(s)
-				// To add 'up/down'-feature, use jline library
-				String line = br.readLine();
-				if(line != null && !line.isEmpty() ) {
-					args = line.split(" ");
-					if(args[0].startsWith("-")) {
-						// So as to avoid parsing '-i' command
-						writelnToStandardError("Error reading command line arguments. Try \"help\".");
-						return cmd;
-					}
-					args[0] = "-" + args[0];
+		//Display input prompt
+        writeToStandardOutput("(SystemMLdb) ");
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		try {
+			//read command line argument(s)
+			// To add 'up/down'-feature, use jline library
+			String line = br.readLine();
+			if(line != null && !line.isEmpty() ) {
+				args = line.split(" ");
+				if(args[0].startsWith("-")) {
+					// So as to avoid parsing '-i' command
+					writelnToStandardError("Error reading command line arguments. Try \"help\".");
+					return cmd;
 				}
-			} catch (IOException ae) {
-				writelnToStandardError("Error reading command line arguments. Try \"help\".");
-				return cmd;
-	    	}
-//	    	
-//		}
-//		else {
-//			// TODO: Read commands from Process that was created by server socket
-//		}
-		
+				args[0] = "-" + args[0];
+			}
+		} catch (IOException ae) {
+			writelnToStandardError("Error reading command line arguments. Try \"help\".");
+			return cmd;
+    	}
+
 		CommandLineParser CLIparser = new GnuParser();		
 		try {
 			//parse current command

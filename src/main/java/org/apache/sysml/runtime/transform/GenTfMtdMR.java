@@ -46,7 +46,7 @@ public class GenTfMtdMR {
 
 	public static final String DELIM = ",";
 
-	public static long runJob(String inputPath, String txMtdPath, String specFileWithIDs, String smallestFile, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numCols, int replication, String headerLine) throws IOException, ClassNotFoundException, InterruptedException {
+	public static long runJob(String inputPath, String txMtdPath, String specWithIDs, String smallestFile, String partOffsetsFile, CSVFileFormatProperties inputDataProperties, long numCols, int replication, String headerLine) throws IOException, ClassNotFoundException, InterruptedException {
 		JobConf job = new JobConf(GenTfMtdMR.class);
 		job.setJobName("GenTfMTD");
 		
@@ -81,7 +81,7 @@ public class GenTfMtdMR {
 		if ( inputDataProperties.getNAStrings() != null)
 			// Adding "dummy" string to handle the case of na_strings = ""
 			job.set(MRJobConfiguration.TF_NA_STRINGS, TfUtils.prepNAStrings(inputDataProperties.getNAStrings()) );
-		job.set(MRJobConfiguration.TF_SPEC_FILE, specFileWithIDs);
+		job.set(MRJobConfiguration.TF_SPEC, specWithIDs);
 		job.set(MRJobConfiguration.TF_SMALLEST_FILE, smallestFile);
 		job.setLong(MRJobConfiguration.TF_NUM_COLS, numCols);
 		job.set(MRJobConfiguration.TF_HEADER, headerLine);

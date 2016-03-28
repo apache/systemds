@@ -152,7 +152,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		{
 			boolean isRed = opcode.startsWith("red");
 			
-			//check number of fields (3 inputs, output, type)
+			//check number of fields (4 inputs, output, type)
 			if( isRed )
 				InstructionUtils.checkNumFields( parts, 8 );
 			else
@@ -168,31 +168,38 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			boolean cacheU = isRed ? Boolean.parseBoolean(parts[7]) : true;
 			boolean cacheV = isRed ? Boolean.parseBoolean(parts[8]) : true;
 		
-			return new QuaternarySPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[6])), in1, in2, in3, in4, out, cacheU, cacheV, opcode, str);
+			final WDivMMType wt = WDivMMType.valueOf(parts[6]);
+			QuaternaryOperator qop = (wt.hasScalar() ? new QuaternaryOperator(wt, Double.parseDouble(in4.getName())) : new QuaternaryOperator(wt));
+			return new QuaternarySPInstruction(qop, in1, in2, in3, in4, out, cacheU, cacheV, opcode, str);
 		} 
 		else //map/redwsigmoid, map/redwcemm
 		{
 			boolean isRed = opcode.startsWith("red");
+			int addInput4 = (opcode.endsWith("wcemm")) ? 1 : 0;
 			
-			//check number of fields (3 inputs, output, type)
+			//check number of fields (3 or 4 inputs, output, type)
 			if( isRed )
-				InstructionUtils.checkNumFields( parts, 7 );
+				InstructionUtils.checkNumFields( parts, 7 + addInput4 );
 			else
-				InstructionUtils.checkNumFields( parts, 5 );
+				InstructionUtils.checkNumFields( parts, 5 + addInput4 );
 			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
-			CPOperand out = new CPOperand(parts[4]);
+			CPOperand out = new CPOperand(parts[4 + addInput4]);
 			
 			//in mappers always through distcache, in reducers through distcache/shuffle
-			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6]) : true;
-			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7]) : true;
+			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6 + addInput4]) : true;
+			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7 + addInput4]) : true;
 		
 			if( opcode.endsWith("wsigmoid") )
 				return new QuaternarySPInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
-			else if( opcode.endsWith("wcemm") )
-				return new QuaternarySPInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[5])), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
+			else if( opcode.endsWith("wcemm") ) {
+				CPOperand in4 = new CPOperand(parts[4]);
+				final WCeMMType wt = WCeMMType.valueOf(parts[6]);
+				QuaternaryOperator qop = (wt.hasFourInputs() ? new QuaternaryOperator(wt, Double.parseDouble(in4.getName())) : new QuaternaryOperator(wt));
+				return new QuaternarySPInstruction(qop, in1, in2, in3, in4, out, cacheU, cacheV, opcode, str);
+			}
 		}
 		
 		return null;
@@ -235,7 +242,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			PartitionedBroadcastMatrix bc2 = sec.getBroadcastForVariable( input3.getName() );
 			
 			//partitioning-preserving mappartitions (key access required for broadcast loopkup)
-			boolean noKeyChange = (qop.wtype3 == null || qop.wtype3.isBasic()); //only wsdivmm changes keys
+			boolean noKeyChange = (qop.wtype3 == null || qop.wtype3.isBasic()); //only wdivmm changes keys
 			out = in.mapPartitionsToPair(new RDDQuaternaryFunction1(qop, bc1, bc2), noKeyChange);
 			
 			rddVars.add( input1.getName() );
@@ -249,7 +256,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			PartitionedBroadcastMatrix bc2 = _cacheV ? sec.getBroadcastForVariable( input3.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inU = (!_cacheU) ? sec.getBinaryBlockRDDHandleForVariable( input2.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inV = (!_cacheV) ? sec.getBinaryBlockRDDHandleForVariable( input3.getName() ) : null;
-			JavaPairRDD<MatrixIndexes,MatrixBlock> inW = qop.hasFourInputs() ? 
+			JavaPairRDD<MatrixIndexes,MatrixBlock> inW = (qop.hasFourInputs() && !_input4.isLiteral()) ? 
 					sec.getBinaryBlockRDDHandleForVariable( _input4.getName() ) : null;
 
 			//preparation of transposed and replicated U
@@ -281,6 +288,9 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			else if( inU == null && inV != null && inW != null )
 				out = in.join(inV).join(inW)
 				        .mapToPair(new RDDQuaternaryFunction3(qop, bc1, bc2));
+			else if( inU == null && inV == null && inW == null ) {
+				out = in.mapPartitionsToPair(new RDDQuaternaryFunction1(qop, bc1, bc2), false);
+			}
 			//function call w/ four rdd inputs
 			else //need keys in case of wdivmm 
 				out = in.join(inU).join(inV).join(inW)

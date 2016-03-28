@@ -21,10 +21,9 @@ package org.apache.sysml.test.integration.functions.data;
 
 import org.junit.Assert;
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -363,7 +362,7 @@ public class FullStringInitializeTest extends AutomatedTestBase
 			if( !expectExcept ) {
 				//compare matrices 
 				MatrixBlock ret = DataConverter.readMatrixFromHDFS(output("A"), InputInfo.TextCellInputInfo,
-						rows, cols, DMLTranslator.DMLBlockSize, DMLTranslator.DMLBlockSize, sparsity, null);
+						rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, sparsity, null);
 				double[][] dret = DataConverter.convertToDoubleMatrix(ret);
 				TestUtils.compareMatrices(A, dret, rows, cols, eps);
 			}

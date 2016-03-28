@@ -23,7 +23,7 @@
 from py4j.protocol import Py4JJavaError, Py4JError
 import traceback
 import os
-from pyspark.sql import *
+from pyspark.sql import DataFrame, SQLContext
 from pyspark.rdd import RDD
 
 
@@ -97,6 +97,37 @@ class MLContext(object):
                 return mlOut
             else:
                 raise TypeError('Arguments do not match MLContext-API')
+        except Py4JJavaError:
+            traceback.print_exc()
+
+    def executeScript(self, dmlScript, nargs=None, outputs=None, configFilePath=None):
+        """
+        Executes the script in spark-mode by passing the arguments to the
+        MLContext java class.
+        Returns:
+            MLOutput: an instance of the MLOutput-class
+        """
+        try:
+            # Register inputs as needed
+            if nargs is not None:
+                for key, value in nargs.items():
+                    if isinstance(value, DataFrame):
+                        self.registerInput(key, value)
+                        del nargs[key]
+                    else:
+                        nargs[key] = str(value)
+            else:
+                nargs = {}
+
+            # Register outputs as needed
+            if outputs is not None:
+                for out in outputs:
+                    self.registerOutput(out)
+
+            # Execute script
+            jml_out = self.ml.executeScript(dmlScript, nargs, configFilePath)
+            ml_out = MLOutput(jml_out, self.sc)
+            return ml_out
         except Py4JJavaError:
             traceback.print_exc()
 

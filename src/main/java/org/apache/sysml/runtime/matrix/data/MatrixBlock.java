@@ -34,15 +34,14 @@ import java.util.Iterator;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.CTable;
@@ -86,7 +85,7 @@ import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
-public class MatrixBlock extends MatrixValue implements Externalizable
+public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable
 {
 	private static final long serialVersionUID = 7319972089143154056L;
 	
@@ -175,7 +174,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		this.copy(that);
 	}
 	
-	public MatrixBlock(MatrixBlock that, SparseBlock.Type stype)
+	public MatrixBlock(MatrixBlock that, SparseBlock.Type stype, boolean deep)
 	{
 		//sanity check sparse matrix block
 		if( !that.isInSparseFormat() )
@@ -188,7 +187,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		nonZeros = that.nonZeros;
 		estimatedNNzsPerRow = that.estimatedNNzsPerRow;
 		sparseBlock = SparseBlockFactory
-				.copySparseBlock(stype, that.sparseBlock, true);
+				.copySparseBlock(stype, that.sparseBlock, deep);
 	}
 	
 	////////
@@ -1229,66 +1228,77 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		sparseBlock = null;
 	}
 
+	/**
+	 * Recomputes and materializes the number of non-zero values
+	 * of the entire matrix block.
+	 * 
+	 */
 	public void recomputeNonZeros()
 	{
-		nonZeros=0;
-		if( sparse && sparseBlock!=null )
+		if( sparse && sparseBlock!=null ) //SPARSE (max long)
 		{
 			//note: rlen might be <= sparseBlock.numRows()
 			nonZeros = sparseBlock.size(0, rlen);
 		}
-		else if( !sparse && denseBlock!=null )
+		else if( !sparse && denseBlock!=null ) //DENSE (max int)
 		{
-			int limit=rlen*clen;
-			for(int i=0; i<limit; i++) {
-				//HotSpot JVM bug causes crash in presence of NaNs 
-				//nonZeros += (denseBlock[i]!=0) ? 1 : 0;
-				if( denseBlock[i]!=0 )
-					nonZeros++;
-			}
+			double[] a = denseBlock;
+			final int limit=rlen*clen;
+			int nnz = 0;
+			for(int i=0; i<limit; i++)
+				nnz += (a[i]!=0) ? 1 : 0;
+			nonZeros = nnz;
 		}
 	}
 	
+	/**
+	 * Recomputes the number of non-zero values of a specified 
+	 * range of the matrix block. NOTE: This call does not materialize
+	 * the compute result in any form.
+	 * 
+	 * @param rl 	row lower index, 0-based, inclusive
+	 * @param ru 	row upper index, 0-based, inclusive
+	 * @param cl 	column lower index, 0-based, inclusive
+	 * @param cu 	column upper index, 0-based, inclusive
+	 * @return
+	 */
 	protected long recomputeNonZeros(int rl, int ru, int cl, int cu)
 	{
-		long nnz = 0;
-		if(sparse)
+		if( sparse && sparseBlock!=null ) //SPARSE (max long)
 		{
-			if(sparseBlock!=null)
-			{
-				int rlimit = Math.min( ru+1, rlen);
-				if( cl==0 && cu==clen-1 ) //specific case: all cols
-				{
-					nnz = sparseBlock.size(rl, ru+1);
-				}
-				else if( cl==cu ) //specific case: one column
-				{
-					for(int i=rl; i<rlimit; i++)
-						if(!sparseBlock.isEmpty(i))
-							nnz += (sparseBlock.get(i, cl)!=0) ? 1 : 0;
-				}
-				else //general case
-				{
-					nnz = sparseBlock.size(rl, ru+1, cl, cu+1);
-				}
+			long nnz = 0;
+			if( cl==0 && cu==clen-1 ) { //specific case: all cols
+				nnz = sparseBlock.size(rl, ru+1);
 			}
+			else if( cl==cu ) { //specific case: one column
+				final int rlimit = Math.min( ru+1, rlen);
+				for(int i=rl; i<rlimit; i++)
+					if(!sparseBlock.isEmpty(i))
+						nnz += (sparseBlock.get(i, cl)!=0) ? 1 : 0;
+			}
+			else { //general case
+				nnz = sparseBlock.size(rl, ru+1, cl, cu+1);
+			}
+			return nnz;
 		}
-		else
+		else if( !sparse && denseBlock!=null ) //DENSE (max int)
 		{
-			if(denseBlock!=null)
-			{
-				for( int i=rl, ix=rl*clen; i<=ru; i++, ix+=clen )
+			double[] a = denseBlock;
+			final int n = clen;
+			int nnz = 0;
+			if( cl==0 && cu==n-1 ) { //specific case: all cols
+				for( int i=rl*n; i<(ru+1)*n; i++ )
+					nnz += (a[i]!=0) ? 1 : 0;
+			}
+			else {
+				for( int i=rl, ix=rl*n; i<=ru; i++, ix+=n )
 					for( int j=cl; j<=cu; j++ )
-					{
-						//HotSpot JVM bug causes crash in presence of NaNs 
-						//nnz += (denseBlock[ix+j]!=0) ? 1 : 0;
-						if( denseBlock[ix+j]!=0 )
-							nnz++;
-					}
+						nnz += (a[ix+j]!=0) ? 1 : 0;
 			}
+			return nnz;
 		}
-
-		return nnz;
+		
+		return 0; //empty block
 	}
 	
 	/**
@@ -2746,6 +2756,21 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	}
 	
 	////////
+	// CacheBlock implementation
+	
+	@Override
+	public long getExactSerializedSize() {
+		return getExactSizeOnDisk();
+	}
+	
+	@Override
+	public boolean isShallowSerialize() {
+		//shallow serialize if dense in serialized form or already in CSR
+		return !evalSparseFormatOnDisk()
+			|| (sparse && sparseBlock instanceof SparseBlockCSR);
+	}
+	
+	////////
 	// Core block operations (called from instructions)
 	
 	/**
@@ -2798,7 +2823,10 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		if( LibMatrixAgg.isSupportedUnaryOperator(op) ) 
 		{
 			//e.g., cumsum/cumprod/cummin/cumax
-			LibMatrixAgg.aggregateUnaryMatrix(this, ret, op);
+			if( op.getNumThreads() > 1 )
+				LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op, op.getNumThreads());
+			else
+				LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op);
 		}
 		else
 		{
@@ -4492,7 +4520,7 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 				        || ((Builtin)(op.aggOp.increOp.fn)).bFunc == Builtin.BuiltinFunctionCode.MININDEX) 
 				        ){
 					double currMaxValue = result.quickGetValue(i, 1);
-					long newMaxIndex = UtilFunctions.cellIndexCalculation(indexesIn.getColumnIndex(), blockingFactorCol, j);
+					long newMaxIndex = UtilFunctions.computeCellIndex(indexesIn.getColumnIndex(), blockingFactorCol, j);
 					double newMaxValue = quickGetValue(i, j);
 					double update = op.aggOp.increOp.fn.execute(newMaxValue, currMaxValue);
 						   
@@ -5792,16 +5820,23 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 		else if( qop.wtype3 != null ){ //wdivmm
 			//note: for wdivmm-minus X and W interchanged because W always present 
 			MatrixBlock W = qop.wtype3.hasFourInputs() ? checkType(wm) : null;
+			if( qop.getScalar() != 0 ) {
+				W = new MatrixBlock(1, 1, false);
+				W.quickSetValue(0, 0, qop.getScalar());
+			}
 			if( k > 1 )
 				LibMatrixMult.matrixMultWDivMM(X, U, V, W, R, qop.wtype3, k);
 			else
 				LibMatrixMult.matrixMultWDivMM(X, U, V, W, R, qop.wtype3);	
 		}
 		else if( qop.wtype4 != null ){ //wcemm
+			MatrixBlock W = qop.wtype4.hasFourInputs() ? checkType(wm) : null;
+			double eps = (W != null && W.getNumRows() == 1 && W.getNumColumns() == 1) ? W.quickGetValue(0, 0) : qop.getScalar();
+			
 			if( k > 1 )
-				LibMatrixMult.matrixMultWCeMM(X, U, V, R, qop.wtype4, k);
+				LibMatrixMult.matrixMultWCeMM(X, U, V, eps, R, qop.wtype4, k);
 			else
-				LibMatrixMult.matrixMultWCeMM(X, U, V, R, qop.wtype4);	
+				LibMatrixMult.matrixMultWCeMM(X, U, V, eps, R, qop.wtype4);
 		}
 		else if( qop.wtype5 != null ){ //wumm
 			if( k > 1 )
@@ -5852,11 +5887,8 @@ public class MatrixBlock extends MatrixValue implements Externalizable
 	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed, int k) 
 		throws DMLRuntimeException
 	{
-		DMLConfig conf = ConfigurationManager.getConfig();
-		int blocksize = (conf!=null) ? ConfigurationManager.getConfig().getIntValue(DMLConfig.DEFAULT_BLOCK_SIZE)
-				                     : DMLTranslator.DMLBlockSize;
-		
-		RandomMatrixGenerator rgen = new RandomMatrixGenerator(pdf, rows, cols, blocksize, blocksize, sparsity, min, max);
+		RandomMatrixGenerator rgen = new RandomMatrixGenerator(pdf, rows, cols, 
+				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), sparsity, min, max);
 		
 		if (k > 1)
 			return randOperations(rgen, seed, k);

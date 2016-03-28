@@ -20,9 +20,8 @@
 package org.apache.sysml.test.integration.functions.io.csv;
 
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -138,12 +137,12 @@ public class ReadCSVTest extends AutomatedTestBase
 	{
 		
 		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		boolean oldpar = OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS;
+		boolean oldpar = CompilerConfig.FLAG_PARREAD_TEXT;
 		
 		try
 		{
 			rtplatform = platform;
-			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = parallel;
+			CompilerConfig.FLAG_PARREAD_TEXT = parallel;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
@@ -171,7 +170,7 @@ public class ReadCSVTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = oldPlatform;
-			OptimizerUtils.PARALLEL_CP_READ_TEXTFORMATS = oldpar;		
+			CompilerConfig.FLAG_PARREAD_TEXT = oldpar;		
 		}
 	}
 	

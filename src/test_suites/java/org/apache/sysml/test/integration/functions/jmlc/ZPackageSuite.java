@@ -26,6 +26,9 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	FrameDecodeTest.class,
+	FrameReadMetaTest.class,
+	FrameTransformTest.class,
 	ReuseModelVariablesTest.class,
 	SystemTMulticlassSVMScoreTest.class
 })

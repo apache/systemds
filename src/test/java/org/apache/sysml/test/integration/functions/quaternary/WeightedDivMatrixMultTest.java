@@ -58,6 +58,8 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	private final static String TEST_NAME9 = "WeightedDivMM4MultMinusRight";
 	private final static String TEST_NAME10 = "WeightedDivMMLeftEps";
 	private final static String TEST_NAME11 = "WeightedDivMMRightEps";
+	private final static String TEST_NAME12 = "WeightedDivMMLeftEps2";
+	private final static String TEST_NAME13 = "WeightedDivMMLeftEps3";
 	private final static String TEST_DIR = "functions/quaternary/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + WeightedDivMatrixMultTest.class.getSimpleName() + "/";
 	
@@ -85,7 +87,9 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME9,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME10,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME11,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11,new String[]{"R"}));
-	
+		addTestConfiguration(TEST_NAME12,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME13,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME13,new String[]{"R"}));
+		
 		if (TEST_CACHE_ENABLED) {
 			setOutAndExpectedDeletionDisabled(true);
 		}
@@ -552,6 +556,18 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 		runWeightedDivMMTest(TEST_NAME11, false, true, true, ExecType.SPARK);
 	}
 
+	//d) testcases for wdivmm w/ DIVIDE LEFT/RIGHT with Epsilon
+	
+	@Test
+	public void testWeightedDivMMLeftEpsCanonicalized1SparseCP() {
+		runWeightedDivMMTest(TEST_NAME12, true, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testWeightedDivMMLeftEpsCanonicalized2SparseCP() {
+		runWeightedDivMMTest(TEST_NAME13, true, true, false, ExecType.CP);
+	}
+	
 	/**
 	 * 
 	 * @param sparseM1
@@ -582,7 +598,8 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 			boolean basic = testname.equals(TEST_NAME3);
 			boolean left = testname.equals(TEST_NAME1) || testname.equals(TEST_NAME4) 
 					|| testname.equals(TEST_NAME6) || testname.equals(TEST_NAME8)
-					|| testname.equals(TEST_NAME10);
+					|| testname.equals(TEST_NAME10) || testname.equals(TEST_NAME12)
+					|| testname.equals(TEST_NAME13);
 			double sparsity = (sparse) ? spSparse : spDense;
 			String TEST_NAME = testname;
 			String TEST_CACHE_DIR = TEST_CACHE_ENABLED ? 

@@ -43,7 +43,6 @@ import org.apache.sysml.runtime.util.FastStringTokenizer;
 
 public class ReaderTextCell extends MatrixReader
 {
-
 	private boolean _isMMFile = false;
 	
 	public ReaderTextCell(InputInfo info)
@@ -137,8 +136,7 @@ public class ReaderTextCell extends MatrixReader
 				{
 					if( sparse ) //SPARSE<-value
 					{
-						while( reader.next(key, value) )
-						{
+						while( reader.next(key, value) ) {
 							st.reset( value.toString() ); //reinit tokenizer
 							row = st.nextInt() - 1;
 							col = st.nextInt() - 1;
@@ -150,8 +148,7 @@ public class ReaderTextCell extends MatrixReader
 					} 
 					else //DENSE<-value
 					{
-						while( reader.next(key, value) )
-						{
+						while( reader.next(key, value) ) {
 							st.reset( value.toString() ); //reinit tokenizer
 							row = st.nextInt()-1;
 							col = st.nextInt()-1;
@@ -160,25 +157,18 @@ public class ReaderTextCell extends MatrixReader
 						}
 					}
 				}
-				finally
-				{
-					if( reader != null )
-						reader.close();
+				finally {
+					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			//post-mortem error handling and bounds checking
 			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen )
-			{
 				throw new IOException("Matrix cell ["+(row+1)+","+(col+1)+"] " +
 									  "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
-			}
 			else
-			{
 				throw new IOException( "Unable to read matrix in text cell format.", ex );
-			}
 		}
 	}
 
@@ -280,21 +270,15 @@ public class ReaderTextCell extends MatrixReader
 				}
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			//post-mortem error handling and bounds checking
 			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen ) 
-			{
 				throw new IOException("Matrix cell ["+(row+1)+","+(col+1)+"] " +
 									  "out of overall matrix range [1:"+rlen+",1:"+clen+"].", ex);
-			}
 			else
-			{
 				throw new IOException( "Unable to read matrix in raw text cell format.", ex );
-			}
 		}
-		finally
-		{
+		finally {
 			IOUtilFunctions.closeSilently(br);
 		}
 	}

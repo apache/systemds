@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.io;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.LinkedList;
+import java.util.concurrent.Callable;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -144,5 +145,30 @@ public abstract class MatrixReader
 		if( MapReduceTool.isFileEmpty( fs, path.toString() ) )
 			throw new EOFException("Empty input file "+ path.toString() +".");
 		
+	}
+	
+	
+	/**
+	 * Utility task for sorting sparse rows as potentially required
+	 * by different parallel readers.
+	 */
+	protected static class SortRowsTask implements Callable<Object> 
+	{
+		private MatrixBlock _dest = null;
+		private int _rl = -1;
+		private int _ru = -1;
+		
+		public SortRowsTask(MatrixBlock dest, int rl, int ru) {
+			_dest = dest;
+			_rl = rl;
+			_ru = ru;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			for( int i=_rl; i<_ru; i++ )
+				_dest.getSparseBlock().sort(i);
+			return null;
+		}
 	}
 }

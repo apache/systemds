@@ -235,11 +235,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @param file
 	 */
 	public synchronized void setFileName( String file ) {
-		if (!_hdfsFileName.equals( file )) {
-			_hdfsFileName = file;
+		if( _hdfsFileName!=null && !_hdfsFileName.equals(file) )
 			if( !isEmpty(true) )
 				_dirtyFlag = true;
-		}
+		_hdfsFileName = file;
 	}
 	
 	/**

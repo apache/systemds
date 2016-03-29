@@ -955,36 +955,27 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		   && hi.getInput().get(0) instanceof BinaryOp
 		   && (((BinaryOp)hi.getInput().get(0)).getOp()==OpOp2.CBIND    //append (cbind/rbind)
 		    || ((BinaryOp)hi.getInput().get(0)).getOp()==OpOp2.RBIND) 
-		   && hi.getInput().get(0).getParent().size() == 1 ) //single consumers of append
+		   && hi.getInput().get(0).getParent().size() == 1 ) //single consumer of append
 		{
 			BinaryOp bop = (BinaryOp)hi.getInput().get(0);
 			if( bop.getInput().get(0) instanceof ReorgOp  //both inputs transpose ops
 				&& ((ReorgOp)bop.getInput().get(0)).getOp()==ReOrgOp.TRANSPOSE
+				&& bop.getInput().get(0).getParent().size() == 1 //single consumer of transpose
 				&& bop.getInput().get(1) instanceof ReorgOp 
-				&& ((ReorgOp)bop.getInput().get(1)).getOp()==ReOrgOp.TRANSPOSE )
+				&& ((ReorgOp)bop.getInput().get(1)).getOp()==ReOrgOp.TRANSPOSE
+				&& bop.getInput().get(1).getParent().size() == 1 ) //single consumer of transpose
 			{
 				Hop left = bop.getInput().get(0).getInput().get(0);
 				Hop right = bop.getInput().get(1).getInput().get(0);
 				
-				//rewire links from parent, transpose, and binary
+				//create new subdag (no in-place dag update to prevent anomalies with
+				//multiple consumers during rewrite process)
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
-				HopRewriteUtils.addChildReference(parent, bop, pos);
-				HopRewriteUtils.removeAllChildReferences(hi);
-				HopRewriteUtils.removeAllChildReferences(bop);
+				OpOp2 binop = (bop.getOp()==OpOp2.CBIND) ? OpOp2.RBIND : OpOp2.CBIND;
+				BinaryOp bopnew = HopRewriteUtils.createBinary(left, right, binop);
+				HopRewriteUtils.addChildReference(parent, bopnew, pos);
 				
-				//change append type (safe due to single parent check)
-				if( bop.getOp()==OpOp2.CBIND )
-					bop.setOp(OpOp2.RBIND);
-				else 
-					bop.setOp(OpOp2.CBIND);
-				
-				//relink new childs to binary op
-				HopRewriteUtils.addChildReference(bop, left, 0);
-				HopRewriteUtils.addChildReference(bop, right, 1);
-				bop.refreshSizeInformation();
-				
-				hi = bop;
-			
+				hi = bopnew;
 				LOG.debug("Applied simplifyTransposedAppend (line "+hi.getBeginLine()+").");				
 			}
 		}

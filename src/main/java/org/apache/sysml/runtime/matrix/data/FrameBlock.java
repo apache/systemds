@@ -216,6 +216,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_coldata.get(c).set(r, val);
 	}
 	
+	public void reset() 
+		throws IOException
+	{
+		_schema = new ArrayList<ValueType>();
+		_colnames = new ArrayList<String>();
+		_coldata = new ArrayList<Array>();
+		_numRows=0;
+	}
+	
+
 	/**
 	 * Append a row to the end of the data frame, where all row fields
 	 * are boxed objects according to the schema.
@@ -446,7 +456,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return
 	 */
 	public FrameBlock sliceOperations(int rl, int ru, int cl, int cu, FrameBlock ret) 
-		throws DMLRuntimeException
+		throws DMLRuntimeException, IOException
 	{
 		// check the validity of bounds
 		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
@@ -458,8 +468,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		//allocate output frame
 		if( ret == null )
 			ret = new FrameBlock();
+		else
+			ret.reset();
+
 		ret._numRows = ru-rl+1;
-		
+
 		//copy output schema and colnames
 		for( int j=cl; j<=cu; j++ ) {
 			ret._schema.add(_schema.get(j));
@@ -469,7 +482,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		//copy output data
 		for( int j=cl; j<=cu; j++ )
 			ret._coldata.add(_coldata.get(j).slice(rl,ru));
-		
+
 		return ret;
 	}
 	
@@ -555,8 +568,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		ensureAllocatedColumns(rlen);
 		
 		//copy values
-		for( int i=cl; i<cu; i++ )
-			_coldata.get(i).set(rl, ru-rl-1, src._coldata.get(i));
+		for( int i=cl; i<=cu; i++ )
+			_coldata.get(i).set(rl, ru, src._coldata.get(i));
 	}
 		
 

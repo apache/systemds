@@ -216,13 +216,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_coldata.get(c).set(r, val);
 	}
 	
-	public void reset() 
+	public void reset(int nrow) 
 		throws IOException
 	{
-		_schema = new ArrayList<ValueType>();
-		_colnames = new ArrayList<String>();
-		_coldata = new ArrayList<Array>();
-		_numRows=0;
+		for(int i=0; i < _coldata.size(); ++i)
+			_coldata.get(i)._size = nrow;
 	}
 	
 
@@ -467,21 +465,26 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		//allocate output frame
 		if( ret == null )
+		{
 			ret = new FrameBlock();
+			
+			//copy output schema and colnames
+			for( int j=cl; j<=cu; j++ ) {
+				ret._schema.add(_schema.get(j));
+				ret._colnames.add(_colnames.get(j));
+			}
+		}
 		else
-			ret.reset();
-
+			ret.reset(ru-rl+1);
+		
 		ret._numRows = ru-rl+1;
 
-		//copy output schema and colnames
-		for( int j=cl; j<=cu; j++ ) {
-			ret._schema.add(_schema.get(j));
-			ret._colnames.add(_colnames.get(j));
-		}
-		
-		//copy output data
-		for( int j=cl; j<=cu; j++ )
-			ret._coldata.add(_coldata.get(j).slice(rl,ru));
+		if(ret._coldata.size() == 0)
+			//copy output data
+			for( int j=cl; j<=cu; j++ )
+				ret._coldata.add(_coldata.get(j).slice(rl,ru));
+		else
+			ret.copy(rl, ru, cl, cu, this, ru-rl+1, cu-cl+1, 0);
 
 		return ret;
 	}
@@ -562,14 +565,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 
 	
-	public void copy(int rl, int ru, int cl, int cu, FrameBlock src, int rlen, int clen) 
+	public void copy(int rl, int ru, int cl, int cu, FrameBlock src, int rlen, int clen, int rlDest) 
 		throws DMLRuntimeException
 	{
 		ensureAllocatedColumns(rlen);
 		
 		//copy values
 		for( int i=cl; i<=cu; i++ )
-			_coldata.get(i).set(rl, ru, src._coldata.get(i));
+			_coldata.get(i).set(rlDest, rlDest+(ru-rl), src._coldata.get(i), rl);
 	}
 		
 

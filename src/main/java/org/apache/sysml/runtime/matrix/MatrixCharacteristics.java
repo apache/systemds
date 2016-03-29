@@ -64,7 +64,6 @@ import org.apache.sysml.runtime.instructions.mr.ZeroOutInstruction;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
-import org.apache.sysml.runtime.util.IndexRange;
 
 
 public class MatrixCharacteristics implements Serializable
@@ -385,12 +384,9 @@ public class MatrixCharacteristics implements Serializable
 		}
 		else if(ins instanceof RangeBasedReIndexInstruction)
 		{
-			RangeBasedReIndexInstruction realIns=(RangeBasedReIndexInstruction)ins;
-			MatrixCharacteristics in_dim=dims.get(realIns.input);
-			IndexRange ixrange = realIns.getIndexRange(); 
-			long nrow=ixrange.rowEnd-ixrange.rowStart+1;
-			long ncol=ixrange.colEnd-ixrange.colStart+1;
-			dimOut.set(nrow, ncol, in_dim.numRowsPerBlock, in_dim.numColumnsPerBlock);
+			RangeBasedReIndexInstruction realIns = (RangeBasedReIndexInstruction)ins;
+			MatrixCharacteristics dimIn = dims.get(realIns.input);
+			realIns.computeOutputCharacteristics(dimIn, dimOut);
 		}
 		else if (ins instanceof TernaryInstruction) {
 			TernaryInstruction realIns = (TernaryInstruction)ins;

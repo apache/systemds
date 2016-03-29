@@ -210,15 +210,13 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				out = in1.mapPartitionsToPair(
 						new LeftIndexPartitionFunction(broadcastIn2, ixrange, mcOut), true);
 			}
-			else {
-				// Zero-out LHS
-				in1 = in1.mapToPair(new ZeroOutLHS(false, mcLeft.getRowsPerBlock(), 
-								mcLeft.getColsPerBlock(), rl, ru, cl, cu));
+			else { //general case
+				// zero-out lhs
+				in1 = in1.mapToPair(new ZeroOutLHS(false, ixrange, mcLeft));
 				
-				// Slice RHS to merge for LHS
+				// slice rhs, shift and merge with lhs
 				in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() )
-					    .flatMapToPair(new SliceRHSForLeftIndexing(rl, cl, mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock(), mcLeft.getRows(), mcLeft.getCols()));
-				
+					    .flatMapToPair(new SliceRHSForLeftIndexing(ixrange, mcLeft));
 				out = RDDAggregateUtils.mergeByKey(in1.union(in2));
 			}
 			
@@ -267,74 +265,29 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 	{
 		private static final long serialVersionUID = 5724800998701216440L;
 		
-		private long rl; 
-		private long cl; 
-		private int brlen; 
-		private int bclen;
-		private long lhs_rlen;
-		private long lhs_clen;
+		private IndexRange _ixrange = null; 
+		private int _brlen = -1; 
+		private int _bclen = -1;
+		private long _rlen = -1;
+		private long _clen = -1;
 		
-		public SliceRHSForLeftIndexing(long rl, long cl, int brlen, int bclen, long lhs_rlen, long lhs_clen) {
-			this.rl = rl;
-			this.cl = cl;
-			this.brlen = brlen;
-			this.bclen = bclen;
-			this.lhs_rlen = lhs_rlen;
-			this.lhs_clen = lhs_clen;
+		public SliceRHSForLeftIndexing(IndexRange ixrange, MatrixCharacteristics mcLeft) {
+			_ixrange = ixrange;
+			_rlen = mcLeft.getRows();
+			_clen = mcLeft.getCols();
+			_brlen = mcLeft.getRowsPerBlock();
+			_bclen = mcLeft.getColsPerBlock();
 		}
 
 		@Override
 		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> rightKV) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-	
-			long start_lhs_globalRowIndex = rl + (rightKV._1.getRowIndex()-1)*brlen;
-			long start_lhs_globalColIndex = cl + (rightKV._1.getColumnIndex()-1)*bclen;
-			long end_lhs_globalRowIndex = start_lhs_globalRowIndex + rightKV._2.getNumRows() - 1;
-			long end_lhs_globalColIndex = start_lhs_globalColIndex + rightKV._2.getNumColumns() - 1;
-			
-			long start_lhs_rowIndex = UtilFunctions.computeBlockIndex(start_lhs_globalRowIndex, brlen);
-			long end_lhs_rowIndex = UtilFunctions.computeBlockIndex(end_lhs_globalRowIndex, brlen);
-			long start_lhs_colIndex = UtilFunctions.computeBlockIndex(start_lhs_globalColIndex, bclen);
-			long end_lhs_colIndex = UtilFunctions.computeBlockIndex(end_lhs_globalColIndex, bclen);
-			
-			for(long leftRowIndex = start_lhs_rowIndex; leftRowIndex <= end_lhs_rowIndex; leftRowIndex++) {
-				for(long leftColIndex = start_lhs_colIndex; leftColIndex <= end_lhs_colIndex; leftColIndex++) {
-					
-					// Calculate global index of right hand side block
-					long lhs_rl = Math.max((leftRowIndex-1)*brlen+1, start_lhs_globalRowIndex);
-					long lhs_ru = Math.min(leftRowIndex*brlen, end_lhs_globalRowIndex);
-					long lhs_cl = Math.max((leftColIndex-1)*bclen+1, start_lhs_globalColIndex);
-					long lhs_cu = Math.min(leftColIndex*bclen, end_lhs_globalColIndex);
-					
-					int lhs_lrl = UtilFunctions.computeCellInBlock(lhs_rl, brlen);
-					int lhs_lru = UtilFunctions.computeCellInBlock(lhs_ru, brlen);
-					int lhs_lcl = UtilFunctions.computeCellInBlock(lhs_cl, bclen);
-					int lhs_lcu = UtilFunctions.computeCellInBlock(lhs_cu, bclen);
-					
-					long rhs_rl = lhs_rl - rl + 1;
-					long rhs_ru = rhs_rl + (lhs_ru - lhs_rl);
-					long rhs_cl = lhs_cl - cl + 1;
-					long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
-					
-					int rhs_lrl = UtilFunctions.computeCellInBlock(rhs_rl, brlen);
-					int rhs_lru = UtilFunctions.computeCellInBlock(rhs_ru, brlen);
-					int rhs_lcl = UtilFunctions.computeCellInBlock(rhs_cl, bclen);
-					int rhs_lcu = UtilFunctions.computeCellInBlock(rhs_cu, bclen);
-					
-					MatrixBlock slicedRHSBlk = rightKV._2.sliceOperations(rhs_lrl, rhs_lru, rhs_lcl, rhs_lcu, new MatrixBlock());
-					
-					int lbrlen = UtilFunctions.computeBlockSize(lhs_rlen, leftRowIndex, brlen);
-					int lbclen = UtilFunctions.computeBlockSize(lhs_clen, leftColIndex, bclen);
-					MatrixBlock resultBlock = new MatrixBlock(lbrlen, lbclen, false);
-					resultBlock = resultBlock.leftIndexingOperations(slicedRHSBlk, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, null, false);
-					retVal.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(leftRowIndex, leftColIndex), resultBlock));
-				}
-			}
-			return retVal;
-		}
-		
+			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(rightKV);			
+			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();
+			OperationsOnMatrixValues.performShift(in, _ixrange, _brlen, _bclen, _rlen, _clen, out);
+			return SparkUtils.fromIndexedMatrixBlock(out);
+		}		
 	}
 	
 	/**
@@ -344,39 +297,34 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 	{
 		private static final long serialVersionUID = -3581795160948484261L;
 		
-		private boolean complementary = false;
-		private int brlen; int bclen;
-		private IndexRange indexRange;
-		private long rl; long ru; long cl; long cu;
+		private boolean _complement = false;
+		private IndexRange _ixrange = null;
+		private int _brlen = -1;
+		private int _bclen = -1;
 		
-		public ZeroOutLHS(boolean complementary, int brlen, int bclen, long rl, long ru, long cl, long cu) {
-			this.complementary = complementary;
-			this.brlen = brlen;
-			this.bclen = bclen;
-			this.rl = rl;
-			this.ru = ru;
-			this.cl = cl;
-			this.cu = cu;
-			this.indexRange = new IndexRange(rl, ru, cl, cu);
+		public ZeroOutLHS(boolean complement, IndexRange range, MatrixCharacteristics mcLeft) {
+			_complement = complement;
+			_ixrange = range;
+			_brlen = mcLeft.getRowsPerBlock();
+			_bclen = mcLeft.getColsPerBlock();
 		}
 		
 		@Override
 		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
 			throws Exception 
 		{
-			if( !UtilFunctions.isInBlockRange(kv._1(), brlen, bclen, rl, ru, cl, cu) ) {
+			if( !UtilFunctions.isInBlockRange(kv._1(), _brlen, _bclen, _ixrange) ) {
 				return kv;
 			}
 			
-			IndexRange range = UtilFunctions.getSelectedRangeForZeroOut(new IndexedMatrixValue(kv._1, kv._2), brlen, bclen, indexRange);
+			IndexRange range = UtilFunctions.getSelectedRangeForZeroOut(new IndexedMatrixValue(kv._1, kv._2), _brlen, _bclen, _ixrange);
 			if(range.rowStart == -1 && range.rowEnd == -1 && range.colStart == -1 && range.colEnd == -1) {
 				throw new Exception("Error while getting range for zero-out");
 			}
 			
-			MatrixBlock zeroBlk = (MatrixBlock) kv._2.zeroOutOperations(new MatrixBlock(), range, complementary);
+			MatrixBlock zeroBlk = (MatrixBlock) kv._2.zeroOutOperations(new MatrixBlock(), range, _complement);
 			return new Tuple2<MatrixIndexes, MatrixBlock>(kv._1, zeroBlk);
 		}
-		
 	}
 	
 	/**
@@ -387,10 +335,9 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 		private static final long serialVersionUID = 1757075506076838258L;
 		
 		private PartitionedBroadcastMatrix _binput;
-		private IndexRange _ixrange;
-		private int _brlen;
-		private int _bclen;
-		
+		private IndexRange _ixrange = null;
+		private int _brlen = -1;
+		private int _bclen = -1;
 		
 		public LeftIndexPartitionFunction(PartitionedBroadcastMatrix binput, IndexRange ixrange, MatrixCharacteristics mc) 
 		{

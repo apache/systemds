@@ -22,10 +22,10 @@ package org.apache.sysml.test.integration.functions.indexing;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -106,6 +106,7 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("A");
 			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("A");
 			TestUtils.compareMatrices(dmlfile, rfile, epsilon, "A-DML", "A-R");
+			checkDMLMetaDataFile("A", new MatrixCharacteristics(rows,cols,1,1));
 		}
 		finally
 		{

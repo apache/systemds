@@ -24,12 +24,12 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp.LeftIndexingMethod;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -233,6 +233,7 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 		HashMap<CellIndex, Double> rfile = readRMatrixFromFS("R");
 		TestUtils.compareMatrices(dmlfile, rfile, 0, "DML", "R");
+		checkDMLMetaDataFile("R", new MatrixCharacteristics(rows1,cols1,1,1));
 	}
 }
 

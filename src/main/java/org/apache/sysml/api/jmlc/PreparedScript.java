@@ -48,6 +48,7 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.utils.Explain;
 
 /**
  * JMLC (Java Machine Learning Connector) API:
@@ -250,8 +251,7 @@ public class PreparedScript
 	 * Remove all current values bound to input or output variables.
 	 * 
 	 */
-	public void clearParameters()
-	{
+	public void clearParameters() {
 		_vars.removeAll();
 	}
 	
@@ -289,5 +289,14 @@ public class PreparedScript
 				rvars.addResult(ovar, _vars.get(ovar));
 			
 		return rvars;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 * @throws DMLException
+	 */
+	public String explain() throws DMLException {
+		return Explain.explain(_prog);
 	}
 }

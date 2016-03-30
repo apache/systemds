@@ -32,6 +32,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLException;
@@ -74,6 +76,8 @@ import org.apache.wink.json4j.JSONObject;
  */
 public class Connection 
 {	
+	private static final Log LOG = LogFactory.getLog(Connection.class.getName());
+	
 	private DMLConfig _dmlconf = null;
 	private CompilerConfig _cconf = null;
 	
@@ -277,23 +281,34 @@ public class Connection
 	 * @return
 	 * @throws IOException 
 	 */
-	@SuppressWarnings("unchecked")
 	public FrameBlock readTransformMetaData(String spec, String metapath) 
 		throws IOException 
 	{
+		//read column types (for sanity check column names)
+		String coltypesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+"coltypes.csv");
+		List<String> coltypes = Arrays.asList(IOUtilFunctions.split(coltypesStr.trim(), ","));
+		
 		//read column names
-		String colStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+"column.names");
-		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colStr.trim(), ","));
+		String colnamesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+"column.names");
+		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colnamesStr.trim(), ","));
+		if( coltypes.size() != colnames.size() ) {
+			LOG.warn("Number of columns names: "+colnames.size()+" (expected: "+coltypes.size()+").");
+			LOG.warn("--Sample column names: "+(!colnames.isEmpty()?colnames.get(0):"null"));
+		}
 		
 		//read meta data (currently only recode supported, without parsing spec)
 		HashMap<String,String> meta = new HashMap<String,String>();
 		int rows = 0;
-		for( String colName : colnames ) {
+		for( int j=0; j<colnames.size(); j++ ) {
+			String colName = colnames.get(j);
 			String name = metapath+File.separator+"Recode"+File.separator+colName;
 			if( MapReduceTool.existsFileOnHDFS(name+".map") ) {
 				meta.put(colName, MapReduceTool.readStringFromHDFSFile(name+".map"));
 				String ndistinct = MapReduceTool.readStringFromHDFSFile(name+".ndistinct");
 				rows = Math.max(rows, Integer.parseInt(ndistinct));
+			}
+			else if( coltypes.get(j).equals("2") ) {
+				LOG.warn("Recode map for column '"+colName+"' does not exist.");
 			}
 		}
 		

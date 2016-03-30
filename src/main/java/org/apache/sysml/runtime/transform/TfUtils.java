@@ -53,6 +53,9 @@ public class TfUtils implements Serializable{
 	
 	private static final long serialVersionUID = 526252850872633125L;
 
+	public static final String TXMTD_SEP 	= ",";
+	
+	
 	private OmitAgent _oa = null;
 	private MVImputeAgent _mia = null;
 	private RecodeAgent _ra = null;	

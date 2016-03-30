@@ -176,7 +176,7 @@ public class BinAgent extends TransformationAgent {
 	{
 		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + BIN_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TXMTD_SEP + min + TXMTD_SEP + max + TXMTD_SEP + binwidth + TXMTD_SEP + nbins + "\n");
+		br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
 		br.close();
 	}
 
@@ -274,7 +274,7 @@ public class BinAgent extends TransformationAgent {
 					
 				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
 				// format: colID,min,max,nbins
-				String[] fields = br.readLine().split(TXMTD_SEP);
+				String[] fields = br.readLine().split(TfUtils.TXMTD_SEP);
 				double min = UtilFunctions.parseToDouble(fields[1]);
 				//double max = UtilFunctions.parseToDouble(fields[2]);
 				double binwidth = UtilFunctions.parseToDouble(fields[3]);

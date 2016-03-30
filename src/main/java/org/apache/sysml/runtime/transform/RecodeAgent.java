@@ -45,7 +45,9 @@ import com.google.common.collect.Ordering;
 
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.MVImputeAgent.MVMethod;
+import org.apache.sysml.runtime.transform.decode.DecoderRecode;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class RecodeAgent extends TransformationAgent {
@@ -268,7 +270,7 @@ public class RecodeAgent extends TransformationAgent {
 				
 				// output (w, count, rcdIndex)
 				if(br != null)		
-					br.write(UtilFunctions.quote(w) + TXMTD_SEP + rcdIndex + TXMTD_SEP + count  + "\n");
+					br.write(UtilFunctions.quote(w) + TfUtils.TXMTD_SEP + rcdIndex + TfUtils.TXMTD_SEP + count  + "\n");
 				
 				if(maxCount < count) {
 					maxCount = count;
@@ -384,24 +386,15 @@ public class RecodeAgent extends TransformationAgent {
 				TfUtils.checkValidInputFile(fs, path, true); 
 				
 				HashMap<String,String> map = new HashMap<String,String>();
+				Pair<String,String> pair = new Pair<String,String>();
 				
 				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
-				String line = null, word=null;
-				String rcdIndex = null;
+				String line = null;
 				
 				// Example line to parse: "WN (1)67492",1,61975
 				while((line=br.readLine())!=null) {
-					
-					// last occurrence of quotation mark
-					int idxQuote = line.lastIndexOf('"');
-					word = UtilFunctions.unquote(line.substring(0,idxQuote+1));
-					
-					int idx = idxQuote+2;
-					while(line.charAt(idx) != TXMTD_SEP.charAt(0))
-						idx++;
-					rcdIndex = line.substring(idxQuote+2,idx); 
-					
-					map.put(word, rcdIndex);
+					DecoderRecode.parseRecodeMapEntry(line, pair);
+					map.put(pair.getKey(), pair.getValue());
 				}
 				br.close();
 				_finalMaps.put(colID, map);
@@ -469,7 +462,6 @@ public class RecodeAgent extends TransformationAgent {
 			
 		return words;
 	}
-	
 	
 	public void printMaps() {
 		for(Integer k : _rcdMaps.keySet()) {

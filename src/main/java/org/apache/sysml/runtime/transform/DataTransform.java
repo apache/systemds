@@ -682,7 +682,7 @@ public class DataTransform
 			if ( TfUtils.checkValidInputFile(fs, binpath, false ) )
 			{
 				br = new BufferedReader(new InputStreamReader(fs.open(binpath)));
-				int nbins = UtilFunctions.parseToInt(br.readLine().split(TransformationAgent.TXMTD_SEP)[4]);
+				int nbins = UtilFunctions.parseToInt(br.readLine().split(TfUtils.TXMTD_SEP)[4]);
 				br.close();
 				ret += (nbins-1);
 			}

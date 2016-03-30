@@ -59,8 +59,10 @@ import org.apache.sysml.runtime.io.ReaderTextCell;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.TransformationAgent;
 import org.apache.sysml.runtime.transform.TransformationAgent.TX_METHOD;
+import org.apache.sysml.runtime.transform.decode.DecoderRecode;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -358,11 +360,12 @@ public class Connection
 				
 				InputStream is = new ByteArrayInputStream(map.getBytes("UTF-8"));
 				BufferedReader br = new BufferedReader(new InputStreamReader(is));
+				Pair<String,String> pair = new Pair<String,String>();
 				String line = null; int rpos = 0;
 				while( (line = br.readLine()) != null ) {
-					String parts[] = IOUtilFunctions.split(line.trim(), ",");
-					String pair = parts[0] + Lop.DATATYPE_PREFIX + parts[1]; //sval.code
-					ret.set(rpos++, colID-1, pair);
+					DecoderRecode.parseRecodeMapEntry(line, pair);
+					String tmp = pair.getKey() + Lop.DATATYPE_PREFIX + pair.getValue();
+					ret.set(rpos++, colID-1, tmp);
 				}
 			}
 		}

@@ -26,6 +26,8 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
@@ -77,5 +79,22 @@ public class DecoderRecode extends Decoder
 			}
 		}
 		return out;
+	}
+	
+	/**
+	 * Parses a line of <token, ID, count> into <token, ID> pairs, where 
+	 * quoted tokens (potentially including separators) are supportd.
+	 * 
+	 * @param entry
+	 * @param pair
+	 */
+	public static void parseRecodeMapEntry(String entry, Pair<String,String> pair) {
+		int ixq = entry.lastIndexOf('"');
+		String token = UtilFunctions.unquote(entry.substring(0,ixq+1));
+		int idx = ixq+2;
+		while(entry.charAt(idx) != TfUtils.TXMTD_SEP.charAt(0))
+			idx++;
+		String id = entry.substring(ixq+2,idx); 
+		pair.set(token, id);
 	}
 }

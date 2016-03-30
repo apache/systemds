@@ -518,7 +518,7 @@ public class MVImputeAgent extends TransformationAgent {
 	{
 		Path pt=new Path(tfMtdDir+"/Impute/"+ agents.getName(colID) + MV_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TXMTD_SEP + mean + "\n");
+		br.write(colID + TfUtils.TXMTD_SEP + mean + "\n");
 		br.close();
 	}
 	
@@ -526,7 +526,7 @@ public class MVImputeAgent extends TransformationAgent {
 	{
 		Path pt=new Path(tfMtdDir+"/Scale/"+ agents.getName(colID) + SCALE_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TXMTD_SEP + mean + TXMTD_SEP + sdev + "\n");
+		br.write(colID + TfUtils.TXMTD_SEP + mean + TfUtils.TXMTD_SEP + sdev + "\n");
 		br.close();
 	}
 	
@@ -534,7 +534,7 @@ public class MVImputeAgent extends TransformationAgent {
 	{
 		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + BIN_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-		br.write(colID + TXMTD_SEP + min + TXMTD_SEP + max + TXMTD_SEP + binwidth + TXMTD_SEP + nbins + "\n");
+		br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
 		br.close();
 	}
 	
@@ -802,7 +802,7 @@ public class MVImputeAgent extends TransformationAgent {
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
 		String line = br.readLine();
-		String replacement =  UtilFunctions.unquote(line.split(TXMTD_SEP)[1]);
+		String replacement =  UtilFunctions.unquote(line.split(TfUtils.TXMTD_SEP)[1]);
 		br.close();
 		
 		return replacement;

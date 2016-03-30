@@ -54,7 +54,7 @@ public abstract class TransformationAgent implements Serializable {
 	public static final String JSON_ATTRS 	= "attributes"; 
 	public static final String JSON_MTHD 	= "methods"; 
 	public static final String JSON_CONSTS = "constants"; 
-	public static final String JSON_NBINS 	= "numbins"; 
+	public static final String JSON_NBINS 	= "numbins"; 	
 	
 	protected static final String MV_FILE_SUFFIX 		= ".impute";
 	protected static final String RCD_MAP_FILE_SUFFIX 	= ".map";
@@ -65,7 +65,6 @@ public abstract class TransformationAgent implements Serializable {
 	protected static final String DCD_FILE_NAME 		= "dummyCodeMaps.csv";
 	protected static final String COLTYPES_FILE_NAME 	= "coltypes.csv";
 	
-	protected static final String TXMTD_SEP 	= ",";
 	protected static final String DCD_NAME_SEP 	= "_";
 	
 	protected static final String OUT_HEADER = "column.names";

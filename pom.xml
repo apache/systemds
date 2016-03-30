@@ -112,7 +112,6 @@
 									<groupId>org.apache.hadoop</groupId>
 									<artifactId>hadoop-test</artifactId>
 									<version>1.2.1</version>
-									<!-- <classifier>jar</classifier> -->
 									<type>jar</type>
 									<overWrite>true</overWrite>
 									<outputDirectory>${project.build.directory}/hadoop-test</outputDirectory>
@@ -613,7 +612,7 @@
 								</configuration>
 							</execution>
 
-							<!--execution>
+							<execution>
 								<id>create-inmemory-jar</id>
 								<phase>package</phase>
 								<goals>
@@ -624,7 +623,7 @@
 										<descriptor>src/assembly/inmemory.xml</descriptor>
 									</descriptors>
 								</configuration>
-							</execution-->
+							</execution>
 						</executions>
 					</plugin>
 

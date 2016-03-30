@@ -38,13 +38,6 @@
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
 
-		<fileSet>
-			<directory>${basedir}/src/main/config</directory>
-			<includes>
-				<include>log4j.properties</include>
-			</includes>
-			<outputDirectory>.</outputDirectory>
-		</fileSet>
 	</fileSets>
 
 	<!-- 
@@ -57,11 +50,21 @@
 	</files>
 	-->
 
-	<!--  Include all the libraries needed to run in standalone mode. -->
+	<!--  Include all the libraries needed to run in in-memory (JMLC) mode. -->
 	<dependencySets>
 		<dependencySet>
 			<includes>
-				<include>*:*system-ml*</include>
+				<include>*:commons-collections*</include>
+				<include>*:commons-configuration*</include>
+				<include>*:commons-lang*</include>
+				<include>*:commons-logging*</include>
+				<include>*:hadoop-auth*</include>
+				<include>*:hadoop-common*</include>
+				<include>*:hadoop-mapreduce-client-core*</include>
+				<include>*:log4j*</include>
+				<include>*:slf4j-api*</include>
+				<include>*:slf4j-log4j*</include>
+				<include>*:systemml*</include>
 			</includes>
 			<outputDirectory>.</outputDirectory>
 			<scope>provided</scope>

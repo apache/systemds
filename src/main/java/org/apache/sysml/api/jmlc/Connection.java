@@ -49,11 +49,13 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
+import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.io.ReaderTextCell;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -214,30 +216,123 @@ public class Connection
 				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 			}
 			// from local file system
-			else 
-			{ 
+			else { 
 				in = new BufferedReader(new FileReader(fname));
 			}
 			
 			//core script reading
 			String tmp = null;
-			while ((tmp = in.readLine()) != null)
-			{
+			while ((tmp = in.readLine()) != null) {
 				sb.append( tmp );
 				sb.append( "\n" );
 			}
 		}
-		catch (IOException ex)
-		{
+		catch (IOException ex) {
 			throw ex;
 		}
-		finally 
-		{
-			if( in != null )
-			 	in.close();
+		finally {
+			IOUtilFunctions.closeSilently(in);
 		}
 		
 		return sb.toString();
+	}
+	
+	/**
+	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
+	 * NOTE: this call currently only supports default configurations for CSV.
+	 * 
+	 * @param fname
+	 * @return
+	 * @throws IOException
+	 */
+	public double[][] readDoubleMatrix(String fname) 
+		throws IOException
+	{
+		try {
+			//read json meta data 
+			String fnamemtd = DataExpression.getMTDFileName(fname);
+			JSONObject jmtd = new DataExpression().readMetadataFile(fnamemtd, false);
+			
+			//parse json meta data 
+			long rows = jmtd.getLong(DataExpression.READROWPARAM);
+			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
+			int brlen = jmtd.containsKey(DataExpression.ROWBLOCKCOUNTPARAM)?
+					jmtd.getInt(DataExpression.ROWBLOCKCOUNTPARAM) : -1;
+			int bclen = jmtd.containsKey(DataExpression.COLUMNBLOCKCOUNTPARAM)?
+					jmtd.getInt(DataExpression.COLUMNBLOCKCOUNTPARAM) : -1;
+			long nnz = jmtd.containsKey(DataExpression.READNUMNONZEROPARAM)?
+					jmtd.getLong(DataExpression.READNUMNONZEROPARAM) : -1;
+			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);			
+		
+			//read matrix file
+			return readDoubleMatrix(fname, iinfo, rows, cols, brlen, bclen, nnz);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
+	 * NOTE: this call currently only supports default configurations for CSV.
+	 * 
+	 * @param fname
+	 * @param iinfo
+	 * @param rows
+	 * @param cols
+	 * @param brlen
+	 * @param bclen
+	 * @param nnz
+	 * @return
+	 * @throws IOException
+	 */
+	public double[][] readDoubleMatrix(String fname, InputInfo iinfo, long rows, long cols, int brlen, int bclen, long nnz) 
+		throws IOException
+	{
+		try {
+			MatrixReader reader = MatrixReaderFactory.createMatrixReader(iinfo);
+			MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, brlen, bclen, nnz);
+			return DataConverter.convertToDoubleMatrix(mb);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Converts an input string representation of a matrix in textcell format
+	 * into a dense double array. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.  
+	 * 
+	 * @param input
+	 * @param rows
+	 * @param cols
+	 * @return
+	 * @throws IOException
+	 */
+	public double[][] convertToDoubleMatrix(String input, String meta) 
+		throws IOException
+	{
+		try {
+			//parse json meta data 
+			JSONObject jmtd = new JSONObject(meta);
+			int rows = jmtd.getInt(DataExpression.READROWPARAM);
+			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
+			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+	
+			//sanity check input format
+			if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
+				||DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(format))) {
+				throw new IOException("Invalid input format (expected: text or mm): "+format);
+			}
+			
+			//parse the input matrix
+			return convertToDoubleMatrix(input, rows, cols);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
 	}
 	
 	/**
@@ -246,35 +341,52 @@ public class Connection
 	 * specified because textcell only represents non-zero values and hence
 	 * does not define the dimensions in the general case.
 	 * 
-	 * @param input  a string representation of an input matrix, 
-	 *              in format textcell (rowindex colindex value)
-	 * @param rows number of rows
-	 * @param cols number of columns 
+	 * @param input
+	 * @param rows
+	 * @param cols
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public double[][] convertToDoubleMatrix(String input, int rows, int cols) 
 		throws IOException
 	{
+		InputStream is = new ByteArrayInputStream(input.getBytes("UTF-8"));
+		return convertToDoubleMatrix(is, rows, cols);
+	}
+	
+	/**
+	 * Converts an input stream of a string matrix in textcell format
+	 * into a dense double array. The number of rows and columns need to be 
+	 * specified because textcell only represents non-zero values and hence
+	 * does not define the dimensions in the general case.
+	 * 
+	 * @param input
+	 * @param rows
+	 * @param cols
+	 * @return
+	 * @throws IOException
+	 */
+	public double[][] convertToDoubleMatrix(InputStream input, int rows, int cols) 
+		throws IOException
+	{
 		double[][] ret = null;
 		
-		try 
-		{
+		try {
 			//read input matrix
-			InputStream is = new ByteArrayInputStream(input.getBytes("UTF-8"));
 			ReaderTextCell reader = (ReaderTextCell)MatrixReaderFactory.createMatrixReader(InputInfo.TextCellInputInfo);
-			MatrixBlock mb = reader.readMatrixFromInputStream(is, rows, cols, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), (long)rows*cols);
+			MatrixBlock mb = reader.readMatrixFromInputStream(input, rows, cols, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), (long)rows*cols);
 		
 			//convert to double array
 			ret = DataConverter.convertToDoubleMatrix( mb );
 		}
-		catch(DMLRuntimeException rex) 
-		{
+		catch(DMLRuntimeException rex) {
 			throw new IOException( rex );
 		}
 		
 		return ret;
 	}
+	
+	
 	
 	/**
 	 * 

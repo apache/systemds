@@ -31,7 +31,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
-
+import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.sort.PickFromCompactInputFormat;
@@ -110,7 +110,7 @@ public class InputInfo implements Serializable
 			throw new DMLRuntimeException("Unrecognized output info: " + ii);
 	}
 	
-	public static InputInfo stringToInputInfo (String str) {
+	public static InputInfo stringToInputInfo(String str) {
 		if ( str.equalsIgnoreCase("textcell")) {
 			return TextCellInputInfo;
 		}
@@ -131,6 +131,23 @@ public class InputInfo implements Serializable
 			return WeightedPairInputInfo;
 		else if ( str.equalsIgnoreCase("csv"))
 			return CSVInputInfo;
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @param str
+	 * @return
+	 */
+	public static InputInfo stringExternalToInputInfo(String str) {
+		if( DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(str) )
+			return InputInfo.TextCellInputInfo;
+		else if( DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(str) )
+			return InputInfo.MatrixMarketInputInfo;
+		else if( DataExpression.FORMAT_TYPE_VALUE_CSV.equals(str) )
+			return InputInfo.CSVInputInfo; 
+		else if( DataExpression.FORMAT_TYPE_VALUE_BINARY.equals(str) )
+			return InputInfo.BinaryBlockInputInfo; 		
 		return null;
 	}
 	

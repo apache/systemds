@@ -407,30 +407,6 @@ public class RecodeAgent extends TransformationAgent {
 	}
 	
 	/**
-	 * Method to apply transformations.
-	 * 
-	 * @param words
-	 * @return
-	 */
-	@Override
-	public String[] apply(String[] words, TfUtils agents) {
-		if ( _rcdList == null )
-			return words;
-		
-		for(int i=0; i < _rcdList.length; i++) {
-			int colID = _rcdList[i];
-			try {
-				words[colID-1] = _finalMaps.get(colID).get(UtilFunctions.unquote(words[colID-1].trim()));
-			} catch(NullPointerException e) {
-				System.err.println("Maps for colID="+colID + " may be null (map = " + _finalMaps.get(colID) + ")");
-				throw new RuntimeException(e);
-			}
-		}
-			
-		return words;
-	}
-	
-	/**
 	 * Check if the given column ID is subjected to this transformation.
 	 * 
 	 */
@@ -443,21 +419,50 @@ public class RecodeAgent extends TransformationAgent {
 		return ( idx >= 0 ? idx : -1);
 	}
 
+	
+
+	/**
+	 * Method to apply transformations.
+	 * 
+	 * @param words
+	 * @return
+	 */
+	@Override
+	public String[] apply(String[] words, TfUtils agents) {
+		if ( _rcdList == null )
+			return words;
+		
+		//apply recode maps on relevant columns of given row
+		for(int i=0; i < _rcdList.length; i++) {
+			//prepare input and get code
+			int colID = _rcdList[i];
+			String key = UtilFunctions.unquote(words[colID-1].trim());
+			String val = _finalMaps.get(colID).get(key);			
+			// replace unseen keys with NaN 
+			words[colID-1] = (val!=null) ? val : "NaN";
+		}
+			
+		return words;
+	}
+	
+	/**
+	 * 
+	 * @param words
+	 * @param agents
+	 * @return
+	 */
 	public String[] cp_apply(String[] words, TfUtils agents) {
 		if ( _rcdList == null )
 			return words;
 		
-		String w = null;
+		//apply recode maps on relevant columns of given row
 		for(int i=0; i < _rcdList.length; i++) {
+			//prepare input and get code
 			int colID = _rcdList[i];
-			try {
-				w = UtilFunctions.unquote(words[colID-1].trim());
-				words[colID-1] = Long.toString(_rcdMaps.get(colID).get(w));
-			} catch(NullPointerException e) {
-				if(w.isEmpty() && agents.isNA("") )
-					throw new RuntimeException("Empty string (a missing value) in column ID " + colID + " is not handled. Consider adding an imputation method on this column.");		
-				throw new RuntimeException("ColID="+colID + ", word=" + words[colID-1] + ", maps entry not found (map = " + _rcdMaps.get(colID) + ")");
-			}
+			String key = UtilFunctions.unquote(words[colID-1].trim());
+			Long val = _rcdMaps.get(colID).get(key);			
+			// replace unseen keys with NaN
+			words[colID-1] = (val!=null) ? Long.toString(val) : "NaN";
 		}
 			
 		return words;

@@ -53,7 +53,12 @@ public class TfUtils implements Serializable{
 	
 	private static final long serialVersionUID = 526252850872633125L;
 
-	public static final String TXMTD_SEP 	= ",";
+	public static final String TXMTD_SEP 	     = ",";
+	public static final String TXMTD_COLTYPES 	 = "coltypes.csv";	
+	public static final String TXMTD_COLNAMES    = "column.names";
+	public static final String TXMTD_DC_COLNAMES = "dummycoded.column.names";	
+	public static final String TXMTD_RCD_MAP_SUFFIX 	 = ".map";
+	public static final String TXMTD_RCD_DISTINCT_SUFFIX = ".ndistinct";
 	
 	
 	private OmitAgent _oa = null;
@@ -224,6 +229,8 @@ public class TfUtils implements Serializable{
 		_numTransformedRows = 0;
 		_numTransformedColumns = 0;
 		
+		//TODO: fix hard-wired header propagation to meta data column names
+		
 		_headerLine = headerLine;
 		_hasHeader = hasHeader;
 		_delimString = delim;
@@ -374,6 +381,8 @@ public class TfUtils implements Serializable{
 
 	public String processHeaderLine() throws IOException 
 	{
+		//TODO: fix hard-wired header propagation to meta data column names
+		
 		FileSystem fs = FileSystem.get(ConfigurationManager.getCachedJobConf());
 		String dcdHeader = getDummycodeAgent().constructDummycodedHeader(getHeader(), getDelim());
 		getDummycodeAgent().genDcdMapsAndColTypes(fs, getTmpDir(), (int) getNumCols(), this);

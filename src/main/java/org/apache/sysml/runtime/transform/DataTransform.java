@@ -631,9 +631,9 @@ public class DataTransform
 	private static void moveFilesFromTmp(FileSystem fs, String tmpPath, String txMtdPath) throws IllegalArgumentException, IOException 
 	{
 		// move files from temporary location to txMtdPath
-		MapReduceTool.renameFileOnHDFS(tmpPath + "/" + TransformationAgent.OUT_HEADER, txMtdPath + "/" + TransformationAgent.OUT_HEADER);
-		MapReduceTool.renameFileOnHDFS(tmpPath + "/" + TransformationAgent.OUT_DCD_HEADER, txMtdPath + "/" + TransformationAgent.OUT_DCD_HEADER);
-		MapReduceTool.renameFileOnHDFS(tmpPath + "/" + TransformationAgent.COLTYPES_FILE_NAME, txMtdPath + "/" + TransformationAgent.COLTYPES_FILE_NAME);
+		MapReduceTool.renameFileOnHDFS(tmpPath + "/" + TfUtils.TXMTD_COLNAMES, txMtdPath + "/" + TfUtils.TXMTD_COLNAMES);
+		MapReduceTool.renameFileOnHDFS(tmpPath + "/" + TfUtils.TXMTD_DC_COLNAMES, txMtdPath + "/" + TfUtils.TXMTD_DC_COLNAMES);
+		MapReduceTool.renameFileOnHDFS(tmpPath + "/" + TfUtils.TXMTD_COLTYPES, txMtdPath + "/" + TfUtils.TXMTD_COLTYPES);
 		
 		if ( fs.exists(new Path(tmpPath +"/Dummycode/" + TransformationAgent.DCD_FILE_NAME)) ) 
 		{
@@ -677,7 +677,7 @@ public class DataTransform
 			int id = UtilFunctions.toInt(o);
 			
 			Path binpath = new Path( tfMtdPath + "/Bin/" + UtilFunctions.unquote(columnNames[id-1]) + TransformationAgent.BIN_FILE_SUFFIX);
-			Path rcdpath = new Path( tfMtdPath + "/Recode/" + UtilFunctions.unquote(columnNames[id-1]) + TransformationAgent.NDISTINCT_FILE_SUFFIX);
+			Path rcdpath = new Path( tfMtdPath + "/Recode/" + UtilFunctions.unquote(columnNames[id-1]) + TfUtils.TXMTD_RCD_DISTINCT_SUFFIX);
 			
 			if ( TfUtils.checkValidInputFile(fs, binpath, false ) )
 			{
@@ -939,7 +939,7 @@ public class DataTransform
 		
 		if(oprnds.isApply)
 		{
-			BufferedReader br = new BufferedReader(new InputStreamReader( fs.open(new Path(oprnds.applyTxPath + "/" + TransformationAgent.OUT_HEADER)) ));
+			BufferedReader br = new BufferedReader(new InputStreamReader( fs.open(new Path(oprnds.applyTxPath + "/" + TfUtils.TXMTD_COLNAMES)) ));
 			ret = br.readLine();
 			br.close();
 		}
@@ -1280,14 +1280,14 @@ public class DataTransform
 			br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
 			if ( fileNo == 0 ) 
 			{
-				String header = null;
 				if ( prop.hasHeader() )
 					br.readLine(); // ignore the header line from data file
 				
-				header = headerLine;
-				String dcdHeader = _da.constructDummycodedHeader(header, agents.getDelim());
+				//TODO: fix hard-wired header propagation to meta data column names
+				
+				String dcdHeader = _da.constructDummycodedHeader(headerLine, agents.getDelim());
 				numColumnsTf = _da.genDcdMapsAndColTypes(fs, tfMtdPath, ncols, agents);
-				DataTransform.generateHeaderFiles(fs, tfMtdPath, header, dcdHeader);
+				generateHeaderFiles(fs, tfMtdPath, headerLine, dcdHeader);
 			}
 			
 			line = null;
@@ -1340,13 +1340,13 @@ public class DataTransform
 	
 	public static void generateHeaderFiles(FileSystem fs, String txMtdDir, String origHeader, String newHeader) throws IOException {
 		// write out given header line
-		Path pt=new Path(txMtdDir+"/" + TransformationAgent.OUT_HEADER);
+		Path pt=new Path(txMtdDir+"/" + TfUtils.TXMTD_COLNAMES);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(origHeader+"\n");
 		br.close();
 
 		// write out the new header line (after all transformations)
-		pt = new Path(txMtdDir + "/" + TransformationAgent.OUT_DCD_HEADER);
+		pt = new Path(txMtdDir + "/" + TfUtils.TXMTD_DC_COLNAMES);
 		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(newHeader+"\n");
 		br.close();

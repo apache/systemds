@@ -62,6 +62,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.TransformationAgent;
 import org.apache.sysml.runtime.transform.TransformationAgent.TX_METHOD;
 import org.apache.sysml.runtime.transform.decode.DecoderRecode;
@@ -386,25 +387,35 @@ public class Connection
 		return ret;
 	}
 	
-	
+	/**
+	 * 
+	 * @param spec
+	 * @param metapath
+	 * @return
+	 * @throws IOException
+	 */
+	public FrameBlock readTransformMetaData(String spec, String metapath) throws IOException {
+		return readTransformMetaData(spec, metapath, TfUtils.TXMTD_SEP);
+	}
 	
 	/**
+	 * NOTE: This is a temporary api - use readTransformMetaData(String spec, String metapath) if possible. 
 	 * 
 	 * @param spec
 	 * @param metapath
 	 * @return
 	 * @throws IOException 
 	 */
-	public FrameBlock readTransformMetaData(String spec, String metapath) 
+	public FrameBlock readTransformMetaData(String spec, String metapath, String colDelim) 
 		throws IOException 
 	{
 		//read column types (for sanity check column names)
-		String coltypesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+"coltypes.csv");
-		List<String> coltypes = Arrays.asList(IOUtilFunctions.split(coltypesStr.trim(), ","));
+		String coltypesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+TfUtils.TXMTD_COLTYPES);
+		List<String> coltypes = Arrays.asList(IOUtilFunctions.split(coltypesStr.trim(), TfUtils.TXMTD_SEP));
 		
 		//read column names
-		String colnamesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+"column.names");
-		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colnamesStr.trim(), ","));
+		String colnamesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+TfUtils.TXMTD_COLNAMES);
+		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colnamesStr.trim(), colDelim));
 		if( coltypes.size() != colnames.size() ) {
 			LOG.warn("Number of columns names: "+colnames.size()+" (expected: "+coltypes.size()+").");
 			LOG.warn("--Sample column names: "+(!colnames.isEmpty()?colnames.get(0):"null"));
@@ -416,9 +427,9 @@ public class Connection
 		for( int j=0; j<colnames.size(); j++ ) {
 			String colName = colnames.get(j);
 			String name = metapath+File.separator+"Recode"+File.separator+colName;
-			if( MapReduceTool.existsFileOnHDFS(name+".map") ) {
-				meta.put(colName, MapReduceTool.readStringFromHDFSFile(name+".map"));
-				String ndistinct = MapReduceTool.readStringFromHDFSFile(name+".ndistinct");
+			if( MapReduceTool.existsFileOnHDFS(name+TfUtils.TXMTD_RCD_MAP_SUFFIX) ) {
+				meta.put(colName, MapReduceTool.readStringFromHDFSFile(name+TfUtils.TXMTD_RCD_MAP_SUFFIX));
+				String ndistinct = MapReduceTool.readStringFromHDFSFile(name+TfUtils.TXMTD_RCD_DISTINCT_SUFFIX);
 				rows = Math.max(rows, Integer.parseInt(ndistinct));
 			}
 			else if( coltypes.get(j).equals("2") ) {

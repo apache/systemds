@@ -244,7 +244,7 @@ public class RecodeAgent extends TransformationAgent {
 		boolean isRecoded = (isRecoded(colID) != -1);
 		boolean isModeImputed = (mvagent.getMethod(colID) == MVMethod.GLOBAL_MODE);
 		
-		Path pt=new Path(outputDir+"/Recode/"+ agents.getName(colID) + RCD_MAP_FILE_SUFFIX);
+		Path pt=new Path(outputDir+"/Recode/"+ agents.getName(colID) + TfUtils.TXMTD_RCD_MAP_SUFFIX);
 		BufferedWriter br=null;
 		if(isRecoded)
 			br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));		
@@ -299,7 +299,7 @@ public class RecodeAgent extends TransformationAgent {
 			br.close();
 		
 			// output number of distinct values
-			pt=new Path(outputDir+"/Recode/"+ agents.getName(colID) + NDISTINCT_FILE_SUFFIX);
+			pt=new Path(outputDir+"/Recode/"+ agents.getName(colID) + TfUtils.TXMTD_RCD_DISTINCT_SUFFIX);
 			br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 			br.write(""+map.size());
 			br.close();
@@ -382,7 +382,7 @@ public class RecodeAgent extends TransformationAgent {
 			for(int i=0; i<_rcdList.length;i++) {
 				int colID = _rcdList[i];
 				
-				Path path = new Path( txMtdDir + "/Recode/" + agents.getName(colID) + RCD_MAP_FILE_SUFFIX);
+				Path path = new Path( txMtdDir + "/Recode/" + agents.getName(colID) + TfUtils.TXMTD_RCD_MAP_SUFFIX);
 				TfUtils.checkValidInputFile(fs, path, true); 
 				
 				HashMap<String,String> map = new HashMap<String,String>();

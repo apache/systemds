@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.transform;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
@@ -39,6 +40,7 @@ import org.apache.wink.json4j.JSONObject;
 
 import com.google.common.base.Functions;
 import com.google.common.collect.Ordering;
+
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class DummycodeAgent extends TransformationAgent {	
@@ -150,7 +152,7 @@ public class DummycodeAgent extends TransformationAgent {
 		{
 			if ( _dcdList != null && idx < _dcdList.length && _dcdList[idx] == colID )
 			{
-				br.write(colID + "," + "1" + "," + sum + "," + (sum+_domainSizes[idx]-1) + "\n");
+				br.write(colID + TfUtils.TXMTD_SEP + "1" + TfUtils.TXMTD_SEP + sum + TfUtils.TXMTD_SEP + (sum+_domainSizes[idx]-1) + "\n");
 				_dcdColumnMap[colID-1] = (sum+_domainSizes[idx]-1)-1;
 
 				for(int i=sum; i <=(sum+_domainSizes[idx]-1); i++)
@@ -161,7 +163,7 @@ public class DummycodeAgent extends TransformationAgent {
 			}
 			else 
 			{
-				br.write(colID + "," + "0" + "," + sum + "," + sum + "\n");
+				br.write(colID + TfUtils.TXMTD_SEP + "0" + TfUtils.TXMTD_SEP + sum + TfUtils.TXMTD_SEP + sum + "\n");
 				_dcdColumnMap[colID-1] = sum-1;
 				
 				if ( agents.getBinAgent().isBinned(colID) != -1 )
@@ -176,12 +178,12 @@ public class DummycodeAgent extends TransformationAgent {
 		br.close();
 
 		// Write coltypes.csv
-		pt=new Path(txMtdDir+"/" + COLTYPES_FILE_NAME);
+		pt=new Path(txMtdDir + File.separator + TfUtils.TXMTD_COLTYPES);
 		br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		
 		br.write(columnTypeToID(ctypes[0]) + "");
 		for(int i = 1; i < _dummycodedLength; i++) 
-			br.write( "," + columnTypeToID(ctypes[i]));
+			br.write( TfUtils.TXMTD_SEP + columnTypeToID(ctypes[i]));
 		br.close();
 		
 		return sum-1;

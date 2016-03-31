@@ -57,18 +57,13 @@ public abstract class TransformationAgent implements Serializable {
 	public static final String JSON_NBINS 	= "numbins"; 	
 	
 	protected static final String MV_FILE_SUFFIX 		= ".impute";
-	protected static final String RCD_MAP_FILE_SUFFIX 	= ".map";
-	protected static final String NDISTINCT_FILE_SUFFIX = ".ndistinct";
 	protected static final String MODE_FILE_SUFFIX 		= ".mode";
 	protected static final String BIN_FILE_SUFFIX 		= ".bin";
 	protected static final String SCALE_FILE_SUFFIX		= ".scale";
 	protected static final String DCD_FILE_NAME 		= "dummyCodeMaps.csv";
-	protected static final String COLTYPES_FILE_NAME 	= "coltypes.csv";
 	
 	protected static final String DCD_NAME_SEP 	= "_";
 	
-	protected static final String OUT_HEADER = "column.names";
-	protected static final String OUT_DCD_HEADER = "dummycoded.column.names";
 	
 	abstract public void print();
 	abstract public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException;

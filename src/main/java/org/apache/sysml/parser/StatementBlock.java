@@ -194,8 +194,6 @@ public class StatementBlock extends LiveVariableAnalysis
 			
 			//function calls (only mergable if inlined dml-bodied function)
 			if (sourceExpr instanceof FunctionCallIdentifier){
-				
-				
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
 				if (fblock == null){

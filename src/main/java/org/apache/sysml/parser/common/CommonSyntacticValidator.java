@@ -697,6 +697,8 @@ public abstract class CommonSyntacticValidator {
 		functCall.setFunctionName(functionName);
 		functCall.setFunctionNamespace(namespace);
 
+		functCall.setAllPositions(currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
+
 		setAssignmentStatement(ctx, info, target, functCall);
 	}
 

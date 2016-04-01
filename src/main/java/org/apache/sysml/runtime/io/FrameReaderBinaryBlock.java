@@ -122,7 +122,7 @@ public class FrameReaderBinaryBlock extends FrameReader
 					dest.copy( 0, rows-1, 
 							   0, cols-1,
 							   value, 
-							   dest.getNumRows(), dest.getNumColumns(), row_offset);
+							   row_offset);
 				}
 			}
 			finally

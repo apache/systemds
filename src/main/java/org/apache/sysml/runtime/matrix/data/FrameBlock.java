@@ -217,10 +217,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	public void reset(int nrow) 
-		throws IOException
 	{
-		for(int i=0; i < _coldata.size(); ++i)
-			_coldata.get(i)._size = nrow;
+		getSchema().clear();
+		getColumnNames().clear();
+		if(_coldata != null)
+			for(int i=0; i < _coldata.size(); ++i)
+				_coldata.get(i)._size = nrow;
+	}
+
+	public void reset() 
+	{
+		reset(0);
 	}
 	
 
@@ -454,7 +461,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return
 	 */
 	public FrameBlock sliceOperations(int rl, int ru, int cl, int cu, FrameBlock ret) 
-		throws DMLRuntimeException, IOException
+		throws DMLRuntimeException
 	{
 		// check the validity of bounds
 		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
@@ -465,17 +472,15 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		//allocate output frame
 		if( ret == null )
-		{
 			ret = new FrameBlock();
-			
-			//copy output schema and colnames
-			for( int j=cl; j<=cu; j++ ) {
-				ret._schema.add(_schema.get(j));
-				ret._colnames.add(_colnames.get(j));
-			}
-		}
 		else
 			ret.reset(ru-rl+1);
+		
+		//copy output schema and colnames
+		for( int j=cl; j<=cu; j++ ) {
+			ret._schema.add(_schema.get(j));
+			ret._colnames.add(_colnames.get(j));
+		}
 		
 		ret._numRows = ru-rl+1;
 
@@ -484,7 +489,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			for( int j=cl; j<=cu; j++ )
 				ret._coldata.add(_coldata.get(j).slice(rl,ru));
 		else
-			ret.copy(rl, ru, cl, cu, this, ru-rl+1, cu-cl+1, 0);
+			ret.copy(rl, ru, cl, cu, this, 0);
 
 		return ret;
 	}
@@ -565,10 +570,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 
 	
-	public void copy(int rl, int ru, int cl, int cu, FrameBlock src, int rlen, int clen, int rlDest) 
+	public void copy(int rl, int ru, int cl, int cu, FrameBlock src, int rlDest) 
 		throws DMLRuntimeException
 	{
-		ensureAllocatedColumns(rlen);
+		ensureAllocatedColumns(ru-rl+1);
 		
 		//copy values
 		for( int i=cl; i<=cu; i++ )

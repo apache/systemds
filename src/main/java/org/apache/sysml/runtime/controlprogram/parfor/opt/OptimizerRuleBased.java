@@ -158,7 +158,7 @@ public class OptimizerRuleBased extends Optimizer
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";
 	
-	public static final boolean APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE = true;
+	public static final boolean APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE = false;
 	
 	public static final double PAR_K_FACTOR        = OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
 	public static final double PAR_K_MR_FACTOR     = 1.0 * OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
@@ -1865,6 +1865,7 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param inPlaceResultVars
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("unused")
 	protected void rewriteSetInPlaceResultIndexing(OptNode pn, double M, LocalVariableMap vars, HashSet<String> inPlaceResultVars, ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
@@ -2700,7 +2701,7 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
               .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
 		
-		double M_sumInterm = rComputeSumMemoryIntermediates(pn, inplaceResultVars, new HashMap <String, ArrayList <UIPCandidateHop>>());
+		double M_sumInterm = rComputeSumMemoryIntermediates(pn, inplaceResultVars, null);
 		boolean apply = false;
 		
 		if( (pfpb.getExecMode() == PExecMode.REMOTE_MR_DP || pfpb.getExecMode() == PExecMode.REMOTE_MR)
@@ -2720,8 +2721,9 @@ public class OptimizerRuleBased extends Optimizer
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("unused")
 	protected double rComputeSumMemoryIntermediates( OptNode n, HashSet<String> inplaceResultVars, 
-													HashMap <String, ArrayList <UIPCandidateHop>> uipCandidateHM )	
+													HashMap <String, ArrayList <UIPCandidateHop>> uipCands )	
 		throws DMLRuntimeException
 	{
 		double sum = 0;
@@ -2729,36 +2731,38 @@ public class OptimizerRuleBased extends Optimizer
 		if( !n.isLeaf() )
 		{
 			for( OptNode cn : n.getChilds() )
-				sum += rComputeSumMemoryIntermediates( cn, inplaceResultVars, uipCandidateHM );
+				sum += rComputeSumMemoryIntermediates( cn, inplaceResultVars, uipCands );
 		}
-		else if(    n.getNodeType()== NodeType.HOP )
+		else if( n.getNodeType()== NodeType.HOP )
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			if (h.getDataType() == Expression.DataType.MATRIX && h instanceof LeftIndexingOp &&
-					h.getInput().get(0).getParent().size() == 1)
-			{
-				long pid =  OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
+			if( uipCands != null && APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE
+				&& h.getDataType() == Expression.DataType.MATRIX && h instanceof LeftIndexingOp 
+				&& h.getInput().get(0).getParent().size() == 1)
+			{ 
+				//get associated program block of parent node
+				long pid = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
 				ProgramBlock pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(pid)[1];
-				
-				while(!(pb instanceof WhileProgramBlock || pb instanceof ForProgramBlock))
-				{
-					pid = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(pid);
-					pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(pid)[1];
+				while(!(pb instanceof WhileProgramBlock || pb instanceof ForProgramBlock)) {
+					long pid2 = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(pid);
+					OptNode parent2 = OptTreeConverter.getAbstractPlanMapping().getOptNode(pid2);
+					if( parent2.getNodeType() != NodeType.FUNCCALL )
+						pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(pid)[1];
 				}
 
-				String uipCandiateID = new String(h.getName());
-				ArrayList <UIPCandidateHop> uipCandiHopList = uipCandidateHM.get(uipCandiateID);
-				if(uipCandiHopList == null)
-					uipCandiHopList = new ArrayList<UIPCandidateHop>();
-				uipCandiHopList.add(new UIPCandidateHop(h, pb));
-				uipCandidateHM.put(uipCandiateID, uipCandiHopList);
+				//add candidate to update-in-place candidate list
+				if( !uipCands.containsKey(h.getName()) )
+					uipCands.put(h.getName(), new ArrayList<UIPCandidateHop>());
+				uipCands.get(h.getName()).add(new UIPCandidateHop(h, pb));
 
-				StatementBlock sb = (StatementBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID()))[0];
-				if(LOG.isTraceEnabled())
+				//debug info update-in-place candidates
+				if(LOG.isTraceEnabled()) {
+					StatementBlock sb = (StatementBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID()))[0];
 					LOG.trace("Candidate Hop:" + h.getName() + "<" + h.getBeginLine() + "," + h.getEndLine() + ">,<" + 
 						h.getBeginColumn() + "," + h.getEndColumn() + "> PB:" + "<" + pb.getBeginLine() + "," + pb.getEndLine() + ">,<" + 
 						pb.getBeginColumn() + "," + pb.getEndColumn() + "> SB:" + "<" + sb.getBeginLine() + "," + sb.getEndLine() + ">,<" + 
 						sb.getBeginColumn() + "," + sb.getEndColumn() + ">");
+				}
 			}
 			
 			if(    n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING)

@@ -274,33 +274,22 @@ The predicate in the while statement consist of operations on scalar variables a
 
 The syntax for an if statement is as follows:
 
-    if (predicate) {
-        statement1
-        statement2
-        ...
-    } else {
-        statement1
-        statement2
-        ...
-    }
-
-The If statement has two bodies: the if body (evaluated if the predicate evaluates to true) and the optional else body (evaluated otherwise). Both, the statements in the if body and else body must be surrounded by braces, even if the body only has a single statement. The if body and else body may contain any sequence of statements.
-
-The syntax for an if - else if statement is as follows:
-
     if (predicate1) {
         statement1
         statement2
         ...
-    } else if (predicate2) {
+    } [ else if (predicate2){
         statement1
         statement2
         ...
-    } else {
+    } ] [ else {
         statement1
         statement2
         ...
-    }
+    } ]
+
+
+The If statement has three bodies: the `if` body (evaluated if the predicate1 evaluates to true), the optional `else if` body (evaluated if the predicate2 evaluates to true) and the optional `else` body (evaluated otherwise). There can be multiple `else if` bodies with different predicates but at most one `else` body. The statement(s) in any of three bodies must be surrounded by braces, even if only a single statement is enclosed. The bodies may contain any sequence of statements.
 
 
 ##### Examples

@@ -20,6 +20,7 @@
 package org.apache.sysml.parser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
@@ -29,6 +30,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	protected Expression[] 	  _args = null;
 	private BuiltinFunctionOp _opcode;
+	private Boolean revalidationNeeded = false;
 
 	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, ArrayList<ParameterExpression> args, String fname, int blp, int bcp, int elp, int ecp) {
 		_kind = Kind.BuiltinFunctionOp;
@@ -201,6 +203,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
+		}
+
+		// Added casting expressions will trigger a re-validation.
+		if (revalidationNeeded) {
+			this.revalidationNeeded = false;
+			this.validateExpression(ids, constVars, conditional);
 		}
 	}
 
@@ -1005,7 +1013,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Unsupported function "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
-		return;
+
+		// Added casting expressions will trigger a re-validation.
+		if (revalidationNeeded) {
+			this.revalidationNeeded = false;
+			this.validateExpression(ids, constVars, conditional);
+		}
 	}
 	
 	private void expandArguments() {
@@ -1164,32 +1177,83 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 
 	/**
-	 * 
-	 * @param e
+	 * Check that the given expression is a matrix, or a scalar.  In
+	 * the later case, we add a casting expression from a scalar to a
+	 * 1x1 matrix.
+	 *
+	 * @param e The expression argument to evaluate.
+	 * @retun Boolean of if a casting expression was added.
 	 * @throws LanguageException
 	 */
 	protected void checkMatrixParam(Expression e) //always unconditional
-		throws LanguageException 
+			throws LanguageException
 	{
-		if (e.getOutput().getDataType() != DataType.MATRIX) {
-			raiseValidateError("Expecting matrix parameter for function "+ this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		Identifier out = e.getOutput();
+		if (out.getDataType() != DataType.MATRIX) {
+			if (out.getDataType() == DataType.SCALAR) {
+				// Create a cast from a scalar to a 1x1 matrix.
+				// Note, we use the same line/column data as the
+				// current built-in function expression since this
+				// cast is implicitly tied to the function, rather
+				// than the function argument.
+				Expression[] castArgs = {e};
+				BuiltinFunctionExpression cast = new BuiltinFunctionExpression(BuiltinFunctionOp.CAST_AS_MATRIX,
+						castArgs, this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(),
+						this.getEndColumn());
+				cast.setDimensions(1, 1);
+				cast.setDataType(DataType.MATRIX);
+				cast.setValueType(e.getOutput().getValueType());
+				replaceArgument(e, cast);
+				this.revalidationNeeded = true;
+			} else {
+				raiseValidateError("Expecting matrix parameter for function "+ this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+			}
 		}
 	}
-	
+
 	/**
-	 * 
-	 * @param e
+	 * Check that the given expression is a scalar, or a 1x1 matrix.  In
+	 * the later case, we add a casting expression from a 1x1 matrix to
+	 * a scalar.
+	 *
+	 * @param e The expression argument to evaluate.
 	 * @throws LanguageException
 	 */
 	private void checkScalarParam(Expression e) //always unconditional
-		throws LanguageException 
+			throws LanguageException
 	{
-		if (e.getOutput().getDataType() != DataType.SCALAR) 
-		{
-			raiseValidateError("Expecting scalar parameter for function " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		Identifier out = e.getOutput();
+		if (out.getDataType() != DataType.SCALAR) {
+			if (out.getDataType() == DataType.MATRIX && is1DMatrix(e)) {
+				// Create a cast from a 1x1 matrix to a scalar.
+				// Note, we use the same line/column data as the
+				// current built-in function expression since this
+				// cast is implicitly tied to the function, rather
+				// than the function argument.
+				Expression[] castArgs = {e};
+				BuiltinFunctionExpression cast = new BuiltinFunctionExpression(BuiltinFunctionOp.CAST_AS_SCALAR,
+						castArgs, this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(),
+						this.getEndColumn());
+				cast.setDimensions(0, 0);
+				cast.setDataType(DataType.SCALAR);
+				cast.setValueType(e.getOutput().getValueType());
+				replaceArgument(e, cast);
+				this.revalidationNeeded = true;
+			} else {
+				raiseValidateError("Expecting scalar parameter for function " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+			}
 		}
 	}
-	
+
+	/**
+	 * Replace an argument with another expression.
+	 */
+	protected void replaceArgument(Expression oldArg, Expression newArg) {
+		int pos = Arrays.asList(_args).indexOf(oldArg);
+		if (pos >= 0)
+			_args[pos] = newArg;
+	}
+
 	/**
 	 * 
 	 * @param e

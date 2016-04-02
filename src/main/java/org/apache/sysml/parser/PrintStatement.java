@@ -19,6 +19,7 @@
 
 package org.apache.sysml.parser;
 
+import org.apache.commons.math3.analysis.function.Exp;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLBreakpointManager;
 
@@ -114,6 +115,10 @@ public class PrintStatement extends Statement
 
 	public Expression getExpression(){
 		return _expr;
+	}
+
+	public void setExpression(Expression e) {
+		_expr = e;
 	}
 	
 	public PRINTTYPE getType() {

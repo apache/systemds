@@ -122,8 +122,39 @@ public class BinaryExpression extends Expression
 			_left = constVars.get(((DataIdentifier) _left).getName());
 		if( _right instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _right).getName()) )
 			_right = constVars.get(((DataIdentifier) _right).getName());
-		
-		
+
+
+		// Perform any 1x1 matrix -> scalar casts if necessary.
+		// Note, we use the same line/column data as the
+		// current built-in function expression since this
+		// cast is implicitly tied to the function, rather
+		// than the function argument.
+		Identifier lout = _left.getOutput();
+		Identifier rout = _right.getOutput();
+		if (lout.getDataType() == DataType.SCALAR && rout.getDataType() == DataType.MATRIX
+				&& rout.getDim1() == 1 && rout.getDim2() == 1 && rout.getValueType() != ValueType.STRING) {
+			Expression[] castArgs = {_right};
+			BuiltinFunctionExpression cast = new BuiltinFunctionExpression(BuiltinFunctionOp.CAST_AS_SCALAR,
+					castArgs, this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(),
+					this.getEndColumn());
+			cast.setDimensions(0, 0);
+			cast.setDataType(DataType.MATRIX);
+			cast.setValueType(_right.getOutput().getValueType());
+			_right = cast;
+			_right.validateExpression(ids, constVars, conditional);
+		} else if (rout.getDataType() == DataType.SCALAR && lout.getDataType() == DataType.MATRIX
+				&& lout.getDim1() == 1 && lout.getDim2() == 1 && lout.getValueType() != ValueType.STRING) {
+			Expression[] castArgs = {_right};
+			BuiltinFunctionExpression cast = new BuiltinFunctionExpression(BuiltinFunctionOp.CAST_AS_SCALAR,
+					castArgs, this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(),
+					this.getEndColumn());
+			cast.setDimensions(0, 0);
+			cast.setDataType(DataType.MATRIX);
+			cast.setValueType(_left.getOutput().getValueType());
+			_left = cast;
+			_left.validateExpression(ids, constVars, conditional);
+		}
+
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);
 		output.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());		

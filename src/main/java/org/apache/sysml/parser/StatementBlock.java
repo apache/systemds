@@ -762,8 +762,24 @@ public class StatementBlock extends LiveVariableAnalysis
 				expr.validateExpression(ids.getVariables(), currConstVars, conditional);
 				
 				// check that variables referenced in print statement expression are scalars
-				if (expr.getOutput().getDataType() != Expression.DataType.SCALAR){
-				   raiseValidateError("print statement can only print scalars", conditional);
+				Identifier out = expr.getOutput();
+				if (out.getDataType() != DataType.SCALAR) {
+					if (out.getValueType() != ValueType.STRING && out.getDataType() == DataType.MATRIX
+							&& out.getDim1() == 1 && out.getDim2() == 1) {
+						// Create a cast from a 1x1 matrix to a scalar.
+						// Note, we use the same line/column data as the
+						// current built-in function expression since
+						// this cast is implicitly tied to the
+						// function, rather than the function argument.
+						Expression[] castArgs = {expr};
+						BuiltinFunctionExpression cast =
+								new BuiltinFunctionExpression(Expression.BuiltinFunctionOp.CAST_AS_SCALAR,
+										castArgs, this.getFilename(), this.getBeginLine(), this.getBeginColumn(),
+										this.getEndLine(), this.getEndColumn());
+						pstmt.setExpression(cast);
+					} else {
+						raiseValidateError("print statement can only print scalars", conditional);
+					}
 				}
 			}
 			

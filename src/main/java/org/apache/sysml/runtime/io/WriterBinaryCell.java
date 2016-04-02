@@ -113,8 +113,8 @@ public class WriterBinaryCell extends MatrixWriter
 				while( iter.hasNext() )
 				{
 					IJV lcell = iter.next();
-					indexes.setIndexes(lcell.i+1, lcell.j+1);
-					cell.setValue(lcell.v);
+					indexes.setIndexes(lcell.getI()+1, lcell.getJ()+1);
+					cell.setValue(lcell.getV());
 					writer.append(indexes, cell);
 					entriesWritten = true;
 				}

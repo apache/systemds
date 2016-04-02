@@ -112,9 +112,9 @@ Converter<MatrixIndexes, MatrixBlock, MatrixIndexes, MatrixCell>
 			else
 			{
 				IJV tmpcell = sparseIterator.next();
-				i = tmpcell.i + startIndexes.getRowIndex();
-				j = tmpcell.j + startIndexes.getColumnIndex();
-				v = tmpcell.v;
+				i = tmpcell.getI() + startIndexes.getRowIndex();
+				j = tmpcell.getJ() + startIndexes.getColumnIndex();
+				v = tmpcell.getV();
 			}
 				
 		}else

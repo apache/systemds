@@ -25,30 +25,37 @@ package org.apache.sysml.runtime.matrix.data;
  */
 public class IJV
 {
+	private int _i = -1;
+	private int _j = -1;
+	private double _v = 0;
 	
-	public int i=-1;
-	public int j=-1;
-	public double v=0;
-	
-	public IJV()
-	{
-		
+	public IJV() {
+		//do nothing
 	}
 	
-	public IJV(int i, int j, double v)
-	{
+	public IJV(int i, int j, double v){
 		set(i, j, v);
 	}
 	
-	public void set(int i, int j, double v)
-	{
-		this.i = i;
-		this.j = j;
-		this.v = v;
+	public void set(int i, int j, double v) {
+		_i = i;
+		_j = j;
+		_v = v;
 	}
 	
-	public String toString()
-	{
-		return "("+i+", "+j+"): "+v;
+	public int getI() {
+		return _i;
+	}
+	
+	public int getJ() {
+		return _j;
+	}
+	
+	public double getV() {
+		return _v;
+	}
+	
+	public String toString() {
+		return "("+_i+", "+_j+"): "+_v;
 	}
 }

@@ -97,13 +97,13 @@ public class GetMLLibBlocks implements PairFunction<Tuple2<MatrixIndexes,MatrixB
 			while( iter.hasNext() ) {
 				IJV cell = iter.next(); // TODO: This might output global
 				// MLLib's sparse rows are stored as Compressed Sparse Column (CSC) format
-				if(lastCol != cell.j) {
-					lastCol = cell.j;
+				if(lastCol != cell.getJ()) {
+					lastCol = cell.getJ();
 					colPtrList.add(lastCol);
 				}
 				try {
-					values[index] = cell.v;
-					rowIndices[index] = cell.i;
+					values[index] = cell.getV();
+					rowIndices[index] = cell.getI();
 					index++;
 				}
 				catch(Exception e) {

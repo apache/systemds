@@ -958,11 +958,11 @@ public class ResultMergeLocalFile extends ResultMerge
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
-								sb.append(row_offset+lcell.i);
+								sb.append(row_offset+lcell.getI());
 								sb.append(' ');
-								sb.append(col_offset+lcell.j);
+								sb.append(col_offset+lcell.getJ());
 								sb.append(' ');
-								sb.append(lcell.v);
+								sb.append(lcell.getV());
 								sb.append('\n');
 								out.write( sb.toString() ); 
 								sb.setLength(0);
@@ -1108,8 +1108,8 @@ public class ResultMergeLocalFile extends ResultMerge
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
-								indexes.setIndexes(row_offset+lcell.i, col_offset+lcell.j);
-								cell.setValue(lcell.v);
+								indexes.setIndexes(row_offset+lcell.getI(), col_offset+lcell.getJ());
+								cell.setValue(lcell.getV());
 								out.append(indexes,cell);
 								written = true;
 							}

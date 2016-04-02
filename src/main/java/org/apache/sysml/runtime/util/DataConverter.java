@@ -322,10 +322,9 @@ public class DataConverter
 			if( mb.isInSparseFormat() )
 			{
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
-				while( iter.hasNext() )
-				{
+				while( iter.hasNext() ) {
 					IJV cell = iter.next();
-					ret[cell.i][cell.j] = cell.v;
+					ret[cell.getI()][cell.getJ()] = cell.getV();
 				}
 			}
 			else
@@ -355,10 +354,9 @@ public class DataConverter
 			if( mb.isInSparseFormat() )
 			{
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
-				while( iter.hasNext() )
-				{
+				while( iter.hasNext() ) {
 					IJV cell = iter.next();
-					ret[cell.i*cols+cell.j] = (cell.v != 0.0);
+					ret[cell.getI()*cols+cell.getJ()] = (cell.getV() != 0.0);
 				}
 			}
 			else
@@ -390,10 +388,9 @@ public class DataConverter
 			if( mb.isInSparseFormat() )
 			{
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
-				while( iter.hasNext() )
-				{
+				while( iter.hasNext() ) {
 					IJV cell = iter.next();
-					ret[cell.i*cols+cell.j] = (int)cell.v;
+					ret[cell.getI()*cols+cell.getJ()] = (int)cell.getV();
 				}
 			}
 			else
@@ -424,10 +421,9 @@ public class DataConverter
 			if( mb.isInSparseFormat() )
 			{
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
-				while( iter.hasNext() )
-				{
+				while( iter.hasNext() ) {
 					IJV cell = iter.next();
-					ret[cell.i*cols+cell.j] = cell.v;
+					ret[cell.getI()*cols+cell.getJ()] = cell.getV();
 				}
 			}
 			else
@@ -455,10 +451,9 @@ public class DataConverter
 		if( mb.isInSparseFormat() )
 		{
 			Iterator<IJV> iter = mb.getSparseBlockIterator();
-			while( iter.hasNext() )
-			{
+			while( iter.hasNext() ) {
 				IJV cell = iter.next();
-				ret.add( cell.v );
+				ret.add( cell.getV() );
 			}
 			for( long i=nnz; i<(long)rows*cols; i++ )
 				ret.add( 0d ); //add remaining values
@@ -808,7 +803,7 @@ public class DataConverter
 					Iterator<IJV> iter = mb.getSparseBlockIterator();
 					while( iter.hasNext() ) {
 						IJV cell = iter.next();
-						ret[cell.j].appendValue(cell.i, 0, cell.v);
+						ret[cell.getJ()].appendValue(cell.getI(), 0, cell.getV());
 					}
 				}
 				else { //DENSE

@@ -116,9 +116,9 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 			else
 			{
 				IJV cell = sparseIterator.next();
-				i = cell.i + startIndexes.getRowIndex();
-				j = cell.j + startIndexes.getColumnIndex();
-				v = cell.v;
+				i = cell.getI() + startIndexes.getRowIndex();
+				j = cell.getJ() + startIndexes.getColumnIndex();
+				v = cell.getV();
 			}
 				
 		}else

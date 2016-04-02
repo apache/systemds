@@ -157,11 +157,11 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 					{
 						IJV cell = iter.next();
 
-						sb.append(cell.i+1);
+						sb.append(cell.getI()+1);
 						sb.append(' ');
-						sb.append(cell.j+1);
+						sb.append(cell.getJ()+1);
 						sb.append(' ');
-						sb.append(cell.v);
+						sb.append(cell.getV());
 						sb.append('\n');
 						bw.write( sb.toString() );
 						sb.setLength(0); 

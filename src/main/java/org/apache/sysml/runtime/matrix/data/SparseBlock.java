@@ -482,11 +482,16 @@ public abstract class SparseBlock implements Serializable
 		@Override
 		public IJV next( ) {
 			retijv.set(_curRow, _curIndexes[_curColIx], _curValues[_curColIx]);
-			if( ++_curColIx >= pos(_curRow)+size(_curRow) ) {
-				_curRow++;
-				findNextNonZeroRow();
-			}
 			
+			//NOTE: no preincrement on curcolix to avoid OpenJDK8 escape analysis bug, encountered 
+			//with tests SparsityRecompileTest/SparsityFunctionRecompileTest on parfor local result merge
+			if( _curColIx < pos(_curRow)+size(_curRow)-1 ) 
+				_curColIx++;
+			else {
+				_curRow++;
+				findNextNonZeroRow();	
+			}
+
 			return retijv;
 		}
 

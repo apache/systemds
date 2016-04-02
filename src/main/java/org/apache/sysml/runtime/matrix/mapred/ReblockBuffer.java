@@ -109,9 +109,9 @@ public class ReblockBuffer
 			while( iter.hasNext() )
 			{
 				IJV cell = iter.next();
-				long tmp = Double.doubleToRawLongBits(cell.v);
-				_buff[_count][0] = r_offset + cell.i;
-				_buff[_count][1] = c_offset + cell.j;
+				long tmp = Double.doubleToRawLongBits(cell.getV());
+				_buff[_count][0] = r_offset + cell.getI();
+				_buff[_count][1] = c_offset + cell.getJ();
 				_buff[_count][2] = tmp;
 				_count++;
 				

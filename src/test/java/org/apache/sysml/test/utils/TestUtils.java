@@ -1904,8 +1904,8 @@ public class TestUtils
 						while( iter.hasNext() )
 						{
 							IJV cell = iter.next();
-							valueMap.put(new MatrixIndexes(((indexes.getRowIndex() - 1) * rowsInBlock + cell.i),
-									(int) ((indexes.getColumnIndex() - 1) * colsInBlock + cell.j)), cell.v);
+							valueMap.put(new MatrixIndexes(((indexes.getRowIndex() - 1) * rowsInBlock + cell.getI()),
+									(int) ((indexes.getColumnIndex() - 1) * colsInBlock + cell.getJ())), cell.getV());
 						}
 						
 					} else {

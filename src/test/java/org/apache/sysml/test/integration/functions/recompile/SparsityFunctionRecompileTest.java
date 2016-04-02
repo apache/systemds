@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 import java.util.HashMap;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -103,8 +102,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 		runRecompileTest(TEST_NAME3, false, true);
 	}
 	
-	//TODO: enable test, but currently creates non-reproducible errors on jenkins
-	@Ignore
+	@Test
 	public void testParForRecompileIPA() 
 	{
 		runRecompileTest(TEST_NAME4, true, true);
@@ -158,8 +156,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 		runRecompileTest(TEST_NAME4, true, false);
 	}
 	
-	//TODO: enable test, but currently creates non-reproducible errors on jenkins
-	@Ignore
+	@Test
 	public void testParForNoRecompileNoIPA() 
 	{
 		runRecompileTest(TEST_NAME4, false, false);

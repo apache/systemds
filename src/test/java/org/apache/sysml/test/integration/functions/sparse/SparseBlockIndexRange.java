@@ -209,8 +209,8 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 			int count = 0;
 			while( iter.hasNext() ) {
 				IJV cell = iter.next();
-				if( cell.v != A[cell.i][cell.j] )
-					Assert.fail("Wrong value returned by iterator: "+cell.v+", expected: "+A[cell.i][cell.j]);	
+				if( cell.getV() != A[cell.getI()][cell.getJ()] )
+					Assert.fail("Wrong value returned by iterator: "+cell.getV()+", expected: "+A[cell.getI()][cell.getJ()]);	
 				count++;
 			}
 			if( count != nnz )

@@ -479,9 +479,9 @@ public class DataPartitionerLocal extends DataPartitioner
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
-								Cell tmp = new Cell( row_offset + lcell.i + 1, 
-													 col_offset + lcell.j + 1,
-													 lcell.v ); 
+								Cell tmp = new Cell( row_offset + lcell.getI() + 1, 
+													 col_offset + lcell.getJ() + 1,
+													 lcell.getV() ); 
 								buffer.addLast( tmp );
 							}
 						}

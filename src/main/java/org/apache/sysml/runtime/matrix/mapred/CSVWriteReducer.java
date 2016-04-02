@@ -328,11 +328,11 @@ public class CSVWriteReducer extends ReduceBase implements Reducer<TaggedFirstSe
 					while( iter.hasNext() )
 					{
 						IJV cell = iter.next();
-						appendZero(_buffer, sparse, delim, true, cell.j-j-1);
+						appendZero(_buffer, sparse, delim, true, cell.getJ()-j-1);
 						
-						j = cell.j; //current col
-						if( cell.v != 0 ) //for nnz
-							_buffer.append(cell.v);
+						j = cell.getJ(); //current col
+						if( cell.getV() != 0 ) //for nnz
+							_buffer.append(cell.getV());
 						else if( !sparse ) 
 							_buffer.append('0');
 						if( j < _numCols-1 )

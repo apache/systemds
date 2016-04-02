@@ -469,9 +469,9 @@ public class DataPartitionerRemoteMapper
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
-								longKey.set( row_offset + lcell.i + 1 );
-								cellkey2.setIndexes( 1, col_offset + lcell.j + 1 );	
-								cellvalue2.setValue( lcell.v );
+								longKey.set( row_offset + lcell.getI() + 1 );
+								cellkey2.setIndexes( 1, col_offset + lcell.getJ() + 1 );	
+								cellvalue2.setValue( lcell.getV() );
 								pairValue.indexes = cellkey2;
 								pairValue.cell = cellvalue2;
 								out.collect(longKey, pairValue);
@@ -503,8 +503,8 @@ public class DataPartitionerRemoteMapper
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
-								cellkey2.setIndexes( 1, col_offset + lcell.j + 1 );	
-								cellvalue2.setValue( lcell.v );
+								cellkey2.setIndexes( 1, col_offset + lcell.getJ() + 1 );	
+								cellvalue2.setValue( lcell.getV() );
 								pairValue.indexes = cellkey2;
 								pairValue.cell = cellvalue2;
 								out.collect(longKey, pairValue);
@@ -537,8 +537,8 @@ public class DataPartitionerRemoteMapper
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
-								cellkey2.setIndexes( rowBlockIndex, col_offset + lcell.j + 1 );	
-								cellvalue2.setValue( lcell.v );
+								cellkey2.setIndexes( rowBlockIndex, col_offset + lcell.getJ() + 1 );	
+								cellvalue2.setValue( lcell.getV() );
 								pairValue.indexes = cellkey2;
 								pairValue.cell = cellvalue2;
 								out.collect(longKey, pairValue);
@@ -566,9 +566,9 @@ public class DataPartitionerRemoteMapper
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
-								longKey.set( col_offset + lcell.j + 1 );
-								cellkey2.setIndexes( row_offset + lcell.i + 1, 1 );	
-								cellvalue2.setValue( lcell.v );
+								longKey.set( col_offset + lcell.getJ() + 1 );
+								cellkey2.setIndexes( row_offset + lcell.getI() + 1, 1 );	
+								cellvalue2.setValue( lcell.getV() );
 								pairValue.indexes = cellkey2;
 								pairValue.cell = cellvalue2;
 								out.collect(longKey, pairValue);
@@ -600,8 +600,8 @@ public class DataPartitionerRemoteMapper
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
-								cellkey2.setIndexes( row_offset + lcell.i + 1, 1 );	
-								cellvalue2.setValue( lcell.v );
+								cellkey2.setIndexes( row_offset + lcell.getI() + 1, 1 );	
+								cellvalue2.setValue( lcell.getV() );
 								pairValue.indexes = cellkey2;
 								pairValue.cell = cellvalue2;
 								out.collect(longKey, pairValue);
@@ -634,8 +634,8 @@ public class DataPartitionerRemoteMapper
 							while( iter.hasNext() )
 							{
 								IJV lcell = iter.next();
-								cellkey2.setIndexes( row_offset + lcell.i + 1, colBlockIndex );	
-								cellvalue2.setValue( lcell.v );
+								cellkey2.setIndexes( row_offset + lcell.getI() + 1, colBlockIndex );	
+								cellvalue2.setValue( lcell.getV() );
 								pairValue.indexes = cellkey2;
 								pairValue.cell = cellvalue2;
 								out.collect(longKey, pairValue);

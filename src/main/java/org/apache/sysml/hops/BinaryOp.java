@@ -503,14 +503,15 @@ public class BinaryOp extends Hop
 		
 		//sanity check for input data types
 		if( !((dt1==DataType.MATRIX && dt2==DataType.MATRIX)
+			 ||(dt1==DataType.FRAME && dt2==DataType.FRAME) 	
 			 ||(dt1==DataType.SCALAR && dt2==DataType.SCALAR
 			   && vt1==ValueType.STRING && vt2==ValueType.STRING )) )
 		{
-			throw new HopsException("Append can only apply to two matrices or two scalar strings!");
+			throw new HopsException("Append can only apply to two matrices, two frames, or two scalar strings!");
 		}
 				
 		Lop append = null;
-		if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
+		if( dt1==DataType.MATRIX || dt1==DataType.FRAME )
 		{
 			long rlen = cbind ? getInput().get(0).getDim1() : (getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) ?
 				getInput().get(0).getDim1()+getInput().get(1).getDim1() : -1;

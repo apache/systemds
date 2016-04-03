@@ -37,6 +37,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.util.IndexRange;
 
 /**
  * 
@@ -447,6 +448,21 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param ixrange
+	 * @param ret
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public FrameBlock sliceOperations(IndexRange ixrange, FrameBlock ret) 
+		throws DMLRuntimeException
+	{
+		return sliceOperations(
+				(int)ixrange.rowStart, (int)ixrange.rowEnd,
+				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
 	}
 	
 	/**

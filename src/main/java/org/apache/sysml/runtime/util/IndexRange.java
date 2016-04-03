@@ -25,26 +25,35 @@ import java.io.Serializable;
 public class IndexRange implements Serializable
 {
 	private static final long serialVersionUID = 5746526303666494601L;
-	public long rowStart=0;
-	public long rowEnd=0;
-	public long colStart=0;
-	public long colEnd=0;
 	
-	public IndexRange(long rs, long re, long cs, long ce)
-	{
+	public long rowStart = 0;
+	public long rowEnd = 0;
+	public long colStart = 0;
+	public long colEnd = 0;
+	
+	public IndexRange(long rs, long re, long cs, long ce) {
 		set(rs, re, cs, ce);
 	}
-	public void set(long rs, long re, long cs, long ce)
-	{
+	
+	public void set(long rs, long re, long cs, long ce) {
 		rowStart = rs;
 		rowEnd = re;
 		colStart = cs;
 		colEnd = ce;
 	}
 	
+	public boolean isScalar() {
+		return (rowStart==rowEnd && colStart==colEnd);
+	}
+	
+	public IndexRange add(int delta) {
+		return new IndexRange(
+			rowStart + delta, rowEnd + delta,
+			colStart + delta, colEnd + delta);
+	}
+	
 	@Override
-	public String toString()
-	{
-		return "["+rowStart+":"+rowEnd+", "+colStart+":"+colEnd+"]";
+	public String toString() {
+		return "["+rowStart+":"+rowEnd+","+colStart+":"+colEnd+"]";
 	}
 }

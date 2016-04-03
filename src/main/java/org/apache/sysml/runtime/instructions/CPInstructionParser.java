@@ -42,9 +42,9 @@ import org.apache.sysml.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.DataPartitionCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.FileCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MMTSJCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MatrixReshapeCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.PMMJCPInstruction;
@@ -359,7 +359,7 @@ public class CPInstructionParser extends InstructionParser
 			case MatrixIndexing: 
 				execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
 				if( execType == ExecType.CP )
-					return MatrixIndexingCPInstruction.parseInstruction(str);
+					return IndexingCPInstruction.parseInstruction(str);
 				else //exectype CP_FILE
 					return MatrixIndexingCPFileInstruction.parseInstruction(str);
 			

@@ -3852,6 +3852,24 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			LibMatrixMult.matrixMultPermute(this, m2, ret1, ret2);
 
 	}
+
+	/**
+	 * 
+	 * @param rhsMatrix
+	 * @param ixrange
+	 * @param ret
+	 * @param inplace
+	 * @return
+	 * @throws DMLRuntimeException
+	 * @throws DMLUnsupportedOperationException
+	 */
+	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, IndexRange ixrange, MatrixBlock ret, boolean inplace) 
+		throws DMLRuntimeException, DMLUnsupportedOperationException 
+	{
+		return leftIndexingOperations(
+				rhsMatrix, (int)ixrange.rowStart, (int)ixrange.rowEnd, 
+				(int)ixrange.colStart, (int)ixrange.colEnd, ret, inplace);
+	}
 	
 	/**
 	 * Method to perform leftIndexing operation for a given lower and upper bounds in row and column dimensions.
@@ -3966,6 +3984,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		ret.quickSetValue(rl, cl, inVal);
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param ixrange
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public MatrixBlock sliceOperations(IndexRange ixrange, MatrixBlock ret) throws DMLRuntimeException {
+		return sliceOperations(
+				(int)ixrange.rowStart, (int)ixrange.rowEnd, 
+				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
 	}
 	
 	/**

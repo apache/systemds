@@ -235,7 +235,9 @@ public class PreparedScript
 		String scratch_space = ConfigurationManager.getScratchSpace();
 		
 		//create new frame object
-		FrameObject fo = new FrameObject(scratch_space+"/"+varname);
+		MatrixCharacteristics mc = new MatrixCharacteristics(frame.getNumRows(), frame.getNumColumns(), -1, -1);
+		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
+		FrameObject fo = new FrameObject(scratch_space+"/"+varname, meta);
 		fo.acquireModify(frame);
 		fo.release();
 		

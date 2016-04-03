@@ -45,9 +45,12 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
+import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -310,7 +313,9 @@ public class ExecutionContext
 	{
 		//TODO: fix createvar instructions generation for frame handles
 		//FrameObject fo = (FrameObject) getVariable(varName);
-		FrameObject fo = new FrameObject(varName);
+		MatrixCharacteristics mc = new MatrixCharacteristics(-1, -1, -1, -1);
+		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
+		FrameObject fo = new FrameObject(varName, meta);
 		fo.acquireModify(outputData);
 	    fo.release();
 		    

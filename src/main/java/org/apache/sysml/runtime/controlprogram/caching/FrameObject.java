@@ -22,6 +22,9 @@ package org.apache.sysml.runtime.controlprogram.caching;
 
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
+import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 
@@ -29,6 +32,9 @@ public class FrameObject extends CacheableData<FrameBlock>
 {
 	private static final long serialVersionUID = 1755082174281927785L;
 
+	/** Holds meta data on frame characteristics (required for nrow etc)*/
+	private MetaData _metaData = null;
+	
 	/**
 	 * 
 	 */
@@ -46,12 +52,48 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 	
 	/**
+	 * 
+	 * @param fname
+	 * @param meta
+	 */
+	public FrameObject(String fname, MetaData meta) {
+		this();
+		setFileName(fname);
+		setMetaData(meta);
+	}
+	
+	/**
 	 * Copy constructor that copies meta data but NO data.
 	 * 
 	 * @param fo
 	 */
 	public FrameObject(FrameObject fo) {
 		super(fo);
+	}
+	
+	@Override
+	public void setMetaData(MetaData md) {
+		_metaData = md;
+	}
+	
+	@Override
+	public MetaData getMetaData() {
+		return _metaData;
+	}
+
+	@Override
+	public void removeMetaData() {
+		_metaData = null;
+	}
+	
+	public void refreshMetaData() 
+		throws CacheException
+	{
+		if ( _data == null || _metaData ==null ) //refresh only for existing data
+			throw new CacheException("Cannot refresh meta data because there is no data or meta data. "); 
+		
+		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics();
+		mc.setDimension( _data.getNumRows(),_data.getNumColumns() );	
 	}
 	
 	////////////////////////////////////
@@ -81,7 +123,11 @@ public class FrameObject extends CacheableData<FrameBlock>
 	public FrameBlock acquireModify(FrameBlock newData) 
 		throws CacheException 
 	{
-		return _data = newData;
+		//set data and update meta data
+		_data = newData;
+		refreshMetaData();
+		
+		return _data;
 	}
 
 	@Override

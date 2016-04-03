@@ -26,7 +26,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.cp.MatrixIndexingCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -43,23 +43,19 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  * COLWISE partition formats. 
  * 
  */
-public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction 
+public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction 
 {
-	
-	public MatrixIndexingCPFileInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr)
-	{
+	public MatrixIndexingCPFileInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
 		super( op, in, rl, ru, cl, cu, out, opcode, istr );
 	}
 	
-	public MatrixIndexingCPFileInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr)
-	{
+	public MatrixIndexingCPFileInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
 		super( op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
 	}
 	
 	public static MatrixIndexingCPFileInstruction parseInstruction ( String str ) 
 		throws DMLRuntimeException 
-	{
-		
+	{		
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
@@ -100,17 +96,14 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 			throws DMLUnsupportedOperationException, DMLRuntimeException 
 	{	
 		String opcode = getOpcode();
-		long rl = ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral()).getLongValue();
-		long ru = ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral()).getLongValue();
-		long cl = ec.getScalarInput(colLower.getName(), colLower.getValueType(), colLower.isLiteral()).getLongValue();
-		long cu = ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue();
+		IndexRange ixrange = getIndexRange(ec).add(1);
 		MatrixObject mo = (MatrixObject) ec.getVariable(input1.getName());
 		
 		if( mo.isPartitioned() && opcode.equalsIgnoreCase("rangeReIndex") ) 
 		{
 			MatrixFormatMetaData meta = (MatrixFormatMetaData)mo.getMetaData();
 			MatrixCharacteristics mc = meta.getMatrixCharacteristics();
-			String pfname = mo.getPartitionFileName( new IndexRange(rl,ru,cl,cu), mc.getRowsPerBlock(), mc.getColsPerBlock());
+			String pfname = mo.getPartitionFileName( ixrange, mc.getRowsPerBlock(), mc.getColsPerBlock());
 			
 			if( MapReduceTool.existsFileOnHDFS(pfname) )
 			{
@@ -142,7 +135,7 @@ public class MatrixIndexingCPFileInstruction extends MatrixIndexingCPInstruction
 			else
 			{
 				//will return an empty matrix partition 
-				MatrixBlock resultBlock = mo.readMatrixPartition( new IndexRange(rl,ru,cl,cu) );
+				MatrixBlock resultBlock = mo.readMatrixPartition( ixrange );
 				ec.setMatrixOutput(output.getName(), resultBlock);
 			}
 		}

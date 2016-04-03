@@ -158,7 +158,7 @@ public class OptimizerRuleBased extends Optimizer
 	public static final boolean APPLY_REWRITE_NESTED_PARALLELISM = false;
 	public static final String FUNCTION_UNFOLD_NAMEPREFIX = "__unfold_";
 	
-	public static final boolean APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE = false;
+	public static final boolean APPLY_REWRITE_UPDATE_INPLACE_INTERMEDIATE = true;
 	
 	public static final double PAR_K_FACTOR        = OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
 	public static final double PAR_K_MR_FACTOR     = 1.0 * OptimizationWrapper.PAR_FACTOR_INFRASTRUCTURE; 
@@ -1865,7 +1865,6 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param inPlaceResultVars
 	 * @throws DMLRuntimeException
 	 */
-	@SuppressWarnings("unused")
 	protected void rewriteSetInPlaceResultIndexing(OptNode pn, double M, LocalVariableMap vars, HashSet<String> inPlaceResultVars, ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
@@ -2721,7 +2720,6 @@ public class OptimizerRuleBased extends Optimizer
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	@SuppressWarnings("unused")
 	protected double rComputeSumMemoryIntermediates( OptNode n, HashSet<String> inplaceResultVars, 
 													HashMap <String, ArrayList <UIPCandidateHop>> uipCands )	
 		throws DMLRuntimeException
@@ -2744,8 +2742,8 @@ public class OptimizerRuleBased extends Optimizer
 				long pid = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
 				ProgramBlock pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(pid)[1];
 				while(!(pb instanceof WhileProgramBlock || pb instanceof ForProgramBlock)) {
-					long pid2 = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(pid);
-					OptNode parent2 = OptTreeConverter.getAbstractPlanMapping().getOptNode(pid2);
+					pid = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(pid);
+					OptNode parent2 = OptTreeConverter.getAbstractPlanMapping().getOptNode(pid);
 					if( parent2.getNodeType() != NodeType.FUNCCALL )
 						pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(pid)[1];
 				}

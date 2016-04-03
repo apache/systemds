@@ -119,12 +119,10 @@ public class FrameReaderBinaryBlock extends FrameReader
 								              "out of overall frame range [1:"+rlen+",1:"+clen+"].");
 					}
 			
-					{
-						dest.copy( row_offset, row_offset+rows-1, 
-								   col_offset, col_offset+cols-1,
-								   value, 
-								   dest.getNumRows(), dest.getNumColumns());
-					}
+					dest.copy( 0, rows-1, 
+							   0, cols-1,
+							   value, 
+							   row_offset);
 				}
 			}
 			finally

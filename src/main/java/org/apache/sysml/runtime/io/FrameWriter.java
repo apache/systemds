@@ -63,8 +63,6 @@ public abstract class FrameWriter
 	{
 		FrameBlock frameBlock[] = new FrameBlock[1];
 		frameBlock[0] = new FrameBlock(schema, names);
-
-		frameBlock[0].ensureAllocatedColumns((int)rlen);
 		return frameBlock;
 	}
 	

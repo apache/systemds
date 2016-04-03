@@ -29,7 +29,6 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
@@ -89,7 +88,7 @@ public class FrameWriterBinaryBlock extends FrameWriter
 
 		// 1) create sequence file writer 
 		SequenceFile.Writer writer = null;
-		writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
+		writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, FrameBlock.class);
 		
 		try
 		{

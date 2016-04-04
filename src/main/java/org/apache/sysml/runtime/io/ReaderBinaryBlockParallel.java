@@ -121,14 +121,8 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			
 			//post-processing
 			dest.setNonZeros( lnnz );
-			if( dest.isInSparseFormat() && clen>bclen ) {
-				//need to sort if multiple column block; otherwise always sorted
-				ArrayList<SortRowsTask> tasks2 = new ArrayList<SortRowsTask>();
-				int blklen = (int)(Math.ceil((double)rlen/_numThreads));
-				for( int i=0; i<_numThreads & i*blklen<rlen; i++ )
-					tasks2.add(new SortRowsTask(dest, i*blklen, Math.min((i+1)*blklen, (int)rlen)));
-				pool.invokeAll(tasks2);
-			}
+			if( dest.isInSparseFormat() && clen>bclen ) 
+				sortSparseRowsParallel(dest, rlen, _numThreads, pool);
 			
 			pool.shutdown();
 		} 

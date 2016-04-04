@@ -152,13 +152,8 @@ public class ReaderTextCellParallel extends MatrixReader
 				
 			//post-processing
 			dest.setNonZeros( lnnz );
-			if( dest.isInSparseFormat() ) {
-				ArrayList<SortRowsTask> tasks2 = new ArrayList<SortRowsTask>();
-				int blklen = (int)(Math.ceil((double)rlen/_numThreads));
-				for( int i=0; i<_numThreads & i*blklen<rlen; i++ )
-					tasks2.add(new SortRowsTask(dest, i*blklen, Math.min((i+1)*blklen, (int)rlen)));
-				pool.invokeAll(tasks2);
-			}
+			if( dest.isInSparseFormat() ) 
+				sortSparseRowsParallel(dest, rlen, _numThreads, pool);
 			
 			pool.shutdown();
 		} 

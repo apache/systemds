@@ -21,8 +21,13 @@ package org.apache.sysml.runtime.io;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -147,12 +152,35 @@ public abstract class MatrixReader
 		
 	}
 	
+	/**
+	 * 
+	 * @param dest
+	 * @param rlen
+	 * @param k
+	 * @param pool
+	 * @throws InterruptedException
+	 * @throws ExecutionException 
+	 */
+	protected static void sortSparseRowsParallel(MatrixBlock dest, long rlen, int k, ExecutorService pool) 
+		throws InterruptedException, ExecutionException
+	{
+		//create sort tasks
+		ArrayList<SortRowsTask> tasks = new ArrayList<SortRowsTask>();
+		int blklen = (int)(Math.ceil((double)rlen/k));
+		for( int i=0; i<k & i*blklen<rlen; i++ )
+			tasks.add(new SortRowsTask(dest, i*blklen, Math.min((i+1)*blklen, (int)rlen)));
+		
+		//execute parallel sort and check for errors
+		List<Future<Object>> rt2 = pool.invokeAll(tasks);
+		for( Future<Object> task : rt2 )
+			task.get(); //error handling
+	}
 	
 	/**
 	 * Utility task for sorting sparse rows as potentially required
 	 * by different parallel readers.
 	 */
-	protected static class SortRowsTask implements Callable<Object> 
+	private static class SortRowsTask implements Callable<Object> 
 	{
 		private MatrixBlock _dest = null;
 		private int _rl = -1;
@@ -166,8 +194,10 @@ public abstract class MatrixReader
 
 		@Override
 		public Object call() throws Exception {
+			SparseBlock sblock = _dest.getSparseBlock();
 			for( int i=_rl; i<_ru; i++ )
-				_dest.getSparseBlock().sort(i);
+				if( !sblock.isEmpty(i) )
+					sblock.sort(i);
 			return null;
 		}
 	}

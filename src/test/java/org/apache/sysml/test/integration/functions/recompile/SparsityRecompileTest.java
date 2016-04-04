@@ -39,7 +39,6 @@ import org.apache.sysml.utils.Statistics;
 
 public class SparsityRecompileTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static String TEST_NAME1 = "while_recompile_sparse";
 	private final static String TEST_NAME2 = "if_recompile_sparse";
@@ -51,22 +50,6 @@ public class SparsityRecompileTest extends AutomatedTestBase
 	private final static long cols = 500000;    
 	private final static double sparsity = 0.00001d;    
 	private final static double val = 7.0;
-	
-	/**
-	 * Main method for running one test at a time.
-	 */
-	public static void main(String[] args) {
-		long startMsec = System.currentTimeMillis();
-
-		SparsityRecompileTest t = new SparsityRecompileTest();
-		t.setUpBase();
-		t.setUp();
-		t.testParForRecompile();
-		t.tearDown();
-
-		long elapsedMsec = System.currentTimeMillis() - startMsec;
-		System.err.printf("Finished in %1.3f sec\n", elapsedMsec / 1000.0);
-	}
 	
 	@Override
 	public void setUp() 

@@ -33,7 +33,6 @@ import org.apache.sysml.runtime.io.FrameWriter;
 import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -51,7 +50,6 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	
 	private final static String DELIMITER = "::";
 	private final static boolean HEADER = true;
-//	private enum OUTPUT_TYPE {CSV, TEXT_CELL, BINARY};
 	
 	@Override
 	public void setUp() {
@@ -119,9 +117,9 @@ public class FrameReadWriteTest extends AutomatedTestBase
 			fprop.setDelim(DELIMITER);
 			fprop.setHeader(HEADER);
 			
-			writeAndVerifyData(OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo, frame1, frame2, fprop);
-			writeAndVerifyData(OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo, frame1, frame2, fprop);
-			writeAndVerifyData(OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo, frame1, frame2, fprop);
+			writeAndVerifyData(OutputInfo.TextCellOutputInfo, frame1, frame2, fprop);
+			writeAndVerifyData(OutputInfo.CSVOutputInfo, frame1, frame2, fprop);
+			writeAndVerifyData(OutputInfo.BinaryBlockOutputInfo, frame1, frame2, fprop);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -160,15 +158,15 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	 * @throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
 	 */
 
-	void writeAndVerifyData(OutputInfo oinfo, InputInfo iinfo, FrameBlock frame1, FrameBlock frame2, CSVFileFormatProperties fprop)
+	void writeAndVerifyData(OutputInfo oinfo, FrameBlock frame1, FrameBlock frame2, CSVFileFormatProperties fprop)
 		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
 	{
 		String fname1 = TEST_DIR + "/frameData1";
 		String fname2 = TEST_DIR + "/frameData2";
 		
 		//Create reader/writer
-		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo, fprop);;
-		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo, fprop);
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo, fprop);
+		FrameReader reader = FrameReaderFactory.createFrameReader(OutputInfo.getMatchingInputInfo(oinfo), fprop);
 		
 		//Write frame data to disk
 		writer.writeFrameToHDFS(frame1, fname1, frame1.getNumRows(), frame1.getNumColumns());

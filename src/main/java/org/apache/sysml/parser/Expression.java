@@ -58,6 +58,7 @@ public abstract class Expression
 		CAST_AS_INT,
 		CAST_AS_MATRIX,
 		CAST_AS_SCALAR,
+		CAST_AS_FRAME,
 		CBIND, //previously APPEND
 		CEIL,
 		CHOLESKY,

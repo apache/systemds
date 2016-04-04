@@ -192,6 +192,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "rmfilevar"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_SCALAR_OPCODE, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_MATRIX_OPCODE, CPINSTRUCTION_TYPE.Variable);
+		String2CPInstructionType.put( UnaryCP.CAST_AS_FRAME_OPCODE,  CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_DOUBLE_OPCODE, CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_INT_OPCODE,    CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_BOOLEAN_OPCODE, CPINSTRUCTION_TYPE.Variable);

@@ -1033,7 +1033,7 @@ public abstract class Hop
 
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SIGN, SQRT, LOG, EXP, 
-		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
+		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
 		PRINT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
 		//cumulative sums, products, extreme values
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
@@ -1279,6 +1279,7 @@ public abstract class Hop
 		HopsOpOp1LopsUS.put(OpOp1.LOG, org.apache.sysml.lops.UnaryCP.OperationTypes.LOG);
 		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_SCALAR, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_SCALAR);
 		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_MATRIX, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_MATRIX);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_FRAME, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_FRAME);
 		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_DOUBLE, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_DOUBLE);
 		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_INT, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_INT);
 		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_BOOLEAN, org.apache.sysml.lops.UnaryCP.OperationTypes.CAST_AS_BOOLEAN);

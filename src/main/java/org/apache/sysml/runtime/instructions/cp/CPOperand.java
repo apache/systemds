@@ -68,7 +68,7 @@ public class CPOperand
 		return _isLiteral;
 	}
 	
-	public void set_name(String name) {
+	public void setName(String name) {
 		_name = name;
 	}
 	
@@ -80,7 +80,7 @@ public class CPOperand
 		_dataType = dt;
 	}
 	
-	public void set_literal(boolean literal) {
+	public void setLiteral(boolean literal) {
 		_isLiteral = literal;
 	}
 	

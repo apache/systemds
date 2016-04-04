@@ -2446,13 +2446,18 @@ public class DMLTranslator
 			}
 			break;
 
+		//data type casts	
 		case CAST_AS_SCALAR:
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR, target.getValueType(), Hop.OpOp1.CAST_AS_SCALAR, expr);
 			break;
 		case CAST_AS_MATRIX:
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.MATRIX, target.getValueType(), Hop.OpOp1.CAST_AS_MATRIX, expr);
 			break;	
+		case CAST_AS_FRAME:
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.FRAME, target.getValueType(), Hop.OpOp1.CAST_AS_FRAME, expr);
+			break;	
 
+		//value type casts
 		case CAST_AS_DOUBLE:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.DOUBLE, Hop.OpOp1.CAST_AS_DOUBLE, expr);
 			break;

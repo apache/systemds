@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.jmlc;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map.Entry;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,7 +29,6 @@ import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
-import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -40,11 +38,11 @@ import org.apache.sysml.test.utils.TestUtils;
  * 
  * 
  */
-public class FrameTransformTest extends AutomatedTestBase 
+public class FrameCastingTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "transform";
+	private final static String TEST_NAME1 = "transform6";
 	private final static String TEST_DIR = "functions/jmlc/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FrameTransformTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FrameCastingTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 700;
 	private final static int cols = 3;
@@ -57,7 +55,7 @@ public class FrameTransformTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Y" }) ); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "F2" }) ); 
 	}
 	
 	@Test
@@ -96,16 +94,18 @@ public class FrameTransformTest extends AutomatedTestBase
 		loadTestConfiguration(config);
 	
 		//generate inputs
-		double[][] Xd = TestUtils.round(getRandomMatrix(rows, cols, 0.51, 7.49, sparse?sparsity2:sparsity1, 1234));
-		String[][] Xs = createFrameData(Xd);
-		String[][] Ms = createRecodeMaps(Xs);
+		double[][] Fd = TestUtils.round(getRandomMatrix(rows, cols, 0.51, 7.49, sparse?sparsity2:sparsity1, 1234));
+		String[][] F1s = FrameTransformTest.createFrameData(Fd, "");
 		
 		//run DML via JMLC
-		ArrayList<double[][]> Yset = execDMLScriptviaJMLC( TEST_NAME, Xs, Ms, modelReuse );
+		ArrayList<String[][]> F2set = execDMLScriptviaJMLC( TEST_NAME, F1s, modelReuse );
 		
-		//check correct result (nnz 7 + 0 -> 8 distinct vals)
-		for( double[][] data : Yset )
-			Assert.assertEquals("Wrong result: "+data[0][0]+".", new Double(8), new Double(data[0][0]));
+		//check correct result 
+		double[][] cF1 = add(Fd, 7);
+		for( String[][] data : F2set )
+			for( int i=0; i<F1s.length; i++ )
+				for( int j=0; j<F1s[i].length; j++ )
+					Assert.assertEquals("Wrong result: "+data[i][j]+".", new Double(data[i][j]), new Double(cF1[i][j]));
 	}
 
 	/**
@@ -115,12 +115,12 @@ public class FrameTransformTest extends AutomatedTestBase
 	 * @throws DMLException
 	 * @throws IOException
 	 */
-	private ArrayList<double[][]> execDMLScriptviaJMLC( String testname, String[][] X, String[][] M, boolean modelReuse) 
+	private ArrayList<String[][]> execDMLScriptviaJMLC( String testname, String[][] F1, boolean modelReuse) 
 		throws IOException
 	{
 		Timing time = new Timing(true);
 		
-		ArrayList<double[][]> ret = new ArrayList<double[][]>();
+		ArrayList<String[][]> ret = new ArrayList<String[][]>();
 		
 		//establish connection to SystemML
 		Connection conn = new Connection();
@@ -133,24 +133,23 @@ public class FrameTransformTest extends AutomatedTestBase
 			
 			//read and precompile script
 			String script = conn.readScript(SCRIPT_DIR + TEST_DIR + testname + ".dml");	
-			PreparedScript pstmt = conn.prepareScript(script, args, new String[]{"X","M"}, new String[]{"Y"}, false);
+			PreparedScript pstmt = conn.prepareScript(script, args, new String[]{"F1","M"}, new String[]{"F2"}, false);
 			
 			if( modelReuse )
-				pstmt.setFrame("M", M, true);
+				pstmt.setFrame("F1", F1, true);
 			
 			//execute script multiple times
 			for( int i=0; i<nRuns; i++ )
 			{
 				//bind input parameters
 				if( !modelReuse )
-					pstmt.setFrame("M", M);
-				pstmt.setFrame("X", X);
+					pstmt.setFrame("F1", F1);
 				
 				//execute script
 				ResultVariables rs = pstmt.executeScript();
 				
 				//get output parameter
-				double[][] Y = rs.getMatrix("Y");
+				String[][] Y = rs.getFrame("F2");
 				ret.add(Y); //keep result for comparison
 			}
 		}
@@ -170,55 +169,16 @@ public class FrameTransformTest extends AutomatedTestBase
 		return ret;
 	}
 	
-	protected static String[][] createFrameData(double[][] data) {
-		return createFrameData(data, "V");
-	}
-	
 	/**
 	 * 
 	 * @param data
+	 * @param val
 	 * @return
 	 */
-	protected static String[][] createFrameData(double[][] data, String prefix) {
-		String[][] ret = new String[data.length][];
-		for( int i=0; i<data.length; i++ ) {
-			String[] row = new String[data[i].length]; 
+	private double[][] add(double[][] data, double val) {
+		for( int i=0; i<data.length; i++ )
 			for( int j=0; j<data[i].length; j++ )
-				row[j] = prefix+String.valueOf(data[i][j]);
-			ret[i] = row;
-		}
-		
-		return ret;
-	}
-	
-	protected static String[][] createRecodeMaps(String[][] data) {
-		//create maps per column
-		ArrayList<HashMap<String,Integer>> map = new ArrayList<HashMap<String,Integer>>(); 
-		for( int j=0; j<data[0].length; j++ )
-			map.add(new HashMap<String,Integer>());
-		//create recode maps per column
-		for( int i=0; i<data.length; i++ ) {
-			for( int j=0; j<data[i].length; j++ )
-				if( !map.get(j).containsKey(data[i][j]) )
-					map.get(j).put(data[i][j], map.get(j).size()+1);
-		}
-		//determine max recode map size
-		int max = 0;
-		for( int j=0; j<data[0].length; j++ )
-			max = Math.max(max, map.get(j).size());
-		
-		//allocate output
-		String[][] ret = new String[max][];
-		for( int i=0; i<max; i++ )
-			ret[i] = new String[data[0].length];
-		
-		//create frame of recode maps
-		for( int j=0; j<data[0].length; j++) {
-			int i = 0;
-			for( Entry<String, Integer> e : map.get(j).entrySet() )
-				ret[i++][j] = e.getKey()+Lop.DATATYPE_PREFIX+e.getValue();
-		}
-		
-		return ret;
+				data[i][j] += val;
+		return data;
 	}
 }

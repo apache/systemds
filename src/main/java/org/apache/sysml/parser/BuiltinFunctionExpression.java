@@ -362,9 +362,21 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		case CAST_AS_MATRIX:
 			checkNumParameters(1);
-			checkScalarParam(getFirstExpr());
+			checkScalarFrameParam(getFirstExpr());
 			output.setDataType(DataType.MATRIX);
-			output.setDimensions(1, 1);
+			output.setDimensions(id.getDim1(), id.getDim2());
+			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
+				output.setDimensions(1, 1); //correction scalars
+			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
+			output.setValueType(id.getValueType());
+			break;
+		case CAST_AS_FRAME:
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+			output.setDataType(DataType.FRAME);
+			output.setDimensions(id.getDim1(), id.getDim2());
+			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
+				output.setDimensions(1, 1); //correction scalars
 			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
 			output.setValueType(id.getValueType());
 			break;
@@ -1197,8 +1209,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	private void checkScalarParam(Expression e) //always unconditional
 		throws LanguageException 
 	{
-		if (e.getOutput().getDataType() != DataType.SCALAR) 
-		{
+		if (e.getOutput().getDataType() != DataType.SCALAR) {
+			raiseValidateError("Expecting scalar parameter for function " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param e
+	 * @throws LanguageException
+	 */
+	private void checkScalarFrameParam(Expression e) //always unconditional
+		throws LanguageException 
+	{
+		if (e.getOutput().getDataType() != DataType.SCALAR && e.getOutput().getDataType() != DataType.FRAME) {
 			raiseValidateError("Expecting scalar parameter for function " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
@@ -1415,6 +1439,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;
 		else if (functionName.equals("as.matrix"))
 			bifop = Expression.BuiltinFunctionOp.CAST_AS_MATRIX;
+		else if (functionName.equals("as.frame"))
+			bifop = Expression.BuiltinFunctionOp.CAST_AS_FRAME;
 		else if (functionName.equals("as.double"))
 			bifop = Expression.BuiltinFunctionOp.CAST_AS_DOUBLE;
 		else if (functionName.equals("as.integer"))

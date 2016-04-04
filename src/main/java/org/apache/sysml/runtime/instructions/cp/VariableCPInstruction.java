@@ -42,9 +42,11 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
@@ -80,7 +82,8 @@ public class VariableCPInstruction extends CPInstruction
 		RemoveVariable, 
 		RemoveVariableAndFile,		 
 		CastAsScalarVariable, 
-		CastAsMatrixVariable,
+		CastAsMatrixVariable, 
+		CastAsFrameVariable,
 		CastAsDoubleVariable,
 		CastAsIntegerVariable,
 		CastAsBooleanVariable,
@@ -132,6 +135,9 @@ public class VariableCPInstruction extends CPInstruction
 		
 		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_MATRIX_OPCODE) ) 
 			return VariableOperationCode.CastAsMatrixVariable;
+		
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_FRAME_OPCODE) ) 
+			return VariableOperationCode.CastAsFrameVariable;
 		
 		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_DOUBLE_OPCODE) ) 
 			return VariableOperationCode.CastAsDoubleVariable;
@@ -379,6 +385,7 @@ public class VariableCPInstruction extends CPInstruction
 			
 		case CastAsScalarVariable:
 		case CastAsMatrixVariable:
+		case CastAsFrameVariable:
 		case CastAsDoubleVariable:
 		case CastAsIntegerVariable:
 		case CastAsBooleanVariable:			
@@ -512,10 +519,33 @@ public class VariableCPInstruction extends CPInstruction
 			ec.setScalarOutput(output.getName(), new DoubleObject(value));
 			break;
 		case CastAsMatrixVariable:{
-			ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
-			MatrixBlock out = new MatrixBlock(1,1,false);
-			out.quickSetValue(0, 0, scalarInput.getDoubleValue());
+			MatrixBlock out = null;
+			if( input1.getDataType()==DataType.SCALAR ) {
+				ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+				out = new MatrixBlock(1,1,false);
+				out.quickSetValue(0, 0, scalarInput.getDoubleValue());	
+			}
+			else { //DataType.FRAME
+				FrameBlock fin = ec.getFrameInput(input1.getName());
+				out = DataConverter.convertToMatrixBlock(fin);
+				ec.releaseFrameInput(input1.getName());
+			}
 			ec.setMatrixOutput(output.getName(), out);
+			break;
+		}
+		case CastAsFrameVariable:{
+			FrameBlock out = null;
+			if( input1.getDataType()==DataType.SCALAR ) {
+				ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+				out = new FrameBlock(1, input1.getValueType());
+				out.set(0, 0, scalarInput.getStringValue());	
+			}
+			else { //DataType.FRAME
+				MatrixBlock min = ec.getMatrixInput(input1.getName());
+				out = DataConverter.convertToFrameBlock(min);
+				ec.releaseMatrixInput(input1.getName());
+			}
+			ec.setFrameOutput(output.getName(), out);
 			break;
 		}
 		case CastAsDoubleVariable:{ 
@@ -1000,7 +1030,7 @@ public class VariableCPInstruction extends CPInstruction
 			|| opcode == VariableOperationCode.SetFileName )
 		{
 			//replace in-memory instruction
-			input2.set_name(input2.getName().replaceAll(pattern, replace));
+			input2.setName(input2.getName().replaceAll(pattern, replace));
 
 			// Find a start position of file name string.
 			int iPos = StringUtils.ordinalIndexOf(instString, Lop.OPERAND_DELIMITOR, CREATEVAR_FILE_NAME_VAR_POS); 

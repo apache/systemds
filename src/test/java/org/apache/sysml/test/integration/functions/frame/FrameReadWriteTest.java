@@ -27,14 +27,17 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.cp.AppendCPInstruction.AppendType;
+import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderBinaryBlock;
 import org.apache.sysml.runtime.io.FrameReaderTextCSV;
 import org.apache.sysml.runtime.io.FrameReaderTextCell;
+import org.apache.sysml.runtime.io.FrameWriter;
 import org.apache.sysml.runtime.io.FrameWriterBinaryBlock;
 import org.apache.sysml.runtime.io.FrameWriterTextCSV;
 import org.apache.sysml.runtime.io.FrameWriterTextCell;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
@@ -119,9 +122,9 @@ public class FrameReadWriteTest extends AutomatedTestBase
 			fprop.setDelim(DELIMITER);
 			fprop.setHeader(HEADER);
 			
-			writeAndVerifyTextCSVData(frame1, frame2, fprop);
-			writeAndVerifyTextCellData(frame1, frame2);
-			writeAndVerifyBinaryBlockData(frame1, frame2);
+			writeAndVerifyData(OutputInfo.TextCellOutputInfo, frame1, frame2, fprop);
+			writeAndVerifyData(OutputInfo.CSVOutputInfo, frame1, frame2, fprop);
+			writeAndVerifyData(OutputInfo.BinaryBlockOutputInfo, frame1, frame2, fprop);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -150,7 +153,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 							", is not same as original value " + frame2.get(i, j));
 			}
 	}
-
+	
 	/**
 	 * 
 	 * @param frame1
@@ -160,77 +163,43 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	 * @throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
 	 */
 
-	void writeAndVerifyTextCSVData(FrameBlock frame1, FrameBlock frame2, CSVFileFormatProperties fprop)
+	void writeAndVerifyData(OutputInfo oinfo, FrameBlock frame1, FrameBlock frame2, CSVFileFormatProperties fprop)
 		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
 	{
-		String fname1 = TEST_DIR + "/frameCSV1";
-		String fname2 = TEST_DIR + "/frameCSV2";
-		FrameWriterTextCSV frameWriterTextCSV = new FrameWriterTextCSV(fprop);
-		frameWriterTextCSV.writeFrameToHDFS(frame1, fname1, frame1.getNumRows(), frame1.getNumColumns());
-		frameWriterTextCSV.writeFrameToHDFS(frame2, fname2, frame2.getNumRows(), frame2.getNumColumns());
+		String fname1 = TEST_DIR + "/frameData1";
+		String fname2 = TEST_DIR + "/frameData2";
+		FrameWriter writer = null;
+		FrameReader reader = null;
+		
+		if( oinfo == OutputInfo.TextCellOutputInfo ) {
+			writer = new FrameWriterTextCell();
+			reader = new FrameReaderTextCell();	
+		} else if( oinfo == OutputInfo.CSVOutputInfo ) {
+			if( fprop!=null && !(fprop instanceof CSVFileFormatProperties) )
+				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
+			writer = new FrameWriterTextCSV((CSVFileFormatProperties)fprop);
+			reader = new FrameReaderTextCSV((CSVFileFormatProperties)fprop);
+		}
+		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
+			writer = new FrameWriterBinaryBlock();
+			reader = new FrameReaderBinaryBlock();
+		}
+		else {
+			throw new DMLRuntimeException("Failed to create frame reader/writer for unknown output info: "
+		                                   + OutputInfo.outputInfoToString(oinfo));
+		}
+		
+		//Write frame data to disk
+		writer.writeFrameToHDFS(frame1, fname1, frame1.getNumRows(), frame1.getNumColumns());
+		writer.writeFrameToHDFS(frame2, fname2, frame2.getNumRows(), frame2.getNumColumns());
 		
 		//Read frame data from disk
-		FrameReaderTextCSV frameReaderTextCSV = new FrameReaderTextCSV(fprop);
-		FrameBlock frame1Read = frameReaderTextCSV.readFrameFromHDFS(fname1, frame1.getSchema(), frame1.getNumRows(), frame1.getNumColumns());
-		FrameBlock frame2Read = frameReaderTextCSV.readFrameFromHDFS(fname2, frame2.getSchema(), frame2.getNumRows(), frame2.getNumColumns());
+		FrameBlock frame1Read = reader.readFrameFromHDFS(fname1, frame1.getSchema(), frame1.getNumRows(), frame1.getNumColumns());
+		FrameBlock frame2Read = reader.readFrameFromHDFS(fname2, frame2.getSchema(), frame2.getNumRows(), frame2.getNumColumns());
 		
 		// Verify that data read with original frames
 		verifyFrameData(frame1, frame1Read);			
 		verifyFrameData(frame2, frame2Read);
-	}
-	
-	/**
-	 * 
-	 * @param frame1
-	 * @param frame2
-	 * @return 
-	 * @throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
-	 */
-
-	void writeAndVerifyTextCellData(FrameBlock frame1, FrameBlock frame2)
-		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
-	{
-		String fname1 = TEST_DIR + "/frameTextCell1";
-		String fname2 = TEST_DIR + "/frameTextCell2";
-		FrameWriterTextCell frameWriterTextCell = new FrameWriterTextCell();
-		frameWriterTextCell.writeFrameToHDFS(frame1, fname1, frame1.getNumRows(), frame1.getNumColumns());
-		frameWriterTextCell.writeFrameToHDFS(frame2, fname2, frame2.getNumRows(), frame2.getNumColumns());
-		
-		//Read frame data from disk
-		FrameReaderTextCell frameReaderTextCell = new FrameReaderTextCell();
-		FrameBlock frame1Read = frameReaderTextCell.readFrameFromHDFS(fname1, frame1.getSchema(), frame1.getNumRows(), frame1.getNumColumns());
-		FrameBlock frame2Read = frameReaderTextCell.readFrameFromHDFS(fname2, frame2.getSchema(), frame2.getNumRows(), frame2.getNumColumns());
-		
-		// Verify that data read with original frames
-		verifyFrameData(frame1, frame1Read);			
-		verifyFrameData(frame2, frame2Read);
-	}
-	
-	/**
-	 * 
-	 * @param frame1
-	 * @param frame2
-	 * @return 
-	 * @throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
-	 */
-
-	void writeAndVerifyBinaryBlockData(FrameBlock frame1, FrameBlock frame2)
-		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
-	{
-		String fname1 = TEST_DIR + "/frameBinary1";
-		String fname2 = TEST_DIR + "/frameBinary2";
-		FrameWriterBinaryBlock frameWriterBinaryBlock = new FrameWriterBinaryBlock();
-		frameWriterBinaryBlock.writeFrameToHDFS(frame1, fname1, frame1.getNumRows(), frame1.getNumColumns());
-		frameWriterBinaryBlock.writeFrameToHDFS(frame2, fname2, frame2.getNumRows(), frame2.getNumColumns());
-		
-		//Read frame data from disk
-		FrameReaderBinaryBlock frameReaderBinaryBlock = new FrameReaderBinaryBlock();
-		FrameBlock frame1Read = frameReaderBinaryBlock.readFrameFromHDFS(fname1, frame1.getSchema(), frame1.getNumRows(), frame1.getNumColumns());
-		FrameBlock frame2Read = frameReaderBinaryBlock.readFrameFromHDFS(fname2, frame2.getSchema(), frame2.getNumRows(), frame2.getNumColumns());
-		
-		// Verify that data read with original frames
-		verifyFrameData(frame1Read, frame1);			
-		verifyFrameData(frame2Read, frame2);
 	}
 	
 }

@@ -406,6 +406,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	///////
 	// indexing and append operations
 	
+	public FrameBlock leftIndexingOperations(FrameBlock rhsFrame, IndexRange ixrange, FrameBlock ret)
+		throws DMLRuntimeException
+	{
+		return leftIndexingOperations(rhsFrame, 
+				(int)ixrange.rowStart, (int)ixrange.rowEnd, 
+				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
+	}
+	
 	/**
 	 * 
 	 * @param rhsFrame
@@ -496,16 +504,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int j=cl; j<=cu; j++ ) {
 			ret._schema.add(_schema.get(j));
 			ret._colnames.add(_colnames.get(j));
-		}
-		
+		}	
 		ret._numRows = ru-rl+1;
 
+		//copy output data
 		if(ret._coldata.size() == 0)
-			//copy output data
 			for( int j=cl; j<=cu; j++ )
 				ret._coldata.add(_coldata.get(j).slice(rl,ru));
 		else
-			ret.copy(rl, ru, cl, cu, this, 0);
+			for( int j=cl; j<=cu; j++ )
+				ret._coldata.get(j-cl).set(0, ru-rl+1, _coldata.get(j), rl);	
 
 		return ret;
 	}
@@ -575,8 +583,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return ret;
 	}
 	
-	public void copy(FrameBlock src)
-	{
+	/**
+	 * 
+	 * @param src
+	 */
+	public void copy(FrameBlock src) {
 		//allocate 
 		ensureAllocatedColumns(src.getNumRows());
 		
@@ -585,15 +596,23 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_coldata.get(i).set(0, src.getNumRows()-1, src._coldata.get(i));
 	}
 
-	
-	public void copy(int rl, int ru, int cl, int cu, FrameBlock src, int rlDest) 
+	/**
+	 * 
+	 * @param rl
+	 * @param ru
+	 * @param cl
+	 * @param cu
+	 * @param src
+	 * @throws DMLRuntimeException
+	 */
+	public void copy(int rl, int ru, int cl, int cu, FrameBlock src) 
 		throws DMLRuntimeException
 	{
 		ensureAllocatedColumns(ru-rl+1);
 		
 		//copy values
 		for( int i=cl; i<=cu; i++ )
-			_coldata.get(i).set(rlDest, rlDest+(ru-rl), src._coldata.get(i), rl);
+			_coldata.get(i).set(rl, ru, src._coldata.get(i-cl));
 	}
 		
 

@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -51,6 +53,31 @@ public final class FrameIndexingCPInstruction extends IndexingCPInstruction
 			FrameBlock out = in.sliceOperations(ixrange, new FrameBlock());	
 				
 			//unpin rhs input
+			ec.releaseFrameInput(input1.getName());
+			
+			//unpin output
+			ec.setFrameOutput(output.getName(), out);
+		}
+		//left indexing
+		else if ( opcode.equalsIgnoreCase("leftIndex"))
+		{
+			FrameBlock lin = ec.getFrameInput(input1.getName());
+			FrameBlock out = null;
+			
+			if(input2.getDataType() == DataType.FRAME) { //FRAME<-FRAME
+				FrameBlock rin = ec.getFrameInput(input2.getName());
+				out = lin.leftIndexingOperations(rin, ixrange, new FrameBlock());
+				ec.releaseFrameInput(input2.getName());
+			}
+			else { //FRAME<-SCALAR 
+				if(!ixrange.isScalar())
+					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: "+ixrange.toString()+"." );
+				ScalarObject scalar = ec.getScalarInput(input2.getName(), ValueType.DOUBLE, input2.isLiteral());
+				out = new FrameBlock(lin);
+				out.set((int)ixrange.rowStart, (int)ixrange.colStart, scalar.getStringValue());
+			}
+
+			//unpin lhs input
 			ec.releaseFrameInput(input1.getName());
 			
 			//unpin output

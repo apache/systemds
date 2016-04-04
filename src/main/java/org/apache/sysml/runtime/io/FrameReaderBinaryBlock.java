@@ -104,8 +104,7 @@ public class FrameReaderBinaryBlock extends FrameReader
 			try
 			{
 				//note: next(key, value) does not yet exploit the given serialization classes, record reader does but is generally slower.
-				while( reader.next(key, value) )
-				{	
+				while( reader.next(key, value) ) {	
 					int row_offset = (int)(key.getRowIndex()-1)*ConfigurationManager.getBlocksize();
 					int col_offset = (int)(key.getColumnIndex()-1)*ConfigurationManager.getBlocksize();
 					
@@ -113,24 +112,18 @@ public class FrameReaderBinaryBlock extends FrameReader
 					int cols = value.getNumColumns();
 					
 					//bound check per block
-					if( row_offset + rows < 0 || row_offset + rows > rlen || col_offset + cols<0 || col_offset + cols > clen )
-					{
+					if( row_offset + rows < 0 || row_offset + rows > rlen || col_offset + cols<0 || col_offset + cols > clen ) {
 						throw new IOException("Frame block ["+(row_offset+1)+":"+(row_offset+rows)+","+(col_offset+1)+":"+(col_offset+cols)+"] " +
 								              "out of overall frame range [1:"+rlen+",1:"+clen+"].");
 					}
 			
-					dest.copy( 0, rows-1, 
-							   0, cols-1,
-							   value, 
-							   row_offset);
+					dest.copy( row_offset, row_offset+rows-1, 
+							0, cols-1, value);
 				}
 			}
-			finally
-			{
+			finally {
 				IOUtilFunctions.closeSilently(reader);
 			}
 		}
-		
 	}
-
 }

@@ -28,15 +28,12 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.cp.AppendCPInstruction.AppendType;
 import org.apache.sysml.runtime.io.FrameReader;
-import org.apache.sysml.runtime.io.FrameReaderBinaryBlock;
-import org.apache.sysml.runtime.io.FrameReaderTextCSV;
-import org.apache.sysml.runtime.io.FrameReaderTextCell;
+import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriter;
-import org.apache.sysml.runtime.io.FrameWriterBinaryBlock;
-import org.apache.sysml.runtime.io.FrameWriterTextCSV;
-import org.apache.sysml.runtime.io.FrameWriterTextCell;
+import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -122,9 +119,9 @@ public class FrameReadWriteTest extends AutomatedTestBase
 			fprop.setDelim(DELIMITER);
 			fprop.setHeader(HEADER);
 			
-			writeAndVerifyData(OutputInfo.TextCellOutputInfo, frame1, frame2, fprop);
-			writeAndVerifyData(OutputInfo.CSVOutputInfo, frame1, frame2, fprop);
-			writeAndVerifyData(OutputInfo.BinaryBlockOutputInfo, frame1, frame2, fprop);
+			writeAndVerifyData(OutputInfo.TextCellOutputInfo, InputInfo.TextCellInputInfo, frame1, frame2, fprop);
+			writeAndVerifyData(OutputInfo.CSVOutputInfo, InputInfo.CSVInputInfo, frame1, frame2, fprop);
+			writeAndVerifyData(OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo, frame1, frame2, fprop);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -163,31 +160,15 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	 * @throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
 	 */
 
-	void writeAndVerifyData(OutputInfo oinfo, FrameBlock frame1, FrameBlock frame2, CSVFileFormatProperties fprop)
+	void writeAndVerifyData(OutputInfo oinfo, InputInfo iinfo, FrameBlock frame1, FrameBlock frame2, CSVFileFormatProperties fprop)
 		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
 	{
 		String fname1 = TEST_DIR + "/frameData1";
 		String fname2 = TEST_DIR + "/frameData2";
-		FrameWriter writer = null;
-		FrameReader reader = null;
 		
-		if( oinfo == OutputInfo.TextCellOutputInfo ) {
-			writer = new FrameWriterTextCell();
-			reader = new FrameReaderTextCell();	
-		} else if( oinfo == OutputInfo.CSVOutputInfo ) {
-			if( fprop!=null && !(fprop instanceof CSVFileFormatProperties) )
-				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
-			writer = new FrameWriterTextCSV((CSVFileFormatProperties)fprop);
-			reader = new FrameReaderTextCSV((CSVFileFormatProperties)fprop);
-		}
-		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
-			writer = new FrameWriterBinaryBlock();
-			reader = new FrameReaderBinaryBlock();
-		}
-		else {
-			throw new DMLRuntimeException("Failed to create frame reader/writer for unknown output info: "
-		                                   + OutputInfo.outputInfoToString(oinfo));
-		}
+		//Create reader/writer
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo, fprop);;
+		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo, fprop);
 		
 		//Write frame data to disk
 		writer.writeFrameToHDFS(frame1, fname1, frame1.getNumRows(), frame1.getNumColumns());

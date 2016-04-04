@@ -195,9 +195,10 @@ public abstract class MatrixReader
 		@Override
 		public Object call() throws Exception {
 			SparseBlock sblock = _dest.getSparseBlock();
-			for( int i=_rl; i<_ru; i++ )
-				if( !sblock.isEmpty(i) )
-					sblock.sort(i);
+			if( sblock != null )
+				for( int i=_rl; i<_ru; i++ )
+					if( !sblock.isEmpty(i) )
+						sblock.sort(i);
 			return null;
 		}
 	}

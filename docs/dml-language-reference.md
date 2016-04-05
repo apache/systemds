@@ -289,7 +289,7 @@ The syntax for an if statement is as follows:
     } ]
 
 
-The If statement has three bodies: the `if` body (evaluated if the predicate1 evaluates to true), the optional `else if` body (evaluated if the predicate2 evaluates to true) and the optional `else` body (evaluated otherwise). There can be multiple `else if` bodies with different predicates but at most one `else` body. The statement(s) in any of three bodies must be surrounded by braces, even if only a single statement is enclosed. The bodies may contain any sequence of statements.
+The If statement has three bodies: the `if` body (evaluated if predicate1 evaluates to true), the optional `else if` body (evaluated if predicate2 evaluates to true) and the optional `else` body (evaluated otherwise). There can be multiple `else if` bodies with different predicates but at most one `else` body. The bodies may contain any sequence of statements. If only a single statement is enclosed in a body, the braces surrounding the statement can be omitted.
 
 
 ##### Examples

@@ -519,15 +519,15 @@ public class VariableCPInstruction extends CPInstruction
 			break;
 		case CastAsMatrixVariable:{
 			MatrixBlock out = null;
-			if( input1.getDataType()==DataType.SCALAR ) {
-				ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
-				out = new MatrixBlock(1,1,false);
-				out.quickSetValue(0, 0, scalarInput.getDoubleValue());	
-			}
-			else { //DataType.FRAME
+			if( input1.getDataType()==DataType.FRAME ) {
 				FrameBlock fin = ec.getFrameInput(input1.getName());
 				out = DataConverter.convertToMatrixBlock(fin);
 				ec.releaseFrameInput(input1.getName());
+			}
+			else { //assume DataType.SCALAR otherwise
+				ScalarObject scalarInput = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
+				out = new MatrixBlock(1,1,false);
+				out.quickSetValue(0, 0, scalarInput.getDoubleValue());		
 			}
 			ec.setMatrixOutput(output.getName(), out);
 			break;

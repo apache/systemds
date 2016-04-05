@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.transform;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -31,70 +30,42 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
-
+import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class OmitAgent extends TransformationAgent {
-	
+public class OmitAgent extends Encoder 
+{	
 	private static final long serialVersionUID = 1978852120416654195L;
 
-	private int[] _omitList = null;
-
-	OmitAgent() { }
-	
-	OmitAgent(int[] list) {
-		_omitList = list;
+	public OmitAgent() { 
+		super(null);
 	}
 	
-	public OmitAgent(JSONObject parsedSpec) throws JSONException {
-		if (!parsedSpec.containsKey(TX_METHOD.OMIT.toString()))
+	public OmitAgent(int[] list) {
+		super(list);
+	}
+	
+	public OmitAgent(JSONObject parsedSpec) 
+		throws JSONException 
+	{
+		super(null);
+		if (!parsedSpec.containsKey(TfUtils.TXMETHOD_OMIT))
 			return;
-		JSONObject obj = (JSONObject) parsedSpec.get(TX_METHOD.OMIT.toString());
-		JSONArray attrs = (JSONArray) obj.get(JSON_ATTRS);
-		
-		_omitList = new int[attrs.size()];
-		for(int i=0; i < _omitList.length; i++) 
-			_omitList[i] = UtilFunctions.toInt(attrs.get(i));
+		JSONObject obj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_OMIT);
+		initColList((JSONArray) obj.get(TfUtils.JSON_ATTRS));
 	}
 	
 	public boolean omit(String[] words, TfUtils agents) 
 	{
-		if(_omitList == null)
+		if( !isApplicable() )
 			return false;
 		
-		for(int i=0; i<_omitList.length; i++) 
-		{
-			int colID = _omitList[i];
-			if(agents.isNA(UtilFunctions.unquote(words[colID-1].trim())))
+		for(int i=0; i<_colList.length; i++) {
+			int colID = _colList[i];
+			if(TfUtils.isNA(agents.getNAStrings(),UtilFunctions.unquote(words[colID-1].trim())))
 				return true;
 		}
 		return false;
-	}
-	
-	public boolean isApplicable() 
-	{
-		return (_omitList != null);
-	}
-	
-	/**
-	 * Check if the given column ID is subjected to this transformation.
-	 * 
-	 */
-	public int isOmitted(int colID)
-	{
-		if(_omitList == null)
-			return -1;
-		
-		int idx = Arrays.binarySearch(_omitList, colID);
-		return ( idx >= 0 ? idx : -1);
-	}
-
-	@Override
-	public void print() {
-		System.out.print("Omit List: \n    ");
-		for(int i : _omitList) 
-			System.out.print(i + " ");
-		System.out.println();
 	}
 
 	@Override
@@ -115,10 +86,8 @@ public class OmitAgent extends TransformationAgent {
 	}
 
 	@Override
-	public String[] apply(String[] words, TfUtils agents) {
+	public String[] apply(String[] words) {
 		return null;
 	}
-
-
 }
  

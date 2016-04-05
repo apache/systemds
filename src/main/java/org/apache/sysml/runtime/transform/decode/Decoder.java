@@ -44,8 +44,9 @@ public abstract class Decoder
 	 * 
 	 * @param in
 	 * @param out
+	 * @return
 	 */
-	public abstract void decode(double[] in, Object[] out);
+	public abstract Object[] decode(double[] in, Object[] out);
 	
 	/**
 	 * Block decode API converting a matrix block into a frame block.

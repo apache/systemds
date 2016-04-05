@@ -63,8 +63,6 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.TfUtils;
-import org.apache.sysml.runtime.transform.TransformationAgent;
-import org.apache.sysml.runtime.transform.TransformationAgent.TX_METHOD;
 import org.apache.sysml.runtime.transform.decode.DecoderRecode;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -462,14 +460,14 @@ public class Connection
 			
 			//parse json transform specification
 			JSONObject jSpec = new JSONObject(spec);
-			if ( jSpec.containsKey(TX_METHOD.RECODE.toString()))  {
+			if ( jSpec.containsKey(TfUtils.TXMETHOD_RECODE))  {
 				JSONArray attrs = null; //TODO simplify once json spec consolidated
-				if( jSpec.get(TX_METHOD.RECODE.toString()) instanceof JSONObject ) {
-					JSONObject obj = (JSONObject) jSpec.get(TX_METHOD.RECODE.toString());
-					attrs = (JSONArray) obj.get(TransformationAgent.JSON_ATTRS);
+				if( jSpec.get(TfUtils.TXMETHOD_RECODE) instanceof JSONObject ) {
+					JSONObject obj = (JSONObject) jSpec.get(TfUtils.TXMETHOD_RECODE);
+					attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
 				}
 				else
-					attrs = (JSONArray)jSpec.get(TX_METHOD.RECODE.toString());				
+					attrs = (JSONArray)jSpec.get(TfUtils.TXMETHOD_RECODE);				
 				for(int j=0; j<attrs.length(); j++) 
 					specRecodeIDs.add(UtilFunctions.toInt(attrs.get(j)));
 			}	

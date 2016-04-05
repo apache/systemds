@@ -30,7 +30,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -39,7 +38,7 @@ import org.apache.sysml.runtime.io.ReaderBinaryBlock;
 import org.apache.sysml.runtime.io.ReaderTextCSV;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.transform.TransformationAgent.TX_METHOD;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -141,7 +140,7 @@ public class ScalingTest extends AutomatedTestBase
 				obj.put(METHOD, SCALE_METHOD_Z);
 			scaleSpec.add(obj);
 		}
-		outputSpec.put(TX_METHOD.SCALE.toString(), scaleSpec);
+		outputSpec.put(TfUtils.TXMETHOD_SCALE, scaleSpec);
 		
 		FileSystem fs = FileSystem.get(TestUtils.conf);
 		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(new Path(specFile),true)));

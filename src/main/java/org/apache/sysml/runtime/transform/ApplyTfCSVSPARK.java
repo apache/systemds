@@ -124,7 +124,6 @@ public class ApplyTfCSVSPARK {
 					_tfmapper.processHeaderLine();
 					
 					if (_tfmapper.hasHeader() ) {
-						//outLines.add(dcdHeader); // if the header needs to be preserved in the output file
 						continue; 
 					}
 				}

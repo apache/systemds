@@ -47,9 +47,10 @@ public class DecoderComposite extends Decoder
 	}
 
 	@Override
-	public void decode(double[] in, Object[] out) {
+	public Object[] decode(double[] in, Object[] out) {
 		for( Decoder decoder : _decoders )
 			decoder.decode(in, out);
+		return out;
 	}
 
 	@Override

@@ -26,8 +26,7 @@ import java.util.List;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.transform.TransformationAgent;
-import org.apache.sysml.runtime.transform.TransformationAgent.TX_METHOD;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
@@ -59,14 +58,14 @@ public class DecoderFactory
 			}
 			
 			//create decoder 'recode'
-			if ( jSpec.containsKey(TX_METHOD.RECODE.toString()))  {
+			if ( jSpec.containsKey(TfUtils.TXMETHOD_RECODE))  {
 				JSONArray attrs = null;
-				if( jSpec.get(TX_METHOD.RECODE.toString()) instanceof JSONObject ) {
-					JSONObject obj = (JSONObject) jSpec.get(TX_METHOD.RECODE.toString());
-					attrs = (JSONArray) obj.get(TransformationAgent.JSON_ATTRS);
+				if( jSpec.get(TfUtils.TXMETHOD_RECODE) instanceof JSONObject ) {
+					JSONObject obj = (JSONObject) jSpec.get(TfUtils.TXMETHOD_RECODE);
+					attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
 				}
 				else
-					attrs = (JSONArray)jSpec.get(TX_METHOD.RECODE.toString());
+					attrs = (JSONArray)jSpec.get(TfUtils.TXMETHOD_RECODE);
 				
 				int[] rcCols = new int[attrs.size()];
 				for(int j=0; j<rcCols.length; j++) 

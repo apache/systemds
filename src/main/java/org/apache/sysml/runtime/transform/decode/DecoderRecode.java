@@ -61,11 +61,12 @@ public class DecoderRecode extends Decoder
 	}
 
 	@Override
-	public void decode(double[] in, Object[] out) {
+	public Object[] decode(double[] in, Object[] out) {
 		for( int j=0; j<_rcCols.length; j++ ) {
 			long key = UtilFunctions.toLong(in[_rcCols[j]]);
 			out[_rcCols[j]] = _rcMaps[j].get(key);
 		}
+		return out;
 	}
 
 	@Override

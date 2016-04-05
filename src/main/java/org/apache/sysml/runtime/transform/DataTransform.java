@@ -78,7 +78,6 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
-import org.apache.sysml.runtime.transform.TransformationAgent.TX_METHOD;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.JSONHelper;
@@ -237,8 +236,8 @@ public class DataTransform
 		
 		// --------------------------------------------------------------------------
 		// Omit
-		if( inputSpec.containsKey(TX_METHOD.OMIT.toString()) ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.OMIT.toString());
+		if( inputSpec.containsKey(TfUtils.TXMETHOD_OMIT) ) {
+			JSONArray arrtmp = (JSONArray) inputSpec.get(TfUtils.TXMETHOD_OMIT);
 			omitList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
 				if(byPositions)
@@ -254,8 +253,8 @@ public class DataTransform
 			omitList = null;
 		// --------------------------------------------------------------------------
 		// Missing value imputation
-		if( inputSpec.containsKey(TX_METHOD.IMPUTE.toString()) ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.IMPUTE.toString());
+		if( inputSpec.containsKey(TfUtils.TXMETHOD_IMPUTE) ) {
+			JSONArray arrtmp = (JSONArray) inputSpec.get(TfUtils.TXMETHOD_IMPUTE);
 			
 			mvList = new int[arrtmp.size()];
 			mvMethods = new byte[arrtmp.size()];
@@ -306,8 +305,8 @@ public class DataTransform
 			mvList = null;
 		// --------------------------------------------------------------------------
 		// Recoding
-		if( inputSpec.containsKey(TX_METHOD.RECODE.toString()) ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.RECODE.toString());
+		if( inputSpec.containsKey(TfUtils.TXMETHOD_RECODE) ) {
+			JSONArray arrtmp = (JSONArray) inputSpec.get(TfUtils.TXMETHOD_RECODE);
 			rcdList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
 				if (byPositions)
@@ -323,8 +322,8 @@ public class DataTransform
 			rcdList = null;
 		// --------------------------------------------------------------------------
 		// Binning
-		if( inputSpec.containsKey(TX_METHOD.BIN.toString()) ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.BIN.toString());
+		if( inputSpec.containsKey(TfUtils.TXMETHOD_BIN) ) {
+			JSONArray arrtmp = (JSONArray) inputSpec.get(TfUtils.TXMETHOD_BIN);
 			
 			binList = new int[arrtmp.size()];
 			binMethods = new byte[arrtmp.size()];
@@ -349,7 +348,7 @@ public class DataTransform
 					throw new IOException("Unknown missing value imputation method (" + stmp + ") in transformation specification: " + specWithNames);
 				binMethods[i] = btmp;
 				
-				numBins[i] = entry.get(TransformationAgent.JSON_NBINS);
+				numBins[i] = entry.get(TfUtils.JSON_NBINS);
 				if ( ((Integer) numBins[i]).intValue() <= 1 ) 
 					throw new IllegalArgumentException("Invalid transformation on column \"" + (String) entry.get(NAME) + "\". Number of bins must be greater than 1.");
 			}
@@ -371,8 +370,8 @@ public class DataTransform
 			binList = null;
 		// --------------------------------------------------------------------------
 		// Dummycoding
-		if( inputSpec.containsKey(TX_METHOD.DUMMYCODE.toString()) ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.DUMMYCODE.toString());
+		if( inputSpec.containsKey(TfUtils.TXMETHOD_DUMMYCODE) ) {
+			JSONArray arrtmp = (JSONArray) inputSpec.get(TfUtils.TXMETHOD_DUMMYCODE);
 			dcdList = new int[arrtmp.size()];
 			for(int i=0; i<arrtmp.size(); i++) {
 				if (byPositions)
@@ -388,8 +387,8 @@ public class DataTransform
 			dcdList = null;
 		// --------------------------------------------------------------------------
 		// Scaling
-		if(inputSpec.containsKey(TX_METHOD.SCALE.toString()) ) {
-			JSONArray arrtmp = (JSONArray) inputSpec.get(TX_METHOD.SCALE.toString());
+		if(inputSpec.containsKey(TfUtils.TXMETHOD_SCALE) ) {
+			JSONArray arrtmp = (JSONArray) inputSpec.get(TfUtils.TXMETHOD_SCALE);
 			
 			scaleList = new int[arrtmp.size()];
 			scaleMethods = new byte[arrtmp.size()];
@@ -535,55 +534,55 @@ public class DataTransform
 		if (omitList != null)
 		{
 			JSONObject rcdSpec = new JSONObject();
-			rcdSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(omitList));
-			outputSpec.put(TX_METHOD.OMIT.toString(), rcdSpec);
+			rcdSpec.put(TfUtils.JSON_ATTRS, toJSONArray(omitList));
+			outputSpec.put(TfUtils.TXMETHOD_OMIT, rcdSpec);
 		}
 		
 		if (mvList != null)
 		{
 			JSONObject mvSpec = new JSONObject();
-			mvSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(mvList));
-			mvSpec.put(TransformationAgent.JSON_MTHD, toJSONArray(mvMethods));
-			mvSpec.put(TransformationAgent.JSON_CONSTS, toJSONArray(mvConstants));
-			outputSpec.put(TX_METHOD.IMPUTE.toString(), mvSpec);
+			mvSpec.put(TfUtils.JSON_ATTRS, toJSONArray(mvList));
+			mvSpec.put(TfUtils.JSON_MTHD, toJSONArray(mvMethods));
+			mvSpec.put(TfUtils.JSON_CONSTS, toJSONArray(mvConstants));
+			outputSpec.put(TfUtils.TXMETHOD_IMPUTE, mvSpec);
 		}
 		
 		if (rcdList != null)
 		{
 			JSONObject rcdSpec = new JSONObject();
-			rcdSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(rcdList));
-			outputSpec.put(TX_METHOD.RECODE.toString(), rcdSpec);
+			rcdSpec.put(TfUtils.JSON_ATTRS, toJSONArray(rcdList));
+			outputSpec.put(TfUtils.TXMETHOD_RECODE, rcdSpec);
 		}
 		
 		if (binList != null)
 		{
 			JSONObject binSpec = new JSONObject();
-			binSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(binList));
-			binSpec.put(TransformationAgent.JSON_MTHD, toJSONArray(binMethods));
-			binSpec.put(TransformationAgent.JSON_NBINS, toJSONArray(numBins));
-			outputSpec.put(TX_METHOD.BIN.toString(), binSpec);
+			binSpec.put(TfUtils.JSON_ATTRS, toJSONArray(binList));
+			binSpec.put(TfUtils.JSON_MTHD, toJSONArray(binMethods));
+			binSpec.put(TfUtils.JSON_NBINS, toJSONArray(numBins));
+			outputSpec.put(TfUtils.TXMETHOD_BIN, binSpec);
 		}
 		
 		if (dcdList != null)
 		{
 			JSONObject dcdSpec = new JSONObject();
-			dcdSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(dcdList));
-			outputSpec.put(TX_METHOD.DUMMYCODE.toString(), dcdSpec);
+			dcdSpec.put(TfUtils.JSON_ATTRS, toJSONArray(dcdList));
+			outputSpec.put(TfUtils.TXMETHOD_DUMMYCODE, dcdSpec);
 		}
 		
 		if (scaleList != null)
 		{
 			JSONObject scaleSpec = new JSONObject();
-			scaleSpec.put(TransformationAgent.JSON_ATTRS, toJSONArray(scaleList));
-			scaleSpec.put(TransformationAgent.JSON_MTHD, toJSONArray(scaleMethods));
-			outputSpec.put(TX_METHOD.SCALE.toString(), scaleSpec);
+			scaleSpec.put(TfUtils.JSON_ATTRS, toJSONArray(scaleList));
+			scaleSpec.put(TfUtils.JSON_MTHD, toJSONArray(scaleMethods));
+			outputSpec.put(TfUtils.TXMETHOD_SCALE, scaleSpec);
 		}
 		
 		if (mvrcdList != null)
 		{
 			JSONObject mvrcd = new JSONObject();
-			mvrcd.put(TransformationAgent.JSON_ATTRS, toJSONArray(mvrcdList));
-			outputSpec.put(TX_METHOD.MVRCD.toString(), mvrcd);
+			mvrcd.put(TfUtils.JSON_ATTRS, toJSONArray(mvrcdList));
+			outputSpec.put(TfUtils.TXMETHOD_MVRCD, mvrcd);
 		}
 		
 		// return output spec with IDs
@@ -635,11 +634,11 @@ public class DataTransform
 		MapReduceTool.renameFileOnHDFS(tmpPath + "/" + TfUtils.TXMTD_DC_COLNAMES, txMtdPath + "/" + TfUtils.TXMTD_DC_COLNAMES);
 		MapReduceTool.renameFileOnHDFS(tmpPath + "/" + TfUtils.TXMTD_COLTYPES, txMtdPath + "/" + TfUtils.TXMTD_COLTYPES);
 		
-		if ( fs.exists(new Path(tmpPath +"/Dummycode/" + TransformationAgent.DCD_FILE_NAME)) ) 
+		if ( fs.exists(new Path(tmpPath +"/Dummycode/" + TfUtils.DCD_FILE_NAME)) ) 
 		{
 			if ( !fs.exists( new Path(txMtdPath + "/Dummycode/") )) 
 				fs.mkdirs(new Path(txMtdPath + "/Dummycode/"));
-			MapReduceTool.renameFileOnHDFS( tmpPath + "/Dummycode/" + TransformationAgent.DCD_FILE_NAME, txMtdPath + "/Dummycode/" + TransformationAgent.DCD_FILE_NAME);
+			MapReduceTool.renameFileOnHDFS( tmpPath + "/Dummycode/" + TfUtils.DCD_FILE_NAME, txMtdPath + "/Dummycode/" + TfUtils.DCD_FILE_NAME);
 		}
 	}
 	
@@ -666,17 +665,17 @@ public class DataTransform
 		br.close();
 		
 		// fetch relevant attribute lists
-		if ( !spec.containsKey(TX_METHOD.DUMMYCODE.toString()) )
+		if ( !spec.containsKey(TfUtils.TXMETHOD_DUMMYCODE) )
 			return ret;
 		
-		JSONArray dcdList = (JSONArray) ((JSONObject)spec.get(TX_METHOD.DUMMYCODE.toString())).get(TransformationAgent.JSON_ATTRS);
+		JSONArray dcdList = (JSONArray) ((JSONObject)spec.get(TfUtils.TXMETHOD_DUMMYCODE)).get(TfUtils.JSON_ATTRS);
 
 		// look for numBins among binned columns
 		for(Object o : dcdList) 
 		{
 			int id = UtilFunctions.toInt(o);
 			
-			Path binpath = new Path( tfMtdPath + "/Bin/" + UtilFunctions.unquote(columnNames[id-1]) + TransformationAgent.BIN_FILE_SUFFIX);
+			Path binpath = new Path( tfMtdPath + "/Bin/" + UtilFunctions.unquote(columnNames[id-1]) + TfUtils.BIN_FILE_SUFFIX);
 			Path rcdpath = new Path( tfMtdPath + "/Recode/" + UtilFunctions.unquote(columnNames[id-1]) + TfUtils.TXMTD_RCD_DISTINCT_SUFFIX);
 			
 			if ( TfUtils.checkValidInputFile(fs, binpath, false ) )
@@ -1063,7 +1062,7 @@ public class DataTransform
 			ret = new MatrixBlock(input.getNumRows(), input.getNumColumns(), false);
 			Iterator<String[]> iter = input.getStringRowIterator();
 			for( int i=0; iter.hasNext(); i++ ) {
-				String[] tmp = agents.apply(iter.next(), true);
+				String[] tmp = agents.apply(iter.next());
 				for( int j=0; j<tmp.length; j++ )
 					ret.appendValue(i, j, UtilFunctions.parseToDouble(tmp[j]));
 			}
@@ -1227,7 +1226,7 @@ public class DataTransform
 			_ba.loadTxMtd(job, fs, tmp, agents);
 			
 			_da.setRecodeMapsCP( _ra.getCPRecodeMaps() );
-			_da.setNumBins(_ba.getBinList(), _ba.getNumBins());
+			_da.setNumBins(_ba.getColList(), _ba.getNumBins());
 			_da.loadTxMtd(job, fs, tmp, agents);
 		}
 		else {
@@ -1247,7 +1246,7 @@ public class DataTransform
 			_ba.loadTxMtd(job, fs, tmp, agents);
 			
 			_da.setRecodeMaps( _ra.getRecodeMaps() );
-			_da.setNumBins(_ba.getBinList(), _ba.getNumBins());
+			_da.setNumBins(_ba.getColList(), _ba.getNumBins());
 			_da.loadTxMtd(job, fs, tmp, agents);
 		}
 		
@@ -1296,7 +1295,7 @@ public class DataTransform
 
 				if(!agents.omit(words))
 				{
-					words = agents.apply(words, !isApply);
+					words = agents.apply(words);
 	
 					if (isCSV)
 					{

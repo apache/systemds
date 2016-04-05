@@ -59,8 +59,7 @@ public class DistinctValue implements Writable, Serializable {
 		_count = count;
 	}
 	
-	public DistinctValue(OffsetCount oc) throws CharacterCodingException 
-	{
+	public DistinctValue(OffsetCount oc) throws CharacterCodingException {
 		this(oc.filename + "," + oc.fileOffset, oc.count);
 	}
 	
@@ -70,8 +69,13 @@ public class DistinctValue implements Writable, Serializable {
 		_count = -1;
 	}
 	
-	public String getWord() {  return new String( _bytes, 0, _length, Charset.forName("UTF-8") ); }
-	public long getCount() { return _count; }
+	public String getWord() {  
+		return new String( _bytes, 0, _length, Charset.forName("UTF-8") ); 
+	}
+	
+	public long getCount() { 
+		return _count; 
+	}
 	
 	@Override
 	public void write(DataOutput out) throws IOException {
@@ -85,24 +89,17 @@ public class DistinctValue implements Writable, Serializable {
 	@Override
 	public void readFields(DataInput in) throws IOException {
 	    // read word 
-		int newLength = WritableUtils.readVInt(in);
-	    _bytes = new byte[newLength];
-	    in.readFully(_bytes, 0, newLength);
-	    _length = newLength;
-	    if (_length != _bytes.length)
-	    	System.out.println("ERROR in DistinctValue.readFields()");
+		_length = WritableUtils.readVInt(in);
+	    _bytes = new byte[_length];
+	    in.readFully(_bytes, 0, _length);
 	    // read count
 	    _count = in.readLong();
 	}
 	
 	public OffsetCount getOffsetCount() {
-		OffsetCount oc = new OffsetCount();
 		String[] parts = getWord().split(",");
-		oc.filename = parts[0];
-		oc.fileOffset = UtilFunctions.parseToLong(parts[1]);
-		oc.count = getCount();
-		
-		return oc;
+		return new OffsetCount( parts[0],
+				UtilFunctions.parseToLong(parts[1]),
+				getCount() );
 	}
-	
 }

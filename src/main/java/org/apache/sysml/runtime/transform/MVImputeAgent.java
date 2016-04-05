@@ -26,7 +26,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -50,10 +49,11 @@ import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class MVImputeAgent extends TransformationAgent {
-	
+public class MVImputeAgent extends Encoder 
+{	
 	private static final long serialVersionUID = 9057868620144662194L;
 
 	public static final String MEAN_PREFIX = "mean";
@@ -65,7 +65,6 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	public enum MVMethod { INVALID, GLOBAL_MEAN, GLOBAL_MODE, CONSTANT };
 	
-	private int[] _mvList = null;
 	/* 
 	 * Imputation Methods:
 	 * 1 - global_mean
@@ -94,6 +93,8 @@ public class MVImputeAgent extends TransformationAgent {
 	private CM_COV_Object[] _scnomvVarList = null;		// column-level variances, computed so far
 	
 	private String[] _replacementList = null;		// replacements: for global_mean, mean; and for global_mode, recode id of mode category
+	private String[] _NAstrings = null;
+	
 	
 	public String[] getReplacements() { return _replacementList; }
 	public KahanObject[] getMeans()   { return _meanList; }
@@ -101,46 +102,47 @@ public class MVImputeAgent extends TransformationAgent {
 	public KahanObject[] getMeans_scnomv()   { return _scnomvMeanList; }
 	public CM_COV_Object[] getVars_scnomv()  { return _scnomvVarList; }
 	
-	MVImputeAgent(JSONObject parsedSpec) throws JSONException {
-	
-		boolean isMV = parsedSpec.containsKey(TX_METHOD.IMPUTE.toString());
-		boolean isSC = parsedSpec.containsKey(TX_METHOD.SCALE.toString());
+	public MVImputeAgent(JSONObject parsedSpec, String[] NAstrings)
+		throws JSONException 
+	{
+		super(null);	
+		boolean isMV = parsedSpec.containsKey(TfUtils.TXMETHOD_IMPUTE);
+		boolean isSC = parsedSpec.containsKey(TfUtils.TXMETHOD_SCALE);		
+		_NAstrings = NAstrings;
 		
 		if(!isMV) {
 			// MV Impute is not applicable
-			_mvList = null;
+			_colList = null;
 			_mvMethodList = null;
 			_meanList = null;
 			_countList = null;
 			_replacementList = null;
 		}
 		else {
-			JSONObject mvobj = (JSONObject) parsedSpec.get(TX_METHOD.IMPUTE.toString());
-			JSONArray mvattrs = (JSONArray) mvobj.get(JSON_ATTRS);
-			JSONArray mvmthds = (JSONArray) mvobj.get(JSON_MTHD);
+			JSONObject mvobj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_IMPUTE);
+			JSONArray mvattrs = (JSONArray) mvobj.get(TfUtils.JSON_ATTRS);
+			JSONArray mvmthds = (JSONArray) mvobj.get(TfUtils.JSON_MTHD);
 			int mvLength = mvattrs.size();
 			
-			assert(mvLength == mvmthds.size());
-			
-			_mvList = new int[mvLength];
+			_colList = new int[mvLength];
 			_mvMethodList = new byte[mvLength];
 			
 			_meanList = new KahanObject[mvLength];
 			_countList = new long[mvLength];
 			_varList = new CM_COV_Object[mvLength];
 			
-			_isMVScaled = new BitSet(_mvList.length);
+			_isMVScaled = new BitSet(_colList.length);
 			_isMVScaled.clear();
 			
-			for(int i=0; i < _mvList.length; i++) {
-				_mvList[i] = UtilFunctions.toInt(mvattrs.get(i));
+			for(int i=0; i < _colList.length; i++) {
+				_colList[i] = UtilFunctions.toInt(mvattrs.get(i));
 				_mvMethodList[i] = (byte) UtilFunctions.toInt(mvmthds.get(i)); 
 				_meanList[i] = new KahanObject(0, 0);
 			}
 			
 			_replacementList = new String[mvLength]; 	// contains replacements for all columns (scale and categorical)
 			
-			JSONArray constants = (JSONArray)mvobj.get(JSON_CONSTS);
+			JSONArray constants = (JSONArray)mvobj.get(TfUtils.JSON_CONSTS);
 			for(int i=0; i < constants.size(); i++) {
 				if ( constants.get(i) == null )
 					_replacementList[i] = "NaN";
@@ -159,12 +161,12 @@ public class MVImputeAgent extends TransformationAgent {
 		}
 		else
 		{
-			if ( _mvList != null ) 
-				_mvscMethodList = new byte[_mvList.length];
+			if ( _colList != null ) 
+				_mvscMethodList = new byte[_colList.length];
 			
-			JSONObject scobj = (JSONObject) parsedSpec.get(TX_METHOD.SCALE.toString());
-			JSONArray scattrs = (JSONArray) scobj.get(JSON_ATTRS);
-			JSONArray scmthds = (JSONArray) scobj.get(JSON_MTHD);
+			JSONObject scobj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_SCALE);
+			JSONArray scattrs = (JSONArray) scobj.get(TfUtils.JSON_ATTRS);
+			JSONArray scmthds = (JSONArray) scobj.get(TfUtils.JSON_MTHD);
 			int scLength = scattrs.size();
 			
 			int[] _allscaled = new int[scLength];
@@ -178,7 +180,7 @@ public class MVImputeAgent extends TransformationAgent {
 				_allscaled[i] = colID;
 				
 				// check if the attribute is also MV imputed
-				int mvidx = isImputed(colID);
+				int mvidx = isApplicable(colID);
 				if(mvidx != -1)
 				{
 					_isMVScaled.set(mvidx);
@@ -203,7 +205,7 @@ public class MVImputeAgent extends TransformationAgent {
 					colID = UtilFunctions.toInt(scattrs.get(i));
 					mthd = (byte)UtilFunctions.toInt(scmthds.get(i)); 
 							
-					if(isImputed(colID) == -1)
+					if(isApplicable(colID) == -1)
 					{	// scaled but not imputed
 						_scnomvList[idx] = colID;
 						_scnomvMethodList[idx] = mthd;
@@ -216,17 +218,17 @@ public class MVImputeAgent extends TransformationAgent {
 		}
 	}
 	
-	public void prepare(String[] words, TfUtils agents) throws IOException {
+	public void prepare(String[] words) throws IOException {
 		
 		try {
 			String w = null;
-			if(_mvList != null)
-			for(int i=0; i <_mvList.length; i++) {
-				int colID = _mvList[i];
+			if(_colList != null)
+			for(int i=0; i <_colList.length; i++) {
+				int colID = _colList[i];
 				w = UtilFunctions.unquote(words[colID-1].trim());
 				
 				try {
-				if(!agents.isNA(w)) {
+				if(!TfUtils.isNA(_NAstrings, w)) {
 					_countList[i]++;
 					
 					boolean computeMean = (_mvMethodList[i] == 1 || _isMVScaled.get(i) );
@@ -421,9 +423,9 @@ public class MVImputeAgent extends TransformationAgent {
 			StringBuilder sb = new StringBuilder();
 			DistinctValue dv = null;
 			
-			if(_mvList != null)
-				for(int i=0; i < _mvList.length; i++) {
-					int colID = _mvList[i];
+			if(_colList != null)
+				for(int i=0; i < _colList.length; i++) {
+					int colID = _colList[i];
 					IntWritable iw = new IntWritable(-colID);
 					
 					dv = prepMeanOutput(taskID, i, sb, false);				outDV(iw, dv, out);
@@ -476,9 +478,9 @@ public class MVImputeAgent extends TransformationAgent {
 			StringBuilder sb = new StringBuilder();
 			DistinctValue dv = null;
 			
-			if(_mvList != null)
-				for(int i=0; i < _mvList.length; i++) {
-					int colID = _mvList[i];
+			if(_colList != null)
+				for(int i=0; i < _colList.length; i++) {
+					int colID = _colList[i];
 					Integer iw = -colID;
 					
 					dv = prepMeanOutput(taskID, i, sb, false);				addDV(iw, dv, list);
@@ -516,7 +518,7 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	private void writeTfMtd(int colID, String mean, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
-		Path pt=new Path(tfMtdDir+"/Impute/"+ agents.getName(colID) + MV_FILE_SUFFIX);
+		Path pt=new Path(tfMtdDir+"/Impute/"+ agents.getName(colID) + TfUtils.MV_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TfUtils.TXMTD_SEP + mean + "\n");
 		br.close();
@@ -524,7 +526,7 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	private void writeTfMtd(int colID, String mean, String sdev, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
-		Path pt=new Path(tfMtdDir+"/Scale/"+ agents.getName(colID) + SCALE_FILE_SUFFIX);
+		Path pt=new Path(tfMtdDir+"/Scale/"+ agents.getName(colID) + TfUtils.SCALE_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TfUtils.TXMTD_SEP + mean + TfUtils.TXMTD_SEP + sdev + "\n");
 		br.close();
@@ -532,7 +534,7 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
-		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + BIN_FILE_SUFFIX);
+		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + TfUtils.BIN_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
 		br.close();
@@ -541,9 +543,9 @@ public class MVImputeAgent extends TransformationAgent {
 	public void outputTransformationMetadata(String outputDir, FileSystem fs, TfUtils agents) throws IOException {
 		
 		try{
-			if (_mvList != null)
-				for(int i=0; i < _mvList.length; i++) {
-					int colID = _mvList[i];
+			if (_colList != null)
+				for(int i=0; i < _colList.length; i++) {
+					int colID = _colList[i];
 					
 					double imputedValue = Double.NaN;
 					KahanObject gmean = null;
@@ -770,11 +772,11 @@ public class MVImputeAgent extends TransformationAgent {
 		{
 			try {
 				if( totalValidCount != totalRecordCount) {
-					// In the presense of missing values, the variance needs to be adjusted.
+					// In the presence of missing values, the variance needs to be adjusted.
 					// The mean does not need to be adjusted, when mv impute method is global_mean, 
 					// since missing values themselves are replaced with gmean.
 					long totalMissingCount = (totalRecordCount-totalValidCount);
-					int idx = isImputed(colID);
+					int idx = isApplicable(colID);
 					if(idx != -1 && _mvMethodList[idx] == 3) 
 						_meanFn.execute(gmean, UtilFunctions.parseToDouble(_replacementList[idx]), totalRecordCount);
 					_varFn.execute(gcm, gmean._sum, totalMissingCount);
@@ -797,7 +799,7 @@ public class MVImputeAgent extends TransformationAgent {
 
 	private String readReplacement(int colID, FileSystem fs, Path  txMtdDir, TfUtils agents) throws IOException
 	{
-		Path path = new Path( txMtdDir + "/Impute/" + agents.getName(colID) + MV_FILE_SUFFIX);
+		Path path = new Path( txMtdDir + "/Impute/" + agents.getName(colID) + TfUtils.MV_FILE_SUFFIX);
 		TfUtils.checkValidInputFile(fs, path, true); 
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
@@ -810,7 +812,7 @@ public class MVImputeAgent extends TransformationAgent {
 	
 	public String readScaleLine(int colID, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException
 	{
-		Path path = new Path( txMtdDir + "/Scale/" + agents.getName(colID) + SCALE_FILE_SUFFIX);
+		Path path = new Path( txMtdDir + "/Scale/" + agents.getName(colID) + TfUtils.SCALE_FILE_SUFFIX);
 		TfUtils.checkValidInputFile(fs, path, true); 
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
 		String line = br.readLine();
@@ -846,9 +848,9 @@ public class MVImputeAgent extends TransformationAgent {
 		if(fs.isDirectory(tfMtdDir)) {
 			
 			// Load information about missing value imputation
-			if (_mvList != null)
-				for(int i=0; i<_mvList.length;i++) {
-					int colID = _mvList[i];
+			if (_colList != null)
+				for(int i=0; i<_colList.length;i++) {
+					int colID = _colList[i];
 					
 					if ( _mvMethodList[i] == 1 || _mvMethodList[i] == 2 )
 						// global_mean or global_mode
@@ -862,10 +864,10 @@ public class MVImputeAgent extends TransformationAgent {
 				}
 			
 			// Load scaling information
-			if(_mvList != null)
-				for(int i=0; i < _mvList.length; i++)
+			if(_colList != null)
+				for(int i=0; i < _colList.length; i++)
 					if ( _isMVScaled.get(i) ) 
-						processScalingFile(i, _mvList, _meanList, _varList, fs, tfMtdDir, agents);
+						processScalingFile(i, _colList, _meanList, _varList, fs, tfMtdDir, agents);
 			
 			if(_scnomvList != null)
 				for(int i=0; i < _scnomvList.length; i++)
@@ -884,21 +886,21 @@ public class MVImputeAgent extends TransformationAgent {
 	 * @return
 	 */
 	@Override
-	public String[] apply(String[] words, TfUtils agents) {
-		
-		if ( _mvList != null)
-		for(int i=0; i < _mvList.length; i++) {
-			int colID = _mvList[i];
-			String w = UtilFunctions.unquote(words[colID-1]);
-			if(agents.isNA(w))
-				w = words[colID-1] = _replacementList[i];
-			
-			if ( _isMVScaled.get(i) )
-				if ( _mvscMethodList[i] == 1 )
-					words[colID-1] = Double.toString( UtilFunctions.parseToDouble(w) - _meanList[i]._sum );
-				else
-					words[colID-1] = Double.toString( (UtilFunctions.parseToDouble(w) - _meanList[i]._sum) / _varList[i].mean._sum );
-		}
+	public String[] apply(String[] words) 
+	{	
+		if( isApplicable() )
+			for(int i=0; i < _colList.length; i++) {
+				int colID = _colList[i];
+				String w = UtilFunctions.unquote(words[colID-1]);
+				if(TfUtils.isNA(_NAstrings, w))
+					w = words[colID-1] = _replacementList[i];
+				
+				if ( _isMVScaled.get(i) )
+					if ( _mvscMethodList[i] == 1 )
+						words[colID-1] = Double.toString( UtilFunctions.parseToDouble(w) - _meanList[i]._sum );
+					else
+						words[colID-1] = Double.toString( (UtilFunctions.parseToDouble(w) - _meanList[i]._sum) / _varList[i].mean._sum );
+			}
 		
 		if(_scnomvList != null)
 		for(int i=0; i < _scnomvList.length; i++)
@@ -913,23 +915,8 @@ public class MVImputeAgent extends TransformationAgent {
 		return words;
 	}
 	
-	/**
-	 * Check if the given column ID is subjected to this transformation.
-	 * 
-	 */
-	public int isImputed(int colID)
-	{
-		if(_mvList == null)
-			return -1;
-		
-		int idx = Arrays.binarySearch(_mvList, colID);
-		return ( idx >= 0 ? idx : -1);
-	}
-	
-	public MVMethod getMethod(int colID) 
-	{
-		int idx = isImputed(colID);
-		
+	public MVMethod getMethod(int colID) {
+		int idx = isApplicable(colID);		
 		if(idx == -1)
 			return MVMethod.INVALID;
 		
@@ -943,35 +930,13 @@ public class MVImputeAgent extends TransformationAgent {
 		
 	}
 	
-	public long getNonMVCount(int colID) 
-	{
-		int idx = isImputed(colID);
-		if(idx == -1)
-			return 0;
-		else
-			return _countList[idx];
+	public long getNonMVCount(int colID) {
+		int idx = isApplicable(colID);
+		return (idx == -1) ? 0 : _countList[idx];
 	}
 	
-	public String getReplacement(int colID) 
-	{
-		int idx = isImputed(colID);
-		
-		if(idx == -1)
-			return null;
-		else
-			return _replacementList[idx];
+	public String getReplacement(int colID)  {
+		int idx = isApplicable(colID);		
+		return (idx == -1) ? null : _replacementList[idx];
 	}
-	
-	public void print() {
-		System.out.print("MV Imputation List: \n    ");
-		for(int i : _mvList) {
-			System.out.print(i + " ");
-		}
-		System.out.print("\n    ");
-		for(byte b : _mvMethodList) {
-			System.out.print(b + " ");
-		}
-		System.out.println();
-	}
-
 }

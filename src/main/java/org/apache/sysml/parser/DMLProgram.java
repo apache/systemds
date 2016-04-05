@@ -95,8 +95,8 @@ public class DMLProgram
 	public HashMap<String, FunctionStatementBlock> getFunctionStatementBlocks(String namespaceKey) throws LanguageException{
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
 		if (namespaceProgram == null){
-			LOG.error("ERROR: namespace " + namespaceKey + " is underfined");
-			throw new LanguageException("ERROR: namespace " + namespaceKey + " is underfined");
+			LOG.error("ERROR: namespace " + namespaceKey + " is undefined");
+			throw new LanguageException("ERROR: namespace " + namespaceKey + " is undefined");
 		}
 		// for the namespace DMLProgram, get the functions in its current namespace
 		return namespaceProgram._functionBlocks;
@@ -569,7 +569,7 @@ public class DMLProgram
 	 * are cleaned after execution anyway.
 	 * (3) As an alternative to doing rule 2, we could also check for existing objects in createvar and function invocation
 	 * (or generic at program block level) and remove objects of previous iterations accordingly (but objects of last iteration
-	 * would still require seperate cleanup).
+	 * would still require separate cleanup).
 	 * 
 	 * TODO: MB: external function invocations should become hops/lops as well (see instruction gen in DMLTranslator), 
 	 * (currently not possible at Hops/Lops level due the requirement of multiple outputs for functions) 

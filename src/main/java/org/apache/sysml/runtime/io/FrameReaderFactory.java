@@ -21,7 +21,9 @@ package org.apache.sysml.runtime.io;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 /**
  * 
@@ -80,6 +82,41 @@ public class FrameReaderFactory
 		}
 		else if( iinfo == InputInfo.CSVInputInfo ) {
 			reader = new FrameReaderTextCSV( props.formatProperties!=null ? (CSVFileFormatProperties)props.formatProperties : new CSVFileFormatProperties());
+		}
+		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
+			reader = new FrameReaderBinaryBlock();
+		}
+		else {
+			throw new DMLRuntimeException("Failed to create frame reader for unknown input info: "
+		                                   + InputInfo.inputInfoToString(iinfo));
+		}
+		
+		return reader;
+	}
+
+	
+	/**
+	 * 
+	 * @param props
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static FrameReader createFrameReader( InputInfo iinfo, FileFormatProperties props ) 
+		throws DMLRuntimeException
+	{
+		//check valid read properties
+		if( props == null )
+			throw new DMLRuntimeException("Failed to create frame reader with empty properties.");
+		
+		FrameReader reader = null;
+
+		if( iinfo == InputInfo.TextCellInputInfo ) {
+			reader = new FrameReaderTextCell();
+		}
+		else if( iinfo == InputInfo.CSVInputInfo ) {
+			if( props!=null && !(props instanceof CSVFileFormatProperties) )
+				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
+			reader = new FrameReaderTextCSV( (CSVFileFormatProperties)props);
 		}
 		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
 			reader = new FrameReaderBinaryBlock();

@@ -32,7 +32,6 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
@@ -80,10 +79,9 @@ public class CostEstimationWrapper
 	 * @param rtprog
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static double getTimeEstimate(Program rtprog, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		Timing time = new Timing(true);
 		
@@ -101,10 +99,9 @@ public class CostEstimationWrapper
 	 * @param ec
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static double getTimeEstimate(ProgramBlock pb, ExecutionContext ec, boolean recursive) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		Timing time = new Timing(true);
 		
@@ -122,13 +119,12 @@ public class CostEstimationWrapper
 	 * @param ec
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws HopsException
 	 * @throws LopsException
 	 * @throws IOException
 	 */
 	public static double getTimeEstimate( ArrayList<Hop> hops, ExecutionContext ec ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LopsException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		Timing time = new Timing(true);
 		

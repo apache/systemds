@@ -33,7 +33,6 @@ import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysml.lops.MapMult;
 import org.apache.sysml.lops.MapMult.CacheType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Multiply;
@@ -107,7 +106,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		

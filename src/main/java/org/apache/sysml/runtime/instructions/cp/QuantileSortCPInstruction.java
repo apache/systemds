@@ -23,7 +23,6 @@ import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -84,7 +83,7 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		//acquire inputs matrices
 		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());

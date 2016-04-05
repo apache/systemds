@@ -36,7 +36,6 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -315,10 +314,9 @@ public class GMR
 	 * @param rlens
 	 * @param clens
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private static void setupDistributedCache(JobConf job, String instMap, String instRed, String[] inputs, long[] rlens, long[] clens) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		//concatenate mapper and reducer instructions
 		String allInsts = (instMap!=null && !instMap.trim().isEmpty() ) ? instMap : null;
@@ -386,10 +384,9 @@ public class GMR
 	 * @param inst4
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private static boolean[] getDistCacheOnlyInputs(byte[] realIndexes, String inst1, String inst2, String inst3, String inst4) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		boolean[] ret = new boolean[realIndexes.length];
 		String[] inst = new String[]{inst1, inst2, inst3, inst4};

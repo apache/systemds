@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.sysml.lops.BinaryM.VectorType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -48,7 +47,7 @@ public class MatrixBVectorBuiltinSPInstruction extends BuiltinBinarySPInstructio
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException, DMLUnsupportedOperationException 
+			throws DMLRuntimeException 
 	{
 		//common binary matrix-broadcast vector process instruction
 		super.processMatrixBVectorBinaryInstruction(ec, _vtype);

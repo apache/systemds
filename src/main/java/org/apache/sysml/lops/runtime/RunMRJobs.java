@@ -35,7 +35,6 @@ import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -511,11 +510,10 @@ public class RunMRJobs
 	 * @param inputMatrices
 	 * @param outputMatrices
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private static JobReturn executeInMemoryReblockOperations( MRJobInstruction inst, String shuffleInst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
 		ReblockInstruction[] rblkSet = MRInstructionParser.parseReblockInstructions(shuffleInst);
@@ -538,7 +536,7 @@ public class RunMRJobs
 	}
 	
 	private static JobReturn executeInMemoryDataGenOperations( MRJobInstruction inst, String randInst, MatrixObject[] outputMatrices ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
 		DataGenMRInstruction[] dgSet = MRInstructionParser.parseDataGenInstructions(randInst);

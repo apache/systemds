@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.cp;
 import java.io.IOException;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.RemoveFile;
 import org.apache.sysml.runtime.functionobjects.RenameFile;
@@ -56,18 +55,18 @@ public class FileCPInstruction extends CPInstruction
 	}
 
 	private static FileOperationCode getFileOperationCode ( String str ) 
-		throws DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		if ( str.equalsIgnoreCase("rm"))
 			return FileOperationCode.RemoveFile;
 		else if ( str.equalsIgnoreCase("mv") ) 
 			return FileOperationCode.MoveFile;
 		else
-			throw new DMLUnsupportedOperationException("Invalid function: " + str);
+			throw new DMLRuntimeException("Invalid function: " + str);
 	}
 	
 	public static FileCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		String opcode = InstructionUtils.getOpCode(str);
 		

@@ -27,7 +27,6 @@ import org.apache.hadoop.io.Writable;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -61,7 +60,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 	private PDataPartitionFormat _dpf = null;
 	
 	public DataPartitionerRemoteSparkMapper(MatrixCharacteristics mc, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		_rlen = mc.getRows();
 		_clen = mc.getCols();

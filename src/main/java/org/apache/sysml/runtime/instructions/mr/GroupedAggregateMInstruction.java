@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -76,7 +75,7 @@ public class GroupedAggregateMInstruction extends BinaryMRInstructionBase implem
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
 			int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{	
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input1);
 		if( blkList == null ) 

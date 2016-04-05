@@ -25,7 +25,6 @@ import org.apache.spark.api.java.function.Function;
 
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -76,7 +75,7 @@ public class TsmmSPInstruction extends UnarySPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		

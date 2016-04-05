@@ -38,7 +38,6 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.compile.Dag;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -191,13 +190,12 @@ public class RewriteConstantFolding extends HopRewriteRule
 	 * 
 	 * @return
 	 * @throws IOException 
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 */
 	private LiteralOp evalScalarOperation( Hop bop ) 
-		throws LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException, HopsException
+		throws LopsException, DMLRuntimeException, IOException, HopsException
 	{
 		//Timing time = new Timing( true );
 		

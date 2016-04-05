@@ -161,12 +161,12 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 
 	@Override
-	protected void evictBlobFromMemory(FrameBlock mb) throws CacheIOException {
+	protected void evictBlobFromMemory(FrameBlock mb) throws CacheException {
 		throw new RuntimeException("Caching not implemented yet for FrameObject.");
 	}
 
 	@Override
-	protected void restoreBlobIntoMemory() throws CacheIOException {
+	protected void restoreBlobIntoMemory() throws CacheException {
 		throw new RuntimeException("Caching not implemented yet for FrameObject.");
 	}
 

@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.mr;
 import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -66,7 +65,7 @@ public class AppendGInstruction extends AppendInstruction
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int brlen, int bclen)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		//setup basic meta data
 		int blen = _cbind ? bclen : brlen;

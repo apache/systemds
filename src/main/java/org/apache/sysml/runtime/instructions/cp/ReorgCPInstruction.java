@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.cp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
 import org.apache.sysml.runtime.functionobjects.RevIndex;
@@ -112,7 +111,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		//acquire inputs
 		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());		

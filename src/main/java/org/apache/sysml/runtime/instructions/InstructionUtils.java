@@ -40,7 +40,6 @@ import org.apache.sysml.lops.WeightedSquaredLossR;
 import org.apache.sysml.lops.WeightedUnaryMM;
 import org.apache.sysml.lops.WeightedUnaryMMR;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.And;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
@@ -229,11 +228,8 @@ public class InstructionUtils
 	 * 
 	 * @param str
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 */
-	public static MRINSTRUCTION_TYPE getMRType( String str ) 
-		throws DMLUnsupportedOperationException 
-	{
+	public static MRINSTRUCTION_TYPE getMRType( String str ) {
 		String opcode = getOpCode(str);
 		MRINSTRUCTION_TYPE mrtype = MRInstructionParser.String2MRInstructionType.get( opcode ); 
 		return mrtype;
@@ -243,11 +239,8 @@ public class InstructionUtils
 	 * 
 	 * @param str
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 */
-	public static SPINSTRUCTION_TYPE getSPType( String str ) 
-		throws DMLUnsupportedOperationException 
-	{
+	public static SPINSTRUCTION_TYPE getSPType( String str ) {
 		String opcode = getOpCode(str);
 		SPINSTRUCTION_TYPE sptype = SPInstructionParser.String2SPInstructionType.get( opcode ); 
 		return sptype;
@@ -257,11 +250,8 @@ public class InstructionUtils
 	 * 
 	 * @param str
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 */
-	public static CPINSTRUCTION_TYPE getCPType( String str ) 
-		throws DMLUnsupportedOperationException 
-	{
+	public static CPINSTRUCTION_TYPE getCPType( String str ) {
 		String opcode = getOpCode(str);
 		CPINSTRUCTION_TYPE cptype = CPInstructionParser.String2CPInstructionType.get( opcode ); 
 		return cptype;
@@ -272,14 +262,12 @@ public class InstructionUtils
 	 * @param opcode
 	 * @return
 	 */
-	public static boolean isBuiltinFunction ( String opcode ) 
-	{
+	public static boolean isBuiltinFunction( String opcode ) {
 		Builtin.BuiltinFunctionCode bfc = Builtin.String2BuiltinFunctionCode.get(opcode);
 		return (bfc != null);
 	}
 	
-	public static boolean isOperand(String str) 
-	{
+	public static boolean isOperand(String str) {
 		//note: split required for empty tokens
 		String[] parts = str.split(Instruction.DATATYPE_PREFIX);
 		return (parts.length > 1);

@@ -42,7 +42,6 @@ import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -229,11 +228,10 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param varname
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	@SuppressWarnings("unchecked")
 	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockRDDHandleForVariable( String varname ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		return (JavaPairRDD<MatrixIndexes,MatrixBlock>) getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo);
 	}
@@ -244,10 +242,9 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param inputInfo
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public JavaPairRDD<?,?> getRDDHandleForVariable( String varname, InputInfo inputInfo ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		MatrixObject mo = getMatrixObject(varname);
 		return getRDDHandleForMatrixObject(mo, inputInfo);
@@ -260,12 +257,11 @@ public class SparkExecutionContext extends ExecutionContext
 	 * 
 	 * @param varname
 	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException  
 	 */
 	@SuppressWarnings("unchecked")
 	public JavaPairRDD<?,?> getRDDHandleForMatrixObject( MatrixObject mo, InputInfo inputInfo ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{		
 		//NOTE: MB this logic should be integrated into MatrixObject
 		//However, for now we cannot assume that spark libraries are 
@@ -348,11 +344,10 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param varname
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	@SuppressWarnings("unchecked")
 	public PartitionedBroadcastMatrix getBroadcastForVariable( String varname ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
@@ -415,10 +410,9 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param varname
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public BlockPartitioner getPartitionerForRDDVariable(String varname) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//get input rdd and matrix characteristics
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = getBinaryBlockRDDHandleForVariable(varname);
@@ -453,11 +447,10 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param sc
 	 * @param block
 	 * @return
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
 	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int brlen, int bclen) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		LinkedList<Tuple2<MatrixIndexes,MatrixBlock>> list = new LinkedList<Tuple2<MatrixIndexes,MatrixBlock>>();
@@ -1054,11 +1047,10 @@ public class SparkExecutionContext extends ExecutionContext
 	 * 
 	 * @param var
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	@SuppressWarnings("unchecked")
 	public void repartitionAndCacheMatrixObject( String var ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//get input rdd and default storage level
 		MatrixObject mo = getMatrixObject(var);
@@ -1102,11 +1094,10 @@ public class SparkExecutionContext extends ExecutionContext
 	 * 
 	 * @param var
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	@SuppressWarnings("unchecked")
 	public void cacheMatrixObject( String var ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//get input rdd and default storage level
 		MatrixObject mo = getMatrixObject(var);

@@ -32,7 +32,6 @@ import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -1491,7 +1490,7 @@ public class MRJobInstruction extends Instruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
 			throw new DMLRuntimeException("MapReduce jobs cannot be executed when execution mode = singlenode");

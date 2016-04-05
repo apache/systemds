@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.matrix.data;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Equals;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
@@ -120,15 +119,17 @@ public class LibMatrixOuterAgg
 			
 	}
 
-	/*
+	/**
 	 * 
 	 * @param iCols
 	 * @param vmb
 	 * @param bOp
 	 * @param uaggOp
-	 * 
+	 * @return
+	 * @throws DMLRuntimeException
 	 */
-	public static int[] prepareRowIndices(int iCols, double vmb[], BinaryOperator bOp, AggregateUnaryOperator uaggOp) throws DMLRuntimeException, DMLUnsupportedOperationException
+	public static int[] prepareRowIndices(int iCols, double vmb[], BinaryOperator bOp, AggregateUnaryOperator uaggOp) 
+		throws DMLRuntimeException
 	{
 		return (isRowIndexMax(uaggOp)?prepareRowIndicesMax(iCols, vmb, bOp):prepareRowIndicesMin(iCols, vmb, bOp));
 	}
@@ -161,7 +162,7 @@ public class LibMatrixOuterAgg
 	 * @param bOp
 	 * @return vixCumSum
 	 */
-	public static int[] prepareRowIndicesMax(int iCols, double vmb[], BinaryOperator bOp) throws DMLRuntimeException, DMLUnsupportedOperationException
+	public static int[] prepareRowIndicesMax(int iCols, double vmb[], BinaryOperator bOp) throws DMLRuntimeException
 	{
 		int[] vixCumSum = null;
 		int[] vix = new int[iCols];
@@ -241,7 +242,7 @@ public class LibMatrixOuterAgg
 	 * @param bOp
 	 * @return vixCumSum
 	 */
-	public static int[] prepareRowIndicesMin(int iCols, double vmb[], BinaryOperator bOp) throws DMLRuntimeException, DMLUnsupportedOperationException
+	public static int[] prepareRowIndicesMin(int iCols, double vmb[], BinaryOperator bOp) throws DMLRuntimeException
 	{
 		int[] vixCumSum = null;
 		int[] vix = new int[iCols];

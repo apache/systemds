@@ -23,7 +23,6 @@ import org.apache.sysml.api.MLContext;
 import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -84,7 +83,7 @@ public abstract class SPInstruction extends Instruction
 	
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//default pre-process behavior (e.g., debug state)
 		Instruction tmp = super.preprocessInstruction(ec);
@@ -114,7 +113,7 @@ public abstract class SPInstruction extends Instruction
 
 	@Override 
 	public abstract void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException, DMLUnsupportedOperationException;
+			throws DMLRuntimeException;
 
 	@Override
 	public void postprocessInstruction(ExecutionContext ec)

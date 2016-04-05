@@ -27,7 +27,6 @@ import java.util.Iterator;
 import org.apache.hadoop.mapred.JobConf;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.AggregateInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -59,8 +58,6 @@ public class MMCJMRCombinerReducerBase extends ReduceBase
 		AggregateBinaryInstruction[] ins;
 		try {
 			ins = MRJobConfiguration.getAggregateBinaryInstructions(job);
-		} catch (DMLUnsupportedOperationException e) {
-			throw new RuntimeException(e);
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}

@@ -23,7 +23,6 @@ import org.apache.sysml.lops.Ternary;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -96,7 +95,7 @@ public class TernaryCPInstruction extends ComputationCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException {
+		throws DMLRuntimeException {
 		
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 		MatrixBlock matBlock2=null, wtBlock=null;

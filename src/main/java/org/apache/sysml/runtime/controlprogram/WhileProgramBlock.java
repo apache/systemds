@@ -27,7 +27,6 @@ import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
@@ -114,7 +113,7 @@ public class WhileProgramBlock extends ProgramBlock
 		{ return _exitInstructions; }
 	
 	private BooleanObject executePredicate(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		BooleanObject result = null;
 		try
@@ -168,7 +167,7 @@ public class WhileProgramBlock extends ProgramBlock
 		return result;
 	}
 	
-	public void execute(ExecutionContext ec) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public void execute(ExecutionContext ec) throws DMLRuntimeException {
 
 		BooleanObject predResult = executePredicate(ec); 
 		

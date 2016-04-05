@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
@@ -79,7 +78,7 @@ public class CumulativeOffsetInstruction extends BinaryInstruction
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{	
 		IndexedMatrixValue in1 = cachedValues.getFirst(input1); //original data 
 		IndexedMatrixValue in2 = cachedValues.getFirst(input2); //offset row vector

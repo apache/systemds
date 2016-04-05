@@ -31,9 +31,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
-
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -159,7 +158,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 				try {
 					OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes(left.value, 
 							right.value, valueBuffer, (AggregateBinaryOperator)aggBinInstruction.getOperator());
-				} catch (DMLUnsupportedOperationException e) {
+				} catch (DMLRuntimeException e) {
 					throw new IOException(e);
 				}
 
@@ -209,7 +208,7 @@ implements Reducer<TaggedFirstSecondIndexes, MatrixValue, Writable, Writable>
 			{
 				realWriteToCollector(indexes, value_out);
 			}
-		} catch (DMLUnsupportedOperationException e) {
+		} catch (DMLRuntimeException e) {
 			throw new IOException(e);
 		}
 	}

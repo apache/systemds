@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.PMMJ.CacheType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -96,7 +95,7 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistr
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{	
 		//get both matrix inputs (left side always permutation)
 		DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input1);

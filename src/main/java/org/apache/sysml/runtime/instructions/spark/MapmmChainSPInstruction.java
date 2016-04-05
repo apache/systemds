@@ -29,7 +29,6 @@ import scala.Tuple2;
 import org.apache.sysml.lops.MapMultChain;
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -122,7 +121,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
@@ -161,7 +160,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		private PartitionedBroadcastMatrix _pmV = null;
 		
 		public RDDMapMMChainFunction( PartitionedBroadcastMatrix bV) 
-			throws DMLRuntimeException, DMLUnsupportedOperationException
+			throws DMLRuntimeException
 		{			
 			//get first broadcast vector (always single block)
 			_pmV = bV;
@@ -192,7 +191,7 @@ public class MapmmChainSPInstruction extends SPInstruction
 		private ChainType _chainType = null;
 		
 		public RDDMapMMChainFunction2( PartitionedBroadcastMatrix bV, PartitionedBroadcastMatrix bW, ChainType chain) 
-			throws DMLRuntimeException, DMLUnsupportedOperationException
+			throws DMLRuntimeException
 		{			
 			//get both broadcast vectors (first always single block)
 			_pmV = bV;

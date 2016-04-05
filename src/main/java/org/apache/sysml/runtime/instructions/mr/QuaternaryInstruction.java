@@ -33,7 +33,6 @@ import org.apache.sysml.lops.WeightedUnaryMM;
 import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
 import org.apache.sysml.lops.WeightedUnaryMMR;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -308,7 +307,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			           IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		QuaternaryOperator qop = (QuaternaryOperator)optr; 
 		

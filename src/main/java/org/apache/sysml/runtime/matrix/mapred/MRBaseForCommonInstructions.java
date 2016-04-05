@@ -31,7 +31,6 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Reporter;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -160,11 +159,10 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	/**
 	 * 
 	 * @param mixed_instructions
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	protected void processMixedInstructions(ArrayList<MRInstruction> mixed_instructions) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		if( mixed_instructions != null )
 			for( MRInstruction ins : mixed_instructions )
@@ -178,12 +176,11 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 	 * @param cachedValues
 	 * @param tempValue
 	 * @param zeroInput
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	protected void processOneInstruction(MRInstruction ins, Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//Timing time = new Timing(true);
 		

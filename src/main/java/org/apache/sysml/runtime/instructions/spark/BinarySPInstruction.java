@@ -24,7 +24,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysml.lops.BinaryM.VectorType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -97,10 +96,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	 * 
 	 * @param ec
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	protected void processMatrixMatrixBinaryInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
@@ -143,10 +141,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	 * @param ec
 	 * @param type 
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected void processMatrixBVectorBinaryInstruction(ExecutionContext ec, VectorType vtype) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
@@ -189,10 +186,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 	 * 
 	 * @param ec
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected void processMatrixScalarBinaryInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 	

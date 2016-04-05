@@ -35,7 +35,6 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
@@ -186,65 +185,6 @@ public class RDDSortUtils
 	}
 	
 	/**
-	 * 
-	 * @param val
-	 * @param data
-	 * @param asc
-	 * @param rlen
-	 * @param brlen
-	 * @param bclen
-	 * @param ec
-	 * @param r_op
-	 * @return
-	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
-	 */
-	/* This function collects and sorts value column through cluster distribution and then broadcasts it. 
-	 * 
-	 * For now, its commented out until it gets evaluated completely through experiments.
-	 */
-//	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByValDistSort( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
-//			JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int brlen, int bclen, 
-//				ExecutionContext ec, ReorgOperator r_op) 
-//					throws DMLRuntimeException, DMLUnsupportedOperationException
-//	{
-//		SparkExecutionContext sec = (SparkExecutionContext)ec;
-//		MatrixBlock sortedBlock;
-//		
-//		//create value-index rdd from inputs
-//		JavaPairRDD<ValueIndexPair, Double> dvals = val
-//				.flatMapToPair(new ExtractDoubleValuesWithIndexFunction(brlen));
-//	
-//		//sort (creates sorted range per partition)
-//		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
-//		int numPartitions = (int)Math.ceil(((double)rlen*16)/hdfsBlocksize);
-//		JavaRDD<ValueIndexPair> sdvals = dvals
-//				.sortByKey(new IndexComparator(asc), true, numPartitions)
-//				.keys(); //workaround for index comparator
-//	 
-//		//create target indexes by original index
-//		JavaPairRDD<Long, Long> ixmap = sdvals
-//				.zipWithIndex()
-//				.mapToPair(new ExtractIndexFunction())			// Original Index sorted by values
-//				.sortByKey();									// Original Index sorted to original order, with target index associaed with them.
-//		
-//		JavaPairRDD<MatrixIndexes, MatrixBlock> ixmap2 = ixmap 
-//        		.mapPartitions(new ConvertToBinaryBlockFunction4(rlen, brlen))
-//        		.mapToPair(new UnfoldBinaryBlockFunction());
-//		
-//		sortedBlock = SparkExecutionContext.toMatrixBlock(ixmap2, (int)rlen, 1, brlen, bclen, -1);
-//
-//		PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(sortedBlock, brlen, bclen);		
-//		Broadcast<PartitionedMatrixBlock> _pmb = sec.getSparkContext().broadcast(pmb);	
-//
-//		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = data
-//					.flatMapToPair(new ShuffleMatrixBlockRowsInMemFunction(rlen, brlen, _pmb));
-//		ret = RDDAggregateUtils.mergeByKey(ret);
-//
-//		return ret;	
-//	}
-	
-	/**
 	 * This function collects and sorts value column in memory and then broadcasts it. 
 	 * 
 	 * @param val
@@ -257,12 +197,11 @@ public class RDDSortUtils
 	 * @param r_op
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByValMemSort( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
 			JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int brlen, int bclen, 
 			SparkExecutionContext sec, ReorgOperator r_op) 
-					throws DMLRuntimeException, DMLUnsupportedOperationException
+					throws DMLRuntimeException
 	{
 		//collect orderby column for in-memory sorting
 		MatrixBlock inMatBlock = SparkExecutionContext

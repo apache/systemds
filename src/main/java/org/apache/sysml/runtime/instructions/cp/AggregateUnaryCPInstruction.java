@@ -23,7 +23,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Builtin;
@@ -73,7 +72,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 	
 	@Override
 	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String output_name = output.getName();
 		String opcode = getOpcode();

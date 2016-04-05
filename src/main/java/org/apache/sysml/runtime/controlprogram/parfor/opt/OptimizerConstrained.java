@@ -27,7 +27,6 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -77,7 +76,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	 */
 	@Override
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 

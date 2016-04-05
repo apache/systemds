@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.lops.AppendM.CacheType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -77,7 +76,7 @@ public class AppendMInstruction extends AppendInstruction implements IDistribute
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
 			int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{	
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input1);
 		if( blkList == null ) 

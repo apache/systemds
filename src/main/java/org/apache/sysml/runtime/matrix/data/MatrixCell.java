@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import org.apache.hadoop.io.WritableComparable;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.CTable;
 import org.apache.sysml.runtime.functionobjects.ReduceDiag;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -70,10 +69,10 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 		value=v;
 	}
 
-	private static MatrixCell checkType(MatrixValue cell) throws DMLUnsupportedOperationException
+	private static MatrixCell checkType(MatrixValue cell) throws DMLRuntimeException 
 	{
 		if( cell!=null && !(cell instanceof MatrixCell))
-			throw new DMLUnsupportedOperationException("the Matrix Value is not MatrixCell!");
+			throw new DMLRuntimeException("the Matrix Value is not MatrixCell!");
 		return (MatrixCell) cell;
 	}
 
@@ -172,7 +171,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public MatrixValue aggregateBinaryOperations(MatrixValue value1,
 			MatrixValue value2, MatrixValue result, AggregateBinaryOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException {
+	throws DMLRuntimeException {
 		
 		MatrixCell c1=checkType(value1);
 		MatrixCell c2=checkType(value2);
@@ -186,7 +185,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int brlen, int bclen,
-			MatrixIndexes indexesIn) throws DMLUnsupportedOperationException {
+			MatrixIndexes indexesIn) throws DMLRuntimeException {
 		
 		MatrixCell c3=checkType(result);
 		if(c3==null)
@@ -207,7 +206,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public MatrixValue binaryOperations(BinaryOperator op,
 			MatrixValue thatValue, MatrixValue result)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		MatrixCell c2=checkType(thatValue);
 		MatrixCell c3=checkType(result);
 		if(c3==null)
@@ -219,22 +218,20 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public void binaryOperationsInPlace(BinaryOperator op,
 			MatrixValue thatValue)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		MatrixCell c2=checkType(thatValue);
 		setValue(op.fn.execute(this.getValue(), c2.getValue()));
 		
 	}
 
 	public void denseScalarOperationsInPlace(ScalarOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		value=op.executeScalar(value);
 	}
 
 	@Override
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
-			int startRow, int startColumn, int length)
-			throws DMLUnsupportedOperationException {
-		
+			int startRow, int startColumn, int length) throws DMLRuntimeException {		
 		MatrixCell c3=checkType(result);
 		if(c3==null)
 			c3=new MatrixCell();
@@ -243,7 +240,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 
 	@Override
-	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) throws DMLUnsupportedOperationException, DMLRuntimeException {
+	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) throws DMLRuntimeException {
 		
 		MatrixCell c3=checkType(result);
 		c3.setValue(op.fn.execute(value, op.getConstant()));
@@ -251,18 +248,18 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 
 	public void sparseScalarOperationsInPlace(ScalarOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		value=op.executeScalar(value);
 	}
 
 	public void sparseUnaryOperationsInPlace(UnaryOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		value=op.fn.execute(value);
 	}
 
 	@Override
 	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		MatrixCell c3=checkType(result);
 		c3.setValue(op.fn.execute(value));
 		return c3;
@@ -270,7 +267,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void unaryOperationsInPlace(UnaryOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		value=op.fn.execute(value);
 	}
 
@@ -320,13 +317,13 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
 			MatrixValue correction, MatrixValue newWithCorrection)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("MatrixCell.incrementalAggregate should never be called");
 	}
 
 	@Override
 	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		if(range.rowStart!=0 || range.rowEnd!=0 || range.colStart!=0 || range.colEnd!=0)
 			throw new DMLRuntimeException("wrong range: "+range+" for matrixCell");
 		MatrixCell c3=checkType(result);
@@ -337,14 +334,14 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
 			MatrixValue newWithCorrection)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("MatrixCell.incrementalAggregate should never be called");
 	}
 
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue that,
 			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		MatrixCell c2=checkType(that);
 		MatrixCell c3=checkType(that2);
@@ -358,7 +355,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue that, double scalarThat2, boolean ignoreZeros, 
 			CTableMap ctableResult, MatrixBlock ctableResultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		MatrixCell c2=checkType(that);
 		CTable ctable = CTable.getCTableFnObject();
@@ -371,7 +368,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
 			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		CTable ctable = CTable.getCTableFnObject();
 		if ( resultMap != null)
@@ -383,7 +380,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public void ternaryOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
 			CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		//ctable expand (column vector to ctable)
 		CTable ctable = CTable.getCTableFnObject();
@@ -404,7 +401,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
 			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		MatrixCell c3=checkType(that2);
 		CTable ctable = CTable.getCTableFnObject();
@@ -417,7 +414,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	
 	@Override
 	public MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		throw new DMLRuntimeException("operation not supported fro MatrixCell");
 	}
@@ -426,14 +423,14 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	public void sliceOperations(ArrayList<IndexedMatrixValue> outlist,
 			IndexRange range, int rowCut, int colCut, int blockRowFactor,
 			int blockColFactor, int boundaryRlen, int boundaryClen)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
 		
 	}
 	
 	@Override
 	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		MatrixCell out = checkType(result);		
 		if( value == pattern || (Double.isNaN(pattern) && Double.isNaN(value)) )
@@ -447,7 +444,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int blockingFactorRow, int blockingFactorCol,
 			MatrixIndexes indexesIn, boolean inCP)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		return aggregateUnaryOperations(op,	result, blockingFactorRow, blockingFactorCol,indexesIn);
 	}
 
@@ -455,14 +452,14 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index,
 			MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value,
 			MatrixValue result, AggregateBinaryOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("MatrixCell.aggregateBinaryOperations should never be called");
 	}
 
 	@Override
 	public void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
 			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException  {
+	throws DMLRuntimeException  {
 		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
 		MatrixCell c2=checkType(valueIn2);
 		((MatrixCell)outlist.get(1).getValue()).setValue(c2.getValue());	

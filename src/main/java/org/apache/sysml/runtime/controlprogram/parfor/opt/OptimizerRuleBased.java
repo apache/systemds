@@ -69,7 +69,6 @@ import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
@@ -212,7 +211,7 @@ public class OptimizerRuleBased extends Optimizer
 	 */
 	@Override
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 
@@ -877,11 +876,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	protected void recompileLIX( OptNode n, LocalVariableMap vars ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 		
@@ -1347,11 +1345,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param M
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	@SuppressWarnings("all")
 	protected boolean rewriteNestedParallelism(OptNode n, double M, boolean flagLIX ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		boolean nested = false;
 	
@@ -2882,10 +2879,9 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * @param n
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected void rewriteInjectSparkLoopCheckpointing(OptNode n) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//get program blocks of root parfor
 		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
@@ -2925,10 +2921,9 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * @param n
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected void rewriteInjectSparkRepartition(OptNode n, LocalVariableMap vars) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//get program blocks of root parfor
 		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
@@ -3016,10 +3011,9 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * @param n
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected void rewriteSetSparkEagerRDDCaching(OptNode n, LocalVariableMap vars) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//get program blocks of root parfor
 		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
@@ -3555,10 +3549,9 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * @param n
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected void rewriteRemoveRecursiveParFor(OptNode n, LocalVariableMap vars) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		int count = 0; //num removed parfor
 		
@@ -3623,12 +3616,11 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param parfor
 	 * @param recPBs
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws HopsException
 	 * @throws LanguageException
 	 */
 	protected void rFindAndUnfoldRecursiveFunction( OptNode n, ParForProgramBlock parfor, HashSet<ParForProgramBlock> recPBs, LocalVariableMap vars )
-		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LanguageException
+		throws DMLRuntimeException, HopsException, LanguageException
 	{
 		//unfold if found
 		if( n.getNodeType() == NodeType.FUNCCALL && n.isRecursive())
@@ -3747,11 +3739,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param oldName
 	 * @param newName
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws HopsException 
 	 */
 	protected void rReplaceFunctionNames( OptNode n, String oldName, String newName ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException
+		throws DMLRuntimeException, HopsException
 	{
 		if( n.getNodeType() == NodeType.FUNCCALL)
 		{
@@ -3798,11 +3789,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param n
 	 * @param recPBs
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	protected int removeRecursiveParFor( OptNode n, HashSet<ParForProgramBlock> recPBs ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		int count = 0;
 		
@@ -3852,10 +3842,9 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * @param n
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected void rewriteRemoveUnnecessaryParFor(OptNode n) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		int count = removeUnnecessaryParFor( n );
 		
@@ -3867,11 +3856,10 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * @param n
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	protected int removeUnnecessaryParFor( OptNode n ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		int count = 0;
 		

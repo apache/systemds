@@ -30,7 +30,6 @@ import scala.Tuple2;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -64,11 +63,10 @@ public class RemoteParForSpark
 	 * @param numMappers
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static RemoteParForJobReturn runJob(long pfid, String program, List<Task> tasks, ExecutionContext ec,
 			                                   boolean cpCaching, int numMappers) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException  
+		throws DMLRuntimeException  
 	{
 		String jobname = "ParFor-ESP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;

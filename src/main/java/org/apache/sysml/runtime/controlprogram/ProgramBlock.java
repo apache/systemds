@@ -32,7 +32,6 @@ import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -129,10 +128,9 @@ public class ProgramBlock
 	 * 
 	 * @param ec
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		ArrayList<Instruction> tmp = _inst;
 
@@ -175,10 +173,9 @@ public class ProgramBlock
 	 * @param hops
 	 * @param ec
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public ScalarObject executePredicate(ArrayList<Instruction> inst, Hop hops, boolean requiresRecompile, ValueType retType, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ArrayList<Instruction> tmp = inst;
 		
@@ -211,10 +208,9 @@ public class ProgramBlock
 	 * @param inst
 	 * @param ec
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected void executeInstructions(ArrayList<Instruction> inst, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		for (int i = 0; i < inst.size(); i++) 
 		{
@@ -232,10 +228,9 @@ public class ProgramBlock
 	 * @param inst
 	 * @param ec
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected ScalarObject executePredicateInstructions(ArrayList<Instruction> inst, ValueType retType, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		ScalarObject ret = null;
 		String retName = null;

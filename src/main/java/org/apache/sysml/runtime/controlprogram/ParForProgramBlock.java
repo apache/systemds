@@ -48,7 +48,6 @@ import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -520,7 +519,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	@Override	
 	public void execute(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
 		
@@ -682,12 +681,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param from
 	 * @param to
 	 * @param incr
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 * @throws InterruptedException 
 	 */
 	private void executeLocalParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException, InterruptedException
+		throws DMLRuntimeException, InterruptedException
 	{
 		/* Step 1) init parallel workers, task queue and threads
 		 *         start threads (from now on waiting for tasks)
@@ -816,12 +814,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param from
 	 * @param to
 	 * @param incr
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 * @throws IOException 
 	 */
 	private void executeRemoteMRParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
+		throws DMLRuntimeException, IOException
 	{
 		/* Step 0) check and recompile MR inst
 		 * Step 1) serialize child PB and inst
@@ -915,12 +912,11 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param from
 	 * @param to
 	 * @param incr
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 * @throws IOException
 	 */
 	private void executeRemoteMRParForDP( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
+		throws DMLRuntimeException, IOException
 	{
 		/* Step 0) check and recompile MR inst
 		 * Step 1) serialize child PB and inst
@@ -1000,10 +996,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param to
 	 * @param incr
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private void executeRemoteSparkParFor(ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		Timing time = ( _monitor ? new Timing(true) : null );
 		
@@ -1065,7 +1060,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	}
 	
 	private void executeRemoteSparkParForDP( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
+		throws DMLRuntimeException, IOException
 	{
 		Timing time = ( _monitor ? new Timing(true) : null );
 		
@@ -1133,10 +1128,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * 
 	 * @param ec
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private void handleDataPartitioning( ExecutionContext ec ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		if( _dataPartitioner != PDataPartitioner.NONE )
 		{			
@@ -1204,10 +1198,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * 
 	 * @param ec
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private void handleSparkRepartitioning( ExecutionContext ec ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		if( OptimizerUtils.isSparkExecutionMode() &&
 			_variablesRP != null && !_variablesRP.isEmpty() ) {
@@ -1222,10 +1215,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * 
 	 * @param ec
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private void handleSparkEagerCaching( ExecutionContext ec ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		if( OptimizerUtils.isSparkExecutionMode() &&
 			_variablesECache != null && !_variablesECache.isEmpty() ) {
@@ -1393,7 +1385,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @return
 	 * @throws InstantiationException
 	 * @throws IllegalAccessException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 * @throws CloneNotSupportedException
 	 */

@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -61,7 +60,7 @@ public abstract class MRInstruction extends Instruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//do nothing (not applicable for MR instructions)
 	}
@@ -74,12 +73,11 @@ public abstract class MRInstruction extends Instruction
 	 * @param zeroInput
 	 * @param blockRowFactor
 	 * @param blockColFactor
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public abstract void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException;
+		throws DMLRuntimeException;
 
 	
 	/**

@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions;
 
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
@@ -30,7 +29,7 @@ import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_T
 public class InstructionParser 
 {		
 	public static Instruction parseSingleInstruction ( String str ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{	
 		if ( str == null || str.isEmpty() )
 			return null;
@@ -59,7 +58,7 @@ public class InstructionParser
 	}
 	
 	public static Instruction[] parseMixedInstructions ( String str ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		if ( str == null || str.isEmpty() )
 			return null;

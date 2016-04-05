@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.cp;
 import org.apache.sysml.lops.UAggOuterChain;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
@@ -80,7 +79,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		boolean rightCached = (_uaggOp.indexFn instanceof ReduceCol || _uaggOp.indexFn instanceof ReduceAll
 				|| !LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp));

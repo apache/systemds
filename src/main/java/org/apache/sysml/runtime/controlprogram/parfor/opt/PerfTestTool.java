@@ -59,7 +59,6 @@ import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -428,11 +427,10 @@ public class PerfTestTool
 	
 	/**
 	 * 
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private static void registerInstructions() 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//reset ID sequences for consistent IDs
 		_seqInst.reset();
@@ -718,11 +716,10 @@ public class PerfTestTool
 	/**
 	 * 
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	private static void executeTest( ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, IOException
 	{
 		System.out.println("SystemML PERFORMANCE TEST TOOL:");
 		
@@ -826,11 +823,10 @@ public class PerfTestTool
 	 * 
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	private static double executeTestCase1D( TestMeasure m, InternalTestVariable v, DataFormat df, double varValue, ProgramBlock pb, boolean vectors, IOSchema schema, ExecutionContext ec ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, IOException
 	{
 		double datasize = -1;
 		double dim1 = -1, dim2 = -1;
@@ -950,11 +946,10 @@ public class PerfTestTool
 	 * @param schema
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	private static double executeTestCaseMD( TestMeasure m, InternalTestVariable[] v, DataFormat df, double[] varValue, ProgramBlock pb, IOSchema schema, ExecutionContext ec ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, IOException
 	{
 		//double datasize = DEFAULT_DATASIZE;
 		double sparsity = DEFAULT_SPARSITY;
@@ -1018,10 +1013,9 @@ public class PerfTestTool
 	 * @param pb
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static double executeGenericProgramBlock( TestMeasure measure, ProgramBlock pb, ExecutionContext ec ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		double value = 0;
 		try
@@ -1276,13 +1270,12 @@ public class PerfTestTool
 	/**
 	 * 
 	 * @param fname
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 * @throws XMLStreamException
 	 * @throws IOException
 	 */
 	public static void externalReadProfile( String fname ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException, XMLStreamException, IOException
+		throws DMLRuntimeException, XMLStreamException, IOException
 	{
 		//validate external name (security issue)
 		if( !LocalFileUtils.validateExternalFilename(fname, false) )
@@ -1299,11 +1292,11 @@ public class PerfTestTool
 	 * @param dirname
 	 * @return
 	 * @throws IOException
-	 * @throws DMLUnsupportedOperationException
+	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("all")
 	private static HashMap<Integer,Long> writeResults( String dirname ) 
-		throws IOException, DMLUnsupportedOperationException 
+		throws IOException, DMLRuntimeException 
 	{
 		HashMap<Integer,Long> map = new HashMap<Integer, Long>();
 		int count = 1;
@@ -1386,7 +1379,7 @@ public class PerfTestTool
 								//sbuff[offset+2*plen+plen*(plen-1)/2] = String.valueOf(tmp);
 							}
 							else
-								throw new DMLUnsupportedOperationException("More than 3 dims currently not supported.");
+								throw new DMLRuntimeException("More than 3 dims currently not supported.");
 								
 						}
 							

@@ -24,7 +24,6 @@ import java.io.Serializable;
 import org.apache.spark.broadcast.Broadcast;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -91,7 +90,7 @@ public class PartitionedBroadcastMatrix implements Serializable
 	}
 	
 	public MatrixBlock sliceOperations(long rl, long ru, long cl, long cu, MatrixBlock matrixBlock) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		MatrixBlock ret = null;
 		

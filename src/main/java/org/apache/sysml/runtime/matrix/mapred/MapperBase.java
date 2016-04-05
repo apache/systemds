@@ -32,7 +32,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
 import org.apache.sysml.runtime.instructions.mr.DataGenMRInstruction;
@@ -212,8 +211,6 @@ public abstract class MapperBase extends MRBaseForCommonInstructions
 			
 			allCSVReblockIns=MRJobConfiguration.getCSVReblockInstructions(job);
 			
-		} catch (DMLUnsupportedOperationException e) {
-			throw new RuntimeException(e);
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}

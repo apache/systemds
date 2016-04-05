@@ -31,7 +31,6 @@ import scala.Tuple2;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -68,13 +67,12 @@ public class RemoteDPParForSpark
 	 * @param replication
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, String resultFile, MatrixObject input, 
 			                                   ExecutionContext ec,
 			                                   PDataPartitionFormat dpf, OutputInfo oi, boolean tSparseCol, //config params
 			                                   boolean enableCPCaching, int numReducers )  //opt params
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String jobname = "ParFor-DPESP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;

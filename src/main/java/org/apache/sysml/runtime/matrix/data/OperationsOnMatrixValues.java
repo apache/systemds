@@ -23,7 +23,6 @@ package org.apache.sysml.runtime.matrix.data;
 import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -43,26 +42,26 @@ public class OperationsOnMatrixValues
 {
 	
 	public static void performScalarIgnoreIndexes(MatrixValue valueIn, MatrixValue valueOut, ScalarOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		valueIn.scalarOperations(op, valueOut);
 	}
 	
 	public static void performUnaryIgnoreIndexes(MatrixValue valueIn, MatrixValue valueOut, UnaryOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		valueIn.unaryOperations(op, valueOut);
 	}
 	
 	public static void performUnaryIgnoreIndexesInPlace(MatrixValue valueIn, UnaryOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		valueIn.unaryOperationsInPlace(op);
 	}
 	
 	public static void performReorg(MatrixIndexes indexesIn, MatrixValue valueIn, MatrixIndexes indexesOut, 
 			         MatrixValue valueOut, ReorgOperator op, int startRow, int startColumn, int length) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//operate on the value indexes first
 		op.fn.execute(indexesIn, indexesOut);
@@ -73,14 +72,14 @@ public class OperationsOnMatrixValues
 
 	public static void performAppend(MatrixValue valueIn1, MatrixValue valueIn2,
 			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor, int blockColFactor,  boolean cbind, boolean m2IsLast, int nextNCol) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		valueIn1.appendOperations(valueIn2, outlist, blockRowFactor, blockColFactor, cbind, m2IsLast, nextNCol);
 	}
 	
 	public static void performZeroOut(MatrixIndexes indexesIn, MatrixValue valueIn, 
 			MatrixIndexes indexesOut, MatrixValue valueOut, IndexRange range, boolean complementary) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		valueIn.zeroOutOperations(valueOut, range, complementary);
 		indexesOut.setIndexes(indexesIn);
@@ -90,7 +89,7 @@ public class OperationsOnMatrixValues
 	// tertiary where all three inputs are matrices
 	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
 			MatrixIndexes indexesIn3, MatrixValue valueIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
 		valueIn1.ternaryOperations(op, valueIn2, valueIn3, resultMap, resultBlock);
@@ -99,7 +98,7 @@ public class OperationsOnMatrixValues
 	// tertiary where first two inputs are matrices, and third input is a scalar (double)
 	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, MatrixIndexes indexesIn2, MatrixValue valueIn2, 
 			double scalarIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
 		valueIn1.ternaryOperations(op, valueIn2, scalarIn3, false, resultMap, resultBlock);
@@ -108,7 +107,7 @@ public class OperationsOnMatrixValues
 	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
 	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
 			double scalarIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
 		valueIn1.ternaryOperations(op, scalarIn2, scalarIn3, resultMap, resultBlock);
@@ -117,7 +116,7 @@ public class OperationsOnMatrixValues
 	// tertiary where first input is a matrix, and second is scalars (double)
 	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, boolean left,
 			int brlen, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
 		valueIn1.ternaryOperations(op, indexesIn1, scalarIn2, left, brlen, resultMap, resultBlock);
@@ -126,7 +125,7 @@ public class OperationsOnMatrixValues
 	// tertiary where first and third inputs are matrices, and second is a scalars (double)
 	public static void performTernary(MatrixIndexes indexesIn1, MatrixValue valueIn1, double scalarIn2, 
 			MatrixIndexes indexesIn3, MatrixValue valueIn3, CTableMap resultMap, MatrixBlock resultBlock, Operator op ) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		//operation on the cells inside the value
 		valueIn1.ternaryOperations(op, scalarIn2, valueIn3, resultMap, resultBlock);
@@ -136,7 +135,7 @@ public class OperationsOnMatrixValues
 	//binary operations are those that the indexes of both cells have to be matched
 	public static void performBinaryIgnoreIndexes(MatrixValue value1, MatrixValue value2, 
 			MatrixValue valueOut, BinaryOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		value1.binaryOperations(op, value2, valueOut);
 	}
@@ -150,12 +149,11 @@ public class OperationsOnMatrixValues
 	 * @param clen
 	 * @param sparseHint
 	 * @param imbededCorrection
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static void startAggregation(MatrixValue valueOut, MatrixValue correction, AggregateOperator op, 
 			int rlen, int clen, boolean sparseHint, boolean imbededCorrection)
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		int outRow=0, outCol=0, corRow=0, corCol=0;
 		if(op.correctionExists)
@@ -249,7 +247,7 @@ public class OperationsOnMatrixValues
 	}
 	
 	public static void incrementalAggregation(MatrixValue valueAgg, MatrixValue correction, MatrixValue valueAdd, 
-			AggregateOperator op, boolean imbededCorrection) throws DMLUnsupportedOperationException, DMLRuntimeException
+			AggregateOperator op, boolean imbededCorrection) throws DMLRuntimeException
 	{
 		if(op.correctionExists)
 		{
@@ -264,7 +262,7 @@ public class OperationsOnMatrixValues
 	
 	public static void performAggregateUnary(MatrixIndexes indexesIn, MatrixValue valueIn, MatrixIndexes indexesOut, 
 			MatrixValue valueOut, AggregateUnaryOperator op,int brlen, int bclen)
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//operate on the value indexes first
 		op.indexFn.execute(indexesIn, indexesOut);
@@ -275,7 +273,7 @@ public class OperationsOnMatrixValues
 	
 	public static void performAggregateBinary(MatrixIndexes indexes1, MatrixValue value1, MatrixIndexes indexes2, MatrixValue value2, 
 			MatrixIndexes indexesOut, MatrixValue valueOut, AggregateBinaryOperator op)
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		//compute output index
 		indexesOut.setIndexes(indexes1.getRowIndex(), indexes2.getColumnIndex());
@@ -287,7 +285,7 @@ public class OperationsOnMatrixValues
 	public static void performAggregateBinaryIgnoreIndexes(
 			MatrixValue value1, MatrixValue value2,
 			MatrixValue valueOut, AggregateBinaryOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException {
+	throws DMLRuntimeException {
 			
 		//perform on the value
 		value1.aggregateBinaryOperations(value1, value2, valueOut, op);
@@ -300,11 +298,10 @@ public class OperationsOnMatrixValues
 	 * @param brlen
 	 * @param bclen
 	 * @param outlist
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static void performSlice(IndexedMatrixValue in, IndexRange ixrange, int brlen, int bclen, ArrayList<IndexedMatrixValue> outlist) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		long cellIndexTopRow = UtilFunctions.computeCellIndex(in.getIndexes().getRowIndex(), brlen, 0);
 		long cellIndexBottomRow = UtilFunctions.computeCellIndex(in.getIndexes().getRowIndex(), brlen, in.getValue().getNumRows()-1);
@@ -373,11 +370,10 @@ public class OperationsOnMatrixValues
 	 * @param rlen
 	 * @param clen
 	 * @param outlist
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static void performShift(IndexedMatrixValue in, IndexRange ixrange, int brlen, int bclen, long rlen, long clen, ArrayList<IndexedMatrixValue> outlist) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		MatrixIndexes ix = in.getIndexes();
 		MatrixBlock mb = (MatrixBlock)in.getValue();
@@ -435,9 +431,8 @@ public class OperationsOnMatrixValues
 	 * @param bclen
 	 * @param outlist
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
-	public static void performMapGroupedAggregate( Operator op, IndexedMatrixValue inTarget, MatrixBlock groups, int ngroups, int brlen, int bclen, ArrayList<IndexedMatrixValue> outlist ) throws DMLRuntimeException, DMLUnsupportedOperationException
+	public static void performMapGroupedAggregate( Operator op, IndexedMatrixValue inTarget, MatrixBlock groups, int ngroups, int brlen, int bclen, ArrayList<IndexedMatrixValue> outlist ) throws DMLRuntimeException
 	{
 		MatrixIndexes ix = inTarget.getIndexes();
 		MatrixBlock target = (MatrixBlock)inTarget.getValue();

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -56,7 +55,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 	}
 	
 	public static MultiReturnBuiltinCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		ArrayList<CPOperand> outputs = new ArrayList<CPOperand>();
@@ -99,7 +98,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		String opcode = getOpcode();
 		MatrixObject mo = (MatrixObject) ec.getVariable(input1.getName());

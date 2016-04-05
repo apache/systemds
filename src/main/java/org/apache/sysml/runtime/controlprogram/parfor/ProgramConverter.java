@@ -45,7 +45,6 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
@@ -205,11 +204,10 @@ public class ProgramConverter
 	 * @param forceDeepCopy 
 	 * 
 	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
 	 */
 	public static ArrayList<ProgramBlock> rcreateDeepCopyProgramBlocks(ArrayList<ProgramBlock> childBlocks, long pid, int IDPrefix, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		ArrayList<ProgramBlock> tmp = new ArrayList<ProgramBlock>();
 		
@@ -267,11 +265,10 @@ public class ProgramConverter
 	 * @param IDPrefix
 	 * @param prog
 	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
 	 */
 	public static WhileProgramBlock createDeepCopyWhileProgramBlock(WhileProgramBlock wpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(wpb.getPredicate(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true);
 		WhileProgramBlock tmpPB = new WhileProgramBlock(prog, predinst);
@@ -292,11 +289,10 @@ public class ProgramConverter
 	 * @param IDPrefix
 	 * @param prog
 	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
 	 */
 	public static IfProgramBlock createDeepCopyIfProgramBlock(IfProgramBlock ipb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(ipb.getPredicate(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true);
 		IfProgramBlock tmpPB = new IfProgramBlock(prog, predinst);
@@ -319,10 +315,9 @@ public class ProgramConverter
 	 * @param prog
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static ForProgramBlock createDeepCopyForProgramBlock(ForProgramBlock fpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ForProgramBlock tmpPB = new ForProgramBlock(prog,fpb.getIterablePredicateVars());
 		tmpPB.setStatementBlock( createForStatementBlockCopy((ForStatementBlock)fpb.getStatementBlock(), pid, plain, forceDeepCopy));
@@ -343,10 +338,9 @@ public class ProgramConverter
 	 * @param prog
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static ForProgramBlock createShallowCopyForProgramBlock(ForProgramBlock fpb, Program prog ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ForProgramBlock tmpPB = new ForProgramBlock(prog,fpb.getIterablePredicateVars());
 		
@@ -365,10 +359,9 @@ public class ProgramConverter
 	 * @param prog
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static ForProgramBlock createShallowCopyParForProgramBlock(ParForProgramBlock pfpb, Program prog ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ParForProgramBlock tmpPB = new ParForProgramBlock(prog,pfpb.getIterablePredicateVars(),pfpb.getParForParams());
 		
@@ -391,11 +384,10 @@ public class ProgramConverter
 	 * @param IDPrefix
 	 * @param prog
 	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
 	 */
 	public static ParForProgramBlock createDeepCopyParForProgramBlock(ParForProgramBlock pfpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ParForProgramBlock tmpPB = null;
 		
@@ -432,11 +424,10 @@ public class ProgramConverter
 	 * 
 	 * @param oldName
 	 * @param pid
-	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException  
 	 */
 	public static void createDeepCopyFunctionProgramBlock(String namespace, String oldName, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//fpb guaranteed to be non-null (checked inside getFunctionProgramBlock)
 		FunctionProgramBlock fpb = prog.getFunctionProgramBlock(namespace, oldName);
@@ -500,10 +491,9 @@ public class ProgramConverter
 	 * @param fpb
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static FunctionProgramBlock createDeepCopyFunctionProgramBlock(FunctionProgramBlock fpb, HashSet<String> fnStack, HashSet<String> fnCreated) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		if( fpb == null )
 			throw new DMLRuntimeException("Unable to create a deep copy of a non-existing FunctionProgramBlock.");
@@ -537,10 +527,9 @@ public class ProgramConverter
 	 * @param pid
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static ArrayList<Instruction> createDeepCopyInstructionSet(ArrayList<Instruction> instSet, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean cpFunctions) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ArrayList<Instruction> tmp = new ArrayList<Instruction>();
 		for( Instruction inst : instSet )
@@ -565,10 +554,9 @@ public class ProgramConverter
 	 * @param pid
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static Instruction cloneInstruction( Instruction oInst, long pid, boolean plain, boolean cpFunctions ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		Instruction inst = null;
 		String tmpString = oInst.toString();
@@ -597,7 +585,7 @@ public class ProgramConverter
 				inst = new MRJobInstruction( (MRJobInstruction)oInst );
 			}
 			else
-				throw new DMLUnsupportedOperationException("Failed to clone instruction: "+oInst);
+				throw new DMLRuntimeException("Failed to clone instruction: "+oInst);
 		}
 		catch(Exception ex)
 		{
@@ -827,10 +815,9 @@ public class ProgramConverter
 	 * @param body
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static String serializeParForBody( ParForBody body ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ArrayList<ProgramBlock> pbs = body.getChildBlocks();
 		ArrayList<String> rVnames   = body.getResultVarNames();
@@ -900,10 +887,9 @@ public class ProgramConverter
 	 * @param prog
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static String serializeProgram( Program prog, ArrayList<ProgramBlock> pbs ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//note program contains variables, programblocks and function program blocks 
 		//but in order to avoid redundancy, we only serialize function program blocks
@@ -1279,10 +1265,9 @@ public class ProgramConverter
 	 * @param pbs
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static String rSerializeFunctionProgramBlocks(HashMap<String,FunctionProgramBlock> pbs, HashSet<String> cand) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -1312,10 +1297,9 @@ public class ProgramConverter
 	 * @param pbs
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static String rSerializeProgramBlocks(ArrayList<ProgramBlock> pbs) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		StringBuilder sb = new StringBuilder();
 		int count = 0;
@@ -1338,10 +1322,9 @@ public class ProgramConverter
 	 * @param pb
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static String rSerializeProgramBlock( ProgramBlock pb) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -1417,7 +1400,7 @@ public class ProgramConverter
 			
 			//check for nested remote ParFOR
 			if( PExecMode.valueOf( pfpb.getParForParams().get( ParForStatementBlock.EXEC_MODE )) == PExecMode.REMOTE_MR )
-				throw new DMLUnsupportedOperationException( NOT_SUPPORTED_MR_PARFOR );
+				throw new DMLRuntimeException( NOT_SUPPORTED_MR_PARFOR );
 			
 			sb.append( serializeStringArray(pfpb.getIterablePredicateVars()) );
 			sb.append( COMPONENTS_DELIM );
@@ -1536,10 +1519,9 @@ public class ProgramConverter
 	 * @param id
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static ParForBody parseParForBody( String in, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ParForBody body = new ParForBody();
 		
@@ -1594,10 +1576,9 @@ public class ProgramConverter
 	 * @param id
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static Program parseProgram( String in, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String lin = in.substring( PARFOR_PROG_BEGIN.length(),in.length()-PARFOR_PROG_END.length()).trim(); 
 		
@@ -1647,10 +1628,9 @@ public class ProgramConverter
 	 * @param id
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static HashMap<String,FunctionProgramBlock> parseFunctionProgramBlocks( String in, Program prog, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		HashMap<String,FunctionProgramBlock> ret = new HashMap<String, FunctionProgramBlock>();
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer( in, ELEMENT_DELIM );
@@ -1681,11 +1661,10 @@ public class ProgramConverter
 	 * @param prog
 	 * @param id
 	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
 	 */
 	public static ArrayList<ProgramBlock> rParseProgramBlocks(String in, Program prog, int id) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ArrayList<ProgramBlock> pbs = new ArrayList<ProgramBlock>();
 		String tmpdata = in.substring(PARFOR_PBS_BEGIN.length(),in.length()-PARFOR_PBS_END.length()); ;
@@ -1707,10 +1686,9 @@ public class ProgramConverter
 	 * @param id
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static ProgramBlock rParseProgramBlock( String in, Program prog, int id )
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ProgramBlock pb = null;
 		
@@ -1729,7 +1707,7 @@ public class ProgramConverter
  		else if ( in.startsWith(PARFOR_PB_BEGIN ) )
 			pb = rParseGenericProgramBlock( in, prog, id );
 		else 
-			throw new DMLUnsupportedOperationException( NOT_SUPPORTED_PB+" "+in );
+			throw new DMLRuntimeException( NOT_SUPPORTED_PB+" "+in );
 		
 		return pb;
 	}
@@ -1741,10 +1719,9 @@ public class ProgramConverter
 	 * @param id
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static WhileProgramBlock rParseWhileProgramBlock( String in, Program prog, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String lin = in.substring( PARFOR_PB_WHILE.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
@@ -1777,10 +1754,9 @@ public class ProgramConverter
 	 * @param id
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static ForProgramBlock rParseForProgramBlock( String in, Program prog, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String lin = in.substring( PARFOR_PB_FOR.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
@@ -1819,10 +1795,9 @@ public class ProgramConverter
 	 * @param id
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static ParForProgramBlock rParseParForProgramBlock( String in, Program prog, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String lin = in.substring( PARFOR_PB_PARFOR.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
@@ -1865,10 +1840,9 @@ public class ProgramConverter
 	 * @param id
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static IfProgramBlock rParseIfProgramBlock( String in, Program prog, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String lin = in.substring( PARFOR_PB_IF.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
@@ -1903,10 +1877,9 @@ public class ProgramConverter
 	 * @param id
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static FunctionProgramBlock rParseFunctionProgramBlock( String in, Program prog, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String lin = in.substring( PARFOR_PB_FC.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
@@ -1939,11 +1912,10 @@ public class ProgramConverter
 	 * @param prog
 	 * @param id
 	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
 	 */
 	public static ExternalFunctionProgramBlock rParseExternalFunctionProgramBlock( String in, Program prog, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String lin = in.substring( PARFOR_PB_EFC.length(),in.length()-PARFOR_PB_END.length()); 
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
@@ -1983,10 +1955,9 @@ public class ProgramConverter
 	 * @param id
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static ProgramBlock rParseGenericProgramBlock( String in, Program prog, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String lin = in.substring( PARFOR_PB_BEGIN.length(),in.length()-PARFOR_PB_END.length()); 
 		StringTokenizer st = new StringTokenizer(lin,COMPONENTS_DELIM);
@@ -2003,11 +1974,10 @@ public class ProgramConverter
 	 * 
 	 * @param in
 	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
 	 */
 	public static ArrayList<Instruction> parseInstructions( String in, int id ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ArrayList<Instruction> insts = new ArrayList<Instruction>();  
 
@@ -2212,10 +2182,9 @@ public class ProgramConverter
 	 * @param in
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static ExecutionContext parseExecutionContext(String in, Program prog) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ExecutionContext ec = null;
 		
@@ -2249,10 +2218,9 @@ public class ProgramConverter
 	 * @param replacement
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static Instruction saveReplaceThreadID( Instruction inst, String pattern, String replacement ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//currently known, relevant instructions: createvar, rand, seq, extfunct, 
 		if( inst instanceof MRJobInstruction )

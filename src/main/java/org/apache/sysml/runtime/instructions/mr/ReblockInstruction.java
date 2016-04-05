@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
@@ -67,7 +66,7 @@ public class ReblockInstruction extends UnaryMRInstructionBase
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("ReblockInstruction.processInstruction should never be called");
 		
 	}

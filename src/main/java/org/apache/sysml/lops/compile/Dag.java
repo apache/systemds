@@ -64,7 +64,6 @@ import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.CPInstructionParser;
@@ -228,10 +227,9 @@ public class Dag<N extends Lop>
 	 * @throws LopsException
 	 * @throws IOException
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public ArrayList<Instruction> getJobs(DMLConfig config)
-			throws LopsException, IOException, DMLRuntimeException, DMLUnsupportedOperationException 
+			throws LopsException, IOException, DMLRuntimeException 
 	{
 		return getJobs(null, config);
 	}
@@ -241,13 +239,11 @@ public class Dag<N extends Lop>
 	 * 
 	 * @param config
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 
 	public ArrayList<Instruction> getJobs(StatementBlock sb, DMLConfig config)
-			throws LopsException, IOException, DMLRuntimeException,
-			DMLUnsupportedOperationException {
+			throws LopsException, IOException, DMLRuntimeException {
 		
 		if (config != null) 
 		{
@@ -276,8 +272,7 @@ public class Dag<N extends Lop>
 	}
 
 	private static void deleteUpdatedTransientReadVariables(StatementBlock sb, ArrayList<Lop> nodeV,
-			ArrayList<Instruction> inst) throws DMLRuntimeException,
-			DMLUnsupportedOperationException {
+			ArrayList<Instruction> inst) throws DMLRuntimeException {
 
 		if ( sb == null ) 
 			return;
@@ -350,9 +345,8 @@ public class Dag<N extends Lop>
 
 	}
 	  
-	private static void generateRemoveInstructions(StatementBlock sb,
-			ArrayList<Instruction> deleteInst)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+	private static void generateRemoveInstructions(StatementBlock sb, ArrayList<Instruction> deleteInst)
+		throws DMLRuntimeException {
 		
 		if ( sb == null ) 
 			return;
@@ -675,8 +669,6 @@ public class Dag<N extends Lop>
 						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
 						currInstr.setLocation(n);						
 						inst.add(currInstr);
-					} catch (DMLUnsupportedOperationException e) {
-						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n", e);
 					} catch (DMLRuntimeException e) {
 						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n", e);
 					}
@@ -797,12 +789,10 @@ public class Dag<N extends Lop>
 	 * 
 	 * @param node_v
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private ArrayList<Instruction> doGreedyGrouping(StatementBlock sb, ArrayList<Lop> node_v)
-			throws LopsException, IOException, DMLRuntimeException,
-			DMLUnsupportedOperationException
+			throws LopsException, IOException, DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Grouping DAG ============");
@@ -1284,9 +1274,8 @@ public class Dag<N extends Lop>
 	 * @param node
 	 * @param inst
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
-	private void processConsumersForInputs(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> delteInst) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	private void processConsumersForInputs(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> delteInst) throws DMLRuntimeException {
 		// reduce the consumer count for all input lops
 		// if the count becomes zero, then then variable associated w/ input can be removed
 		for(Lop in : node.getInputs() ) {
@@ -1299,7 +1288,7 @@ public class Dag<N extends Lop>
 		}
 	}
 	
-	private static void processConsumers(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> deleteInst, Lop locationInfo) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	private static void processConsumers(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> deleteInst, Lop locationInfo) throws DMLRuntimeException {
 		// reduce the consumer count for all input lops
 		// if the count becomes zero, then then variable associated w/ input can be removed
 		if ( node.removeConsumer() == 0 ) {
@@ -1329,11 +1318,9 @@ public class Dag<N extends Lop>
 	 * @param deleteInst
 	 * @throws LopsException
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private void generateControlProgramJobs(ArrayList<Lop> execNodes,
-			ArrayList<Instruction> inst, ArrayList<Instruction> writeInst, ArrayList<Instruction> deleteInst) throws LopsException,
-			DMLUnsupportedOperationException, DMLRuntimeException {
+			ArrayList<Instruction> inst, ArrayList<Instruction> writeInst, ArrayList<Instruction> deleteInst) throws LopsException, DMLRuntimeException {
 
 		// nodes to be deleted from execnodes
 		ArrayList<Lop> markedNodes = new ArrayList<Lop>();
@@ -2104,15 +2091,12 @@ public class Dag<N extends Lop>
 	 * @param jobNodes
 	 * @throws LopsException
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private void generateMRJobs(ArrayList<Lop> execNodes,
 			ArrayList<Instruction> inst,
 			ArrayList<Instruction> writeinst,
 			ArrayList<Instruction> deleteinst, ArrayList<ArrayList<Lop>> jobNodes)
-			throws LopsException, DMLUnsupportedOperationException,
-			DMLRuntimeException
-
+			throws LopsException, DMLRuntimeException
 	{
 		printJobNodes(jobNodes);
 		
@@ -2326,11 +2310,10 @@ public class Dag<N extends Lop>
 	/**
 	 * Method to setup output filenames and outputInfos, and to generate related instructions
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 */
 	private NodeOutput setupNodeOutputs(Lop node, ExecType et, boolean cellModeOverride, boolean copyTWrite) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException, LopsException {
+	throws DMLRuntimeException, LopsException {
 		
 		OutputParameters oparams = node.getOutputParameters();
 		NodeOutput out = new NodeOutput();
@@ -2790,13 +2773,11 @@ public class Dag<N extends Lop>
 	 * @param deleteinst
 	 * @param jobType
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private void generateMapReduceInstructions(ArrayList<Lop> execNodes,
 			ArrayList<Instruction> inst, ArrayList<Instruction> writeinst, ArrayList<Instruction> deleteinst, ArrayList<Instruction> rmvarinst, 
-			JobType jt) throws LopsException,
-			DMLUnsupportedOperationException, DMLRuntimeException
+			JobType jt) throws LopsException, DMLRuntimeException
 	{
 		ArrayList<Byte> resultIndices = new ArrayList<Byte>();
 		ArrayList<String> inputs = new ArrayList<String>();

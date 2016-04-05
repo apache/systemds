@@ -25,7 +25,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -89,7 +88,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 	@Override
 	@SuppressWarnings("unchecked")
 	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		SparkExecutionContext sec = (SparkExecutionContext) ec;
 

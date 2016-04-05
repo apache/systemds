@@ -35,7 +35,6 @@ import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -116,11 +115,10 @@ public class DMLAppMasterUtils
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	public static void setupProgramMappingRemoteMaxMemory(Program prog) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		if( DMLScript.isActiveAM() && isResourceOptimizerEnabled() )
 		{

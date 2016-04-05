@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.lops.AppendM.CacheType;
 import org.apache.sysml.lops.BinaryM.VectorType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -78,7 +77,7 @@ public class BinaryMInstruction extends BinaryMRInstructionBase implements IDist
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput,
 			int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{	
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input1);
 		if( blkList == null ) 

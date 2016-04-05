@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
@@ -41,7 +40,7 @@ public class MatrixMatrixArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		// Read input matrices
         MatrixBlock inBlock1 = ec.getMatrixInput(input1.getName());

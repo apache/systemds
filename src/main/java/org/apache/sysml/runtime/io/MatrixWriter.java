@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.io;
 import java.io.IOException;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -44,11 +43,10 @@ public abstract class MatrixWriter
 	 * @param bclen
 	 * @param expNnz
 	 * @return
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
 	public abstract void writeMatrixToHDFS( MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz )
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException;
+		throws IOException, DMLRuntimeException;
 	
 	/**
 	 * Writes a minimal entry to represent an empty matrix on hdfs.
@@ -60,7 +58,6 @@ public abstract class MatrixWriter
 	 * @param bclen
 	 * @throws IOException
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public abstract void writeEmptyMatrixToHDFS( String fname, long rlen, long clen, int brlen, int bclen )
 		throws IOException, DMLRuntimeException;

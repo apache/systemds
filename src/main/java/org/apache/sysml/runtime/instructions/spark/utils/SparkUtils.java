@@ -34,7 +34,6 @@ import scala.Tuple2;
 
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -97,7 +96,6 @@ public class SparkUtils
 	 * @param blen
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static MatrixBlock[] partitionIntoRowBlocks( MatrixBlock mb, int blen ) 
 		throws DMLRuntimeException
@@ -123,7 +121,6 @@ public class SparkUtils
 	 * @param brlen
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static MatrixBlock[] partitionIntoColumnBlocks( MatrixBlock mb, int blen ) 
 		throws DMLRuntimeException

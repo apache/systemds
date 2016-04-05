@@ -34,7 +34,6 @@ import org.apache.sysml.lops.WeightedSquaredLossR;
 import org.apache.sysml.lops.WeightedUnaryMM;
 import org.apache.sysml.lops.WeightedUnaryMMR;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.spark.AggregateTernarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.AppendGAlignedSPInstruction;
@@ -260,7 +259,7 @@ public class SPInstructionParser extends InstructionParser
 	}
 
 	public static SPInstruction parseSingleInstruction (String str ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		if ( str == null || str.isEmpty() )
 			return null;
@@ -268,7 +267,7 @@ public class SPInstructionParser extends InstructionParser
 		SPINSTRUCTION_TYPE cptype = InstructionUtils.getSPType(str); 
 		if ( cptype == null )
 			// return null;
-			throw new DMLUnsupportedOperationException("Invalid SP Instruction Type: " + str);
+			throw new DMLRuntimeException("Invalid SP Instruction Type: " + str);
 		SPInstruction spinst = parseSingleInstruction(cptype, str);
 		if ( spinst == null )
 			throw new DMLRuntimeException("Unable to parse instruction: " + str);
@@ -276,7 +275,7 @@ public class SPInstructionParser extends InstructionParser
 	}
 	
 	public static SPInstruction parseSingleInstruction ( SPINSTRUCTION_TYPE sptype, String str ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{	
 		if ( str == null || str.isEmpty() ) 
 			return null;
@@ -410,7 +409,7 @@ public class SPInstructionParser extends InstructionParser
 				
 			case INVALID:
 			default:
-				throw new DMLUnsupportedOperationException("Invalid SP Instruction Type: " + sptype );
+				throw new DMLRuntimeException("Invalid SP Instruction Type: " + sptype );
 		}
 	}
 }

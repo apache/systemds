@@ -24,7 +24,6 @@ import java.util.Arrays;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
@@ -132,7 +131,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			           IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		ArrayList<IndexedMatrixValue> blkList = null; 
 		boolean rightCached = (_uaggOp.indexFn instanceof ReduceCol || _uaggOp.indexFn instanceof ReduceAll

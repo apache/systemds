@@ -51,7 +51,6 @@ import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
@@ -114,10 +113,9 @@ public class OptimizationWrapper
 	 * @param rtprog
 	 * @throws DMLRuntimeException 
 	 * @throws LanguageException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static void optimize(DMLProgram prog, Program rtprog, boolean monitor) 
-		throws DMLRuntimeException, LanguageException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException, LanguageException 
 	{
 		LOG.debug("ParFOR Opt: Running optimize all on DML program "+DMLScript.getUUID());
 		
@@ -156,10 +154,9 @@ public class OptimizationWrapper
 	 * @param sb
 	 * @param pb
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static void optimize( POptMode type, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		Timing time = new Timing(true);
 		
@@ -201,12 +198,11 @@ public class OptimizationWrapper
 	 * @param sb
 	 * @param pb
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws  
 	 */
 	@SuppressWarnings("unused")
 	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		Timing time = new Timing(true);
 		

@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -53,7 +52,7 @@ public class AppendRInstruction extends AppendInstruction
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int brlen, int bclen)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{		
 		//get both inputs
 		IndexedMatrixValue left = cachedValues.getFirst(input1);

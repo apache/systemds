@@ -25,7 +25,6 @@ import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.OffsetColumnIndex;
@@ -71,7 +70,7 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		// general case append (map-extend, aggregate)
 		SparkExecutionContext sec = (SparkExecutionContext)ec;

@@ -23,7 +23,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -43,7 +42,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{	
 		String opcode = getOpcode();
 		IndexRange ixrange = getIndexRange(ec);

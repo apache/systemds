@@ -396,23 +396,19 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * 
 	 * @param data 
 	 * 
-	 * @throws CacheIOException if the eviction fails, the data blob
-	 *     remains as it was at the start.
+	 * @throws CacheException 
 	 */
 	protected abstract void evictBlobFromMemory(T data) 
-		throws CacheIOException;
+		throws CacheException;
 	
 	/**
 	 * Low-level cache I/O method that physically restores the data blob to
 	 * main memory.  Must be defined by a subclass, never called by users.
 	 *
-	 * @throws CacheIOException if the restore fails, the data blob
-	 *     remains as it was at the start.
-	 * @throws CacheAssignmentException if the restored blob cannot be assigned
-	 *     to this envelope.
+	 * @throws CacheException 
 	 */
 	protected abstract void restoreBlobIntoMemory()
-		throws CacheIOException;
+		throws CacheException;
 
 	/**
 	 * Low-level cache I/O method that deletes the file containing the
@@ -487,12 +483,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				break;
 			case READ:
 				if (isModify)
-					throw new CacheStatusException ("READ-MODIFY not allowed.");
+					throw new CacheException ("READ-MODIFY not allowed.");
 				else
 					addOneRead();
 				break;
 			case MODIFY:
-				throw new CacheStatusException ("MODIFY-MODIFY not allowed.");
+				throw new CacheException ("MODIFY-MODIFY not allowed.");
 		}
 
 		if( LOG.isTraceEnabled() )
@@ -520,7 +516,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			case EMPTY:
 			case CACHED:
 			case CACHED_NOWRITE:	
-				throw new CacheStatusException("Redundant release.");
+				throw new CacheException("Redundant release.");
 			case READ:
 				removeOneRead( isBlobPresent(), cacheNoWrite );
 				break;

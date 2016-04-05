@@ -45,7 +45,6 @@ import org.apache.sysml.lops.WeightedUnaryMM;
 import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
 import org.apache.sysml.lops.WeightedUnaryMMR;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -207,7 +206,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		QuaternaryOperator qop = (QuaternaryOperator) _optr;
@@ -390,7 +389,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		private static final long serialVersionUID = -8209188316939435099L;
 		
 		public RDDQuaternaryFunction1( QuaternaryOperator qop, PartitionedBroadcastMatrix bcU, PartitionedBroadcastMatrix bcV ) 
-			throws DMLRuntimeException, DMLUnsupportedOperationException
+			throws DMLRuntimeException
 		{
 			super(qop, bcU, bcV);
 		}
@@ -439,7 +438,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		private static final long serialVersionUID = 7493974462943080693L;
 		
 		public RDDQuaternaryFunction2( QuaternaryOperator qop, PartitionedBroadcastMatrix bcU, PartitionedBroadcastMatrix bcV ) 
-			throws DMLRuntimeException, DMLUnsupportedOperationException
+			throws DMLRuntimeException
 		{
 			super(qop, bcU, bcV);
 		}
@@ -475,7 +474,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		private static final long serialVersionUID = -2294086455843773095L;
 		
 		public RDDQuaternaryFunction3( QuaternaryOperator qop, PartitionedBroadcastMatrix bcU, PartitionedBroadcastMatrix bcV ) 
-			throws DMLRuntimeException, DMLUnsupportedOperationException
+			throws DMLRuntimeException
 		{
 			super(qop, bcU, bcV);
 		}
@@ -514,7 +513,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		private static final long serialVersionUID = 7328911771600289250L;
 		
 		public RDDQuaternaryFunction4( QuaternaryOperator qop ) 
-			throws DMLRuntimeException, DMLUnsupportedOperationException
+			throws DMLRuntimeException
 		{ 
 			super(qop, null, null);		
 		}

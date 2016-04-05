@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -43,7 +42,7 @@ public class MatrixBuiltinSPInstruction extends BuiltinUnarySPInstruction
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		

@@ -25,7 +25,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
@@ -57,17 +56,17 @@ public class WeightedCell extends MatrixCell
 	}
 
 	private static WeightedCell checkType(MatrixValue cell) 
-	throws DMLUnsupportedOperationException
+	throws DMLRuntimeException
 	{
 		if( cell!=null && !(cell instanceof WeightedCell))
-			throw new DMLUnsupportedOperationException("the Matrix Value is not WeightedCell!");
+			throw new DMLRuntimeException("the Matrix Value is not WeightedCell!");
 		return (WeightedCell) cell;
 	}
 	public void copy(MatrixValue that){
 		WeightedCell c2;
 		try {
 			c2 = checkType(that);
-		} catch (DMLUnsupportedOperationException e) {
+		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}
 		value=c2.getValue();
@@ -121,7 +120,7 @@ public class WeightedCell extends MatrixCell
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int brlen, int bclen,
-			MatrixIndexes indexesIn) throws DMLUnsupportedOperationException {
+			MatrixIndexes indexesIn) throws DMLRuntimeException {
 		super.aggregateUnaryOperations(op, result, brlen, bclen, indexesIn);
 		WeightedCell c3=checkType(result);
 		c3.setWeight(weight);
@@ -130,14 +129,14 @@ public class WeightedCell extends MatrixCell
 
 	//TODO: how to handle -minus left vs. minus right
 	public void denseScalarOperationsInPlace(ScalarOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		value=op.executeScalar(value);
 	}
 
 	@Override
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
 			int startRow, int startColumn, int length)
-			throws DMLUnsupportedOperationException {
+			throws DMLRuntimeException {
 		super.reorgOperations(op, result, startRow, startColumn, length);
 		WeightedCell c3=checkType(result);
 		c3.setWeight(weight);
@@ -146,7 +145,7 @@ public class WeightedCell extends MatrixCell
 
 	@Override
 	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		WeightedCell c3=checkType(result);
 		c3.setValue(op.fn.execute(value, op.getConstant()));
@@ -155,18 +154,18 @@ public class WeightedCell extends MatrixCell
 	}
 
 	public void sparseScalarOperationsInPlace(ScalarOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		value=op.executeScalar(value);
 	}
 
 	public void sparseUnaryOperationsInPlace(UnaryOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		value=op.fn.execute(value);
 	}
 
 	@Override
 	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		WeightedCell c3=checkType(result);
 		c3.setValue(op.fn.execute(value));
 		c3.setWeight(weight);
@@ -175,7 +174,7 @@ public class WeightedCell extends MatrixCell
 
 	@Override
 	public void unaryOperationsInPlace(UnaryOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		value=op.fn.execute(value);
 	}
 }

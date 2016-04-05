@@ -29,7 +29,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
@@ -41,11 +40,10 @@ public class FrameWriterTextCell extends FrameWriter
 	 * @return
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	@Override
 	public void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
+		throws IOException, DMLRuntimeException 
 	{
 		//validity check frame dimensions
 		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {

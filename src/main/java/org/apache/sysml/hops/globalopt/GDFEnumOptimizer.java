@@ -45,7 +45,6 @@ import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
@@ -106,7 +105,7 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 
 	@Override
 	public GDFGraph optimize(GDFGraph gdfgraph, Summary summary) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LopsException 
+		throws DMLRuntimeException, HopsException, LopsException 
 	{
 		Timing time = new Timing(true);
 		
@@ -167,10 +166,9 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	 * @param maxCosts
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static PlanSet enumOpt( GDFNode node, MemoStructure memo, double maxCosts )
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//memoization of already enumerated subgraphs
 		if( memo.constainsEntry(node) )
@@ -209,12 +207,11 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	 * 
 	 * @param node
 	 * @param memo 
-	 * @return
-	 * @throws DMLUnsupportedOperationException 
+	 * @return 
 	 * @throws DMLRuntimeException 
 	 */
 	private static PlanSet enumNodePlans( GDFNode node, MemoStructure memo, double maxCosts ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ArrayList<Plan> plans = new ArrayList<Plan>();
 		ExecType CLUSTER = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
@@ -394,10 +391,9 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	 * @param plans
 	 * @param maxCosts 
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private static void pruneSuboptimalPlans( PlanSet plans, double maxCosts ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//costing of all plans incl containment check
 		for( Plan p : plans.getPlans() ) {
@@ -446,10 +442,9 @@ public class GDFEnumOptimizer extends GlobalOptimizer
 	 * @param p
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private static double costRuntimePlan(Plan p) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		Program prog = p.getNode().getProgram();
 		if( prog == null )

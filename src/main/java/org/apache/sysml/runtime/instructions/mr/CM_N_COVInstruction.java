@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.COV;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -87,7 +86,7 @@ public class CM_N_COVInstruction extends UnaryMRInstructionBase
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		
 		throw new DMLRuntimeException("no processInstruction for AggregateInstruction!");
 		

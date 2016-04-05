@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -34,7 +33,7 @@ public class MatrixScalarArithmeticSPInstruction extends ArithmeticBinarySPInstr
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//sanity check opcode
 		String opcode = getOpcode();

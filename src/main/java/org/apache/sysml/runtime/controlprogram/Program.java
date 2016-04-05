@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 
 
@@ -135,7 +134,7 @@ public class Program
 	}
 
 	public void execute(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		ec.initDebugProgramCounters();
 		

@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.mr;
 import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
 import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
@@ -91,7 +90,7 @@ public class ReorgInstruction extends UnaryMRInstructionBase
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
 			int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -184,7 +183,7 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			           IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(_input1);
 		if( blkList !=null )
@@ -227,10 +226,9 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 * @param outIx
 	 * @param outVal
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private void processXtXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		DistributedCacheInput dcInput2 = MRBaseForCommonInstructions.dcValues.get(_input2); //v
 		MatrixBlock Xi = (MatrixBlock)inVal;
@@ -250,10 +248,9 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 * @param outIx
 	 * @param outVal
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private void processXtwXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal, ChainType chain )
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		DistributedCacheInput dcInput2 = MRBaseForCommonInstructions.dcValues.get(_input2); //v
 		DistributedCacheInput dcInput3 = MRBaseForCommonInstructions.dcValues.get(_input3); //w

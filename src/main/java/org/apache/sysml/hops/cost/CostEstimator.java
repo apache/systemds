@@ -36,7 +36,6 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
@@ -85,10 +84,9 @@ public abstract class CostEstimator
 	 * @param rtprog
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public double getTimeEstimate(Program rtprog, LocalVariableMap vars, HashMap<String,VarStats> stats) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		double costs = 0;
 
@@ -109,10 +107,9 @@ public abstract class CostEstimator
 	 * @param stats
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public double getTimeEstimate(ProgramBlock pb, LocalVariableMap vars, HashMap<String,VarStats> stats, boolean recursive) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//obtain stats from symboltable (e.g., during recompile)
 		maintainVariableStatistics(vars, stats);
@@ -127,14 +124,13 @@ public abstract class CostEstimator
 	 * @param hops
 	 * @param vars
 	 * @return
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 * @throws LopsException 
 	 * @throws HopsException 
 	 */
 	public double getTimeEstimate( ArrayList<Hop> hops, LocalVariableMap vars, HashMap<String,VarStats> stats ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException, LopsException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		double costs = 0;
 		
@@ -158,10 +154,9 @@ public abstract class CostEstimator
 	 * @param stats
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private double rGetTimeEstimate(ProgramBlock pb, HashMap<String,VarStats> stats, HashSet<String> memoFunc, boolean recursive) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		double ret = 0;
 		
@@ -392,10 +387,9 @@ public abstract class CostEstimator
 	 * @param inst
 	 * @param stats
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private void maintainMRJobInstVariableStatistics( Instruction inst, HashMap<String, VarStats> stats ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		MRJobInstruction jobinst = (MRJobInstruction)inst;
 		
@@ -769,10 +763,9 @@ public abstract class CostEstimator
 	 * @param args
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected abstract double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args  ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException;
+		throws DMLRuntimeException;
 	
 	/**
 	 * 
@@ -781,8 +774,7 @@ public abstract class CostEstimator
 	 * @param args
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected abstract double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args  ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException;
+		throws DMLRuntimeException;
 }

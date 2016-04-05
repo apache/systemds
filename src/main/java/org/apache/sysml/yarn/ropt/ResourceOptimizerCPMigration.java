@@ -168,7 +168,7 @@ public class ResourceOptimizerCPMigration
 	
 	public HashMap<Long, ProgramBlock> sbIdMap;		// Pointer to all reachable program blocks
 	
-	public CPMigrationOptimizer(Program rtprog) throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException {
+	public CPMigrationOptimizer(Program rtprog) throws DMLRuntimeException, HopsException {
 		prog = rtprog;
 		copiedProgramBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(prog._programBlocks, 1, -1, new HashSet<String>(), false);
 		

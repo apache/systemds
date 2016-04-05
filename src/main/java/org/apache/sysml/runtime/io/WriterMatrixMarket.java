@@ -35,7 +35,6 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -47,7 +46,7 @@ public class WriterMatrixMarket extends MatrixWriter
 {
 	@Override
 	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
+		throws IOException, DMLRuntimeException 
 	{
 		//validity check matrix dimensions
 		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {

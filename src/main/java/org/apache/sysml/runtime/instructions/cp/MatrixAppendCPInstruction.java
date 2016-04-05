@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -33,7 +32,7 @@ public final class MatrixAppendCPInstruction extends AppendCPInstruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		//get inputs
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());

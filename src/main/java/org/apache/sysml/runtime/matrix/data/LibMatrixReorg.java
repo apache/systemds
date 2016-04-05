@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
 import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
@@ -184,11 +183,10 @@ public class LibMatrixReorg
 	 * @param rows1
 	 * @param brlen
 	 * @param out
-	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException  
 	 */
 	public static void rev( IndexedMatrixValue in, long rlen, int brlen, ArrayList<IndexedMatrixValue> out ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//input block reverse 
 		MatrixIndexes inix = in.getIndexes();
@@ -482,11 +480,10 @@ public class LibMatrixReorg
 	 * @param in
 	 * @param out
 	 * @param rows
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
 	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		return rmempty(in, ret, rows, null);
 	}
@@ -497,11 +494,10 @@ public class LibMatrixReorg
 	 * @param in
 	 * @param out
 	 * @param rows
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
 	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, MatrixBlock select) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
@@ -618,10 +614,9 @@ public class LibMatrixReorg
 	 * @param rows
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//prepare parameters
 		int lmax = (int)UtilFunctions.toLong(max);
@@ -658,10 +653,9 @@ public class LibMatrixReorg
 	 * @param bclen
 	 * @param outList
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//prepare parameters
 		MatrixIndexes ix = data.getIndexes();
@@ -1797,10 +1791,9 @@ public class LibMatrixReorg
 	 * @param select
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		final int m = in.rlen;
 		final int n = in.clen;
@@ -1895,10 +1888,9 @@ public class LibMatrixReorg
 	 * @param select
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret, MatrixBlock select) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		final int m = in.rlen;
 		final int n = in.clen;

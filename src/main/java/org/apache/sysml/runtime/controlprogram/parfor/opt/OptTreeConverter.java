@@ -47,7 +47,6 @@ import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
@@ -103,7 +102,7 @@ public class OptTreeConverter
 	}
 	
 	public static OptTree createOptTree( int ck, double cm, PlanInputType type, ParForStatementBlock pfsb, ParForProgramBlock pfpb, ExecutionContext ec ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException, HopsException
+		throws DMLRuntimeException, HopsException
 	{	
 		OptNode root = null;
 		switch( type )
@@ -133,11 +132,10 @@ public class OptTreeConverter
 	 * @param cm
 	 * @param pfpb
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static OptTree createOptTree( int ck, double cm, ParForProgramBlock pfpb ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		// TODO: Passing an empty variable map here, for now. Must be reevaluated 
 		// whenever this function is used.
@@ -149,7 +147,7 @@ public class OptTreeConverter
 	}
 	
 	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb, ParForProgramBlock pfpb, Set<String> memo, ExecutionContext ec ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		OptTree tree = null;
 		OptNode root = null;
@@ -173,11 +171,10 @@ public class OptTreeConverter
 	 * @param vars
 	 * @param topLevel
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static OptNode rCreateOptNode( ProgramBlock pb, LocalVariableMap vars, boolean topLevel, boolean storeObjs ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		OptNode node = null;
 		
@@ -296,11 +293,10 @@ public class OptTreeConverter
 	 * @param instset
 	 * @param vars
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static ArrayList<OptNode> createOptNodes (ArrayList<Instruction> instset, LocalVariableMap vars, boolean storeObjs) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		ArrayList<OptNode> tmp = new ArrayList<OptNode>(instset.size());
 		for( Instruction inst : instset )
@@ -313,11 +309,10 @@ public class OptTreeConverter
 	 * @param inst
 	 * @param vars
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static OptNode createOptNode( Instruction inst, LocalVariableMap vars, boolean storeObjs ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		OptNode node = new OptNode(NodeType.INST);
 		String instStr = inst.toString();
@@ -344,7 +339,7 @@ public class OptTreeConverter
 				break;
 			default:
 				// In initial prototype, parfor is not supported for spark, so this exception will be thrown
-				throw new DMLUnsupportedOperationException("Unsupported instruction type.");
+				throw new DMLRuntimeException("Unsupported instruction type.");
 		}
 		
 		//create statistics 
@@ -891,11 +886,10 @@ public class OptTreeConverter
 	 * @param n
 	 * @param pbOld
 	 * @param pbNew
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException 
 	 */
 	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, boolean rtMap) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		ProgramBlock pbParent = null;
 		if( rtMap )
@@ -933,7 +927,7 @@ public class OptTreeConverter
 			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );	
 		}
 		else
-			throw new DMLUnsupportedOperationException("Optimizer doesn't support "+pbParent.getClass().getName());
+			throw new DMLRuntimeException("Optimizer doesn't support "+pbParent.getClass().getName());
 		
 		//update repository
 		if( rtMap )

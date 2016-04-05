@@ -25,7 +25,6 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.ParameterizedBuiltin;
@@ -75,7 +74,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 	}
 	
 	public static ParameterizedBuiltinCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		// first part is always the opcode
@@ -136,7 +135,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		
 		String opcode = getOpcode();

@@ -25,7 +25,6 @@ import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.AggregateUnaryCPInstruction;
@@ -257,7 +256,7 @@ public class CPInstructionParser extends InstructionParser
 	}
 
 	public static CPInstruction parseSingleInstruction (String str ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		if ( str == null || str.isEmpty() )
 			return null;
@@ -272,7 +271,7 @@ public class CPInstructionParser extends InstructionParser
 	}
 	
 	public static CPInstruction parseSingleInstruction ( CPINSTRUCTION_TYPE cptype, String str ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		ExecType execType = null; 
 		

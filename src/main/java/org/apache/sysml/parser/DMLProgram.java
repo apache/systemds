@@ -34,7 +34,6 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.compile.Dag;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
@@ -175,7 +174,7 @@ public class DMLProgram
 	}
 	
 	
-	public Program getRuntimeProgram(DMLConfig config) throws IOException, LanguageException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException {
+	public Program getRuntimeProgram(DMLConfig config) throws IOException, LanguageException, DMLRuntimeException, LopsException {
 		
 		// constructor resets the set of registered functions
 		Program rtprog = new Program();
@@ -213,10 +212,9 @@ public class DMLProgram
 	 * @throws IOException
 	 * @throws LopsException
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, DMLConfig config) 
-		throws IOException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException 
+		throws IOException, LopsException, DMLRuntimeException 
 	{
 		Dag<Lop> dag = null; 
 		Dag<Lop> pred_dag = null;
@@ -583,11 +581,10 @@ public class DMLProgram
 	 * @param pb
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	@SuppressWarnings("unused")
 	private ProgramBlock verifyAndCorrectProgramBlock(VariableSet in, VariableSet out, VariableSet kill, ProgramBlock pb) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{	
 		//RULE 1: if in IN and not in OUT, then there should be an rmvar or rmfilevar inst
 		//(currently required for specific cases of external functions)
@@ -642,7 +639,7 @@ public class DMLProgram
 	}
 	
 	private Instruction createCleanupInstruction(String varName) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//(example "CP+Lops.OPERAND_DELIMITOR+rmvar+Lops.OPERAND_DELIMITOR+Var7")
 		StringBuilder sb = new StringBuilder();

@@ -24,7 +24,6 @@ import java.util.HashMap;
 import org.apache.sysml.lops.Ternary;
 import org.apache.sysml.lops.Ternary.OperationTypes;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -214,7 +213,7 @@ public class TernaryInstruction extends MRInstruction
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			            IndexedMatrixValue zeroInput, HashMap<Byte, CTableMap> resultMaps, HashMap<Byte, MatrixBlock> resultBlocks, 
 			            int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{	
 		
 		IndexedMatrixValue in1, in2, in3 = null;
@@ -300,7 +299,7 @@ public class TernaryInstruction extends MRInstruction
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
 			int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		throw new DMLRuntimeException("This function should not be called!");
 	}

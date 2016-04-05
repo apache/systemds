@@ -27,7 +27,6 @@ import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -51,7 +50,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	private Accumulator<Integer> _aIters = null;
 	
 	public RemoteParForSparkWorker(String program, boolean cpCaching, Accumulator<Integer> atasks, Accumulator<Integer> aiters) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//keep inputs (unfortunately, spark does not expose task ids and it would be implementation-dependent
 		//when this constructor is actually called; hence, we do lazy initialization on task execution)
@@ -93,12 +92,11 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	/**
 	 * 
 	 * @param ID
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 */
 	private void configureWorker( long ID ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, IOException
 	{
 		_workerID = ID;
 		

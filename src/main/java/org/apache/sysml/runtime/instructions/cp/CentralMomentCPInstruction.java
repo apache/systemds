@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.cp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -92,7 +91,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction
 	
 	@Override
 	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		String output_name = output.getName();
 

@@ -70,7 +70,6 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
@@ -150,11 +149,10 @@ public class Recompiler
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	public static ArrayList<Instruction> recompileHopsDag( StatementBlock sb, ArrayList<Hop> hops, LocalVariableMap vars, RecompileStatus status, boolean inplace, long tid ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
 
@@ -249,11 +247,10 @@ public class Recompiler
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	public static ArrayList<Instruction> recompileHopsDag( Hop hops, LocalVariableMap vars, RecompileStatus status, boolean inplace, long tid ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
 
@@ -330,11 +327,10 @@ public class Recompiler
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	public static ArrayList<Instruction> recompileHopsDag2Forced( StatementBlock sb, ArrayList<Hop> hops, long tid, ExecType et ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
 		
@@ -387,11 +383,10 @@ public class Recompiler
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	public static ArrayList<Instruction> recompileHopsDag2Forced( Hop hops, long tid, ExecType et ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
 
@@ -434,11 +429,10 @@ public class Recompiler
 	 * @throws HopsException
 	 * @throws LopsException
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	public static ArrayList<Instruction> recompileHopsDagInstructions( StatementBlock sb, ArrayList<Hop> hops ) 
-		throws HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException 
+		throws HopsException, LopsException, DMLRuntimeException, IOException 
 	{
 		ArrayList<Instruction> newInst = null;
 
@@ -485,11 +479,10 @@ public class Recompiler
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	public static ArrayList<Instruction> recompileHopsDagInstructions( Hop hops ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		ArrayList<Instruction> newInst = null;
 
@@ -582,13 +575,12 @@ public class Recompiler
 	 * 
 	 * @param pb
 	 * @throws IOException 
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 * @throws LopsException 
 	 * @throws HopsException 
 	 */
 	public static void recompileProgramBlockInstructions(ProgramBlock pb) 
-		throws HopsException, LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException
+		throws HopsException, LopsException, DMLRuntimeException, IOException
 	{
 		if( pb instanceof WhileProgramBlock )
 		{
@@ -802,13 +794,12 @@ public class Recompiler
 	 * @param vars
 	 * @param tid
 	 * @throws IOException 
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 */
 	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
-		throws HopsException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException, IOException
+		throws HopsException, DMLRuntimeException, LopsException, IOException
 	{
 		if (pb instanceof WhileProgramBlock)
 		{
@@ -1185,11 +1176,10 @@ public class Recompiler
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	private static void recompileIfPredicate( IfProgramBlock ipb, IfStatementBlock isb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		if( isb != null )
 		{
@@ -1220,11 +1210,10 @@ public class Recompiler
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	private static void recompileWhilePredicate( WhileProgramBlock wpb, WhileStatementBlock wsb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		if( wsb != null )
 		{
@@ -1255,11 +1244,10 @@ public class Recompiler
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	private static void recompileForPredicates( ForProgramBlock fpb, ForStatementBlock fsb, LocalVariableMap vars, RecompileStatus status, long tid, boolean resetRecompile ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		if( fsb != null )
 		{
@@ -1322,11 +1310,10 @@ public class Recompiler
 	 * @throws HopsException
 	 * @throws DMLRuntimeException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	private static void rRecompileProgramBlock2Forced( ProgramBlock pb, long tid, HashSet<String> fnStack, ExecType et ) 
-		throws HopsException, DMLRuntimeException, LopsException, DMLUnsupportedOperationException, IOException
+		throws HopsException, DMLRuntimeException, LopsException, IOException
 	{
 		if (pb instanceof WhileProgramBlock)
 		{
@@ -1965,11 +1952,10 @@ public class Recompiler
 	 * @param inputs
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	public static boolean checkCPTransform(MRJobInstruction inst, MatrixObject[] inputs) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, IOException 
+		throws DMLRuntimeException, IOException 
 	{
 		boolean ret = true;
 		

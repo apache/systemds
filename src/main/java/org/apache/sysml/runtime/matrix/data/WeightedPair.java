@@ -24,8 +24,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
-
+import org.apache.sysml.runtime.DMLRuntimeException;
 
 public class WeightedPair extends WeightedCell 
 {
@@ -52,17 +51,17 @@ public class WeightedPair extends WeightedCell
 		out.writeDouble(weight);
 	}
 
-	private static WeightedPair checkType(MatrixValue cell) throws DMLUnsupportedOperationException
+	private static WeightedPair checkType(MatrixValue cell) throws DMLRuntimeException
 	{
 		if( cell!=null && !(cell instanceof WeightedPair))
-			throw new DMLUnsupportedOperationException("the Matrix Value is not WeightedPair!");
+			throw new DMLRuntimeException("the Matrix Value is not WeightedPair!");
 		return (WeightedPair) cell;
 	}
 	public void copy(MatrixValue that){
 		WeightedPair c2;
 		try {
 			c2 = checkType(that);
-		} catch (DMLUnsupportedOperationException e) {
+		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}
 		value=c2.getValue();

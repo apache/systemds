@@ -20,7 +20,6 @@
 package org.apache.sysml.udf;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 
@@ -75,7 +74,7 @@ public class ExternalFunctionInvocationInstruction extends Instruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException, DMLUnsupportedOperationException 
+			throws DMLRuntimeException 
 	{
 		//do nothing (not applicable because this instruction is only used as
 		//meta data container)

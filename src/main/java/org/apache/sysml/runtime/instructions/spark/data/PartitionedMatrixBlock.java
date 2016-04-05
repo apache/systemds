@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import scala.Tuple2;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -258,11 +257,10 @@ public class PartitionedMatrixBlock implements Externalizable
 	 * @param cu
 	 * @param matrixBlock
 	 * @return
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
 	public MatrixBlock sliceOperations(long rl, long ru, long cl, long cu, MatrixBlock matrixBlock) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		int lrl = (int) rl;
 		int lru = (int) ru;

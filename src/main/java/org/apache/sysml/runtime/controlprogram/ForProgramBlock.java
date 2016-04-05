@@ -27,7 +27,6 @@ import org.apache.sysml.parser.ForStatementBlock;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -155,7 +154,7 @@ public class ForProgramBlock extends ProgramBlock
 	
 	@Override	
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		// add the iterable predicate variable to the variable set
 		String iterVarName = _iterablePredicateVars[0];

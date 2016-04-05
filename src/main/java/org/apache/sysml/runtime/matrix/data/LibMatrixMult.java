@@ -37,7 +37,6 @@ import org.apache.sysml.lops.WeightedSigmoid.WSigmoidType;
 import org.apache.sysml.lops.WeightedSquaredLoss.WeightsType;
 import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
@@ -226,10 +225,9 @@ public class LibMatrixMult
 	 * @param ret
 	 * @param ct
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static void matrixMultChain(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{		
 		//check inputs / outputs (after that mV and mW guaranteed to be dense)
 		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) ) {
@@ -271,10 +269,9 @@ public class LibMatrixMult
 	 * @param ct
 	 * @param k
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static void matrixMultChain(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int k) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{		
 		//check inputs / outputs (after that mV and mW guaranteed to be dense)
 		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) ) {
@@ -331,10 +328,9 @@ public class LibMatrixMult
 	 * @param ret
 	 * @param leftTranspose
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public static void matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose )
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) ) {
@@ -368,11 +364,10 @@ public class LibMatrixMult
 	 * @param ret
 	 * @param leftTranspose
 	 * @param k
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static void matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int k )
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) ) {
@@ -426,11 +421,10 @@ public class LibMatrixMult
 	 * @param m2
 	 * @param ret1
 	 * @param ret2
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static void matrixMultPermute( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2 )
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//check inputs / outputs
 		if( pm1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
@@ -471,12 +465,10 @@ public class LibMatrixMult
 	 * @param m2
 	 * @param ret1
 	 * @param ret2
-	 * @throws DMLUnsupportedOperationException
-	 * @throws DMLRuntimeException
 	 * @throws DMLRuntimeException 
 	 */
 	public static void matrixMultPermute( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2, int k)
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//check inputs / outputs
 		if( pm1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
@@ -1606,7 +1598,6 @@ public class LibMatrixMult
 	 * @param ret
 	 * @param ct
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private static void matrixMultChainDense(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int rl, int ru) 
 	{
@@ -1661,7 +1652,6 @@ public class LibMatrixMult
 	 * @param rl
 	 * @param ru
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private static void matrixMultChainSparse(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int rl, int ru) 
 	{
@@ -1718,7 +1708,6 @@ public class LibMatrixMult
 	 * @param ret
 	 * @param leftTranspose
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private static void matrixMultTransposeSelfDense( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int rl, int ru ) 
 		throws DMLRuntimeException
@@ -1856,7 +1845,6 @@ public class LibMatrixMult
 	 * 
 	 * @param out
 	 * @param leftTranspose
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private static void matrixMultTransposeSelfSparse( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int rl, int ru ) 

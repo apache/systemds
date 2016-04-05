@@ -30,7 +30,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -65,8 +64,6 @@ implements Mapper<Writable, Writable, Writable, Writable>
 		AggregateBinaryInstruction[] ins;
 		try {
 			ins = MRJobConfiguration.getAggregateBinaryInstructions(job);
-		} catch (DMLUnsupportedOperationException e) {
-			throw new RuntimeException(e);
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}

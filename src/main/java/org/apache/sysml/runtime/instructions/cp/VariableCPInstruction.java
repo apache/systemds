@@ -28,7 +28,6 @@ import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
@@ -110,7 +109,7 @@ public class VariableCPInstruction extends CPInstruction
 		_uniqueVarID  = new IDSequence(true); 
 	}
 	
-	private static VariableOperationCode getVariableOperationCode ( String str ) throws DMLUnsupportedOperationException {
+	private static VariableOperationCode getVariableOperationCode ( String str ) throws DMLRuntimeException {
 		
 		if ( str.equalsIgnoreCase("createvar"))
 			return VariableOperationCode.CreateVariable;
@@ -158,7 +157,7 @@ public class VariableCPInstruction extends CPInstruction
 			return VariableOperationCode.SetFileName;
 		
 		else
-			throw new DMLUnsupportedOperationException("Invalid function: " + str);
+			throw new DMLRuntimeException("Invalid function: " + str);
 	}
 	
 	// Checks if this instructon is a remove instruction for varName
@@ -247,7 +246,7 @@ public class VariableCPInstruction extends CPInstruction
 	}
 	
 	public static VariableCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = parts[0];
@@ -428,7 +427,7 @@ public class VariableCPInstruction extends CPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		switch ( opcode ) 
 		{ 
@@ -872,7 +871,7 @@ public class VariableCPInstruction extends CPInstruction
 		}
 	}
 	
-	public static Instruction prepareRemoveInstruction(String varName) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareRemoveInstruction(String varName) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -884,7 +883,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}
 	
-	public static Instruction prepareCopyInstruction(String srcVar, String destVar) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCopyInstruction(String srcVar, String destVar) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -898,7 +897,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}
 	
-	public static Instruction prepareMoveInstruction(String srcVar, String destFileName, String format) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareMoveInstruction(String srcVar, String destFileName, String format) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -914,7 +913,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}
 	
-	public static Instruction prepareMoveInstruction(String srcVar, String destVar) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareMoveInstruction(String srcVar, String destVar) throws DMLRuntimeException {
 		// example: mvvar tempA A 
 		// (instead of two instructions -- cpvar tempA A; rmvar tempA)
 		StringBuilder sb = new StringBuilder();
@@ -947,11 +946,11 @@ public class VariableCPInstruction extends CPInstruction
 		return sb.toString();
 	}
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format) throws DMLRuntimeException {
 		return parseInstruction(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 	}
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 		
@@ -971,7 +970,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}	
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean updateInPlace) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean updateInPlace) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 		
@@ -993,7 +992,7 @@ public class VariableCPInstruction extends CPInstruction
 		return parseInstruction(str);
 	}	
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean updateInPlace, boolean hasHeader, String delim, boolean sparse) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, String format, MatrixCharacteristics mc, boolean updateInPlace, boolean hasHeader, String delim, boolean sparse) throws DMLRuntimeException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, format));
 		

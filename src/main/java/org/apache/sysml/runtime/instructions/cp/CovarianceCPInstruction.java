@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.cp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.COV;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -85,7 +84,7 @@ public class CovarianceCPInstruction extends BinaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
         MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());

@@ -34,7 +34,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -59,12 +58,11 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 	 * @param brlen
 	 * @param bclen
 	 * @throws IOException
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
 	@Override
 	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication )
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
+		throws IOException, DMLRuntimeException
 	{
 		//estimate output size and number of output blocks (min 1)
 		int numPartFiles = (int)(OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, src.getNonZeros()) 

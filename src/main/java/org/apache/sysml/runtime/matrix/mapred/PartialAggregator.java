@@ -28,7 +28,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -107,11 +106,10 @@ public class PartialAggregator extends MMCJMRCache
 	 * @param value
 	 * @param leftcached
 	 * @throws IOException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public void aggregateToBuffer(MatrixIndexes indexes, MatrixValue value, boolean leftcached) 
-		throws IOException, DMLUnsupportedOperationException, DMLRuntimeException
+		throws IOException, DMLRuntimeException
 	{
 		if( !memOnly )
 		{
@@ -183,11 +181,10 @@ public class PartialAggregator extends MMCJMRCache
 	 * @param indexes
 	 * @param value
 	 * @param leftcached
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private void aggregateToBufferHelp(MatrixIndexes indexes, MatrixValue value, boolean leftcached) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		Integer ix = _bufferMap.get( indexes );
 		if( ix != null ) //agg into existing block 

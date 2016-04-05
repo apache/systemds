@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.cp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
@@ -42,7 +41,7 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 	}
 	
 	public static ArithmeticBinaryCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -97,7 +96,7 @@ public abstract class ArithmeticBinaryCPInstruction extends BinaryCPInstruction
 			if(vt1 == ValueType.STRING 
 			   || vt2 == ValueType.STRING 
 			   || vt3 == ValueType.STRING)
-				throw new DMLUnsupportedOperationException("We do not support element-wise string operations on matrices "
+				throw new DMLRuntimeException("We do not support element-wise string operations on matrices "
 												  + in1.getName()
 												  + ", "
 												  + in2.getName()

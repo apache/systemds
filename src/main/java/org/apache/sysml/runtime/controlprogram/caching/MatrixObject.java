@@ -363,7 +363,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !isAvailableToRead() )
-			throw new CacheStatusException ("MatrixObject not available to read.");
+			throw new CacheException ("MatrixObject not available to read.");
 		
 		//get object from cache
 		if( _data == null )
@@ -407,7 +407,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			}
 			catch (IOException e)
 			{
-				throw new CacheIOException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
+				throw new CacheException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
 			}
 			
 			_isAcquireFromEmpty = true;
@@ -450,7 +450,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !isAvailableToModify() )
-			throw new CacheStatusException("MatrixObject not available to modify.");
+			throw new CacheException("MatrixObject not available to modify.");
 		
 		//get object from cache
 		if( _data == null )
@@ -470,7 +470,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			}
 			catch (IOException e)
 			{
-				throw new CacheIOException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
+				throw new CacheException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
 			}
 		}
 
@@ -509,7 +509,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if (! isAvailableToModify ())
-			throw new CacheStatusException ("MatrixObject not available to modify.");
+			throw new CacheException ("MatrixObject not available to modify.");
 		
 		//clear old data 
 		clearData(); 
@@ -543,7 +543,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * In-Status:  READ, MODIFY;
 	 * Out-Status: READ(-1), EVICTABLE, EMPTY.
 	 * 
-	 * @throws CacheStatusException
+	 * @throws CacheException
 	 */
 	@Override
 	public synchronized void release() 
@@ -625,7 +625,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		if( !isCleanupEnabled() ) 
 			return; // do nothing
 		if( !isAvailableToModify() )
-			throw new CacheStatusException ("MatrixObject (" + this.getDebugName() + ") not available to modify. Status = " + this.getStatusAsString() + ".");
+			throw new CacheException ("MatrixObject (" + this.getDebugName() + ") not available to modify. Status = " + this.getStatusAsString() + ".");
 		
 		// clear existing WB / FS representation (but prevent unnecessary probes)
 		if( !(isEmpty(true)||(_data!=null && isBelowCachingThreshold()) 
@@ -672,7 +672,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		//prevent concurrent modifications
 		if ( !isAvailableToRead() )
-			throw new CacheStatusException ("MatrixObject not available to read.");
+			throw new CacheException ("MatrixObject not available to read.");
 
 		LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 				
@@ -705,7 +705,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				}
 				catch (IOException e)
 				{
-				    throw new CacheIOException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
+				    throw new CacheException("Reading of " + _hdfsFileName + " ("+getVarName()+") failed.", e);
 				}
 			}
 			//get object from cache
@@ -723,7 +723,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			}
 			catch (Exception e)
 			{
-				throw new CacheIOException ("Export to " + fName + " failed.", e);
+				throw new CacheException ("Export to " + fName + " failed.", e);
 			}
 			finally
 			{
@@ -744,7 +744,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				writeMetaData( fName, outputFormat, formatProperties );
 			}
 			catch (Exception e) {
-				throw new CacheIOException ("Export to " + fName + " failed.", e);
+				throw new CacheException ("Export to " + fName + " failed.", e);
 			}
 		}
 		else if( getRDDHandle()!=null && //pending rdd operation
@@ -757,7 +757,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				writeMetaData( fName, outputFormat, formatProperties );
 			}
 			catch (Exception e) {
-				throw new CacheIOException ("Export to " + fName + " failed.", e);
+				throw new CacheException ("Export to " + fName + " failed.", e);
 			}
 		}
 		else 
@@ -777,10 +777,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * @param fName
 	 * @param outputFormat
 	 * @return
-	 * @throws CacheIOException
+	 * @throws CacheException
 	 */
 	public synchronized boolean moveData(String fName, String outputFormat) 
-		throws CacheIOException 
+		throws CacheException 
 	{	
 		boolean ret = false;
 		
@@ -809,7 +809,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		}
 		catch (Exception e)
 		{
-			throw new CacheIOException ("Move to " + fName + " failed.", e);
+			throw new CacheException ("Move to " + fName + " failed.", e);
 		}
 		
 		return ret;
@@ -887,7 +887,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !_partitioned )
-			throw new CacheStatusException ("MatrixObject not available to indexed read.");
+			throw new CacheException ("MatrixObject not available to indexed read.");
 		
 		//return static partition of set from outside of the program
 		if( _partitionInMemory != null )
@@ -992,13 +992,13 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * 
 	 * @param pred
 	 * @return
-	 * @throws CacheStatusException 
+	 * @throws CacheException 
 	 */
 	public String getPartitionFileName( IndexRange pred, int brlen, int bclen ) 
-		throws CacheStatusException
+		throws CacheException
 	{
 		if ( !_partitioned )
-			throw new CacheStatusException ("MatrixObject not available to indexed read.");
+			throw new CacheException ("MatrixObject not available to indexed read.");
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(_hdfsFileName);
@@ -1022,7 +1022,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				sb.append((pred.colStart-1)/bclen+1);
 				break;
 			default:
-				throw new CacheStatusException ("MatrixObject not available to indexed read.");
+				throw new CacheException ("MatrixObject not available to indexed read.");
 		}
 
 		return sb.toString();
@@ -1047,14 +1047,14 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 
 	@Override
 	protected void evictBlobFromMemory ( MatrixBlock mb ) 
-		throws CacheIOException
+		throws CacheException
 	{
-		throw new CacheIOException("Redundant explicit eviction.");
+		throw new CacheException("Redundant explicit eviction.");
 	}
 	
 	@Override
 	protected void restoreBlobIntoMemory () 
-		throws CacheIOException
+		throws CacheException
 	{
 		long begin = 0;
 		
@@ -1070,7 +1070,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						(_hdfsFileName == null ? "null" : _hdfsFileName) + ", Restore from path: " + filePath);
 				
 		if (_data != null)
-			throw new CacheIOException (filePath + " : Cannot restore on top of existing in-memory data.");
+			throw new CacheException (filePath + " : Cannot restore on top of existing in-memory data.");
 
 		try
 		{
@@ -1078,12 +1078,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		}
 		catch (IOException e)
 		{
-			throw new CacheIOException (filePath + " : Restore failed.", e);	
+			throw new CacheException (filePath + " : Restore failed.", e);	
 		}
 		
 		//check for success
 	    if (_data == null)
-			throw new CacheIOException (filePath + " : Restore failed.");
+			throw new CacheException (filePath + " : Restore failed.");
 	    
 	    if( LOG.isTraceEnabled() )
 	    	LOG.trace("Restoring matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");

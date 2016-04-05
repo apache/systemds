@@ -28,7 +28,6 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -48,7 +47,7 @@ public class WriterBinaryBlock extends MatrixWriter
 
 	@Override
 	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
+		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -93,12 +92,11 @@ public class WriterBinaryBlock extends MatrixWriter
 	 * @param brlen
 	 * @param bclen
 	 * @throws IOException
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("deprecation")
 	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication )
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
+		throws IOException, DMLRuntimeException
 	{
 		boolean sparse = src.isInSparseFormat();
 		FileSystem fs = FileSystem.get(job);
@@ -187,12 +185,11 @@ public class WriterBinaryBlock extends MatrixWriter
 	 * @param bclen
 	 * @param replication
 	 * @throws IOException
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("deprecation")
 	protected void writeDiagBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication ) 
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
+		throws IOException, DMLRuntimeException
 	{
 		boolean sparse = src.isInSparseFormat();
 		FileSystem fs = FileSystem.get(job);
@@ -293,11 +290,10 @@ public class WriterBinaryBlock extends MatrixWriter
 	 * @param pformat
 	 * @throws IOException
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	@SuppressWarnings("deprecation")
 	public void writePartitionedBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pformat )
-			throws IOException, DMLRuntimeException, DMLUnsupportedOperationException
+			throws IOException, DMLRuntimeException
 	{
 		boolean sparse = src.isInSparseFormat();
 		FileSystem fs = FileSystem.get(job);

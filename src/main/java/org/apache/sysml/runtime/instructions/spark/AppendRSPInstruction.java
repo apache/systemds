@@ -25,7 +25,6 @@ import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.OffsetColumnIndex;
@@ -69,7 +68,7 @@ public class AppendRSPInstruction extends BinarySPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		// reduce-only append (output must have at most one column block)
 		SparkExecutionContext sec = (SparkExecutionContext)ec;

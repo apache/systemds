@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
@@ -104,7 +103,7 @@ public class RandInstruction extends DataGenMRInstruction
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		//do nothing (only meta carrier, handled in special job type)
 	}	

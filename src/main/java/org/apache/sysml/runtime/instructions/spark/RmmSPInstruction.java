@@ -29,7 +29,6 @@ import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Multiply;
@@ -83,7 +82,7 @@ public class RmmSPInstruction extends BinarySPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		

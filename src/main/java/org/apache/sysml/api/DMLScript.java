@@ -33,8 +33,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -45,7 +43,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.xml.sax.SAXException;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -65,7 +62,6 @@ import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -182,10 +178,8 @@ public class DMLScript
 	 * Default DML script invocation (e.g., via 'hadoop jar SystemML.jar -f Test.dml')
 	 * 
 	 * @param args
-	 * @throws ParseException
 	 * @throws IOException
-	 * @throws SAXException
-	 * @throws ParserConfigurationException
+	 * @throws DMLException
 	 */
 	public static void main(String[] args) 
 		throws IOException, DMLException 
@@ -560,12 +554,11 @@ public class DMLScript
 	 * @throws DMLRuntimeException 
 	 * @throws HopsException 
 	 * @throws LanguageException 
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 * @throws DMLException 
 	 */
 	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs, boolean parsePyDML)
-		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
+		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException 
 	{	
 		//print basic time and environment info
 		printStartExecInfo( dmlScriptStr );
@@ -707,12 +700,11 @@ public class DMLScript
 	 * @throws DMLDebuggerException
 	 * @throws HopsException 
 	 * @throws LanguageException 
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 * @throws DMLException 
 	 */
 	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, boolean parsePyDML)
-		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException, DMLUnsupportedOperationException 
+		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException 
 	{		
 		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
 		

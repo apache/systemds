@@ -30,7 +30,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.mr.AggregateInstruction;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction;
@@ -126,8 +125,6 @@ public class ReduceBase extends MRBaseForCommonInstructions
 			}
 			
 			
-		} catch (DMLUnsupportedOperationException e) {
-			throw new RuntimeException(e);
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}		
@@ -271,8 +268,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	
 	protected void outputResultsFromCachedValues(Reporter reporter) throws IOException
 	{
-		for(int i=0; i<resultIndexes.length; i++)
-		{
+		for(int i=0; i<resultIndexes.length; i++) {
 			byte output=resultIndexes[i];
 			ArrayList<IndexedMatrixValue> outValues=cachedValues.get(output);
 			if(outValues==null)
@@ -280,52 +276,14 @@ public class ReduceBase extends MRBaseForCommonInstructions
 			for(IndexedMatrixValue outValue: outValues)
 				collectOutput_N_Increase_Counter(outValue.getIndexes(), 
 					outValue.getValue(), i, reporter);
-	//		LOG.info("output: "+outValue.getIndexes()+" -- "+outValue.getValue()+" ~~ tag: "+output);
-		//	System.out.println("Reducer output: "+outValue.getIndexes()+" -- "+outValue.getValue()+" ~~ tag: "+output);
 		}
 	}
 
 	
 	//process one aggregate instruction
-/*	private void processAggregateHelp(MatrixIndexes indexes, TaggedMatrixValue tagged, 
-			AggregateInstruction instruction) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
-	{
-		AggregateOperator aggOp=(AggregateOperator)instruction.getOperator();
-		
-		IndexedMatrixValue out=cachedValues.get(instruction.output);
-		IndexedMatrixValue correction=null;
-		if(aggOp.correctionExists)
-			correction=correctionCache.get(instruction.output);
-		if(out==null)
-		{
-			out=cachedValues.holdPlace(instruction.output, valueClass);
-			out.getIndexes().setIndexes(indexes);
-			if(aggOp.correctionExists )
-			{
-				if(correction==null)
-					correction=correctionCache.holdPlace(instruction.output, valueClass);
-				OperationsOnMatrixValues.startAggregation(out.getValue(), correction.getValue(), aggOp, 
-					tagged.getBaseObject().getNumRows(), tagged.getBaseObject().getNumColumns(),
-					tagged.getBaseObject().isInSparseFormat());
-			}else
-				OperationsOnMatrixValues.startAggregation(out.getValue(), null, aggOp, 
-						tagged.getBaseObject().getNumRows(), tagged.getBaseObject().getNumColumns(),
-						tagged.getBaseObject().isInSparseFormat());
-		}
-		
-		if(aggOp.correctionExists)
-			OperationsOnMatrixValues.incrementalAggregation(out.getValue(), correction.getValue(), 
-				tagged.getBaseObject(), (AggregateOperator)instruction.getOperator());
-		else
-			OperationsOnMatrixValues.incrementalAggregation(out.getValue(), null, 
-					tagged.getBaseObject(), (AggregateOperator)instruction.getOperator());	
-	}
-	*/
-	//process one aggregate instruction
 	private void processAggregateHelp(long row, long col, MatrixValue value, 
 			AggregateInstruction instruction, boolean imbededCorrection) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		AggregateOperator aggOp=(AggregateOperator)instruction.getOperator();
 		
@@ -355,19 +313,14 @@ public class ReduceBase extends MRBaseForCommonInstructions
 				OperationsOnMatrixValues.startAggregation(out.getValue(), null, aggOp, 
 						value.getNumRows(), value.getNumColumns(),
 						value.isInSparseFormat(), imbededCorrection);
-			//System.out.println("after start: "+out);
 		}
-		//System.out.println("value to add: "+value);
+
 		if(aggOp.correctionExists)// && !imbededCorrection)
-		{
-			//System.out.println("incremental aggregation maxindex/minindex");
 			OperationsOnMatrixValues.incrementalAggregation(out.getValue(), correction.getValue(), 
 					value, (AggregateOperator)instruction.getOperator(), imbededCorrection);
-		}
 		else
 			OperationsOnMatrixValues.incrementalAggregation(out.getValue(), null, 
 					value, (AggregateOperator)instruction.getOperator(), imbededCorrection);
-		//System.out.println("after increment: "+out);
 	}
 	
 	//process all the aggregate instructions for one group of values

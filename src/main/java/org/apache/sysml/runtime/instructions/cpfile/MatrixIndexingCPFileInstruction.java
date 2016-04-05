@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.cpfile;
 
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -93,7 +92,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{	
 		String opcode = getOpcode();
 		IndexRange ixrange = getIndexRange(ec).add(1);

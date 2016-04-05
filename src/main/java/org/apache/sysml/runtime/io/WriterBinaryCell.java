@@ -28,7 +28,6 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
@@ -40,7 +39,7 @@ public class WriterBinaryCell extends MatrixWriter
 
 	@Override
 	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException 
+		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());

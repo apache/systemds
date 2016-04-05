@@ -29,7 +29,6 @@ import java.util.concurrent.Future;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
 import org.apache.sysml.runtime.functionobjects.CM;
@@ -706,10 +705,9 @@ public class LibMatrixAgg
 	 * @param aop
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private static void aggregateFinalResult( AggregateOperator aop, MatrixBlock out, MatrixBlock partout ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		AggregateOperator laop = aop;
 		

@@ -24,7 +24,6 @@ import java.io.IOException;
 import org.apache.sysml.lops.PickByCount.OperationTypes;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -105,7 +104,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		switch( _type ) 
 		{

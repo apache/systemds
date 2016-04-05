@@ -30,7 +30,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -101,7 +100,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	@Override
 	@SuppressWarnings("unused")
 	protected double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		CPInstruction cpinst = (CPInstruction)inst;
 		
@@ -157,7 +156,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	
 	@Override
 	protected double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		MRJobInstruction jinst = (MRJobInstruction) inst;
 		
@@ -320,11 +319,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @param inst
 	 * @param stats
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private Object[] extractMRInstStatistics( String inst, VarStats[] stats ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		Object[] ret = new Object[2]; //stats, attrs
 		VarStats[] vs = new VarStats[3];
@@ -499,11 +497,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @param aggInst
 	 * @param otherInst
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private byte[] getMapOutputIndexes( byte[] inIx, byte[] retIx, String rdInst, String mapInst, String shfInst, String aggInst, String otherInst ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//note: this is a simplified version of MRJobConfiguration.setUpOutputIndexesForMapper
 		
@@ -647,10 +644,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @param inst
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private int getDistcacheIndex(String inst) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		ArrayList<Byte> indexes = new ArrayList<Byte>();
 		
@@ -806,10 +802,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @param args
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private double getInstTimeEstimate(String opcode, VarStats[] vs, String[] args, ExecType et) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		boolean inMR = (et == ExecType.MR);
 		return getInstTimeEstimate(opcode, inMR,  
@@ -837,9 +832,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @param d3s
 	 * @return
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
-	private double getInstTimeEstimate( String opcode, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) throws DMLRuntimeException, DMLUnsupportedOperationException
+	private double getInstTimeEstimate( String opcode, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) throws DMLRuntimeException
 	{
 		double nflops = getNFLOP(opcode, inMR, d1m, d1n, d1s, d2m, d2n, d2s, d3m, d3n, d3s, args);
 		double time = nflops / DEFAULT_FLOPS;
@@ -865,10 +859,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @param args
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private double getNFLOP( String optype, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//operation costs in FLOP on matrix block level (for CP and MR instructions)
 		//(excludes IO and parallelism; assumes known dims for all inputs, outputs )

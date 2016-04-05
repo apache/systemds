@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.mr;
 import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -93,7 +92,7 @@ public class RemoveEmptyMRInstruction extends BinaryInstruction
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{			
 		//get input and offsets
 		IndexedMatrixValue inData = cachedValues.getFirst(input1);

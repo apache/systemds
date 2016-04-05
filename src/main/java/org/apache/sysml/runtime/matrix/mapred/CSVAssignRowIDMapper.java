@@ -34,7 +34,6 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.wink.json4j.JSONException;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
@@ -122,12 +121,10 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 					break;
 				}
 			}
-		} catch (DMLUnsupportedOperationException e) {
-			throw new RuntimeException(e);
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}
-
+		
 		// load properties relevant to transform
 		try {
 			boolean omit = job.getBoolean(MRJobConfiguration.TF_TRANSFORM, false);

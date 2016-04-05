@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
@@ -37,7 +36,7 @@ public class MatrixBuiltinCPInstruction extends BuiltinUnaryCPInstruction
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		UnaryOperator u_op = (UnaryOperator) _optr;
 		String output_name = output.getName();

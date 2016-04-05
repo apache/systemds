@@ -40,7 +40,6 @@ import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.CM;
@@ -2793,7 +2792,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 */
 	@Override
 	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		MatrixBlock ret = checkType(result);
 		
@@ -2819,7 +2818,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 */
 	@Override
 	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		MatrixBlock ret = checkType(result);
 		
@@ -2863,11 +2862,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	/**
 	 * 
 	 * @param op
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private void sparseUnaryOperations(UnaryOperator op, MatrixBlock ret) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//early abort possible since sparse-safe
 		if( isEmptyBlock(false) )
@@ -2915,11 +2913,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 * @param op
 	 * @param ret
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private void denseUnaryOperations(UnaryOperator op, MatrixBlock ret) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//prepare 0-value init (determine if unnecessarily sparse-unsafe)
 		double val0 = op.fn.execute(0);
@@ -2944,12 +2941,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	/**
 	 * 
 	 * @param op
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	@Override
 	public void unaryOperationsInPlace(UnaryOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		if(op.sparseSafe)
 			sparseUnaryOperationsInPlace(op);
@@ -2961,11 +2957,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * only apply to non zero cells
 	 * 
 	 * @param op
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private void sparseUnaryOperationsInPlace(UnaryOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//early abort possible since sparse-safe
 		if( isEmptyBlock(false) )
@@ -3014,7 +3009,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	private void denseUnaryOperationsInPlace(UnaryOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		if( sparse ) //SPARSE MATRIX
 		{
@@ -3057,7 +3052,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 */
 	public MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		MatrixBlock that = checkType(thatValue);
 		MatrixBlock ret = checkType(result);
@@ -3089,7 +3084,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 */
 	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		MatrixBlock that=checkType(thatValue);
 		if( !LibMatrixBincell.isValidDimensionsBinary(this, that) ) {
@@ -3112,7 +3107,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, 
 			MatrixValue newWithCorrection)
-	throws DMLUnsupportedOperationException, DMLRuntimeException
+	throws DMLRuntimeException
 	{
 		//assert(aggOp.correctionExists); 
 		MatrixBlock cor=checkType(correction);
@@ -3355,7 +3350,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection)
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//assert(aggOp.correctionExists);
 		MatrixBlock newWithCor=checkType(newWithCorrection);
@@ -3656,11 +3651,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param that
 	 * @param ret
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public MatrixBlock appendOperations( MatrixBlock that, MatrixBlock ret ) 	
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		//default append-cbind
 		return appendOperations(that, ret, true);
@@ -3671,11 +3665,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param that
 	 * @param ret
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public MatrixBlock appendOperations( MatrixBlock that, MatrixBlock ret, boolean cbind ) 	
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		MatrixBlock result = checkType( ret );
 		final int m = cbind ? rlen : rlen+that.rlen;
@@ -3727,10 +3720,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param tstype
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype ) 	
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		return transposeSelfMatrixMultOperations(out, tstype, 1);
 	}
@@ -3741,10 +3733,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param tstype
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype, int k ) 	
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//check for transpose type
 		if( !(tstype == MMTSJType.LEFT || tstype == MMTSJType.RIGHT) )
@@ -3777,10 +3768,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param ctype
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 	
+		throws DMLRuntimeException 	
 	{
 		return chainMatrixMultOperations(v, w, out, ctype, 1);
 	}
@@ -3793,10 +3783,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param ctype
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k ) 	
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//check for transpose type
 		if( !(ctype == ChainType.XtXv || ctype == ChainType.XtwXv || ctype == ChainType.XtXvy) )
@@ -3832,10 +3821,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param out1Val
 	 * @param out2Val
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public void permutationMatrixMultOperations( MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val ) 	
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		permutationMatrixMultOperations(m2Val, out1Val, out2Val, 1);
 	}
@@ -3847,10 +3835,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param out1Val
 	 * @param out2Val
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public void permutationMatrixMultOperations( MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val, int k ) 	
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//check input types and dimensions
 		MatrixBlock m2 = checkType(m2Val);
@@ -3876,10 +3863,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param inplace
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, IndexRange ixrange, MatrixBlock ret, boolean inplace) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		return leftIndexingOperations(
 				rhsMatrix, (int)ixrange.rowStart, (int)ixrange.rowEnd, 
@@ -3895,11 +3881,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 *   2) result[rowLower:rowUpper, colLower:colUpper] = rhsMatrix;
 	 *  
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, int rl, int ru, 
 			int cl, int cu, MatrixBlock ret, boolean inplace) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		// Check the validity of bounds
 		if ( rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
@@ -3977,10 +3962,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param ret
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock leftIndexingOperations(ScalarObject scalar, int rl, int cl, MatrixBlock ret, boolean inplace) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		double inVal = scalar.getDoubleValue();
 		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, 1, 1, (inVal!=0)?1:0);
@@ -4018,7 +4002,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * Extracted submatrix is returned as "result". Note: This operation is now 0-based.
 	 * 
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	public MatrixBlock sliceOperations(int rl, int ru, int cl, int cu, MatrixBlock ret) 
 		throws DMLRuntimeException 
@@ -4274,7 +4257,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public void appendOperations(MatrixValue v2,
 			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor,
 			int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{	
 		MatrixBlock m2 = (MatrixBlock)v2;
 		
@@ -4318,7 +4301,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 */
 	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		checkType(result);
 		double currentSparsity=(double)nonZeros/(double)rlen/(double)clen;
@@ -4427,7 +4410,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn)
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		return aggregateUnaryOperations(op, result, 
 				blockingFactorRow, blockingFactorCol, indexesIn, false);
@@ -4436,7 +4419,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
@@ -4920,7 +4903,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return covobj;
 	}
 
-	public MatrixValue sortOperations(MatrixValue weights, MatrixValue result) throws DMLRuntimeException, DMLUnsupportedOperationException {
+	public MatrixValue sortOperations(MatrixValue weights, MatrixValue result) throws DMLRuntimeException {
 		boolean wtflag = (weights!=null);
 		
 		MatrixBlock wts= (weights == null ? null : checkType(weights));
@@ -5074,7 +5057,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public MatrixValue pickValues(MatrixValue quantiles, MatrixValue ret) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException {
+		throws DMLRuntimeException {
 	
 		MatrixBlock qs=checkType(quantiles);
 		
@@ -5177,12 +5160,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param result
 	 * @param op
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
 			MatrixValue result, AggregateBinaryOperator op ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		return aggregateBinaryOperations(m1Value, m2Value, result, op);
 	}
@@ -5191,7 +5173,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 */
 	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//check input types, dimensions, configuration
 		MatrixBlock m1 = checkType(m1Value);
@@ -5231,11 +5213,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param m3
 	 * @param op
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public ScalarObject aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, AggregateBinaryOperator op) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//check input dimensions and operators
 		if( m1.rlen!=m2.rlen || m1.clen!=m2.clen || (m3!=null && (m2.rlen!=m3.rlen || m2.clen!=m3.clen)) )
@@ -5263,11 +5244,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param bOp
 	 * @oaram uaggOp
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public MatrixBlock  uaggouterchainOperations(MatrixBlock mbLeft, MatrixBlock mbRight, MatrixBlock mbOut, BinaryOperator bOp, AggregateUnaryOperator uaggOp) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		double bv[] = DataConverter.convertToDoubleVector(mbRight);
 		int bvi[] = null;
@@ -5313,10 +5293,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param op
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups, Operator op) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//single-threaded grouped aggregate 
 		return groupedAggOperations(tgt, wghts, ret, ngroups, op, 1);
@@ -5332,10 +5311,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param k
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups, Operator op, int k) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 		
+		throws DMLRuntimeException 		
 	{
 		//setup input matrices
 		MatrixBlock target = checkType(tgt);
@@ -5396,10 +5374,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param select
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows, MatrixBlock select )
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		MatrixBlock result = checkType(ret);
 		return LibMatrixReorg.rmempty(this, result, rows, select);
@@ -5411,10 +5388,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param rows
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock removeEmptyOperations( MatrixBlock ret, boolean rows)
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		return removeEmptyOperations(ret, rows, null);
 	}
@@ -5428,10 +5404,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param ignore
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public MatrixBlock rexpandOperations( MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore )
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		MatrixBlock result = checkType(ret);
 		return LibMatrixReorg.rexpand(this, result, max, rows, cast, ignore);
@@ -5440,7 +5415,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	@Override
 	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		MatrixBlock ret = checkType(result);
 		examSparsity(); //ensure its in the right format
@@ -5535,12 +5510,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * (v2) from sclar_input2 (scalarThat)
 	 * (i3,j3,w)  from input3 (that2)
 	 * @throws DMLRuntimeException 
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
 			MatrixValue that2Val, CTableMap resultMap, MatrixBlock resultBlock)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		MatrixBlock that2 = checkType(that2Val);
 		CTable ctable = CTable.getCTableFnObject();
@@ -5580,7 +5554,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
 			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{
 		CTable ctable = CTable.getCTableFnObject();
 		double v2 = scalarThat;
@@ -5616,7 +5590,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	@Override
 	public void ternaryOperations(Operator op, MatrixIndexes ix1, double scalarThat,
 			boolean left, int brlen, CTableMap resultMap, MatrixBlock resultBlock)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{	
 		CTable ctable = CTable.getCTableFnObject();
 		double w = scalarThat;
@@ -5663,7 +5637,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue thatVal, double scalarThat2, boolean ignoreZeros,
 			     CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{	
 		//setup ctable computation
 		MatrixBlock that = checkType(thatVal);
@@ -5733,7 +5707,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * (w)  from scalar_input3 (scalarThat2)
 	 */
 	public void ternaryOperations(Operator op, MatrixValue thatMatrix, double thatScalar, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{	
 		MatrixBlock that = checkType(thatMatrix);
 		CTable ctable = CTable.getCTableFnObject();
@@ -5763,14 +5737,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * (i1,j1,w)  from input3 (that2)
 	 */
 	public void ternaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, CTableMap resultMap)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		ternaryOperations(op, thatVal, that2Val, resultMap, null);
 	}
 		
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue thatVal, MatrixValue that2Val, CTableMap resultMap, MatrixBlock resultBlock)
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{	
 		MatrixBlock that = checkType(thatVal);
 		MatrixBlock that2 = checkType(that2Val);
@@ -5805,7 +5779,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	@Override
 	public MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		return quaternaryOperations(qop, um, vm, wm, out, 1);
 	}
@@ -5820,11 +5794,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param wt
 	 * @param k
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out, int k)
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//check input dimensions
 		if( getNumRows() != um.getNumRows() )

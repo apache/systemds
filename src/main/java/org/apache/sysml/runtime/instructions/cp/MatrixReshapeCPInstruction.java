@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
@@ -76,7 +75,7 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		//get inputs
 		MatrixBlock in = ec.getMatrixInput(input1.getName());

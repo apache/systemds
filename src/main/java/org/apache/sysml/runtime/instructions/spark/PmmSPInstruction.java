@@ -31,7 +31,6 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.MapMult.CacheType;
 import org.apache.sysml.lops.PMMJ;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Multiply;
@@ -96,7 +95,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
@@ -136,7 +135,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 		private int _brlen = -1;
 		
 		public RDDPMMFunction( CacheType type, PartitionedBroadcastMatrix binput, long rlen, int brlen ) 
-			throws DMLRuntimeException, DMLUnsupportedOperationException
+			throws DMLRuntimeException
 		{
 			_brlen = brlen;
 			_rlen = rlen;

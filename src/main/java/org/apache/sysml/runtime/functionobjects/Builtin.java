@@ -26,7 +26,6 @@ import org.apache.commons.math3.util.FastMath;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 
 
 /**
@@ -281,7 +280,7 @@ public class Builtin extends ValueFunction
 		throw new CloneNotSupportedException();
 	}
 	
-	public boolean checkArity(int _arity) throws DMLUnsupportedOperationException {
+	public boolean checkArity(int _arity) throws DMLRuntimeException {
 		switch (bFunc) {
 		case ABS:
 		case SIN:
@@ -319,7 +318,7 @@ public class Builtin extends ValueFunction
 		case MIN:
 			return (_arity == 2);
 		default:
-			throw new DMLUnsupportedOperationException("checkNumberOfOperands(): Unknown opcode: " + bFunc);
+			throw new DMLRuntimeException("checkNumberOfOperands(): Unknown opcode: " + bFunc);
 		}
 	}
 	

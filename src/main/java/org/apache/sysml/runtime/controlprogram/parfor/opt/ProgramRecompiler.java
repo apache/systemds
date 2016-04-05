@@ -44,7 +44,6 @@ import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
@@ -73,13 +72,12 @@ public class ProgramRecompiler
 	 * @param sbs
 	 * @return
 	 * @throws IOException 
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 * @throws LopsException 
 	 * @throws HopsException 
 	 */
 	public static ArrayList<ProgramBlock> generatePartitialRuntimeProgram(Program rtprog, ArrayList<StatementBlock> sbs) 
-		throws LopsException, DMLRuntimeException, DMLUnsupportedOperationException, IOException, HopsException
+		throws LopsException, DMLRuntimeException, IOException, HopsException
 	{
 		ArrayList<ProgramBlock> ret = new ArrayList<ProgramBlock>();
 		DMLConfig config = ConfigurationManager.getDMLConfig();
@@ -110,11 +108,10 @@ public class ProgramRecompiler
 	 * @param var
 	 * @param ec
 	 * @param force
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var, ExecutionContext ec, boolean force )
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		if( pb instanceof IfProgramBlock && sb instanceof IfStatementBlock )
 		{
@@ -222,11 +219,10 @@ public class ProgramRecompiler
 	 * @param parforSB
 	 * @param vars
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static LocalVariableMap getReusableScalarVariables( DMLProgram prog, StatementBlock parforSB, LocalVariableMap vars ) 
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		LocalVariableMap constVars = new LocalVariableMap(); 
 		
@@ -244,7 +240,7 @@ public class ProgramRecompiler
 	}
 	
 	public static void replaceConstantScalarVariables( StatementBlock sb, LocalVariableMap vars )
-		throws DMLUnsupportedOperationException, DMLRuntimeException, HopsException
+		throws DMLRuntimeException, HopsException
 	{
 		if( sb instanceof IfStatementBlock )
 		{
@@ -312,11 +308,10 @@ public class ProgramRecompiler
 	 * @param parforSB
 	 * @param var
 	 * @return
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	public static boolean isApplicableForReuseVariable( DMLProgram prog, StatementBlock parforSB, String var )
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		boolean ret = false;
 		
@@ -331,11 +326,10 @@ public class ProgramRecompiler
 	 * @param sb
 	 * @param parforSB
 	 * @param var
-	 * @throws DMLUnsupportedOperationException
 	 * @throws DMLRuntimeException
 	 */
 	private static boolean isApplicableForReuseVariable( StatementBlock sb, StatementBlock parforSB, String var )
-			throws DMLUnsupportedOperationException, DMLRuntimeException
+			throws DMLRuntimeException
 	{
 		boolean ret = false;
 		
@@ -533,10 +527,9 @@ public class ProgramRecompiler
 	 * @param offset
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	protected static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//create instruction string
 		StringBuilder sb = new StringBuilder("CP"+Lop.OPERAND_DELIMITOR+"+"+Lop.OPERAND_DELIMITOR);

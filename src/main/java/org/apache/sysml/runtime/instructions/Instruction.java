@@ -26,7 +26,6 @@ import org.apache.sysml.api.monitoring.Location;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 
 
@@ -197,11 +196,10 @@ public abstract class Instruction
 	 * 
 	 * @param ec
 	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws DMLRuntimeException 
 	 */
 	public Instruction preprocessInstruction(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//update debug status
 		ec.updateDebugState( this );
@@ -215,10 +213,9 @@ public abstract class Instruction
 	 * 
 	 * @param ec
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public abstract void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException;
+		throws DMLRuntimeException;
 	
 	/**
 	 * This method should be used for any tear down after executing this instruction.

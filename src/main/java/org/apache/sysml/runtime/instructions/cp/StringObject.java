@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 
 public class StringObject extends ScalarObject 
 {	
@@ -78,7 +77,6 @@ public class StringObject extends ScalarObject
 	/**
 	 * 
 	 * @param len
-	 * @throws DMLUnsupportedOperationException
 	 */
 	public static void checkMaxStringLength( long len ) 
 		throws DMLRuntimeException

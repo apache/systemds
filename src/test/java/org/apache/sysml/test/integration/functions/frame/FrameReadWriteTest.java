@@ -25,7 +25,6 @@ import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.cp.AppendCPInstruction.AppendType;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
@@ -34,6 +33,7 @@ import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
@@ -155,11 +155,11 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	 * @param frame2
 	 * @param fprop
 	 * @return 
-	 * @throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
+	 * @throws DMLRuntimeException, IOException
 	 */
 
 	void writeAndVerifyData(OutputInfo oinfo, FrameBlock frame1, FrameBlock frame2, CSVFileFormatProperties fprop)
-		throws DMLUnsupportedOperationException, DMLRuntimeException, IOException
+		throws DMLRuntimeException, IOException
 	{
 		String fname1 = TEST_DIR + "/frameData1";
 		String fname2 = TEST_DIR + "/frameData2";
@@ -179,6 +179,8 @@ public class FrameReadWriteTest extends AutomatedTestBase
 		// Verify that data read with original frames
 		verifyFrameData(frame1, frame1Read);			
 		verifyFrameData(frame2, frame2Read);
+		MapReduceTool.deleteFileIfExistOnHDFS(fname1);
+		MapReduceTool.deleteFileIfExistOnHDFS(fname2);
 	}
 	
 }

@@ -29,7 +29,6 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -157,8 +156,6 @@ implements Reducer<TripleIndexes, TaggedMatrixValue, MatrixIndexes, MatrixValue>
 		super.configure(job);
 		try {
 			aggBinInstructions = MRJobConfiguration.getAggregateBinaryInstructions(job);
-		} catch (DMLUnsupportedOperationException e) {
-			throw new RuntimeException(e);
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}

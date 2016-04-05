@@ -24,7 +24,6 @@ import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 
 /**
@@ -44,12 +43,11 @@ public abstract class FrameWriter
 	 * @param rlen
 	 * @param clen
 	 * @return
-	 * @throws IOException
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
 	public abstract void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
-		throws IOException, DMLRuntimeException, DMLUnsupportedOperationException;
+		throws IOException, DMLRuntimeException;
 	
 	/**
 	 * 

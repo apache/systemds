@@ -26,7 +26,6 @@ import java.io.IOException;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 
@@ -64,10 +63,10 @@ public class MatrixPackedCell extends MatrixCell
 		extra_size=size;
 	}
 	
-	public static MatrixPackedCell checkType(MatrixValue cell) throws DMLUnsupportedOperationException
+	public static MatrixPackedCell checkType(MatrixValue cell) throws DMLRuntimeException
 	{
 		if( cell!=null && !(cell instanceof MatrixPackedCell))
-			throw new DMLUnsupportedOperationException("the Matrix Value is not MatrixPackedCell!");
+			throw new DMLRuntimeException("the Matrix Value is not MatrixPackedCell!");
 		return (MatrixPackedCell) cell;
 	}
 	
@@ -82,14 +81,14 @@ public class MatrixPackedCell extends MatrixCell
 	//with corrections
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, 
-			MatrixValue newWithCorrection)throws DMLUnsupportedOperationException, DMLRuntimeException {
+			MatrixValue newWithCorrection)throws DMLRuntimeException {
 		incrementalAggregate(aggOp, newWithCorrection);
 	}
 	
 	//with corrections
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
-			MatrixValue newWithCorrection)throws DMLUnsupportedOperationException, DMLRuntimeException {
+			MatrixValue newWithCorrection)throws DMLRuntimeException {
 
 		
 		MatrixPackedCell newWithCor=checkType(newWithCorrection);

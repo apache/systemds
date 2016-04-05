@@ -25,7 +25,6 @@ import org.apache.sysml.lops.MMCJ.MMCJType;
 import org.apache.sysml.lops.MapMult;
 import org.apache.sysml.lops.MapMult.CacheType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -149,7 +148,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException 
+			throws DMLRuntimeException 
 	{	
 		IndexedMatrixValue in1=cachedValues.getFirst(input1);
 		IndexedMatrixValue in2=cachedValues.getFirst(input2);
@@ -199,10 +198,9 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	 * @param blockRowFactor
 	 * @param blockColFactor
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private void processMapMultInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, IndexedMatrixValue in1, IndexedMatrixValue in2, int blockRowFactor, int blockColFactor) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		boolean removeOutput = true;
 		

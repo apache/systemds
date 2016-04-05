@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -74,11 +73,10 @@ public abstract class Optimizer
 	 * 
 	 * @param plan
 	 * @return true if plan changed, false otherwise
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
 	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException;	
+		throws DMLRuntimeException;	
 	
 	/**
 	 * 

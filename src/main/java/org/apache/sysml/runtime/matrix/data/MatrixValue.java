@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import org.apache.hadoop.io.WritableComparable;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
@@ -109,78 +108,78 @@ public abstract class MatrixValue implements WritableComparable
 	public abstract void copy(MatrixValue that, boolean sp);
 	
 	public abstract MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	public abstract MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	public abstract void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	public abstract MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
 			int startRow, int startColumn, int length)
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	// tertiary where all three inputs are matrices
 	public abstract void ternaryOperations(Operator op, MatrixValue that, MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	// tertiary where first two inputs are matrices, and third input is a scalar (double)
 	public abstract void ternaryOperations(Operator op, MatrixValue that, double scalar_that2, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock)
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
 	public abstract void ternaryOperations(Operator op, double scalar_that, double scalar_that2, CTableMap resultMap, MatrixBlock resultBlock)
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	// tertiary where first input is a matrix, and second and third inputs are scalars (double)
 	public abstract void ternaryOperations(Operator op, MatrixIndexes ix1, double scalar_that, boolean left, int brlen, CTableMap resultMap, MatrixBlock resultBlock)
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 
 	// tertiary where first and third inputs are matrices and second is a scalar
 	public abstract void ternaryOperations(Operator op, double scalarThat, MatrixValue that2, CTableMap ctableResult, MatrixBlock ctableResultBlock)
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 
 	public abstract MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
-		throws DMLUnsupportedOperationException, DMLRuntimeException;
+		throws DMLRuntimeException;
 		
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
-			int brlen, int bclen, MatrixIndexes indexesIn) throws DMLUnsupportedOperationException, DMLRuntimeException;
+			int brlen, int bclen, MatrixIndexes indexesIn) throws DMLRuntimeException;
 	
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	public abstract MatrixValue aggregateBinaryOperations(MatrixValue m1Value, MatrixValue m2Value, 
 			MatrixValue result, AggregateBinaryOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	public abstract MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index, MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value, 
 			MatrixValue result, AggregateBinaryOperator op) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	public abstract MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) 
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
-	public abstract void unaryOperationsInPlace(UnaryOperator op) throws DMLUnsupportedOperationException, DMLRuntimeException;
+	public abstract void unaryOperationsInPlace(UnaryOperator op) throws DMLRuntimeException;
 
 	public abstract void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, 
-			MatrixValue newWithCorrection)	throws DMLUnsupportedOperationException, DMLRuntimeException;
+			MatrixValue newWithCorrection)	throws DMLRuntimeException;
 	
 	public abstract void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection)
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 
 	public abstract MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 	
 	public abstract void sliceOperations(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
 			int blockRowFactor, int blockColFactor, int boundaryRlen, int boundaryClen)
-	throws DMLUnsupportedOperationException, DMLRuntimeException;
+	throws DMLRuntimeException;
 
 	public abstract MatrixValue replaceOperations( MatrixValue result, double pattern, double replacement )
-			throws DMLUnsupportedOperationException, DMLRuntimeException;
+			throws DMLRuntimeException;
 
 	public abstract void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
 			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
-			throws DMLUnsupportedOperationException, DMLRuntimeException ;
+			throws DMLRuntimeException ;
 }

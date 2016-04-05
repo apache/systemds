@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -70,7 +69,7 @@ public class GroupedAggregateInstruction extends UnaryMRInstructionBase
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput,
 			int blockRowFactor, int blockColFactor)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("GroupedAggregateInstruction.processInstruction() should not be called!");
 		
 	}

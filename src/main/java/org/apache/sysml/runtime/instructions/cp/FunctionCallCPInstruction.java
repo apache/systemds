@@ -32,7 +32,6 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -82,7 +81,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 	 * 
 	 */
 	public static FunctionCallCPInstruction parseInstruction(String str) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{	
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String namespace = parts[1];
@@ -110,7 +109,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 	
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec)
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		//default pre-process behavior
 		Instruction tmp = super.preprocessInstruction(ec);
@@ -125,7 +124,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{		
 		if( LOG.isTraceEnabled() ){
 			LOG.trace("Executing instruction : " + this.toString());
@@ -209,7 +208,7 @@ public class FunctionCallCPInstruction extends CPInstruction
 			String boundVarName = _boundOutputParamNames.get(i); 
 			Data boundValue = retVars.get(fpb.getOutputParams().get(i).getName());
 			if (boundValue == null)
-				throw new DMLUnsupportedOperationException(boundVarName + " was not assigned a return value");
+				throw new DMLRuntimeException(boundVarName + " was not assigned a return value");
 
 			//cleanup existing data bound to output variable name
 			Data exdata = ec.removeVariable(boundVarName);

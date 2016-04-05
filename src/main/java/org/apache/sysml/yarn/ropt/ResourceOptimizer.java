@@ -41,7 +41,6 @@ import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
@@ -183,13 +182,12 @@ public class ResourceOptimizer
 	 * @param rc
 	 * @return
 	 * @throws IOException 
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 * @throws HopsException 
 	 * @throws DMLRuntimeException 
 	 */
 	public static ArrayList<ProgramBlock> compileProgram( ArrayList<ProgramBlock> prog, ResourceConfig rc ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		//recompile program block hierarchy to list of blocks and apply optimized resource configuration
 		ArrayList<ProgramBlock> B = compileProgram(prog, null, rc.getCPResource(), rc.getMaxMRResource());
@@ -205,13 +203,12 @@ public class ResourceOptimizer
 	 * @param B
 	 * @return
 	 * @throws IOException 
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws LopsException 
 	 * @throws HopsException 
 	 * @throws DMLRuntimeException 
 	 */
 	private static ArrayList<ProgramBlock> compileProgram( ArrayList<ProgramBlock> prog, ArrayList<ProgramBlock> B, double cp, double mr ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		if( B == null ) //init 
 		{
@@ -234,14 +231,13 @@ public class ResourceOptimizer
 	 * @param pb
 	 * @param Bp
 	 * @return
-	 * @throws IOException 
-	 * @throws DMLUnsupportedOperationException 
+	 * @throws IOException  
 	 * @throws LopsException 
 	 * @throws HopsException 
 	 * @throws DMLRuntimeException 
 	 */
 	private static ArrayList<ProgramBlock> compileProgram( ProgramBlock pb, ArrayList<ProgramBlock> B, double cp, double mr ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		if (pb instanceof FunctionProgramBlock)
 		{
@@ -317,11 +313,10 @@ public class ResourceOptimizer
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	private static void recompileProgramBlocks( ArrayList<ProgramBlock> pbs, long cp, double[][] memo ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		for( int i=0; i<pbs.size(); i++ )
 		{
@@ -339,11 +334,10 @@ public class ResourceOptimizer
 	 * @throws DMLRuntimeException
 	 * @throws HopsException
 	 * @throws LopsException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws IOException
 	 */
 	private static void recompileProgramBlock( ProgramBlock pb, long cp, long mr ) 
-		throws DMLRuntimeException, HopsException, LopsException, DMLUnsupportedOperationException, IOException
+		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		//init compiler memory budget
 		InfrastructureAnalyzer.setLocalMaxMemory( cp );
@@ -455,11 +449,10 @@ public class ResourceOptimizer
 	 * @param pb
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 * @throws HopsException 
 	 */
 	private static double getProgramCosts( ProgramBlock pb ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException, HopsException
+		throws DMLRuntimeException, HopsException
 	{
 		double val = 0;
 		if( COST_INDIVIDUAL_BLOCKS ) {
@@ -483,11 +476,10 @@ public class ResourceOptimizer
 	/**
 	 * 
 	 * @param prog
-	 * @throws DMLUnsupportedOperationException 
 	 * @throws DMLRuntimeException 
 	 */
 	private static double getProgramCosts( Program prog ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//we need to cost the entire program in order to take in-memory status into account
 		ExecutionContext ec = ExecutionContextFactory.createContext();
@@ -708,10 +700,9 @@ public class ResourceOptimizer
 	 * @param min
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private static double[][] initLocalMemoTable( ArrayList<ProgramBlock> Bp, double min ) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		//allocate memo structure
 		int len = Bp.size();

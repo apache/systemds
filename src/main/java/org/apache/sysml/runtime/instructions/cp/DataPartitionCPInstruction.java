@@ -24,7 +24,6 @@ import org.apache.hadoop.mapred.JobConf;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -79,7 +78,7 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction
 	
 	@Override
 	public void processInstruction(ExecutionContext ec)
-		throws DMLUnsupportedOperationException, DMLRuntimeException 
+		throws DMLRuntimeException 
 	{
 		//get input
 		MatrixObject moIn = (MatrixObject) ec.getVariable(input1.getName());

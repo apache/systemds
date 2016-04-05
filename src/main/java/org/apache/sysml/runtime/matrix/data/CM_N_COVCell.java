@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import org.apache.hadoop.io.WritableComparable;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -55,27 +54,27 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	@Override
 	public MatrixValue aggregateBinaryOperations(MatrixValue m1Value,
 			MatrixValue m2Value, MatrixValue result, AggregateBinaryOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int brlen, int bclen, MatrixIndexes indexesIn)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
 	public MatrixValue binaryOperations(BinaryOperator op,
 			MatrixValue thatValue, MatrixValue result)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
 	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");		
 	}
 
@@ -122,14 +121,14 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
 			MatrixValue correction, MatrixValue newWithCorrection)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
 	
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
 			MatrixValue newWithCorrection)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
 
@@ -146,7 +145,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	@Override
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
 			int startRow, int startColumn, int length)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new RuntimeException("operation not supported fro WeightedCell");
 	}
 
@@ -174,7 +173,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 	
@@ -195,13 +194,13 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
 	public void unaryOperationsInPlace(UnaryOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
@@ -274,14 +273,14 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue that,
 			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 		
 	}
@@ -289,34 +288,34 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	@Override
 	public void ternaryOperations(Operator op, MatrixValue that,
 			double scalarThat2, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
 			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 	
 	@Override
 	public void ternaryOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
 			CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
 	public void ternaryOperations(Operator op, double scalarThat,
 			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 	
 	@Override
 	public MatrixValue quaternaryOperations(QuaternaryOperator qop, MatrixValue um, MatrixValue vm, MatrixValue wm, MatrixValue out)
-		throws DMLUnsupportedOperationException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
@@ -326,13 +325,13 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	public void sliceOperations(ArrayList<IndexedMatrixValue> outlist,
 			IndexRange range, int rowCut, int colCut, int blockRowFactor,
 			int blockColFactor, int boundaryRlen, int boundaryClen)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");		
 	}
 	
 	@Override
 	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");		
 	}
 
@@ -340,7 +339,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int blockingFactorRow, int blockingFactorCol,
 			MatrixIndexes indexesIn, boolean inCP)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
@@ -348,14 +347,14 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	public MatrixValue aggregateBinaryOperations(MatrixIndexes m1Index,
 			MatrixValue m1Value, MatrixIndexes m2Index, MatrixValue m2Value,
 			MatrixValue result, AggregateBinaryOperator op)
-			throws DMLUnsupportedOperationException, DMLRuntimeException {
+			throws DMLRuntimeException {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 
 	@Override
 	public void appendOperations(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
 			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
-	throws DMLUnsupportedOperationException, DMLRuntimeException   {
+	throws DMLRuntimeException   {
 		throw new DMLRuntimeException("operation not supported fro WeightedCell");
 	}
 }

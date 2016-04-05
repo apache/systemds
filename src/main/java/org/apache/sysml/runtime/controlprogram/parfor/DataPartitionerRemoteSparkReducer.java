@@ -31,7 +31,6 @@ import org.apache.spark.api.java.function.VoidFunction;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -50,7 +49,7 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 	private String _fnameNew = null;
 	
 	public DataPartitionerRemoteSparkReducer(String fnameNew, OutputInfo oi) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{
 		_fnameNew = fnameNew;
 		//_oi = oi;

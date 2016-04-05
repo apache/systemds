@@ -27,7 +27,6 @@ import org.apache.sysml.parser.IfStatementBlock;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
@@ -144,7 +143,7 @@ public class IfProgramBlock extends ProgramBlock
 	
 	@Override
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException
+		throws DMLRuntimeException
 	{	
 		BooleanObject predResult = executePredicate(ec); 
 	
@@ -202,10 +201,9 @@ public class IfProgramBlock extends ProgramBlock
 	 * @param ec
 	 * @return
 	 * @throws DMLRuntimeException
-	 * @throws DMLUnsupportedOperationException
 	 */
 	private BooleanObject executePredicate(ExecutionContext ec) 
-		throws DMLRuntimeException, DMLUnsupportedOperationException 
+		throws DMLRuntimeException 
 	{
 		BooleanObject result = null;
 		try

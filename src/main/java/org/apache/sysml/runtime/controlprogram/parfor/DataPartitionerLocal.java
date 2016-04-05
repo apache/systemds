@@ -41,7 +41,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.DMLUnsupportedOperationException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
@@ -553,10 +552,9 @@ public class DataPartitionerLocal extends DataPartitioner
 	 * @param bclen
 	 * @throws DMLRuntimeException
 	 * @throws IOException
-	 * @throws DMLUnsupportedOperationException 
 	 */
 	private void appendBlockToStagingArea( String dir, MatrixBlock mb, long row_offset, long col_offset, long brlen, long bclen ) 
-		throws DMLRuntimeException, IOException, DMLUnsupportedOperationException
+		throws DMLRuntimeException, IOException
 	{
 		//NOTE: for temporary block we always create dense representations
 		boolean sparse = mb.isInSparseFormat();

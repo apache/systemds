@@ -339,7 +339,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		try {
 			prog = (new DMLParserWrapper()).doParse(filePath, null, argVals);
 		} catch (ParseException e) {
-			notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
+			notifyErrorListeners(e.getMessage(), ctx.start);
 			return;
 		}
         // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism

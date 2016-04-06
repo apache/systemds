@@ -1309,7 +1309,12 @@ public class MLContext {
 		
 		//parsing
 		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
-		DMLProgram prog = parser.parse(dmlScriptFilePath, dmlScriptStr, argVals);
+		DMLProgram prog;
+		if (isFile) {
+			prog = parser.parse(dmlScriptFilePath, null, argVals);
+		} else {
+			prog = parser.parse(null, dmlScriptStr, argVals);
+		}
 		
 		//language validate
 		DMLTranslator dmlt = new DMLTranslator(prog);

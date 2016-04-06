@@ -82,7 +82,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 		
 		//read meta data frame
 		String spec = MapReduceTool.readStringFromHDFSFile(SCRIPT_DIR + TEST_DIR+"tfmtd_example/spec.json");
-		FrameBlock M = conn.readTransformMetaData(spec, SCRIPT_DIR + TEST_DIR+"tfmtd_example/");
+		FrameBlock M = conn.readTransformMetaDataFromFile(spec, SCRIPT_DIR + TEST_DIR+"tfmtd_example/");
 		
 		//generate data based on recode maps
 		HashMap<String,Long>[] RC = getRecodeMaps(M);

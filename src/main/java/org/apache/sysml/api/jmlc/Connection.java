@@ -349,7 +349,7 @@ public class Connection
 	public double[][] convertToDoubleMatrix(String input, int rows, int cols) 
 		throws IOException
 	{
-		InputStream is = new ByteArrayInputStream(input.getBytes("UTF-8"));
+		InputStream is = IOUtilFunctions.toInputStream(input);
 		return convertToDoubleMatrix(is, rows, cols);
 	}
 	
@@ -386,25 +386,30 @@ public class Connection
 	}
 	
 	/**
+	 * Reads transform meta data from an HDFS file path and converts it into an in-memory
+	 * FrameBlock object. The column names in the meta data file 'column.names' is processed
+	 * with default separator ','. 
 	 * 
-	 * @param spec
-	 * @param metapath
+	 * @param spec      transform specification as json string
+	 * @param metapath  hdfs file path to meta data directory
 	 * @return
 	 * @throws IOException
 	 */
-	public FrameBlock readTransformMetaData(String spec, String metapath) throws IOException {
-		return readTransformMetaData(spec, metapath, TfUtils.TXMTD_SEP);
+	public FrameBlock readTransformMetaDataFromFile(String spec, String metapath) throws IOException {
+		return readTransformMetaDataFromFile(spec, metapath, TfUtils.TXMTD_SEP);
 	}
 	
 	/**
-	 * NOTE: This is a temporary api - use readTransformMetaData(String spec, String metapath) if possible. 
+	 * Reads transform meta data from an HDFS file path and converts it into an in-memory
+	 * FrameBlock object.  
 	 * 
-	 * @param spec
-	 * @param metapath
+	 * @param spec      transform specification as json string
+	 * @param metapath  hdfs file path to meta data directory
+	 * @param colDelim  separator for processing column names in the meta data file 'column.names'
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
-	public FrameBlock readTransformMetaData(String spec, String metapath, String colDelim) 
+	public FrameBlock readTransformMetaDataFromFile(String spec, String metapath, String colDelim) 
 		throws IOException 
 	{
 		//read column types (for sanity check column names)
@@ -436,17 +441,80 @@ public class Connection
 		}
 		
 		//create frame block from in-memory strings
-		return readTransformMetaData(spec, rows, colnames, meta);
+		return convertToTransformMetaDataFrame(spec, rows, colnames, meta);
 	}
 	
 	/**
+	 * Reads transform meta data from the class path and converts it into an in-memory
+	 * FrameBlock object. The column names in the meta data file 'column.names' is processed
+	 * with default separator ','. 
 	 * 
-	 * @param spec
-	 * @param meta
+	 * @param spec      transform specification as json string
+	 * @param metapath  resource path to meta data directory
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
-	public FrameBlock readTransformMetaData(String spec, int rows, List<String> colnames, HashMap<String,String> meta) 
+	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath) throws IOException {
+		return readTransformMetaDataFromPath(spec, metapath, TfUtils.TXMTD_SEP);
+	}
+	
+	/**
+	 * Reads transform meta data from the class path and converts it into an in-memory
+	 * FrameBlock object.  
+	 * 
+	 * @param spec      transform specification as json string
+	 * @param metapath  resource path to meta data directory
+	 * @param colDelim  separator for processing column names in the meta data file 'column.names'
+	 * @return
+	 * @throws IOException
+	 */
+	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) 
+		throws IOException 
+	{
+		//read column types (for sanity check column names)
+		String coltypesStr = IOUtilFunctions.toString(Connection.class.getResourceAsStream(metapath+"/"+TfUtils.TXMTD_COLTYPES));
+		List<String> coltypes = Arrays.asList(IOUtilFunctions.split(coltypesStr.trim(), TfUtils.TXMTD_SEP));
+		
+		//read column names
+		String colnamesStr = IOUtilFunctions.toString(Connection.class.getResourceAsStream(metapath+"/"+TfUtils.TXMTD_COLNAMES));
+		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colnamesStr.trim(), colDelim));
+		if( coltypes.size() != colnames.size() ) {
+			LOG.warn("Number of columns names: "+colnames.size()+" (expected: "+coltypes.size()+").");
+			LOG.warn("--Sample column names: "+(!colnames.isEmpty()?colnames.get(0):"null"));
+		}
+		
+		//read meta data (currently only recode supported, without parsing spec)
+		HashMap<String,String> meta = new HashMap<String,String>();
+		int rows = 0;
+		for( int j=0; j<colnames.size(); j++ ) {
+			String colName = colnames.get(j);
+			String name = metapath+"/"+"Recode"+"/"+colName;
+			String map = IOUtilFunctions.toString(Connection.class.getResourceAsStream(name+TfUtils.TXMTD_RCD_MAP_SUFFIX));
+			if( map != null ) {
+				meta.put(colName, map);
+				String ndistinct = IOUtilFunctions.toString(Connection.class.getResourceAsStream(name+TfUtils.TXMTD_RCD_DISTINCT_SUFFIX));
+				rows = Math.max(rows, Integer.parseInt(ndistinct));
+			}
+			else if( coltypes.get(j).equals("2") ) {
+				LOG.warn("Recode map for column '"+colName+"' does not exist.");
+			}
+		}
+		
+		//create frame block from in-memory strings
+		return convertToTransformMetaDataFrame(spec, rows, colnames, meta);
+	}
+	
+	/**
+	 * Converts transform meta data into an in-memory FrameBlock object.
+	 * 
+	 * @param spec      transform specification as json string
+	 * @param rows      maximum number of distinct items (number of rows in frame block)
+	 * @param colnames  column names, ordered by position
+	 * @param meta      map of (column name, recode map)-pairs, with recode maps in their original csv representation
+	 * @return
+	 * @throws IOException
+	 */
+	public FrameBlock convertToTransformMetaDataFrame(String spec, int rows, List<String> colnames, HashMap<String,String> meta) 
 		throws IOException 
 	{
 		//create frame block w/ pure string schema

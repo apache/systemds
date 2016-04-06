@@ -21,6 +21,8 @@ package org.apache.sysml.runtime.io;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,7 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.RecordReader;
-
+import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class IOUtilFunctions 
@@ -201,5 +203,34 @@ public class IOUtilFunctions
 		//split by whole separator required for multi-character delimiters, preserve
 		//all tokens required for empty cells and in order to keep cell alignment
 		return StringUtils.splitByWholeSeparatorPreserveAllTokens(str, delim);
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 * @throws IOException
+	 */
+	public static InputStream toInputStream(String input) throws IOException {
+		if( input == null ) 
+			return null;
+		return new ByteArrayInputStream(input.getBytes("UTF-8"));
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 * @throws IOException
+	 */
+	public static String toString(InputStream input) throws IOException {
+		if( input == null )
+			return null;
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		byte[] buff = new byte[LocalFileUtils.BUFFER_SIZE];
+		for( int len=0; (len=input.read(buff))!=-1; )
+			bos.write(buff, 0, len);
+		input.close();		
+		return bos.toString("UTF-8");
 	}
 }

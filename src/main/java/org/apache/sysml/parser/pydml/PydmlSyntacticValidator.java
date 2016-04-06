@@ -119,8 +119,8 @@ import org.apache.sysml.parser.pydml.PydmlParser.WhileStatementContext;
  */
 public class PydmlSyntacticValidator extends CommonSyntacticValidator implements PydmlListener {
 
-	public PydmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
-		super(errorListener, argVals);
+	public PydmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
+		super(errorListener, argVals, sourceNamespace);
 	}
 
 	@Override public String namespaceResolutionOp() { return "."; }
@@ -384,7 +384,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 		DMLProgram prog = null;
 		try {
-			prog = (new PyDMLParserWrapper()).doParse(filePath, null, argVals);
+			prog = (new PyDMLParserWrapper()).doParse(filePath, null, namespace, argVals);
 		} catch (ParseException e) {
 			notifyErrorListeners(e.getMessage(), ctx.start);
 			return;

@@ -72,17 +72,21 @@ public class PyDMLParserWrapper extends AParserWrapper
 	 */
 	@Override
 	public DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
-		DMLProgram prog = doParse(fileName, dmlScript, argVals);
+		DMLProgram prog = doParse(fileName, dmlScript, null, argVals);
 		
 		return prog;
 	}
 	
 	/**
 	 * This function is supposed to be called directly only from PydmlSyntacticValidator when it encounters 'import'
-	 * @param fileName
-	 * @return null if atleast one error
+	 * @param fileName script file name
+	 * @param dmlScript script file contents
+	 * @param sourceNamespace namespace from source statement
+	 * @param argVals script arguments
+	 * @return null if at least one error
+	 * @throws ParseException
 	 */
-	public DMLProgram doParse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
+	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, HashMap<String,String> argVals) throws ParseException {
 		DMLProgram dmlPgm = null;
 		
 		ANTLRInputStream in;
@@ -160,7 +164,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 		ParseTree tree = ast;
 		// And also do syntactic validation
 		ParseTreeWalker walker = new ParseTreeWalker();
-		PydmlSyntacticValidator validator = new PydmlSyntacticValidator(errorListener, argVals);
+		PydmlSyntacticValidator validator = new PydmlSyntacticValidator(errorListener, argVals, sourceNamespace);
 		walker.walk(validator, tree);
 		errorListener.unsetCurrentFileName();
 		if(errorListener.isAtleastOneError()) {

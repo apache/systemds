@@ -357,10 +357,10 @@ public class StatementBlock extends LiveVariableAnalysis
 		}
 		if (_liveOut != null) sb.append("liveout " + _liveOut.toString() + "\n");
 		if (_liveIn!= null) sb.append("livein " + _liveIn.toString()+ "\n");
-		if (_gen != null) sb.append("gen " + _gen.toString()+ "\n");
-		if (_kill != null) sb.append("kill " + _kill.toString()+ "\n");
-		if (_read != null) sb.append("read " + _read.toString()+ "\n");
-		if (_updated != null) sb.append("updated " + _updated.toString()+ "\n");
+		if (_gen != null && !_gen.getVariables().isEmpty()) sb.append("gen " + _gen.toString()+ "\n");
+		if (_kill != null && !_kill.getVariables().isEmpty()) sb.append("kill " + _kill.toString()+ "\n");
+		if (_read != null && !_read.getVariables().isEmpty()) sb.append("read " + _read.toString()+ "\n");
+		if (_updated != null && !_updated.getVariables().isEmpty()) sb.append("updated " + _updated.toString()+ "\n");
 		return sb.toString();
 	}
 

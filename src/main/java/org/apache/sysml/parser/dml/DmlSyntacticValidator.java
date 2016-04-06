@@ -111,8 +111,8 @@ import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class DmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
 
-	public DmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
-		super(errorListener, argVals);
+	public DmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
+		super(errorListener, argVals, sourceNamespace);
 	}
 
 	@Override public String namespaceResolutionOp() { return "::"; }
@@ -337,7 +337,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 		DMLProgram prog = null;
 		try {
-			prog = (new DMLParserWrapper()).doParse(filePath, null, argVals);
+			prog = (new DMLParserWrapper()).doParse(filePath, null, namespace, argVals);
 		} catch (ParseException e) {
 			notifyErrorListeners(e.getMessage(), ctx.start);
 			return;

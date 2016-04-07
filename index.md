@@ -82,3 +82,7 @@ machine learning algorithms included with SystemML in detail.
 command-line interface.
 * [IDE Guide](developer-tools-systemml.html) - Useful IDE Guide for Developing SystemML.
 
+## Other
+
+* [Contributing to SystemML](contributing-to-systemml.html) - Describes ways to contribute to SystemML.
+* [Troubleshooting Guide](troubleshooting-guide.html) - Troubleshoot various issues related to SystemML.

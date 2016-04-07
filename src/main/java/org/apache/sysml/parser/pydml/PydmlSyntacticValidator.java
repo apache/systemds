@@ -1011,7 +1011,6 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		functCall.setFunctionName(functionName);
 		functCall.setFunctionNamespace(namespace);
 
-
 		final ArrayList<DataIdentifier> targetList = new ArrayList<DataIdentifier>();
 		for(DataIdentifierContext dataCtx : ctx.targetList) {
 			if(dataCtx.dataInfo.expr instanceof DataIdentifier) {
@@ -1032,6 +1031,10 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			if (validBIF)
 				return;
 		}
+
+		// Override default namespace for imported non-built-in function
+		String inferNamespace = (sourceNamespace != null && sourceNamespace.length() > 0 && DMLProgram.DEFAULT_NAMESPACE.equals(namespace)) ? sourceNamespace : namespace;
+		functCall.setFunctionNamespace(inferNamespace);
 
 		setMultiAssignmentStatement(targetList, functCall, ctx, ctx.info);
 	}

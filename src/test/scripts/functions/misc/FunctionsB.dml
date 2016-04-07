@@ -29,3 +29,13 @@ matrixPrint = function(matrix[double] X) return ()
         }
     }
 }
+matrixPrintMinMax = function(matrix[double] X) return ()
+{
+    [min, max] = minMax(X)
+    print("Minimum is " + min)
+    print("Maximum is " + max)
+}
+minMax = function(matrix[double] M) return (double minVal, double maxVal) {
+    minVal = min(M)
+    maxVal = max(M)
+}

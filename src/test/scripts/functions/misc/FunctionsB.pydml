@@ -23,3 +23,12 @@ def matrixPrint(X: matrix[float]) -> ():
         for (j in 1:ncol(X)) :
             xij = scalar(X[i,j])
             print("[" + i + "," + j + "] " + xij)
+
+def matrixPrintMinMax(X: matrix[float]) -> ():
+    [min, max] = minMax(X)
+    print("Minimum is " + min)
+    print("Maximum is " + max)
+
+def minMax(M: matrix[float]) -> (minVal: float, maxVal: float):
+    minVal = min(M)
+    maxVal = max(M)

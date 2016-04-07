@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -42,6 +43,7 @@ import scala.Tuple2;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.Pair;
 
 public class GenTfMtdSPARK 
 {
@@ -129,17 +131,17 @@ public class GenTfMtdSPARK
 			
 			// Prepare the output in the form of DistinctValues, which subsequently need to be grouped and aggregated. 
 			
-			ArrayList<Tuple2<Integer,DistinctValue>> outList = new ArrayList<Tuple2<Integer,DistinctValue>>();
+			ArrayList<Pair<Integer,DistinctValue>> outList = new ArrayList<Pair<Integer,DistinctValue>>();
 			
 			_agents.getMVImputeAgent().mapOutputTransformationMetadata(partitionID, outList, _agents);
 			_agents.getRecodeAgent().mapOutputTransformationMetadata(partitionID, outList, _agents);
 			_agents.getBinAgent().mapOutputTransformationMetadata(partitionID, outList, _agents);
 			
 			DistinctValue dv = new DistinctValue(new OffsetCount("Partition"+partitionID, _offsetInPartFile, _agents.getTotal()));
-			Tuple2<Integer, DistinctValue> tuple = new Tuple2<Integer, DistinctValue>((int) (_agents.getNumCols()+1), dv); 
+			Pair<Integer, DistinctValue> tuple = new Pair<Integer, DistinctValue>((int) (_agents.getNumCols()+1), dv); 
 			outList.add(tuple);
 
-			return outList.iterator();
+			return toTuple2List(outList).iterator();
 		}
 		
 	}
@@ -210,5 +212,17 @@ public class GenTfMtdSPARK
 			
 			return numRows;
 		}
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static List<Tuple2<Integer,DistinctValue>> toTuple2List(List<Pair<Integer,DistinctValue>> in) {
+		ArrayList<Tuple2<Integer,DistinctValue>> ret = new ArrayList<Tuple2<Integer,DistinctValue>>();
+		for( Pair<Integer,DistinctValue> e : in )
+			ret.add(new Tuple2<Integer,DistinctValue>(e.getKey(), e.getValue()));
+		return ret;
 	}
 }

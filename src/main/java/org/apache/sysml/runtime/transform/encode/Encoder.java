@@ -29,6 +29,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.DistinctValue;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -85,6 +87,47 @@ public abstract class Encoder implements Serializable
 		int idx = Arrays.binarySearch(_colList, colID);
 		return ( idx >= 0 ? idx : -1);
 	}
+	
+	/**
+	 * Row encode: build and apply (transform encode).
+	 * 
+	 * @param in
+	 * @param out
+	 * @return
+	 */
+	public abstract double[] encode(String[] in, double[] out);
+	
+	/**
+	 * Block encode: build and apply (transform encode).
+	 * 
+	 * @param in
+	 * @param out
+	 * @return
+	 */
+	public abstract MatrixBlock encode(FrameBlock in, MatrixBlock out);
+
+	/**
+	 * Build the transform meta data for given row input. This call modifies
+	 * and keeps meta data as encoder state.
+	 * 
+	 * @param in
+	 */
+	public abstract void build(String[] in);
+	
+	/**
+	 * Build the transform meta data for the given block input. This call modifies
+	 * and keeps meta data as encoder state.
+	 * 
+	 * @param in
+	 */
+	public abstract void build(FrameBlock in);
+	
+	/**
+	 * Construct a frame block out of the transform meta data.
+	 * 
+	 * @return
+	 */
+	public abstract FrameBlock getMetaData(FrameBlock out);
 	
 	/**
 	 * Encode input data according to existing transform meta

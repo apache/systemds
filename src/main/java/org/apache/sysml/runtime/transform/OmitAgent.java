@@ -30,6 +30,8 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -87,6 +89,31 @@ public class OmitAgent extends Encoder
 
 	@Override
 	public String[] apply(String[] words) {
+		return null;
+	}
+
+	@Override
+	public double[] encode(String[] in, double[] out) {
+		return null;
+	}
+
+	@Override
+	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		return null;
+	}
+
+	@Override
+	public void build(String[] in) {
+		
+	}
+
+	@Override
+	public void build(FrameBlock in) {	
+	
+	}
+
+	@Override
+	public FrameBlock getMetaData(FrameBlock out) {
 		return null;
 	}
 }

@@ -38,15 +38,15 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
-
-import scala.Tuple2;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.Mean;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.transform.encode.Encoder;
@@ -468,12 +468,12 @@ public class MVImputeAgent extends Encoder
 	 * @throws IOException
 	 */
 	
-	private void addDV(Integer iw, DistinctValue dv, ArrayList<Tuple2<Integer, DistinctValue>> list) throws IOException {
+	private void addDV(Integer iw, DistinctValue dv, ArrayList<Pair<Integer, DistinctValue>> list) throws IOException {
 		if ( dv != null )	
-			list.add( new Tuple2<Integer, DistinctValue>(iw, dv) );	
+			list.add( new Pair<Integer, DistinctValue>(iw, dv) );	
 	}
 
-	public ArrayList<Tuple2<Integer, DistinctValue>> mapOutputTransformationMetadata(int taskID, ArrayList<Tuple2<Integer, DistinctValue>> list, TfUtils agents) throws IOException {
+	public ArrayList<Pair<Integer, DistinctValue>> mapOutputTransformationMetadata(int taskID, ArrayList<Pair<Integer, DistinctValue>> list, TfUtils agents) throws IOException {
 		try { 
 			StringBuilder sb = new StringBuilder();
 			DistinctValue dv = null;
@@ -938,5 +938,30 @@ public class MVImputeAgent extends Encoder
 	public String getReplacement(int colID)  {
 		int idx = isApplicable(colID);		
 		return (idx == -1) ? null : _replacementList[idx];
+	}
+	@Override
+	public double[] encode(String[] in, double[] out) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public void build(String[] in) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void build(FrameBlock in) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public FrameBlock getMetaData(FrameBlock out) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

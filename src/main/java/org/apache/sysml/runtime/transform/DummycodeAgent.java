@@ -41,6 +41,8 @@ import org.apache.wink.json4j.JSONObject;
 import com.google.common.base.Functions;
 import com.google.common.collect.Ordering;
 
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -392,5 +394,35 @@ public class DummycodeAgent extends Encoder
 		}
 		
 		return nwords;
+	}
+
+	@Override
+	public double[] encode(String[] in, double[] out) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void build(String[] in) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void build(FrameBlock in) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public FrameBlock getMetaData(FrameBlock out) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

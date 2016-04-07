@@ -37,9 +37,9 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
-
-import scala.Tuple2;
-
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.MVImputeAgent.MVMethod;
 import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -152,7 +152,7 @@ public class BinAgent extends Encoder
 		}
 	}
 	
-	public ArrayList<Tuple2<Integer, DistinctValue>> mapOutputTransformationMetadata(int taskID, ArrayList<Tuple2<Integer, DistinctValue>> list, TfUtils agents) throws IOException {
+	public ArrayList<Pair<Integer, DistinctValue>> mapOutputTransformationMetadata(int taskID, ArrayList<Pair<Integer, DistinctValue>> list, TfUtils agents) throws IOException {
 		if ( !isApplicable() )
 			return list;
 		
@@ -161,9 +161,9 @@ public class BinAgent extends Encoder
 				int colID = _colList[i];
 				Integer iw = -colID;
 				
-				list.add( new Tuple2<Integer,DistinctValue>(iw, prepMinOutput(i)) );
-				list.add( new Tuple2<Integer,DistinctValue>(iw, prepMaxOutput(i)) );
-				list.add( new Tuple2<Integer,DistinctValue>(iw, prepNBinsOutput(i)) );
+				list.add( new Pair<Integer,DistinctValue>(iw, prepMinOutput(i)) );
+				list.add( new Pair<Integer,DistinctValue>(iw, prepMaxOutput(i)) );
+				list.add( new Pair<Integer,DistinctValue>(iw, prepNBinsOutput(i)) );
 			}
 		} catch(Exception e) {
 			throw new IOException(e);
@@ -316,5 +316,35 @@ public class BinAgent extends Encoder
 		}
 		
 		return words;
+	}
+
+	@Override
+	public double[] encode(String[] in, double[] out) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void build(String[] in) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void build(FrameBlock in) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public FrameBlock getMetaData(FrameBlock out) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

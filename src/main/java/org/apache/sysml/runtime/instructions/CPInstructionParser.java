@@ -46,6 +46,7 @@ import org.apache.sysml.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MatrixReshapeCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.PMMJCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuantilePickCPInstruction;
@@ -182,6 +183,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "transform"	, CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformapply",CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformdecode",CPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2CPInstructionType.put( "transformencode",CPINSTRUCTION_TYPE.MultiReturnParameterizedBuiltin);
 
 		// Variable Instruction Opcodes 
 		String2CPInstructionType.put( "assignvar"   , CPINSTRUCTION_TYPE.Variable);
@@ -347,6 +349,9 @@ public class CPInstructionParser extends InstructionParser
 				else //exectype CP_FILE
 					return ParameterizedBuiltinCPFileInstruction.parseInstruction(str);
 	
+			case MultiReturnParameterizedBuiltin:
+				return MultiReturnParameterizedBuiltinCPInstruction.parseInstruction(str);
+				
 			case MultiReturnBuiltin:
 				return MultiReturnBuiltinCPInstruction.parseInstruction(str);
 				

@@ -1177,8 +1177,12 @@ public class DMLTranslator
 				else if ( source instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)source).multipleReturns() ) {
 					// construct input hops
 					Hop fcall = processMultipleReturnBuiltinFunctionExpression((BuiltinFunctionExpression)source, mas.getTargetList(), ids);
-					output.add(fcall);
-					
+					output.add(fcall);					
+				}
+				else if ( source instanceof ParameterizedBuiltinFunctionExpression && ((ParameterizedBuiltinFunctionExpression)source).multipleReturns() ) {
+					// construct input hops
+					Hop fcall = processMultipleReturnParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, mas.getTargetList(), ids);
+					output.add(fcall);					
 				}
 				else
 					throw new LanguageException("Class \"" + source.getClass() + "\" is not supported in Multiple Assignment statements");
@@ -1889,6 +1893,54 @@ public class DMLTranslator
 			paramHops.put("dist", distLop);
 		
 		return new ParameterizedBuiltinOp(name, dt, vt, ParameterizedBuiltinFunctionExpression.pbHopMap.get(op), paramHops);
+	}
+	
+	/**
+	 * 
+	 * @param source
+	 * @param targetList
+	 * @param hops
+	 * @return
+	 * @throws ParseException
+	 */
+	private Hop processMultipleReturnParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionExpression source, ArrayList<DataIdentifier> targetList,
+			HashMap<String, Hop> hops) throws ParseException 
+	{
+		FunctionType ftype = FunctionType.MULTIRETURN_BUILTIN;
+		String nameSpace = DMLProgram.INTERNAL_NAMESPACE;
+		
+		// Create an array list to hold the outputs of this lop.
+		// Exact list of outputs are added based on opcode.
+		ArrayList<Hop> outputs = new ArrayList<Hop>();
+		
+		// Construct Hop for current builtin function expression based on its type
+		Hop currBuiltinOp = null;
+		switch (source.getOpCode()) {
+			case TRANSFORMENCODE:
+				ArrayList<Hop> inputs = new ArrayList<Hop>();
+				inputs.add( processExpression(source.getVarParam("target"), null, hops) );
+				inputs.add( processExpression(source.getVarParam("spec"), null, hops) );
+				String[] outputNames = new String[targetList.size()]; 
+				outputNames[0] = ((DataIdentifier)targetList.get(0)).getName();
+				outputNames[1] = ((DataIdentifier)targetList.get(1)).getName();
+				outputs.add(new DataOp(outputNames[0], DataType.MATRIX, ValueType.DOUBLE, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, outputNames[0]));
+				outputs.add(new DataOp(outputNames[1], DataType.FRAME, ValueType.STRING, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, outputNames[1]));
+				
+				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), inputs, outputNames, outputs);
+				break;
+				
+			default:
+				throw new ParseException("Invaid Opcode in DMLTranslator:processMultipleReturnParameterizedBuiltinFunctionExpression(): " + source.getOpCode());
+		}
+
+		// set properties for created hops based on outputs of source expression
+		for ( int i=0; i < source.getOutputs().length; i++ ) {
+			setIdentifierParams( outputs.get(i), source.getOutputs()[i]);
+			outputs.get(i).setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+		}
+		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
+
+		return currBuiltinOp;
 	}
 	
 	/**

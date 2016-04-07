@@ -67,6 +67,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		opcodeMap.put("transform",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORM);
 		opcodeMap.put("transformapply",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORMAPPLY);
 		opcodeMap.put("transformdecode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMDECODE);
+		opcodeMap.put("transformencode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMENCODE);
 	}
 	
 	public static HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp> pbHopMap;
@@ -182,11 +183,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		// validate all input parameters
 		for ( String s : getVarParams().keySet() ) {
 			Expression paramExpr = getVarParam(s);
-			
-			if (paramExpr instanceof FunctionCallIdentifier){
-				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
-			}
-			
+			if (paramExpr instanceof FunctionCallIdentifier)
+				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);	
 			paramExpr.validateExpression(ids, constVars, conditional);
 		}
 		
@@ -243,8 +241,42 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			break;	
 		
 		default: //always unconditional (because unsupported operation)
-			raiseValidateError("Unsupported parameterized function "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
+			raiseValidateError("Unsupported parameterized function "+ getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
+		return;
+	}
+
+	@Override
+	public void validateExpression(MultiAssignmentStatement stmt, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
+		throws LanguageException 
+	{
+		// validate all input parameters
+		for ( String s : getVarParams().keySet() ) {
+			Expression paramExpr = getVarParam(s);			
+			if (paramExpr instanceof FunctionCallIdentifier)
+				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+			paramExpr.validateExpression(ids, constVars, conditional);
+		}
+		
+		_outputs = new Identifier[stmt.getTargetList().size()];
+		int count = 0;
+		for (DataIdentifier outParam: stmt.getTargetList()){
+			DataIdentifier tmp = new DataIdentifier(outParam);
+			tmp.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+			_outputs[count++] = tmp;
+		}
+		
+		switch (this.getOpCode()) {	
+			case TRANSFORMENCODE:
+				DataIdentifier out1 = (DataIdentifier) getOutputs()[0];
+				DataIdentifier out2 = (DataIdentifier) getOutputs()[1];
+				
+				validateTransformEncode(out1, out2, conditional);
+				break;	
+			default: //always unconditional (because unsupported operation)
+				raiseValidateError("Unsupported parameterized function "+ getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
+		}
+		
 		return;
 	}
 	
@@ -333,6 +365,30 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDataType(DataType.FRAME);
 		output.setValueType(ValueType.STRING);
 		output.setDimensions(-1, -1);
+	}
+	
+	/**
+	 * 
+	 * @param output
+	 * @param conditional
+	 * @throws LanguageException
+	 */
+	private void validateTransformEncode(DataIdentifier output1, DataIdentifier output2, boolean conditional) 
+		throws LanguageException 
+	{
+		//validate data / metadata (recode maps) 
+		checkDataType("transformencode", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
+		
+		//validate specification
+		checkDataValueType("transformencode", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		
+		//set output dimensions 
+		output1.setDataType(DataType.MATRIX);
+		output1.setValueType(ValueType.DOUBLE);
+		output1.setDimensions(-1, -1);
+		output2.setDataType(DataType.FRAME);
+		output2.setValueType(ValueType.STRING);
+		output2.setDimensions(-1, -1);
 	}
 	
 	private void validateReplace(DataIdentifier output, boolean conditional) throws LanguageException {
@@ -713,6 +769,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	@Override
 	public boolean multipleReturns() {
-		return false;
+		switch(_opcode) {
+			case TRANSFORMENCODE:
+				return true;
+			default:
+				return false;
+		}
 	}
 }

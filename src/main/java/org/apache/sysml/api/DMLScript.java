@@ -83,6 +83,7 @@ import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 // import org.apache.sysml.utils.visualize.DotGraph;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
+import org.xml.sax.SAXException;
 
 
 public class DMLScript 
@@ -188,7 +189,9 @@ public class DMLScript
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		
 		try {
-		DMLScript.executeScript(conf, otherArgs); 
+			DMLScript.executeScript(conf, otherArgs);
+		} catch (ParseException pe) {
+			System.err.println(pe.getMessage());
 		} catch (DMLScriptException e){
 			// In case of DMLScriptException, simply print the error message.
 			System.err.println(e.getMessage());
@@ -196,7 +199,7 @@ public class DMLScript
 	} 
 
 	public static boolean executeScript( String[] args ) 
-		throws DMLException
+		throws DMLException, ParseException
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		return executeScript( conf, args );
@@ -210,9 +213,10 @@ public class DMLScript
 	 * @param suppress
 	 * @return
 	 * @throws DMLException
+	 * @throws ParseException
 	 */
 	public static String executeScript( Configuration conf, String[] args, boolean suppress) 
-		throws DMLException
+		throws DMLException, ParseException
 	{
 		_suppressPrint2Stdout = suppress;
 		try {
@@ -230,10 +234,11 @@ public class DMLScript
 	 * @param conf
 	 * @param args
 	 * @return
-	 * @throws LanguageException 
+	 * @throws DMLException 
+	 * @throws ParseException 
 	 */
 	public static boolean executeScript( Configuration conf, String[] args ) 
-		throws DMLException
+		throws DMLException, ParseException
 	{
 		boolean ret = false;
 		
@@ -333,6 +338,9 @@ public class DMLScript
 			}
 			
 			ret = true;
+		}
+		catch (ParseException pe) {
+			throw pe;
 		}
 		catch (DMLScriptException e) {
 			//rethrow DMLScriptException to propagate stop call

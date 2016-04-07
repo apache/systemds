@@ -386,7 +386,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		try {
 			prog = (new PyDMLParserWrapper()).doParse(filePath, null, argVals);
 		} catch (ParseException e) {
-			notifyErrorListeners("Exception found during importing a program from file " + filePath, ctx.start);
+			notifyErrorListeners(e.getMessage(), ctx.start);
 			return;
 		}
         // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism

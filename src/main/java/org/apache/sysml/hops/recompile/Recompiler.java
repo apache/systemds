@@ -34,6 +34,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
@@ -1646,7 +1647,8 @@ public class Recompiler
 		//special case for persistent reads with unknown size (read-after-write)
 		else if( hop instanceof DataOp 
 				&& ((DataOp)hop).getDataOpType() == DataOpTypes.PERSISTENTREAD
-				&& !hop.dimsKnown() && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.CSV )
+				&& !hop.dimsKnown() && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.CSV
+				&& !ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA) )
 		{
 			//update hop with read meta data
 			DataOp dop = (DataOp) hop; 

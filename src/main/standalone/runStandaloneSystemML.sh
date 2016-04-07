@@ -26,10 +26,11 @@ printUsageExit()
 cat << EOF
 Usage: $0 <dml-filename> [arguments] [-help]
     -help     - Print this usage message and exit
+Default Java options (-Xmx4g -Xms4g -Xmn400m) can be overridden by setting SYSTEMML_STANDALONE_OPTS.
 EOF
   exit 1
 }
-#    Script internally invokes 'java -Xmx4g -Xms4g -Xmn400m -jar StandaloneSystemML.jar -f <dml-filename> -exec singlenode -config=SystemML-config.xml [Optional-Arguments]'
+#    Script internally invokes 'java [SYSTEMML_STANDALONE_OPTS] -jar StandaloneSystemML.jar -f <dml-filename> -exec singlenode -config=SystemML-config.xml [arguments]'
 
 while getopts "h:" options; do
   case $options in
@@ -62,8 +63,28 @@ done
 
 LOG4JPROP=log4j.properties
 
-# invoke the jar with options and arguments
-java -Xmx4g -Xms4g -Xmn400m -cp ${CLASSPATH} -Dlog4j.configuration=file:${LOG4JPROP} org.apache.sysml.api.DMLScript \
-     -f ${SCRIPT_FILE} -exec singlenode -config=$CURRENT_PATH"/SystemML-config.xml" \
-     $@
+# set default java opts if none supplied
+if [ -z "$SYSTEMML_STANDALONE_OPTS" ] ; then
+  SYSTEMML_STANDALONE_OPTS="-Xmx4g -Xms4g -Xmn400m"
+fi;
 
+# invoke the jar with options and arguments
+CMD="\
+java ${SYSTEMML_STANDALONE_OPTS} \
+-cp ${CLASSPATH} \
+-Dlog4j.configuration=file:${LOG4JPROP} \
+org.apache.sysml.api.DMLScript \
+-f ${SCRIPT_FILE} \
+-exec singlenode \
+-config=$CURRENT_PATH"/SystemML-config.xml" \
+$@"
+
+$CMD
+
+# if there was an error, display the full java command
+# RETURN_CODE=$?
+# if [ $RETURN_CODE -ne 0 ]
+# then
+#   echo "Failed to run SystemML. Exit code: $RETURN_CODE"
+#   echo ${CMD}
+# fi

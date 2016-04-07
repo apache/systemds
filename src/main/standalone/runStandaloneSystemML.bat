@@ -30,21 +30,48 @@ setLocal EnableDelayedExpansion
 SET HADOOP_HOME=%CD%/lib/hadoop
 
 set CLASSPATH=./lib/*
-echo !CLASSPATH!
 
 set LOG4JPROP=log4j.properties
 
 for /f "tokens=1,* delims= " %%a in ("%*") do set ALLBUTFIRST=%%b
 
-java -Xmx4g -Xms4g -Xmn400m -cp %CLASSPATH% -Dlog4j.configuration=file:%LOG4JPROP% org.apache.sysml.api.DMLScript -f %1 -exec singlenode -config=SystemML-config.xml %ALLBUTFIRST%
+IF "%SYSTEMML_STANDALONE_OPTS%" == "" (
+  SET SYSTEMML_STANDALONE_OPTS=-Xmx4g -Xms4g -Xmn400m
+)
+
+:: construct the java command with options and arguments
+set CMD=java %SYSTEMML_STANDALONE_OPTS% ^
+     -cp %CLASSPATH% ^
+     -Dlog4j.configuration=file:%LOG4JPROP% ^
+     org.apache.sysml.api.DMLScript ^
+     -f %1 ^
+     -exec singlenode ^
+     -config=SystemML-config.xml ^
+     %ALLBUTFIRST%
+
+:: execute the java command
+%CMD%
+
+:: if there was an error, display the full java command
+::IF  ERRORLEVEL 1 (
+::  ECHO Failed to run SystemML. Exit code: %ERRORLEVEL%
+::  SET LF=^
+::
+::
+::  :: keep empty lines above for the line breaks
+::  ECHO %CMD:      =!LF!     %
+::  EXIT /B %ERRORLEVEL%
+::)
+
 GOTO End
 
 :Err
-ECHO "Wrong Usage. Please provide DML filename to be executed."
+ECHO Wrong Usage. Please provide DML filename to be executed.
 GOTO Msg
 
 :Msg
-ECHO "Usage: runStandaloneSystemML.bat <dml-filename> [arguments] [-help]"
-ECHO "Script internally invokes 'java -Xmx4g -Xms4g -Xmn400m -jar jSystemML.jar -f <dml-filename> -exec singlenode -config=SystemML-config.xml [Optional-Arguments]'"
+ECHO Usage: runStandaloneSystemML.bat ^<dml-filename^> [arguments] [-help]
+ECHO Default Java options (-Xmx4g -Xms4g -Xmn400m) can be overridden by setting SYSTEMML_STANDALONE_OPTS.
+ECHO Script internally invokes 'java [SYSTEMML_STANDALONE_OPTS] -cp ./lib/* -Dlog4j.configuration=file:log4j.properties org.apache.sysml.api.DMLScript -f ^<dml-filename^> -exec singlenode -config=SystemML-config.xml [arguments]'
 
 :End

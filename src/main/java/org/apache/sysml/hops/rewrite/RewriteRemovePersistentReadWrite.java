@@ -22,6 +22,8 @@ package org.apache.sysml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
@@ -36,6 +38,7 @@ import org.apache.sysml.hops.Hop.VisitStatus;
  */
 public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 {
+	private static final Log LOG = LogFactory.getLog(RewriteRemovePersistentReadWrite.class.getName());
 	
 	private HashSet<String> _inputs = null;
 	private HashSet<String> _outputs = null;
@@ -103,10 +106,14 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 				case PERSISTENTREAD:
 					if( _inputs.contains(dop.getName()) )
 						dop.setDataOpType(DataOpTypes.TRANSIENTREAD);
+					else
+						LOG.warn("Non-registered persistent read of variable '"+dop.getName()+"' (line "+dop.getBeginLine()+").");
 					break;
 				case PERSISTENTWRITE:
 					if( _outputs.contains(dop.getName()) )
 						dop.setDataOpType(DataOpTypes.TRANSIENTWRITE);
+					else
+						LOG.warn("Non-registered persistent write of variable '"+dop.getName()+"' (line "+dop.getBeginLine()+").");
 					break;
 				default:
 					//do nothing

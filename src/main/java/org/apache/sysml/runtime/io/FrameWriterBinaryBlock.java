@@ -23,12 +23,12 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
 
@@ -85,7 +85,7 @@ public class FrameWriterBinaryBlock extends FrameWriter
 
 		// 1) create sequence file writer 
 		SequenceFile.Writer writer = null;
-		writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, FrameBlock.class);
+		writer = new SequenceFile.Writer(fs, job, path, LongWritable.class, FrameBlock.class);
 		
 		try
 		{
@@ -97,12 +97,12 @@ public class FrameWriterBinaryBlock extends FrameWriter
 			}
 		
 			//3) reblock and write
-			MatrixIndexes indexes = new MatrixIndexes();
+			LongWritable indexes = new LongWritable();
 
 			if( rlen <= brlen && clen <= bclen ) //opt for single block
 			{
 				//directly write single block
-				indexes.setIndexes(1, 1);
+				indexes.set(1);
 				writer.append(indexes, src);
 			}
 			else //general case
@@ -112,25 +112,22 @@ public class FrameWriterBinaryBlock extends FrameWriter
 				
 				//create and write subblocks of frame
 				for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)brlen); blockRow++)
-					for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)bclen); blockCol++)
-					{
-						int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
-						int maxCol = (blockCol*bclen + bclen < src.getNumColumns()) ? bclen : src.getNumColumns() - blockCol*bclen;
-				
-						int row_offset = blockRow*brlen;
-						int col_offset = blockCol*bclen;
-						
-						//get reuse frame block
-						FrameBlock block = getFrameBlockForReuse(blocks);
-	
-						//copy subpart to block
-						src.sliceOperations( row_offset, row_offset+maxRow-1, 
-								             col_offset, col_offset+maxCol-1, block );
-						
-						//append block to sequence file
-						indexes.setIndexes(blockRow+1, blockCol+1);
-						writer.append(indexes, block);
-					}
+				{
+					int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
+			
+					int row_offset = blockRow*brlen;
+					
+					//get reuse frame block
+					FrameBlock block = getFrameBlockForReuse(blocks);
+
+					//copy subpart to block
+					src.sliceOperations( row_offset, row_offset+maxRow-1, 
+							             0, src.getNumColumns()-1, block );
+					
+					//append block to sequence file
+					indexes.set(row_offset+1);
+					writer.append(indexes, block);
+				}
 			}
 		
 		}

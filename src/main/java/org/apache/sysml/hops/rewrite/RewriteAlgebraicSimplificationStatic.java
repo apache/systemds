@@ -21,6 +21,7 @@ package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -134,8 +135,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//apply actual simplification rewrites (of childs incl checks)
 			hi = removeUnnecessaryVectorizeOperation(hi);        //e.g., matrix(1,nrow(X),ncol(X))/X -> 1/X
 			hi = removeUnnecessaryBinaryOperation(hop, hi, i);   //e.g., X*1 -> X (dep: should come after rm unnecessary vectorize)
-			hi = fuseDatagenAndBinaryOperation(hop, hi, i);      //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
-			hi = fuseDatagenAndMinusOperation(hop, hi, i);       //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
+			hi = fuseDatagenAndBinaryOperation(hi);              //e.g., rand(min=-1,max=1)*7 -> rand(min=-7,max=7)
+			hi = fuseDatagenAndMinusOperation(hi);               //e.g., -(rand(min=-2,max=1)) -> rand(min=-1,max=2)
  			hi = simplifyBinaryToUnaryOperation(hop, hi, i);     //e.g., X*X -> X^2 (pow2), X+X -> X*2, (X>0)-(X<0) -> sign(X)
  			hi = canonicalizeMatrixMultScalarAdd(hi);            //e.g., eps+U%*%t(V) -> U%*%t(V)+eps, U%*%t(V)-eps -> U%*%t(V)+(-eps) 
  			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
@@ -331,17 +332,16 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	}
 	
 	/**
-	 * handle removal of unnecessary binary operations over rand data
+	 * Handle removal of unnecessary binary operations over rand data
 	 * 
-	 * rand*7 -> rand(min*7,max*7); rand+7 -> rand(min+7,max+7);
+	 * rand*7 -> rand(min*7,max*7); rand+7 -> rand(min+7,max+7); rand-7 -> rand(min+(-7),max+(-7))
+	 * 7*rand -> rand(min*7,max*7); 7+rand -> rand(min+7,max+7); 
 	 * 
-	 * @param parent
 	 * @param hi
-	 * @param pos
 	 * @return
 	 * @throws HopsException
 	 */
-	private Hop fuseDatagenAndBinaryOperation( Hop parent, Hop hi, int pos ) 
+	private Hop fuseDatagenAndBinaryOperation( Hop hi ) 
 		throws HopsException
 	{
 		if( hi instanceof BinaryOp )
@@ -349,10 +349,13 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			BinaryOp bop = (BinaryOp)hi;
 			Hop left = bop.getInput().get(0);
 			Hop right = bop.getInput().get(1);
+		
+			//NOTE: rewrite not applied if more than one datagen consumer because this would lead to 
+			//the creation of multiple datagen ops and thus potentially different results if seed not specified)
 			
 			//left input rand and hence output matrix double, right scalar literal
 			if( left instanceof DataGenOp && ((DataGenOp)left).getOp()==DataGenMethod.RAND &&
-				right instanceof LiteralOp )
+				right instanceof LiteralOp && left.getParent().size()==1 )
 			{
 				DataGenOp inputGen = (DataGenOp)left;
 				HashMap<String,Integer> params = inputGen.getParamIndexMap();
@@ -360,31 +363,35 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				Hop max = left.getInput().get(params.get(DataExpression.RAND_MAX));
 				double sval = ((LiteralOp)right).getDoubleValue();
 				
-				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS)
+				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS || bop.getOp() == OpOp2.MINUS)
 					&& min instanceof LiteralOp && max instanceof LiteralOp )
 				{
 					//create fused data gen operator
 					DataGenOp gen = null;
 					if( bop.getOp()==OpOp2.MULT )
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, sval, 0);
-					else //if( bop.getOp()==OpOp2.PLUS )		
+					else { //OpOp2.PLUS | OpOp2.MINUS		
+						sval *= (bop.getOp()==OpOp2.MINUS) ? -1 : 1;
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, 1, sval);
+					}
 						
-					//rewire parents
-					HopRewriteUtils.removeChildReference(parent, bop);
-					HopRewriteUtils.addChildReference(parent, gen, pos);
-					
-					//propagate potentially updated nnz=0
-					parent.refreshSizeInformation(); 
+					//rewire all parents (avoid anomalies with replicated datagen)
+					List<Hop> parents = new ArrayList<Hop>(bop.getParent());
+					for( Hop p : parents ) {
+						int cpos = HopRewriteUtils.getChildReferencePos(p, bop);
+						HopRewriteUtils.removeChildReferenceByPos(p, bop, cpos);
+						HopRewriteUtils.addChildReference(p, gen, cpos);
+						//propagate potentially updated nnz=0
+						p.refreshSizeInformation();
+					}
 					
 					hi = gen;
-					
-					LOG.debug("Applied fuseDatagenAndBinaryOperation1");
+					LOG.debug("Applied fuseDatagenAndBinaryOperation1 (line "+bop.getBeginLine()+").");
 				}
 			}
 			//right input rand and hence output matrix double, left scalar literal
 			else if( right instanceof DataGenOp && ((DataGenOp)right).getOp()==DataGenMethod.RAND &&
-				left instanceof LiteralOp )
+				left instanceof LiteralOp && right.getParent().size()==1 )
 			{
 				DataGenOp inputGen = (DataGenOp)right;
 				HashMap<String,Integer> params = inputGen.getParamIndexMap();
@@ -399,19 +406,22 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					DataGenOp gen = null;
 					if( bop.getOp()==OpOp2.MULT )
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, sval, 0);
-					else //if( bop.getOp()==OpOp2.PLUS )		
+					else { //OpOp2.PLUS 
 						gen = HopRewriteUtils.copyDataGenOp(inputGen, 1, sval);
-						
-					//rewire parents
-					HopRewriteUtils.removeChildReference(parent, bop);
-					HopRewriteUtils.addChildReference(parent, gen, pos);
-
-					//propagate potentially updated nnz=0
-					parent.refreshSizeInformation(); 
+					}
+					
+					//rewire all parents (avoid anomalies with replicated datagen)
+					List<Hop> parents = new ArrayList<Hop>(bop.getParent());
+					for( Hop p : parents ) {
+						int cpos = HopRewriteUtils.getChildReferencePos(p, bop);
+						HopRewriteUtils.removeChildReferenceByPos(p, bop, cpos);
+						HopRewriteUtils.addChildReference(p, gen, cpos);
+						//propagate potentially updated nnz=0
+						p.refreshSizeInformation();
+					}
 					
 					hi = gen;
-					
-					LOG.debug("Applied fuseDatagenAndBinaryOperation2");
+					LOG.debug("Applied fuseDatagenAndBinaryOperation2 (line "+bop.getBeginLine()+").");
 				}
 			}
 		}
@@ -421,13 +431,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	
 	/**
 	 * 
-	 * @param parent
 	 * @param hi
-	 * @param pos
 	 * @return
 	 * @throws HopsException
 	 */
-	private Hop fuseDatagenAndMinusOperation( Hop parent, Hop hi, int pos ) 
+	private Hop fuseDatagenAndMinusOperation( Hop hi ) 
 		throws HopsException
 	{
 		if( hi instanceof BinaryOp )
@@ -461,11 +469,18 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeChildReferenceByPos(inputGen, max, ixMax);
 					HopRewriteUtils.addChildReference(inputGen, newMax, ixMax);
 					
-					HopRewriteUtils.removeChildReference(parent, bop);
-					HopRewriteUtils.addChildReference(parent, inputGen, pos);
+					//rewire all parents (avoid anomalies with replicated datagen)
+					List<Hop> parents = new ArrayList<Hop>(bop.getParent());
+					for( Hop p : parents ) {
+						int cpos = HopRewriteUtils.getChildReferencePos(p, bop);
+						HopRewriteUtils.removeChildReferenceByPos(p, bop, cpos);
+						HopRewriteUtils.addChildReference(p, inputGen, cpos);
+						//propagate potentially updated nnz=0
+						p.refreshSizeInformation();
+					}
+					
 					hi = inputGen;
-
-					LOG.debug("Applied fuseDatagenAndMinusOperation");		
+					LOG.debug("Applied fuseDatagenAndMinusOperation (line "+bop.getBeginLine()+").");		
 				}
 			}
 		}

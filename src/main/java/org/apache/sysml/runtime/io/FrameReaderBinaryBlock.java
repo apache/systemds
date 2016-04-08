@@ -24,13 +24,13 @@ import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 
 
@@ -93,7 +93,7 @@ public class FrameReaderBinaryBlock extends FrameReader
 	private static void readBinaryBlockFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
-		MatrixIndexes key = new MatrixIndexes(); 
+		LongWritable key = new LongWritable();
 		FrameBlock value = new FrameBlock();
 		
 		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
@@ -105,15 +105,14 @@ public class FrameReaderBinaryBlock extends FrameReader
 			{
 				//note: next(key, value) does not yet exploit the given serialization classes, record reader does but is generally slower.
 				while( reader.next(key, value) ) {	
-					int row_offset = (int)(key.getRowIndex()-1)*ConfigurationManager.getBlocksize();
-					int col_offset = (int)(key.getColumnIndex()-1)*ConfigurationManager.getBlocksize();
+					int row_offset = (int)(key.get()-1);
 					
 					int rows = value.getNumRows();
 					int cols = value.getNumColumns();
 					
 					//bound check per block
-					if( row_offset + rows < 0 || row_offset + rows > rlen || col_offset + cols<0 || col_offset + cols > clen ) {
-						throw new IOException("Frame block ["+(row_offset+1)+":"+(row_offset+rows)+","+(col_offset+1)+":"+(col_offset+cols)+"] " +
+					if( row_offset + rows < 0 || row_offset + rows > rlen ) {
+						throw new IOException("Frame block ["+(row_offset+1)+":"+(row_offset+rows)+","+":"+"] " +
 								              "out of overall frame range [1:"+rlen+",1:"+clen+"].");
 					}
 			

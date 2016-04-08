@@ -80,8 +80,8 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistr
 		String opcode = parts[0];
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);
+		long nrow = UtilFunctions.toLong(Double.parseDouble(parts[3]));
 		byte out = Byte.parseByte(parts[4]);
-		long nrow = Long.parseLong(parts[3]);
 		CacheType ctype = CacheType.valueOf(parts[5]);
 		boolean outputEmpty = Boolean.parseBoolean(parts[6]);
 		

@@ -36,6 +36,7 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.OutputParameters.Format;
+import org.apache.sysml.lops.PMMJ;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.lops.ParameterizedBuiltin;
 import org.apache.sysml.lops.RepMat;
@@ -617,35 +618,56 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Lop loffset = offsets.constructLops();
 				Lop lmaxdim = maxDim.constructLops();
 				
-				boolean requiresRep =   ((clen>bclen || clen<=0) &&  rmRows) 
-						             || ((rlen>brlen || rlen<=0) && !rmRows);
+				double mestPM = OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, 1, brlen, bclen, 1.0);
+				Lop rmEmpty = null;
 				
-				if( requiresRep ) {
-					Lop pos = createOffsetLop(input, rmRows); //ncol of left input (determines num replicates)
-					loffset = new RepMat(loffset, pos, rmRows, DataType.MATRIX, ValueType.DOUBLE);
-					loffset.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
-					setLineNumbers(loffset);
+				//a) broadcast-based PMM (permutation matrix mult)
+				if( rmRows && mestPM < OptimizerUtils.getRemoteMemBudgetMap() )
+				{
+					boolean needPart = !offsets.dimsKnown() || offsets.getDim1() > DistributedCacheInput.PARTITION_SIZE;
+					if( needPart ){ //requires partitioning
+						loffset = new DataPartition(loffset, DataType.MATRIX, ValueType.DOUBLE, (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+						loffset.getOutputParameters().setDimensions(offsets.getDim1(), 1, rlen, clen, rlen);
+						setLineNumbers(loffset);	
+					}
+					
+					rmEmpty = new PMMJ(loffset, linput, lmaxdim, getDataType(), getValueType(), needPart, true, ExecType.MR);
+					setOutputDimensions(rmEmpty);
+					setLineNumbers(rmEmpty);
+				}
+				//b) general case: repartition-based rmempty
+				else
+				{
+					boolean requiresRep =   ((clen>bclen || clen<=0) &&  rmRows) 
+							             || ((rlen>brlen || rlen<=0) && !rmRows);
+					
+					if( requiresRep ) {
+						Lop pos = createOffsetLop(input, rmRows); //ncol of left input (determines num replicates)
+						loffset = new RepMat(loffset, pos, rmRows, DataType.MATRIX, ValueType.DOUBLE);
+						loffset.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
+						setLineNumbers(loffset);
+					}
+					
+					Group group1 = new Group(linput, Group.OperationTypes.Sort, getDataType(), getValueType());
+					setLineNumbers(group1);
+					group1.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
+				
+					Group group2 = new Group( loffset, Group.OperationTypes.Sort, getDataType(), getValueType());
+					setLineNumbers(group2);
+					group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
+				
+					HashMap<String, Lop> inMap = new HashMap<String, Lop>();
+					inMap.put("target", group1);
+					inMap.put("offset", group2);
+					inMap.put("maxdim", lmaxdim);
+					inMap.put("margin", inputlops.get("margin"));
+					
+					rmEmpty = new ParameterizedBuiltin(inMap, HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);			
+					setOutputDimensions(rmEmpty);
+					setLineNumbers(rmEmpty);
 				}
 				
-				Group group1 = new Group(linput, Group.OperationTypes.Sort, getDataType(), getValueType());
-				setLineNumbers(group1);
-				group1.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
-			
-				Group group2 = new Group( loffset, Group.OperationTypes.Sort, getDataType(), getValueType());
-				setLineNumbers(group2);
-				group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
-			
-				HashMap<String, Lop> inMap = new HashMap<String, Lop>();
-				inMap.put("target", group1);
-				inMap.put("offset", group2);
-				inMap.put("maxdim", lmaxdim);
-				inMap.put("margin", inputlops.get("margin"));
-				
-				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inMap, HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);			
-				setOutputDimensions(pbilop);
-				setLineNumbers(pbilop);
-			
-				Group group3 = new Group( pbilop, Group.OperationTypes.Sort, getDataType(), getValueType());
+				Group group3 = new Group( rmEmpty, Group.OperationTypes.Sort, getDataType(), getValueType());
 				setLineNumbers(group3);
 				group3.getOutputParameters().setDimensions(-1, -1, brlen, bclen, -1);
 				

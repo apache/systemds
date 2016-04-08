@@ -81,9 +81,7 @@ import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
-// import org.apache.sysml.utils.visualize.DotGraph;
 import org.apache.sysml.yarn.DMLYarnClientProxy;
-import org.xml.sax.SAXException;
 
 
 public class DMLScript 

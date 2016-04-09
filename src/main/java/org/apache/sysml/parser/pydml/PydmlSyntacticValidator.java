@@ -119,8 +119,8 @@ import org.apache.sysml.parser.pydml.PydmlParser.WhileStatementContext;
  */
 public class PydmlSyntacticValidator extends CommonSyntacticValidator implements PydmlListener {
 
-	public PydmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
-		super(errorListener, argVals);
+	public PydmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
+		super(errorListener, argVals, sourceNamespace);
 	}
 
 	@Override public String namespaceResolutionOp() { return "."; }
@@ -384,7 +384,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 		DMLProgram prog = null;
 		try {
-			prog = (new PyDMLParserWrapper()).doParse(filePath, null, argVals);
+			prog = (new PyDMLParserWrapper()).doParse(filePath, null, namespace, argVals);
 		} catch (ParseException e) {
 			notifyErrorListeners(e.getMessage(), ctx.start);
 			return;
@@ -1011,7 +1011,6 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		functCall.setFunctionName(functionName);
 		functCall.setFunctionNamespace(namespace);
 
-
 		final ArrayList<DataIdentifier> targetList = new ArrayList<DataIdentifier>();
 		for(DataIdentifierContext dataCtx : ctx.targetList) {
 			if(dataCtx.dataInfo.expr instanceof DataIdentifier) {
@@ -1032,6 +1031,10 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			if (validBIF)
 				return;
 		}
+
+		// Override default namespace for imported non-built-in function
+		String inferNamespace = (sourceNamespace != null && sourceNamespace.length() > 0 && DMLProgram.DEFAULT_NAMESPACE.equals(namespace)) ? sourceNamespace : namespace;
+		functCall.setFunctionNamespace(inferNamespace);
 
 		setMultiAssignmentStatement(targetList, functCall, ctx, ctx.info);
 	}

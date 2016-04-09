@@ -111,8 +111,8 @@ import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class DmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
 
-	public DmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
-		super(errorListener, argVals);
+	public DmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
+		super(errorListener, argVals, sourceNamespace);
 	}
 
 	@Override public String namespaceResolutionOp() { return "::"; }
@@ -337,7 +337,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 		DMLProgram prog = null;
 		try {
-			prog = (new DMLParserWrapper()).doParse(filePath, null, argVals);
+			prog = (new DMLParserWrapper()).doParse(filePath, null, namespace, argVals);
 		} catch (ParseException e) {
 			notifyErrorListeners(e.getMessage(), ctx.start);
 			return;
@@ -474,7 +474,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		functCall.setFunctionName(functionName);
 		functCall.setFunctionNamespace(namespace);
 
-
 		final ArrayList<DataIdentifier> targetList = new ArrayList<DataIdentifier>();
 		for(DataIdentifierContext dataCtx : ctx.targetList) {
 			if(dataCtx.dataInfo.expr instanceof DataIdentifier) {
@@ -495,6 +494,10 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			if (validBIF)
 				return;
 		}
+
+		// Override default namespace for imported non-built-in function
+		String inferNamespace = (sourceNamespace != null && sourceNamespace.length() > 0 && DMLProgram.DEFAULT_NAMESPACE.equals(namespace)) ? sourceNamespace : namespace;
+		functCall.setFunctionNamespace(inferNamespace);
 
 		setMultiAssignmentStatement(targetList, functCall, ctx, ctx.info);
 	}

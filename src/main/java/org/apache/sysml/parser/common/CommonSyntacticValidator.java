@@ -65,11 +65,13 @@ public abstract class CommonSyntacticValidator {
 	protected final String currentFile;
 	protected String _workingDir = ".";   //current working directory
 	protected HashMap<String,String> argVals = null;
+	protected String sourceNamespace = null;
 
-	public CommonSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals) {
+	public CommonSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
 		this.errorListener = errorListener;
 		currentFile = errorListener.getCurrentFileName();
 		this.argVals = argVals;
+		this.sourceNamespace = sourceNamespace;
 	}
 
 	protected void notifyErrorListeners(String message, int line, int charPositionInLine) {
@@ -700,7 +702,9 @@ public abstract class CommonSyntacticValidator {
 		// If builtin functions weren't found...
 		FunctionCallIdentifier functCall = new FunctionCallIdentifier(paramExpression);
 		functCall.setFunctionName(functionName);
-		functCall.setFunctionNamespace(namespace);
+		// Override default namespace for imported non-built-in function
+		String inferNamespace = (sourceNamespace != null && sourceNamespace.length() > 0 && DMLProgram.DEFAULT_NAMESPACE.equals(namespace)) ? sourceNamespace : namespace;
+		functCall.setFunctionNamespace(inferNamespace);
 
 		functCall.setAllPositions(currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
 

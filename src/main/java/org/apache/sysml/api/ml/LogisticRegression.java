@@ -20,7 +20,6 @@
 package org.apache.sysml.api.ml;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.spark.SparkContext;
@@ -37,12 +36,10 @@ import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
 
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.MLContext;
 import org.apache.sysml.api.MLOutput;
 import org.apache.sysml.api.ml.LogisticRegressionModel;
 import org.apache.sysml.api.ml.functions.ConvertSingleColumnToString;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -470,14 +467,8 @@ public class LogisticRegression extends ProbabilisticClassifier<Vector, Logistic
 			JavaPairRDD<MatrixIndexes, MatrixBlock> b_out = out.getBinaryBlockedRDD("B_out");
 			MatrixCharacteristics b_outMC = out.getMatrixCharacteristics("B_out");
 			return new LogisticRegressionModel(b_out, b_outMC, sc).setParent(this);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			throw new RuntimeException(e);
-		} catch (DMLRuntimeException e) {
-			throw new RuntimeException(e);
-		} catch (DMLException e) {
-			throw new RuntimeException(e);
-		} catch (ParseException e) {
-			throw new RuntimeException(e);
-		}
+		} 
 	}
 }

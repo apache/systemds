@@ -21,46 +21,49 @@ package org.apache.sysml.parser;
 
 import java.util.List;
 
+import org.apache.sysml.api.DMLException;
 import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
 
 /**
  * This exception is thrown when parse issues are encountered.
  * 
- * NOTE: MB: Originally, this exception was generated with javacc.
- * Unfortunately, many classes directly use this exception. Hence, on removing
- * javacc we kept a condensed version of it. TODO: eventually we should remove
- * the token class and create our own exception or just use LanguageException.
  */
-public class ParseException extends Exception {
+public class ParseException extends DMLException 
+{
+	private static final long serialVersionUID = 9199966053655385928L;
 
 	/**
-	 * The version identifier for this Serializable class. Increment only if the
-	 * <i>serialized</i> form of the class changes.
+	 * List of issues that happened during parsing. Typically set by the error
+	 * listener.
 	 */
-	private static final long serialVersionUID = 1L;
+	private List<ParseIssue> _parseIssues;
 
 	/**
-	 * The following constructors are for use by you for whatever purpose you
-	 * can think of. Constructing the exception in this manner makes the
-	 * exception behave in the normal way - i.e., as documented in the class
-	 * "Throwable". The fields "errorToken", "expectedTokenSequences", and
-	 * "tokenImage" do not contain relevant information. The JavaCC generated
-	 * code does not use these constructors.
+	 * The DML/PyDML script string. Used to display the original lines where the
+	 * parse issues occurred.
 	 */
+	private String _scriptString;
 
+	/**
+	 * Standard exception message. If no list of parse issues exists, this
+	 * message can be used to display a parse exception message that doesn't
+	 * relate to the list of parse issues.
+	 */
+	private String _message;
+
+	
 	public ParseException() {
 		super();
 	}
 
-	/** Constructor with message. */
 	public ParseException(String message) {
 		super(message);
-		this.message = message;
+		_message = message;
 	}
 
 	public ParseException(String message, Exception e) {
 		super(message, e);
-		this.message = message;
+		_message = message;
 	}
 
 	/**
@@ -75,49 +78,9 @@ public class ParseException extends Exception {
 	 */
 	public ParseException(List<ParseIssue> parseIssues, String scriptString) {
 		super();
-		this.parseIssues = parseIssues;
-		this.scriptString = scriptString;
+		_parseIssues = parseIssues;
+		_scriptString = scriptString;
 	}
-
-	/**
-	 * This is the last token that has been consumed successfully. If this
-	 * object has been created due to a parse issue, the token following this
-	 * token will (therefore) be the first error token.
-	 */
-	public Token currentToken;
-
-	/**
-	 * Each entry in this array is an array of integers. Each array of integers
-	 * represents a sequence of tokens (by their ordinal values) that is
-	 * expected at this point of the parse.
-	 */
-	public int[][] expectedTokenSequences;
-
-	/**
-	 * This is a reference to the "tokenImage" array of the generated parser
-	 * within which the parse issue occurred. This array is defined in the
-	 * generated ...Constants interface.
-	 */
-	public String[] tokenImage;
-
-	/**
-	 * List of issues that happened during parsing. Typically set by the error
-	 * listener.
-	 */
-	private List<ParseIssue> parseIssues;
-
-	/**
-	 * The DML/PyDML script string. Used to display the original lines where the
-	 * parse issues occurred.
-	 */
-	private String scriptString;
-
-	/**
-	 * Standard exception message. If no list of parse issues exists, this
-	 * message can be used to display a parse exception message that doesn't
-	 * relate to the list of parse issues.
-	 */
-	private String message;
 
 	/**
 	 * Obtain the list of parse issues that occurred.
@@ -125,7 +88,7 @@ public class ParseException extends Exception {
 	 * @return the list of parse issues
 	 */
 	public List<ParseIssue> getParseIssues() {
-		return parseIssues;
+		return _parseIssues;
 	}
 
 	/**
@@ -135,7 +98,7 @@ public class ParseException extends Exception {
 	 *            the list of parse issues
 	 */
 	public void setParseIssues(List<ParseIssue> parseIssues) {
-		this.parseIssues = parseIssues;
+		_parseIssues = parseIssues;
 	}
 
 	/**
@@ -144,7 +107,7 @@ public class ParseException extends Exception {
 	 * @return the original DML/PyDML script string
 	 */
 	public String getScriptString() {
-		return scriptString;
+		return _scriptString;
 	}
 
 	/**
@@ -154,7 +117,7 @@ public class ParseException extends Exception {
 	 *            the original DML/PyDML script string
 	 */
 	public void setScriptString(String scriptString) {
-		this.scriptString = scriptString;
+		_scriptString = scriptString;
 	}
 
 	/**
@@ -164,11 +127,7 @@ public class ParseException extends Exception {
 	 *         greater than 0, <code>false</code> otherwise
 	 */
 	public boolean hasParseIssues() {
-		if ((parseIssues != null) && (parseIssues.size() > 0)) {
-			return true;
-		} else {
-			return false;
-		}
+		return (_parseIssues != null && _parseIssues.size() > 0);
 	}
 
 	/**
@@ -178,15 +137,8 @@ public class ParseException extends Exception {
 	 */
 	@Override
 	public String getMessage() {
-		if (!hasParseIssues()) {
-			if (message != null) {
-				return message;
-			} else {
-				return "No parse issue message.";
-			}
-		} else {
-			return generateParseIssuesMessage();
-		}
+		return hasParseIssues() ? generateParseIssuesMessage() :
+			(_message != null) ? _message : "No parse issue message.";
 	}
 
 	/**
@@ -196,20 +148,19 @@ public class ParseException extends Exception {
 	 * @return String representing the list of parse issues.
 	 */
 	private String generateParseIssuesMessage() {
-		if (scriptString == null) {
+		if (_scriptString == null)
 			return "No script string available.";
-		}
-		String[] scriptLines = scriptString.split("\\n");
+		
+		String[] scriptLines = _scriptString.split("\\n");
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n--------------------------------------------------------------");
-		if (parseIssues.size() == 1) {
+		if (_parseIssues.size() == 1)
 			sb.append("\nThe following parse issue was encountered:\n");
-		} else {
-			sb.append("\nThe following " + parseIssues.size() + " parse issues were encountered:\n");
-		}
+		else
+			sb.append("\nThe following " + _parseIssues.size() + " parse issues were encountered:\n");
 		int count = 1;
-		for (ParseIssue parseIssue : parseIssues) {
-			if (parseIssues.size() > 1) {
+		for (ParseIssue parseIssue : _parseIssues) {
+			if (_parseIssues.size() > 1) {
 				sb.append("#");
 				sb.append(count++);
 				sb.append(" ");

@@ -198,7 +198,6 @@ public class StatementBlock extends LiveVariableAnalysis
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
 				if (fblock == null){
-					LOG.error(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 				}
 				if( !rIsInlineableFunction(fblock, dmlProg) )
@@ -224,7 +223,6 @@ public class StatementBlock extends LiveVariableAnalysis
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(),fcall.getName());
 				if (fblock == null){
-					LOG.error(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 				}
 				
@@ -415,8 +413,7 @@ public class StatementBlock extends LiveVariableAnalysis
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
 				if (fblock == null){
-					LOG.error(fcall.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
-					throw new LanguageException(fcall.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
+					fcall.raiseValidateError("function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace(), false);
 				}
 				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
 				
@@ -430,8 +427,7 @@ public class StatementBlock extends LiveVariableAnalysis
 				String prefix = _seq.getNextID() + "_";
 				
 				if (fstmt.getBody().size() > 1){
-					LOG.error(sourceExpr.printErrorLocation() + "rewritable function can only have 1 statement block");
-					throw new LanguageException(sourceExpr.printErrorLocation() + "rewritable function can only have 1 statement block");
+					sourceExpr.raiseValidateError("rewritable function can only have 1 statement block", false);
 				}
 				StatementBlock sblock = fstmt.getBody().get(0);
 				
@@ -452,8 +448,7 @@ public class StatementBlock extends LiveVariableAnalysis
 					else {
 						// use default value for parameter
 						if (fstmt.getInputParams().get(i).getDefaultValue() == null){
-							LOG.error(currFormalParam.printErrorLocation() + "default parameter for " + currFormalParam + " is undefined");
-							throw new LanguageException(currFormalParam.printErrorLocation() + "default parameter for " + currFormalParam + " is undefined");
+							currFormalParam.raiseValidateError("default parameter for " + currFormalParam + " is undefined", false);
 						}
 						currCallParam = new DataIdentifier(fstmt.getInputParams().get(i).getDefaultValue());
 						currCallParam.setAllPositions( 	fstmt.getInputParams().get(i).getFilename(),
@@ -497,8 +492,7 @@ public class StatementBlock extends LiveVariableAnalysis
 					DataIdentifier newTarget = null;
 					if (current instanceof AssignmentStatement){
 						if (i > 0) {
-							LOG.error(current.printErrorLocation() + "Assignment statement cannot return multiple values");
-							throw new LanguageException(current.printErrorLocation() + "Assignment statement cannot return multiple values");
+							fstmt.raiseValidateError("Assignment statement cannot return multiple values", false);
 						}
 						newTarget = new DataIdentifier(((AssignmentStatement)current).getTarget());
 					}
@@ -873,8 +867,7 @@ public class StatementBlock extends LiveVariableAnalysis
 			VariableSet updated = s.variablesUpdated();
 			
 			if (s instanceof WhileStatement || s instanceof IfStatement || s instanceof ForStatement){
-				LOG.error(s.printErrorLocation() + "control statement (while / for / if) cannot be in generic statement block");
-				throw new LanguageException(s.printErrorLocation() + "control statement (while / for / if) cannot be in generic statement block");
+				raiseValidateError("control statement (while / for / if) cannot be in generic statement block", false);
 			}
 	
 			if (read != null){
@@ -998,7 +991,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		{
 			String fullMsg = this.printErrorLocation() + msg;
 			
-			LOG.error( fullMsg );			
+			//LOG.error( fullMsg ); //no redundant error			
 			if( errorCode != null )
 				throw new LanguageException( fullMsg, errorCode );
 			else 

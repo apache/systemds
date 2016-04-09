@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
 import org.apache.sysml.udf.PackageFunction;
-import org.apache.sysml.udf.PackageRuntimeException;
 import org.apache.sysml.udf.Scalar;
 import org.apache.sysml.udf.Matrix.ValueType;
 import org.apache.sysml.udf.Scalar.ScalarValueType;
@@ -58,7 +57,7 @@ public class DynamicReadMatrixRcCP extends PackageFunction
 		if(pos == 1)
 			return _rc;
 		
-		throw new PackageRuntimeException("Invalid function output being requested");
+		throw new RuntimeException("Invalid function output being requested");
 		
 	}
 

@@ -70,42 +70,36 @@ public class OutputStatement extends Statement
 	 * @param ecp
 	 * @throws DMLParseException
 	 */
-	OutputStatement(String fname, FunctionCallIdentifier fci, 
+	public OutputStatement(String fname, FunctionCallIdentifier fci, 
 			String filename, int blp, int bcp, int elp, int ecp) 
-		throws DMLParseException 
-	{
-		
-		this.setAllPositions(filename, blp, bcp, elp, ecp);
+		throws LanguageException 
+	{		
+		setAllPositions(filename, blp, bcp, elp, ecp);
 		DataOp op = Expression.DataOp.WRITE;
 		ArrayList<ParameterExpression> passedExprs = fci.getParamExprs();
 		_paramsExpr = new DataExpression(op, new HashMap<String,Expression>(),
 				filename, blp, bcp, elp, ecp);
-		DMLParseException runningList = new DMLParseException(fname);
 		
 		//check number parameters and proceed only if this will not cause errors
 		if (passedExprs.size() < 2)
-			runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "write method must specify both variable to write to file, and filename to write variable to"));
+			raiseValidateError("write method must specify both variable to write to file, and filename to write variable to");
 		else
 		{
 			ParameterExpression firstParam = passedExprs.get(0);
 			if (firstParam.getName() != null || (!(firstParam.getExpr() instanceof DataIdentifier)))
-				runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "first argument to write method must be name of variable to be written out"));
+				raiseValidateError("first argument to write method must be name of variable to be written out");
 			else
 				_id = (DataIdentifier)firstParam.getExpr();
 			
 			ParameterExpression secondParam = passedExprs.get(1);
 			if (secondParam.getName() != null || (secondParam.getName() != null && secondParam.getName().equals(DataExpression.IO_FILENAME)))
-				runningList.add(new DMLParseException(fci.getFilename(), fci.printErrorLocation() + "second argument to write method must be filename of file variable written to"));
+				raiseValidateError("second argument to write method must be filename of file variable written to");
 			else
 				addExprParam(DataExpression.IO_FILENAME, secondParam.getExpr(), false);
 				
 			for (int i = 2; i< passedExprs.size(); i++){
 				ParameterExpression currParam = passedExprs.get(i);
-				try {
-					addExprParam(currParam.getName(), currParam.getExpr(), false);
-				} catch (DMLParseException e){
-					runningList.add(e);
-				}
+				addExprParam(currParam.getName(), currParam.getExpr(), false);
 			}
 			if (fname.equals("writeMM")){
 				StringIdentifier writeMMExpr = new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET,
@@ -118,9 +112,6 @@ public class OutputStatement extends Statement
 				addExprParam(DataExpression.FORMAT_TYPE, delimitedExpr, false);
 			}
 		}
-		
-		if (runningList.size() > 0)
-			throw runningList;
 	}
 	
 	public void setExprParam(String name, Expression value) {
@@ -134,20 +125,16 @@ public class OutputStatement extends Statement
 			return false;
 	}
 	
-	public void addExprParam(String name, Expression value, boolean fromMTDFile) throws DMLParseException
+	public void addExprParam(String name, Expression value, boolean fromMTDFile) 
+		throws LanguageException
 	{
-		DMLParseException runningList = new DMLParseException(value.getFilename());
-		
 		if( _paramsExpr.getVarParam(name) != null )
-			runningList.add(new DMLParseException(value.getFilename(), value.printErrorLocation() + "attempted to add IOStatement parameter " + name + " more than once"));
+			raiseValidateError("attempted to add IOStatement parameter " + name + " more than once", false);
 		
 		if( !OutputStatement.isValidParamName(name) )
-			runningList.add(new DMLParseException(value.getFilename(), value.printErrorLocation() + "attempted to add invalid write statement parameter: " + name));
+			raiseValidateError("attempted to add invalid write statement parameter: " + name, false);
 		
 		_paramsExpr.addVarParam(name, value);
-		
-		if (runningList.size() > 0)
-			throw runningList;
 	}
 	
 	// rewrites statement to support function inlining (create deep copy)

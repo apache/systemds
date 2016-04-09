@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
 import org.apache.sysml.udf.PackageFunction;
-import org.apache.sysml.udf.PackageRuntimeException;
 import org.apache.sysml.udf.Scalar;
 import org.apache.sysml.udf.Scalar.ScalarValueType;
 
@@ -35,6 +34,7 @@ import org.apache.sysml.udf.Scalar.ScalarValueType;
  * 
  *
  */
+@Deprecated
 public class DynamicWriteMatrixCP extends PackageFunction 
 {	
 	
@@ -76,7 +76,7 @@ public class DynamicWriteMatrixCP extends PackageFunction
 		}
 		catch(Exception e)
 		{
-			throw new PackageRuntimeException("Error executing dynamic write of matrix",e);
+			throw new RuntimeException("Error executing dynamic write of matrix",e);
 		}
 		
 		_success = new Scalar(ScalarValueType.Boolean,String.valueOf(success));

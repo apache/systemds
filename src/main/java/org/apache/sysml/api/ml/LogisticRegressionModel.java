@@ -20,7 +20,6 @@
 package org.apache.sysml.api.ml;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.spark.SparkContext;
@@ -35,10 +34,8 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
 
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.MLContext;
 import org.apache.sysml.api.MLOutput;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -175,13 +172,7 @@ public class LogisticRegressionModel extends ProbabilisticClassificationModel<Ve
 			predictionsNProb = predictionsNProb.join(rawPred, predictionsNProb.col("ID").equalTo(rawPred.col("ID2"))).select("ID", "probability", "prediction", "rawPrediction");
 			DataFrame dataset1 = RDDConverterUtilsExt.addIDToDataFrame(dataset, sqlContext, "ID");			
 			return dataset1.join(predictionsNProb, dataset1.col("ID").equalTo(predictionsNProb.col("ID"))).orderBy("id");
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		} catch (DMLRuntimeException e) {
-			throw new RuntimeException(e);
-		} catch (DMLException e) {
-			throw new RuntimeException(e);
-		} catch (ParseException e) {
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} 
 	}

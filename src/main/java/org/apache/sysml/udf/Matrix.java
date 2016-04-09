@@ -141,29 +141,23 @@ public class Matrix extends FunctionParameter
 	 * representation.
 	 * 
 	 * @return
+	 * @throws DMLRuntimeException 
+	 * @throws IOException 
 	 */
 	public double[][] getMatrixAsDoubleArray() 
+		throws DMLRuntimeException, IOException 
 	{
 		double[][] ret = null;
 		
-		try 
-		{
-			if( _mo != null ) //CP ext function
-			{
-				MatrixBlock mb = _mo.acquireRead();
-				ret = DataConverter.convertToDoubleMatrix( mb );
-				_mo.release();
-			}
-			else //traditional ext function (matrix file produced by reblock)
-			{
-				MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.TextCellInputInfo);
-				MatrixBlock mb = reader.readMatrixFromHDFS(this.getFilePath(), _rows, _cols, -1, -1, -1);
-				ret = DataConverter.convertToDoubleMatrix( mb );
-			}
+		if( _mo != null ) { //CP ext function
+			MatrixBlock mb = _mo.acquireRead();
+			ret = DataConverter.convertToDoubleMatrix( mb );
+			_mo.release();
 		}
-		catch(Exception ex)
-		{
-			throw new PackageRuntimeException(ex);
+		else { //traditional ext function (matrix file produced by reblock)
+			MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.TextCellInputInfo);
+			MatrixBlock mb = reader.readMatrixFromHDFS(this.getFilePath(), _rows, _cols, -1, -1, -1);
+			ret = DataConverter.convertToDoubleMatrix( mb );
 		}
 			
 		return ret;

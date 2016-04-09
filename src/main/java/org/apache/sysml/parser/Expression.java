@@ -30,7 +30,6 @@ import org.apache.sysml.hops.Hop.FileFormatTypes;
 
 public abstract class Expression 
 {
-	
 	public enum Kind {
 		UnaryOp, BinaryOp, BooleanOp, BuiltinFunctionOp, ParameterizedBuiltinFunctionOp, DataOp, Data, Literal, RelationalOp, ExtBuiltinFunctionOp, FunctionCallOp
 	};
@@ -387,15 +386,12 @@ public abstract class Expression
 	///////////////////////////////////////////////////////////////
 	// validate error handling (consistent for all expressions)
 	
-	/**
-	 * 
-	 * @param msg
-	 * @param conditional
-	 * @throws LanguageException
-	 */
-	public void raiseValidateError( String msg, boolean conditional ) 
-		throws LanguageException
-	{
+	
+	public void raiseValidateError( String msg ) throws LanguageException {
+		raiseValidateError(msg, false, null);
+	}
+	
+	public void raiseValidateError( String msg, boolean conditional ) throws LanguageException {
 		raiseValidateError(msg, conditional, null);
 	}
 	
@@ -419,7 +415,7 @@ public abstract class Expression
 		{
 			String fullMsg = this.printErrorLocation() + msg;
 			
-			LOG.error( fullMsg );			
+			//LOG.error( fullMsg ); //no redundant error			
 			if( errorCode != null )
 				throw new LanguageException( fullMsg, errorCode );
 			else 

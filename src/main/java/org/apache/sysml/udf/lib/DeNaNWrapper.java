@@ -23,13 +23,13 @@ package org.apache.sysml.udf.lib;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
 import org.apache.sysml.udf.PackageFunction;
-import org.apache.sysml.udf.PackageRuntimeException;
 import org.apache.sysml.udf.Matrix.ValueType;
 
 /**
  * Wrapper class to deNaN matrices by replacing all NaNs with zeros,
  * made by modifying <code>OrderWrapper.java</code>
  */
+@Deprecated
 public class DeNaNWrapper extends PackageFunction 
 {
 	
@@ -51,7 +51,7 @@ public class DeNaNWrapper extends PackageFunction
 		if(pos == 0)
 			return ret;
 		
-		throw new PackageRuntimeException("Invalid function output being requested");
+		throw new RuntimeException("Invalid function output being requested");
 	}
 
 	@Override
@@ -73,7 +73,7 @@ public class DeNaNWrapper extends PackageFunction
 		} 
 		catch (Exception e) 
 		{
-			throw new PackageRuntimeException("Error executing external removeNaN function", e);
+			throw new RuntimeException("Error executing external removeNaN function", e);
 		}
 	}
 }

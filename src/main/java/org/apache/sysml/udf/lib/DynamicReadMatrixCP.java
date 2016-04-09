@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
 import org.apache.sysml.udf.PackageFunction;
-import org.apache.sysml.udf.PackageRuntimeException;
 import org.apache.sysml.udf.Scalar;
 import org.apache.sysml.udf.Matrix.ValueType;
 
@@ -80,7 +79,7 @@ public class DynamicReadMatrixCP extends PackageFunction
 		}
 		catch(Exception e)
 		{
-			throw new PackageRuntimeException("Error executing dynamic read of matrix",e);
+			throw new RuntimeException("Error executing dynamic read of matrix",e);
 		}
 	}
 }

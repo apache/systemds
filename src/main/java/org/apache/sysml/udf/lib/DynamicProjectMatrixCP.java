@@ -25,7 +25,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
 import org.apache.sysml.udf.PackageFunction;
-import org.apache.sysml.udf.PackageRuntimeException;
 import org.apache.sysml.udf.Matrix.ValueType;
 
 public class DynamicProjectMatrixCP extends PackageFunction
@@ -99,7 +98,7 @@ public class DynamicProjectMatrixCP extends PackageFunction
 		}
 		catch(Exception e)
 		{
-			throw new PackageRuntimeException("Error executing dynamic project of matrix", e);
+			throw new RuntimeException("Error executing dynamic project of matrix", e);
 		}
 	}	
 }

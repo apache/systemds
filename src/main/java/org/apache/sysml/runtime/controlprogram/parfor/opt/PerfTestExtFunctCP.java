@@ -26,7 +26,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.Matrix;
 import org.apache.sysml.udf.PackageFunction;
-import org.apache.sysml.udf.PackageRuntimeException;
 import org.apache.sysml.udf.Matrix.ValueType;
 
 /**
@@ -87,7 +86,7 @@ public class PerfTestExtFunctCP extends PackageFunction
 		}
 		catch(Exception e)
 		{
-			throw new PackageRuntimeException("Error executing generic test extfunct.", e);
+			throw new RuntimeException("Error executing generic test extfunct.", e);
 		}
 	}
 

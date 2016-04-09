@@ -132,5 +132,39 @@ public abstract class Statement
 		return "INFO: " + _filename + " -- line " + beginLine + ", column " + beginColumn + " -- ";
 	}
 
+	public void raiseValidateError( String msg ) throws LanguageException {
+		raiseValidateError(msg, false, null);
+	}
+
+	public void raiseValidateError( String msg, boolean conditional ) throws LanguageException {
+		raiseValidateError(msg, conditional, null);
+	}
 	
+	/**
+	* 
+	* @param msg
+	* @param conditional
+	* @param code
+	* @throws LanguageException
+	*/
+	public void raiseValidateError( String msg, boolean conditional, String errorCode ) 
+		throws LanguageException
+	{
+		if( conditional )  //warning if conditional
+		{
+			String fullMsg = this.printWarningLocation() + msg;
+			
+			LOG.warn( fullMsg );
+		}
+		else  //error and exception if unconditional
+		{
+			String fullMsg = this.printErrorLocation() + msg;
+			
+			//LOG.error( fullMsg ); //no redundant error	
+			if( errorCode != null )
+				throw new LanguageException( fullMsg, errorCode );
+			else 
+				throw new LanguageException( fullMsg );
+		}
+	}	
 }

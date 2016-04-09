@@ -37,7 +37,6 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.udf.ExternalFunctionInvocationInstruction;
 import org.apache.sysml.udf.Matrix;
-import org.apache.sysml.udf.PackageRuntimeException;
 
 /**
  * CP external function program block, that overcomes the need for 
@@ -135,7 +134,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 		
 		// class name cannot be null, however, configFile and execLocation can be null
 		if (className == null)
-			throw new PackageRuntimeException(this.printBlockErrorLocation() + ExternalFunctionStatement.CLASS_NAME + " not provided!");
+			throw new RuntimeException(this.printBlockErrorLocation() + ExternalFunctionStatement.CLASS_NAME + " not provided!");
 
 		// assemble input and output param strings
 		String inputParameterString = getParameterString(getInputParams());

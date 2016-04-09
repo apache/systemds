@@ -67,6 +67,9 @@ public class CustomErrorListener extends BaseErrorListener {
 	public void validationError(int line, int charPositionInLine, String msg) {
 		parseIssues
 				.add(new ParseIssue(line, charPositionInLine, msg, currentFileName, ParseIssueType.VALIDATION_ERROR));
+		
+		//TODO MB: we should not redundantly log errors here 
+		//(this also applies for the two other methods below).
 		try {
 			setAtleastOneError(true);
 			// Print error messages with file name
@@ -94,6 +97,7 @@ public class CustomErrorListener extends BaseErrorListener {
 	public void validationWarning(int line, int charPositionInLine, String msg) {
 		parseIssues.add(new ParseIssue(line, charPositionInLine, msg, currentFileName,
 				ParseIssueType.VALIDATION_WARNING));
+		
 		try {
 			// atleastOneError = true; ---> not an error, just warning
 			// Print error messages with file name
@@ -273,6 +277,8 @@ public class CustomErrorListener extends BaseErrorListener {
 	 * to the user.
 	 */
 	public enum ParseIssueType {
+		//TODO MB: This classification is misleading as it only refers to variations of parsing issues.
+		//We need to consolidate the handling of parsing issues and actual validation issues (see validateParseTree).		
 		SYNTAX_ERROR("Syntax error"), VALIDATION_ERROR("Validation error"), VALIDATION_WARNING("Validation warning");
 
 		ParseIssueType(String text) {

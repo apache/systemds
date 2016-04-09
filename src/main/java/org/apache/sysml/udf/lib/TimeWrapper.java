@@ -24,7 +24,6 @@ package org.apache.sysml.udf.lib;
 
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.PackageFunction;
-import org.apache.sysml.udf.PackageRuntimeException;
 import org.apache.sysml.udf.Scalar;
 import org.apache.sysml.udf.Scalar.ScalarValueType;
 
@@ -41,7 +40,6 @@ import org.apache.sysml.udf.Scalar.ScalarValueType;
  */
 public class TimeWrapper extends PackageFunction 
 {
-	
 	private static final long serialVersionUID = 1L;
 
 	private Scalar _ret;
@@ -56,21 +54,14 @@ public class TimeWrapper extends PackageFunction
 		if (pos == 0)
 			return _ret;
 
-		throw new PackageRuntimeException(
+		throw new RuntimeException(
 				"Invalid function output being requested");
 	}
 
 	@Override
 	public void execute() {
-		try {
-			// int past = Integer.parseInt(((Scalar) getFunctionInput(0))
-			// .getValue());
-			long present = System.currentTimeMillis();
-			_ret = new Scalar(ScalarValueType.Double, String.valueOf(present));
-		} catch (Exception e) {
-			throw new PackageRuntimeException(
-					"Error executing external time function", e);
-		}
+		long present = System.currentTimeMillis();
+		_ret = new Scalar(ScalarValueType.Double, String.valueOf(present));
 	}
 
 }

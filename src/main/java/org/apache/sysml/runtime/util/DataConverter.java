@@ -47,7 +47,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
-import org.apache.sysml.udf.Matrix;
 
 
 /**
@@ -842,12 +841,9 @@ public class DataConverter
 	public static Array2DRowRealMatrix convertToArray2DRowRealMatrix(MatrixObject mo) 
 		throws DMLRuntimeException 
 	{
-		Matrix.ValueType vt = (mo.getValueType() == ValueType.DOUBLE ? Matrix.ValueType.Double : Matrix.ValueType.Integer);
-		Matrix mathInput = new Matrix(mo.getFileName(), mo.getNumRows(), mo.getNumColumns(), vt);
-		mathInput.setMatrixObject(mo);
-		double[][] data = mathInput.getMatrixAsDoubleArray();
-		Array2DRowRealMatrix matrixInput = new Array2DRowRealMatrix(data, false);
-		
-		return matrixInput;
+		MatrixBlock mb = mo.acquireRead();
+		double[][] data = DataConverter.convertToDoubleMatrix(mb);
+		mo.release();		
+		return new Array2DRowRealMatrix(data, false);
 	}
 }

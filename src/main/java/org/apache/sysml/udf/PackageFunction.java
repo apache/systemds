@@ -33,8 +33,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
  * 
  */
 public abstract class PackageFunction implements Serializable 
-{
-	
+{	
 	protected static final Log LOG = LogFactory.getLog(PackageFunction.class.getName());
 	
 	private static final long serialVersionUID = 3274150928865462856L;
@@ -44,13 +43,8 @@ public abstract class PackageFunction implements Serializable
 	
 	private String _baseDir; // base dir for all created files of that external function
 	private IDSequence _seq = null;
-	
-	/**
-	 * Constructor
-	 */
 
-	public PackageFunction() 
-	{
+	public PackageFunction() {
 		_function_inputs = new ArrayList<FunctionParameter>();
 		_seq = new IDSequence();
 	}
@@ -62,7 +56,7 @@ public abstract class PackageFunction implements Serializable
 	 */
 	public final int getNumFunctionInputs() {
 		if (_function_inputs == null)
-			throw new PackageRuntimeException("function inputs null");
+			throw new RuntimeException("function inputs null");
 
 		return (_function_inputs.size());
 	}
@@ -75,8 +69,7 @@ public abstract class PackageFunction implements Serializable
 	 */
 	public final FunctionParameter getFunctionInput(int pos) {
 		if (_function_inputs == null || _function_inputs.size() <= pos)
-			throw new PackageRuntimeException(
-					"function inputs null or size <= pos");
+			throw new RuntimeException("function inputs null or size <= pos");
 
 		return (_function_inputs.get(pos));
 	}
@@ -87,7 +80,6 @@ public abstract class PackageFunction implements Serializable
 	 * 
 	 * @return
 	 */
-
 	public abstract int getNumFunctionOutputs();
 
 	/**
@@ -104,14 +96,12 @@ public abstract class PackageFunction implements Serializable
 	 * 
 	 * @param numInputs
 	 */
-
 	public final void setNumFunctionInputs(int numInputs) {
 		if (_function_inputs == null)
-			throw new PackageRuntimeException("function inputs null");
+			throw new RuntimeException("function inputs null");
 
 		if (_function_inputs.size() > numInputs)
-			throw new PackageRuntimeException(
-					"function inputs size > numInputs -- cannot reduce size");
+			throw new RuntimeException("function inputs size > numInputs -- cannot reduce size");
 
 		while (_function_inputs.size() < numInputs)
 			_function_inputs.add(null);
@@ -124,11 +114,9 @@ public abstract class PackageFunction implements Serializable
 	 * @param input
 	 * @param pos
 	 */
-
 	public final void setInput(FunctionParameter input, int pos) {
 		if (_function_inputs == null || _function_inputs.size() <= pos)
-			throw new PackageRuntimeException(
-					"function inputs null or size <= pos");
+			throw new RuntimeException("function inputs null or size <= pos");
 
 		_function_inputs.set(pos, input);
 
@@ -139,7 +127,6 @@ public abstract class PackageFunction implements Serializable
 	 * 
 	 * @param fName
 	 */
-
 	public final void setConfiguration(String fName) {
 		_configurationFile = fName;
 	}
@@ -149,7 +136,6 @@ public abstract class PackageFunction implements Serializable
 	 * 
 	 * @return
 	 */
-
 	public final String getConfiguration() {
 		return _configurationFile;
 	}
@@ -158,8 +144,7 @@ public abstract class PackageFunction implements Serializable
 	 * 
 	 * @param dir
 	 */
-	public void setBaseDir(String dir)
-	{
+	public void setBaseDir(String dir) {
 		_baseDir = dir;
 	}
 
@@ -167,19 +152,17 @@ public abstract class PackageFunction implements Serializable
 	 * 
 	 * @return
 	 */
-	public String getBaseDir()
-	{
+	public String getBaseDir() {
 		return _baseDir;
 	}
 	
-	public String createOutputFilePathAndName( String fname )
-	{
+	public String createOutputFilePathAndName( String fname ) {
 		return _baseDir + fname + _seq.getNextID();
 	}
 	
 
 	/**
-	 * Method that will be executed to perform this function.
+	 * Method that will be executed to perform this function. 
 	 */
 	public abstract void execute();
 	

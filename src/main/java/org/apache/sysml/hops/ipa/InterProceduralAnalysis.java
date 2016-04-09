@@ -114,6 +114,7 @@ import org.apache.sysml.udf.lib.OrderWrapper;
  *     
  *         
  */
+@SuppressWarnings("deprecation")
 public class InterProceduralAnalysis 
 {
 	

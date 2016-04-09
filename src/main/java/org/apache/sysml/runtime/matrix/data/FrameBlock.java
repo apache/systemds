@@ -391,6 +391,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	////////
 	// CacheBlock implementation
 	
+	public long getInMemorySize() {
+		return 1;
+	}
+	
 	@Override
 	public long getExactSerializedSize() {
 		//TODO implement getExactSizeOnDisk();

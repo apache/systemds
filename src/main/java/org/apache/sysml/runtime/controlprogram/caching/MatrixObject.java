@@ -574,7 +574,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		if(    isCachingActive() //only if caching is enabled (otherwise keep everything in mem)
 			&& isCached(true)    //not empty and not read/modify
-			&& !isUpdateInPlace()        //pinned result variable
+			&& !isUpdateInPlaceEnabled()    //pinned result variable
 		    && !isBelowCachingThreshold() ) //min size for caching
 		{
 			if( write || _requiresLocalWrite ) 
@@ -1037,88 +1037,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	// ***     ONLY CALLED BY THE SUPERCLASS     ***
 	// ***                                       ***
 	// *********************************************
-	
-
+		
 	@Override
-	protected boolean isBlobPresent()
-	{
-		return (_data != null);
-	}
-
-	@Override
-	protected void evictBlobFromMemory ( MatrixBlock mb ) 
-		throws CacheException
-	{
-		throw new CacheException("Redundant explicit eviction.");
+	protected MatrixBlock readBlobFromCache(String fname) throws IOException {
+		return (MatrixBlock)LazyWriteBuffer.readBlock(fname, true);
 	}
 	
-	@Override
-	protected void restoreBlobIntoMemory () 
-		throws CacheException
-	{
-		long begin = 0;
-		
-		if( LOG.isTraceEnabled() ) {
-			LOG.trace("RESTORE of Matrix "+getVarName()+", "+_hdfsFileName);
-			begin = System.currentTimeMillis();
-		}
-		
-		String filePath = getCacheFilePathAndName();
-		
-		if( LOG.isTraceEnabled() )
-			LOG.trace ("CACHE: Restoring matrix...  " + getVarName() + "  HDFS path: " + 
-						(_hdfsFileName == null ? "null" : _hdfsFileName) + ", Restore from path: " + filePath);
-				
-		if (_data != null)
-			throw new CacheException (filePath + " : Cannot restore on top of existing in-memory data.");
-
-		try
-		{
-			_data = readMatrix(filePath);
-		}
-		catch (IOException e)
-		{
-			throw new CacheException (filePath + " : Restore failed.", e);	
-		}
-		
-		//check for success
-	    if (_data == null)
-			throw new CacheException (filePath + " : Restore failed.");
-	    
-	    if( LOG.isTraceEnabled() )
-	    	LOG.trace("Restoring matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
-	}		
-
-	@Override
-	protected void freeEvictedBlob()
-	{
-		String cacheFilePathAndName = getCacheFilePathAndName();
-		long begin = 0;
-		if( LOG.isTraceEnabled() ){
-			LOG.trace("CACHE: Freeing evicted matrix...  " + getVarName() + "  HDFS path: " + 
-						(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
-			begin = System.currentTimeMillis();
-		}
-		
-		LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
-		
-		if( LOG.isTraceEnabled() )
-			LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");		
-	}
-	
-	@Override
-	protected boolean isBelowCachingThreshold()
-	{
-		long rlen = _data.getNumRows();
-		long clen = _data.getNumColumns();
-		long nnz = _data.getNonZeros();
-		
-		//get in-memory size (assume dense, if nnz unknown)
-		double sparsity = OptimizerUtils.getSparsity( rlen, clen, nnz );
-		double size = MatrixBlock.estimateSizeInMemory( rlen, clen, sparsity ); 
-		
-		return ( !_data.isAllocated() || size <= CACHING_THRESHOLD );
-	}
 	
 	// *******************************************
 	// ***                                     ***
@@ -1126,23 +1050,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	// ***           FOR MATRIX I/O            ***
 	// ***                                     ***
 	// *******************************************
-	
-	private boolean isUpdateInPlace()
-	{
-		return _updateInPlaceFlag;
-	}
-	
-	/**
-	 * 
-	 * @param filePathAndName
-	 * @return
-	 * @throws IOException
-	 */
-	private MatrixBlock readMatrix (String filePathAndName)
-		throws IOException
-	{
-		return (MatrixBlock)LazyWriteBuffer.readBlock(filePathAndName, true);
-	}
 	
 	/**
 	 * 
@@ -1399,25 +1306,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		return ret;
 	}
-	
-	@Override
-	public synchronized String getDebugName()
-	{
-		int maxLength = 23;
-		String debugNameEnding = (_hdfsFileName == null ? "null" : 
-			(_hdfsFileName.length() < maxLength ? _hdfsFileName : "..." + 
-				_hdfsFileName.substring (_hdfsFileName.length() - maxLength + 3)));
-		return getVarName() + " " + debugNameEnding;
-	}
 
-	
-	// *******************************************
-	// ***                                     ***
-	// ***      LOW-LEVEL PRIVATE METHODS      ***
-	// ***       FOR SOFTREFERENCE CACHE       ***
-	// ***                                     ***
-	// *******************************************
-	
 	/**
 	 * 
 	 * @param add
@@ -1425,7 +1314,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private void updateStatusPinned(boolean add) {
 		if( _data != null ) { //data should never be null
 			long size = sizePinned.get();
-			size += (add ? 1 : -1) * _data.getSizeInMemory();
+			size += (add ? 1 : -1) * _data.getInMemorySize();
 			sizePinned.set( Math.max(size,0) );
 		}
 	}
@@ -1434,8 +1323,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * 
 	 * @param flag
 	 */
-	public void enableUpdateInPlace(boolean flag)
-	{
+	public void enableUpdateInPlace(boolean flag) {
 		_updateInPlaceFlag = flag;
 	}
 	
@@ -1443,18 +1331,14 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * 
 	 * @return
 	 */
-	public boolean isUpdateInPlaceEnabled()
-	{
+	public boolean isUpdateInPlaceEnabled() {
 		return _updateInPlaceFlag;
 	}
-	
-	
 
 	/**
 	 * 
 	 */
-	public void setEmptyStatus()
-	{
+	public void setEmptyStatus() {
 		setEmpty();
 	}
 }

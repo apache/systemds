@@ -2504,20 +2504,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	// Estimates size and sparsity
 	
 	/**
-	 * Estimate size based on current sparse/dense representation.
-	 * 
-	 * @return
-	 */
-	public long getSizeInMemory() 
-	{
-		double sp = OptimizerUtils.getSparsity(rlen, clen, nonZeros);
-		if( sparse )
-			return estimateSizeSparseInMemory(rlen, clen, sp);
-		else
-			return estimateSizeDenseInMemory(rlen, clen);
-	}
-	
-	/**
 	 * 
 	 * @return
 	 */
@@ -2771,6 +2757,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	////////
 	// CacheBlock implementation
+	
+	@Override
+	public long getInMemorySize() {
+		//in-memory size given by header if not allocated
+		if( !isAllocated() ) 
+			return 44;
+		//in-memory size of dense/sparse representation
+		double sp = OptimizerUtils.getSparsity(rlen, clen, nonZeros);
+		return sparse ? estimateSizeSparseInMemory(rlen, clen, sp) : 
+			estimateSizeDenseInMemory(rlen, clen);
+	}
 	
 	@Override
 	public long getExactSerializedSize() {

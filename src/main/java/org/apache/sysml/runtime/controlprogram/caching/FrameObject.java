@@ -20,6 +20,8 @@
 package org.apache.sysml.runtime.controlprogram.caching;
 
 
+import java.io.IOException;
+
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -153,35 +155,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 	
 	////////////////////////////////////
-	// currently unsupported caching api
-	
-	@Override
-	protected boolean isBlobPresent() {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
-	}
+	// low-level cache API 
 
 	@Override
-	protected void evictBlobFromMemory(FrameBlock mb) throws CacheException {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
-	}
-
-	@Override
-	protected void restoreBlobIntoMemory() throws CacheException {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
-	}
-
-	@Override
-	protected void freeEvictedBlob() {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
-	}
-
-	@Override
-	protected boolean isBelowCachingThreshold() {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
-	}
-
-	@Override
-	public String getDebugName() {
-		throw new RuntimeException("Caching not implemented yet for FrameObject.");
+	protected FrameBlock readBlobFromCache(String fname) throws IOException {
+		return (FrameBlock)LazyWriteBuffer.readBlock(fname, false);
 	}
 }

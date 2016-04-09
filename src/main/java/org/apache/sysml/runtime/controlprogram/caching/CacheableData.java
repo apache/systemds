@@ -44,8 +44,7 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
  * Under the protection of the envelope, the data blob may be evicted to
  * the file system; then the subclass must set its reference to <code>null</code>
  * to allow Java garbage collection. If other parts of the system continue
- * keep references to the data blob, its eviction will not release any memory.
- * To make the eviction meaningful, the rest of the system must dispose all references. 
+ * keep references to the cache block, its eviction will not release any memory.
  */
 public abstract class CacheableData<T extends CacheBlock> extends Data
 {
@@ -60,8 +59,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO; 
 	public static final boolean CACHING_BUFFER_PAGECACHE = false; 
 	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;	
-	public static final String CACHING_COUNTER_GROUP_NAME    = "SystemML Caching Counters";
-	public static final String CACHEING_EVICTION_FILEEXTENSION = ".dat";
+	public static final String  CACHING_COUNTER_GROUP_NAME    = "SystemML Caching Counters";
+	public static final String  CACHEING_EVICTION_FILEEXTENSION = ".dat";
     
 	/**
 	 * Defines all possible cache status types for a data blob.
@@ -260,18 +259,18 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	
 	/**
 	 * 
-	 * @param props
-	 */
-	public void setFileFormatProperties(FileFormatProperties props) {
-		_formatProps = props;
-	}
-	
-	/**
-	 * 
 	 * @return
 	 */
 	public FileFormatProperties getFileFormatProperties() {
 		return _formatProps;
+	}
+	
+	/**
+	 * 
+	 * @param props
+	 */
+	public void setFileFormatProperties(FileFormatProperties props) {
+		_formatProps = props;
 	}
 	
 	// --------- ABSTRACT HIGH-LEVEL CACHE I/O OPERATIONS ----------
@@ -319,9 +318,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * 
 	 * @throws CacheException
 	 */
-	public synchronized void exportData() 
-		throws CacheException 
-	{
+	public synchronized void exportData() throws CacheException {
 		exportData( -1 );
 	}
 	
@@ -333,8 +330,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * 
 	 * @throws CacheException 
 	 */
-	public synchronized void exportData( int replication )
-		throws CacheException
+	public synchronized void exportData( int replication ) 
+		throws CacheException 
 	{
 		exportData(_hdfsFileName, null, replication, null);
 		_hdfsFileExists = true;
@@ -388,39 +385,87 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * reference points to it;
 	 * <code>false</code> if the blob reference is <code>null</code>.
 	 */
-	protected abstract boolean isBlobPresent();
-	
-	/**
-	 * Low-level cache I/O method that physically evicts the data blob from
-	 * main memory.  Must be defined by a subclass, never called by users.
-	 * 
-	 * @param data 
-	 * 
-	 * @throws CacheException 
-	 */
-	protected abstract void evictBlobFromMemory(T data) 
-		throws CacheException;
-	
+	protected boolean isBlobPresent() {
+		return (_data != null);
+	}
+
 	/**
 	 * Low-level cache I/O method that physically restores the data blob to
 	 * main memory.  Must be defined by a subclass, never called by users.
 	 *
 	 * @throws CacheException 
 	 */
-	protected abstract void restoreBlobIntoMemory()
-		throws CacheException;
+	protected void restoreBlobIntoMemory() 
+		throws CacheException
+	{
+		String cacheFilePathAndName = getCacheFilePathAndName();
+		long begin = LOG.isTraceEnabled() ? System.currentTimeMillis() : 0;
+		
+		if( LOG.isTraceEnabled() )
+			LOG.trace ("CACHE: Restoring matrix...  " + getVarName() + "  HDFS path: " + 
+						(_hdfsFileName == null ? "null" : _hdfsFileName) + ", Restore from path: " + cacheFilePathAndName);
+				
+		if (_data != null)
+			throw new CacheException (cacheFilePathAndName + " : Cannot restore on top of existing in-memory data.");
 
+		try {
+			_data = readBlobFromCache(cacheFilePathAndName);
+		}
+		catch (IOException e) {
+			throw new CacheException (cacheFilePathAndName + " : Restore failed.", e);	
+		}
+		
+		//check for success
+	    if (_data == null)
+			throw new CacheException (cacheFilePathAndName + " : Restore failed.");
+	    
+	    if( LOG.isTraceEnabled() )
+	    	LOG.trace("Restoring matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
+	}		
+	/**
+	 * 
+	 * @param fname
+	 * @return
+	 */
+	protected abstract T readBlobFromCache(String fname)
+		throws IOException;
+	
 	/**
 	 * Low-level cache I/O method that deletes the file containing the
 	 * evicted data blob, without reading it.
 	 * Must be defined by a subclass, never called by users.
 	 */
-	protected abstract void freeEvictedBlob();
+	protected void freeEvictedBlob() {
+		String cacheFilePathAndName = getCacheFilePathAndName();
+		long begin = LOG.isTraceEnabled() ? System.currentTimeMillis() : 0;
+		if( LOG.isTraceEnabled() )
+			LOG.trace("CACHE: Freeing evicted matrix...  " + getVarName() + "  HDFS path: " + 
+						(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
 		
+		LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
+		
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");		
+	}
+	
 	/**
 	 * 
 	 */
-	protected abstract boolean isBelowCachingThreshold();
+	protected boolean isBelowCachingThreshold() {
+		return (_data.getInMemorySize() <= CACHING_THRESHOLD);
+	}
+	
+	/**
+	 * 
+	 */
+	@Override //Data
+	public synchronized String getDebugName() {
+		int maxLength = 23;
+		String debugNameEnding = (_hdfsFileName == null ? "null" : 
+			(_hdfsFileName.length() < maxLength ? _hdfsFileName : "..." + 
+				_hdfsFileName.substring (_hdfsFileName.length() - maxLength + 3)));
+		return getVarName() + " " + debugNameEnding;
+	}
 	
 	
 	// ------------- IMPLEMENTED CACHE LOGIC METHODS --------------	
@@ -541,58 +586,46 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	//  **************************************************
 	
 	
-	public String getStatusAsString()
-	{
+	public String getStatusAsString() {
 		return _cacheStatus.toString();
 	}
     
-	//TODO isCached is only public for access from SparkExectionContext, once we can assume
-	//the existence of spark libraries, we can move the related code to MatrixObject and
-	//make this method protected again
-	public boolean isCached(boolean inclCachedNoWrite)
-	{
+	public boolean isCached(boolean inclCachedNoWrite) {
 		if( inclCachedNoWrite )
 			return (_cacheStatus == CacheStatus.CACHED || _cacheStatus == CacheStatus.CACHED_NOWRITE);
 		else
 			return (_cacheStatus == CacheStatus.CACHED);
 	}
 	
-	protected boolean isEmpty(boolean inclCachedNoWrite)
-	{
+	protected boolean isEmpty(boolean inclCachedNoWrite) {
 		if( inclCachedNoWrite )
 			return (_cacheStatus == CacheStatus.EMPTY || _cacheStatus == CacheStatus.CACHED_NOWRITE);
 		else
 			return (_cacheStatus == CacheStatus.EMPTY);
 	}
 	
-	protected boolean isModify()
-	{
+	protected boolean isModify() {
 		return (_cacheStatus == CacheStatus.MODIFY);
 	}
 	
-	protected void setEmpty()
-	{
+	protected void setEmpty() {
 		_cacheStatus = CacheStatus.EMPTY;
 	}
 	
-	protected void setModify()
-	{
+	protected void setModify() {
 		_cacheStatus = CacheStatus.MODIFY;
 	}
 	
-	protected void setCached()
-	{
+	protected void setCached() {
 		_cacheStatus = CacheStatus.CACHED;
 	}
 
-	protected void addOneRead()
-	{
+	protected void addOneRead() {
 		_numReadThreads ++;
 		_cacheStatus = CacheStatus.READ;
 	}
 	
-	protected void removeOneRead(boolean doesBlobExist, boolean cacheNoWrite)
-	{
+	protected void removeOneRead(boolean doesBlobExist, boolean cacheNoWrite) {
 		_numReadThreads --;					
 		if (_numReadThreads == 0) {
 			if( cacheNoWrite )
@@ -604,21 +637,26 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		}
 	}
 	
-	protected boolean isAvailableToRead()
-	{
+	protected boolean isAvailableToRead() {
 		return (   _cacheStatus == CacheStatus.EMPTY 
 				|| _cacheStatus == CacheStatus.CACHED
 				|| _cacheStatus == CacheStatus.CACHED_NOWRITE
 				|| _cacheStatus == CacheStatus.READ);
 	}
 	
-	protected boolean isAvailableToModify()
-	{
+	protected boolean isAvailableToModify() {
 		return (   _cacheStatus == CacheStatus.EMPTY 
 				|| _cacheStatus == CacheStatus.CACHED
 				|| _cacheStatus == CacheStatus.CACHED_NOWRITE);
 	}
 
+	// *******************************************
+	// ***                                     ***
+	// ***      LOW-LEVEL PRIVATE METHODS      ***
+	// ***       FOR SOFTREFERENCE CACHE       ***
+	// ***                                     ***
+	// *******************************************
+	
 	/**
 	 * Creates a new cache soft reference to the currently
 	 * referenced cache block.  
@@ -652,8 +690,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	/**
 	 * 
 	 */
-	public synchronized static void cleanupCacheDir()
-	{
+	public synchronized static void cleanupCacheDir() {
 		//cleanup remaining cached writes
 		LazyWriteBuffer.cleanup();
 		
@@ -725,18 +762,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_activeFlag = true; //turn on caching
 	}
 	
-	public static synchronized boolean isCachingActive()
-	{
+	public static synchronized boolean isCachingActive() {
 		return _activeFlag;
 	}
 	
-	public static synchronized void disableCaching()
-	{
+	public static synchronized void disableCaching() {
 		_activeFlag = false;
 	}
 	
-	public static synchronized void enableCaching()
-	{
+	public static synchronized void enableCaching() {
 		_activeFlag = true;
 	}
 }

@@ -30,6 +30,12 @@ import org.apache.hadoop.io.Writable;
 public interface CacheBlock extends Writable 
 {
 	/**
+	 * Get the in-memory size in bytes of the cache block.
+	 * @return
+	 */
+	public long getInMemorySize();
+	
+	/**
 	 * Get the exact serialized size in bytes of the cache block.
 	 * @return
 	 */

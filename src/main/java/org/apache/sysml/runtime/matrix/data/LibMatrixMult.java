@@ -302,7 +302,7 @@ public class LibMatrixMult
 			int blklen = (int)(Math.ceil((double)mX.rlen/k));
 			blklen += (blklen%24 != 0)?24-blklen%24:0;
 			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
-				tasks.add(new MatrixMultChainTask(mX, mV, mW, ret, ct, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
+				tasks.add(new MatrixMultChainTask(mX, mV, mW, ct, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
 			//execute tasks
 			List<Future<double[]>> taskret = pool.invokeAll(tasks);	
 			pool.shutdown();
@@ -4130,12 +4130,11 @@ public class LibMatrixMult
 		private MatrixBlock _m1  = null;
 		private MatrixBlock _m2  = null;
 		private MatrixBlock _m3  = null;
-		private MatrixBlock _ret = null;
 		private ChainType _ct = null;
 		private int _rl = -1;
 		private int _ru = -1;
 
-		protected MatrixMultChainTask( MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int rl, int ru ) 
+		protected MatrixMultChainTask( MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, ChainType ct, int rl, int ru ) 
 			throws DMLRuntimeException
 		{
 			_m1 = mX;
@@ -4144,25 +4143,25 @@ public class LibMatrixMult
 			_ct = ct;
 			_rl = rl;
 			_ru = ru;
-			
-			//allocate local result for partial aggregation
-			_ret = new MatrixBlock(ret.rlen, ret.clen, false);
-			_ret.allocateDenseBlock();
 		}
 		
 		@Override
 		public double[] call() throws DMLRuntimeException
 		{
+			//thread-local allocation for partial aggregation
+			MatrixBlock ret = new MatrixBlock(1, _m1.clen, false);
+			ret.allocateDenseBlock();
+			
 			if( _m1.sparse )
-				matrixMultChainSparse(_m1, _m2, _m3, _ret, _ct, _rl, _ru);
+				matrixMultChainSparse(_m1, _m2, _m3, ret, _ct, _rl, _ru);
 			else
-				matrixMultChainDense(_m1, _m2, _m3, _ret, _ct, _rl, _ru);
+				matrixMultChainDense(_m1, _m2, _m3, ret, _ct, _rl, _ru);
 			
 			//NOTE: we dont do global aggregation from concurrent tasks in order
 			//to prevent synchronization (sequential aggregation led to better 
 			//performance after JIT)
 			
-			return _ret.getDenseBlock();
+			return ret.getDenseBlock();
 		}
 	}
 

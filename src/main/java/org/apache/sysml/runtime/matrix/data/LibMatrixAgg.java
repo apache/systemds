@@ -3603,20 +3603,21 @@ public class LibMatrixAgg
 		protected PartialAggTask( MatrixBlock in, MatrixBlock ret, AggType aggtype, AggregateUnaryOperator uaop, int rl, int ru ) 
 			throws DMLRuntimeException
 		{
-			_in = in;			
+			_in = in;	
+			_ret = ret;
 			_aggtype = aggtype;
 			_uaop = uaop;
 			_rl = rl;
 			_ru = ru;
-			
-			//allocate local result for partial aggregation
-			_ret = new MatrixBlock(ret.rlen, ret.clen, false);
-			_ret.allocateDenseBlock();
 		}
 		
 		@Override
 		public Object call() throws DMLRuntimeException
 		{
+			//thead-local allocation for partial aggregation
+			_ret = new MatrixBlock(_ret.rlen, _ret.clen, false);
+			_ret.allocateDenseBlock();
+			
 			if( !_in.sparse )
 				aggregateUnaryMatrixDense(_in, _ret, _aggtype, _uaop.aggOp.increOp.fn, _uaop.indexFn, _rl, _ru);
 			else

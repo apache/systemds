@@ -223,7 +223,7 @@ if( CLPath != " " ){
 }
 CL_matrix = matrix( 0,nrow( Test ),1 );
 if( CLPath != " " ){
-    for( i in 1:nrow( NNR_matrix ) ,check=0){
+    parfor( i in 1:nrow( NNR_matrix ) ,check=0){
         NNR_tmp_matrix = matrix( 0,k_value,1 );
         for( j in 1:k_value ){
             NNR_tmp_matrix[j,1] = CL[as.scalar( NNR_matrix[i,j] ),1] ;
@@ -275,10 +275,10 @@ naiveKNNsearch = function(
 naiveKNNsearchForPredict = function(
     matrix[double] P,
     matrix[double] Q,
-	matrix[double] L,
+    matrix[double] L,
     integer K
 )return(
-	matrix[double] OL
+    matrix[double] OL
 ){
     num_records = nrow (P);
     num_features = ncol (P);
@@ -290,12 +290,12 @@ naiveKNNsearchForPredict = function(
     if (K == 1) {
         Dt = t(D);
         O = rowIndexMin (Dt);
-		OL = matrix (0, rows = num_queries, cols = 1)
-		parfor( i in 1:num_queries){
-			OL[i,] = L[as.scalar(O[i,1]),1]
-		}
+        OL = matrix (0, rows = num_queries, cols = 1)
+        parfor( i in 1:num_queries){
+            OL[i,] = L[as.scalar(O[i,1]),1]
+        }
     } else {
-		OL = matrix (0, rows = num_queries, cols = K);
+        OL = matrix (0, rows = num_queries, cols = K);
         parfor (i in 1:num_queries) {
             D_sorted=order(target=append(D[,i],L), by=1, decreasing=FALSE, index.return=FALSE);
             OL[i,] = t(D_sorted[1:K,2]);
@@ -320,7 +320,7 @@ return(
 
 getKNeighbor = function (  matrix[double] in_m_data,
         matrix[double] in_m_test_data,
-		matrix[double] in_m_cl, 
+        matrix[double] in_m_cl, 
         integer in_i_k_max   ) 
     return (  matrix[double] out_m_neighbor_value  ) {
     #to naive
@@ -329,7 +329,7 @@ getKNeighbor = function (  matrix[double] in_m_data,
 }
 
 getErr_k = function (  matrix[double] in_m_neighbor_value,
-		matrix[double] in_m_cl,
+        matrix[double] in_m_cl,
         integer in_i_cl_type , 
         integer in_i_k_min  ) 
     return (  matrix[double] out_m_err  ){
@@ -418,9 +418,9 @@ return(
 
     m_active_flag = matrix( 0,1,k_max-k_min+1  );
     i_active_model_number = k_max - k_min + 1;
-	
+    
     m_iter_err_sum = matrix( 0,1,k_max-k_min+1);
-	m_iter_err_sum_squared = matrix( 0,1,k_max-k_min+1);
+    m_iter_err_sum_squared = matrix( 0,1,k_max-k_min+1);
     while( b_continue_loop  ){
         # 1.build k-d tree? , or use hash method
         # 2.search data to get k_max nearest neighbor
@@ -429,32 +429,32 @@ return(
             i_process_item = i_record;
             b_continue_loop = FALSE;
         }
- 		#i_process_begin_item = (i_iter - 1)*interval + 1
-		i_process_begin_item = 1
-		i_process_end_item = i_process_item 
-		
+        #i_process_begin_item = (i_iter - 1)*interval + 1
+        i_process_begin_item = 1
+        i_process_end_item = i_process_item 
+        
         m_neighbor_value = getKNeighbor( in_m_data,in_m_data[i_process_begin_item:i_process_end_item,],in_m_data_target,k_max  );
         # 3.get matrix of err from k_min to k_max 
         m_err = getErr_k( m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical,k_min  );
 
         # 4.check this matrix to drop unnessary record
         m_active_flag_tmp = matrix( 0,1,ncol( m_err  )  );
-		
-		s_rows_number = i_process_item#nrow(m_err);
-			
-		m_iter_err_sum = colSums(m_err)# + m_iter_err_sum
-		m_iter_err_sum_squared = colSums(m_err ^ 2)# + m_iter_err_sum_squared
-		
-		m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number
-		m_err_vars = ( m_err_mean ^2 * s_rows_number -
-			2 * m_err_mean * m_iter_err_sum  + m_iter_err_sum_squared) / (s_rows_number-1)
-		m_err_vars = sqrt(m_err_vars)
-		
+        
+        s_rows_number = i_process_item#nrow(m_err);
+            
+        m_iter_err_sum = colSums(m_err)# + m_iter_err_sum
+        m_iter_err_sum_squared = colSums(m_err ^ 2)# + m_iter_err_sum_squared
+        
+        m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number
+        m_err_vars = ( m_err_mean ^2 * s_rows_number -
+            2 * m_err_mean * m_iter_err_sum  + m_iter_err_sum_squared) / (s_rows_number-1)
+        m_err_vars = sqrt(m_err_vars)
+        
         parfor( i in 1:ncol( m_err  )  ){
-			#m_err_i = m_err - m_err[,i];
-			#m_err_i_mean = colMeans(m_err_i);
-			#m_err_i_vars = colVars(m_err_i);
-            for( j in 1:ncol( m_err  )  ){
+            #m_err_i = m_err - m_err[,i];
+            #m_err_i_mean = colMeans(m_err_i);
+            #m_err_i_vars = colVars(m_err_i);
+            parfor( j in 1:ncol( m_err  )  ){
                 b_execute_block = TRUE;
                 if( j==i  ) b_execute_block = FALSE;
                 if( as.scalar( m_active_flag_tmp[1,i]  ) == 1  )  b_execute_block = FALSE; 
@@ -479,7 +479,7 @@ return(
             b_continue_loop = FALSE;
         }
         i_iter = i_iter + 1;
-		print("i_iter" + i_iter)
+        print("i_iter" + i_iter)
     }
 
     k = 0;
@@ -505,7 +505,7 @@ return(
 }
 
 getErr = function (  matrix[double] in_m_neighbor_value,
-		matrix[double] in_m_cl,
+        matrix[double] in_m_cl,
         integer in_i_cl_type ) 
     return (  matrix[double] out_m_err ){
     i_col = ncol( in_m_neighbor_value );
@@ -567,8 +567,8 @@ return(
         b_selected_morethan_one = FALSE;
         b_continue_loop = TRUE; #level 2 while loop flag
         i_iter = 1;
-		m_iter_err_sum = matrix( 0,1,i_n_column+1 );
-		m_iter_err_sum_squared = matrix( 0,1,i_n_column+1 );
+        m_iter_err_sum = matrix( 0,1,i_n_column+1 );
+        m_iter_err_sum_squared = matrix( 0,1,i_n_column+1 );
         while( b_continue_loop ){
             #print( "*************" + i_iter + "*************" );
             i_process_item = i_iter*interval;
@@ -576,17 +576,17 @@ return(
                 i_process_item = i_n_record;
                 b_continue_loop = FALSE;
             }
-			i_process_begin_item = (i_iter - 1)*interval + 1
-			#i_process_begin_item = 1
-			i_process_end_item = i_process_item
+            i_process_begin_item = (i_iter - 1)*interval + 1
+            #i_process_begin_item = 1
+            i_process_end_item = i_process_item
             m_err = matrix( d_max_err_value,i_process_end_item - i_process_begin_item + 1,i_n_column+1 );
             if( b_no_feature_selected == TRUE ){
-                for( i in 1:i_n_column ,check=0){
+                parfor( i in 1:i_n_column ,check=0){
                     if( as.scalar( m_feature_selected_flag[1,i] ) != 1 ){
                         m_tmp_process_data = in_m_data[,i];
                         m_neighbor_value = getKNeighbor( 
                             m_tmp_process_data,m_tmp_process_data[i_process_begin_item:i_process_end_item,],
-							in_m_data_target,k_value );                            
+                            in_m_data_target,k_value );                            
                         m_tmp_err = getErr( 
                             m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical );
                         m_err[,i] = m_tmp_err;
@@ -600,7 +600,7 @@ return(
                 if( m_this_model_selected_flag == TRUE ){
                     m_neighbor_value = getKNeighbor( 
                         m_tmp_data,m_tmp_data[i_process_begin_item:i_process_end_item,],in_m_data_target, k_value );
-					
+                    
                     m_tmp_err = getErr( m_neighbor_value,in_m_data_target[i_process_begin_item:i_process_end_item,],in_i_is_categorical );
                     m_err[,i_n_column+1] = m_tmp_err;
                 }
@@ -620,25 +620,25 @@ return(
             }else{
                 m_active_flag_tmp = append( m_feature_selected_flag,matrix( 1,1,1 ) );
             }
-			
-			s_rows_number = i_process_item#nrow(m_err);
-			
-			m_iter_err_sum = colSums(m_err) + m_iter_err_sum
-			m_iter_err_sum_squared = colSums(m_err ^ 2) + m_iter_err_sum_squared
-			
-			m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number
-			m_err_vars = ( m_err_mean ^2 * s_rows_number -
-					2 * m_err_mean * m_iter_err_sum  + m_iter_err_sum_squared) / (s_rows_number-1)
-			m_err_vars = sqrt(m_err_vars)
-			
+            
+            s_rows_number = i_process_item#nrow(m_err);
+            
+            m_iter_err_sum = colSums(m_err) + m_iter_err_sum
+            m_iter_err_sum_squared = colSums(m_err ^ 2) + m_iter_err_sum_squared
+            
+            m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number
+            m_err_vars = ( m_err_mean ^2 * s_rows_number -
+                    2 * m_err_mean * m_iter_err_sum  + m_iter_err_sum_squared) / (s_rows_number-1)
+            m_err_vars = sqrt(m_err_vars)
+            
             parfor( i in 1:ncol( m_err ) ){
-				#m_err_i_mean = (m_iter_err_sum - m_iter_err_sum[,i])/s_rows_number
-				#m_err_i_vars = (m_iter_err_sum_squared + m_err_i_mean ^2 * s_rows_number -
-				#	2 * m_iter_err_sum * m_err_i_mean) / (s_rows_number-1)
-				#m_err_i_vars = sqrt(m_err_i_vars)
-				#m_err_i_mean = m_err_mean[i,]
-				#m_err_i_vars = m_err_vars[i,]
-                for( j in 1:ncol( m_err ) ){
+                #m_err_i_mean = (m_iter_err_sum - m_iter_err_sum[,i])/s_rows_number
+                #m_err_i_vars = (m_iter_err_sum_squared + m_err_i_mean ^2 * s_rows_number -
+                #   2 * m_iter_err_sum * m_err_i_mean) / (s_rows_number-1)
+                #m_err_i_vars = sqrt(m_err_i_vars)
+                #m_err_i_mean = m_err_mean[i,]
+                #m_err_i_vars = m_err_vars[i,]
+                parfor( j in 1:ncol( m_err ) ){
                     b_execute_block = TRUE;
                     if( j==i ) b_execute_block = FALSE;
                     if( as.scalar( m_active_flag_tmp[1,i] ) == 1 )  b_execute_block = FALSE; 
@@ -648,7 +648,7 @@ return(
                     if( b_execute_block ){
                         #print( "i=" + i + ",j=" + j );
                         b_flag = eliminateModel( as.scalar(m_err_mean[i,j]),as.scalar(m_err_vars[i,j]),s_rows_number);
-						if(  b_flag == TRUE ){
+                        if(  b_flag == TRUE ){
                             m_active_flag_tmp[1,i] = 1;
                         }
                     }

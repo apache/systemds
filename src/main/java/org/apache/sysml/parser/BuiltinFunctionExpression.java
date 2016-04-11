@@ -536,7 +536,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case NCOL:
 		case LENGTH:
 			checkNumParameters(1);
-			checkMatrixParam(getFirstExpr());
+			checkMatrixFrameParam(getFirstExpr());
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);

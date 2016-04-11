@@ -745,7 +745,7 @@ public class DataConverter
 			SparseBlock sblock = mb.getSparseBlock();			
 			for( int i=0; i<mb.getNumRows(); i++ ) {
 				Arrays.fill(row, null); //reset
-				if( !sblock.isEmpty(i) ) {
+				if( sblock != null && !sblock.isEmpty(i) ) {
 					int apos = sblock.pos(i);
 					int alen = sblock.size(i);
 					int[] aix = sblock.indexes(i);

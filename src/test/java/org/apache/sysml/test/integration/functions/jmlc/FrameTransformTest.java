@@ -97,6 +97,7 @@ public class FrameTransformTest extends AutomatedTestBase
 	
 		//generate inputs
 		double[][] Xd = TestUtils.round(getRandomMatrix(rows, cols, 0.51, 7.49, sparse?sparsity2:sparsity1, 1234));
+		setColumnValue(Xd, 2, 3); //create ragged meta frame
 		String[][] Xs = createFrameData(Xd);
 		String[][] Ms = createRecodeMaps(Xs);
 		
@@ -221,4 +222,9 @@ public class FrameTransformTest extends AutomatedTestBase
 		
 		return ret;
 	}
+	
+	protected void setColumnValue(double[][] data, int col, double val) {
+		for( int i=0; i<data.length; i++ )
+			data[i][col] = val;
+	} 
 }

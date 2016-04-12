@@ -429,9 +429,9 @@ return(
             i_process_item = i_record;
             b_continue_loop = FALSE;
         }
-        #i_process_begin_item = (i_iter - 1)*interval + 1
-        i_process_begin_item = 1
-        i_process_end_item = i_process_item 
+        i_process_begin_item = (i_iter - 1)*interval + 1
+		#i_process_begin_item = 1
+        i_process_end_item = i_process_item
         
         m_neighbor_value = getKNeighbor( in_m_data,in_m_data[i_process_begin_item:i_process_end_item,],in_m_data_target,k_max  );
         # 3.get matrix of err from k_min to k_max 
@@ -442,8 +442,8 @@ return(
         
         s_rows_number = i_process_item#nrow(m_err);
             
-        m_iter_err_sum = colSums(m_err)# + m_iter_err_sum
-        m_iter_err_sum_squared = colSums(m_err ^ 2)# + m_iter_err_sum_squared
+        m_iter_err_sum = colSums(m_err) + m_iter_err_sum
+        m_iter_err_sum_squared = colSums(m_err ^ 2) + m_iter_err_sum_squared
         
         m_err_mean = - outer(t(m_iter_err_sum), m_iter_err_sum , "-") / s_rows_number
         m_err_vars = ( m_err_mean ^2 * s_rows_number -
@@ -454,7 +454,7 @@ return(
             #m_err_i = m_err - m_err[,i];
             #m_err_i_mean = colMeans(m_err_i);
             #m_err_i_vars = colVars(m_err_i);
-            parfor( j in 1:ncol( m_err  )  ){
+            parfor( j in 1:ncol( m_err  ),check=0  ){
                 b_execute_block = TRUE;
                 if( j==i  ) b_execute_block = FALSE;
                 if( as.scalar( m_active_flag_tmp[1,i]  ) == 1  )  b_execute_block = FALSE; 
@@ -491,7 +491,7 @@ return(
         print( "Get k, which value is " + k  );
     }else{
         m_err_for_order = 
-            append( t( colMeans(m_err)  ), matrix( seq( k_min,k_max,1  ),k_max-k_min+1,1  )  );
+            append( t( m_iter_err_sum ), matrix( seq( k_min,k_max,1  ),k_max-k_min+1,1  )  );
         m_err_for_order = removeEmpty( 
             target=m_err_for_order * t( ppred( m_active_flag,0,"=="  )  ),margin="rows"  );
         for( i in 1:nrow( m_err_for_order  )  ){
@@ -638,7 +638,7 @@ return(
                 #m_err_i_vars = sqrt(m_err_i_vars)
                 #m_err_i_mean = m_err_mean[i,]
                 #m_err_i_vars = m_err_vars[i,]
-                parfor( j in 1:ncol( m_err ) ){
+                parfor( j in 1:ncol( m_err ) ,check=0){
                     b_execute_block = TRUE;
                     if( j==i ) b_execute_block = FALSE;
                     if( as.scalar( m_active_flag_tmp[1,i] ) == 1 )  b_execute_block = FALSE; 

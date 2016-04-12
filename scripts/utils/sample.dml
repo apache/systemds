@@ -20,26 +20,28 @@
 #-------------------------------------------------------------
 
 #
-# Sampling of a data set into number of samples specified as percentages in column vector
+# Randomly split data into a number of disjoint subsets (by rows). The sizes of the subsets are specified in terms of fractions, stored as a 1-column vector in a separate input file (see parameter 'sv'). 
 #
 # Parameters:
 #    X       : (input)  input data set: filename of input data set
-#    sv      : (input)  sampling vector: filename of 1-column vector w/ percentages. sum(sv) must be 1.
-#                         e.g. sv = (0.2)   for a 20% sample
-#                         e.g. sv = (0.25, 0.25, 0.25, 0.25, 0.25) for 5 25% samples
-#                         e.g. sv = (0.5, 0.3, 0.2) for a 50%, 30%, and 20% sample
-#    O       : (output) folder name w/ samples generated
-#    ofmt    : (output, default "binary") format of O: "csv", "binary" 
+#    sv      : (input)  splitting vector: filename of 1-column vector with fractions. sum(sv) must be less than 1
+#         e.g. sv = [0.2]: Draw a 20% simple random sample without replacement
+#         e.g. sv = [0.25, 0.25, 0.25, 0.25]: Randomly split data into 4 equal sized disjoint subsets
+#         e.g. sv = [0.5, 0.3, 0.2]: Randomly split data into 3 disjoint subsets containing 50%, 30% and 20% of rows, respectively
+#    O       : (output) output folder name. The output subsets are stored in subfolders: $O/1, $O/2, ..., $O/#splits
+#    ofmt    : (output, default "binary") format of output file. Other valid options are: "csv" and "text" 
 #
 # Example:
-#   hadoop jar SystemML.jar -f algorithms/utils/sample.dml -nvargs X="/tmp/X.mtx" sv="/tmp/sv.mtx" O=/tmp/Out ofmt=csv
+#   printf "0.8\n0.2" | hadoop fs -put - /tmp/sv.csv
+#   echo '{"data_type": "matrix", "value_type": "double", "rows": 2, "cols": 1, "format": "csv"}' | hadoop fs -put - /tmp/sv.csv.mtd
+#   hadoop jar SystemML.jar -f ./scripts/utils/sample.dml -nvargs X=/tmp/X.mtx sv=/tmp/sv.csv O=/tmp/Out ofmt=csv
 
 # set defaults
 ofmt = ifdef($ofmt, "binary")
 
                                         # Read inputs
-X = read ($X);         # X dataset
-sv = read ($sv);       # sv sample.dml vector
+X = read ($X);         # X: dataset
+sv = read ($sv);       # sv: splitting fraction vector
 
 # Construct sampling lower/upper bounds for samples using prefix sum
 R = rand(rows=nrow(X), cols=1, min=0.0, max=1.0, pdf = "uniform");

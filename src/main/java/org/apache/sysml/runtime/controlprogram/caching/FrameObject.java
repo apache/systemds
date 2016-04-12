@@ -22,8 +22,11 @@ package org.apache.sysml.runtime.controlprogram.caching;
 
 import java.io.IOException;
 
+import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
@@ -34,9 +37,6 @@ public class FrameObject extends CacheableData<FrameBlock>
 {
 	private static final long serialVersionUID = 1755082174281927785L;
 
-	/** Holds meta data on frame characteristics (required for nrow etc)*/
-	private MetaData _metaData = null;
-	
 	/**
 	 * 
 	 */
@@ -72,22 +72,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 	public FrameObject(FrameObject fo) {
 		super(fo);
 	}
-	
-	@Override
-	public void setMetaData(MetaData md) {
-		_metaData = md;
-	}
-	
-	@Override
-	public MetaData getMetaData() {
-		return _metaData;
-	}
 
 	@Override
-	public void removeMetaData() {
-		_metaData = null;
-	}
-	
 	public void refreshMetaData() 
 		throws CacheException
 	{
@@ -98,67 +84,37 @@ public class FrameObject extends CacheableData<FrameBlock>
 		mc.setDimension( _data.getNumRows(),_data.getNumColumns() );	
 	}
 	
-	////////////////////////////////////
-	// high-level cache API (pseudo-integrated)
-
-
-	@Override
-	public FrameBlock acquireRead() 
-		throws CacheException 
-	{
-		//read in=memory frame if necessary
-		if( _data == null ) {
-			// TODO @Arvind: please integrate readers here for now
-		}
-		
-		return _data;
-	}
-
-	@Override
-	public FrameBlock acquireModify() 
-		throws CacheException 
-	{
-		return _data;
-	}
-
-	@Override
-	public FrameBlock acquireModify(FrameBlock newData) 
-		throws CacheException 
-	{
-		//set data and update meta data
-		_data = newData;
-		refreshMetaData();
-		
-		return _data;
-	}
-
-	@Override
-	public void release() 
-		throws CacheException 
-	{
-		//do nothing
-	}
-
-	@Override
-	public void clearData() 
-		throws CacheException 
-	{
-		if( isCleanupEnabled() )
-			_data = null;
-	}
-
-	@Override
-	public void exportData(String fName, String outputFormat, int replication, FileFormatProperties formatProperties) 
-		throws CacheException 
-	{
-		// TODO @Arvind: please integrate writers here for now		
-	}
-	
-	////////////////////////////////////
-	// low-level cache API 
 
 	@Override
 	protected FrameBlock readBlobFromCache(String fname) throws IOException {
 		return (FrameBlock)LazyWriteBuffer.readBlock(fname, false);
+	}
+
+	@Override
+	protected FrameBlock readBlobFromHDFS(String fname, long rlen, long clen)
+		throws IOException 
+	{
+		throw new IOException("Not implemented yet.");
+	}
+
+	@Override
+	protected FrameBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
+			throws IOException 
+	{
+		throw new IOException("Not implemented yet.");
+	}
+
+	@Override
+	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop) 
+		throws IOException, DMLRuntimeException 
+	{
+		throw new IOException("Not implemented yet.");
+	}
+
+	@Override
+	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt) 
+		throws IOException, DMLRuntimeException 
+	{
+		throw new IOException("Not implemented yet.");
 	}
 }

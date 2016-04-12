@@ -2781,6 +2781,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			|| (sparse && sparseBlock instanceof SparseBlockCSR);
 	}
 	
+	@Override
+	public void compactEmptyBlock() {
+		if( isEmptyBlock(false) && isAllocated() )
+			cleanupBlock(true, true);
+	}
+	
 	////////
 	// Core block operations (called from instructions)
 	

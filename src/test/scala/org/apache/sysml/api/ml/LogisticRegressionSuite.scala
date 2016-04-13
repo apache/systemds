@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.api.ml.scala
+package org.apache.sysml.api.ml
 
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
@@ -30,7 +30,8 @@ class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Mat
   test("run logistic regression with default"){
     //Make sure system ml home set when run wrapper
     val newsqlContext = new org.apache.spark.sql.SQLContext(sc);
-    import newsqlContext.implicits._    
+
+import newsqlContext.implicits._    
     val training = sc.parallelize(Seq(
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 3.0)),
       LabeledPoint(1.0, Vectors.dense(1.0, 0.4, 2.1)),

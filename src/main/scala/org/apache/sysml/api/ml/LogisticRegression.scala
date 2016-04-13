@@ -17,13 +17,12 @@
  * under the License.
  */
 
-package org.apache.sysml.api.ml.scala
+package org.apache.sysml.api.ml
 
 import org.apache.sysml.api.{MLContext, MLOutput}
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
 import org.apache.sysml.runtime.instructions.spark.utils.{RDDConverterUtilsExt => RDDConverterUtils}
-
 import org.apache.spark.{ SparkContext }
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType

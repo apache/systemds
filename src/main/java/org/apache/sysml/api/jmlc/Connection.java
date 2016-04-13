@@ -309,7 +309,7 @@ public class Connection
 	 * @param cols number of columns in the matrix
 	 * @param brlen number of rows per block
 	 * @param bclen number of columns per block
-	 * @param nnz number of non-zero values
+	 * @param nnz number of non-zero values, -1 indicates unknown
 	 * @return matrix as a two-dimensional double array
 	 * @throws IOException
 	 */

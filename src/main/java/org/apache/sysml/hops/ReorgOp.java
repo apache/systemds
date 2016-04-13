@@ -321,7 +321,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 				}
 				else //CP or Spark
 				{
-					if( et==ExecType.SPARK && !FORCE_DIST_SORT_INDEXES)
+					if( (et==ExecType.SPARK || et==ExecType.FLINK) && !FORCE_DIST_SORT_INDEXES)
 						bSortSPRewriteApplicable = isSortSPRewriteApplicable();
 					
 					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et, bSortSPRewriteApplicable);
@@ -482,7 +482,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		
 		checkAndSetForcedPlatform();
 	
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		ExecType REMOTE = OptimizerUtils.getRemoteExecType();
 		
 		if( _etypeForced != null ) 			
 		{

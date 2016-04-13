@@ -61,6 +61,10 @@ public class Statistics
 	private static int iNoOfExecutedSPInst = 0;
 	private static int iNoOfCompiledSPInst = 0;
 
+	// number of compiled/executed FL instructions
+	private static int iNoOfExecutedFLInst = 0;
+	private static int iNoOfCompiledFLInst = 0;
+
 	//JVM stats
 	private static long jitCompileTime = 0; //in milli sec
 	private static long jvmGCTime = 0; //in milli sec
@@ -164,6 +168,30 @@ public class Statistics
 		return iNoOfCompiledSPInst;
 	}
 
+	public static synchronized void setNoOfExecutedFLInst(int numJobs) {
+		iNoOfExecutedFLInst = numJobs;
+	}
+
+	public static synchronized int getNoOfExecutedFLInst() {
+		return iNoOfExecutedFLInst;
+	}
+
+	public static synchronized void incrementNoOfExecutedFLInst() {
+		iNoOfExecutedFLInst ++;
+	}
+
+	public static synchronized void decrementNoOfExecutedFLInst() {
+		iNoOfExecutedFLInst --;
+	}
+	
+	public static synchronized void setNoOfCompiledFLInst(int numJobs) {
+		iNoOfCompiledFLInst = numJobs;
+	}
+	
+	public static synchronized int getNoOfCompiledFLInst() {
+		return iNoOfCompiledFLInst;
+	}
+
 	public static synchronized void incrementNoOfCompiledSPInst() {
 		iNoOfCompiledSPInst ++;
 	}
@@ -220,11 +248,18 @@ public class Statistics
 		
 		if(OptimizerUtils.isSparkExecutionMode()) {
 			setNoOfExecutedSPInst(count);
-			setNoOfExecutedMRJobs(0);		
+			setNoOfExecutedMRJobs(0);
+			setNoOfExecutedFLInst(0);
+		}
+		else if (OptimizerUtils.isFlinkExecutionMode()) {
+			setNoOfExecutedFLInst(count);
+			setNoOfExecutedMRJobs(0);
+			setNoOfExecutedSPInst(0);
 		}
 		else {
 			setNoOfExecutedMRJobs(count);
 			setNoOfExecutedSPInst(0);
+			setNoOfExecutedFLInst(0);
 		}
 	}
 	
@@ -590,6 +625,11 @@ public class Statistics
 			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
 				sb.append("Number of compiled Spark inst:\t" + getNoOfCompiledSPInst() + ".\n");
 			sb.append("Number of executed Spark inst:\t" + getNoOfExecutedSPInst() + ".\n");
+		}
+		else if ( OptimizerUtils.isFlinkExecutionMode() ) {
+			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
+				sb.append("Number of compiled Flink inst:\t" + getNoOfCompiledFLInst() + ".\n");
+			sb.append("Number of executed Flink inst:\t" + getNoOfExecutedFLInst() + ".\n");
 		}
 		else {
 			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request

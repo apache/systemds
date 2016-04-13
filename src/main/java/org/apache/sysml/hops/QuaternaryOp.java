@@ -50,6 +50,7 @@ import org.apache.sysml.lops.WeightedUnaryMMR;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.context.FlinkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
@@ -228,6 +229,8 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 						constructMRLopsWeightedSquaredLoss(wtype);
 					else if( et == ExecType.SPARK )
 						constructSparkLopsWeightedSquaredLoss(wtype);
+					else if ( et == ExecType.FLINK )
+						constructFlinkLopsWeightedSquaredLoss(wtype);
 					else
 						throw new HopsException("Unsupported quaternaryop-wsloss exec type: "+et);
 					break;
@@ -561,6 +564,63 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 			Lop wsloss = new WeightedSquaredLossR( 
 					X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(), 
 					DataType.SCALAR, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
+			setOutputDimensions(wsloss);
+			setLineNumbers(wsloss);
+			setLops(wsloss);
+		}
+	}
+
+
+	/**
+	 *
+	 * @param wtype
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructFlinkLopsWeightedSquaredLoss(WeightsType wtype)
+		throws HopsException, LopsException
+	{
+		//NOTE: the common case for wsloss are factors U/V with a rank of 10s to 100s; the current runtime only
+		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
+		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
+
+		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
+		//and needs to fit once in executor broadcast memory. The 2GB broadcast constraint is no longer
+		//required because the max_int byte buffer constraint has been fixed in Spark 1.4 
+		double memBudgetExec = FlinkExecutionContext.getUDFMemoryBudget();
+		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
+
+		Hop X = getInput().get(0);
+		Hop U = getInput().get(1);
+		Hop V = getInput().get(2);
+		Hop W = getInput().get(3);
+
+		//MR operator selection, part1
+		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
+		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
+		boolean isMapWsloss = (!wtype.hasFourInputs() && m1Size+m2Size < memBudgetExec
+			&& 2*m1Size < memBudgetLocal && 2*m2Size < memBudgetLocal);
+
+		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
+		{
+			//map-side wsloss always with broadcast
+			Lop wsloss = new WeightedSquaredLoss( X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(),
+				DataType.SCALAR, ValueType.DOUBLE, wtype, ExecType.FLINK);
+			setOutputDimensions(wsloss);
+			setLineNumbers(wsloss);
+			setLops(wsloss);
+		}
+		else //general case
+		{
+			//MR operator selection part 2
+			boolean cacheU = !FORCE_REPLICATION && (m1Size < memBudgetExec && 2*m1Size < memBudgetLocal);
+			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < memBudgetExec )
+				|| (cacheU && m1Size+m2Size < memBudgetExec)) && 2*m2Size < memBudgetLocal;
+
+			//reduce-side wsloss w/ or without broadcast
+			Lop wsloss = new WeightedSquaredLossR(
+				X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(),
+				DataType.SCALAR, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.FLINK);
 			setOutputDimensions(wsloss);
 			setLineNumbers(wsloss);
 			setLops(wsloss);
@@ -1602,7 +1662,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	{	
 		checkAndSetForcedPlatform();
 		
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		ExecType REMOTE = OptimizerUtils.getRemoteExecType();
 		
 		if( _etypeForced != null ) 			
 		{

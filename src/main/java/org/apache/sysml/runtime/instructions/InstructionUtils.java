@@ -71,6 +71,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceDiag;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.flink.FLInstruction.FLINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -82,98 +83,98 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTy
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 
-public class InstructionUtils 
+public class InstructionUtils
 {
-	
+
 	/**
-	 * 
+	 *
 	 * @param str
 	 * @param expected
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static int checkNumFields( String str, int expected ) 
-		throws DMLRuntimeException 
+	public static int checkNumFields( String str, int expected )
+			throws DMLRuntimeException
 	{
 		//note: split required for empty tokens
 		int numParts = str.split(Instruction.OPERAND_DELIM).length;
 		int numFields = numParts - 2; // -2 accounts for execType and opcode
-		
-		if ( numFields != expected ) 
+
+		if ( numFields != expected )
 			throw new DMLRuntimeException("checkNumFields() for (" + str + ") -- expected number (" + expected + ") != is not equal to actual number (" + numFields + ").");
-		
-		return numFields; 
+
+		return numFields;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param str
 	 * @param expected
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static int checkNumFields( String[] parts, int expected ) 
-		throws DMLRuntimeException 
+	public static int checkNumFields( String[] parts, int expected )
+			throws DMLRuntimeException
 	{
 		int numParts = parts.length;
 		int numFields = numParts - 1; //account for opcode
-		
-		if ( numFields != expected ) 
+
+		if ( numFields != expected )
 			throw new DMLRuntimeException("checkNumFields() -- expected number (" + expected + ") != is not equal to actual number (" + numFields + ").");
-		
-		return numFields; 
+
+		return numFields;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param parts
 	 * @param expected1
 	 * @param expected2
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static int checkNumFields( String[] parts, int expected1, int expected2 ) 
-		throws DMLRuntimeException 
+	public static int checkNumFields( String[] parts, int expected1, int expected2 )
+			throws DMLRuntimeException
 	{
 		int numParts = parts.length;
 		int numFields = numParts - 1; //account for opcode
-		
-		if ( numFields != expected1 && numFields != expected2 ) 
+
+		if ( numFields != expected1 && numFields != expected2 )
 			throw new DMLRuntimeException("checkNumFields() -- expected number (" + expected1 + " or "+ expected2 +") != is not equal to actual number (" + numFields + ").");
-		
-		return numFields; 
+
+		return numFields;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param str
 	 * @param expected1
 	 * @param expected2
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static int checkNumFields( String str, int expected1, int expected2 ) 
-		throws DMLRuntimeException 
+	public static int checkNumFields( String str, int expected1, int expected2 )
+			throws DMLRuntimeException
 	{
 		//note: split required for empty tokens
 		int numParts = str.split(Instruction.OPERAND_DELIM).length;
 		int numFields = numParts - 2; // -2 accounts for execType and opcode
-		
-		if ( numFields != expected1 && numFields != expected2 ) 
+
+		if ( numFields != expected1 && numFields != expected2 )
 			throw new DMLRuntimeException("checkNumFields() for (" + str + ") -- expected number (" + expected1 + " or "+ expected2 +") != is not equal to actual number (" + numFields + ").");
-		
-		return numFields; 
+
+		return numFields;
 	}
-	
+
 	/**
-	 * Given an instruction string, strip-off the execution type and return 
-	 * opcode and all input/output operands WITHOUT their data/value type. 
+	 * Given an instruction string, strip-off the execution type and return
+	 * opcode and all input/output operands WITHOUT their data/value type.
 	 * i.e., ret.length = parts.length-1 (-1 for execution type)
-	 * 
+	 *
 	 * @param str
-	 * @return 
+	 * @return
 	 */
-	public static String[] getInstructionParts( String str ) 
+	public static String[] getInstructionParts( String str )
 	{
 		StringTokenizer st = new StringTokenizer( str, Instruction.OPERAND_DELIM );
 		String[] ret = new String[st.countTokens()-1];
@@ -183,24 +184,24 @@ public class InstructionUtils
 		while( st.hasMoreTokens() ){
 			String tmp = st.nextToken();
 			int ix = tmp.indexOf(Instruction.DATATYPE_PREFIX);
-			ret[index++] = tmp.substring(0,((ix>=0)?ix:tmp.length()));	
+			ret[index++] = tmp.substring(0,((ix>=0)?ix:tmp.length()));
 		}
 		return ret;
 	}
-	
+
 	/**
-	 * Given an instruction string, this function strips-off the 
-	 * execution type (CP or MR) and returns the remaining parts, 
+	 * Given an instruction string, this function strips-off the
+	 * execution type (CP or MR) and returns the remaining parts,
 	 * which include the opcode as well as the input and output operands.
 	 * Each returned part will have the datatype and valuetype associated
 	 * with the operand.
-	 * 
+	 *
 	 * This function is invoked mainly for parsing CPInstructions.
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 */
-	public static String[] getInstructionPartsWithValueType( String str ) 
+	public static String[] getInstructionPartsWithValueType( String str )
 	{
 		//note: split required for empty tokens
 		String[] parts = str.split(Instruction.OPERAND_DELIM, -1);
@@ -208,57 +209,68 @@ public class InstructionUtils
 		ret[0] = parts[1]; // opcode
 		for( int i=1; i<parts.length; i++ )
 			ret[i-1] = parts[i];
-		
+
 		return ret;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 */
-	public static String getOpCode( String str ) 
+	public static String getOpCode( String str )
 	{
 		int ix1 = str.indexOf(Instruction.OPERAND_DELIM);
 		int ix2 = str.indexOf(Instruction.OPERAND_DELIM, ix1+1);
 		return str.substring(ix1+1, ix2);
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 */
 	public static MRINSTRUCTION_TYPE getMRType( String str ) {
 		String opcode = getOpCode(str);
-		MRINSTRUCTION_TYPE mrtype = MRInstructionParser.String2MRInstructionType.get( opcode ); 
+		MRINSTRUCTION_TYPE mrtype = MRInstructionParser.String2MRInstructionType.get( opcode );
 		return mrtype;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 */
 	public static SPINSTRUCTION_TYPE getSPType( String str ) {
 		String opcode = getOpCode(str);
-		SPINSTRUCTION_TYPE sptype = SPInstructionParser.String2SPInstructionType.get( opcode ); 
+		SPINSTRUCTION_TYPE sptype = SPInstructionParser.String2SPInstructionType.get( opcode );
 		return sptype;
 	}
-	
+
 	/**
-	 * 
+	 *
+	 * @param str
+	 * @return
+	 */
+	public static FLINSTRUCTION_TYPE getFLType(String str ) {
+		String opcode = getOpCode(str);
+		FLINSTRUCTION_TYPE fltype = FLInstructionParser.String2FLInstructionType.get( opcode );
+		return fltype;
+	}
+
+	/**
+	 *
 	 * @param str
 	 * @return
 	 */
 	public static CPINSTRUCTION_TYPE getCPType( String str ) {
 		String opcode = getOpCode(str);
-		CPINSTRUCTION_TYPE cptype = CPInstructionParser.String2CPInstructionType.get( opcode ); 
+		CPINSTRUCTION_TYPE cptype = CPInstructionParser.String2CPInstructionType.get( opcode );
 		return cptype;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param opcode
 	 * @return
 	 */
@@ -266,60 +278,60 @@ public class InstructionUtils
 		Builtin.BuiltinFunctionCode bfc = Builtin.String2BuiltinFunctionCode.get(opcode);
 		return (bfc != null);
 	}
-	
+
 	public static boolean isOperand(String str) {
 		//note: split required for empty tokens
 		String[] parts = str.split(Instruction.DATATYPE_PREFIX);
 		return (parts.length > 1);
 	}
-	
+
 	/**
 	 * Evaluates if at least one instruction of the given instruction set
 	 * used the distributed cache; this call can also be used for individual
-	 * instructions. 
-	 * 
+	 * instructions.
+	 *
 	 * @param str
 	 * @return
 	 */
-	public static boolean isDistributedCacheUsed(String str) 
-	{	
+	public static boolean isDistributedCacheUsed(String str)
+	{
 		String[] parts = str.split(Instruction.INSTRUCTION_DELIM);
-		for(String inst : parts) 
+		for(String inst : parts)
 		{
 			String opcode = getOpCode(inst);
-			if(  opcode.equalsIgnoreCase(AppendM.OPCODE)  
-			   || opcode.equalsIgnoreCase(MapMult.OPCODE)
-			   || opcode.equalsIgnoreCase(MapMultChain.OPCODE)
-			   || opcode.equalsIgnoreCase(PMMJ.OPCODE)
-			   || opcode.equalsIgnoreCase(UAggOuterChain.OPCODE)
-			   || opcode.equalsIgnoreCase(GroupedAggregateM.OPCODE)
-			   || isDistQuaternaryOpcode( opcode ) //multiple quaternary opcodes
-			   || BinaryM.isOpcode( opcode ) ) //multiple binary opcodes	
+			if(  opcode.equalsIgnoreCase(AppendM.OPCODE)
+					|| opcode.equalsIgnoreCase(MapMult.OPCODE)
+					|| opcode.equalsIgnoreCase(MapMultChain.OPCODE)
+					|| opcode.equalsIgnoreCase(PMMJ.OPCODE)
+					|| opcode.equalsIgnoreCase(UAggOuterChain.OPCODE)
+					|| opcode.equalsIgnoreCase(GroupedAggregateM.OPCODE)
+					|| isDistQuaternaryOpcode( opcode ) //multiple quaternary opcodes
+					|| BinaryM.isOpcode( opcode ) ) //multiple binary opcodes
 			{
 				return true;
 			}
 		}
 		return false;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param opcode
 	 * @return
 	 */
 	public static AggregateUnaryOperator parseBasicAggregateUnaryOperator(String opcode)
 	{
 		AggregateUnaryOperator aggun = null;
-		
+
 		if ( opcode.equalsIgnoreCase("uak+") ) {
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-		} 		
+		}
 		else if ( opcode.equalsIgnoreCase("uark+") ) {
 			// RowSums
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("uack+") ) {
 			// ColSums
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
@@ -343,12 +355,12 @@ public class InstructionUtils
 			// Mean
 			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("uarmean") ) {
 			// RowMeans
 			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("uacmean") ) {
 			// ColMeans
 			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOROWS);
@@ -378,12 +390,12 @@ public class InstructionUtils
 		else if ( opcode.equalsIgnoreCase("ua+") ) {
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("uar+") ) {
 			// RowSums
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("uac+") ) {
 			// ColSums
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
@@ -392,7 +404,7 @@ public class InstructionUtils
 		else if ( opcode.equalsIgnoreCase("ua*") ) {
 			AggregateOperator agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("uamax") ) {
 			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
@@ -400,19 +412,19 @@ public class InstructionUtils
 		else if ( opcode.equalsIgnoreCase("uamin") ) {
 			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject());
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("uatrace") ) {
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject());
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("uaktrace") ) {
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject());
-		} 		
+		}
 		else if ( opcode.equalsIgnoreCase("uarmax") ) {
 			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-		} 
+		}
 		else if (opcode.equalsIgnoreCase("uarimax") ) {
 			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
@@ -420,7 +432,7 @@ public class InstructionUtils
 		else if ( opcode.equalsIgnoreCase("uarmin") ) {
 			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
-		} 
+		}
 		else if (opcode.equalsIgnoreCase("uarimin") ) {
 			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("minindex"), true, CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject());
@@ -428,17 +440,17 @@ public class InstructionUtils
 		else if ( opcode.equalsIgnoreCase("uacmax") ) {
 			AggregateOperator agg = new AggregateOperator(-Double.MAX_VALUE, Builtin.getBuiltinFnObject("max"));
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("uacmin") ) {
 			AggregateOperator agg = new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject("min"));
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 		}
-		
+
 		return aggun;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param opcode
 	 * @param corrExists
 	 * @param corrLoc
@@ -447,7 +459,7 @@ public class InstructionUtils
 	public static AggregateOperator parseAggregateOperator(String opcode, String corrExists, String corrLoc)
 	{
 		AggregateOperator agg = null;
-	
+
 		if ( opcode.equalsIgnoreCase("ak+") || opcode.equalsIgnoreCase("aktrace") ) {
 			boolean lcorrExists = (corrExists==null) ? true : Boolean.parseBoolean(corrExists);
 			CorrectionLocationType lcorrLoc = (corrLoc==null) ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.valueOf(corrLoc);
@@ -460,7 +472,7 @@ public class InstructionUtils
 		}
 		else if ( opcode.equalsIgnoreCase("a+") ) {
 			agg = new AggregateOperator(0, Plus.getPlusFnObject());
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("a*") ) {
 			agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
 		}
@@ -492,85 +504,85 @@ public class InstructionUtils
 
 		return agg;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param uop
 	 * @return
 	 */
 	public static AggregateUnaryOperator parseCumulativeAggregateUnaryOperator(UnaryOperator uop)
 	{
 		Builtin f = (Builtin)uop.fn;
-		
-		if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMSUM ) 
+
+		if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMSUM )
 			return parseCumulativeAggregateUnaryOperator("ucumack+") ;
-		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMPROD ) 
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMPROD )
 			return parseCumulativeAggregateUnaryOperator("ucumac*") ;
-		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMIN ) 
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMIN )
 			return parseCumulativeAggregateUnaryOperator("ucumacmin") ;
-		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMAX ) 
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMAX )
 			return parseCumulativeAggregateUnaryOperator("ucumacmax" ) ;
-		
+
 		throw new RuntimeException("Unsupported cumulative aggregate unary operator: "+f.getBuiltinFunctionCode());
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param uop
 	 * @return
 	 */
 	public static AggregateUnaryOperator parseBasicCumulativeAggregateUnaryOperator(UnaryOperator uop)
 	{
 		Builtin f = (Builtin)uop.fn;
-		
-		if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMSUM ) 
+
+		if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMSUM )
 			return parseBasicAggregateUnaryOperator("uack+") ;
-		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMPROD ) 
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMPROD )
 			return parseBasicAggregateUnaryOperator("uac*") ;
-		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMIN ) 
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMIN )
 			return parseBasicAggregateUnaryOperator("uacmin") ;
-		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMAX ) 
+		else if( f.getBuiltinFunctionCode()==BuiltinFunctionCode.CUMMAX )
 			return parseBasicAggregateUnaryOperator("uacmax" ) ;
-		
+
 		throw new RuntimeException("Unsupported cumulative aggregate unary operator: "+f.getBuiltinFunctionCode());
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param opcode
 	 * @return
 	 */
 	public static AggregateUnaryOperator parseCumulativeAggregateUnaryOperator(String opcode)
 	{
 		AggregateUnaryOperator aggun = null;
-		if( "ucumack+".equals(opcode) ) { 
+		if( "ucumack+".equals(opcode) ) {
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 		}
-		else if ( "ucumac*".equals(opcode) ) { 
+		else if ( "ucumac*".equals(opcode) ) {
 			AggregateOperator agg = new AggregateOperator(0, Multiply.getMultiplyFnObject(), false, CorrectionLocationType.NONE);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 		}
-		else if ( "ucumacmin".equals(opcode) ) { 
+		else if ( "ucumacmin".equals(opcode) ) {
 			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("min"), false, CorrectionLocationType.NONE);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 		}
-		else if ( "ucumacmax".equals(opcode) ) { 
+		else if ( "ucumacmax".equals(opcode) ) {
 			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("max"), false, CorrectionLocationType.NONE);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 		}
-		
+
 		return aggun;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param opcode
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static BinaryOperator parseBinaryOperator(String opcode) 
-		throws DMLRuntimeException
+	public static BinaryOperator parseBinaryOperator(String opcode)
+			throws DMLRuntimeException
 	{
 		if(opcode.equalsIgnoreCase("=="))
 			return new BinaryOperator(Equals.getEqualsFnObject());
@@ -596,7 +608,7 @@ public class InstructionUtils
 			return new BinaryOperator(Multiply.getMultiplyFnObject());
 		else if(opcode.equalsIgnoreCase("1-*"))
 			return new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject());
-		else if ( opcode.equalsIgnoreCase("*2") ) 
+		else if ( opcode.equalsIgnoreCase("*2") )
 			return new BinaryOperator(Multiply2.getMultiply2FnObject());
 		else if(opcode.equalsIgnoreCase("/"))
 			return new BinaryOperator(Divide.getDivideFnObject());
@@ -608,34 +620,34 @@ public class InstructionUtils
 			return new BinaryOperator(Power.getPowerFnObject());
 		else if ( opcode.equalsIgnoreCase("^2") )
 			return new BinaryOperator(Power2.getPower2FnObject());
-		else if ( opcode.equalsIgnoreCase("max") ) 
+		else if ( opcode.equalsIgnoreCase("max") )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
-		else if ( opcode.equalsIgnoreCase("min") ) 
+		else if ( opcode.equalsIgnoreCase("min") )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-		
+
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
 	}
-	
+
 	/**
 	 * scalar-matrix operator
-	 * 
+	 *
 	 * @param opcode
 	 * @param arg1IsScalar
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar) 
-		throws DMLRuntimeException
+	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar)
+			throws DMLRuntimeException
 	{
 		//for all runtimes that set constant dynamically (cp/spark)
 		double default_constant = 0;
-		
+
 		return parseScalarBinaryOperator(opcode, arg1IsScalar, default_constant);
 	}
-	
+
 	/**
 	 * scalar-matrix operator
-	 * 
+	 *
 	 * @param opcode
 	 * @param arg1IsScalar
 	 * @param constant
@@ -643,15 +655,15 @@ public class InstructionUtils
 	 * @throws DMLRuntimeException
 	 */
 	public static ScalarOperator parseScalarBinaryOperator(String opcode, boolean arg1IsScalar, double constant)
-		throws DMLRuntimeException
+			throws DMLRuntimeException
 	{
 		//commutative operators
-		if ( opcode.equalsIgnoreCase("+") ){ 
-			return new RightScalarOperator(Plus.getPlusFnObject(), constant); 
+		if ( opcode.equalsIgnoreCase("+") ){
+			return new RightScalarOperator(Plus.getPlusFnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("*") ) {
 			return new RightScalarOperator(Multiply.getMultiplyFnObject(), constant);
-		} 
+		}
 		//non-commutative operators
 		else if ( opcode.equalsIgnoreCase("-") ) {
 			if(arg1IsScalar)
@@ -666,7 +678,7 @@ public class InstructionUtils
 			if(arg1IsScalar)
 				return new LeftScalarOperator(Divide.getDivideFnObject(), constant);
 			else return new RightScalarOperator(Divide.getDivideFnObject(), constant);
-		}  
+		}
 		else if ( opcode.equalsIgnoreCase("%%") ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(Modulus.getModulusFnObject(), constant);
@@ -723,38 +735,38 @@ public class InstructionUtils
 				return new LeftScalarOperator(NotEquals.getNotEqualsFnObject(), constant);
 			return new RightScalarOperator(NotEquals.getNotEqualsFnObject(), constant);
 		}
-		
+
 		//operations that only exist for performance purposes (all unary or commutative operators)
 		else if ( opcode.equalsIgnoreCase("*2") ) {
 			return new RightScalarOperator(Multiply2.getMultiply2FnObject(), constant);
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("^2") ){
 			return new RightScalarOperator(Power2.getPower2FnObject(), constant);
 		}
 		else if ( opcode.equalsIgnoreCase("1-*") ) {
 			return new RightScalarOperator(Minus1Multiply.getMinus1MultiplyFnObject(), constant);
 		}
-		
+
 		//operations that only exist in mr
 		else if ( opcode.equalsIgnoreCase("s-r") ) {
 			return new LeftScalarOperator(Minus.getMinusFnObject(), constant);
-		} 
+		}
 		else if ( opcode.equalsIgnoreCase("so") ) {
 			return new LeftScalarOperator(Divide.getDivideFnObject(), constant);
 		}
-		
+
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
-	}	
+	}
 
 
 	/**
-	 * 
+	 *
 	 * @param opcode
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static BinaryOperator parseExtendedBinaryOperator(String opcode) 
-		throws DMLRuntimeException
+	public static BinaryOperator parseExtendedBinaryOperator(String opcode)
+			throws DMLRuntimeException
 	{
 		if(opcode.equalsIgnoreCase("==") || opcode.equalsIgnoreCase("map=="))
 			return new BinaryOperator(Equals.getEqualsFnObject());
@@ -780,7 +792,7 @@ public class InstructionUtils
 			return new BinaryOperator(Multiply.getMultiplyFnObject());
 		else if(opcode.equalsIgnoreCase("1-*") || opcode.equalsIgnoreCase("map1-*"))
 			return new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject());
-		else if ( opcode.equalsIgnoreCase("*2") ) 
+		else if ( opcode.equalsIgnoreCase("*2") )
 			return new BinaryOperator(Multiply2.getMultiply2FnObject());
 		else if(opcode.equalsIgnoreCase("/") || opcode.equalsIgnoreCase("map/"))
 			return new BinaryOperator(Divide.getDivideFnObject());
@@ -792,17 +804,17 @@ public class InstructionUtils
 			return new BinaryOperator(Power.getPowerFnObject());
 		else if ( opcode.equalsIgnoreCase("^2") )
 			return new BinaryOperator(Power2.getPower2FnObject());
-		else if ( opcode.equalsIgnoreCase("max") || opcode.equalsIgnoreCase("mapmax") ) 
+		else if ( opcode.equalsIgnoreCase("max") || opcode.equalsIgnoreCase("mapmax") )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
-		else if ( opcode.equalsIgnoreCase("min") || opcode.equalsIgnoreCase("mapmin") ) 
+		else if ( opcode.equalsIgnoreCase("min") || opcode.equalsIgnoreCase("mapmin") )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-		
+
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
 	}
-	
-	
+
+
 	/**
-	 * 
+	 *
 	 * @param opcode
 	 * @return
 	 */
@@ -820,7 +832,7 @@ public class InstructionUtils
 			return "a+";
 		else if ( opcode.equalsIgnoreCase("ua*") )
 			return "a*";
-		else if ( opcode.equalsIgnoreCase("uatrace") || opcode.equalsIgnoreCase("uaktrace") ) 
+		else if ( opcode.equalsIgnoreCase("uatrace") || opcode.equalsIgnoreCase("uaktrace") )
 			return "aktrace";
 		else if ( opcode.equalsIgnoreCase("uamax") || opcode.equalsIgnoreCase("uarmax") || opcode.equalsIgnoreCase("uacmax") )
 			return "amax";
@@ -830,12 +842,12 @@ public class InstructionUtils
 			return "arimax";
 		else if (opcode.equalsIgnoreCase("uarimin") )
 			return "arimin";
-	
+
 		return null;
 	}
 
 	/**
-	 * 
+	 *
 	 * @param opcode
 	 * @return
 	 */
@@ -857,26 +869,26 @@ public class InstructionUtils
 			return CorrectionLocationType.LASTFOURROWS;
 		else if (opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin") )
 			return CorrectionLocationType.LASTCOLUMN;
-		
+
 		return CorrectionLocationType.NONE;
 	}
 
 	/**
-	 * 
+	 *
 	 * @param opcode
 	 * @return
 	 */
-	public static boolean isDistQuaternaryOpcode(String opcode) 
+	public static boolean isDistQuaternaryOpcode(String opcode)
 	{
 		return WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)     //mapwsloss
-			|| WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode)    //redwsloss
-			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)   	   //mapwsigmoid
-			|| WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode)        //redwsigmoid
-			|| WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)           //mapwdivmm
-			|| WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode)          //redwdivmm
-			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(opcode)    //mapwcemm
-			|| WeightedCrossEntropyR.OPCODE.equalsIgnoreCase(opcode)   //redwcemm
-			|| WeightedUnaryMM.OPCODE.equalsIgnoreCase(opcode)         //mapwumm
-			|| WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode);       //redwumm
+				|| WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode)    //redwsloss
+				|| WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)   	   //mapwsigmoid
+				|| WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode)        //redwsigmoid
+				|| WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)           //mapwdivmm
+				|| WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode)          //redwdivmm
+				|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(opcode)    //mapwcemm
+				|| WeightedCrossEntropyR.OPCODE.equalsIgnoreCase(opcode)   //redwcemm
+				|| WeightedUnaryMM.OPCODE.equalsIgnoreCase(opcode)         //mapwumm
+				|| WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode);       //redwumm
 	}
 }

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
+
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -32,7 +33,9 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.context.FlinkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.flink.data.DataSetObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
@@ -636,6 +639,57 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		return mb;
 	}
+
+	/**
+	 *
+	 * @param dataset
+	 * @return
+	 * @throws IOException
+	 */
+	@Override
+	protected MatrixBlock readBlobFromDataSet(DataSetObject dataset, MutableBoolean writeStatus)
+		throws IOException
+	{
+		//note: the read of a matrix block from an Dataset might trigger
+		//lazy evaluation of pending transformations.
+		DataSetObject lds = dataset;
+
+		//prepare return status (by default only collect)
+		writeStatus.setValue(false);
+
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		InputInfo ii = iimd.getInputInfo();
+		MatrixBlock mb = null;
+		try
+		{
+			//obtain matrix block from Dataset
+			int rlen = (int)mc.getRows();
+			int clen = (int)mc.getCols();
+			int brlen = (int)mc.getRowsPerBlock();
+			int bclen = (int)mc.getColsPerBlock();
+			long nnz = mc.getNonZeros();
+
+			if( ii == InputInfo.BinaryCellInputInfo ) {
+				//collect matrix block from binary block Dataset
+				mb = FlinkExecutionContext.toMatrixBlock(lds, rlen, clen, nnz);
+			}
+			else {
+				//collect matrix block from binary cell Dataset
+				mb = FlinkExecutionContext.toMatrixBlock(lds, rlen, clen, brlen, bclen, nnz);
+			}
+		}
+		catch(DMLRuntimeException ex) {
+			throw new IOException(ex);
+		}
+
+		//sanity check correct output
+		if( mb == null ) {
+			throw new IOException("Unable to load matrix from rdd: "+lds.getVarName());
+		}
+
+		return mb;
+	}
 	
 	/**
 	 * Writes in-memory matrix to HDFS in a specified format.
@@ -698,6 +752,21 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		//note: the write of an RDD to HDFS might trigger
 		//lazy evaluation of pending transformations.				
 		long newnnz = SparkExecutionContext.writeRDDtoHDFS(rdd, fname, oinfo);	
+		((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics().setNonZeros(newnnz);
+	}
+
+	@Override
+	protected void writeBlobFromDataSetToHDFS(DataSetObject dso, String fname, String outputFormat)
+			throws IOException, DMLRuntimeException
+	{
+		//prepare output info
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat)
+				: InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
+
+		//note: the write of an Dataset to HDFS might trigger
+		//lazy evaluation of pending transformations.
+		long newnnz = FlinkExecutionContext.writeDataSetToHDFS(dso, fname, oinfo);
 		((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics().setNonZeros(newnnz);
 	}
 }

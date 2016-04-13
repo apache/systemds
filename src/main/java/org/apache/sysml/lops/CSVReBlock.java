@@ -19,6 +19,7 @@
 
 package org.apache.sysml.lops;
 
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecLocation;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes;
@@ -73,6 +74,9 @@ public class CSVReBlock extends Lop
 		}
 		else if(et == ExecType.SPARK) {
 			this.lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
+		else if(et == ExecType.FLINK) {
+			this.lps.setProperties( inputs, ExecType.FLINK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
 		else {
 			throw new LopsException("Incorrect execution type for CSVReblock:" + et);
@@ -162,7 +166,7 @@ public class CSVReBlock extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String output) throws LopsException {
-		if(getExecType() != ExecType.SPARK) {
+		if(!(OptimizerUtils.isSparkExecutionMode() || OptimizerUtils.isFlinkExecutionMode())) {
 			throw new LopsException("The method getInstructions(String,String) for CSVReblock should be called only for Spark execution type");
 		}
 		

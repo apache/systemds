@@ -428,7 +428,7 @@ public class DataOp extends Hop
 		//for example for sum(X) where the memory consumption is solely determined by the DataOp
 		
 		ExecType letype = (OptimizerUtils.isMemoryBasedOptLevel()) ? findExecTypeByMemEstimate() : null;
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		ExecType REMOTE = OptimizerUtils.getRemoteExecType();
 		
 		//NOTE: independent of etype executed in MR (piggybacked) if input to persistent write is MR
 		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )

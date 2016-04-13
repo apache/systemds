@@ -77,7 +77,8 @@ public class BinaryOp extends Hop
 		MR_MAPPEND, //map-only append (rhs must be vector and fit in mapper mem)
 		MR_RAPPEND, //reduce-only append (output must have at most one column block)
 		MR_GAPPEND, //map-reduce general case append (map-extend, aggregate)
-		SP_GAlignedAppend // special case for general case in Spark where left.getCols() % left.getColsPerBlock() == 0
+		SP_GAlignedAppend, // special case for general case in Spark where left.getCols() % left.getColsPerBlock() == 0
+		FL_GAlignedAppend
 	};
 	
 	private enum MMBinaryMethod{
@@ -527,6 +528,11 @@ public class BinaryOp extends Hop
 				append = constructSPAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), cbind, this);
 				append.getOutputParameters().setDimensions(rlen, clen, getRowsInBlock(), getColsInBlock(), getNnz());
 			}
+			else if(et == ExecType.FLINK)
+			{
+				append = constructFLAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), cbind, this);
+				append.getOutputParameters().setDimensions(rlen, clen, getRowsInBlock(), getColsInBlock(), getNnz());
+			}
 			else //CP
 			{
 				Lop offset = createOffsetLop( getInput().get(0), cbind ); //offset 1st input
@@ -585,8 +591,7 @@ public class BinaryOp extends Hop
 				ot = Unary.OperationTypes.MULTIPLY2;
 			else //general case
 				ot = HopsOpOp2LopsU.get(op);
-			
-			
+
 			Unary unary1 = new Unary(getInput().get(0).constructLops(),
 						   getInput().get(1).constructLops(), ot, getDataType(), getValueType(), et);
 		
@@ -633,6 +638,35 @@ public class BinaryOp extends Hop
 							HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
 				}
 				
+				setOutputDimensions(binary);
+				setLineNumbers(binary);
+				setLops(binary);
+			}
+			else if(et == ExecType.FLINK)
+			{
+				Hop left = getInput().get(0);
+				Hop right = getInput().get(1);
+				MMBinaryMethod mbin = optFindMMBinaryMethodFlink(left, right);
+
+				Lop  binary = null;
+				if( mbin == MMBinaryMethod.MR_BINARY_UAGG_CHAIN ) {
+					AggUnaryOp uRight = (AggUnaryOp)right;
+					binary = new BinaryUAggChain(left.constructLops(), HopsOpOp2LopsB.get(op),
+						HopsAgg2Lops.get(uRight.getOp()), HopsDirection2Lops.get(uRight.getDirection()),
+						getDataType(), getValueType(), et);
+				}
+				else if (mbin == MMBinaryMethod.MR_BINARY_M) {
+					boolean partitioned = false;
+					boolean isColVector = (right.getDim2()==1 && left.getDim1()==right.getDim1());
+
+					binary = new BinaryM(left.constructLops(), right.constructLops(),
+						HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et, partitioned, isColVector);
+				}
+				else {
+					binary = new Binary(left.constructLops(), right.constructLops(),
+						HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
+				}
+
 				setOutputDimensions(binary);
 				setLineNumbers(binary);
 				setLops(binary);
@@ -798,8 +832,6 @@ public class BinaryOp extends Hop
 			
 			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);	
 		}
-		
-		
 		return ret;
 	}
 	
@@ -933,7 +965,7 @@ public class BinaryOp extends Hop
 		
 		checkAndSetForcedPlatform();
 		
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		ExecType REMOTE = OptimizerUtils.getRemoteExecType();
 		DataType dt1 = getInput().get(0).getDataType();
 		DataType dt2 = getInput().get(1).getDataType();
 		
@@ -996,6 +1028,20 @@ public class BinaryOp extends Hop
 		{
 			//pull unary scalar operation into spark 
 			_etype = ExecType.SPARK;
+		}
+
+		//spark-specific decision refinement (execute unary scalar w/ spark input and 
+		//single parent also in spark because it's likely cheap and reduces intermediates)
+		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
+			&& getDataType().isMatrix() && (dt1.isScalar() || dt2.isScalar())
+			&& supportsMatrixScalarOperations()                          //scalar operations
+			&& !(getInput().get(dt1.isScalar()?1:0) instanceof DataOp)   //input is not checkpoint
+			&& getInput().get(dt1.isScalar()?1:0).getParent().size()==1  //unary scalar is only parent
+			&& !HopRewriteUtils.isSingleBlock(getInput().get(dt1.isScalar()?1:0)) //single block triggered exec
+			&& getInput().get(dt1.isScalar()?1:0).optFindExecType() == ExecType.FLINK )
+		{
+			//pull unary scalar operation into spark 
+			_etype = ExecType.FLINK;
 		}
 
 		//mark for recompile (forever)
@@ -1159,8 +1205,67 @@ public class BinaryOp extends Hop
 		}
 		
 		ret.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-		
-		
+
+
+		return ret;
+	}
+
+
+	/**
+	 *
+	 * @param left
+	 * @param right
+	 * @param dt
+	 * @param vt
+	 * @param current
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	public static Lop constructFLAppendLop( Hop left, Hop right, DataType dt, ValueType vt, boolean cbind, Hop current )
+		throws HopsException, LopsException
+	{
+		Lop ret = null;
+
+		Lop offset = createOffsetLop( left, cbind ); //offset 1st input
+		AppendMethod am = optFindAppendFLMethod(left.getDim1(), left.getDim2(), right.getDim1(), right.getDim2(),
+			right.getRowsInBlock(), right.getColsInBlock(), right.getNnz(), cbind);
+
+		switch( am )
+		{
+			case MR_MAPPEND: //special case map-only append
+			{
+				ret = new AppendM(left.constructLops(), right.constructLops(), offset,
+					current.getDataType(), current.getValueType(), cbind, false, ExecType.FLINK);
+				break;
+			}
+			case MR_RAPPEND: //special case reduce append w/ one column block
+			{
+				ret = new AppendR(left.constructLops(), right.constructLops(),
+					current.getDataType(), current.getValueType(), cbind, ExecType.FLINK);
+				break;
+			}
+			case MR_GAPPEND:
+			{
+				Lop offset2 = createOffsetLop( right, cbind ); //offset second input
+				ret = new AppendG(left.constructLops(), right.constructLops(), offset, offset2,
+					current.getDataType(), current.getValueType(), cbind, ExecType.FLINK);
+				break;
+			}
+			/*
+			case SP_GAlignedAppend:
+			{
+				ret = new AppendGAlignedSP(left.constructLops(), right.constructLops(), offset,
+					current.getDataType(), current.getValueType(), cbind);
+				break;
+			}*/
+			default:
+				throw new HopsException("Invalid SP append method: "+am);
+		}
+
+		ret.setAllPositions(current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
+
+
 		return ret;
 	}
 	
@@ -1317,6 +1422,42 @@ public class BinaryOp extends Hop
 		return AppendMethod.MR_GAPPEND; 	
 	}
 
+	private static AppendMethod optFindAppendFLMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb, long m2_nnz, boolean cbind )
+	{
+		if(FORCED_APPEND_METHOD != null) {
+			return FORCED_APPEND_METHOD;
+		}
+
+		//check for best case (map-only w/o shuffle)		
+		if(    m2_dim1 >= 1 && m2_dim2 >= 1   //rhs dims known 				
+			&& (cbind && m2_dim2 <= m1_cpb    //rhs is smaller than column block 
+			|| !cbind && m2_dim1 <= m1_rpb) ) //rhs is smaller than row block
+		{
+			if( OptimizerUtils.checkFlinkBroadcastMemoryBudget(m2_dim1, m2_dim2, m1_rpb, m1_cpb, m2_nnz) ) {
+				return AppendMethod.MR_MAPPEND;
+			}
+		}
+
+		//check for in-block append (reduce-only)
+		if( cbind && m1_dim2 >= 1 && m2_dim2 >= 0  //column dims known
+			&& m1_dim2+m2_dim2 <= m1_cpb   //output has one column block
+			||!cbind && m1_dim1 >= 1 && m2_dim1 >= 0 //row dims known
+			&& m1_dim1+m2_dim1 <= m1_rpb ) //output has one column block
+		{
+			return AppendMethod.MR_RAPPEND;
+		}
+
+		// if(mc1.getCols() % mc1.getColsPerBlock() == 0) {
+		if( cbind && m1_dim2 % m1_cpb == 0
+			|| !cbind && m1_dim1 % m1_rpb == 0 )
+		{
+			return AppendMethod.FL_GAlignedAppend;
+		}
+
+		//general case (map and reduce)
+		return AppendMethod.MR_GAPPEND;
+	}
+
 	/**
 	 * 
 	 * @param rightInput
@@ -1368,6 +1509,37 @@ public class BinaryOp extends Hop
 			}
 		}
 		
+		//MR_BINARY_R as robust fallback strategy
+		return MMBinaryMethod.MR_BINARY_R;
+	}
+
+	private MMBinaryMethod optFindMMBinaryMethodFlink(Hop left, Hop right) {
+		long m1_dim1 = left.getDim1();
+		long m1_dim2 = left.getDim2();
+		long m2_dim1 =  right.getDim1();
+		long m2_dim2 = right.getDim2();
+		long m1_rpb = left.getRowsInBlock();
+		long m1_cpb = left.getColsInBlock();
+
+		//MR_BINARY_UAGG_CHAIN only applied if result is column/row vector of MV binary operation.
+		if( right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
+			&& ((((AggUnaryOp) right).getDirection() == Direction.Row && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //single column block
+			||  (((AggUnaryOp) right).getDirection() == Direction.Col && m1_dim1 > 1 && m1_dim1 <= m1_rpb ))) //single row block
+		{
+			return MMBinaryMethod.MR_BINARY_UAGG_CHAIN;
+		}
+
+		//MR_BINARY_M currently only applied for MV because potential partitioning job may cause additional latency for VV.
+		if( m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 
+			&& ((m1_dim2 >= 1 && m2_dim2 == 1)  //rhs column vector	
+			||(m1_dim1 >= 1 && m2_dim1 == 1 )) ) //rhs row vector
+		{
+			double size = OptimizerUtils.estimateSize(m2_dim1, m2_dim2);
+			if( OptimizerUtils.checkFlinkBroadcastMemoryBudget(size) ) { //TODO: check this
+				return MMBinaryMethod.MR_BINARY_M;
+			}
+		}
+
 		//MR_BINARY_R as robust fallback strategy
 		return MMBinaryMethod.MR_BINARY_R;
 	}

@@ -60,6 +60,11 @@ public class ExecutionContextFactory
 			case HYBRID_SPARK:
 				ec = new SparkExecutionContext(allocateVars, prog);
 				break;
+
+			case FLINK:
+			case HYBRID_FLINK:
+				ec = new FlinkExecutionContext(allocateVars, prog);
+				break;
 		}
 		
 		return ec;

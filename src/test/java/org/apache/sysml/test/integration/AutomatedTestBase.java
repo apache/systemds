@@ -1144,6 +1144,10 @@ public abstract class AutomatedTestBase
 			args.add("spark");
 		else if (rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
 			args.add("hybrid_spark");
+		else if (rtplatform == RUNTIME_PLATFORM.FLINK)
+			args.add("flink");
+		else if (rtplatform == RUNTIME_PLATFORM.HYBRID_FLINK)
+			args.add("hybrid_flink");
 		else {
 			throw new RuntimeException("Unknown runtime platform: " + rtplatform);
 		}

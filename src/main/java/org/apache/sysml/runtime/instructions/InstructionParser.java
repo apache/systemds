@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.flink.FLInstruction.FLINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
 
@@ -45,6 +46,11 @@ public class InstructionParser
 		{
 			SPINSTRUCTION_TYPE sptype = InstructionUtils.getSPType(str); 
 			return SPInstructionParser.parseSingleInstruction (sptype, str);
+		}
+		else if ( execType.equalsIgnoreCase(ExecType.FLINK.toString()) )
+		{
+			FLINSTRUCTION_TYPE fltype = InstructionUtils.getFLType(str);
+			return FLInstructionParser.parseSingleInstruction(fltype, str);
 		}
 		else if ( execType.equalsIgnoreCase("MR") ) {
 			MRINSTRUCTION_TYPE mrtype = InstructionUtils.getMRType(str); 

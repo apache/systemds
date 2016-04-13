@@ -69,6 +69,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.context.FlinkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -93,7 +94,9 @@ public class DMLScript
 		SINGLE_NODE,    // execute all matrix operations in CP
 		HYBRID,         // execute matrix operations in CP or MR
 		HYBRID_SPARK,   // execute matrix operations in CP or Spark   
-		SPARK			// execute matrix operations in Spark
+		SPARK,			// execute matrix operations in Spark
+		FLINK,
+		HYBRID_FLINK
 	}
 	
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
@@ -520,6 +523,10 @@ public class DMLScript
 			lrtplatform = RUNTIME_PLATFORM.SPARK;
 		else if ( platform.equalsIgnoreCase("hybrid_spark"))
 			lrtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+        else if ( platform.equalsIgnoreCase("flink"))
+            lrtplatform = RUNTIME_PLATFORM.FLINK;
+		else if ( platform.equalsIgnoreCase("hybrid_flink"))
+			lrtplatform = RUNTIME_PLATFORM.HYBRID_FLINK;
 		else 
 			System.err.println("ERROR: Unknown runtime platform: " + platform);
 		
@@ -674,8 +681,11 @@ public class DMLScript
 			
 			//run execute (w/ exception handling to ensure proper shutdown)
 			ec = ExecutionContextFactory.createContext(rtprog);
-			rtprog.execute( ec );  
-			
+			rtprog.execute( ec );
+			if (ec instanceof FlinkExecutionContext) {
+				((FlinkExecutionContext) ec).execute();
+
+			}
 		}
 		finally //ensure cleanup/shutdown
 		{	

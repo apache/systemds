@@ -35,6 +35,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.flink.data.DataSetObject;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -178,6 +179,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject _bcHandle = null; //Broadcast handle
+
+	// flink specific handles
+	private DataSetObject _dataSetHandle = null;
 	
 	/**
 	 * Basic constructor for any cacheable data.
@@ -377,6 +381,24 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( _bcHandle != null )
 			bc.setBackReference(this);
 	}
+
+	/**
+	 * Flink specifics
+	 */
+
+	public DataSetObject getDataSetHandle() {
+		return _dataSetHandle;
+	}
+
+	public void setDataSetHandle(DataSetObject ds) {
+
+		if(_dataSetHandle != null)
+			_dataSetHandle.setBackReference(null);
+
+		_dataSetHandle = ds;
+		if(_dataSetHandle != null)
+			ds.setBackReference(this);
+	}
 	
 	// *********************************************
 	// ***                                       ***
@@ -420,8 +442,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			{
 				if( DMLScript.STATISTICS )
 					CacheStatistics.incrementHDFSHits();
-				
-				if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
+
+				if( getDataSetHandle() == null && (getRDDHandle() == null || getRDDHandle().allowsShortCircuitRead()))
 				{
 					//check filename
 					if( _hdfsFileName == null )
@@ -433,16 +455,19 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 					//mark for initial local write despite read operation
 					_requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
 				}
-				else
-				{
-					//read matrix from rdd (incl execute pending rdd operations)
+				else {
 					MutableBoolean writeStatus = new MutableBoolean();
-					_data = readBlobFromRDD( getRDDHandle(), writeStatus );
-					
+					if (DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK) {
+						//read matrix from rdd (incl execute pending rdd operations)
+						_data = readBlobFromRDD(getRDDHandle(), writeStatus);
+					} else if (DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_FLINK || DMLScript.rtplatform == RUNTIME_PLATFORM.FLINK) {
+						//read matrix from rdd (incl execute pending rdd operations)
+						_data = readBlobFromDataSet(getDataSetHandle(), writeStatus);
+					}
 					//mark for initial local write (prevent repeated execution of rdd operations)
-					if( writeStatus.booleanValue() )
+					if (writeStatus.booleanValue())
 						_requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
-					else		
+					else
 						_requiresLocalWrite = true;
 				}
 				
@@ -681,6 +706,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			_rddHandle.setBackReference(null);
 		if( _bcHandle != null )
 			_bcHandle.setBackReference(null);
+		if( _dataSetHandle != null)
+			_dataSetHandle.setBackReference(null);
 		
 		// change object state EMPTY
 		setDirty(false);
@@ -784,10 +811,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
 				try
 				{
-					if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
-						_data = readBlobFromHDFS( _hdfsFileName );
-					else
-						_data = readBlobFromRDD( getRDDHandle(), new MutableBoolean() );
+					if( getDataSetHandle() == null && (getRDDHandle() == null || getRDDHandle().allowsShortCircuitRead())) {
+						_data = readBlobFromHDFS(_hdfsFileName);
+					}
+					else {
+						if (DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+							_data = readBlobFromRDD(getRDDHandle(), new MutableBoolean());
+						else if (DMLScript.rtplatform == RUNTIME_PLATFORM.FLINK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_FLINK)
+							_data = readBlobFromDataSet(getDataSetHandle(), new MutableBoolean());
+					}
 					setDirty(false);
 				}
 				catch (IOException e)
@@ -824,23 +856,31 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			{
 				MapReduceTool.deleteFileIfExistOnHDFS(fName);
 				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
-				if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
+				if( getDataSetHandle()==null && (getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead()) )
 					MapReduceTool.copyFileOnHDFS( _hdfsFileName, fName );
 				else //write might trigger rdd operations and nnz maintenance
-					writeBlobFromRDDtoHDFS(getRDDHandle(), fName, outputFormat);
+				{
+					if (DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+						writeBlobFromRDDtoHDFS(getRDDHandle(), fName, outputFormat);
+					else if (DMLScript.rtplatform == RUNTIME_PLATFORM.FLINK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_FLINK)
+						writeBlobFromDataSetToHDFS(getDataSetHandle(), fName, outputFormat);
+				}
 				writeMetaData( fName, outputFormat, formatProperties );
 			}
 			catch (Exception e) {
 				throw new CacheException ("Export to " + fName + " failed.", e);
 			}
 		}
-		else if( getRDDHandle()!=null && //pending rdd operation
-				!getRDDHandle().allowsShortCircuitRead() )
+		else if( getDataSetHandle()!=null && (getRDDHandle()!=null && //pending rdd operation
+				!getRDDHandle().allowsShortCircuitRead()) )
 		{
 			//CASE 3: pending rdd operation (other than checkpoints)
 			try
 			{
-				writeBlobFromRDDtoHDFS(getRDDHandle(), fName, outputFormat);
+				if (DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+					writeBlobFromRDDtoHDFS(getRDDHandle(), fName, outputFormat);
+				else if (DMLScript.rtplatform == RUNTIME_PLATFORM.FLINK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_FLINK)
+					writeBlobFromDataSetToHDFS(getDataSetHandle(), fName, outputFormat);
 				writeMetaData( fName, outputFormat, formatProperties );
 			}
 			catch (Exception e) {
@@ -986,6 +1026,16 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	protected abstract T readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 		throws IOException;
+
+	/**
+	 *
+	 * @param rdd
+	 * @param status
+	 * @return
+	 * @throws IOException
+	 */
+	protected abstract T readBlobFromDataSet(DataSetObject dso, MutableBoolean status)
+			throws IOException;
 	
 	/**
 	 * 
@@ -1009,8 +1059,18 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	protected abstract void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt) 
 		throws IOException, DMLRuntimeException;
-		
-	
+
+	/**
+	 *
+	 * @param rdd
+	 * @param fname
+	 * @param ofmt
+	 * @throws IOException
+	 * @throws DMLRuntimeException
+	 */
+	protected abstract void writeBlobFromDataSetToHDFS(DataSetObject dso, String fname, String ofmt)
+			throws IOException, DMLRuntimeException;
+
 	/**
 	 * 
 	 * @param filePathAndName

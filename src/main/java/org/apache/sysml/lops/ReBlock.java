@@ -67,6 +67,8 @@ public class ReBlock extends Lop
 			lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
 		else if(et == ExecType.SPARK) 
 			lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		else if(et == ExecType.FLINK)
+			lps.setProperties( inputs, ExecType.FLINK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob ); 
 		else 
 			throw new LopsException("Incorrect execution type for Reblock:" + et);
 	}
@@ -106,7 +108,7 @@ public class ReBlock extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String output) throws LopsException {
-		if(getExecType() != ExecType.SPARK) {
+		if(getExecType() != ExecType.SPARK && getExecType() != ExecType.FLINK) {
 			throw new LopsException("The method getInstructions(String,String) for Reblock should be called only for Spark execution type");
 		}
 		

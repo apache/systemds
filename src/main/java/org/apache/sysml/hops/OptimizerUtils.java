@@ -39,6 +39,7 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.context.FlinkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -431,6 +432,37 @@ public class OptimizerUtils
 		//memory and hand it over to the spark context as in-memory object
 		return ( size < memBudgetExec && 2*size < memBudgetLocal );
 	}
+
+	/**
+	 *
+	 * @param size
+	 * @return
+	 */
+	public static boolean checkFlinkBroadcastMemoryBudget( double size )
+	{
+		double memBudgetExec = FlinkExecutionContext.getUDFMemoryBudget(); //TODO: change this
+		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
+
+		//basic requirement: the broadcast needs to to fit once in the remote broadcast memory 
+		//and twice into the local memory budget because we have to create a partitioned broadcast
+		//memory and hand it over to the spark context as in-memory object
+		return ( size < memBudgetExec && 2*size < memBudgetLocal );
+	}
+
+	public static boolean checkFlinkBroadcastMemoryBudget(long rlen, long clen, long brlen, long bclen, long nnz) {
+		double memBudgetExec = FlinkExecutionContext.getUDFMemoryBudget();
+		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
+
+		double sp = getSparsity(rlen, clen, nnz);
+		double size = estimateSizeExactSparsity(rlen, clen, sp);
+		double sizeP = estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, sp);
+
+		//basic requirement: the broadcast needs to to fit once in the remote broadcast memory
+		//and twice into the local memory budget because we have to create a partitioned broadcast
+		//memory and hand it over to the spark context as in-memory object
+		return (   OptimizerUtils.isValidCPDimensions(rlen, clen)
+				&& sizeP < memBudgetExec && size+sizeP < memBudgetLocal );
+	}
 	
 	/**
 	 * 
@@ -548,6 +580,20 @@ public class OptimizerUtils
 		return (   DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
 				|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK);
 	}
+
+	public static boolean isFlinkExecutionMode() {
+		return (   DMLScript.rtplatform == RUNTIME_PLATFORM.FLINK
+				|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_FLINK);
+	}
+
+	public static ExecType getRemoteExecType() {
+		if (isSparkExecutionMode())
+			return ExecType.SPARK;
+		else if (isFlinkExecutionMode())
+			return ExecType.FLINK;
+		else
+			return ExecType.MR;
+	}
 	
 	/**
 	 * 
@@ -555,7 +601,8 @@ public class OptimizerUtils
 	 */
 	public static boolean isHybridExecutionMode() {
 		return (  DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID 
-			   || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK );
+			   || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK
+			   || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_FLINK);
 	}
 	
 	/**

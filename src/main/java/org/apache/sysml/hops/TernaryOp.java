@@ -386,7 +386,7 @@ public class TernaryOp extends Hop
 		//reset reblock requirement (see MR ctable / construct lops)
 		setRequiresReblock( false );
 		
-		if ( et == ExecType.CP  || et == ExecType.SPARK) 
+		if ( et == ExecType.CP  || et == ExecType.SPARK || et == ExecType.FLINK) 
 		{	
 			//for CP we support only ctable expand left
 			Ternary.OperationTypes tertiaryOp = isSequenceRewriteApplicable(true) ? Ternary.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : tertiaryOpOrig;
@@ -404,7 +404,7 @@ public class TernaryOp extends Hop
 			tertiary.setAllPositions(this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 			
 			//force blocked output in CP (see below), otherwise binarycell
-			if ( et == ExecType.SPARK ) {
+			if ( et == ExecType.SPARK || et == ExecType.FLINK) {
 				tertiary.getOutputParameters().setDimensions(_dim1, _dim2, -1, -1, -1);
 				setRequiresReblock( true );
 			}
@@ -757,7 +757,7 @@ public class TernaryOp extends Hop
 	{	
 		checkAndSetForcedPlatform();
 
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		ExecType REMOTE = OptimizerUtils.getRemoteExecType();
 		
 		if( _etypeForced != null ) 			
 		{

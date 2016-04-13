@@ -48,6 +48,7 @@ import org.apache.sysml.lops.Transform.OperationTypes;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.context.FlinkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -229,6 +230,29 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + _method + ") while constructing SPARK lops.");	
 				}
 			}
+			else if( et == ExecType.FLINK )
+			{
+				//matrix mult operation selection part 3 (Flink type)
+				boolean tmmRewrite = input1 instanceof ReorgOp && ((ReorgOp)input1).getOp()==ReOrgOp.TRANSPOSE;
+				_method = optFindMMultMethodFlink (
+					input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(), input1.getNnz(),
+					input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), input2.getNnz(),
+					mmtsj, chain, _hasLeftPMInput, tmmRewrite );
+
+				//dispatch Flink lops construction 
+				switch( _method )
+				{
+					case TSMM:
+						constructFlinkLopsTSMM( mmtsj );
+						break;
+					case MAPMM_L:
+					case MAPMM_R:
+						constructFlinkLopsMapMM( _method );
+						break;
+					default:
+						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + _method + ") while constructing SPARK lops.");
+				}
+			}
 			else if( et == ExecType.MR ) 
 			{
 				//matrix mult operation selection part 3 (MR type)
@@ -407,7 +431,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	{	
 		checkAndSetForcedPlatform();
 
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		ExecType REMOTE = OptimizerUtils.getRemoteExecType();
 		
 		if( _etypeForced != null ) 			
 		{
@@ -682,7 +706,92 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		
 		return out;
 	}
-	
+
+	//////////////////////////
+	// Flink Lops generation
+	/////////////////////////
+
+	/**
+	 *
+	 * @param mmtsj
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private void constructFlinkLopsTSMM(MMTSJType mmtsj)
+		throws HopsException, LopsException
+	{
+		Hop input = getInput().get(mmtsj.isLeft()?1:0);
+		MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), getValueType(), ExecType.FLINK, mmtsj);
+		setOutputDimensions(tsmm);
+		setLineNumbers(tsmm);
+		setLops(tsmm);
+	}
+
+	/**
+	 *
+	 * @param method
+	 * @throws LopsException
+	 * @throws HopsException
+	 */
+	private void constructFlinkLopsMapMM(MMultMethod method)
+		throws LopsException, HopsException
+	{
+		Lop mapmult = null;
+		if( isLeftTransposeRewriteApplicable(false, false) )
+		{
+			mapmult = constructFlinkLopsMapMMWithLeftTransposeRewrite();
+		}
+		else
+		{
+			// If number of columns is smaller than block size then explicit aggregation is not required.
+			// i.e., entire matrix multiplication can be performed in the mappers.
+			boolean needAgg = requiresAggregation(method);
+			SparkAggType aggtype = getSparkMMAggregationType(needAgg);
+			_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this);
+
+			//core matrix mult
+			mapmult = new MapMult( getInput().get(0).constructLops(), getInput().get(1).constructLops(),
+				getDataType(), getValueType(), (method==MMultMethod.MAPMM_R), false,
+				_outputEmptyBlocks, aggtype, ExecType.FLINK);
+		}
+		setOutputDimensions(mapmult);
+		setLineNumbers(mapmult);
+		setLops(mapmult);
+	}
+
+	/**
+	 *
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructFlinkLopsMapMMWithLeftTransposeRewrite()
+		throws HopsException, LopsException
+	{
+		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
+		Hop Y = getInput().get(1);
+
+		//right vector transpose
+		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
+		setLineNumbers(tY);
+
+		//matrix mult spark
+		boolean needAgg = requiresAggregation(MMultMethod.MAPMM_R);
+		SparkAggType aggtype = getSparkMMAggregationType(needAgg);
+		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this);
+
+		Lop mult = new MapMult( tY, X.constructLops(), getDataType(), getValueType(),
+			false, false, _outputEmptyBlocks, aggtype, ExecType.FLINK);
+		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers(mult);
+
+		//result transpose (dimensions set outside)
+		Lop out = new Transform(mult, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
+
+		return out;
+	}
+
 	//////////////////////////
 	// Spark Lops generation
 	/////////////////////////
@@ -728,7 +837,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			//core matrix mult
 			mapmult = new MapMult( getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
 					                getDataType(), getValueType(), (method==MMultMethod.MAPMM_R), false, 
-					                _outputEmptyBlocks, aggtype);	
+					                _outputEmptyBlocks, aggtype, ExecType.SPARK);	
 		}
 		setOutputDimensions(mapmult);
 		setLineNumbers(mapmult);
@@ -758,7 +867,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
 		
 		Lop mult = new MapMult( tY, X.constructLops(), getDataType(), getValueType(), 
-				      false, false, _outputEmptyBlocks, aggtype);	
+				      false, false, _outputEmptyBlocks, aggtype, ExecType.SPARK);	
 		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(mult);
 		
@@ -871,7 +980,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	
 	/**
 	 * 
-	 * @param chain
 	 * @throws LopsException
 	 * @throws HopsException
 	 */
@@ -1869,6 +1977,143 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		if ( cpmm_costs < rmm_costs ) 
 			return MMultMethod.CPMM;
 		else 
+			return MMultMethod.RMM;
+	}
+
+
+	/**
+	 *
+	 * @param m1_rows
+	 * @param m1_cols
+	 * @param m1_rpb
+	 * @param m1_cpb
+	 * @param m2_rows
+	 * @param m2_cols
+	 * @param m2_rpb
+	 * @param m2_cpb
+	 * @param mmtsj
+	 * @param chainType
+	 * @return
+	 */
+	private MMultMethod optFindMMultMethodFlink( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m1_nnz,
+												 long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, long m2_nnz,
+												 MMTSJType mmtsj, ChainType chainType, boolean leftPMInput, boolean tmmRewrite )
+	{
+		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
+		//and needs to fit once in executor broadcast memory.
+		double memBudgetExec = MAPMULT_MEM_MULTIPLIER * FlinkExecutionContext.getUDFMemoryBudget();
+		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
+
+		//reset broadcast memory information (for concurrent parfor jobs, awareness of additional
+		//cp memory requirements on flink dataset operations with broadcasts)
+		_spBroadcastMemEstimate = 0;
+
+		// Step 0: check for forced mmultmethod
+		if( FORCED_MMULT_METHOD !=null )
+			return FORCED_MMULT_METHOD;
+
+		// Step 1: check TSMM
+		// If transpose self pattern and result is single block:
+		// use specialized TSMM method (always better than generic jobs)
+		if(    ( mmtsj == MMTSJType.LEFT && m2_cols>=0 && m2_cols <= m2_cpb )
+			|| ( mmtsj == MMTSJType.RIGHT && m1_rows>=0 && m1_rows <= m1_rpb ) )
+		{
+			return MMultMethod.TSMM;
+		}
+
+		// Step 2: check MapMMChain
+		// If mapmultchain pattern and result is a single block:
+		// use specialized mapmult method
+		if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES )
+		{
+			//matmultchain if dim2(X)<=blocksize and all vectors fit in mappers
+			//(X: m1_cols x m1_rows, v: m1_rows x m2_cols, w: m1_cols x m2_cols) 
+			//NOTE: generalization possibe: m2_cols>=0 && m2_cols<=m2_cpb
+			if( chainType!=ChainType.NONE && m1_rows >=0 && m1_rows <= m1_rpb && m2_cols==1 )
+			{
+				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0
+					&& OptimizerUtils.estimateSize(m1_rows, m2_cols ) < memBudgetExec )
+				{
+					return MMultMethod.MAPMM_CHAIN;
+				}
+				else if( (chainType==ChainType.XtwXv || chainType==ChainType.XtXvy )
+					&& m1_rows>=0 && m2_cols>=0 && m1_cols>=0
+					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols)
+					+ OptimizerUtils.estimateSize(m1_cols, m2_cols) < memBudgetExec
+					&& 2*(OptimizerUtils.estimateSize(m1_rows, m2_cols)
+					+ OptimizerUtils.estimateSize(m1_cols, m2_cols)) < memBudgetLocal )
+				{
+					_spBroadcastMemEstimate = 2*(OptimizerUtils.estimateSize(m1_rows, m2_cols)
+						+ OptimizerUtils.estimateSize(m1_cols, m2_cols));
+					return MMultMethod.MAPMM_CHAIN;
+				}
+			}
+		}
+
+		// Step 3: check for PMM (permutation matrix needs to fit into mapper memory)
+		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
+		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, true);
+		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, true);
+		if( (footprintPM1 < memBudgetExec && m1_rows>=0 || footprintPM2 < memBudgetExec && m2_rows>=0)
+			&& 2*OptimizerUtils.estimateSize(m1_rows, 1) < memBudgetLocal
+			&& leftPMInput )
+		{
+			_spBroadcastMemEstimate = 2*OptimizerUtils.estimateSize(m1_rows, 1);
+			return MMultMethod.PMM;
+		}
+
+		// Step 4: check MapMM
+		// If the size of one input is small, choose a method that uses broadcast variables to prevent shuffle
+
+		//memory estimates for local partitioning (mb -> partitioned mb)
+		double m1Size = OptimizerUtils.estimateSizeExactSparsity(m1_rows, m1_cols, m1_nnz); //m1 single block
+		double m2Size = OptimizerUtils.estimateSizeExactSparsity(m2_rows, m2_cols, m2_nnz); //m2 single block
+		double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz); //m1 partitioned 
+		double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz); //m2 partitioned
+
+		//memory estimates for remote execution (broadcast and outputs)
+		double footprint1 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, false);
+		double footprint2 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 2, false);
+
+		if (   (footprint1 < memBudgetExec && m1Size+m1SizeP < memBudgetLocal && m1_rows>=0 && m1_cols>=0)
+			|| (footprint2 < memBudgetExec && m2Size+m2SizeP < memBudgetLocal && m2_rows>=0 && m2_cols>=0) )
+		{
+			//apply map mult if one side fits in remote task memory 
+			//(if so pick smaller input for distributed cache)
+			if( m1SizeP < m2SizeP && m1_rows>=0 && m1_cols>=0) {
+				_spBroadcastMemEstimate = m1Size+m1SizeP;
+				return MMultMethod.MAPMM_L;
+			}
+			else {
+				_spBroadcastMemEstimate = m2Size+m2SizeP;
+				return MMultMethod.MAPMM_R;
+			}
+		}
+
+		// Step 5: check for unknowns
+		// If the dimensions are unknown at compilation time, simply assume 
+		// the worst-case scenario and produce the most robust plan -- which is CPMM
+		if ( m1_rows == -1 || m1_cols == -1 || m2_rows == -1 || m2_cols == -1 )
+			return MMultMethod.CPMM;
+
+		// Step 6: check for ZIPMM
+		// If t(X)%*%y -> t(t(y)%*%X) rewrite and ncol(X)<blocksize
+		if( tmmRewrite && m1_rows >= 0 && m1_rows <= m1_rpb  //blocksize constraint left
+			&& m2_cols >= 0 && m2_cols <= m2_cpb )           //blocksize constraint right	
+		{
+			return MMultMethod.ZIPMM;
+		}
+
+		// Step 7: Decide CPMM vs RMM based on io costs
+		//estimate shuffle costs weighted by parallelism
+		//TODO currently we reuse the mr estimates, these need to be fine-tune for our spark operators
+		double rmm_costs = getRMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);
+		double cpmm_costs = getCPMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);
+
+		//final mmult method decision 
+		if ( cpmm_costs < rmm_costs )
+			return MMultMethod.CPMM;
+		else
 			return MMultMethod.RMM;
 	}
 

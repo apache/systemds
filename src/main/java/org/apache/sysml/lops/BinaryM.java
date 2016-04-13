@@ -79,6 +79,10 @@ public class BinaryM extends Lop
 			lps.addCompatibility(JobType.INVALID);
 			lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 		}
+		else if(et == ExecType.FLINK) {
+			lps.addCompatibility(JobType.INVALID);
+			lps.setProperties( inputs, ExecType.FLINK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		}
 		else {
 			throw new LopsException("Incorrect execution type for BinaryM lop:" + et.name());
 		}

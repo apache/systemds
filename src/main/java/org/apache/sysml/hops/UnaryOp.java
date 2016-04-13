@@ -155,10 +155,15 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 				{
 					//TODO additional physical operation if offsets fit in memory
 					Lop cumsumLop = null;
-					if( et == ExecType.MR )
+					if( et == ExecType.MR ) {
 						cumsumLop = constructLopsMRCumulativeUnary();
-					else
+					}
+					else if (et == ExecType.FLINK) {
+						cumsumLop = constructLopsFlinkCumulativeUnary();
+					}
+					else {
 						cumsumLop = constructLopsSparkCumulativeUnary();
+					}
 					setLops(cumsumLop);
 				}
 				else //default unary 
@@ -444,6 +449,72 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		
 		return TEMP;
 	}
+
+
+	/**
+	 *
+	 * @return
+	 * @throws HopsException
+	 * @throws LopsException
+	 */
+	private Lop constructLopsFlinkCumulativeUnary()
+		throws HopsException, LopsException
+	{
+		Hop input = getInput().get(0);
+		long rlen = input.getDim1();
+		long clen = input.getDim2();
+		long brlen = input.getRowsInBlock();
+		long bclen = input.getColsInBlock();
+		boolean force = !dimsKnown() || _etypeForced == ExecType.FLINK;
+		OperationTypes aggtype = getCumulativeAggType();
+
+		Lop X = input.constructLops();
+		Lop TEMP = X;
+		ArrayList<Lop> DATA = new ArrayList<Lop>();
+		int level = 0;
+
+		//recursive preaggregation until aggregates fit into CP memory budget
+		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen) + OptimizerUtils.estimateSize(1, clen))
+			> OptimizerUtils.getLocalMemBudget()
+			&& TEMP.getOutputParameters().getNumRows()>1) || force )
+		{
+			DATA.add(TEMP);
+
+			//preaggregation per block (for flink, the CumulativePartialAggregate subsumes both
+			//the preaggregation and subsequent block aggregation)
+			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNumRows()/brlen);
+			Lop preagg = new CumulativePartialAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE, aggtype, ExecType.FLINK);
+			preagg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
+			setLineNumbers(preagg);
+
+			TEMP = preagg;
+			level++;
+			force = false; //in case of unknowns, generate one level
+		}
+
+		//in-memory cum sum (of partial aggregates)
+		if( TEMP.getOutputParameters().getNumRows()!=1 ) {
+			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
+			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP, k);
+			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
+			setLineNumbers(unary1);
+			TEMP = unary1;
+		}
+
+		//split, group and mr cumsum
+		while( level-- > 0  ) {
+			//(for flink, the CumulativeOffsetBinary subsumes both the split aggregate and 
+			//the subsequent offset binary apply of split aggregates against the original data)
+			double initValue = getCumulativeInitValue();
+			CumulativeOffsetBinary binary = new CumulativeOffsetBinary(DATA.get(level), TEMP,
+				DataType.MATRIX, ValueType.DOUBLE, initValue, aggtype, ExecType.FLINK);
+			binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
+			setLineNumbers(binary);
+			TEMP = binary;
+		}
+
+		return TEMP;
+	}
 	
 	/**
 	 * 
@@ -646,7 +717,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	{		
 		checkAndSetForcedPlatform();
 	
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		ExecType REMOTE = OptimizerUtils.getRemoteExecType();
 		
 		if( _etypeForced != null ) 			
 		{
@@ -685,6 +756,18 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		{
 			//pull unary operation into spark 
 			_etype = ExecType.SPARK;
+		}
+
+		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
+			&& getInput().get(0).optFindExecType() == ExecType.FLINK
+			&& getDataType().isMatrix()
+			&& !isCumulativeUnaryOperation() && !isCastUnaryOperation()
+			&& _op!=OpOp1.MEDIAN && _op!=OpOp1.IQM
+			&& !(getInput().get(0) instanceof DataOp)    //input is not checkpoint
+			&& getInput().get(0).getParent().size()==1 ) //unary is only parent
+		{
+			//pull unary operation into flink
+			_etype = ExecType.FLINK;
 		}
 		
 		//mark for recompile (forever)

@@ -220,7 +220,30 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		runDistributedMatrixMatrixMultiplicationTest(true, true, MMultMethod.RMM, ExecType.SPARK);
 	}
-	
+
+	@Test
+	public void testDenseDenseMapmmFlink()
+	{
+		runDistributedMatrixMatrixMultiplicationTest(false, false, MMultMethod.MAPMM_R, ExecType.FLINK);
+	}
+
+	@Test
+	public void testDenseSparseMapmmFlink()
+	{
+		runDistributedMatrixMatrixMultiplicationTest(false, true, MMultMethod.MAPMM_R, ExecType.FLINK);
+	}
+
+	@Test
+	public void testSparseDenseMapmmFlink()
+	{
+		runDistributedMatrixMatrixMultiplicationTest(true, false, MMultMethod.MAPMM_R, ExecType.FLINK);
+	}
+
+	@Test
+	public void testSparseSparseMapmmFlink()
+	{
+		runDistributedMatrixMatrixMultiplicationTest(true, true, MMultMethod.MAPMM_R, ExecType.FLINK);
+	}
 
 	/**
 	 * 
@@ -235,6 +258,7 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 		switch( instType ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			case FLINK: rtplatform = RUNTIME_PLATFORM.FLINK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
 	

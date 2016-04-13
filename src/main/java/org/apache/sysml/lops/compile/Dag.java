@@ -66,15 +66,11 @@ import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
-import org.apache.sysml.runtime.instructions.CPInstructionParser;
-import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.*;
 import org.apache.sysml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
-import org.apache.sysml.runtime.instructions.InstructionParser;
-import org.apache.sysml.runtime.instructions.SPInstructionParser;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
-import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -1260,7 +1256,7 @@ public class Dag<N extends Lop>
 		//for(Instruction inst : deleteInst) {
 		for(int i=0; i < deleteInst.size(); i++) {
 			Instruction inst = deleteInst.get(i);
-			if ((inst.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM  || inst.getType() == INSTRUCTION_TYPE.SPARK)
+			if ((inst.getType() == INSTRUCTION_TYPE.CONTROL_PROGRAM  || inst.getType() == INSTRUCTION_TYPE.SPARK || inst.getType() == INSTRUCTION_TYPE.FLINK)
 					&& ((CPInstruction)inst).getCPInstructionType() == CPINSTRUCTION_TYPE.Variable 
 					&& ((VariableCPInstruction)inst).isRemoveVariable(varName) ) {
 				deleteInst.remove(i);
@@ -2784,6 +2780,9 @@ public class Dag<N extends Lop>
 								// This will throw an exception if the exectype of hop is set incorrectly
 								// Note: the exec type and exec location of lops needs to be set to SPARK and ControlProgram respectively
 								currInstr = SPInstructionParser.parseSingleInstruction(io_inst);
+							else if(node.getExecType() == ExecType.FLINK) {
+								currInstr = FLInstructionParser.parseSingleInstruction(io_inst);
+							}
 							else
 								currInstr = CPInstructionParser.parseSingleInstruction(io_inst);
 						}

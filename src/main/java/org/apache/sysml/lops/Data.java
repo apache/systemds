@@ -404,6 +404,8 @@ public class Data extends Lop
 		StringBuilder sb = new StringBuilder();
 		if(this.getExecType() == ExecType.SPARK)  
 			sb.append( "SPARK" );
+		else if(this.getExecType() == ExecType.FLINK)
+			sb.append( "FLINK" );
 		else
 			sb.append( "CP" );
 		sb.append( OPERAND_DELIMITOR );
@@ -481,7 +483,7 @@ public class Data extends Lop
 				sb.append(OPERAND_DELIMITOR);
 				sb.append(sparseLop.getBooleanValue());
 				
-				if ( this.getExecType() == ExecType.SPARK ) 
+				if ( this.getExecType() == ExecType.SPARK || this.getExecType() == ExecType.FLINK )
 				{
 					boolean isInputMatrixBlock = true;
 					Lop input = getInputs().get(0);

@@ -340,7 +340,7 @@ public class IndexingOp extends Hop
 		
 		checkAndSetForcedPlatform();
 
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		ExecType REMOTE = OptimizerUtils.getRemoteExecType();
 		
 		if( _etypeForced != null ) 			
 		{

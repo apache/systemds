@@ -37,7 +37,8 @@ public abstract class Instruction
 		EXTERNAL_LIBRARY, 
 		MAPREDUCE_JOB, 
 		BREAKPOINT, 
-		SPARK 
+		SPARK,
+		FLINK
 	};
 	
 	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());
@@ -49,6 +50,7 @@ public abstract class Instruction
 	public static final String INSTRUCTION_DELIM = Lop.INSTRUCTION_DELIMITOR;
 	public static final String NAME_VALUE_SEPARATOR = Lop.NAME_VALUE_SEPARATOR;
 	public static final String SP_INST_PREFIX = "sp_";
+	public static final String FL_INST_PREFIX = "fl_";
 	
 	//basic instruction meta data
 	protected INSTRUCTION_TYPE type = null;

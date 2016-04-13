@@ -132,7 +132,7 @@ public class Unary extends Lop
 	{
 		//sanity check
 		if ( (op == OperationTypes.INVERSE || op == OperationTypes.CHOLESKY)
-			 && (et == ExecType.SPARK || et == ExecType.MR) ) {
+			 && (et == ExecType.SPARK || et == ExecType.MR || et == ExecType.FLINK) ) {
 			throw new LopsException("Invalid exection type "+et.toString()+" for operation "+op.toString());
 		}
 		

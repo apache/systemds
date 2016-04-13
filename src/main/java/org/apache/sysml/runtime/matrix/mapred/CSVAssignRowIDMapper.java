@@ -32,8 +32,6 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.wink.json4j.JSONException;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.CSVReblockMR.OffsetCount;
@@ -41,20 +39,19 @@ import org.apache.sysml.runtime.transform.TfUtils;
 
 public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWritable, Text, ByteWritable, OffsetCount>
 {	
-	
-	private ByteWritable outKey=new ByteWritable();
-	private long fileOffset=0;
-	private long num=0;
-	private boolean first=true;
-	private OutputCollector<ByteWritable, OffsetCount> outCache=null;
-	private String delim=" ";
-	private boolean ignoreFirstLine=false;
-	private boolean realFirstLine=false;
-	private String filename="";
-	private boolean headerFile=false;
+	private ByteWritable outKey = new ByteWritable();
+	private long fileOffset = 0;
+	private long num = 0;
+	private boolean first = true;
+	private OutputCollector<ByteWritable, OffsetCount> outCache = null;
+	private String delim = " ";
+	private boolean ignoreFirstLine = false;
+	private boolean realFirstLine = false;
+	private String filename = "";
+	private boolean headerFile = false;
 	
 	// members relevant to transform
-	TfUtils _agents = null;
+	private TfUtils _agents = null;
 	
 	@Override
 	public void map(LongWritable key, Text value,
@@ -62,31 +59,26 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 			throws IOException 
 	{
 		if(first) {
-			first=false;
-			fileOffset=key.get();
-			outCache=out;
+			first = false;
+			fileOffset = key.get();
+			outCache = out;
 		}
 		
-		if(key.get()==0 && headerFile)//getting the number of colums
-		{
-			if(!ignoreFirstLine)
-			{
+		//getting the number of colums
+		if(key.get()==0 && headerFile) {
+			if(!ignoreFirstLine) {
 				report.incrCounter(CSVReblockMR.NUM_COLS_IN_MATRIX, outKey.toString(), value.toString().split(delim, -1).length);
-				if(!omit(value.toString()))
-					num++;
+				num += omit(value.toString()) ? 0 : 1;
 			}
 			else
-				realFirstLine=true;
+				realFirstLine = true;
 		}
-		else
-		{
-			if(realFirstLine)
-			{
+		else {
+			if(realFirstLine) {
 				report.incrCounter(CSVReblockMR.NUM_COLS_IN_MATRIX, outKey.toString(), value.toString().split(delim, -1).length);
-				realFirstLine=false;
+				realFirstLine = false;
 			}
-			if(!omit(value.toString()))
-				num++;
+			num += omit(value.toString()) ? 0 : 1;
 		}
 	}
 	
@@ -97,59 +89,42 @@ public class CSVAssignRowIDMapper extends MapReduceBase implements Mapper<LongWr
 		byte thisIndex;
 		try {
 			//it doesn't make sense to have repeated file names in the input, since this is for reblock
-			thisIndex=MRJobConfiguration.getInputMatrixIndexesInMapper(job).get(0);
+			thisIndex = MRJobConfiguration.getInputMatrixIndexesInMapper(job).get(0);
 			outKey.set(thisIndex);
-			FileSystem fs=FileSystem.get(job);
-			Path thisPath=new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
-			filename=thisPath.toString();
-			String[] strs=job.getStrings(CSVReblockMR.SMALLEST_FILE_NAME_PER_INPUT);
-			Path headerPath=new Path(strs[thisIndex]).makeQualified(fs);
-			if(headerPath.toString().equals(filename))
-				headerFile=true;
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+			FileSystem fs = FileSystem.get(job);
+			Path thisPath = new Path(job.get(MRConfigurationNames.MR_MAP_INPUT_FILE)).makeQualified(fs);
+			filename = thisPath.toString();
+			String[] strs = job.getStrings(CSVReblockMR.SMALLEST_FILE_NAME_PER_INPUT);
+			Path headerPath = new Path(strs[thisIndex]).makeQualified(fs);
+			headerFile = headerPath.toString().equals(filename);
 		
-		try {
 			CSVReblockInstruction[] reblockInstructions = MRJobConfiguration.getCSVReblockInstructions(job);
 			for(CSVReblockInstruction ins: reblockInstructions)
-			{
-				if(ins.input==thisIndex)
-				{
-					delim=Pattern.quote(ins.delim); 
-					ignoreFirstLine=ins.hasHeader;
+				if(ins.input == thisIndex) {
+					delim = Pattern.quote(ins.delim); 
+					ignoreFirstLine = ins.hasHeader;
 					break;
 				}
-			}
-		} catch (DMLRuntimeException e) {
-			throw new RuntimeException(e);
-		}
 		
-		// load properties relevant to transform
-		try {
+			// load properties relevant to transform
 			boolean omit = job.getBoolean(MRJobConfiguration.TF_TRANSFORM, false);
 			if ( omit ) 
 				_agents = new TfUtils(job, true);
-		} 
-		catch(IOException e) {
-			throw new RuntimeException(e);
-		} 
-		catch(JSONException e) {
+		}
+		catch(Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 	
-	private boolean omit(String line)
-	{
+	private boolean omit(String line) {
 		if(_agents == null)
-			return false;
-		
+			return false;		
 		return _agents.omit( line.split(delim, -1) );
 	}
 	
 	@Override
-	public void close() throws IOException
-	{
-		outCache.collect(outKey, new OffsetCount(filename, fileOffset, num));
+	public void close() throws IOException {
+		if( outCache != null ) //robustness empty splits
+			outCache.collect(outKey, new OffsetCount(filename, fileOffset, num));
 	}
 }

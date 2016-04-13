@@ -295,8 +295,10 @@ public class DMLScript
 					if( rtplatform==null ) 
 						return ret;
 				}
-				else if (args[i].startsWith("-config="))
-					fnameOptConfig = args[i].substring(8).replaceAll("\"", ""); 
+				else if (args[i].startsWith("-config=")) // legacy
+					fnameOptConfig = args[i].substring(8).replaceAll("\"", "");
+				else if (args[i].equalsIgnoreCase("-config"))
+					fnameOptConfig = args[++i];
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
 				}
@@ -570,12 +572,12 @@ public class DMLScript
 		printStartExecInfo( dmlScriptStr );
 		
 		//Step 1: parse configuration files
-		DMLConfig dmlconf = DMLConfig.readAndMergeConfigurationFiles(fnameOptConfig);
+		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
 		ConfigurationManager.setGlobalConfig(dmlconf);		
 		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
 		ConfigurationManager.setGlobalConfig(cconf);
 		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
-		
+
 		//Step 2: set local/remote memory if requested (for compile in AM context) 
 		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
 			DMLAppMasterUtils.setupConfigRemoteMaxMemory(dmlconf); 
@@ -715,9 +717,9 @@ public class DMLScript
 		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
 		
 		//Step 1: parse configuration files
-		DMLConfig conf = DMLConfig.readAndMergeConfigurationFiles(fnameOptConfig);
+		DMLConfig conf = DMLConfig.readConfigurationFile(fnameOptConfig);
 		ConfigurationManager.setGlobalConfig(conf);
-	
+
 		//Step 2: parse dml script
 		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
 		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
@@ -947,7 +949,7 @@ public class DMLScript
 		try
 		{
 			//read the default config
-			DMLConfig conf = DMLConfig.readAndMergeConfigurationFiles(null);
+			DMLConfig conf = DMLConfig.readConfigurationFile(null);
 			
 			//run cleanup job to clean remote local tmp dirs
 			CleanupMR.runJob(conf);

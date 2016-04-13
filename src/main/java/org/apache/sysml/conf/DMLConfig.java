@@ -180,7 +180,7 @@ public class DMLConfig
 			} // end if (otherConfigNodeList != null && otherConfigNodeList.getLength() > 0){
 		} catch (Exception e){
 			LOG.error("Failed in merge default config file with optional config file",e);
-			throw new ParseException("ERROR: error merging config file" + otherConfig._fileName + " with " + _fileName);
+			throw new ParseException("ERROR: error merging config file " + otherConfig._fileName + " with " + _fileName);
 		}
 	}
 	
@@ -388,10 +388,10 @@ public class DMLConfig
 	}
 	
 	/**
-	 * Read the specified configuration file.  If it is not explicitly
-	 * given, then fallback to the default configuration file location.
-	 * If that is also not present, then fallback to the internal
-	 * defaults.
+	 * Start with the internal default settings, then merge in the
+	 * settings from any specified configuration file, if available.
+	 * If it is not explicitly given, then merge in settings from
+	 * the default configuration file location, if available.
 	 *
 	 * @param configPath User-defined path of the configuration file.
 	 * @return DMLConfig object containing configuration settings.
@@ -401,27 +401,26 @@ public class DMLConfig
 	public static DMLConfig readConfigurationFile(String configPath)
 		throws ParseException, FileNotFoundException
 	{
-		DMLConfig config = null;
+		// Always start with the internal defaults
+		DMLConfig config = new DMLConfig();
 
-		// try to read the explicitly specified config
+		// Merge in any specified or default configs if available
 		if (configPath != null) {
+			// specified
 			try {
 				config = new DMLConfig(configPath, false);
 			} catch (FileNotFoundException fnfe) {
-				LOG.error("Config file " + configPath + " not found.");
+				LOG.error("Custom config file " + configPath + " not found.");
 				throw fnfe;
 			} catch (ParseException e) {
 				throw e;
 			}
-		} else { // otherwise, look in the default location
+		} else {
+			// default
 			try {
 				config = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH, false);
 			} catch (FileNotFoundException fnfe) {
-				// if no default file was found either, fallback to
-				// the internal defaults.
-				LOG.warn("No SystemML config file supplied, and no default config file " +
-				         "(" + DEFAULT_SYSTEMML_CONFIG_FILEPATH + ") found. " +
-				         "Using internal default settings in DMLConfig.  If you wish to " +
+				LOG.info("Using internal default configuration settings.  If you wish to " +
 						 "customize any settings, please supply a `SystemML-config.xml` file.");
 				config = new DMLConfig();
 			} catch (ParseException e) {

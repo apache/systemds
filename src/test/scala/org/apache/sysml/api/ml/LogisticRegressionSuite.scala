@@ -25,13 +25,13 @@ import org.apache.spark.Logging
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 
-class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Matchers with Logging{
+class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Matchers with Logging {
 
-  test("run logistic regression with default"){
+  test("run logistic regression with default") {
     //Make sure system ml home set when run wrapper
     val newsqlContext = new org.apache.spark.sql.SQLContext(sc);
 
-import newsqlContext.implicits._    
+    import newsqlContext.implicits._
     val training = sc.parallelize(Seq(
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 3.0)),
       LabeledPoint(1.0, Vectors.dense(1.0, 0.4, 2.1)),
@@ -39,11 +39,11 @@ import newsqlContext.implicits._
     val testing = sc.parallelize(Seq(
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 3.0)),
       LabeledPoint(1.0, Vectors.dense(1.0, 0.4, 2.1)),
-      LabeledPoint(2.0, Vectors.dense(1.2, 0.0, 3.5))))    
-    val lr = new LogisticRegression("log",sc)
+      LabeledPoint(2.0, Vectors.dense(1.2, 0.0, 3.5))))
+    val lr = new LogisticRegression("log", sc)
     val lrmodel = lr.fit(training.toDF)
     lrmodel.transform(testing.toDF).show
-    
+
     lr.getIcpt shouldBe 0
     lrmodel.getIcpt shouldBe lr.getIcpt
     lrmodel.getMaxInnerIter shouldBe lr.getMaxInnerIter

@@ -19,8 +19,8 @@
 
 package org.apache.sysml.api.ml
 
-import org.scalatest.{BeforeAndAfterAll, Suite}
-import org.apache.spark.{SparkConf, SparkContext}
+import org.scalatest.{ BeforeAndAfterAll, Suite }
+import org.apache.spark.{ SparkConf, SparkContext }
 import org.apache.spark.sql.SQLContext
 
 trait WrapperSparkContext extends BeforeAndAfterAll { self: Suite =>
@@ -50,5 +50,5 @@ trait WrapperSparkContext extends BeforeAndAfterAll { self: Suite =>
       super.afterAll()
     }
   }
-  
+
 }

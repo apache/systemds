@@ -33,6 +33,7 @@ import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
@@ -1025,6 +1026,14 @@ public class MRJobInstruction extends Instruction
 			inputDataTypes[i] = d.getDataType();
 			if ( d.getDataType() == DataType.MATRIX ) {
 				inputmat.add((MatrixObject) d);
+			}
+			else if( d.getDataType() == DataType.FRAME ) {
+				//FIXME conversion from frame to matrix object (meta data only) to adhere to
+				//the given matrix-based mr job submission framework
+				FrameObject fo = (FrameObject) d;
+				MatrixObject mo = new MatrixObject(fo.getValueType(), fo.getFileName(), fo.getMetaData());
+				mo.setFileFormatProperties(fo.getFileFormatProperties());
+				inputmat.add(mo);
 			}
 		}
 		inputMatrices = inputmat.toArray(new MatrixObject[inputmat.size()]);

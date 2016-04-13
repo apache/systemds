@@ -27,11 +27,17 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysml.runtime.io.FrameReader;
+import org.apache.sysml.runtime.io.FrameReaderFactory;
+import org.apache.sysml.runtime.io.FrameWriter;
+import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
+import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
@@ -84,6 +90,23 @@ public class FrameObject extends CacheableData<FrameBlock>
 		mc.setDimension( _data.getNumRows(),_data.getNumColumns() );	
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public long getNumRows() {
+		MatrixCharacteristics mc = getMatrixCharacteristics();
+		return mc.getRows();
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public long getNumColumns() {
+		MatrixCharacteristics mc = getMatrixCharacteristics();
+		return mc.getCols();
+	}
 
 	@Override
 	protected FrameBlock readBlobFromCache(String fname) throws IOException {
@@ -94,13 +117,31 @@ public class FrameObject extends CacheableData<FrameBlock>
 	protected FrameBlock readBlobFromHDFS(String fname, long rlen, long clen)
 		throws IOException 
 	{
-		throw new IOException("Not implemented yet.");
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		
+		FrameBlock data = null;
+		try {
+			FrameReader reader = FrameReaderFactory.createFrameReader(
+					iimd.getInputInfo());
+			data = reader.readFrameFromHDFS(fname, mc.getRows(), mc.getCols()); 
+		}
+		catch( DMLRuntimeException ex ) {
+			throw new IOException(ex);
+		}
+			
+		//sanity check correct output
+		if( data == null )
+			throw new IOException("Unable to load frame from file: "+fname);
+						
+		return data;
 	}
 
 	@Override
 	protected FrameBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 			throws IOException 
 	{
+		//TODO support for distributed frame representations
 		throw new IOException("Not implemented yet.");
 	}
 
@@ -108,13 +149,16 @@ public class FrameObject extends CacheableData<FrameBlock>
 	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop) 
 		throws IOException, DMLRuntimeException 
 	{
-		throw new IOException("Not implemented yet.");
+		OutputInfo oinfo = OutputInfo.stringToOutputInfo(ofmt);
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo);
+		writer.writeFrameToHDFS(_data, fname, getNumRows(), getNumColumns());
 	}
 
 	@Override
 	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt) 
 		throws IOException, DMLRuntimeException 
 	{
+		//TODO support for distributed frame representations
 		throw new IOException("Not implemented yet.");
 	}
 }

@@ -392,15 +392,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					}
 					// create metadata instructions to populate symbol table 
 					// with variables that hold blocked matrices
-					
-			  		/*StringBuilder mtdInst = new StringBuilder();
-					mtdInst.append("CP" + Lops.OPERAND_DELIMITOR + "createvar");
-			 		mtdInst.append(Lops.OPERAND_DELIMITOR + outLabels.get(i) + Lops.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lops.VALUETYPE_PREFIX + matrices.get(i).getValueType());
-			  		mtdInst.append(Lops.OPERAND_DELIMITOR + outputs[i] + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
-			  		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo) ) ;
-					c2binst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));*/
-					Instruction createInst = VariableCPInstruction.prepareCreateVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo));
-					
+					Instruction createInst = VariableCPInstruction.prepareCreateMatrixVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo));
 					createInst.setLocation(matrices.get(i));
 					
 					c2binst.add(createInst);
@@ -514,16 +506,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 					}
 					// create metadata instructions to populate symbol table 
 					// with variables that hold unblocked matrices
-				 	
-					/*StringBuilder mtdInst = new StringBuilder();
-					mtdInst.append("CP" + Lops.OPERAND_DELIMITOR + "createvar");
-						mtdInst.append(Lops.OPERAND_DELIMITOR + outLabels.get(i) + Lops.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lops.VALUETYPE_PREFIX + matrices.get(i).getValueType());
-				 		mtdInst.append(Lops.OPERAND_DELIMITOR + outputs[i] + Lops.DATATYPE_PREFIX + DataType.SCALAR + Lops.VALUETYPE_PREFIX + ValueType.STRING);
-				 		mtdInst.append(Lops.OPERAND_DELIMITOR + OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo) ) ;
-					b2cinst.add(CPInstructionParser.parseSingleInstruction(mtdInst.toString()));*/
-					
-			 		Instruction createInst = VariableCPInstruction.prepareCreateVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo));
-			 		
+				 	Instruction createInst = VariableCPInstruction.prepareCreateMatrixVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo));			 		
 			 		createInst.setLocation(matrices.get(i));
 			 		
 			 		b2cinst.add(createInst);

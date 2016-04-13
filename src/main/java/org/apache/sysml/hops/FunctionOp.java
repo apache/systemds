@@ -136,7 +136,6 @@ public class FunctionOp extends Hop
 				_processingMemEstimate = computeIntermediateMemEstimate(_dim1, _dim2, lnnz);
 			}
 			_memEstimate = getInputOutputSize();
-			//System.out.println("QREst " + (_memEstimate/1024/1024));
 		}
 	}
 	
@@ -150,25 +149,19 @@ public class FunctionOp extends Hop
 				// upper-triangular and lower-triangular matrices
 				long outputH = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 0.5);
 				long outputR = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 0.5);
-				//System.out.println("QROut " + (outputH+outputR)/1024/1024);
 				return outputH+outputR; 
-				
 			}
 			else if ( getFunctionName().equalsIgnoreCase("lu") ) {
 				// upper-triangular and lower-triangular matrices
 				long outputP = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0/getOutputs().get(1).getDim2());
 				long outputL = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 0.5);
 				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 0.5);
-				//System.out.println("LUOut " + (outputL+outputU+outputP)/1024/1024);
 				return outputL+outputU+outputP; 
-				
 			}
 			else if ( getFunctionName().equalsIgnoreCase("eigen") ) {
 				long outputVectors = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
-				//System.out.println("EigenOut " + (outputVectors+outputValues)/1024/1024);
 				return outputVectors+outputValues; 
-				
 			}
 			else
 				throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
@@ -275,6 +268,7 @@ public class FunctionOp extends Hop
 	}
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	public Object clone() throws CloneNotSupportedException 
 	{
 		FunctionOp ret = new FunctionOp();	
@@ -287,6 +281,8 @@ public class FunctionOp extends Hop
 		ret._fnamespace = _fnamespace;
 		ret._fname = _fname;
 		ret._outputs = _outputs.clone();
+		if( _outputHops != null )
+			ret._outputHops = (ArrayList<Hop>) _outputHops.clone();
 		
 		return ret;
 	}

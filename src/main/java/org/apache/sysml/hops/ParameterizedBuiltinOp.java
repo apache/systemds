@@ -996,7 +996,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				// force remote, at runtime cp transform triggered for small files.
 				return REMOTE;
 			}
-			else if( _op == ParamBuiltinOp.TRANSFORMAPPLY ) {
+			else if( _op == ParamBuiltinOp.TRANSFORMAPPLY
+					|| _op == ParamBuiltinOp.TRANSFORMDECODE ) {
 				return ExecType.CP;
 			}
 			

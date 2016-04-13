@@ -103,10 +103,6 @@ public class FrameReaderFactory
 	public static FrameReader createFrameReader( InputInfo iinfo, FileFormatProperties props ) 
 		throws DMLRuntimeException
 	{
-		//check valid read properties
-		if( props == null )
-			throw new DMLRuntimeException("Failed to create frame reader with empty properties.");
-		
 		FrameReader reader = null;
 
 		if( iinfo == InputInfo.TextCellInputInfo ) {

@@ -432,7 +432,7 @@ public class Data extends Lop
 		if ( operation == OperationTypes.WRITE ) {
 			sb.append( OPERAND_DELIMITOR );
 			String fmt = "";
-			if ( getDataType() == DataType.MATRIX ) {
+			if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME ) {
 				if ( oparams.getFormat() == Format.MM )
 					fmt = "matrixmarket";
 				else if (oparams.getFormat() == Format.TEXT)
@@ -522,18 +522,15 @@ public class Data extends Lop
 			
 			OutputParameters oparams = getOutputParameters();
 			String fmt = "";
-			// TODO: following logic should change once we LOPs encode key-value-class information.
 			if ( oparams.getFormat() == Format.TEXT )
 				fmt = "textcell";
 			else if ( oparams.getFormat() == Format.MM )
 				fmt = "matrixmarket";
 			else if ( oparams.getFormat() == Format.CSV )
 				fmt = "csv";
-			else {
-				if ( oparams.getRowsInBlock() > 0 || oparams.getColsInBlock() > 0 )
-					fmt = "binaryblock";
-				else 
-					fmt = "binarycell";
+			else { //binary
+				fmt = ( getDataType() == DataType.FRAME || oparams.getRowsInBlock() > 0 
+					|| oparams.getColsInBlock() > 0 ) ? "binaryblock" : "binarycell";
 			}
 			
 			StringBuilder sb = new StringBuilder();
@@ -546,6 +543,8 @@ public class Data extends Lop
 			sb.append( outputFileName );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( false );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getDataType() );
 			sb.append( OPERAND_DELIMITOR ); // only persistent reads come here!
 			sb.append( fmt );
 			sb.append( OPERAND_DELIMITOR );

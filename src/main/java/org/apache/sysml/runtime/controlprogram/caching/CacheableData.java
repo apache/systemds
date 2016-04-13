@@ -38,6 +38,7 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
@@ -322,6 +323,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	@Override
 	public void removeMetaData() {
 		_metaData = null;
+	}
+	
+	public MatrixCharacteristics getMatrixCharacteristics() {
+		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
+		return meta.getMatrixCharacteristics();
 	}
 	
 	/**
@@ -949,7 +955,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @return
 	 * @throws IOException
 	 */
-	protected T readBlobFromHDFS(String fname) throws IOException {
+	protected T readBlobFromHDFS(String fname) 
+		throws IOException 
+	{
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		return readBlobFromHDFS(fname, mc.getRows(), mc.getCols());

@@ -914,11 +914,6 @@ public class DataExpression extends DataIdentifier
 					}	
 				}
 				
-				// Table must be in CSV format
-				if ( !isMatrix && !getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("csv") ) {
-					raiseValidateError("Input data of type 'table' must be in CSV format. Invalid format '" + getVarParam(FORMAT_TYPE)+ "' in statement: " + this.toString(), conditional);
-				}
-				
 				// initialize block dimensions to UNKNOWN 
 				getOutput().setBlockDimensions(-1, -1);
 				

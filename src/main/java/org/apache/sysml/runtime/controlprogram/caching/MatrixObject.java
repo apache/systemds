@@ -150,14 +150,13 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						 _data.getNumColumns() );
 		mc.setNonZeros( _data.getNonZeros() );		
 	}
-
+	
 	/**
 	 * 
 	 * @return
 	 */
 	public long getNumRows() {
-		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
-		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getRows ();
 	}
 
@@ -166,18 +165,16 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * @return
 	 */
 	public long getNumColumns() {
-		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
-		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getCols ();
 	}
-	
+
 	/**
 	 * 
 	 * @return
 	 */
 	public long getNumRowsPerBlock() {
-		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
-		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getRowsPerBlock();
 	}
 	
@@ -186,8 +183,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * @return
 	 */
 	public long getNumColumnsPerBlock() {
-		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
-		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getColsPerBlock();
 	}
 	
@@ -196,8 +192,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * @return
 	 */
 	public long getNnz() {
-		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
-		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getNonZeros();
 	}
 	
@@ -206,18 +201,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * @return
 	 */
 	public double getSparsity() {
-		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
-		MatrixCharacteristics mc = meta.getMatrixCharacteristics();		
+		MatrixCharacteristics mc = getMatrixCharacteristics();		
 		return ((double)mc.getNonZeros())/mc.getRows()/mc.getCols();
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public MatrixCharacteristics getMatrixCharacteristics() {
-		MatrixDimensionsMetaData meta = (MatrixDimensionsMetaData) _metaData;
-		return meta.getMatrixCharacteristics();
 	}
 	
 	public String toString()
@@ -558,9 +543,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				mc.getRowsPerBlock(), mc.getColsPerBlock(), sparsity, getFileFormatProperties());
 		
 		//sanity check correct output
-		if( newData == null ) {
+		if( newData == null )
 			throw new IOException("Unable to load matrix from file: "+fname);
-		}
 		
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Reading Completed: " + (System.currentTimeMillis()-begin) + " msec.");

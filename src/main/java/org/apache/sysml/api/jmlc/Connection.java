@@ -82,8 +82,7 @@ public class Connection
 	private static final Log LOG = LogFactory.getLog(Connection.class.getName());
 	
 	private DMLConfig _dmlconf = null;
-	private CompilerConfig _cconf = null;
-	
+
 	/**
 	 * Connection constructor, starting point for any other JMLC API calls.
 	 * 
@@ -94,20 +93,20 @@ public class Connection
 		
 		//setup basic parameters for embedded execution
 		//(parser, compiler, and runtime parameters)
-		_cconf = new CompilerConfig();
-		_cconf.set(ConfigType.IGNORE_UNSPECIFIED_ARGS, true);
-		_cconf.set(ConfigType.IGNORE_READ_WRITE_METADATA, true);
-		_cconf.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
-		_cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
-		_cconf.set(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, false);
-		_cconf.set(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, false);
-		_cconf.set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
-		_cconf.set(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, false);
-		_cconf.set(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR, false);
-		_cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, false);
-		_cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
-		_cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
-		ConfigurationManager.setLocalConfig(_cconf);
+		CompilerConfig cconf = new CompilerConfig();
+		cconf.set(ConfigType.IGNORE_UNSPECIFIED_ARGS, true);
+		cconf.set(ConfigType.IGNORE_READ_WRITE_METADATA, true);
+		cconf.set(ConfigType.REJECT_READ_WRITE_UNKNOWNS, false);
+		cconf.set(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, false);
+		cconf.set(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, false);
+		cconf.set(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, false);
+		cconf.set(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, false);
+		cconf.set(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, false);
+		cconf.set(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR, false);
+		cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, false);
+		cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
+		cconf.set(ConfigType.ALLOW_CSE_PERSISTENT_READS, false);
+		ConfigurationManager.setLocalConfig(cconf);
 		
 		//disable caching globally 
 		CacheableData.disableCaching();
@@ -225,11 +224,7 @@ public class Connection
 				sb.append( tmp );
 				sb.append( "\n" );
 			}
-		}
-		catch (IOException ex) {
-			throw ex;
-		}
-		finally {
+		} finally {
 			IOUtilFunctions.closeSilently(in);
 		}
 		
@@ -305,8 +300,7 @@ public class Connection
 	 * .mtd file including the number of rows and columns.  
 	 * 
 	 * @param input
-	 * @param rows
-	 * @param cols
+	 * @param meta
 	 * @return
 	 * @throws IOException
 	 */
@@ -550,7 +544,7 @@ public class Connection
 				InputStream is = new ByteArrayInputStream(map.getBytes("UTF-8"));
 				BufferedReader br = new BufferedReader(new InputStreamReader(is));
 				Pair<String,String> pair = new Pair<String,String>();
-				String line = null; int rpos = 0;
+				String line; int rpos = 0;
 				while( (line = br.readLine()) != null ) {
 					DecoderRecode.parseRecodeMapEntry(line, pair);
 					String tmp = pair.getKey() + Lop.DATATYPE_PREFIX + pair.getValue();

@@ -74,6 +74,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public FrameBlock(int ncols, ValueType vt) {
 		this();
 		_schema.addAll(Collections.nCopies(ncols, vt));
+		_colnames = createColNames(ncols);
 	}
 	
 	public FrameBlock(List<ValueType> schema) {

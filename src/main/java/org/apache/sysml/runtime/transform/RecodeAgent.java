@@ -113,15 +113,7 @@ public class RecodeAgent extends Encoder
 	public void initRecodeMaps( FrameBlock frame ) {
 		for( int j=0; j<_colList.length; j++ ) {
 			int colID = _colList[j]; //1-based
-			HashMap<String,Long> map = new HashMap<String,Long>();
-			for( int i=0; i<frame.getNumRows(); i++ ) {
-				Object val = frame.get(i, colID-1);
-				if( val != null ) {
-					String[] tmp = val.toString().split(Lop.DATATYPE_PREFIX);
-					map.put(tmp[0], Long.parseLong(tmp[1]));
-				}
-			}
-			_rcdMaps.put(colID, map);
+			_rcdMaps.put(colID, frame.getRecodeMap(colID-1));
 		}
 	}
 	

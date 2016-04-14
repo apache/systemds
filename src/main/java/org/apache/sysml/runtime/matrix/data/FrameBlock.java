@@ -25,6 +25,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
@@ -48,6 +50,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 {
 	private static final long serialVersionUID = -3993450030207130665L;
 	
+	//internal configuration
+	private static final boolean REUSE_RECODE_MAPS = true;
+	
 	/** The number of rows of the FrameBlock */
 	private int _numRows = -1;
 	
@@ -60,11 +65,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/** The data frame data as an ordered list of columns */
 	private List<Array> _coldata = null;
 	
+	/** Cache for recode maps from frame meta data, indexed by column 0-based */
+	private Map<Integer, SoftReference<HashMap<String,Long>>> _rcdMapCache = null;
+	
 	public FrameBlock() {
 		_numRows = 0;
 		_schema = new ArrayList<ValueType>();
 		_colnames = new ArrayList<String>();
 		_coldata = new ArrayList<Array>();
+		if( REUSE_RECODE_MAPS )
+			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
 	}
 	
 	public FrameBlock(FrameBlock that) {
@@ -97,6 +107,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_coldata = new ArrayList<Array>();
 		for( int i=0; i<data.length; i++ )
 			appendRow(data[i]);
+		if( REUSE_RECODE_MAPS )
+			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
 	}
 	
 	/**
@@ -629,7 +641,42 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				}
 		}
 	}
+	
+	
+	///////
+	// transform specific functionality
+	
+	/**
+	 * 
+	 * @param col
+	 * @return
+	 */
+	public HashMap<String,Long> getRecodeMap(int col) {
+		//probe cache for existing map
+		if( REUSE_RECODE_MAPS ) {
+			SoftReference<HashMap<String,Long>> tmp = _rcdMapCache.get(col);
+			HashMap<String,Long> map = (tmp!=null) ? tmp.get() : null;
+			if( map != null ) return map;
+		}
 		
+		//construct recode map
+		HashMap<String,Long> map = new HashMap<String,Long>();
+		Array ldata = _coldata.get(col); 
+		for( int i=0; i<getNumRows(); i++ ) {
+			Object val = ldata.get(i);
+			if( val != null ) {
+				String[] tmp = val.toString().split(Lop.DATATYPE_PREFIX);
+				map.put(tmp[0], Long.parseLong(tmp[1]));
+			}
+		}
+		
+		//put created map into cache
+		if( REUSE_RECODE_MAPS ) {
+			_rcdMapCache.put(col, new SoftReference<HashMap<String,Long>>(map));
+		}
+		
+		return map;
+	}
 
 	
 	///////

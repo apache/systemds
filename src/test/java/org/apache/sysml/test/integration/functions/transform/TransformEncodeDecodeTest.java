@@ -82,7 +82,6 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 		runTransformEncodeDecodeTest(ExecType.CP, true, "text");
 	}
 	
-	/*TODO to enable binary, we need to properly propagate schema first
 	@Test
 	public void runTestBinaryDenseCP() {
 		runTransformEncodeDecodeTest(ExecType.CP, false, "binary");
@@ -92,8 +91,6 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 	public void runTestBinarySparseCP() {
 		runTransformEncodeDecodeTest(ExecType.CP, true, "binary");
 	}
-	*/
-
 	
 	/**
 	 * 

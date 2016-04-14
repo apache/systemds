@@ -21,6 +21,7 @@ package org.apache.sysml.api.jmlc;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -78,11 +79,9 @@ public class PreparedScript
 		
 		//populate input/output vars
 		_inVarnames = new HashSet<String>();
-		for( String var : inputs )
-			_inVarnames.add( var );
+		Collections.addAll(_inVarnames, inputs);
 		_outVarnames = new HashSet<String>();
-		for( String var : outputs )
-			_outVarnames.add( var );
+		Collections.addAll(_outVarnames, outputs);
 		_inVarReuse = new HashMap<String, Data>();
 	}
 	

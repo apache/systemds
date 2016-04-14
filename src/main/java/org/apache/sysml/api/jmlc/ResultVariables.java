@@ -108,7 +108,6 @@ public class ResultVariables
 		if( !_out.containsKey(varname) )
 			throw new DMLException("Non-existing output variable: "+varname);
 		
-		String[][] ret = null;
 		Data dat = _out.get(varname);
 		
 		//basic checks for data type	
@@ -118,7 +117,7 @@ public class ResultVariables
 		//convert output matrix to double array	
 		FrameObject fo = (FrameObject)dat;
 		FrameBlock frame = fo.acquireRead();
-		ret = DataConverter.convertToStringFrame(frame);
+		String[][] ret = DataConverter.convertToStringFrame(frame);
 		fo.release();
 		
 		return ret;

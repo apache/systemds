@@ -194,7 +194,7 @@ public class FrameRDDConverterUtils
 			_hasHeader = hasHeader;
 			_delim = delim;
 			_fill = fill;
-			_maxRowsPerBlock = (int) (BUFFER_SIZE/_clen);
+			_maxRowsPerBlock = Math.max((int) (BUFFER_SIZE/_clen), 1);
 		}
 
 		@Override

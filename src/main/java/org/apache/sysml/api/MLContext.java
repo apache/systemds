@@ -483,7 +483,7 @@ public class MLContext {
 		if(_inVarnames == null)
 			_inVarnames = new ArrayList<String>();
 		
-		MatrixObject mo = null;
+		MatrixObject mo;
 		if( format.equals("csv") ) {
 			//TODO replace default block size
 			MatrixCharacteristics mc = new MatrixCharacteristics(rlen, clen, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
@@ -1125,32 +1125,32 @@ public class MLContext {
 	 * @throws ParseException
 	 */
 	public MLOutput executeScript(String dmlScript)
-			throws IOException, DMLException, ParseException {
+			throws IOException, DMLException {
 		return compileAndExecuteScript(dmlScript, null, false, false, false, null);
 	}
 	
 	public MLOutput executeScript(String dmlScript, String configFilePath)
-			throws IOException, DMLException, ParseException {
+			throws IOException, DMLException {
 		return compileAndExecuteScript(dmlScript, null, false, false, false, configFilePath);
 	}
 
 	public MLOutput executeScript(String dmlScript, scala.collection.immutable.Map<String, String> namedArgs)
-			throws IOException, DMLException, ParseException {
+			throws IOException, DMLException {
 		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), null);
 	}
 
 	public MLOutput executeScript(String dmlScript, scala.collection.immutable.Map<String, String> namedArgs, String configFilePath)
-			throws IOException, DMLException, ParseException {
+			throws IOException, DMLException {
 		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), configFilePath);
 	}
 
 	public MLOutput executeScript(String dmlScript, HashMap<String, String> namedArgs)
-			throws IOException, DMLException, ParseException {
+			throws IOException, DMLException {
 		return executeScript(dmlScript, namedArgs, null);
 	}
 
 	public MLOutput executeScript(String dmlScript, HashMap<String, String> namedArgs, String configFilePath)
-			throws IOException, DMLException, ParseException {
+			throws IOException, DMLException {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
 		for(Entry<String, String> entry : namedArgs.entrySet()) {
@@ -1169,7 +1169,7 @@ public class MLContext {
 		}
 	}
 	
-	private MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument, boolean isPyDML, String configFilePath) throws IOException, DMLException, ParseException {
+	private MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args, boolean isNamedArgument, boolean isPyDML, String configFilePath) throws IOException, DMLException {
 		return compileAndExecuteScript(dmlScriptFilePath, args, true, isNamedArgument, isPyDML, configFilePath);
 	}
 	
@@ -1185,7 +1185,7 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException
 	 */
-	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args,  boolean isFile, boolean isNamedArgument, boolean isPyDML, String configFilePath) throws IOException, DMLException, ParseException {
+	private synchronized MLOutput compileAndExecuteScript(String dmlScriptFilePath, String [] args,  boolean isFile, boolean isNamedArgument, boolean isPyDML, String configFilePath) throws IOException, DMLException {
 		try {
 			if(getActiveMLContext() != null) {
 				throw new DMLRuntimeException("SystemML (and hence by definition MLContext) doesnot support parallel execute() calls from same or different MLContexts. "
@@ -1204,7 +1204,7 @@ public class MLContext {
 				HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> retVal = null;
 				
 				// Depending on whether registerInput/registerOutput was called initialize the variables 
-				String[] inputs = null; String[] outputs = null;
+				String[] inputs; String[] outputs;
 				if(_inVarnames != null) {
 					inputs = _inVarnames.toArray(new String[0]);
 				}
@@ -1236,7 +1236,7 @@ public class MLContext {
 								retVal = new HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>>();
 							}
 							retVal.put(ovar, ((SparkExecutionContext) ec).getBinaryBlockRDDHandleForVariable(ovar));
-							outMetadata.put(ovar, ((SparkExecutionContext) ec).getMatrixCharacteristics(ovar)); // For converting output to dataframe
+							outMetadata.put(ovar, ec.getMatrixCharacteristics(ovar)); // For converting output to dataframe
 						}
 						else {
 							throw new DMLException("Error: The variable " + ovar + " is not available as output after the execution of the DMLScript.");
@@ -1269,12 +1269,13 @@ public class MLContext {
 	 * The caller (which is compileAndExecuteScript) is expected to set inputSymbolTable with appropriate matrix representation (RDD, MatrixObject).
 	 * 
 	 * @param dmlScriptFilePath
-	 * @param args
-	 * @param isNamedArgument
+	 * @param isFile
+	 * @param argVals
 	 * @param parsePyDML
 	 * @param inputs
 	 * @param outputs
 	 * @param inputSymbolTable
+	 * @param configFilePath
 	 * @return
 	 * @throws IOException
 	 * @throws DMLException
@@ -1282,7 +1283,7 @@ public class MLContext {
 	 */
 	private ExecutionContext executeUsingSimplifiedCompilationChain(String dmlScriptFilePath, boolean isFile, HashMap<String, String> argVals, boolean parsePyDML, 
 			String[] inputs, String[] outputs, LocalVariableMap inputSymbolTable, String configFilePath) 
-		throws IOException, DMLException, ParseException 
+		throws IOException, DMLException
 	{
 		//construct dml configuration
 		DMLConfig config = (configFilePath == null) ? new DMLConfig() : new DMLConfig(configFilePath);

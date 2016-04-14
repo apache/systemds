@@ -34,17 +34,13 @@ public class Location implements Comparable<Location> {
 	public boolean equals(Object other) {
 		if(other instanceof Location) {
 			Location loc = (Location) other;
-			if(loc.beginLine == beginLine && loc.endLine == endLine && loc.beginCol == beginCol && loc.endCol == endCol) {
-				return true;
-			}
-			else
-				return false;
+			return loc.beginLine == beginLine && loc.endLine == endLine && loc.beginCol == beginCol && loc.endCol == endCol;
 		}
 		return false;
 	}
 	
 	private int compare(int v1, int v2) {
-		return new Integer(v1).compareTo(new Integer(v2));
+		return new Integer(v1).compareTo(v2);
 	}
 	
 	public String toString() {

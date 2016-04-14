@@ -248,7 +248,7 @@ public class MLOutput {
 				}
 				retVal.add(new Tuple2<Long, Tuple2<Long,Double[]>>(startRowIndex + i, new Tuple2<Long,Double[]>(kv._1.getColumnIndex(), partialRow)));
 			}
-			return (Iterable<Tuple2<Long, Tuple2<Long, Double[]>>>) retVal;
+			return retVal;
 		}
 	}
 	
@@ -300,13 +300,13 @@ public class MLOutput {
 				}
 				
 				long rowIndex = arg0._1;
-				row[0] = new Double(rowIndex);
+				row[0] = (double) rowIndex;
 				row[1] = new DenseVector(vecVals); // breeze.util.JavaArrayOps.arrayDToDv(vecVals);
 			}
 			else {
 				row = new Double[sizeOfPartialRows + 1];
 				long rowIndex = arg0._1;
-				row[0] = new Double(rowIndex);
+				row[0] = (double) rowIndex;
 				for(long columnBlockIndex = 1; columnBlockIndex <= partialRows.size(); columnBlockIndex++) {
 					if(partialRows.containsKey(columnBlockIndex)) {
 						Double [] array = partialRows.get(columnBlockIndex);
@@ -355,8 +355,7 @@ public class MLOutput {
 			}
 			
 			// Insert first row as row index
-			Object[] row = null;
-			row = new Object[range.size() + 1];
+			Object[] row = new Object[range.size() + 1];
 			
 			double [] vecVals = new double[sizeOfPartialRows];
 			
@@ -380,7 +379,7 @@ public class MLOutput {
 			}
 			
 			long rowIndex = arg0._1;
-			row[0] = new Double(rowIndex);
+			row[0] = (double) rowIndex;
 			
 			int i = 1;
 			
@@ -394,7 +393,7 @@ public class MLOutput {
 				}
 				
 				if(low == high) {
-					row[i] = new Double(vecVals[(int) (low-1)]);
+					row[i] = vecVals[(int) (low - 1)];
 				}
 				else {
 					int lengthOfVector = (int) (high - low + 1);
@@ -407,9 +406,8 @@ public class MLOutput {
 				
 				i++;
 			}
-			
-			Object[] row_fields = row;
-			return RowFactory.create(row_fields);
+
+			return RowFactory.create(row);
 		}
 	}
 }

@@ -42,7 +42,6 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class FrameRDDConverterUtils 
 {
@@ -181,18 +180,21 @@ public class FrameRDDConverterUtils
 		private static final long serialVersionUID = -1976803898174960086L;
 
 		private long _clen = -1;
-		private int _brlen = -1;
 		private boolean _hasHeader = false;
 		private String _delim = null;
 		private boolean _fill = false;
+		private int _maxRowsPerBlock = -1; 
+		
+		protected static final int BUFFER_SIZE = 2 * 1000 * 1000; //2M elements 
+
 		
 		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean hasHeader, String delim, boolean fill)
 		{
 			_clen = mc.getCols();
-			_brlen = mc.getRowsPerBlock();
 			_hasHeader = hasHeader;
 			_delim = delim;
 			_fill = fill;
+			_maxRowsPerBlock = (int) (BUFFER_SIZE/_clen);
 		}
 
 		@Override
@@ -203,28 +205,30 @@ public class FrameRDDConverterUtils
 
 			LongWritable[] ix = new LongWritable[1];
 			FrameBlock[] mb = new FrameBlock[1];
+			int iRowsInBlock = 0;
 			
 			while( arg0.hasNext() )
 			{
 				Tuple2<Text,Long> tmp = arg0.next();
 				String row = tmp._1().toString();
-				long rowix = tmp._2() + 1;
-				if(_hasHeader && rowix == 1)	//Skip header
+				long rowix = tmp._2();
+				if(!_hasHeader) 	// In case there is no header, rowindex to be adjusted to base 1.
+					++rowix;
+				if(_hasHeader && rowix == 0)	//Skip header
 					continue;
-				
-				long rix = UtilFunctions.computeBlockIndex(rowix, _brlen);
 			
-				//create new blocks for entire row
-				if( ix[0] == null || ix[0].get() != rix ) {
-					if( ix[0] !=null )
+				if( iRowsInBlock == 0 || iRowsInBlock == _maxRowsPerBlock) {
+					if( iRowsInBlock == _maxRowsPerBlock )
 						flushBlocksToList(ix, mb, ret);
 					createBlocks(rowix, ix, mb);
+					iRowsInBlock = 0;
 				}
 				
 				//process row data
 				String[] parts = IOUtilFunctions.split(row, _delim);
 				boolean emptyFound = false;
 				mb[0].appendRow(parts);
+				++iRowsInBlock;
 		
 				//sanity check empty cells filled w/ values
 				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(row, _fill, emptyFound);
@@ -240,8 +244,7 @@ public class FrameRDDConverterUtils
 		private void createBlocks(long rowix, LongWritable[] ix, FrameBlock[] mb)
 		{
 			//compute row block index and number of column blocks
-			long rix = UtilFunctions.computeBlockIndex(rowix, _brlen);
-			ix[0] = new LongWritable(rix);
+			ix[0] = new LongWritable(rowix);
 			mb[0] = new FrameBlock((int)_clen, ValueType.STRING);		
 		}
 		
@@ -282,28 +285,28 @@ public class FrameRDDConverterUtils
 			//handle header information
 			if(_props.hasHeader() && ix.get()==1 ) {
 				StringBuilder sb = new StringBuilder();
-	    		for(int j = 1; j <= blk.getNumColumns(); j++) {
-	    			if(j != 1)
-	    				sb.append(_props.getDelim());
-	    			sb.append("C" + j);
-	    		}
-    			ret.add(sb.toString());
-	    	}
-		
-			//handle matrix block data
-			StringBuilder sb = new StringBuilder();
-    		for(int i=0; i<blk.getNumRows(); i++) {
-    			for(int j=0; j<blk.getNumColumns(); j++) {
-	    			if(j != 0)
-	    				sb.append(_props.getDelim());
-	    			Object val = blk.get(i, j);
-	    			
-	    			if(val != null)
-	    				sb.append(val);
+				for(int j = 1; j <= blk.getNumColumns(); j++) {
+					if(j != 1)
+						sb.append(_props.getDelim());
+					sb.append("C" + j);
 				}
-	    		ret.add(sb.toString());
-	    		sb.setLength(0); //reset
-    		}
+				ret.add(sb.toString());
+			}
+		
+			//handle Frame block data
+			StringBuilder sb = new StringBuilder();
+			for(int i=0; i<blk.getNumRows(); i++) {
+				for(int j=0; j<blk.getNumColumns(); j++) {
+					if(j != 0)
+						sb.append(_props.getDelim());
+					Object val = blk.get(i, j);
+	    			
+					if(val != null)
+						sb.append(val);
+				}
+				ret.add(sb.toString());
+				sb.setLength(0); //reset
+			}
 			
 			return ret;
 		}

@@ -29,6 +29,8 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	private final static String TEST_NAME0 = "FunctionsA";
 	private final static String TEST_NAME1 = "Functions1";
 	private final static String TEST_NAME2 = "Functions2";
+	private final static String TEST_NAME3 = "Functions3";
+	private final static String TEST_NAME4 = "Functions4";
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionNamespaceTest.class.getSimpleName() + "/";
 	
@@ -38,6 +40,8 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME0, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME0));
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1)); 
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2)); 
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3)); 
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4)); 
 	}
 	
 	@Test
@@ -59,6 +63,18 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testFunctionImportSource() 
+	{
+		runFunctionNamespaceTest(TEST_NAME3, ScriptType.DML);
+	}
+	
+	@Test
+	public void testFunctionMultiSource() 
+	{
+		runFunctionNamespaceTest(TEST_NAME4, ScriptType.DML);
+	}
+	
+	@Test
 	public void testPyFunctionDefaultNS() 
 	{
 		runFunctionNamespaceTest(TEST_NAME0, ScriptType.PYDML);
@@ -74,6 +90,18 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	public void testPyFunctionWithoutNS() 
 	{
 		runFunctionNamespaceTest(TEST_NAME2, ScriptType.PYDML);
+	}
+	
+	@Test
+	public void testPyFunctionImportSource() 
+	{
+		runFunctionNamespaceTest(TEST_NAME3, ScriptType.PYDML);
+	}
+	
+	@Test
+	public void testPyFunctionMultiSource() 
+	{
+		runFunctionNamespaceTest(TEST_NAME4, ScriptType.PYDML);
 	}
 
 	private void runFunctionNamespaceTest(String TEST_NAME, ScriptType scriptType)

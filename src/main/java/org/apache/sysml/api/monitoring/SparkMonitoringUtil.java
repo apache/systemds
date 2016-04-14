@@ -349,7 +349,12 @@ public class SparkMonitoringUtil {
 	
 	
 	private boolean isInterestingCP(String inst) {
-		return !(inst.startsWith("CP rmvar") || inst.startsWith("CP cpvar") || inst.startsWith("CP mvvar")) && inst.startsWith("CP");
+		if(inst.startsWith("CP rmvar") || inst.startsWith("CP cpvar") || inst.startsWith("CP mvvar"))
+			return false;
+		else if(inst.startsWith("CP"))
+			return true;
+		else
+			return false;
 	}
 	
 	private String getStageIDAsString(String instruction) {

@@ -435,8 +435,8 @@ public class DataOp extends Hop
 		{
 			checkAndSetForcedPlatform();
 
-			//additional check for write only
-			if( getDataType()==DataType.SCALAR )
+			//additional check for write only (TODO: remove frame here once support for distributed)
+			if( getDataType()==DataType.SCALAR || getDataType()==DataType.FRAME )
 				_etypeForced = ExecType.CP;
 			
 			if( _etypeForced != null ) 			

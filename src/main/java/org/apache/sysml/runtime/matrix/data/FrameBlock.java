@@ -407,6 +407,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return true;
 	}
 	
+	@Override
+	public void compactEmptyBlock() {
+		//do nothing
+	}
+	
 	///////
 	// indexing and append operations
 	

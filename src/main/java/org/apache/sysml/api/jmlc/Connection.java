@@ -71,11 +71,32 @@ import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 
 /**
- * JMLC (Java Machine Learning Connector) API:
+ * Interaction with SystemML using the JMLC (Java Machine Learning Connector) API is initiated with
+ * a {@link Connection} object. The JMLC API is patterned
+ * after JDBC. A DML script is precompiled by calling
+ * the {@link #prepareScript(String, String[], String[], boolean)}
+ * method or the {@link #prepareScript(String, HashMap, String[], String[], boolean)}
+ * method on the {@link Connection} object, which returns a
+ * {@link PreparedScript} object. Note that this is similar to calling
+ * a {@code prepareStatement} method on a JDBC {@code Connection} object.
  * 
- * NOTES: 
- *   * Currently fused API and implementation in order to reduce complexity. 
- *   * See JUnit test cases (org.apache.sysml.test.integration.functions.jmlc) for examples. 
+ * <p>
+ * Following this, input variable data is passed to the script by calling the
+ * {@code setFrame}, {@code setMatrix}, and {@code setScalar} methods of the {@link PreparedScript}
+ * object. The script is executed via {@link PreparedScript}'s
+ * {@link PreparedScript#executeScript() executeScript} method,
+ * which returns a {@link ResultVariables} object, which is similar to a JDBC
+ * {@code ResultSet}. Data can be read from a {@link ResultVariables} object by calling
+ * its {@link ResultVariables#getFrame(String) getFrame} and
+ * {@link ResultVariables#getMatrix(String) getMatrix} methods.
+ * 
+ * <p>
+ * For examples, please see the following:
+ * <ul>
+ *   <li>JMLC JUnit test cases (org.apache.sysml.test.integration.functions.jmlc)</li>
+ *   <li><a target="_blank" href="http://apache.github.io/incubator-systemml/jmlc.html">JMLC section
+ *   of SystemML online documentation</li>
+ * </ul>
  */
 public class Connection 
 {	
@@ -84,7 +105,7 @@ public class Connection
 	private DMLConfig _dmlconf = null;
 
 	/**
-	 * Connection constructor, starting point for any other JMLC API calls.
+	 * Connection constructor, the starting point for any other JMLC API calls.
 	 * 
 	 */
 	public Connection()
@@ -117,11 +138,13 @@ public class Connection
 	}
 	
 	/**
+	 * Prepares (precompiles) a script and registers input and output variables.
 	 * 
-	 * @param script
-	 * @param inputs
-	 * @param outputs
-	 * @return
+	 * @param script string representing the DML or PyDML script
+	 * @param inputs string array of input variables to register
+	 * @param outputs string array of output variables to register
+	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
+	 * @return PreparedScript object representing the precompiled script
 	 * @throws DMLException
 	 */
 	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs, boolean parsePyDML) 
@@ -131,12 +154,14 @@ public class Connection
 	}
 	
 	/**
+	 * Prepares (precompiles) a script, sets input parameter values, and registers input and output variables.
 	 * 
-	 * @param script
-	 * @param args
-	 * @param inputs
-	 * @param outputs
-	 * @return
+	 * @param script string representing the DML or PyDML script
+	 * @param args map of input parameters ($) and their values
+	 * @param inputs string array of input variables to register
+	 * @param outputs string array of output variables to register
+	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
+	 * @return PreparedScript object representing the precompiled script
 	 * @throws DMLException
 	 */
 	public PreparedScript prepareScript( String script, HashMap<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) 
@@ -185,7 +210,8 @@ public class Connection
 	}
 	
 	/**
-	 * 
+	 * Close connection to SystemML, which clears the
+	 * thread-local DML and compiler configurations.
 	 */
 	public void close() {
 		//clear thread-local dml / compiler configs
@@ -193,9 +219,10 @@ public class Connection
 	}
 	
 	/**
+	 * Read a DML or PyDML file as a string.
 	 * 
-	 * @param fname
-	 * @return
+	 * @param fname the filename of the script
+	 * @return string content of the script file
 	 * @throws IOException
 	 */
 	public String readScript(String fname) 
@@ -235,8 +262,8 @@ public class Connection
 	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
 	 * NOTE: this call currently only supports default configurations for CSV.
 	 * 
-	 * @param fname
-	 * @return
+	 * @param fname the filename of the input matrix
+	 * @return matrix as a two-dimensional double array
 	 * @throws IOException
 	 */
 	public double[][] readDoubleMatrix(String fname) 
@@ -271,14 +298,14 @@ public class Connection
 	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
 	 * NOTE: this call currently only supports default configurations for CSV.
 	 * 
-	 * @param fname
-	 * @param iinfo
-	 * @param rows
-	 * @param cols
-	 * @param brlen
-	 * @param bclen
-	 * @param nnz
-	 * @return
+	 * @param fname the filename of the input matrix
+	 * @param iinfo InputInfo object
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @param brlen number of rows per block
+	 * @param bclen number of columns per block
+	 * @param nnz number of non-zero values, -1 indicates unknown
+	 * @return matrix as a two-dimensional double array
 	 * @throws IOException
 	 */
 	public double[][] readDoubleMatrix(String fname, InputInfo iinfo, long rows, long cols, int brlen, int bclen, long nnz) 
@@ -298,10 +325,10 @@ public class Connection
 	 * Converts an input string representation of a matrix in textcell format
 	 * into a dense double array. The meta data string is the SystemML generated
 	 * .mtd file including the number of rows and columns.  
-	 * 
-	 * @param input
-	 * @param meta
-	 * @return
+	 *
+	 * @param input string matrix in textcell format
+	 * @param meta string representing SystemML matrix metadata in JSON format
+	 * @return matrix as a two-dimensional double array
 	 * @throws IOException
 	 */
 	public double[][] convertToDoubleMatrix(String input, String meta) 
@@ -334,10 +361,10 @@ public class Connection
 	 * specified because textcell only represents non-zero values and hence
 	 * does not define the dimensions in the general case.
 	 * 
-	 * @param input
-	 * @param rows
-	 * @param cols
-	 * @return
+	 * @param input string matrix in textcell format
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @return matrix as a two-dimensional double array
 	 * @throws IOException
 	 */
 	public double[][] convertToDoubleMatrix(String input, int rows, int cols) 
@@ -353,10 +380,10 @@ public class Connection
 	 * specified because textcell only represents non-zero values and hence
 	 * does not define the dimensions in the general case.
 	 * 
-	 * @param input
-	 * @param rows
-	 * @param cols
-	 * @return
+	 * @param input InputStream to a string matrix in textcell format
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @return matrix as a two-dimensional double array
 	 * @throws IOException
 	 */
 	public double[][] convertToDoubleMatrix(InputStream input, int rows, int cols) 
@@ -386,7 +413,7 @@ public class Connection
 	 * 
 	 * @param spec      transform specification as json string
 	 * @param metapath  hdfs file path to meta data directory
-	 * @return
+	 * @return FrameBlock object representing transform metadata
 	 * @throws IOException
 	 */
 	public FrameBlock readTransformMetaDataFromFile(String spec, String metapath) throws IOException {
@@ -400,7 +427,7 @@ public class Connection
 	 * @param spec      transform specification as json string
 	 * @param metapath  hdfs file path to meta data directory
 	 * @param colDelim  separator for processing column names in the meta data file 'column.names'
-	 * @return
+	 * @return FrameBlock object representing transform metadata
 	 * @throws IOException
 	 */
 	public FrameBlock readTransformMetaDataFromFile(String spec, String metapath, String colDelim) 
@@ -445,7 +472,7 @@ public class Connection
 	 * 
 	 * @param spec      transform specification as json string
 	 * @param metapath  resource path to meta data directory
-	 * @return
+	 * @return FrameBlock object representing transform metadata
 	 * @throws IOException
 	 */
 	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath) throws IOException {
@@ -459,7 +486,7 @@ public class Connection
 	 * @param spec      transform specification as json string
 	 * @param metapath  resource path to meta data directory
 	 * @param colDelim  separator for processing column names in the meta data file 'column.names'
-	 * @return
+	 * @return FrameBlock object representing transform metadata
 	 * @throws IOException
 	 */
 	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) 
@@ -505,7 +532,7 @@ public class Connection
 	 * @param rows      maximum number of distinct items (number of rows in frame block)
 	 * @param colnames  column names, ordered by position
 	 * @param meta      map of (column name, recode map)-pairs, with recode maps in their original csv representation
-	 * @return
+	 * @return FrameBlock object representing transform metadata
 	 * @throws IOException
 	 */
 	public FrameBlock convertToTransformMetaDataFrame(String spec, int rows, List<String> colnames, HashMap<String,String> meta) 

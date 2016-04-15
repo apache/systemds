@@ -28,9 +28,7 @@ BASE=$4
 export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
 
 #for all intercept values
-MAXICT=20
-i=0
-while [ $i -ne $MAXICT ]
+for i in 0 1
 do
    #training
    tstart=$SECONDS
@@ -43,7 +41,4 @@ do
    ${CMD} -f ../algorithms/m-svm-predict.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/w fmt="csv"
    tpredict=$(($SECONDS - $tstart - 3))
    echo "MSVM predict ict="$i" on "$1": "$tpredict >> times.txt
-
-   #counter increment
-   i=`expr $i + 1`
 done

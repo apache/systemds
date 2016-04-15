@@ -34,9 +34,7 @@ then
 fi
 
 #for all intercept values
-MAXICT=20
-i=0
-while [ $i -ne $MAXICT ]
+for i in 0 1 2
 do
    #training
    tstart=$SECONDS
@@ -49,7 +47,4 @@ do
    ${CMD} -f ../algorithms/GLM-predict.dml $DASH-explain $DASH-stats $DASH-nvargs dfam=$DFAM vpow=-1 link=2 lpow=-1 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
    tpredict=$(($SECONDS - $tstart - 3))
    echo "MultiLogReg predict ict="$i" on "$1": "$tpredict >> times.txt
-
-   #counter increment
-   i=`expr $i + 1`
 done

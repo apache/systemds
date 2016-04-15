@@ -28,9 +28,7 @@ BASE=$3
 export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
 
 # run all intercepts
-MAXICT=20
-i=0
-while [ $i -ne $MAXICT ]
+for i in 0 1 2
 do
    echo "running GLM gamma log on ict="$i
    
@@ -45,7 +43,4 @@ do
    ${CMD} -f ../algorithms/GLM-predict.dml $DASH-explain $DASH-stats $DASH-nvargs dfam=1 vpow=2.0 link=1 lpow=0.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
    tpredict=$(($SECONDS - $tstart - 3))
    echo "GLM_gamma_log predict ict="$i" on "$1": "$tpredict >> times.txt
-
-   #counter increment
-   i=`expr $i + 1`
 done

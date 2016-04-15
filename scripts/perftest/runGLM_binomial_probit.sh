@@ -28,9 +28,7 @@ BASE=$3
 export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
 
 # run all intercepts
-MAXICT=20
-i=0
-while [ $i -ne $MAXICT ]
+for i in 0 1 2
 do
    echo "running GLM binomial probit on ict="$i
 
@@ -45,7 +43,4 @@ do
    ${CMD} -f ../algorithms/GLM-predict.dml $DASH-explain $DASH-stats $DASH-nvargs dfam=2 link=3 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
    tpredict=$(($SECONDS - $tstart - 3))
    echo "GLM_binomial_probit predict ict="$i" on "$1": "$tpredict >> times.txt
-
-   #counter increment
-   i=`expr $i + 1`
 done

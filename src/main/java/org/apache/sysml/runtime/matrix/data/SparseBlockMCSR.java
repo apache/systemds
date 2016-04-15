@@ -232,7 +232,8 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public void set(int r, SparseRow row, boolean deep) {
-		_rows[r] = deep ? new SparseRow(row) : row;
+		_rows[r] = (deep && row != null) ? 
+				new SparseRow(row) : row;
 	}
 	
 	@Override

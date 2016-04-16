@@ -422,6 +422,23 @@ public class RecodeAgent extends Encoder
 		return words;
 	}
 	
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+		//apply recode maps column wise
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j];
+			for( int i=0; i<in.getNumRows(); i++ ) {
+				Object okey = in.get(i, colID-1);
+				String key = (okey!=null) ? okey.toString() : null;
+				String val = lookupRCDMap(colID, key);			
+				out.quickSetValue(i, colID-1, (val!=null) ? 
+						Double.parseDouble(val) : Double.NaN);
+			}
+		}
+		
+		return out;
+	}
+	
 	/**
 	 * 
 	 * @param colID
@@ -457,19 +474,10 @@ public class RecodeAgent extends Encoder
 		if( !isApplicable() )
 			return out;
 		
-		//build recode maps 
+		//build and apply recode maps 
 		build(in);
+		apply(in, out);
 		
-		//apply created recode maps
-		Iterator<String[]> iter = in.getStringRowIterator();
-		for( int i=0; iter.hasNext(); i++ ) {
-			String[] row = apply( iter.next() );
-			for( int j=0; j<_colList.length; j++ ) {
-				double val = Double.parseDouble(row[_colList[j]-1]);
-				out.quickSetValue(i, _colList[j]-1, val);
-			}	
-		}
-			
 		return out;
 	}
 

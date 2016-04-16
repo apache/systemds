@@ -319,6 +319,11 @@ public class BinAgent extends Encoder
 	}
 
 	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+		return null;
+	}
+	
+	@Override
 	public double[] encode(String[] in, double[] out) {
 		// TODO Auto-generated method stub
 		return null;

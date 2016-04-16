@@ -915,6 +915,11 @@ public class MVImputeAgent extends Encoder
 		return words;
 	}
 	
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+		return null;
+	}
+	
 	public MVMethod getMethod(int colID) {
 		int idx = isApplicable(colID);		
 		if(idx == -1)

@@ -83,7 +83,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		String spec = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getStringValue();
 		
 		//execute block transform encode
-		Encoder encoder = EncoderFactory.createEncoder(spec, fin.getNumColumns());
+		Encoder encoder = EncoderFactory.createEncoder(spec, fin.getNumColumns(), null);
 		MatrixBlock data = encoder.encode(fin, new MatrixBlock(fin.getNumRows(), fin.getNumColumns(), false)); //build and apply
 		FrameBlock meta = encoder.getMetaData(new FrameBlock(fin.getNumColumns(), ValueType.STRING));
 		

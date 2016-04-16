@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -80,6 +79,8 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
+import org.apache.sysml.runtime.transform.encode.Encoder;
+import org.apache.sysml.runtime.transform.encode.EncoderFactory;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.JSONHelper;
@@ -1057,30 +1058,8 @@ public class DataTransform
 	public static MatrixBlock cpDataTransform(HashMap<String,String> params, FrameBlock input, FrameBlock meta) 
 		throws DMLRuntimeException
 	{
-		MatrixBlock ret = null;
-		
-		try
-		{
-			//initialize transform encoders
-			JSONObject spec = new JSONObject(params.get("spec"));
-			TfUtils agents = new TfUtils(spec, input.getNumColumns());		
-			agents.getRecodeAgent().initRecodeMaps(meta);
-			
-			//core transform apply over input frame and append to output
-			//FIXME number of output columns after encoder creation
-			ret = new MatrixBlock(input.getNumRows(), input.getNumColumns(), false);
-			Iterator<String[]> iter = input.getStringRowIterator();
-			for( int i=0; iter.hasNext(); i++ ) {
-				String[] tmp = agents.apply(iter.next());
-				for( int j=0; j<tmp.length; j++ )
-					ret.appendValue(i, j, UtilFunctions.parseToDouble(tmp[j]));
-			}
-		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
-		}
-		
-		return ret;
+		Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), input.getNumColumns(), meta);
+		return encoder.apply(input, new MatrixBlock(input.getNumRows(), input.getNumColumns(), false));
 	}
 	
 	/**

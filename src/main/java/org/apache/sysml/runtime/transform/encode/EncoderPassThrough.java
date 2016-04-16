@@ -20,19 +20,19 @@
 package org.apache.sysml.runtime.transform.encode;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.DistinctValue;
 import org.apache.sysml.runtime.transform.TfUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * Simple composite encoder that applies a list of encoders 
@@ -40,66 +40,62 @@ import org.apache.sysml.runtime.transform.TfUtils;
  * it can be used as a drop-in replacement for any other encoder. 
  * 
  */
-public class EncoderComposite extends Encoder
+public class EncoderPassThrough extends Encoder
 {
 	private static final long serialVersionUID = -8473768154646831882L;
 	
-	private List<Encoder> _encoders = null;
-	
-	protected EncoderComposite(List<Encoder> encoders) {
-		super(null);
-		_encoders = encoders;
-	}
-	
-	protected EncoderComposite(Encoder[] encoders) {
-		super(null);
-		_encoders = Arrays.asList(encoders);
+	protected EncoderPassThrough(int[] ptCols) {
+		super(ptCols); //0-based indexes
 	}
 
 	@Override
 	public double[] encode(String[] in, double[] out) {
-		for( Encoder encoder : _encoders )
-			encoder.encode(in, out);
+		for( int j=0; j<_colList.length; j++ ) {
+			String tmp = in[_colList[j]];
+			out[_colList[j]] = (tmp==null) ? 0 : 
+				Double.parseDouble(tmp);
+		}
+		
 		return out;
 	}
 
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		for( Encoder encoder : _encoders )
-			encoder.encode(in, out);
-		return out;
+		return apply(in, out);
 	}
 
 	@Override
 	public void build(String[] in) {
-		for( Encoder encoder : _encoders )
-			encoder.build(in);		
+		//do nothing	
 	}
 
 	@Override
 	public void build(FrameBlock in) {
-		for( Encoder encoder : _encoders )
-			encoder.build(in);
+		//do nothing
 	}
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
-		for( Encoder encoder : _encoders )
-			encoder.getMetaData(out);
-		return out;
+		return null;
 	}
 	
 	@Override
 	public String[] apply(String[] in) {
-		for( Encoder encoder : _encoders )
-			encoder.apply(in);
 		return in;
 	}
 	
 	@Override 
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
-		for( Encoder encoder : _encoders )
-			encoder.apply(in, out);
+		for( int j=0; j<_colList.length; j++ ) {
+			int col = _colList[j];
+			ValueType vt = in.getSchema().get(col);
+			for( int i=0; i<in.getNumRows(); i++ ) {
+				Object val = in.get(i, col);
+				out.quickSetValue(i, col,
+					UtilFunctions.objectToDouble(vt, val));
+			}
+		}
+		
 		return out;
 	}
 

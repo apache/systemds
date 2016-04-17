@@ -55,7 +55,9 @@ public class FrameRDDConverterUtils
 	 */
 	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<LongWritable,FrameBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
 	{
-		JavaPairRDD<LongWritable,FrameBlock> input = in;
+		//convert input rdd to serializable long/frame block
+		JavaPairRDD<LongWritable,FrameBlock> input = 
+				in.mapToPair(new LongWritableToSerFunction());
 		
 		//sort if required (on blocks/rows)
 		if( strict ) {
@@ -139,18 +141,24 @@ public class FrameRDDConverterUtils
 		private static final long serialVersionUID = 8683232211035837695L;
 
 		@Override
-		public Tuple2<LongWritable, Text> call(String arg0) 
-			throws Exception 
-		{
-			SerLongWritable slarg = new SerLongWritable(1L);
-			SerText starg = new SerText(arg0);			
-			return new Tuple2<LongWritable,Text>(slarg, starg);
+		public Tuple2<LongWritable, Text> call(String arg0) throws Exception {
+			return new Tuple2<LongWritable,Text>(new SerLongWritable(1L), new SerText(arg0));
 		}
 	}
 	
-	/////////////////////////////////
-	// CSV-SPECIFIC FUNCTIONS
-
+	/**
+	 * 
+	 */
+	public static class LongWritableToSerFunction implements PairFunction<Tuple2<LongWritable,FrameBlock>,LongWritable,FrameBlock> 
+	{
+		private static final long serialVersionUID = 2286037080400222528L;
+		
+		@Override
+		public Tuple2<LongWritable, FrameBlock> call(Tuple2<LongWritable, FrameBlock> arg0) throws Exception  {
+			return new Tuple2<LongWritable,FrameBlock>(new SerLongWritable(arg0._1.get()), arg0._2);
+		}
+	}
+	
 	/**
 	 * 
 	 */
@@ -159,12 +167,9 @@ public class FrameRDDConverterUtils
 		private static final long serialVersionUID = -2744814934501782747L;
 
 		@Override
-		public String call(Text v1) 
-			throws Exception 
-		{
+		public String call(Text v1) throws Exception {
 			return v1.toString();
 		}
-		
 	}
 
 	/**

@@ -319,6 +319,15 @@ public class UtilFunctions
 	
 	/**
 	 * 
+	 * @param in
+	 * @return
+	 */
+	public static String objectToString( Object in ) {
+		return (in !=null) ? in.toString() : null;
+	}
+	
+	/**
+	 * 
 	 * @param vt
 	 * @param in1
 	 * @param in2

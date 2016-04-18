@@ -622,12 +622,12 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Lop rmEmpty = null;
 				
 				//a) broadcast-based PMM (permutation matrix mult)
-				if( rmRows && mestPM < OptimizerUtils.getRemoteMemBudgetMap() )
+				if( rmRows && rlen > 0 && mestPM < OptimizerUtils.getRemoteMemBudgetMap() )
 				{
 					boolean needPart = !offsets.dimsKnown() || offsets.getDim1() > DistributedCacheInput.PARTITION_SIZE;
 					if( needPart ){ //requires partitioning
 						loffset = new DataPartition(loffset, DataType.MATRIX, ValueType.DOUBLE, (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-						loffset.getOutputParameters().setDimensions(offsets.getDim1(), 1, rlen, clen, rlen);
+						loffset.getOutputParameters().setDimensions(rlen, 1, brlen, bclen, rlen);
 						setLineNumbers(loffset);	
 					}
 					

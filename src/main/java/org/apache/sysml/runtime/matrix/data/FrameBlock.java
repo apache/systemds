@@ -536,8 +536,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				ret._coldata.add(_coldata.get(j).slice(rl,ru));
 		else
 			for( int j=cl; j<=cu; j++ )
-				ret._coldata.get(j-cl).set(0, ru-rl+1, _coldata.get(j), rl);	
-
+				ret._coldata.get(j-cl).set(0, ru-rl, _coldata.get(j), rl);	
+		
 		return ret;
 	}
 	

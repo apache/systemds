@@ -76,6 +76,7 @@ public class DataExpression extends DataIdentifier
 	public static final String VALUETYPEPARAM = "value_type";
 	public static final String DESCRIPTIONPARAM = "description";
 	public static final String AUTHORPARAM = "author";
+	public static final String SCHEMAPARAM = "schema";
 
 	// Parameter names relevant to reading/writing delimited/csv files
 	public static final String DELIM_DELIMITER = "sep";
@@ -96,14 +97,14 @@ public class DataExpression extends DataIdentifier
 	
 	// Valid parameter names in a metadata file
 	public static final String[] READ_VALID_MTD_PARAM_NAMES = 
-		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM, FORMAT_TYPE, 
-			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, DESCRIPTIONPARAM,
+		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNUMNONZEROPARAM, FORMAT_TYPE,
+			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM,
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
 		}; 
 
 	public static final String[] READ_VALID_PARAM_NAMES = 
-	{	IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM,
+	{	IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM,
 		ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNUMNONZEROPARAM, 
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
@@ -789,9 +790,10 @@ public class DataExpression extends DataIdentifier
 								|| key.equals(DELIM_FILL) || key.equals(DELIM_FILL_VALUE)
 								|| key.equals(READROWPARAM) || key.equals(READCOLPARAM)
 								|| key.equals(READNUMNONZEROPARAM) || key.equals(DATATYPEPARAM) || key.equals(VALUETYPEPARAM)
-								)){
-							
+								|| key.equals(SCHEMAPARAM)) )
+						{	
 							String msg = "Only parameters allowed are: " + IO_FILENAME     + "," 
+									   + SCHEMAPARAM + "," 
 									   + DELIM_HAS_HEADER_ROW   + "," 
 									   + DELIM_DELIMITER 	+ ","
 									   + DELIM_FILL 		+ ","
@@ -799,7 +801,7 @@ public class DataExpression extends DataIdentifier
 									   + READROWPARAM     + "," 
 									   + READCOLPARAM;
 							
-							raiseValidateError("Invalid parameter " + key + " in read.csv statement: " +
+							raiseValidateError("Invalid parameter " + key + " in read statement: " +
 									toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 						}
 					}

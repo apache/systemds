@@ -560,10 +560,17 @@ public class Data extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( oparams.getUpdateInPlace() );
 			
-			/* Format-specific properties */
+			// Format-specific properties
 			if ( oparams.getFormat() == Format.CSV ) {
 				sb.append( OPERAND_DELIMITOR );
 				sb.append( createVarCSVHelper() );
+			}
+			
+			// Frame-specific properties
+			if( getDataType()==DataType.FRAME ) {
+				Data schema = (Data) getNamedInputLop(DataExpression.SCHEMAPARAM);
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( (schema!=null) ? schema.prepScalarLabel() : "*" );
 			}
 			
 			return sb.toString();

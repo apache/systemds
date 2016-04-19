@@ -21,8 +21,12 @@ package org.apache.sysml.runtime.controlprogram.caching;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -43,6 +47,8 @@ public class FrameObject extends CacheableData<FrameBlock>
 {
 	private static final long serialVersionUID = 1755082174281927785L;
 
+	private List<ValueType> _schema = null;
+	
 	/**
 	 * 
 	 */
@@ -79,15 +85,35 @@ public class FrameObject extends CacheableData<FrameBlock>
 		super(fo);
 	}
 
+	public void setSchema(String schema) {
+		if( schema.equals("*") ) {
+			//populate default schema
+			int clen = (int) getNumColumns();
+			if( clen > 0 ) //known number of cols
+				_schema = Collections.nCopies(clen, ValueType.STRING);
+		}
+		else {
+			//parse given schema
+			_schema = new ArrayList<ValueType>();
+			String[] parts = schema.split(DataExpression.DEFAULT_DELIM_DELIMITER);
+			for( String svt : parts )
+				_schema.add(ValueType.valueOf(svt.toUpperCase()));
+		}
+	}
+	
 	@Override
 	public void refreshMetaData() 
 		throws CacheException
 	{
 		if ( _data == null || _metaData ==null ) //refresh only for existing data
 			throw new CacheException("Cannot refresh meta data because there is no data or meta data. "); 
-		
+
+		//update matrix characteristics
 		MatrixCharacteristics mc = ((MatrixDimensionsMetaData) _metaData).getMatrixCharacteristics();
-		mc.setDimension( _data.getNumRows(),_data.getNumColumns() );	
+		mc.setDimension( _data.getNumRows(),_data.getNumColumns() );
+		
+		//update schema information
+		_schema = _data.getSchema();
 	}
 	
 	/**
@@ -124,7 +150,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		try {
 			FrameReader reader = FrameReaderFactory.createFrameReader(
 					iimd.getInputInfo());
-			data = reader.readFrameFromHDFS(fname, mc.getRows(), mc.getCols()); 
+			data = reader.readFrameFromHDFS(fname, _schema, mc.getRows(), mc.getCols()); 
 		}
 		catch( DMLRuntimeException ex ) {
 			throw new IOException(ex);
@@ -151,7 +177,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	{
 		OutputInfo oinfo = OutputInfo.stringToOutputInfo(ofmt);
 		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo);
-		writer.writeFrameToHDFS(_data, fname, getNumRows(), getNumColumns());
+		writer.writeFrameToHDFS(_data, fname,  getNumRows(), getNumColumns());
 	}
 
 	@Override

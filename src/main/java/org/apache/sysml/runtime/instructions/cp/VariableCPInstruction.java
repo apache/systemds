@@ -101,10 +101,13 @@ public class VariableCPInstruction extends CPInstruction
 	private CPOperand input3;
 	private CPOperand output;
 	private MetaData metadata;
-	private boolean updateInPlace;
+	private boolean _updateInPlace;
+	
+	// Frame related members
+	private String _schema;
 	
 	// CSV related members (used only in createvar instructions)
-	private FileFormatProperties formatProperties;
+	private FileFormatProperties _formatProperties;
 	
 	static {
 		_uniqueVarID  = new IDSequence(true); 
@@ -187,32 +190,35 @@ public class VariableCPInstruction extends CPInstruction
 		input3 = in3;
 		output = out;
 		
-		formatProperties = null;
+		_formatProperties = null;
+		_schema = null;
 	}
 
 	// This version of the constructor is used only in case of CreateVariable
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, boolean updateInPlace, int _arity, String sopcode, String istr)
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, boolean updateInPlace, int _arity, String schema, String sopcode, String istr)
 	{
 		this(op, in1, in2, in3, (CPOperand)null, _arity, sopcode, istr);
 		metadata = md;
-		this.updateInPlace = updateInPlace;		
+		_updateInPlace = updateInPlace;		
+		_schema = schema;
 	}
 	
 	// This version of the constructor is used only in case of CreateVariable
-	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, boolean updateInPlace, int _arity, FileFormatProperties formatProperties, String sopcode, String istr)
+	public VariableCPInstruction (VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md, boolean updateInPlace, int _arity, FileFormatProperties formatProperties, String schema, String sopcode, String istr)
 	{
 		this(op, in1, in2, in3, (CPOperand)null, _arity, sopcode, istr);
 		metadata = md;
-		this.updateInPlace = updateInPlace;  
-		this.formatProperties = formatProperties;
+		_updateInPlace = updateInPlace;  
+		_formatProperties = formatProperties;
+		_schema = schema;
 	}
 	
 	public FileFormatProperties getFormatProperties() {
-		return formatProperties;
+		return _formatProperties;
 	}
 	
 	public void setFormatProperties(FileFormatProperties prop) {
-		formatProperties = prop;
+		_formatProperties = prop;
 	}
 	
 	public CPOperand getInput1() {
@@ -282,6 +288,7 @@ public class VariableCPInstruction extends CPInstruction
 			// variable name 
 			DataType dt = DataType.valueOf(parts[4]);
 			ValueType vt = dt==DataType.MATRIX ? ValueType.DOUBLE : ValueType.STRING;
+			int extSchema = (dt==DataType.FRAME && parts.length>=13) ? 1 : 0;
 			in1 = new CPOperand(parts[1], vt, dt);
 			// file name
 			in2 = new CPOperand(parts[2], ValueType.STRING, DataType.SCALAR);
@@ -294,11 +301,11 @@ public class VariableCPInstruction extends CPInstruction
 				// Cretevar instructions for CSV format either has 13 or 14 inputs.
 				// 13 inputs: createvar corresponding to WRITE -- includes properties hasHeader, delim, and sparse
 				// 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
-				if ( parts.length < 15 || parts.length > 17 )
+				if ( parts.length < 15+extSchema || parts.length > 17+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			else {
-				if ( parts.length != 6 && parts.length != 12 )
+				if ( parts.length != 6 && parts.length != 12+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
@@ -322,12 +329,15 @@ public class VariableCPInstruction extends CPInstruction
 			if ( parts.length >= 12 )
 				updateInPlace = Boolean.parseBoolean(parts[11]);
 			
+			//handle frame schema
+			String schema = (dt==DataType.FRAME && parts.length>=13) ? parts[parts.length-1] : null;
+			
 			if ( fmt.equalsIgnoreCase("csv") ) {
 				// Cretevar instructions for CSV format either has 13 or 14 inputs.
 				// 13 inputs: createvar corresponding to WRITE -- includes properties hasHeader, delim, and sparse
 				// 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
 				FileFormatProperties fmtProperties = null;
-				if ( parts.length == 15 ) {
+				if ( parts.length == 15+extSchema ) {
 					boolean hasHeader = Boolean.parseBoolean(parts[12]);
 					String delim = parts[13];
 					boolean sparse = Boolean.parseBoolean(parts[14]);
@@ -339,14 +349,14 @@ public class VariableCPInstruction extends CPInstruction
 					boolean fill = Boolean.parseBoolean(parts[14]);
 					double fillValue = UtilFunctions.parseToDouble(parts[15]);
 					String naStrings = null;
-					if ( parts.length == 17 )
+					if ( parts.length == 17+extSchema )
 						naStrings = parts[16];
 					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, fill, fillValue, naStrings) ;
 				}
-				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateInPlace, parts.length, fmtProperties, opcode, str);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateInPlace, parts.length, fmtProperties, schema, opcode, str);
 			}
 			else {
-				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateInPlace, parts.length, opcode, str);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateInPlace, parts.length, schema, opcode, str);
 			}
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
@@ -446,10 +456,10 @@ public class VariableCPInstruction extends CPInstruction
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
 				mobj.setMetaData((MetaData)metadata.clone());
-				mobj.setFileFormatProperties(formatProperties);
-				mobj.enableUpdateInPlace(updateInPlace);
+				mobj.setFileFormatProperties(_formatProperties);
+				mobj.enableUpdateInPlace(_updateInPlace);
 				ec.setVariable(input1.getName(), mobj);
-				if(DMLScript.STATISTICS && updateInPlace)
+				if(DMLScript.STATISTICS && _updateInPlace)
 					Statistics.incrementTotalUIPVar();
 			}
 			else if( input1.getDataType() == DataType.FRAME ) {
@@ -458,7 +468,9 @@ public class VariableCPInstruction extends CPInstruction
 				fobj.setVarName(input1.getName());
 				fobj.setDataType(DataType.FRAME);
 				fobj.setMetaData((MetaData)metadata.clone());
-				fobj.setFileFormatProperties(formatProperties);
+				fobj.setFileFormatProperties(_formatProperties);
+				if( _schema != null )
+					fobj.setSchema(_schema); //after metadata
 				ec.setVariable(input1.getName(), fobj);
 			}
 			else if ( input1.getDataType() == DataType.SCALAR ){
@@ -772,25 +784,25 @@ public class VariableCPInstruction extends CPInstruction
 		if(mo.isDirty()) {
 			// there exist data computed in CP that is not backed up on HDFS
 			// i.e., it is either in-memory or in evicted space
-			mo.exportData(fname, outFmt, formatProperties);
+			mo.exportData(fname, outFmt, _formatProperties);
 		}
 		else {
 			try {
 				OutputInfo oi = ((MatrixFormatMetaData)mo.getMetaData()).getOutputInfo();
 				MatrixCharacteristics mc = ((MatrixFormatMetaData)mo.getMetaData()).getMatrixCharacteristics();
 				if(oi == OutputInfo.CSVOutputInfo) {
-					WriterTextCSV writer = new WriterTextCSV((CSVFileFormatProperties)formatProperties);
+					WriterTextCSV writer = new WriterTextCSV((CSVFileFormatProperties)_formatProperties);
 					writer.addHeaderToCSV(mo.getFileName(), fname, mc.getRows(), mc.getCols());
 				}
 				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {
-					mo.exportData(fname, outFmt, formatProperties);
+					mo.exportData(fname, outFmt, _formatProperties);
 				}
 				else {
 					throw new DMLRuntimeException("Unexpected data format (" + OutputInfo.outputInfoToString(oi) + "): can not export into CSV format.");
 				}
 				
 				// Write Metadata file
-				MapReduceTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), mc, OutputInfo.CSVOutputInfo, formatProperties);
+				MapReduceTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), mc, OutputInfo.CSVOutputInfo, _formatProperties);
 			} catch (IOException e) {
 				throw new DMLRuntimeException(e);
 			}

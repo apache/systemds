@@ -3944,7 +3944,8 @@ public class LibMatrixMult
 	private static boolean checkPrepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 )
 	{
 		//transpose if dense-dense, skinny rhs matrix (not vector), and memory guarded by output 
-		return (!m1.sparse && !m2.sparse && m1.rlen>m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64);
+		return (LOW_LEVEL_OPTIMIZATION && !m1.sparse && !m2.sparse 
+				&& m1.rlen>m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64);
 	}
 	
 	/**

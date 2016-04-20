@@ -57,7 +57,6 @@ object ScriptsUtils {
       if(reader != null)
         reader.close();
     }
-    System.out.println(out.toString());   //Prints the string content read from input stream
     return out.toString()
   }
 }

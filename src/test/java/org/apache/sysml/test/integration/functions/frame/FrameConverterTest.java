@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -64,6 +65,8 @@ public class FrameConverterTest extends AutomatedTestBase
 	private enum ConvType {
 		CSV2BIN,
 		BIN2CSV,
+		TXTCELL2BIN,
+		BIN2TXTCELL
 	}
 	
 	@Override
@@ -92,6 +95,26 @@ public class FrameConverterTest extends AutomatedTestBase
 		runFrameConverterTest(schemaMixed, ConvType.BIN2CSV);
 	}
 
+	@Test
+	public void testFrameStringsTxtCellBinSpark()  {
+		runFrameConverterTest(schemaStrings, ConvType.TXTCELL2BIN);
+	}
+	
+	@Test
+	public void testFrameMixedTxtCellBinSpark()  {
+		runFrameConverterTest(schemaMixed, ConvType.TXTCELL2BIN);
+	}
+	
+	@Test
+	public void testFrameStringsBinTxtCellSpark()  {
+		runFrameConverterTest(schemaStrings, ConvType.BIN2TXTCELL);
+	}
+	
+	@Test
+	public void testFrameMixedBinTxtCellSpark()  {
+		runFrameConverterTest(schemaMixed, ConvType.BIN2TXTCELL);
+	}
+
 	
 	/**
 	 * 
@@ -105,6 +128,9 @@ public class FrameConverterTest extends AutomatedTestBase
 		DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
+		SparkConf conf = new SparkConf().setAppName("Frame").setMaster("local");
+		conf.set("spark.kryo.classesToRegister", "org.apache.hadoop.io.LongWritable");
 
 		try
 		{
@@ -126,6 +152,14 @@ public class FrameConverterTest extends AutomatedTestBase
 					oinfo = OutputInfo.BinaryBlockOutputInfo;
 					iinfo = InputInfo.CSVInputInfo;
 					break;
+				case TXTCELL2BIN:
+					oinfo = OutputInfo.TextCellOutputInfo;
+					iinfo = InputInfo.BinaryBlockInputInfo;
+					break;
+				case BIN2TXTCELL:
+					oinfo = OutputInfo.BinaryBlockOutputInfo;
+					iinfo = InputInfo.TextCellInputInfo;
+					break;
 				default: 
 					throw new RuntimeException("Unsuported converter type: "+type.toString());
  			}
@@ -141,7 +175,7 @@ public class FrameConverterTest extends AutomatedTestBase
 
 			//run converter under test
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, schema.length, -1, -1, -1);
-			runConverter(type, mc, input("A"), output("B"));
+			runConverter(type, mc, Arrays.asList(schema), input("A"), output("B"));
 			
 			//read frame data from hdfs
 			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
@@ -200,12 +234,13 @@ public class FrameConverterTest extends AutomatedTestBase
 	 * @param frame1
 	 * @param frame2
 	 * @param fprop
+	 * @param schema
 	 * @return 
 	 * @throws DMLRuntimeException, IOException
 	 */
 
 	@SuppressWarnings("unchecked")
-	private void runConverter(ConvType type, MatrixCharacteristics mc, String fnameIn, String fnameOut)
+	private void runConverter(ConvType type, MatrixCharacteristics mc, List<ValueType> schema, String fnameIn, String fnameOut)
 		throws DMLRuntimeException, IOException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext) ExecutionContextFactory.createContext();		
@@ -228,6 +263,22 @@ public class FrameConverterTest extends AutomatedTestBase
 				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
 				CSVFileFormatProperties fprop = new CSVFileFormatProperties();
 				JavaRDD<String> rddOut = FrameRDDConverterUtils.binaryBlockToCsv(rddIn, mc, fprop, true);
+				rddOut.saveAsTextFile(fnameOut);
+				break;
+			}
+			case TXTCELL2BIN: {
+				InputInfo iinfo = InputInfo.TextCellInputInfo;
+				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				JavaPairRDD<LongWritable,Text> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
+						.textCellToBinaryBlock(sc, rddIn, mc, schema);
+				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
+				break;
+			}
+			case BIN2TXTCELL: {
+				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
+				JavaRDD<String> rddOut = FrameRDDConverterUtils.binaryBlockToStringRDD(rddIn, mc, "text");
 				rddOut.saveAsTextFile(fnameOut);
 				break;
 			}

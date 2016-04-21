@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -111,7 +112,7 @@ import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class DmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
 
-	public DmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
+	public DmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {
 		super(errorListener, argVals, sourceNamespace);
 	}
 

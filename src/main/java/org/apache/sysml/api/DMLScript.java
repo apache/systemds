@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.commons.logging.Log;
@@ -322,7 +323,7 @@ public class DMLScript
 		
 			//Step 2: prepare script invocation
 			String dmlScriptStr = readDMLScript(args[0], args[1]);
-			HashMap<String, String> argVals = createArgumentsMap(namedScriptArgs, scriptArgs);		
+			Map<String, String> argVals = createArgumentsMap(namedScriptArgs, scriptArgs);
 			
 			DML_FILE_PATH_ANTLR_PARSER = args[1];
 			
@@ -369,10 +370,10 @@ public class DMLScript
 	 * @param args
 	 * @throws LanguageException
 	 */
-	protected static HashMap<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args) 
+	protected static Map<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args)
 		throws LanguageException
 	{			
-		HashMap<String, String> argMap = new HashMap<String,String>();
+		Map<String, String> argMap = new HashMap<String,String>();
 		
 		if (args == null)
 			return argMap;
@@ -562,7 +563,7 @@ public class DMLScript
 	 * @throws LanguageException 
 	 * @throws LopsException 
 	 */
-	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs, boolean parsePyDML)
+	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException 
 	{	
 		//print basic time and environment info
@@ -707,7 +708,7 @@ public class DMLScript
 	 * @throws LanguageException 
 	 * @throws LopsException
 	 */
-	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, boolean parsePyDML)
+	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException 
 	{		
 		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
@@ -899,7 +900,7 @@ public class DMLScript
 	 * @param fnameOptConfig
 	 * @param argVals
 	 */
-	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, HashMap<String,String> argVals)
+	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, Map<String,String> argVals)
 	{		
 		LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + fnameScript + "\n" 
 	                + "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"

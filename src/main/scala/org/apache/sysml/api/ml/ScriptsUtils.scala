@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.api.ml.scala
+package org.apache.sysml.api.ml
 
 import java.io.File
 import java.io.BufferedReader
@@ -26,37 +26,50 @@ import org.apache.sysml.runtime.DMLRuntimeException
 
 object ScriptsUtils {
   var systemmlHome = System.getenv("SYSTEMML_HOME")
-  def resolvePath(filename:String):String = {
-    import java.io.File
-    ScriptsUtils.systemmlHome + File.separator + "algorithms" + File.separator + filename
-  }
-  def setSystemmlHome(path:String) {
+
+  /**
+   * set SystemML home
+   */
+  def setSystemmlHome(path: String) {
     systemmlHome = path
   }
   
-  // Example usage: val dmlScriptForGLM = getDMLScript("GLM")
-  def getDMLScript(algorithmName:String): String = {
-    var reader:BufferedReader = null
+  /*
+   * Internal function to get dml path
+   */
+  private[sysml] def resolvePath(filename: String): String = {
+    import java.io.File
+    ScriptsUtils.systemmlHome + File.separator + "algorithms" + File.separator + filename
+  }
+
+    /*
+   * Internal function to get dml string from jar
+   */
+  private[sysml] def getDMLScript(algorithmFileName: String): String = {
+    var reader: BufferedReader = null
     val out = new StringBuilder()
-    
     try {
-      val in = classOf[LogisticRegression].getClassLoader().getResourceAsStream(algorithmName + ".dml")
-  		reader = new BufferedReader(new InputStreamReader(in))
+      val in = {
+        if (systemmlHome == "") {
+          classOf[LogisticRegression].getClassLoader().getResourceAsStream(algorithmFileName)
+        } else {
+          new java.io.FileInputStream(resolvePath(algorithmFileName))
+        }
+      }
+      var reader = new BufferedReader(new InputStreamReader(in))
       var line = reader.readLine()
       while (line != null) {
-          out.append(line);
-          out.append(System.getProperty("line.separator"));
-          line = reader.readLine()
+        out.append(line);
+        out.append(System.getProperty("line.separator"));
+        line = reader.readLine()
       }
-    }
-    catch {
+    } catch {
       case ex: Exception =>
-        throw new DMLRuntimeException("Cannot read the algorithm " + algorithmName, ex)
-    }
-    finally {
-      if(reader != null)
+        throw new DMLRuntimeException("Cannot read the algorithm file " + algorithmFileName, ex)
+    } finally {
+      if (reader != null)
         reader.close();
     }
-    return out.toString()
+    out.toString()
   }
 }

@@ -53,13 +53,23 @@ public class FrameReadMetaTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testJMLCTransformDenseSpec() throws IOException {
+		runJMLCReadMetaTest(TEST_NAME1, false, true);
+	}
+	
+	@Test
+	public void testJMLCTransformDenseReuseSpec() throws IOException {
+		runJMLCReadMetaTest(TEST_NAME1, true, true);
+	}
+	
+	@Test
 	public void testJMLCTransformDense() throws IOException {
-		runJMLCReadMetaTest(TEST_NAME1, false);
+		runJMLCReadMetaTest(TEST_NAME1, false, false);
 	}
 	
 	@Test
 	public void testJMLCTransformDenseReuse() throws IOException {
-		runJMLCReadMetaTest(TEST_NAME1, true);
+		runJMLCReadMetaTest(TEST_NAME1, true, false);
 	}
 
 	/**
@@ -69,7 +79,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 	 * @param instType
 	 * @throws IOException 
 	 */
-	private void runJMLCReadMetaTest( String testname, boolean modelReuse ) 
+	private void runJMLCReadMetaTest( String testname, boolean modelReuse, boolean useSpec ) 
 		throws IOException
 	{	
 		String TEST_NAME = testname;
@@ -82,7 +92,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 		
 		//read meta data frame
 		String spec = MapReduceTool.readStringFromHDFSFile(SCRIPT_DIR + TEST_DIR+"tfmtd_example/spec.json");
-		FrameBlock M = conn.readTransformMetaDataFromFile(spec, SCRIPT_DIR + TEST_DIR+"tfmtd_example/");
+		FrameBlock M = conn.readTransformMetaDataFromFile(useSpec ? spec : null, SCRIPT_DIR + TEST_DIR+"tfmtd_example/");
 		
 		//generate data based on recode maps
 		HashMap<String,Long>[] RC = getRecodeMaps(M);

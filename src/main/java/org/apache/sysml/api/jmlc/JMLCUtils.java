@@ -32,13 +32,18 @@ import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 
+/**
+ * Utility class containing static methods for working with JMLC.
+ *
+ */
 public class JMLCUtils 
 {
 	/**
 	 * Removes rmvar instructions that would remove any of the given outputs.
 	 * This is important for keeping registered outputs after the program terminates.
 	 * 
-	 * @param prog
+	 * @param prog the DML/PyDML program
+	 * @param outputs registered output variables
 	 */
 	public static void cleanupRuntimeProgram( Program prog, String[] outputs)
 	{
@@ -58,9 +63,10 @@ public class JMLCUtils
 	}
 	
 	/**
+	 * Cleanup program blocks (called recursively).
 	 * 
-	 * @param pb
-	 * @param outputs
+	 * @param pb program block
+	 * @param outputs registered output variables
 	 */
 	public static void rCleanupRuntimeProgram( ProgramBlock pb, String[] outputs )
 	{
@@ -92,10 +98,12 @@ public class JMLCUtils
 	}
 	
 	/**
+	 * Cleanup runtime instructions, removing rmvar instructions for
+	 * any of the given output variable names.
 	 * 
-	 * @param insts
-	 * @param outputs
-	 * @return
+	 * @param insts list of instructions
+	 * @param outputs registered output variables
+	 * @return list of instructions
 	 */
 	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, String[] outputs )
 	{		

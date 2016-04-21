@@ -43,6 +43,7 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
@@ -330,6 +331,92 @@ public class SparkExecutionContext extends ExecutionContext
 			RDDObject rddhandle = new RDDObject(rdd, mo.getVarName());
 			rddhandle.setHDFSFile(true);
 			mo.setRDDHandle(rddhandle);
+		}
+		
+		return rdd;
+	}
+	
+	/**
+	 * FIXME: currently this implementation assumes matrix representations but frame signature
+	 * in order to support the old transform implementation.
+	 * 
+	 * @param mo
+	 * @param inputInfo
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	@SuppressWarnings("unchecked")
+	public JavaPairRDD<?,?> getRDDHandleForFrameObject( FrameObject fo, InputInfo inputInfo ) 
+		throws DMLRuntimeException
+	{		
+		//NOTE: MB this logic should be integrated into MatrixObject
+		//However, for now we cannot assume that spark libraries are 
+		//always available and hence only store generic references in 
+		//matrix object while all the logic is in the SparkExecContext
+		
+		JavaPairRDD<?,?> rdd = null;
+		//CASE 1: rdd already existing (reuse if checkpoint or trigger
+		//pending rdd operations if not yet cached but prevent to re-evaluate 
+		//rdd operations if already executed and cached
+		if(    fo.getRDDHandle()!=null 
+			&& (fo.getRDDHandle().isCheckpointRDD() || !fo.isCached(false)) )
+		{
+			//return existing rdd handling (w/o input format change)
+			rdd = fo.getRDDHandle().getRDD();
+		}
+		//CASE 2: dirty in memory data or cached result of rdd operations
+		else if( fo.isDirty() || fo.isCached(false) )
+		{
+			//get in-memory matrix block and parallelize it
+			//w/ guarded parallelize (fallback to export, rdd from file if too large)
+			boolean fromFile = false;
+			if( !OptimizerUtils.checkSparkCollectMemoryBudget(fo.getMatrixCharacteristics(), 0) ) {
+				if( fo.isDirty() ) { //write only if necessary
+					fo.exportData();
+				}
+				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				rdd = ((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd).mapToPair( new CopyBlockPairFunction() ); //cp is workaround for read bug			
+				fromFile = true;
+			}
+			else { //default case
+				//MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
+				//rdd = toJavaPairRDD(getSparkContext(), mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
+				//fo.release(); //unpin matrix
+				throw new RuntimeException("Not implemented yet.");
+			}
+			
+			//keep rdd handle for future operations on it
+			RDDObject rddhandle = new RDDObject(rdd, fo.getVarName());
+			rddhandle.setHDFSFile(fromFile);
+			fo.setRDDHandle(rddhandle);
+		}
+		//CASE 3: non-dirty (file exists on HDFS)
+		else
+		{
+			// parallelize hdfs-resident file
+			// For binary block, these are: SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class
+			if(inputInfo == InputInfo.BinaryBlockInputInfo) {
+				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				//note: this copy is still required in Spark 1.4 because spark hands out whatever the inputformat
+				//recordreader returns; the javadoc explicitly recommend to copy all key/value pairs
+				rdd = ((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd).mapToPair( new CopyBlockPairFunction() ); //cp is workaround for read bug
+			}
+			else if(inputInfo == InputInfo.TextCellInputInfo || inputInfo == InputInfo.CSVInputInfo || inputInfo == InputInfo.MatrixMarketInputInfo) {
+				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				rdd = ((JavaPairRDD<LongWritable, Text>)rdd).mapToPair( new CopyTextInputFunction() ); //cp is workaround for read bug
+			}
+			else if(inputInfo == InputInfo.BinaryCellInputInfo) {
+				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+				rdd = ((JavaPairRDD<MatrixIndexes, MatrixCell>)rdd).mapToPair( new CopyBinaryCellFunction() ); //cp is workaround for read bug
+			}
+			else {
+				throw new DMLRuntimeException("Incorrect input format in getRDDHandleForVariable");
+			}
+			
+			//keep rdd handle for future operations on it
+			RDDObject rddhandle = new RDDObject(rdd, fo.getVarName());
+			rddhandle.setHDFSFile(true);
+			fo.setRDDHandle(rddhandle);
 		}
 		
 		return rdd;
@@ -888,8 +975,8 @@ public class SparkExecutionContext extends ExecutionContext
 	public void addLineageRDD(String varParent, String varChild) 
 		throws DMLRuntimeException 
 	{
-		RDDObject parent = getMatrixObject(varParent).getRDDHandle();
-		RDDObject child = getMatrixObject(varChild).getRDDHandle();
+		RDDObject parent = getCacheableData(varParent).getRDDHandle();
+		RDDObject child = getCacheableData(varChild).getRDDHandle();
 		
 		parent.addLineageChild( child );
 	}
@@ -904,8 +991,8 @@ public class SparkExecutionContext extends ExecutionContext
 	public void addLineageBroadcast(String varParent, String varChild) 
 		throws DMLRuntimeException 
 	{
-		RDDObject parent = getMatrixObject(varParent).getRDDHandle();
-		BroadcastObject child = getMatrixObject(varChild).getBroadcastHandle();
+		RDDObject parent = getCacheableData(varParent).getRDDHandle();
+		BroadcastObject child = getCacheableData(varChild).getBroadcastHandle();
 		
 		parent.addLineageChild( child );
 	}

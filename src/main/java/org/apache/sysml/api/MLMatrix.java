@@ -116,13 +116,13 @@ public class MLMatrix extends DataFrame {
 	/**
 	 * Convenient method to write a MLMatrix.
 	 */
-	public void write(String filePath, String format) throws IOException, DMLException, ParseException {
+	public void write(String filePath, String format) throws IOException, DMLException {
 		ml.reset();
 		ml.registerInput("left", this);
 		ml.executeScript("left = read(\"\"); output=left; write(output, \"" + filePath + "\", format=\"" + format + "\");");
 	}
 	
-	private double getScalarBuiltinFunctionResult(String fn) throws IOException, DMLException, ParseException {
+	private double getScalarBuiltinFunctionResult(String fn) throws IOException, DMLException {
 		if(fn.equals("nrow") || fn.equals("ncol")) {
 			ml.reset();
 			ml.registerInput("left", getRDDLazily(this), mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros());
@@ -150,7 +150,7 @@ public class MLMatrix extends DataFrame {
 	 * @throws DMLException 
 	 * @throws IOException 
 	 */
-	public long numRows() throws IOException, DMLException, ParseException {
+	public long numRows() throws IOException, DMLException {
 		if(mc.rowsKnown()) {
 			return mc.getRows();
 		}
@@ -166,7 +166,7 @@ public class MLMatrix extends DataFrame {
 	 * @throws DMLException 
 	 * @throws IOException 
 	 */
-	public long numCols() throws IOException, DMLException, ParseException {
+	public long numCols() throws IOException, DMLException {
 		if(mc.colsKnown()) {
 			return mc.getCols();
 		}
@@ -207,7 +207,7 @@ public class MLMatrix extends DataFrame {
 		return mat.rdd().toJavaRDD().mapToPair(new GetMIMBFromRow());
 	}
 	
-	private MLMatrix matrixBinaryOp(MLMatrix that, String op) throws IOException, DMLException, ParseException {
+	private MLMatrix matrixBinaryOp(MLMatrix that, String op) throws IOException, DMLException {
 		
 		if(mc.getRowsPerBlock() != that.mc.getRowsPerBlock() || mc.getColsPerBlock() != that.mc.getColsPerBlock()) {
 			throw new DMLRuntimeException("Incompatible block sizes: brlen:" + mc.getRowsPerBlock() + "!=" +  that.mc.getRowsPerBlock() + " || bclen:" + mc.getColsPerBlock() + "!=" + that.mc.getColsPerBlock());
@@ -235,7 +235,7 @@ public class MLMatrix extends DataFrame {
 		return new MLMatrix(this.sqlContext().createDataFrame(rows.toJavaRDD(), schema), mcOut, ml);
 	}
 	
-	private MLMatrix scalarBinaryOp(Double scalar, String op, boolean isScalarLeft) throws IOException, DMLException, ParseException {
+	private MLMatrix scalarBinaryOp(Double scalar, String op, boolean isScalarLeft) throws IOException, DMLException {
 		ml.reset();
 		ml.registerInput("left", this);
 		ml.registerOutput("output");
@@ -249,95 +249,95 @@ public class MLMatrix extends DataFrame {
 	// ---------------------------------------------------
 	// Simple operator loading but doesnot utilize the optimizer
 	
-	public MLMatrix $greater(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $greater(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, ">");
 	}
 	
-	public MLMatrix $less(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $less(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "<");
 	}
 	
-	public MLMatrix $greater$eq(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $greater$eq(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, ">=");
 	}
 	
-	public MLMatrix $less$eq(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $less$eq(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "<=");
 	}
 	
-	public MLMatrix $eq$eq(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $eq$eq(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "==");
 	}
 	
-	public MLMatrix $bang$eq(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $bang$eq(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "!=");
 	}
 	
-	public MLMatrix $up(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $up(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "^");
 	}
 	
-	public MLMatrix exp(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix exp(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "^");
 	}
 	
-	public MLMatrix $plus(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $plus(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "+");
 	}
 	
-	public MLMatrix add(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix add(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "+");
 	}
 	
-	public MLMatrix $minus(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $minus(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "-");
 	}
 	
-	public MLMatrix minus(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix minus(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "-");
 	}
 	
-	public MLMatrix $times(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $times(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "*");
 	}
 	
-	public MLMatrix elementWiseMultiply(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix elementWiseMultiply(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "*");
 	}
 	
-	public MLMatrix $div(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $div(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "/");
 	}
 	
-	public MLMatrix divide(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix divide(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "/");
 	}
 	
-	public MLMatrix $percent$div$percent(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $percent$div$percent(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "%/%");
 	}
 	
-	public MLMatrix integerDivision(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix integerDivision(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "%/%");
 	}
 	
-	public MLMatrix $percent$percent(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $percent$percent(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "%%");
 	}
 	
-	public MLMatrix modulus(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix modulus(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "%%");
 	}
 	
-	public MLMatrix $percent$times$percent(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix $percent$times$percent(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "%*%");
 	}
 	
-	public MLMatrix multiply(MLMatrix that) throws IOException, DMLException, ParseException {
+	public MLMatrix multiply(MLMatrix that) throws IOException, DMLException {
 		return matrixBinaryOp(that, "%*%");
 	}
 	
-	public MLMatrix transpose() throws IOException, DMLException, ParseException {
+	public MLMatrix transpose() throws IOException, DMLException {
 		ml.reset();
 		ml.registerInput("left", this);
 		ml.registerOutput("output");
@@ -352,59 +352,59 @@ public class MLMatrix extends DataFrame {
 	}
 	
 	// TODO: For 'scalar op matrix' operations: Do implicit conversions 
-	public MLMatrix $plus(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix $plus(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "+", false);
 	}
 	
-	public MLMatrix add(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix add(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "+", false);
 	}
 	
-	public MLMatrix $minus(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix $minus(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "-", false);
 	}
 	
-	public MLMatrix minus(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix minus(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "-", false);
 	}
 	
-	public MLMatrix $times(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix $times(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "*", false);
 	}
 	
-	public MLMatrix elementWiseMultiply(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix elementWiseMultiply(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "*", false);
 	}
 	
-	public MLMatrix $div(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix $div(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "/", false);
 	}
 	
-	public MLMatrix divide(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix divide(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "/", false);
 	}
 	
-	public MLMatrix $greater(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix $greater(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, ">", false);
 	}
 	
-	public MLMatrix $less(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix $less(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "<", false);
 	}
 	
-	public MLMatrix $greater$eq(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix $greater$eq(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, ">=", false);
 	}
 	
-	public MLMatrix $less$eq(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix $less$eq(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "<=", false);
 	}
 	
-	public MLMatrix $eq$eq(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix $eq$eq(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "==", false);
 	}
 	
-	public MLMatrix $bang$eq(Double scalar) throws IOException, DMLException, ParseException {
+	public MLMatrix $bang$eq(Double scalar) throws IOException, DMLException {
 		return scalarBinaryOp(scalar, "!=", false);
 	}
 	

@@ -138,6 +138,16 @@ public abstract class Encoder implements Serializable
 	 */
 	public abstract String[] apply(String[] in);
 	
+	/**
+	 * Encode input data blockwise according to existing transform meta
+	 * data (transform apply).
+	 * 
+	 * @param in
+	 * @param out
+	 * @return
+	 */
+	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out);
+	
 	
 	//OLD API: kept for a transition phase only
 	//TODO stage 2: refactor data and meta data IO into minimal set of ultility functions

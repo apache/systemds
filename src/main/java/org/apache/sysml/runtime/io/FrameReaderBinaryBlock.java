@@ -125,4 +125,35 @@ public class FrameReaderBinaryBlock extends FrameReader
 			}
 		}
 	}
+
+	/**
+	 * Specific functionality of FrameReaderBinaryBlock, mostly used for testing.
+	 * 
+	 * @param fname
+	 * @return
+	 * @throws IOException 
+	 */
+	@SuppressWarnings("deprecation")
+	public FrameBlock readFirstBlock(String fname) throws IOException 
+	{
+		//prepare file access
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
+		FileSystem fs = FileSystem.get(job);
+		Path path = new Path( fname ); 
+		
+		LongWritable key = new LongWritable();
+		FrameBlock value = new FrameBlock();
+		
+		//read first block from first file
+		Path lpath = getSequenceFilePaths(fs, path)[0];  
+		SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);		
+		try {
+			reader.next(key, value);
+		}
+		finally {
+			IOUtilFunctions.closeSilently(reader);
+		}
+		
+		return value;
+	}
 }

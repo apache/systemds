@@ -1314,6 +1314,26 @@ public class LibMatrixMult
 		    			}
 					}
 			}
+			else if( n<=64 )           //MATRIX-MATRIX (skinny rhs)
+			{
+				//no blocking since b and c fit into cache anyway
+				for( int i=rl, cix=rl*n; i<ru; i++, cix+=n ) {
+					if( a.isEmpty(i) ) 
+						continue;
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);					
+					//rest not aligned to blocks of 4 rows
+					int bn = alen%4;
+					for( int k=apos; k<apos+bn; k++ )
+	    				vectMultiplyAdd(avals[k], b, c, aix[k]*n, cix, n); 
+	    			//compute blocks of 4 rows (core inner loop)
+	    			for( int k=apos+bn; k<apos+alen; k+=4 )
+	    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
+	    					aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
+				}	
+			}
 			else                       //MATRIX-MATRIX
 			{							
 				//blocksizes to fit blocks of B (dense) and several rows of A/C in common L2 cache size, 
@@ -3924,7 +3944,8 @@ public class LibMatrixMult
 	private static boolean checkPrepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 )
 	{
 		//transpose if dense-dense, skinny rhs matrix (not vector), and memory guarded by output 
-		return (!m1.sparse && !m2.sparse && m1.rlen>m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64);
+		return (LOW_LEVEL_OPTIMIZATION && !m1.sparse && !m2.sparse 
+				&& m1.rlen>m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64);
 	}
 	
 	/**

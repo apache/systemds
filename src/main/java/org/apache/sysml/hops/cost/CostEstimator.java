@@ -324,11 +324,11 @@ public abstract class CostEstimator
 				if( parts.length<10 )
 					return;
 				String varname = parts[1];
-				long rlen = Long.parseLong(parts[5]);
-				long clen = Long.parseLong(parts[6]);
-				long brlen = Long.parseLong(parts[7]);
-				long bclen = Long.parseLong(parts[8]);
-				long nnz = Long.parseLong(parts[9]);
+				long rlen = Long.parseLong(parts[6]);
+				long clen = Long.parseLong(parts[7]);
+				long brlen = Long.parseLong(parts[8]);
+				long bclen = Long.parseLong(parts[9]);
+				long nnz = Long.parseLong(parts[10]);
 				VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, false);
 				stats.put(varname, vs);
 				

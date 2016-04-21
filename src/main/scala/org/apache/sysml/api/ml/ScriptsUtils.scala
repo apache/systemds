@@ -20,6 +20,9 @@
 package org.apache.sysml.api.ml
 
 import java.io.File
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import org.apache.sysml.runtime.DMLRuntimeException
 
 object ScriptsUtils {
   var systemmlHome = System.getenv("SYSTEMML_HOME")
@@ -29,5 +32,31 @@ object ScriptsUtils {
   }
   def setSystemmlHome(path:String) {
     systemmlHome = path
+  }
+  
+  // Example usage: val dmlScriptForGLM = getDMLScript("GLM")
+  def getDMLScript(algorithmName:String): String = {
+    var reader:BufferedReader = null
+    val out = new StringBuilder()
+    
+    try {
+      val in = classOf[LogisticRegression].getClassLoader().getResourceAsStream(algorithmName + ".dml")
+  		reader = new BufferedReader(new InputStreamReader(in))
+      var line = reader.readLine()
+      while (line != null) {
+          out.append(line);
+          out.append(System.getProperty("line.separator"));
+          line = reader.readLine()
+      }
+    }
+    catch {
+      case ex: Exception =>
+        throw new DMLRuntimeException("Cannot read the algorithm " + algorithmName, ex)
+    }
+    finally {
+      if(reader != null)
+        reader.close();
+    }
+    return out.toString()
   }
 }

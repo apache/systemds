@@ -95,6 +95,13 @@ public class EncoderComposite extends Encoder
 			encoder.apply(in);
 		return in;
 	}
+	
+	@Override 
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+		for( Encoder encoder : _encoders )
+			encoder.apply(in, out);
+		return out;
+	}
 
 	@Override
 	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {

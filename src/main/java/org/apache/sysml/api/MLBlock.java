@@ -61,7 +61,7 @@ public class MLBlock implements Row {
 			return block;
 		}
 		// TODO: For now not supporting any operations
-		return new Integer(0);
+		return 0;
 	}
 
 	@Override
@@ -78,7 +78,7 @@ public class MLBlock implements Row {
 			return block;
 		}
 		// TODO: For now not supporting any operations
-		return new Integer(0);
+		return 0;
 	}
 
 	@Override

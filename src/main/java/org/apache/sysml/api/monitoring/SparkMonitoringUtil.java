@@ -213,26 +213,24 @@ public class SparkMonitoringUtil {
 			List<String> listInst = new ArrayList<String>(instructions.get(loc));
 			long expressionExecutionTime = 0;
 			
-			if(listInst != null && listInst.size() > 0) {
-				for(String inst : listInst) {
-					long instructionExecutionTime = 0;
-					for(Integer stageId : stageIDs.get(inst)) {
-						try {
-							if(getStageExecutionTime(stageId) != null) {
-								long stageExecTime = getStageExecutionTime(stageId);
-								instructionExecutionTime += stageExecTime;
-								expressionExecutionTime += stageExecTime;
-								stageExecutionTimes.put(stageId, stageExecTime);
-							}
+			for(String inst : listInst) {
+				long instructionExecutionTime = 0;
+				for(Integer stageId : stageIDs.get(inst)) {
+					try {
+						if(getStageExecutionTime(stageId) != null) {
+							long stageExecTime = getStageExecutionTime(stageId);
+							instructionExecutionTime += stageExecTime;
+							expressionExecutionTime += stageExecTime;
+							stageExecutionTimes.put(stageId, stageExecTime);
 						}
-						catch(Exception e) {}
-						
-						relatedInstructionsPerStage.put(stageId, getRelatedInstructions(stageId));
 					}
-					instructionExecutionTimes.put(inst, instructionExecutionTime);
+					catch(Exception e) {}
+
+					relatedInstructionsPerStage.put(stageId, getRelatedInstructions(stageId));
 				}
-				expressionExecutionTime /= listInst.size(); // average
+				instructionExecutionTimes.put(inst, instructionExecutionTime);
 			}
+			expressionExecutionTime /= listInst.size(); // average
 			maxExpressionExecutionTime = Math.max(maxExpressionExecutionTime, expressionExecutionTime);
 			expressionExecutionTimes.put(loc.toString(), expressionExecutionTime);
 		}
@@ -255,10 +253,8 @@ public class SparkMonitoringUtil {
 			if(expressionExecutionTimes.get(loc.toString()) == 0) {
 				List<String> listInst = new ArrayList<String>(instructions.get(loc));
 				long expressionExecutionTime = 0;
-				if(listInst != null && listInst.size() > 0) {
-					for(String inst : listInst) {
-						expressionExecutionTime += instructionExecutionTimes.get(inst);
-					}
+				for(String inst : listInst) {
+					expressionExecutionTime += instructionExecutionTimes.get(inst);
 				}
 				expressionExecutionTime /= listInst.size(); // average
 				maxExpressionExecutionTime = Math.max(maxExpressionExecutionTime, expressionExecutionTime);
@@ -284,7 +280,7 @@ public class SparkMonitoringUtil {
 	public String getRuntimeInfoInJSONFormat() throws DMLRuntimeException, IOException {
 		StringBuilder retVal = new StringBuilder("{\n");
 		
-		retVal.append(getInQuotes("dml") + ":" + getInQuotes(getEscapedJSON(dmlStrForMonitoring)) + ",\n"); 
+		retVal.append(getInQuotes("dml") + ":" + getInQuotes(getEscapedJSON(dmlStrForMonitoring)) + ",\n");
 		retVal.append(getInQuotes("expressions") + ":" + "[\n");
 		
 		boolean isFirstExpression = true;

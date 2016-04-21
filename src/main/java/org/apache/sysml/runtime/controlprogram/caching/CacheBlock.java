@@ -49,4 +49,9 @@ public interface CacheBlock extends Writable
 	 * @return
 	 */
 	public boolean isShallowSerialize();
+	
+	/**
+	 * Free unnecessarily allocated empty block.
+	 */
+	public void compactEmptyBlock();
 }

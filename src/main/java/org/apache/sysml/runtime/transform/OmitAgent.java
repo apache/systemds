@@ -91,6 +91,11 @@ public class OmitAgent extends Encoder
 	public String[] apply(String[] words) {
 		return null;
 	}
+	
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+		return null;
+	}
 
 	@Override
 	public double[] encode(String[] in, double[] out) {

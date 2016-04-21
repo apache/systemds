@@ -62,6 +62,10 @@ trait HasRegParam extends Params {
 object LogisticRegression {
   final val scriptPath = "MultiLogReg.dml"
 }
+
+/**
+ * Logistic Regression Scala API
+ */
 class LogisticRegression(override val uid: String, val sc: SparkContext) extends Estimator[LogisticRegressionModel] with HasIcpt
     with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter {
 
@@ -72,8 +76,8 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
   def setTol(value: Double) = set(tol, value)
 
   override def copy(extra: ParamMap): LogisticRegression = {
-    val that = new LogisticRegression(uid,sc)
-    copyValues(that,extra)
+    val that = new LogisticRegression(uid, sc)
+    copyValues(that, extra)
   }
   override def transformSchema(schema: StructType): StructType = schema
   override def fit(df: DataFrame): LogisticRegressionModel = {
@@ -96,7 +100,8 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
       ml.registerInput("X", Xin, mcXin);
       ml.registerInput("Y_vec", yin, "csv");
       ml.registerOutput("B_out");
-      ml.execute(ScriptsUtils.resolvePath(LogisticRegression.scriptPath), paramsMap)
+      ml.executeScript(ScriptsUtils.getDMLScript(LogisticRegression.scriptPath), paramsMap)
+      //ml.execute(ScriptsUtils.resolvePath(LogisticRegression.scriptPath), paramsMap)
     }
     new LogisticRegressionModel("logisticRegression")(mloutput)
   }
@@ -104,13 +109,18 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
 object LogisticRegressionModel {
   final val scriptPath = "GLM-predict.dml"
 }
+
+/**
+ * Logistic Regression Scala API
+ */
+
 class LogisticRegressionModel(
   override val uid: String)(
     val mloutput: MLOutput) extends Model[LogisticRegressionModel] with HasIcpt
     with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter {
   override def copy(extra: ParamMap): LogisticRegressionModel = {
     val that = new LogisticRegressionModel(uid)(mloutput)
-    copyValues(that,extra)
+    copyValues(that, extra)
   }
   override def transformSchema(schema: StructType): StructType = schema
   override def transform(df: DataFrame): DataFrame = {
@@ -126,7 +136,7 @@ class LogisticRegressionModel(
       ml.registerInput("X", Xin, mcXin);
       ml.registerInput("B_full", mloutput.getBinaryBlockedRDD("B_out"), mloutput.getMatrixCharacteristics("B_out"));
       ml.registerOutput("means");
-      ml.execute(ScriptsUtils.resolvePath(LogisticRegressionModel.scriptPath), paramsMap)
+      ml.executeScript(ScriptsUtils.getDMLScript(LogisticRegressionModel.scriptPath), paramsMap)
     }
 
     val prob = mlscoreoutput.getDF(df.sqlContext, "means", true).withColumnRenamed("C1", "probability")
@@ -155,6 +165,9 @@ class LogisticRegressionModel(
   }
 }
 
+/**
+ * Example code for Logistic Regression
+ */
 object LogisticRegressionExample {
   import org.apache.spark.{ SparkConf, SparkContext }
   import org.apache.spark.sql.types._

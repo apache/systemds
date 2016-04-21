@@ -254,6 +254,12 @@ public class UtilFunctions
 		else
 			return ((Integer)obj).intValue();
 	}
+	
+	public static int roundToNext(int val, int factor) {
+		//round up to next non-zero multiple of factor
+		int pval = Math.max(val, factor);
+		return ((pval + factor-1) / factor) * factor;
+	}
 
 	/**
 	 * 

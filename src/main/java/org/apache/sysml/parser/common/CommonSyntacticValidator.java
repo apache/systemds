@@ -65,6 +65,12 @@ public abstract class CommonSyntacticValidator {
 	protected String _workingDir = ".";   //current working directory
 	protected Map<String,String> argVals = null;
 	protected String sourceNamespace = null;
+	// track imported scripts to prevent infinite recursion
+	protected static Map<String, String> scripts = new HashMap<String, String>();
+	
+	public static void init() {
+		scripts.clear();
+	}
 
 	public CommonSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {
 		this.errorListener = errorListener;

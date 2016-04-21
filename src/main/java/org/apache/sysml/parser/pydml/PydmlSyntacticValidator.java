@@ -382,20 +382,37 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 		//concatenate working directory to filepath
 		filePath = _workingDir + File.separator + filePath;
+		String scriptID = filePath + namespaceResolutionOp() + namespace;
 
 		DMLProgram prog = null;
-		try {
-			prog = (new PyDMLParserWrapper()).doParse(filePath, null, namespace, argVals);
-		} catch (ParseException e) {
-			notifyErrorListeners(e.getMessage(), ctx.start);
-			return;
+		if (!scripts.containsKey(scriptID))
+		{
+			scripts.put(scriptID, namespace);
+			try {
+				prog = (new PyDMLParserWrapper()).doParse(filePath, null, namespace, argVals);
+			} catch (ParseException e) {
+				notifyErrorListeners(e.getMessage(), ctx.start);
+				return;
+			}
+	        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
+			if(prog == null) {
+				notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
+				return;
+			}
+			else {
+				ctx.info.namespaces = new HashMap<String, DMLProgram>();
+				ctx.info.namespaces.put(namespace, prog);
+				ctx.info.stmt = new ImportStatement();
+				((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
+				((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
+				((ImportStatement) ctx.info.stmt).setNamespace(namespace);
+			}
 		}
-        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
-		if(prog == null) {
-			notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
-			return;
-		}
-		else {
+		else
+		{
+			// Skip redundant parsing (to prevent potential infinite recursion) and
+			// create empty program for this context to allow processing to continue.
+			prog = new DMLProgram();
 			ctx.info.namespaces = new HashMap<String, DMLProgram>();
 			ctx.info.namespaces.put(namespace, prog);
 			ctx.info.stmt = new ImportStatement();

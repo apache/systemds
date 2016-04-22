@@ -1,0 +1,69 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Randomly sample data (without replacement) into disjoint subsets.
+# The sizes of the subsets are specified in terms of fractions, stored
+# as a 1-column vector in a separate input file (see parameter 'sv'). 
+#
+# Parameters:
+#    X    : (input) input data set: filename of input data set
+#    sv   : (input) splitting vector: filename of 1-column vector with
+#           fractions. sum(sv) must be less than or equal to 1
+#               e.g. sv = [0.2]: Draw a 20% simple random sample
+#                    without replacement.
+#               e.g. sv = [0.25,0.25,0.25,0.25]: Randomly split data
+#                    into 4 approximately equal-sized disjoint subsets.
+#               e.g. sv = [0.5,0.3,0.2]: Randomly split data into 3
+#                    disjoint subsets that contain roughly 50%, 30%
+#                    and 20% of original data, respectively.
+#    O    : (output) output folder name. The output subsets are stored
+#           in subfolders named by consecutive integers: $O/1, $O/2,
+#           ..., $O/#subsets
+#    ofmt : (output, default "binary") format of output file. Other
+#           valid options are: "csv" and "text" 
+#
+# Example:
+#   printf "0.8\n0.2" | hadoop fs -put - /tmp/sv.csv
+#   echo '{"data_type": "matrix", "value_type": "double", "rows": 2, "cols": 1, "format": "csv"}' | hadoop fs -put - /tmp/sv.csv.mtd
+#   hadoop jar SystemML.jar -f ./scripts/utils/sample.dml -nvargs X=/tmp/X.mtx sv=/tmp/sv.csv O=/tmp/Out ofmt=csv
+
+# set defaults
+ofmt = ifdef($ofmt, "text");
+
+# Read inputs
+X = read($1);                    # X: dataset
+sv = matrix($2, rows=2, cols=1); # sv: splitting fraction vector
+
+# Construct sampling lower/upper bounds for samples using prefix sum
+R = rand(rows=nrow(X), cols=1, min=0.0, max=1.0, pdf = "uniform");
+svLowBnd = cumsum(sv) - sv;
+svUpBnd = cumsum(sv);
+
+# Construct sampling matrix SM, and apply to create samples
+parfor ( i in 1:nrow(sv))
+{
+  T1 = ppred(R, as.scalar(svUpBnd[i,1]), "<=");
+  T2 = ppred(R, as.scalar(svLowBnd[i,1]), ">");
+  SM = T1 * T2; 
+  P = removeEmpty(target=diag(SM), margin="rows");
+  iX = P %*% X;
+  write (iX, $3 + i, format=ofmt);
+}

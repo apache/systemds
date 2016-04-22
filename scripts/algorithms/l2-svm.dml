@@ -144,6 +144,10 @@ while(continue == 1 & iter < maxiterations)  {
     s = be * s + g_new
     g_old = g_new
 
+	if(sum(s^2) == 0){
+	    continue = 0
+	}
+
     iter = iter + 1
 }
 

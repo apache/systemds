@@ -382,12 +382,12 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 		//concatenate working directory to filepath
 		filePath = _workingDir + File.separator + filePath;
-		String scriptID = filePath + namespaceResolutionOp() + namespace;
+		String scriptID = DMLProgram.constructFunctionKey(namespace, filePath);
 
 		DMLProgram prog = null;
-		if (!scripts.containsKey(scriptID))
+		if (!_scripts.get().containsKey(scriptID))
 		{
-			scripts.put(scriptID, namespace);
+			_scripts.get().put(scriptID, namespace);
 			try {
 				prog = (new PyDMLParserWrapper()).doParse(filePath, null, namespace, argVals);
 			} catch (ParseException e) {

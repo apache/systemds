@@ -66,10 +66,12 @@ public abstract class CommonSyntacticValidator {
 	protected Map<String,String> argVals = null;
 	protected String sourceNamespace = null;
 	// track imported scripts to prevent infinite recursion
-	protected static Map<String, String> scripts = new HashMap<String, String>();
+	protected static ThreadLocal<HashMap<String, String>> _scripts = new ThreadLocal<HashMap<String, String>>() {
+		@Override protected HashMap<String, String> initialValue() { return new HashMap<String, String>(); }
+	};
 	
 	public static void init() {
-		scripts.clear();
+		_scripts.get().clear();
 	}
 
 	public CommonSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {

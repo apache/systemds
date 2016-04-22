@@ -335,12 +335,12 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 		//concatenate working directory to filepath
 		filePath = _workingDir + File.separator + filePath;
-		String scriptID = filePath + namespaceResolutionOp() + namespace;
+		String scriptID = DMLProgram.constructFunctionKey(namespace, filePath);
 
 		DMLProgram prog = null;
-		if (!scripts.containsKey(scriptID))
+		if (!_scripts.get().containsKey(scriptID))
 		{
-			scripts.put(scriptID, this.currentFile);
+			_scripts.get().put(scriptID, this.currentFile);
 			try {
 				prog = (new DMLParserWrapper()).doParse(filePath, null, namespace, argVals);
 			} catch (ParseException e) {

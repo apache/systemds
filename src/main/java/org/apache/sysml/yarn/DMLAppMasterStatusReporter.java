@@ -62,6 +62,9 @@ public class DMLAppMasterStatusReporter extends Thread
 				//sleep for interval ms until next report
 				Thread.sleep( _interval );
 			}
+			catch(InterruptedException ex){
+				LOG.warn("Status reporter interrupted with stop=" + _stop);
+			}
 			catch(Exception ex)
 			{
 				LOG.error("Failed to report status to ResourceManager.", ex);

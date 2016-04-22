@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -119,7 +120,7 @@ import org.apache.sysml.parser.pydml.PydmlParser.WhileStatementContext;
  */
 public class PydmlSyntacticValidator extends CommonSyntacticValidator implements PydmlListener {
 
-	public PydmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
+	public PydmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {
 		super(errorListener, argVals, sourceNamespace);
 	}
 

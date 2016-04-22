@@ -23,7 +23,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.fs.FileSystem;
@@ -47,7 +47,7 @@ public abstract class AParserWrapper
 	 * @return
 	 * @throws ParseException
 	 */
-	public abstract DMLProgram parse(String fileName, String dmlScript, HashMap<String, String> argVals) 
+	public abstract DMLProgram parse(String fileName, String dmlScript, Map<String, String> argVals)
 		throws ParseException;
 
 	

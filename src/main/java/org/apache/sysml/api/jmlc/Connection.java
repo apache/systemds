@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -75,7 +76,7 @@ import org.apache.wink.json4j.JSONObject;
  * a {@link Connection} object. The JMLC API is patterned
  * after JDBC. A DML script is precompiled by calling
  * the {@link #prepareScript(String, String[], String[], boolean)}
- * method or the {@link #prepareScript(String, HashMap, String[], String[], boolean)}
+ * method or the {@link #prepareScript(String, Map, String[], String[], boolean)}
  * method on the {@link Connection} object, which returns a
  * {@link PreparedScript} object. Note that this is similar to calling
  * a {@code prepareStatement} method on a JDBC {@code Connection} object.
@@ -164,7 +165,7 @@ public class Connection
 	 * @return PreparedScript object representing the precompiled script
 	 * @throws DMLException
 	 */
-	public PreparedScript prepareScript( String script, HashMap<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) 
+	public PreparedScript prepareScript( String script, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) 
 		throws DMLException 
 	{
 		//prepare arguments
@@ -466,7 +467,7 @@ public class Connection
 		}
 		
 		//read meta data (currently only recode supported, without parsing spec)
-		HashMap<String,String> meta = new HashMap<String,String>();
+		Map<String,String> meta = new HashMap<String,String>();
 		int rows = 0;
 		for( int j=0; j<colnames.size(); j++ ) {
 			String colName = colnames.get(j);
@@ -543,7 +544,7 @@ public class Connection
 		}
 		
 		//read meta data (currently only recode supported, without parsing spec)
-		HashMap<String,String> meta = new HashMap<String,String>();
+		Map<String,String> meta = new HashMap<String,String>();
 		int rows = 0;
 		for( int j=0; j<colnames.size(); j++ ) {
 			String colName = colnames.get(j);
@@ -576,7 +577,7 @@ public class Connection
 	 * @return
 	 * @throws IOException
 	 */
-	private FrameBlock convertToTransformMetaDataFrame(int rows, List<Integer> recodeIDs, List<String> colnames, HashMap<String,String> meta) 
+	private FrameBlock convertToTransformMetaDataFrame(int rows, List<Integer> recodeIDs, List<String> colnames, Map<String,String> meta) 
 		throws IOException 
 	{
 		//create frame block w/ pure string schema

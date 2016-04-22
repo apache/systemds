@@ -23,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -71,7 +70,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 	 * @throws ParseException
 	 */
 	@Override
-	public DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
+	public DMLProgram parse(String fileName, String dmlScript, Map<String,String> argVals) throws ParseException {
 		DMLProgram prog = doParse(fileName, dmlScript, null, argVals);
 		
 		return prog;
@@ -86,7 +85,7 @@ public class PyDMLParserWrapper extends AParserWrapper
 	 * @return null if at least one error
 	 * @throws ParseException
 	 */
-	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, HashMap<String,String> argVals) throws ParseException {
+	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, Map<String,String> argVals) throws ParseException {
 		DMLProgram dmlPgm = null;
 		
 		ANTLRInputStream in;

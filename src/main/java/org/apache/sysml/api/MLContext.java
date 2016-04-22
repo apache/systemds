@@ -23,6 +23,7 @@ package org.apache.sysml.api;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
@@ -33,6 +34,8 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
+import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.SQLContext;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.monitoring.SparkMonitoringUtil;
@@ -50,11 +53,11 @@ import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.parser.StringIdentifier;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.StringIdentifier;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -80,10 +83,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.utils.Explain;
-import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.utils.Explain.ExplainCounts;
-import org.apache.spark.sql.DataFrame;
-import org.apache.spark.sql.SQLContext;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * MLContext is useful for passing RDDs as input/output to SystemML. This API avoids the need to read/write
@@ -195,7 +196,7 @@ public class MLContext {
 	private LocalVariableMap _variables = null; // temporary symbol table
 	private Program _rtprog = null;
 	
-	private HashMap<String, String> _additionalConfigs = new HashMap<String, String>();
+	private Map<String, String> _additionalConfigs = new HashMap<String, String>();
 	
 	// --------------------------------------------------
 	// _monitorUtils is set only when MLContext(sc, true)
@@ -627,7 +628,7 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException 
 	 */
-	public MLOutput execute(String dmlScriptFilePath, HashMap<String, String> namedArgs, boolean parsePyDML, String configFilePath) throws IOException, DMLException, ParseException {
+	public MLOutput execute(String dmlScriptFilePath, Map<String, String> namedArgs, boolean parsePyDML, String configFilePath) throws IOException, DMLException, ParseException {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
 		for(Entry<String, String> entry : namedArgs.entrySet()) {
@@ -649,7 +650,7 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException 
 	 */
-	public MLOutput execute(String dmlScriptFilePath, HashMap<String, String> namedArgs, String configFilePath) throws IOException, DMLException, ParseException {
+	public MLOutput execute(String dmlScriptFilePath, Map<String, String> namedArgs, String configFilePath) throws IOException, DMLException, ParseException {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
 		for(Entry<String, String> entry : namedArgs.entrySet()) {
@@ -671,7 +672,7 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException 
 	 */
-	public MLOutput execute(String dmlScriptFilePath, HashMap<String, String> namedArgs) throws IOException, DMLException, ParseException {
+	public MLOutput execute(String dmlScriptFilePath, Map<String, String> namedArgs) throws IOException, DMLException, ParseException {
 		return execute(dmlScriptFilePath, namedArgs, false, null);
 	}
 	
@@ -698,7 +699,7 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException
 	 */
-	public MLOutput execute(String dmlScriptFilePath, HashMap<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
+	public MLOutput execute(String dmlScriptFilePath, Map<String, String> namedArgs, boolean parsePyDML) throws IOException, DMLException, ParseException {
 		return execute(dmlScriptFilePath, namedArgs, parsePyDML, null);
 	}
 	
@@ -1144,12 +1145,12 @@ public class MLContext {
 		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), configFilePath);
 	}
 
-	public MLOutput executeScript(String dmlScript, HashMap<String, String> namedArgs)
+	public MLOutput executeScript(String dmlScript, Map<String, String> namedArgs)
 			throws IOException, DMLException {
 		return executeScript(dmlScript, namedArgs, null);
 	}
 
-	public MLOutput executeScript(String dmlScript, HashMap<String, String> namedArgs, String configFilePath)
+	public MLOutput executeScript(String dmlScript, Map<String, String> namedArgs, String configFilePath)
 			throws IOException, DMLException {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
@@ -1201,7 +1202,7 @@ public class MLContext {
 			
 			if(DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK) {
 				
-				HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> retVal = null;
+				Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> retVal = null;
 				
 				// Depending on whether registerInput/registerOutput was called initialize the variables 
 				String[] inputs; String[] outputs;
@@ -1217,9 +1218,9 @@ public class MLContext {
 				else {
 					outputs = new String[0];
 				}
-				HashMap<String, MatrixCharacteristics> outMetadata = new HashMap<String, MatrixCharacteristics>();
+				Map<String, MatrixCharacteristics> outMetadata = new HashMap<String, MatrixCharacteristics>();
 				
-				HashMap<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
+				Map<String, String> argVals = DMLScript.createArgumentsMap(isNamedArgument, args);
 				
 				// Run the DML script
 				ExecutionContext ec = executeUsingSimplifiedCompilationChain(dmlScriptFilePath, isFile, argVals, isPyDML, inputs, outputs, _variables, configFilePath);
@@ -1281,7 +1282,7 @@ public class MLContext {
 	 * @throws DMLException
 	 * @throws ParseException
 	 */
-	private ExecutionContext executeUsingSimplifiedCompilationChain(String dmlScriptFilePath, boolean isFile, HashMap<String, String> argVals, boolean parsePyDML, 
+	private ExecutionContext executeUsingSimplifiedCompilationChain(String dmlScriptFilePath, boolean isFile, Map<String, String> argVals, boolean parsePyDML, 
 			String[] inputs, String[] outputs, LocalVariableMap inputSymbolTable, String configFilePath) 
 		throws IOException, DMLException
 	{

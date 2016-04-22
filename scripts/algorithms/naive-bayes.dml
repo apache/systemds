@@ -74,7 +74,7 @@ acc = sum(rowIndexMax(logProbs) == C) / numRows * 100
 
 acc_str = "Training Accuracy (%): " + acc
 print(acc_str)
-write(acc_str, $accuracy)
+write(acc, $accuracy)
 
 extraModelParams = as.matrix(numFeatures)
 classPrior = rbind(classPrior, extraModelParams)

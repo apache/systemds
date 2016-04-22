@@ -17,17 +17,38 @@
  * under the License.
  */
 
-package org.apache.sysml.api.ml.scala
+package org.apache.sysml.api.ml
 
-import java.io.File
+import org.scalatest.{ BeforeAndAfterAll, Suite }
+import org.apache.spark.{ SparkConf, SparkContext }
+import org.apache.spark.sql.SQLContext
 
-object ScriptsUtils {
-  var systemmlHome = System.getenv("SYSTEMML_HOME")
-  def resolvePath(filename:String):String = {
-    import java.io.File
-    ScriptsUtils.systemmlHome + File.separator + "algorithms" + File.separator + filename
+trait WrapperSparkContext extends BeforeAndAfterAll { self: Suite =>
+  @transient var sc: SparkContext = _
+  @transient var sqlContext: SQLContext = _
+
+  override def beforeAll() {
+    super.beforeAll()
+    val conf = new SparkConf()
+      .setMaster("local[2]")
+      .setAppName("MLlibUnitTest")
+    sc = new SparkContext(conf)
+    //SQLContext.clearActive()
+    sqlContext = new SQLContext(sc)
+    //SQLContext.setActive(sqlContext)
   }
-  def setSystemmlHome(path:String) {
-    systemmlHome = path
+
+  override def afterAll() {
+    try {
+      sqlContext = null
+      //SQLContext.clearActive()
+      if (sc != null) {
+        sc.stop()
+      }
+      sc = null
+    } finally {
+      super.afterAll()
+    }
   }
+
 }

@@ -202,7 +202,8 @@ if (dir == "forward") {
 */
 linear_regression = function (Matrix[Double] X, Matrix[Double] y, Double m_orig, Matrix[Double] Selected, String fileB) return (Double AIC) {
 		
-	intercept_status = ifdef ($icpt, 0); 		
+	intercept_status = ifdef ($icpt, 0);
+	fmt  = ifdef ($fmt, "text");	 		
 	n = nrow (X);	
 	m = ncol (X);
 	

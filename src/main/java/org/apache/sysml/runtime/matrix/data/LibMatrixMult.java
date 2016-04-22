@@ -184,10 +184,10 @@ public class LibMatrixMult
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
 			ArrayList<MatrixMultTask> tasks = new ArrayList<MatrixMultTask>();
-			int nk = pm2 ? k : Math.max(Math.min(8*k,ru/8), k);
-			int blklen = (int)(Math.ceil((double)ru/nk));
-			for( int i=0; i<nk & i*blklen<ru; i++ )
-				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2, i*blklen, Math.min((i+1)*blklen, ru)));
+			int nk = pm2 ? k : UtilFunctions.roundToNext(Math.min(8*k,ru/32), k);
+			ArrayList<Integer> blklens = getBalancedBlockSizes(ru, nk);
+			for( int i=0, rl=0; i<blklens.size(); rl+=blklens.get(i), i++ )
+				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2, rl, rl+blklens.get(i)));
 			//execute tasks
 			List<Future<Object>> taskret = pool.invokeAll(tasks);	
 			pool.shutdown();
@@ -3944,7 +3944,9 @@ public class LibMatrixMult
 	private static boolean checkPrepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 )
 	{
 		//transpose if dense-dense, skinny rhs matrix (not vector), and memory guarded by output 
-		return (!m1.sparse && !m2.sparse && m1.rlen>m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64);
+		return (LOW_LEVEL_OPTIMIZATION && !m1.sparse && !m2.sparse 
+				&& m1.rlen > m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64
+				&& 8*m2.rlen*m2.clen < 256*1024 ); //rhs fits in L2 cache
 	}
 	
 	/**
@@ -4076,6 +4078,24 @@ public class LibMatrixMult
 				vectAdd4(partret[j], partret[j+1], partret[j+2], partret[j+3], ret, bi, bi, llen);
 		}
 		
+	}
+	
+	/**
+	 * 
+	 * @param len
+	 * @param k
+	 * @return
+	 */
+	private static ArrayList<Integer> getBalancedBlockSizes(int len, int k) {
+		ArrayList<Integer> ret = new ArrayList<Integer>();
+		int base = len / k;
+		int rest = len % k;
+		for( int i=0; i<k; i++ ) {
+			int val = base + (i<rest?1:0);
+			if( val > 0 )
+				ret.add(val);
+		}	
+		return ret; 
 	}
 	
 	/////////////////////////////////////////////////////////

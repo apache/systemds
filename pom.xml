@@ -73,6 +73,15 @@
 	</properties>
 
 	<build>
+	
+		<resources>
+      		<resource>
+      			<directory>scripts/algorithms</directory>
+      			<includes>
+		          <include>**/*.dml</include>
+		        </includes>
+      		</resource>
+      	</resources>
 		<plugins>
 
 			<plugin>

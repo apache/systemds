@@ -389,6 +389,31 @@ public class FrameRDDConverterUtils
 	}
 
 		
+	/**
+	 * 
+	 * @param sc
+	 * @param input
+	 * @param mcOut
+	 * @param schema
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlockLongIndex(JavaSparkContext sc,
+			JavaPairRDD<Long, Text> input, MatrixCharacteristics mcOut, List<ValueType> schema ) 
+		throws DMLRuntimeException  
+	{
+		
+ 		//convert textcell rdd to binary block rdd (w/ partial blocks)
+		JavaPairRDD<Long, FrameBlock> output = input.values().mapPartitionsToPair(new TextToBinaryBlockFunction( mcOut, schema ));
+		
+		//aggregate partial matrix blocks
+		JavaPairRDD<Long,FrameBlock> out = 
+				RDDAggregateUtils.mergeByFrameKey( output ); 
+
+		return out;
+	}
+
+		
 	// Useful for printing, testing binary blocked RDD and also for external use.
 	public static JavaRDD<String> binaryBlockToStringRDD(JavaPairRDD<LongWritable, FrameBlock> input, MatrixCharacteristics mcIn, String format) throws DMLRuntimeException {
 		if(format.equals("text")) {

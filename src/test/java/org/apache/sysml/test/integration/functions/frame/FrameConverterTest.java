@@ -36,6 +36,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriter;
@@ -66,6 +67,7 @@ public class FrameConverterTest extends AutomatedTestBase
 		CSV2BIN,
 		BIN2CSV,
 		TXTCELL2BIN,
+		TXTCELL2BIN_LONGIDX,
 		BIN2TXTCELL
 	}
 	
@@ -115,6 +117,16 @@ public class FrameConverterTest extends AutomatedTestBase
 		runFrameConverterTest(schemaMixed, ConvType.BIN2TXTCELL);
 	}
 
+	@Test
+	public void testFrameStringsTxtCellBinLongIdxSpark()  {
+		runFrameConverterTest(schemaStrings, ConvType.TXTCELL2BIN_LONGIDX);
+	}
+	
+	@Test
+	public void testFrameMixedTxtCellBinLongIdxSpark()  {
+		runFrameConverterTest(schemaMixed, ConvType.TXTCELL2BIN_LONGIDX);
+	}
+
 	
 	/**
 	 * 
@@ -153,6 +165,7 @@ public class FrameConverterTest extends AutomatedTestBase
 					iinfo = InputInfo.CSVInputInfo;
 					break;
 				case TXTCELL2BIN:
+				case TXTCELL2BIN_LONGIDX:
 					oinfo = OutputInfo.TextCellOutputInfo;
 					iinfo = InputInfo.BinaryBlockInputInfo;
 					break;
@@ -280,6 +293,20 @@ public class FrameConverterTest extends AutomatedTestBase
 				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
 				JavaRDD<String> rddOut = FrameRDDConverterUtils.binaryBlockToStringRDD(rddIn, mc, "text");
 				rddOut.saveAsTextFile(fnameOut);
+				break;
+			}
+			case TXTCELL2BIN_LONGIDX: {
+				InputInfo iinfo = InputInfo.TextCellInputInfo;
+				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				JavaPairRDD<Long,Text> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+				JavaPairRDD<Long, FrameBlock> rddOut = FrameRDDConverterUtils
+						.textCellToBinaryBlockLongIndex(sc, rddIn, mc, schema);
+
+				//convert input rdd to serializable long/frame block
+				JavaPairRDD<LongWritable,FrameBlock> rddOut2 = 
+						rddOut.mapToPair(new LongFrameToLongWritableFrameFunction());
+				
+				rddOut2.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
 				break;
 			}
 		}

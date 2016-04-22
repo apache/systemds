@@ -51,7 +51,7 @@ SystemML can then be rebuilt with the `commons-math3` dependency using
 Maven (`mvn clean package -P distribution`).
 
 ## OutOfMemoryError in Hadoop Reduce Phase 
-In Hadoop MapReduce, outputs from mapper nodes are copied to reducer nodes and then sorted (known as the *shuffle* phase) before being consumed by reducers. The shuffle phase utilizes several buffers that share memory space with other MapReduce tasks, which will throw `OutOfMemoryError` if shuffle buffers take too much space: 
+In Hadoop MapReduce, outputs from mapper nodes are copied to reducer nodes and then sorted (known as the *shuffle* phase) before being consumed by reducers. The shuffle phase utilizes several buffers that share memory space with other MapReduce tasks, which will throw an `OutOfMemoryError` if the shuffle buffers take too much space: 
 
     java.lang.OutOfMemoryError: Java heap space
   

@@ -99,7 +99,7 @@ public class SparkUtils
 	 * @return
 	 */
 	public static Tuple2<Long,FrameBlock> fromIndexedFrameBlock( Pair<Long, FrameBlock> in ){
-		return new Tuple2<Long, FrameBlock>(in.getKey(), (FrameBlock)in.getValue());
+		return new Tuple2<Long, FrameBlock>(in.getKey(), in.getValue());
 	}
 	
 	

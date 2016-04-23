@@ -82,7 +82,7 @@ public class FrameReblockBuffer
 		_count = 0;
 		
 		_buff = new FrameCell[ _bufflen ];
-		for(int i=0; i< _bufflen; ++i)
+		for(int i=0; i< _bufflen; i++)
 			_buff[i] = new FrameCell();
 		
 		_rlen = rlen;

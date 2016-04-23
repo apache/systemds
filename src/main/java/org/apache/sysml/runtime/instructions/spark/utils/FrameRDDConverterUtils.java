@@ -53,32 +53,9 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class FrameRDDConverterUtils 
 {
-	/**
-	 * 
-	 * @param in
-	 * @param mcIn
-	 * @param props
-	 * @param strict
-	 * @return
-	 */
-	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<LongWritable,FrameBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
-	{
-		//convert input rdd to serializable long/frame block
-		JavaPairRDD<LongWritable,FrameBlock> input = 
-				in.mapToPair(new LongWritableToSerFunction());
-		
-		//sort if required (on blocks/rows)
-		if( strict ) {
-			input = input.sortByKey(true);
-		}
-		
-		//convert binary block to csv (from blocks/rows)
-		JavaRDD<String> out = input
-				.flatMap(new BinaryBlockToCSVFunction(props));
-	
-		return out;
-	}
-	
+	//=====================================
+	// CSV <--> Binary block
+
 	/**
 	 * 
 	 * @param sc
@@ -140,6 +117,104 @@ public class FrameRDDConverterUtils
 		//convert to binary block
 		return csvToBinaryBlock(sc, prepinput, mcOut, hasHeader, delim, fill, fillValue);
 	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param mcIn
+	 * @param props
+	 * @param strict
+	 * @return
+	 */
+	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<LongWritable,FrameBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
+	{
+		//convert input rdd to serializable long/frame block
+		JavaPairRDD<LongWritable,FrameBlock> input = 
+				in.mapToPair(new LongWritableToSerFunction());
+		
+		//sort if required (on blocks/rows)
+		if( strict ) {
+			input = input.sortByKey(true);
+		}
+		
+		//convert binary block to csv (from blocks/rows)
+		JavaRDD<String> out = input
+				.flatMap(new BinaryBlockToCSVFunction(props));
+	
+		return out;
+	}
+	
+	
+	//=====================================
+	// cellText <--> Binary block
+	/**
+	 * 
+	 * @param sc
+	 * @param input
+	 * @param mcOut
+	 * @param schema
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<LongWritable, FrameBlock> textCellToBinaryBlock(JavaSparkContext sc,
+			JavaPairRDD<LongWritable, Text> in, MatrixCharacteristics mcOut, List<ValueType> schema ) 
+		throws DMLRuntimeException  
+	{
+		
+		//convert input rdd to serializable long/frame block
+		JavaPairRDD<Long,Text> input = 
+				in.mapToPair(new LongWritableTextToLongTextFunction());
+		
+		//Do actual conversion
+		JavaPairRDD<Long,FrameBlock> output = textCellToBinaryBlockLongIndex(sc, input, mcOut, schema);
+		
+		//convert input rdd to serializable long/frame block
+		JavaPairRDD<LongWritable,FrameBlock> out = 
+				output.mapToPair(new LongFrameToLongWritableFrameFunction());
+		
+		return out;
+	}
+
+		
+	/**
+	 * 
+	 * @param sc
+	 * @param input
+	 * @param mcOut
+	 * @param schema
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlockLongIndex(JavaSparkContext sc,
+			JavaPairRDD<Long, Text> input, MatrixCharacteristics mcOut, List<ValueType> schema ) 
+		throws DMLRuntimeException  
+	{
+		
+ 		//convert textcell rdd to binary block rdd (w/ partial blocks)
+		JavaPairRDD<Long, FrameBlock> output = input.values().mapPartitionsToPair(new TextToBinaryBlockFunction( mcOut, schema ));
+		
+		//aggregate partial matrix blocks
+		JavaPairRDD<Long,FrameBlock> out = 
+				RDDAggregateUtils.mergeByFrameKey( output ); 
+
+		return out;
+	}
+
+		
+	// Useful for printing, testing binary blocked RDD and also for external use.
+	public static JavaRDD<String> binaryBlockToStringRDD(JavaPairRDD<LongWritable, FrameBlock> input, MatrixCharacteristics mcIn, String format) throws DMLRuntimeException {
+		if(format.equals("text")) {
+			JavaRDD<String> ijv = input.flatMap(new ConvertFrameBlockToIJVLines(mcIn.getRowsPerBlock(), mcIn.getColsPerBlock()));
+			return ijv;
+		}
+		else {
+			throw new DMLRuntimeException("The output format:" + format + " is not implemented yet.");
+		}
+	}
+	
+
+	/////////////////////////////////
+	// CSV-SPECIFIC FUNCTIONS
 	
 	/**
 	 * 
@@ -354,78 +429,6 @@ public class FrameRDDConverterUtils
 			return ret;
 		}
 	}
-	//=====================================
-	// cellText <--> Binary block
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param schema
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static JavaPairRDD<LongWritable, FrameBlock> textCellToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> in, MatrixCharacteristics mcOut, List<ValueType> schema ) 
-		throws DMLRuntimeException  
-	{
-		
-		//convert input rdd to serializable long/frame block
-		JavaPairRDD<Long,Text> input = 
-				in.mapToPair(new LongWritableTextToLongTextFunction());
-		
- 		//convert textcell rdd to binary block rdd (w/ partial blocks)
-		JavaPairRDD<Long, FrameBlock> output = input.values().mapPartitionsToPair(new TextToBinaryBlockFunction( mcOut, schema ));
-		
-		//aggregate partial matrix blocks
-		JavaPairRDD<Long,FrameBlock> outputMerge = 
-				RDDAggregateUtils.mergeByFrameKey( output ); 
-
-		//convert input rdd to serializable long/frame block
-		JavaPairRDD<LongWritable,FrameBlock> out = 
-				outputMerge.mapToPair(new LongFrameToLongWritableFrameFunction());
-		
-		return out;
-	}
-
-		
-	/**
-	 * 
-	 * @param sc
-	 * @param input
-	 * @param mcOut
-	 * @param schema
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlockLongIndex(JavaSparkContext sc,
-			JavaPairRDD<Long, Text> input, MatrixCharacteristics mcOut, List<ValueType> schema ) 
-		throws DMLRuntimeException  
-	{
-		
- 		//convert textcell rdd to binary block rdd (w/ partial blocks)
-		JavaPairRDD<Long, FrameBlock> output = input.values().mapPartitionsToPair(new TextToBinaryBlockFunction( mcOut, schema ));
-		
-		//aggregate partial matrix blocks
-		JavaPairRDD<Long,FrameBlock> out = 
-				RDDAggregateUtils.mergeByFrameKey( output ); 
-
-		return out;
-	}
-
-		
-	// Useful for printing, testing binary blocked RDD and also for external use.
-	public static JavaRDD<String> binaryBlockToStringRDD(JavaPairRDD<LongWritable, FrameBlock> input, MatrixCharacteristics mcIn, String format) throws DMLRuntimeException {
-		if(format.equals("text")) {
-			JavaRDD<String> ijv = input.flatMap(new ConvertFrameBlockToIJVLines(mcIn.getRowsPerBlock(), mcIn.getColsPerBlock()));
-			return ijv;
-		}
-		else {
-			throw new DMLRuntimeException("The output format:" + format + " is not implemented yet.");
-		}
-	}
-	
-
 	/////////////////////////////////
 	// TEXTCELL-SPECIFIC FUNCTIONS
 	
@@ -466,6 +469,7 @@ public class FrameRDDConverterUtils
 			ret.addAll(SparkUtils.fromIndexedFrameBlock(rettmp));
 		}
 	}
+	
 	
 	/**
 	 * 
@@ -514,7 +518,5 @@ public class FrameRDDConverterUtils
 		
 			return ret;
 		}
-	}
-
-	
+	}	
 }

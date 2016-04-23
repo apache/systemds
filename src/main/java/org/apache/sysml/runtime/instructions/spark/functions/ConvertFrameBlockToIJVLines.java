@@ -18,18 +18,14 @@
  */
 package org.apache.sysml.runtime.instructions.spark.functions;
 
-import java.util.Iterator;
-
+import java.util.ArrayList;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.function.FlatMapFunction;
 
 import scala.Tuple2;
+import scala.actors.threadpool.Arrays;
 
-import org.apache.sysml.runtime.matrix.data.FrameBinaryBlockToTextCellConverter;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.Pair;
 
 public class ConvertFrameBlockToIJVLines implements FlatMapFunction<Tuple2<LongWritable,FrameBlock>, String> {
 
@@ -40,37 +36,22 @@ public class ConvertFrameBlockToIJVLines implements FlatMapFunction<Tuple2<LongW
 		this.brlen = brlen;
 		this.bclen = bclen;
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	@Override
 	public Iterable<String> call(Tuple2<LongWritable, FrameBlock> kv) throws Exception {
-		final FrameBinaryBlockToTextCellConverter converter = new FrameBinaryBlockToTextCellConverter();
-		converter.setBlockSize(brlen, bclen);
-		converter.convert(kv._1, kv._2);
-		
-		return new Iterable<String>() {
-			@Override
-			public Iterator<String> iterator() {
-				return new Iterator<String>() {
-					
-					@Override
-					public void remove() {}
-					
-					@Override
-					public String next() {
-						Pair <NullWritable, Text> nextText = converter.next();
-						if (nextText != null)
-							return nextText.getValue().toString();
-						else
-							return null;
-					}
-					
-					@Override
-					public boolean hasNext() {
-						return converter.hasNext();
-					}
-				};
-			}
-		};
-	}
 
+		long lRowIndex = kv._1.get();
+		FrameBlock block = kv._2;
+		
+		ArrayList<String> cells = new ArrayList<String>();
+		
+		for (int i=0; i<block.getNumRows(); ++i)
+			for (int j=0; j<block.getNumColumns(); ++j) {
+				Object obj = block.get(i, j);
+				if(obj != null)
+					cells.add(lRowIndex+i+" "+(j+1)+" "+obj.toString());
+			}
+		return Arrays.asList(cells.toArray());
+	}
 }

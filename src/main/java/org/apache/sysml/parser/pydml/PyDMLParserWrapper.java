@@ -213,7 +213,10 @@ public class PyDMLParserWrapper extends AParserWrapper
 					// Add the DMLProgram entries into current program
 					for(Map.Entry<String, DMLProgram> entry : stmtCtx.info.namespaces.entrySet()) {
 						// TODO handle namespace key already exists for different program value instead of overwriting
-						dmlPgm.getNamespaces().put(entry.getKey(), entry.getValue());
+						DMLProgram prog = entry.getValue();
+						if (prog != null && prog.getNamespaces().size() > 0) {
+							dmlPgm.getNamespaces().put(entry.getKey(), prog);
+						}
 						
 						// Add dependent programs (handle imported script that also imports scripts)
 						for(Map.Entry<String, DMLProgram> dependency : entry.getValue().getNamespaces().entrySet()) {

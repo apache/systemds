@@ -29,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PyDMLParserWrapper;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -67,6 +68,8 @@ public abstract class AParserWrapper
 			ret = new PyDMLParserWrapper();
 		else
 			ret = new DMLParserWrapper();
+		
+		CommonSyntacticValidator.init();
 		
 		return ret;
 	}

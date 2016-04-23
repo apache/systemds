@@ -39,6 +39,8 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	private final static String TEST_NAME3 = "Functions3";
 	private final static String TEST_NAME4 = "Functions4";
 	private final static String TEST_NAME5 = "Functions5";
+	private final static String TEST_NAME6 = "Functions6";
+	private final static String TEST_NAME7 = "Functions7";
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionNamespaceTest.class.getSimpleName() + "/";
 	
@@ -55,6 +57,8 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3)); 
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4)); 
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5)); 
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6)); 
+		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7)); 
 	}
 	
 	@Test
@@ -100,6 +104,24 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testFunctionCircular() 
+	{
+		runFunctionNamespaceTest(TEST_NAME6, ScriptType.DML);
+	}
+	
+	@Test
+	public void testFunctionCircularChain() 
+	{
+		runFunctionNoInliningNamespaceTest(TEST_NAME7, ScriptType.DML, true);
+	}
+	
+	@Test
+	public void testFunctionCircularChainNoIPA() 
+	{
+		runFunctionNoInliningNamespaceTest(TEST_NAME7, ScriptType.DML, false);
+	}
+	
+	@Test
 	public void testPyFunctionDefaultNS() 
 	{
 		runFunctionNamespaceTest(TEST_NAME0, ScriptType.PYDML);
@@ -139,6 +161,24 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	public void testPyFunctionNoInliningNoIPA() 
 	{
 		runFunctionNoInliningNamespaceTest(TEST_NAME5, ScriptType.PYDML, false);
+	}
+	
+	@Test
+	public void testPyFunctionCircular() 
+	{
+		runFunctionNamespaceTest(TEST_NAME6, ScriptType.PYDML);
+	}
+	
+	@Test
+	public void testPyFunctionCircularChain() 
+	{
+		runFunctionNoInliningNamespaceTest(TEST_NAME7, ScriptType.PYDML, true);
+	}
+	
+	@Test
+	public void testPyFunctionCircularChainNoIPA() 
+	{
+		runFunctionNoInliningNamespaceTest(TEST_NAME7, ScriptType.PYDML, false);
 	}
 
 	private void runFunctionNamespaceTest(String TEST_NAME, ScriptType scriptType)

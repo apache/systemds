@@ -20,21 +20,13 @@
 package org.apache.sysml.api.jmlc;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLException;
@@ -46,12 +38,10 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
-import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -65,13 +55,9 @@ import org.apache.sysml.runtime.io.ReaderTextCell;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.TfUtils;
-import org.apache.sysml.runtime.transform.decode.DecoderRecode;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 
 /**
@@ -103,9 +89,7 @@ import org.apache.wink.json4j.JSONObject;
  * </ul>
  */
 public class Connection 
-{	
-	private static final Log LOG = LogFactory.getLog(Connection.class.getName());
-	
+{		
 	private DMLConfig _dmlconf = null;
 
 	/**
@@ -599,44 +583,8 @@ public class Connection
 	 * @return FrameBlock object representing transform metadata
 	 * @throws IOException
 	 */
-	public FrameBlock readTransformMetaDataFromFile(String spec, String metapath, String colDelim) 
-		throws IOException 
-	{
-		//NOTE: this implementation assumes column alignment of colnames and coltypes
-		
-		//read column types (for sanity check column names)
-		String coltypesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+TfUtils.TXMTD_COLTYPES);
-		List<String> coltypes = Arrays.asList(IOUtilFunctions.split(coltypesStr.trim(), TfUtils.TXMTD_SEP));
-		
-		//read column names
-		String colnamesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+TfUtils.TXMTD_COLNAMES);
-		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colnamesStr.trim(), colDelim));
-		if( coltypes.size() != colnames.size() ) {
-			LOG.warn("Number of columns names: "+colnames.size()+" (expected: "+coltypes.size()+").");
-			LOG.warn("--Sample column names: "+(!colnames.isEmpty()?colnames.get(0):"null"));
-		}
-		
-		//read meta data (currently only recode supported, without parsing spec)
-		Map<String,String> meta = new HashMap<String,String>();
-		int rows = 0;
-		for( int j=0; j<colnames.size(); j++ ) {
-			String colName = colnames.get(j);
-			String name = metapath+File.separator+"Recode"+File.separator+colName;
-			if( MapReduceTool.existsFileOnHDFS(name+TfUtils.TXMTD_RCD_MAP_SUFFIX) ) {
-				meta.put(colName, MapReduceTool.readStringFromHDFSFile(name+TfUtils.TXMTD_RCD_MAP_SUFFIX));
-				String ndistinct = MapReduceTool.readStringFromHDFSFile(name+TfUtils.TXMTD_RCD_DISTINCT_SUFFIX);
-				rows = Math.max(rows, Integer.parseInt(ndistinct));
-			}
-			else if( coltypes.get(j).equals("2") ) {
-				LOG.warn("Recode map for column '"+colName+"' does not exist.");
-			}
-		}
-
-		//get list of recode ids
-		List<Integer> recodeIDs = parseRecodeColIDs(spec, coltypes);
-		
-		//create frame block from in-memory strings
-		return convertToTransformMetaDataFrame(rows, recodeIDs, colnames, meta);
+	public FrameBlock readTransformMetaDataFromFile(String spec, String metapath, String colDelim) throws IOException {
+		return TfMetaUtils.readTransformMetaDataFromFile(spec, metapath, colDelim);
 	}
 	
 	/**
@@ -676,127 +624,7 @@ public class Connection
 	 * @return FrameBlock object representing transform metadata
 	 * @throws IOException
 	 */
-	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) 
-		throws IOException 
-	{
-		//NOTE: this implementation assumes column alignment of colnames and coltypes
-		
-		//read column types (for sanity check column names)
-		String coltypesStr = IOUtilFunctions.toString(Connection.class.getResourceAsStream(metapath+"/"+TfUtils.TXMTD_COLTYPES));
-		List<String> coltypes = Arrays.asList(IOUtilFunctions.split(coltypesStr.trim(), TfUtils.TXMTD_SEP));
-		
-		//read column names
-		String colnamesStr = IOUtilFunctions.toString(Connection.class.getResourceAsStream(metapath+"/"+TfUtils.TXMTD_COLNAMES));
-		List<String> colnames = Arrays.asList(IOUtilFunctions.split(colnamesStr.trim(), colDelim));
-		if( coltypes.size() != colnames.size() ) {
-			LOG.warn("Number of columns names: "+colnames.size()+" (expected: "+coltypes.size()+").");
-			LOG.warn("--Sample column names: "+(!colnames.isEmpty()?colnames.get(0):"null"));
-		}
-		
-		//read meta data (currently only recode supported, without parsing spec)
-		Map<String,String> meta = new HashMap<String,String>();
-		int rows = 0;
-		for( int j=0; j<colnames.size(); j++ ) {
-			String colName = colnames.get(j);
-			String name = metapath+"/"+"Recode"+"/"+colName;
-			String map = IOUtilFunctions.toString(Connection.class.getResourceAsStream(name+TfUtils.TXMTD_RCD_MAP_SUFFIX));
-			if( map != null ) {
-				meta.put(colName, map);
-				String ndistinct = IOUtilFunctions.toString(Connection.class.getResourceAsStream(name+TfUtils.TXMTD_RCD_DISTINCT_SUFFIX));
-				rows = Math.max(rows, Integer.parseInt(ndistinct));
-			}
-			else if( coltypes.get(j).equals("2") ) {
-				LOG.warn("Recode map for column '"+colName+"' does not exist.");
-			}
-		}
-		
-		//get list of recode ids
-		List<Integer> recodeIDs = parseRecodeColIDs(spec, coltypes);
-		
-		//create frame block from in-memory strings
-		return convertToTransformMetaDataFrame(rows, recodeIDs, colnames, meta);
-	}
-	
-	/**
-	 * Converts transform meta data into an in-memory FrameBlock object.
-	 * 
-	 * @param rows
-	 * @param recodeIDs
-	 * @param colnames
-	 * @param meta
-	 * @return
-	 * @throws IOException
-	 */
-	private FrameBlock convertToTransformMetaDataFrame(int rows, List<Integer> recodeIDs, List<String> colnames, Map<String,String> meta) 
-		throws IOException 
-	{
-		//create frame block w/ pure string schema
-		List<ValueType> schema = Collections.nCopies(colnames.size(), ValueType.STRING);
-		FrameBlock ret = new FrameBlock(schema, colnames);
-		ret.ensureAllocatedColumns(rows);
-		
-		//encode recode maps into frame
-		for( Integer colID : recodeIDs ) {
-			String name = colnames.get(colID-1);
-			String map = meta.get(name);
-			if( map == null )
-				throw new IOException("Recode map for column '"+name+"' (id="+colID+") not existing.");
-			
-			InputStream is = new ByteArrayInputStream(map.getBytes("UTF-8"));
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
-			Pair<String,String> pair = new Pair<String,String>();
-			String line; int rpos = 0;
-			while( (line = br.readLine()) != null ) {
-				DecoderRecode.parseRecodeMapEntry(line, pair);
-				String tmp = pair.getKey() + Lop.DATATYPE_PREFIX + pair.getValue();
-				ret.set(rpos++, colID-1, tmp);
-			}
-		}
-		
-		return ret;
-	}
-	
-	/**
-	 * Parses the given json specification and extracts a list of column ids
-	 * that are subject to recoding.
-	 * 
-	 * @param spec
-	 * @param coltypes
-	 * @return
-	 * @throws IOException
-	 */
-	private ArrayList<Integer> parseRecodeColIDs(String spec, List<String> coltypes) 
-		throws IOException 
-	{	
-		ArrayList<Integer> specRecodeIDs = new ArrayList<Integer>();
-		
-		try {
-			if( spec != null ) {
-				//parse json transform specification for recode col ids
-				JSONObject jSpec = new JSONObject(spec);
-				if ( jSpec.containsKey(TfUtils.TXMETHOD_RECODE))  {
-					JSONArray attrs = null; //TODO simplify once json spec consolidated
-					if( jSpec.get(TfUtils.TXMETHOD_RECODE) instanceof JSONObject ) {
-						JSONObject obj = (JSONObject) jSpec.get(TfUtils.TXMETHOD_RECODE);
-						attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
-					}
-					else
-						attrs = (JSONArray)jSpec.get(TfUtils.TXMETHOD_RECODE);				
-					for(int j=0; j<attrs.length(); j++) 
-						specRecodeIDs.add(UtilFunctions.toInt(attrs.get(j)));
-				}
-			}
-			else {
-				//obtain recode col ids from coltypes 
-				for( int j=0; j<coltypes.size(); j++ )
-					if( coltypes.get(j).equals("2") )
-						specRecodeIDs.add(j+1);
-			}
-		}
-		catch(Exception ex) {
-			throw new IOException(ex);
-		}
-		
-		return specRecodeIDs;
+	public FrameBlock readTransformMetaDataFromPath(String spec, String metapath, String colDelim) throws IOException {
+		return TfMetaUtils.readTransformMetaDataFromPath(spec, metapath, colDelim);
 	}
 }

@@ -197,7 +197,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			case INVCDF: 
 			case REPLACE:
 			case TRANSFORMAPPLY: 
-			case TRANSFORMDECODE: { 
+			case TRANSFORMDECODE: 
+			case TRANSFORMMETA: { 
 				ExecType et = optFindExecType();			
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
 						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
@@ -994,11 +995,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		{
 			if( _op == ParamBuiltinOp.TRANSFORM ) {
 				// force remote, at runtime cp transform triggered for small files.
-				return REMOTE;
-			}
-			else if( _op == ParamBuiltinOp.TRANSFORMAPPLY
-					|| _op == ParamBuiltinOp.TRANSFORMDECODE ) {
-				return ExecType.CP;
+				return (_etype = REMOTE);
 			}
 			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
@@ -1016,6 +1013,13 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
+		}
+		
+		//force CP for in-memory only transform builtins
+		if( _op == ParamBuiltinOp.TRANSFORMAPPLY
+			|| _op == ParamBuiltinOp.TRANSFORMDECODE
+			|| _op == ParamBuiltinOp.TRANSFORMMETA ) {
+			_etype = ExecType.CP;
 		}
 		
 		//mark for recompile (forever)

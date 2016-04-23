@@ -41,7 +41,7 @@ public class ParameterizedBuiltin extends Lop
 	public enum OperationTypes { 
 		INVALID, CDF, INVCDF, RMEMPTY, REPLACE, REXPAND, 
 		PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
-		TRANSFORM, TRANSFORMAPPLY, TRANSFORMDECODE,
+		TRANSFORM, TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMMETA,
 	};
 	
 	private OperationTypes _operation;
@@ -241,24 +241,15 @@ public class ParameterizedBuiltin extends Lop
 				
 				break;
 				
-			case TRANSFORM: {
-				sb.append("transform");
+			case TRANSFORM: 
+			case TRANSFORMAPPLY:
+			case TRANSFORMDECODE:
+			case TRANSFORMMETA:	{
+				sb.append(_operation.toString().toLowerCase()); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				sb.append(compileGenericParamMap(_inputParams));
 				break;
 			}			
-			case TRANSFORMAPPLY: {
-				sb.append("transformapply");
-				sb.append(OPERAND_DELIMITOR);
-				sb.append(compileGenericParamMap(_inputParams));
-				break;
-			}
-			case TRANSFORMDECODE: {
-				sb.append("transformdecode");
-				sb.append(OPERAND_DELIMITOR);
-				sb.append(compileGenericParamMap(_inputParams));
-				break;
-			}
 				
 			default:
 				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);

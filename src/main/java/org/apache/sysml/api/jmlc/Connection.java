@@ -55,6 +55,9 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.io.FrameReader;
+import org.apache.sysml.runtime.io.FrameReaderFactory;
+import org.apache.sysml.runtime.io.FrameReaderTextCell;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
@@ -259,6 +262,10 @@ public class Connection
 		return sb.toString();
 	}
 	
+	////////////////////////////////////////////
+	// Read matrices
+	////////////////////////////////////////////
+	
 	/**
 	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
 	 * NOTE: this call currently only supports default configurations for CSV.
@@ -399,6 +406,149 @@ public class Connection
 		
 			//convert to double array
 			ret = DataConverter.convertToDoubleMatrix( mb );
+		}
+		catch(DMLRuntimeException rex) {
+			throw new IOException( rex );
+		}
+		
+		return ret;
+	}
+	
+	////////////////////////////////////////////
+	// Read frames
+	////////////////////////////////////////////
+
+	/**
+	 * Reads an input frame in arbitrary format from HDFS into a dense string array.
+	 * NOTE: this call currently only supports default configurations for CSV.
+	 * 
+	 * @param fname the filename of the input frame
+	 * @return frame as a two-dimensional string array
+	 * @throws IOException
+	 */
+	public String[][] readStringFrame(String fname) 
+		throws IOException
+	{
+		try {
+			//read json meta data 
+			String fnamemtd = DataExpression.getMTDFileName(fname);
+			JSONObject jmtd = new DataExpression().readMetadataFile(fnamemtd, false);
+			
+			//parse json meta data 
+			long rows = jmtd.getLong(DataExpression.READROWPARAM);
+			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
+			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);			
+		
+			//read frame file
+			return readStringFrame(fname, iinfo, rows, cols);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Reads an input frame in arbitrary format from HDFS into a dense string array.
+	 * NOTE: this call currently only supports default configurations for CSV.
+	 * 
+	 * @param fname the filename of the input frame
+	 * @param iinfo InputInfo object
+	 * @param rows number of rows in the frame
+	 * @param cols number of columns in the frame
+	 * @return frame as a two-dimensional string array
+	 * @throws IOException
+	 */
+	public String[][] readStringFrame(String fname, InputInfo iinfo, long rows, long cols) 
+		throws IOException
+	{
+		try {
+			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
+			FrameBlock mb = reader.readFrameFromHDFS(fname, rows, cols);
+			return DataConverter.convertToStringFrame(mb);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Converts an input string representation of a frame in textcell format
+	 * into a dense string array. The meta data string is the SystemML generated
+	 * .mtd file including the number of rows and columns.
+	 * 
+	 * @param input string frame in textcell format
+	 * @param meta string representing SystemML frame metadata in JSON format
+	 * @return frame as a two-dimensional string array
+	 * @throws IOException
+	 */
+	public String[][] convertToStringFrame(String input, String meta) 
+		throws IOException
+	{
+		try {
+			//parse json meta data 
+			JSONObject jmtd = new JSONObject(meta);
+			int rows = jmtd.getInt(DataExpression.READROWPARAM);
+			int cols = jmtd.getInt(DataExpression.READCOLPARAM);
+			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+	
+			//sanity check input format
+			if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
+				||DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(format))) {
+				throw new IOException("Invalid input format (expected: text or mm): "+format);
+			}
+			
+			//parse the input frame
+			return convertToStringFrame(input, rows, cols);
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Converts an input string representation of a frame in textcell format
+	 * into a dense string array. The number of rows and columns need to be 
+	 * specified because textcell only represents non-zero values and hence
+	 * does not define the dimensions in the general case.
+	 * 
+	 * @param input string frame in textcell format
+	 * @param rows number of rows in the frame
+	 * @param cols number of columns in the frame
+	 * @return frame as a two-dimensional string array
+	 * @throws IOException
+	 */
+	public String[][] convertToStringFrame(String input, int rows, int cols) 
+		throws IOException
+	{
+		InputStream is = IOUtilFunctions.toInputStream(input);
+		return convertToStringFrame(is, rows, cols);
+	}
+	
+	/**
+	 * Converts an input stream of a string frame in textcell format
+	 * into a dense string array. The number of rows and columns need to be 
+	 * specified because textcell only represents non-zero values and hence
+	 * does not define the dimensions in the general case.
+	 * 
+	 * @param input InputStream to a string frame in textcell format
+	 * @param rows number of rows in the frame
+	 * @param cols number of columns in the frame
+	 * @return frame as a two-dimensional string array
+	 * @throws IOException
+	 */
+	public String[][] convertToStringFrame(InputStream input, int rows, int cols) 
+		throws IOException
+	{
+		String[][] ret = null;
+		
+		try {
+			//read input matrix
+			FrameReaderTextCell reader = (FrameReaderTextCell)FrameReaderFactory.createFrameReader(InputInfo.TextCellInputInfo);
+			FrameBlock mb = reader.readFrameFromInputStream(input, rows, cols);
+		
+			//convert to double array
+			ret = DataConverter.convertToStringFrame( mb );
 		}
 		catch(DMLRuntimeException rex) {
 			throw new IOException( rex );

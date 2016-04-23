@@ -84,6 +84,20 @@ public class FrameReaderTextCell extends FrameReader
 	/**
 	 * 
 	 * @param is
+	 * @param rlen
+	 * @param clen
+	 * @return
+	 * @throws IOException
+	 * @throws DMLRuntimeException
+	 */
+	public FrameBlock readFrameFromInputStream(InputStream is, long rlen, long clen) 
+		throws IOException, DMLRuntimeException {
+		return readFrameFromInputStream(is, getDefSchema(clen), getDefColNames(clen), rlen, clen);
+	}
+	
+	/**
+	 * 
+	 * @param is
 	 * @param schema
 	 * @param names
 	 * @param rlen
@@ -93,7 +107,7 @@ public class FrameReaderTextCell extends FrameReader
 	 * @throws IOException 
 	 */
 	public FrameBlock readFrameFromInputStream(InputStream is, List<ValueType> schema, List<String> names, long rlen, long clen) 
-			throws IOException, DMLRuntimeException 
+		throws IOException, DMLRuntimeException 
 	{
 		//allocate output frame block
 		FrameBlock ret = createOutputFrameBlock(schema, names, rlen);

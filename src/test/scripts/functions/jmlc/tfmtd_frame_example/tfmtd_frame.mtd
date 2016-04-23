@@ -1,0 +1,10 @@
+{
+    "data_type": "frame",
+    "value_type": "string",
+    "rows": 7,
+    "cols": 9,
+    "format": "text",
+    "description": {
+        "author": "SystemML"
+    }
+}

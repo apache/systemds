@@ -53,7 +53,14 @@ Maven (`mvn clean package -P distribution`).
 ## OutOfMemoryError in Hadoop Reduce Phase 
 In Hadoop MapReduce, outputs from mapper nodes are copied to reducer nodes and then sorted (known as the *shuffle* phase) before being consumed by reducers. The shuffle phase utilizes several buffers that share memory space with other MapReduce tasks, which will throw an `OutOfMemoryError` if the shuffle buffers take too much space: 
 
-    java.lang.OutOfMemoryError: Java heap space
+    Error: java.lang.OutOfMemoryError: Java heap space
+        at org.apache.hadoop.mapred.IFile$Reader.readNextBlock(IFile.java:357)
+        at org.apache.hadoop.mapred.IFile$Reader.next(IFile.java:419)
+        at org.apache.hadoop.mapred.Merger$Segment.next(Merger.java:238)
+        at org.apache.hadoop.mapred.Merger$MergeQueue.adjustPriorityQueue(Merger.java:348)
+        at org.apache.hadoop.mapred.Merger$MergeQueue.next(Merger.java:368)
+        at org.apache.hadoop.mapred.Merger.writeFile(Merger.java:156)
+        ...
   
 One way to fix this issue is lowering the following buffer thresholds.
 
@@ -76,7 +83,7 @@ These configurations can be modified **globally** by inserting/modifying the fol
      <value>0.0</value>
     </property>
 
-They can also be configured on a **per-task basis** by inserting the following in `SystemML-config.xml`.
+They can also be configured on a **per SystemML-task basis** by inserting the following in `SystemML-config.xml`.
 
     <mapred.job.shuffle.merge.percent>0.2</mapred.job.shuffle.merge.percent>
     <mapred.job.shuffle.input.buffer.percent>0.2</mapred.job.shuffle.input.buffer.percent>
@@ -86,4 +93,4 @@ Note: The default `SystemML-config.xml` is located in `<path to SystemML root>/c
 
     hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config=<config_filename>) ([-args | -nvargs] <args-list>)
     
-See http://apache.github.io/incubator-systemml/hadoop-batch-mode.html for details of the syntax. 
+See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for details of the syntax. 

@@ -93,7 +93,7 @@ public class FrameReaderBinaryBlock extends FrameReader
 	private static void readBinaryBlockFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, long rlen, long clen )
 		throws IOException, DMLRuntimeException
 	{
-		LongWritable key = new LongWritable();
+		LongWritable key = new LongWritable(-1L);
 		FrameBlock value = new FrameBlock();
 		
 		for( Path lpath : getSequenceFilePaths(fs, path) ) //1..N files 
@@ -109,6 +109,9 @@ public class FrameReaderBinaryBlock extends FrameReader
 					
 					int rows = value.getNumRows();
 					int cols = value.getNumColumns();
+
+					if(rows == 0 || cols == 0)	//Empty block, ignore it.
+						continue;
 					
 					//bound check per block
 					if( row_offset + rows < 0 || row_offset + rows > rlen ) {
@@ -124,5 +127,36 @@ public class FrameReaderBinaryBlock extends FrameReader
 				IOUtilFunctions.closeSilently(reader);
 			}
 		}
+	}
+
+	/**
+	 * Specific functionality of FrameReaderBinaryBlock, mostly used for testing.
+	 * 
+	 * @param fname
+	 * @return
+	 * @throws IOException 
+	 */
+	@SuppressWarnings("deprecation")
+	public FrameBlock readFirstBlock(String fname) throws IOException 
+	{
+		//prepare file access
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
+		FileSystem fs = FileSystem.get(job);
+		Path path = new Path( fname ); 
+		
+		LongWritable key = new LongWritable();
+		FrameBlock value = new FrameBlock();
+		
+		//read first block from first file
+		Path lpath = getSequenceFilePaths(fs, path)[0];  
+		SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);		
+		try {
+			reader.next(key, value);
+		}
+		finally {
+			IOUtilFunctions.closeSilently(reader);
+		}
+		
+		return value;
 	}
 }

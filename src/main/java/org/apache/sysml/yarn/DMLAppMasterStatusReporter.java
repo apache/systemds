@@ -33,7 +33,7 @@ public class DMLAppMasterStatusReporter extends Thread
 	
 	private AMRMClient<ContainerRequest> _rmClient;
 	private long _interval; //in ms
-	private boolean _stop;	
+	private volatile boolean _stop;
 	
 	
 	public DMLAppMasterStatusReporter(AMRMClient<ContainerRequest> rmClient, long interval) 
@@ -46,12 +46,13 @@ public class DMLAppMasterStatusReporter extends Thread
 	public void stopStatusReporter()
 	{
 		_stop = true;
+		interrupt();
 	}
 	
 	@Override
 	public void run() 
 	{
-		while( !_stop ) 
+		while( !_stop && !Thread.currentThread().isInterrupted())
 		{
 			try
 			{
@@ -60,6 +61,9 @@ public class DMLAppMasterStatusReporter extends Thread
 
 				//sleep for interval ms until next report
 				Thread.sleep( _interval );
+			}
+			catch(InterruptedException ex){
+				LOG.warn("Status reporter interrupted with stop=" + _stop);
 			}
 			catch(Exception ex)
 			{

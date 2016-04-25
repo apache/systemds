@@ -720,20 +720,27 @@ public abstract class AutomatedTestBase
 	 * @param fileName
 	 * @param mc
 	 */
-	public static void checkDMLMetaDataFile(String fileName, MatrixCharacteristics mc)
+	public static void checkDMLMetaDataFile(String fileName, MatrixCharacteristics mc) {
+		MatrixCharacteristics rmc = readDMLMetaDataFile(fileName);
+		Assert.assertEquals(mc.getRows(), rmc.getRows());
+		Assert.assertEquals(mc.getCols(), rmc.getCols());
+	}
+	
+	/**
+	 * 
+	 * @param fileName
+	 * @return
+	 */
+	public static MatrixCharacteristics readDMLMetaDataFile(String fileName)
 	{
-		try
-		{
+		try {
 			String fname = baseDirectory + OUTPUT_DIR + fileName +".mtd";
 			JSONObject meta = new DataExpression().readMetadataFile(fname, false);
 			long rlen = Long.parseLong(meta.get(DataExpression.READROWPARAM).toString());
 			long clen = Long.parseLong(meta.get(DataExpression.READCOLPARAM).toString());
-			
-			Assert.assertEquals(mc.getRows(), rlen);
-			Assert.assertEquals(mc.getCols(), clen);
+			return new MatrixCharacteristics(rlen, clen, -1, -1);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
 	}

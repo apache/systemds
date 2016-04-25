@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.api.ml;
+package org.apache.sysml.api.javaml;
 
 import java.io.File;
 import java.util.HashMap;

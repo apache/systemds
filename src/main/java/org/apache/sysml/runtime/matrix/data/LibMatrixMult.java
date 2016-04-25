@@ -184,10 +184,10 @@ public class LibMatrixMult
 		try {
 			ExecutorService pool = Executors.newFixedThreadPool( k );
 			ArrayList<MatrixMultTask> tasks = new ArrayList<MatrixMultTask>();
-			int nk = pm2 ? k : Math.max(Math.min(8*k,ru/8), k);
-			int blklen = (int)(Math.ceil((double)ru/nk));
-			for( int i=0; i<nk & i*blklen<ru; i++ )
-				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2, i*blklen, Math.min((i+1)*blklen, ru)));
+			int nk = pm2 ? k : UtilFunctions.roundToNext(Math.min(8*k,ru/32), k);
+			ArrayList<Integer> blklens = getBalancedBlockSizes(ru, nk);
+			for( int i=0, rl=0; i<blklens.size(); rl+=blklens.get(i), i++ )
+				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2, rl, rl+blklens.get(i)));
 			//execute tasks
 			List<Future<Object>> taskret = pool.invokeAll(tasks);	
 			pool.shutdown();
@@ -302,7 +302,7 @@ public class LibMatrixMult
 			int blklen = (int)(Math.ceil((double)mX.rlen/k));
 			blklen += (blklen%24 != 0)?24-blklen%24:0;
 			for( int i=0; i<k & i*blklen<mX.rlen; i++ )
-				tasks.add(new MatrixMultChainTask(mX, mV, mW, ret, ct, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
+				tasks.add(new MatrixMultChainTask(mX, mV, mW, ct, i*blklen, Math.min((i+1)*blklen, mX.rlen)));
 			//execute tasks
 			List<Future<double[]>> taskret = pool.invokeAll(tasks);	
 			pool.shutdown();
@@ -1313,6 +1313,26 @@ public class LibMatrixMult
 		    						          aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
 		    			}
 					}
+			}
+			else if( n<=64 )           //MATRIX-MATRIX (skinny rhs)
+			{
+				//no blocking since b and c fit into cache anyway
+				for( int i=rl, cix=rl*n; i<ru; i++, cix+=n ) {
+					if( a.isEmpty(i) ) 
+						continue;
+					int apos = a.pos(i);
+					int alen = a.size(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);					
+					//rest not aligned to blocks of 4 rows
+					int bn = alen%4;
+					for( int k=apos; k<apos+bn; k++ )
+	    				vectMultiplyAdd(avals[k], b, c, aix[k]*n, cix, n); 
+	    			//compute blocks of 4 rows (core inner loop)
+	    			for( int k=apos+bn; k<apos+alen; k+=4 )
+	    				vectMultiplyAdd4( avals[k], avals[k+1], avals[k+2], avals[k+3], b, c, 
+	    					aix[k]*n, aix[k+1]*n, aix[k+2]*n, aix[k+3]*n, cix, n );
+				}	
 			}
 			else                       //MATRIX-MATRIX
 			{							
@@ -3924,7 +3944,9 @@ public class LibMatrixMult
 	private static boolean checkPrepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 )
 	{
 		//transpose if dense-dense, skinny rhs matrix (not vector), and memory guarded by output 
-		return (!m1.sparse && !m2.sparse && m1.rlen>m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64);
+		return (LOW_LEVEL_OPTIMIZATION && !m1.sparse && !m2.sparse 
+				&& m1.rlen > m2.clen && m2.rlen > 64 && m2.clen > 1 && m2.clen < 64
+				&& 8*m2.rlen*m2.clen < 256*1024 ); //rhs fits in L2 cache
 	}
 	
 	/**
@@ -4058,6 +4080,24 @@ public class LibMatrixMult
 		
 	}
 	
+	/**
+	 * 
+	 * @param len
+	 * @param k
+	 * @return
+	 */
+	private static ArrayList<Integer> getBalancedBlockSizes(int len, int k) {
+		ArrayList<Integer> ret = new ArrayList<Integer>();
+		int base = len / k;
+		int rest = len % k;
+		for( int i=0; i<k; i++ ) {
+			int val = base + (i<rest?1:0);
+			if( val > 0 )
+				ret.add(val);
+		}	
+		return ret; 
+	}
+	
 	/////////////////////////////////////////////////////////
 	// Task Implementations for Multi-Threaded Operations  //
 	/////////////////////////////////////////////////////////
@@ -4130,12 +4170,11 @@ public class LibMatrixMult
 		private MatrixBlock _m1  = null;
 		private MatrixBlock _m2  = null;
 		private MatrixBlock _m3  = null;
-		private MatrixBlock _ret = null;
 		private ChainType _ct = null;
 		private int _rl = -1;
 		private int _ru = -1;
 
-		protected MatrixMultChainTask( MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int rl, int ru ) 
+		protected MatrixMultChainTask( MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, ChainType ct, int rl, int ru ) 
 			throws DMLRuntimeException
 		{
 			_m1 = mX;
@@ -4144,25 +4183,25 @@ public class LibMatrixMult
 			_ct = ct;
 			_rl = rl;
 			_ru = ru;
-			
-			//allocate local result for partial aggregation
-			_ret = new MatrixBlock(ret.rlen, ret.clen, false);
-			_ret.allocateDenseBlock();
 		}
 		
 		@Override
 		public double[] call() throws DMLRuntimeException
 		{
+			//thread-local allocation for partial aggregation
+			MatrixBlock ret = new MatrixBlock(1, _m1.clen, false);
+			ret.allocateDenseBlock();
+			
 			if( _m1.sparse )
-				matrixMultChainSparse(_m1, _m2, _m3, _ret, _ct, _rl, _ru);
+				matrixMultChainSparse(_m1, _m2, _m3, ret, _ct, _rl, _ru);
 			else
-				matrixMultChainDense(_m1, _m2, _m3, _ret, _ct, _rl, _ru);
+				matrixMultChainDense(_m1, _m2, _m3, ret, _ct, _rl, _ru);
 			
 			//NOTE: we dont do global aggregation from concurrent tasks in order
 			//to prevent synchronization (sequential aggregation led to better 
 			//performance after JIT)
 			
-			return _ret.getDenseBlock();
+			return ret.getDenseBlock();
 		}
 	}
 

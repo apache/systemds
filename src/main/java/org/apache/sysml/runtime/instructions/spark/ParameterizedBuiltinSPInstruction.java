@@ -33,6 +33,7 @@ import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -386,7 +387,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			try {
 				DataTransform.spDataTransform(
 						this, 
-						new MatrixObject[] { (MatrixObject) sec.getVariable(params.get("target")) }, 
+						new FrameObject[] { (FrameObject) sec.getVariable(params.get("target")) }, 
 						new MatrixObject[] { (MatrixObject) sec.getVariable(output.getName()) }, ec);
 			} catch (Exception e) {
 				throw new DMLRuntimeException(e);

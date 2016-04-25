@@ -48,7 +48,6 @@ import org.apache.sysml.runtime.instructions.CPInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
 
 
-
 public class DMLProgram 
 {
 	
@@ -63,7 +62,6 @@ public class DMLProgram
 		_blocks = new ArrayList<StatementBlock>();
 		_functionBlocks = new HashMap<String,FunctionStatementBlock>();
 		_namespaces = new HashMap<String,DMLProgram>();
-		_namespaces.put(DMLProgram.DEFAULT_NAMESPACE,this);
 	}
 	
 	public HashMap<String,DMLProgram> getNamespaces(){

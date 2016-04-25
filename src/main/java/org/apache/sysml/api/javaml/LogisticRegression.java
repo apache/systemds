@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.api.ml;
+package org.apache.sysml.api.javaml;
 
 import java.io.File;
 import java.util.HashMap;
@@ -35,10 +35,9 @@ import org.apache.spark.ml.param.StringArrayParam;
 import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
-
 import org.apache.sysml.api.MLContext;
 import org.apache.sysml.api.MLOutput;
-import org.apache.sysml.api.ml.LogisticRegressionModel;
+import org.apache.sysml.api.javaml.LogisticRegressionModel;
 import org.apache.sysml.api.ml.functions.ConvertSingleColumnToString;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;

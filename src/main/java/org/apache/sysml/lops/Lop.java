@@ -87,6 +87,7 @@ public abstract class Lop
 	
 	public static final String NAME_VALUE_SEPARATOR = "="; // e.g., used in parameterized builtins
 	public static final String MATRIX_VAR_NAME_PREFIX = "_mVar";
+	public static final String FRAME_VAR_NAME_PREFIX = "_fVar";
 	public static final String SCALAR_VAR_NAME_PREFIX = "_Var";
 	
 	// Boolean array to hold the list of nodes(lops) in the DAG that are reachable from this lop.

@@ -33,6 +33,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -45,12 +46,9 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -164,6 +162,34 @@ public class ExecutionContext
 			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix.");
 		
 		return (MatrixObject) dat;
+	}
+	
+	public FrameObject getFrameObject(String varname) 
+		throws DMLRuntimeException
+	{
+		Data dat = getVariable(varname);
+		
+		//error handling if non existing or no matrix
+		if( dat == null )
+			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
+		if( !(dat instanceof FrameObject) )
+			throw new DMLRuntimeException("Variable '"+varname+"' is not a frame.");
+		
+		return (FrameObject) dat;
+	}
+	
+	public CacheableData<?> getCacheableData(String varname) 
+		throws DMLRuntimeException
+	{
+		Data dat = getVariable(varname);
+		
+		//error handling if non existing or no matrix
+		if( dat == null )
+			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
+		if( !(dat instanceof CacheableData<?>) )
+			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix or frame.");
+		
+		return (CacheableData<?>) dat;
 	}
 	
 	public MatrixCharacteristics getMatrixCharacteristics( String varname ) 
@@ -311,13 +337,9 @@ public class ExecutionContext
 	public void setFrameOutput(String varName, FrameBlock outputData) 
 		throws DMLRuntimeException 
 	{
-		//TODO: fix createvar instructions generation for frame handles
-		//FrameObject fo = (FrameObject) getVariable(varName);
-		MatrixCharacteristics mc = new MatrixCharacteristics(-1, -1, -1, -1);
-		MatrixFormatMetaData meta = new MatrixFormatMetaData(mc, OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
-		FrameObject fo = new FrameObject(varName, meta);
+		FrameObject fo = (FrameObject) getVariable(varName);
 		fo.acquireModify(outputData);
-	    fo.release();
+		fo.release();
 		    
 	    setVariable(varName, fo);
 	}

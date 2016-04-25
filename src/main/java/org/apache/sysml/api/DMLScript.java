@@ -28,9 +28,11 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.commons.logging.Log;
@@ -92,7 +94,7 @@ public class DMLScript
 		HYBRID,         // execute matrix operations in CP or MR
 		HYBRID_SPARK,   // execute matrix operations in CP or Spark   
 		SPARK			// execute matrix operations in Spark
-	};
+	}
 	
 	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
 	public static boolean STATISTICS = false; //default statistics
@@ -181,7 +183,7 @@ public class DMLScript
 	 * @throws DMLException
 	 */
 	public static void main(String[] args) 
-		throws IOException, DMLException 
+		throws IOException, DMLException
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
@@ -197,7 +199,7 @@ public class DMLScript
 	} 
 
 	public static boolean executeScript( String[] args ) 
-		throws DMLException, ParseException
+		throws DMLException
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		return executeScript( conf, args );
@@ -214,7 +216,7 @@ public class DMLScript
 	 * @throws ParseException
 	 */
 	public static String executeScript( Configuration conf, String[] args, boolean suppress) 
-		throws DMLException, ParseException
+		throws DMLException
 	{
 		_suppressPrint2Stdout = suppress;
 		try {
@@ -236,10 +238,8 @@ public class DMLScript
 	 * @throws ParseException 
 	 */
 	public static boolean executeScript( Configuration conf, String[] args ) 
-		throws DMLException, ParseException
+		throws DMLException
 	{
-		boolean ret = false;
-		
 		//Step 1: parse arguments 
 		//check for help 
 		if( args.length==0 || (args.length==1 && (args[0].equalsIgnoreCase("-help")|| args[0].equalsIgnoreCase("-?"))) ){
@@ -257,14 +257,14 @@ public class DMLScript
 		if( args.length < 2 ){
 			System.err.println( "ERROR: Unrecognized invocation arguments." );
 			System.err.println( USAGE );
-			return ret;
+			return false;
 		}
 				
 		//check script arg - print usage if incorrect
 		if (!(args[0].equals("-f") || args[0].equals("-s"))){
 			System.err.println("ERROR: First argument must be either -f or -s");
 			System.err.println( USAGE );
-			return ret;
+			return false;
 		}
 		
 		//parse arguments and set execution properties
@@ -293,10 +293,12 @@ public class DMLScript
 				else if ( args[i].equalsIgnoreCase("-exec")) {
 					rtplatform = parseRuntimePlatform(args[++i]);
 					if( rtplatform==null ) 
-						return ret;
+						return false;
 				}
-				else if (args[i].startsWith("-config="))
-					fnameOptConfig = args[i].substring(8).replaceAll("\"", ""); 
+				else if (args[i].startsWith("-config=")) // legacy
+					fnameOptConfig = args[i].substring(8).replaceAll("\"", "");
+				else if (args[i].equalsIgnoreCase("-config"))
+					fnameOptConfig = args[++i];
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
 				}
@@ -311,7 +313,7 @@ public class DMLScript
 				}
 				else{
 					System.err.println("ERROR: Unknown argument: " + args[i]);
-					return ret;
+					return false;
 				}
 			}
 			
@@ -321,7 +323,7 @@ public class DMLScript
 		
 			//Step 2: prepare script invocation
 			String dmlScriptStr = readDMLScript(args[0], args[1]);
-			HashMap<String, String> argVals = createArgumentsMap(namedScriptArgs, scriptArgs);		
+			Map<String, String> argVals = createArgumentsMap(namedScriptArgs, scriptArgs);
 			
 			DML_FILE_PATH_ANTLR_PARSER = args[1];
 			
@@ -334,8 +336,7 @@ public class DMLScript
 			else {
 				execute(dmlScriptStr, fnameOptConfig, argVals, args, parsePyDML);
 			}
-			
-			ret = true;
+
 		}
 		catch (ParseException pe) {
 			throw pe;
@@ -356,7 +357,7 @@ public class DMLScript
 			EXPLAIN = oldexplain;
 		}
 		
-		return ret;
+		return true;
 	}
 	
 	///////////////////////////////
@@ -366,13 +367,13 @@ public class DMLScript
 	/**
 	 * 
 	 * @param hasNamedArgs
-	 * @param scriptArguments
+	 * @param args
 	 * @throws LanguageException
 	 */
-	protected static HashMap<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args) 
+	protected static Map<String,String> createArgumentsMap(boolean hasNamedArgs, String[] args)
 		throws LanguageException
 	{			
-		HashMap<String, String> argMap = new HashMap<String,String>();
+		Map<String, String> argMap = new HashMap<String,String>();
 		
 		if (args == null)
 			return argMap;
@@ -425,7 +426,7 @@ public class DMLScript
 	/**
 	 * 
 	 * @param argname
-	 * @param arg
+	 * @param script
 	 * @return
 	 * @throws IOException 
 	 * @throws LanguageException 
@@ -433,8 +434,8 @@ public class DMLScript
 	protected static String readDMLScript( String argname, String script ) 
 		throws IOException, LanguageException
 	{
-		boolean fromFile = argname.equals("-f") ? true : false;
-		String dmlScriptStr = null;
+		boolean fromFile = argname.equals("-f");
+		String dmlScriptStr;
 		
 		if( fromFile )
 		{
@@ -561,21 +562,20 @@ public class DMLScript
 	 * @throws HopsException 
 	 * @throws LanguageException 
 	 * @throws LopsException 
-	 * @throws DMLException 
 	 */
-	private static void execute(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, String[] allArgs, boolean parsePyDML)
+	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException 
 	{	
 		//print basic time and environment info
 		printStartExecInfo( dmlScriptStr );
 		
 		//Step 1: parse configuration files
-		DMLConfig dmlconf = DMLConfig.readAndMergeConfigurationFiles(fnameOptConfig);
+		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
 		ConfigurationManager.setGlobalConfig(dmlconf);		
 		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
 		ConfigurationManager.setGlobalConfig(cconf);
 		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
-		
+
 		//Step 2: set local/remote memory if requested (for compile in AM context) 
 		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
 			DMLAppMasterUtils.setupConfigRemoteMaxMemory(dmlconf); 
@@ -706,18 +706,17 @@ public class DMLScript
 	 * @throws DMLDebuggerException
 	 * @throws HopsException 
 	 * @throws LanguageException 
-	 * @throws LopsException 
-	 * @throws DMLException 
+	 * @throws LopsException
 	 */
-	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, HashMap<String,String> argVals, boolean parsePyDML)
+	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, boolean parsePyDML)
 		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException 
 	{		
 		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
 		
 		//Step 1: parse configuration files
-		DMLConfig conf = DMLConfig.readAndMergeConfigurationFiles(fnameOptConfig);
+		DMLConfig conf = DMLConfig.readConfigurationFile(fnameOptConfig);
 		ConfigurationManager.setGlobalConfig(conf);
-	
+
 		//Step 2: parse dml script
 		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
 		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
@@ -799,8 +798,7 @@ public class DMLScript
 			//check existence, for backwards compatibility to < hadoop 0.21
 			if( UserGroupInformation.class.getMethod("getCurrentUser") != null ){
 				String[] groups = UserGroupInformation.getCurrentUser().getGroupNames();
-				for( String g : groups )
-					groupNames.add( g );
+				Collections.addAll(groupNames, groups);
 			}
 		}catch(Exception ex){}
 		
@@ -902,7 +900,7 @@ public class DMLScript
 	 * @param fnameOptConfig
 	 * @param argVals
 	 */
-	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, HashMap<String,String> argVals)
+	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, Map<String,String> argVals)
 	{		
 		LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + fnameScript + "\n" 
 	                + "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
@@ -947,7 +945,7 @@ public class DMLScript
 		try
 		{
 			//read the default config
-			DMLConfig conf = DMLConfig.readAndMergeConfigurationFiles(null);
+			DMLConfig conf = DMLConfig.readConfigurationFile(null);
 			
 			//run cleanup job to clean remote local tmp dirs
 			CleanupMR.runJob(conf);

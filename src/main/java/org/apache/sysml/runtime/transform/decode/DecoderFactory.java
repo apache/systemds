@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.transform.decode;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
@@ -30,6 +31,7 @@ import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
+
 
 public class DecoderFactory 
 {
@@ -57,7 +59,7 @@ public class DecoderFactory
 				schema = Collections.nCopies(meta.getNumColumns(), ValueType.STRING);
 			}
 			
-			//create decoder 'recode'
+			//create decoders 'recode' and 'pass-through'
 			if ( jSpec.containsKey(TfUtils.TXMETHOD_RECODE))  {
 				JSONArray attrs = null;
 				if( jSpec.get(TfUtils.TXMETHOD_RECODE) instanceof JSONObject ) {
@@ -67,11 +69,30 @@ public class DecoderFactory
 				else
 					attrs = (JSONArray)jSpec.get(TfUtils.TXMETHOD_RECODE);
 				
-				int[] rcCols = new int[attrs.size()];
+				//recode decoder
+				int[] rcCols = new int[attrs.size()]; 
 				for(int j=0; j<rcCols.length; j++) 
 					rcCols[j] = UtilFunctions.toInt(attrs.get(j))-1;
-				
 				ldecoders.add(new DecoderRecode(schema, meta, rcCols));
+				
+				//pass-through decode (non-recode columns)
+				if( schema.size() > attrs.size() ) {
+					int[] ptCols = new int[schema.size()-attrs.size()]; 
+					HashSet<Integer> probe = new HashSet<Integer>();
+					for( int j=0; j<rcCols.length; j++ )
+						probe.add(rcCols[j]);
+					for( int j=0, pos=0; j<schema.size(); j++ )
+						if( !probe.contains(j) )
+							ptCols[pos++] = j;
+					ldecoders.add(new DecoderPassThrough(schema, ptCols));	
+				}
+			}
+			//create full 'pass-through' decoder if necessary
+			else {
+				int[] ptCols = new int[schema.size()];
+				for( int j=0; j<ptCols.length; j++ )
+					ptCols[j] = j;
+				ldecoders.add(new DecoderPassThrough(schema, ptCols));
 			}
 			
 			//create composite decoder of all created decoders

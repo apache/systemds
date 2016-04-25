@@ -1538,9 +1538,13 @@ public class ProgramConverter
 		String confStr = st.nextToken();
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
-			DMLConfig config = DMLConfig.parseDMLConfig(confStr);
-			ConfigurationManager.setLocalConfig(config);
-			ParForProgramBlock.initInternalConfigurations(config);
+			if( confStr != null && !confStr.trim().isEmpty() ) {
+				DMLConfig config = DMLConfig.parseDMLConfig(confStr);
+				ConfigurationManager.setLocalConfig(config);
+			}
+			//init internal configuration w/ parsed or default config
+			ParForProgramBlock.initInternalConfigurations(
+					ConfigurationManager.getDMLConfig());
 		}
 		
 		//handle additional configs

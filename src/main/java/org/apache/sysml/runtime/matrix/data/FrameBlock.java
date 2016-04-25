@@ -25,6 +25,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,10 +35,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.util.IndexRange;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * 
@@ -46,6 +49,9 @@ import org.apache.sysml.runtime.util.IndexRange;
 public class FrameBlock implements Writable, CacheBlock, Externalizable
 {
 	private static final long serialVersionUID = -3993450030207130665L;
+	
+	//internal configuration
+	private static final boolean REUSE_RECODE_MAPS = true;
 	
 	/** The number of rows of the FrameBlock */
 	private int _numRows = -1;
@@ -59,11 +65,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/** The data frame data as an ordered list of columns */
 	private List<Array> _coldata = null;
 	
+	/** Cache for recode maps from frame meta data, indexed by column 0-based */
+	private Map<Integer, SoftReference<HashMap<String,Long>>> _rcdMapCache = null;
+	
 	public FrameBlock() {
 		_numRows = 0;
 		_schema = new ArrayList<ValueType>();
 		_colnames = new ArrayList<String>();
 		_coldata = new ArrayList<Array>();
+		if( REUSE_RECODE_MAPS )
+			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
 	}
 	
 	public FrameBlock(FrameBlock that) {
@@ -74,6 +85,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public FrameBlock(int ncols, ValueType vt) {
 		this();
 		_schema.addAll(Collections.nCopies(ncols, vt));
+		_colnames = createColNames(ncols);
 	}
 	
 	public FrameBlock(List<ValueType> schema) {
@@ -95,6 +107,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_coldata = new ArrayList<Array>();
 		for( int i=0; i<data.length; i++ )
 			appendRow(data[i]);
+		if( REUSE_RECODE_MAPS )
+			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
 	}
 	
 	/**
@@ -407,6 +421,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return true;
 	}
 	
+	@Override
+	public void compactEmptyBlock() {
+		//do nothing
+	}
+	
 	///////
 	// indexing and append operations
 	
@@ -517,8 +536,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				ret._coldata.add(_coldata.get(j).slice(rl,ru));
 		else
 			for( int j=cl; j<=cu; j++ )
-				ret._coldata.get(j-cl).set(0, ru-rl+1, _coldata.get(j), rl);	
-
+				ret._coldata.get(j-cl).set(0, ru-rl, _coldata.get(j), rl);	
+		
 		return ret;
 	}
 	
@@ -590,14 +609,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/**
 	 * 
 	 * @param src
+	 * @throws DMLRuntimeException 
 	 */
 	public void copy(FrameBlock src) {
-		//allocate 
-		ensureAllocatedColumns(src.getNumRows());
-		
-		//actual copy 
-		for( int i=0; i<src.getNumColumns(); i++ )
-			_coldata.get(i).set(0, src.getNumRows()-1, src._coldata.get(i));
+		copy(0, src.getNumRows()-1, 0, src.getNumColumns()-1, src);
 	}
 
 	/**
@@ -607,18 +622,104 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param cl
 	 * @param cu
 	 * @param src
-	 * @throws DMLRuntimeException
 	 */
 	public void copy(int rl, int ru, int cl, int cu, FrameBlock src) 
-		throws DMLRuntimeException
 	{
+		//allocate columns if necessary
 		ensureAllocatedColumns(ru-rl+1);
 		
 		//copy values
-		for( int i=cl; i<=cu; i++ )
-			_coldata.get(i).set(rl, ru, src._coldata.get(i-cl));
+		for( int j=cl; j<=cu; j++ ) {
+			//special case: column memcopy 
+			if( _schema.get(j).equals(src._schema.get(j-cl)) )
+				_coldata.get(j).set(rl, ru, src._coldata.get(j-cl));
+			//general case w/ schema transformation
+			else 
+				for( int i=rl; i<=ru; i++ ) {
+					String tmp = src.get(i-rl, j)!=null ? src.get(i-rl, j).toString() : null;
+					set(i, j, UtilFunctions.stringToObject(_schema.get(j), tmp));
+				}
+		}
 	}
+	
+	
+	///////
+	// transform specific functionality
+	
+	/**
+	 * 
+	 * @param col
+	 * @return
+	 */
+	public HashMap<String,Long> getRecodeMap(int col) {
+		//probe cache for existing map
+		if( REUSE_RECODE_MAPS ) {
+			SoftReference<HashMap<String,Long>> tmp = _rcdMapCache.get(col);
+			HashMap<String,Long> map = (tmp!=null) ? tmp.get() : null;
+			if( map != null ) return map;
+		}
 		
+		//construct recode map
+		HashMap<String,Long> map = new HashMap<String,Long>();
+		Array ldata = _coldata.get(col); 
+		for( int i=0; i<getNumRows(); i++ ) {
+			Object val = ldata.get(i);
+			if( val != null ) {
+				String[] tmp = val.toString().split(Lop.DATATYPE_PREFIX);
+				map.put(tmp[0], Long.parseLong(tmp[1]));
+			}
+		}
+		
+		//put created map into cache
+		if( REUSE_RECODE_MAPS ) {
+			_rcdMapCache.put(col, new SoftReference<HashMap<String,Long>>(map));
+		}
+		
+		return map;
+	}
+
+	/**
+	 * 
+	 * @param that
+	 * @throws DMLRuntimeException 
+	 */
+	public void merge(FrameBlock that ) 
+		throws DMLRuntimeException
+	{
+		//check for empty input source (nothing to merge)
+		if( that == null || that.getNumRows() == 0 )
+			return;
+		
+		//check dimensions (before potentially copy to prevent implicit dimension change) 
+		if( getNumRows() != that.getNumRows() || getNumColumns() != that.getNumColumns() )
+			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+getNumRows()+"x"+getNumColumns()+", source="+that.getNumRows()+"x"+that.getNumColumns()+")");
+		
+		//core frame block merge through cell copy
+		for( int i=0; i<getNumRows(); i++ ) {
+			for( int j=0; j<getNumColumns(); j++ ) {
+				switch( _schema.get(j) ) {
+					case STRING:  
+						if (that.get(i,j) != null)
+							set(i,j,that.get(i, j));
+						break;
+					case BOOLEAN: 
+						if ((Boolean)that.get(i,j) != Boolean.getBoolean("false"))
+							set(i,j,that.get(i, j));
+						break;
+					case INT:     
+						if ((Long)that.get(i,j) != 0)
+							set(i,j,that.get(i, j));
+						break;
+					case DOUBLE:  
+						if ((Double)that.get(i,j) != 0.0)
+							set(i,j,that.get(i, j));
+						break;
+					default: throw new RuntimeException("Unsupported value type: "+_schema.get(j));
+				}
+			}
+		}
+		
+	}
 
 	
 	///////

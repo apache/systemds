@@ -23,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -87,7 +86,7 @@ public class DMLParserWrapper extends AParserWrapper
 	 * @throws ParseException
 	 */
 	@Override
-	public DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
+	public DMLProgram parse(String fileName, String dmlScript, Map<String,String> argVals) throws ParseException {
 		DMLProgram prog = doParse(fileName, dmlScript, null, argVals);
 		
 		return prog;
@@ -102,7 +101,7 @@ public class DMLParserWrapper extends AParserWrapper
 	 * @return null if at least one error
 	 * @throws ParseException
 	 */
-	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, HashMap<String,String> argVals) throws ParseException {
+	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, Map<String,String> argVals) throws ParseException {
 		DMLProgram dmlPgm = null;
 		
 		ANTLRInputStream in;
@@ -184,22 +183,22 @@ public class DMLParserWrapper extends AParserWrapper
 			List<ParseIssue> parseIssues = errorListener.getParseIssues();
 			throw new ParseException(parseIssues, dmlScript);
 		}
-		dmlPgm = createDMLProgram(ast);
+		dmlPgm = createDMLProgram(ast, sourceNamespace);
 		
 		return dmlPgm;
 	}
 	
-	private DMLProgram createDMLProgram(ProgramrootContext ast) {
+	private DMLProgram createDMLProgram(ProgramrootContext ast, String sourceNamespace) {
 
 		DMLProgram dmlPgm = new DMLProgram();
+		String namespace = (sourceNamespace != null && sourceNamespace.length() > 0) ? sourceNamespace : DMLProgram.DEFAULT_NAMESPACE;
+		dmlPgm.getNamespaces().put(namespace, dmlPgm);
 
 		// First add all the functions
 		for(FunctionStatementContext fn : ast.functionBlocks) {
 			FunctionStatementBlock functionStmtBlk = new FunctionStatementBlock();
 			functionStmtBlk.addStatement(fn.info.stmt);
 			try {
-				// TODO: currently the logic of nested namespace is not clear.
-				String namespace = DMLProgram.DEFAULT_NAMESPACE;
 				dmlPgm.addFunctionStatementBlock(namespace, fn.info.functionName, functionStmtBlk);
 			} catch (LanguageException e) {
 				LOG.error("line: " + fn.start.getLine() + ":" + fn.start.getCharPositionInLine() + " cannot process the function " + fn.info.functionName);
@@ -220,32 +219,20 @@ public class DMLParserWrapper extends AParserWrapper
 				if(stmtCtx.info.namespaces != null) {
 					// Add the DMLProgram entries into current program
 					for(Map.Entry<String, DMLProgram> entry : stmtCtx.info.namespaces.entrySet()) {
-						dmlPgm.getNamespaces().put(entry.getKey(), entry.getValue());
+						// TODO handle namespace key already exists for different program value instead of overwriting
+						DMLProgram prog = entry.getValue();
+						if (prog != null && prog.getNamespaces().size() > 0) {
+							dmlPgm.getNamespaces().put(entry.getKey(), prog);
+						}
 						
-//						// Don't add DMLProgram into the current program, just add function statements
-						// dmlPgm.getNamespaces().put(entry.getKey(), entry.getValue());
-						// Add function statements to current dml program
-//						DMLProgram importedPgm = entry.getValue();
-//						try {
-//							for(FunctionStatementBlock importedFnBlk : importedPgm.getFunctionStatementBlocks()) {
-//								if(importedFnBlk.getStatements() != null && importedFnBlk.getStatements().size() == 1) {
-//									String functionName = ((FunctionStatement)importedFnBlk.getStatement(0)).getName();
-//									System.out.println("Adding function => " + entry.getKey() + "::" + functionName);
-//									TODO:33
-//									dmlPgm.addFunctionStatementBlock(entry.getKey(), functionName, importedFnBlk);
-//								}
-//								else {
-//									LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " incorrect number of functions in the imported function block .... strange");
-//									return null;
-//								}
-//							}
-//							if(importedPgm.getStatementBlocks() != null && importedPgm.getStatementBlocks().size() > 0) {
-//								LOG.warn("Only the functions can be imported from the namespace " + entry.getKey());
-//							}
-//						} catch (LanguageException e) {
-//							LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " cannot import functions from the file in the import statement: " + e.getMessage());
-//							return null;
-//						}
+						// Add dependent programs (handle imported script that also imports scripts)
+						for(Map.Entry<String, DMLProgram> dependency : entry.getValue().getNamespaces().entrySet()) {
+							String depNamespace = dependency.getKey();
+							DMLProgram depProgram = dependency.getValue();
+							if (dmlPgm.getNamespaces().get(depNamespace) == null) {
+								dmlPgm.getNamespaces().put(depNamespace, depProgram);
+							}
+						}
 					}
 				}
 				else {

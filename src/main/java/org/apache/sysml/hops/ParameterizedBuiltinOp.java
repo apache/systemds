@@ -197,7 +197,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			case INVCDF: 
 			case REPLACE:
 			case TRANSFORMAPPLY: 
-			case TRANSFORMDECODE: { 
+			case TRANSFORMDECODE: 
+			case TRANSFORMMETA: { 
 				ExecType et = optFindExecType();			
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
 						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
@@ -622,12 +623,12 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Lop rmEmpty = null;
 				
 				//a) broadcast-based PMM (permutation matrix mult)
-				if( rmRows && mestPM < OptimizerUtils.getRemoteMemBudgetMap() )
+				if( rmRows && rlen > 0 && mestPM < OptimizerUtils.getRemoteMemBudgetMap() )
 				{
 					boolean needPart = !offsets.dimsKnown() || offsets.getDim1() > DistributedCacheInput.PARTITION_SIZE;
 					if( needPart ){ //requires partitioning
 						loffset = new DataPartition(loffset, DataType.MATRIX, ValueType.DOUBLE, (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-						loffset.getOutputParameters().setDimensions(offsets.getDim1(), 1, rlen, clen, rlen);
+						loffset.getOutputParameters().setDimensions(rlen, 1, brlen, bclen, rlen);
 						setLineNumbers(loffset);	
 					}
 					
@@ -994,10 +995,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		{
 			if( _op == ParamBuiltinOp.TRANSFORM ) {
 				// force remote, at runtime cp transform triggered for small files.
-				return REMOTE;
-			}
-			else if( _op == ParamBuiltinOp.TRANSFORMAPPLY ) {
-				return ExecType.CP;
+				return (_etype = REMOTE);
 			}
 			
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
@@ -1015,6 +1013,13 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
+		}
+		
+		//force CP for in-memory only transform builtins
+		if( _op == ParamBuiltinOp.TRANSFORMAPPLY
+			|| _op == ParamBuiltinOp.TRANSFORMDECODE
+			|| _op == ParamBuiltinOp.TRANSFORMMETA ) {
+			_etype = ExecType.CP;
 		}
 		
 		//mark for recompile (forever)

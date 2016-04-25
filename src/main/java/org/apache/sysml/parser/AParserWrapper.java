@@ -23,12 +23,13 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PyDMLParserWrapper;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -47,7 +48,7 @@ public abstract class AParserWrapper
 	 * @return
 	 * @throws ParseException
 	 */
-	public abstract DMLProgram parse(String fileName, String dmlScript, HashMap<String, String> argVals) 
+	public abstract DMLProgram parse(String fileName, String dmlScript, Map<String, String> argVals)
 		throws ParseException;
 
 	
@@ -67,6 +68,8 @@ public abstract class AParserWrapper
 			ret = new PyDMLParserWrapper();
 		else
 			ret = new DMLParserWrapper();
+		
+		CommonSyntacticValidator.init();
 		
 		return ret;
 	}

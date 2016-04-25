@@ -22,6 +22,7 @@ package org.apache.sysml.api;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.spark.api.java.JavaPairRDD;
@@ -37,9 +38,6 @@ import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-
-import scala.Tuple2;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.functions.GetMLBlock;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt;
@@ -47,6 +45,8 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.UtilFunctions;
+
+import scala.Tuple2;
 
 /**
  * This is a simple container object that returns the output of execute from MLContext 
@@ -56,10 +56,10 @@ public class MLOutput {
 	
 	
 	
-	HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> _outputs;
-	private HashMap<String, MatrixCharacteristics> _outMetadata = null;
+	Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> _outputs;
+	private Map<String, MatrixCharacteristics> _outMetadata = null;
 	
-	public MLOutput(HashMap<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> outputs, HashMap<String, MatrixCharacteristics> outMetadata) {
+	public MLOutput(Map<String, JavaPairRDD<MatrixIndexes,MatrixBlock>> outputs, Map<String, MatrixCharacteristics> outMetadata) {
 		this._outputs = outputs;
 		this._outMetadata = outMetadata;
 	}
@@ -132,7 +132,7 @@ public class MLOutput {
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public DataFrame getDF(SQLContext sqlContext, String varName, HashMap<String, Tuple2<Long, Long>> range) throws DMLRuntimeException {
+	public DataFrame getDF(SQLContext sqlContext, String varName, Map<String, Tuple2<Long, Long>> range) throws DMLRuntimeException {
 		if(sqlContext == null) {
 			throw new DMLRuntimeException("SQLContext is not created.");
 		}
@@ -248,7 +248,7 @@ public class MLOutput {
 				}
 				retVal.add(new Tuple2<Long, Tuple2<Long,Double[]>>(startRowIndex + i, new Tuple2<Long,Double[]>(kv._1.getColumnIndex(), partialRow)));
 			}
-			return (Iterable<Tuple2<Long, Tuple2<Long, Double[]>>>) retVal;
+			return retVal;
 		}
 	}
 	
@@ -300,13 +300,13 @@ public class MLOutput {
 				}
 				
 				long rowIndex = arg0._1;
-				row[0] = new Double(rowIndex);
+				row[0] = (double) rowIndex;
 				row[1] = new DenseVector(vecVals); // breeze.util.JavaArrayOps.arrayDToDv(vecVals);
 			}
 			else {
 				row = new Double[sizeOfPartialRows + 1];
 				long rowIndex = arg0._1;
-				row[0] = new Double(rowIndex);
+				row[0] = (double) rowIndex;
 				for(long columnBlockIndex = 1; columnBlockIndex <= partialRows.size(); columnBlockIndex++) {
 					if(partialRows.containsKey(columnBlockIndex)) {
 						Double [] array = partialRows.get(columnBlockIndex);
@@ -355,8 +355,7 @@ public class MLOutput {
 			}
 			
 			// Insert first row as row index
-			Object[] row = null;
-			row = new Object[range.size() + 1];
+			Object[] row = new Object[range.size() + 1];
 			
 			double [] vecVals = new double[sizeOfPartialRows];
 			
@@ -380,7 +379,7 @@ public class MLOutput {
 			}
 			
 			long rowIndex = arg0._1;
-			row[0] = new Double(rowIndex);
+			row[0] = (double) rowIndex;
 			
 			int i = 1;
 			
@@ -394,7 +393,7 @@ public class MLOutput {
 				}
 				
 				if(low == high) {
-					row[i] = new Double(vecVals[(int) (low-1)]);
+					row[i] = vecVals[(int) (low - 1)];
 				}
 				else {
 					int lengthOfVector = (int) (high - low + 1);
@@ -407,9 +406,8 @@ public class MLOutput {
 				
 				i++;
 			}
-			
-			Object[] row_fields = row;
-			return RowFactory.create(row_fields);
+
+			return RowFactory.create(row);
 		}
 	}
 }

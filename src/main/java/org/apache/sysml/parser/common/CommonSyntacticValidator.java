@@ -51,7 +51,6 @@ import org.apache.sysml.parser.PrintStatement;
 import org.apache.sysml.parser.RelationalExpression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StringIdentifier;
-import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.dml.DmlParser.BuiltinFunctionExpressionContext;
 import org.apache.sysml.parser.dml.DmlSyntacticValidator;
 import org.apache.sysml.parser.pydml.PydmlSyntacticValidator;
@@ -64,10 +63,18 @@ public abstract class CommonSyntacticValidator {
 	protected final CustomErrorListener errorListener;
 	protected final String currentFile;
 	protected String _workingDir = ".";   //current working directory
-	protected HashMap<String,String> argVals = null;
+	protected Map<String,String> argVals = null;
 	protected String sourceNamespace = null;
+	// track imported scripts to prevent infinite recursion
+	protected static ThreadLocal<HashMap<String, String>> _scripts = new ThreadLocal<HashMap<String, String>>() {
+		@Override protected HashMap<String, String> initialValue() { return new HashMap<String, String>(); }
+	};
+	
+	public static void init() {
+		_scripts.get().clear();
+	}
 
-	public CommonSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
+	public CommonSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {
 		this.errorListener = errorListener;
 		currentFile = errorListener.getCurrentFileName();
 		this.argVals = argVals;

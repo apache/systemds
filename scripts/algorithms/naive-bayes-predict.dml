@@ -70,7 +70,7 @@ if(cmdLine_Y != " "){
 	acc_str = "Accuracy (%): " + acc
 	print(acc_str)
 	if(cmdLine_accuracy != " ")
-		write(acc_str, cmdLine_accuracy)
+		write(acc, cmdLine_accuracy)
 
 	num_classes = nrow(prior)
 	num_classes_ground_truth = max(C)

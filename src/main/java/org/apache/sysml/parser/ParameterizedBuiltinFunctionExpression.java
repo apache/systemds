@@ -68,6 +68,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		opcodeMap.put("transformapply",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORMAPPLY);
 		opcodeMap.put("transformdecode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMDECODE);
 		opcodeMap.put("transformencode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMENCODE);
+		opcodeMap.put("transformmeta", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMMETA);
 	}
 	
 	public static HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp> pbHopMap;
@@ -240,6 +241,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			validateTransformDecode(output, conditional);
 			break;	
 		
+		case TRANSFORMMETA:
+			validateTransformMeta(output, conditional);
+			break;	
+			
 		default: //always unconditional (because unsupported operation)
 			raiseValidateError("Unsupported parameterized function "+ getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
@@ -360,6 +365,27 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		//validate specification
 		checkDataValueType("transformdecode", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		
+		//set output dimensions
+		output.setDataType(DataType.FRAME);
+		output.setValueType(ValueType.STRING);
+		output.setDimensions(-1, -1);
+	}
+	
+	/**
+	 * 
+	 * @param output
+	 * @param conditional
+	 * @throws LanguageException
+	 */
+	private void validateTransformMeta(DataIdentifier output, boolean conditional) 
+		throws LanguageException 
+	{
+		//validate specification
+		checkDataValueType("transformmeta", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
+		
+		//validate meta data path 
+		checkDataValueType("transformmeta", TF_FN_PARAM_MTD, DataType.SCALAR, ValueType.STRING, conditional);
 		
 		//set output dimensions
 		output.setDataType(DataType.FRAME);

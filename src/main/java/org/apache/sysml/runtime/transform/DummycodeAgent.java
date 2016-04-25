@@ -395,6 +395,11 @@ public class DummycodeAgent extends Encoder
 		
 		return nwords;
 	}
+	
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+		return null;
+	}
 
 	@Override
 	public double[] encode(String[] in, double[] out) {

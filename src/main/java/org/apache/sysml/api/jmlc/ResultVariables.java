@@ -31,9 +31,10 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
 
 /**
- * JMLC (Java Machine Learning Connector) API:
- * 
- * NOTE: Currently fused API and implementation in order to reduce complexity. 
+ * A ResultVariables object holds the data returned by a call
+ * to {@link PreparedScript}'s {@link PreparedScript#executeScript executeScript}
+ * method, which executes a DML/PyDML script.
+ *
  */
 public class ResultVariables 
 {
@@ -45,20 +46,31 @@ public class ResultVariables
 		_out = new HashMap<String, Data>();
 	}
 	
+	/**
+	 * Obtain the output variable names held by this ResultVariables object.
+	 * 
+	 * @return the set of output variable names
+	 */
 	public Set<String> getVariableNames()
 	{
 		return _out.keySet();
 	}
 	
+	/**
+	 * Obtain the number of output data held by this ResultVariables object.
+	 * 
+	 * @return the number of output variables with data
+	 */
 	public int size()
 	{
 		return _out.size();
 	}
 	
 	/**
+	 * Obtain the matrix represented by the given output variable.
 	 * 
-	 * @param varname
-	 * @return
+	 * @param varname output variable name
+	 * @return matrix as a two-dimensional double array
 	 * @throws DMLException
 	 */
 	public double[][] getMatrix(String varname) 
@@ -84,9 +96,10 @@ public class ResultVariables
 	}
 	
 	/**
+	 * Obtain the frame represented by the given output variable.
 	 * 
-	 * @param varname
-	 * @return
+	 * @param varname output variable name
+	 * @return frame as a two-dimensional string array
 	 * @throws DMLException
 	 */
 	public String[][] getFrame(String varname) 
@@ -95,7 +108,6 @@ public class ResultVariables
 		if( !_out.containsKey(varname) )
 			throw new DMLException("Non-existing output variable: "+varname);
 		
-		String[][] ret = null;
 		Data dat = _out.get(varname);
 		
 		//basic checks for data type	
@@ -105,17 +117,19 @@ public class ResultVariables
 		//convert output matrix to double array	
 		FrameObject fo = (FrameObject)dat;
 		FrameBlock frame = fo.acquireRead();
-		ret = DataConverter.convertToStringFrame(frame);
+		String[][] ret = DataConverter.convertToStringFrame(frame);
 		fo.release();
 		
 		return ret;
 	}
 	
 	/**
+	 * Add the output variable name and generated output data to the ResultVariable
+	 * object. Called during the execution of {@link PreparedScript}'s
+	 * {@link PreparedScript#executeScript executeScript} method.
 	 * 
-	 * 
-	 * @param ovar
-	 * @param data
+	 * @param ovar output variable name
+	 * @param data generated output data
 	 */
 	protected void addResult(String ovar, Data data) 
 	{

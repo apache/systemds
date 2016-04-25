@@ -29,6 +29,8 @@ import org.junit.runners.Suite;
 	RunTest.class,
 	ScalingTest.class,
 	TransformAndApplyTest.class,
+	TransformEncodeDecodeTest.class,
+	TransformReadMetaTest.class,
 	TransformTest.class,
 })
 

@@ -64,7 +64,7 @@ if(cmdLine_scores != " ")
 if(cmdLine_Y != " "){
 	y = read(cmdLine_Y)
 
-	pred = ppred(scores, 0, ">")
+	pred = ppred(scores, 0, ">=")
 	pred_labels = pred*positive_label + (1-pred)*negative_label
 	num_correct = sum(ppred(pred_labels, y, "=="))
 	acc = 100*num_correct/nrow(X)

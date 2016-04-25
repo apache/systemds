@@ -22,9 +22,11 @@ package org.apache.sysml.runtime.instructions.cp;
 import java.util.HashMap;
 
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.ParameterizedBuiltin;
@@ -37,8 +39,10 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.transform.DataTransform;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.decode.Decoder;
 import org.apache.sysml.runtime.transform.decode.DecoderFactory;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
@@ -123,7 +127,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		}
 		else if (   opcode.equals("transform")
 				 || opcode.equals("transformapply")
-				 || opcode.equals("transformdecode")) 
+				 || opcode.equals("transformdecode")
+				 || opcode.equals("transformmeta")) 
 		{
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
@@ -229,10 +234,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			ec.releaseMatrixInput(params.get("target"));
 		}
 		else if ( opcode.equalsIgnoreCase("transform")) {
-			MatrixObject mo = (MatrixObject) ec.getVariable(params.get("target"));
+			FrameObject fo = (FrameObject) ec.getVariable(params.get("target"));
 			MatrixObject out = (MatrixObject) ec.getVariable(output.getName());			
 			try {
-				JobReturn jt = DataTransform.cpDataTransform(this, new MatrixObject[] { mo } , new MatrixObject[] {out} );
+				JobReturn jt = DataTransform.cpDataTransform(this, new FrameObject[] { fo } , new MatrixObject[] {out} );
 				out.updateMatrixCharacteristics(jt.getMatrixCharacteristics(0));
 			} catch (Exception e) {
 				throw new DMLRuntimeException(e);
@@ -264,6 +269,23 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			ec.setFrameOutput(output.getName(), fbout);
 			ec.releaseMatrixInput(params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
+		}
+		else if ( opcode.equalsIgnoreCase("transformmeta")) {
+			//get input spec and path
+			String spec = getParameterMap().get("spec");
+			String path = getParameterMap().get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_MTD);
+			
+			//execute transform meta data read
+			FrameBlock meta = null;
+			try {
+				meta = TfMetaUtils.readTransformMetaDataFromFile(spec, path, TfUtils.TXMTD_SEP);
+			}
+			catch(Exception ex) {
+				throw new DMLRuntimeException(ex);
+			}
+			
+			//release locks
+			ec.setFrameOutput(output.getName(), meta);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

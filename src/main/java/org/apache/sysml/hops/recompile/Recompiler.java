@@ -1366,9 +1366,9 @@ public class Recompiler
 		{	
 			StatementBlock sb = pb.getStatementBlock();
 			
-			//recompile hops dag to CP (opt: don't recompile if CP and no MR inst)
-			if(	sb != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pb, true, true)) )
-			{
+			//recompile hops dag to CP (note selective recompile 'if CP and no MR inst' 
+			//would be invalid with permutation matrix mult across multiple dags)
+			if(	sb != null ) {
 				ArrayList<Instruction> tmp = pb.getInstructions();
 				tmp = Recompiler.recompileHopsDag2Forced(sb, sb.get_hops(), tid, et);
 				pb.setInstructions( tmp );

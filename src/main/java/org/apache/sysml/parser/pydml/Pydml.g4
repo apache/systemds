@@ -325,7 +325,7 @@ COMMANDLINE_POSITION_ID: '$' DIGIT+;
 
 // supports single and double quoted string with escape characters
 STRING: '"' ( ESC | ~[\\"] )*? '"' | '\'' ( ESC | ~[\\'] )*? '\'';
-fragment ESC : '\\' [abtnfrv"'\\] ;
+fragment ESC : '\\' [btnfr"'\\] ;
 // Comments, whitespaces and new line
 // LINE_COMMENT : '#' .*? '\r'? '\n' -> skip ;
 // MULTILINE_BLOCK_COMMENT : '/*' .*? '*/' -> skip ;

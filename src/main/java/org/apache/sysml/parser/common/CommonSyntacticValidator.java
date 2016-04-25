@@ -282,16 +282,25 @@ public abstract class CommonSyntacticValidator {
 		}
 	}
 
-	protected void constStringIdExpressionHelper(ParserRuleContext ctx, ExpressionInfo me) {
-		String val = "";
-		String text = ctx.getText();
+	protected String extractStringInQuotes(String text) {
+		String val = null;
 		if(	(text.startsWith("\"") && text.endsWith("\"")) ||
 			(text.startsWith("\'") && text.endsWith("\'"))) {
 			if(text.length() > 2) {
-				val = text.substring(1, text.length()-1);
+				val = text.substring(1, text.length()-1)
+					.replaceAll("\\\\b","\b")
+					.replaceAll("\\\\t","\t")
+					.replaceAll("\\\\n","\n")
+					.replaceAll("\\\\f","\f")
+					.replaceAll("\\\\r","\r");
 			}
 		}
-		else {
+		return val;
+	}
+	
+	protected void constStringIdExpressionHelper(ParserRuleContext ctx, ExpressionInfo me) {
+		String val = extractStringInQuotes(ctx.getText());
+		if(val == null) {
 			notifyErrorListeners("incorrect string literal ", ctx.start);
 			return;
 		}
@@ -425,7 +434,7 @@ public abstract class CommonSyntacticValidator {
 		String text = varValue;
 		if(	(text.startsWith("\"") && text.endsWith("\"")) || (text.startsWith("\'") && text.endsWith("\'"))) {
 			if(text.length() > 2) {
-				val = text.substring(1, text.length()-1);
+				val = extractStringInQuotes(text);
 			}
 		}
 		else {

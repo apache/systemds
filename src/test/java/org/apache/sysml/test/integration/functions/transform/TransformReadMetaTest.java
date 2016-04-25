@@ -31,6 +31,7 @@ import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.MatrixWriter;
 import org.apache.sysml.runtime.io.MatrixWriterFactory;
+import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -50,6 +51,7 @@ import org.apache.sysml.test.utils.TestUtils;
 public class TransformReadMetaTest extends AutomatedTestBase 
 {
 	private static final String TEST_NAME1 = "TransformReadMeta";
+	private static final String TEST_NAME2 = "TransformReadMeta2";
 	private static final String TEST_DIR = "functions/transform/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + TransformReadMetaTest.class.getSimpleName() + "/";
 	private static final String SPEC_X = "TransformReadMetaSpecX.json";
@@ -60,51 +62,83 @@ public class TransformReadMetaTest extends AutomatedTestBase
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"M1, M"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"M1, M"}));
 	}
 	
 	@Test
 	public void runTestCsvCP() throws DMLRuntimeException, IOException {
-		runTransformReadMetaTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv");
+		runTransformReadMetaTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", ",");
 	}
 	
 	@Test
 	public void runTestCsvHadoop() throws DMLRuntimeException, IOException {
-		runTransformReadMetaTest(RUNTIME_PLATFORM.HADOOP, "csv");
+		runTransformReadMetaTest(RUNTIME_PLATFORM.HADOOP, "csv", ",");
 	}
 
 	@Test
 	public void runTestCsvSpark() throws DMLRuntimeException, IOException {
-		runTransformReadMetaTest(RUNTIME_PLATFORM.SPARK, "csv");
+		runTransformReadMetaTest(RUNTIME_PLATFORM.SPARK, "csv", ",");
 	}
 	
 	@Test
+	public void runTestCsvTabCP() throws DMLRuntimeException, IOException {
+		runTransformReadMetaTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", "\t");
+	}
+	
+	@Test
+	public void runTestCsvTabHadoop() throws DMLRuntimeException, IOException {
+		runTransformReadMetaTest(RUNTIME_PLATFORM.HADOOP, "csv", "\t");
+	}
+
+	@Test
+	public void runTestCsvTabSpark() throws DMLRuntimeException, IOException {
+		runTransformReadMetaTest(RUNTIME_PLATFORM.SPARK, "csv", "\t");
+	}
+	
+	@Test
+	public void runTestCsvColonCP() throws DMLRuntimeException, IOException {
+		runTransformReadMetaTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", ":");
+	}
+	
+	@Test
+	public void runTestCsvColonHadoop() throws DMLRuntimeException, IOException {
+		runTransformReadMetaTest(RUNTIME_PLATFORM.HADOOP, "csv", ":");
+	}
+
+	@Test
+	public void runTestCsvColonSpark() throws DMLRuntimeException, IOException {
+		runTransformReadMetaTest(RUNTIME_PLATFORM.SPARK, "csv", ":");
+	}
+	
+	
+	@Test
 	public void runTestTextCP() throws DMLRuntimeException, IOException {
-		runTransformReadMetaTest(RUNTIME_PLATFORM.SINGLE_NODE, "text");
+		runTransformReadMetaTest(RUNTIME_PLATFORM.SINGLE_NODE, "text", ",");
 	}
 	
 	@Test
 	public void runTestTextHadoop() throws DMLRuntimeException, IOException {
-		runTransformReadMetaTest(RUNTIME_PLATFORM.HADOOP, "text");
+		runTransformReadMetaTest(RUNTIME_PLATFORM.HADOOP, "text", ",");
 	}
 
 	@Test
 	public void runTestTextSpark() throws DMLRuntimeException, IOException {
-		runTransformReadMetaTest(RUNTIME_PLATFORM.SPARK, "text");
+		runTransformReadMetaTest(RUNTIME_PLATFORM.SPARK, "text", ",");
 	}
 
 	@Test
 	public void runTestBinaryCP() throws DMLRuntimeException, IOException {
-		runTransformReadMetaTest(RUNTIME_PLATFORM.SINGLE_NODE, "binary");
+		runTransformReadMetaTest(RUNTIME_PLATFORM.SINGLE_NODE, "binary", ",");
 	}
 	
 	@Test
 	public void runTestBinaryHadoop() throws DMLRuntimeException, IOException {
-		runTransformReadMetaTest(RUNTIME_PLATFORM.HADOOP, "binary");
+		runTransformReadMetaTest(RUNTIME_PLATFORM.HADOOP, "binary", ",");
 	}
 
 	@Test
 	public void runTestBinarySpark() throws DMLRuntimeException, IOException {
-		runTransformReadMetaTest(RUNTIME_PLATFORM.SPARK, "binary");
+		runTransformReadMetaTest(RUNTIME_PLATFORM.SPARK, "binary", ",");
 	}
 
 	
@@ -116,7 +150,7 @@ public class TransformReadMetaTest extends AutomatedTestBase
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
-	private void runTransformReadMetaTest( RUNTIME_PLATFORM rt, String ofmt) throws IOException, DMLRuntimeException
+	private void runTransformReadMetaTest( RUNTIME_PLATFORM rt, String ofmt, String delim) throws IOException, DMLRuntimeException
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		rtplatform = rt;
@@ -127,21 +161,24 @@ public class TransformReadMetaTest extends AutomatedTestBase
 
 		try
 		{
-			getAndLoadTestConfiguration(TEST_NAME1);
+			String testname = delim.equals(",") ? TEST_NAME1 : TEST_NAME2;
+			
+			getAndLoadTestConfiguration(testname);
 			
 			//generate input data
 			double[][] X = DataConverter.convertToDoubleMatrix(
 					MatrixBlock.seqOperations(0.5, rows/2, 0.5).appendOperations(
 					MatrixBlock.seqOperations(0.5, rows/2, 0.5), new MatrixBlock()));
 			MatrixBlock mbX = DataConverter.convertToMatrixBlock(X);
-			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo);
+			CSVFileFormatProperties fprops = new CSVFileFormatProperties(false, delim, false);
+			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo, 1, fprops);
 			writer.writeMatrixToHDFS(mbX, input("X"), rows, 2, -1, -1, -1);
 			
 			//read specs transform X and Y
 			String specX = MapReduceTool.readStringFromHDFSFile(SCRIPT_DIR+TEST_DIR+SPEC_X);
 			
-			fullDMLScriptName = SCRIPT_DIR+TEST_DIR + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-args", input("X"), specX, output("M1"), output("M"), ofmt};
+			fullDMLScriptName = SCRIPT_DIR+TEST_DIR + testname + ".dml";
+			programArgs = new String[]{"-args", input("X"), specX, output("M1"), output("M"), ofmt, delim};
 			
 			//run test
 			runTest(true, false, null, -1); 
@@ -149,7 +186,7 @@ public class TransformReadMetaTest extends AutomatedTestBase
 			//compare meta data frames
 			InputInfo iinfo = InputInfo.stringExternalToInputInfo(ofmt);
 			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo); 
-			FrameBlock mExpected = TfMetaUtils.readTransformMetaDataFromFile(specX, output("M1"), ",");
+			FrameBlock mExpected = TfMetaUtils.readTransformMetaDataFromFile(specX, output("M1"), delim);
 			FrameBlock mRet = reader.readFrameFromHDFS(output("M"), rows, 2);
 			for( int i=0; i<rows; i++ )
 				for( int j=0; j<2; j++ ) {

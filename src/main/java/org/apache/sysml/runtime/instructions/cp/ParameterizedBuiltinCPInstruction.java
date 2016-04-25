@@ -274,11 +274,12 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			//get input spec and path
 			String spec = getParameterMap().get("spec");
 			String path = getParameterMap().get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_MTD);
+			String delim = getParameterMap().containsKey("sep") ? getParameterMap().get("sep") : TfUtils.TXMTD_SEP;
 			
 			//execute transform meta data read
 			FrameBlock meta = null;
 			try {
-				meta = TfMetaUtils.readTransformMetaDataFromFile(spec, path, TfUtils.TXMTD_SEP);
+				meta = TfMetaUtils.readTransformMetaDataFromFile(spec, path, delim);
 			}
 			catch(Exception ex) {
 				throw new DMLRuntimeException(ex);

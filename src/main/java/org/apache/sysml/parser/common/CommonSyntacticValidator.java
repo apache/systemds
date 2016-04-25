@@ -295,6 +295,9 @@ public abstract class CommonSyntacticValidator {
 						.replaceAll("\\\\f","\f")
 						.replaceAll("\\\\r","\r");
 				}
+				else if(text.equals("\"\"") || text.equals("\'\'")) {
+					val = "";
+				}
 			}
 		}
 		else {

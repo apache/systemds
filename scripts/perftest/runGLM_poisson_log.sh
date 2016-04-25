@@ -34,7 +34,7 @@ do
    
    #training
    tstart=$SECONDS
-   ${CMD} -f ../algorithms/GLM.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" moi=3 mii=5 dfam=1 vpow=1.0 link=1 lpow=0.0 tol=0.0001 reg=0.01
+   ${CMD} -f ../algorithms/GLM.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" moi=$5 mii=5 dfam=1 vpow=1.0 link=1 lpow=0.0 tol=0.0001 reg=0.01
    ttrain=$(($SECONDS - $tstart - 3))
    echo "GLM_poisson_log train ict="$i" on "$1": "$ttrain >> times.txt
    

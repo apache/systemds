@@ -37,9 +37,11 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -89,6 +91,32 @@ public class SparkUtils
 		
 		return ret;
 	}
+	
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static Tuple2<Long,FrameBlock> fromIndexedFrameBlock( Pair<Long, FrameBlock> in ){
+		return new Tuple2<Long, FrameBlock>(in.getKey(), in.getValue());
+	}
+	
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static ArrayList<Tuple2<Long,FrameBlock>> fromIndexedFrameBlock( ArrayList<Pair<Long, FrameBlock>> in )
+	{
+		ArrayList<Tuple2<Long, FrameBlock>> ret = new ArrayList<Tuple2<Long, FrameBlock>>();
+		for( Pair<Long, FrameBlock> ifv : in )
+			ret.add(fromIndexedFrameBlock(ifv));
+		
+		return ret;
+	}
+	
 	
 	/**
 	 * 

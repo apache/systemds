@@ -50,7 +50,7 @@ object ScriptsUtils {
     val out = new StringBuilder()
     try {
       val in = {
-        if (systemmlHome == "") {
+        if (systemmlHome == null || systemmlHome.equals("")) {
           classOf[LogisticRegression].getClassLoader().getResourceAsStream(algorithmFileName)
         } else {
           new java.io.FileInputStream(resolvePath(algorithmFileName))

@@ -27,6 +27,7 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * Central place for analyzing and obtaining static infrastructure properties
@@ -347,31 +348,23 @@ public class InfrastructureAnalyzer
 		try
 		{
 			StringTokenizer st = new StringTokenizer( javaOpts, " " );
-			while( st.hasMoreTokens() )
-			{
+			while( st.hasMoreTokens() ) {
 				String arg = st.nextToken();
 				if( !arg.startsWith("-Xmx") ) //search for max mem
 					continue;
 				
-				arg = arg.substring(4); //cut off "-Xmx"
+				//cut off "-Xmx" parameter
+				arg = arg.substring(4);
+				
 				//parse number and unit
-				if ( arg.endsWith("g") || arg.endsWith("G") )
-					ret = Long.parseLong(arg.substring(0,arg.length()-1)) * 1024 * 1024 * 1024;
-				else if ( arg.endsWith("m") || arg.endsWith("M") )
-					ret = Long.parseLong(arg.substring(0,arg.length()-1)) * 1024 * 1024;
-				else if( arg.endsWith("k") || arg.endsWith("K") )
-					ret = Long.parseLong(arg.substring(0,arg.length()-1)) * 1024;
-				else 
-					ret = Long.parseLong(arg.substring(0,arg.length()-2));
+				ret = UtilFunctions.parseMemorySize(arg); 
 			}
 			
-			if( ret < 0 ) // no argument found
-			{
+			if( ret < 0 ) { // no argument found
 				ret = DEFAULT_JVM_SIZE;
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			//if anything breaks during parsing (e.g., because args not specified correctly)
 			ret = DEFAULT_JVM_SIZE;
 		}
@@ -464,14 +457,8 @@ public class InfrastructureAnalyzer
 		//step 2: analyze if used jdk older than jdk8
 		String version = System.getProperty("java.version");
 		
-		//parse jre version
-		int ix1 = version.indexOf('.');
-		int ix2 = version.indexOf('.', ix1+1);
-		int versionp1 = Integer.parseInt(version.substring(0, ix1));
-		int versionp2 = Integer.parseInt(version.substring(ix1+1, ix2));
-		
 		//check for jdk version less than 8 (and raise warning if multi-threaded)
-		_isLtJDK8 = (versionp1 == 1 && versionp2 < 8);
+		_isLtJDK8 = (UtilFunctions.compareVersion(version, "1.8") < 0); 
 	}
 	
 	/**

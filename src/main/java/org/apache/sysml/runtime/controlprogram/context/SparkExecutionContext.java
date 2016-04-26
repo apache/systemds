@@ -27,6 +27,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -69,33 +71,36 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Statistics;
 
 
 public class SparkExecutionContext extends ExecutionContext
 {
-
 	private static final Log LOG = LogFactory.getLog(SparkExecutionContext.class.getName());
-
+	private static final boolean LDEBUG = false; //local debug flag
+	
 	//internal configurations 
 	private static boolean LAZY_SPARKCTX_CREATION = true;
 	private static boolean ASYNCHRONOUS_VAR_DESTROY = true;
 	private static boolean FAIR_SCHEDULER_MODE = true;
 	
 	//executor memory and relative fractions as obtained from the spark configuration
-	private static long _memExecutors = -1; //mem per executors
-	private static double _memRatioData = -1; 
-	private static double _memRatioShuffle = -1;
-	private static int _numExecutors = -1; //total executors
-	private static int _defaultPar = -1; //total vcores  
-	private static boolean _confOnly = false; //infrastructure info based on config
+	private static SparkClusterConfig _sconf = null;
 	
 	// Only one SparkContext may be active per JVM. You must stop() the active SparkContext before creating a new one. 
 	// This limitation may eventually be removed; see SPARK-2243 for more details.
 	private static JavaSparkContext _spctx = null; 
 	
-	protected SparkExecutionContext(Program prog) 
-	{
+	static {
+		// for internal debugging only
+		if( LDEBUG ) {
+			Logger.getLogger("org.apache.sysml.runtime.controlprogram.context")
+				  .setLevel((Level) Level.DEBUG);
+		}
+	}
+	
+	protected SparkExecutionContext(Program prog) {
 		//protected constructor to force use of ExecutionContextFactory
 		this( true, prog );
 	}
@@ -806,161 +811,6 @@ public class SparkExecutionContext extends ExecutionContext
 		return nnz;
 	}
 	
-	
-	/**
-	 * Returns the available memory budget for broadcast variables in bytes.
-	 * In detail, this takes into account the total executor memory as well
-	 * as relative ratios for data and shuffle. Note, that this is a conservative
-	 * estimate since both data memory and shuffle memory might not be fully
-	 * utilized. 
-	 * 
-	 * @return
-	 */
-	public static double getBroadcastMemoryBudget()
-	{
-		if( _memExecutors < 0 || _memRatioData < 0 || _memRatioShuffle < 0 )
-			analyzeSparkConfiguation();
-		
-		//70% of remaining free memory
-		double membudget = OptimizerUtils.MEM_UTIL_FACTOR *
-			              (  _memExecutors 
-			               - _memExecutors*(_memRatioData+_memRatioShuffle) );
-		
-		return membudget;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public static double getConfiguredTotalDataMemory() {
-		return getConfiguredTotalDataMemory(false);
-	}
-	
-	/**
-	 * 
-	 * @param refresh
-	 * @return
-	 */
-	public static double getConfiguredTotalDataMemory(boolean refresh)
-	{
-		if( _memExecutors < 0 || _memRatioData < 0 )
-			analyzeSparkConfiguation();
-		
-		//always get the current num executors on refresh because this might 
-		//change if not all executors are initially allocated and it is plan-relevant
-		if( refresh && !_confOnly ) {
-			JavaSparkContext jsc = getSparkContextStatic();
-			int numExec = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);
-			return _memExecutors * _memRatioData * numExec; 
-		}
-		else
-			return ( _memExecutors * _memRatioData * _numExecutors );
-	}
-	
-	public static int getNumExecutors()
-	{
-		if( _numExecutors < 0 )
-			analyzeSparkConfiguation();
-		
-		return _numExecutors;
-	}
-	
-	public static int getDefaultParallelism() {
-		return getDefaultParallelism(false);
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public static int getDefaultParallelism(boolean refresh) 
-	{
-		if( _defaultPar < 0 && !refresh )
-			analyzeSparkConfiguation();
-		
-		//always get the current default parallelism on refresh because this might 
-		//change if not all executors are initially allocated and it is plan-relevant
-		if( refresh && !_confOnly )
-			return getSparkContextStatic().defaultParallelism();
-		else
-			return _defaultPar;
-	}
-	
-	/**
-	 * 
-	 */
-	public static void analyzeSparkConfiguation() 
-	{
-		SparkConf sconf = new SparkConf();
-		
-		//parse absolute executor memory
-		String tmp = sconf.get("spark.executor.memory", "512m");
-		if ( tmp.endsWith("g") || tmp.endsWith("G") )
-			_memExecutors = Long.parseLong(tmp.substring(0,tmp.length()-1)) * 1024 * 1024 * 1024;
-		else if ( tmp.endsWith("m") || tmp.endsWith("M") )
-			_memExecutors = Long.parseLong(tmp.substring(0,tmp.length()-1)) * 1024 * 1024;
-		else if( tmp.endsWith("k") || tmp.endsWith("K") )
-			_memExecutors = Long.parseLong(tmp.substring(0,tmp.length()-1)) * 1024;
-		else 
-			_memExecutors = Long.parseLong(tmp.substring(0,tmp.length()-2));
-		
-		//get data and shuffle memory ratios (defaults not specified in job conf)
-		_memRatioData = sconf.getDouble("spark.storage.memoryFraction", 0.6); //default 60%
-		_memRatioShuffle = sconf.getDouble("spark.shuffle.memoryFraction", 0.2); //default 20%
-		
-		int numExecutors = sconf.getInt("spark.executor.instances", -1);
-		int numCoresPerExec = sconf.getInt("spark.executor.cores", -1);
-		int defaultPar = sconf.getInt("spark.default.parallelism", -1);
-		
-		if( numExecutors > 1 && (defaultPar > 1 || numCoresPerExec > 1) ) {
-			_numExecutors = numExecutors;
-			_defaultPar = (defaultPar>1) ? defaultPar : numExecutors * numCoresPerExec;
-			_confOnly = true;
-		}
-		else {
-			//get default parallelism (total number of executors and cores)
-			//note: spark context provides this information while conf does not
-			//(for num executors we need to correct for driver and local mode)
-			JavaSparkContext jsc = getSparkContextStatic();
-			_numExecutors = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);  
-			_defaultPar = jsc.defaultParallelism();
-			_confOnly = false; //implies env info refresh w/ spark context 
-		}
-		
-		//note: required time for infrastructure analysis on 5 node cluster: ~5-20ms. 
-	}
-
-	/**
-	 * 
-	 */
-	public void checkAndRaiseValidationWarningJDKVersion()
-	{
-		//check for jdk version less than jdk8
-		boolean isLtJDK8 = InfrastructureAnalyzer.isJavaVersionLessThanJDK8();
-
-		//check multi-threaded executors
-		int numExecutors = getNumExecutors();
-		int numCores = getDefaultParallelism();
-		boolean multiThreaded = (numCores > numExecutors);
-		
-		//check for jdk version less than 8 (and raise warning if multi-threaded)
-		if( isLtJDK8 && multiThreaded) 
-		{
-			//get the jre version 
-			String version = System.getProperty("java.version");
-			
-			LOG.warn("########################################################################################");
-			LOG.warn("### WARNING: Multi-threaded text reblock may lead to thread contention on JRE < 1.8 ####");
-			LOG.warn("### java.version = " + version);
-			LOG.warn("### total number of executors = " + numExecutors);
-			LOG.warn("### total number of cores = " + numCores);
-			LOG.warn("### JDK-7032154: Performance tuning of sun.misc.FloatingDecimal/FormattedFloatingDecimal");
-			LOG.warn("### Workaround: Convert text to binary w/ changed configuration of one executor per core");
-			LOG.warn("########################################################################################");
-		}
-	}
-	
 	///////////////////////////////////////////
 	// Cleanup of RDDs and Broadcast variables
 	///////
@@ -1246,6 +1096,7 @@ public class SparkExecutionContext extends ExecutionContext
 		return false;
 	}
 	
+	
 	///////////////////////////////////////////
 	// Debug String Handling (see explain); TODO to be removed
 	///////
@@ -1353,4 +1204,278 @@ public class SparkExecutionContext extends ExecutionContext
 		
 	}
 	
+
+	///////////////////////////////////////////
+	// Spark configuration handling 
+	///////
+
+	/**
+	 * Obtains the lazily analyzed spark cluster configuration. 
+	 * 
+	 * @return
+	 */
+	public static SparkClusterConfig getSparkClusterConfig() {
+		//lazy creation of spark cluster config		
+		if( _sconf == null )
+			_sconf = new SparkClusterConfig();
+		return _sconf;
+	}
+	
+	/**
+	 * Obtains the available memory budget for broadcast variables in bytes.
+	 * 
+	 * @return
+	 */
+	public static double getBroadcastMemoryBudget() {
+		return getSparkClusterConfig()
+			.getBroadcastMemoryBudget();
+	}
+	
+	/**
+	 * Obtain the available memory budget for data storage in bytes.
+	 * 
+	 * @param min      flag for minimum data budget 
+	 * @param refresh  flag for refresh with spark context
+	 * @return
+	 */
+	public static double getDataMemoryBudget(boolean min, boolean refresh) {
+		return getSparkClusterConfig()
+			.getDataMemoryBudget(min, refresh);
+	}
+	
+	/**
+	 * Obtain the number of executors in the cluster (excluding the driver).
+	 * 
+	 * @return
+	 */
+	public static int getNumExecutors() {
+		return getSparkClusterConfig()
+			.getNumExecutors();
+	}
+	
+	/**
+	 * Obtain the default degree of parallelism (cores in the cluster). 
+	 * 
+	 * @param refresh  flag for refresh with spark context 
+	 * @return
+	 */
+	public static int getDefaultParallelism(boolean refresh) {
+		return getSparkClusterConfig()
+			.getDefaultParallelism(refresh);
+	}
+	
+	/**
+	 * 
+	 */
+	public void checkAndRaiseValidationWarningJDKVersion()
+	{
+		//check for jdk version less than jdk8
+		boolean isLtJDK8 = InfrastructureAnalyzer.isJavaVersionLessThanJDK8();
+
+		//check multi-threaded executors
+		int numExecutors = getNumExecutors();
+		int numCores = getDefaultParallelism(false);
+		boolean multiThreaded = (numCores > numExecutors);
+		
+		//check for jdk version less than 8 (and raise warning if multi-threaded)
+		if( isLtJDK8 && multiThreaded) 
+		{
+			//get the jre version 
+			String version = System.getProperty("java.version");
+			
+			LOG.warn("########################################################################################");
+			LOG.warn("### WARNING: Multi-threaded text reblock may lead to thread contention on JRE < 1.8 ####");
+			LOG.warn("### java.version = " + version);
+			LOG.warn("### total number of executors = " + numExecutors);
+			LOG.warn("### total number of cores = " + numCores);
+			LOG.warn("### JDK-7032154: Performance tuning of sun.misc.FloatingDecimal/FormattedFloatingDecimal");
+			LOG.warn("### Workaround: Convert text to binary w/ changed configuration of one executor per core");
+			LOG.warn("########################################################################################");
+		}
+	}
+	
+	/**
+	 * Captures relevant spark cluster configuration properties, e.g., memory budgets and 
+	 * degree of parallelism. This configuration abstracts legacy (< Spark 1.6) and current
+	 * configurations and provides a unified view. 
+	 */
+	private static class SparkClusterConfig 
+	{
+		//broadcasts are stored in mem-and-disk in data space, this config
+		//defines the fraction of data space to be used as broadcast budget
+		private static final double BROADCAST_DATA_FRACTION = 0.3;
+		
+		//forward private config from Spark's UnifiedMemoryManager.scala (>1.6)
+		private static final long RESERVED_SYSTEM_MEMORY_BYTES = 300 * 1024 * 1024;
+		
+		//meta configurations
+		private boolean _legacyVersion = false; //spark version <1.6
+		private boolean _confOnly = false; //infrastructure info based on config
+		
+		//memory management configurations
+		private long _memExecutor = -1; //mem per executor
+		private double _memDataMinFrac = -1; //minimum data fraction
+		private double _memDataMaxFrac = -1; //maximum data fraction
+		private double _memBroadcastFrac = -1; //broadcast fraction
+		
+		//degree of parallelism configurations
+		private int _numExecutors = -1; //total executors
+		private int _defaultPar = -1; //total vcores  
+	
+		public SparkClusterConfig() 
+		{
+			SparkConf sconf = new SparkConf();
+			
+			//parse version and config //TODO avoid spark context creation if possible
+			JavaSparkContext jsc = getSparkContextStatic();
+			_legacyVersion = (UtilFunctions.compareVersion(jsc.version(), "1.6.0") < 0
+					|| sconf.getBoolean("spark.memory.useLegacyMode", false) );
+			
+			//obtain basic spark configurations
+			if( _legacyVersion )
+				analyzeSparkConfiguationLegacy(sconf);
+			else
+				analyzeSparkConfiguation(sconf);
+	
+			//log debug of created spark cluster config
+			if( LOG.isDebugEnabled() )
+				LOG.debug( this.toString() );
+		}
+		
+		/**
+		 * 
+		 * @return
+		 */
+		public long getBroadcastMemoryBudget() {
+			return (long) (_memExecutor * _memBroadcastFrac);
+		}
+		
+		/**
+		 * 
+		 * @param min
+		 * @param refresh
+		 * @return
+		 */
+		public long getDataMemoryBudget(boolean min, boolean refresh) {
+			//always get the current num executors on refresh because this might 
+			//change if not all executors are initially allocated and it is plan-relevant
+			int numExec = _numExecutors;
+			if( refresh && !_confOnly ) {
+				JavaSparkContext jsc = getSparkContextStatic();
+				numExec = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);
+			}
+			
+			//compute data memory budget
+			return (long) ( numExec * _memExecutor *
+				(min ? _memDataMinFrac : _memDataMaxFrac) );	
+		}
+
+		/**
+		 * 
+		 * @return
+		 */
+		public int getNumExecutors() {
+			if( _numExecutors < 0 )
+				analyzeSparkParallelismConfiguation(null);			
+			return _numExecutors;
+		}
+		
+		/**
+		 * 
+		 * @param refresh
+		 * @return
+		 */
+		public int getDefaultParallelism(boolean refresh) {
+			if( _defaultPar < 0 && !refresh )
+				analyzeSparkParallelismConfiguation(null);
+			
+			//always get the current default parallelism on refresh because this might 
+			//change if not all executors are initially allocated and it is plan-relevant
+			return ( refresh && !_confOnly ) ?
+				getSparkContextStatic().defaultParallelism() : _defaultPar;
+		}
+
+		/**
+		 * 
+		 * @param conf
+		 */
+		public void analyzeSparkConfiguationLegacy(SparkConf conf)  {
+			//ensure allocated spark conf
+			SparkConf sconf = (conf == null) ? new SparkConf() : conf;
+			
+			//parse absolute executor memory
+			_memExecutor = UtilFunctions.parseMemorySize(
+					sconf.get("spark.executor.memory", "1g"));
+			
+			//get data and shuffle memory ratios (defaults not specified in job conf)
+			double dataFrac = sconf.getDouble("spark.storage.memoryFraction", 0.6); //default 60%
+			_memDataMinFrac = dataFrac;
+			_memDataMaxFrac = dataFrac;
+			_memBroadcastFrac = dataFrac * BROADCAST_DATA_FRACTION; //default 18%
+			
+			//analyze spark degree of parallelism 
+			analyzeSparkParallelismConfiguation(sconf);	
+		}
+		
+		/**
+		 * 
+		 * @param conf
+		 */
+		public void analyzeSparkConfiguation(SparkConf conf) {
+			//ensure allocated spark conf
+			SparkConf sconf = (conf == null) ? new SparkConf() : conf;
+			
+			//parse absolute executor memory, incl fixed cut off
+			_memExecutor = UtilFunctions.parseMemorySize(
+					sconf.get("spark.executor.memory", "1g")) 
+					- RESERVED_SYSTEM_MEMORY_BYTES;
+			
+			//get data and shuffle memory ratios (defaults not specified in job conf)
+			_memDataMinFrac = sconf.getDouble("spark.memory.storageFraction", 0.5); //default 50%
+			_memDataMaxFrac = sconf.getDouble("spark.memory.fraction", 0.75); //default 75%
+			_memBroadcastFrac = _memDataMaxFrac * BROADCAST_DATA_FRACTION; //default 22.5%
+			
+			//analyze spark degree of parallelism 
+			analyzeSparkParallelismConfiguation(sconf);
+		}
+		
+		/**
+		 * 
+		 * @param sconf
+		 */
+		private void analyzeSparkParallelismConfiguation(SparkConf sconf) {
+			int numExecutors = sconf.getInt("spark.executor.instances", -1);
+			int numCoresPerExec = sconf.getInt("spark.executor.cores", -1);
+			int defaultPar = sconf.getInt("spark.default.parallelism", -1);
+			
+			if( numExecutors > 1 && (defaultPar > 1 || numCoresPerExec > 1) ) {
+				_numExecutors = numExecutors;
+				_defaultPar = (defaultPar>1) ? defaultPar : numExecutors * numCoresPerExec;
+				_confOnly = true;
+			}
+			else {
+				//get default parallelism (total number of executors and cores)
+				//note: spark context provides this information while conf does not
+				//(for num executors we need to correct for driver and local mode)
+				JavaSparkContext jsc = getSparkContextStatic();
+				_numExecutors = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);  
+				_defaultPar = jsc.defaultParallelism();
+				_confOnly = false; //implies env info refresh w/ spark context 
+			}
+		}
+		
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder("SparkClusterConfig: \n");
+			sb.append("-- legacyVersion    = " + _legacyVersion + " ("+getSparkContextStatic().version()+")\n" );
+			sb.append("-- confOnly         = " + _confOnly + "\n");
+			sb.append("-- memExecutor      = " + _memExecutor + "\n");
+			sb.append("-- memDataMinFrac   = " + _memDataMinFrac + "\n");
+			sb.append("-- memDataMaxFrac   = " + _memDataMaxFrac + "\n");
+			sb.append("-- memBroadcastFrac = " + _memBroadcastFrac + "\n");
+			sb.append("-- numExecutors     = " + _numExecutors + "\n");
+			sb.append("-- defaultPar       = " + _defaultPar + "\n");		
+			return sb.toString();
+		}
+	}
 }

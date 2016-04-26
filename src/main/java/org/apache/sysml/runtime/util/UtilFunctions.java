@@ -353,6 +353,27 @@ public class UtilFunctions
 		}
 	}
 	
+	/**
+	 * Compares two version strings of format x.y.z, where x is major,
+	 * y is minor, and z is maintenance release.
+	 * 
+	 * @param version1
+	 * @param version2
+	 * @return
+	 */
+	public static int compareVersion( String version1, String version2 ) {
+		String[] partsv1 = version1.split("\\.");
+		String[] partsv2 = version2.split("\\.");
+		int len = Math.min(partsv1.length, partsv2.length);
+		for( int i=0; i<partsv1.length && i<len; i++ ) {
+			Integer iv1 = Integer.parseInt(partsv1[i]);
+			Integer iv2 = Integer.parseInt(partsv2[i]);
+			if( iv1.compareTo(iv2) != 0 )
+				return iv1.compareTo(iv2);
+		}		
+		return 0; //equal 
+	}
+	
 	public static boolean isIntegerNumber( String str )
 	{
 		byte[] c = str.getBytes();
@@ -401,5 +422,23 @@ public class UtilFunctions
 			sb.append(list[i]);
 		}
 		return sb.toString();
+	}
+	
+	/**
+	 * Parses a memory size with optional g/m/k quantifiers into its
+	 * number representation.
+	 * 
+	 * @param arg
+	 * @return
+	 */
+	public static long parseMemorySize(String arg) {
+		if ( arg.endsWith("g") || arg.endsWith("G") )
+			return Long.parseLong(arg.substring(0,arg.length()-1)) * 1024 * 1024 * 1024;
+		else if ( arg.endsWith("m") || arg.endsWith("M") )
+			return Long.parseLong(arg.substring(0,arg.length()-1)) * 1024 * 1024;
+		else if( arg.endsWith("k") || arg.endsWith("K") )
+			return Long.parseLong(arg.substring(0,arg.length()-1)) * 1024;
+		else 
+			return Long.parseLong(arg.substring(0,arg.length()));
 	}
 }

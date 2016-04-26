@@ -375,7 +375,7 @@ public abstract class Hop
 				boolean serializedStorage = false;
 				if( dimsKnown(true) && !Checkpoint.CHECKPOINT_SPARSE_CSR ) {
 					double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(_dim1, _dim2, _rows_in_block, _cols_in_block, _nnz);
-					double dataCache = SparkExecutionContext.getConfiguredTotalDataMemory(true);
+					double dataCache = SparkExecutionContext.getDataMemoryBudget(true, true);
 					serializedStorage = (MatrixBlock.evalSparseFormatInMemory(_dim1, _dim2, _nnz)
 							             && matrixPSize > dataCache ); //sparse in-memory does not fit in agg mem 
 				}

@@ -287,10 +287,8 @@ public class Dag<N extends Lop>
 		// is no longer accessible/used.
 		HashSet<String> updatedLabels = new HashSet<String>();
 		HashMap<String, Lop> updatedLabelsLineNum =  new HashMap<String, Lop>();
-		
 		// first capture all transient read variables
 		for ( Lop node : nodeV ) {
-
 			if (node.getExecLocation() == ExecLocation.Data
 					&& ((Data) node).isTransient()
 					&& ((Data) node).getOperationType() == OperationTypes.READ
@@ -976,17 +974,14 @@ public class Dag<N extends Lop>
 					boolean dnode_queued = false;
 					
 					if ( dnode.getOperationType() == OperationTypes.READ ) {
-						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Adding Data -"+ node.toString());
-
-						// TODO: avoid readScalar instruction, and read it on-demand just like the way Matrices are read in control program
-						if ( node.getDataType() == DataType.SCALAR 
-								//TODO: LEO check the following condition is still needed
-								&& node.getOutputParameters().getFile_name() != null ) {
-							// this lop corresponds to reading a scalar from HDFS file
-							// add it to execNodes so that "readScalar" instruction gets generated
-							execNodes.add(node);
-							// note: no need to add it to any job vector
+						if ( node.getDataType() == DataType.SCALAR && node.getOutputParameters().getFile_name() != null ) {
+							// if reading a scalar from a file (persistent read), need to add the node to execNodes
+							// if reading a scalar from MLContext/JMLC (transient read), do not add the node to execNodes
+							if (!dnode.isTransient()) {
+								if( LOG.isTraceEnabled() )
+									LOG.trace(indent + "Adding Data -"+ node.toString());
+								execNodes.add(node);
+							}
 						}
 					}
 					else if (dnode.getOperationType() == OperationTypes.WRITE) {

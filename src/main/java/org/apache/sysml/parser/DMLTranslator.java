@@ -2032,8 +2032,7 @@ public class DMLTranslator
 									target.getName(), target.getDataType(), 
 									target.getValueType(), ParamBuiltinOp.TRANSFORMDECODE, 
 									paramHops);
-			break;	
-			
+			break;			
 
 		case TRANSFORMMETA:
 			currBuiltinOp = new ParameterizedBuiltinOp(
@@ -2041,6 +2040,13 @@ public class DMLTranslator
 									target.getValueType(), ParamBuiltinOp.TRANSFORMMETA, 
 									paramHops);
 			break;		
+		
+		case CAST_AS_STRING:
+			currBuiltinOp = new ParameterizedBuiltinOp(
+									target.getName(), target.getDataType(), 
+									target.getValueType(), ParamBuiltinOp.CAST_AS_STRING, 
+									paramHops);
+			break;
 			
 		default:
 			

@@ -20,6 +20,8 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
+import java.text.DecimalFormat;
+
 /**
  * SparseBlock implementation that realizes a 'modified compressed sparse row'
  * representation, where each compressed row is stored as a separate SparseRow
@@ -316,6 +318,72 @@ public class SparseBlockMCSR extends SparseBlock
 			sb.append(_rows[i]);
 			sb.append("\n");
 		}		
+		
+		return sb.toString();
+	}
+
+	@Override
+	public String denseToString(String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal) {
+		StringBuffer sb = new StringBuffer();
+
+		int rlen = _rows.length;
+		int clen = -1;
+		for (int i=0; i<_rows.length; ++i) { if (clen < _rows[i].size()) clen = _rows[i].size(); }
+		
+		int rowLength = rlen;
+		int colLength = clen;
+		if (rowsToPrint >= 0)
+			rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
+		if (colsToPrint >= 0)
+			colLength = colsToPrint < clen ? colsToPrint : clen;
+		DecimalFormat df = new DecimalFormat();
+		if (decimal >= 0){
+			df.setMinimumFractionDigits(decimal);
+		}
+		
+		for (int i=0; i<rowLength; ++i){
+			for (int j=0; j<colLength; ++j){
+				sb.append(df.format(_rows[i].get(j)));
+				sb.append(separator);
+			}
+			sb.append(lineseparator);
+		}
+		
+		return sb.toString();
+	}
+
+	@Override
+	public String sparseToString(String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal) {
+		StringBuffer sb = new StringBuffer();
+
+		int rlen = _rows.length;
+		int clen = -1;
+		for (int i=0; i<_rows.length; ++i) { if (clen < _rows[i].size()) clen = _rows[i].size(); }
+		
+		int rowLength = rlen;
+		int colLength = clen;
+		if (rowsToPrint >= 0)
+			rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
+		if (colsToPrint >= 0)
+			colLength = colsToPrint < clen ? colsToPrint : clen;
+		DecimalFormat df = new DecimalFormat();
+		if (decimal >= 0){
+			df.setMinimumFractionDigits(decimal);
+		}
+		
+		
+		for (int i=0; i<rowLength; ++i){
+			int[] rows = _rows[i].indexes();
+			double[] values = _rows[i].values();
+			for (int j=0; j<rows.length; ++j){
+				if (rows[j] < colLength){
+					sb.append(i).append(separator).append(rows[j]).append(separator);
+					sb.append(df.format(values[j]));
+					sb.append(lineseparator);
+				}
+			}
+		}
+		
 		
 		return sb.toString();
 	}

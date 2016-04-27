@@ -132,6 +132,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		{
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
+		else if (	opcode.equals("as.string"))
+		{
+			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
 		}
@@ -287,6 +291,54 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			
 			//release locks
 			ec.setFrameOutput(output.getName(), meta);
+		}
+		else if ( opcode.equalsIgnoreCase("as.string")) {
+			// Default Arguments
+			final int MAXROWS = 100;
+			final int MAXCOLS = 100;
+			final int DECIMAL = 3;
+			final boolean SPARSE = false;
+			final String SEPARATOR = " ";
+			final String LINESEPARATOR = "\n";
+			
+			int rows=MAXROWS, cols=MAXCOLS, decimal=DECIMAL;
+			boolean sparse = SPARSE;
+			String separator=SEPARATOR, lineseparator=LINESEPARATOR; 
+			
+			String rowsStr = getParameterMap().get("rows");
+			if (rowsStr != null){ rows = Integer.parseInt(rowsStr); }
+			
+			String colsStr = getParameterMap().get("cols");
+			if (colsStr != null) { cols = Integer.parseInt(rowsStr); }
+			
+			String decimalStr = getParameterMap().get("decimal");
+			if (decimalStr != null) { decimal = Integer.parseInt(decimalStr); }
+			
+			String sparseStr = getParameterMap().get("sparse");
+			if (sparseStr != null) { sparse = Boolean.parseBoolean(sparseStr); }
+			
+			String separatorStr = getParameterMap().get("separator");
+			if (separatorStr != null) { separator = separatorStr; }
+			
+			String lineseparatorStr = getParameterMap().get("lineseparator");
+			if (lineseparatorStr != null) { lineseparator = lineseparatorStr; }
+			
+			// The matrix argument is "null"
+			String matrixStr = getParameterMap().get("null");
+			Data data = ec.getVariable(matrixStr);
+			if (!(data instanceof MatrixObject))
+				throw new DMLRuntimeException("as.string only converts matrix objects to string");
+			MatrixBlock matrix = ec.getMatrixInput(matrixStr);
+			
+			String outputStr;
+			if (sparse)
+				outputStr = matrix.sparseToString(separator, lineseparator, rows, cols, decimal);
+			else
+				outputStr = matrix.denseToString(separator, lineseparator, rows, cols, decimal);
+			
+			ec.releaseMatrixInput(matrixStr);
+			ec.setScalarOutput(output.getName(), new StringObject(outputStr));
+			
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

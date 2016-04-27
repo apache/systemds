@@ -198,7 +198,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			case REPLACE:
 			case TRANSFORMAPPLY: 
 			case TRANSFORMDECODE: 
-			case TRANSFORMMETA: { 
+			case TRANSFORMMETA: 
+			case CAST_AS_STRING: {
 				ExecType et = optFindExecType();			
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
 						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
@@ -881,6 +882,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	{
 		//CDF always known because 
 		
+		// CAST_AS_STRING outputs a string
+		
 		long[] ret = null;
 	
 		Hop input = getInput().get(_paramIndexMap.get("target"));	
@@ -1006,6 +1009,10 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			{
 				_etype = ExecType.CP;
 			}
+			else if ( _op == ParamBuiltinOp.CAST_AS_STRING)
+			{
+				_etype = ExecType.CP;
+			}
 			else
 			{
 				_etype = REMOTE;
@@ -1104,6 +1111,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Hop target = getInput().get(_paramIndexMap.get("target"));
 				setDim1( target.getDim1() ); //rows remain unchanged
 			}
+				break;
 			default:
 				//do nothing
 				break;

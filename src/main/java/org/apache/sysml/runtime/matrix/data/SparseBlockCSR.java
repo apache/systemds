@@ -20,6 +20,7 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
+import java.text.DecimalFormat;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.util.SortUtils;
@@ -625,5 +626,86 @@ public class SparseBlockCSR extends SparseBlock
 		int rlen = numRows();
 		for( int i=rl; i<rlen+1; i++ )
 			_ptr[i]-=cnt;
+	}
+
+	@Override
+	public String denseToString(String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal) {
+		StringBuffer sb = new StringBuffer();
+		
+		int rlen = _ptr.length-1;
+		int clen = -1;
+		for (int i=0; i<_indexes.length; ++i) { if (clen < _indexes[i]) clen = _indexes[i]; }
+		clen += 1;
+		
+		int rowLength = rlen;
+		int colLength = clen;
+		if (rowsToPrint >= 0)
+			rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
+		if (colsToPrint >= 0)
+			colLength = colsToPrint < clen ? colsToPrint : clen;
+		DecimalFormat df = new DecimalFormat();
+		if (decimal >= 0){
+			df.setMinimumFractionDigits(decimal);
+		}
+		
+		double[][] values = new double[rowLength][colLength];
+		for( int i=0; i<numRows(); i++ ) {
+			int rowIndex = i;
+			int pos = pos(i);
+			int len = size(i);
+			for(int j=pos; j<pos+len; j++) {
+				int colIndex = _indexes[j];
+				double value = _values[j];
+				values[rowIndex][colIndex] = value;
+			}
+		}	
+		
+		for (int i=0; i<rowLength; ++i){
+			for (int j=0; j<colLength; ++j){
+				sb.append(df.format(values[i][j]));
+				sb.append(separator);
+			}
+			sb.append(lineseparator);
+		}
+		
+		return sb.toString();
+	}
+
+	@Override
+	public String sparseToString(String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal) {
+		StringBuffer sb = new StringBuffer();
+		
+		int rlen = _ptr.length-1;
+		int clen = -1;
+		for (int i=0; i<_indexes.length; ++i) { if (clen < _indexes[i]) clen = _indexes[i]; }
+		clen += 1;
+		
+		int rowLength = rlen;
+		int colLength = clen;
+		if (rowsToPrint >= 0)
+			rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
+		if (colsToPrint >= 0)
+			colLength = colsToPrint < clen ? colsToPrint : clen;
+		DecimalFormat df = new DecimalFormat();
+		if (decimal >= 0){
+			df.setMinimumFractionDigits(decimal);
+		}
+		
+		for( int i=0; i<numRows(); i++ ) {
+			int rowIndex = i;
+			int pos = pos(i);
+			int len = size(i);
+			for(int j=pos; j<pos+len; j++) {
+				int colIndex = _indexes[j];
+				double value = _values[j];
+				if (rowIndex < rowLength && colIndex < colLength){
+					sb.append(rowIndex).append(separator).append(colIndex).append(separator);
+					sb.append(df.format(value));
+					sb.append(lineseparator);
+				}
+			}
+		}		
+		
+		return sb.toString();
 	}
 }

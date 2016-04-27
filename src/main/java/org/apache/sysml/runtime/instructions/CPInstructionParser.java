@@ -185,7 +185,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "transformdecode",CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformencode",CPINSTRUCTION_TYPE.MultiReturnParameterizedBuiltin);
 		String2CPInstructionType.put( "transformmeta",CPINSTRUCTION_TYPE.ParameterizedBuiltin);
-
+		String2CPInstructionType.put( "as.string"   , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		
 		// Variable Instruction Opcodes 
 		String2CPInstructionType.put( "assignvar"   , CPINSTRUCTION_TYPE.Variable);
 		String2CPInstructionType.put( "cpvar"    	, CPINSTRUCTION_TYPE.Variable);

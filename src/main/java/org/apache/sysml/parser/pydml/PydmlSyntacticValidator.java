@@ -963,9 +963,18 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		String functionName = fnNames[1];
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
 
+		castAsScalarDeprecationCheck(functionName, ctx);
+
 		boolean hasLHS = ctx.targetList != null;
 		functionCallAssignmentStatementHelper(ctx, printStatements, outputStatements, hasLHS ? ctx.targetList.dataInfo.expr : null, ctx.info, ctx.name,
 	 			hasLHS ? ctx.targetList.start : null, namespace, functionName, paramExpression, hasLHS);
+	}
+
+	// TODO: remove this when castAsScalar has been removed from DML/PYDML
+	private void castAsScalarDeprecationCheck(String functionName, ParserRuleContext ctx) {
+		if ("castAsScalar".equalsIgnoreCase(functionName)) {
+			raiseWarning("castAsScalar() has been deprecated. Please use scalar().", ctx.start);
+		}
 	}
 
 	@Override
@@ -980,6 +989,8 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		String functionName = names[1];
 
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
+
+		castAsScalarDeprecationCheck(functionName, ctx);
 
 		ConvertedDMLSyntax convertedSyntax = convertToDMLSyntax(ctx, namespace, functionName, paramExpression, ctx.name);
 		if(convertedSyntax == null) {

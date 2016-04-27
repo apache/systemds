@@ -23,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
@@ -45,7 +44,6 @@ import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.common.CustomErrorListener;
-import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ProgramrootContext;
@@ -166,8 +164,10 @@ public class PyDMLParserWrapper extends AParserWrapper
 		PydmlSyntacticValidator validator = new PydmlSyntacticValidator(errorListener, argVals, sourceNamespace);
 		walker.walk(validator, tree);
 		errorListener.unsetCurrentFileName();
-		if(errorListener.isAtleastOneError()) {
-			List<ParseIssue> parseIssues = errorListener.getParseIssues();
+		this.parseIssues = errorListener.getParseIssues();
+		this.atLeastOneWarning = errorListener.isAtLeastOneWarning();
+		this.atLeastOneError = errorListener.isAtLeastOneError();
+		if (atLeastOneError) {
 			throw new ParseException(parseIssues, dmlScript);
 		}
 		dmlPgm = createDMLProgram(ast, sourceNamespace);

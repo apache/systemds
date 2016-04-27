@@ -23,6 +23,7 @@ package org.apache.sysml.api;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
@@ -54,6 +55,8 @@ import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.common.CustomErrorListener;
+import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
 import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
@@ -1316,6 +1319,11 @@ public class MLContext {
 			prog = parser.parse(dmlScriptFilePath, null, argVals);
 		} else {
 			prog = parser.parse(null, dmlScriptStr, argVals);
+		}
+		
+		if (parser.isAtLeastOneWarning()) {
+			List<ParseIssue> parseIssues = parser.getParseIssues();
+			System.out.println(CustomErrorListener.generateParseIssuesMessage(dmlScriptStr, parseIssues));
 		}
 		
 		//language validate

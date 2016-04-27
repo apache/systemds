@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -30,6 +31,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
+import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
 import org.apache.sysml.parser.pydml.PyDMLParserWrapper;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -40,6 +42,10 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
  */
 public abstract class AParserWrapper 
 {
+	protected boolean atLeastOneError = false;
+	protected boolean atLeastOneWarning = false;
+	protected List<ParseIssue> parseIssues;
+	
 	/**
 	 * 
 	 * @param fileName
@@ -159,5 +165,17 @@ public abstract class AParserWrapper
 		dmlScriptStr = sb.toString();
 		
 		return dmlScriptStr;
+	}
+	
+	public boolean isAtLeastOneError() {
+		return atLeastOneError;
+	}
+
+	public boolean isAtLeastOneWarning() {
+		return atLeastOneWarning;
+	}
+
+	public List<ParseIssue> getParseIssues() {
+		return parseIssues;
 	}
 }

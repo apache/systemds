@@ -348,7 +348,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			break;
 			
-		case CAST_AS_SCALAR:
+		case AS_SCALAR:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
 			if (( getFirstExpr().getOutput().getDim1() != -1 && getFirstExpr().getOutput().getDim1() !=1) || ( getFirstExpr().getOutput().getDim2() != -1 && getFirstExpr().getOutput().getDim2() !=1)) {
@@ -360,7 +360,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions (0, 0);
 			output.setValueType(id.getValueType());
 			break;
-		case CAST_AS_MATRIX:
+		case AS_MATRIX:
 			checkNumParameters(1);
 			checkScalarFrameParam(getFirstExpr());
 			output.setDataType(DataType.MATRIX);
@@ -370,7 +370,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
 			output.setValueType(id.getValueType());
 			break;
-		case CAST_AS_FRAME:
+		case AS_FRAME:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
 			output.setDataType(DataType.FRAME);
@@ -380,7 +380,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
 			output.setValueType(id.getValueType());
 			break;
-		case CAST_AS_DOUBLE:
+		case AS_DOUBLE:
 			checkNumParameters(1);
 			checkScalarParam(getFirstExpr());
 			output.setDataType(DataType.SCALAR);
@@ -389,7 +389,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions (0, 0);
 			output.setValueType(ValueType.DOUBLE);
 			break;
-		case CAST_AS_INT:
+		case AS_INT:
 			checkNumParameters(1);
 			checkScalarParam(getFirstExpr());
 			output.setDataType(DataType.SCALAR);
@@ -398,7 +398,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions (0, 0);
 			output.setValueType(ValueType.INT);
 			break;
-		case CAST_AS_BOOLEAN:
+		case AS_BOOLEAN:
 			checkNumParameters(1);
 			checkScalarParam(getFirstExpr());
 			output.setDataType(DataType.SCALAR);
@@ -1436,17 +1436,17 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			 bifop = Expression.BuiltinFunctionOp.CUMSUM;
 		//'castAsScalar' for backwards compatibility
 		else if (functionName.equals("as.scalar") || functionName.equals("castAsScalar")) 
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;
+			bifop = Expression.BuiltinFunctionOp.AS_SCALAR;
 		else if (functionName.equals("as.matrix"))
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_MATRIX;
+			bifop = Expression.BuiltinFunctionOp.AS_MATRIX;
 		else if (functionName.equals("as.frame"))
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_FRAME;
+			bifop = Expression.BuiltinFunctionOp.AS_FRAME;
 		else if (functionName.equals("as.double"))
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_DOUBLE;
+			bifop = Expression.BuiltinFunctionOp.AS_DOUBLE;
 		else if (functionName.equals("as.integer"))
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_INT;
+			bifop = Expression.BuiltinFunctionOp.AS_INT;
 		else if (functionName.equals("as.logical")) //alternative: as.boolean
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_BOOLEAN;
+			bifop = Expression.BuiltinFunctionOp.AS_BOOLEAN;
 		else if (functionName.equals("quantile"))
 			bifop= Expression.BuiltinFunctionOp.QUANTILE;
 		else if (functionName.equals("interQuantile"))
@@ -1497,10 +1497,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	} // end method getBuiltinFunctionExpression
 
 	/**
+	 * Convert a value type (double, int, or boolean) to a built-in function operator.
 	 * 
-	 * @param vt
-	 * @return
-	 * @throws LanguageException
+	 * @param vt Value type ({@code ValueType.DOUBLE}, {@code ValueType.INT}, or {@code ValueType.BOOLEAN}).
+	 * @return Built-in function operator ({@code BuiltinFunctionOp.AS_DOUBLE},
+	 * {@code BuiltinFunctionOp.AS_INT}, or {@code BuiltinFunctionOp.AS_BOOLEAN}).
+	 * @throws LanguageException thrown if ValueType not accepted
 	 */
 	public static BuiltinFunctionOp getValueTypeCastOperator( ValueType vt ) 
 		throws LanguageException
@@ -1508,11 +1510,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		switch( vt )
 		{
 			case DOUBLE:
-				return BuiltinFunctionOp.CAST_AS_DOUBLE;
+				return BuiltinFunctionOp.AS_DOUBLE;
 			case INT:
-				return BuiltinFunctionOp.CAST_AS_INT;
+				return BuiltinFunctionOp.AS_INT;
 			case BOOLEAN:
-				return BuiltinFunctionOp.CAST_AS_BOOLEAN;
+				return BuiltinFunctionOp.AS_BOOLEAN;
 			default:
 				throw new LanguageException("No cast for value type "+vt);
 		}

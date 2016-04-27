@@ -22,6 +22,7 @@ package org.apache.sysml.parser;
 import java.util.List;
 
 import org.apache.sysml.api.DMLException;
+import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
 
 /**
@@ -148,53 +149,7 @@ public class ParseException extends DMLException
 	 * @return String representing the list of parse issues.
 	 */
 	private String generateParseIssuesMessage() {
-		if (_scriptString == null)
-			return "No script string available.";
-		
-		String[] scriptLines = _scriptString.split("\\n");
-		StringBuilder sb = new StringBuilder();
-		sb.append("\n--------------------------------------------------------------");
-		if (_parseIssues.size() == 1)
-			sb.append("\nThe following parse issue was encountered:\n");
-		else
-			sb.append("\nThe following " + _parseIssues.size() + " parse issues were encountered:\n");
-		int count = 1;
-		for (ParseIssue parseIssue : _parseIssues) {
-			if (_parseIssues.size() > 1) {
-				sb.append("#");
-				sb.append(count++);
-				sb.append(" ");
-			}
-
-			int issueLineNum = parseIssue.getLine();
-			boolean displayScriptLine = false;
-			String scriptLine = null;
-			if ((issueLineNum > 0) && (issueLineNum <= scriptLines.length)) {
-				displayScriptLine = true;
-				scriptLine = scriptLines[issueLineNum - 1];
-			}
-
-			String name = parseIssue.getFileName();
-			if (name != null) {
-				sb.append(name);
-				sb.append(" ");
-			}
-			sb.append("[line ");
-			sb.append(issueLineNum);
-			sb.append(":");
-			sb.append(parseIssue.getCharPositionInLine());
-			sb.append("] [");
-			sb.append(parseIssue.getParseIssueType().getText());
-			sb.append("]");
-			if (displayScriptLine) {
-				sb.append(" -> ");
-				sb.append(scriptLine);
-			}
-			sb.append("\n   ");
-			sb.append(parseIssue.getMessage());
-			sb.append("\n");
-		}
-		sb.append("--------------------------------------------------------------");
-		return sb.toString();
+		return CustomErrorListener.generateParseIssuesMessage(_scriptString, _parseIssues);
 	}
+	
 }

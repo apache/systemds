@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -62,6 +63,8 @@ import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
+import org.apache.sysml.parser.common.CustomErrorListener;
+import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -585,6 +588,11 @@ public class DMLScript
 		Statistics.startCompileTimer();
 		AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
 		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
+		
+		if (parser.isAtLeastOneWarning()) {
+			List<ParseIssue> parseIssues = parser.getParseIssues();
+			System.out.println(CustomErrorListener.generateParseIssuesMessage(dmlScriptStr, parseIssues));
+		}
 		
 		//Step 4: construct HOP DAGs (incl LVA and validate)
 		DMLTranslator dmlt = new DMLTranslator(prog);

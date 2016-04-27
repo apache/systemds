@@ -41,7 +41,7 @@ echo "-- Generating multinomial data." >> times.txt;
 ./genMultinomialData.sh $1 $2 &>> logs/genMultinomialData.out
 
 # run all classifiers with binomial labels on all datasets
-MAXITR=10
+MAXITR=20
 for d in "10k_1k_dense" "10k_1k_sparse" # "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" "100M_1k_dense" "100M_1k_sparse" 
 do 
    for f in "runNaiveBayes"

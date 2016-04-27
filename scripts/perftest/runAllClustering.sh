@@ -39,7 +39,7 @@ echo "-- Using cluster data." >> times.txt;
 ./genClusteringData.sh $1 $2 &>> logs/genClusteringData.out
 
 # run all clustering algorithms on all datasets
-MAXITR=10
+MAXITR=20
 for d in "10k_1k_dense" #"100k_1k_dense" "1M_1k_dense" #"10M_1k_dense" #"100M_1k_dense"
 do 
    echo "-- Running Kmeans on "$d >> times.txt;

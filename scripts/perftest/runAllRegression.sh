@@ -39,7 +39,7 @@ echo $2"-- Using binomial data: " >> times.txt;
 ./genBinomialData.sh $1 $2 &>> logs/genBinomialData.out
 
 # run all regression algorithms with binomial labels on all datasets
-MAXITR=10
+MAXITR=20
 for d in "10k_1k_dense" "10k_1k_sparse" # "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" #"_KDD" "100M_1k_dense" "100M_1k_sparse" 
 do
    for f in "runLinearRegDS"

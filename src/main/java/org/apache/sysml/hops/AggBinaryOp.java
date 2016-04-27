@@ -901,8 +901,12 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		long brlen = pmInput.getRowsInBlock();
 		long bclen = pmInput.getColsInBlock();
 		
-		//a) full permutation matrix input (potentially without empty block materialized)
 		Lop lpmInput = pmInput.constructLops();
+		Hop nrow = null;
+		double mestPM = OptimizerUtils.estimateSize(pmInput.getDim1(), 1);
+		ExecType etVect = (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP;				
+		
+		//a) full permutation matrix input (potentially without empty block materialized)
 		if( pmInput.getDim2() != 1 ) //not a vector
 		{
 			//compute condensed permutation matrix vector input			
@@ -930,20 +934,28 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			//mult.computeMemEstimate(memo); //select exec type
 			HopRewriteUtils.copyLineNumbers(this, mult);
 			
-			lpmInput = mult.constructLops();
+			//compute NROW target via nrow(m)
+			nrow = HopRewriteUtils.createValueHop(pmInput, true);
+			HopRewriteUtils.setOutputBlocksizes(nrow, 0, 0);
+			nrow.setForcedExecType(ExecType.CP);
+			HopRewriteUtils.copyLineNumbers(this, nrow);
 			
+			lpmInput = mult.constructLops();
 			HopRewriteUtils.removeChildReference(pmInput, transpose);
+		}
+		else //input vector
+		{
+			//compute NROW target via max(v)
+			nrow = HopRewriteUtils.createAggUnaryOp(pmInput, AggOp.MAX, Direction.RowCol); 
+			HopRewriteUtils.setOutputBlocksizes(nrow, 0, 0);
+			nrow.setForcedExecType(etVect);
+			HopRewriteUtils.copyLineNumbers(this, nrow);
 		}
 		
 		//b) condensed permutation matrix vector input (target rows)
-		Hop nrow = HopRewriteUtils.createValueHop(pmInput, true); //NROW
-		HopRewriteUtils.setOutputBlocksizes(nrow, 0, 0);
-		nrow.setForcedExecType(ExecType.CP);
-		HopRewriteUtils.copyLineNumbers(this, nrow);
-		Lop lnrow = nrow.constructLops();
-		
 		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
-		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), lnrow, getDataType(), getValueType(), false, _outputEmptyBlocks, ExecType.SPARK);
+		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), nrow.constructLops(), 
+				getDataType(), getValueType(), false, _outputEmptyBlocks, ExecType.SPARK);
 		setOutputDimensions(pmm);
 		setLineNumbers(pmm);
 		setLops(pmm);
@@ -1309,8 +1321,12 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		long brlen = pmInput.getRowsInBlock();
 		long bclen = pmInput.getColsInBlock();
 		
-		//a) full permutation matrix input (potentially without empty block materialized)
 		Lop lpmInput = pmInput.constructLops();
+		Hop nrow = null;
+		double mestPM = OptimizerUtils.estimateSize(pmInput.getDim1(), 1);
+		ExecType etVect = (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP;
+		
+		//a) full permutation matrix input (potentially without empty block materialized)
 		if( pmInput.getDim2() != 1 ) //not a vector
 		{
 			//compute condensed permutation matrix vector input			
@@ -1335,31 +1351,36 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			HopRewriteUtils.setOutputBlocksizes(mult, brlen, bclen); 
 			mult.refreshSizeInformation();
 			mult.setForcedExecType(ExecType.MR);
-			//mult.computeMemEstimate(memo); //select exec type
 			HopRewriteUtils.copyLineNumbers(this, mult);
 			
-			lpmInput = mult.constructLops();
-			
+			//compute NROW target via nrow(m)
+			nrow = HopRewriteUtils.createValueHop(pmInput, true);
+			HopRewriteUtils.setOutputBlocksizes(nrow, 0, 0);
+			nrow.setForcedExecType(ExecType.CP);
+			HopRewriteUtils.copyLineNumbers(this, nrow);
+				
+			lpmInput = mult.constructLops();			
 			HopRewriteUtils.removeChildReference(pmInput, transpose);
 		}
+		else //input vector
+		{
+			//compute NROW target via max(v)
+			nrow = HopRewriteUtils.createAggUnaryOp(pmInput, AggOp.MAX, Direction.RowCol); 
+			HopRewriteUtils.setOutputBlocksizes(nrow, 0, 0);
+			nrow.setForcedExecType(etVect);
+			HopRewriteUtils.copyLineNumbers(this, nrow);
+		}
 		
-		//b) condensed permutation matrix vector input (target rows)
-		Hop nrow = HopRewriteUtils.createValueHop(pmInput, true); //NROW
-		HopRewriteUtils.setOutputBlocksizes(nrow, 0, 0);
-		nrow.setForcedExecType(ExecType.CP);
-		HopRewriteUtils.copyLineNumbers(this, nrow);
-		Lop lnrow = nrow.constructLops();
-		
+		//b) condensed permutation matrix vector input (target rows)		
 		boolean needPart = !pmInput.dimsKnown() || pmInput.getDim1() > DistributedCacheInput.PARTITION_SIZE;
-		double mestPM = OptimizerUtils.estimateSize(pmInput.getDim1(), 1);
 		if( needPart ){ //requires partitioning
-			lpmInput = new DataPartition(lpmInput, DataType.MATRIX, ValueType.DOUBLE, (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
+			lpmInput = new DataPartition(lpmInput, DataType.MATRIX, ValueType.DOUBLE, etVect, PDataPartitionFormat.ROW_BLOCK_WISE_N);
 			lpmInput.getOutputParameters().setDimensions(pmInput.getDim1(), 1, getRowsInBlock(), getColsInBlock(), pmInput.getDim1());
 			setLineNumbers(lpmInput);	
 		}
 		
 		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
-		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), lnrow, getDataType(), getValueType(), needPart, _outputEmptyBlocks, ExecType.MR);
+		PMMJ pmm = new PMMJ(lpmInput, rightInput.constructLops(), nrow.constructLops(), getDataType(), getValueType(), needPart, _outputEmptyBlocks, ExecType.MR);
 		pmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(pmm);
 		
@@ -1367,7 +1388,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		aggregate.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		aggregate.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
 		setLineNumbers(aggregate);
-		
 		setLops(aggregate);
 		
 		HopRewriteUtils.removeChildReference(pmInput, nrow);		

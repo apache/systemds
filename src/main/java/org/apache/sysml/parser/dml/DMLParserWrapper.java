@@ -23,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -87,7 +86,7 @@ public class DMLParserWrapper extends AParserWrapper
 	 * @throws ParseException
 	 */
 	@Override
-	public DMLProgram parse(String fileName, String dmlScript, HashMap<String,String> argVals) throws ParseException {
+	public DMLProgram parse(String fileName, String dmlScript, Map<String,String> argVals) throws ParseException {
 		DMLProgram prog = doParse(fileName, dmlScript, null, argVals);
 		
 		return prog;
@@ -102,7 +101,7 @@ public class DMLParserWrapper extends AParserWrapper
 	 * @return null if at least one error
 	 * @throws ParseException
 	 */
-	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, HashMap<String,String> argVals) throws ParseException {
+	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, Map<String,String> argVals) throws ParseException {
 		DMLProgram dmlPgm = null;
 		
 		ANTLRInputStream in;
@@ -221,7 +220,10 @@ public class DMLParserWrapper extends AParserWrapper
 					// Add the DMLProgram entries into current program
 					for(Map.Entry<String, DMLProgram> entry : stmtCtx.info.namespaces.entrySet()) {
 						// TODO handle namespace key already exists for different program value instead of overwriting
-						dmlPgm.getNamespaces().put(entry.getKey(), entry.getValue());
+						DMLProgram prog = entry.getValue();
+						if (prog != null && prog.getNamespaces().size() > 0) {
+							dmlPgm.getNamespaces().put(entry.getKey(), prog);
+						}
 						
 						// Add dependent programs (handle imported script that also imports scripts)
 						for(Map.Entry<String, DMLProgram> dependency : entry.getValue().getNamespaces().entrySet()) {

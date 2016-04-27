@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -111,10 +112,10 @@ import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class DmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
 
-	public DmlSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
+	public DmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {
 		super(errorListener, argVals, sourceNamespace);
 	}
-
+	
 	@Override public String namespaceResolutionOp() { return "::"; }
 	@Override public String trueStringLiteral() { return "TRUE"; }
 	@Override public String falseStringLiteral() { return "FALSE"; }
@@ -334,20 +335,37 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 		//concatenate working directory to filepath
 		filePath = _workingDir + File.separator + filePath;
+		String scriptID = DMLProgram.constructFunctionKey(namespace, filePath);
 
 		DMLProgram prog = null;
-		try {
-			prog = (new DMLParserWrapper()).doParse(filePath, null, namespace, argVals);
-		} catch (ParseException e) {
-			notifyErrorListeners(e.getMessage(), ctx.start);
-			return;
+		if (!_scripts.get().containsKey(scriptID))
+		{
+			_scripts.get().put(scriptID, this.currentFile);
+			try {
+				prog = (new DMLParserWrapper()).doParse(filePath, null, namespace, argVals);
+			} catch (ParseException e) {
+				notifyErrorListeners(e.getMessage(), ctx.start);
+				return;
+			}
+	        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
+			if(prog == null) {
+				notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
+				return;
+			}
+			else {
+				ctx.info.namespaces = new HashMap<String, DMLProgram>();
+				ctx.info.namespaces.put(namespace, prog);
+				ctx.info.stmt = new ImportStatement();
+				((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
+				((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
+				((ImportStatement) ctx.info.stmt).setNamespace(namespace);
+			}
 		}
-        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
-		if(prog == null) {
-			notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
-			return;
-		}
-		else {
+		else
+		{
+			// Skip redundant parsing (to prevent potential infinite recursion) and
+			// create empty program for this context to allow processing to continue.
+			prog = new DMLProgram();
 			ctx.info.namespaces = new HashMap<String, DMLProgram>();
 			ctx.info.namespaces.put(namespace, prog);
 			ctx.info.stmt = new ImportStatement();

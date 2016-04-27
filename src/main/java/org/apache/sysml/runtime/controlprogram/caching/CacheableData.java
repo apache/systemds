@@ -1039,7 +1039,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			{
 				mc = new MatrixCharacteristics(mc.getRows(), mc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros());
 			}
-			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, mc, oinfo, formatProperties);
+			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, dataType, mc, oinfo, formatProperties);
 		}
 	}
 	

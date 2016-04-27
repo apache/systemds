@@ -117,14 +117,14 @@ public class Explain
 		
 		if( OptimizerUtils.isSparkExecutionMode() )
 		{
-			if( counts.numJobs-counts.numReblocks == 0 )
-			{
+			if( counts.numJobs-counts.numReblocks == 0 ) {
 				//avoid unnecessary lazy spark context creation on access to memory configurations
-				sb.append( "?MB/?MB" );
+				sb.append( "?MB/?MB/?MB" );
 			}
-			else //default
-			{
-				sb.append( OptimizerUtils.toMB(SparkExecutionContext.getConfiguredTotalDataMemory()) );
+			else { //default
+				sb.append( OptimizerUtils.toMB(SparkExecutionContext.getDataMemoryBudget(true, false)) );
+				sb.append( "MB/" );
+				sb.append( OptimizerUtils.toMB(SparkExecutionContext.getDataMemoryBudget(false, false)) );
 				sb.append( "MB/" );
 				sb.append( OptimizerUtils.toMB(SparkExecutionContext.getBroadcastMemoryBudget()) );
 				sb.append( "MB" );
@@ -165,15 +165,12 @@ public class Explain
 		
 		if( OptimizerUtils.isSparkExecutionMode() ) //SP
 		{
-			if( counts.numJobs-counts.numReblocks == 0 )
-			{
+			if( counts.numJobs-counts.numReblocks == 0 ) {
 				//avoid unnecessary lazy spark context creation on access to memory configurations
 				sb.append( "?" );
 			}
-			else //default
-			{
-				int rk = SparkExecutionContext.getDefaultParallelism(); 
-				sb.append( rk );	
+			else { //default
+				sb.append( SparkExecutionContext.getDefaultParallelism(false) );	
 			}
 		}
 		else //MR

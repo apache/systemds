@@ -222,12 +222,20 @@ public class StatementBlock extends LiveVariableAnalysis
 			if (sourceExpr instanceof FunctionCallIdentifier){
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(),fcall.getName());
-				if (fblock == null){
+				if (fblock == null) {
 					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 				}
 				
-				if( rIsInlineableFunction(fblock, dmlProg) )
+				//check for unsupported target indexed identifiers (for consistent error handling)
+				if( stmt instanceof AssignmentStatement 
+					&& ((AssignmentStatement)stmt).getTarget() instanceof IndexedIdentifier ) {
+					return false;
+				}
+				
+				//check if function can be inlined
+				if( rIsInlineableFunction(fblock, dmlProg) ) {
 					return true;
+				}
 			}
 		}
 		

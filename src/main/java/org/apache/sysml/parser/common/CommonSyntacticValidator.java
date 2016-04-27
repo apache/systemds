@@ -51,7 +51,6 @@ import org.apache.sysml.parser.PrintStatement;
 import org.apache.sysml.parser.RelationalExpression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StringIdentifier;
-import org.apache.sysml.parser.common.CustomErrorListener;
 import org.apache.sysml.parser.dml.DmlParser.BuiltinFunctionExpressionContext;
 import org.apache.sysml.parser.dml.DmlSyntacticValidator;
 import org.apache.sysml.parser.pydml.PydmlSyntacticValidator;
@@ -64,10 +63,18 @@ public abstract class CommonSyntacticValidator {
 	protected final CustomErrorListener errorListener;
 	protected final String currentFile;
 	protected String _workingDir = ".";   //current working directory
-	protected HashMap<String,String> argVals = null;
+	protected Map<String,String> argVals = null;
 	protected String sourceNamespace = null;
+	// track imported scripts to prevent infinite recursion
+	protected static ThreadLocal<HashMap<String, String>> _scripts = new ThreadLocal<HashMap<String, String>>() {
+		@Override protected HashMap<String, String> initialValue() { return new HashMap<String, String>(); }
+	};
+	
+	public static void init() {
+		_scripts.get().clear();
+	}
 
-	public CommonSyntacticValidator(CustomErrorListener errorListener, HashMap<String,String> argVals, String sourceNamespace) {
+	public CommonSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {
 		this.errorListener = errorListener;
 		currentFile = errorListener.getCurrentFileName();
 		this.argVals = argVals;
@@ -275,16 +282,37 @@ public abstract class CommonSyntacticValidator {
 		}
 	}
 
-	protected void constStringIdExpressionHelper(ParserRuleContext ctx, ExpressionInfo me) {
-		String val = "";
-		String text = ctx.getText();
-		if(	(text.startsWith("\"") && text.endsWith("\"")) ||
-			(text.startsWith("\'") && text.endsWith("\'"))) {
-			if(text.length() > 2) {
-				val = text.substring(1, text.length()-1);
+	protected String extractStringInQuotes(String text, boolean inQuotes) {
+		String val = null;
+		if(inQuotes) {
+			if(	(text.startsWith("\"") && text.endsWith("\"")) ||
+				(text.startsWith("\'") && text.endsWith("\'"))) {
+				if(text.length() > 2) {
+					val = text.substring(1, text.length()-1)
+						.replaceAll("\\\\b","\b")
+						.replaceAll("\\\\t","\t")
+						.replaceAll("\\\\n","\n")
+						.replaceAll("\\\\f","\f")
+						.replaceAll("\\\\r","\r");
+				}
+				else if(text.equals("\"\"") || text.equals("\'\'")) {
+					val = "";
+				}
 			}
 		}
 		else {
+			val = text.replaceAll("\\\\b","\b")
+					.replaceAll("\\\\t","\t")
+					.replaceAll("\\\\n","\n")
+					.replaceAll("\\\\f","\f")
+					.replaceAll("\\\\r","\r");
+		}
+		return val;
+	}
+	
+	protected void constStringIdExpressionHelper(ParserRuleContext ctx, ExpressionInfo me) {
+		String val = extractStringInQuotes(ctx.getText(), true);
+		if(val == null) {
 			notifyErrorListeners("incorrect string literal ", ctx.start);
 			return;
 		}
@@ -418,12 +446,12 @@ public abstract class CommonSyntacticValidator {
 		String text = varValue;
 		if(	(text.startsWith("\"") && text.endsWith("\"")) || (text.startsWith("\'") && text.endsWith("\'"))) {
 			if(text.length() > 2) {
-				val = text.substring(1, text.length()-1);
+				val = extractStringInQuotes(text, true);
 			}
 		}
 		else {
 			// the commandline parameters can be passed without any quotes
-			val = varValue;
+			val = extractStringInQuotes(text, false);
 		}
 		return new StringIdentifier(val, currentFile, linePosition, charPosition, linePosition, charPosition);
 	}
@@ -438,13 +466,13 @@ public abstract class CommonSyntacticValidator {
 
 		String varValue = null;
 		for(Map.Entry<String, String> arg : this.argVals.entrySet()) {
-			if(arg.getKey().trim().equals(varName)) {
+			if(arg.getKey().equals(varName)) {
 				if(varValue != null) {
 					notifyErrorListeners("multiple values passed for the parameter " + varName + " via commandline", start);
 					return;
 				}
 				else {
-					varValue = arg.getValue().trim();
+					varValue = arg.getValue();
 				}
 			}
 		}
@@ -455,7 +483,7 @@ public abstract class CommonSyntacticValidator {
 
 		// Command line param cannot be empty string
 		// If you want to pass space, please quote it
-		if(varValue.trim().equals(""))
+		if(varValue.equals(""))
 			return;
 
 		dataInfo.expr = getConstIdFromString(varValue, start);

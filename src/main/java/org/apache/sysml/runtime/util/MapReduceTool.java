@@ -40,6 +40,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.MatrixReader;
@@ -437,12 +438,25 @@ public class MapReduceTool
 		return stats;
 	}
 	
-	public static void writeMetaDataFile ( String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo) throws IOException {
-		writeMetaDataFile(mtdfile, v, mc, outinfo, null);
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, MatrixCharacteristics mc, OutputInfo outinfo) 
+		throws IOException {
+		writeMetaDataFile(mtdfile, vt, DataType.MATRIX, mc, outinfo);
+	}
+	
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataType dt, MatrixCharacteristics mc, OutputInfo outinfo) 
+		throws IOException {
+		writeMetaDataFile(mtdfile, vt, dt, mc, outinfo, null);
 	}
 
-	public static void writeMetaDataFile(String mtdfile, ValueType v, MatrixCharacteristics mc, OutputInfo outinfo,
-	                                     FileFormatProperties formatProperties) throws IOException {
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, MatrixCharacteristics mc,  OutputInfo outinfo, FileFormatProperties formatProperties) 
+		throws IOException {
+		writeMetaDataFile(mtdfile, vt, DataType.MATRIX, mc, outinfo, formatProperties);
+	}
+	
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataType dt, MatrixCharacteristics mc, 
+			OutputInfo outinfo, FileFormatProperties formatProperties) 
+		throws IOException 
+	{
 		Path pt = new Path(mtdfile);
 		FileSystem fs = FileSystem.get(_rJob);
 		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
@@ -452,8 +466,8 @@ public class MapReduceTool
 
 		try {
 			// build JSON metadata object
-			mtd.put(DataExpression.DATATYPEPARAM, "matrix");
-			switch (v) {
+			mtd.put(DataExpression.DATATYPEPARAM, dt.toString().toLowerCase());
+			switch (vt) {
 				case DOUBLE:
 					mtd.put(DataExpression.VALUETYPEPARAM, "double");
 					break;
@@ -475,12 +489,15 @@ public class MapReduceTool
 			}
 			mtd.put(DataExpression.READROWPARAM, mc.getRows());
 			mtd.put(DataExpression.READCOLPARAM, mc.getCols());
-			// only output rows_in_block and cols_in_block for binary format
-			if (outinfo == OutputInfo.BinaryBlockOutputInfo) {
+			// only output rows_in_block and cols_in_block for matrix binary format
+			if (outinfo == OutputInfo.BinaryBlockOutputInfo && dt.isMatrix() ) {
 				mtd.put(DataExpression.ROWBLOCKCOUNTPARAM, mc.getRowsPerBlock());
 				mtd.put(DataExpression.COLUMNBLOCKCOUNTPARAM, mc.getColsPerBlock());
 			}
-			mtd.put(DataExpression.READNUMNONZEROPARAM, mc.getNonZeros());
+			// only output nnz for matrix
+			if( dt.isMatrix() ) {
+				mtd.put(DataExpression.READNUMNONZEROPARAM, mc.getNonZeros());
+			}
 			if (outinfo == OutputInfo.TextCellOutputInfo) {
 				mtd.put(DataExpression.FORMAT_TYPE, "text");
 			} else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo ) {

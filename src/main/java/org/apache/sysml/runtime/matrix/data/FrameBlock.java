@@ -678,6 +678,49 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return map;
 	}
 
+	/**
+	 * 
+	 * @param that
+	 * @throws DMLRuntimeException 
+	 */
+	public void merge(FrameBlock that ) 
+		throws DMLRuntimeException
+	{
+		//check for empty input source (nothing to merge)
+		if( that == null || that.getNumRows() == 0 )
+			return;
+		
+		//check dimensions (before potentially copy to prevent implicit dimension change) 
+		if( getNumRows() != that.getNumRows() || getNumColumns() != that.getNumColumns() )
+			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+getNumRows()+"x"+getNumColumns()+", source="+that.getNumRows()+"x"+that.getNumColumns()+")");
+		
+		//core frame block merge through cell copy
+		for( int i=0; i<getNumRows(); i++ ) {
+			for( int j=0; j<getNumColumns(); j++ ) {
+				switch( _schema.get(j) ) {
+					case STRING:  
+						if (that.get(i,j) != null)
+							set(i,j,that.get(i, j));
+						break;
+					case BOOLEAN: 
+						if ((Boolean)that.get(i,j) != Boolean.getBoolean("false"))
+							set(i,j,that.get(i, j));
+						break;
+					case INT:     
+						if ((Long)that.get(i,j) != 0)
+							set(i,j,that.get(i, j));
+						break;
+					case DOUBLE:  
+						if ((Double)that.get(i,j) != 0.0)
+							set(i,j,that.get(i, j));
+						break;
+					default: throw new RuntimeException("Unsupported value type: "+_schema.get(j));
+				}
+			}
+		}
+		
+	}
+
 	
 	///////
 	// row iterators (over strings and boxed objects)

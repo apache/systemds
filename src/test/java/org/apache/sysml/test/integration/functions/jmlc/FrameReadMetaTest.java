@@ -30,6 +30,7 @@ import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -54,22 +55,32 @@ public class FrameReadMetaTest extends AutomatedTestBase
 	
 	@Test
 	public void testJMLCTransformDenseSpec() throws IOException {
-		runJMLCReadMetaTest(TEST_NAME1, false, true);
+		runJMLCReadMetaTest(TEST_NAME1, false, false, true);
 	}
 	
 	@Test
 	public void testJMLCTransformDenseReuseSpec() throws IOException {
-		runJMLCReadMetaTest(TEST_NAME1, true, true);
+		runJMLCReadMetaTest(TEST_NAME1, true, false, true);
 	}
 	
 	@Test
 	public void testJMLCTransformDense() throws IOException {
-		runJMLCReadMetaTest(TEST_NAME1, false, false);
+		runJMLCReadMetaTest(TEST_NAME1, false, false, false);
 	}
 	
 	@Test
 	public void testJMLCTransformDenseReuse() throws IOException {
-		runJMLCReadMetaTest(TEST_NAME1, true, false);
+		runJMLCReadMetaTest(TEST_NAME1, true, false, false);
+	}
+	
+	@Test
+	public void testJMLCTransformDenseReadFrame() throws IOException {
+		runJMLCReadMetaTest(TEST_NAME1, false, true, false);
+	}
+	
+	@Test
+	public void testJMLCTransformDenseReuseReadFrame() throws IOException {
+		runJMLCReadMetaTest(TEST_NAME1, true, true, false);
 	}
 
 	/**
@@ -79,7 +90,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 	 * @param instType
 	 * @throws IOException 
 	 */
-	private void runJMLCReadMetaTest( String testname, boolean modelReuse, boolean useSpec ) 
+	private void runJMLCReadMetaTest( String testname, boolean modelReuse, boolean readFrame, boolean useSpec ) 
 		throws IOException
 	{	
 		String TEST_NAME = testname;
@@ -92,7 +103,9 @@ public class FrameReadMetaTest extends AutomatedTestBase
 		
 		//read meta data frame
 		String spec = MapReduceTool.readStringFromHDFSFile(SCRIPT_DIR + TEST_DIR+"tfmtd_example/spec.json");
-		FrameBlock M = conn.readTransformMetaDataFromFile(useSpec ? spec : null, SCRIPT_DIR + TEST_DIR+"tfmtd_example/");
+		FrameBlock M = readFrame ?
+				DataConverter.convertToFrameBlock(conn.readStringFrame(SCRIPT_DIR + TEST_DIR+"tfmtd_frame_example/tfmtd_frame")) : 
+				conn.readTransformMetaDataFromFile(useSpec ? spec : null, SCRIPT_DIR + TEST_DIR+"tfmtd_example/");
 		
 		//generate data based on recode maps
 		HashMap<String,Long>[] RC = getRecodeMaps(M);

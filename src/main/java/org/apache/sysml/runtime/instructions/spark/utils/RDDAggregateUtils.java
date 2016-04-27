@@ -22,13 +22,13 @@ package org.apache.sysml.runtime.instructions.spark.utils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
-
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.spark.data.CorrMatrixBlock;
 import org.apache.sysml.runtime.instructions.spark.data.RowMatrixBlock;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
@@ -776,4 +776,43 @@ public class RDDAggregateUtils
 			return v1 + v2;
 		}	
 	}
+	
+	/**
+	 * @param: in
+	 * @return: 
+	 */
+	public static JavaPairRDD<Long, FrameBlock> mergeByFrameKey( JavaPairRDD<Long, FrameBlock> in )
+	{
+		return in.reduceByKey(
+				new MergeFrameBlocksFunction());
+	}
+	
+	/**
+	 * 
+	 */
+	private static class MergeFrameBlocksFunction implements Function2<FrameBlock, FrameBlock, FrameBlock> 
+	{		
+		private static final long serialVersionUID = -8881019027250258850L;
+
+		@Override
+		public FrameBlock call(FrameBlock b1, FrameBlock b2) 
+			throws Exception 
+		{
+			// sanity check input dimensions
+			if (b1.getNumRows() != b2.getNumRows() || b1.getNumColumns() != b2.getNumColumns()) {
+				throw new DMLRuntimeException("Mismatched frame block sizes for: "
+						+ b1.getNumRows() + " " + b1.getNumColumns() + " "
+						+ b2.getNumRows() + " " + b2.getNumColumns());
+			}
+
+			// execute merge (never pass by reference)
+			FrameBlock ret = new FrameBlock(b1);
+			ret.merge(b2);
+			
+			return ret;
+		}
+
+	}
+	
+
 }

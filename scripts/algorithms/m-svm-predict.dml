@@ -78,7 +78,7 @@ if(cmdLine_Y != " "){
 		num_classes = num_classes_ground_truth
 
 	if(cmdLine_confusion != " "){
-		confusion_mat = table(pred, y, num_classes, num_classes)
+		confusion_mat = table(y, pred, num_classes, num_classes)
 		write(confusion_mat, cmdLine_confusion, format="csv")
 	}
 }

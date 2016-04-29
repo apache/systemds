@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -409,7 +410,7 @@ public class DMLYarnClient
 	{
 		//start command
 		StringBuilder command = new StringBuilder();
-		command.append("java");
+		command.append(Environment.JAVA_HOME.$$() + "/bin/java");
 		
 		//add client jvm arguments (concatenation of HADOOP_CLIENT_OPTS and HADOOP_OPTS)
 		if( System.getenv().containsKey(JVMOPTS_ENV_CONST) ) {

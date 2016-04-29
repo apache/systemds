@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
@@ -27,8 +28,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.Hop.VisitStatus;
+import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.parser.Expression.DataType;
 
 /**
  * This rewrite is a custom rewrite for JMLC in order to replace all persistent reads
@@ -104,9 +106,16 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 			switch( dotype ) 
 			{
 				case PERSISTENTREAD:
-					if( _inputs.contains(dop.getName()) )
+					if( _inputs.contains(dop.getName()) ) {
 						dop.setDataOpType(DataOpTypes.TRANSIENTREAD);
-					else
+						if (hop.getDataType() == DataType.SCALAR) {
+							int iofilenameIndex = dop.getParameterIndex("iofilename");
+							dop.getInput().remove(iofilenameIndex);
+							HashMap<String, Integer> parameterIndexMap = dop.getParameterIndexMap();
+							parameterIndexMap.remove("iofilename");
+							parameterIndexMap.put("format", iofilenameIndex);
+						}
+					} else
 						LOG.warn("Non-registered persistent read of variable '"+dop.getName()+"' (line "+dop.getBeginLine()+").");
 					break;
 				case PERSISTENTWRITE:

@@ -208,6 +208,10 @@ public class DataOp extends Hop
 		return _paramIndexMap.get(name);
 	}
 	
+	public HashMap<String, Integer> getParameterIndexMap() {
+		return _paramIndexMap;
+	}
+	
 	@Override
 	public Lop constructLops()
 			throws HopsException, LopsException 

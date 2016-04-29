@@ -19,18 +19,15 @@
 
 package org.apache.sysml.runtime.io;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -39,98 +36,24 @@ public class IOUtilFunctions
 {
 	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
-	
-
 	/**
 	 * 
-	 * @param is
+	 * @param io
 	 */
-	public static void closeSilently( InputStream is ) 
-	{
+	public static void closeSilently( Closeable io ) {
 		try {
-			if( is != null )
-				is.close();
+			if( io != null )
+				io.close();
         } 
 		catch (Exception ex) {
-           LOG.error("Failed to close input stream.", ex);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param is
-	 */
-	public static void closeSilently( OutputStream os ) 
-	{
-		try {
-			if( os != null )
-				os.close();
-        } 
-		catch (Exception ex) {
-           LOG.error("Failed to close output stream.", ex);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param br
-	 */
-	public static void closeSilently( BufferedReader br ) 
-	{
-		try {
-			if( br != null )
-				br.close();
-        } 
-		catch (Exception ex) {
-           LOG.error("Failed to close buffered reader.", ex);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param br
-	 */
-	public static void closeSilently( BufferedWriter bw ) 
-	{
-		try {
-			if( bw != null )
-				bw.close();
-        } 
-		catch (Exception ex) {
-           LOG.error("Failed to buffered writer.", ex);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param br
-	 */
-	public static void closeSilently( SequenceFile.Reader br ) 
-	{
-		try {
-			if( br != null )
-				br.close();
-        } 
-		catch (Exception ex) {
-           LOG.error("Failed to close reader.", ex);
-		}
-	}
-	
-	/**
-	 * 
-	 * @param br
-	 */
-	public static void closeSilently( SequenceFile.Writer bw ) 
-	{
-		try {
-			if( bw != null )
-				bw.close();
-        } 
-		catch (Exception ex) {
-           LOG.error("Failed to writer.", ex);
+           LOG.error("Failed to close IO resource.", ex);
 		}
 	}
 
+	/**
+	 * 
+	 * @param rr
+	 */
 	public static void closeSilently( RecordReader<?,?> rr ) 
 	{
 		try {

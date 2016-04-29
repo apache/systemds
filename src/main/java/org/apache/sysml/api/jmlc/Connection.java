@@ -20,6 +20,7 @@
 package org.apache.sysml.api.jmlc;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -88,7 +89,7 @@ import org.apache.wink.json4j.JSONObject;
  *   of SystemML online documentation</li>
  * </ul>
  */
-public class Connection 
+public class Connection implements Closeable
 {		
 	private DMLConfig _dmlconf = null;
 
@@ -201,6 +202,7 @@ public class Connection
 	 * Close connection to SystemML, which clears the
 	 * thread-local DML and compiler configurations.
 	 */
+	@Override
 	public void close() {
 		//clear thread-local dml / compiler configs
 		ConfigurationManager.clearLocalConfigs();

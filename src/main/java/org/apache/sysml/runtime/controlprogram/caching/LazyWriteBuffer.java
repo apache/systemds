@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -48,6 +50,9 @@ public class LazyWriteBuffer
 	//eviction queue of <filename,buffer> pairs (implemented via linked hash map 
 	//for (1) queue semantics and (2) constant time get/insert/delete operations)
 	private static EvictionQueue _mQueue;
+	
+	//file cleaner for synchronous or asynchronous delete of evicted files
+	private static FileCleaner _fClean;
 	
 	static {
 		//obtain the logical buffer size in bytes
@@ -144,7 +149,7 @@ public class LazyWriteBuffer
 		
 		//delete from FS if required
 		if( requiresDelete )
-			LocalFileUtils.deleteFileIfExists(fname, true);
+			_fClean.deleteFile(fname);
 	}
 	
 	/**
@@ -195,7 +200,8 @@ public class LazyWriteBuffer
 	 * 
 	 */
 	public static void init() {
-		_mQueue = new EvictionQueue();		
+		_mQueue = new EvictionQueue();
+		_fClean = new FileCleaner();
 		_size = 0;
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.init();
@@ -205,8 +211,10 @@ public class LazyWriteBuffer
 	 * 
 	 */
 	public static void cleanup() {
-		if( _mQueue!=null )
+		if( _mQueue != null )
 			_mQueue.clear();
+		if( _fClean != null )
+			_fClean.close();
 		if( CacheableData.CACHING_BUFFER_PAGECACHE )
 			PageCache.clear();
 	}
@@ -269,6 +277,50 @@ public class LazyWriteBuffer
 			iter.remove();
 			
 			return entry;
+		}
+	}
+	
+	/**
+	 * File delete service for abstraction of synchronous and asynchronous 
+	 * file cleanup on rmvar/cpvar. The threadpool for asynchronous cleanup
+	 * may increase the number of threads temporarily to the number of concurrent 
+	 * delete tasks (which is bounded to the parfor degree of parallelism).
+	 */
+	private static class FileCleaner
+	{
+		private ExecutorService _pool = null;
+		
+		public FileCleaner() {
+			//create new threadpool for async cleanup
+			if( CacheableData.CACHING_ASYNC_FILECLEANUP )
+				_pool = Executors.newCachedThreadPool();
+		}
+		
+		public void deleteFile(String fname) {
+			//sync or async file delete
+			if( CacheableData.CACHING_ASYNC_FILECLEANUP )
+				_pool.submit(new FileCleanerTask(fname));
+			else
+				LocalFileUtils.deleteFileIfExists(fname, true);
+		}
+		
+		public void close() {
+			//execute pending tasks and shutdown pool
+			if( CacheableData.CACHING_ASYNC_FILECLEANUP )
+				_pool.shutdown();
+		}
+		
+		private class FileCleanerTask implements Runnable {
+			private String _fname = null;
+			
+			public FileCleanerTask( String fname ) {
+				_fname = fname;
+			}
+			
+			@Override
+			public void run() {
+				LocalFileUtils.deleteFileIfExists(_fname, true);
+			}			
 		}
 	}
 }

@@ -849,12 +849,11 @@ public class LibMatrixReorg
 		}
 		
 		//allocate output sparse rows
-		//TODO perf sparse block
-		//if( cnt != null ) {
-		//	for( int i=0; i<m2; i++ )
-		//		if( cnt[i] > 0 )
-		//			c[i] = new SparseRow(cnt[i]);
-		//}
+		if( cnt != null ) {
+			for( int i=0; i<m2; i++ )
+				if( cnt[i] > 0 )
+					c.allocate(i, cnt[i]);
+		}
 		
 		//blocking according to typical L2 cache sizes 
 		final int blocksizeI = 128;

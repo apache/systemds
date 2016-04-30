@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.util;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -845,5 +846,92 @@ public class DataConverter
 		double[][] data = DataConverter.convertToDoubleMatrix(mb);
 		mo.release();		
 		return new Array2DRowRealMatrix(data, false);
+	}
+	
+	/**
+	 * Returns a string representation of a matrix
+	 * @param mb
+	 * @param sparse if true, string will contain a table with row index, col index, value (where value != 0.0)
+	 * 				 otherwise it will be a rectangular string with all values of the matrix block
+	 * @param separator Separator string between each element in a row, or between the columns in sparse format
+	 * @param lineseparator Separator string between each row
+	 * @param rowsToPrint maximum number of rows to print, -1 for all
+	 * @param colsToPrint maximum number of columns to print, -1 for all
+	 * @param decimal number of decimal places to print, -1 for default
+	 * @return
+	 */
+	public static String convertToString(MatrixBlock mb, boolean sparse, String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal){
+		StringBuffer sb = new StringBuffer();
+		
+		// Setup number of rows and columns to print
+		int rlen = mb.getNumRows();
+		int clen = mb.getNumColumns();
+		int rowLength = rlen;
+		int colLength = clen;
+		if (rowsToPrint >= 0)
+			rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
+		if (colsToPrint >= 0)
+			colLength = colsToPrint < clen ? colsToPrint : clen;
+		
+		DecimalFormat df = new DecimalFormat();
+		if (decimal >= 0){
+			df.setMinimumFractionDigits(decimal);
+		}
+		
+		if (mb.isInSparseFormat()){ // SparseBlock
+			if (sparse){
+				Iterator<IJV> sbi = mb.getSparseBlockIterator();
+				while (sbi.hasNext()){
+					IJV ijv = sbi.next();
+					int row = ijv.getI();
+					int col = ijv.getJ();
+					double value = ijv.getV();
+					if (row < rowLength && col < colLength) {
+						// Print (row+1) and (col+1) since for a DML user, everything is 1-indexed
+						sb.append(row+1).append(separator).append(col+1).append(separator);
+						sb.append(df.format(value)).append(lineseparator);
+					}
+				}
+				
+			} else {
+				SparseBlock spb = mb.getSparseBlock();
+				for (int i=0; i<rowLength; ++i){
+					for (int j=0; j<colLength-1; ++j){
+						double value = spb.get(i, j);
+						sb.append(df.format(value));
+						sb.append(separator);
+					}
+					double value = spb.get(i, colLength-1);
+					sb.append(df.format(value));	// Do not put separator after last element
+					sb.append(lineseparator);
+				}
+			}
+			
+		} else {	// Dense Block
+			if (sparse){
+				for (int i=0; i<rowLength; ++i){
+					for (int j=0; j<colLength-1; ++j){
+						double value = mb.getValue(i, j);
+						if (value != 0.0){
+							sb.append(i+1).append(separator).append(j+1).append(separator);
+							sb.append(df.format(value)).append(lineseparator);
+						}
+					}
+				}
+			} else {
+				for (int i=0; i<rowLength; ++i){
+					for (int j=0; j<colLength-1; ++j){
+						double value = mb.getValue(i, j);
+						sb.append(df.format(value));
+						sb.append(separator);
+					}
+					double value = mb.getValue(i, colLength-1);
+					sb.append(df.format(value));	// Do not put separator after last element
+					sb.append(lineseparator);
+				}
+			}
+		}
+		
+		return sb.toString();
 	}
 }

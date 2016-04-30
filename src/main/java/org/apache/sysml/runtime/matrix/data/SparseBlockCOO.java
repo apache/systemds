@@ -20,7 +20,6 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -648,68 +647,5 @@ public class SparseBlockCOO extends SparseBlock
 		public void remove() {
 			throw new RuntimeException("SparseBlockCOOIterator is unsupported!");			
 		}		
-	}
-
-	@Override
-	public String denseToString(String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal) {
-		StringBuffer sb = new StringBuffer();
-		
-		int rlen = _rindexes[_size-1] + 1;
-		int clen = _cindexes[_size-1] + 1;
-		int rowLength = rlen;
-		int colLength = clen;
-		if (rowsToPrint >= 0)
-			rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
-		if (colsToPrint >= 0)
-			colLength = colsToPrint < clen ? colsToPrint : clen;
-		DecimalFormat df = new DecimalFormat();
-		if (decimal >= 0){
-			df.setMinimumFractionDigits(decimal);
-		}
-		int k=0;
-		for (int i=0; i<rowLength; ++i){
-			for (int j=0; j<colLength; ++j){
-				double value = 0.0;
-				if (_rindexes[k] == i && _cindexes[k] == j){
-					value = _values[k];
-					k++;
-				}
-				sb.append(df.format(value));
-				sb.append(separator);
-			}
-			sb.append(lineseparator);
-		}
-		return sb.toString();
-	}
-
-	@Override
-	public String sparseToString(String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal) {
-		StringBuffer sb = new StringBuffer();
-		
-		int rlen = _rindexes[_size-1] + 1;
-		int clen = _cindexes[_size-1] + 1;
-		int rowLength = rlen;
-		int colLength = clen;
-		if (rowsToPrint >= 0)
-			rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
-		if (colsToPrint >= 0)
-			colLength = colsToPrint < clen ? colsToPrint : clen;
-		DecimalFormat df = new DecimalFormat();
-		if (decimal >= 0){
-			df.setMinimumFractionDigits(decimal);
-		}
-		
-		for (int k=0; k<_size; ++k){
-			double value = _values[k];
-			int rowIndex = _rindexes[k];
-			int colIndex = _cindexes[k];
-			if (rowIndex < rowLength && colIndex < colLength){
-				sb.append(rowIndex).append(separator).append(colIndex).append(separator);
-				sb.append(df.format(value));
-				sb.append(lineseparator);
-			}
-		}
-		
-		return sb.toString();
 	}
 }

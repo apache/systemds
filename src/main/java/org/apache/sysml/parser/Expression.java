@@ -146,7 +146,7 @@ public abstract class Expression
 		// Distribution Functions
 		CDF, INVCDF, PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
 		TRANSFORM, TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMENCODE, TRANSFORMMETA,
-		CAST_AS_STRING,	// The "toString" method for DML; named arguments accepted to format output
+		TOSTRING,	// The "toString" method for DML; named arguments accepted to format output
 		INVALID
 	};
 	

@@ -445,7 +445,7 @@ public abstract class SparseBlock implements Serializable
 	}
 	
 	@Override 
-	public abstract String toString();	
+	public abstract String toString();
 	
 	/**
 	 * Default sparse block iterator implemented against the sparse block
@@ -516,31 +516,4 @@ public abstract class SparseBlock implements Serializable
 			}
 		}		
 	}
-
-	/**
-	 * Returns the dense representation of the data in a string.
-	 * The string will contain all the values of the matrix for all i, j
-	 * where i < rowsToPrint, j < colsToPrint
-	 * @param separator Separator string between each element in a row
-	 * @param lineseparator Separator string between each row
-	 * @param rowsToPrint maximum number of rows to print, -1 for all
-	 * @param colsToPrint maximum number of columns to print, -1 for all
-	 * @param decimal number of decimal places to print, -1 for default
-	 * @return
-	 */
-	public abstract String denseToString(String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal);
-
-	/**
-	 * Returns the sparse representation of the data in a string.
-	 * The string will contain a table with row index, col index, value
-	 * @param separator Separator string between each element in a row
-	 * @param lineseparator Separator string between each row
-	 * @param rowsToPrint maximum number of rows to print, -1 for all
-	 * @param colsToPrint maximum number of columns to print, -1 for all
-	 * @param decimal number of decimal places to print, -1 for default
-	 * @return
-	 */
-	public abstract String sparseToString(String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal);
-	
-	
 }

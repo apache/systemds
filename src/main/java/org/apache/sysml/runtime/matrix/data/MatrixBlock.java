@@ -27,7 +27,6 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -6158,82 +6157,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else
 		{
 			if(denseBlock!=null) {
-				sb.append(denseToString("\t", "\n", -1, -1, -1));
+				for(int i=0, ix=0; i<rlen; i++, ix+=clen) {
+					for(int j=0; j<clen; j++) {
+						sb.append(this.denseBlock[ix+j]);
+						sb.append("\t");
+					}
+					sb.append("\n");
+				}
 			}
 		}
 		
 		return sb.toString();
-	}
-	
-	/**
-	 * Returns the data of the dense matrix as a string
-	 * @param separator Separator string between each element in a row
-	 * @param lineseparator Separator string between each row
-	 * @param rowsToPrint maximum number of rows to print, -1 for all
-	 * @param colsToPrint maximum number of columns to print, -1 for all
-	 * @param decimal number of decimal places to print, -1 for default
-	 * @return
-	 */
-	public String denseToString(String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal) {
-		StringBuffer sb = new StringBuffer();
-
-		if (denseBlock != null) {
-			int rowLength = rlen;
-			int colLength = clen;
-			if (rowsToPrint >= 0)
-				rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
-			if (colsToPrint >= 0)
-				colLength = colsToPrint < clen ? colsToPrint : clen;
-			DecimalFormat df = new DecimalFormat();
-			if (decimal >= 0){
-				df.setMinimumFractionDigits(decimal);
-			}
-						
-			for(int i=0, ix=0; i<rowLength; i++, ix+=colLength) {
-				for(int j=0; j<colLength; j++) {
-					sb.append(df.format(this.denseBlock[ix+j]));
-					sb.append(separator);
-				}
-				sb.append(lineseparator);
-			}
-			return sb.toString();
-		}
-		else 
-		{
-			return sparseBlock.denseToString(separator, lineseparator, rowsToPrint, colsToPrint, decimal);
-		
-		}
-	}
-	
-	public String sparseToString(String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal) {
-		StringBuffer sb = new StringBuffer();
-
-		if (denseBlock != null) {
-			int rowLength = rlen;
-			int colLength = clen;
-			if (rowsToPrint >= 0)
-				rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
-			if (colsToPrint >= 0)
-				colLength = colsToPrint < clen ? colsToPrint : clen;
-			DecimalFormat df = new DecimalFormat();
-			if (decimal >= 0){
-				df.setMinimumFractionDigits(decimal);
-			}
-						
-			for(int i=0, ix=0; i<rowLength; i++, ix+=colLength) {
-				for(int j=0; j<colLength; j++) {
-					sb.append(i).append(separator).append(j).append(separator);
-					sb.append(df.format(this.denseBlock[ix+j]));
-					sb.append(lineseparator);
-				}
-			}
-			return sb.toString();
-		}
-		else 
-		{
-			return sparseBlock.sparseToString(separator, lineseparator, rowsToPrint, colsToPrint, decimal);
-		
-		}
 	}
 
 

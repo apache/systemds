@@ -74,7 +74,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		opcodeMap.put("transformmeta", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMMETA);
 
 		// toString
-		opcodeMap.put("as.string", Expression.ParameterizedBuiltinFunctionOp.CAST_AS_STRING);
+		opcodeMap.put("toString", Expression.ParameterizedBuiltinFunctionOp.TOSTRING);
 	}
 	
 	public static HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp> pbHopMap;
@@ -104,7 +104,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QEXP, ParamBuiltinOp.INVCDF);
 		
 		// toString
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.CAST_AS_STRING, ParamBuiltinOp.CAST_AS_STRING);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.TOSTRING, ParamBuiltinOp.TOSTRING);
 	}
 	
 	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(String functionName, ArrayList<ParameterExpression> paramExprsPassed,
@@ -254,7 +254,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			validateTransformMeta(output, conditional);
 			break;
 			
-		case CAST_AS_STRING:
+		case TOSTRING:
 			validateCastAsString(output, conditional);
 			break;
 			
@@ -742,7 +742,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		HashMap<String, Expression> varParams = getVarParams();
 		// null is for the matrix argument
-		String[] validArgsArr = {null, "rows", "cols", "decimal", "sparse", "separator", "lineseparator"};
+		String[] validArgsArr = {null, "rows", "cols", "decimal", "sparse", "sep", "linesep"};
 		HashSet<String> validArgs = new HashSet<String>(Arrays.asList(validArgsArr));
 		for (String k : varParams.keySet()){
 			if (!validArgs.contains(k)){

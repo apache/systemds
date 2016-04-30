@@ -2041,10 +2041,10 @@ public class DMLTranslator
 									paramHops);
 			break;		
 		
-		case CAST_AS_STRING:
+		case TOSTRING:
 			currBuiltinOp = new ParameterizedBuiltinOp(
 									target.getName(), target.getDataType(), 
-									target.getValueType(), ParamBuiltinOp.CAST_AS_STRING, 
+									target.getValueType(), ParamBuiltinOp.TOSTRING, 
 									paramHops);
 			break;
 			

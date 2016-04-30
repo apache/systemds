@@ -43,6 +43,7 @@ import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.decode.Decoder;
 import org.apache.sysml.runtime.transform.decode.DecoderFactory;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysml.runtime.util.DataConverter;
 
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
@@ -132,7 +133,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		{
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
-		else if (	opcode.equals("as.string"))
+		else if (	opcode.equals("toString"))
 		{
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
@@ -292,7 +293,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			//release locks
 			ec.setFrameOutput(output.getName(), meta);
 		}
-		else if ( opcode.equalsIgnoreCase("as.string")) {
+		else if ( opcode.equalsIgnoreCase("toString")) {
 			// Default Arguments
 			final int MAXROWS = 100;
 			final int MAXCOLS = 100;
@@ -317,10 +318,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			String sparseStr = getParameterMap().get("sparse");
 			if (sparseStr != null) { sparse = Boolean.parseBoolean(sparseStr); }
 			
-			String separatorStr = getParameterMap().get("separator");
+			String separatorStr = getParameterMap().get("sep");
 			if (separatorStr != null) { separator = separatorStr; }
 			
-			String lineseparatorStr = getParameterMap().get("lineseparator");
+			String lineseparatorStr = getParameterMap().get("linesep");
 			if (lineseparatorStr != null) { lineseparator = lineseparatorStr; }
 			
 			// The matrix argument is "null"
@@ -330,11 +331,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 				throw new DMLRuntimeException("as.string only converts matrix objects to string");
 			MatrixBlock matrix = ec.getMatrixInput(matrixStr);
 			
-			String outputStr;
-			if (sparse)
-				outputStr = matrix.sparseToString(separator, lineseparator, rows, cols, decimal);
-			else
-				outputStr = matrix.denseToString(separator, lineseparator, rows, cols, decimal);
+			
+//			if (sparse)
+//				outputStr = matrix.sparseToString(separator, lineseparator, rows, cols, decimal);
+//			else
+//				outputStr = matrix.denseToString(separator, lineseparator, rows, cols, decimal);
+			
+			String outputStr = DataConverter.convertToString(matrix, sparse, separator, lineseparator, rows, cols, decimal);
 			
 			ec.releaseMatrixInput(matrixStr);
 			ec.setScalarOutput(output.getName(), new StringObject(outputStr));

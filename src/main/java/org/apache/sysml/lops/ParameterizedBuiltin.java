@@ -42,7 +42,7 @@ public class ParameterizedBuiltin extends Lop
 		INVALID, CDF, INVCDF, RMEMPTY, REPLACE, REXPAND, 
 		PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
 		TRANSFORM, TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMMETA,
-		CAST_AS_STRING
+		TOSTRING
 	};
 	
 	private OperationTypes _operation;
@@ -251,8 +251,8 @@ public class ParameterizedBuiltin extends Lop
 				sb.append(compileGenericParamMap(_inputParams));
 				break;
 			}			
-			case CAST_AS_STRING:{
-				sb.append("as.string"); //opcode
+			case TOSTRING:{
+				sb.append("toString"); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				sb.append(compileGenericParamMap(_inputParams));
 				break;

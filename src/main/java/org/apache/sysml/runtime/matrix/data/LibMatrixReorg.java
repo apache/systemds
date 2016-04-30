@@ -26,7 +26,12 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
@@ -54,7 +59,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public class LibMatrixReorg 
 {
-	
+	public static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
 	public static final boolean SHALLOW_DENSE_VECTOR_TRANSPOSE = true;
 	public static final boolean SHALLOW_DENSE_ROWWISE_RESHAPE = true;
 	public static final boolean ALLOW_BLOCK_REUSE = false;
@@ -101,7 +106,10 @@ public class LibMatrixReorg
 		switch( type )
 		{
 			case TRANSPOSE: 
-				return transpose(in, out);
+				if( op.getNumThreads() > 1 )
+					return transpose(in, out, op.getNumThreads());
+				else
+					return transpose(in, out);
 			case REV: 
 				return rev(in, out);
 			case DIAG:      
@@ -125,22 +133,94 @@ public class LibMatrixReorg
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out ) 
 		throws DMLRuntimeException
 	{
-		//Timing time = new Timing(true);
-	
 		//sparse-safe operation
 		if( in.isEmptyBlock(false) )
 			return out;
+	
+		//set basic meta data
+		out.nonZeros = in.nonZeros;
 		
+		//shallow dense vector transpose (w/o result allocation)
+		//since the physical representation of dense vectors is always the same,
+		//we don't need to create a copy, given our copy on write semantics.
+		//however, note that with update in-place this would be an invalid optimization
+		if( SHALLOW_DENSE_VECTOR_TRANSPOSE && !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1)  ) {
+			out.denseBlock = in.denseBlock;
+			return out;
+		}
+		
+		//Timing time = new Timing(true);
+		
+		//allocate output arrays (if required)
+		if( out.sparse )
+			out.allocateSparseRowsBlock(false);
+		else
+			out.allocateDenseBlock(false);
+	
+		//execute transpose operation
 		if( !in.sparse && !out.sparse )
-			transposeDenseToDense( in, out );
+			transposeDenseToDense( in, out, 0, in.rlen, 0, in.clen );
 		else if( in.sparse && out.sparse )
 			transposeSparseToSparse( in, out );
 		else if( in.sparse )
-			transposeSparseToDense( in, out );
+			transposeSparseToDense( in, out, 0, in.rlen, 0, in.clen );
 		else
 			transposeDenseToSparse( in, out );
 		
 		//System.out.println("r' ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
+		
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @param out
+	 * @param k
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out, int k ) 
+		throws DMLRuntimeException
+	{
+		//redirect small or special cases to sequential execution
+		if( in.isEmptyBlock(false) || (in.rlen * in.clen < PAR_NUMCELL_THRESHOLD)
+			|| (SHALLOW_DENSE_VECTOR_TRANSPOSE && !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1) )
+			|| (in.sparse && !out.sparse && in.rlen==1) || out.sparse )
+		{
+			return transpose(in, out);
+		}
+		
+		//Timing time = new Timing(true);
+		
+		//set meta data and allocate output arrays (if required)
+		out.nonZeros = in.nonZeros;
+		if( out.sparse )
+			out.allocateSparseRowsBlock(false);
+		else
+			out.allocateDenseBlock(false);
+		
+		//core multi-threaded transpose
+		try {
+			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ArrayList<TransposeTask> tasks = new ArrayList<TransposeTask>();
+			boolean row = in.sparse || in.rlen >= in.clen;
+			int len = row ? in.rlen : in.clen;
+			int blklen = (int)(Math.ceil((double)len/k));
+			blklen += (blklen%8 != 0)?8-blklen%8:0;
+			for( int i=0; i<k & i*blklen<in.rlen; i++ )
+				tasks.add(new TransposeTask(in, out, row, i*blklen, Math.min((i+1)*blklen, len)));
+			//execute tasks and check for errors
+			List<Future<Object>> taskret = pool.invokeAll(tasks);	
+			pool.shutdown();
+			for( Future<Object> task : taskret )
+				task.get();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}	
+		
+		//System.out.println("r' k="+k+" ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
 		return out;
 	}
@@ -721,36 +801,21 @@ public class LibMatrixReorg
 	 * @param out
 	 * @throws DMLRuntimeException 
 	 */
-	private static void transposeDenseToDense(MatrixBlock in, MatrixBlock out) 
+	private static void transposeDenseToDense(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu) 
 		throws DMLRuntimeException
 	{
 		final int m = in.rlen;
 		final int n = in.clen;
-		final int m2 = out.rlen;
 		final int n2 = out.clen;
-		
-		//set basic meta data
-		out.sparse = false;
-		out.nonZeros = in.nonZeros;
-		
-		//shallow dense vector transpose (w/o result allocation)
-		if( SHALLOW_DENSE_VECTOR_TRANSPOSE && (m==1 || n==1) ) {
-			//since the physical representation of dense vectors is always the same,
-			//we don't need to create a copy, given our copy on write semantics.
-			//however, note that with update in-place this would be an invalid optimization
-			out.denseBlock = in.denseBlock;
-			return;
-		}
-		
-		//allocate output arrays (if required)
-		out.allocateDenseBlock(false);
 		
 		double[] a = in.getDenseBlock();
 		double[] c = out.getDenseBlock();
 		
 		if( m==1 || n==1 ) //VECTOR TRANSPOSE
 		{
-			System.arraycopy(a, 0, c, 0, m2*n2);
+			//plain memcopy, in case shallow dense copy no applied 
+			int ix = rl+cl; int len = ru+cu-ix-1;
+			System.arraycopy(a, ix, c, ix, len);
 		}
 		else //MATRIX TRANSPOSE
 		{
@@ -759,11 +824,11 @@ public class LibMatrixReorg
 			final int blocksizeJ = 128; 
 			
 			//blocked execution
-			for( int bi = 0; bi<m; bi+=blocksizeI )
-				for( int bj = 0; bj<n; bj+=blocksizeJ )
+			for( int bi = rl; bi<ru; bi+=blocksizeI )
+				for( int bj = cl; bj<cu; bj+=blocksizeJ )
 				{
-					int bimin = Math.min(bi+blocksizeI, m);
-					int bjmin = Math.min(bj+blocksizeJ, n);
+					int bimin = Math.min(bi+blocksizeI, ru);
+					int bjmin = Math.min(bj+blocksizeJ, cu);
 					//core transpose operation
 					for( int i=bi; i<bimin; i++ )
 					{
@@ -782,16 +847,14 @@ public class LibMatrixReorg
 	 */
 	private static void transposeDenseToSparse(MatrixBlock in, MatrixBlock out)
 	{
+		//NOTE: called only in sequential execution
+		
 		final int m = in.rlen;
 		final int n = in.clen;
 		final int m2 = out.rlen;
 		final int n2 = out.clen;
 		final int ennz2 = (int) (in.nonZeros/m2); 
 		
-		//allocate output arrays (if required)
-		out.reset(m2, n2, true); //always sparse
-		out.allocateSparseRowsBlock();
-				
 		double[] a = in.getDenseBlock();
 		SparseBlock c = out.getSparseBlock();
 		
@@ -813,8 +876,6 @@ public class LibMatrixReorg
 						c.append(j, i, a[aix]);
 					}
 			}
-		
-		out.nonZeros = in.nonZeros;
 	}
 	
 	/**
@@ -824,15 +885,13 @@ public class LibMatrixReorg
 	 */
 	private static void transposeSparseToSparse(MatrixBlock in, MatrixBlock out)
 	{
+		//NOTE: called only in sequential execution
+		
 		final int m = in.rlen;
 		final int n = in.clen;
 		final int m2 = out.rlen;
 		final int n2 = out.clen;
 		final int ennz2 = (int) (in.nonZeros/m2); 
-		
-		//allocate output arrays (if required)
-		out.reset(m2, n2, true); //always sparse
-		out.allocateSparseRowsBlock();
 		
 		SparseBlock a = in.getSparseBlock();
 		SparseBlock c = out.getSparseBlock();
@@ -889,7 +948,6 @@ public class LibMatrixReorg
 				}
 			}
 		}
-		out.nonZeros = in.nonZeros;
 	}
 	
 	/**
@@ -898,23 +956,19 @@ public class LibMatrixReorg
 	 * @param out
 	 * @throws DMLRuntimeException 
 	 */
-	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out) 
+	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu) 
 		throws DMLRuntimeException
 	{
 		final int m = in.rlen;
 		final int n = in.clen;
-		final int m2 = out.rlen;
 		final int n2 = out.clen;
-		
-		//allocate output arrays (if required)
-		out.reset(m2, n2, false); //always dense
-		out.allocateDenseBlock();
 		
 		SparseBlock a = in.getSparseBlock();
 		double[] c = out.getDenseBlock();
 		
 		if( m==1 ) //ROW VECTOR TRANSPOSE
 		{
+			//NOTE: called only in sequential execution
 			int alen = a.size(0); //always pos 0
 			int[] aix = a.indexes(0);
 			double[] avals = a.values(0);
@@ -931,12 +985,12 @@ public class LibMatrixReorg
 			int[] ix = new int[blocksizeI];
 			
 			//blocked execution
-			for( int bi = 0; bi<m; bi+=blocksizeI )
+			for( int bi = rl; bi<ru; bi+=blocksizeI )
 			{
 				Arrays.fill(ix, 0);
 				for( int bj = 0; bj<n; bj+=blocksizeJ )
 				{
-					int bimin = Math.min(bi+blocksizeI, m);
+					int bimin = Math.min(bi+blocksizeI, ru);
 					int bjmin = Math.min(bj+blocksizeJ, n);
 	
 					//core transpose operation
@@ -956,7 +1010,6 @@ public class LibMatrixReorg
 				}
 			}
 		}
-		out.nonZeros = in.nonZeros;
 	}
 	
 	/**
@@ -2265,5 +2318,48 @@ public class LibMatrixReorg
 			double val1 = _mb.quickGetValue(arg1, _col);	
 			return (val0 > val1 ? -1 : (val0 == val1 ? 0 : 1));
 		}		
+	}
+	
+	/**
+	 * 
+	 */
+	private static class TransposeTask implements Callable<Object>
+	{
+		private MatrixBlock _in = null;
+		private MatrixBlock _out = null;
+		private boolean _row = false;
+		private int _rl = -1;
+		private int _ru = -1;
+
+		protected TransposeTask(MatrixBlock in, MatrixBlock out, boolean row, int rl, int ru) 
+			throws DMLRuntimeException
+		{
+			_in = in;
+			_out = out;
+			_row = row;
+			_rl = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public Object call() throws DMLRuntimeException
+		{
+			int rl = _row ? _rl : 0;
+			int ru = _row ? _ru : _in.rlen;
+			int cl = _row ? 0 : _rl;
+			int cu = _row ? _in.clen : _ru;
+			
+			//execute transpose operation
+			if( !_in.sparse && !_out.sparse )
+				transposeDenseToDense( _in, _out, rl, ru, cl, cu );
+			else if( _in.sparse && _out.sparse )
+				throw new DMLRuntimeException("Unsupported multi-threaded sparse-sparse transpose.");
+			else if( _in.sparse )
+				transposeSparseToDense( _in, _out, rl, ru, cl, cu );
+			else
+				throw new DMLRuntimeException("Unsupported multi-threaded dense-sparse transpose.");
+			
+			return null;
+		}
 	}
 }

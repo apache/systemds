@@ -1538,7 +1538,9 @@ public class OptimizerRuleBased extends Optimizer
 						&& !( h instanceof ParameterizedBuiltinOp //only paramop-grpagg
 							 && ((ParameterizedBuiltinOp)h).getOp()!=ParamBuiltinOp.GROUPEDAGG)
 						&& !( h instanceof UnaryOp //only unaryop-cumulativeagg
-							 && !((UnaryOp)h).isCumulativeUnaryOperation() )      )
+							 && !((UnaryOp)h).isCumulativeUnaryOperation() )
+						&& !( h instanceof ReorgOp //only reorgop-transpose
+							 && ((ReorgOp)h).getOp() != ReOrgOp.TRANSPOSE ))
 					{
 						MultiThreadedHop mhop = (MultiThreadedHop) h;
 						mhop.setMaxNumThreads(opsK); //set max constraint in hop

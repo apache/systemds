@@ -26,16 +26,24 @@ import org.apache.sysml.runtime.functionobjects.IndexFunction;
 
 public class ReorgOperator  extends Operator implements Serializable
 {
-
-
 	private static final long serialVersionUID = -5322516429026298404L;
 
 	public IndexFunction fn;
+	private int k; //num threads
 	
-	public ReorgOperator(IndexFunction p)
-	{
-		fn=p;
-		sparseSafe=true;
+	public ReorgOperator(IndexFunction p) {
+		//default degree of parallelism is 1 
+		//(for example in MR/Spark because we parallelize over the number of blocks)
+		this( p, 1 );
+	}
+		
+	public ReorgOperator(IndexFunction p, int numThreads) {
+		fn = p;
+		sparseSafe = true;
+		k = numThreads;
 	}
 
+	public int getNumThreads() {
+		return k;
+	}
 }

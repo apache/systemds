@@ -32,8 +32,6 @@ import org.apache.sysml.parser.Expression.*;
 
 public class Transform extends Lop
 {
-
-	
 	public enum OperationTypes {
 		Transpose,
 		Diag,
@@ -42,30 +40,32 @@ public class Transform extends Lop
 		Rev
 	};
 	
-	private boolean _bSortIndInMem = false;
-	
 	private OperationTypes operation = null;
-	
+	private boolean _bSortIndInMem = false;
+	private int _numThreads = 1;
+		
 	/**
 	 * Constructor when we have one input.
 	 * @param input
 	 * @param op
 	 */
 
-	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-	{
-		super(Lop.Type.Transform, dt, vt);		
-		init(input, op, dt, vt, et);
+	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+		this(input, op, dt, vt, et, 1);		
 	}
 	
-	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt) 
-	{
+	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k)  {
+		super(Lop.Type.Transform, dt, vt);		
+		init(input, op, dt, vt, et);
+		_numThreads = k;
+	}
+	
+	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt) {
 		super(Lop.Type.Transform, dt, vt);		
 		init(input, op, dt, vt, ExecType.MR);
 	}
 
-	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) 
-	{
+	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) {
 		super(Lop.Type.Transform, dt, vt);		
 		_bSortIndInMem = bSortIndInMem;
 		init(input, op, dt, vt, et);
@@ -166,6 +166,11 @@ public class Transform extends Lop
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
+
+		if( getExecType()==ExecType.CP && operation == OperationTypes.Transpose ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
 		
 		return sb.toString();
 	}
@@ -198,7 +203,7 @@ public class Transform extends Lop
 		
 		if( getExecType()==ExecType.SPARK && operation == OperationTypes.Sort ){
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( _bSortIndInMem);
+			sb.append( _bSortIndInMem );
 		}
 		
 		return sb.toString();

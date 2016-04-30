@@ -83,8 +83,11 @@ public class ReorgCPInstruction extends UnaryCPInstruction
 		String opcode = parts[0];
 		
 		if ( opcode.equalsIgnoreCase("r'") ) {
-			parseUnaryInstruction(str, in, out); //max 2 operands
-			return new ReorgCPInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, str);
+			InstructionUtils.checkNumFields(str, 2, 3);
+			in.split(parts[1]);
+			out.split(parts[2]);
+			int k = Integer.parseInt(parts[3]);
+			return new ReorgCPInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("rev") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands

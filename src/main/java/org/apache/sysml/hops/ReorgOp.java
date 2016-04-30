@@ -22,6 +22,7 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Group;
@@ -47,7 +48,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
  *  and (2) most importantly semantic of reshape is exactly a reorg op. 
  */
 
-public class ReorgOp extends Hop 
+public class ReorgOp extends Hop implements MultiThreadedHop
 {
 	
 	public static boolean FORCE_DIST_SORT_INDEXES = false;
@@ -55,7 +56,8 @@ public class ReorgOp extends Hop
 	public boolean bSortSPRewriteApplicable = false;
 	
 	private ReOrgOp op;
-
+	private int _maxNumThreads = -1; //-1 for unlimited
+	
 	private ReorgOp() {
 		//default constructor for clone
 	}
@@ -86,6 +88,16 @@ public class ReorgOp extends Hop
 		refreshSizeInformation();
 	}
 
+	@Override
+	public void setMaxNumThreads( int k ) {
+		_maxNumThreads = k;
+	}
+	
+	@Override
+	public int getMaxNumThreads() {
+		return _maxNumThreads;
+	}
+	
 	public ReOrgOp getOp()
 	{
 		return op;
@@ -111,6 +123,15 @@ public class ReorgOp extends Hop
 		switch( op )
 		{
 			case TRANSPOSE:
+			{
+				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+				Transform transform1 = new Transform( getInput().get(0).constructLops(), 
+						HopsTransf2Lops.get(op), getDataType(), getValueType(), et, k);
+				setOutputDimensions(transform1);
+				setLineNumbers(transform1);
+				setLops(transform1);			
+				break;
+			}
 			case DIAG:
 			{
 				Transform transform1 = new Transform( getInput().get(0).constructLops(), 
@@ -591,6 +612,7 @@ public class ReorgOp extends Hop
 		
 		//copy specific attributes
 		ret.op = op;
+		ret._maxNumThreads = _maxNumThreads;
 		
 		return ret;
 	}
@@ -603,6 +625,7 @@ public class ReorgOp extends Hop
 		
 		ReorgOp that2 = (ReorgOp)that;		
 		boolean ret =  (op == that2.op)
+				    && (_maxNumThreads == that2._maxNumThreads)
 				    && (getInput().size()==that.getInput().size());
 				
 		//compare all childs (see reshape, sort)

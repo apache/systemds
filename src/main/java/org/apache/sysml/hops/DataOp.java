@@ -19,19 +19,21 @@
 
 package org.apache.sysml.hops;
 
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.util.LocalFileUtils;
-
-import java.util.HashMap;
-import java.util.Map.Entry;
 
 
 public class DataOp extends Hop 
@@ -206,10 +208,6 @@ public class DataOp extends Hop
 	public int getParameterIndex(String name)
 	{
 		return _paramIndexMap.get(name);
-	}
-	
-	public HashMap<String, Integer> getParameterIndexMap() {
-		return _paramIndexMap;
 	}
 	
 	@Override
@@ -572,4 +570,30 @@ public class DataOp extends Hop
 		
 		return ret;
 	}
+
+	/**
+	 * Remove an input from the list of inputs and from the parameter index map.
+	 * Parameter index map values higher than the index of the removed input
+	 * will be decremented by one.
+	 * 
+	 * @param inputName The name of the input to remove
+	 */
+	public void removeInput(String inputName) {
+
+		int inputIndex = getParameterIndex(inputName);
+		_input.remove(inputIndex);
+		_paramIndexMap.remove(inputName);
+
+		SortedMap<Integer, String> reverseLookup = new TreeMap<Integer, String>();
+		for (Entry<String, Integer> entry : _paramIndexMap.entrySet()) {
+			reverseLookup.put(entry.getValue(), entry.getKey());
+		}
+
+		for (Entry<Integer, String> entry : reverseLookup.entrySet()) {
+			if (entry.getKey() > inputIndex) {
+				_paramIndexMap.put(entry.getValue(), (entry.getKey() - 1));
+			}
+		}
+	}
+
 }

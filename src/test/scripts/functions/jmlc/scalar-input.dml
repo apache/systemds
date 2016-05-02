@@ -1,0 +1,4 @@
+inScalar1 = read("./tmp/doesntexist1", data_type="scalar");
+inScalar2 = read("./tmp/doesntexist2", data_type="scalar");
+total = inScalar1 + inScalar2;
+print("total:" + total);

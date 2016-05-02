@@ -1,0 +1,3 @@
+inScalar1 = read("./tmp/doesntexist1", data_type="scalar", value_type="string");
+inScalar2 = read("./tmp/doesntexist2", data_type="scalar", value_type="string");
+print("result:" + inScalar1 + inScalar2);

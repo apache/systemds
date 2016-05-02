@@ -20,7 +20,6 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
@@ -109,11 +108,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 					if( _inputs.contains(dop.getName()) ) {
 						dop.setDataOpType(DataOpTypes.TRANSIENTREAD);
 						if (hop.getDataType() == DataType.SCALAR) {
-							int iofilenameIndex = dop.getParameterIndex("iofilename");
-							dop.getInput().remove(iofilenameIndex);
-							HashMap<String, Integer> parameterIndexMap = dop.getParameterIndexMap();
-							parameterIndexMap.remove("iofilename");
-							parameterIndexMap.put("format", iofilenameIndex);
+							dop.removeInput("iofilename");
 						}
 					} else
 						LOG.warn("Non-registered persistent read of variable '"+dop.getName()+"' (line "+dop.getBeginLine()+").");

@@ -57,7 +57,7 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 			//pre-check (for robustness regarding too long strings)
 			String val1 = so1.getStringValue();
 			String val2 = so2.getStringValue();
-			StringObject.checkMaxStringLength(val1.length() + val2.length());
+			// StringObject.checkMaxStringLength(val1.length() + val2.length());
 			
 			String rval = dop.fn.execute(val1, val2);
 			sores = new StringObject(rval);

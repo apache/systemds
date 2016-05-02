@@ -110,6 +110,19 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	public HashMap<String, Integer> getParamIndexMap(){
 		return _paramIndexMap;
 	}
+	
+	/**
+	 * Returns a parameters by its name. Returns null if not present  
+	 * @param val
+	 * @return
+	 */
+	public Hop getInputParameter(String val){
+		Integer index = getParamIndexMap().get(val);
+		if (index == null)
+			return null;
+		else
+			return getInput().get(index);
+	}
 		
 	@Override
 	public String getOpString() {
@@ -827,8 +840,87 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{	
-		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
-		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);	
+		if (getOp() == ParamBuiltinOp.TOSTRING){
+			final long AVERAGE_CHARS_PER_VALUE = 7;
+			final long AVERAGE_CHARS_PER_INDEX = 4;
+			Hop rowsHop = getInputParameter("rows");
+			Hop colsHop = getInputParameter("cols");
+			Hop sparsePrintHOP = getInputParameter("sparse");
+			Hop sepHop = getInputParameter("sep");
+			Hop linesepHop = getInputParameter("linesep");
+			long numNonZeroes = getInput().get(0).getNnz();
+
+	
+			long numRows = getInput().get(0).getDim1();
+			long numCols = getInput().get(0).getDim2();
+			
+			long specifiedRows = 100;
+			long specifiedCols = 100;
+			boolean sparsePrint = false;
+			String sep = " ";
+			String linesep = "\n";
+			
+			try {
+			
+				if (rowsHop != null && rowsHop instanceof LiteralOp) {
+					specifiedRows = ((LiteralOp)rowsHop).getLongValue();
+				}
+				numRows = numRows < specifiedRows ? numRows : specifiedRows;
+				if (colsHop != null && colsHop instanceof LiteralOp){
+					specifiedCols = ((LiteralOp)colsHop).getLongValue();
+				}
+				numCols = numCols < specifiedCols ? numCols : specifiedCols;
+				
+				if (sparsePrintHOP != null && sparsePrintHOP instanceof LiteralOp){
+					sparsePrint = ((LiteralOp)sparsePrintHOP).getBooleanValue();
+				}
+				
+				if (sepHop != null && sepHop instanceof LiteralOp){
+					sep = ((LiteralOp)sepHop).getStringValue();
+				}
+				
+				if (linesepHop != null && linesepHop instanceof LiteralOp){
+					linesep = ((LiteralOp)linesepHop).getStringValue();
+				}
+				
+				long numberOfChars = -1;
+				if (sparsePrint){
+					numberOfChars = AVERAGE_CHARS_PER_VALUE * numNonZeroes			// Length for value digits
+									+ AVERAGE_CHARS_PER_INDEX * 2L * numNonZeroes	// Length for row & column index
+									+ sep.length() * 2L * numNonZeroes				// Length for separator chars
+									+ linesep.length() * numNonZeroes;				// Length for line separator chars
+				} else {
+					numberOfChars = AVERAGE_CHARS_PER_VALUE * numRows * numCols 	// Length for digits
+									+ sep.length() * numRows * (numCols - 1) 		// Length for separator chars
+									+ linesep.length() * numRows;					// Length for line separator chars
+				}
+				
+				/**
+				 * For JVM
+				 * 8 + // object header used by the VM
+				 * 8 + // 64-bit reference to char array (value)
+				 * 8 + string.length() * 2 + // character array itself (object header + 16-bit chars)
+				 * 4 + // offset integer
+				 * 4 + // count integer
+				 * 4 + // cached hash code
+				 */
+				
+				return (36 + numberOfChars * 2);
+				
+			} catch (HopsException e){
+				LOG.warn("Invalid values when trying to compute dims1, dims2 & nnz", e);
+				
+				// Assume Defaults : 100 * 100, sep = " ", linesep = "\n", sparse = false
+				return 36 * (100 * 100 * AVERAGE_CHARS_PER_VALUE 	// Length for digits  
+							+ 1 * 100 * 99 							// Length for separator chars
+							+ 1* 100);								// Length for line separator chars
+			}
+			
+			
+		} else {
+			double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+			return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+		}
 	}
 	
 	@Override

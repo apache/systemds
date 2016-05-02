@@ -878,8 +878,8 @@ public class DataConverter
 			df.setMinimumFractionDigits(decimal);
 		}
 		
-		if (mb.isInSparseFormat()){ // SparseBlock
-			if (sparse){
+		if (sparse){ // Sparse Print Format
+			if (mb.isInSparseFormat()){	// Block is in sparse format
 				Iterator<IJV> sbi = mb.getSparseBlockIterator();
 				while (sbi.hasNext()){
 					IJV ijv = sbi.next();
@@ -892,25 +892,9 @@ public class DataConverter
 						sb.append(df.format(value)).append(lineseparator);
 					}
 				}
-				
-			} else {
-				SparseBlock spb = mb.getSparseBlock();
+			} else {	// Block is in dense format
 				for (int i=0; i<rowLength; ++i){
-					for (int j=0; j<colLength-1; ++j){
-						double value = spb.get(i, j);
-						sb.append(df.format(value));
-						sb.append(separator);
-					}
-					double value = spb.get(i, colLength-1);
-					sb.append(df.format(value));	// Do not put separator after last element
-					sb.append(lineseparator);
-				}
-			}
-			
-		} else {	// Dense Block
-			if (sparse){
-				for (int i=0; i<rowLength; ++i){
-					for (int j=0; j<colLength-1; ++j){
+					for (int j=0; j<colLength; ++j){
 						double value = mb.getValue(i, j);
 						if (value != 0.0){
 							sb.append(i+1).append(separator).append(j+1).append(separator);
@@ -918,17 +902,18 @@ public class DataConverter
 						}
 					}
 				}
-			} else {
-				for (int i=0; i<rowLength; ++i){
-					for (int j=0; j<colLength-1; ++j){
-						double value = mb.getValue(i, j);
-						sb.append(df.format(value));
-						sb.append(separator);
-					}
-					double value = mb.getValue(i, colLength-1);
-					sb.append(df.format(value));	// Do not put separator after last element
-					sb.append(lineseparator);
+			}
+		}
+		else {	// Dense Print Format
+			for (int i=0; i<rowLength; i++){
+				for (int j=0; j<colLength-1; j++){
+					double value = mb.quickGetValue(i, j);
+					sb.append(df.format(value));
+					sb.append(separator);
 				}
+				double value = mb.quickGetValue(i, colLength-1);
+				sb.append(df.format(value));	// Do not put separator after last element
+				sb.append(lineseparator);
 			}
 		}
 		

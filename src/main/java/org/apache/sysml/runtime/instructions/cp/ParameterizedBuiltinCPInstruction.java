@@ -328,15 +328,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			String matrixStr = getParameterMap().get("null");
 			Data data = ec.getVariable(matrixStr);
 			if (!(data instanceof MatrixObject))
-				throw new DMLRuntimeException("as.string only converts matrix objects to string");
+				throw new DMLRuntimeException("toString only converts matrix objects to string");
 			MatrixBlock matrix = ec.getMatrixInput(matrixStr);
-			
-			
-//			if (sparse)
-//				outputStr = matrix.sparseToString(separator, lineseparator, rows, cols, decimal);
-//			else
-//				outputStr = matrix.denseToString(separator, lineseparator, rows, cols, decimal);
-			
+
 			String outputStr = DataConverter.convertToString(matrix, sparse, separator, lineseparator, rows, cols, decimal);
 			
 			ec.releaseMatrixInput(matrixStr);

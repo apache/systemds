@@ -30,6 +30,7 @@ import java.io.ObjectOutputStream;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -414,6 +415,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public void allocateDenseBlock(boolean clearNNZ, boolean zeroOut) 
 			throws RuntimeException 
 	{
+		long start = System.nanoTime();
 		long limit = (long)rlen * clen;
 		
 		//check max size constraint (16GB dense), since java arrays are limited to 2^(32-1) elements)
@@ -471,6 +473,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 */
 	public void allocateSparseRowsBlock(boolean clearNNZ)
 	{	
+		long start = System.nanoTime();
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized)
 		if( sparseBlock == null || sparseBlock.numRows()<rlen ) {
 			sparseBlock = SparseBlockFactory.createSparseBlock(DEFAULT_SPARSEBLOCK, rlen);
@@ -481,6 +484,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( clearNNZ ) {
 			nonZeros = 0;
 		}
+		Statistics.incrementAllocationTime(System.nanoTime()-start, true);
 	}
 	
 	

@@ -1,8 +1,5 @@
 # Initial prototype for Deep Learning
 
-Please note: until this fork is merged into trunk, this prototype does not represent SystemML's deep learning engine.
-So, if you do benchmark against this fork, please DO NOT cite SystemML.
-
 ## Representing tensor and images in SystemML
 
 In this prototype, we represent a tensor as a matrix stored in a row-major format,

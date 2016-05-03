@@ -382,6 +382,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 		//concatenate working directory to filepath
 		filePath = _workingDir + File.separator + filePath;
+		validateNamespace(namespace, filePath, ctx);
 		String scriptID = DMLProgram.constructFunctionKey(namespace, filePath);
 
 		DMLProgram prog = null;
@@ -389,7 +390,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		{
 			_scripts.get().put(scriptID, namespace);
 			try {
-				prog = (new PyDMLParserWrapper()).doParse(filePath, null, namespace, argVals);
+				prog = (new PyDMLParserWrapper()).doParse(filePath, null, getQualifiedNamespace(namespace), argVals);
 			} catch (ParseException e) {
 				notifyErrorListeners(e.getMessage(), ctx.start);
 				return;
@@ -401,7 +402,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			}
 			else {
 				ctx.info.namespaces = new HashMap<String, DMLProgram>();
-				ctx.info.namespaces.put(namespace, prog);
+				ctx.info.namespaces.put(getQualifiedNamespace(namespace), prog);
 				ctx.info.stmt = new ImportStatement();
 				((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
 				((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
@@ -414,7 +415,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			// create empty program for this context to allow processing to continue.
 			prog = new DMLProgram();
 			ctx.info.namespaces = new HashMap<String, DMLProgram>();
-			ctx.info.namespaces.put(namespace, prog);
+			ctx.info.namespaces.put(getQualifiedNamespace(namespace), prog);
 			ctx.info.stmt = new ImportStatement();
 			((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
 			((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());

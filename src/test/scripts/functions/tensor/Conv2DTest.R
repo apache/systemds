@@ -19,6 +19,7 @@
 #
 #-------------------------------------------------------------
 args <- commandArgs(TRUE)
+library("Matrix")
 imgSize=as.integer(args[1])
 numImg=as.integer(args[2])
 numChannels=as.integer(args[3])
@@ -38,7 +39,8 @@ pad_image <- function(img, Hin, Win, padh, padw){
   for (c in 1:C) {
     img_slice = matrix(img[c,], Hin, Win)  # depth slice C reshaped
     img_padded_slice = matrix(0, Hin+2*padh, Win+2*padw)
-    img_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = img_slice
+    #img_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = img_slice
+    img_padded_slice[(padh+1):(padh+Hin), (padw+1):(padw+Win)] = img_slice
     img_padded[c,] = matrix(img_padded_slice, 1, (Hin+2*padh)*(Win+2*padw))  # reshape
   }
   img_padded

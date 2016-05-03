@@ -34,7 +34,7 @@ w=matrix(seq(1, numFilters*numChannels*filterSize*filterSize), numFilters, numCh
 
 pad_image <- function(img, Hin, Win, padh, padw){
   C = nrow(img)
-  img_padded = matrix(0, C, (Hin+2*padh)*(Win+2*padw))  # zeros
+  img_padded = matrix(0, C, (Hin+2*padh)*(Win+2*padw), byrow=TRUE)  # zeros
   for (c in 1:C) {
     img_slice = matrix(img[c,], Hin, Win, byrow=TRUE)  # depth slice C reshaped
     img_padded_slice = matrix(0, Hin+2*padh, Win+2*padw)
@@ -49,13 +49,13 @@ im2col <- function(img, Hin, Win, Hf, Wf, strideh, stridew) {
   Hout = as.integer((Hin - Hf) / strideh + 1)
   Wout = as.integer((Win - Wf) / stridew + 1)
 
-  img_cols = matrix(0, C*Hf*Wf, Hout*Wout)  # zeros
+  img_cols = matrix(0, C*Hf*Wf, Hout*Wout, byrow=TRUE)  # zeros
   for (hout in 1:Hout) {  # all output rows
     hin = (hout-1) * strideh + 1
     for (wout in 1:Wout) {  # all output columns
       win = (wout-1) * stridew + 1
       # Extract a local patch of the input image corresponding spatially to the filter sizes.
-      img_patch = matrix(0, C, Hf*Wf)  # zeros
+      img_patch = matrix(0, C, Hf*Wf, byrow=TRUE)  # zeros
       for (c in 1:C) {  # all channels
         img_slice = matrix(img[c,], Hin, Win, byrow=TRUE)  # reshape
         img_patch[c,] = matrix(t(img_slice[hin:(hin+Hf-1), win:(win+Wf-1)]), 1, Hf*Wf)
@@ -73,7 +73,7 @@ conv2d <- function(X, W, C, Hin, Win, Hf, Wf, strideh, stridew, padh, padw) {
   Wout = as.integer((Win + 2 * padw - Wf) / stridew + 1)
   
   # Create output volume
-  out = matrix(0, N, F*Hout*Wout)
+  out = matrix(0, N, F*Hout*Wout, byrow=TRUE)
 
   # Convolution - im2col implementation
   for (n in 1:N) {  # all examples

@@ -120,6 +120,11 @@ public class Conv2DTest extends AutomatedTestBase
 			runRScript(true);
 			HashMap<CellIndex, Double> bHM = readRMatrixFromFS("B");
 			
+			// Uncomment this if people in dev mailing list agree to this approach
+			// and R script itself is debugged
+//			runRScript(true);
+//			HashMap<CellIndex, Double> bHM = readRMatrixFromFS("B");
+			
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
 			TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "B-R");
 			

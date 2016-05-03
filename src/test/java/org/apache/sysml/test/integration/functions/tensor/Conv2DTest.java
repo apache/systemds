@@ -113,13 +113,22 @@ public class Conv2DTest extends AutomatedTestBase
 				"" + filterSize, "" + stride, "" + pad, 
 				output("B")};
 			
+			fullRScriptName = RI_HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + imgSize + " " + numImg + 
+					" " + numChannels + " " + numFilters + 
+					" " + filterSize + " " + stride + " " + pad + " " + expectedDir(); 
 			
 			boolean exceptionExpected = false;
 			int expectedNumberOfJobs = -1;
 			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
 			
+			// Uncomment this if people in dev mailing list agree to this approach
+			// and R script itself is debugged
+//			runRScript(true);
+//			HashMap<CellIndex, Double> bHM = readRMatrixFromFS("B");
+			
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
-			TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "NumPy");
+			TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "B-R");
 			
 		}
 		finally

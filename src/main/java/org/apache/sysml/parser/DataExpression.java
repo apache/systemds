@@ -131,6 +131,42 @@ public class DataExpression extends DataIdentifier
 		_checkMetadata = checkMetadata;
 	}
 	
+	private static ArrayList<ParameterExpression> getMatrixParametersForTensorFn(DataExpression dataExpr, ArrayList<ParameterExpression> passedParamExprs,
+			String filename, int blp, int bcp, int elp, int ecp) throws LanguageException {
+		ArrayList<ParameterExpression> newPassedParamExprs = new ArrayList<ParameterExpression>();
+		for(ParameterExpression currExpr : passedParamExprs) {
+			if(currExpr.getName() != null && currExpr.getName().equals("shape")) {
+				if(currExpr.getExpr() instanceof ExpressionList) {
+					// Replace shape by rows and columns
+					ArrayList<Expression> shape = ((ExpressionList) currExpr.getExpr()).getValue();
+					if(shape.size() < 2) {
+						throw new LanguageException(filename, dataExpr.printErrorLocation(blp, bcp) 
+								+ "only tensors of shape > 1 supported");
+					}
+
+					Expression cols = shape.get(1);
+					for(int i = 2; i < shape.size(); i++) {
+						BinaryExpression temp = new BinaryExpression(BinaryOp.MULT, 
+								filename, blp, bcp, elp, ecp);
+						temp.setLeft(cols);
+						temp.setRight(shape.get(i));
+						cols = temp;
+					}
+					newPassedParamExprs.add(new ParameterExpression("rows", shape.get(0)));
+					newPassedParamExprs.add(new ParameterExpression("cols", cols));
+				}
+				else {
+					throw new LanguageException(filename, dataExpr.printErrorLocation(blp, bcp) 
+							+ "tensor method must have at least shape parameter");
+				}
+			}
+			else {
+				newPassedParamExprs.add(currExpr);
+			}
+		}
+		return newPassedParamExprs;
+	}
+	
 	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs, 
 				String filename, int blp, int bcp, int elp, int ecp) throws LanguageException 
 	{	

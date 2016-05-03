@@ -19,19 +19,19 @@
 
 package org.apache.sysml.hops;
 
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.util.LocalFileUtils;
-
-import java.util.HashMap;
-import java.util.Map.Entry;
 
 
 public class DataOp extends Hop 
@@ -568,4 +568,25 @@ public class DataOp extends Hop
 		
 		return ret;
 	}
+
+	/**
+	 * Remove an input from the list of inputs and from the parameter index map.
+	 * Parameter index map values higher than the index of the removed input
+	 * will be decremented by one.
+	 * 
+	 * @param inputName The name of the input to remove
+	 */
+	public void removeInput(String inputName) {
+
+		int inputIndex = getParameterIndex(inputName);
+		_input.remove(inputIndex);
+		_paramIndexMap.remove(inputName);
+
+		for (Entry<String, Integer> entry : _paramIndexMap.entrySet()) {
+			if (entry.getValue() > inputIndex) {
+				_paramIndexMap.put(entry.getKey(), (entry.getValue() - 1));
+			}
+		}
+	}
+
 }

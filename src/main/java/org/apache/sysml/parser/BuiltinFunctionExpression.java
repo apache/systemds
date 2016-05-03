@@ -1000,6 +1000,37 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
 			break;
 			
+		case CONV2D:
+		case CONV2D_BACKWARD_FILTER:
+		case CONV2D_BACKWARD_DATA:
+		case MAX_POOL:
+		case AVG_POOL:
+		case MAX_POOL_BACKWARD:
+		{
+			// At DML level:
+			// output = conv2d(input, filter, input_shape=[3, 2, 2], filter_shape=[3, 2, 2], 
+			// strides=[1, 1], border_mode="valid")
+			// 
+			// Converted to following in constructor (only supported NCHW):
+			// output = conv2d(input, filter, stride1, stride2, padding1,padding2,  
+			// input_shape1, input_shape2, input_shape3, input_shape4, 
+			// filter_shape1, filter_shape2, filter_shape3, filter_shape4)
+			//
+			// Similarly,
+			// conv2d_backward_filter and conv2d_backward_data
+			Expression input = _args[0];			// For conv2d_backward_filter, this is input and for conv2d_backward_data, this is filter
+			
+			if(!(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)) {
+				Expression filter = _args[1];			// For conv2d_backward functions, this is dout
+				checkMatrixParam(filter);
+			}
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
+			  			
+			checkMatrixParam(input);
+			break;
+		}
 		default:
 			if (this.isMathFunction()) {
 				// datatype and dimensions are same as this.getExpr()
@@ -1471,6 +1502,18 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.LU;
 		else if (functionName.equals("eigen"))
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
+		else if (functionName.equals("conv2d"))
+			 bifop = Expression.BuiltinFunctionOp.CONV2D;
+		else if (functionName.equals("conv2d_backward_filter"))
+			 bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_FILTER;
+		else if (functionName.equals("conv2d_backward_data"))
+			 bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_DATA;
+		else if (functionName.equals("max_pool"))
+			 bifop = Expression.BuiltinFunctionOp.MAX_POOL;
+		else if (functionName.equals("max_pool_backward"))
+			 bifop = Expression.BuiltinFunctionOp.MAX_POOL_BACKWARD;
+		else if (functionName.equals("avg_pool"))
+			 bifop = Expression.BuiltinFunctionOp.AVG_POOL;
 		else if (functionName.equals("solve"))
 			bifop = Expression.BuiltinFunctionOp.SOLVE;
 		else if (functionName.equals("ceil"))

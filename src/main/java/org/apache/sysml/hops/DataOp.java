@@ -21,8 +21,6 @@ package org.apache.sysml.hops;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -584,14 +582,9 @@ public class DataOp extends Hop
 		_input.remove(inputIndex);
 		_paramIndexMap.remove(inputName);
 
-		SortedMap<Integer, String> reverseLookup = new TreeMap<Integer, String>();
 		for (Entry<String, Integer> entry : _paramIndexMap.entrySet()) {
-			reverseLookup.put(entry.getValue(), entry.getKey());
-		}
-
-		for (Entry<Integer, String> entry : reverseLookup.entrySet()) {
-			if (entry.getKey() > inputIndex) {
-				_paramIndexMap.put(entry.getValue(), (entry.getKey() - 1));
+			if (entry.getValue() > inputIndex) {
+				_paramIndexMap.put(entry.getKey(), (entry.getValue() - 1));
 			}
 		}
 	}

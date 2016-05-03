@@ -64,6 +64,9 @@ import org.apache.sysml.parser.Expression.ParameterizedBuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.hops.ConvolutionOp;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
 
 
 public class DMLTranslator 
@@ -2792,6 +2795,76 @@ public class DMLTranslator
 			currBuiltinOp.refreshSizeInformation(); //force size reevaluation according to 'outer' flag otherwise danger of incorrect dims
 			break;
 			
+		case CONV2D:
+		{
+			Hop filter = expr2;
+			// Step 1: IM2COL
+			Hop image = expr;
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
+			Hop loweredMat = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops1);
+
+			// Step 2: Matrix multiplication
+			Hop temp = new AggBinaryOp("temp" + target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, filter, loweredMat);
+
+			// Step 3: Reshape col
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp, source, 2, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.RESHAPE_COL, inHops2);
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
+			break;
+		}
+		case AVG_POOL:
+		case MAX_POOL:
+		{
+			Hop image = expr;
+			ArrayList<Hop> inHops1 = getALHopsForPoolingForwardIM2COL(image, source, 1, hops);
+			if(source.getOpCode() == BuiltinFunctionOp.MAX_POOL)
+				currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.MAX_POOLING, inHops1);
+			else
+				throw new HopsException("Average pooling is not implemented");
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
+			break;
+		}
+		case MAX_POOL_BACKWARD:
+		{
+			Hop image = expr;
+			ArrayList<Hop> inHops1 = getALHopsForConvOpPoolingCOL2IM(image, source, 1, hops); // process dout as well
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.MAX_POOLING_BACKWARD, inHops1);
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
+			break;
+		}
+		case CONV2D_BACKWARD_FILTER:
+		{
+			Hop image = expr;
+			Hop dout = expr2;
+
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(image, source, 2, hops);
+			Hop x_col = new ConvolutionOp(image.getName(), image.getDataType(), image.getValueType(), Hop.ConvOp.IM2COL, inHops1);
+
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(dout, source, 2, hops);
+			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops2);
+
+			Hop dfilter1 = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, x_col, dout_reshaped);
+			currBuiltinOp = new ReorgOp("tempTranspose" + image.getName(), image.getDataType(), image.getValueType(), Hop.ReOrgOp.TRANSPOSE, dfilter1);
+			setBlockSizeAndRefreshSizeInfo(image, currBuiltinOp);
+			break;
+		}
+		case CONV2D_BACKWARD_DATA:
+		{
+			Hop filter = expr;
+			Hop dout = expr2;
+
+			ArrayList<Hop> inHops1 = getALHopsForConvOp(dout, source, 2, hops);
+			Hop dout_reshaped = new ConvolutionOp(dout.getName(), dout.getDataType(), dout.getValueType(), Hop.ConvOp.ROTATE180, inHops1);
+
+			Hop temp1 = new AggBinaryOp("temp" + target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, dout_reshaped, filter);
+			Hop temp2 = new ReorgOp("tempTranspose" + target.getName(), target.getDataType(), target.getValueType(), Hop.ReOrgOp.TRANSPOSE, temp1);
+
+			ArrayList<Hop> inHops2 = getALHopsForConvOp(temp2, source, 2, hops);
+			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(), Hop.ConvOp.COL2IM, inHops2);
+			setBlockSizeAndRefreshSizeInfo(filter, currBuiltinOp);
+			break;
+		}
+			 
 		default:
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}
@@ -2799,6 +2872,91 @@ public class DMLTranslator
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		currBuiltinOp.setAllPositions(source.getBeginLine(), source.getBeginColumn(), source.getEndLine(), source.getEndColumn());
 		return currBuiltinOp;
+	}
+	
+	private void setBlockSizeAndRefreshSizeInfo(Hop in, Hop out) {
+		HopRewriteUtils.setOutputBlocksizes(out, in.getRowsInBlock(), in.getColsInBlock());
+		HopRewriteUtils.copyLineNumbers(in, out);
+		out.refreshSizeInformation();
+	}
+
+	private ArrayList<Hop> getALHopsForConvOpPoolingCOL2IM(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
+		ArrayList<Hop> ret = new ArrayList<Hop>();
+		ret.add(first);
+		Expression[] allExpr = source.getAllExpr();
+
+		for(int i = skip; i < allExpr.length; i++) {
+			if(i == 11) {
+				ret.add(processExpression(allExpr[7], null, hops)); // Make number of channels of images and filter the same
+			}
+			else
+				ret.add(processExpression(allExpr[i], null, hops));
+		}
+		return ret;
+	}
+
+	private ArrayList<Hop> getALHopsForPoolingForwardIM2COL(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
+		ArrayList<Hop> ret = new ArrayList<Hop>();
+		ret.add(first);
+		Expression[] allExpr = source.getAllExpr();
+		if(skip != 1) {
+			throw new ParseException("Unsupported skip");
+		}
+
+		Expression numChannels = allExpr[6];
+
+		for(int i = skip; i < allExpr.length; i++) {
+			if(i == 10) { 
+				ret.add(processExpression(numChannels, null, hops));
+			}
+			else
+				ret.add(processExpression(allExpr[i], null, hops));
+		}
+		return ret;
+	}
+
+	private ArrayList<Hop> getALHopsForConvOpPoolingIM2COL(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
+		ArrayList<Hop> ret = new ArrayList<Hop>();
+		ret.add(first);
+		Expression[] allExpr = source.getAllExpr();
+		int numImgIndex = -1;
+		if(skip == 1) {
+			numImgIndex = 5;
+		}
+		else if(skip == 2) {
+			numImgIndex = 6;
+		}
+		else {
+			throw new ParseException("Unsupported skip");
+		}
+
+		for(int i = skip; i < allExpr.length; i++) {
+			if(i == numImgIndex) { // skip=1 ==> i==5  and skip=2 => i==6
+				Expression numImg = allExpr[numImgIndex];
+				Expression numChannels = allExpr[numImgIndex+1];
+				BinaryExpression tmp = new BinaryExpression(org.apache.sysml.parser.Expression.BinaryOp.MULT, 
+						numImg.getFilename(), numImg.getBeginLine(), numImg.getBeginColumn(), numImg.getEndLine(), numImg.getEndColumn());
+				tmp.setLeft(numImg);
+				tmp.setRight(numChannels);
+				ret.add(processTempIntExpression(tmp, hops));
+				ret.add(processExpression(new IntIdentifier(1, numImg.getFilename(), numImg.getBeginLine(), numImg.getBeginColumn(), 
+						numImg.getEndLine(), numImg.getEndColumn()), null, hops));
+				i++;
+			}
+			else
+				ret.add(processExpression(allExpr[i], null, hops));
+		}
+		return ret;
+	}
+
+	private ArrayList<Hop> getALHopsForConvOp(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
+		ArrayList<Hop> ret = new ArrayList<Hop>();
+		ret.add(first);
+		Expression[] allExpr = source.getAllExpr();
+		for(int i = skip; i < allExpr.length; i++) {
+			ret.add(processExpression(allExpr[i], null, hops));
+		}
+		return ret;
 	}
 		
 	public void setIdentifierParams(Hop h, Identifier id) {

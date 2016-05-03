@@ -27,8 +27,10 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import org.apache.commons.math3.random.Well1024a;
@@ -82,6 +84,7 @@ import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.Statistics;
 
 
 public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable
@@ -96,6 +99,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
+	
+	public static final boolean REUSE_NONZEROED_OUTPUT = false;
+	// Using hashmap to avoid any performance impacts of multimap
+	public static final HashMap<Integer, SoftReference<double[]>> NON_ZEROED_DOUBLE_ARR = new HashMap<Integer, SoftReference<double[]>>();
+	public static final int NON_ZEROED_DOUBLE_ARR_THRESHOLD = 100;
 	
 	public enum BlockType{
 		EMPTY_BLOCK,  
@@ -403,14 +411,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			allocateDenseBlock();
 	}
 	
-	/**
-	 * 
-	 * @param clearNNZ
-	 * @throws DMLRuntimeException
-	 */
-	public void allocateDenseBlock(boolean clearNNZ) 
-		throws RuntimeException 
+	public void allocateDenseBlock(boolean clearNNZ, boolean zeroOut) 
+			throws RuntimeException 
 	{
+		long start = System.nanoTime();
 		long limit = (long)rlen * clen;
 		
 		//check max size constraint (16GB dense), since java arrays are limited to 2^(32-1) elements)
@@ -420,14 +424,40 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
-		if(denseBlock == null || denseBlock.length < limit ) {
-			denseBlock = new double[(int)limit];
+		if(!zeroOut && REUSE_NONZEROED_OUTPUT 
+				&& (denseBlock == null || denseBlock.length < limit) 
+				&& limit >= NON_ZEROED_DOUBLE_ARR_THRESHOLD && 
+				// Not a column vector
+				rlen != 1 && clen != 1) {
+			SoftReference<double[]> arr = NON_ZEROED_DOUBLE_ARR.remove(new Integer((int) limit));
+			if(arr != null) {
+				denseBlock = arr.get();
+			}
 		}
+		if(denseBlock == null || denseBlock.length < limit) {
+			denseBlock = new double[(int)limit];
+			Statistics.incrementAllocationCount(false);
+		}
+		
 		
 		//clear nnz if necessary
 		if( clearNNZ ) {
 			nonZeros = 0;
 		}
+		
+		sparse = false;
+		Statistics.incrementAllocationTime(System.nanoTime()-start, false);
+	}
+	
+	/**
+	 * 
+	 * @param clearNNZ
+	 * @throws DMLRuntimeException
+	 */
+	public void allocateDenseBlock(boolean clearNNZ) 
+		throws RuntimeException 
+	{
+		allocateDenseBlock(clearNNZ, true);
 	}
 	
 	/**
@@ -443,15 +473,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 */
 	public void allocateSparseRowsBlock(boolean clearNNZ)
 	{	
+		long start = System.nanoTime();
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized)
 		if( sparseBlock == null || sparseBlock.numRows()<rlen ) {
 			sparseBlock = SparseBlockFactory.createSparseBlock(DEFAULT_SPARSEBLOCK, rlen);
+			Statistics.incrementAllocationCount(true);
 		}
 		
 		//clear nnz if necessary
 		if( clearNNZ ) {
 			nonZeros = 0;
 		}
+		Statistics.incrementAllocationTime(System.nanoTime()-start, true);
 	}
 	
 	

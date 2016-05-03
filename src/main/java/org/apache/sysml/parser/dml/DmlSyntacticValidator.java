@@ -429,8 +429,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		String functionName = fnNames[1];
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
 
-		castAsScalarDeprecationCheck(functionName, ctx);
-
 		if(functionName.equals("conv2d") || functionName.equals("conv2d_backward_filter") || functionName.equals("conv2d_backward_data")) {
 			HashSet<String> expand = new HashSet<String>();
 			expand.add("input_shape"); expand.add("filter_shape"); expand.add("stride"); expand.add("padding");
@@ -453,6 +451,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 				paramExpression = orderConvolutionParams(paramExpression, 1, ctx);
 		}
 		
+		castAsScalarDeprecationCheck(functionName, ctx);
+		
 		boolean hasLHS = ctx.targetList != null;
 		functionCallAssignmentStatementHelper(ctx, printStatements, outputStatements, hasLHS ? ctx.targetList.dataInfo.expr : null, ctx.info, ctx.name,
 	 			hasLHS ? ctx.targetList.start : null, namespace, functionName, paramExpression, hasLHS);
@@ -464,7 +464,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			raiseWarning("castAsScalar() has been deprecated. Please use as.scalar().", ctx.start);
 		}
 	}
-	
+
 	private ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, 
 			int skip, ParserRuleContext ctx) {
 		ArrayList<ParameterExpression> newParams = new ArrayList<ParameterExpression>();
@@ -533,7 +533,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		return newParamExpressions;
 	}
 			  
-
 
 	@Override
 	public void exitBuiltinFunctionExpression(BuiltinFunctionExpressionContext ctx) {

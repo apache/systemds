@@ -66,14 +66,14 @@ public abstract class Expression
 		ABS,
 		ACOS,
 		ASIN,
-		AS_BOOLEAN,
-		AS_DOUBLE,
-		AS_FRAME,
-		AS_INT,
-		AS_MATRIX,
-		AS_SCALAR,
 		ATAN,
 		AVG,
+		CAST_AS_BOOLEAN,
+		CAST_AS_DOUBLE,
+		CAST_AS_FRAME,
+		CAST_AS_INT,
+		CAST_AS_MATRIX,
+		CAST_AS_SCALAR,
 		CBIND, //previously APPEND
 		CEIL,
 		CHOLESKY,
@@ -514,32 +514,32 @@ public abstract class Expression
 	}
 	
 	/**
-	 * Throw a LanguageException with the message if doWarning is {@code false};
+	 * Throw a LanguageException with the message if conditional is {@code false};
 	 * otherwise log the message as a warning.
 	 * 
 	 * @param message the error (or warning) message
-	 * @param doWarning if {@code true}, display log warning message. Otherwise, the message
+	 * @param conditional if {@code true}, display log warning message. Otherwise, the message
 	 * will be thrown as a LanguageException
-	 * @throws LanguageException
+	 * @throws LanguageException thrown if conditional is {@code false}.
 	 */
-	public void raiseValidateError( String message, boolean doWarning ) throws LanguageException {
-		raiseValidateError(message, doWarning, null);
+	public void raiseValidateError( String message, boolean conditional ) throws LanguageException {
+		raiseValidateError(message, conditional, null);
 	}
 	
 	/**
-	 * Throw a LanguageException with the message (and optional error code) if doWarning is {@code false};
+	 * Throw a LanguageException with the message (and optional error code) if conditional is {@code false};
 	 * otherwise log the message as a warning.
 	 * 
 	 * @param message the error (or warning) message
-	 * @param doWarning if {@code true}, display log warning message. Otherwise, the message (and optional
+	 * @param conditional if {@code true}, display log warning message. Otherwise, the message (and optional
 	 * error code) will be thrown as a LanguageException
 	 * @param errorCode optional error code
-	 * @throws LanguageException thrown if doWarning is {@code false}.
+	 * @throws LanguageException thrown if conditional is {@code false}.
 	 */
-	public void raiseValidateError( String message, boolean doWarning, String errorCode ) 
+	public void raiseValidateError( String message, boolean conditional, String errorCode ) 
 		throws LanguageException
 	{
-		if( doWarning )  //warning if conditional
+		if( conditional )  //warning if conditional
 		{
 			String fullMsg = this.printWarningLocation() + message;
 			

@@ -2506,24 +2506,24 @@ public class DMLTranslator
 			break;
 
 		//data type casts	
-		case AS_SCALAR:
+		case CAST_AS_SCALAR:
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR, target.getValueType(), Hop.OpOp1.CAST_AS_SCALAR, expr);
 			break;
-		case AS_MATRIX:
+		case CAST_AS_MATRIX:
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.MATRIX, target.getValueType(), Hop.OpOp1.CAST_AS_MATRIX, expr);
 			break;	
-		case AS_FRAME:
+		case CAST_AS_FRAME:
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.FRAME, target.getValueType(), Hop.OpOp1.CAST_AS_FRAME, expr);
 			break;	
 
 		//value type casts
-		case AS_DOUBLE:
+		case CAST_AS_DOUBLE:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.DOUBLE, Hop.OpOp1.CAST_AS_DOUBLE, expr);
 			break;
-		case AS_INT:
+		case CAST_AS_INT:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.INT, Hop.OpOp1.CAST_AS_INT, expr);
 			break;
-		case AS_BOOLEAN:
+		case CAST_AS_BOOLEAN:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, Hop.OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
 		case ABS:

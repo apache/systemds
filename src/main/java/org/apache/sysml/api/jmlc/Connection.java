@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -44,8 +43,6 @@ import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.parser.common.CustomErrorListener;
-import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -168,11 +165,6 @@ public class Connection
 			//parsing
 			AParserWrapper parser = AParserWrapper.createParser(parsePyDML);
 			DMLProgram prog = parser.parse(null, script, args);
-			
-			if (parser.isAtLeastOneWarning()) {
-				List<ParseIssue> parseIssues = parser.getParseIssues();
-				System.out.println(CustomErrorListener.generateParseIssuesMessage(script, parseIssues));
-			}
 			
 			//language validate
 			DMLTranslator dmlt = new DMLTranslator(prog);

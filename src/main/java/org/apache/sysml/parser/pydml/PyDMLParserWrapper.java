@@ -170,6 +170,9 @@ public class PyDMLParserWrapper extends AParserWrapper
 		if (atLeastOneError) {
 			throw new ParseException(parseIssues, dmlScript);
 		}
+		if (atLeastOneWarning) {
+			LOG.warn(CustomErrorListener.generateParseIssuesMessage(dmlScript, parseIssues));
+		}
 		dmlPgm = createDMLProgram(ast, sourceNamespace);
 		
 		return dmlPgm;

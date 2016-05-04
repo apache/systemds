@@ -286,6 +286,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	}
 
 
+
 	private void checkInputDimensionForIm2col(MatrixBlock matBlock, ConvolutionParameters params) throws DMLRuntimeException {
 		if((params.N != matBlock.getNumRows() || params.C*params.H*params.W != matBlock.getNumColumns())) {
 			throw new DMLRuntimeException("Incorrect input shape in conv2d");

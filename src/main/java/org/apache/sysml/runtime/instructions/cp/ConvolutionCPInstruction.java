@@ -259,6 +259,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			outputBlock.allocateDenseBlock();
 		}
 		outputBlock.setNonZeros(numRows * numCols);
+
 		if(DMLScript.STATISTICS)
 			Statistics.incrementAllocationTime(System.nanoTime()-start, false);
 		return outputBlock;

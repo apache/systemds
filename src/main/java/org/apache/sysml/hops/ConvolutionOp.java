@@ -106,6 +106,8 @@ public class ConvolutionOp extends Hop
 					break;
 				}
 				else {
+					// TODO: Add support for SPARK/MR backends once we are happy with the performance of
+					// single node Lenet script. 
 					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
 				}
 				// break;

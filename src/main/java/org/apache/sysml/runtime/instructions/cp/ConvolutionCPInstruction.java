@@ -156,6 +156,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				.getLongValue();
 	}
 	
+	// TODO: optimize "Sparse operations" once we are happy with the performance of single node Lenet script on dense MNIST dataset
 	@Override
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException {

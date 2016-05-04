@@ -93,10 +93,29 @@ public abstract class CommonSyntacticValidator {
 		errorListener.validationWarning(op.getLine(), op.getCharPositionInLine(), message);
 	}
 
-	// Different namespaces for DML (::) and PyDml (.)
+	/**
+	 * Obtain the namespace separator ({@code ::} for DML and {@code .} for
+	 * PYDML) that is used to specify a namespace and a function in that
+	 * namespace.
+	 * 
+	 * @return The namespace separator
+	 */
 	public abstract String namespaceResolutionOp();
 
-	// Returns list of two elements <namespace, function names>, else null
+	/**
+	 * Obtain the namespace and the function name as a two-element array based
+	 * on the fully-qualified function name. If no namespace is supplied in
+	 * front of the function name, the default namespace will be used.
+	 * 
+	 * @param fullyQualifiedFunctionName
+	 *            Namespace followed by separator ({@code ::} for DML and
+	 *            {@code .} for PYDML) followed by function name (for example,
+	 *            {@code mynamespace::myfunctionname}), or only function name if
+	 *            the default namespace is used (for example,
+	 *            {@code myfunctionname}).
+	 * @return Two-element array consisting of namespace and function name, or
+	 *         {@code null}.
+	 */
 	protected String[] getQualifiedNames(String fullyQualifiedFunctionName) {
 		String splitStr = Pattern.quote(namespaceResolutionOp());
 		String [] fnNames = fullyQualifiedFunctionName.split(splitStr);

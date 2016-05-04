@@ -23,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
@@ -44,7 +43,6 @@ import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.common.CustomErrorListener;
-import org.apache.sysml.parser.common.CustomErrorListener.ParseIssue;
 import org.apache.sysml.parser.dml.DmlParser.FunctionStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.ProgramrootContext;
 import org.apache.sysml.parser.dml.DmlParser.StatementContext;
@@ -179,9 +177,14 @@ public class DMLParserWrapper extends AParserWrapper
 		DmlSyntacticValidator validator = new DmlSyntacticValidator(errorListener, argVals, sourceNamespace);
 		walker.walk(validator, tree);
 		errorListener.unsetCurrentFileName();
-		if (errorListener.isAtleastOneError()) {
-			List<ParseIssue> parseIssues = errorListener.getParseIssues();
+		this.parseIssues = errorListener.getParseIssues();
+		this.atLeastOneWarning = errorListener.isAtLeastOneWarning();
+		this.atLeastOneError = errorListener.isAtLeastOneError();
+		if (atLeastOneError) {
 			throw new ParseException(parseIssues, dmlScript);
+		}
+		if (atLeastOneWarning) {
+			LOG.warn(CustomErrorListener.generateParseIssuesMessage(dmlScript, parseIssues));
 		}
 		dmlPgm = createDMLProgram(ast, sourceNamespace);
 		
@@ -249,6 +252,4 @@ public class DMLParserWrapper extends AParserWrapper
 		dmlPgm.mergeStatementBlocks();
 		return dmlPgm;
 	}
-	
-	
 }

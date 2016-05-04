@@ -30,34 +30,50 @@ import org.apache.sysml.hops.Hop.FileFormatTypes;
 
 public abstract class Expression 
 {
+	/**
+	 * The kind of expression. Can be an operator (unary operator, binary operator, boolean operator, built-in function operator,
+	 * parameterized built-in function operator, data operator, relational operator, external built-in function operator, function call operator), data, or literal.
+	 */
 	public enum Kind {
 		UnaryOp, BinaryOp, BooleanOp, BuiltinFunctionOp, ParameterizedBuiltinFunctionOp, DataOp, Data, Literal, RelationalOp, ExtBuiltinFunctionOp, FunctionCallOp
 	};
 
+	/**
+	 * Binary operators.
+	 */
 	public enum BinaryOp {
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, MATMULT, POW, INVALID
 	};
 
+	/**
+	 * Relational operators.
+	 */
 	public enum RelationalOp {
 		LESSEQUAL, LESS, GREATEREQUAL, GREATER, EQUAL, NOTEQUAL, INVALID
 	};
 
+	/**
+	 * Boolean operators.
+	 */
 	public enum BooleanOp {
 		CONDITIONALAND, CONDITIONALOR, LOGICALAND, LOGICALOR, NOT, INVALID
 	};
 
+	/**
+	 * Built-in function operators.
+	 */
 	public enum BuiltinFunctionOp { 
-		ABS, 
+		ABS,
 		ACOS,
-		ASIN, 
+		ASIN,
 		ATAN,
 		AVG,
 		CAST_AS_BOOLEAN,
 		CAST_AS_DOUBLE,
+		CAST_AS_FRAME,
 		CAST_AS_INT,
 		CAST_AS_MATRIX,
 		CAST_AS_SCALAR,
-		CAST_AS_FRAME,
 		CBIND, //previously APPEND
 		CEIL,
 		CHOLESKY,
@@ -122,6 +138,9 @@ public abstract class Expression
 		VAR
 	};
 
+	/**
+	 * Parameterized built-in function operators.
+	 */
 	public enum ParameterizedBuiltinFunctionOp {
 		GROUPEDAGG, RMEMPTY, REPLACE, ORDER, 
 		// Distribution Functions
@@ -130,30 +149,30 @@ public abstract class Expression
 		INVALID
 	};
 	
+	/**
+	 * Data operators.
+	 */
 	public enum DataOp {
 		READ, WRITE, RAND, MATRIX, INVALID	
 	}
 
+	/**
+	 * Function call operators.
+	 */
 	public enum FunctCallOp {
 		INTERNAL, EXTERNAL
 	};
 	
+	/**
+	 * External built-in function operators.
+	 */
 	public enum ExtBuiltinFunctionOp {
 		EIGEN, CHOLESKY
 	};
 
-	public enum AggOp {
-		SUM, MIN, MAX, INVALID
-	};
-
-	public enum ReorgOp {
-		TRANSPOSE, DIAG
-	};
-
-	//public enum DataOp {
-	//	READ, WRITE
-	//};
-
+	/**
+	 * Data types (matrix, scalar, frame, object, unknown).
+	 */
 	public enum DataType {
 		MATRIX, SCALAR, FRAME, OBJECT, UNKNOWN;
 		
@@ -165,10 +184,16 @@ public abstract class Expression
 		}
 	};
 
+	/**
+	 * Value types (int, double, string, boolean, object, unknown).
+	 */
 	public enum ValueType {
 		INT, DOUBLE, STRING, BOOLEAN, OBJECT, UNKNOWN
 	};
 
+	/**
+	 * Format types (text, binary, matrix market, csv, unknown).
+	 */
 	public enum FormatType {
 		TEXT, BINARY, MM, CSV, UNKNOWN
 	};
@@ -198,6 +223,11 @@ public abstract class Expression
 		return _kind;
 	}
 
+	/**
+	 * Obtain identifier.
+	 * 
+	 * @return Identifier
+	 */
 	public Identifier getOutput() {
 		if (_outputs != null && _outputs.length > 0)
 			return _outputs[0];
@@ -205,6 +235,10 @@ public abstract class Expression
 			return null;
 	}
 	
+	/** Obtain identifiers.
+	 * 
+	 * @return Identifiers
+	 */
 	public Identifier[] getOutputs() {
 		return _outputs;
 	}
@@ -220,7 +254,16 @@ public abstract class Expression
 	{
 		raiseValidateError("Should never be invoked in Baseclass 'Expression'", false);
 	}
-	
+
+	/**
+	 * Convert string value to binary operator.
+	 * 
+	 * @param val String value ('+', '-', '*', '/', '%%', '%/%', '^', %*%')
+	 * @return Binary operator ({@code BinaryOp.PLUS}, {@code BinaryOp.MINUS}, 
+	 * {@code BinaryOp.MULT}, {@code BinaryOp.DIV}, {@code BinaryOp.MODULUS}, 
+	 * {@code BinaryOp.INTDIV}, {@code BinaryOp.POW}, {@code BinaryOp.MATMULT}).
+	 * Returns {@code BinaryOp.INVALID} if string value not recognized.
+	 */
 	public static BinaryOp getBinaryOp(String val) {
 		if (val.equalsIgnoreCase("+"))
 			return BinaryOp.PLUS;
@@ -241,6 +284,15 @@ public abstract class Expression
 		return BinaryOp.INVALID;
 	}
 
+	/**
+	 * Convert string value to relational operator.
+	 * 
+	 * @param val String value ('&lt;', '&lt=', '&gt;', '&gt;=', '==', '!=')
+	 * @return Relational operator ({@code RelationalOp.LESS}, {@code RelationalOp.LESSEQUAL}, 
+	 * {@code RelationalOp.GREATER}, {@code RelationalOp.GREATEREQUAL}, {@code RelationalOp.EQUAL}, 
+	 * {@code RelationalOp.NOTEQUAL}).
+	 * Returns {@code RelationalOp.INVALID} if string value not recognized.
+	 */
 	public static RelationalOp getRelationalOp(String val) {
 		if (val == null) 
 			return null;
@@ -259,6 +311,14 @@ public abstract class Expression
 		return RelationalOp.INVALID;
 	}
 
+	/**
+	 * Convert string value to boolean operator.
+	 * 
+	 * @param val String value ('&amp;&amp;', '&amp;', '||', '|', '!')
+	 * @return Boolean operator ({@code BooleanOp.CONDITIONALAND}, {@code BooleanOp.LOGICALAND}, 
+	 * {@code BooleanOp.CONDITIONALOR}, {@code BooleanOp.LOGICALOR}, {@code BooleanOp.NOT}).
+	 * Returns {@code BooleanOp.INVALID} if string value not recognized.
+	 */
 	public static BooleanOp getBooleanOp(String val) {
 		if (val.equalsIgnoreCase("&&"))
 			return BooleanOp.CONDITIONALAND;
@@ -274,22 +334,27 @@ public abstract class Expression
 	}
 
 	/**
-	 * Convert format types from parser to Hops enum : default is text
+	 * Convert string format type to {@code Hop.FileFormatTypes}.
+	 * 
+	 * @param format String format type ("text", "binary", "mm", "csv")
+	 * @return Format as {@code Hop.FileFormatTypes}. Can be
+	 * {@code FileFormatTypes.TEXT}, {@code FileFormatTypes.BINARY}, 
+	 * {@code FileFormatTypes.MM}, or {@code FileFormatTypes.CSV}. Unrecognized
+	 * type is set to {@code FileFormatTypes.TEXT}.
 	 */
-	
-	public static FileFormatTypes convertFormatType(String fn) {
-		if (fn == null)
+	public static FileFormatTypes convertFormatType(String format) {
+		if (format == null)
 			return FileFormatTypes.TEXT;
-		if (fn.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_TEXT)) {
+		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_TEXT)) {
 			return FileFormatTypes.TEXT;
 		}
-		if (fn.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_BINARY)) {
+		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_BINARY)) {
 			return FileFormatTypes.BINARY;
 		}
-		if (fn.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET))  {
+		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET))  {
 			return FileFormatTypes.MM;
 		}
-		if (fn.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV))  {
+		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV))  {
 			return FileFormatTypes.CSV;
 		}
 		// ToDo : throw parse exception for invalid / unsupported format type
@@ -297,7 +362,10 @@ public abstract class Expression
 	}
     
 	/**
-	 * Construct Hops from parse tree : Create temporary views in expressions
+	 * Obtain temporary name ("parsertemp" + _tempId) for expression. Used to construct Hops from
+	 * parse tree.
+	 * 
+	 * @return Temporary name of expression.
 	 */
 	public static String getTempName() {
 		return "parsertemp" + _tempId++;
@@ -307,13 +375,36 @@ public abstract class Expression
 
 	public abstract VariableSet variablesUpdated();
 
-	public static DataType computeDataType(Expression e1, Expression e2, boolean cast) throws LanguageException {
-		return computeDataType(e1.getOutput(), e2.getOutput(), cast);
+	/**
+	 * Compute data type based on expressions. The identifier for each expression is obtained and passed to
+	 * {@link #computeDataType(Identifier, Identifier, boolean)}. If the identifiers have the same data type, the shared data type is
+	 * returned. Otherwise, if {@code cast} is {@code true} and one of the identifiers is a matrix and the other
+	 * identifier is a scalar, return {@code DataType.MATRIX}. Otherwise, throw a LanguageException.
+	 * 
+	 * @param expression1 First expression
+	 * @param expression2 Second expression
+	 * @param cast Whether a cast should potentially be performed
+	 * @return The data type ({@link DataType})
+	 * @throws LanguageException
+	 */
+	public static DataType computeDataType(Expression expression1, Expression expression2, boolean cast) throws LanguageException {
+		return computeDataType(expression1.getOutput(), expression2.getOutput(), cast);
 	}
 
-	public static DataType computeDataType(Identifier id1, Identifier id2, boolean cast) throws LanguageException {
-		DataType d1 = id1.getDataType();
-		DataType d2 = id2.getDataType();
+	/**
+	 * Compute data type based on identifiers. If the identifiers have the same data type, the shared data type is
+	 * returned. Otherwise, if {@code cast} is {@code true} and one of the identifiers is a matrix and the other
+	 * identifier is a scalar, return {@code DataType.MATRIX}. Otherwise, throw a LanguageException.
+	 * 
+	 * @param identifier1 First identifier
+	 * @param identifier2 Second identifier
+	 * @param cast Whether a cast should potentially be performed
+	 * @return The data type ({@link DataType})
+	 * @throws LanguageException
+	 */
+	public static DataType computeDataType(Identifier identifier1, Identifier identifier2, boolean cast) throws LanguageException {
+		DataType d1 = identifier1.getDataType();
+		DataType d2 = identifier2.getDataType();
 
 		if (d1 == d2)
 			return d1;
@@ -326,18 +417,43 @@ public abstract class Expression
 		}
 
 		//raise error with id1 location
-		id1.raiseValidateError("Invalid Datatypes for operation "+d1+" "+d2, false, 
+		identifier1.raiseValidateError("Invalid Datatypes for operation "+d1+" "+d2, false, 
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		return null; //never reached because unconditional
 	}
 
-	public static ValueType computeValueType(Expression e1, Expression e2, boolean cast) throws LanguageException {
-		return computeValueType(e1.getOutput(), e2.getOutput(), cast);
+	/**
+	 * Compute value type based on expressions. The identifier for each expression is obtained and passed to
+	 * {@link #computeValueType(Identifier, Identifier, boolean)}. If the identifiers have the same value type, the shared value type is
+	 * returned. Otherwise, if {@code cast} is {@code true} and one value type is a double and the other is an int,
+	 * return {@code ValueType.DOUBLE}. If {@code cast} is {@code true} and one value type is a string or the other value type is a string, return
+	 * {@code ValueType.STRING}. Otherwise, throw a LanguageException.
+	 * 
+	 * @param expression1 First expression
+	 * @param expression2 Second expression
+	 * @param cast Whether a cast should potentially be performed
+	 * @return The value type ({@link ValueType})
+	 * @throws LanguageException
+	 */
+	public static ValueType computeValueType(Expression expression1, Expression expression2, boolean cast) throws LanguageException {
+		return computeValueType(expression1.getOutput(), expression2.getOutput(), cast);
 	}
-
-	public static ValueType computeValueType(Identifier id1, Identifier id2, boolean cast) throws LanguageException {
-		ValueType v1 = id1.getValueType();
-		ValueType v2 = id2.getValueType();
+	
+	/**
+	 * Compute value type based on identifiers. If the identifiers have the same value type, the shared value type is
+	 * returned. Otherwise, if {@code cast} is {@code true} and one value type is a double and the other is an int,
+	 * return {@code ValueType.DOUBLE}. If {@code cast} is {@code true} and one value type is a string or the other value type is a string, return
+	 * {@code ValueType.STRING}. Otherwise, throw a LanguageException.
+	 * 
+	 * @param identifier1 First identifier
+	 * @param identifier2 Second identifier
+	 * @param cast Whether a cast should potentially be performed
+	 * @return The value type ({@link ValueType})
+	 * @throws LanguageException
+	 */
+	public static ValueType computeValueType(Identifier identifier1, Identifier identifier2, boolean cast) throws LanguageException {
+		ValueType v1 = identifier1.getValueType();
+		ValueType v2 = identifier2.getValueType();
 
 		if (v1 == v2)
 			return v1;
@@ -355,7 +471,7 @@ public abstract class Expression
 		}
 
 		//raise error with id1 location
-		id1.raiseValidateError("Invalid Valuetypes for operation "+v1+" "+v2, false, 
+		identifier1.raiseValidateError("Invalid Valuetypes for operation "+v1+" "+v2, false, 
 				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		return null; //never reached because unconditional
 	}
@@ -387,33 +503,51 @@ public abstract class Expression
 	// validate error handling (consistent for all expressions)
 	
 	
-	public void raiseValidateError( String msg ) throws LanguageException {
-		raiseValidateError(msg, false, null);
-	}
-	
-	public void raiseValidateError( String msg, boolean conditional ) throws LanguageException {
-		raiseValidateError(msg, conditional, null);
+	/**
+	 * Throw a LanguageException with the message.
+	 * 
+	 * @param message the error message
+	 * @throws LanguageException
+	 */
+	public void raiseValidateError( String message ) throws LanguageException {
+		raiseValidateError(message, false, null);
 	}
 	
 	/**
+	 * Throw a LanguageException with the message if conditional is {@code false};
+	 * otherwise log the message as a warning.
 	 * 
-	 * @param msg
-	 * @param conditional
-	 * @param code
-	 * @throws LanguageException
+	 * @param message the error (or warning) message
+	 * @param conditional if {@code true}, display log warning message. Otherwise, the message
+	 * will be thrown as a LanguageException
+	 * @throws LanguageException thrown if conditional is {@code false}.
 	 */
-	public void raiseValidateError( String msg, boolean conditional, String errorCode ) 
+	public void raiseValidateError( String message, boolean conditional ) throws LanguageException {
+		raiseValidateError(message, conditional, null);
+	}
+	
+	/**
+	 * Throw a LanguageException with the message (and optional error code) if conditional is {@code false};
+	 * otherwise log the message as a warning.
+	 * 
+	 * @param message the error (or warning) message
+	 * @param conditional if {@code true}, display log warning message. Otherwise, the message (and optional
+	 * error code) will be thrown as a LanguageException
+	 * @param errorCode optional error code
+	 * @throws LanguageException thrown if conditional is {@code false}.
+	 */
+	public void raiseValidateError( String message, boolean conditional, String errorCode ) 
 		throws LanguageException
 	{
 		if( conditional )  //warning if conditional
 		{
-			String fullMsg = this.printWarningLocation() + msg;
+			String fullMsg = this.printWarningLocation() + message;
 			
 			LOG.warn( fullMsg );
 		}
 		else  //error and exception if unconditional
 		{
-			String fullMsg = this.printErrorLocation() + msg;
+			String fullMsg = this.printErrorLocation() + message;
 			
 			//LOG.error( fullMsg ); //no redundant error			
 			if( errorCode != null )
@@ -428,18 +562,20 @@ public abstract class Expression
 	 * Returns the matrix characteristics for scalar-scalar, scalar-matrix, matrix-scalar, matrix-matrix
 	 * operations. This method is aware of potentially unknowns and matrix-vector (col/row) operations.
 	 * 
-	 * Format: rlen, clen, brlen, bclen.
 	 * 
-	 * @param left
-	 * @param right
-	 * @return
+	 * @param expression1 The first expression
+	 * @param expression2 The second expression
+	 * @return long array of 4 values, where [0] is the number of rows (rlen),
+	 * [1] is the number of columns (clen), [2] is the number of rows in a block (brlen),
+	 * and [3] is the number of columns in a block (bclen). Default (unknown) values are
+	 * -1. Scalar values are all 0.
 	 */
-	public static long[] getBinaryMatrixCharacteristics( Expression left, Expression right )
+	public static long[] getBinaryMatrixCharacteristics(Expression expression1, Expression expression2)
 	{
 		long[] ret = new long[]{ -1, -1, -1, -1 };
 		
-		Identifier idleft = left.getOutput();
-		Identifier idright = right.getOutput();
+		Identifier idleft = expression1.getOutput();
+		Identifier idright = expression2.getOutput();
 		
 		if( idleft.getDataType()==DataType.SCALAR && idright.getDataType()==DataType.SCALAR ) {
 			ret[0] = 0; 
@@ -488,6 +624,15 @@ public abstract class Expression
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
 	public void setParseExceptionList(ArrayList<String> passed) { _parseExceptionList = passed;}
 	
+	/**
+	 * Set the filename, the beginning line/column positions, and the ending line/column positions.
+	 * 
+	 * @param filename The DML/PYDML filename (if it exists)
+	 * @param blp Beginning line position
+	 * @param bcp Beginning column position
+	 * @param elp Ending line position
+	 * @param ecp Ending column position
+	 */
 	public void setAllPositions(String filename, int blp, int bcp, int elp, int ecp){
 		_filename    = filename;
 		_beginLine	 = blp; 
@@ -503,18 +648,29 @@ public abstract class Expression
 	public int getEndColumn()	{ return _endColumn; }
 	public ArrayList<String> getParseExceptionList() { return _parseExceptionList; }
 	
+	/**
+	 * Return error message containing the filename, the beginning line position, and the beginning column position.
+	 * 
+	 * @return the error message
+	 */
 	public String printErrorLocation(){
 		return "ERROR: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
 	
-	public String printErrorLocation(int beginLine, int beginColumn){
-		return "ERROR: " + _filename + " -- line " + beginLine + ", column " + beginColumn + " -- ";
-	}
-	
+	/**
+	 * Return warning message containing the filename, the beginning line position, and the beginning column position.
+	 * 
+	 * @return the warning message
+	 */
 	public String printWarningLocation(){
 		return "WARNING: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}
 	
+	/**
+	 * Return info message containing the filename, the beginning line position, and the beginning column position.
+	 * 
+	 * @return the info message
+	 */
 	public String printInfoLocation(){
 		return "INFO: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}

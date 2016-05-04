@@ -1497,10 +1497,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	} // end method getBuiltinFunctionExpression
 
 	/**
+	 * Convert a value type (double, int, or boolean) to a built-in function operator.
 	 * 
-	 * @param vt
-	 * @return
-	 * @throws LanguageException
+	 * @param vt Value type ({@code ValueType.DOUBLE}, {@code ValueType.INT}, or {@code ValueType.BOOLEAN}).
+	 * @return Built-in function operator ({@code BuiltinFunctionOp.AS_DOUBLE},
+	 * {@code BuiltinFunctionOp.AS_INT}, or {@code BuiltinFunctionOp.AS_BOOLEAN}).
+	 * @throws LanguageException thrown if ValueType not accepted
 	 */
 	public static BuiltinFunctionOp getValueTypeCastOperator( ValueType vt ) 
 		throws LanguageException

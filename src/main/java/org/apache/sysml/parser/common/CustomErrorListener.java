@@ -34,7 +34,8 @@ public class CustomErrorListener extends BaseErrorListener {
 
 	private static final Log log = LogFactory.getLog(DMLScript.class.getName());
 
-	private boolean atleastOneError = false;
+	private boolean atLeastOneError = false;
+	private boolean atLeastOneWarning = false;
 	private String currentFileName = null;
 
 	/**
@@ -71,7 +72,7 @@ public class CustomErrorListener extends BaseErrorListener {
 		//TODO MB: we should not redundantly log errors here 
 		//(this also applies for the two other methods below).
 		try {
-			setAtleastOneError(true);
+			setAtLeastOneError(true);
 			// Print error messages with file name
 			if (currentFileName == null) {
 				log.error("line " + line + ":" + charPositionInLine + " " + msg);
@@ -99,8 +100,7 @@ public class CustomErrorListener extends BaseErrorListener {
 				ParseIssueType.VALIDATION_WARNING));
 		
 		try {
-			// atleastOneError = true; ---> not an error, just warning
-			// Print error messages with file name
+			setAtLeastOneWarning(true);
 			if (currentFileName == null)
 				log.warn("line " + line + ":" + charPositionInLine + " " + msg);
 			else {
@@ -120,7 +120,7 @@ public class CustomErrorListener extends BaseErrorListener {
 			String msg, RecognitionException e) {
 		parseIssues.add(new ParseIssue(line, charPositionInLine, msg, currentFileName, ParseIssueType.SYNTAX_ERROR));
 		try {
-			setAtleastOneError(true);
+			setAtLeastOneError(true);
 			// Print error messages with file name
 			if (currentFileName == null)
 				log.error("line " + line + ":" + charPositionInLine + " " + msg);
@@ -133,13 +133,23 @@ public class CustomErrorListener extends BaseErrorListener {
 		}
 	}
 
-	public boolean isAtleastOneError() {
-		return atleastOneError;
+	public boolean isAtLeastOneError() {
+		return atLeastOneError;
 	}
 
-	public void setAtleastOneError(boolean atleastOneError) {
-		this.atleastOneError = atleastOneError;
+	public void setAtLeastOneError(boolean atleastOneError) {
+		this.atLeastOneError = atleastOneError;
 	}
+	
+	public boolean isAtLeastOneWarning() {
+		return atLeastOneWarning;
+	}
+
+	public void setAtLeastOneWarning(boolean atLeastOneWarning) {
+		this.atLeastOneWarning = atLeastOneWarning;
+	}
+
+
 
 	/**
 	 * A parse issue (such as an parse error or a parse warning).
@@ -279,6 +289,7 @@ public class CustomErrorListener extends BaseErrorListener {
 	public enum ParseIssueType {
 		//TODO MB: This classification is misleading as it only refers to variations of parsing issues.
 		//We need to consolidate the handling of parsing issues and actual validation issues (see validateParseTree).		
+		// DE: MB, please feel free to rename.
 		SYNTAX_ERROR("Syntax error"), VALIDATION_ERROR("Validation error"), VALIDATION_WARNING("Validation warning");
 
 		ParseIssueType(String text) {
@@ -326,4 +337,67 @@ public class CustomErrorListener extends BaseErrorListener {
 		parseIssues.clear();
 	}
 
+	/**
+	 * Generate a message displaying information about the parse issues that
+	 * occurred.
+	 * 
+	 * @param scriptString The DML or PYDML script string.
+	 * @param parseIssues The list of parse issues.
+	 * @return String representing the list of parse issues.
+	 */
+	public static String generateParseIssuesMessage(String scriptString, List<ParseIssue> parseIssues) {
+		if (scriptString == null) {
+			return "No script string available.";
+		}
+		if (parseIssues == null) {
+			return "No parse issues available.";
+		}
+		
+		String[] scriptLines = scriptString.split("\\n");
+		StringBuilder sb = new StringBuilder();
+		sb.append("\n--------------------------------------------------------------");
+		if (parseIssues.size() == 1)
+			sb.append("\nThe following parse issue was encountered:\n");
+		else
+			sb.append("\nThe following " + parseIssues.size() + " parse issues were encountered:\n");
+		int count = 1;
+		for (ParseIssue parseIssue : parseIssues) {
+			if (parseIssues.size() > 1) {
+				sb.append("#");
+				sb.append(count++);
+				sb.append(" ");
+			}
+
+			int issueLineNum = parseIssue.getLine();
+			boolean displayScriptLine = false;
+			String scriptLine = null;
+			if ((issueLineNum > 0) && (issueLineNum <= scriptLines.length)) {
+				displayScriptLine = true;
+				scriptLine = scriptLines[issueLineNum - 1];
+			}
+
+			String name = parseIssue.getFileName();
+			if (name != null) {
+				sb.append(name);
+				sb.append(" ");
+			}
+			sb.append("[line ");
+			sb.append(issueLineNum);
+			sb.append(":");
+			sb.append(parseIssue.getCharPositionInLine());
+			sb.append("] [");
+			sb.append(parseIssue.getParseIssueType().getText());
+			sb.append("]");
+			if (displayScriptLine) {
+				sb.append(" -> ");
+				sb.append(scriptLine);
+			}
+			sb.append("\n   ");
+			sb.append(parseIssue.getMessage());
+			sb.append("\n");
+		}
+		sb.append("--------------------------------------------------------------");
+		return sb.toString();
+	}
+	
 }

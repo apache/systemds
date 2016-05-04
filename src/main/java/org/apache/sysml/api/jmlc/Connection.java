@@ -43,6 +43,7 @@ import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -188,6 +189,10 @@ public class Connection implements Closeable
 			JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
 			
 			//System.out.println(Explain.explain(rtprog));
+		}
+		catch(ParseException pe) {
+			// don't chain ParseException (for cleaner error output)
+			throw pe;
 		}
 		catch(Exception ex)
 		{

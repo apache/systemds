@@ -24,6 +24,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -34,6 +35,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.utils.Statistics;
 
 public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
@@ -255,6 +257,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	boolean reuseNonZeroedOutput = false;
 	private MatrixBlock getDenseOutputBlock(ExecutionContext ec, int numRows, int numCols, boolean reuseNonZeroedOutput1) throws DMLRuntimeException {
+		long start = -1;
+		if(DMLScript.STATISTICS)
+			start = System.nanoTime();
+		
 		MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, numRows * numCols);
 		reuseNonZeroedOutput = false;
 		if(reuseNonZeroedOutput1 && MatrixBlock.REUSE_NONZEROED_OUTPUT) {
@@ -266,6 +272,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		outputBlock.setNonZeros(numRows * numCols);
 		outputArray = outputBlock.getDenseBlock();
+		if(DMLScript.STATISTICS)
+			Statistics.incrementAllocationTime(System.nanoTime()-start, false);
 		return outputBlock;
 	}
 	

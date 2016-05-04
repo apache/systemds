@@ -359,6 +359,11 @@ public class Statistics
 		resetJVMgcTime();
 		resetJVMgcCount();
 		resetCPHeavyHitters();
+		
+		denseBlockAllocationCount.set(0);
+		denseBlockAllocationTime.set(0);
+		sparseBlockAllocationCount.set(0);
+		sparseBlockAllocationTime.set(0);
 	}
 	
 	/**

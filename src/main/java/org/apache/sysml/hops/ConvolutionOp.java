@@ -170,8 +170,25 @@ public class ConvolutionOp extends Hop
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
-		//no dedicated mem estimation per op type, because always propagated via refreshSizeInformation
-		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+		double sparsity = 1.0;
+		switch(op) 
+		{
+			case RESHAPE_COL:
+			case ROTATE180:
+			{
+				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+				break;
+			}
+			case IM2COL:
+			case COL2IM: 
+			case MAX_POOLING: 
+			case MAX_POOLING_BACKWARD:
+			case DIRECT_CONV2D: 
+			case DIRECT_CONV2D_BACKWARD_FILTER: 
+			case DIRECT_CONV2D_BACKWARD_DATA:
+				sparsity = 1.0; // worst-case estimate
+				break;
+		}
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 	}
 	
@@ -188,22 +205,38 @@ public class ConvolutionOp extends Hop
 		// [numRows, numCols, NNZ] 
 		long[] ret = null;
 	
-		//	Hop input = getInput().get(0);
-		// MatrixCharacteristics mc = memo.getAllInputStats(input);
+		Hop input1 = getInput().get(0);
+		MatrixCharacteristics mc = memo.getAllInputStats(input1);
 			
 		switch(op) 
 		{
-			case IM2COL:
 			case RESHAPE_COL:
+			{
+				parseInput();
+				ret = new long[3];
+				ret[0] = N;
+				ret[1] = getExtractedVal(K, P, Q);;
+				ret[2] = mc.getNonZeros(); // exact estimates
+				break;
+			}
 			case ROTATE180:
+			{
+				parseInput();
+				ret = new long[3];
+				ret[0] = getExtractedVal(N, P, Q);
+				ret[1] = K;
+				ret[2] = mc.getNonZeros(); // exact estimates
+				break;
+			}
+			case IM2COL:
 			case COL2IM: 
 			case MAX_POOLING: 
 			case MAX_POOLING_BACKWARD:
 			case DIRECT_CONV2D: 
 			case DIRECT_CONV2D_BACKWARD_FILTER: 
 			case DIRECT_CONV2D_BACKWARD_DATA:
-				// TODO:
-		}	
+				break;
+		}
 		
 		return ret;
 	}
@@ -257,30 +290,22 @@ public class ConvolutionOp extends Hop
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
 	void parseInput() {
 		// For pooling: x,stride,stride,pad,pad,numImg,numChannels,imgSize,imgSize,1,1,poolSize1,poolSize2)
-		try {
-			stride1 = extractValue(getInput().get(1));
-			stride2 = extractValue(getInput().get(2));
-			padding1 = extractValue(getInput().get(3));
-			padding2 = extractValue(getInput().get(4));
-			N = extractValue(getInput().get(5));
-			C = extractValue(getInput().get(6));
-			H = extractValue(getInput().get(7));
-			W = extractValue(getInput().get(8));
-			K = extractValue(getInput().get(9));
-			C = (C <= 0) ? extractValue(getInput().get(10)) : C;
-			R = extractValue(getInput().get(11));
-			S = extractValue(getInput().get(12));
+		stride1 = extractValue(getInput().get(1));
+		stride2 = extractValue(getInput().get(2));
+		padding1 = extractValue(getInput().get(3));
+		padding2 = extractValue(getInput().get(4));
+		N = extractValue(getInput().get(5));
+		C = extractValue(getInput().get(6));
+		H = extractValue(getInput().get(7));
+		W = extractValue(getInput().get(8));
+		K = extractValue(getInput().get(9));
+		C = (C <= 0) ? extractValue(getInput().get(10)) : C;
+		R = extractValue(getInput().get(11));
+		S = extractValue(getInput().get(12));
+		if(H > 0 && R > 0 && stride1 > 0 && padding1 > 0)
 			P = ConvolutionUtils.getP(H, R, stride1, padding1);
-			Q = ConvolutionUtils.getQ(W, S, stride2, padding2);
-		} catch (DMLRuntimeException e) {
-			N = -1; C = -1; H = -1; W = -1;
-			K = -1; R = -1; S = -1;
-			stride1 = -1;
-			stride2 = -1;
-			padding1 = -1;
-			padding2 = -1;
-			P = -1; Q = -1;
-		}
+		if(W > 0 && S > 0 && stride2 > 0 && padding2 > 0)
+		Q = ConvolutionUtils.getQ(W, S, stride2, padding2);
 	}
 	
 	long getExtractedVal(long val1, long val2) {
@@ -307,104 +332,74 @@ public class ConvolutionOp extends Hop
 			case IM2COL:
 			{
 				parseInput();
-				if(N != -1) {
-					_dim1 = getExtractedVal(C, R, S);
-					_dim2 = getExtractedVal(N, P, Q);
-					if(input1.getNnz() >= 0) {
-						// long approxNumPaddedZeros = N*C*(2*(P*R + Q*S));
-						// long numZerosInOriginalImage = (N*C*H*W - input1.getNnz());
-						// long conservativeEstNumZeros = (numZerosInOriginalImage + approxNumPaddedZeros);
-						// Worst-case estimates (assuming only nnz are replicated):
-						// TODO:
-						_nnz = _dim1*_dim2; // - numZerosInOriginalImage; 
-					}
-				}
-				
+				_dim1 = getExtractedVal(C, R, S);
+				_dim2 = getExtractedVal(N, P, Q);
+				_nnz = -1;
 				break;
 			}
 			case COL2IM:
 			{
 				parseInput();
 				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-				if(N != -1) {
-					_dim1 = N;
-					_dim2 = getExtractedVal(C, H, W);
-					_nnz = _dim1*_dim2;
-				}
+				_dim1 = N;
+				_dim2 = getExtractedVal(C, H, W);
+				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case RESHAPE_COL:
 			{
 				parseInput();
-				if(N != -1) {
-					_dim1 = N;
-					_dim2 = getExtractedVal(K, P, Q);
-					// TODO: nnz
-					_nnz = _dim1*_dim2;
-				}
+				_dim1 = N;
+				_dim2 = getExtractedVal(K, P, Q);
+				_nnz = input1.getNnz(); // exact estimates
 				break;
 			}
 			case ROTATE180:
 			{
 				parseInput();
-				if(N != -1) {
-					_dim1 = getExtractedVal(N, P, Q);
-					_dim2 = K;
-					// TODO: nnz
-					_nnz = _dim1*_dim2;
-				}
+				_dim1 = getExtractedVal(N, P, Q);
+				_dim2 = K;
+				_nnz = input1.getNnz(); // exact estimates
 				break;
 			}
 			case MAX_POOLING:
 			{
 				parseInput();
-				if(N != -1) {
-					// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-					_dim1 = N;
-					_dim2 = getExtractedVal(C, P, Q);
-					_nnz = _dim1*_dim2;
-				}
+				_dim1 = N;
+				_dim2 = getExtractedVal(C, P, Q);
+				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case MAX_POOLING_BACKWARD:
 			{
 				parseInput();
-				if(N != -1) {
-					// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-					_dim1 = N;
-					_dim2 = getExtractedVal(C, H, W);
-					_nnz = _dim1*_dim2;
-				}
+				_dim1 = N;
+				_dim2 = getExtractedVal(C, H, W);
+				_nnz = -1;
 				break;
 			}
 			case DIRECT_CONV2D:
 			{
 				parseInput();
-				if(N != -1) {
-					_dim1 = N;
-					_dim2 = getExtractedVal(K, P, Q);
-					_nnz = _dim1*_dim2;
-				}
+				_dim1 = N;
+				_dim2 = getExtractedVal(K, P, Q);
+				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_DATA:
 			{
 				parseInput();
-				if(N != -1) {
-					_dim1 = N;
-					_dim2 = getExtractedVal(C, H, W);
-					_nnz = _dim1*_dim2;
-				}
+				_dim1 = N;
+				_dim2 = getExtractedVal(C, H, W);
+				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_FILTER:
 			{
 				parseInput();
-				if(N != -1) {
-					_dim1 = K;
-					_dim2 = getExtractedVal(C, R, S);
-					_nnz = _dim1*_dim2;
-				}
+				_dim1 = K;
+				_dim2 = getExtractedVal(C, R, S);
+				_nnz = -1; // cannot infer stats
 				break;
 			}
 			default:
@@ -412,10 +407,10 @@ public class ConvolutionOp extends Hop
 		}
 	}
 	
-	private long extractValue(Hop hop) throws DMLRuntimeException {
+	private long extractValue(Hop hop)  {
 		if(hop instanceof LiteralOp)
 			return (long) HopRewriteUtils.getDoubleValueSafe((LiteralOp)hop);
-		throw new DMLRuntimeException("Cannot extract value");
+		return -1;
 	}
 	
 	@Override

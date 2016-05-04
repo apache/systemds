@@ -521,15 +521,18 @@ Next, we'll consider an example of a SystemML linear regression algorithm run fr
 Instructions to clone and build Zeppelin can be found at the [GitHub Apache Zeppelin](https://github.com/apache/incubator-zeppelin)
 site. This example also will look at the Spark ML linear regression algorithm.
 
-This Zeppelin notebook example can be downloaded [here](files/spark-mlcontext-programming-guide/zeppelin-notebook-linear-regression/2AZ2AQ12B.tar.gz).
-Once downloaded and unzipped, place the folder in the Zeppelin `notebook` directory.
+This Zeppelin notebook example can be imported by choosing `Import note` -> `Add from URL` from the Zeppelin main page, then insert the following URL:
+
+    https://raw.githubusercontent.com/apache/incubator-systemml/master/samples/zeppelin-notebooks/2AZ2AQ12B/note.json
+
+Alternatively download <a href="https://raw.githubusercontent.com/apache/incubator-systemml/master/samples/zeppelin-notebooks/2AZ2AQ12B/note.json" download="note.json">note.json</a>, then import it by choosing `Import note` -> `Choose a JSON here` from the Zeppelin main page.
 
 A `conf/zeppelin-env.sh` file is created based on `conf/zeppelin-env.sh.template`. For
 this demonstration, it features `SPARK_HOME`, `SPARK_SUBMIT_OPTIONS`, and `ZEPPELIN_SPARK_USEHIVECONTEXT`
 environment variables:
 
 	export SPARK_HOME=/Users/example/spark-1.5.1-bin-hadoop2.6
-	export SPARK_SUBMIT_OPTIONS="--jars $/Users/example/systemml/system-ml/target/SystemML.jar"
+	export SPARK_SUBMIT_OPTIONS="--jars /Users/example/systemml/system-ml/target/SystemML.jar"
 	export ZEPPELIN_SPARK_USEHIVECONTEXT=false
 
 Start Zeppelin using the `zeppelin.sh` script:

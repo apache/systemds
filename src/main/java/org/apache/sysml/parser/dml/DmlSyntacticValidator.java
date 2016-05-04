@@ -449,8 +449,9 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			else
 				paramExpression = orderConvolutionParams(paramExpression, 1, ctx);
 		}
-
+		
 		castAsScalarDeprecationCheck(functionName, ctx);
+
 		
 		boolean hasLHS = ctx.targetList != null;
 		functionCallAssignmentStatementHelper(ctx, printStatements, outputStatements, hasLHS ? ctx.targetList.dataInfo.expr : null, ctx.info, ctx.name,

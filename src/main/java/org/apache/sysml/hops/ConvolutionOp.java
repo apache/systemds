@@ -36,6 +36,14 @@ import org.apache.sysml.runtime.util.ConvolutionUtils;
 public class ConvolutionOp extends Hop 
 {	
 	private Hop.ConvOp op;
+	
+	long N = -1; long C = -1; long H = -1; long W = -1;
+	long K = -1; long R = -1; long S = -1;
+	long stride1 = -1;
+	long stride2 = -1;
+	long padding1 = -1;
+	long padding2 = -1;
+	long P = -1; long Q = -1;
 
 	private ConvolutionOp() {
 		//default constructor for clone
@@ -244,13 +252,6 @@ public class ConvolutionOp extends Hop
 		return _etype;
 	}
 	
-	long N = -1; long C = -1; long H = -1; long W = -1;
-	long K = -1; long R = -1; long S = -1;
-	long stride1 = -1;
-	long stride2 = -1;
-	long padding1 = -1;
-	long padding2 = -1;
-	long P = -1; long Q = -1;
 	// stride1, stride2, padding1, padding2  
 	// input_shape1, input_shape2, input_shape3, input_shape4, 
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4

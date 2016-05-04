@@ -40,6 +40,7 @@ public class ConvolutionTransform extends Lop
 	};
 	
 	private OperationTypes operation = null;
+	private int numThreads = -1;
 	
 	/**
 	 * Constructor when we have one input.
@@ -47,10 +48,11 @@ public class ConvolutionTransform extends Lop
 	 * @param op
 	 */
 
-	public ConvolutionTransform(Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	public ConvolutionTransform(Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
 	{
 		super(Lop.Type.Transform, dt, vt);		
 		init(input, op, dt, vt, et);
+		numThreads = k;
 	}
 	
 	public ConvolutionTransform(Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt) 
@@ -164,6 +166,12 @@ public class ConvolutionTransform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
 		
+		//append degree of parallelism
+		if( getExecType()==ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( numThreads );
+		}
+		
 		return sb.toString();
 	}
 	
@@ -196,32 +204,13 @@ public class ConvolutionTransform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
 		
+		//append degree of parallelism
+		if( getExecType()==ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( numThreads );
+		}
+		
 		return sb.toString();
 	}
-	
-	public static ConvolutionTransform constructConvolutionTransformLop(Lop input1, OperationTypes op, DataType dt, ValueType vt) {
-		
-		for (Lop lop  : input1.getOutputs()) {
-			if ( lop.type == Lop.Type.ConvolutionTransform ) {
-				return (ConvolutionTransform)lop;
-			}
-		}
-		ConvolutionTransform retVal = new ConvolutionTransform(input1, op, dt, vt);
-		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
-		return retVal;
-	}
 
-	public static ConvolutionTransform constructConvolutionTransformLop(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		
-		for (Lop lop  : input1.getOutputs()) {
-			if ( lop.type == Lop.Type.ConvolutionTransform ) {
-				return (ConvolutionTransform)lop;
-			}
-		}
-		ConvolutionTransform retVal = new  ConvolutionTransform(input1, op, dt, vt, et);
-		retVal.setAllPositions(input1.getBeginLine(), input1.getBeginColumn(), input1.getEndLine(), input1.getEndColumn());
-		return retVal; 
-	}
-
- 
 }

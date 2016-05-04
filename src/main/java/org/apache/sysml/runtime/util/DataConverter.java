@@ -874,6 +874,7 @@ public class DataConverter
 			colLength = colsToPrint < clen ? colsToPrint : clen;
 		
 		DecimalFormat df = new DecimalFormat();
+		df.setGroupingUsed(false);
 		if (decimal >= 0){
 			df.setMinimumFractionDigits(decimal);
 		}

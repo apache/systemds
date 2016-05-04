@@ -46,6 +46,7 @@ import java.util.Random;
 import java.util.StringTokenizer;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -59,6 +60,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.BinaryMatrixCharacteristics;
+
+import junit.framework.Assert;
 
 
 /**
@@ -585,21 +588,15 @@ public class TestUtils
 	public static String readDMLString(String filePath) {
 		FileSystem fs;
 		try {
-			String s =  null;
+			StringBuffer sb =  new StringBuffer();
 			fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
-			String line;
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
-				BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout));
-				
-				while ((line = outIn.readLine()) != null) { // only 1 scalar value in file
-					s = line; 
-				}
-				outIn.close();
+				sb.append(IOUtils.toString(new InputStreamReader(fsout)));
 			}
-			return s;
+			return sb.toString();
 		} catch (IOException e) {
 			assertTrue("could not read from file " + filePath, false);
 		}
@@ -746,6 +743,10 @@ public class TestUtils
 		if(!compareCellValue(d1, d2, tol, false)) {
 			assertTrue("Given scalars do not match: " + d1 + " != " + d2 , false);
 		}
+	}
+	
+	public static void compareScalars(String expected, String actual) {
+			assertEquals(expected, actual);
 	}
 
 	/**

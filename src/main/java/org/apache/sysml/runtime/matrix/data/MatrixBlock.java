@@ -30,8 +30,8 @@ import java.io.ObjectOutputStream;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -102,7 +102,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public static final boolean REUSE_NONZEROED_OUTPUT = false;
 	// Using hashmap to avoid any performance impacts of multimap
-	public static final HashMap<Integer, SoftReference<double[]>> NON_ZEROED_DOUBLE_ARR = new HashMap<Integer, SoftReference<double[]>>();
+	public static final ConcurrentHashMap<Integer, SoftReference<double[]>> NON_ZEROED_DOUBLE_ARR = new ConcurrentHashMap<Integer, SoftReference<double[]>>();
 	public static final int NON_ZEROED_DOUBLE_ARR_THRESHOLD = 100;
 	
 	public enum BlockType{

@@ -165,7 +165,7 @@ logisticRegression = function (Matrix[double] X, Matrix[double] y, Integer in_in
    norm_grad = sqrt(sum(grad*grad))
    
    #print("-- Outer Iteration = " + iter)
-   objScalar = castAsScalar(obj)
+   objScalar = as.scalar(obj)
    #print("     Iterations = " + iter + ", Objective = " + objScalar + ", Gradient Norm = " + norm_grad)
    
    # SOLVE TRUST REGION SUB-PROBLEM
@@ -183,23 +183,23 @@ logisticRegression = function (Matrix[double] X, Matrix[double] y, Integer in_in
     alpha_deno = t(d) %*% Hd 
     alpha = norm_r2 / alpha_deno
    
-    s = s + castAsScalar(alpha) * d
-    os = os + castAsScalar(alpha) * od
+    s = s + as.scalar(alpha) * d
+    os = os + as.scalar(alpha) * od
   
     sts = t(s) %*% s
     delta2 = delta*delta 
-    stsScalar = castAsScalar(sts)
+    stsScalar = as.scalar(sts)
     
     shouldBreak = FALSE;  # to mimic "break" in the following 'if' condition
     if (stsScalar > delta2) {
         #print("      --- cg reaches trust region boundary")
-     s = s - castAsScalar(alpha) * d
-     os = os - castAsScalar(alpha) * od
+     s = s - as.scalar(alpha) * d
+     os = os - as.scalar(alpha) * od
      std = t(s) %*% d
      dtd = t(d) %*% d
      sts = t(s) %*% s
      rad = sqrt(std*std + dtd*(delta2 - sts))
-     stdScalar = castAsScalar(std)
+     stdScalar = as.scalar(std)
      
      tau = 0; #TODO
      if(stdScalar >= 0) {
@@ -209,9 +209,9 @@ logisticRegression = function (Matrix[double] X, Matrix[double] y, Integer in_in
       tau = (rad - std)/dtd
      }
         
-     s = s + castAsScalar(tau) * d
-     os = os + castAsScalar(tau) * od
-     r = r - castAsScalar(tau) * Hd
+     s = s + as.scalar(tau) * d
+     os = os + as.scalar(tau) * od
+     r = r - as.scalar(tau) * Hd
      
      #break
      shouldBreak = TRUE;
@@ -220,7 +220,7 @@ logisticRegression = function (Matrix[double] X, Matrix[double] y, Integer in_in
     } 
     
     if (!shouldBreak) {
-     r = r - castAsScalar(alpha) * Hd
+     r = r - as.scalar(alpha) * Hd
      old_norm_r2 = norm_r2 
      norm_r2 = sum(r*r)
      beta = norm_r2/old_norm_r2
@@ -241,10 +241,10 @@ logisticRegression = function (Matrix[double] X, Matrix[double] y, Integer in_in
    objnew = 0.5 * t(wnew) %*% wnew + C * sum(-log(logisticnew))
    
    actred = (obj - objnew)
-   actredScalar = castAsScalar(actred)
+   actredScalar = as.scalar(actred)
    rho = actred / qk
-   qkScalar = castAsScalar(qk)
-   rhoScalar = castAsScalar(rho);
+   qkScalar = as.scalar(qk)
+   rhoScalar = as.scalar(rho);
    snorm = sqrt(sum( s * s ))
   
    #print("     Actual    = " + actredScalar)
@@ -254,12 +254,12 @@ logisticRegression = function (Matrix[double] X, Matrix[double] y, Integer in_in
       delta = min(delta, snorm)
    }
    alpha2 = objnew - obj - gs
-   alpha2Scalar = castAsScalar(alpha2)
+   alpha2Scalar = as.scalar(alpha2)
    if (alpha2Scalar <= 0) {
       alpha = sigma3*e
    } 
    else {
-      ascalar = max(sigma1, -0.5*castAsScalar(gs)/alpha2Scalar)  
+      ascalar = max(sigma1, -0.5*as.scalar(gs)/alpha2Scalar)  
       alpha = ascalar*e
    }
   
@@ -273,7 +273,7 @@ logisticRegression = function (Matrix[double] X, Matrix[double] y, Integer in_in
     obj = objnew 
    } 
   
-   alphaScalar = castAsScalar(alpha)
+   alphaScalar = as.scalar(alpha)
    if (rhoScalar < eta0){
     delta = min(max( alphaScalar , sigma1) * snorm, sigma2 * delta )
    }
@@ -342,7 +342,7 @@ scoreLogRegModel = function (Matrix[double] X_train, Matrix[double] y_train, Mat
 
     b = 0.0;
     if (nrow (w) > num_features) {
-        b = castAsScalar (w [num_features + 1, 1]);
+        b = as.scalar (w [num_features + 1, 1]);
     }
 
 # TRAINING DATA - ESTIMATE PROBABILITIES:
@@ -472,56 +472,56 @@ printFoldStatistics = function (Matrix[double] stats ) return( Integer err )
     stats_min = round (colMins (stats) * 10000.0) / 10000.0;
 /*    
     print ("Training Data, Model-estimated statistics:");
-    print ("    True Positives:  Min = " + castAsScalar (stats_min [1,  1]) + ",  Avg = " + castAsScalar (stats_avg [1,  1]) + ",  Max = " + castAsScalar (stats_max [1,  1]));
-    print ("   False Positives:  Min = " + castAsScalar (stats_min [1,  2]) + ",  Avg = " + castAsScalar (stats_avg [1,  2]) + ",  Max = " + castAsScalar (stats_max [1,  2]));
-    print ("    True Negatives:  Min = " + castAsScalar (stats_min [1,  3]) + ",  Avg = " + castAsScalar (stats_avg [1,  3]) + ",  Max = " + castAsScalar (stats_max [1,  3]));
-    print ("   False Negatives:  Min = " + castAsScalar (stats_min [1,  4]) + ",  Avg = " + castAsScalar (stats_avg [1,  4]) + ",  Max = " + castAsScalar (stats_max [1,  4]));
-    print ("       Precision %:  Min = " + castAsScalar (stats_min [1,  5]) + ",  Avg = " + castAsScalar (stats_avg [1,  5]) + ",  Max = " + castAsScalar (stats_max [1,  5]));
-    print ("Recall (Sensit-y)%:  Min = " + castAsScalar (stats_min [1,  6]) + ",  Avg = " + castAsScalar (stats_avg [1,  6]) + ",  Max = " + castAsScalar (stats_max [1,  6]));
-    print ("     Specificity %:  Min = " + castAsScalar (stats_min [1,  7]) + ",  Avg = " + castAsScalar (stats_avg [1,  7]) + ",  Max = " + castAsScalar (stats_max [1,  7]));
-    print ("      Value - Cost:  Min = " + castAsScalar (stats_min [1,  8]) + ",  Avg = " + castAsScalar (stats_avg [1,  8]) + ",  Max = " + castAsScalar (stats_max [1,  8]));
+    print ("    True Positives:  Min = " + as.scalar (stats_min [1,  1]) + ",  Avg = " + as.scalar (stats_avg [1,  1]) + ",  Max = " + as.scalar (stats_max [1,  1]));
+    print ("   False Positives:  Min = " + as.scalar (stats_min [1,  2]) + ",  Avg = " + as.scalar (stats_avg [1,  2]) + ",  Max = " + as.scalar (stats_max [1,  2]));
+    print ("    True Negatives:  Min = " + as.scalar (stats_min [1,  3]) + ",  Avg = " + as.scalar (stats_avg [1,  3]) + ",  Max = " + as.scalar (stats_max [1,  3]));
+    print ("   False Negatives:  Min = " + as.scalar (stats_min [1,  4]) + ",  Avg = " + as.scalar (stats_avg [1,  4]) + ",  Max = " + as.scalar (stats_max [1,  4]));
+    print ("       Precision %:  Min = " + as.scalar (stats_min [1,  5]) + ",  Avg = " + as.scalar (stats_avg [1,  5]) + ",  Max = " + as.scalar (stats_max [1,  5]));
+    print ("Recall (Sensit-y)%:  Min = " + as.scalar (stats_min [1,  6]) + ",  Avg = " + as.scalar (stats_avg [1,  6]) + ",  Max = " + as.scalar (stats_max [1,  6]));
+    print ("     Specificity %:  Min = " + as.scalar (stats_min [1,  7]) + ",  Avg = " + as.scalar (stats_avg [1,  7]) + ",  Max = " + as.scalar (stats_max [1,  7]));
+    print ("      Value - Cost:  Min = " + as.scalar (stats_min [1,  8]) + ",  Avg = " + as.scalar (stats_avg [1,  8]) + ",  Max = " + as.scalar (stats_max [1,  8]));
     print (" ");
     if (1==1) {
       print(" ")
     }
 */
     print ("Training Data, Label comparison statistics:");
-    print ("    True Positives:  Min = " + castAsScalar (stats_min [1, 11]) + ",  Avg = " + castAsScalar (stats_avg [1, 11]) + ",  Max = " + castAsScalar (stats_max [1, 11]));
-    print ("   False Positives:  Min = " + castAsScalar (stats_min [1, 12]) + ",  Avg = " + castAsScalar (stats_avg [1, 12]) + ",  Max = " + castAsScalar (stats_max [1, 12]));
-    print ("    True Negatives:  Min = " + castAsScalar (stats_min [1, 13]) + ",  Avg = " + castAsScalar (stats_avg [1, 13]) + ",  Max = " + castAsScalar (stats_max [1, 13]));
-    print ("   False Negatives:  Min = " + castAsScalar (stats_min [1, 14]) + ",  Avg = " + castAsScalar (stats_avg [1, 14]) + ",  Max = " + castAsScalar (stats_max [1, 14]));
-    print ("       Precision %:  Min = " + castAsScalar (stats_min [1, 15]) + ",  Avg = " + castAsScalar (stats_avg [1, 15]) + ",  Max = " + castAsScalar (stats_max [1, 15]));
-    print ("Recall (Sensit-y)%:  Min = " + castAsScalar (stats_min [1, 16]) + ",  Avg = " + castAsScalar (stats_avg [1, 16]) + ",  Max = " + castAsScalar (stats_max [1, 16]));
-    print ("     Specificity %:  Min = " + castAsScalar (stats_min [1, 17]) + ",  Avg = " + castAsScalar (stats_avg [1, 17]) + ",  Max = " + castAsScalar (stats_max [1, 17]));
-    print ("      Value - Cost:  Min = " + castAsScalar (stats_min [1, 18]) + ",  Avg = " + castAsScalar (stats_avg [1, 18]) + ",  Max = " + castAsScalar (stats_max [1, 18]));
+    print ("    True Positives:  Min = " + as.scalar (stats_min [1, 11]) + ",  Avg = " + as.scalar (stats_avg [1, 11]) + ",  Max = " + as.scalar (stats_max [1, 11]));
+    print ("   False Positives:  Min = " + as.scalar (stats_min [1, 12]) + ",  Avg = " + as.scalar (stats_avg [1, 12]) + ",  Max = " + as.scalar (stats_max [1, 12]));
+    print ("    True Negatives:  Min = " + as.scalar (stats_min [1, 13]) + ",  Avg = " + as.scalar (stats_avg [1, 13]) + ",  Max = " + as.scalar (stats_max [1, 13]));
+    print ("   False Negatives:  Min = " + as.scalar (stats_min [1, 14]) + ",  Avg = " + as.scalar (stats_avg [1, 14]) + ",  Max = " + as.scalar (stats_max [1, 14]));
+    print ("       Precision %:  Min = " + as.scalar (stats_min [1, 15]) + ",  Avg = " + as.scalar (stats_avg [1, 15]) + ",  Max = " + as.scalar (stats_max [1, 15]));
+    print ("Recall (Sensit-y)%:  Min = " + as.scalar (stats_min [1, 16]) + ",  Avg = " + as.scalar (stats_avg [1, 16]) + ",  Max = " + as.scalar (stats_max [1, 16]));
+    print ("     Specificity %:  Min = " + as.scalar (stats_min [1, 17]) + ",  Avg = " + as.scalar (stats_avg [1, 17]) + ",  Max = " + as.scalar (stats_max [1, 17]));
+    print ("      Value - Cost:  Min = " + as.scalar (stats_min [1, 18]) + ",  Avg = " + as.scalar (stats_avg [1, 18]) + ",  Max = " + as.scalar (stats_max [1, 18]));
     print (" ");
     if (1==1) {
       print(" ")
     }
 /*
     print ("TEST Data, Model-estimated statistics:");
-    print ("    True Positives:  Min = " + castAsScalar (stats_min [1, 21]) + ",  Avg = " + castAsScalar (stats_avg [1, 21]) + ",  Max = " + castAsScalar (stats_max [1, 21]));
-    print ("   False Positives:  Min = " + castAsScalar (stats_min [1, 22]) + ",  Avg = " + castAsScalar (stats_avg [1, 22]) + ",  Max = " + castAsScalar (stats_max [1, 22]));
-    print ("    True Negatives:  Min = " + castAsScalar (stats_min [1, 23]) + ",  Avg = " + castAsScalar (stats_avg [1, 23]) + ",  Max = " + castAsScalar (stats_max [1, 23]));
-    print ("   False Negatives:  Min = " + castAsScalar (stats_min [1, 24]) + ",  Avg = " + castAsScalar (stats_avg [1, 24]) + ",  Max = " + castAsScalar (stats_max [1, 24]));
-    print ("       Precision %:  Min = " + castAsScalar (stats_min [1, 25]) + ",  Avg = " + castAsScalar (stats_avg [1, 25]) + ",  Max = " + castAsScalar (stats_max [1, 25]));
-    print ("Recall (Sensit-y)%:  Min = " + castAsScalar (stats_min [1, 26]) + ",  Avg = " + castAsScalar (stats_avg [1, 26]) + ",  Max = " + castAsScalar (stats_max [1, 26]));
-    print ("     Specificity %:  Min = " + castAsScalar (stats_min [1, 27]) + ",  Avg = " + castAsScalar (stats_avg [1, 27]) + ",  Max = " + castAsScalar (stats_max [1, 27]));
-    print ("      Value - Cost:  Min = " + castAsScalar (stats_min [1, 28]) + ",  Avg = " + castAsScalar (stats_avg [1, 28]) + ",  Max = " + castAsScalar (stats_max [1, 28]));
+    print ("    True Positives:  Min = " + as.scalar (stats_min [1, 21]) + ",  Avg = " + as.scalar (stats_avg [1, 21]) + ",  Max = " + as.scalar (stats_max [1, 21]));
+    print ("   False Positives:  Min = " + as.scalar (stats_min [1, 22]) + ",  Avg = " + as.scalar (stats_avg [1, 22]) + ",  Max = " + as.scalar (stats_max [1, 22]));
+    print ("    True Negatives:  Min = " + as.scalar (stats_min [1, 23]) + ",  Avg = " + as.scalar (stats_avg [1, 23]) + ",  Max = " + as.scalar (stats_max [1, 23]));
+    print ("   False Negatives:  Min = " + as.scalar (stats_min [1, 24]) + ",  Avg = " + as.scalar (stats_avg [1, 24]) + ",  Max = " + as.scalar (stats_max [1, 24]));
+    print ("       Precision %:  Min = " + as.scalar (stats_min [1, 25]) + ",  Avg = " + as.scalar (stats_avg [1, 25]) + ",  Max = " + as.scalar (stats_max [1, 25]));
+    print ("Recall (Sensit-y)%:  Min = " + as.scalar (stats_min [1, 26]) + ",  Avg = " + as.scalar (stats_avg [1, 26]) + ",  Max = " + as.scalar (stats_max [1, 26]));
+    print ("     Specificity %:  Min = " + as.scalar (stats_min [1, 27]) + ",  Avg = " + as.scalar (stats_avg [1, 27]) + ",  Max = " + as.scalar (stats_max [1, 27]));
+    print ("      Value - Cost:  Min = " + as.scalar (stats_min [1, 28]) + ",  Avg = " + as.scalar (stats_avg [1, 28]) + ",  Max = " + as.scalar (stats_max [1, 28]));
     print (" ");
     if (1==1) {
       print(" ")
     }
 */
     print ("TEST Data, Label comparison statistics:");
-    print ("    True Positives:  Min = " + castAsScalar (stats_min [1, 31]) + ",  Avg = " + castAsScalar (stats_avg [1, 31]) + ",  Max = " + castAsScalar (stats_max [1, 31]));
-    print ("   False Positives:  Min = " + castAsScalar (stats_min [1, 32]) + ",  Avg = " + castAsScalar (stats_avg [1, 32]) + ",  Max = " + castAsScalar (stats_max [1, 32]));
-    print ("    True Negatives:  Min = " + castAsScalar (stats_min [1, 33]) + ",  Avg = " + castAsScalar (stats_avg [1, 33]) + ",  Max = " + castAsScalar (stats_max [1, 33]));
-    print ("   False Negatives:  Min = " + castAsScalar (stats_min [1, 34]) + ",  Avg = " + castAsScalar (stats_avg [1, 34]) + ",  Max = " + castAsScalar (stats_max [1, 34]));
-    print ("       Precision %:  Min = " + castAsScalar (stats_min [1, 35]) + ",  Avg = " + castAsScalar (stats_avg [1, 35]) + ",  Max = " + castAsScalar (stats_max [1, 35]));
-    print ("Recall (Sensit-y)%:  Min = " + castAsScalar (stats_min [1, 36]) + ",  Avg = " + castAsScalar (stats_avg [1, 36]) + ",  Max = " + castAsScalar (stats_max [1, 36]));
-    print ("     Specificity %:  Min = " + castAsScalar (stats_min [1, 37]) + ",  Avg = " + castAsScalar (stats_avg [1, 37]) + ",  Max = " + castAsScalar (stats_max [1, 37]));
-    print ("      Value - Cost:  Min = " + castAsScalar (stats_min [1, 38]) + ",  Avg = " + castAsScalar (stats_avg [1, 38]) + ",  Max = " + castAsScalar (stats_max [1, 38]));
+    print ("    True Positives:  Min = " + as.scalar (stats_min [1, 31]) + ",  Avg = " + as.scalar (stats_avg [1, 31]) + ",  Max = " + as.scalar (stats_max [1, 31]));
+    print ("   False Positives:  Min = " + as.scalar (stats_min [1, 32]) + ",  Avg = " + as.scalar (stats_avg [1, 32]) + ",  Max = " + as.scalar (stats_max [1, 32]));
+    print ("    True Negatives:  Min = " + as.scalar (stats_min [1, 33]) + ",  Avg = " + as.scalar (stats_avg [1, 33]) + ",  Max = " + as.scalar (stats_max [1, 33]));
+    print ("   False Negatives:  Min = " + as.scalar (stats_min [1, 34]) + ",  Avg = " + as.scalar (stats_avg [1, 34]) + ",  Max = " + as.scalar (stats_max [1, 34]));
+    print ("       Precision %:  Min = " + as.scalar (stats_min [1, 35]) + ",  Avg = " + as.scalar (stats_avg [1, 35]) + ",  Max = " + as.scalar (stats_max [1, 35]));
+    print ("Recall (Sensit-y)%:  Min = " + as.scalar (stats_min [1, 36]) + ",  Avg = " + as.scalar (stats_avg [1, 36]) + ",  Max = " + as.scalar (stats_max [1, 36]));
+    print ("     Specificity %:  Min = " + as.scalar (stats_min [1, 37]) + ",  Avg = " + as.scalar (stats_avg [1, 37]) + ",  Max = " + as.scalar (stats_max [1, 37]));
+    print ("      Value - Cost:  Min = " + as.scalar (stats_min [1, 38]) + ",  Avg = " + as.scalar (stats_avg [1, 38]) + ",  Max = " + as.scalar (stats_max [1, 38]));
 
     err = 0;
 }

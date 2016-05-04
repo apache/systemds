@@ -39,7 +39,7 @@ w = matrix(0, rows = ncol(X), cols = 1);
 i = 0;
 while(i < maxiter) {
 	q = ((t(X) %*% (X %*% p)) + eps  * p);
-	alpha = norm_r2 / castAsScalar(t(p) %*% q);
+	alpha = norm_r2 / as.scalar(t(p) %*% q);
 	w = w + alpha * p;
 	old_norm_r2 = norm_r2;
 	r = r + alpha * q;

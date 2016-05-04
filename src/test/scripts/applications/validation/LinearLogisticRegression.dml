@@ -105,7 +105,7 @@ while(!converge) {
  norm_grad = sqrt(sum(grad*grad))
  
  print("-- Outer Iteration = " + iter)
- objScalar = castAsScalar(obj)
+ objScalar = as.scalar(obj)
  print("     Iterations = " + iter + ", Objective = " + objScalar + ", Gradient Norm = " + norm_grad)
  
  # SOLVE TRUST REGION SUB-PROBLEM
@@ -123,23 +123,23 @@ while(!converge) {
   alpha_deno = t(d) %*% Hd 
   alpha = norm_r2 / alpha_deno
  
-  s = s + castAsScalar(alpha) * d
-  os = os + castAsScalar(alpha) * od
+  s = s + as.scalar(alpha) * d
+  os = os + as.scalar(alpha) * od
 
   sts = t(s) %*% s
   delta2 = delta*delta 
-  stsScalar = castAsScalar(sts)
+  stsScalar = as.scalar(sts)
   
   shouldBreak = FALSE;  # to mimic "break" in the following 'if' condition
   if (stsScalar > delta2) {
       print("      --- cg reaches trust region boundary")
-   s = s - castAsScalar(alpha) * d
-   os = os - castAsScalar(alpha) * od
+   s = s - as.scalar(alpha) * d
+   os = os - as.scalar(alpha) * od
    std = t(s) %*% d
    dtd = t(d) %*% d
    sts = t(s) %*% s
    rad = sqrt(std*std + dtd*(delta2 - sts))
-   stdScalar = castAsScalar(std)
+   stdScalar = as.scalar(std)
    if(stdScalar >= 0) {
     tau = (delta2 - sts)/(std + rad)
    } 
@@ -147,9 +147,9 @@ while(!converge) {
     tau = (rad - std)/dtd
    }
       
-   s = s + castAsScalar(tau) * d
-   os = os + castAsScalar(tau) * od
-   r = r - castAsScalar(tau) * Hd
+   s = s + as.scalar(tau) * d
+   os = os + as.scalar(tau) * od
+   r = r - as.scalar(tau) * Hd
    
    #break
    shouldBreak = TRUE;
@@ -158,7 +158,7 @@ while(!converge) {
   } 
   
   if (!shouldBreak) {
-   r = r - castAsScalar(alpha) * Hd
+   r = r - as.scalar(alpha) * Hd
    old_norm_r2 = norm_r2 
    norm_r2 = sum(r*r)
    beta = norm_r2/old_norm_r2
@@ -179,10 +179,10 @@ while(!converge) {
  objnew = 0.5 * t(wnew) %*% wnew + C * sum(-log(logisticnew))
  
  actred = (obj - objnew)
- actredScalar = castAsScalar(actred)
+ actredScalar = as.scalar(actred)
  rho = actred / qk
- qkScalar = castAsScalar(qk)
- rhoScalar = castAsScalar(rho);
+ qkScalar = as.scalar(qk)
+ rhoScalar = as.scalar(rho);
  snorm = sqrt(sum( s * s ))
 
  print("     Actual    = " + actredScalar)
@@ -192,12 +192,12 @@ while(!converge) {
     delta = min(delta, snorm)
  }
  alpha2 = objnew - obj - gs
- alpha2Scalar = castAsScalar(alpha2)
+ alpha2Scalar = as.scalar(alpha2)
  if (alpha2Scalar <= 0) {
     alpha = sigma3*e
  } 
  else {
-    ascalar = max(sigma1, -0.5*castAsScalar(gs)/alpha2Scalar)  
+    ascalar = max(sigma1, -0.5*as.scalar(gs)/alpha2Scalar)  
     alpha = ascalar*e
  }
 
@@ -211,7 +211,7 @@ while(!converge) {
   obj = objnew 
  } 
 
- alphaScalar = castAsScalar(alpha)
+ alphaScalar = as.scalar(alpha)
  if (rhoScalar < eta0){
   delta = min(max( alphaScalar , sigma1) * snorm, sigma2 * delta )
  }

@@ -251,15 +251,15 @@ if (fileY != " ")
     str = append (str, "DEVIANCE_G2_PVAL,,TRUE," + G2_scaled_pValue);
 
     for (i in 1:ncol(Y)) {
-        str = append (str, "AVG_TOT_Y," + i + ",," + castAsScalar (avg_tot_Y [1, i]));
-        str = append (str, "STDEV_TOT_Y," + i + ",," + castAsScalar (sqrt (var_tot_Y [1, i])));
-        str = append (str, "AVG_RES_Y," + i + ",," + castAsScalar (avg_res_Y [1, i]));
-        str = append (str, "STDEV_RES_Y," + i + ",," + castAsScalar (sqrt (var_res_Y [1, i])));
-        str = append (str, "PRED_STDEV_RES," + i + ",TRUE," + castAsScalar (sqrt (predicted_avg_var_res_Y [1, i])));
-        str = append (str, "PLAIN_R2," + i + ",," + castAsScalar (plain_R2 [1, i]));
-        str = append (str, "ADJUSTED_R2," + i + ",," + castAsScalar (adjust_R2 [1, i]));
-        str = append (str, "PLAIN_R2_NOBIAS," + i + ",," + castAsScalar (plain_R2_nobias [1, i]));
-        str = append (str, "ADJUSTED_R2_NOBIAS," + i + ",," + castAsScalar (adjust_R2_nobias [1, i]));
+        str = append (str, "AVG_TOT_Y," + i + ",," + as.scalar (avg_tot_Y [1, i]));
+        str = append (str, "STDEV_TOT_Y," + i + ",," + as.scalar (sqrt (var_tot_Y [1, i])));
+        str = append (str, "AVG_RES_Y," + i + ",," + as.scalar (avg_res_Y [1, i]));
+        str = append (str, "STDEV_RES_Y," + i + ",," + as.scalar (sqrt (var_res_Y [1, i])));
+        str = append (str, "PRED_STDEV_RES," + i + ",TRUE," + as.scalar (sqrt (predicted_avg_var_res_Y [1, i])));
+        str = append (str, "PLAIN_R2," + i + ",," + as.scalar (plain_R2 [1, i]));
+        str = append (str, "ADJUSTED_R2," + i + ",," + as.scalar (adjust_R2 [1, i]));
+        str = append (str, "PLAIN_R2_NOBIAS," + i + ",," + as.scalar (plain_R2_nobias [1, i]));
+        str = append (str, "ADJUSTED_R2_NOBIAS," + i + ",," + as.scalar (adjust_R2_nobias [1, i]));
     }
     
     if (fileO != " ") {

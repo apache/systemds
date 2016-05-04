@@ -50,7 +50,7 @@ one = Rand(rows=1, cols=1, min=1.0, max=1.0, pdf="uniform")
 copy_start_index = numActualGroups+1
 parfor(i in copy_start_index:numGroups){
 	r = Rand(rows=1, cols=1, min=1.0, max=numActualGroups, pdf="uniform", seed=0)
-	j = castAsScalar(round(r))
+	j = as.scalar(round(r))
 	permut[j,i] = one
 }
 
@@ -77,12 +77,12 @@ for(i in 2:numGroups){
 data = Rand(rows=numSamples, cols=1, min=0.0, max=0.0, pdf="uniform")
 parfor(i in 1:numSamples){
 	r_mat = Rand(rows=1, cols=1, min=0.0, max=1.0, pdf="uniform", seed=0)
-	r1 = castAsScalar(r_mat)
+	r1 = as.scalar(r_mat)
 
 	g = -1
 	continue = 1
 	for(k in 1:numGroups){
-		cdf = castAsScalar(cntCDFs[k,1])
+		cdf = as.scalar(cntCDFs[k,1])
 		if(continue==1 & r1<=cdf){
 			g = k
 			continue=0

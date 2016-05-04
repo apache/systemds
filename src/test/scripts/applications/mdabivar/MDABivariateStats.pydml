@@ -64,9 +64,9 @@ mn = colMins(D)
 num_distinct_values = mx-mn+1
 max_num_distinct_values = 0
 for(i1 in 1:nrow(feature_indices)):
-    feature_index1 = castAsScalar(feature_indices[i1,1])
-    num = castAsScalar(num_distinct_values[1,feature_index1])
-    if(castAsScalar(feature_measurement_levels[i1,1]) == 0 & num >= max_num_distinct_values):
+    feature_index1 = scalar(feature_indices[i1,1])
+    num = scalar(num_distinct_values[1,feature_index1])
+    if(scalar(feature_measurement_levels[i1,1]) == 0 & num >= max_num_distinct_values):
         max_num_distinct_values = num
 distinct_label_values = full(0, rows=1, cols=1)
 contingencyTableSz = 1
@@ -99,8 +99,8 @@ if(label_measurement_level == 0):
         featureValues[label_index,i2] = i2-labelCorrection
 
 parfor(i3 in 1:nrow(feature_indices), check=0):
-    feature_index2 = castAsScalar(feature_indices[i3,1])
-    feature_measurement_level = castAsScalar(feature_measurement_levels[i3,1])
+    feature_index2 = scalar(feature_indices[i3,1])
+    feature_measurement_level = scalar(feature_measurement_levels[i3,1])
     
     feature = D[,feature_index2]
     

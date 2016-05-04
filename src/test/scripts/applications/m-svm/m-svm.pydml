@@ -129,7 +129,7 @@ else:
     debug_str = "# Class, Iter, Obj"
     for(iter_class in 1:ncol(debug_mat)):
         for(iter in 1:nrow(debug_mat)):
-            obj = castAsScalar(debug_mat[iter, iter_class])
+            obj = scalar(debug_mat[iter, iter_class])
             if(obj != -1):
                 debug_str = append(debug_str, iter_class + "," + iter + "," + obj)
     save(debug_str, $Log)

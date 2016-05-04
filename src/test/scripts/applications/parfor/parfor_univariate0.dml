@@ -77,7 +77,7 @@ else {
 		# project out the i^th column
 		F = A[,i];
 
-		kind = castAsScalar(K[1,i]);
+		kind = as.scalar(K[1,i]);
 
 		if ( kind == 1 ) {
 			print("[" + i + "] Scale");

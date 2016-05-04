@@ -54,7 +54,7 @@ w = w[1:(nrow(w)-4),]
 
 b = 0.0
 if(intercept == 1)
-	b = castAsScalar(w[nrow(w),1])
+	b = as.scalar(w[nrow(w),1])
 
 scores = b + (X %*% w[1:ncol(X),])
 

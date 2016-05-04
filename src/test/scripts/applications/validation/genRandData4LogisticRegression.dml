@@ -101,17 +101,17 @@ scaleWeights =
     W_ext [, 1] = w_unscaled;
     S1 = colSums (X_data %*% W_ext);
     TF = Rand (rows = 2, cols = 2, min = 1, max = 1);
-    TF [1, 1] = S1 [1, 1] * meanLF * nrow (X_data) / castAsScalar (S1 %*% t(S1));
+    TF [1, 1] = S1 [1, 1] * meanLF * nrow (X_data) / as.scalar (S1 %*% t(S1));
     TF [1, 2] = S1 [1, 2];
-    TF [2, 1] = S1 [1, 2] * meanLF * nrow (X_data) / castAsScalar (S1 %*% t(S1));
+    TF [2, 1] = S1 [1, 2] * meanLF * nrow (X_data) / as.scalar (S1 %*% t(S1));
     TF [2, 2] = - S1 [1, 1];
     TF = W_ext %*% TF;
     Q = t(TF) %*% t(X_data) %*% X_data %*% TF;
     Q [1, 1] = Q [1, 1] - nrow (X_data) * meanLF * meanLF;
     new_sigmaLF = sigmaLF;
-    discr = castAsScalar (Q [1, 1] * Q [2, 2] - Q [1, 2] * Q [2, 1] - nrow (X_data) * Q [2, 2] * sigmaLF * sigmaLF);
+    discr = as.scalar (Q [1, 1] * Q [2, 2] - Q [1, 2] * Q [2, 1] - nrow (X_data) * Q [2, 2] * sigmaLF * sigmaLF);
     if (discr > 0.0) {
-        new_sigmaLF = sqrt (castAsScalar ((Q [1, 1] * Q [2, 2] - Q [1, 2] * Q [2, 1]) / (nrow (X_data) * Q [2, 2])));
+        new_sigmaLF = sqrt (as.scalar ((Q [1, 1] * Q [2, 2] - Q [1, 2] * Q [2, 1]) / (nrow (X_data) * Q [2, 2])));
         discr = -0.0;
     }
     t = Rand (rows = 2, cols = 1, min = 1, max = 1);

@@ -107,7 +107,7 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
     num_samples = sum(X_subset)
     
     print("num non zero labels: " + num_non_zero_labels)
-    mpl = castAsScalar(most_popular_label)
+    mpl = scalar(most_popular_label)
     print("most popular label: " + mpl)
     print("num remaining attrs: " + num_remaining_attrs)
     
@@ -135,14 +135,14 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
         sz = nrow(attributes)
         gains = full(0, rows=sz, cols=1)
         for(i in 1:nrow(attributes)):
-            if(castAsScalar(attributes[i,1]) == 1):
+            if(scalar(attributes[i,1]) == 1):
                 attr_vals = X[,i]
                 attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
                 
                 hxt_vector = full(0, rows=nrow(attr_domain), cols=1)
                 
                 for(j in 1:nrow(attr_domain), check=0):
-                    if(castAsScalar(attr_domain[j,1]) != 0):
+                    if(scalar(attr_domain[j,1]) != 0):
                         val = j
                         Tj = X_subset * ppred(X[,i], val, "==")
                         
@@ -164,8 +164,8 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
         max_gain = 0
         for(i4 in 1:nrow(gains)):
             #print("best attr " + best_attr + " max gain " + max_gain)
-            if(castAsScalar(attributes[i4,1]) == 1):
-                g = castAsScalar(gains[i4,1])
+            if(scalar(attributes[i4,1]) == 1):
+                g = scalar(gains[i4,1])
                 if(best_attr == -1 | max_gain <= g):
                     max_gain = g
                     best_attr = i4
@@ -203,7 +203,7 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
                 start_pt = 1+(i1-1)*max_sz_subtree
                 tempNodeStore[,start_pt:(start_pt+nrow(nodesi)-1)] = t(nodesi)
                 numSubtreeNodes[i1,1] = nrow(nodesi)
-                if(nrow(edgesi)!=1 | ncol(edgesi)!=1 | castAsScalar(edgesi[1,1])!=-1):
+                if(nrow(edgesi)!=1 | ncol(edgesi)!=1 | scalar(edgesi[1,1])!=-1):
                     tempEdgeStore[,start_pt:(start_pt+nrow(edgesi)-1)] = t(edgesi)
                     numSubtreeEdges[i1,1] = nrow(edgesi)
                 else:
@@ -227,20 +227,20 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
         edges = full(1, rows=sz, cols=3)
         numEdges = 0
         for(i6 in 1:nrow(attr_domain)):
-            num_nodesi = castAsScalar(numSubtreeNodes[i6,1])
+            num_nodesi = scalar(numSubtreeNodes[i6,1])
             if(num_nodesi > 0):
                 edges[numEdges+1,2] = i6
                 numEdges = numEdges + 1
         
         nonEmptyAttri = 0
         for(i7 in 1:nrow(attr_domain)):
-            numNodesInSubtree = castAsScalar(numSubtreeNodes[i7,1])
+            numNodesInSubtree = scalar(numSubtreeNodes[i7,1])
             
             if(numNodesInSubtree > 0):
                 start_pt1 = 1 + (i7-1)*max_sz_subtree
                 nodes[numNodes+1:numNodes+numNodesInSubtree,] = transpose(tempNodeStore[,start_pt1:(start_pt1+numNodesInSubtree-1)])
                 
-                numEdgesInSubtree = castAsScalar(numSubtreeEdges[i7,1])
+                numEdgesInSubtree = scalar(numSubtreeEdges[i7,1])
                 
                 if(numEdgesInSubtree!=0):
                     edgesi1 = transpose(tempEdgeStore[,start_pt1:(start_pt1+numEdgesInSubtree-1)])
@@ -279,9 +279,9 @@ y = y + labelCorrection + 0
 nodes[,2] = nodes[,2] - labelCorrection * ppred(nodes[,1], -1, "==")
 for(i3 in 1:nrow(edges)):
 #parfor(i3 in 1:nrow(edges)):
-    e_parent = castAsScalar(edges[i3,1])
-    parent_feature = castAsScalar(nodes[e_parent,1])
-    correction = castAsScalar(featureCorrections[1,parent_feature])
+    e_parent = scalar(edges[i3,1])
+    parent_feature = scalar(nodes[e_parent,1])
+    correction = scalar(featureCorrections[1,parent_feature])
     edges[i3,2] = edges[i3,2] - correction
 
 save(nodes, $3, format="text")

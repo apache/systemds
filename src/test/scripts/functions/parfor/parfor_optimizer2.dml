@@ -73,14 +73,14 @@ dummy = matrix(1, rows=1, cols=1);
 
 
 parfor( i in 1:s1size, check=0, opt=RULEBASED) {
-    a1 = castAsScalar(S1[,i]);
-    k1 = castAsScalar(K1[1,i]);
+    a1 = as.scalar(S1[,i]);
+    k1 = as.scalar(K1[1,i]);
     A1 = D[,a1];
 
     parfor( j in 1:s2size, check=0) {
         pairID = (i-1)*s2size+j; 
-        a2 = castAsScalar(S2[,j]);
-        k2 = castAsScalar(K2[1,j]);
+        a2 = as.scalar(S2[,j]);
+        k2 = as.scalar(K2[1,j]);
         A2 = D[,a2];
     
         if (k1 == k2) {
@@ -233,7 +233,7 @@ computeRanks = function(Matrix[Double] X) return (Matrix[Double] Ranks) {
         if( i>1 ){
            prefixSum = sum(X[1:(i-1),1]);
         } 
-        Rks[i,1] = dummy * (prefixSum + ((castAsScalar(X[i,1])+1)/2));
+        Rks[i,1] = dummy * (prefixSum + ((as.scalar(X[i,1])+1)/2));
     }
     Ranks = Rks;
 }
@@ -268,7 +268,7 @@ bivar_oo = function(Matrix[Double] A, Matrix[Double] B) return (Double sp) {
 
     covXY = 0.0;
     for(i in 1:catA) {
-        covXY = covXY + sum((F[i,]/(W-1)) * (castAsScalar(C[i,1])-meanX) * (t(D[,1])-meanY));
+        covXY = covXY + sum((F[i,]/(W-1)) * (as.scalar(C[i,1])-meanX) * (t(D[,1])-meanY));
     }
 
     sp = covXY/(sqrt(varX)*sqrt(varY));

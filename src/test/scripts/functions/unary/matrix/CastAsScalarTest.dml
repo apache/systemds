@@ -24,6 +24,6 @@
 $$readhelper$$
 
 A = read("$$indir$$a", rows=1, cols=1, format="text");
-b = castAsScalar(A);
+b = as.scalar(A);
 BHelper = b * Helper;
 write(BHelper, "$$outdir$$b", format="text");

@@ -38,7 +38,7 @@ eye = diag(ones);
 Q = eye;
 for( j in n:1 ) {
     v = H[,j];
-    Qj = eye - 2 * (v %*% t(v))/castAsScalar((t(v)%*%v));
+    Qj = eye - 2 * (v %*% t(v))/as.scalar((t(v)%*%v));
     Q = Qj %*% Q;
 }
 

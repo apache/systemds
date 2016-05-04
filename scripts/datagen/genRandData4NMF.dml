@@ -80,7 +80,7 @@ parfor(i in 1:numDocuments){
 	r_w = Rand(rows=numWordsPerDoc, cols=1, min=0, max=1, pdf="uniform", seed=0)
 	
 	for(j in 1:numWordsPerDoc){
-		rz = castAsScalar(r_z[j,1])
+		rz = as.scalar(r_z[j,1])
 		continue = 1
 		
 		z = -1
@@ -88,7 +88,7 @@ parfor(i in 1:numDocuments){
 		#z=1	
 		
 		for(k1 in 1:numTopics){
-			prob = castAsScalar(docTopic[1,k1])
+			prob = as.scalar(docTopic[1,k1])
 			if(continue==1 & rz <= prob){
 				z=k1
 				continue=0
@@ -100,7 +100,7 @@ parfor(i in 1:numDocuments){
 			z = numTopics
 		}
 		
-		rw = castAsScalar(r_w[j,1])
+		rw = as.scalar(r_w[j,1])
 		continue = 1
 		
 		w = -1
@@ -108,7 +108,7 @@ parfor(i in 1:numDocuments){
 		#w = 1
 		
 		for(k2 in 1:numFeatures){
-			prob = castAsScalar(topicDistributions[z,k2])
+			prob = as.scalar(topicDistributions[z,k2])
 			if(continue == 1 & rw <= prob){
 				w = k2
 				continue = 0

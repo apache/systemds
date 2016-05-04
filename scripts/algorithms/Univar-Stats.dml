@@ -69,7 +69,7 @@ parfor(i in 1:n, check=0) {
 	# project out the i^th column
 	F = A[,i];
 
-	kind = castAsScalar(K[1,i]);
+	kind = as.scalar(K[1,i]);
 
 	if ( kind == 1 ) {
 		#print("[" + i + "] Scale");
@@ -149,7 +149,7 @@ parfor(i in 1:n, check=0) {
 if (consoleOutput == TRUE) {
 	for(i in 1:n) {
 		print("-------------------------------------------------");
-		kind = castAsScalar(K[1,i]);
+		kind = as.scalar(K[1,i]);
 		if (kind == 1) {
 			print("Feature [" + i + "]: Scale");
 			print(" (01) Minimum             | " + as.scalar(baseStats[1,i]));

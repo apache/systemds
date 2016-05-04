@@ -173,7 +173,7 @@ while (is_opt_converged == 0)
             q [i, 1] = (quadratic_plus_both - quadratic_plus_1 - quadratic_plus_p + bilinear_form_value) + q [i, 1];
         }
         
-        alpha = norm_r2 / castAsScalar (t(p) %*% q);
+        alpha = norm_r2 / as.scalar (t(p) %*% q);
         shift_vector = shift_vector + alpha * p;
         old_norm_r2 = norm_r2;
         residual = residual + alpha * q;
@@ -228,8 +228,8 @@ left_swap  = round (0.5 + dim_sample * rnd);
 rnd = Rand (rows = num_swaps, cols = 1, min = 0.0, max = 1.0);
 right_swap = round (0.5 + dim_sample * rnd);
 for (swap_i in 1:num_swaps) {
-    l = castAsScalar (left_swap  [swap_i, 1]);
-    r = castAsScalar (right_swap [swap_i, 1]);
+    l = as.scalar (left_swap  [swap_i, 1]);
+    r = as.scalar (right_swap [swap_i, 1]);
     if (l != r) {
         tmp_row = SampleOrder [l, ];
         SampleOrder [l, ] = SampleOrder [r, ];
@@ -265,7 +265,7 @@ for (iter in 1:num_iter)
     
     # Create a normally distributed random sample
     
-    dim_half_sample = castAsScalar (round (dim_sample / 2 + 0.1 + zero));
+    dim_half_sample = as.scalar (round (dim_sample / 2 + 0.1 + zero));
     rnd1 = Rand (rows = dim_half_sample, cols = 1, min = 0.0, max = 1.0);
     rnd2 = Rand (rows = dim_half_sample, cols = 1, min = 0.0, max = 1.0);
     rnd_normal_1 = sqrt (- 2.0 * log (rnd1)) * sin (2 * pi * rnd2);
@@ -288,7 +288,7 @@ for (iter in 1:num_iter)
     {
         # Generate the sample unit-vector and updaters
         
-        if (castAsScalar (isVar [1, idx]) > 0.5) {
+        if (as.scalar (isVar [1, idx]) > 0.5) {
             freeVars_updater = SampleOrder [1 : num_frees, idx];
             regresValues_updater = RegresValueMap %*% CReps %*% freeVars_updater;
             bilinear_updater_vector = regresValues_updater * regresParams;
@@ -309,11 +309,11 @@ for (iter in 1:num_iter)
 
 # BEGIN DEBUG INSERT
 # mmm = 1;
-# if (castAsScalar (isVar [1, idx]) > 0.5) {
-# for (iii in 2:num_frees) {if (castAsScalar (freeVars_updater [iii, 1] - freeVars_updater [mmm, 1]) > 0) {mmm = iii;}}
+# if (as.scalar (isVar [1, idx]) > 0.5) {
+# for (iii in 2:num_frees) {if (as.scalar (freeVars_updater [iii, 1] - freeVars_updater [mmm, 1]) > 0) {mmm = iii;}}
 # print ("freeVars[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   coeff_a = " + coeff_a);
 # } else {
-# for (iii in 2:num_params) {if (castAsScalar (params_updater [iii, 1] - params_updater [mmm, 1]) > 0) {mmm = iii;}}
+# for (iii in 2:num_params) {if (as.scalar (params_updater [iii, 1] - params_updater [mmm, 1]) > 0) {mmm = iii;}}
 # print ("  params[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   coeff_a = " + coeff_a);
 # }
 # END DEBUG INSERT
@@ -323,12 +323,12 @@ for (iter in 1:num_iter)
             
         mean_shift  = - coeff_b / (2.0 * coeff_a);
         sigma_shift = 1.0 / sqrt (2.0 * coeff_a);
-        shift = mean_shift + sigma_shift * castAsScalar (rnd_normal [idx, 1]);
+        shift = mean_shift + sigma_shift * as.scalar (rnd_normal [idx, 1]);
             
         # Perform the updates
 
         bilinear_form = bilinear_form + shift * bilinear_updater;
-        if (castAsScalar (isVar [1, idx]) > 0.5) {
+        if (as.scalar (isVar [1, idx]) > 0.5) {
             freeVars = freeVars + shift * freeVars_updater;
             regresValues = regresValues + shift * regresValues_updater;
         } else {
@@ -353,16 +353,16 @@ for (iter in 1:num_iter)
     }
 
 
-v1 =castAsScalar(round(reports_matrix[ 1,num_terms]));
-v2 =castAsScalar(round(reports_matrix[ 2,num_terms]));
-v3 =castAsScalar(round(reports_matrix[ 3,num_terms]));
-v4 =castAsScalar(round(reports_matrix[ 4,num_terms]));
-v5 =castAsScalar(round(reports_matrix[ 5,num_terms]));
-v8 =castAsScalar(round(reports_matrix[ 8,num_terms]));
-v9 =castAsScalar(round(reports_matrix[ 9,num_terms]));
-v10=castAsScalar(round(reports_matrix[10,num_terms]));
-v16=castAsScalar(round(reports_matrix[16,num_terms]));
-v19=castAsScalar(round(reports_matrix[19,num_terms]));
+v1 =as.scalar(round(reports_matrix[ 1,num_terms]));
+v2 =as.scalar(round(reports_matrix[ 2,num_terms]));
+v3 =as.scalar(round(reports_matrix[ 3,num_terms]));
+v4 =as.scalar(round(reports_matrix[ 4,num_terms]));
+v5 =as.scalar(round(reports_matrix[ 5,num_terms]));
+v8 =as.scalar(round(reports_matrix[ 8,num_terms]));
+v9 =as.scalar(round(reports_matrix[ 9,num_terms]));
+v10=as.scalar(round(reports_matrix[10,num_terms]));
+v16=as.scalar(round(reports_matrix[16,num_terms]));
+v19=as.scalar(round(reports_matrix[19,num_terms]));
 print (
 " Sample = 1:" + v1 + ", 2:" + v2 + ", 3:" + v3 + ", 4:" + v4 + ", 5:" + v5 +
 ", 8:" + v8 + ", 9:" + v9 + ", 10:" + v10 + ", 16:" + v16 + ", 19:" + v19);
@@ -402,7 +402,7 @@ matricize = function (Matrix[double] v, int n_rows) return (Matrix[double] M)
 {
     zero = matrix (0.0, rows = 1, cols = 1);
     n = nrow (v);
-    n_cols = castAsScalar (round (zero + (n / n_rows)));
+    n_cols = as.scalar (round (zero + (n / n_rows)));
     if (n_cols * n_rows < n) {
         n_cols = n_cols + 1;
     }

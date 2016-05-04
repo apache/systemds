@@ -380,7 +380,7 @@ if (is_GROUP_4_ENABLED == 1) {
 for (t in (num_known_terms + num_predicted_terms + 1) : num_terms)
 {
     for (i in 1 : num_attrs) {
-        if (castAsScalar (disabled_known_values [i, t - (num_known_terms + num_predicted_terms)]) == 0.0)
+        if (as.scalar (disabled_known_values [i, t - (num_known_terms + num_predicted_terms)]) == 0.0)
         {
             reg_index = ((t-1) * num_attrs - 1 + i) * num_factors;
             RegresCoeffDefault [reg_index + 1, 1] = 1.0 + zero; # Default coefficient = 1.0

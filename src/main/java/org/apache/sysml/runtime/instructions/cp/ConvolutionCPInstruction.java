@@ -46,7 +46,21 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	private ArrayList<CPOperand> _filter_shape;
 	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
 	private ArrayList<CPOperand> _padding = new ArrayList<CPOperand>();
-
+	
+	int N; int C; int H; int W;
+	int K; int R; int S; int stride_h; int stride_w; int pad_h; int pad_w;
+	int P; int Q;
+	double[] outputArray; double[] inputArray; MatrixBlock input;
+	double [] doutArray; MatrixBlock dout;
+	long outNNZ = 0;
+	
+	boolean reuseNonZeroedOutput = false;
+	
+	enum TaskType {
+		ReshapeCol, Rotate180, Im2Col, Col2Im, MaxPooling_Forward, MaxPooling_Backward
+	}
+	public static final int TASK_SIZE = 64; // to take care of extremely small tasks
+	
 	public ConvolutionCPInstruction(CPOperand in, CPOperand out, String opcode,
 			String istr, ArrayList<CPOperand> stride,
 			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
@@ -164,89 +178,76 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			throws DMLRuntimeException {
 		// acquire inputs
 		MatrixBlock outputBlock = null;
-		if (instOpcode.equalsIgnoreCase("im2col")
-				|| instOpcode.equalsIgnoreCase("reshape_col")
-				|| instOpcode.equalsIgnoreCase("rotate180")
-				|| instOpcode.equalsIgnoreCase("col2im")
-				|| instOpcode.equalsIgnoreCase("pooling_pre_reshape")
-				|| instOpcode.equalsIgnoreCase("pooling_post_reshape")
-				|| instOpcode.equalsIgnoreCase("pooling_backward_reshape")
-				|| instOpcode.equalsIgnoreCase("maxpooling")
-				|| instOpcode.equalsIgnoreCase("maxpooling_backward")) {
-			
-			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
-			pad_h = getScalarInput(ec, _padding, 0);
-			pad_w = getScalarInput(ec, _padding, 1);
-			stride_h = getScalarInput(ec, _stride, 0);
-			stride_w = getScalarInput(ec, _stride, 1);
+		
+		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+		pad_h = getScalarInput(ec, _padding, 0);
+		pad_w = getScalarInput(ec, _padding, 1);
+		stride_h = getScalarInput(ec, _stride, 0);
+		stride_w = getScalarInput(ec, _stride, 1);
 
-			N = getScalarInput(ec, _input_shape, 0);
-			C = getScalarInput(ec, _input_shape, 1);
-			H = getScalarInput(ec, _input_shape, 2);
-			W = getScalarInput(ec, _input_shape, 3);
+		N = getScalarInput(ec, _input_shape, 0);
+		C = getScalarInput(ec, _input_shape, 1);
+		H = getScalarInput(ec, _input_shape, 2);
+		W = getScalarInput(ec, _input_shape, 3);
 
-			K = getScalarInput(ec, _filter_shape, 0);
-			
-			R = getScalarInput(ec, _filter_shape, 2);
-			S = getScalarInput(ec, _filter_shape, 3);
-			
-			P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
-			Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
-			
-			
-			if (instOpcode.equalsIgnoreCase("im2col")) {
-				checkHeightWidth(ec);
-				checkInputDimensionForIm2col(matBlock);
-				this.input = matBlock;
-				outputBlock = getDenseOutputBlock(ec, C * R * S, N * P * Q, true);
-				im2col(matBlock, outputBlock);
-			}
-			else if (instOpcode.equalsIgnoreCase("reshape_col")) {
-				checkHeightWidth(ec);
-				this.input = matBlock;
-				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
-				// without somewhat expensive HashMap checks
-				outputBlock = getDenseOutputBlock(ec, N, K * P * Q, true);
-				reshape_col(matBlock, outputBlock);
-			}
-			else if (instOpcode.equalsIgnoreCase("rotate180")) {
-				checkHeightWidth(ec);
-				this.input = matBlock;
-				// Is eligible for REUSE_NONZEROED_OUTPUT and always an intermediate instruction
-				outputBlock = getDenseOutputBlock(ec, N * P * Q, K, true);
-				rotate180(matBlock, outputBlock);
-			}
-			else if (instOpcode.equalsIgnoreCase("col2im")) {
-				checkHeightWidth(ec);
-				checkInputDimensionForCol2im(matBlock);
-				this.input = matBlock;
-				// needs to be zeroed-out
-				outputBlock = getDenseOutputBlock(ec, N, C * H * W, false);
-				col2im(matBlock, outputBlock);
-			}
-			else if (instOpcode.equalsIgnoreCase("maxpooling")) {
-				this.input = matBlock;
-				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
-				// without somewhat expensive HashMap checks
-				outputBlock = getDenseOutputBlock(ec, N, C*P*Q, true);
-				maxpooling(matBlock, outputBlock);
-			}
-			else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
-				MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-				this.input = matBlock;
-				// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
-				// without somewhat expensive HashMap checks
-				outputBlock = getDenseOutputBlock(ec, N, C*H*W, false); 
-				maxpooling_backward(matBlock, dout, outputBlock);
-				ec.releaseMatrixInput(_in2.getName());
-			}
-			else {
-				throw new DMLRuntimeException("Unsupported op code " + instOpcode);
-			}
-		} else {
+		K = getScalarInput(ec, _filter_shape, 0);
+		
+		R = getScalarInput(ec, _filter_shape, 2);
+		S = getScalarInput(ec, _filter_shape, 3);
+		
+		P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
+		Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+		
+		
+		if (instOpcode.equalsIgnoreCase("im2col")) {
+			checkHeightWidth(ec);
+			checkInputDimensionForIm2col(matBlock);
+			this.input = matBlock;
+			outputBlock = getDenseOutputBlock(ec, C * R * S, N * P * Q, true);
+			im2col(matBlock, outputBlock);
+		}
+		else if (instOpcode.equalsIgnoreCase("reshape_col")) {
+			checkHeightWidth(ec);
+			this.input = matBlock;
+			// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
+			// without somewhat expensive HashMap checks
+			outputBlock = getDenseOutputBlock(ec, N, K * P * Q, true);
+			reshape_col(matBlock, outputBlock);
+		}
+		else if (instOpcode.equalsIgnoreCase("rotate180")) {
+			checkHeightWidth(ec);
+			this.input = matBlock;
+			// Is eligible for REUSE_NONZEROED_OUTPUT and always an intermediate instruction
+			outputBlock = getDenseOutputBlock(ec, N * P * Q, K, true);
+			rotate180(matBlock, outputBlock);
+		}
+		else if (instOpcode.equalsIgnoreCase("col2im")) {
+			checkHeightWidth(ec);
+			checkInputDimensionForCol2im(matBlock);
+			this.input = matBlock;
+			// needs to be zeroed-out
+			outputBlock = getDenseOutputBlock(ec, N, C * H * W, false);
+			col2im(matBlock, outputBlock);
+		}
+		else if (instOpcode.equalsIgnoreCase("maxpooling")) {
+			this.input = matBlock;
+			// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
+			// without somewhat expensive HashMap checks
+			outputBlock = getDenseOutputBlock(ec, N, C*P*Q, true);
+			maxpooling(matBlock, outputBlock);
+		}
+		else if (instOpcode.equalsIgnoreCase("maxpooling_backward")) {
+			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+			this.input = matBlock;
+			// Is eligible for REUSE_NONZEROED_OUTPUT but cannot guarantee that previous output has been rmvar-ed
+			// without somewhat expensive HashMap checks
+			outputBlock = getDenseOutputBlock(ec, N, C*H*W, false); 
+			maxpooling_backward(matBlock, dout, outputBlock);
+			ec.releaseMatrixInput(_in2.getName());
+		}
+		else {
 			throw new DMLRuntimeException("Unsupported op code " + instOpcode);
 		}
-
 		outputArray = null;
 		inputArray = null;
 		
@@ -255,7 +256,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
-	boolean reuseNonZeroedOutput = false;
 	private MatrixBlock getDenseOutputBlock(ExecutionContext ec, int numRows, int numCols, boolean reuseNonZeroedOutput1) throws DMLRuntimeException {
 		long start = -1;
 		if(DMLScript.STATISTICS)
@@ -277,14 +277,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		return outputBlock;
 	}
 	
-	int N; int C; int H; int W;
-	int K; int R; int S; int stride_h; int stride_w; int pad_h; int pad_w;
-	int P; int Q;
-	double[] outputArray; double[] inputArray; MatrixBlock input;
-	long outNNZ = 0;
-	// These are used to iterate
-	int globalIndex;  int row;
-
 	private void checkHeightWidth(ExecutionContext ec) throws DMLRuntimeException {
 		int numChannelsInFilter = getScalarInput(ec, _filter_shape, 1);
 		
@@ -333,8 +325,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			runParallelConvTask(constrainedNumThreads, C, TaskType.MaxPooling_Backward);
 		}
 	}
-
-	double [] doutArray; MatrixBlock dout;
+	
 	public void doPoolingBackward(int n, int c) {
 		for (int p = 0; p < P; p++) {
 			for (int q = 0; q < Q; q++) {
@@ -344,7 +335,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				int end_index_w = Math.min(start_index_w + S, W);
 				start_index_h = Math.max(start_index_h, 0);
 				start_index_w = Math.max(start_index_w, 0);
-				//System.out.println("[" + start_index_h + " " + end_index_h + "]" + "[" + start_index_w + " " + end_index_w + "]");
 				int maxIndex = n*C*H*W + c*H*W +  start_index_h*W + start_index_w; 
 				double maxVal = Double.MIN_VALUE; 
 
@@ -409,7 +399,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				start_index_h = Math.max(start_index_h, 0);
 				start_index_w = Math.max(start_index_w, 0);
 				int out_index = n*C*P*Q + c*P*Q +  p * Q + q;
-				//System.out.println("[" + start_index_h + " " + end_index_h + "]" + "[" + start_index_w + " " + end_index_w + "]");
 				outputArray[out_index] = 0;
 				for (int h = start_index_h; h < end_index_h; h++) {
 					for (int w = start_index_w; w < end_index_w; w++) {
@@ -431,7 +420,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 		if (!input.isInSparseFormat())
 			inputArray = input.getDenseBlock();
-		globalIndex = 0; row = 0; 
 		
 		if(input.getNumColumns() != K*P*Q || input.getNumRows() != N) {
 			throw new DMLRuntimeException("Incorrect input dimensions in rotate180:" + input.getNumRows() + " " + input.getNumColumns() + " " + N + " " + K*P*Q);
@@ -468,7 +456,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 
 		if (!input.isInSparseFormat())
 			inputArray = input.getDenseBlock();
-		globalIndex = 0; row = 0; 
 		
 		if(input.getNumColumns() != N*P*Q || input.getNumRows() != K) {
 			throw new DMLRuntimeException("Incorrect input dimensions in reshape_col:" + input.getNumRows() + " " + input.getNumColumns());
@@ -505,11 +492,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}	
 		pool.shutdown();
 	}
-	
-	enum TaskType {
-		ReshapeCol, Rotate180, Im2Col, Col2Im, MaxPooling_Forward, MaxPooling_Backward
-	}
-	public static final int TASK_SIZE = 64; // to take care of extremely small tasks
 	
 	private static class ConvTask implements Callable<Object> {
 		ConvolutionCPInstruction curr; int n1; int n2; int z1; int z2; 
@@ -593,7 +575,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		inputArray = null;
 		if (!input.isInSparseFormat())
 			inputArray = input.getDenseBlock();
-		globalIndex = 0; row = 0;
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
@@ -613,7 +594,6 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		inputArray = null;
 		if (!input.isInSparseFormat())
 			inputArray = input.getDenseBlock();
-		globalIndex = 0; row = 0;
 		
 		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {

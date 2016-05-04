@@ -38,13 +38,13 @@ public class LibMatrixDNN {
 	public static class ConvolutionParameters {
 		public int N; public int C; public int H; public int W;
 		public int K; public int R; public int S; public int stride_h; public int stride_w; public int pad_h; public int pad_w;
-		public int P; public int Q;
+		public int P; public int Q; public int numThreads;
 		
 		MatrixBlock input1; MatrixBlock input2; MatrixBlock output;
 		boolean reuseNonZeroedOutput = false;
 		
 		public ConvolutionParameters(int N, int C, int H, int W,
-			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w) {
+			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int numThreads) {
 			this.N = N;
 			this.C = C;
 			this.H = H;
@@ -58,6 +58,7 @@ public class LibMatrixDNN {
 			this.pad_w = pad_w;
 			P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
 			Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+			this.numThreads = numThreads;
 		}
 		
 		public void setReuseNonZeroedOutput(boolean reuseNonZeroedOutput) {
@@ -77,7 +78,7 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect dout dimensions in maxpooling_backward:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
 
-		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < params.N; n++) {
 				for (int c = 0; c < params.C; c++) {
@@ -149,7 +150,7 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect input dimensions in maxpooling:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
 		
-		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < params.N; n++) {
 				for (int c = 0; c < params.C; c++) {
@@ -203,7 +204,7 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect input dimensions in rotate180:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
 		}
 		
-		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < params.N; n++) {
 				doRotate180(n, params);
@@ -244,7 +245,7 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException("Incorrect input dimensions in reshape_col:" + input.getNumRows() + " " + input.getNumColumns());
 		}
 		
-		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < params.N; n++) { 
 				doReshapeCol(n, params);
@@ -366,7 +367,7 @@ public class LibMatrixDNN {
 		params.input1 = input;
 		params.output = outputBlock;
 		
-		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			for (int n = 0; n < params.N; n++) { // Do following for all images
 				for (int c = 0; c < params.C; c++) { // Since format is NCHW
@@ -384,7 +385,7 @@ public class LibMatrixDNN {
 		params.input1 = input;
 		params.output = outputBlock;
 		
-		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		int constrainedNumThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if(!ALLOW_MULTI_THREADED_OPS || constrainedNumThreads <= 1) {
 			// Sequential col2im
 			for (int n = 0; n < params.N; n++) { // Do following for all images

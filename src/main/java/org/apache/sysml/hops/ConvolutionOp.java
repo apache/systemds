@@ -22,6 +22,7 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Lop;
@@ -29,11 +30,10 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 
-public class ConvolutionOp extends Hop 
+public class ConvolutionOp extends Hop  implements MultiThreadedHop
 {	
 	private Hop.ConvOp op;
 	
@@ -44,6 +44,8 @@ public class ConvolutionOp extends Hop
 	long padding1 = -1;
 	long padding2 = -1;
 	long P = -1; long Q = -1;
+	
+	private int _maxNumThreads = -1; //-1 for unlimited
 
 	private ConvolutionOp() {
 		//default constructor for clone
@@ -148,8 +150,9 @@ public class ConvolutionOp extends Hop
 		}
 		
 		Lop in = inputs.get(0).constructLops();
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		ConvolutionTransform transform1 = new ConvolutionTransform( in, 
-				HopsConv2Lops.get(op), getDataType(), getValueType(), et);
+				HopsConv2Lops.get(op), getDataType(), getValueType(), et, k);
 		setOutputDimensions(transform1);
 		setLineNumbers(transform1);
 		
@@ -423,6 +426,7 @@ public class ConvolutionOp extends Hop
 		
 		//copy specific attributes
 		ret.op = op;
+		ret._maxNumThreads = _maxNumThreads;
 		
 		return ret;
 	}
@@ -435,7 +439,8 @@ public class ConvolutionOp extends Hop
 		
 		ConvolutionOp that2 = (ConvolutionOp)that;		
 		boolean ret =  (op == that2.op)
-				    && (getInput().size()==that.getInput().size());
+				    && (getInput().size()==that.getInput().size())
+				    && _maxNumThreads == that2._maxNumThreads;
 				
 		//compare all childs (see reshape, sort)
 		if( ret ) //sizes matched
@@ -459,5 +464,15 @@ public class ConvolutionOp extends Hop
 			}
 			setVisited(VisitStatus.DONE);
 		}
+	}
+
+	@Override
+	public void setMaxNumThreads( int k ) {
+		_maxNumThreads = k;
+	}
+	
+	@Override
+	public int getMaxNumThreads() {
+		return _maxNumThreads;
 	}
 }

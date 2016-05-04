@@ -218,7 +218,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				if(arr != null && arr.length >= MatrixBlock.NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
 					// Put the last recently removed arrays into the NON_ZEROED_DOUBLE_ARR as 
 					// it has lower probability of being garbage collected
-					MatrixBlock.NON_ZEROED_DOUBLE_ARR.put(new Integer(arr.length), new SoftReference<double[]>(arr));
+					MatrixBlock.non_zeroed_double_arr.put(new Integer(arr.length), new SoftReference<double[]>(arr));
 				}
 			}
 		}

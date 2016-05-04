@@ -102,7 +102,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public static final boolean REUSE_NONZEROED_OUTPUT = false;
 	// Using hashmap to avoid any performance impacts of multimap
-	public static final ConcurrentHashMap<Integer, SoftReference<double[]>> NON_ZEROED_DOUBLE_ARR = new ConcurrentHashMap<Integer, SoftReference<double[]>>();
+	public static final ConcurrentHashMap<Integer, SoftReference<double[]>> non_zeroed_double_arr = new ConcurrentHashMap<Integer, SoftReference<double[]>>();
 	public static final int NON_ZEROED_DOUBLE_ARR_THRESHOLD = 100;
 	
 	public enum BlockType{
@@ -428,7 +428,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				&& limit >= NON_ZEROED_DOUBLE_ARR_THRESHOLD && 
 				// Not a column vector
 				rlen != 1 && clen != 1) {
-			SoftReference<double[]> arr = NON_ZEROED_DOUBLE_ARR.remove(new Integer((int) limit));
+			SoftReference<double[]> arr = non_zeroed_double_arr.remove(new Integer((int) limit));
 			if(arr != null) {
 				denseBlock = arr.get();
 			}

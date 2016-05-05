@@ -51,6 +51,7 @@ public abstract class Lop
 		Append,                                             //CP/MR append (column append)
 		CombineUnary, CombineBinary, CombineTernary,        //MR combine (stitch together)
 		CentralMoment, CoVariance, GroupedAgg, GroupedAggM,
+		ConvolutionTransform,
 		Transform, DataPartition, RepMat,                   //CP/MR reorganization, partitioning, replication
 		ParameterizedBuiltin,                               //CP/MR parameterized ops (name/value)
 		FunctionCallCP, 									//CP function calls 
@@ -526,6 +527,24 @@ public abstract class Lop
 	public String getInstructions(String input, String rowl, String rowu,
 			String coll, String colu, String leftRowDim,
 			String leftColDim, String output) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+	
+	// stride1, stride2, padding1, padding2  
+	// input_shape1, input_shape2, input_shape3, input_shape4, 
+	// filter_shape1, filter_shape2, filter_shape3, filter_shape4,
+	public String getInstructions(String input, String stride1, String stride2, String padding1, String padding2, 
+			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
+			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
+			String output) throws LopsException {
+		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
+	}
+	
+	// For pooling backward
+	public String getInstructions(String input, String dout, String stride1, String stride2, String padding1, String padding2, 
+			String input_shape1, String input_shape2, String input_shape3, String input_shape4,
+			String filter_shape1, String filter_shape2, String filter_shape3, String filter_shape4,
+			String output) throws LopsException {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
 	

@@ -47,7 +47,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
-
 /**
  * Each object of this class is a cache envelope for some large piece of data
  * called "cache block". For example, the body of a matrix can be the cache block.  
@@ -643,6 +642,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		}
 	}
 	
+	protected void clearReusableData() {}
+	
 	/**
 	 * Sets the cache block reference to <code>null</code>, abandons the old block.
 	 * Makes the "envelope" empty.  Run it to finalize the object (otherwise the
@@ -671,6 +672,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			freeEvictedBlob();	
 		
 		// clear the in-memory data
+		clearReusableData();
 		_data = null;	
 		clearCache();
 		

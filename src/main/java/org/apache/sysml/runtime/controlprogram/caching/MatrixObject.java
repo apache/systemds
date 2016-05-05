@@ -205,6 +205,25 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		return ((double)mc.getNonZeros())/mc.getRows()/mc.getCols();
 	}
 	
+	@Override
+	protected void clearReusableData() {
+		if(MatrixBlock.REUSE_NONZEROED_OUTPUT) {
+			if(_data == null) {
+				getCache();
+			}
+			if(_data != null && _data instanceof MatrixBlock && 
+					// Not a column vector
+					((MatrixBlock)_data).getNumRows() != 1 && ((MatrixBlock)_data).getNumColumns() != 1) {
+				double[] arr = ((MatrixBlock)_data).getDenseBlock();
+				if(arr != null && arr.length >= MatrixBlock.NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
+					// Put the last recently removed arrays into the NON_ZEROED_DOUBLE_ARR as 
+					// it has lower probability of being garbage collected
+					MatrixBlock.non_zeroed_double_arr.put(new Integer(arr.length), new SoftReference<double[]>(arr));
+				}
+			}
+		}
+	}
+	
 	public String toString()
 	{ 
 		StringBuilder str = new StringBuilder();

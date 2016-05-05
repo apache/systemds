@@ -81,7 +81,7 @@ max_pool <- function(X, N, C, Hin, Win, Hf, Wf,
 
     for (c in 1:C) {  # all channels
       # Extract local image slice patches into columns with im2col, of shape (Hf*Wf, Hout*Wout)
-      img_slice_cols = im2col(img[c,], Hin, Win, Hf, Wf, strideh, stridew)
+      img_slice_cols = im2col(matrix(t(img[c,]), 1, Hin*Win) , Hin, Win, Hf, Wf, strideh, stridew)
 
       # Max pooling on patches
       img_maxes[c,] = colMaxs(img_slice_cols)

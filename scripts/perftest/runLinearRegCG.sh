@@ -34,7 +34,7 @@ do
    
    #training
    tstart=$SECONDS
-   ${CMD} -f ../algorithms/LinearRegCG.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" maxi=3 tol=0.0001 reg=0.01
+   ${CMD} -f ../algorithms/LinearRegCG.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" maxi=$5 tol=0.0001 reg=0.01
    ttrain=$(($SECONDS - $tstart - 3))
    echo "LinRegCG train ict="$i" on "$1": "$ttrain >> times.txt
 

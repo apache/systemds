@@ -32,7 +32,7 @@ for i in 0 1
 do
    #training
    tstart=$SECONDS
-   ${CMD} -f ../algorithms/m-svm.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 icpt=$i classes=$3 tol=0.0001 reg=0.01 maxiter=3 model=${BASE}/w Log=${BASE}/debug_output fmt="csv"
+   ${CMD} -f ../algorithms/m-svm.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 icpt=$i classes=$3 tol=0.0001 reg=0.01 maxiter=$6 model=${BASE}/w Log=${BASE}/debug_output fmt="csv"
    ttrain=$(($SECONDS - $tstart - 3))
    echo "MSVM train ict="$i" on "$1": "$ttrain >> times.txt
 

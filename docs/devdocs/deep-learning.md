@@ -27,7 +27,7 @@ For example: to perform the above operations with broadcasting on second dimensi
 ``` python
 rep = function(matrix[double] Z, int C) return (matrix[double] ret) {
 	ret = Z
-	parfor(i in 2:C) {
+	for(i in 2:C) {
 		ret = cbind(ret, Z)
 	}
 }

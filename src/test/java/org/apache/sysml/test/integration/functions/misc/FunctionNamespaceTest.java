@@ -41,6 +41,9 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	private final static String TEST_NAME5 = "Functions5";
 	private final static String TEST_NAME6 = "Functions6";
 	private final static String TEST_NAME7 = "Functions7";
+	private final static String TEST_NAME8 = "Functions8";
+	private final static String TEST_NAME9 = "Functions9";
+	private final static String TEST_NAME10 = "Functions10";
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionNamespaceTest.class.getSimpleName() + "/";
 	
@@ -59,6 +62,9 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5)); 
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6)); 
 		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7)); 
+		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8)); 
+		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9)); 
+		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10)); 
 	}
 	
 	@Test
@@ -120,6 +126,23 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	{
 		runFunctionNoInliningNamespaceTest(TEST_NAME7, ScriptType.DML, false);
 	}
+	@Test
+	public void testFunctionErrorConflict() 
+	{
+		runFunctionNamespaceTest(TEST_NAME8, ScriptType.DML);
+	}
+	
+	@Test
+	public void testFunctionIndirectConflict() 
+	{
+		runFunctionNoInliningNamespaceTest(TEST_NAME9, ScriptType.DML, true);
+	}
+	
+	@Test
+	public void testFunctionMultiConflict() 
+	{
+		runFunctionNamespaceTest(TEST_NAME10, ScriptType.DML);
+	}
 	
 	@Test
 	public void testPyFunctionDefaultNS() 
@@ -180,6 +203,24 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	{
 		runFunctionNoInliningNamespaceTest(TEST_NAME7, ScriptType.PYDML, false);
 	}
+	
+	@Test
+	public void testPyFunctionErrorConflict() 
+	{
+		runFunctionNamespaceTest(TEST_NAME8, ScriptType.PYDML);
+	}
+	
+	@Test
+	public void testPyFunctionIndirectConflict() 
+	{
+		runFunctionNoInliningNamespaceTest(TEST_NAME9, ScriptType.PYDML, true);
+	}
+	
+	@Test
+	public void testPyFunctionMultiConflict() 
+	{
+		runFunctionNamespaceTest(TEST_NAME10, ScriptType.PYDML);
+	}
 
 	private void runFunctionNamespaceTest(String TEST_NAME, ScriptType scriptType)
 	{		
@@ -209,7 +250,17 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 				String stdErrString = baos.toString();
 				if (null != stdErrString && stdErrString.length() > 0)
 				{
-					Assert.fail("Unexpected parse error or DML script error: " + stdErrString);
+					if (TEST_NAME8.equals(TEST_NAME))
+					{
+						if (!stdErrString.contains("Namespace Conflict"))
+						{
+							Assert.fail("Expected parse issue not detected.");
+						}
+					}
+					else
+					{
+						Assert.fail("Unexpected parse error or DML script error: " + stdErrString);
+					}
 				}
 			}
 		}

@@ -69,6 +69,8 @@ public abstract class CommonSyntacticValidator {
 	protected static ThreadLocal<HashMap<String, String>> _scripts = new ThreadLocal<HashMap<String, String>>() {
 		@Override protected HashMap<String, String> initialValue() { return new HashMap<String, String>(); }
 	};
+	// mapping of namespaces to full paths as defined only from source statements in this script (i.e., currentFile)
+	protected HashMap<String, String> sources;
 	
 	public static void init() {
 		_scripts.get().clear();
@@ -79,6 +81,7 @@ public abstract class CommonSyntacticValidator {
 		currentFile = errorListener.getCurrentFileName();
 		this.argVals = argVals;
 		this.sourceNamespace = sourceNamespace;
+		sources = new HashMap<String, String>();
 	}
 
 	protected void notifyErrorListeners(String message, int line, int charPositionInLine) {
@@ -126,7 +129,7 @@ public abstract class CommonSyntacticValidator {
 			functionName = fnNames[0].trim();
 		}
 		else if(fnNames.length == 2) {
-			namespace = fnNames[0].trim();
+			namespace = getQualifiedNamespace(fnNames[0].trim());
 			functionName = fnNames[1].trim();
 		}
 		else
@@ -137,7 +140,21 @@ public abstract class CommonSyntacticValidator {
 		retVal[1] = functionName;
 		return retVal;
 	}
+	
+	protected String getQualifiedNamespace(String namespace) {
+		String path = sources.get(namespace);
+		return (path != null && path.length() > 0) ? path : namespace;
+	}
 
+	protected void validateNamespace(String namespace, String filePath, ParserRuleContext ctx) {
+		if (!sources.containsKey(namespace)) {
+			sources.put(namespace, filePath);
+		}
+		else {
+			notifyErrorListeners("Namespace Conflict: '" + namespace + "' already defined as " + sources.get(namespace), ctx.start);
+		}
+	}
+	
 	protected boolean validateBuiltinFunctions(String function) {
 		String functionName = function.replaceAll(" ", "").trim();
 		if(functionName.equals("write") || functionName.equals(DMLProgram.DEFAULT_NAMESPACE + namespaceResolutionOp() + "write")) {

@@ -117,6 +117,20 @@ public class PoolTest extends AutomatedTestBase
 			int expectedNumberOfJobs = -1;
 			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
 			
+			// Uncomment this after fixing following R error:
+//			Error in matrix(0, C * Hf * Wf, Hout * Wout, byrow = TRUE) : 
+//				  invalid 'nrow' value (too large or NA)
+//				Calls: max_pool -> im2col -> matrix
+			// ------------------------------------------
+//			fullRScriptName = RI_HOME + TEST_NAME + ".R";
+//			rCmd = "Rscript" + " " + fullRScriptName + " " + imgSize + " " + numImg + 
+//					" " + numChannels + " " + poolSize1 + 
+//					" " + poolSize2 + " " + stride + " " + pad + " " + expectedDir(); 
+//			
+//			// Run comparison R script
+//			runRScript(true);
+//			HashMap<CellIndex, Double> bHM = readRMatrixFromFS("B");
+			
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
 			TestUtils.compareMatrices(dmlfile, bHM, epsilon, "B-DML", "NumPy");
 			

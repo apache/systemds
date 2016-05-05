@@ -20,13 +20,12 @@
 package org.apache.sysml.parser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
-
-import scala.actors.threadpool.Arrays;
 
 
 public class ParameterizedBuiltinFunctionExpression extends DataIdentifier 

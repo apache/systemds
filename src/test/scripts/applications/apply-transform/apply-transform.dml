@@ -52,7 +52,7 @@ if(cmdLine_missing_value_maps != " "){
 	missing_indicator_mat = original_X[,(last_data_col+1):ncol(original_X)]
 	
 	parfor(i in 1:nrow(missing_val_maps), check=0){
-		attr_index_mv = castAsScalar(missing_val_maps[i,1])
+		attr_index_mv = as.scalar(missing_val_maps[i,1])
 		attrinfo[attr_index_mv,1] = i
 		attrinfo[attr_index_mv,2] = missing_val_maps[i,2]
 	}	
@@ -61,7 +61,7 @@ if(cmdLine_missing_value_maps != " "){
 if(cmdLine_bin_defns != " "){
 	bin_defns = read(cmdLine_bin_defns)
 	parfor(i in 1:nrow(bin_defns), check=0){
-		attr_index_bin = castAsScalar(bin_defns[i,1])
+		attr_index_bin = as.scalar(bin_defns[i,1])
 		attrinfo[attr_index_bin,3] = bin_defns[i,4]
 		attrinfo[attr_index_bin,4] = bin_defns[i,2]
 		attrinfo[attr_index_bin,5] = bin_defns[i,3]
@@ -71,7 +71,7 @@ if(cmdLine_bin_defns != " "){
 if(cmdLine_dummy_code_maps != " "){
 	dummy_code_maps = read(cmdLine_dummy_code_maps)
 	parfor(i in 1:nrow(dummy_code_maps), check=0){
-		attr_index_dc = castAsScalar(dummy_code_maps[i,1])
+		attr_index_dc = as.scalar(dummy_code_maps[i,1])
 		attrinfo[attr_index_dc,6] = dummy_code_maps[i,2]
 		attrinfo[attr_index_dc,7] = dummy_code_maps[i,3]
 	}
@@ -83,31 +83,31 @@ if(cmdLine_dummy_code_maps != " "){
 if(cmdLine_normalization_maps != " "){
 	normalization_map = read(cmdLine_normalization_maps)
 	parfor(i in 1:nrow(normalization_map), check=0){
-		attr_index_normalization = castAsScalar(normalization_map[i,1])
+		attr_index_normalization = as.scalar(normalization_map[i,1])
 		attrinfo[attr_index_normalization,8] = 1
-		attrinfo[attr_index_normalization,9] = castAsScalar(normalization_map[i,2])
-		attrinfo[attr_index_normalization,10] = castAsScalar(normalization_map[i,3])
+		attrinfo[attr_index_normalization,9] = as.scalar(normalization_map[i,2])
+		attrinfo[attr_index_normalization,10] = as.scalar(normalization_map[i,3])
 	}
 }
 
 #write(attrinfo, "binning/attrinfo.mtx", format="csv")
 
-cols_in_transformed_X = castAsScalar(attrinfo[nrow(attrinfo),6])
+cols_in_transformed_X = as.scalar(attrinfo[nrow(attrinfo),6])
 new_X = matrix(0, rows=nrow(X), cols=cols_in_transformed_X)
 log = matrix(0, rows=ncol(X), cols=2)
 parfor(i in 1:ncol(X), check=0){
 	col = X[,i]
 	
-	mv_col_id = castAsScalar(attrinfo[i,1])
-	global_mean = castAsScalar(attrinfo[i,2])
-	num_bins = castAsScalar(attrinfo[i,3])
-	bin_width = castAsScalar(attrinfo[i,4])
-	min_val = castAsScalar(attrinfo[i,5])
-	dummy_coding_beg_col = castAsScalar(attrinfo[i,6])
-	dummy_coding_end_col = castAsScalar(attrinfo[i,7])
-	normalization_needed = castAsScalar(attrinfo[i,8])
-	normalization_mean = castAsScalar(attrinfo[i,9])
-	normalization_std = castAsScalar(attrinfo[i,10])
+	mv_col_id = as.scalar(attrinfo[i,1])
+	global_mean = as.scalar(attrinfo[i,2])
+	num_bins = as.scalar(attrinfo[i,3])
+	bin_width = as.scalar(attrinfo[i,4])
+	min_val = as.scalar(attrinfo[i,5])
+	dummy_coding_beg_col = as.scalar(attrinfo[i,6])
+	dummy_coding_end_col = as.scalar(attrinfo[i,7])
+	normalization_needed = as.scalar(attrinfo[i,8])
+	normalization_mean = as.scalar(attrinfo[i,9])
+	normalization_std = as.scalar(attrinfo[i,10])
 	
 	if(mv_col_id > 0){ 
 		# fill-in with global mean
@@ -150,7 +150,7 @@ write(new_X, $transformed_X, format="text")
 
 s = "Warning Messages"
 for(i in 1:nrow(log)){
-	if(castAsScalar(log[i,1]) == 1)
-		s = append(s, "Unseen value in column " + i + " (" + castAsScalar(log[i,2]) + ")")
+	if(as.scalar(log[i,1]) == 1)
+		s = append(s, "Unseen value in column " + i + " (" + as.scalar(log[i,2]) + ")")
 }
 write(s, $Log)

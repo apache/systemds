@@ -190,11 +190,11 @@ termination_bitmap = matrix (0, rows = num_runs, cols = 3);
 termination_bitmap_raw = table (seq (1, num_runs, 1), termination_code);
 termination_bitmap [, 1 : ncol(termination_bitmap_raw)] = termination_bitmap_raw;
 termination_stats = colSums (termination_bitmap);
-print ("Number of successful runs = " + as.integer (castAsScalar (termination_stats [1, 1])));
-print ("Number of incomplete runs = " + as.integer (castAsScalar (termination_stats [1, 2])));
-print ("Number of failed runs (with lost centroids) = " + as.integer (castAsScalar (termination_stats [1, 3])));
+print ("Number of successful runs = " + as.integer (as.scalar (termination_stats [1, 1])));
+print ("Number of incomplete runs = " + as.integer (as.scalar (termination_stats [1, 2])));
+print ("Number of failed runs (with lost centroids) = " + as.integer (as.scalar (termination_stats [1, 3])));
 
-num_successful_runs = castAsScalar (termination_stats [1, 1]);
+num_successful_runs = as.scalar (termination_stats [1, 1]);
 if (num_successful_runs > 0) {
     final_wcss_successful = final_wcss * termination_bitmap [, 1];
     worst_wcss = max (final_wcss_successful);

@@ -309,18 +309,18 @@ printFoldStatistics = function (Matrix[double] stats ) return( Integer err )
     stats_min = round (colMins (stats) * 10000.0) / 10000.0;
     
     print ("Training Data, Label comparison statistics:");
-    print ("    True Matches:  Min = " + castAsScalar (stats_min [1, 11]) + ",  Avg = " + castAsScalar (stats_avg [1, 11]) + ",  Max = " + castAsScalar (stats_max [1, 11]));
-    print ("   False Matches:  Min = " + castAsScalar (stats_min [1, 12]) + ",  Avg = " + castAsScalar (stats_avg [1, 12]) + ",  Max = " + castAsScalar (stats_max [1, 12]));
-    print ("     Precision %:  Min = " + castAsScalar (stats_min [1, 15]) + ",  Avg = " + castAsScalar (stats_avg [1, 15]) + ",  Max = " + castAsScalar (stats_max [1, 15]));
+    print ("    True Matches:  Min = " + as.scalar (stats_min [1, 11]) + ",  Avg = " + as.scalar (stats_avg [1, 11]) + ",  Max = " + as.scalar (stats_max [1, 11]));
+    print ("   False Matches:  Min = " + as.scalar (stats_min [1, 12]) + ",  Avg = " + as.scalar (stats_avg [1, 12]) + ",  Max = " + as.scalar (stats_max [1, 12]));
+    print ("     Precision %:  Min = " + as.scalar (stats_min [1, 15]) + ",  Avg = " + as.scalar (stats_avg [1, 15]) + ",  Max = " + as.scalar (stats_max [1, 15]));
 
     print (" ");
     if (1==1) {
       print(" ")
     }
     print ("TEST Data, Label comparison statistics:");
-    print ("    True Matches:  Min = " + castAsScalar (stats_min [1, 31]) + ",  Avg = " + castAsScalar (stats_avg [1, 31]) + ",  Max = " + castAsScalar (stats_max [1, 31]));
-    print ("   False Matches:  Min = " + castAsScalar (stats_min [1, 32]) + ",  Avg = " + castAsScalar (stats_avg [1, 32]) + ",  Max = " + castAsScalar (stats_max [1, 32]));
-    print ("     Precision %:  Min = " + castAsScalar (stats_min [1, 35]) + ",  Avg = " + castAsScalar (stats_avg [1, 35]) + ",  Max = " + castAsScalar (stats_max [1, 35]));
+    print ("    True Matches:  Min = " + as.scalar (stats_min [1, 31]) + ",  Avg = " + as.scalar (stats_avg [1, 31]) + ",  Max = " + as.scalar (stats_max [1, 31]));
+    print ("   False Matches:  Min = " + as.scalar (stats_min [1, 32]) + ",  Avg = " + as.scalar (stats_avg [1, 32]) + ",  Max = " + as.scalar (stats_max [1, 32]));
+    print ("     Precision %:  Min = " + as.scalar (stats_min [1, 35]) + ",  Avg = " + as.scalar (stats_avg [1, 35]) + ",  Max = " + as.scalar (stats_max [1, 35]));
 
     err = 0;
 }

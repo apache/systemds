@@ -179,7 +179,7 @@ while (is_opt_converged == 0)
         }
         q = t(gradient_change_p);
         
-        alpha = norm_r2 / castAsScalar (t(p) %*% q);
+        alpha = norm_r2 / as.scalar (t(p) %*% q);
         shift_vector_change = alpha * p;
         shift_vector = shift_vector + shift_vector_change;
         old_norm_r2 = norm_r2;
@@ -286,7 +286,7 @@ while (is_enough_gradient_descent == 0)
         q_frees  = t(gradientInFrees_eps_p  - gradientInFrees)  / cg_eps;
         q_params = t(gradientInParams_eps_p - gradientInParams) / cg_eps;
         
-        alpha = norm_r2 / castAsScalar (t(p_frees) %*% q_frees + t(p_params) %*% q_params);
+        alpha = norm_r2 / as.scalar (t(p_frees) %*% q_frees + t(p_params) %*% q_params);
 
         shift_frees  = shift_frees  + alpha * p_frees;
         shift_params = shift_params + alpha * p_params;
@@ -475,8 +475,8 @@ left_swap  = round (0.5 + dim_sample * rnd);
 rnd = Rand (rows = num_swaps, cols = 1, min = 0.0, max = 1.0);
 right_swap = round (0.5 + dim_sample * rnd);
 for (swap_i in 1:num_swaps) {
-    l = castAsScalar (left_swap  [swap_i, 1]);
-    r = castAsScalar (right_swap [swap_i, 1]);
+    l = as.scalar (left_swap  [swap_i, 1]);
+    r = as.scalar (right_swap [swap_i, 1]);
     if (l != r) {
         tmp_row = SampleOrder [l, ];
         SampleOrder [l, ] = SampleOrder [r, ];
@@ -560,7 +560,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
     
     # Create a normally distributed random sample
     
-    dim_half_sample = castAsScalar (round (dim_sample / 2 + 0.1 + zero));
+    dim_half_sample = as.scalar (round (dim_sample / 2 + 0.1 + zero));
     rnd1 = Rand (rows = dim_half_sample, cols = 1, min = 0.0, max = 1.0);
     rnd2 = Rand (rows = dim_half_sample, cols = 1, min = 0.0, max = 1.0);
     rnd_normal_1 = sqrt (- 2.0 * log (rnd1)) * sin (2 * pi * rnd2);
@@ -583,7 +583,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
     {
         # Generate the sample unit-vector and updaters
         
-        if (castAsScalar (isVar [1, idx]) > 0.5) {
+        if (as.scalar (isVar [1, idx]) > 0.5) {
             freeVars_updater = SampleOrder [1 : num_frees, idx];
             regresValues_updater = RegresValueMap %*% CReps %*% freeVars_updater;
             bilinear_updater_vector = regresValues_updater * regresParams;
@@ -607,18 +607,18 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
             
         mean_shift  = - coeff_b / (2.0 * coeff_a);
         sigma_shift = 1.0 / sqrt (2.0 * coeff_a);
-        shift = mean_shift + sigma_shift * castAsScalar (rnd_normal [idx, 1]);
+        shift = mean_shift + sigma_shift * as.scalar (rnd_normal [idx, 1]);
             
 # BEGIN DEBUG INSERT
 # mmm = 1;
-# if (castAsScalar (isVar [1, idx]) > 0.5 &          # IT IS A FREE VARIABLE, NOT A PARAMETER
-#     castAsScalar (freeVars_updater [mmm, 1]) > 0)  # IT IS mmm-TH FREE VARIABLE
+# if (as.scalar (isVar [1, idx]) > 0.5 &          # IT IS A FREE VARIABLE, NOT A PARAMETER
+#     as.scalar (freeVars_updater [mmm, 1]) > 0)  # IT IS mmm-TH FREE VARIABLE
 # {
 # #   print ("freeVars[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   coeff_a = " + coeff_a + ",   coeff_b = " + coeff_b);
 #     print ("freeVars[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   mean_shift = " + mean_shift + ",   sigma_shift = " + sigma_shift + ",   shift = " + shift);
 # }
-# if (castAsScalar (isVar [1, idx]) <= 0.5 &       # IT IS A PARAMETER, NOT A FREE VARIABLE
-#     castAsScalar (params_updater [mmm, 1]) > 0)  # IT IS mmm-TH PARAMETER
+# if (as.scalar (isVar [1, idx]) <= 0.5 &       # IT IS A PARAMETER, NOT A FREE VARIABLE
+#     as.scalar (params_updater [mmm, 1]) > 0)  # IT IS mmm-TH PARAMETER
 # {
 # #   print ("  params[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   coeff_a = " + coeff_a + ",   coeff_b = " + coeff_b);
 #     print ("  params[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   mean_shift = " + mean_shift + ",   sigma_shift = " + sigma_shift + ",   shift = " + shift);
@@ -628,7 +628,7 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
         # Perform the updates
 
         bilinear_form = bilinear_form + shift * bilinear_updater;
-        if (castAsScalar (isVar [1, idx]) > 0.5) {
+        if (as.scalar (isVar [1, idx]) > 0.5) {
             freeVars = freeVars + shift * freeVars_updater;
             regresValues = regresValues + shift * regresValues_updater;
         } else {
@@ -653,21 +653,21 @@ while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_itera
         sum_of_observed_losses = sum_of_observed_losses + bilinear_form_value;
     }
 
-# v1 =castAsScalar(round(10000*reports[1 + (num_terms - 1) * num_attrs, 1])/10000);
-# v2 =castAsScalar(round(10000*reports[2 + (num_terms - 1) * num_attrs, 1])/10000);
-# v3 =castAsScalar(round(10000*reports[3 + (num_terms - 1) * num_attrs, 1])/10000);
-# v4 =castAsScalar(round(10000*reports[4 + (num_terms - 1) * num_attrs, 1])/10000);
-# w1 =castAsScalar(round(10000*reports_matrix[ 1,num_terms])/10000);
-# w2 =castAsScalar(round(10000*reports_matrix[ 2,num_terms])/10000);
-# w3 =castAsScalar(round(10000*reports_matrix[ 3,num_terms])/10000);
-# w4 =castAsScalar(round(10000*reports_matrix[ 4,num_terms])/10000);
+# v1 =as.scalar(round(10000*reports[1 + (num_terms - 1) * num_attrs, 1])/10000);
+# v2 =as.scalar(round(10000*reports[2 + (num_terms - 1) * num_attrs, 1])/10000);
+# v3 =as.scalar(round(10000*reports[3 + (num_terms - 1) * num_attrs, 1])/10000);
+# v4 =as.scalar(round(10000*reports[4 + (num_terms - 1) * num_attrs, 1])/10000);
+# w1 =as.scalar(round(10000*reports_matrix[ 1,num_terms])/10000);
+# w2 =as.scalar(round(10000*reports_matrix[ 2,num_terms])/10000);
+# w3 =as.scalar(round(10000*reports_matrix[ 3,num_terms])/10000);
+# w4 =as.scalar(round(10000*reports_matrix[ 4,num_terms])/10000);
 
-# v5 =castAsScalar(round(reports_matrix[ 5,num_terms]));
-# v8 =castAsScalar(round(reports_matrix[ 8,num_terms]));
-# v9 =castAsScalar(round(reports_matrix[ 9,num_terms]));
-# v10=castAsScalar(round(reports_matrix[10,num_terms]));
-# v16=castAsScalar(round(reports_matrix[16,num_terms]));
-# v19=castAsScalar(round(reports_matrix[19,num_terms]));
+# v5 =as.scalar(round(reports_matrix[ 5,num_terms]));
+# v8 =as.scalar(round(reports_matrix[ 8,num_terms]));
+# v9 =as.scalar(round(reports_matrix[ 9,num_terms]));
+# v10=as.scalar(round(reports_matrix[10,num_terms]));
+# v16=as.scalar(round(reports_matrix[16,num_terms]));
+# v19=as.scalar(round(reports_matrix[19,num_terms]));
 
 #print (" Sample = 1:" + v1 + ", 2:" + v2 + ", 3:" + v3 + ", 4:" + v4);
 ## + ", 5:" + v5 + ", 8:" + v8 + ", 9:" + v9 + ", 10:" + v10 + ", 16:" + v16 + ", 19:" + v19);

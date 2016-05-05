@@ -92,13 +92,13 @@ actual_meanLT  = colSums (LT) / numSamples;
 actual_sigmaLT = sqrt (colSums ((LT - ones %*% actual_meanLT)^2) / numSamples);
 
 for (i in 1:(numCategories - 1)) {
-    if (castAsScalar (new_sigmaLT [1, i]) == castAsScalar (sigmaLT [1, i])) {
-        print ("Category " + i + ":  Intercept = " + castAsScalar (b_intercept [1, i])); 
+    if (as.scalar (new_sigmaLT [1, i]) == as.scalar (sigmaLT [1, i])) {
+        print ("Category " + i + ":  Intercept = " + as.scalar (b_intercept [1, i])); 
     } else {
-        print ("Category " + i + ":  Intercept = " + castAsScalar (b_intercept [1, i]) + ",  st.dev.(LT) relaxed from " + castAsScalar (sigmaLT [1, i])); 
+        print ("Category " + i + ":  Intercept = " + as.scalar (b_intercept [1, i]) + ",  st.dev.(LT) relaxed from " + as.scalar (sigmaLT [1, i])); 
     }
-    print ("    Wanted LT mean = " + castAsScalar (meanLT [1, i])        + ",  st.dev. = " + castAsScalar (new_sigmaLT [1, i]));
-    print ("    Actual LT mean = " + castAsScalar (actual_meanLT [1, i]) + ",  st.dev. = " + castAsScalar (actual_sigmaLT [1, i]));
+    print ("    Wanted LT mean = " + as.scalar (meanLT [1, i])        + ",  st.dev. = " + as.scalar (new_sigmaLT [1, i]));
+    print ("    Actual LT mean = " + as.scalar (actual_meanLT [1, i]) + ",  st.dev. = " + as.scalar (actual_sigmaLT [1, i]));
 }
 
 

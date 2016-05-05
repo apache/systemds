@@ -91,7 +91,7 @@ while(!converge):
     norm_grad = sqrt(sum(grad*grad))
     
     print("-- Outer Iteration = " + iter)
-    objScalar = castAsScalar(obj)
+    objScalar = scalar(obj)
     print("     Iterations = " + iter + ", Objective = " + objScalar + ", Gradient Norm = " + norm_grad)
     
     # SOLVE TRUST REGION SUB-PROBLEM
@@ -109,37 +109,37 @@ while(!converge):
         alpha_deno = dot(transpose(d), Hd)
         alpha = norm_r2 / alpha_deno
         
-        s = s + castAsScalar(alpha) * d
-        os = os + castAsScalar(alpha) * od
+        s = s + scalar(alpha) * d
+        os = os + scalar(alpha) * od
         
         sts = dot(transpose(s), s)
         delta2 = delta*delta 
-        stsScalar = castAsScalar(sts)
+        stsScalar = scalar(sts)
         
         shouldBreak = False  # to mimic "break" in the following 'if' condition
         if (stsScalar > delta2):
             print("      --- cg reaches trust region boundary")
-            s = s - castAsScalar(alpha) * d
-            os = os - castAsScalar(alpha) * od
+            s = s - scalar(alpha) * d
+            os = os - scalar(alpha) * od
             std = dot(transpose(s), d)
             dtd = dot(transpose(d), d)
             sts = dot(transpose(s), s)
             rad = sqrt(std*std + dtd*(delta2 - sts))
-            stdScalar = castAsScalar(std)
+            stdScalar = scalar(std)
             if(stdScalar >= 0):
                 tau = (delta2 - sts)/(std + rad)
             else:
                 tau = (rad - std)/dtd
             
-            s = s + castAsScalar(tau) * d
-            os = os + castAsScalar(tau) * od
-            r = r - castAsScalar(tau) * Hd
+            s = s + scalar(tau) * d
+            os = os + scalar(tau) * od
+            r = r - scalar(tau) * Hd
             
             #break
             shouldBreak = True
             innerconverge = True
         if (!shouldBreak):
-            r = r - castAsScalar(alpha) * Hd
+            r = r - scalar(alpha) * Hd
             old_norm_r2 = norm_r2
             norm_r2 = sum(r*r)
             beta = norm_r2/old_norm_r2
@@ -159,10 +159,10 @@ while(!converge):
     objnew = dot((0.5 * transpose(wnew)), wnew) + C * sum(-log(logisticnew))
     
     actred = (obj - objnew)
-    actredScalar = castAsScalar(actred)
+    actredScalar = scalar(actred)
     rho = actred / qk
-    qkScalar = castAsScalar(qk)
-    rhoScalar = castAsScalar(rho)
+    qkScalar = scalar(qk)
+    rhoScalar = scalar(rho)
     snorm = sqrt(sum( s * s ))
     print("     Actual    = " + actredScalar)
     print("     Predicted = " + qkScalar)
@@ -170,11 +170,11 @@ while(!converge):
     if (iter==0):
         delta = min(delta, snorm)
     alpha2 = objnew - obj - gs
-    alpha2Scalar = castAsScalar(alpha2)
+    alpha2Scalar = scalar(alpha2)
     if (alpha2Scalar <= 0):
         alpha = sigma3*e
     else:
-        ascalar = max(sigma1, -0.5*castAsScalar(gs)/alpha2Scalar)
+        ascalar = max(sigma1, -0.5*scalar(gs)/alpha2Scalar)
         alpha = ascalar*e
     
     if (rhoScalar > eta0):
@@ -185,7 +185,7 @@ while(!converge):
         logisticD = logisticnew * (1 - logisticnew)
         obj = objnew
     
-    alphaScalar = castAsScalar(alpha)
+    alphaScalar = scalar(alpha)
     if (rhoScalar < eta0):
         delta = min(max( alphaScalar , sigma1) * snorm, sigma2 * delta )
     else:

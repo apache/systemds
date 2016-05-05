@@ -435,7 +435,7 @@ if (is_supported == 1):
         save (beta_out, fileB, format=fmtB)
         
         if (intercept_status == 1 | intercept_status == 2):
-            intercept_value = castAsScalar (beta_out [num_features, 1])
+            intercept_value = scalar (beta_out [num_features, 1])
             beta_noicept = beta_out [1 : (num_features - 1), 1]
         else:
             beta_noicept = beta_out [1 : num_features, 1]
@@ -443,9 +443,9 @@ if (is_supported == 1):
         min_beta = min (beta_noicept)
         max_beta = max (beta_noicept)
         tmp_i_min_beta = rowIndexMin (transpose(beta_noicept))
-        i_min_beta = castAsScalar (tmp_i_min_beta [1, 1])
+        i_min_beta = scalar (tmp_i_min_beta [1, 1])
         tmp_i_max_beta = rowIndexMax (transpose(beta_noicept))
-        i_max_beta = castAsScalar (tmp_i_max_beta [1, 1])
+        i_max_beta = scalar (tmp_i_max_beta [1, 1])
         
         #####  OVER-DISPERSION PART  #####
         

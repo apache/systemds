@@ -40,7 +40,7 @@ max_iteration = 3;
 i = 0;
 while(i < max_iteration) {
 	q = ((t(V) %*% (V %*% p)) + eps  * p);
-	alpha = norm_r2 / castAsScalar(t(p) %*% q);
+	alpha = norm_r2 / as.scalar(t(p) %*% q);
 	w = w + alpha * p;
 	old_norm_r2 = norm_r2;
 	r = r + alpha * q;

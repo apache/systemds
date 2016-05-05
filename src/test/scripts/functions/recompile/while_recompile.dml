@@ -22,7 +22,7 @@
 
 V = Rand(rows=$1+1, cols=$2+1, min=$3, max=$3);
 Z = Rand(rows=1,cols=1,min=0,max=0);
-while( castAsScalar(V[1,1])>castAsScalar(Z[1,1]) )
+while( as.scalar(V[1,1])>as.scalar(Z[1,1]) )
 {
    Z[1,1] = V[1,1]; 
 }  

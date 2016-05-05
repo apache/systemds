@@ -24,7 +24,7 @@ foo = function(Matrix[Double] input) return (Double out)
 {
    if( 1==1 ){} #prevent inlining
   
-   out = castAsScalar(input[1,1]);
+   out = as.scalar(input[1,1]);
 }
 
 Y = matrix(1, rows=10, cols=10);

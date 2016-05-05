@@ -23,7 +23,7 @@
 Y = matrix(1, rows=10, cols=10);
 X = matrix(7, rows=10, cols=10);
 if(1==1){}
-X = castAsScalar(X[1,1]);
+X = as.scalar(X[1,1]);
 
 print("Result: "+sum(X + Y));
 #expected: "Result: 800.0"

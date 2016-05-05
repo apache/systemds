@@ -43,13 +43,13 @@ def arima_css(w:matrix[float], X:matrix[float], pIn: int, P: int, qIn: int, Q:in
         ma_ind_ns = P+pIn+i7
         err_ind_ns = i7
         ones_ns = Rand(rows=nrow(R)-err_ind_ns, cols=1, min=1, max=1)
-        d_ns = ones_ns * castAsScalar(w[ma_ind_ns,1])
+        d_ns = ones_ns * scalar(w[ma_ind_ns,1])
         R[1+err_ind_ns:nrow(R),1:ncol(R)-err_ind_ns] = R[1+err_ind_ns:nrow(R),1:ncol(R)-err_ind_ns] + diag(d_ns)
     for(i8 in 1:Q):
         ma_ind_s = P+pIn+qIn+i8
         err_ind_s = s*i8
         ones_s = Rand(rows=nrow(R)-err_ind_s, cols=1, min=1, max=1)
-        d_s = ones_s * castAsScalar(w[ma_ind_s,1])
+        d_s = ones_s * scalar(w[ma_ind_s,1])
         R[1+err_ind_s:nrow(R),1:ncol(R)-err_ind_s] = R[1+err_ind_s:nrow(R),1:ncol(R)-err_ind_s] + diag(d_s)
     
     #checking for strict diagonal dominance
@@ -86,7 +86,7 @@ def arima_css(w:matrix[float], X:matrix[float], pIn: int, P: int, qIn: int, Q:in
         while(iter < max_iter & continue == 1):
             q = dot(Z, p)
             transpose_p = transpose(p)
-            alpha = norm_r2 / castAsScalar(dot(transpose_p, q))
+            alpha = norm_r2 / scalar(dot(transpose_p, q))
             y_hat = y_hat + alpha * p
             old_norm_r2 = norm_r2
             r = r + alpha * q
@@ -187,23 +187,23 @@ parfor(i3 in 1:ncol(simplex)):
 
 num_func_invoc = num_func_invoc + ncol(simplex)
 
-tol = 1.5 * (10**-8) * castAsScalar(objvals[1,1])
+tol = 1.5 * (10**-8) * scalar(objvals[1,1])
 
 continue = 1
 while(continue == 1 & num_func_invoc <= max_func_invoc):
     best_index = 1
     worst_index = 1
     for(i in 2:ncol(objvals)):
-        this = castAsScalar(objvals[1,i])
-        that = castAsScalar(objvals[1,best_index])
+        this = scalar(objvals[1,i])
+        that = scalar(objvals[1,best_index])
         if(that > this):
             best_index = i
-        that = castAsScalar(objvals[1,worst_index])
+        that = scalar(objvals[1,worst_index])
         if(that < this):
             worst_index = i
     
-    best_obj_val = castAsScalar(objvals[1,best_index])
-    worst_obj_val = castAsScalar(objvals[1,worst_index])
+    best_obj_val = scalar(objvals[1,best_index])
+    worst_obj_val = scalar(objvals[1,worst_index])
     if(worst_obj_val <= best_obj_val + tol):
         continue = 0
     
@@ -235,7 +235,7 @@ while(continue == 1 & num_func_invoc <= max_func_invoc):
         obj_x_c_in = arima_css(x_c_in, Z, p, P, q, Q, s, useJacobi)
         num_func_invoc = num_func_invoc + 1
         
-        if(obj_x_c_in < castAsScalar(objvals[1,worst_index])):
+        if(obj_x_c_in < scalar(objvals[1,worst_index])):
             simplex[,worst_index] = x_c_in
             objvals[1,worst_index] = obj_x_c_in
         else:

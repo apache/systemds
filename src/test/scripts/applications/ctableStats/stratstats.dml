@@ -317,9 +317,9 @@ fStat_tailprob = function (Matrix[double] fStat, Matrix[double] df_1, Matrix[dou
     tailprob = fStat;
     for (i in 1:nrow(fStat)) {
       for (j in 1:ncol(fStat)) {
-        q = castAsScalar (fStat [i, j]);
-        d1 = castAsScalar (df_1 [i, j]);
-        d2 = castAsScalar (df_2 [i, j]);
+        q = as.scalar (fStat [i, j]);
+        d1 = as.scalar (df_1 [i, j]);
+        d2 = as.scalar (df_2 [i, j]);
         if (d1 >= 1 & d2 >= 1 & q >= 0.0) {
             tailprob  [i, j] = pf (target = q, df1 = d1, df2 = d2, lower.tail=FALSE);
         } else {

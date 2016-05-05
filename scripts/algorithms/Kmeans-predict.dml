@@ -266,19 +266,19 @@ if (num_records != nrow (prY) | ncol (spY) != 1 | ncol (prY) != 1) {
     
     for (i in 1 : nrow (spY_cids))
     {
-        cid = as.integer (castAsScalar (spY_cids [i, 1]));
-        pct = castAsScalar (rounded_percentages [i, 1]);
+        cid = as.integer (as.scalar (spY_cids [i, 1]));
+        pct = as.scalar (rounded_percentages [i, 1]);
         space_pct = "";  if (pct < 100) {space_pct = " ";}  if (pct < 10) {space_pct = "  ";}
         print ("Category " + cid + 
-            ":  best pred. cluster is " + as.integer (castAsScalar (prY_cids [i, 1])) + 
-            ";  full count = " + as.integer (castAsScalar (full_counts [i, 1])) + 
+            ":  best pred. cluster is " + as.integer (as.scalar (prY_cids [i, 1])) + 
+            ";  full count = " + as.integer (as.scalar (full_counts [i, 1])) + 
             ",  matching count = " + space_pct + pct + "% (" +
-            as.integer (castAsScalar (matching_counts [i, 1])) + ")");
+            as.integer (as.scalar (matching_counts [i, 1])) + ")");
             
-        str = append (str, "SPEC_TO_PRED,"  + cid + "," + castAsScalar (prY_cids [i, 1]));
-        str = append (str, "SPEC_FULL_CT,"  + cid + "," + castAsScalar (full_counts [i, 1]));
-        str = append (str, "SPEC_MATCH_CT," + cid + "," + castAsScalar (matching_counts [i, 1]));
-        str = append (str, "SPEC_MATCH_PC," + cid + "," + castAsScalar (rounded_percentages [i, 1]));
+        str = append (str, "SPEC_TO_PRED,"  + cid + "," + as.scalar (prY_cids [i, 1]));
+        str = append (str, "SPEC_FULL_CT,"  + cid + "," + as.scalar (full_counts [i, 1]));
+        str = append (str, "SPEC_MATCH_CT," + cid + "," + as.scalar (matching_counts [i, 1]));
+        str = append (str, "SPEC_MATCH_PC," + cid + "," + as.scalar (rounded_percentages [i, 1]));
     }
 
     [prY_cids, spY_cids, full_counts, matching_counts, rounded_percentages] =
@@ -292,19 +292,19 @@ if (num_records != nrow (prY) | ncol (spY) != 1 | ncol (prY) != 1) {
     
     for (i in 1 : nrow (prY_cids))
     {
-        cid = as.integer (castAsScalar (prY_cids [i, 1]));
-        pct = castAsScalar (rounded_percentages [i, 1]);
+        cid = as.integer (as.scalar (prY_cids [i, 1]));
+        pct = as.scalar (rounded_percentages [i, 1]);
         space_pct = "";  if (pct < 100) {space_pct = " ";}  if (pct < 10) {space_pct = "  ";}
         print ("Cluster " + cid + 
-            ":  best spec. categ. is " + as.integer (castAsScalar (spY_cids [i, 1])) + 
-            ";  full count = " + as.integer (castAsScalar (full_counts [i, 1])) + 
+            ":  best spec. categ. is " + as.integer (as.scalar (spY_cids [i, 1])) + 
+            ";  full count = " + as.integer (as.scalar (full_counts [i, 1])) + 
             ",  matching count = " + space_pct + pct + "% (" +
-            as.integer (castAsScalar (matching_counts [i, 1])) + ")");
+            as.integer (as.scalar (matching_counts [i, 1])) + ")");
 
-        str = append (str, "PRED_TO_SPEC,"  + cid + "," + castAsScalar (spY_cids [i, 1]));
-        str = append (str, "PRED_FULL_CT,"  + cid + "," + castAsScalar (full_counts [i, 1]));
-        str = append (str, "PRED_MATCH_CT," + cid + "," + castAsScalar (matching_counts [i, 1]));
-        str = append (str, "PRED_MATCH_PC," + cid + "," + castAsScalar (rounded_percentages [i, 1]));
+        str = append (str, "PRED_TO_SPEC,"  + cid + "," + as.scalar (spY_cids [i, 1]));
+        str = append (str, "PRED_FULL_CT,"  + cid + "," + as.scalar (full_counts [i, 1]));
+        str = append (str, "PRED_MATCH_CT," + cid + "," + as.scalar (matching_counts [i, 1]));
+        str = append (str, "PRED_MATCH_PC," + cid + "," + as.scalar (rounded_percentages [i, 1]));
     }
 
     print (" ");

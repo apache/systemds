@@ -24,6 +24,6 @@ A = Rand(rows=10,cols=1);
 
 parfor( i in 1:10 )
 {
-   b = i + castAsScalar(A[i,1]);
+   b = i + as.scalar(A[i,1]);
    #print(b);
 }

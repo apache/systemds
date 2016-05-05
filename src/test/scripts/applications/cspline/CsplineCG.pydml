@@ -155,7 +155,7 @@ def interpSpline(x: float, X: matrix[float], Y: matrix[float], K: matrix[float])
     
     qm = (1-t)*Y[i-1,1] + t*Y[i,1] + t*(1-t)*(a*(1-t)+b*t)
     
-    q = castAsScalar(qm)
+    q = scalar(qm)
 
 #solve Ax = b
 #   for CG our formulation is

@@ -37,7 +37,7 @@ source ("Binomial.dml");
 # test_m = Rand (rows = 1, cols = 1, min = 0, max = 0);
 # test_p = Rand (rows = 1, cols = 1, min = 0.00421, max = 0.00421);
 # [alpha] = binomProb (test_n, test_m, test_p);
-# print ("TEST:  Prob [Binom (" + castAsScalar (test_n) + ", " + castAsScalar (test_p) + ") <= " + castAsScalar (test_m) + "]  =  " + castAsScalar (alpha));
+# print ("TEST:  Prob [Binom (" + as.scalar (test_n) + ", " + as.scalar (test_p) + ") <= " + as.scalar (test_m) + "]  =  " + as.scalar (alpha));
 
 print ("BEGIN WILSON SCORE SCRIPT");
 print ("Reading X...");
@@ -87,39 +87,39 @@ result [, 15] = r_m_n_exact;
 print ("M / sum(M)  RESULTS:  Wilson, Exact");
 
 for (i in 1:num_rows) {
-    p1  = castAsScalar (round (result [i,  1] * 100000) / 1000);
-    lw1 = castAsScalar (round (result [i,  2] * 100000) / 1000);
-    rw1 = castAsScalar (round (result [i,  3] * 100000) / 1000);
-    le1 = castAsScalar (round (result [i,  4] * 100000) / 1000);
-    re1 = castAsScalar (round (result [i,  5] * 100000) / 1000);
+    p1  = as.scalar (round (result [i,  1] * 100000) / 1000);
+    lw1 = as.scalar (round (result [i,  2] * 100000) / 1000);
+    rw1 = as.scalar (round (result [i,  3] * 100000) / 1000);
+    le1 = as.scalar (round (result [i,  4] * 100000) / 1000);
+    re1 = as.scalar (round (result [i,  5] * 100000) / 1000);
     print ("Row " + i + ":   "
-        + castAsScalar (M [i, 1]) + "/" + castAsScalar (sum_M [i, 1]) + " = " 
+        + as.scalar (M [i, 1]) + "/" + as.scalar (sum_M [i, 1]) + " = " 
         + p1 + "%  [" + lw1 + "%, " + rw1 + "%]   [" + le1 + "%, " + re1 + "%]");
 }
 
 print ("N / sum(N)  RESULTS:  Wilson, Exact");
 
 for (i in 1:num_rows) {
-    p2  = castAsScalar (round (result [i,  6] * 100000) / 1000);
-    lw2 = castAsScalar (round (result [i,  7] * 100000) / 1000);
-    rw2 = castAsScalar (round (result [i,  8] * 100000) / 1000);
-    le2 = castAsScalar (round (result [i,  9] * 100000) / 1000);
-    re2 = castAsScalar (round (result [i, 10] * 100000) / 1000);
+    p2  = as.scalar (round (result [i,  6] * 100000) / 1000);
+    lw2 = as.scalar (round (result [i,  7] * 100000) / 1000);
+    rw2 = as.scalar (round (result [i,  8] * 100000) / 1000);
+    le2 = as.scalar (round (result [i,  9] * 100000) / 1000);
+    re2 = as.scalar (round (result [i, 10] * 100000) / 1000);
     print ("Row " + i + ":   "
-        + castAsScalar (N [i, 1]) + "/" + castAsScalar (sum_N [i, 1]) + " = " 
+        + as.scalar (N [i, 1]) + "/" + as.scalar (sum_N [i, 1]) + " = " 
         + p2 + "%  [" + lw2 + "%, " + rw2 + "%]   [" + le2 + "%, " + re2 + "%]   ");
 }
 
 print ("M / N  RESULTS:  Wilson, Exact");
 
 for (i in 1:num_rows) {
-    p3  = castAsScalar (round (result [i, 11] * 100000) / 1000);
-    lw3 = castAsScalar (round (result [i, 12] * 100000) / 1000);
-    rw3 = castAsScalar (round (result [i, 13] * 100000) / 1000);
-    le3 = castAsScalar (round (result [i, 14] * 100000) / 1000);
-    re3 = castAsScalar (round (result [i, 15] * 100000) / 1000);
+    p3  = as.scalar (round (result [i, 11] * 100000) / 1000);
+    lw3 = as.scalar (round (result [i, 12] * 100000) / 1000);
+    rw3 = as.scalar (round (result [i, 13] * 100000) / 1000);
+    le3 = as.scalar (round (result [i, 14] * 100000) / 1000);
+    re3 = as.scalar (round (result [i, 15] * 100000) / 1000);
     print ("Row " + i + ":   "
-        + castAsScalar (M [i, 1]) + "/" + castAsScalar (    N [i, 1]) + " = " 
+        + as.scalar (M [i, 1]) + "/" + as.scalar (    N [i, 1]) + " = " 
         + p3 + "%  [" + lw3 + "%, " + rw3 + "%]   [" + le3 + "%, " + re3 + "%]   ");
 }
 

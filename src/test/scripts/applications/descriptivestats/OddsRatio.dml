@@ -61,10 +61,10 @@ else {
 
 # Given a 2x2 contingency table, it computes oddsRatio and the corresponding confidence interval
 pair_corr = function(Matrix[Double] A) return (Double oddsRatio, Double left_conf, Double right_conf, Double sd, Double chisquared, Double pvalue, Double crv, Double sigma_away, Double df) {
-	a11 = castAsScalar(A[1,1]);
-	a12 = castAsScalar(A[1,2]);
-	a21 = castAsScalar(A[2,1]);
-	a22 = castAsScalar(A[2,2]);
+	a11 = as.scalar(A[1,1]);
+	a12 = as.scalar(A[1,2]);
+	a21 = as.scalar(A[2,1]);
+	a22 = as.scalar(A[2,2]);
 
 	sd = sqrt(1/a11 + 1/a12 + 1/a21 + 1/a22);
 	oddsRatio = (a11*a22)/(a12*a21);

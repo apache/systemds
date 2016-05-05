@@ -28,7 +28,7 @@ factorial = function(Matrix[Double] arr, Integer pos) return (Matrix[Double] arr
 	}
 	
 	for(i in 1:ncol(arr))
-		print("inside factorial (" + pos + ") " + i + ": " + castAsScalar(arr[1, i]))
+		print("inside factorial (" + pos + ") " + i + ": " + as.scalar(arr[1, i]))
 }
 
 n = $1
@@ -38,7 +38,7 @@ arr = factorial(arr, n)
 R = matrix(0, rows=1, cols=n);
 for(i in 1:n) #copy important to test dynamic rewrites
 {
-   print("main factorial " + i + ": " + castAsScalar(arr[1, i]))
+   print("main factorial " + i + ": " + as.scalar(arr[1, i]))
    R[1,i] = as.scalar(arr[1, i]);
 }
 

@@ -67,16 +67,16 @@ cat_vars = matrix(0, rows=maxC, cols=numPairs);
 
 
 for( i in 1:s1size ) {
-    a1 = castAsScalar(S1[,i]);
-    k1 = castAsScalar(K1[1,i]);
+    a1 = as.scalar(S1[,i]);
+    k1 = as.scalar(K1[1,i]);
     A1 = D[,a1];
     #print("a1="+a1);
 
     for( j in 1:s2size ) {
         pairID = (i-1)*s2size+j; 
         #print("ID="+pairID+"(i="+i+",j="+j+")");
-        a2 = castAsScalar(S2[,j]);
-        k2 = castAsScalar(K2[1,j]);
+        a2 = as.scalar(S2[,j]);
+        k2 = as.scalar(K2[1,j]);
         A2 = D[,a2];
         #print("a2="+a2);
     

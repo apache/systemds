@@ -112,7 +112,7 @@ for (iLabel in 1:numLabels)
         
         print ("    (partition & label) / (all label) ratios...");
         
-        cntThisLabel = zeros + castAsScalar (cntLabels [iLabel, 1]);
+        cntThisLabel = zeros + as.scalar (cntLabels [iLabel, 1]);
         [ratio2, left_conf_wilson2, right_conf_wilson2] = 
             wilson_confidence (cntThisLabel, cntPartitionsWithLabel);
         [left_conf_exact2] = binomQuantile (cntThisLabel, cntPartitionsWithLabel_minus_1, big_alpha);

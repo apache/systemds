@@ -40,7 +40,7 @@ numEval = $2;
 D = matrix(1, numEval, 1);
 for ( i in 1:numEval ) {
     Av = A %*% evec[,i];
-    rhs = castAsScalar(eval[i,1]) * evec[,i];
+    rhs = as.scalar(eval[i,1]) * evec[,i];
     diff = sum(Av-rhs);
     D[i,1] = diff;
 }
@@ -49,7 +49,7 @@ for ( i in 1:numEval ) {
 # TODO: dummy if() must be removed
 v = evec[,1];
 Av = A %*% v;
-rhs = castAsScalar(eval[1,1]) * evec[,1];
+rhs = as.scalar(eval[1,1]) * evec[,1];
 diff = sum(Av-rhs);
 
 D = matrix(1,1,1);

@@ -65,9 +65,9 @@ mn = colMins(D)
 num_distinct_values = mx-mn+1
 max_num_distinct_values = 0
 for(i1 in 1:nrow(feature_indices)){
-	feature_index1 = castAsScalar(feature_indices[i1,1])
-	num = castAsScalar(num_distinct_values[1,feature_index1])
-	if(castAsScalar(feature_measurement_levels[i1,1]) == 0 & num >= max_num_distinct_values){
+	feature_index1 = as.scalar(feature_indices[i1,1])
+	num = as.scalar(num_distinct_values[1,feature_index1])
+	if(as.scalar(feature_measurement_levels[i1,1]) == 0 & num >= max_num_distinct_values){
 		max_num_distinct_values = num
 	}
 }
@@ -107,8 +107,8 @@ if(label_measurement_level == 0){
 }
 
 parfor(i3 in 1:nrow(feature_indices), check=0){
-	feature_index2 = castAsScalar(feature_indices[i3,1])
-	feature_measurement_level = castAsScalar(feature_measurement_levels[i3,1])
+	feature_index2 = as.scalar(feature_indices[i3,1])
+	feature_measurement_level = as.scalar(feature_measurement_levels[i3,1])
 	
 	feature = D[,feature_index2]
 	

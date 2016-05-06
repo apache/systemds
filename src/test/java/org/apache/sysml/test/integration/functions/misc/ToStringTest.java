@@ -123,7 +123,7 @@ public class ToStringTest extends AutomatedTestBase {
 		final String LINESEP = "\n";
 				
 		String testName = "ToString6";
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		long k=1;
 		long i=1, j=1;
 		for (i=1; i<=MAX_ROWS; i++){
@@ -152,7 +152,7 @@ public class ToStringTest extends AutomatedTestBase {
 		final String LINESEP = "\n";
 				
 		String testName = "ToString7";
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		long k=1;
 		long i=1, j=1;
 		for (i=1; i<=MAX_ROWS; i++){

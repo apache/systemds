@@ -841,8 +841,17 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{	
 		if (getOp() == ParamBuiltinOp.TOSTRING){
+			// Conservative Assumptions about characteristics of digits
 			final long AVERAGE_CHARS_PER_VALUE = 7;
 			final long AVERAGE_CHARS_PER_INDEX = 4;
+			
+			// Default Values for toString
+			long specifiedRows = 100;
+			long specifiedCols = 100;
+			boolean sparsePrint = false;
+			String sep = " ";
+			String linesep = "\n";
+			
 			Hop rowsHop = getInputParameter("rows");
 			Hop colsHop = getInputParameter("cols");
 			Hop sparsePrintHOP = getInputParameter("sparse");
@@ -850,15 +859,19 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			Hop linesepHop = getInputParameter("linesep");
 			long numNonZeroes = getInput().get(0).getNnz();
 
-	
 			long numRows = getInput().get(0).getDim1();
+			if (numRows < 0) 	// If number of rows is not known, set to default
+				numRows = specifiedRows;
 			long numCols = getInput().get(0).getDim2();
+			if (numCols < 0)	// If number of columns is not known, set to default
+				numCols = specifiedCols;
 			
-			long specifiedRows = 100;
-			long specifiedCols = 100;
-			boolean sparsePrint = false;
-			String sep = " ";
-			String linesep = "\n";
+			// Assume Defaults : 100 * 100, sep = " ", linesep = "\n", sparse = false
+			// String size in bytes is 36 + number_of_chars * 2
+			final long DEFAULT_SIZE = 36 + 2 *
+					(100 * 100 * AVERAGE_CHARS_PER_VALUE 	// Length for digits  
+					+ 1 * 100 * 99 							// Length for separator chars
+					+ 1* 100) ;								// Length for line separator chars
 			
 			try {
 			
@@ -884,6 +897,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				}
 				
 				long numberOfChars = -1;
+				
 				if (sparsePrint){
 					numberOfChars = AVERAGE_CHARS_PER_VALUE * numNonZeroes			// Length for value digits
 									+ AVERAGE_CHARS_PER_INDEX * 2L * numNonZeroes	// Length for row & column index
@@ -910,12 +924,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			} catch (HopsException e){
 				LOG.warn("Invalid values when trying to compute dims1, dims2 & nnz", e);
 				
-				// Assume Defaults : 100 * 100, sep = " ", linesep = "\n", sparse = false
-				return 36 * (100 * 100 * AVERAGE_CHARS_PER_VALUE 	// Length for digits  
-							+ 1 * 100 * 99 							// Length for separator chars
-							+ 1* 100);								// Length for line separator chars
+				return DEFAULT_SIZE;
 			}
-			
 			
 		} else {
 			double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);

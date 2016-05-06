@@ -588,7 +588,7 @@ public class TestUtils
 	public static String readDMLString(String filePath) {
 		FileSystem fs;
 		try {
-			StringBuffer sb =  new StringBuffer();
+			StringBuilder sb =  new StringBuilder();
 			fs = FileSystem.get(conf);
 			Path outDirectory = new Path(filePath);
 			FileStatus[] outFiles = fs.listStatus(outDirectory);

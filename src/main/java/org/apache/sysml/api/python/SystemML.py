@@ -226,7 +226,7 @@ class MLOutput(object):
 
     def getDF(self, sqlContext, varName):
         try:
-            jdf = self.jmlOut.getDF(sqlContext._scala_SQLContext, varName)
+            jdf = self.jmlOut.getDF(sqlContext._ssql_ctx, varName)
             df = DataFrame(jdf, sqlContext)
             return df
         except Py4JJavaError:

@@ -100,7 +100,7 @@ class MLContext(object):
         except Py4JJavaError:
             traceback.print_exc()
 
-    def executeScript(self, dmlScript, nargs=None, outputs=None, configFilePath=None):
+    def executeScript(self, dmlScript, nargs=None, outputs=None, isPyDML=False, configFilePath=None):
         """
         Executes the script in spark-mode by passing the arguments to the
         MLContext java class.
@@ -125,7 +125,7 @@ class MLContext(object):
                     self.registerOutput(out)
 
             # Execute script
-            jml_out = self.ml.executeScript(dmlScript, nargs, configFilePath)
+            jml_out = self.ml.executeScript(dmlScript, nargs, isPyDML, configFilePath)
             ml_out = MLOutput(jml_out, self.sc)
             return ml_out
         except Py4JJavaError:

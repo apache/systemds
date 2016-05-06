@@ -636,7 +636,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			//general case w/ schema transformation
 			else 
 				for( int i=rl; i<=ru; i++ ) {
-					String tmp = src.get(i-rl, j)!=null ? src.get(i-rl, j).toString() : null;
+					String tmp = src.get(i-rl, j-cl)!=null ? src.get(i-rl, j-cl).toString() : null;
 					set(i, j, UtilFunctions.stringToObject(_schema.get(j), tmp));
 				}
 		}

@@ -88,7 +88,7 @@ public class FrameReblockBuffer
 		_rlen = rlen;
 		_clen = clen;
 		_brlen = Math.max((int)(_bufflen/_clen), 1);
-		_bclen = 1;
+		_bclen = (int)clen;
 		
 		_schema = schema;
 	}
@@ -102,7 +102,7 @@ public class FrameReblockBuffer
 	 */
 	private long getBlockIndex( long ix, int blen )
 	{
-		return (ix-1)/_brlen+1;
+		return (ix-1)/blen+1;
 	}
 	
 	/**
@@ -113,7 +113,7 @@ public class FrameReblockBuffer
 	 */
 	private int getIndexInBlock( long ix, int blen )
 	{
-		return (int)((ix-1)%_brlen);
+		return (int)((ix-1)%blen);
 	}
 	
 	public int getSize()

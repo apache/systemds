@@ -55,6 +55,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 
 		setExpectedStdOut("total:5");
 		script.executeScript();
+		conn.close();
 	}
 
 	@Test
@@ -70,6 +71,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 
 		setExpectedStdOut("total:8.0");
 		script.executeScript();
+		conn.close();
 	}
 
 	// See: https://issues.apache.org/jira/browse/SYSTEMML-656
@@ -103,6 +105,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 
 		setExpectedStdOut("total:9");
 		script.executeScript();
+		conn.close();
 	}
 
 	// See: https://issues.apache.org/jira/browse/SYSTEMML-658
@@ -136,6 +139,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 
 		setExpectedStdOut("result:hellogoodbye");
 		script.executeScript();
+		conn.close();
 	}
 
 }

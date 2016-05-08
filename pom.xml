@@ -503,19 +503,10 @@
 								<exclude>**/*.mtd</exclude>
 								<exclude>**/target/**</exclude>
 								<exclude>**/README.md</exclude>
+                                <!-- Jupyter Notebooks -->
+                                <exclude>samples/jupyter-notebooks/*.ipynb</exclude>
 								<!-- Generated antlr files -->
-								<exclude>src/main/java/Dml.tokens</exclude>
-								<exclude>src/main/java/DmlLexer.tokens</exclude>
-								<exclude>src/main/java/Pydml.tokens</exclude>
-								<exclude>src/main/java/PydmlLexer.tokens</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/dml/DmlBaseListener.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/dml/DmlLexer.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/dml/DmlListener.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/dml/DmlParser.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/pydml/PydmlBaseListener.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/pydml/PydmlLexer.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/pydml/PydmlListener.java</exclude>
-								<exclude>src/main/java/org/apache/sysml/parser/pydml/PydmlParser.java</exclude>
+								<exclude>src/main/java/*.tokens</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/external/kMeans/kMeansWrapperOutput</exclude>
 								<exclude>src/test/scripts/functions/external/kMeans2/kMeansWrapperOutput1</exclude>
@@ -530,6 +521,16 @@
 								<exclude>src/test/scripts/functions/io/csv/in/transfusion_3.data/part-0</exclude>
 								<exclude>src/test/scripts/functions/io/csv/in/transfusion_3.data/part-1</exclude>
 								<exclude>src/test/scripts/functions/io/csv/in/transfusion_3.data.single</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/**/*.impute</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/**/*.map</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/**/*.mode</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/**/*.ndistinct</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/**/*.node</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/tfmtd_example/Bin/saleprice.bin</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/tfmtd_example/Bin/sqft.bin</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/tfmtd_example/column.names</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/tfmtd_example/dummycoded.column.names</exclude>
+                                <exclude>src/test/scripts/functions/jmlc/tfmtd_frame_example/tfmtd_frame</exclude>
 								<exclude>src/test/scripts/functions/transform/input/homes/homesNAN.csv.colnames</exclude>
 							</excludes>
 						</configuration>

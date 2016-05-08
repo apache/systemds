@@ -31,6 +31,23 @@
 
 	<fileSets>
 		<fileSet>
+			<directory>${basedir}</directory>
+			<includes>
+				<include>DISCLAIMER</include>
+			</includes>
+			<outputDirectory>META-INF</outputDirectory>
+		</fileSet>
+
+		<fileSet>
+			<directory>${basedir}/src/assembly/standalone</directory>
+			<includes>
+				<include>LICENSE</include>
+				<include>NOTICE</include>
+			</includes>
+			<outputDirectory>META-INF</outputDirectory>
+		</fileSet>
+
+		<fileSet>
 			<directory>${project.build.directory}/hadoop-test</directory>
 			<includes>
 				<include>**/*</include>
@@ -66,6 +83,15 @@
 				<include>*:slf4j-log4j*</include>
 				<include>*:systemml*</include>
 			</includes>
+			<unpackOptions>
+				<excludes>
+					<exclude>META-INF/ASL2.0</exclude>
+					<exclude>META-INF/DEPENDENCIES</exclude>
+					<exclude>META-INF/LICENSE.txt</exclude>
+					<exclude>META-INF/NOTICE.txt</exclude>
+					<exclude>META-INF/README.txt</exclude>
+				</excludes>
+			</unpackOptions>
 			<outputDirectory>.</outputDirectory>
 			<scope>provided</scope>
 			<unpack>true</unpack>

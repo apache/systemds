@@ -104,7 +104,8 @@ public class IndexingOp extends Hop
 		
 		//rewrite remove unnecessary right indexing
 		if( dimsKnown() && input.dimsKnown() 
-			&& getDim1() == input.getDim1() && getDim2() == input.getDim2() )
+			&& getDim1() == input.getDim1() && getDim2() == input.getDim2()
+			&& !(getDim1()==1 && getDim2()==1))
 		{
 			setLops( input.constructLops() );
 		}

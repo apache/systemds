@@ -233,9 +233,12 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		if( hi instanceof IndexingOp  ) //indexing op
 		{
 			Hop input = hi.getInput().get(0);
-			if( HopRewriteUtils.isEqualSize(hi, input) ) //equal dims
+			if( HopRewriteUtils.isEqualSize(hi, input)     //equal dims
+				&& !(hi.getDim1()==1 && hi.getDim2()==1) ) //not 1-1 matrix	
 			{
 				//equal dims of right indexing input and output -> no need for indexing
+				//(not applied for 1-1 matrices because low potential and issues w/ error
+				//handling if out of range indexing)
 				
 				//remove unnecessary right indexing
 				HopRewriteUtils.removeChildReference(parent, hi);

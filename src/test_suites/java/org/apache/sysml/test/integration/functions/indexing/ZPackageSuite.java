@@ -33,7 +33,8 @@ import org.junit.runners.Suite;
 	RightIndexingMatrixTest.class,
 	RightIndexingVectorTest.class,
 	
-	Jdk7IssueRightIndexingTest.class
+	Jdk7IssueRightIndexingTest.class,
+	UnboundedScalarRightIndexingTest.class,
 })
 
 

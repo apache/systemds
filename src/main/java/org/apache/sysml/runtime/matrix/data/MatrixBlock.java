@@ -651,7 +651,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public double getValue(int r, int c) 
 	{
 		//matrix bounds check 
-		if( r>rlen || c > clen )
+		if( r >= rlen || c >= clen )
 			throw new RuntimeException("indexes ("+r+","+c+") out of range ("+rlen+","+clen+")");
 		
 		return quickGetValue(r, c);
@@ -661,7 +661,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public void setValue(int r, int c, double v) 
 	{
 		//matrix bounds check 
-		if( r>rlen || c > clen )
+		if( r >= rlen || c >= clen )
 			throw new RuntimeException("indexes ("+r+","+c+") out of range ("+rlen+","+clen+")");
 
 		quickSetValue(r, c, v);

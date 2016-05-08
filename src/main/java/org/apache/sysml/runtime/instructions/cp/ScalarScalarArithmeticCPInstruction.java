@@ -51,7 +51,7 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 		// 2) Compute the result value & make an appropriate data object 
 		BinaryOperator dop = (BinaryOperator) _optr;
 		
-		if ( input1.getValueType() == ValueType.STRING 
+		if( input1.getValueType() == ValueType.STRING 
 			 || input2.getValueType() == ValueType.STRING ) 
 		{
 			//pre-check (for robustness regarding too long strings)
@@ -60,29 +60,29 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 			StringObject.checkMaxStringLength(val1.length() + val2.length());
 			
 			String rval = dop.fn.execute(val1, val2);
-			sores = (ScalarObject) new StringObject(rval);
+			sores = new StringObject(rval);
 		}
 		else if ( so1 instanceof IntObject && so2 instanceof IntObject ) {
 			if ( dop.fn instanceof Divide || dop.fn instanceof Power ) {
 				// If both inputs are of type INT then output must be an INT if operation is not divide or power
-				double rval = dop.fn.execute ( so1.getLongValue(), so2.getLongValue() );
-				sores = (ScalarObject) new DoubleObject(rval);
+				double rval = dop.fn.execute( so1.getLongValue(), so2.getLongValue() );
+				sores = new DoubleObject(rval);
 			}
 			else {
 				// If both inputs are of type INT then output must be an INT if operation is not divide or power
-				double tmpVal = dop.fn.execute ( so1.getLongValue(), so2.getLongValue() );
+				double tmpVal = dop.fn.execute( so1.getLongValue(), so2.getLongValue() );
 				//cast to long if no overflow, otherwise controlled exception
 				if( tmpVal > Long.MAX_VALUE )
 					throw new DMLRuntimeException("Integer operation created numerical result overflow ("+tmpVal+" > "+Long.MAX_VALUE+").");
-				long rval = (long) tmpVal; 
-				sores = (ScalarObject) new IntObject(rval);
+				sores = new IntObject((long) tmpVal);
 			}
 		}
-		
+		//NOTE: boolean-boolean arithmetic covered by general case below in order
+		//to maintain consistency with R
 		else {
 			// If either of the input is of type DOUBLE then output is a DOUBLE
 			double rval = dop.fn.execute ( so1.getDoubleValue(), so2.getDoubleValue() );
-			sores = (ScalarObject) new DoubleObject(rval); 
+			sores = new DoubleObject(rval); 
 		}
 		
 		// 3) Put the result value into ProgramBlock

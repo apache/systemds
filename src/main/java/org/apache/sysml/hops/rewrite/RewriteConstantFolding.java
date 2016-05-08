@@ -215,10 +215,11 @@ public class RewriteConstantFolding extends HopRewriteRule
 		
 		pb.execute( ec );
 		
-		//get scalar result (check before invocation)
+		//get scalar result (check before invocation) and create literal according
+		//to observed scalar output type (not hop type) for runtime consistency
 		ScalarObject so = (ScalarObject) ec.getVariable(TMP_VARNAME);
 		LiteralOp literal = null;
-		switch( bop.getValueType() ){
+		switch( so.getValueType() ){
 			case DOUBLE:  literal = new LiteralOp(so.getDoubleValue()); break;
 			case INT:     literal = new LiteralOp(so.getLongValue()); break;
 			case BOOLEAN: literal = new LiteralOp(so.getBooleanValue()); break;

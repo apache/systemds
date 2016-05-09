@@ -600,7 +600,9 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	 */
 	private ConvertedDMLSyntax convertPythonBuiltinFunctionToDMLSyntax(ParserRuleContext ctx, String namespace, String functionName, ArrayList<ParameterExpression> paramExpression,
 			Token fnName) {
-
+		if (!namespace.equals(DMLProgram.DEFAULT_NAMESPACE) || functions.contains(functionName)) {
+			return new ConvertedDMLSyntax(namespace, functionName, paramExpression);
+		}
 
 		String fileName = currentFile;
 		int line = ctx.start.getLine();
@@ -1345,7 +1347,8 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		// set function name
 		functionStmt.setName(ctx.name.getText());
 
-
+		validateFunctionName(functionStmt.getName(), ctx);
+		
 		if(ctx.body.size() > 0) {
 			// handle function body
 			// Create arraylist of one statement block
@@ -1380,6 +1383,8 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		// set function name
 		functionStmt.setName(ctx.name.getText());
 
+		validateFunctionName(functionStmt.getName(), ctx);
+		
 		// set other parameters
 		HashMap<String, String> otherParams = new HashMap<String,String>();
 		boolean atleastOneClassName = false;

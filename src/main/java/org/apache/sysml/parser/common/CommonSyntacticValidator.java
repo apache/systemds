@@ -21,6 +21,7 @@ package org.apache.sysml.parser.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -64,12 +65,14 @@ public abstract class CommonSyntacticValidator {
 	protected String _workingDir = ".";   //current working directory
 	protected Map<String,String> argVals = null;
 	protected String sourceNamespace = null;
-	// track imported scripts to prevent infinite recursion
+	// Track imported scripts to prevent infinite recursion
 	protected static ThreadLocal<HashMap<String, String>> _scripts = new ThreadLocal<HashMap<String, String>>() {
 		@Override protected HashMap<String, String> initialValue() { return new HashMap<String, String>(); }
 	};
-	// mapping of namespaces to full paths as defined only from source statements in this script (i.e., currentFile)
+	// Map namespaces to full paths as defined only from source statements in this script (i.e., currentFile)
 	protected HashMap<String, String> sources;
+	// Names of new internal and external functions defined in this script (i.e., currentFile)
+	protected Set<String> functions;
 	
 	public static void init() {
 		_scripts.get().clear();
@@ -81,6 +84,7 @@ public abstract class CommonSyntacticValidator {
 		this.argVals = argVals;
 		this.sourceNamespace = sourceNamespace;
 		sources = new HashMap<String, String>();
+		functions = new HashSet<String>();
 	}
 
 	protected void notifyErrorListeners(String message, int line, int charPositionInLine) {
@@ -151,6 +155,15 @@ public abstract class CommonSyntacticValidator {
 		}
 		else {
 			notifyErrorListeners("Namespace Conflict: '" + namespace + "' already defined as " + sources.get(namespace), ctx.start);
+		}
+	}
+	
+	protected void validateFunctionName(String name, ParserRuleContext ctx) {
+		if (!functions.contains(name)) {
+			functions.add(name);
+		}
+		else {
+			notifyErrorListeners("Function Name Conflict: '" + name + "' already defined in " + currentFile, ctx.start);
 		}
 	}
 	
@@ -662,7 +675,7 @@ public abstract class CommonSyntacticValidator {
 		}
 
 		// For builtin functions without LHS
-		if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE)) {
+		if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && !functions.contains(functionName)) {
 			if (printStatements.contains(functionName)){
 				setPrintStatement(ctx, functionName, paramExpression, info);
 				return;
@@ -688,7 +701,7 @@ public abstract class CommonSyntacticValidator {
 		}
 
 		// For builtin functions with LHS
-		if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE)){
+		if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && !functions.contains(functionName)){
 			final DataIdentifier ftarget = target;
 			Action f = new Action() {
 				@Override public void execute(Expression e) { setAssignmentStatement(ctx, info , ftarget, e); }

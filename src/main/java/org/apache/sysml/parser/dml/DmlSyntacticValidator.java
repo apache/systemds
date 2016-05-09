@@ -789,6 +789,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		// set function name
 		functionStmt.setName(ctx.name.getText());
 
+		validateFunctionName(ctx.name.getText(), ctx);
 
 		if(ctx.body.size() > 0) {
 			// handle function body
@@ -823,6 +824,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 		// set function name
 		functionStmt.setName(ctx.name.getText());
+
+		validateFunctionName(ctx.name.getText(), ctx);
 
 		// set other parameters
 		HashMap<String, String> otherParams = new HashMap<String,String>();

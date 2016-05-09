@@ -47,14 +47,14 @@ covariances = full(0, rows=sz, cols=1)
 # store for standard deviations used to compute pearson's r
 standard_deviations = full(0, rows=sz, cols=1)
 
-labels = D[,label_index]
+labels = D[,label_index-1]
 
 labelCorrection = 0
 if(label_measurement_level == 1):
     numLabels = nrow(labels)
     cmLabels = moment(labels,2)
     stdLabels = sqrt(cmLabels * (numLabels/(numLabels-1.0)) )
-    standard_deviations[label_index,1] = stdLabels
+    standard_deviations[label_index-1,0] = stdLabels
 else:
     labelCorrection = 1 - min(labels)
     labels = labels + labelCorrection
@@ -64,9 +64,9 @@ mn = colMins(D)
 num_distinct_values = mx-mn+1
 max_num_distinct_values = 0
 for(i1 in 1:nrow(feature_indices)):
-    feature_index1 = scalar(feature_indices[i1,1])
-    num = scalar(num_distinct_values[1,feature_index1])
-    if(scalar(feature_measurement_levels[i1,1]) == 0 & num >= max_num_distinct_values):
+    feature_index1 = scalar(feature_indices[i1-1,0])
+    num = scalar(num_distinct_values[0,feature_index1-1])
+    if(scalar(feature_measurement_levels[i1-1,0]) == 0 & num >= max_num_distinct_values):
         max_num_distinct_values = num
 distinct_label_values = full(0, rows=1, cols=1)
 contingencyTableSz = 1
@@ -94,15 +94,15 @@ featureMeans = full(0, rows=sz, cols=maxNumberOfGroups)
 featureSTDs = full(0, rows=sz, cols=maxNumberOfGroups)
 
 if(label_measurement_level == 0):
-    featureCounts[label_index,1:nrow(distinct_label_values)] = transpose(distinct_label_values)
-    parfor(i2 in 1:nrow(distinct_label_values)):
-        featureValues[label_index,i2] = i2-labelCorrection
+    featureCounts[label_index-1,0:nrow(distinct_label_values)] = transpose(distinct_label_values)
+    parfor(i2 in 1:nrow(distinct_label_values), check=0):
+        featureValues[label_index-1,i2-1] = i2-labelCorrection
 
 parfor(i3 in 1:nrow(feature_indices), check=0):
-    feature_index2 = scalar(feature_indices[i3,1])
-    feature_measurement_level = scalar(feature_measurement_levels[i3,1])
+    feature_index2 = scalar(feature_indices[i3-1,0])
+    feature_measurement_level = scalar(feature_measurement_levels[i3-1,0])
     
-    feature = D[,feature_index2]
+    feature = D[,feature_index2-1]
     
     if(feature_measurement_level == 0):
         featureCorrection = 1 - min(feature)
@@ -110,9 +110,9 @@ parfor(i3 in 1:nrow(feature_indices), check=0):
         
         if(label_measurement_level == feature_measurement_level):
             # categorical-categorical
-            tests[feature_index2,1] = 1
+            tests[feature_index2-1,0] = 1
             [pVal, contingencyTable, rowMarginals, colMarginals] = bivar_cc(labels, feature)
-            stats[feature_index2,1] = pVal
+            stats[feature_index2-1,0] = pVal
             
             sz3=1
             if(1==1):
@@ -122,42 +122,42 @@ parfor(i3 in 1:nrow(feature_indices), check=0):
             
             parfor(i4 in 1:nrow(contingencyTable), check=0):
                 parfor(j in 1:ncol(contingencyTable), check=0):
-                    contingencyTableLabelValues[1, ncol(contingencyTable)*(i4-1)+j] = i4-labelCorrection
-                    contingencyTableFeatureValues[1, ncol(contingencyTable)*(i4-1)+j] = j-featureCorrection 
+                    contingencyTableLabelValues[0, ncol(contingencyTable)*(i4-1)+j-1] = i4-labelCorrection
+                    contingencyTableFeatureValues[0, ncol(contingencyTable)*(i4-1)+j-1] = j-featureCorrection
             contingencyTableCounts = contingencyTable.reshape(rows=1, cols=sz3)
-            contingencyTablesCounts[feature_index2,1:sz3] = contingencyTableCounts
+            contingencyTablesCounts[feature_index2-1,0:sz3] = contingencyTableCounts
             
-            contingencyTablesLabelValues[feature_index2,1:sz3] = contingencyTableLabelValues
-            contingencyTablesFeatureValues[feature_index2,1:sz3] = contingencyTableFeatureValues
+            contingencyTablesLabelValues[feature_index2-1,0:sz3] = contingencyTableLabelValues
+            contingencyTablesFeatureValues[feature_index2-1,0:sz3] = contingencyTableFeatureValues
             
-            featureCounts[feature_index2,1:ncol(colMarginals)] = colMarginals
+            featureCounts[feature_index2-1,0:ncol(colMarginals)] = colMarginals
             parfor(i5 in 1:ncol(colMarginals), check=0):
-                featureValues[feature_index2,i5] = i5-featureCorrection
+                featureValues[feature_index2-1,i5-1] = i5-featureCorrection
         else:
             # label is scale, feature is categorical
-            tests[feature_index2,1] = 2
+            tests[feature_index2-1,0] = 2
             [pVal, frequencies, means, variances] = bivar_sc(labels, feature)
-            stats[feature_index2,1] = pVal
-            featureCounts[feature_index2,1:nrow(frequencies)] = transpose(frequencies)
+            stats[feature_index2-1,0] = pVal
+            featureCounts[feature_index2-1,0:nrow(frequencies)] = transpose(frequencies)
             parfor(i6 in 1:nrow(frequencies), check=0):
-                featureValues[feature_index2,i6] = i6 - featureCorrection
-            featureMeans[feature_index2,1:nrow(means)] = transpose(means)
-            featureSTDs[feature_index2,1:nrow(variances)] = transpose(sqrt(variances))
+                featureValues[feature_index2-1,i6-1] = i6 - featureCorrection
+            featureMeans[feature_index2-1,0:nrow(means)] = transpose(means)
+            featureSTDs[feature_index2-1,0:nrow(variances)] = transpose(sqrt(variances))
     else:
         if(label_measurement_level == feature_measurement_level):
             # scale-scale
-            tests[feature_index2,1] = 3
+            tests[feature_index2-1,0] = 3
             [r, covariance, stdX, stdY] = bivar_ss(labels, feature)
-            stats[feature_index2,1] = r
-            covariances[feature_index2,1] = covariance
-            standard_deviations[feature_index2,1] = stdY
+            stats[feature_index2-1,0] = r
+            covariances[feature_index2-1,0] = covariance
+            standard_deviations[feature_index2-1,0] = stdY
         else:
             # label is categorical, feature is scale
-            tests[feature_index2,1] = 2
+            tests[feature_index2-1,0] = 2
             [pVal, frequencies, means, variances] = bivar_sc(feature, labels)
-            stats[feature_index2,1] = pVal
-            featureMeans[feature_index2,1:nrow(means)] = transpose(means)
-            featureSTDs[feature_index2,1:nrow(variances)] = transpose(sqrt(variances))
+            stats[feature_index2-1,0] = pVal
+            featureMeans[feature_index2-1,0:nrow(means)] = transpose(means)
+            featureSTDs[feature_index2-1,0:nrow(variances)] = transpose(sqrt(variances))
     # end if(feature_measurement_level == 0)
 # end parfor(i3 in 1:nrow(feature_indices), check=0)
 

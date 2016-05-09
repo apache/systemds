@@ -1118,7 +1118,8 @@ public class MLContext {
 	}
 	
 	/**
-	 * Experimental API. Not supported in Python MLContext API.
+	 * Execute a script stored in a string.
+	 *
 	 * @param dmlScript
 	 * @return
 	 * @throws IOException
@@ -1127,12 +1128,22 @@ public class MLContext {
 	 */
 	public MLOutput executeScript(String dmlScript)
 			throws IOException, DMLException {
-		return compileAndExecuteScript(dmlScript, null, false, false, false, null);
+		return executeScript(dmlScript, false);
 	}
-	
+
+	public MLOutput executeScript(String dmlScript, boolean isPyDML)
+			throws IOException, DMLException {
+		return executeScript(dmlScript, isPyDML, null);
+	}
+
 	public MLOutput executeScript(String dmlScript, String configFilePath)
 			throws IOException, DMLException {
-		return compileAndExecuteScript(dmlScript, null, false, false, false, configFilePath);
+		return executeScript(dmlScript, false, configFilePath);
+	}
+
+	public MLOutput executeScript(String dmlScript, boolean isPyDML, String configFilePath)
+			throws IOException, DMLException {
+		return compileAndExecuteScript(dmlScript, null, false, false, isPyDML, configFilePath);
 	}
 
 	public MLOutput executeScript(String dmlScript, scala.collection.immutable.Map<String, String> namedArgs)
@@ -1140,9 +1151,19 @@ public class MLContext {
 		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), null);
 	}
 
+	public MLOutput executeScript(String dmlScript, scala.collection.immutable.Map<String, String> namedArgs, boolean isPyDML)
+			throws IOException, DMLException {
+		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), isPyDML, null);
+	}
+
 	public MLOutput executeScript(String dmlScript, scala.collection.immutable.Map<String, String> namedArgs, String configFilePath)
 			throws IOException, DMLException {
 		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), configFilePath);
+	}
+
+	public MLOutput executeScript(String dmlScript, scala.collection.immutable.Map<String, String> namedArgs, boolean isPyDML, String configFilePath)
+			throws IOException, DMLException {
+		return executeScript(dmlScript, new HashMap<String, String>(scala.collection.JavaConversions.mapAsJavaMap(namedArgs)), isPyDML, configFilePath);
 	}
 
 	public MLOutput executeScript(String dmlScript, Map<String, String> namedArgs)
@@ -1150,7 +1171,17 @@ public class MLContext {
 		return executeScript(dmlScript, namedArgs, null);
 	}
 
+	public MLOutput executeScript(String dmlScript, Map<String, String> namedArgs, boolean isPyDML)
+			throws IOException, DMLException {
+		return executeScript(dmlScript, namedArgs, isPyDML, null);
+	}
+
 	public MLOutput executeScript(String dmlScript, Map<String, String> namedArgs, String configFilePath)
+			throws IOException, DMLException {
+		return executeScript(dmlScript, namedArgs, false, configFilePath);
+	}
+
+	public MLOutput executeScript(String dmlScript, Map<String, String> namedArgs, boolean isPyDML, String configFilePath)
 			throws IOException, DMLException {
 		String [] args = new String[namedArgs.size()];
 		int i = 0;
@@ -1161,7 +1192,7 @@ public class MLContext {
 				args[i] = entry.getKey() + "=" + entry.getValue();
 			i++;
 		}
-		return compileAndExecuteScript(dmlScript, args, false, true, false, configFilePath);
+		return compileAndExecuteScript(dmlScript, args, false, true, isPyDML, configFilePath);
 	}
 
 	private void checkIfRegisteringInputAllowed() throws DMLRuntimeException {

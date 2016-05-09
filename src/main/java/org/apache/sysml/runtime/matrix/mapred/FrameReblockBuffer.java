@@ -32,6 +32,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * 
@@ -91,29 +92,6 @@ public class FrameReblockBuffer
 		_bclen = (int)clen;
 		
 		_schema = schema;
-	}
-	
-
-	/**
-	 * 
-	 * @param ix
-	 * @param blen
-	 * @return
-	 */
-	private long getBlockIndex( long ix, int blen )
-	{
-		return (ix-1)/blen+1;
-	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param blen
-	 * @return
-	 */
-	private int getIndexInBlock( long ix, int blen )
-	{
-		return (int)((ix-1)%blen);
 	}
 	
 	public int getSize()
@@ -194,8 +172,8 @@ public class FrameReblockBuffer
 		long cbi = -1, cbj = -1; //current block indexes
 		for( int i=0; i<_count; i++ )
 		{
-			long bi = getBlockIndex(_buff[i].getRow(), _brlen);
-			long bj = getBlockIndex(_buff[i].getCol(), _bclen);
+			long bi = UtilFunctions.computeBlockIndex(_buff[i].getRow(), _brlen);
+			long bj = UtilFunctions.computeBlockIndex(_buff[i].getCol(), _bclen);
 			
 			//output block and switch to next index pair
 			if( bi != cbi || bj != cbj ) {
@@ -206,8 +184,8 @@ public class FrameReblockBuffer
 				tmpBlock.reset(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)));
 			}
 			
-			int ci = getIndexInBlock(_buff[i].getRow(), _brlen);
-			int cj = getIndexInBlock(_buff[i].getCol(), _bclen);
+			int ci = UtilFunctions.computeCellInBlock(_buff[i].getRow(), _brlen);
+			int cj = UtilFunctions.computeCellInBlock(_buff[i].getCol(), _bclen);
 			tmpBlock.set(ci, cj, _buff[i].getObjVal());
 		}
 		
@@ -240,8 +218,8 @@ public class FrameReblockBuffer
 		long cbi = -1, cbj = -1; //current block indexes
 		for( int i=0; i<_count; i++ )
 		{
-			long bi = getBlockIndex(_buff[i].getRow(), _brlen);
-			long bj = getBlockIndex(_buff[i].getCol(), _bclen);
+			long bi = UtilFunctions.computeBlockIndex(_buff[i].getRow(), _brlen);
+			long bj = UtilFunctions.computeBlockIndex(_buff[i].getCol(), _bclen);
 			
 			//output block and switch to next index pair
 			if( bi != cbi || bj != cbj ) {
@@ -255,8 +233,8 @@ public class FrameReblockBuffer
 				
 			}
 			
-			int ci = getIndexInBlock(_buff[i].getRow(), _brlen);
-			int cj = getIndexInBlock(_buff[i].getCol(), _bclen);
+			int ci = UtilFunctions.computeCellInBlock(_buff[i].getRow(), _brlen);
+			int cj = UtilFunctions.computeCellInBlock(_buff[i].getCol(), _bclen);
 			tmpBlock.set(ci, cj, _buff[i].getObjVal());
 		}
 		

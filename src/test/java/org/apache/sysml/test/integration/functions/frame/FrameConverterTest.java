@@ -380,8 +380,8 @@ public class FrameConverterTest extends AutomatedTestBase
 				String val1 = UtilFunctions.objectToString(frame1.get(i, j));
 				String val2 = UtilFunctions.objectToString(frame2.get(i, j));				
 				if( UtilFunctions.compareTo(ValueType.STRING, val1, val2) != 0)
-					Assert.fail("Target value for cell ("+ i + "," + j + ") is " + val1 + 
-							", is not same as original value " + val2);
+					Assert.fail("The original data for cell ("+ i + "," + j + ") is " + val1 + 
+							", not same as the converted value " + val2);
 			}
 	}
 
@@ -392,7 +392,7 @@ public class FrameConverterTest extends AutomatedTestBase
 	 * @param frame2
 	 */
 	private void verifyFrameMatrixData(FrameBlock frame, MatrixBlock matrix) {
-		for ( int i=0; i<frame.getNumRows(); ++i )
+		for ( int i=0; i<frame.getNumRows(); i++ )
 			for( int j=0; j<frame.getNumColumns(); j++ )	{
 				Object val1 = UtilFunctions.doubleToObject(frame.getSchema().get(j),
 								UtilFunctions.objectToDouble(frame.getSchema().get(j), frame.get(i, j)));

@@ -46,6 +46,7 @@ import org.apache.sysml.parser.FunctionCallIdentifier;
 import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.ImportStatement;
+import org.apache.sysml.parser.IndexedIdentifier;
 import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.IterablePredicate;
 import org.apache.sysml.parser.LanguageException;
@@ -265,18 +266,73 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		setFileLineColumn(ctx.dataInfo.expr, ctx);
 	}
 
+	/**
+	 * DML uses 1-based indexing.;
+	 *
+	 * @param ctx the parse tree
+	 */
 	@Override
 	public void exitIndexedExpression(IndexedExpressionContext ctx) {
 		boolean isRowLower = (ctx.rowLower != null && !ctx.rowLower.isEmpty() && (ctx.rowLower.info.expr != null));
 		boolean isRowUpper = (ctx.rowUpper != null && !ctx.rowUpper.isEmpty() && (ctx.rowUpper.info.expr != null));
 		boolean isColLower = (ctx.colLower != null && !ctx.colLower.isEmpty() && (ctx.colLower.info.expr != null));
 		boolean isColUpper = (ctx.colUpper != null && !ctx.colUpper.isEmpty() && (ctx.colUpper.info.expr != null));
-		String name = ctx.name.getText();
-		exitIndexedExpressionHelper(ctx, name, ctx.dataInfo,
-				isRowLower ? ctx.rowLower.info : null,
-				isRowUpper ? ctx.rowUpper.info : null,
-				isColLower ? ctx.colLower.info : null,
-				isColUpper ? ctx.colUpper.info : null);
+		ExpressionInfo rowLower = isRowLower ? ctx.rowLower.info : null;
+		ExpressionInfo rowUpper = isRowUpper ? ctx.rowUpper.info : null;
+		ExpressionInfo colLower = isColLower ? ctx.colLower.info : null;
+		ExpressionInfo colUpper = isColUpper ? ctx.colUpper.info : null;
+
+		ctx.dataInfo.expr = new IndexedIdentifier(ctx.name.getText(), false, false);
+		setFileLineColumn(ctx.dataInfo.expr, ctx);
+
+		try {
+			ArrayList< ArrayList<Expression> > exprList = new ArrayList< ArrayList<Expression> >();
+
+			ArrayList<Expression> rowIndices = new ArrayList<Expression>();
+			ArrayList<Expression> colIndices = new ArrayList<Expression>();
+
+
+			if(!isRowLower && !isRowUpper) {
+				// both not set
+				rowIndices.add(null); rowIndices.add(null);
+			}
+			else if(isRowLower && isRowUpper) {
+				// both set
+				rowIndices.add(rowLower.expr);
+				rowIndices.add(rowUpper.expr);
+			}
+			else if(isRowLower && !isRowUpper) {
+				// only row set
+				rowIndices.add(rowLower.expr);
+			}
+			else {
+				notifyErrorListeners("incorrect index expression for row", ctx.start);
+				return;
+			}
+
+			if(!isColLower && !isColUpper) {
+				// both not set
+				colIndices.add(null); colIndices.add(null);
+			}
+			else if(isColLower && isColUpper) {
+				colIndices.add(colLower.expr);
+				colIndices.add(colUpper.expr);
+			}
+			else if(isColLower && !isColUpper) {
+				colIndices.add(colLower.expr);
+			}
+			else {
+				notifyErrorListeners("incorrect index expression for column", ctx.start);
+				return;
+			}
+			exprList.add(rowIndices);
+			exprList.add(colIndices);
+			((IndexedIdentifier) ctx.dataInfo.expr).setIndices(exprList);
+		}
+		catch(Exception e) {
+			notifyErrorListeners("cannot set the indices", ctx.start);
+			return;
+		}
 	}
 
 

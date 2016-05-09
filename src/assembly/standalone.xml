@@ -152,17 +152,21 @@
 	<!-- Include all the libraries needed to run in standalone mode. -->
 	<dependencySets>
 		<dependencySet>
-			<includes>
-				<include>*:antlr*</include>
-				<include>*:wink-json4j*</include>
-			</includes>
-			<outputDirectory>./lib</outputDirectory>
-			<scope>compile</scope>
+			<excludes>
+				<exclude>*:${artifactId}*</exclude> <!-- exclude from base dir -->
+				<!-- Exclude compile-scoped dependencies since they are in main artifact jar -->
+				<exclude>*:antlr4-annotations*</exclude>
+				<exclude>*:antlr4-runtime*</exclude>
+				<exclude>*:guava*</exclude>
+				<exclude>*:org.abego.treelayout.core*</exclude>
+				<exclude>*:wink-json4j*</exclude>
+			</excludes>
 		</dependencySet>
 
 		<dependencySet>
 			<includes>
 				<include>*:${artifactId}*</include>
+				<include>*:antlr4*</include>
 				<include>*:avro*</include>
 				<include>*:commons-cli*</include>
 				<include>*:commons-collections*</include>

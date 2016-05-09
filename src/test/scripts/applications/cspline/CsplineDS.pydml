@@ -127,12 +127,12 @@ def interpSpline(x: float, X: matrix[float], Y: matrix[float], K: matrix[float])
     i = nrow(X) - sum(ppred(X, x, ">=")) + 1
     
     #calc the y as per the algo docs
-    t = (x - X[i-1,1]) / ( X[i,1] - X[i-1,1])
+    t = (x - X[i-2,0]) / ( X[i-1,0] - X[i-2,0])
     
-    a =  K[i-1,1]*(X[i,1]-X[i-1,1]) - (Y[i,1]-Y[i-1,1])
-    b = -K[i,1]*(X[i,1]-X[i-1,1]) + (Y[i,1]-Y[i-1,1])
+    a =  K[i-2,0]*(X[i-1,0]-X[i-2,0]) - (Y[i-1,0]-Y[i-2,0])
+    b = -K[i-1,0]*(X[i-1,0]-X[i-2,0]) + (Y[i-1,0]-Y[i-2,0])
     
-    qm = (1-t)*Y[i-1,1] + t*Y[i,1] + t*(1-t)*(a*(1-t)+b*t)
+    qm = (1-t)*Y[i-2,0] + t*Y[i-1,0] + t*(1-t)*(a*(1-t)+b*t)
     
     q = scalar(qm)
 
@@ -153,10 +153,10 @@ def trunc(X: matrix[float], # nxm matrix
     
     if (r != by ):
         if (dir == "up"):
-            Y[1:r-by,] = X[1+by:r,]
+            Y[0:r-by,] = X[by:r,]
         else:
             if (dir == "down"):
-                Y[1:r-by,] = X[1:r-by,]
+                Y[0:r-by,] = X[0:r-by,]
             else:
                 stop("trunc unsupported direction " + dir)
 
@@ -172,16 +172,16 @@ def resize(X: matrix[float], #nxm matrix
     cn = c + cby
     Y = full(0.0, rn, cn)
     if (dir == "tr"): # top right
-        Y[1+rby:rn, 1:c] = X
+        Y[rby:rn, 0:c] = X
     else:
         if (dir == "bl"): # bottom left
-            Y[1:r, 1+cby:cn] = X
+            Y[0:r, cby:cn] = X
         else:
             if (dir == "tl"): # top left
-                Y[1+rby:rn, 1+cby:cn ] = X
+                Y[rby:rn, cby:cn ] = X
             else:
                 if (dir == "br"): # bottom right
-                    Y[1:r, 1:c] = X
+                    Y[0:r, 0:c] = X
                 else:
                     stop("Unknown direction dir => " + dir)
 

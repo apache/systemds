@@ -43,8 +43,8 @@ numFeatures = ncol(D)
 # Compute the feature counts for each class
 classFeatureCounts = full(0, rows=numClasses, cols=numFeatures)
 parfor (i in 1:numFeatures):
-    Col = D[,i]
-    classFeatureCounts[,i] = aggregate(target=Col, groups=C, fn="sum", ngroups=numClasses)
+    Col = D[,i-1]
+    classFeatureCounts[,i-1] = aggregate(target=Col, groups=C, fn="sum", ngroups=numClasses)
 
 # Compute the total feature count for each class 
 # and add the number of features to this sum

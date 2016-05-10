@@ -20,7 +20,9 @@
 package org.apache.sysml.test.integration.functions.frame;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
@@ -40,10 +42,16 @@ import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriter;
 import org.apache.sysml.runtime.io.FrameWriterFactory;
+import org.apache.sysml.runtime.io.MatrixReader;
+import org.apache.sysml.runtime.io.MatrixReaderFactory;
+import org.apache.sysml.runtime.io.MatrixWriter;
+import org.apache.sysml.runtime.io.MatrixWriterFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -53,6 +61,8 @@ import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+
+
 public class FrameConverterTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/frame/";
@@ -60,13 +70,32 @@ public class FrameConverterTest extends AutomatedTestBase
 
 	private final static int rows = 1593;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
-	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.DOUBLE, ValueType.INT, ValueType.BOOLEAN};	
+	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.DOUBLE, ValueType.INT, ValueType.BOOLEAN};
+
+	private final static List<ValueType> schemaMixedLargeListStr = Collections.nCopies(600, ValueType.STRING);
+	private final static List<ValueType> schemaMixedLargeListDble  = Collections.nCopies(600, ValueType.DOUBLE);
+	private final static List<ValueType> schemaMixedLargeListInt  = Collections.nCopies(600, ValueType.INT);
+	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(600, ValueType.BOOLEAN);
+	private static List<ValueType> schemaMixedLargeList = null;
+	static {
+		schemaMixedLargeList = new ArrayList<ValueType>(schemaMixedLargeListStr);
+		schemaMixedLargeList.addAll(schemaMixedLargeListDble);
+		schemaMixedLargeList.addAll(schemaMixedLargeListInt);
+		schemaMixedLargeList.addAll(schemaMixedLargeListBool);
+	}
+
+	private static ValueType[] schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
+	static {
+		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
+	}
 	
 	private enum ConvType {
 		CSV2BIN,
 		BIN2CSV,
 		TXTCELL2BIN,
-		BIN2TXTCELL
+		BIN2TXTCELL,
+		MAT2BIN,
+		BIN2MAT,
 	}
 	
 	@Override
@@ -115,11 +144,41 @@ public class FrameConverterTest extends AutomatedTestBase
 		runFrameConverterTest(schemaMixed, ConvType.BIN2TXTCELL);
 	}
 
+	@Test
+	public void testFrameStringsMatrixBinSpark()  {
+		runFrameConverterTest(schemaStrings, ConvType.MAT2BIN);
+	}
+	
+	@Test
+	public void testFrameMixedMatrixBinSpark()  {
+		runFrameConverterTest(schemaMixed, ConvType.MAT2BIN);
+	}
+	
+	@Test
+	public void testFrameStringsBinMatrixSpark()  {
+		runFrameConverterTest(schemaStrings, ConvType.BIN2MAT);
+	}
+	
+	@Test
+	public void testFrameMixedBinMatrixSpark()  {
+		runFrameConverterTest(schemaMixed, ConvType.BIN2MAT);
+	}
+	
+	@Test
+	public void testFrameMixedMultiColBlkMatrixBinSpark()  {
+		runFrameConverterTest(schemaMixedLarge, ConvType.MAT2BIN);
+	}
+	
+	@Test
+	public void testFrameMixedMultiColBlkBinMatrixSpark()  {
+		runFrameConverterTest(schemaMixedLarge, ConvType.BIN2MAT);
+	}
+	
 	
 	/**
 	 * 
-	 * @param sparseM1
-	 * @param sparseM2
+	 * @param schema
+	 * @param type
 	 * @param instType
 	 */
 	private void runFrameConverterTest( ValueType[] schema, ConvType type)
@@ -160,10 +219,46 @@ public class FrameConverterTest extends AutomatedTestBase
 					oinfo = OutputInfo.BinaryBlockOutputInfo;
 					iinfo = InputInfo.TextCellInputInfo;
 					break;
+				case MAT2BIN: 
+				case BIN2MAT:
+					oinfo = OutputInfo.BinaryBlockOutputInfo;
+					iinfo = InputInfo.BinaryBlockInputInfo;
+					break;
 				default: 
 					throw new RuntimeException("Unsuported converter type: "+type.toString());
  			}
 			
+			
+			if(type == ConvType.MAT2BIN || type == ConvType.BIN2MAT)
+				runMatrixConverterAndVerify(schema, A, type, iinfo, oinfo);
+			else
+				runConverterAndVerify(schema, A, type, iinfo, oinfo);
+
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException(ex);
+		}
+		finally
+		{
+			DMLScript.rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
+	}
+	
+	/**
+	 * 
+	 * @param schema
+	 * @param A
+	 * @param type
+	 * @param iinfo
+	 * @param oinfo
+	 * @param instType
+	 */
+	private void runConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, InputInfo iinfo, OutputInfo oinfo )
+	{
+		try
+		{
 			//initialize the frame data.
 			List<ValueType> lschema = Arrays.asList(schema);
 			FrameBlock frame1 = new FrameBlock(lschema);
@@ -172,10 +267,10 @@ public class FrameConverterTest extends AutomatedTestBase
 			//write frame data to hdfs
 			FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo);
 			writer.writeFrameToHDFS(frame1, input("A"), rows, schema.length);
-
+	
 			//run converter under test
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, schema.length, -1, -1, -1);
-			runConverter(type, mc, Arrays.asList(schema), input("A"), output("B"));
+			runConverter(type, mc, null, Arrays.asList(schema), input("A"), output("B"));
 			
 			//read frame data from hdfs
 			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
@@ -188,10 +283,73 @@ public class FrameConverterTest extends AutomatedTestBase
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
-		finally
+	}
+	
+	/**
+	 * 
+	 * @param schema
+	 * @param A
+	 * @param type
+	 * @param iinfo
+	 * @param oinfo
+	 * @param instType
+	 */
+	private void runMatrixConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, InputInfo iinfo, OutputInfo oinfo )
+	{
+		try
 		{
-			DMLScript.rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			MatrixCharacteristics mcMatrix = new MatrixCharacteristics(rows, schema.length, 1000, 1000, 0);
+			MatrixCharacteristics mcFrame = new MatrixCharacteristics(rows, schema.length, -1, -1, -1);
+			
+			MatrixBlock matrixBlock1 = null;
+			FrameBlock frame1 = null;
+			
+			if(type == ConvType.MAT2BIN) {
+				//initialize the matrix (dense) data.
+				matrixBlock1 = new MatrixBlock(rows, schema.length, false);
+				matrixBlock1.init(A, rows, schema.length);
+				
+				//write matrix data to hdfs
+				MatrixWriter matWriter = MatrixWriterFactory.createMatrixWriter(oinfo);
+				matWriter.writeMatrixToHDFS(matrixBlock1, input("A"), rows, schema.length, 
+						mcMatrix.getRowsPerBlock(), mcMatrix.getColsPerBlock(), mcMatrix.getNonZeros());
+			} 
+			else {
+				//initialize the frame data.
+				List<ValueType> lschema = Arrays.asList(schema);
+				frame1 = new FrameBlock(lschema);
+				initFrameData(frame1, A, lschema);
+
+				//write frame data to hdfs
+				FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo);
+				writer.writeFrameToHDFS(frame1, input("A"), rows, schema.length);
+			}
+	
+			//run converter under test
+			runConverter(type, mcFrame, mcMatrix, Arrays.asList(schema), input("A"), output("B"));
+			
+			if(type == ConvType.MAT2BIN) {
+				//read frame data from hdfs
+				FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
+				FrameBlock frame2 = reader.readFrameFromHDFS(output("B"), rows, schema.length);
+
+				//verify input and output frame/matrix
+				verifyFrameMatrixData(frame2, matrixBlock1);
+			} 
+			else { 
+				//read matrix data from hdfs
+				MatrixReader matReader = MatrixReaderFactory.createMatrixReader(iinfo);
+				MatrixBlock matrixBlock2 = matReader.readMatrixFromHDFS(output("B"), rows, schema.length, 
+						mcMatrix.getRowsPerBlock(), mcMatrix.getColsPerBlock(), mcMatrix.getNonZeros());
+
+				//verify input and output frame/matrix
+				verifyFrameMatrixData(frame1, matrixBlock2);
+			}
+			
+		}
+		catch(Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException(ex);
 		}
 	}
 	
@@ -222,13 +380,30 @@ public class FrameConverterTest extends AutomatedTestBase
 				String val1 = UtilFunctions.objectToString(frame1.get(i, j));
 				String val2 = UtilFunctions.objectToString(frame2.get(i, j));				
 				if( UtilFunctions.compareTo(ValueType.STRING, val1, val2) != 0)
-					Assert.fail("Target value for cell ("+ i + "," + j + ") is " + val1 + 
-							", is not same as original value " + val2);
+					Assert.fail("The original data for cell ("+ i + "," + j + ") is " + val1 + 
+							", not same as the converted value " + val2);
 			}
 	}
 
+
+	/**
+	 * 
+	 * @param frame1
+	 * @param frame2
+	 */
+	private void verifyFrameMatrixData(FrameBlock frame, MatrixBlock matrix) {
+		for ( int i=0; i<frame.getNumRows(); i++ )
+			for( int j=0; j<frame.getNumColumns(); j++ )	{
+				Object val1 = UtilFunctions.doubleToObject(frame.getSchema().get(j),
+								UtilFunctions.objectToDouble(frame.getSchema().get(j), frame.get(i, j)));
+				Object val2 = UtilFunctions.doubleToObject(frame.getSchema().get(j), matrix.getValue(i, j));
+				if(( UtilFunctions.compareTo(frame.getSchema().get(j), val1, val2)) != 0)
+					Assert.fail("Frame value for cell ("+ i + "," + j + ") is " + val1 + 
+							", is not same as matrix value " + val2);
+			}
+	}
 	
-	
+
 	/**
 	 * @param oinfo 
 	 * @param frame1
@@ -240,7 +415,8 @@ public class FrameConverterTest extends AutomatedTestBase
 	 */
 
 	@SuppressWarnings("unchecked")
-	private void runConverter(ConvType type, MatrixCharacteristics mc, List<ValueType> schema, String fnameIn, String fnameOut)
+	private void runConverter(ConvType type, MatrixCharacteristics mc, MatrixCharacteristics mcMatrix, 
+			List<ValueType> schema, String fnameIn, String fnameOut)
 		throws DMLRuntimeException, IOException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext) ExecutionContextFactory.createContext();		
@@ -282,6 +458,24 @@ public class FrameConverterTest extends AutomatedTestBase
 				rddOut.saveAsTextFile(fnameOut);
 				break;
 			}
+			case MAT2BIN: {
+				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				JavaPairRDD<MatrixIndexes,MatrixBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils.matrixBlockToBinaryBlock(sc, rddIn, mcMatrix);
+				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
+				break;
+			}
+			case BIN2MAT: {
+				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
+				JavaPairRDD<MatrixIndexes,MatrixBlock> rddOut = FrameRDDConverterUtils.binaryBlockToMatrixBlock(rddIn, mc, mcMatrix);
+				rddOut.saveAsHadoopFile(fnameOut, MatrixIndexes.class, MatrixBlock.class, oinfo.outputFormatClass);
+				break;
+			}
+			default: 
+				throw new RuntimeException("Unsuported converter type: "+type.toString());
 		}
 		
 		sec.close();

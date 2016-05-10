@@ -46,10 +46,15 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.FrameReblockBuffer;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.UtilFunctions;
+
+
 
 public class FrameRDDConverterUtils 
 {
@@ -212,7 +217,85 @@ public class FrameRDDConverterUtils
 		}
 	}
 	
+	//=====================================
+	// Matrix block <--> Binary block
 
+	/**
+	 * 
+	 * @param sc
+	 * @param input
+	 * @param mcIn
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<LongWritable, FrameBlock> matrixBlockToBinaryBlock(JavaSparkContext sc,
+			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn)
+		throws DMLRuntimeException 
+	{
+		//Do actual conversion
+		JavaPairRDD<Long, FrameBlock> output = matrixBlockToBinaryBlockLongIndex(sc,input, mcIn);
+		
+		//convert input rdd to serializable LongWritable/frame block
+		JavaPairRDD<LongWritable,FrameBlock> out = 
+				output.mapToPair(new LongFrameToLongWritableFrameFunction());
+		
+		return out;
+	}
+	
+
+	/**
+	 * 
+	 * @param sc
+	 * @param input
+	 * @param mcIn
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<Long, FrameBlock> matrixBlockToBinaryBlockLongIndex(JavaSparkContext sc,
+			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn)
+		throws DMLRuntimeException 
+	{
+		JavaPairRDD<Long, FrameBlock> out = null;
+		
+		if(mcIn.getCols() > mcIn.getColsPerBlock()) {
+			
+			out = input.flatMapToPair(new MatrixToBinaryBlockFunction(mcIn));
+			
+			//aggregate partial frame blocks
+			if(mcIn.getCols() > mcIn.getColsPerBlock())
+				out = RDDAggregateUtils.mergeByFrameKey( out ); 	//TODO: Will need better merger
+		}
+		else
+			out = input.mapToPair(new MatrixToBinaryBlockOneColumnBlockFunction(mcIn));
+		
+		return out;
+	}
+	
+
+	
+	/**
+	 * 
+	 * @param in
+	 * @param mcIn
+	 * @param props
+	 * @param strict
+	 * @return
+	 */
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockToMatrixBlock(JavaPairRDD<LongWritable,FrameBlock> input, 
+			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) 
+	{
+		//convert binary block to matrix block
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input
+				.flatMapToPair(new BinaryBlockToMatrixBlockFunction(mcIn, mcOut));
+	
+		//aggregate partial matrix blocks
+		out = RDDAggregateUtils.mergeByKey( out ); 	
+		
+		return out;
+	}
+	
+
+	
 	/////////////////////////////////
 	// CSV-SPECIFIC FUNCTIONS
 	
@@ -303,7 +386,7 @@ public class FrameRDDConverterUtils
 		private boolean _fill = false;
 		private int _maxRowsPerBlock = -1; 
 		
-		protected static final int BUFFER_SIZE = 2 * 1000 * 1000; //2M elements 
+		protected static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block 
 
 		
 		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean hasHeader, String delim, boolean fill)
@@ -437,7 +520,7 @@ public class FrameRDDConverterUtils
 		private static final long serialVersionUID = -729614449626680946L;
 
 		//internal buffer size (aligned w/ default matrix block size)
-		protected static final int BUFFER_SIZE = 4 * 1000 * 1000; //4M elements (32MB)
+		protected static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements (8MB), size of default matrix block
 		protected int _bufflen = -1;
 		
 		protected long _rlen = -1;
@@ -518,5 +601,183 @@ public class FrameRDDConverterUtils
 		
 			return ret;
 		}
-	}	
+	}
+	
+	// MATRIX Block <---> Binary Block specific functions
+	private static class MatrixToBinaryBlockFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>,Long,FrameBlock>
+	{
+		private static final long serialVersionUID = 6205071301074768437L;
+
+		private int _brlen = -1;
+		private int _bclen = -1;
+		private long _clen = -1;
+		private int _maxRowsPerBlock = -1;
+	
+		
+		protected static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements (Default matrix block size) 
+
+		
+		public MatrixToBinaryBlockFunction(MatrixCharacteristics mc)
+		{
+			_brlen = mc.getRowsPerBlock();
+			_bclen = mc.getColsPerBlock();
+			_clen = mc.getCols();
+			_maxRowsPerBlock = Math.max((int) (BUFFER_SIZE/_clen), 1);
+		}
+
+		@Override
+		public Iterable<Tuple2<Long, FrameBlock>> call(Tuple2<MatrixIndexes,MatrixBlock> arg0) 
+			throws Exception 
+		{
+			ArrayList<Tuple2<Long,FrameBlock>> ret = new ArrayList<Tuple2<Long,FrameBlock>>();
+
+			MatrixIndexes matrixIndexes = arg0._1();
+			MatrixBlock matrixBlock = arg0._2();
+			
+			//Frame Index (Row id, with base 1)
+			Long rowix = new Long((matrixIndexes.getRowIndex()-1)*_brlen+1);
+
+			//Global index within frame blocks
+			long colixLow = (int)((matrixIndexes.getColumnIndex()-1)*_bclen+1);
+			long colixHigh = Math.min(colixLow+matrixBlock.getMaxColumn()-1, _clen);
+			
+			//Index within a local matrix block
+			int iColLowMat = UtilFunctions.computeCellInBlock(colixLow, _bclen);
+			int iColHighMat = UtilFunctions.computeCellInBlock(colixHigh, _bclen);
+
+			FrameBlock tmpBlock = DataConverter.convertToFrameBlock(matrixBlock);
+
+			int iRowLow = 0;	//Index within a local frame block
+			while(iRowLow < matrixBlock.getMaxRow()) {
+				int iRowHigh = Math.min(iRowLow+_maxRowsPerBlock-1,  matrixBlock.getMaxRow()-1);
+				
+				FrameBlock tmpBlock2 = null;
+				//All rows from matrix block can fit into single frame block, no need for slicing 
+				if(iRowLow == 0 && iRowHigh == matrixBlock.getMaxRow()-1)
+					tmpBlock2 = tmpBlock;
+				else
+					tmpBlock2 = tmpBlock.sliceOperations(iRowLow, iRowHigh, iColLowMat, iColHighMat, tmpBlock2);
+				
+				//If Matrix has only one column block, then simply assigns converted block to frame block
+				if(colixLow == 0 && colixHigh == matrixBlock.getMaxColumn()-1)
+					ret.add(new Tuple2<Long, FrameBlock>(rowix+iRowLow, tmpBlock2));
+				else
+				{
+					FrameBlock frameBlock = new FrameBlock((int)_clen, ValueType.STRING);
+					frameBlock.ensureAllocatedColumns(iRowHigh-iRowLow+1);
+					
+					frameBlock.copy(0, iRowHigh-iRowLow, (int)colixLow-1, (int)colixHigh-1, tmpBlock2);
+					ret.add(new Tuple2<Long, FrameBlock>(rowix+iRowLow, frameBlock));
+				}
+				iRowLow = iRowHigh+1;
+			}
+			return ret;
+		}
+	}
+
+	/*
+	 * This function supports if matrix has only one column block.
+	 */
+	private static class MatrixToBinaryBlockOneColumnBlockFunction implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>,Long,FrameBlock>
+	{
+		private static final long serialVersionUID = 3716019666116660815L;
+
+		private int _brlen = -1;
+		private int _bclen = -1;
+		private long _clen = -1;
+	
+		
+		public MatrixToBinaryBlockOneColumnBlockFunction(MatrixCharacteristics mc)
+		{
+			_brlen = mc.getRowsPerBlock();
+			_bclen = mc.getColsPerBlock();
+			_clen = mc.getCols();
+		}
+
+		@Override
+		public Tuple2<Long, FrameBlock> call(Tuple2<MatrixIndexes,MatrixBlock> arg0) 
+			throws Exception 
+		{
+			if(_clen > _bclen)
+				throw new DMLRuntimeException("The input matrix has more than one column block, this function supports only one column block.");
+
+			MatrixIndexes matrixIndexes = arg0._1();
+			MatrixBlock matrixBlock = arg0._2();
+			
+			//Frame Index (Row id, with base 1)
+			Long rowix = new Long((matrixIndexes.getRowIndex()-1)*_brlen+1);
+
+			FrameBlock frameBlock = DataConverter.convertToFrameBlock(matrixBlock);
+			return new Tuple2<Long, FrameBlock>(rowix, frameBlock);
+		}
+	}
+
+	
+	/**
+	 * 
+	 */
+	private static class BinaryBlockToMatrixBlockFunction implements PairFlatMapFunction<Tuple2<LongWritable,FrameBlock>,MatrixIndexes, MatrixBlock> 
+	{
+		private static final long serialVersionUID = -2654986510471835933L;
+		
+		MatrixCharacteristics _mcIn, _mcOut;
+
+		public BinaryBlockToMatrixBlockFunction(MatrixCharacteristics mcIn,
+				MatrixCharacteristics mcOut) {
+				
+				_mcIn = mcIn;		//Frame Characteristics
+				_mcOut = mcOut;		//Matrix Characteristics
+		}
+
+		@Override
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<LongWritable, FrameBlock> arg0)
+			throws Exception 
+		{
+			long rowIndex = arg0._1().get();
+			FrameBlock blk = arg0._2();
+			
+			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+			
+			int _brlenMatrix = _mcOut.getRowsPerBlock();
+			int _bclenMatrix = _mcOut.getColsPerBlock();
+			long _rlen = _mcIn.getRows();
+			long _clen = _mcIn.getCols();
+			
+			long lRowId = 0;
+			while (lRowId < blk.getNumRows()) {
+				// Global Row indices (indexes) across all frame blocks  
+				long endRow = ((rowIndex+lRowId-1)/_brlenMatrix+1) * _brlenMatrix;
+				long begRow = Math.max(endRow-_brlenMatrix+1, 0);
+				endRow = Math.min(endRow, _rlen);
+				
+				// Local Row indices (indexes) within a matrix block  
+				long begRowMat = UtilFunctions.computeCellInBlock(begRow, _brlenMatrix);
+				long endRowMat = UtilFunctions.computeCellInBlock(endRow, _brlenMatrix);
+				
+				long lColId = 0;
+				while (lColId < blk.getNumColumns()) {
+					// Global Column index across all frame blocks  
+					long endCol = Math.min(lColId+_bclenMatrix-1, _clen-1);
+
+					// Local Column indices (indexes) within a matrix block  
+					long begColMat = UtilFunctions.computeCellInBlock(lColId+1, _bclenMatrix);
+					long endColMat = UtilFunctions.computeCellInBlock(endCol+1, _bclenMatrix);
+
+					FrameBlock tmpFrame = new FrameBlock();
+					tmpFrame = blk.sliceOperations((int)lRowId, (int)(lRowId+endRowMat-begRowMat), (int)lColId, (int)endCol, tmpFrame);
+
+					MatrixIndexes matrixIndexes = new MatrixIndexes(UtilFunctions.computeBlockIndex(begRow+1, _brlenMatrix),UtilFunctions.computeBlockIndex(lColId+1, _bclenMatrix));
+
+					MatrixBlock matrixBlocktmp = DataConverter.convertToMatrixBlock(tmpFrame);
+					MatrixBlock matrixBlock = matrixBlocktmp.leftIndexingOperations(matrixBlocktmp, (int)begRowMat, (int)endRowMat, (int)begColMat, (int)endColMat, new MatrixBlock(), true);
+					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(matrixIndexes, matrixBlock));
+					
+					lColId = endCol+1;
+				}
+				lRowId += (endRow-begRow+1);
+			}
+			
+			return ret;
+		}
+	}
 }

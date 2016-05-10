@@ -25,7 +25,9 @@ import java.io.IOException;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -139,6 +141,62 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 
 		setExpectedStdOut("result:hellogoodbye");
 		script.executeScript();
+		conn.close();
+	}
+
+	@Test
+	public void testScalarOutputLong() throws DMLException {
+		Connection conn = new Connection();
+		String str = "outInteger = 5;\nwrite(outInteger, './tmp/outInteger');";
+		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outInteger" }, false);
+
+		long result = script.executeScript().getLong("outInteger");
+		Assert.assertEquals(5, result);
+		conn.close();
+	}
+
+	@Test
+	public void testScalarOutputDouble() throws DMLException {
+		Connection conn = new Connection();
+		String str = "outDouble = 1.23;\nwrite(outDouble, './tmp/outDouble');";
+		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outDouble" }, false);
+
+		double result = script.executeScript().getDouble("outDouble");
+		Assert.assertEquals(1.23, result, 0);
+		conn.close();
+	}
+
+	@Test
+	public void testScalarOutputString() throws DMLException {
+		Connection conn = new Connection();
+		String str = "outString = 'hello';\nwrite(outString, './tmp/outString');";
+		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outString" }, false);
+
+		String result = script.executeScript().getString("outString");
+		Assert.assertEquals("hello", result);
+		conn.close();
+	}
+
+	@Test
+	public void testScalarOutputBoolean() throws DMLException {
+		Connection conn = new Connection();
+		String str = "outBoolean = FALSE;\nwrite(outBoolean, './tmp/outBoolean');";
+		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outBoolean" }, false);
+
+		boolean result = script.executeScript().getBoolean("outBoolean");
+		Assert.assertEquals(false, result);
+		conn.close();
+	}
+
+	@Test
+	public void testScalarOutputScalarObject() throws DMLException {
+		Connection conn = new Connection();
+		String str = "outDouble = 1.23;\nwrite(outDouble, './tmp/outDouble');";
+		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outDouble" }, false);
+
+		ScalarObject so = script.executeScript().getScalarObject("outDouble");
+		double result = so.getDoubleValue();
+		Assert.assertEquals(1.23, result, 0);
 		conn.close();
 	}
 

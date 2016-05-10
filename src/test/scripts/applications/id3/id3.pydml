@@ -118,8 +118,8 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
     #if no attributes remain then return a leaf node with the most popular label    
     if(num_non_zero_labels == 1 | num_remaining_attrs == 0 | num_samples < minsplit):
         nodes = full(0, rows=1, cols=2)
-        nodes[1,1] = -1
-        nodes[1,2] = most_popular_label
+        nodes[0,0] = -1
+        nodes[0,1] = most_popular_label
         edges = full(-1, rows=1, cols=1)
     else:
         #computing gains for all available attributes using parfor
@@ -135,16 +135,16 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
         sz = nrow(attributes)
         gains = full(0, rows=sz, cols=1)
         for(i in 1:nrow(attributes)):
-            if(scalar(attributes[i,1]) == 1):
-                attr_vals = X[,i]
+            if(scalar(attributes[i-1,0]) == 1):
+                attr_vals = X[,i-1]
                 attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
                 
                 hxt_vector = full(0, rows=nrow(attr_domain), cols=1)
                 
                 for(j in 1:nrow(attr_domain), check=0):
-                    if(scalar(attr_domain[j,1]) != 0):
+                    if(scalar(attr_domain[j-1,0]) != 0):
                         val = j
-                        Tj = X_subset * ppred(X[,i], val, "==")
+                        Tj = X_subset * ppred(X[,i-1], val, "==")
                         
                         #entropy = compute_entropy(Tj, y)
                         hist_labels1 = aggregate(target=Tj, groups=y, fn="sum")
@@ -155,17 +155,17 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
                         entropy_vector = -pi*log(log_term)
                         entropy = sum(entropy_vector)
                         
-                        hxt_vector[j,1] = sum(Tj)/sum(X_subset)*entropy
+                        hxt_vector[j-1,0] = sum(Tj)/sum(X_subset)*entropy
                 hxt = sum(hxt_vector)
-                gains[i,1] = (ht - hxt)
+                gains[i-1,0] = (ht - hxt)
         
         #pick out attr with highest gain
         best_attr = -1
         max_gain = 0
         for(i4 in 1:nrow(gains)):
             #print("best attr " + best_attr + " max gain " + max_gain)
-            if(scalar(attributes[i4,1]) == 1):
-                g = scalar(gains[i4,1])
+            if(scalar(attributes[i4-1,0]) == 1):
+                g = scalar(gains[i4-1,0])
                 if(best_attr == -1 | max_gain <= g):
                     max_gain = g
                     best_attr = i4
@@ -173,13 +173,13 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
         print("best attribute is: " + best_attr)
         print("gain is: " + max_gain)
         
-        attr_vals = X[,best_attr]
+        attr_vals = X[,best_attr-1]
         attr_domain = aggregate(target=X_subset, groups=attr_vals, fn="sum")
         if (1==1):
             print(" ")
         
         new_attributes = attributes
-        new_attributes[best_attr, 1] = 0
+        new_attributes[best_attr-1, 0] = 0
         
         max_sz_subtree = 2*sum(X_subset)
         sz1 = 0
@@ -194,20 +194,20 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
         
         for(i1 in 1:nrow(attr_domain), check=0):
             
-            Ti = X_subset * ppred(X[,best_attr], i1, "==")
+            Ti = X_subset * ppred(X[,best_attr-1], i1, "==")
             num_nodes_Ti = sum(Ti)
             
             if(num_nodes_Ti > 0):
                 [nodesi, edgesi] = id3_learn(X, y, Ti, new_attributes, minsplit)
             
                 start_pt = 1+(i1-1)*max_sz_subtree
-                tempNodeStore[,start_pt:(start_pt+nrow(nodesi)-1)] = t(nodesi)
-                numSubtreeNodes[i1,1] = nrow(nodesi)
-                if(nrow(edgesi)!=1 | ncol(edgesi)!=1 | scalar(edgesi[1,1])!=-1):
-                    tempEdgeStore[,start_pt:(start_pt+nrow(edgesi)-1)] = t(edgesi)
-                    numSubtreeEdges[i1,1] = nrow(edgesi)
+                tempNodeStore[,start_pt-1:(start_pt+nrow(nodesi)-1)] = t(nodesi)
+                numSubtreeNodes[i1-1,0] = nrow(nodesi)
+                if(nrow(edgesi)!=1 | ncol(edgesi)!=1 | scalar(edgesi[0,0])!=-1):
+                    tempEdgeStore[,start_pt-1:(start_pt+nrow(edgesi)-1)] = t(edgesi)
+                    numSubtreeEdges[i1-1,0] = nrow(edgesi)
                 else:
-                    numSubtreeEdges[i1,1] = 0
+                    numSubtreeEdges[i1-1,0] = 0
         
         num_nodes_in_subtrees = sum(numSubtreeNodes)
         num_edges_in_subtrees = sum(numSubtreeEdges)
@@ -217,7 +217,7 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
             sz = 1+num_nodes_in_subtrees
         
         nodes = full(0, rows=sz, cols=2)
-        nodes[1,1] = best_attr
+        nodes[0,0] = best_attr
         numNodes = 1
         
         #edges from root to children
@@ -227,29 +227,29 @@ def id3_learn(X:matrix[float], y:matrix[float], X_subset:matrix[float], attribut
         edges = full(1, rows=sz, cols=3)
         numEdges = 0
         for(i6 in 1:nrow(attr_domain)):
-            num_nodesi = scalar(numSubtreeNodes[i6,1])
+            num_nodesi = scalar(numSubtreeNodes[i6-1,0])
             if(num_nodesi > 0):
-                edges[numEdges+1,2] = i6
+                edges[numEdges,1] = i6
                 numEdges = numEdges + 1
         
         nonEmptyAttri = 0
         for(i7 in 1:nrow(attr_domain)):
-            numNodesInSubtree = scalar(numSubtreeNodes[i7,1])
+            numNodesInSubtree = scalar(numSubtreeNodes[i7-1,0])
             
             if(numNodesInSubtree > 0):
                 start_pt1 = 1 + (i7-1)*max_sz_subtree
-                nodes[numNodes+1:numNodes+numNodesInSubtree,] = transpose(tempNodeStore[,start_pt1:(start_pt1+numNodesInSubtree-1)])
+                nodes[numNodes:numNodes+numNodesInSubtree,] = transpose(tempNodeStore[,start_pt1-1:(start_pt1+numNodesInSubtree-1)])
                 
-                numEdgesInSubtree = scalar(numSubtreeEdges[i7,1])
+                numEdgesInSubtree = scalar(numSubtreeEdges[i7-1,0])
                 
                 if(numEdgesInSubtree!=0):
-                    edgesi1 = transpose(tempEdgeStore[,start_pt1:(start_pt1+numEdgesInSubtree-1)])
-                    edgesi1[,1] = edgesi1[,1] + numNodes
-                    edgesi1[,3] = edgesi1[,3] + numNodes
-                    edges[numEdges+1:numEdges+numEdgesInSubtree,] = edgesi1
+                    edgesi1 = transpose(tempEdgeStore[,start_pt1-1:(start_pt1+numEdgesInSubtree-1)])
+                    edgesi1[,0] = edgesi1[,0] + numNodes
+                    edgesi1[,2] = edgesi1[,2] + numNodes
+                    edges[numEdges:numEdges+numEdgesInSubtree,] = edgesi1
                     numEdges = numEdges + numEdgesInSubtree
                 
-                edges[nonEmptyAttri+1,3] = numNodes + 1
+                edges[nonEmptyAttri,2] = numNodes + 1
                 nonEmptyAttri = nonEmptyAttri + 1
                 
                 numNodes = numNodes + numNodesInSubtree
@@ -276,13 +276,13 @@ y = y + labelCorrection + 0
 [nodes, edges] = id3_learn(X, y, X_subset, attributes, minsplit)
 
 # decoding outputs
-nodes[,2] = nodes[,2] - labelCorrection * ppred(nodes[,1], -1, "==")
+nodes[,1] = nodes[,1] - labelCorrection * ppred(nodes[,0], -1, "==")
 for(i3 in 1:nrow(edges)):
 #parfor(i3 in 1:nrow(edges)):
-    e_parent = scalar(edges[i3,1])
-    parent_feature = scalar(nodes[e_parent,1])
-    correction = scalar(featureCorrections[1,parent_feature])
-    edges[i3,2] = edges[i3,2] - correction
+    e_parent = scalar(edges[i3-1,0])
+    parent_feature = scalar(nodes[e_parent-1,0])
+    correction = scalar(featureCorrections[0,parent_feature-1])
+    edges[i3-1,1] = edges[i3-1,1] - correction
 
 save(nodes, $3, format="text")
 save(edges, $4, format="text")

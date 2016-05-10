@@ -189,7 +189,7 @@ if (intercept_status == 1 | intercept_status == 2): # add the intercept column
 
 scale_lambda = full (1, rows = num_features, cols = 1)
 if (intercept_status == 1 | intercept_status == 2):
-    scale_lambda [num_features, 1] = 0
+    scale_lambda [num_features-1, 0] = 0
 
 if (intercept_status == 2): # scale-&-shift X columns to mean 0, variance 1
     # Important assumption: X [, num_features] = ones_r
@@ -197,9 +197,9 @@ if (intercept_status == 2): # scale-&-shift X columns to mean 0, variance 1
     var_X_cols = (transpose(colSums (X ** 2)) - num_records * (avg_X_cols ** 2)) / (num_records - 1)
     is_unsafe = ppred (var_X_cols, 0.0, "<=")
     scale_X = 1.0 / sqrt (var_X_cols * (1 - is_unsafe) + is_unsafe)
-    scale_X [num_features, 1] = 1
+    scale_X [num_features-1, 0] = 1
     shift_X = - avg_X_cols * scale_X
-    shift_X [num_features, 1] = 0
+    shift_X [num_features-1, 0] = 0
     rowSums_X_sq = dot((X ** 2), (scale_X ** 2)) + dot(X, (2 * scale_X * shift_X)) + sum (shift_X ** 2)
 else:
     scale_X = full (1, rows = num_features, cols = 1)
@@ -283,7 +283,7 @@ if (is_supported == 1):
         print ("BEGIN IRLS ITERATIONS...")
         
         ssX_newbeta = dot(diag (scale_X), newbeta)
-        ssX_newbeta [num_features, ] = ssX_newbeta [num_features, ] + dot(transpose(shift_X), newbeta)
+        ssX_newbeta [num_features-1, ] = ssX_newbeta [num_features-1, ] + dot(transpose(shift_X), newbeta)
         all_linear_terms = dot(X, ssX_newbeta)
         
         [new_log_l, isNaN_new_log_l] = glm_log_likelihood_part (all_linear_terms, Y, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean)
@@ -348,7 +348,7 @@ if (is_supported == 1):
                 #     w   = 1.0 / (y_var * link_grad * link_grad)
                 
                 gXY = dot(- transpose(X), g_Y)
-                g = dot(diag (scale_X), gXY) + dot(shift_X, gXY [num_features, ])
+                g = dot(diag (scale_X), gXY) + dot(shift_X, gXY [num_features-1, ])
                 g_norm = sqrt (sum ((g + lambda * beta) ** 2))
                 
                 if (fileLog != " "):
@@ -361,7 +361,7 @@ if (is_supported == 1):
             newbeta = beta + z
             
             ssX_newbeta = dot(diag (scale_X), newbeta)
-            ssX_newbeta [num_features, ] = ssX_newbeta [num_features, ] + dot(transpose(shift_X), newbeta)
+            ssX_newbeta [num_features-1, ] = ssX_newbeta [num_features-1, ] + dot(transpose(shift_X), newbeta)
             all_linear_terms = dot(X, ssX_newbeta)
             
             [new_log_l, isNaN_new_log_l] = glm_log_likelihood_part (all_linear_terms, Y, distribution_type, variance_as_power_of_the_mean, link_type, link_as_power_of_the_mean)
@@ -425,7 +425,7 @@ if (is_supported == 1):
         
         
         ssX_beta = dot(diag (scale_X), beta)
-        ssX_beta [num_features, ] = ssX_beta [num_features, ] + dot(transpose(shift_X), beta)
+        ssX_beta [num_features-1, ] = ssX_beta [num_features-1, ] + dot(transpose(shift_X), beta)
         if (intercept_status == 2):
             beta_out = append (ssX_beta, beta)
         else:
@@ -435,17 +435,17 @@ if (is_supported == 1):
         save (beta_out, fileB, format=fmtB)
         
         if (intercept_status == 1 | intercept_status == 2):
-            intercept_value = scalar (beta_out [num_features, 1])
-            beta_noicept = beta_out [1 : (num_features - 1), 1]
+            intercept_value = scalar (beta_out [num_features-1, 0])
+            beta_noicept = beta_out [0 : (num_features - 1), 0]
         else:
-            beta_noicept = beta_out [1 : num_features, 1]
+            beta_noicept = beta_out [0 : num_features, 0]
         
         min_beta = min (beta_noicept)
         max_beta = max (beta_noicept)
         tmp_i_min_beta = rowIndexMin (transpose(beta_noicept))
-        i_min_beta = scalar (tmp_i_min_beta [1, 1])
+        i_min_beta = scalar (tmp_i_min_beta [0, 0])
         tmp_i_max_beta = rowIndexMax (transpose(beta_noicept))
-        i_max_beta = scalar (tmp_i_max_beta [1, 1])
+        i_max_beta = scalar (tmp_i_max_beta [0, 0])
         
         #####  OVER-DISPERSION PART  #####
         
@@ -641,11 +641,11 @@ def glm_initialize(X: matrix[float], Y: matrix[float], dist_type: int, var_power
     max_iter_CG: int) -> (beta: matrix[float], saturated_log_l: float, isNaN: int):
     saturated_log_l = 0.0
     isNaN = 0
-    y_corr = Y [, 1]
+    y_corr = Y [, 0]
     if (dist_type == 2):
         n_corr = rowSums (Y)
         is_n_zero = ppred (n_corr, 0.0, "==")
-        y_corr = Y [, 1] / (n_corr + is_n_zero) + (0.5 - Y [, 1]) * is_n_zero
+        y_corr = Y [, 0] / (n_corr + is_n_zero) + (0.5 - Y [, 0]) * is_n_zero
     
     linear_terms = y_corr
     if (dist_type == 1 & link_type == 1): # POWER DISTRIBUTION
@@ -761,7 +761,7 @@ def glm_initialize(X: matrix[float], Y: matrix[float], dist_type: int, var_power
     
     if (desired_eta != 0.0):
         if (icept_status == 1 | icept_status == 2):
-            beta [nrow(beta), 1] = desired_eta
+            beta [nrow(beta)-1, 0] = desired_eta
         else:
             # We want: avg (dot(dot(X, ssX_transform), beta)) = desired_eta
             # Note that "ssX_transform" is trivial here, hence ignored
@@ -792,19 +792,19 @@ def glm_dist(linear_terms: matrix[float], Y: matrix[float], dist_type: int, var_
     one_over_sqrt_two_pi = 0.39894228040143267793994605993438
     ones_2 = full (1.0, rows = 1, cols = 2)
     p_one_m_one = ones_2
-    p_one_m_one [1, 2] = -1.0
+    p_one_m_one [0, 1] = -1.0
     m_one_p_one = ones_2
-    m_one_p_one [1, 1] = -1.0
+    m_one_p_one [0, 0] = -1.0
     zero_one = ones_2
-    zero_one [1, 1] = 0.0
+    zero_one [0, 0] = 0.0
     one_zero = ones_2
-    one_zero [1, 2] = 0.0
+    one_zero [0, 1] = 0.0
     flip_pos = full (0, rows = 2, cols = 2)
     flip_neg = flip_pos
-    flip_pos [1, 2] = 1
-    flip_pos [2, 1] = 1
-    flip_neg [1, 2] = -1
-    flip_neg [2, 1] = 1
+    flip_pos [0, 1] = 1
+    flip_pos [1, 0] = 1
+    flip_neg [0, 1] = -1
+    flip_neg [1, 0] = 1
     
     if (dist_type == 1 & link_type == 1): # POWER DISTRIBUTION
         y_mean = zeros_r
@@ -831,7 +831,7 @@ def glm_dist(linear_terms: matrix[float], Y: matrix[float], dist_type: int, var_
         if (link_type == 1): # BINOMIAL.POWER LINKS
             if (link_power == 0.0): # Binomial.log
                 vec1 = 1 / (exp (- linear_terms) - 1)
-                g_Y = Y [, 1] - Y [, 2] * vec1
+                g_Y = Y [, 0] - Y [, 1] * vec1
                 w   = rowSums (Y) * vec1
             else: # Binomial.nonlog
                 vec1 = zeros_r
@@ -846,9 +846,9 @@ def glm_dist(linear_terms: matrix[float], Y: matrix[float], dist_type: int, var_
                 
                 # We want a "zero-protected" version of
                 # vec2 = Y [, 1] / linear_terms
-                is_y_0 = ppred (Y [, 1], 0.0, "==")
-                vec2 = (Y [, 1] + is_y_0) / (linear_terms * (1 - is_y_0) + is_y_0) - is_y_0
-                g_Y =  (vec2 - Y [, 2] * vec1 * linear_terms) / link_power
+                is_y_0 = ppred (Y [, 0], 0.0, "==")
+                vec2 = (Y [, 0] + is_y_0) / (linear_terms * (1 - is_y_0) + is_y_0) - is_y_0
+                g_Y =  (vec2 - Y [, 1] * vec1 * linear_terms) / link_power
                 w   =  rowSums (Y) * vec1 / link_power ** 2
             
         else:
@@ -874,7 +874,7 @@ def glm_dist(linear_terms: matrix[float], Y: matrix[float], dist_type: int, var_
                         + t_gp *   1.061405429))))
                     the_gauss_exp = exp (- (linear_terms ** 2) / 2.0)
                     vec1 = 0.25 * pt_gp * (2 - the_gauss_exp * pt_gp)
-                    vec2 = Y [, 1] - rowSums (Y) * is_lt_pos + the_gauss_exp * pt_gp * rowSums (Y) * (is_lt_pos - 0.5)
+                    vec2 = Y [, 0] - rowSums (Y) * is_lt_pos + the_gauss_exp * pt_gp * rowSums (Y) * (is_lt_pos - 0.5)
                     w   = the_gauss_exp * (one_over_sqrt_two_pi ** 2) * rowSums (Y) / vec1
                     g_Y = one_over_sqrt_two_pi * vec2 / vec1
                 else:
@@ -883,14 +883,14 @@ def glm_dist(linear_terms: matrix[float], Y: matrix[float], dist_type: int, var_
                         the_exp_exp = exp (- the_exp)
                         is_too_small = ppred (10000000 + the_exp, 10000000, "==")
                         the_exp_ratio = (1 - is_too_small) * (1 - the_exp_exp) / (the_exp + is_too_small) + is_too_small * (1 - the_exp / 2)
-                        g_Y =  (rowSums (Y) * the_exp_exp - Y [, 2]) / the_exp_ratio
+                        g_Y =  (rowSums (Y) * the_exp_exp - Y [, 1]) / the_exp_ratio
                         w   =  the_exp_exp * the_exp * rowSums (Y) / the_exp_ratio
                     else:
                         if (link_type == 5): # Binomial.cauchit
                             Y_prob = 0.5 + (dot(atan (finite_linear_terms), p_one_m_one)) / 3.1415926535897932384626433832795
                             Y_prob = Y_prob * (dot((1.0 - rowSums (is_LT_infinite)), ones_2)) + is_LT_infinite
-                            y_residual = Y [, 1] * Y_prob [, 2] - Y [, 2] * Y_prob [, 1]
-                            var_function = rowSums (Y) * Y_prob [, 1] * Y_prob [, 2]
+                            y_residual = Y [, 0] * Y_prob [, 1] - Y [, 1] * Y_prob [, 0]
+                            var_function = rowSums (Y) * Y_prob [, 0] * Y_prob [, 1]
                             link_gradient_normalized = (1 + linear_terms ** 2) * 3.1415926535897932384626433832795
                             g_Y =  rowSums (Y) * y_residual / (var_function * link_gradient_normalized)
                             w   = (rowSums (Y) ** 2) / (var_function * link_gradient_normalized ** 2)
@@ -1074,13 +1074,13 @@ def binomial_probability_two_column(linear_terms: matrix[float], link_type: int,
     
     ones_2 = full (1.0, rows = 1, cols = 2)
     p_one_m_one = ones_2
-    p_one_m_one [1, 2] = -1.0
+    p_one_m_one [0, 1] = -1.0
     m_one_p_one = ones_2
-    m_one_p_one [1, 1] = -1.0
+    m_one_p_one [0, 0] = -1.0
     zero_one = ones_2
-    zero_one [1, 1] = 0.0
+    zero_one [0, 0] = 0.0
     one_zero = ones_2
-    one_zero [1, 2] = 0.0
+    one_zero [0, 1] = 0.0
     
     zeros_r = full (0.0, rows = num_records, cols = 1)
     ones_r = 1.0 + zeros_r
@@ -1124,8 +1124,8 @@ def binomial_probability_two_column(linear_terms: matrix[float], link_type: int,
                     the_exp = exp (finite_linear_terms)
                     the_exp_exp = exp (- the_exp)
                     is_too_small = ppred (10000000 + the_exp, 10000000, "==")
-                    Y_prob [, 1] = (1 - is_too_small) * (1 - the_exp_exp) + is_too_small * the_exp * (1 - the_exp / 2)
-                    Y_prob [, 2] = the_exp_exp
+                    Y_prob [, 0] = (1 - is_too_small) * (1 - the_exp_exp) + is_too_small * the_exp * (1 - the_exp / 2)
+                    Y_prob [, 1] = the_exp_exp
                 else:
                     if (link_type == 5): # Binomial.cauchit
                         Y_prob = 0.5 + (dot(atan (finite_linear_terms), p_one_m_one)) / 3.1415926535897932384626433832795
@@ -1165,9 +1165,9 @@ def get_CG_Steihaug_point(X: matrix[float], scale_X: matrix[float], shift_X: mat
     while (converged_CG == 0):
         i_CG = i_CG + 1
         ssX_p_CG = dot(diag (scale_X), p_CG)
-        ssX_p_CG [size_CG, ] = ssX_p_CG [size_CG, ] + dot(transpose(shift_X), p_CG)
+        ssX_p_CG [size_CG-1, ] = ssX_p_CG [size_CG-1, ] + dot(transpose(shift_X), p_CG)
         temp_CG = dot(transpose(X), (w * (dot(X, ssX_p_CG))))
-        q_CG = (lambda * p_CG) + dot(diag (scale_X), temp_CG) + dot(shift_X, temp_CG [size_CG, ])
+        q_CG = (lambda * p_CG) + dot(diag (scale_X), temp_CG) + dot(shift_X, temp_CG [size_CG-1, ])
         pq_CG = sum (p_CG * q_CG)
         if (pq_CG <= 0):
             pp_CG = sum (p_CG * p_CG)  

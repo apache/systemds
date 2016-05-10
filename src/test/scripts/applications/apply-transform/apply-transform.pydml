@@ -30,89 +30,95 @@ if(cmdLine_missing_value_maps != " "):
     missing_val_maps = read(cmdLine_missing_value_maps)
 
     last_data_col = ncol(original_X)-nrow(missing_val_maps)
-    X = original_X[,1:last_data_col]
+    X = original_X[,0:last_data_col]
 else:
     X = original_X
 
-# col 1: col index of missing indicator col
-#         0 otherwise
-# col 2: global mean if imputation is needed
-# col 3: num_bins if binning is required
-# col 4: bin width if binning is required
-# col 5: min val if binning is required
-# col 6: begin col if dummy coding is required
-# col 7: end col if dummy coding is required
-# col 8: 1 if normalization is required 0 ow
-# col 9: mean for normalization
-# col 10: std for z-scoring for normalization
-#         -1 indicates mean subtraction  
+# col 0: col index of missing indicator col
+#         0 otherwise. NOTE: Assumes 1-based
+#         indexing, so we adjust to 0-based
+#         for PyDML.
+# col 1: global mean if imputation is needed
+# col 2: num_bins if binning is required
+# col 3: bin width if binning is required
+# col 4: min val if binning is required
+# col 5: begin col if dummy coding is required
+#         NOTE: Assumes 1-based indexing, so
+#         we adjust to 0-based for PyDML.
+# col 6: end col if dummy coding is required
+#         NOTE: Assumes 1-based indexing, so
+#         we adjust to 0-based for PyDML.
+# col 7: 1 if normalization is required 0 ow
+# col 8: mean for normalization
+# col 9: std for z-scoring for normalization
+#         -1 indicates mean subtraction
 attrinfo = full(0, rows=ncol(X), cols=10)
 
 if(cmdLine_missing_value_maps != " "):
-    missing_indicator_mat = original_X[,(last_data_col+1):ncol(original_X)]
-    
+    missing_indicator_mat = original_X[,last_data_col:ncol(original_X)]
+
     parfor(i in 1:nrow(missing_val_maps), check=0):
-        attr_index_mv = scalar(missing_val_maps[i,1])
-        attrinfo[attr_index_mv,1] = i
-        attrinfo[attr_index_mv,2] = missing_val_maps[i,2]
-    
+        attr_index_mv = scalar(missing_val_maps[i-1,0])
+        attrinfo[attr_index_mv-1,0] = i
+        attrinfo[attr_index_mv-1,1] = missing_val_maps[i-1,1]
+
 if(cmdLine_bin_defns != " "):
     bin_defns = read(cmdLine_bin_defns)
     parfor(i in 1:nrow(bin_defns), check=0):
-        attr_index_bin = scalar(bin_defns[i,1])
-        attrinfo[attr_index_bin,3] = bin_defns[i,4]
-        attrinfo[attr_index_bin,4] = bin_defns[i,2]
-        attrinfo[attr_index_bin,5] = bin_defns[i,3]
+        attr_index_bin = scalar(bin_defns[i-1,0])
+        attrinfo[attr_index_bin-1,2] = bin_defns[i-1,3]
+        attrinfo[attr_index_bin-1,3] = bin_defns[i-1,1]
+        attrinfo[attr_index_bin-1,4] = bin_defns[i-1,2]
 
 if(cmdLine_dummy_code_maps != " "):
     dummy_code_maps = read(cmdLine_dummy_code_maps)
     parfor(i in 1:nrow(dummy_code_maps), check=0):
-        attr_index_dc = scalar(dummy_code_maps[i,1])
-        attrinfo[attr_index_dc,6] = dummy_code_maps[i,2]
-        attrinfo[attr_index_dc,7] = dummy_code_maps[i,3]
+        attr_index_dc = scalar(dummy_code_maps[i-1,0])
+        attrinfo[attr_index_dc-1,5] = dummy_code_maps[i-1,1]
+        attrinfo[attr_index_dc-1,6] = dummy_code_maps[i-1,2]
 else:
+    attrinfo[,5] = seq(1, ncol(X), 1)
     attrinfo[,6] = seq(1, ncol(X), 1)
-    attrinfo[,7] = seq(1, ncol(X), 1)
 
 if(cmdLine_normalization_maps != " "):
     normalization_map = read(cmdLine_normalization_maps)
     parfor(i in 1:nrow(normalization_map), check=0):
-        attr_index_normalization = scalar(normalization_map[i,1])
-        attrinfo[attr_index_normalization,8] = 1
-        attrinfo[attr_index_normalization,9] = scalar(normalization_map[i,2])
-        attrinfo[attr_index_normalization,10] = scalar(normalization_map[i,3])
+        attr_index_normalization = scalar(normalization_map[i-1,0])
+        attrinfo[attr_index_normalization-1,7] = 1
+        attrinfo[attr_index_normalization-1,8] = scalar(normalization_map[i-1,1])
+        attrinfo[attr_index_normalization-1,9] = scalar(normalization_map[i-1,2])
 
 #write(attrinfo, "binning/attrinfo.mtx", format="csv")
 
-cols_in_transformed_X = scalar(attrinfo[nrow(attrinfo),6])
+cols_in_transformed_X = scalar(attrinfo[nrow(attrinfo)-1,5])
 new_X = full(0, rows=nrow(X), cols=cols_in_transformed_X)
 log = full(0, rows=ncol(X), cols=2)
 parfor(i in 1:ncol(X), check=0):
-    col = X[,i]
-    
-    mv_col_id = scalar(attrinfo[i,1])
-    global_mean = scalar(attrinfo[i,2])
-    num_bins = scalar(attrinfo[i,3])
-    bin_width = scalar(attrinfo[i,4])
-    min_val = scalar(attrinfo[i,5])
-    dummy_coding_beg_col = scalar(attrinfo[i,6])
-    dummy_coding_end_col = scalar(attrinfo[i,7])
-    normalization_needed = scalar(attrinfo[i,8])
-    normalization_mean = scalar(attrinfo[i,9])
-    normalization_std = scalar(attrinfo[i,10])
-    
+    col = X[,i-1]
+
+    mv_col_id = scalar(attrinfo[i-1,0])
+    global_mean = scalar(attrinfo[i-1,1])
+    num_bins = scalar(attrinfo[i-1,2])
+    bin_width = scalar(attrinfo[i-1,3])
+    min_val = scalar(attrinfo[i-1,4])
+    dummy_coding_beg_col = scalar(attrinfo[i-1,5])
+    dummy_coding_end_col = scalar(attrinfo[i-1,6])
+    normalization_needed = scalar(attrinfo[i-1,7])
+    normalization_mean = scalar(attrinfo[i-1,8])
+    normalization_std = scalar(attrinfo[i-1,9])
+
     if(mv_col_id > 0):
         # fill-in with global mean
-        col = col + missing_indicator_mat[,mv_col_id] * global_mean
-    
+        col = col + missing_indicator_mat[,mv_col_id-1] * global_mean
+
     if(num_bins > 0):
         # only for equiwidth bins
-    
+
         # note that max_val entries will get assigned num_bins+1
         col = round((col - min_val)/bin_width - 0.5) + 1
         less_than_lb = ppred(col, 1, "<")
         more_than_ub = ppred(col, num_bins, ">")
-        
+
         col = (1 - less_than_lb - more_than_ub)*col + more_than_ub*num_bins + less_than_lb
 
     if(dummy_coding_beg_col == dummy_coding_end_col):
@@ -121,26 +127,26 @@ parfor(i in 1:ncol(X), check=0):
                 col = col - normalization_mean
             else:
                 col = (col - normalization_mean)/normalization_std
-        
-        new_X[,dummy_coding_beg_col] = col
+
+        new_X[,dummy_coding_beg_col-1] = col
     else:
         min_val = min(col)
         max_val = max(col)
         if(min_val >= 1 & max_val <= dummy_coding_end_col - dummy_coding_beg_col + 1):
             res = table(seq(1, nrow(X), 1), col, nrow(X), (dummy_coding_end_col-dummy_coding_beg_col+1))
-            new_X[,dummy_coding_beg_col:dummy_coding_end_col] = res
+            new_X[,dummy_coding_beg_col-1:dummy_coding_end_col] = res
         else:
-            log[i,1] = 1
+            log[i-1,0] = 1
             if(min_val < 1):
-                log[i,2] = min_val
+                log[i-1,1] = min_val
             else:
-                log[i,2] = max_val
+                log[i-1,1] = max_val
 
 save(new_X, $transformed_X, format="text")
 
 s = "Warning Messages"
 for(i in 1:nrow(log)):
-    if(scalar(log[i,1]) == 1):
-        s = append(s, "Unseen value in column " + i + " (" + scalar(log[i,2]) + ")")
+    if(scalar(log[i-1,0]) == 1):
+        s = append(s, "Unseen value in column " + i + " (" + scalar(log[i-1,1]) + ")")
 
 save(s, $Log)

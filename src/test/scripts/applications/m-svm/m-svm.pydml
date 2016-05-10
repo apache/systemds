@@ -108,7 +108,7 @@ else:
             
             train_acc = sum(ppred(Y_local*(dot(X, w_class)), 0, ">="))/num_samples*100
             print("For class " + iter_class + " iteration " + iter + " training accuracy: " + train_acc)
-            debug_mat[iter+1,iter_class] = obj
+            debug_mat[iter,iter_class-1] = obj
             
             if((step_sz*tmp < epsilon*obj) | (iter >= max_iterations-1)):
                 continue = 0
@@ -121,7 +121,7 @@ else:
             iter = iter + 1
         # end while(continue == 1)
         
-        w[,iter_class] = w_class
+        w[,iter_class-1] = w_class
     # end parfor(iter_class in 1:num_classes)
     
     save(w, $model, format=cmdLine_fmt)
@@ -129,7 +129,7 @@ else:
     debug_str = "# Class, Iter, Obj"
     for(iter_class in 1:ncol(debug_mat)):
         for(iter in 1:nrow(debug_mat)):
-            obj = scalar(debug_mat[iter, iter_class])
+            obj = scalar(debug_mat[iter-1, iter_class-1])
             if(obj != -1):
                 debug_str = append(debug_str, iter_class + "," + iter + "," + obj)
     save(debug_str, $Log)

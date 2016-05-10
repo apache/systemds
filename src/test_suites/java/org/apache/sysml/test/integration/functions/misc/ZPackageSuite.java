@@ -37,6 +37,7 @@ import org.junit.runners.Suite;
 	IPAScalarRecursionTest.class,
 	IPAUnknownRecursionTest.class,
 	LongOverflowTest.class,
+	NegativeLoopIncrementsTest.class,
 	NrowNcolStringTest.class,
 	NrowNcolUnknownCSVReadTest.class,
 	OuterTableExpandTest.class,

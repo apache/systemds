@@ -77,7 +77,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					  || csb instanceof IfStatementBlock 
 					  || csb instanceof ForStatementBlock ) )
 				{
-					//auto vectorzation pattern
+					//auto vectorization pattern
 					sb = vectorizeScalarAggregate(sb, csb, from, to, incr, iterVar);           //e.g., for(i){s = s + as.scalar(X[i,2])}
 					sb = vectorizeElementwiseBinary(sb, csb, from, to, incr, iterVar);
 					sb = vectorizeElementwiseUnary(sb, csb, from, to, incr, iterVar);
@@ -110,8 +110,9 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 	{
 		StatementBlock ret = sb;
 		
-		//check supported increment values
-		if( !(increment instanceof LiteralOp && ((LiteralOp)increment).getDoubleValue()==1.0) ){
+		//check missing and supported increment values
+		if( !(increment!=null && increment instanceof LiteralOp 
+				&& ((LiteralOp)increment).getDoubleValue()==1.0) ) {
 			return ret;
 		}
 			

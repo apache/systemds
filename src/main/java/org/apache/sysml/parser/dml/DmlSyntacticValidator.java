@@ -47,7 +47,6 @@ import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.IndexedIdentifier;
-import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.IterablePredicate;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatement;
@@ -651,7 +650,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 		DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
 		HashMap<String, String> parForParamValues = null;
-		Expression incrementExpr = new IntIdentifier(1, currentFile, line, col, line, col);
+		Expression incrementExpr = null; //1/-1
 		if(ctx.iterPred.info.increment != null) {
 			incrementExpr = ctx.iterPred.info.increment;
 		}
@@ -682,8 +681,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			}
 		}
 
-		Expression incrementExpr = new IntIdentifier(1, currentFile, line, col, line, col);
-
+		Expression incrementExpr = null; //1/-1
 		if( ctx.iterPred.info.increment != null ) {
 			incrementExpr = ctx.iterPred.info.increment;
 		}

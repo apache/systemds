@@ -296,6 +296,9 @@ public class ProgramRewriter
 	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
 		throws HopsException
 	{	
+		if( root == null )
+			return root;
+		
 		for( HopRewriteRule r : _dagRuleSet )
 		{
 			root.resetVisitStatus(); //reset for each rule

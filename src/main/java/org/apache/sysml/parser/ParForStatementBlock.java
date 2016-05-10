@@ -1050,10 +1050,9 @@ public class ParForStatementBlock extends ForStatementBlock
 					//NOTE: conservative approach: include all index variables (also from for)
 					if( ip.getIncrementExpr() instanceof IntIdentifier )
 						incr = ((IntIdentifier)ip.getIncrementExpr()).getValue();
-					else
-						throw new LanguageException("PARFOR loop dependency analysis: cannot check for dependencies " +
-								                    "because increment expression '"+ip.getIncrementExpr().toString()+"' cannot be normalized.");
-				
+					else 
+						incr = ( low <= up ) ? 1 : -1;
+
 					_bounds._lower.put(ip.getIterVar()._name, low);
 					_bounds._upper.put(ip.getIterVar()._name, up);
 					_bounds._increment.put(ip.getIterVar()._name, incr);

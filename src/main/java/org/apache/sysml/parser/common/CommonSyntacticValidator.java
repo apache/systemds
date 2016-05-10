@@ -40,7 +40,6 @@ import org.apache.sysml.parser.DoubleIdentifier;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Expression.DataOp;
 import org.apache.sysml.parser.FunctionCallIdentifier;
-import org.apache.sysml.parser.IndexedIdentifier;
 import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.MultiAssignmentStatement;

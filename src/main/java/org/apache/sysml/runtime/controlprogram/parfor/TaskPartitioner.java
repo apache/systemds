@@ -33,27 +33,26 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
  * 
  */
 public abstract class TaskPartitioner 
-{
-	
-	protected long            _taskSize     = -1;
-	
+{	
+	protected long           _taskSize     = -1;	
 	protected String  		 _iterVarName  = null;
 	protected IntObject      _fromVal      = null;
 	protected IntObject      _toVal        = null;
 	protected IntObject      _incrVal      = null;
-	
-	protected long            _numIter      = -1;
-	
+	protected long           _numIter      = -1;
 	
 	protected TaskPartitioner( long taskSize, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
 	{
 		_taskSize    = taskSize;
-		
 		_iterVarName = iterVarName;
 		_fromVal     = fromVal;
 		_toVal       = toVal;
 		_incrVal     = incrVal;
 		
+		//normalize predicate if necessary
+		normalizePredicate();
+		
+		//compute number of iterations
 		_numIter     = (long)Math.ceil(((double)(_toVal.getLongValue()-_fromVal.getLongValue()+1 )) / _incrVal.getLongValue()); 
 	}
 	
@@ -79,8 +78,25 @@ public abstract class TaskPartitioner
 	 * 
 	 * @return
 	 */
-	public long getNumIterations()
-	{
+	public long getNumIterations() {
 		return _numIter;
+	}
+	
+	/**
+	 * Normalizes the (from, to, incr) predicate to a predicate w/
+	 * positive increment.
+	 */
+	private void normalizePredicate() {
+		//check for positive increment
+		if( _incrVal.getLongValue() >= 0 )
+			return;
+		
+		long lfrom = _fromVal.getLongValue();
+		long lto = _toVal.getLongValue();
+		long lincr = _incrVal.getLongValue();
+		
+		_fromVal = new IntObject(lfrom - ((lfrom - lto)/lincr * lincr));
+		_toVal   = new IntObject(lfrom);
+		_incrVal = new IntObject(-1 * lincr);
 	}
 }

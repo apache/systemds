@@ -19,12 +19,17 @@
 #
 #-------------------------------------------------------------
 
+A = read($1);
+c = as.integer($2);
+mStep = as.logical($3);
 
-Y = matrix(1, rows=10, cols=10);
+s = 0;
+if( mStep )
+   for( i in seq(nrow(A),1,-7) )
+      s = s + as.scalar(A[i,1]) + c;
+else
+   for( i in nrow(A):1 )
+      s = s + as.scalar(A[i,1]) + c; 
 
-
-for( i in seq(1,0,1) ) {
-   Y = read($1);
-}   
-   
-print("Result: "+sum(Y));
+R = as.matrix(s);
+write(R, $4);

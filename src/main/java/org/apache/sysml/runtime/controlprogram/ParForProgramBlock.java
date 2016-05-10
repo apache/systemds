@@ -529,10 +529,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		// evaluate from, to, incr only once (assumption: known at for entry)
 		IntObject from = executePredicateInstructions( 1, _fromInstructions, ec );
 		IntObject to   = executePredicateInstructions( 2, _toInstructions, ec );
-		IntObject incr = executePredicateInstructions( 3, _incrementInstructions, ec );
+		IntObject incr = (_incrementInstructions == null || _incrementInstructions.isEmpty()) && _iterablePredicateVars[3]==null ? 
+				new IntObject((from.getLongValue()<=to.getLongValue()) ? 1 : -1) :
+				executePredicateInstructions( 3, _incrementInstructions, ec );
 		
-		if ( incr.getLongValue() <= 0 ) //would produce infinite loop
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment of variable '" + iterVarName + "' must evaluate to a positive value.");
+		if ( incr.getLongValue() == 0 ) //would produce infinite loop
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Expression for increment of variable '" + iterVarName + "' must evaluate to a non-zero value.");
 		
 		//early exit on num iterations = zero
 		if( computeNumIterations(from, to, incr) <= 0 )

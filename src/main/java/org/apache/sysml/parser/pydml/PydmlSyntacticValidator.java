@@ -1210,7 +1210,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 		DataIdentifier iterVar = new DataIdentifier(ctx.iterVar.getText());
 		HashMap<String, String> parForParamValues = null;
-		Expression incrementExpr = new IntIdentifier(1, currentFile, line, col, line, col);
+		Expression incrementExpr = null; //1/-1
 		if(ctx.iterPred.info.increment != null) {
 			incrementExpr = ctx.iterPred.info.increment;
 		}
@@ -1241,8 +1241,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			}
 		}
 
-		Expression incrementExpr = new IntIdentifier(1, currentFile, line, col, line, col);
-
+		Expression incrementExpr = null; //1/-1
 		if( ctx.iterPred.info.increment != null ) {
 			incrementExpr = ctx.iterPred.info.increment;
 		}

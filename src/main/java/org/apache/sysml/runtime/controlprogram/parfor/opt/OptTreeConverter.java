@@ -447,10 +447,12 @@ public class OptTreeConverter
 			//handle predicate
 			fsb.getFromHops().resetVisitStatus();
 			fsb.getToHops().resetVisitStatus();
-			fsb.getIncrementHops().resetVisitStatus();
+			if( fsb.getIncrementHops()!=null )
+				fsb.getIncrementHops().resetVisitStatus();
 			node.addChilds( rCreateAbstractOptNodes( fsb.getFromHops(), vars, memo ) );
 			node.addChilds( rCreateAbstractOptNodes( fsb.getToHops(), vars, memo ) );
-			node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars, memo ) );
+			if( fsb.getIncrementHops()!=null )
+				node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars, memo ) );
 			
 			//process body
 			int len = fs.getBody().size();
@@ -495,10 +497,12 @@ public class OptTreeConverter
 			{
 				fsb.getFromHops().resetVisitStatus();
 				fsb.getToHops().resetVisitStatus();
-				fsb.getIncrementHops().resetVisitStatus();
+				if( fsb.getIncrementHops()!=null )
+					fsb.getIncrementHops().resetVisitStatus();
 				node.addChilds( rCreateAbstractOptNodes( fsb.getFromHops(), vars, memo ) );
 				node.addChilds( rCreateAbstractOptNodes( fsb.getToHops(), vars, memo ) );
-				node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars, memo ) );
+				if( fsb.getIncrementHops()!=null )
+					node.addChilds( rCreateAbstractOptNodes( fsb.getIncrementHops(), vars, memo ) );
 			}
 			
 			//process body

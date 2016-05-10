@@ -20,11 +20,24 @@
 #-------------------------------------------------------------
 
 
-Y = matrix(1, rows=10, cols=10);
+args <- commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
 
+A = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
+c = as.integer(args[2]);
+mStep = as.logical(args[3]);
 
-for( i in seq(1,0,1) ) {
-   Y = read($1);
-}   
-   
-print("Result: "+sum(Y));
+s = 0;
+if( mStep ) {
+   for( i in seq(nrow(A),1,-7) ) {
+      s = s + A[i,1] + c;
+   }
+} else {
+   for( i in nrow(A):1 ) {
+      s = s + A[i,1] + c;
+   }
+}
+
+R = as.matrix(s);
+writeMM(as(R, "CsparseMatrix"), paste(args[4], "R", sep="")); 

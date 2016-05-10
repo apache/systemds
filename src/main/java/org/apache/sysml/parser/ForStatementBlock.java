@@ -358,7 +358,7 @@ public class ForStatementBlock extends StatementBlock
 		if (replacementExpr != null)
 			ip.setFromExpr(replacementExpr);
 		
-		// handle replacment in to expression
+		// handle replacement in to expression
 		replacementExpr = replaceConstantVar(ip.getToExpr(), currConstVars);  
 		if (replacementExpr != null)
 			ip.setToExpr(replacementExpr);

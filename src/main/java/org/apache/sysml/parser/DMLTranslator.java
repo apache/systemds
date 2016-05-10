@@ -1377,7 +1377,7 @@ public class DMLTranslator
 				varsRead = ip.getFromExpr().variablesRead();
 			else if (i==1)
 				varsRead = ip.getToExpr().variablesRead();
-			else
+			else if( ip.getIncrementExpr() != null )
 				varsRead = ip.getIncrementExpr().variablesRead();
 
 			if(varsRead != null) {
@@ -1405,7 +1405,7 @@ public class DMLTranslator
 				fsb.setFromHops(      processTempIntExpression( ip.getFromExpr(),      _ids ));
 			else if(i==1)
 				fsb.setToHops(        processTempIntExpression( ip.getToExpr(),        _ids ));
-			else
+			else if( ip.getIncrementExpr() != null )
 				fsb.setIncrementHops( processTempIntExpression( ip.getIncrementExpr(), _ids ));					
 				
 		}

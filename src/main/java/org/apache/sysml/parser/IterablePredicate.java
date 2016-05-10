@@ -73,19 +73,18 @@ public class IterablePredicate extends Expression
 	}
 	
 	 
-	public VariableSet variablesRead() 
-	{
+	public VariableSet variablesRead() {
 		VariableSet result = new VariableSet();
 		result.addVariables( _fromExpr.variablesRead()      );
 		result.addVariables( _toExpr.variablesRead()        );
-		result.addVariables( _incrementExpr.variablesRead() );
+		if( _incrementExpr != null )
+			result.addVariables( _incrementExpr.variablesRead() );
 
 		return result;
 	}
 
 	 
-	public VariableSet variablesUpdated() 
-	{
+	public VariableSet variablesUpdated() {
 		VariableSet result = new VariableSet();
 		result.addVariable(_iterVar.getName(), _iterVar);
 		
@@ -105,7 +104,6 @@ public class IterablePredicate extends Expression
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
 		throws LanguageException 
 	{		
-		
 		//recursive validate
 		if (_iterVar instanceof FunctionCallIdentifier
 				|| _fromExpr instanceof FunctionCallIdentifier
@@ -114,8 +112,6 @@ public class IterablePredicate extends Expression
 			raiseValidateError("user-defined function calls not supported for iterable predicates", 
 		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
 		}
-		
-		
 		
 		//1) VALIDATE ITERATION VARIABLE (index)
 		// check the variable has either 1) not been defined already OR 2) defined as integer scalar   
@@ -134,10 +130,20 @@ public class IterablePredicate extends Expression
 		
 		
 		//2) VALIDATE FOR PREDICATE in (from, to, increment)		
+		// handle default increment if unspecified
+		if( _incrementExpr == null && _fromExpr instanceof ConstIdentifier 
+			&& _toExpr instanceof ConstIdentifier ) {
+			ConstIdentifier cFrom = (ConstIdentifier) _fromExpr;
+			ConstIdentifier cTo = (ConstIdentifier) _toExpr;
+			_incrementExpr = new IntIdentifier( (cFrom.getLongValue() <= cTo.getLongValue()) ? 1 : -1, 
+					getFilename(), getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn());
+		}
+		
 		//recursively validate the individual expression
 		_fromExpr.validateExpression(ids, constVars, conditional);
 		_toExpr.validateExpression(ids, constVars, conditional);
-		_incrementExpr.validateExpression(ids, constVars, conditional);
+		if( _incrementExpr != null )
+			_incrementExpr.validateExpression(ids, constVars, conditional);
 		
 		//check for scalar expression output
 		checkNumericScalarOutput( _fromExpr );
@@ -195,7 +201,7 @@ public class IterablePredicate extends Expression
 			ret[1] = from.getOutputParameters().getLabel();
 		if( to.getType()==Lop.Type.Data )
 			ret[2] = to.getOutputParameters().getLabel();
-		if( incr.getType()==Lop.Type.Data )
+		if( incr != null && incr.getType()==Lop.Type.Data )
 			ret[3] = incr.getOutputParameters().getLabel();
 		
 		return ret;

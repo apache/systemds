@@ -600,7 +600,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	 */
 	private ConvertedDMLSyntax convertPythonBuiltinFunctionToDMLSyntax(ParserRuleContext ctx, String namespace, String functionName, ArrayList<ParameterExpression> paramExpression,
 			Token fnName) {
-		if (!namespace.equals(DMLProgram.DEFAULT_NAMESPACE) || functions.contains(functionName)) {
+		if (sources.containsValue(namespace) || functions.contains(functionName)) {
 			return new ConvertedDMLSyntax(namespace, functionName, paramExpression);
 		}
 

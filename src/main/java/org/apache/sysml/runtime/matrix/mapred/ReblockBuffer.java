@@ -35,6 +35,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.PartialBlock;
 import org.apache.sysml.runtime.matrix.data.TaggedAdaptivePartialBlock;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * 
@@ -175,8 +176,8 @@ public class ReblockBuffer
 		long cbi = -1, cbj = -1; //current block indexes
 		for( int i=0; i<_count; i++ )
 		{
-			long bi = getBlockIndex(_buff[i][0], _brlen);
-			long bj = getBlockIndex(_buff[i][1], _bclen);
+			long bi = UtilFunctions.computeBlockIndex(_buff[i][0], _brlen);
+			long bj = UtilFunctions.computeBlockIndex(_buff[i][1], _bclen);
 			
 			//switch to next block
 			if( bi != cbi || bj != cbj ) {
@@ -208,8 +209,8 @@ public class ReblockBuffer
 			cbi = -1; cbj = -1; //current block indexes
 			for( int i=0; i<_count; i++ )
 			{
-				long bi = getBlockIndex(_buff[i][0], _brlen);
-				long bj = getBlockIndex(_buff[i][1], _bclen);
+				long bi = UtilFunctions.computeBlockIndex(_buff[i][0], _brlen);
+				long bj = UtilFunctions.computeBlockIndex(_buff[i][1], _bclen);
 				
 				//output block and switch to next index pair
 				if( bi != cbi || bj != cbj ) {
@@ -221,8 +222,8 @@ public class ReblockBuffer
 							       Math.min(_bclen, (int)(_clen-(bj-1)*_bclen)), sparse);
 				}
 				
-				int ci = getIndexInBlock(_buff[i][0], _brlen);
-				int cj = getIndexInBlock(_buff[i][1], _bclen);
+				int ci = UtilFunctions.computeCellInBlock(_buff[i][0], _brlen);
+				int cj = UtilFunctions.computeCellInBlock(_buff[i][1], _bclen);
 				double tmp = Double.longBitsToDouble(_buff[i][2]);
 				tmpBlock.appendValue(ci, cj, tmp); 
 			}
@@ -236,10 +237,10 @@ public class ReblockBuffer
 			outVal.set(tmpVal);
 			for( int i=0; i<_count; i++ )
 			{
-				long bi = getBlockIndex(_buff[i][0], _brlen);
-				long bj = getBlockIndex(_buff[i][1], _bclen);
-				int ci = getIndexInBlock(_buff[i][0], _brlen);
-				int cj = getIndexInBlock(_buff[i][1], _bclen);
+				long bi = UtilFunctions.computeBlockIndex(_buff[i][0], _brlen);
+				long bj = UtilFunctions.computeBlockIndex(_buff[i][1], _bclen);
+				int ci = UtilFunctions.computeCellInBlock(_buff[i][0], _brlen);
+				int cj = UtilFunctions.computeCellInBlock(_buff[i][1], _bclen);
 				double tmp = Double.longBitsToDouble(_buff[i][2]);
 				tmpIx.setIndexes(bi, bj);
 				tmpVal.set(ci, cj, tmp); //in outVal, in outTVal
@@ -270,8 +271,8 @@ public class ReblockBuffer
 		long cbi = -1, cbj = -1; //current block indexes
 		for( int i=0; i<_count; i++ )
 		{
-			long bi = getBlockIndex(_buff[i][0], _brlen);
-			long bj = getBlockIndex(_buff[i][1], _bclen);
+			long bi = UtilFunctions.computeBlockIndex(_buff[i][0], _brlen);
+			long bj = UtilFunctions.computeBlockIndex(_buff[i][1], _bclen);
 			
 			//switch to next block
 			if( bi != cbi || bj != cbj ) {
@@ -290,8 +291,8 @@ public class ReblockBuffer
 		cbi = -1; cbj = -1; //current block indexes
 		for( int i=0; i<_count; i++ )
 		{
-			long bi = getBlockIndex(_buff[i][0], _brlen);
-			long bj = getBlockIndex(_buff[i][1], _bclen);
+			long bi = UtilFunctions.computeBlockIndex(_buff[i][0], _brlen);
+			long bj = UtilFunctions.computeBlockIndex(_buff[i][1], _bclen);
 			
 			//output block and switch to next index pair
 			if( bi != cbi || bj != cbj ) {
@@ -303,8 +304,8 @@ public class ReblockBuffer
 						       Math.min(_bclen, (int)(_clen-(bj-1)*_bclen)), sparse);
 			}
 			
-			int ci = getIndexInBlock(_buff[i][0], _brlen);
-			int cj = getIndexInBlock(_buff[i][1], _bclen);
+			int ci = UtilFunctions.computeCellInBlock(_buff[i][0], _brlen);
+			int cj = UtilFunctions.computeCellInBlock(_buff[i][1], _bclen);
 			double tmp = Double.longBitsToDouble(_buff[i][2]);
 			tmpBlock.appendValue(ci, cj, tmp); 
 		}
@@ -313,28 +314,6 @@ public class ReblockBuffer
 		outputBlock(outList, tmpIx, tmpBlock);
 		
 		_count = 0;
-	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param blen
-	 * @return
-	 */
-	private static long getBlockIndex( long ix, int blen )
-	{
-		return (ix-1)/blen+1;
-	}
-	
-	/**
-	 * 
-	 * @param ix
-	 * @param blen
-	 * @return
-	 */
-	private static int getIndexInBlock( long ix, int blen )
-	{
-		return (int)((ix-1)%blen);
 	}
 	
 	/**
@@ -397,10 +376,10 @@ public class ReblockBuffer
 		@Override
 		public int compare(long[] arg0, long[] arg1) 
 		{
-			long bi0 = getBlockIndex( arg0[0], _brlen );
-			long bj0 = getBlockIndex( arg0[1], _bclen );
-			long bi1 = getBlockIndex( arg1[0], _brlen );
-			long bj1 = getBlockIndex( arg1[1], _bclen );
+			long bi0 = UtilFunctions.computeBlockIndex( arg0[0], _brlen );
+			long bj0 = UtilFunctions.computeBlockIndex( arg0[1], _bclen );
+			long bi1 = UtilFunctions.computeBlockIndex( arg1[0], _brlen );
+			long bj1 = UtilFunctions.computeBlockIndex( arg1[1], _bclen );
 			
 			return ( bi0 < bi1 || (bi0 == bi1 && bj0 < bj1) ) ? -1 :
                    (( bi0 == bi1 && bj0 == bj1)? 0 : 1);		

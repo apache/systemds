@@ -338,6 +338,8 @@ public class ExecutionContext
 		throws DMLRuntimeException 
 	{
 		FrameObject fo = (FrameObject) getVariable(varName);
+		if( outputData.getNumColumns()>0 && outputData.getSchema()!=null )
+			fo.setValueType(outputData.getSchema().get(0));
 		fo.acquireModify(outputData);
 		fo.release();
 		    

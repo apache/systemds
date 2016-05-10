@@ -35,5 +35,6 @@ write (Y_bin, YFile);
 
 # generate categorical features
 X_cat = floor (rand (rows = num_records, cols = num_cat_features, min = 1, max = num_distinct + 0.99999999999999, sparsity = sparsity));
-write (X_cat, XCatFile, format = "csv");
+fX_cat = as.frame(X_cat);
+write (fX_cat, XCatFile, format = "csv");
 

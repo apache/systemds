@@ -53,7 +53,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 * 
 	 */
 	protected FrameObject() {
-		super(DataType.FRAME, ValueType.UNKNOWN);
+		super(DataType.FRAME, ValueType.STRING);
 	}
 	
 	/**

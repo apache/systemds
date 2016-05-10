@@ -28,10 +28,12 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 	FrameAppendTest.class,
 	FrameCastingTest.class,
+	FrameConverterTest.class,
 	FrameCopyTest.class,
 	FrameGetSetTest.class,
 	FrameIndexingTest.class,
 	FrameReadWriteTest.class,
+	FrameSchemaReadTest.class,
 	FrameSerializationTest.class,
 })
 

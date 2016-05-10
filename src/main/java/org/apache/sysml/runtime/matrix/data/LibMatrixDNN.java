@@ -18,8 +18,10 @@
  */
 package org.apache.sysml.runtime.matrix.data;
 
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,6 +32,28 @@ import org.apache.sysml.runtime.util.ConvolutionUtils;
 public class LibMatrixDNN {
 
 	public static boolean ALLOW_MULTI_THREADED_OPS = true;
+	// Using hashmap to avoid any performance impacts of multimap
+	private static final ConcurrentHashMap<Integer, SoftReference<double[]>> non_zeroed_double_arr = new ConcurrentHashMap<Integer, SoftReference<double[]>>();
+	private static final int NON_ZEROED_DOUBLE_ARR_THRESHOLD = 100;
+	public static void cacheReuseableData(double[] arr) {
+		if(arr != null && arr.length >= NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
+			// Put the last recently removed arrays into the NON_ZEROED_DOUBLE_ARR as 
+			// it has lower probability of being garbage collected
+			// new Integer(arr.length) can be avoided here as autoboxing will do the trick
+			non_zeroed_double_arr.put(arr.length, new SoftReference<double[]>(arr));
+		}
+	}
+	public static double[] getReuseableData(long length) {
+		if(length >= NON_ZEROED_DOUBLE_ARR_THRESHOLD) {
+			// Explicit "new Integer" required here for HashMap.remove
+			SoftReference<double[]> arr = non_zeroed_double_arr.remove(new Integer((int) length));
+			if(arr != null) {
+				return arr.get();
+			}
+		}
+		return null;
+	}
+	
 	enum TaskType {
 		ReshapeCol, Rotate180, Im2Col, Col2Im, MaxPooling_Forward, MaxPooling_Backward
 	}
@@ -42,6 +66,41 @@ public class LibMatrixDNN {
 		
 		MatrixBlock input1; MatrixBlock input2; MatrixBlock output;
 		boolean reuseNonZeroedOutput = false;
+		
+		private int convertToInt(long val) throws DMLRuntimeException {
+			if( val > Integer.MAX_VALUE ) {
+				throw new DMLRuntimeException("The value for ConvolutionParameters is too large:" + val);
+			}
+			return (int) val;
+		}
+		
+		public boolean compare(ConvolutionParameters that) {
+			if(this.N == that.N && this.C == that.C && this.H == that.H && this.W == that.W
+					&& this.K == that.K && this.R == that.R && this.S == that.S && this.stride_h == that.stride_h
+					 && this.stride_w == that.stride_w  && this.pad_h == that.pad_h
+					  && this.pad_w == that.pad_w   && this.numThreads == that.numThreads) {
+				return true;
+			}
+			return false;
+		}
+		
+		public ConvolutionParameters(long N, long C, long H, long W,
+				long K, long R, long S, long stride_h, long stride_w, long pad_h, long pad_w, int numThreads) throws DMLRuntimeException {
+			this.N = convertToInt(N);
+			this.C = convertToInt(C);
+			this.H = convertToInt(H);
+			this.W = convertToInt(W);
+			this.K = convertToInt(K);
+			this.R = convertToInt(R);
+			this.S = convertToInt(S);
+			this.stride_h = convertToInt(stride_h);
+			this.stride_w = convertToInt(stride_w);
+			this.pad_h = convertToInt(pad_h);
+			this.pad_w = convertToInt(pad_w);
+			P = convertToInt(ConvolutionUtils.getP(H, R, stride_h, pad_h));
+			Q = convertToInt(ConvolutionUtils.getQ(W, S, stride_w, pad_w));
+			this.numThreads = numThreads;
+		}
 		
 		public ConvolutionParameters(int N, int C, int H, int W,
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int numThreads) {
@@ -111,7 +170,7 @@ public class LibMatrixDNN {
 				start_index_h = Math.max(start_index_h, 0);
 				start_index_w = Math.max(start_index_w, 0);
 				int maxIndex = n*params.C*params.H*params.W + c*params.H*params.W +  start_index_h*params.W + start_index_w; 
-				double maxVal = Double.MIN_VALUE; 
+				double maxVal = -Double.MAX_VALUE; 
 
 
 				double currDoutVal = -1;

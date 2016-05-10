@@ -165,27 +165,23 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			throws DMLRuntimeException {
 		// acquire inputs
 		MatrixBlock outputBlock = null;
-		int N; int C; int H; int W;
-		int K; int R; int S; int stride_h; int stride_w; int pad_h; int pad_w;
-		int P; int Q;
-		
 		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
-		pad_h = getScalarInput(ec, _padding, 0);
-		pad_w = getScalarInput(ec, _padding, 1);
-		stride_h = getScalarInput(ec, _stride, 0);
-		stride_w = getScalarInput(ec, _stride, 1);
+		int pad_h = getScalarInput(ec, _padding, 0);
+		int pad_w = getScalarInput(ec, _padding, 1);
+		int stride_h = getScalarInput(ec, _stride, 0);
+		int stride_w = getScalarInput(ec, _stride, 1);
 
-		N = getScalarInput(ec, _input_shape, 0);
-		C = getScalarInput(ec, _input_shape, 1);
-		H = getScalarInput(ec, _input_shape, 2);
-		W = getScalarInput(ec, _input_shape, 3);
+		int N = getScalarInput(ec, _input_shape, 0);
+		int C = getScalarInput(ec, _input_shape, 1);
+		int H = getScalarInput(ec, _input_shape, 2);
+		int W = getScalarInput(ec, _input_shape, 3);
 
-		K = getScalarInput(ec, _filter_shape, 0);
+		int K = getScalarInput(ec, _filter_shape, 0);
 		
-		R = getScalarInput(ec, _filter_shape, 2);
-		S = getScalarInput(ec, _filter_shape, 3);
-		P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
-		Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+		int R = getScalarInput(ec, _filter_shape, 2);
+		int S = getScalarInput(ec, _filter_shape, 3);
+		int P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
+		int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
 		
 		ConvolutionParameters params = new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
 		
@@ -251,14 +247,14 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		
 		MatrixBlock outputBlock = new MatrixBlock(numRows, numCols, numRows * numCols);
 		_reuseNonZeroedOutput = false;
-		if(reuseNonZeroedOutput1 && MatrixBlock.REUSE_NONZEROED_OUTPUT) {
+		if(reuseNonZeroedOutput1 && DMLScript.REUSE_NONZEROED_OUTPUT) {
 			_reuseNonZeroedOutput = true;
 			outputBlock.allocateDenseBlock(true, !_reuseNonZeroedOutput);  
 		}
 		else  {
 			outputBlock.allocateDenseBlock();
 		}
-		outputBlock.setNonZeros(numRows * numCols);
+		outputBlock.setNonZeros(-1);
 
 		if(DMLScript.STATISTICS)
 			Statistics.incrementAllocationTime(System.nanoTime()-start, false);

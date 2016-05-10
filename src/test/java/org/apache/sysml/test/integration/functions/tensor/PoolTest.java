@@ -43,8 +43,6 @@ public class PoolTest extends AutomatedTestBase
 				new String[] {"B"}));
 	}
 	
-	HashMap<CellIndex, Double> bHM = new HashMap<CellIndex, Double>();
-	
 	@Test
 	public void testMaxPool2DDense1() 
 	{
@@ -130,7 +128,6 @@ public class PoolTest extends AutomatedTestBase
 		{
 			rtplatform = oldRTP;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			bHM.clear();
 		}
 	}
 	

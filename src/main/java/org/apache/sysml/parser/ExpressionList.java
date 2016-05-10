@@ -50,11 +50,19 @@ public class ExpressionList extends Expression {
 	}
 	@Override
 	public VariableSet variablesRead() {
-		throw new RuntimeException("ExpressionList should not be exposed beyond parser layer.");
+		VariableSet result = new VariableSet();
+		for( Expression expr : _value ) {
+			result.addVariables ( expr.variablesRead() );
+		}
+		return result;
 	}
 	@Override
 	public VariableSet variablesUpdated() {
-		throw new RuntimeException("ExpressionList should not be exposed beyond parser layer.");
+		VariableSet result = new VariableSet();
+		for( Expression expr : _value ) {
+			result.addVariables ( expr.variablesUpdated() );
+		}
+		return result;
 	}
 	
 

@@ -30,21 +30,15 @@ import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.ConvolutionParameters;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
 {	
 	private Hop.ConvOp op;
-	
-	long N = -1; long C = -1; long H = -1; long W = -1;
-	long K = -1; long R = -1; long S = -1;
-	long stride1 = -1;
-	long stride2 = -1;
-	long padding1 = -1;
-	long padding2 = -1;
-	long P = -1; long Q = -1;
-	
+
+	ConvolutionParameters params;
 	private int _maxNumThreads = -1; //-1 for unlimited
 
 	private ConvolutionOp() {
@@ -210,24 +204,27 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	
 		Hop input1 = getInput().get(0);
 		MatrixCharacteristics mc = memo.getAllInputStats(input1);
-			
+		try {
+			params = parseInput();
+		} catch (DMLRuntimeException e) {
+			throw new RuntimeException(e);
+		}
+		
 		switch(op) 
 		{
 			case RESHAPE_COL:
-			{
-				parseInput();
+			{				
 				ret = new long[3];
-				ret[0] = N;
-				ret[1] = getExtractedVal(K, P, Q);;
+				ret[0] = params.N;
+				ret[1] = getExtractedVal(params.K, params.P, params.Q);
 				ret[2] = mc.getNonZeros(); // exact estimates
 				break;
 			}
 			case ROTATE180:
 			{
-				parseInput();
 				ret = new long[3];
-				ret[0] = getExtractedVal(N, P, Q);
-				ret[1] = K;
+				ret[0] = getExtractedVal(params.N, params.P, params.Q);
+				ret[1] = params.K;
 				ret[2] = mc.getNonZeros(); // exact estimates
 				break;
 			}
@@ -255,6 +252,9 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	protected ExecType optFindExecType() throws HopsException {
 		
 		checkAndSetForcedPlatform();
+		
+		// TODO: Remove this once we add Spark instructions
+		_etypeForced = ExecType.CP;
 	
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
@@ -291,24 +291,20 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	// stride1, stride2, padding1, padding2  
 	// input_shape1, input_shape2, input_shape3, input_shape4, 
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-	void parseInput() {
-		// For pooling: x,stride,stride,pad,pad,numImg,numChannels,imgSize,imgSize,1,1,poolSize1,poolSize2)
-		stride1 = extractValue(getInput().get(1));
-		stride2 = extractValue(getInput().get(2));
-		padding1 = extractValue(getInput().get(3));
-		padding2 = extractValue(getInput().get(4));
-		N = extractValue(getInput().get(5));
-		C = extractValue(getInput().get(6));
-		H = extractValue(getInput().get(7));
-		W = extractValue(getInput().get(8));
-		K = extractValue(getInput().get(9));
-		C = (C <= 0) ? extractValue(getInput().get(10)) : C;
-		R = extractValue(getInput().get(11));
-		S = extractValue(getInput().get(12));
-		if(H > 0 && R > 0 && stride1 > 0 && padding1 > 0)
-			P = ConvolutionUtils.getP(H, R, stride1, padding1);
-		if(W > 0 && S > 0 && stride2 > 0 && padding2 > 0)
-		Q = ConvolutionUtils.getQ(W, S, stride2, padding2);
+	ConvolutionParameters parseInput() throws DMLRuntimeException {
+		ConvolutionParameters params = new ConvolutionParameters(
+				extractValue(getInput().get(5)),
+				extractValue(getInput().get(6)), 
+				extractValue(getInput().get(7)), 
+				extractValue(getInput().get(8)), 
+				extractValue(getInput().get(9)), 
+				extractValue(getInput().get(11)), 
+				extractValue(getInput().get(12)), 
+				extractValue(getInput().get(1)), 
+				extractValue(getInput().get(2)), 
+				extractValue(getInput().get(3)), 
+				extractValue(getInput().get(4)), _maxNumThreads);
+		return params;
 	}
 	
 	long getExtractedVal(long val1, long val2) {
@@ -330,78 +326,75 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	{
 		Hop input1 = getInput().get(0);
 		
+		try {
+			params = parseInput();
+		} catch (DMLRuntimeException e) {
+			throw new RuntimeException(e);
+		}
+		
 		switch(op) 
 		{
 			case IM2COL:
 			{
-				parseInput();
-				_dim1 = getExtractedVal(C, R, S);
-				_dim2 = getExtractedVal(N, P, Q);
+				_dim1 = getExtractedVal(params.C, params.R, params.S);
+				_dim2 = getExtractedVal(params.N, params.P, params.Q);
 				_nnz = -1;
 				break;
 			}
 			case COL2IM:
 			{
-				parseInput();
 				// Set _dim1, _dim2 and if possible _nnz (use input1.getNnz())
-				_dim1 = N;
-				_dim2 = getExtractedVal(C, H, W);
+				_dim1 = params.N;
+				_dim2 = getExtractedVal(params.C, params.H, params.W);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case RESHAPE_COL:
 			{
-				parseInput();
-				_dim1 = N;
-				_dim2 = getExtractedVal(K, P, Q);
+				_dim1 = params.N;
+				_dim2 = getExtractedVal(params.K, params.P, params.Q);
 				_nnz = input1.getNnz(); // exact estimates
 				break;
 			}
 			case ROTATE180:
 			{
-				parseInput();
-				_dim1 = getExtractedVal(N, P, Q);
-				_dim2 = K;
+				_dim1 = getExtractedVal(params.N, params.P, params.Q);
+				_dim2 = params.K;
 				_nnz = input1.getNnz(); // exact estimates
 				break;
 			}
 			case MAX_POOLING:
-			{
-				parseInput();
-				_dim1 = N;
-				_dim2 = getExtractedVal(C, P, Q);
+			{	
+				_dim1 = params.N;
+				_dim2 = getExtractedVal(params.C, params.P, params.Q);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case MAX_POOLING_BACKWARD:
 			{
-				parseInput();
-				_dim1 = N;
-				_dim2 = getExtractedVal(C, H, W);
+				_dim1 = params.N;
+				_dim2 = getExtractedVal(params.C, params.H, params.W);
 				_nnz = -1;
 				break;
 			}
 			case DIRECT_CONV2D:
 			{
-				parseInput();
-				_dim1 = N;
-				_dim2 = getExtractedVal(K, P, Q);
+				_dim1 = params.N;
+				_dim2 = getExtractedVal(params.K, params.P, params.Q);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_DATA:
 			{
-				parseInput();
-				_dim1 = N;
-				_dim2 = getExtractedVal(C, H, W);
+				_dim1 = params.N;
+				_dim2 = getExtractedVal(params.C, params.H, params.W);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
 			case DIRECT_CONV2D_BACKWARD_FILTER:
 			{
-				parseInput();
-				_dim1 = K;
-				_dim2 = getExtractedVal(C, R, S);
+				_dim1 = params.K;
+				_dim2 = getExtractedVal(params.C, params.R, params.S);
 				_nnz = -1; // cannot infer stats
 				break;
 			}
@@ -427,6 +420,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		//copy specific attributes
 		ret.op = op;
 		ret._maxNumThreads = _maxNumThreads;
+		ret.params = params;
 		
 		return ret;
 	}
@@ -437,12 +431,22 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		if( !(that instanceof ConvolutionOp) )
 			return false;
 		
-		ConvolutionOp that2 = (ConvolutionOp)that;		
+		ConvolutionOp that2 = (ConvolutionOp)that;
+		try {
+			if(params != null)
+				params = parseInput();
+			if(that2.params != null)
+				that2.params = parseInput();
+		} catch(DMLRuntimeException e) {
+			throw new RuntimeException(e);
+		}
+		
 		boolean ret =  (op == that2.op)
 				    && (getInput().size()==that.getInput().size())
-				    && _maxNumThreads == that2._maxNumThreads;
-				
-		//compare all childs (see reshape, sort)
+				    && _maxNumThreads == that2._maxNumThreads
+				    && (params.compare(that2.params));
+		
+		//compare all childs
 		if( ret ) //sizes matched
 			for( int i=0; i<_input.size(); i++ )
 				ret &= getInput().get(i) == that2.getInput().get(i);

@@ -428,28 +428,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		String namespace = fnNames[0];
 		String functionName = fnNames[1];
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
-
-		if(functionName.equals("conv2d") || functionName.equals("conv2d_backward_filter") || functionName.equals("conv2d_backward_data")) {
-			HashSet<String> expand = new HashSet<String>();
-			expand.add("input_shape"); expand.add("filter_shape"); expand.add("stride"); expand.add("padding");
-			paramExpression = expandListParams(paramExpression, expand, ctx);
-			paramExpression = orderConvolutionParams(paramExpression, 2, ctx);
-		}
-		else if(functionName.equals("max_pool") || functionName.equals("avg_pool") 
-				|| functionName.equals("max_pool_backward")) {
-			HashSet<String> expand = new HashSet<String>();
-			expand.add("input_shape"); expand.add("pool_size"); expand.add("stride"); expand.add("padding");
-			paramExpression = expandListParams(paramExpression, expand, ctx);
-			paramExpression.add(new ParameterExpression("filter_shape1", new IntIdentifier(1, currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), 
-					ctx.stop.getLine(), ctx.stop.getCharPositionInLine())));
-			paramExpression.add(new ParameterExpression("filter_shape2", new IntIdentifier(1, currentFile, ctx.start.getLine(), ctx.start.getCharPositionInLine(), 
-					ctx.stop.getLine(), ctx.stop.getCharPositionInLine())));
-			paramExpression = replaceListParams(paramExpression, "pool_size", "filter_shape", ctx, 3);
-			if(functionName.equals("max_pool_backward"))
-				paramExpression = orderConvolutionParams(paramExpression, 2, ctx);
-			else
-				paramExpression = orderConvolutionParams(paramExpression, 1, ctx);
-		}
 		
 		castAsScalarDeprecationCheck(functionName, ctx);
 		
@@ -464,75 +442,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			raiseWarning("castAsScalar() has been deprecated. Please use as.scalar().", ctx.start);
 		}
 	}
-
-	private ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, 
-			int skip, ParserRuleContext ctx) {
-		ArrayList<ParameterExpression> newParams = new ArrayList<ParameterExpression>();
-
-		for(int i = 0; i < skip; i++)
-			newParams.add(paramExpression.get(i));
-
-		String [] orderedParams = {
-				"stride1", "stride2", "padding1", "padding2",  
-				"input_shape1", "input_shape2", "input_shape3", "input_shape4", 
-				"filter_shape1", "filter_shape2", "filter_shape3", "filter_shape4"	
-		};
-		for(int i = 0; i < orderedParams.length; i++) {
-			boolean found = false;
-			for(ParameterExpression param : paramExpression) {
-				if(param.getName() != null &&  param.getName().equals(orderedParams[i])) {
-					found = true;
-					newParams.add(param);
-				}
-			}
-			if(!found) {
-				notifyErrorListeners("Incorrect parameters. Expected " + orderedParams[i] + " to be expanded.", ctx.start);
-			}
-		}
-
-		return newParams;
-	}
-
-	private ArrayList<ParameterExpression>  replaceListParams(ArrayList<ParameterExpression> paramExpression,
-			String inputVarName, String outputVarName, ParserRuleContext ctx, int startIndex) {
-		ArrayList<ParameterExpression> newParamExpression = new ArrayList<ParameterExpression>();
-		int i = startIndex;
-		int j = 1; // Assumption: sequential ordering pool_size1, pool_size2 
-		for (ParameterExpression expr : paramExpression) {
-			if(expr.getName() != null && expr.getName().equals(inputVarName + j)) {
-				newParamExpression.add(new ParameterExpression(outputVarName + i, expr.getExpr()));
-				i++; j++;
-			}
-			else {
-				newParamExpression.add(expr);
-			}
-		}
-		return newParamExpression;
-	}
-
-	private ArrayList<ParameterExpression> expandListParams(ArrayList<ParameterExpression> paramExpression, 
-			HashSet<String> paramsToExpand, ParserRuleContext ctx) {
-		ArrayList<ParameterExpression> newParamExpressions = new ArrayList<ParameterExpression>();
-		for(ParameterExpression expr : paramExpression) {
-			if(paramsToExpand.contains(expr.getName())) {
-				if(expr.getExpr() instanceof ExpressionList) {
-					int i = 1;
-					for(Expression e : ((ExpressionList)expr.getExpr()).getValue()) {
-						newParamExpressions.add(new ParameterExpression(expr.getName() + i, e));
-						i++;
-					}
-				}
-			}
-			else if(expr.getExpr() instanceof ExpressionList) {
-				notifyErrorListeners("the parameter " + expr.getName() + " cannot be list or is not supported for the given function", ctx.start);
-			}
-			else {
-				newParamExpressions.add(expr);
-			}
-		}
-		return newParamExpressions;
-	}
-			  
 
 	@Override
 	public void exitBuiltinFunctionExpression(BuiltinFunctionExpressionContext ctx) {

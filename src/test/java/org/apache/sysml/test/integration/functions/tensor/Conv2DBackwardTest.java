@@ -44,7 +44,6 @@ public class Conv2DBackwardTest extends AutomatedTestBase
 				new String[] {"B"}));
 	}
 	
-	HashMap<CellIndex, Double> bHM = new HashMap<CellIndex, Double>();
 	
 	@Test
 	public void testConv2DBackwardFilterDense1() 
@@ -140,7 +139,6 @@ public class Conv2DBackwardTest extends AutomatedTestBase
 		{
 			rtplatform = oldRTP;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			bHM.clear();
 		}
 	}
 	

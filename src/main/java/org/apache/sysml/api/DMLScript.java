@@ -965,4 +965,6 @@ public class DMLScript
 			throw new DMLException("Failed to run SystemML workspace cleanup.", ex);
 		}
 	}
+
+	public static final boolean REUSE_NONZEROED_OUTPUT = false;
 }  

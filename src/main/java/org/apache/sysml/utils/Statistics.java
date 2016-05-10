@@ -39,7 +39,6 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
  * This class captures all statistics.
@@ -615,7 +614,7 @@ public class Statistics
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
-			if(MatrixBlock.REUSE_NONZEROED_OUTPUT) {
+			if(DMLScript.REUSE_NONZEROED_OUTPUT) {
 				sb.append("Allocation count (Dense/Sparse):\t" + denseBlockAllocationCount + "/" + sparseBlockAllocationCount  + ".\n");
 				sb.append("Allocation time (Dense/Sparse):\t" + String.format("%.3f", denseBlockAllocationTime.doubleValue()/1000000000) 
 						+ "/" + String.format("%.3f", sparseBlockAllocationTime.doubleValue()/1000000000)  + " sec.\n");

@@ -27,14 +27,12 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -99,11 +97,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
-	
-	public static final boolean REUSE_NONZEROED_OUTPUT = false;
-	// Using hashmap to avoid any performance impacts of multimap
-	public static final ConcurrentHashMap<Integer, SoftReference<double[]>> non_zeroed_double_arr = new ConcurrentHashMap<Integer, SoftReference<double[]>>();
-	public static final int NON_ZEROED_DOUBLE_ARR_THRESHOLD = 100;
 	
 	public enum BlockType{
 		EMPTY_BLOCK,  
@@ -423,15 +416,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
-		if(!zeroOut && REUSE_NONZEROED_OUTPUT 
-				&& (denseBlock == null || denseBlock.length < limit) 
-				&& limit >= NON_ZEROED_DOUBLE_ARR_THRESHOLD && 
+		if(!zeroOut && DMLScript.REUSE_NONZEROED_OUTPUT 
+				&& (denseBlock == null || denseBlock.length < limit)
 				// Not a column vector
-				rlen != 1 && clen != 1) {
-			SoftReference<double[]> arr = non_zeroed_double_arr.remove(new Integer((int) limit));
-			if(arr != null) {
-				denseBlock = arr.get();
-			}
+				&& rlen != 1 && clen != 1) {
+			denseBlock = LibMatrixDNN.getReuseableData(limit);
 		}
 		if(denseBlock == null || denseBlock.length < limit) {
 			denseBlock = new double[(int)limit];

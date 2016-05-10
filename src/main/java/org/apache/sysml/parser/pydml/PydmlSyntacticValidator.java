@@ -36,6 +36,7 @@ import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.AssignmentStatement;
 import org.apache.sysml.parser.BinaryExpression;
+import org.apache.sysml.parser.BuiltinFunctionExpression;
 import org.apache.sysml.parser.ConditionalPredicate;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
@@ -325,6 +326,8 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		boolean isRowUpper = (ctx.rowUpper != null && !ctx.rowUpper.isEmpty() && (ctx.rowUpper.info.expr != null));
 		boolean isColLower = (ctx.colLower != null && !ctx.colLower.isEmpty() && (ctx.colLower.info.expr != null));
 		boolean isColUpper = (ctx.colUpper != null && !ctx.colUpper.isEmpty() && (ctx.colUpper.info.expr != null));
+		boolean isRowSliceImplicit = ctx.rowImplicitSlice != null;
+		boolean isColSliceImplicit = ctx.colImplicitSlice != null;
         ExpressionInfo rowLower = isRowLower ? ctx.rowLower.info : null;
         ExpressionInfo rowUpper = isRowUpper ? ctx.rowUpper.info : null;
         ExpressionInfo colLower = isColLower ? ctx.colLower.info : null;
@@ -350,8 +353,31 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 				rowIndices.add(rowUpper.expr);
 			}
 			else if(isRowLower && !isRowUpper) {
-				// only row set
+				// Add given lower bound
 				rowIndices.add(incrementByOne(rowLower.expr, ctx));
+				if(isRowSliceImplicit) {
+					// Add expression for nrow(X) for implicit upper bound
+					Expression.BuiltinFunctionOp bop = Expression.BuiltinFunctionOp.NROW;
+					DataIdentifier x = new DataIdentifier(ctx.name.getText());
+					int line = ctx.start.getLine();
+					int col = ctx.start.getCharPositionInLine();
+					Expression expr = new BuiltinFunctionExpression(bop, new Expression[]{x},
+							currentFile, line, col, line, col);
+					setFileLineColumn(expr, ctx);
+					rowIndices.add(expr);
+				}
+			}
+			else if(!isRowLower && isRowUpper && isRowSliceImplicit) {
+				// Add expression for `1` for implicit lower bound
+				// Note: We go ahead and increment by 1 to convert from 0-based to 1-based indexing
+				int line = ctx.start.getLine();
+				int col = ctx.start.getCharPositionInLine();
+				IntIdentifier one = new IntIdentifier(1, currentFile, line, col, line, col);
+				setFileLineColumn(one, ctx);
+				rowIndices.add(one);
+
+				// Add given upper bound
+				rowIndices.add(rowUpper.expr);
 			}
 			else {
 				notifyErrorListeners("incorrect index expression for row", ctx.start);
@@ -367,7 +393,31 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 				colIndices.add(colUpper.expr);
 			}
 			else if(isColLower && !isColUpper) {
+				// Add given lower bound
 				colIndices.add(incrementByOne(colLower.expr, ctx));
+				if(isColSliceImplicit) {
+					// Add expression for ncol(X) for implicit upper bound
+					Expression.BuiltinFunctionOp bop = Expression.BuiltinFunctionOp.NCOL;
+					DataIdentifier x = new DataIdentifier(ctx.name.getText());
+					int line = ctx.start.getLine();
+					int col = ctx.start.getCharPositionInLine();
+					Expression expr = new BuiltinFunctionExpression(bop, new Expression[]{x},
+							currentFile, line, col, line, col);
+					setFileLineColumn(expr, ctx);
+					colIndices.add(expr);
+				}
+			}
+			else if(!isColLower && isColUpper && isColSliceImplicit) {
+				// Add expression for `1` for implicit lower bound
+				// Note: We go ahead and increment by 1 to convert from 0-based to 1-based indexing
+				int line = ctx.start.getLine();
+				int col = ctx.start.getCharPositionInLine();
+				IntIdentifier one = new IntIdentifier(1, currentFile, line, col, line, col);
+				setFileLineColumn(one, ctx);
+				colIndices.add(one);
+
+				// Add given upper bound
+				colIndices.add(colUpper.expr);
 			}
 			else {
 				notifyErrorListeners("incorrect index expression for column", ctx.start);

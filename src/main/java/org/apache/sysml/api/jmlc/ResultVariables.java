@@ -26,6 +26,7 @@ import org.apache.sysml.api.DMLException;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -77,7 +78,7 @@ public class ResultVariables
 		throws DMLException
 	{
 		if( !_out.containsKey(varname) )
-			throw new DMLException("Non-existing output variable: "+varname);
+			throw new DMLException("Non-existent output variable: "+varname);
 		
 		double[][] ret = null;
 		Data dat = _out.get(varname);
@@ -106,7 +107,7 @@ public class ResultVariables
 		throws DMLException
 	{
 		if( !_out.containsKey(varname) )
-			throw new DMLException("Non-existing output variable: "+varname);
+			throw new DMLException("Non-existent output variable: "+varname);
 		
 		Data dat = _out.get(varname);
 		
@@ -121,6 +122,78 @@ public class ResultVariables
 		fo.release();
 		
 		return ret;
+	}
+	
+	/**
+	 * Obtain the double value represented by the given output variable.
+	 * 
+	 * @param varname
+	 *            output variable name
+	 * @return double value
+	 * @throws DMLException
+	 */
+	public double getDouble(String varname) throws DMLException {
+		ScalarObject sObj = getScalarObject(varname);
+		return sObj.getDoubleValue();
+	}
+
+	/**
+	 * Obtain the boolean value represented by the given output variable.
+	 * 
+	 * @param varname
+	 *            output variable name
+	 * @return boolean value
+	 * @throws DMLException
+	 */
+	public boolean getBoolean(String varname) throws DMLException {
+		ScalarObject sObj = getScalarObject(varname);
+		return sObj.getBooleanValue();
+	}
+
+	/**
+	 * Obtain the long value represented by the given output variable.
+	 * 
+	 * @param varname
+	 *            output variable name
+	 * @return long value
+	 * @throws DMLException
+	 */
+	public long getLong(String varname) throws DMLException {
+		ScalarObject sObj = getScalarObject(varname);
+		return sObj.getLongValue();
+	}
+
+	/**
+	 * Obtain the string value represented by the given output variable.
+	 * 
+	 * @param varname
+	 *            output variable name
+	 * @return string value
+	 * @throws DMLException
+	 */
+	public String getString(String varname) throws DMLException {
+		ScalarObject sObj = getScalarObject(varname);
+		return sObj.getStringValue();
+	}
+
+	/**
+	 * Obtain the ScalarObject represented by the given output variable.
+	 * 
+	 * @param varname
+	 *            output variable name
+	 * @return ScalarObject
+	 * @throws DMLException
+	 */
+	public ScalarObject getScalarObject(String varname) throws DMLException {
+		if (!_out.containsKey(varname))
+			throw new DMLException("Non-existent output variable: " + varname);
+
+		Data dat = _out.get(varname);
+
+		if (!(dat instanceof ScalarObject)) {
+			throw new DMLException("Expected scalar result '" + varname + "' not a scalar.");
+		}
+		return (ScalarObject) dat;
 	}
 	
 	/**

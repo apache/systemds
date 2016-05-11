@@ -88,6 +88,7 @@ import org.apache.sysml.parser.pydml.PydmlParser.FunctionCallAssignmentStatement
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionCallMultiAssignmentStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.IfStatementContext;
+import org.apache.sysml.parser.pydml.PydmlParser.ElifBranchContext;
 import org.apache.sysml.parser.pydml.PydmlParser.IfdefAssignmentStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.IgnoreNewLineContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ImportStatementContext;
@@ -1095,14 +1096,44 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			ifStmt.mergeStatementBlocksIfBody();
 		}
 
+		IfStatement tailIfStmt = ifStmt;
+
+		if(ctx.elifBranches.size() > 0) {
+			for(ElifBranchContext elifCtx : ctx.elifBranches) {
+				tailIfStmt.addStatementBlockElseBody(getStatementBlock(elifCtx.info.stmt));
+				tailIfStmt = (IfStatement) elifCtx.info.stmt;
+			}
+		}
+
 		if(ctx.elseBody.size() > 0) {
 			for(StatementContext stmtCtx : ctx.elseBody) {
-				ifStmt.addStatementBlockElseBody(getStatementBlock(stmtCtx.info.stmt));
+				tailIfStmt.addStatementBlockElseBody(getStatementBlock(stmtCtx.info.stmt));
 			}
-			ifStmt.mergeStatementBlocksElseBody();
+			tailIfStmt.mergeStatementBlocksElseBody();
 		}
 
 		ctx.info.stmt = ifStmt;
+		setFileLineColumn(ctx.info.stmt, ctx);
+	}
+
+	@Override
+	public void exitElifBranch(ElifBranchContext ctx) {
+		IfStatement elifStmt = new IfStatement();
+		ConditionalPredicate predicate = new ConditionalPredicate(ctx.predicate.info.expr);
+		elifStmt.setConditionalPredicate(predicate);
+		String fileName = currentFile;
+		int line = ctx.start.getLine();
+		int col = ctx.start.getCharPositionInLine();
+		elifStmt.setAllPositions(fileName, line, col, line, col);
+
+		if(ctx.elifBody.size() > 0) {
+			for (StatementContext stmtCtx : ctx.elifBody) {
+				elifStmt.addStatementBlockIfBody(getStatementBlock(stmtCtx.info.stmt));
+			}
+			elifStmt.mergeStatementBlocksIfBody();
+		}
+
+		ctx.info.stmt = elifStmt;
 		setFileLineColumn(ctx.info.stmt, ctx);
 	}
 
@@ -1518,6 +1549,8 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	@Override public void enterAddSubExpression(AddSubExpressionContext ctx) {}
 
 	@Override public void enterIfStatement(IfStatementContext ctx) {}
+
+	@Override public void enterElifBranch(ElifBranchContext ctx) {}
 
 	@Override public void enterIgnoreNewLine(IgnoreNewLineContext ctx) {}
 

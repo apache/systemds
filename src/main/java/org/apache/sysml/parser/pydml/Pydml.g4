@@ -178,7 +178,7 @@ statement returns [ org.apache.sysml.parser.common.StatementInfo info ]
     | targetList=dataIdentifier '=' source=expression NEWLINE   # AssignmentStatement
     // IfStatement
     // | 'if' OPEN_PAREN predicate=expression CLOSE_PAREN (ifBody+=statement ';'* |  NEWLINE INDENT (ifBody+=statement)+  DEDENT )  ('else' (elseBody+=statement ';'* | '{' (elseBody+=statement ';'*)*  '}'))?  # IfStatement
-    | 'if' (OPEN_PAREN predicate=expression CLOSE_PAREN | predicate=expression) ':'  NEWLINE INDENT (ifBody+=statement)+  DEDENT   ('else'  ':'  NEWLINE INDENT (elseBody+=statement)+  DEDENT )?  # IfStatement
+    | 'if' (OPEN_PAREN predicate=expression CLOSE_PAREN | predicate=expression) ':'  NEWLINE INDENT (ifBody+=statement)+  DEDENT (elifBranches += elifBranch)* ('else'  ':'  NEWLINE INDENT (elseBody+=statement)+  DEDENT )?  # IfStatement
     // ------------------------------------------
     // ForStatement & ParForStatement
     | 'for' (OPEN_PAREN iterVar=ID 'in' iterPred=iterablePredicate (',' parForParams+=strictParameterizedExpression)* CLOSE_PAREN |  iterVar=ID 'in' iterPred=iterablePredicate (',' parForParams+=strictParameterizedExpression)* ) ':'  NEWLINE INDENT (body+=statement)+  DEDENT  # ForStatement
@@ -187,6 +187,14 @@ statement returns [ org.apache.sysml.parser.common.StatementInfo info ]
     | 'while' ( OPEN_PAREN predicate=expression CLOSE_PAREN | predicate=expression ) ':' NEWLINE INDENT (body+=statement)+  DEDENT  # WhileStatement
     // ------------------------------------------
     | NEWLINE #IgnoreNewLine
+;
+
+elifBranch returns [ org.apache.sysml.parser.common.StatementInfo info ]
+  @init {
+        // This actions occurs regardless of how many alternatives in this rule
+        $info = new org.apache.sysml.parser.common.StatementInfo();
+  } :
+     'elif' (OPEN_PAREN predicate=expression CLOSE_PAREN | predicate=expression) ':'  NEWLINE INDENT (elifBody+=statement)+  DEDENT
 ;
 
 iterablePredicate returns [ org.apache.sysml.parser.common.ExpressionInfo info ]

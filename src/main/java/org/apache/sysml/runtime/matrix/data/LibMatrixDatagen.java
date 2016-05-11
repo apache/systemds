@@ -490,28 +490,25 @@ public class LibMatrixDatagen
 	public static void generateSequence(MatrixBlock out, double from, double to, double incr) 
 		throws DMLRuntimeException 
 	{
-		boolean neg = (from > to);
-		if (neg != (incr < 0))
-			throw new DMLRuntimeException("Wrong sign for the increment in a call to seq(): from="+from+", to="+to+ ", incr="+incr);
+		//check valid increment value
+		if( (from > to && incr > 0) || incr == 0 )
+			throw new DMLRuntimeException("Wrong sequence increment: from="+from+", to="+to+ ", incr="+incr);
 		
+		//prepare output matrix
 		int rows = 1 + (int)Math.floor((to-from)/incr);
-		int cols = 1;
-		out.sparse = false; // sequence matrix is always dense
-		out.reset(rows, cols, out.sparse);
-		
+		int cols = 1; // sequence vector always dense
+		out.reset(rows, cols, false);
 		out.allocateDenseBlock();
-		
-		//System.out.println(System.nanoTime() + ": MatrixBlockDSM.seq(): seq("+from+","+to+","+incr+") rows = " + rows);
-		double[] c = out.denseBlock; 
-		
-		c[0] = from;
-		for(int i=1; i < rows; i++) {
-			from += incr;
-			c[i] = from;
+	
+		//compute sequence data
+		double[] c = out.denseBlock; 		
+		double cur = from;
+		for(int i=0; i < rows; i++) {
+			c[i] = cur;
+			cur += incr;
 		}
 		
 		out.recomputeNonZeros();
-		//System.out.println(System.nanoTime() + ": end of seq()");
 	}
 
 	

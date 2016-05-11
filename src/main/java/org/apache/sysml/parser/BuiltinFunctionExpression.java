@@ -893,17 +893,15 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			long dim1=-1, dim2=1;
 			if ( isConstant(getFirstExpr()) && isConstant(getSecondExpr()) && (getThirdExpr() != null ? isConstant(getThirdExpr()) : true) ) {
 				double from, to, incr;
-				boolean neg;
 				try {
 					from = getDoubleValue(getFirstExpr());
 					to = getDoubleValue(getSecondExpr());
 					
 					// Setup the value of increment
 					// default value: 1 if from <= to; -1 if from > to
-					neg = (from > to);
 					if(getThirdExpr() == null) {
 						expandArguments();
-						_args[2] = new DoubleIdentifier((neg? -1.0 : 1.0),
+						_args[2] = new DoubleIdentifier(((from > to) ? -1.0 : 1.0),
 								this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
 								this.getEndLine(), this.getEndColumn());
 					}
@@ -914,14 +912,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					throw new LanguageException("Arguments for seq() must be numeric.");
 				}
 
-				if (neg != (incr < 0))
+				if( (from > to) && (incr >= 0) )
 					throw new LanguageException("Wrong sign for the increment in a call to seq()");
 				
 				// Both end points of the range must included i.e., [from,to] both inclusive.
 				// Note that, "to" is included only if (to-from) is perfectly divisible by incr
 				// For example, seq(0,1,0.5) produces (0.0 0.5 1.0) whereas seq(0,1,0.6) produces only (0.0 0.6) but not (0.0 0.6 1.0) 
 				dim1 = 1 + (long)Math.floor((to-from)/incr); 
-				//System.out.println("seq("+from+","+to+","+incr+") -> dims("+dim1+","+dim2+")");
 			}
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.DOUBLE);

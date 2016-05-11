@@ -35,7 +35,7 @@ import org.apache.sysml.test.utils.TestUtils;
 public class NegativeLoopIncrementsTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "NegativeForIncrTest";
-	private final static String TEST_NAME2 = "NegativeParforIncrTest";
+	private final static String TEST_NAME2 = "NegativeParForIncrTest";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + NegativeLoopIncrementsTest.class.getSimpleName() + "/";

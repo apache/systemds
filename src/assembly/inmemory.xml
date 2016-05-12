@@ -39,7 +39,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>${basedir}/src/assembly/standalone</directory>
+			<directory>${basedir}/src/assembly/inmemory</directory>
 			<includes>
 				<include>LICENSE</include>
 				<include>NOTICE</include>

@@ -34,6 +34,12 @@ import org.apache.spark.SparkConf
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import scala.reflect.ClassTag
+import org.apache.spark.sql.types.DataTypes
+import org.apache.spark.sql.RowFactory
+import org.apache.spark.sql.Row
+import scala.collection.mutable.ArrayBuffer
+import org.apache.spark.sql.types.StructField
+import org.apache.sysml.api.ml.util.RDDConverterUtilsExt
 
 trait HasIcpt extends Params {
   final val icpt: Param[Int] = new Param[Int](this, "icpt", "Intercept presence, shifting and rescaling X columns")
@@ -133,7 +139,8 @@ class LogisticRegressionModel(
     val mlscoreoutput = {
       val paramsMap: Map[String, String] = Map(
         "X" -> " ",
-        "B" -> " ")
+        "B" -> " ",
+        "dfam" -> "2")
       ml.registerInput("X", Xin, mcXin);
       ml.registerInput("B_full", mloutput.getBinaryBlockedRDD("B_out"), mloutput.getMatrixCharacteristics("B_out"));
       ml.registerOutput("means");
@@ -161,8 +168,8 @@ class LogisticRegressionModel(
     val rawPred = outNew.getDF(df.sqlContext, "rawPred", true).withColumnRenamed("C1", "rawPrediction").withColumnRenamed("ID", "ID2")
     var predictionsNProb = prob.join(pred, prob.col("ID").equalTo(pred.col("ID1"))).select("ID", "probability", "prediction")
     predictionsNProb = predictionsNProb.join(rawPred, predictionsNProb.col("ID").equalTo(rawPred.col("ID2"))).select("ID", "probability", "prediction", "rawPrediction")
-    val dataset1 = RDDConverterUtils.addIDToDataFrame(df, df.sqlContext, "ID")
-    dataset1.join(predictionsNProb, dataset1.col("ID").equalTo(predictionsNProb.col("ID")))
+    val dataset1 = RDDConverterUtilsExt.addIDToDataFrame(df,"dfindex",0)
+    dataset1.join(predictionsNProb, dataset1.col("dfindex").equalTo(predictionsNProb.col("ID")))
   }
 }
 

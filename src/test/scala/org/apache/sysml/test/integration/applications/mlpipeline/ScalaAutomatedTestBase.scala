@@ -16,9 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysml.api.ml
+package org.apache.sysml.test.integration.applications.mlpipeline
 
 import java.io.File
+import org.apache.sysml.api.ml.ScriptsUtils
 
 object ScalaAutomatedTestBase {
   // *** HACK ALERT *** HACK ALERT *** HACK ALERT ***

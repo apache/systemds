@@ -122,8 +122,8 @@ import org.apache.sysml.parser.pydml.PydmlParser.WhileStatementContext;
  */
 public class PydmlSyntacticValidator extends CommonSyntacticValidator implements PydmlListener {
 
-	public PydmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {
-		super(errorListener, argVals, sourceNamespace);
+	public PydmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace, Set<String> prepFunctions) {
+		super(errorListener, argVals, sourceNamespace, prepFunctions);
 	}
 
 	@Override public String namespaceResolutionOp() { return "."; }
@@ -600,7 +600,9 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 	 */
 	private ConvertedDMLSyntax convertPythonBuiltinFunctionToDMLSyntax(ParserRuleContext ctx, String namespace, String functionName, ArrayList<ParameterExpression> paramExpression,
 			Token fnName) {
-
+		if (sources.containsValue(namespace) || functions.contains(functionName)) {
+			return new ConvertedDMLSyntax(namespace, functionName, paramExpression);
+		}
 
 		String fileName = currentFile;
 		int line = ctx.start.getLine();
@@ -1344,8 +1346,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 		// set function name
 		functionStmt.setName(ctx.name.getText());
-
-
+		
 		if(ctx.body.size() > 0) {
 			// handle function body
 			// Create arraylist of one statement block
@@ -1379,7 +1380,7 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 		// set function name
 		functionStmt.setName(ctx.name.getText());
-
+		
 		// set other parameters
 		HashMap<String, String> otherParams = new HashMap<String,String>();
 		boolean atleastOneClassName = false;

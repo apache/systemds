@@ -44,6 +44,9 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	private final static String TEST_NAME8 = "Functions8";
 	private final static String TEST_NAME9 = "Functions9";
 	private final static String TEST_NAME10 = "Functions10";
+	private final static String TEST_NAME11 = "Functions11";
+	private final static String TEST_NAME12 = "Functions12";
+	private final static String TEST_NAME13 = "Functions13";
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionNamespaceTest.class.getSimpleName() + "/";
 	
@@ -65,6 +68,9 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8)); 
 		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9)); 
 		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10)); 
+		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11)); 
+		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12)); 
+		addTestConfiguration(TEST_NAME13, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME13)); 
 	}
 	
 	@Test
@@ -145,6 +151,24 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testFunctionBuiltinOverride() 
+	{
+		runFunctionNamespaceTest(TEST_NAME11, ScriptType.DML);
+	}
+	
+	@Test
+	public void testFunctionMultiOverride() 
+	{
+		runFunctionNamespaceTest(TEST_NAME12, ScriptType.DML);
+	}
+	
+	@Test
+	public void testFunctionErrorOverride() 
+	{
+		runFunctionNamespaceTest(TEST_NAME13, ScriptType.DML);
+	}
+	
+	@Test
 	public void testPyFunctionDefaultNS() 
 	{
 		runFunctionNamespaceTest(TEST_NAME0, ScriptType.PYDML);
@@ -221,6 +245,24 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	{
 		runFunctionNamespaceTest(TEST_NAME10, ScriptType.PYDML);
 	}
+	
+	@Test
+	public void testPyFunctionBuiltinOverride() 
+	{
+		runFunctionNamespaceTest(TEST_NAME11, ScriptType.PYDML);
+	}
+	
+	@Test
+	public void testPyFunctionMultiOverride() 
+	{
+		runFunctionNamespaceTest(TEST_NAME12, ScriptType.PYDML);
+	}
+	
+	@Test
+	public void testPyFunctionErrorOverride() 
+	{
+		runFunctionNamespaceTest(TEST_NAME13, ScriptType.PYDML);
+	}
 
 	private void runFunctionNamespaceTest(String TEST_NAME, ScriptType scriptType)
 	{		
@@ -253,6 +295,13 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 					if (TEST_NAME8.equals(TEST_NAME))
 					{
 						if (!stdErrString.contains("Namespace Conflict"))
+						{
+							Assert.fail("Expected parse issue not detected.");
+						}
+					}
+					else if (TEST_NAME13.equals(TEST_NAME))
+					{
+						if (stdErrString != null && !stdErrString.contains("Function Name Conflict"))
 						{
 							Assert.fail("Expected parse issue not detected.");
 						}

@@ -97,8 +97,18 @@ public class LibMatrixDNN {
 			this.stride_w = convertToInt(stride_w);
 			this.pad_h = convertToInt(pad_h);
 			this.pad_w = convertToInt(pad_w);
-			P = convertToInt(ConvolutionUtils.getP(H, R, stride_h, pad_h));
-			Q = convertToInt(ConvolutionUtils.getQ(W, S, stride_w, pad_w));
+			if(H >= 0 && pad_h >= 0 && R >= 0 && stride_h >= 0)
+				P = (int) ((H + 2 * pad_h - R) / stride_h + 1);
+			else
+				P = -1;
+			// P = convertToInt(ConvolutionUtils.getP(H, R, stride_h, pad_h));
+			
+			if(W >= 0 && pad_w >= 0 && S >= 0 && stride_w >= 0)
+				Q = (int) ((W + 2 * pad_w - S) / stride_w + 1);
+			else
+				Q = -1;
+			// Q = convertToInt(ConvolutionUtils.getQ(W, S, stride_w, pad_w));
+			
 			this.numThreads = numThreads;
 		}
 		

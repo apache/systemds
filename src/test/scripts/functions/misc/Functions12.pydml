@@ -25,20 +25,28 @@ source("./src/test/scripts/functions/misc/FunctionsL2.pydml") as Functions
 M1 = full("1 2 3 4", rows=2, cols=2)
 M2 = full("5 6 7 8", rows=2, cols=2)
 
-# access imported external function t
+# Use imported external function t
 now = Functions.t()
 print("Time is " + now)
 
-# built-in transpose accessible
+# Built-in transpose accessible since imported override
 result = t(M2)
-nothing = Functions.print(result)
+nothing = Functions.printMatrix(result)
 
-# access imported qr multiple return function
+# Use imported qr multiple return function
 [min, max] = Functions.qr(M1)
 
-# access built-in qr
+# Use built-in qr
 [Q, R] = qr(M2)
+nothing = Functions.printMatrix(Q)
+nothing = Functions.printMatrix(R)
 
-# access imported print
-nothing = Functions.print(Q)
-nothing = Functions.print(R)
+# Use local override before function definition
+[y, Z] = rand(2)
+print("rand is " + y + ", " + sum(Z))
+
+# Local function definition override of built-in rand returning matrix and scalar
+def rand(x: int) -> (y: int, Z: matrix[float]):
+    print("override rand")
+    y = x*2
+    Z = full(y, rows=4, cols=2)

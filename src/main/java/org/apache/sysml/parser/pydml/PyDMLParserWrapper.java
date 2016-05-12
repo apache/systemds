@@ -161,7 +161,11 @@ public class PyDMLParserWrapper extends AParserWrapper
 		ParseTree tree = ast;
 		// And also do syntactic validation
 		ParseTreeWalker walker = new ParseTreeWalker();
-		PydmlSyntacticValidator validator = new PydmlSyntacticValidator(errorListener, argVals, sourceNamespace);
+		// Get list of function definitions which take precedence over built-in functions if same name
+		PydmlPreprocessor prep = new PydmlPreprocessor(errorListener);
+		walker.walk(prep, tree);
+		// Syntactic validation
+		PydmlSyntacticValidator validator = new PydmlSyntacticValidator(errorListener, argVals, sourceNamespace, prep.getFunctionDefs());
 		walker.walk(validator, tree);
 		errorListener.unsetCurrentFileName();
 		this.parseIssues = errorListener.getParseIssues();

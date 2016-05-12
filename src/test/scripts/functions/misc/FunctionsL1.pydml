@@ -20,11 +20,24 @@
 #-------------------------------------------------------------
 def sum(X: matrix[float]) -> (total: float):
     total = 0
-    for (i in 1:nrow(X)):
-        for (j in 1:ncol(X)):
+    for (i in 0:nrow(X)-1):
+        for (j in 0:ncol(X)-1):
             total = total + scalar(X[i,j])
     print("Override sum is " + total)
 
 def min(X: matrix[float]) -> (minimum: float):
-    minimum = min(X)
+    MinRow = rowMins(X)
+    MinCol = colMins(MinRow)
+    minimum = scalar(MinCol[0,0])
     print("Minimum is " + minimum)
+
+def minMax(M: matrix[float]) -> (minVal: float, maxVal: float):
+    # Access local overrides (defined before or after) instead of built-ins
+    minVal = min(M)
+    maxVal = max(M)
+
+def max(X: matrix[float]) -> (maximum: float):
+    MaxRow = rowMaxs(X)
+    MaxCol = colMaxs(MaxRow)
+    maximum = scalar(MaxCol[0,0])
+    print("Maximum is " + maximum)

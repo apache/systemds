@@ -31,7 +31,7 @@ qr = function(matrix[double] M) return (double minVal, double maxVal) {
     print("Maximum is " + maxVal)
 }
 
-print = function(matrix[double] X) return ()
+printMatrix = function(matrix[double] X) return ()
 {
     for (i in 1:nrow(X))
     {

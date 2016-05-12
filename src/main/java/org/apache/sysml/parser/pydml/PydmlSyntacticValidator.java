@@ -122,8 +122,8 @@ import org.apache.sysml.parser.pydml.PydmlParser.WhileStatementContext;
  */
 public class PydmlSyntacticValidator extends CommonSyntacticValidator implements PydmlListener {
 
-	public PydmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {
-		super(errorListener, argVals, sourceNamespace);
+	public PydmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace, Set<String> prepFunctions) {
+		super(errorListener, argVals, sourceNamespace, prepFunctions);
 	}
 
 	@Override public String namespaceResolutionOp() { return "."; }
@@ -1346,8 +1346,6 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 		// set function name
 		functionStmt.setName(ctx.name.getText());
-
-		validateFunctionName(functionStmt.getName(), ctx);
 		
 		if(ctx.body.size() > 0) {
 			// handle function body
@@ -1382,8 +1380,6 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 
 		// set function name
 		functionStmt.setName(ctx.name.getText());
-
-		validateFunctionName(functionStmt.getName(), ctx);
 		
 		// set other parameters
 		HashMap<String, String> otherParams = new HashMap<String,String>();

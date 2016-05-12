@@ -78,13 +78,13 @@ public abstract class CommonSyntacticValidator {
 		_scripts.get().clear();
 	}
 
-	public CommonSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {
+	public CommonSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace, Set<String> prepFunctions) {
 		this.errorListener = errorListener;
 		currentFile = errorListener.getCurrentFileName();
 		this.argVals = argVals;
 		this.sourceNamespace = sourceNamespace;
 		sources = new HashMap<String, String>();
-		functions = new HashSet<String>();
+		functions = (null != prepFunctions) ? prepFunctions : new HashSet<String>();
 	}
 
 	protected void notifyErrorListeners(String message, int line, int charPositionInLine) {
@@ -155,15 +155,6 @@ public abstract class CommonSyntacticValidator {
 		}
 		else {
 			notifyErrorListeners("Namespace Conflict: '" + namespace + "' already defined as " + sources.get(namespace), ctx.start);
-		}
-	}
-	
-	protected void validateFunctionName(String name, ParserRuleContext ctx) {
-		if (!functions.contains(name)) {
-			functions.add(name);
-		}
-		else {
-			notifyErrorListeners("Function Name Conflict: '" + name + "' already defined in " + currentFile, ctx.start);
 		}
 	}
 	
@@ -624,7 +615,11 @@ public abstract class CommonSyntacticValidator {
 		int line = ctx.start.getLine();
 		int col = ctx.start.getCharPositionInLine();
 		try {
-
+			if (functions.contains(functionName)) {
+				// It is a user function definition (which takes precedence if name same as built-in)
+				return false;
+			}
+			
 			Expression lsf = handleLanguageSpecificFunction(ctx, functionName, paramExpressions);
 			if (lsf != null){
 				setFileLineColumn(lsf, ctx);

@@ -33,6 +33,23 @@ sum = function(matrix[double] X) return (double total)
 
 min = function(matrix[double] X) return (double minimum)
 {
-    minimum = min(X)
+    MinRow = rowMins(X)
+    MinCol = colMins(MinRow)
+    minimum = as.scalar(MinCol[1,1])
     print("Minimum is " + minimum)
+}
+
+minMax = function(matrix[double] M) return (double minVal, double maxVal)
+{
+    # Access local overrides (defined before or after) instead of built-ins
+    minVal = min(M)
+    maxVal = max(M)
+}
+
+max = function(matrix[double] X) return (double maximum)
+{
+    MaxRow = rowMaxs(X)
+    MaxCol = colMaxs(MaxRow)
+    maximum = as.scalar(MaxCol[1,1])
+    print("Maximum is " + maximum)
 }

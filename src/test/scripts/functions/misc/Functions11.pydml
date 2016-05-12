@@ -19,26 +19,44 @@
 #
 #-------------------------------------------------------------
 
-# Import internal function definition override of built-in sum
+# Import function definition override of built-in sum
 source("./src/test/scripts/functions/misc/FunctionsL1.pydml") as Functions
 
-# Local internal function definition override of built-in min
-def min(i: int):
-    print("min" + i)
+# Local function definition override of built-in min returning scalar
+def min(x: int) -> (y: int):
+    print("override min")
+    Z = full(x, rows=4, cols=2)
+    y = x*2
+
+# Use local min after definition
+result = min(1)
+print("min is " + result)
 
 M1 = full("1 2 3 4", rows=2, cols=2)
 M2 = full("5 6 7 8", rows=2, cols=2)
 
-# access local min
-nothing = min(1)
-
-# built-in min not directly accessible in this script due to local override
+# Built-in min not directly accessible in this script due to local override
 #result = min(M1)
+
+# Use imported min
 result = Functions.min(M1)
 
-# access imported sum
+# Use imported function with overrides
+[min, max] = Functions.minMax(M2)
+
+# Use imported sum
 result = Functions.sum(M1)
 
-# built-in sum accessible since imported override
+# Built-in sum accessible since imported override
 result = sum(M2)
 print("Built-in sum is " + result)
+
+# Use local override before function definition
+Z = rand(2)
+print("rand sum is " + sum(Z))
+
+# Local function definition override of built-in rand returning matrix
+def rand(x: int) -> (Z: matrix[float]):
+    print("override rand")
+    Z = full(x, rows=4, cols=2)
+    y = x*2

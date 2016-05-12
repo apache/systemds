@@ -29,8 +29,8 @@ def qr(M: matrix[float]) -> (minVal: float, maxVal: float):
     print("Minimum is " + minVal)
     print("Maximum is " + maxVal)
 
-def print(X: matrix[float]) -> ():
-    for (i in 1:nrow(X)):
-        for (j in 1:ncol(X)):
+def printMatrix(X: matrix[float]) -> ():
+    for (i in 0:nrow(X)-1):
+        for (j in 0:ncol(X)-1):
             xij = scalar(X[i,j])
             print("[" + i + "," + j + "] " + xij)

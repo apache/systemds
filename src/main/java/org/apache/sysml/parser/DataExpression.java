@@ -200,7 +200,7 @@ public class DataExpression extends DataIdentifier
 				String pname = currExpr.getName();
 				Expression pexpr = currExpr.getExpr();
 				if (pname == null){
-					dataExpr.raiseValidateError("for Rand Statment all arguments must be named parameters");	
+					dataExpr.raiseValidateError("for Rand Statement all arguments must be named parameters");	
 				}
 				dataExpr.addRandExprParam(pname, pexpr); 
 			}

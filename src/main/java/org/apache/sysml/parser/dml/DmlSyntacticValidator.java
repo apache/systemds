@@ -112,8 +112,8 @@ import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 
 public class DmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
 
-	public DmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace) {
-		super(errorListener, argVals, sourceNamespace);
+	public DmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace, Set<String> prepFunctions) {
+		super(errorListener, argVals, sourceNamespace, prepFunctions);
 	}
 	
 	@Override public String namespaceResolutionOp() { return "::"; }
@@ -789,8 +789,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		// set function name
 		functionStmt.setName(ctx.name.getText());
 
-		validateFunctionName(ctx.name.getText(), ctx);
-
 		if(ctx.body.size() > 0) {
 			// handle function body
 			// Create arraylist of one statement block
@@ -824,8 +822,6 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 		// set function name
 		functionStmt.setName(ctx.name.getText());
-
-		validateFunctionName(ctx.name.getText(), ctx);
 
 		// set other parameters
 		HashMap<String, String> otherParams = new HashMap<String,String>();

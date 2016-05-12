@@ -45,6 +45,8 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_NAME1 = "FrameSchemaRead1";
 	private final static String TEST_NAME2 = "FrameSchemaRead2";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FrameSchemaReadTest.class.getSimpleName() + "/";
+	
 
 	private final static int rows = 1593;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
@@ -54,8 +56,8 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_DIR, TEST_NAME1, new String[] {"B"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_DIR, TEST_NAME2, new String[] {"B"}));		
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"B"}));		
 	}
 	
 	@Test

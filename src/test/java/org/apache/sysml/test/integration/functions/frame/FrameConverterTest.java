@@ -67,6 +67,8 @@ public class FrameConverterTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/frame/";
 	private final static String TEST_NAME = "FrameConv";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FrameConverterTest.class.getSimpleName() + "/";
+
 
 	private final static int rows = 1593;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
@@ -101,7 +103,7 @@ public class FrameConverterTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
 	
 	@Test
@@ -256,6 +258,7 @@ public class FrameConverterTest extends AutomatedTestBase
 	 * @param instType
 	 */
 	private void runConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, InputInfo iinfo, OutputInfo oinfo )
+		throws IOException
 	{
 		try
 		{
@@ -283,6 +286,10 @@ public class FrameConverterTest extends AutomatedTestBase
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
+		finally {
+			MapReduceTool.deleteFileIfExistOnHDFS(input("A"));
+			MapReduceTool.deleteFileIfExistOnHDFS(output("B"));
+		}
 	}
 	
 	/**
@@ -295,6 +302,7 @@ public class FrameConverterTest extends AutomatedTestBase
 	 * @param instType
 	 */
 	private void runMatrixConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, InputInfo iinfo, OutputInfo oinfo )
+		throws IOException
 	{
 		try
 		{
@@ -350,6 +358,10 @@ public class FrameConverterTest extends AutomatedTestBase
 		catch(Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
+		}
+		finally {
+			MapReduceTool.deleteFileIfExistOnHDFS(input("A"));
+			MapReduceTool.deleteFileIfExistOnHDFS(output("B"));
 		}
 	}
 	

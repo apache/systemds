@@ -39,7 +39,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>${basedir}/src/assembly/standalone</directory>
+			<directory>${basedir}/src/assembly/standalone-jar</directory>
 			<includes>
 				<include>LICENSE</include>
 				<include>NOTICE</include>
@@ -73,6 +73,11 @@
 			</includes>
 			<scope>compile</scope>
 			<unpack>true</unpack>
+			<unpackOptions>
+				<excludes>
+					<exclude>META-INF/DEPENDENCIES</exclude>
+				</excludes>
+			</unpackOptions>
 		</dependencySet>
 
 		<dependencySet>

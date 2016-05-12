@@ -38,7 +38,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 {	
 	private Hop.ConvOp op;
 
-	ConvolutionParameters params;
 	private int _maxNumThreads = -1; //-1 for unlimited
 
 	private ConvolutionOp() {
@@ -203,6 +202,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		long[] ret = null;
 	
 		Hop input1 = getInput().get(0);
+		ConvolutionParameters params;
 		MatrixCharacteristics mc = memo.getAllInputStats(input1);
 		try {
 			params = parseInput();
@@ -260,22 +260,20 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			_etype = _etypeForced;
 		}
 		else 
-		{
-			_etype = ExecType.CP;
-			
+		{	
 			// TODO: After adding Spark backend, uncomment this
-//			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
-//				_etype = findExecTypeByMemEstimate();
-//			}
-//			// Choose CP, if the input dimensions are below threshold or if the input is a vector
-//			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
-//			{
-//				_etype = ExecType.CP;
-//			}
-//			else 
-//			{
-//				_etype = REMOTE;
-//			}
+			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
+				_etype = findExecTypeByMemEstimate();
+			}
+			// Choose CP, if the input dimensions are below threshold or if the input is a vector
+			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+			{
+				_etype = ExecType.CP;
+			}
+			else 
+			{
+				_etype = REMOTE;
+			}
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
@@ -284,6 +282,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		//mark for recompile (forever)
 		if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && _etype==REMOTE )
 			setRequiresRecompile();
+		
+		_etype = ExecType.CP;
 	
 		return _etype;
 	}
@@ -326,6 +326,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	{
 		Hop input1 = getInput().get(0);
 		
+		ConvolutionParameters params;
 		try {
 			params = parseInput();
 		} catch (DMLRuntimeException e) {
@@ -420,8 +421,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		//copy specific attributes
 		ret.op = op;
 		ret._maxNumThreads = _maxNumThreads;
-		ret.params = params;
-		
 		return ret;
 	}
 	
@@ -432,19 +431,10 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			return false;
 		
 		ConvolutionOp that2 = (ConvolutionOp)that;
-		try {
-			if(params != null)
-				params = parseInput();
-			if(that2.params != null)
-				that2.params = parseInput();
-		} catch(DMLRuntimeException e) {
-			throw new RuntimeException(e);
-		}
 		
 		boolean ret =  (op == that2.op)
 				    && (getInput().size()==that.getInput().size())
-				    && _maxNumThreads == that2._maxNumThreads
-				    && (params.compare(that2.params));
+				    && _maxNumThreads == that2._maxNumThreads;
 		
 		//compare all childs
 		if( ret ) //sizes matched

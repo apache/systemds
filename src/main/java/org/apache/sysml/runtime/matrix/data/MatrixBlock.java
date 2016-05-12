@@ -82,7 +82,6 @@ import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.Statistics;
 
 
 public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable
@@ -424,7 +423,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		if(denseBlock == null || denseBlock.length < limit) {
 			denseBlock = new double[(int)limit];
-			Statistics.incrementAllocationCount(false);
 		}
 		
 		
@@ -463,7 +461,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized)
 		if( sparseBlock == null || sparseBlock.numRows()<rlen ) {
 			sparseBlock = SparseBlockFactory.createSparseBlock(DEFAULT_SPARSEBLOCK, rlen);
-			Statistics.incrementAllocationCount(true);
 		}
 		
 		//clear nnz if necessary

@@ -252,9 +252,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	protected ExecType optFindExecType() throws HopsException {
 		
 		checkAndSetForcedPlatform();
-		
-		// TODO: Remove this once we add Spark instructions
-		_etypeForced = ExecType.CP;
 	
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
@@ -263,19 +260,22 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			_etype = _etypeForced;
 		}
 		else 
-		{	
-			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
-				_etype = findExecTypeByMemEstimate();
-			}
-			// Choose CP, if the input dimensions are below threshold or if the input is a vector
-			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
-			{
-				_etype = ExecType.CP;
-			}
-			else 
-			{
-				_etype = REMOTE;
-			}
+		{
+			_etype = ExecType.CP;
+			
+			// TODO: After adding Spark backend, uncomment this
+//			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
+//				_etype = findExecTypeByMemEstimate();
+//			}
+//			// Choose CP, if the input dimensions are below threshold or if the input is a vector
+//			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
+//			{
+//				_etype = ExecType.CP;
+//			}
+//			else 
+//			{
+//				_etype = REMOTE;
+//			}
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();

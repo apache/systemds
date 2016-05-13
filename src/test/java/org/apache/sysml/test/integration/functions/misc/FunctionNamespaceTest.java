@@ -47,6 +47,7 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	private final static String TEST_NAME11 = "Functions11";
 	private final static String TEST_NAME12 = "Functions12";
 	private final static String TEST_NAME13 = "Functions13";
+	private final static String TEST_NAME14 = "Functions14";
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionNamespaceTest.class.getSimpleName() + "/";
 	
@@ -71,6 +72,7 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11)); 
 		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12)); 
 		addTestConfiguration(TEST_NAME13, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME13)); 
+		addTestConfiguration(TEST_NAME14, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME14)); 
 	}
 	
 	@Test
@@ -169,6 +171,12 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	}
 	
 	@Test
+	public void testFunctionRandomCDF() 
+	{
+		runFunctionNamespaceTest(TEST_NAME14, ScriptType.DML);
+	}
+	
+	@Test
 	public void testPyFunctionDefaultNS() 
 	{
 		runFunctionNamespaceTest(TEST_NAME0, ScriptType.PYDML);
@@ -262,6 +270,12 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	public void testPyFunctionErrorOverride() 
 	{
 		runFunctionNamespaceTest(TEST_NAME13, ScriptType.PYDML);
+	}
+	
+	@Test
+	public void testPyFunctionRandomCDF() 
+	{
+		runFunctionNamespaceTest(TEST_NAME14, ScriptType.PYDML);
 	}
 
 	private void runFunctionNamespaceTest(String TEST_NAME, ScriptType scriptType)

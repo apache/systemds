@@ -43,6 +43,7 @@ import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.decode.Decoder;
 import org.apache.sysml.runtime.transform.decode.DecoderFactory;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysml.runtime.util.DataConverter;
 
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
@@ -129,6 +130,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 				 || opcode.equals("transformapply")
 				 || opcode.equals("transformdecode")
 				 || opcode.equals("transformmeta")) 
+		{
+			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
+		}
+		else if (	opcode.equals("toString"))
 		{
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
@@ -287,6 +292,50 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			
 			//release locks
 			ec.setFrameOutput(output.getName(), meta);
+		}
+		else if ( opcode.equalsIgnoreCase("toString")) {
+			// Default Arguments
+			final int MAXROWS = 100;
+			final int MAXCOLS = 100;
+			final int DECIMAL = 3;
+			final boolean SPARSE = false;
+			final String SEPARATOR = " ";
+			final String LINESEPARATOR = "\n";
+			
+			int rows=MAXROWS, cols=MAXCOLS, decimal=DECIMAL;
+			boolean sparse = SPARSE;
+			String separator=SEPARATOR, lineseparator=LINESEPARATOR; 
+			
+			String rowsStr = getParameterMap().get("rows");
+			if (rowsStr != null){ rows = Integer.parseInt(rowsStr); }
+			
+			String colsStr = getParameterMap().get("cols");
+			if (colsStr != null) { cols = Integer.parseInt(rowsStr); }
+			
+			String decimalStr = getParameterMap().get("decimal");
+			if (decimalStr != null) { decimal = Integer.parseInt(decimalStr); }
+			
+			String sparseStr = getParameterMap().get("sparse");
+			if (sparseStr != null) { sparse = Boolean.parseBoolean(sparseStr); }
+			
+			String separatorStr = getParameterMap().get("sep");
+			if (separatorStr != null) { separator = separatorStr; }
+			
+			String lineseparatorStr = getParameterMap().get("linesep");
+			if (lineseparatorStr != null) { lineseparator = lineseparatorStr; }
+			
+			// The matrix argument is "null"
+			String matrixStr = getParameterMap().get("null");
+			Data data = ec.getVariable(matrixStr);
+			if (!(data instanceof MatrixObject))
+				throw new DMLRuntimeException("toString only converts matrix objects to string");
+			MatrixBlock matrix = ec.getMatrixInput(matrixStr);
+
+			String outputStr = DataConverter.convertToString(matrix, sparse, separator, lineseparator, rows, cols, decimal);
+			
+			ec.releaseMatrixInput(matrixStr);
+			ec.setScalarOutput(output.getName(), new StringObject(outputStr));
+			
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

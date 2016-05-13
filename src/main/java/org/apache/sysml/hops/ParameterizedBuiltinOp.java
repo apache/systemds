@@ -110,6 +110,19 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	public HashMap<String, Integer> getParamIndexMap(){
 		return _paramIndexMap;
 	}
+	
+	/**
+	 * Returns a parameters by its name. Returns null if not present  
+	 * @param val
+	 * @return
+	 */
+	public Hop getInputParameter(String val){
+		Integer index = getParamIndexMap().get(val);
+		if (index == null)
+			return null;
+		else
+			return getInput().get(index);
+	}
 		
 	@Override
 	public String getOpString() {
@@ -198,7 +211,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			case REPLACE:
 			case TRANSFORMAPPLY: 
 			case TRANSFORMDECODE: 
-			case TRANSFORMMETA: { 
+			case TRANSFORMMETA: 
+			case TOSTRING: {
 				ExecType et = optFindExecType();			
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
 						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
@@ -826,8 +840,100 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{	
-		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
-		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);	
+		if (getOp() == ParamBuiltinOp.TOSTRING){
+			// Conservative Assumptions about characteristics of digits
+			final long AVERAGE_CHARS_PER_VALUE = 7;
+			final long AVERAGE_CHARS_PER_INDEX = 4;
+			
+			// Default Values for toString
+			long specifiedRows = 100;
+			long specifiedCols = 100;
+			boolean sparsePrint = false;
+			String sep = " ";
+			String linesep = "\n";
+			
+			Hop rowsHop = getInputParameter("rows");
+			Hop colsHop = getInputParameter("cols");
+			Hop sparsePrintHOP = getInputParameter("sparse");
+			Hop sepHop = getInputParameter("sep");
+			Hop linesepHop = getInputParameter("linesep");
+			
+			long numNonZeroes = getInput().get(0).getNnz();
+			if (numNonZeroes < 0)
+				numNonZeroes = specifiedRows * specifiedCols;
+			long numRows = getInput().get(0).getDim1();
+			if (numRows < 0) 	// If number of rows is not known, set to default
+				numRows = specifiedRows;
+			long numCols = getInput().get(0).getDim2();
+			if (numCols < 0)	// If number of columns is not known, set to default
+				numCols = specifiedCols;
+			
+			
+			// Assume Defaults : 100 * 100, sep = " ", linesep = "\n", sparse = false
+			// String size in bytes is 36 + number_of_chars * 2
+			final long DEFAULT_SIZE = 36 + 2 *
+					(100 * 100 * AVERAGE_CHARS_PER_VALUE 	// Length for digits  
+					+ 1 * 100 * 99 							// Length for separator chars
+					+ 1* 100) ;								// Length for line separator chars
+			
+			try {
+			
+				if (rowsHop != null && rowsHop instanceof LiteralOp) {
+					specifiedRows = ((LiteralOp)rowsHop).getLongValue();
+				}
+				numRows = numRows < specifiedRows ? numRows : specifiedRows;
+				if (colsHop != null && colsHop instanceof LiteralOp){
+					specifiedCols = ((LiteralOp)colsHop).getLongValue();
+				}
+				numCols = numCols < specifiedCols ? numCols : specifiedCols;
+				
+				if (sparsePrintHOP != null && sparsePrintHOP instanceof LiteralOp){
+					sparsePrint = ((LiteralOp)sparsePrintHOP).getBooleanValue();
+				}
+				
+				if (sepHop != null && sepHop instanceof LiteralOp){
+					sep = ((LiteralOp)sepHop).getStringValue();
+				}
+				
+				if (linesepHop != null && linesepHop instanceof LiteralOp){
+					linesep = ((LiteralOp)linesepHop).getStringValue();
+				}
+				
+				long numberOfChars = -1;
+				
+				if (sparsePrint){
+					numberOfChars = AVERAGE_CHARS_PER_VALUE * numNonZeroes			// Length for value digits
+									+ AVERAGE_CHARS_PER_INDEX * 2L * numNonZeroes	// Length for row & column index
+									+ sep.length() * 2L * numNonZeroes				// Length for separator chars
+									+ linesep.length() * numNonZeroes;				// Length for line separator chars
+				} else {
+					numberOfChars = AVERAGE_CHARS_PER_VALUE * numRows * numCols 	// Length for digits
+									+ sep.length() * numRows * (numCols - 1) 		// Length for separator chars
+									+ linesep.length() * numRows;					// Length for line separator chars
+				}
+				
+				/**
+				 * For JVM
+				 * 8 + // object header used by the VM
+				 * 8 + // 64-bit reference to char array (value)
+				 * 8 + string.length() * 2 + // character array itself (object header + 16-bit chars)
+				 * 4 + // offset integer
+				 * 4 + // count integer
+				 * 4 + // cached hash code
+				 */
+				
+				return (36 + numberOfChars * 2);
+				
+			} catch (HopsException e){
+				LOG.warn("Invalid values when trying to compute dims1, dims2 & nnz", e);
+				
+				return DEFAULT_SIZE;
+			}
+			
+		} else {
+			double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
+			return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+		}
 	}
 	
 	@Override
@@ -880,6 +986,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	protected long[] inferOutputCharacteristics( MemoTable memo )
 	{
 		//CDF always known because 
+		
+		// TOSTRING outputs a string
 		
 		long[] ret = null;
 	
@@ -1018,7 +1126,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		//force CP for in-memory only transform builtins
 		if( _op == ParamBuiltinOp.TRANSFORMAPPLY
 			|| _op == ParamBuiltinOp.TRANSFORMDECODE
-			|| _op == ParamBuiltinOp.TRANSFORMMETA ) {
+			|| _op == ParamBuiltinOp.TRANSFORMMETA 
+			||  _op == ParamBuiltinOp.TOSTRING) {
 			_etype = ExecType.CP;
 		}
 		
@@ -1104,6 +1213,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Hop target = getInput().get(_paramIndexMap.get("target"));
 				setDim1( target.getDim1() ); //rows remain unchanged
 			}
+				break;
 			default:
 				//do nothing
 				break;

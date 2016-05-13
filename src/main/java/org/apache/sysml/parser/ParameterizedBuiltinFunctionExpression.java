@@ -20,7 +20,9 @@
 package org.apache.sysml.parser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
@@ -69,6 +71,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		opcodeMap.put("transformdecode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMDECODE);
 		opcodeMap.put("transformencode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMENCODE);
 		opcodeMap.put("transformmeta", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMMETA);
+
+		// toString
+		opcodeMap.put("toString", Expression.ParameterizedBuiltinFunctionOp.TOSTRING);
 	}
 	
 	public static HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp> pbHopMap;
@@ -96,6 +101,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QF, ParamBuiltinOp.INVCDF);
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QCHISQ, ParamBuiltinOp.INVCDF);
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QEXP, ParamBuiltinOp.INVCDF);
+		
+		// toString
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.TOSTRING, ParamBuiltinOp.TOSTRING);
 	}
 	
 	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(String functionName, ArrayList<ParameterExpression> paramExprsPassed,
@@ -243,7 +251,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		case TRANSFORMMETA:
 			validateTransformMeta(output, conditional);
-			break;	
+			break;
+			
+		case TOSTRING:
+			validateCastAsString(output, conditional);
+			break;
 			
 		default: //always unconditional (because unsupported operation)
 			raiseValidateError("Unsupported parameterized function "+ getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -724,6 +736,28 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		return;
 	}
 	
+
+	private void validateCastAsString(DataIdentifier output, boolean conditional) throws LanguageException {
+		
+		HashMap<String, Expression> varParams = getVarParams();
+		// null is for the matrix argument
+		String[] validArgsArr = {null, "rows", "cols", "decimal", "sparse", "sep", "linesep"};
+		HashSet<String> validArgs = new HashSet<String>(Arrays.asList(validArgsArr));
+		for (String k : varParams.keySet()){
+			if (!validArgs.contains(k)){
+				String errMsg = "Invalid parameter " + k + " for as.string, valid parameters are " + validArgsArr[0];
+				for (int i=1; i<validArgsArr.length; ++i) 
+					errMsg += "," + validArgsArr[i];
+				raiseValidateError(errMsg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+		}
+		
+		// Output is a string
+		output.setDataType(DataType.SCALAR);
+		output.setValueType(ValueType.STRING);
+		output.setDimensions(0, 0);
+	}
+
 
 	/**
 	 * 

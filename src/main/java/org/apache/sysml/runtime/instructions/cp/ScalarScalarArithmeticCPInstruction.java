@@ -57,7 +57,11 @@ public class ScalarScalarArithmeticCPInstruction extends ArithmeticBinaryCPInstr
 			//pre-check (for robustness regarding too long strings)
 			String val1 = so1.getStringValue();
 			String val2 = so2.getStringValue();
-			StringObject.checkMaxStringLength(val1.length() + val2.length());
+			// This line was commented out because of the addition of 
+			// the built-in function toString.
+			// The toString function adds its own memory estimation
+			// and does not need a hard check on the limit of the size of the string.
+			// StringObject.checkMaxStringLength(val1.length() + val2.length());
 			
 			String rval = dop.fn.execute(val1, val2);
 			sores = new StringObject(rval);

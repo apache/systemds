@@ -857,14 +857,17 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			Hop sparsePrintHOP = getInputParameter("sparse");
 			Hop sepHop = getInputParameter("sep");
 			Hop linesepHop = getInputParameter("linesep");
+			
 			long numNonZeroes = getInput().get(0).getNnz();
-
+			if (numNonZeroes < 0)
+				numNonZeroes = specifiedRows * specifiedCols;
 			long numRows = getInput().get(0).getDim1();
 			if (numRows < 0) 	// If number of rows is not known, set to default
 				numRows = specifiedRows;
 			long numCols = getInput().get(0).getDim2();
 			if (numCols < 0)	// If number of columns is not known, set to default
 				numCols = specifiedCols;
+			
 			
 			// Assume Defaults : 100 * 100, sep = " ", linesep = "\n", sparse = false
 			// String size in bytes is 36 + number_of_chars * 2

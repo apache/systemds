@@ -48,21 +48,21 @@ public class PoolBackwardTest extends AutomatedTestBase
 	public void testMaxPool2DBackwardDense1() 
 	{
 		int numImg = 1; int imgSize = 4; int numChannels = 1;  int stride = 2; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
 	}
 	
 	@Test
 	public void testMaxPool2DBackwardDense2() 
 	{
 		int numImg = 3; int imgSize = 6; int numChannels = 3;  int stride = 1; int pad = 0; int poolSize1 = 2; int poolSize2 = 2;
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
 	}
 	
 	@Test
 	public void testMaxPool2DBackwardDense3() 
 	{
 		int numImg = 2; int imgSize = 7; int numChannels = 2;  int stride = 2; int pad = 0; int poolSize1 = 3; int poolSize2 = 3;
-		runConv2DTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
+		runPoolTest(ExecType.CP, imgSize, numImg, numChannels, stride, pad, poolSize1, poolSize2, "max");
 	}
 	
 	/**
@@ -70,7 +70,7 @@ public class PoolBackwardTest extends AutomatedTestBase
 	 * @param et
 	 * @param sparse
 	 */
-	public void runConv2DTest( ExecType et, int imgSize, int numImg, int numChannels, int stride, 
+	public void runPoolTest( ExecType et, int imgSize, int numImg, int numChannels, int stride, 
 			int pad, int poolSize1, int poolSize2, String poolMode) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;

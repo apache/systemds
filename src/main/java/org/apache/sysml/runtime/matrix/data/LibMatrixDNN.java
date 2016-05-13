@@ -249,7 +249,7 @@ public class LibMatrixDNN {
 				start_index_h = Math.max(start_index_h, 0);
 				start_index_w = Math.max(start_index_w, 0);
 				int out_index = n*params.C*params.P*params.Q + c*params.P*params.Q +  p * params.Q + q;
-				outputArray[out_index] = 0;
+				outputArray[out_index] = -Double.MAX_VALUE;
 				for (int h = start_index_h; h < end_index_h; h++) {
 					for (int w = start_index_w; w < end_index_w; w++) {
 						double inVal = -1;

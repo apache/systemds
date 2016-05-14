@@ -1009,9 +1009,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				output.setDataType(id.getDataType());
 				output.setDimensions(id.getDim1(), id.getDim2());
 				output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
-			} else{
+			} 
+			else {
 				// always unconditional (because unsupported operation)
-				raiseValidateError("Unsupported function "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
+				BuiltinFunctionOp op = getOpCode();
+				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR )
+					raiseValidateError("Function "+op+" needs to be called with multi-return assignment.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				else
+					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
 		return;

@@ -43,7 +43,8 @@ import org.apache.sysml.runtime.util.UniformPRNGenerator;
  */
 public class LibMatrixDatagen 
 {
-	protected static final Log LOG = LogFactory.getLog(LibMatrixDatagen.class.getName());
+	private static final Log LOG = LogFactory.getLog(LibMatrixDatagen.class.getName());
+	private static final long PAR_NUMCELL_THRESHOLD = 512*1024; //Min 500k elements
 	public static final String RAND_PDF_UNIFORM = "uniform";
 	public static final String RAND_PDF_NORMAL = "normal";
 	public static final String RAND_PDF_POISSON = "poisson";
@@ -384,7 +385,8 @@ public class LibMatrixDatagen
 		int cpb = rgen._colsPerBlock;
 		double sparsity = rgen._sparsity;
 		
-		if (rows == 1) {
+		//fallback to sequential if single rowblock or too few cells
+		if( k<=1 || rows <= rpb || (long)rows*cols < PAR_NUMCELL_THRESHOLD  ) {
 			generateRandomMatrix(out, rgen, nnzInBlocks, bigrand, bSeed);
 			return;
 		}

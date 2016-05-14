@@ -117,7 +117,6 @@ import org.apache.sysml.udf.lib.OrderWrapper;
 @SuppressWarnings("deprecation")
 public class InterProceduralAnalysis 
 {
-	
 	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(InterProceduralAnalysis.class.getName());
     
@@ -129,6 +128,7 @@ public class InterProceduralAnalysis
 	private static final boolean FLAG_FUNCTION_RECOMPILE_ONCE   = true; //flag functions which require recompilation inside a loop for full function recompile
 	private static final boolean REMOVE_UNNECESSARY_CHECKPOINTS = true; //remove unnecessary checkpoints (unconditionally overwritten intermediates) 
 	private static final boolean REMOVE_CONSTANT_BINARY_OPS     = true; //remove constant binary operations (e.g., X*ones, where ones=matrix(1,...)) 
+	private static final boolean PROPAGATE_SCALAR_VARS_INTO_FUN = true; //propagate scalar variables into functions that are called once
 	
 	static {
 		// for internal debugging only
@@ -138,8 +138,7 @@ public class InterProceduralAnalysis
 		}
 	}
 	
-	public InterProceduralAnalysis()
-	{
+	public InterProceduralAnalysis() {
 		//do nothing
 	}
 	
@@ -170,12 +169,12 @@ public class InterProceduralAnalysis
 			DMLTranslator.resetHopsDAGVisitStatus( dmlp );
 		}
 		
+		//step 2: propagate statistics and scalars into functions and across DAGs
 		if( !fcandCounts.isEmpty() || INTRA_PROCEDURAL_ANALYSIS ) {
-			//step 2: propagate statistics into functions and across DAGs
 			//(callVars used to chain outputs/inputs of multiple functions calls) 
 			LocalVariableMap callVars = new LocalVariableMap();
 			for ( StatementBlock sb : dmlp.getStatementBlocks() ) //propagate stats into candidates
-				propagateStatisticsAcrossBlock( sb, fcandCounts.keySet(), callVars, fcandSafeNNZ, new HashSet<String>() );
+				propagateStatisticsAcrossBlock( sb, fcandCounts, callVars, fcandSafeNNZ, new HashSet<String>() );
 		}
 		
 		//step 3: remove unused functions (e.g., inlined or never called)
@@ -228,7 +227,7 @@ public class InterProceduralAnalysis
 			//step 2: propagate statistics into functions and across DAGs
 			//(callVars used to chain outputs/inputs of multiple functions calls) 
 			LocalVariableMap callVars = new LocalVariableMap();
-			propagateStatisticsAcrossBlock( sb, fcandCounts.keySet(), callVars, fcandSafeNNZ, new HashSet<String>() );
+			propagateStatisticsAcrossBlock( sb, fcandCounts, callVars, fcandSafeNNZ, new HashSet<String>() );
 		}
 		
 		return fcandCounts.keySet();
@@ -437,7 +436,7 @@ public class InterProceduralAnalysis
 	 * @throws ParseException
 	 * @throws CloneNotSupportedException 
 	 */
-	private void propagateStatisticsAcrossBlock( StatementBlock sb, Set<String> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
+	private void propagateStatisticsAcrossBlock( StatementBlock sb, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
 		throws HopsException, ParseException
 	{
 		if (sb instanceof FunctionStatementBlock)
@@ -592,7 +591,7 @@ public class InterProceduralAnalysis
 	 * @throws HopsException
 	 * @throws ParseException
 	 */
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, Set<String> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
 			throws HopsException, ParseException
 	{
 		for( Hop root : roots )
@@ -608,7 +607,7 @@ public class InterProceduralAnalysis
 	 * @throws HopsException
 	 * @throws ParseException
 	 */
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, Set<String> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, Map<String, Integer> fcand, LocalVariableMap callVars, Map<String, Set<Long>> fcandSafeNNZ, Set<String> fnStack ) 
 		throws HopsException, ParseException
 	{
 		if( hop.getVisited() == VisitStatus.DONE )
@@ -628,7 +627,7 @@ public class InterProceduralAnalysis
 				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
 				FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 				
-				if(  fcand.contains(fkey) && 
+				if(  fcand.containsKey(fkey) && 
 				    !fnStack.contains(fkey)  ) //prevent recursion	
 				{
 					//maintain function call stack
@@ -636,7 +635,8 @@ public class InterProceduralAnalysis
 					
 					//create mapping and populate symbol table for refresh
 					LocalVariableMap tmpVars = new LocalVariableMap();
-					populateLocalVariableMapForFunctionCall( fstmt, fop, tmpVars, fcandSafeNNZ.get(fkey) );
+					populateLocalVariableMapForFunctionCall( fstmt, fop, 
+							callVars, tmpVars, fcandSafeNNZ.get(fkey), fcand.get(fkey) );
 	
 					//recursively propagate statistics
 					propagateStatisticsAcrossBlock(fsb, fcand, tmpVars, fcandSafeNNZ, fnStack);
@@ -673,10 +673,13 @@ public class InterProceduralAnalysis
 	 * 
 	 * @param fstmt
 	 * @param fop
+	 * @param callvars
 	 * @param vars
-	 * @throws HopsException 
+	 * @param inputSafeNNZ
+	 * @param singleton
+	 * @throws HopsException
 	 */
-	private void populateLocalVariableMapForFunctionCall( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap vars, Set<Long> inputSafeNNZ ) 
+	private void populateLocalVariableMapForFunctionCall( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callvars, LocalVariableMap vars, Set<Long> inputSafeNNZ, Integer numCalls ) 
 		throws HopsException
 	{
 		ArrayList<DataIdentifier> inputVars = fstmt.getInputParams();
@@ -700,24 +703,34 @@ public class InterProceduralAnalysis
 				mo.setMetaData(meta);	
 				vars.put(dat.getName(), mo);	
 			}
-			else if( input.getDataType()==DataType.SCALAR 
-					&& input instanceof LiteralOp           )
+			else if( input.getDataType()==DataType.SCALAR )
 			{
-				//propagate literal scalars into functions
-				LiteralOp lit = (LiteralOp)input;
-				ScalarObject scalar = null;
-				switch(input.getValueType())
-				{
-					case DOUBLE:	scalar = new DoubleObject(lit.getDoubleValue()); break;
-					case INT:		scalar = new IntObject(lit.getLongValue()); break;
-					case BOOLEAN: 	scalar = new BooleanObject(lit.getBooleanValue()); break;
-					case STRING:	scalar = new StringObject(lit.getStringValue()); break;
-					default: 
-						//do nothing
+				//always propagate scalar literals into functions
+				//(for multiple calls, literal equivalence already checked)
+				if( input instanceof LiteralOp ) {
+					LiteralOp lit = (LiteralOp)input;
+					ScalarObject scalar = null;
+					switch(input.getValueType()) {
+						case DOUBLE:	scalar = new DoubleObject(lit.getDoubleValue()); break;
+						case INT:		scalar = new IntObject(lit.getLongValue()); break;
+						case BOOLEAN: 	scalar = new BooleanObject(lit.getBooleanValue()); break;
+						case STRING:	scalar = new StringObject(lit.getStringValue()); break;
+						default: //do nothing
+					}
+					vars.put(dat.getName(), scalar);
 				}
-				vars.put(dat.getName(), scalar);	
+				//propagate scalar variables into functions if called once
+				//and input scalar is existing variable in symbol table
+				else if( PROPAGATE_SCALAR_VARS_INTO_FUN 
+					&& numCalls != null && numCalls == 1
+					&& input instanceof DataOp  ) 
+				{
+					Data scalar = callvars.get(input.getName()); 
+					if( scalar != null && scalar instanceof ScalarObject ) {
+						vars.put(dat.getName(), scalar);
+					}
+				}
 			}
-			
 		}
 	}
 	

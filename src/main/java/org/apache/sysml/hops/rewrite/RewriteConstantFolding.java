@@ -27,6 +27,7 @@ import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.VisitStatus;
 import org.apache.sysml.hops.HopsException;
@@ -297,7 +298,9 @@ public class RewriteConstantFolding extends HopRewriteRule
 		ArrayList<Hop> in = hop.getInput();
 		return (   hop instanceof UnaryOp 
 				&& in.get(0) instanceof LiteralOp 
-				&& HopRewriteUtils.isValueTypeCast(((UnaryOp)hop).getOp()));			
+				&& ((UnaryOp)hop).getOp() != OpOp1.PRINT 
+				&& ((UnaryOp)hop).getOp() != OpOp1.STOP
+				&& hop.getDataType() == DataType.SCALAR);
 	}
 	
 	/**

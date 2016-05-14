@@ -359,12 +359,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			{
 				DataGenOp inputGen = (DataGenOp)left;
 				HashMap<String,Integer> params = inputGen.getParamIndexMap();
+				Hop pdf = left.getInput().get(params.get(DataExpression.RAND_PDF));
 				Hop min = left.getInput().get(params.get(DataExpression.RAND_MIN));
 				Hop max = left.getInput().get(params.get(DataExpression.RAND_MAX));
 				double sval = ((LiteralOp)right).getDoubleValue();
 				
 				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS || bop.getOp() == OpOp2.MINUS)
-					&& min instanceof LiteralOp && max instanceof LiteralOp )
+					&& min instanceof LiteralOp && max instanceof LiteralOp && pdf instanceof LiteralOp 
+					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue()) )
 				{
 					//create fused data gen operator
 					DataGenOp gen = null;
@@ -395,12 +397,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			{
 				DataGenOp inputGen = (DataGenOp)right;
 				HashMap<String,Integer> params = inputGen.getParamIndexMap();
+				Hop pdf = right.getInput().get(params.get(DataExpression.RAND_PDF));
 				Hop min = right.getInput().get(params.get(DataExpression.RAND_MIN));
 				Hop max = right.getInput().get(params.get(DataExpression.RAND_MAX));
 				double sval = ((LiteralOp)left).getDoubleValue();
 				
 				if( (bop.getOp()==OpOp2.MULT || bop.getOp()==OpOp2.PLUS)
-					&& min instanceof LiteralOp && max instanceof LiteralOp )
+					&& min instanceof LiteralOp && max instanceof LiteralOp && pdf instanceof LiteralOp 
+					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue()) )
 				{
 					//create fused data gen operator
 					DataGenOp gen = null;
@@ -449,6 +453,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			{
 				DataGenOp inputGen = (DataGenOp)right;
 				HashMap<String,Integer> params = inputGen.getParamIndexMap();
+				Hop pdf = right.getInput().get(params.get(DataExpression.RAND_PDF));
 				int ixMin = params.get(DataExpression.RAND_MIN);
 				int ixMax = params.get(DataExpression.RAND_MAX);
 				Hop min = right.getInput().get(ixMin);
@@ -456,7 +461,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				//apply rewrite under additional conditions (for simplicity)
 				if( inputGen.getParent().size()==1 
-					&& min instanceof LiteralOp && max instanceof LiteralOp )
+					&& min instanceof LiteralOp && max instanceof LiteralOp && pdf instanceof LiteralOp 
+					&& DataExpression.RAND_PDF_UNIFORM.equals(((LiteralOp)pdf).getStringValue()) )
 				{
 					//exchange and *-1 (special case 0 stays 0 instead of -0 for consistency)
 					double newMinVal = (((LiteralOp)max).getDoubleValue()==0)?0:(-1 * ((LiteralOp)max).getDoubleValue());

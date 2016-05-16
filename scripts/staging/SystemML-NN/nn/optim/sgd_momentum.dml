@@ -1,0 +1,45 @@
+/*
+ * Stochastic Gradient Descent with momentum (SGD-momentum) optimizer.
+ */
+update = function(matrix[double] X, matrix[double] dX, double lr, double mu, matrix[double] v)
+    return (matrix[double] X, matrix[double] v) {
+  /*
+   * Performs an SGD update with momentum.
+   *
+   * In SGD with momentum, we assume that the parameters have a velocity
+   * that continues with some momentum, and that is influenced by the
+   * gradient.
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *  - dX: Gradient of X wrt to a loss function being optimized, of
+   *      same shape as X.
+   *  - lr: Learning rate.
+   *  - mu: Momentum value.
+   *      Typical values are in the range of [0.5, 0.99], usually
+   *      started at the lower end and annealed towards the higher end.
+   *  - v: State maintaining the velocity of the parameters X, of same
+   *      shape as X.
+   *
+   * Outputs:
+   *  - X: Updated parameters X, of same shape as input X.
+   *  - v: Updated velocity of the parameters X, of same shape as
+   *      input v.
+   */
+  v = mu * v - lr * dX  # update velocity
+  X = X + v  # update position
+}
+
+init = function(matrix[double] X) return (matrix[double] v) {
+  /*
+   * Initialize the state for this optimizer.
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   * 
+   * Outputs:
+   *  - v: Initial velocity of the parameters X.
+   */
+  v = matrix(0, rows=nrow(X), cols=ncol(X))
+}
+

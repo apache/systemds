@@ -1,0 +1,52 @@
+/*
+ * Softmax classifier layer.
+ */
+forward = function(matrix[double] scores) return (matrix[double] probs) {
+  /*
+   * Computes the forward pass for a softmax classifier.  The inputs
+   * are interpreted as unnormalized, log-probabilities for each of
+   * N examples, and the softmax function transforms them to normalized
+   * probabilities.
+   *
+   * Inputs:
+   *  - scores: Input data matrix, of shape (N, D).
+   *
+   * Outputs:
+   *  - probs: Outputs, of shape (N, D).
+   */
+  # For numerical stability, we subtract the max score of an example from all scores for that
+  # example.  This is equivalent:
+  # e^scores_i / sum(e^scores_i) == C*e^scores_i / C*sum(e^scores_i)
+  #                              == e^(scores_i+log(C)) / sum(e^(scores_i+log(C))
+  # set log(C) = -max(scores_i):
+  #                              == e^(scores_i-max(scores_i)) / sum(e^(scores_i-max(scores_i))
+  scores = scores - rowMaxs(scores)  # numerical stability
+  unnorm_probs = exp(scores)
+  probs = unnorm_probs / rowSums(unnorm_probs)
+}
+
+backward = function(matrix[double] dprobs, matrix[double] scores)
+    return (matrix[double] dscores) {
+  /*
+   * Computes the backward pass for a softmax classifier.
+   *
+   * dprobs_ij/dscores_ij = probs_ij * (1 - probs_ij)
+   * dprobs_ic/dscores_ij = probs_ij * -probs_ic
+   *
+   * dloss/dscores_ij = dloss/dprobs_ij * dprobs_ij/dscores_ij + 
+   *                    sum_c(dloss/dprobs_ic * dprobs_ic/dscores_ij)
+   *
+   * Inputs:
+   *  - dprobs: Derivatives from upstream, of shape (N, D).
+   *  - scores: Previous input data matrix, of shape (N, D).
+   *
+   * Outputs:
+   *  - dscores: Gradient wrt scores, of shape (N, D).
+   */
+  scores = scores - rowMaxs(scores)  # numerical stability
+  unnorm_probs = exp(scores)
+  probs = unnorm_probs / rowSums(unnorm_probs)
+  dscores = dprobs * probs
+  dscores = dscores - probs * rowSums(dscores)
+}
+

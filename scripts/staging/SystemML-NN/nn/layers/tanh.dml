@@ -1,0 +1,36 @@
+/*
+ * Tanh nonlinearity layer.
+ */
+forward = function(matrix[double] X) return (matrix[double] out) {
+  /*
+   * Computes the forward pass for a tanh nonlinearity layer.
+   *
+   * tanh(x) = (e^x - e^-x) / (e^x + e^-x)
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (any, any).
+   *
+   * Outputs:
+   *  - out: Ouptuts, of same shape as X.
+   */
+  # Simplification of the above formulation:
+  sigma2X = 1 / (1 + exp(-2*X))
+  out = 2 * sigma2X - 1
+}
+
+backward = function(matrix[double] dout, matrix[double] X) return (matrix[double] dX) {
+  /*
+   * Computes the backward pass for a tanh nonlinearity layer.
+   *
+   * Inputs:
+   *  - dout: Derivatives from upstream, of same shape as X.
+   *  - X: Previous input data matrix, of shape (any, any).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of same shape as X.
+   */
+  sigma2X = 1 / (1 + exp(-2*X))
+  out = 2 * sigma2X - 1
+  dX = (1 - out^2) * dout
+}
+

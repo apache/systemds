@@ -1,0 +1,245 @@
+/*
+ * Utility functions.
+ */
+all_equal = function(matrix[double] X1, matrix[double] X2)
+    return(boolean equivalent) {
+  /*
+   * Determine if two matrices are equivalent.
+   *
+   * Inputs:
+   *  - X1: Input matrix, of shape (any, any).
+   *  - X2: Input matrix, of same shape as X1.
+   *
+   * Outputs:
+   *  - equivalent: Whether or not the two matrices are equivalent.
+   */
+  equivalent = as.logical(prod(ppred(X1, X2, "==")))
+}
+
+check_all_equal = function(matrix[double] X1, matrix[double] X2)
+    return(boolean equivalent) {
+  /*
+   * Check if two matrices are equivalent, and report any issues.
+   *
+   *  - Issues an "ERROR" statement if elements of the two matrices
+   *  are not equal.
+   *
+   * Inputs:
+   *  - X1: Input matrix, of shape (any, any).
+   *  - X2: Input matrix, of same shape as X1.
+   *
+   * Outputs:
+   *  - equivalent: Whether or not the two matrices are equivalent.
+   */
+  # Determine if matrices are equivalent
+  equivalent = all_equal(X1, X2)
+
+  # Evaluate relative error
+  if (!equivalent) {
+      print("ERROR: The two matrices are not equivalent.")
+  }
+}
+
+compute_rel_error = function(double x1, double x2) return (double rel_error) {
+  /*
+   * Relative error measure between two values.
+   *
+   * Uses smoothing to avoid divide-by-zero errors.
+   *
+   * Inputs:
+   *  - x1: First value.
+   *  - x2: Second value.
+   *
+   * Outputs:
+   *  - rel_error: Relative error measure between the two values.
+   */
+  rel_error = abs(x1 - x2) / max(1e-8, abs(x1) + abs(x2))
+}
+
+check_rel_error = function(double x1, double x2, double thresh_error, double thresh_warn)
+    return (double rel_error) {
+  /*
+   * Check and report any issues with the relative error measure between
+   * two values.
+   *
+   *  - Issues an "ERROR" statement for relative errors > thresh_error,
+   *  indicating that the implementation is likely incorrect.
+   *  - Issues a "WARNING" statement for relative errors < thresh_error
+   *  but > thresh_warn, indicating that the implementation may be incorrect.
+   *
+   * Inputs:
+   *  - x1: First value.
+   *  - x2: Second value.
+   *  - thresh_error: Error threshold.
+   *  - thresh_warn: Warning threshold.
+   *
+   * Outputs:
+   *  - rel_error: Relative error measure between the two values.
+   */
+  # Compute relative error
+  rel_error = compute_rel_error(x1, x2)
+
+  # Evaluate relative error
+  if (rel_error > thresh_error) {
+      print("ERROR: Relative error " + rel_error + " > " + thresh_error + " with " + x1 +
+            " vs " + x2 + ".")
+  }
+  else if (rel_error > thresh_warn & rel_error < thresh_error) {
+      print("WARNING: Relative error " + rel_error + " > " + thresh_warn + " with " + x1 +
+            " vs " + x2 + ".")
+  }
+}
+
+im2col = function(matrix[double] img, int Hin, int Win, int Hf, int Wf, int strideh, int stridew)
+    return (matrix[double] img_cols) {
+  /*
+   * Rearrange local image regions (patches) into columns.
+   *
+   * Assumes image has already been padded as necessary.
+   *
+   * Inputs:
+   *  - img: Input image, of shape (C, Hin*Win), where C is the number
+   *      of input channels (depth).
+   *  - Hin: Input height, including padding.
+   *  - Win: Input width, including padding.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *
+   * Outputs:
+   *  - img_cols: Local spatial regions (patches) of the image stretched
+   *      out into columns, of shape (C*Hf*Wf, Hout*Wout).
+   */
+  C = nrow(img)
+  Hout = as.integer((Hin - Hf) / strideh + 1)
+  Wout = as.integer((Win - Wf) / stridew + 1)
+
+  img_cols = matrix(0, rows=C*Hf*Wf, cols=Hout*Wout)  # zeros
+  parfor (hout in 1:Hout, check=0) {  # all output rows
+    hin = (hout-1) * strideh + 1
+    parfor (wout in 1:Wout, check=0) {  # all output columns
+      win = (wout-1) * stridew + 1
+      # Extract a local patch of the input image corresponding spatially to the filter sizes.
+      img_patch = matrix(0, rows=C, cols=Hf*Wf)  # zeros
+      parfor (c in 1:C) {  # all channels
+        img_slice = matrix(img[c,], rows=Hin, cols=Win)  # reshape
+        img_patch[c,] = matrix(img_slice[hin:hin+Hf-1, win:win+Wf-1], rows=1, cols=Hf*Wf)
+      }
+      img_cols[,(hout-1)*Wout + wout] = matrix(img_patch, rows=C*Hf*Wf, cols=1)  # reshape
+    }
+  }
+}
+
+col2im = function(matrix[double] img_cols, int C, int Hin, int Win, int Hf, int Wf,
+                  int strideh, int stridew, string reduction)
+    return (matrix[double] img) {
+  /*
+   * Create an image from columns of local image regions (patches).
+   *
+   * The reduction strategy determines how to deal with overlapping
+   * patches.  If it is set to "add", any overlapping patches will be
+   * added together when creating the image.  This is useful when
+   * computing gradients on the original image given gradients on the
+   * patches.  Otherwise, if "none" is provided, any overlapping
+   * patches will just override previous ones when creating the image.
+   * This is useful when recreating an image from the output of
+   * `im2col`.
+   *
+   * Assumes original image was already padded as necessary.
+   *
+   * Inputs:
+   *  - img_cols: Local spatial regions (patches) of the image stretched
+   *      out into columns, of shape (C*Hf*Wf, Hout*Wout).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height, including padding.
+   *  - Win: Input width, including padding.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - reduction: The reduction strategy to use for overlapping
+   *      patches.  Valid options are "add" and "none".
+   *
+   * Outputs:
+   *  - img: Input image, of shape (C, Hin*Win).
+   */
+  Hout = as.integer((Hin - Hf) / strideh + 1)
+  Wout = as.integer((Win - Wf) / stridew + 1)
+
+  img = matrix(0, rows=C, cols=Hin*Win)  # zeros
+  for (hout in 1:Hout) {  # all output rows
+    hin = (hout-1) * strideh + 1
+    for (wout in 1:Wout) {  # all output columns
+      win = (wout-1) * stridew + 1
+      # Extract a local patch of the input image corresponding spatially to the filter sizes.
+      img_patch = matrix(img_cols[,(hout-1)*Wout + wout], rows=C, cols=Hf*Wf)  # zeros
+      parfor (c in 1:C) {  # all channels
+        img_patch_slice = matrix(img_patch[c,], rows=Hf, cols=Wf)  # reshape
+        if (reduction == "add") {
+          img_slice = matrix(0, rows=Hin, cols=Win)
+          img_slice[hin:hin+Hf-1, win:win+Wf-1] = img_patch_slice
+          img[c,] = img[c,] + matrix(img_slice, rows=1, cols=Hin*Win)
+        } else {
+          img_slice = matrix(img[c,], rows=Hin, cols=Win)
+          img_slice[hin:hin+Hf-1, win:win+Wf-1] = img_patch_slice
+          img[c,] = matrix(img_slice, rows=1, cols=Hin*Win)
+        }
+      }
+    }
+  }
+}
+
+pad_image = function(matrix[double] img, int Hin, int Win, int padh, int padw)
+    return (matrix[double] img_padded) {
+  /*
+   * Pads an image along the height and width dimensions with zeros.
+   *
+   * Inputs:
+   *  - img: Input image, of shape (C, Hin*Win), where C is the number
+   *      of input channels (depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - padh: Padding for top and bottom sides.
+   *  - padw: Padding for left and right sides.
+   *
+   * Outputs:
+   *  - img_padded: The input image padded along the height and width
+   *      dimensions, of shape (C, (Hin+2*padh)*(Win+2*padw)).
+   */
+  C = nrow(img)
+  img_padded = matrix(0, rows=C, cols=(Hin+2*padh)*(Win+2*padw))  # zeros
+  parfor (c in 1:C) {
+    img_slice = matrix(img[c,], rows=Hin, cols=Win)  # depth slice C reshaped
+    img_padded_slice = matrix(0, rows=Hin+2*padh, cols=Win+2*padw)
+    img_padded_slice[padh+1:padh+Hin, padw+1:padw+Win] = img_slice
+    img_padded[c,] = matrix(img_padded_slice, rows=1, cols=(Hin+2*padh)*(Win+2*padw))  # reshape
+  }
+}
+
+unpad_image = function(matrix[double] img_padded, int Hin, int Win, int padh, int padw)
+    return (matrix[double] img) {
+  /*
+   * Unpads an image along the height and width dimensions.
+   *
+   * Inputs:
+   *  - img_padded: The input image padded along the height and width
+   *      dimensions, of shape (C, (Hin+2*padh)*(Win+2*padw)).
+   *  - Hin: Input height of unpadded image.
+   *  - Win: Input width of unpadded image.
+   *  - padh: Padding for top and bottom sides.
+   *  - padw: Padding for left and right sides.
+   *
+   * Outputs:
+   *  - img: Input image, of shape (C, Hin*Win), where C is the number
+   *      of input channels (depth).
+   */
+  C = nrow(img_padded)
+  img = matrix(0, rows=C, cols=Hin*Win)
+  parfor (c in 1:C) {
+    img_padded_slice = matrix(img_padded[c,], rows=(Hin+2*padh), cols=(Win+2*padw))
+    img_slice = img_padded_slice[padh+1:padh+Hin, padw+1:padw+Win]
+    img[c,] = matrix(img_slice, rows=1, cols=Hin*Win)
+  }
+}
+

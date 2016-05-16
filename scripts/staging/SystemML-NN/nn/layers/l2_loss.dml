@@ -1,0 +1,41 @@
+/*
+ * L2 loss function.
+ *
+ * L_i = (1/2) 2norm(pred_i - y_i)^2
+ * L = (1/N) sum(L_i) for i=1 to N, where N is the number of examples.
+ */
+forward = function(matrix[double] pred, matrix[double] y) 
+    return (double loss) {
+  /*
+   * Computes the forward pass for an L2 loss function.  The inputs
+   * consist of N examples, each with M dimensions to predict.
+   *
+   * Inputs:
+   *  - pred: Prediction matrix, of shape (N, M).
+   *  - y: Target matrix, of shape (N, M).
+   *
+   * Outputs:
+   *  - loss: Scalar loss, of shape (1).
+   */
+  N = nrow(y)
+  losses = 0.5 * rowSums((pred - y)^2)
+  loss = sum(losses) / N
+}
+
+backward = function(matrix[double] pred, matrix[double] y) 
+    return (matrix[double] dpred) {
+  /*
+   * Computes the backward pass for an L2 loss function.  The inputs
+   * consist of N examples, each with M dimensions to predict.
+   *
+   * Inputs:
+   *  - pred: Prediction matrix, of shape (N, M).
+   *  - y: Target matrix, of shape (N, M).
+   *
+   * Outputs:
+   *  - dpred: Gradient wrt pred, of shape (N, M).
+   */
+  N = nrow(y)
+  dpred = (pred - y) / N
+}
+

@@ -1,0 +1,44 @@
+/*
+ * Log loss function.
+ *
+ * L_i = -y_i*log(pred_i) - (1-y_i)*log(1-pred_i), where y_i is a
+ *  binary target, and pred_i is a probability of y=1. 
+ * L = (1/N) sum(L_i) for i=1 to N, where N is the number of examples.
+ */
+forward = function(matrix[double] pred, matrix[double] y) 
+    return (double loss) {
+  /*
+   * Computes the forward pass for a log loss function.
+   *
+   * Inputs:
+   *  - pred: Prediction matrix, of shape (N, 1).  Predictions should
+   *      be probabilities that y=1.
+   *  - y: Target matrix, of shape (N, 1).  Targets should be binary
+   *      in the set {0,1}.
+   *
+   * Outputs:
+   *  - loss: Scalar loss, of shape (1).
+   */
+  N = nrow(y)
+  losses = -y * log(pred) - (1-y) * log(1-pred)
+  loss = sum(losses) / N
+}
+
+backward = function(matrix[double] pred, matrix[double] y) 
+    return (matrix[double] dpred) {
+  /*
+   * Computes the backward pass for a log loss function.
+   *
+   * Inputs:
+   *  - pred: Prediction matrix, of shape (N, 1).  Predictions should
+   *      be probabilities that y=1.
+   *  - y: Target matrix, of shape (N, 1).  Targets should be binary
+   *      in the set {0,1}.
+   *
+   * Outputs:
+   *  - dpred: Gradient wrt pred, of shape (N, 1).
+   */
+  N = nrow(y)
+  dpred = (1/N) * (pred-y) / (pred * (1-pred))
+}
+

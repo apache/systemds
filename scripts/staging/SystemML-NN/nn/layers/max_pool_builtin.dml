@@ -1,0 +1,71 @@
+/*
+ * Max pooling layer.
+ */
+forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
+                   int strideh, int stridew)
+    return (matrix[double] out, int Hout, int Wout) {
+  /*
+   * Computes the forward pass for a 2D spatial max pooling layer.
+   * The input data has N examples, each represented as a 3D volume
+   * unrolled into a single vector.
+   *
+   * This implementation uses `im2col` internally for each image to
+   * extract local image regions (patches) of each channel slice into
+   * columns, and then performs max pooling over the patches to compute
+   * the output maps.
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, C*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   */
+  N = nrow(X)
+  Hout = as.integer((Hin - Hf) / strideh + 1)
+  Wout = as.integer((Win - Wf) / stridew + 1)
+
+  # Max pooling - built-in implementation
+  out = max_pool(X, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf], stride=[strideh,stridew],
+                 padding=[0,0])
+}
+
+backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X, int C,
+                    int Hin, int Win, int Hf, int Wf, int strideh, int stridew)
+    return (matrix[double] dX) {
+  /*
+   * Computes the backward pass for a 2D spatial max pooling layer.
+   * The input data has N examples, each represented as a 3D volume
+   * unrolled into a single vector.
+   *
+   * Inputs:
+   *  - dout: Derivatives from upstream, of shape (N, C*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of shape (N, C*Hin*Win).
+   */
+  N = nrow(X)
+  
+  # Gradient of max pooling
+  dX = max_pool_backward(X, dout, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf],
+                         stride=[strideh,stridew], padding=[0,0])
+}
+

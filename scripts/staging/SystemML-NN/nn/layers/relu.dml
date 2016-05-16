@@ -1,0 +1,34 @@
+/*
+ * Rectified Linear Unit (ReLU) nonlinearity layer.
+ */
+forward = function(matrix[double] X) return (matrix[double] out) {
+  /*
+   * Computes the forward pass for a ReLU nonlinearity layer.
+   *
+   * Performs an element-wise evaluation of f(input) = max(0, input).
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (any, any).
+   *
+   * Outputs:
+   *  - out: Ouptuts, of same shape as X.
+   */
+  out = max(0.0, X)
+}
+
+backward = function(matrix[double] dout, matrix[double] X) return (matrix[double] dX) {
+  /*
+   * Computes the backward pass for a ReLU nonlinearity layer.
+   *
+   * Essentially performs a pass-through of the upstream gradient for cells > 0.
+   *
+   * Inputs:
+   *  - dout: Derivatives from upstream, of same shape as X.
+   *  - X: Previous input data matrix, of shape (any, any).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of same shape as X.
+   */
+   dX = (X > 0) * dout
+}
+

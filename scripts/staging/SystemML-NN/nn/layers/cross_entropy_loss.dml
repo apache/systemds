@@ -1,0 +1,44 @@
+/*
+ * Cross-entropy loss function.
+ *
+ * L_i = -y_i^T * log(pred_i), where y_i and pred_i are K-dimensional
+ *  vectors of class probs.
+ * L = (1/N) sum(L_i) for i=1 to N, where N is the number of examples.
+ */
+forward = function(matrix[double] pred, matrix[double] y) 
+    return (double loss) {
+  /*
+   * Computes the forward pass for a cross-entropy loss function.  The
+   * inputs consist of N examples, each with K dimensions corresponding
+   * to normalized probabilities of K classes.
+   *
+   * Inputs:
+   *  - pred: Prediction matrix, of shape (N, K).
+   *  - y: Target matrix, of shape (N, K).
+   *
+   * Outputs:
+   *  - loss: Scalar loss, of shape (1).
+   */
+  N = nrow(y)
+  losses = rowSums(-y * log(pred))
+  loss = sum(losses) / N
+}
+
+backward = function(matrix[double] pred, matrix[double] y) 
+    return (matrix[double] dpred) {
+  /*
+   * Computes the backward pass of a cross-entropy loss function.  The
+   * inputs consist of N examples, each with K dimensions corresponding
+   * to normalized probabilities of K classes.
+   *
+   * Inputs:
+   *  - pred: Prediction matrix, of shape (N, K).
+   *  - y: Target matrix, of shape (N, K).
+   *
+   * Outputs:
+   *  - dpred: Gradient wrt pred, of shape (N, K).
+   */
+  N = nrow(y)
+  dpred = (1/N) * -y * (1/pred)
+}
+

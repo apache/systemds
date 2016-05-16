@@ -1,0 +1,33 @@
+/*
+ * Sigmoid nonlinearity layer.
+ */
+forward = function(matrix[double] X) return (matrix[double] out) {
+  /*
+   * Computes the forward pass for a sigmoid nonlinearity layer.
+   *
+   * sigmoid(x) = 1 / (1 + e^-x)
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (any, any).
+   *
+   * Outputs:
+   *  - out: Ouptuts, of same shape as X.
+   */
+  out = 1 / (1 + exp(-X))
+}
+
+backward = function(matrix[double] dout, matrix[double] X) return (matrix[double] dX) {
+  /*
+   * Computes the backward pass for a sigmoid nonlinearity layer.
+   *
+   * Inputs:
+   *  - dout: Derivatives from upstream, of same shape as X.
+   *  - X: Previous input data matrix, of shape (any, any).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of same shape as X.
+   */
+  out = 1 / (1 + exp(-X))
+  dX = out * (1 - out) * dout
+}
+

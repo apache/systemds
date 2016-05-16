@@ -1,0 +1,65 @@
+/*
+ * Fully-connected (affine) layer.
+ */
+forward = function(matrix[double] X, matrix[double] W, matrix[double] b)
+    return (matrix[double] out) {
+  /*
+   * Computes the forward pass for a fully-connected (affine) layer with
+   * M neurons.  The input data has N examples, each with D features.
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (N, D).
+   *  - W: Weights (parameters) matrix, of shape (D, M).
+   *  - b: Biases vector, of shape (1, M).
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, M).
+   */
+  out = X %*% W + b
+}
+
+backward = function(matrix[double] dout, matrix[double] X,
+                    matrix[double] W, matrix[double] b)
+    return (matrix[double] dX, matrix[double] dW, matrix[double] db) {
+  /*
+   * Computes the backward pass for a fully-connected (affine) layer
+   * with M neurons.
+   *
+   * Inputs:
+   *  - dout: Derivatives from upstream, of shape (N, M).
+   *  - X: Previous input data matrix, of shape (N, D).
+   *  - W: Weights (parameters) matrix, of shape (D, M).
+   *  - b: Biases vector, of shape (1, M).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of shape (N, D).
+   *  - dW: Gradient wrt W, of shape (D, M).
+   *  - db: Gradient wrt b, of shape (1, M).
+   */
+  dX = dout %*% t(W)
+  dW = t(X) %*% dout
+  db = colSums(dout)
+}
+
+init = function(int D, int M)
+    return (matrix[double] W, matrix[double] b) {
+  /*
+   * Initialize the parameters of this layer.
+   * 
+   * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
+   * which limits the magnification of inputs/gradients during
+   * forward/backward passes by scaling unit-Gaussian weights by a
+   * factor of sqrt(2/n), under the assumption of relu neurons.
+   *
+   * Inputs:
+   *  - D: Dimensionality of the input features.
+   *  - M: Number of neurons in this layer.
+   *
+   * Outputs:
+   *  - W: Weight matrix, of shape (D, M).
+   *  - b: Biases vector, of shape (1, M).
+   */
+  W = rand(rows=D, cols=M, pdf="normal") * sqrt(2.0/D)
+  b = matrix(0, rows=1, cols=M) 
+}
+

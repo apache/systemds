@@ -1,0 +1,51 @@
+/*
+ * Adagrad optimizer.
+ */
+update = function(matrix[double] X, matrix[double] dX, double lr, double epsilon,
+                  matrix[double] cache)
+    return (matrix[double] X, matrix[double] cache) {
+  /*
+   * Performs an Adagrad update.
+   *
+   * This is an adaptive learning rate optimizer that maintains the
+   * sum of squared gradients to automatically adjust the effective
+   * learning rate.
+   *
+   * Reference:
+   *  - Adaptive Subgradient Methods for Online Learning and Stochastic
+   *    Optimization, Duchi et al.
+   *      - http://jmlr.org/papers/v12/duchi11a.html
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *  - dX: Gradient of X wrt to a loss function being optimized, of
+   *      same shape as X.
+   *  - lr: Learning rate.
+   *  - epsilon: Smoothing term to avoid divide by zero errors.
+   *      Typical values are in the range of [1e-8, 1e-4].
+   *  - cache: State that maintains per-parameter sum of squared
+   *      gradients, of same shape as X.
+   *
+   * Outputs:
+   *  - X: Updated parameters X, of same shape as input X.
+   *  - v: Updated velocity of the parameters X, of same shape as
+   *      input v.
+   */
+  cache = cache + dX^2
+  X = X - lr * dX / (sqrt(cache) + epsilon)
+}
+
+init = function(matrix[double] X) return (matrix[double] cache) {
+  /*
+   * Initialize the state for this optimizer.
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   * 
+   * Outputs:
+   *  - cache: State that maintains per-parameter sum of squared
+   *      gradients, of same shape as X.
+   */
+  cache = matrix(0, rows=nrow(X), cols=ncol(X))
+}
+

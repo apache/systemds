@@ -1,0 +1,32 @@
+/*
+ * L2 regularizataion.
+ */
+forward = function(matrix[double] X, double lambda) return (double reg_loss) {
+  /*
+   * Computes the forward pass for an L2 regularization function.
+   *
+   * Inputs:
+   *  - X: Parameters, of shape (any, any).
+   *  - lambda: Regularization strength.
+   *      A typical value is 0.01.
+   *
+   * Outputs:
+   *  - reg_loss: Scalar l2 regularization loss, of shape (1).
+   */
+  reg_loss = 0.5 * lambda * sum(X^2)
+}
+
+backward = function(matrix[double] X, double lambda) return (matrix[double] dX) {
+  /*
+   * Computes the backward pass for an L2 regularization function.
+   *
+   * Inputs:
+   *  - X: Parameters, of shape (any, any).
+   *  - lambda: Regularization strength.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of same shape as X. 
+   */
+  dX = lambda * X
+}
+

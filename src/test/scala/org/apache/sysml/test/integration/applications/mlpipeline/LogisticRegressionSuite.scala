@@ -19,7 +19,8 @@
 
 package org.apache.sysml.test.integration.applications.mlpipeline
 
-import scala.reflect.runtime.universe._
+import scala.reflect.runtime.universe
+
 import org.apache.spark.Logging
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
@@ -27,14 +28,11 @@ import org.apache.spark.ml.feature.HashingTF
 import org.apache.spark.ml.feature.Tokenizer
 import org.apache.spark.ml.tuning.CrossValidator
 import org.apache.spark.ml.tuning.ParamGridBuilder
-import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.sysml.api.ml.LogisticRegression
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
-import org.apache.sysml.api.ml.LogisticRegression
-import org.apache.spark.sql.Row
-//import org.apache.spark.ml.classification.LogisticRegression
 
 case class LabeledDocument(id: Long, text: String, label: Double)
 case class Document(id: Long, text: String)

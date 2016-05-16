@@ -19,27 +19,22 @@
 
 package org.apache.sysml.api.ml
 
-import java.io.File
-import org.apache.sysml.api.{ MLContext, MLOutput }
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics
-import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
-import org.apache.spark.{ SparkContext }
+import org.apache.spark.SparkContext
+import org.apache.spark.ml.Estimator
+import org.apache.spark.ml.Model
+import org.apache.spark.ml.param.DoubleParam
+import org.apache.spark.ml.param.Param
+import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.ml.param.Params
+import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.ml.{ Model, Estimator }
-import org.apache.spark.ml.classification._
-import org.apache.spark.ml.param.{ Params, Param, ParamMap, DoubleParam }
-import org.apache.spark.ml.param.shared._
-import org.apache.spark.SparkConf
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.regression.LabeledPoint
-import scala.reflect.ClassTag
-import org.apache.spark.sql.types.DataTypes
-import org.apache.spark.sql.RowFactory
-import org.apache.spark.sql.Row
-import scala.collection.mutable.ArrayBuffer
-import org.apache.spark.sql.types.StructField
+import org.apache.sysml.api.MLContext
+import org.apache.sysml.api.MLOutput
 import org.apache.sysml.api.ml.util.RDDConverterUtilsExt
+import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics
+
 
 trait HasIcpt extends Params {
   final val icpt: Param[Int] = new Param[Int](this, "icpt", "Intercept presence, shifting and rescaling X columns")

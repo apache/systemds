@@ -1,0 +1,43 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+r = 4
+c = 3
+X = rand(rows=r, cols=c, sparsity=1, pdf="normal")
+print("sum of rand normal matrix is " + sum(X))
+
+Y = rand(rows=r, cols=c, sparsity=1, min=0, max=1, pdf="uniform")
+print("avg of rand uniform matrix is " + avg(Y))
+
+p = cdf(dist="normal", target=0.4, mean=0, sd=1)
+print("normal cdf is " + p)
+
+p = cdf(dist="exp", target=0.7, rate=1.0)
+print("exp cdf is " + p)
+
+p = cdf(dist="chisq", target=0.3, df=5)
+print("chisq cdf is " + p)
+
+p = cdf(dist="f", target=2, df1=100, df2=200)
+print("f cdf is " + p)
+
+p = cdf(dist="t", target=1, df=100)
+print("t cdf is " + p)

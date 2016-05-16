@@ -792,9 +792,10 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 				functionName = "ncol";
 			}
 		}
-		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("random.normal")) {
+		else if(namespace.equals("random") && functionName.equals("normal")) {
 			if(paramExpression.size() != 3) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 3 arguments (number of rows, number of columns, sparsity)", fnName);
+				String qualifiedName = namespace + namespaceResolutionOp() + functionName;
+				notifyErrorListeners("The builtin function \'" + qualifiedName + "\' accepts exactly 3 arguments (number of rows, number of columns, sparsity)", fnName);
 				return null;
 			}
 			paramExpression.get(0).setName("rows");
@@ -804,9 +805,10 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			functionName = "rand";
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}
-		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("random.uniform")) {
+		else if(namespace.equals("random") && functionName.equals("uniform")) {
 			if(paramExpression.size() != 5) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 5 arguments (number of rows, number of columns, sparsity, min, max)", fnName);
+				String qualifiedName = namespace + namespaceResolutionOp() + functionName;
+				notifyErrorListeners("The builtin function \'" + qualifiedName + "\' accepts exactly 5 arguments (number of rows, number of columns, sparsity, min, max)", fnName);
 				return null;
 			}
 			paramExpression.get(0).setName("rows");
@@ -958,58 +960,63 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 			functionName = "seq";
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}
-		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("norm.cdf")) {
+		else if(namespace.equals("norm") && functionName.equals("cdf")) {
 			if(paramExpression.size() != 3) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 3 arguments (target, mean, sd)", fnName);
+				String qualifiedName = namespace + namespaceResolutionOp() + functionName;
+				notifyErrorListeners("The builtin function \'" + qualifiedName + "\' accepts exactly 3 arguments (target, mean, sd)", fnName);
 				return null;
 			}
-			functionName = "cumulativeProbability";
+			functionName = "cdf";
 			paramExpression.get(0).setName("target");
 			paramExpression.get(1).setName("mean");
 			paramExpression.get(2).setName("sd");
 			paramExpression.add(new ParameterExpression("dist", new StringIdentifier("normal", fileName, line, col, line, col)));
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}
-		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("expon.cdf")) {
+		else if(namespace.equals("expon") && functionName.equals("cdf")) {
 			if(paramExpression.size() != 2) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 2 arguments (target, mean)", fnName);
+				String qualifiedName = namespace + namespaceResolutionOp() + functionName;
+				notifyErrorListeners("The builtin function \'" + qualifiedName + "\' accepts exactly 2 arguments (target, mean)", fnName);
 				return null;
 			}
-			functionName = "cumulativeProbability";
+			functionName = "cdf";
 			paramExpression.get(0).setName("target");
 			paramExpression.get(1).setName("mean");
 			paramExpression.add(new ParameterExpression("dist", new StringIdentifier("exp", fileName, line, col, line, col)));
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}
-		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("chi.cdf")) {
+		else if(namespace.equals("chi") && functionName.equals("cdf")) {
 			if(paramExpression.size() != 2) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 2 arguments (target, df)", fnName);
+				String qualifiedName = namespace + namespaceResolutionOp() + functionName;
+				notifyErrorListeners("The builtin function \'" + qualifiedName + "\' accepts exactly 2 arguments (target, df)", fnName);
 				return null;
 			}
-			functionName = "cumulativeProbability";
+			functionName = "cdf";
 			paramExpression.get(0).setName("target");
 			paramExpression.get(1).setName("df");
 			paramExpression.add(new ParameterExpression("dist", new StringIdentifier("chisq", fileName, line, col, line, col)));
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}
-		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("f.cdf")) {
+		else if(namespace.equals("f") && functionName.equals("cdf")) {
 			if(paramExpression.size() != 3) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 3 arguments (target, df1, df2)", fnName);
+				String qualifiedName = namespace + namespaceResolutionOp() + functionName;
+				notifyErrorListeners("The builtin function \'" + qualifiedName + "\' accepts exactly 3 arguments (target, df1, df2)", fnName);
 				return null;
 			}
-			functionName = "cumulativeProbability";
+			functionName = "cdf";
 			paramExpression.get(0).setName("target");
 			paramExpression.get(1).setName("df1");
 			paramExpression.get(2).setName("df2");
 			paramExpression.add(new ParameterExpression("dist", new StringIdentifier("f", fileName, line, col, line, col)));
 			namespace = DMLProgram.DEFAULT_NAMESPACE;
 		}
-		else if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE) && functionName.equals("t.cdf")) {
+		else if(namespace.equals("t") && functionName.equals("cdf")) {
 			if(paramExpression.size() != 2) {
-				notifyErrorListeners("The builtin function \'" + functionName + "\' accepts exactly 2 arguments (target, df)", fnName);
+				String qualifiedName = namespace + namespaceResolutionOp() + functionName;
+				notifyErrorListeners("The builtin function \'" + qualifiedName + "\' accepts exactly 2 arguments (target, df)", fnName);
 				return null;
 			}
-			functionName = "cumulativeProbability";
+			functionName = "cdf";
 			paramExpression.get(0).setName("target");
 			paramExpression.get(1).setName("df");
 			paramExpression.add(new ParameterExpression("dist", new StringIdentifier("t", fileName, line, col, line, col)));

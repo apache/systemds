@@ -346,6 +346,14 @@ public class RDDConverterUtilsExt
 		}
 		
 	}
+	
+	/**
+	 * Add element indices as new column to DataFrame
+	 * Note: Element indices start from 1
+	 * @param df input data frame
+	 * @param nameOfCol name of index column
+	 * @return new data frame
+	 */
 	public static DataFrame addIDToDataFrame(DataFrame df, SQLContext sqlContext, String nameOfCol) {
 		StructField[] oldSchema = df.schema().fields();
 		StructField[] newSchema = new StructField[oldSchema.length + 1];

@@ -220,8 +220,8 @@ dataIdentifier returns [ org.apache.sysml.parser.common.ExpressionInfo dataInfo 
        // $dataInfo.expr = new org.apache.sysml.parser.DataIdentifier();
 } :
     // ------------------------------------------
-    // IndexedIdentifier
-    name=ID OPEN_BRACK (rowLower=expression (':' rowUpper=expression)?)? ',' (colLower=expression (':' colUpper=expression)?)? CLOSE_BRACK # IndexedExpression
+    // IndexedIdentifier -- allows implicit lower and upper bounds
+    name=ID OPEN_BRACK ( (rowLower=expression)? (rowImplicitSlice=':' (rowUpper=expression)?)? )? (',' (((colLower=expression)? (colImplicitSlice=':' (colUpper=expression)?)?)?)?)? CLOSE_BRACK # IndexedExpression
     // ------------------------------------------
     | ID                                            # SimpleDataIdentifierExpression
     | COMMANDLINE_NAMED_ID                          # CommandlineParamExpression

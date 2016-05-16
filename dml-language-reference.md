@@ -508,7 +508,7 @@ This will result in parser warning, but the program will run to completion. If t
     D = 1;
     foo = function(double A, double B) return (double C) {
         A = 3.0; # value of global A won’t change since it is pass by value
-        
+
         C = A + B # Note: C = A + D will result in compilation error
     }
     C = foo(A, 1)
@@ -1033,26 +1033,26 @@ The `read` invocation in SystemML is parameterized as follows during compilation
     # Read a matrix with path "in/v.ijv".
     # Defaults for data_type and value_type are used.
     V = read("in/v.ijv", rows=10, cols=8, format="text");
-    
+
     # Read a matrix with path "in/v.ijv".
     # The user specifies "in/" as the directory and "v" as
     # the file name and uses constant string concatenation.
     dir = "in/";
     file = "v.ijv";
     V = read(dir + file, rows=10, cols=8, format="text");
-    
+
     # Read a matrix data file with an MTD file available
     # (MTD file path: in/data.ijv.mtd)
     V = read("in/data.ijv");
-    
+
     # Read a csv matrix data file with no header, comma as
     # separator, 3 rows, and 3 columns.
     V = read("m.csv", format="csv", header=FALSE, sep=",", rows=3, cols=3);
-    
+
     # Read a csv matrix data file with an MTD file available
     # (MTD file: m.csv.mtd)
     V = read("m.csv");
-    
+
     # Read a scalar integer value from file "in/scalar"
     V = read("in/scalar", data_type="scalar", value_type="int");
 
@@ -1333,18 +1333,18 @@ An example transformation specification file [`data.spec.json`](files/dml-langua
 	     ,{ "name": "askingprice" , "method": "global_mean" }
 	     ,{ "name": "sqft"        , "method": "global_mean" }
 	    ]
-	    
+
 	    ,"recode":
 	    [ "zipcode", "district", "numbedrooms", "numbathrooms", "floors", "view" ]
-	    
+
 	    ,"bin":
 	    [ { "name": "saleprice"  , "method": "equi-width", "numbins": 3 }
 	     ,{ "name": "sqft"       , "method": "equi-width", "numbins": 4 }
 	    ]
-	    
+
 	    ,"dummycode":
 	    [ "district", "numbathrooms", "floors", "view", "saleprice", "sqft" ]
-	    
+
 	}
 
 The following DML utilizes the `transform()` function.
@@ -1374,16 +1374,16 @@ rather than column names.
 	     ,{ "id": 9, "method": "global_mean" }
 	     ,{ "id": 3, "method": "global_mean" }
 	    ]
-	    
+
 	    ,"recode": [ 1, 2, 4, 5, 6, 7 ]
-	    
+
 	    ,"bin":
 	    [ { "id": 8, "method": "equi-width", "numbins": 3 }
 	     ,{ "id": 3, "method": "equi-width", "numbins": 4 }
 	    ]
-	    
+
 	    ,"dummycode": [ 2, 5, 6, 7, 8, 3 ]
-	    
+
 	}
 
 As a further JSON transformation specification example, the following [`data.spec3.json`](files/dml-language-reference/data.spec3.json) file specifies *scaling* transformations on three columns.
@@ -1399,13 +1399,13 @@ As a further JSON transformation specification example, the following [`data.spe
 	     ,{ "name": "askingprice" , "method": "global_mean" }
 	     ,{ "name": "sqft"        , "method": "global_mean" }
 	    ]
-	    
+
 	    ,"recode":
 	    [ "zipcode", "district", "numbedrooms", "numbathrooms", "floors", "view" ]
-	    
+
 	    ,"dummycode":
 	    [ "district", "numbathrooms", "floors", "view" ]
-	    
+
 	    ,"scale":
 	    [ { "name": "sqft", "method": "mean-subtraction" }
 	     ,{ "name": "saleprice", "method": "z-score" }
@@ -1443,6 +1443,7 @@ Note that the metadata generated during the training phase (located at `/user/ml
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
 append() | Append a string to another string separated by "\n" <br/> Limitation: The string may grow up to 1 MByte. | Input: (&lt;string&gt;, &lt;string&gt;) <br/> Output: &lt;string&gt; | s = "iter=" + i <br/> i = i + 1 <br/> s = append(s, "iter=" + i) <br/> write(s, "s.out")
+toString() | Formats a Matrix object into a string. <br/> "rows" & "cols" : number of rows and columns to print<br/> "decimal" : number of digits after the decimal<br/>"sparse" : set to true to print in sparse format, i.e. _RowIndex_ _ColIndex_ _Value_<br/>"sep" and "linesep" : inter-element separator and the line separator strings| Input : (&lt;matrix&gt;,<br/> &nbsp;&nbsp;rows=100,<br/> &nbsp;&nbsp;cols=100,<br/> &nbsp;&nbsp;decimal=3,<br/> &nbsp;&nbsp;sparse=FALSE,<br/> &nbsp;&nbsp;sep=" ",<br/> &nbsp;&nbsp;linesep="\n") <br/> Output: &lt;string&gt; | X = matrix(seq(1, 9), rows=3, cols=3)<br/>str = toString(X, sep=" \| ")
 print() | Prints the value of a scalar variable x. This built-in takes an optional string parameter. | Input: (&lt;scalar&gt;) | print("hello") <br/> print("hello" + "world") <br/> print("value of x is " + x )
 stop() | Halts the execution of DML program by printing the message that is passed in as the argument. <br/> Note that the use of stop() is not allowed inside a parfor loop. |  Input: (&lt;scalar&gt;) | stop("Inputs to DML program are invalid") <br/> stop("Class labels must be either -1 or +1")
 order() | Sort a column of the matrix X in decreasing/increasing order and return either index (index.return=TRUE) or data (index.return=FALSE). | Input: (target=X, by=column, decreasing, index.return) | order(X, by=1, decreasing=FALSE, index.return=FALSE)
@@ -1705,4 +1706,3 @@ Note:
     the created MLContext.
 -   Even though the above example shows the usage through Scala/Python
     Shell, it works for Spark-Submit and PySpark-Submit as well.
-

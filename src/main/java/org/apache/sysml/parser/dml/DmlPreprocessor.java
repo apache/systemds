@@ -58,6 +58,7 @@ import org.apache.sysml.parser.dml.DmlParser.MatrixMulExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.Ml_typeContext;
 import org.apache.sysml.parser.dml.DmlParser.ModIntDivExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.MultDivExpressionContext;
+import org.apache.sysml.parser.dml.DmlParser.MultiIdExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ParForStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.ParameterizedExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.PathStatementContext;
@@ -389,5 +390,11 @@ public class DmlPreprocessor implements DmlListener {
 
 	@Override
 	public void exitMl_type(Ml_typeContext ctx) {}
+
+	@Override
+	public void enterMultiIdExpression(MultiIdExpressionContext ctx) {}
+
+	@Override
+	public void exitMultiIdExpression(MultiIdExpressionContext ctx) {}
 
 }

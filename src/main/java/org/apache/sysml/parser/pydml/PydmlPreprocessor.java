@@ -42,6 +42,7 @@ import org.apache.sysml.parser.pydml.PydmlParser.ConstIntIdExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ConstStringIdExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ConstTrueExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.DataIdExpressionContext;
+import org.apache.sysml.parser.pydml.PydmlParser.ElifBranchContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ExternalFunctionDefExpressionContext;
 import org.apache.sysml.parser.pydml.PydmlParser.ForStatementContext;
 import org.apache.sysml.parser.pydml.PydmlParser.FunctionCallAssignmentStatementContext;
@@ -389,5 +390,11 @@ public class PydmlPreprocessor implements PydmlListener {
 
 	@Override
 	public void exitMl_type(Ml_typeContext ctx) {}
+
+	@Override
+	public void enterElifBranch(ElifBranchContext ctx) {}
+
+	@Override
+	public void exitElifBranch(ElifBranchContext ctx) {}
 
 }

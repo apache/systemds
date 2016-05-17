@@ -30,9 +30,9 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -403,13 +403,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			allocateDenseBlock();
 	}
 	
-	/**
-	 * 
-	 * @param clearNNZ
-	 * @throws DMLRuntimeException
-	 */
-	public void allocateDenseBlock(boolean clearNNZ) 
-		throws RuntimeException 
+	public void allocateDenseBlock(boolean clearNNZ, boolean zeroOut) 
+			throws RuntimeException 
 	{
 		long limit = (long)rlen * clen;
 		
@@ -420,14 +415,34 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
-		if(denseBlock == null || denseBlock.length < limit ) {
+		if(!zeroOut && DMLScript.REUSE_NONZEROED_OUTPUT 
+				&& (denseBlock == null || denseBlock.length < limit)
+				// Not a column vector
+				&& rlen != 1 && clen != 1) {
+			denseBlock = LibMatrixDNN.getReuseableData(limit);
+		}
+		if(denseBlock == null || denseBlock.length < limit) {
 			denseBlock = new double[(int)limit];
 		}
+		
 		
 		//clear nnz if necessary
 		if( clearNNZ ) {
 			nonZeros = 0;
 		}
+		
+		sparse = false;
+	}
+	
+	/**
+	 * 
+	 * @param clearNNZ
+	 * @throws DMLRuntimeException
+	 */
+	public void allocateDenseBlock(boolean clearNNZ) 
+		throws RuntimeException 
+	{
+		allocateDenseBlock(clearNNZ, true);
 	}
 	
 	/**

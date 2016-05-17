@@ -161,7 +161,7 @@ expression returns [ org.apache.sysml.parser.common.ExpressionInfo info ]
     | '(' left=expression ')'                       # AtomicExpression
 
     // Should you allow indexed expression here ?
-    // | '[' targetList+=expression (',' targetList+=expression)* ']'  # MultiIdExpression
+    | '[' targetList+=expression (',' targetList+=expression)* ']'  # MultiIdExpression
 
     // | BOOLEAN                                       # ConstBooleanIdExpression
     | 'TRUE'                                        # ConstTrueExpression

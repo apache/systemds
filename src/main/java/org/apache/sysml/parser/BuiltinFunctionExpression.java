@@ -21,6 +21,7 @@ package org.apache.sysml.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 
@@ -33,11 +34,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, ArrayList<ParameterExpression> args, String fname, int blp, int bcp, int elp, int ecp) {
 		_kind = Kind.BuiltinFunctionOp;
 		_opcode = bifop;
+		this.setAllPositions(fname, blp, bcp, elp, ecp);
+		args = expandConvolutionArguments(args);
 		_args = new Expression[args.size()];
 		for(int i=0; i < args.size(); i++) {
 			_args[i] = args.get(i).getExpr();
 		}
-		this.setAllPositions(fname, blp, bcp, elp, ecp);
 	}
 
 	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, Expression[] args, String fname, int blp, int bcp, int elp, int ecp) {
@@ -202,6 +204,105 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
 		}
+	}
+	
+	private ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, 
+			int skip) throws LanguageException {
+		ArrayList<ParameterExpression> newParams = new ArrayList<ParameterExpression>();
+
+		for(int i = 0; i < skip; i++)
+			newParams.add(paramExpression.get(i));
+
+		String [] orderedParams = {
+				"stride1", "stride2", "padding1", "padding2",  
+				"input_shape1", "input_shape2", "input_shape3", "input_shape4", 
+				"filter_shape1", "filter_shape2", "filter_shape3", "filter_shape4"	
+		};
+		for(int i = 0; i < orderedParams.length; i++) {
+			boolean found = false;
+			for(ParameterExpression param : paramExpression) {
+				if(param.getName() != null &&  param.getName().equals(orderedParams[i])) {
+					found = true;
+					newParams.add(param);
+				}
+			}
+			if(!found) {
+				throw new LanguageException("Incorrect parameters. Expected " + orderedParams[i] + " to be expanded.");
+			}
+		}
+
+		return newParams;
+	}
+
+	private ArrayList<ParameterExpression>  replaceListParams(ArrayList<ParameterExpression> paramExpression,
+			String inputVarName, String outputVarName, int startIndex) throws LanguageException {
+		ArrayList<ParameterExpression> newParamExpression = new ArrayList<ParameterExpression>();
+		int i = startIndex;
+		int j = 1; // Assumption: sequential ordering pool_size1, pool_size2 
+		for (ParameterExpression expr : paramExpression) {
+			if(expr.getName() != null && expr.getName().equals(inputVarName + j)) {
+				newParamExpression.add(new ParameterExpression(outputVarName + i, expr.getExpr()));
+				i++; j++;
+			}
+			else {
+				newParamExpression.add(expr);
+			}
+		}
+		return newParamExpression;
+	}
+
+	private ArrayList<ParameterExpression> expandListParams(ArrayList<ParameterExpression> paramExpression, 
+			HashSet<String> paramsToExpand) throws LanguageException {
+		ArrayList<ParameterExpression> newParamExpressions = new ArrayList<ParameterExpression>();
+		for(ParameterExpression expr : paramExpression) {
+			if(paramsToExpand.contains(expr.getName())) {
+				if(expr.getExpr() instanceof ExpressionList) {
+					int i = 1;
+					for(Expression e : ((ExpressionList)expr.getExpr()).getValue()) {
+						newParamExpressions.add(new ParameterExpression(expr.getName() + i, e));
+						i++;
+					}
+				}
+			}
+			else if(expr.getExpr() instanceof ExpressionList) {
+				throw new LanguageException("The parameter " + expr.getName() + " cannot be list or is not supported for the given function");
+			}
+			else {
+				newParamExpressions.add(expr);
+			}
+		}
+		return newParamExpressions;
+	}
+	
+	private ArrayList<ParameterExpression> expandConvolutionArguments(ArrayList<ParameterExpression> paramExpression) {
+		try {
+			if(_opcode == BuiltinFunctionOp.CONV2D || _opcode == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER 
+					|| _opcode == BuiltinFunctionOp.CONV2D_BACKWARD_DATA) {
+				HashSet<String> expand = new HashSet<String>();
+				expand.add("input_shape"); expand.add("filter_shape"); expand.add("stride"); expand.add("padding");
+				paramExpression = expandListParams(paramExpression, expand);
+				paramExpression = orderConvolutionParams(paramExpression, 2);
+			}
+			else if(_opcode == BuiltinFunctionOp.MAX_POOL || 
+					_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD) {
+				HashSet<String> expand = new HashSet<String>();
+				expand.add("input_shape"); expand.add("pool_size"); expand.add("stride"); expand.add("padding");
+				paramExpression = expandListParams(paramExpression, expand);
+				paramExpression.add(new ParameterExpression("filter_shape1", 
+						new IntIdentifier(1, getFilename(), getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn())));
+				paramExpression.add(new ParameterExpression("filter_shape2", 
+						new IntIdentifier(1, getFilename(), getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn())));
+				paramExpression = replaceListParams(paramExpression, "pool_size", "filter_shape", 3);
+				if(_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD)
+					paramExpression = orderConvolutionParams(paramExpression, 2);
+				else
+					paramExpression = orderConvolutionParams(paramExpression, 1);
+			}
+		}
+		catch(LanguageException e) {
+			throw new RuntimeException(e);
+		}
+		return paramExpression;
 	}
 
 	/**
@@ -997,6 +1098,37 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
 			break;
 			
+		case CONV2D:
+		case CONV2D_BACKWARD_FILTER:
+		case CONV2D_BACKWARD_DATA:
+		case MAX_POOL:
+		case AVG_POOL:
+		case MAX_POOL_BACKWARD:
+		{
+			// At DML level:
+			// output = conv2d(input, filter, input_shape=[3, 2, 2], filter_shape=[3, 2, 2], 
+			// strides=[1, 1], border_mode="valid")
+			// 
+			// Converted to following in constructor (only supported NCHW):
+			// output = conv2d(input, filter, stride1, stride2, padding1,padding2,  
+			// input_shape1, input_shape2, input_shape3, input_shape4, 
+			// filter_shape1, filter_shape2, filter_shape3, filter_shape4)
+			//
+			// Similarly,
+			// conv2d_backward_filter and conv2d_backward_data
+			Expression input = _args[0];			// For conv2d_backward_filter, this is input and for conv2d_backward_data, this is filter
+			
+			if(!(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)) {
+				Expression filter = _args[1];			// For conv2d_backward functions, this is dout
+				checkMatrixParam(filter);
+			}
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.DOUBLE);
+			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
+			  			
+			checkMatrixParam(input);
+			break;
+		}
 		default:
 			if (this.isMathFunction()) {
 				// datatype and dimensions are same as this.getExpr()
@@ -1473,6 +1605,18 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.LU;
 		else if (functionName.equals("eigen"))
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
+		else if (functionName.equals("conv2d"))
+			 bifop = Expression.BuiltinFunctionOp.CONV2D;
+		else if (functionName.equals("conv2d_backward_filter"))
+			 bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_FILTER;
+		else if (functionName.equals("conv2d_backward_data"))
+			 bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_DATA;
+		else if (functionName.equals("max_pool"))
+			 bifop = Expression.BuiltinFunctionOp.MAX_POOL;
+		else if (functionName.equals("max_pool_backward"))
+			 bifop = Expression.BuiltinFunctionOp.MAX_POOL_BACKWARD;
+		else if (functionName.equals("avg_pool"))
+			 bifop = Expression.BuiltinFunctionOp.AVG_POOL;
 		else if (functionName.equals("solve"))
 			bifop = Expression.BuiltinFunctionOp.SOLVE;
 		else if (functionName.equals("ceil"))

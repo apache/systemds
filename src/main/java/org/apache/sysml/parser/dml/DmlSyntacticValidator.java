@@ -40,6 +40,7 @@ import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.parser.ExpressionList;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.FunctionCallIdentifier;
@@ -94,6 +95,7 @@ import org.apache.sysml.parser.dml.DmlParser.MatrixMulExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.Ml_typeContext;
 import org.apache.sysml.parser.dml.DmlParser.ModIntDivExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.MultDivExpressionContext;
+import org.apache.sysml.parser.dml.DmlParser.MultiIdExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ParForStatementContext;
 import org.apache.sysml.parser.dml.DmlParser.ParameterizedExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.PathStatementContext;
@@ -481,9 +483,9 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		String namespace = fnNames[0];
 		String functionName = fnNames[1];
 		ArrayList<ParameterExpression> paramExpression = getParameterExpressionList(ctx.paramExprs);
-
+		
 		castAsScalarDeprecationCheck(functionName, ctx);
-
+		
 		boolean hasLHS = ctx.targetList != null;
 		functionCallAssignmentStatementHelper(ctx, printStatements, outputStatements, hasLHS ? ctx.targetList.dataInfo.expr : null, ctx.info, ctx.name,
 	 			hasLHS ? ctx.targetList.start : null, namespace, functionName, paramExpression, hasLHS);
@@ -1044,5 +1046,17 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	@Override public void enterSimpleDataIdentifierExpression(SimpleDataIdentifierExpressionContext ctx) {}
 
 	@Override public void enterBooleanOrExpression(BooleanOrExpressionContext ctx) {}
+
+	@Override
+	public void enterMultiIdExpression(MultiIdExpressionContext ctx) { }
+
+	@Override
+	public void exitMultiIdExpression(MultiIdExpressionContext ctx) {
+		ArrayList<Expression> values = new ArrayList<Expression>();
+		for(ExpressionContext elem : ctx.targetList) {
+			values.add(elem.info.expr);
+		}
+		ctx.info.expr = new ExpressionList(values);
+	}
 
 }

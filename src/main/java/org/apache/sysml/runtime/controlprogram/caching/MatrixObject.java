@@ -40,6 +40,7 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -203,6 +204,21 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	public double getSparsity() {
 		MatrixCharacteristics mc = getMatrixCharacteristics();		
 		return ((double)mc.getNonZeros())/mc.getRows()/mc.getCols();
+	}
+	
+	@Override
+	protected void clearReusableData() {
+		if(DMLScript.REUSE_NONZEROED_OUTPUT) {
+			if(_data == null) {
+				getCache();
+			}
+			if(_data != null &&  
+					// Not a column vector
+					_data.getNumRows() != 1 && _data.getNumColumns() != 1) {
+				double[] arr = ((MatrixBlock)_data).getDenseBlock();
+				LibMatrixDNN.cacheReuseableData(arr);
+			}
+		}
 	}
 	
 	public String toString()

@@ -1083,6 +1083,12 @@ public abstract class Hop
 		//DIAG_V2M, DIAG_M2V, 
 	};
 	
+	public enum ConvOp {
+		IM2COL, RESHAPE_COL, ROTATE180, COL2IM, 
+		MAX_POOLING, MAX_POOLING_BACKWARD,
+		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA
+	};
+	
 	public enum DataGenMethod {
 		RAND, SEQ, SINIT, SAMPLE, INVALID
 	};
@@ -1146,6 +1152,20 @@ public abstract class Hop
 		HopsTransf2Lops.put(ReOrgOp.RESHAPE, org.apache.sysml.lops.Transform.OperationTypes.Reshape);
 		HopsTransf2Lops.put(ReOrgOp.SORT, org.apache.sysml.lops.Transform.OperationTypes.Sort);
 
+	}
+	
+	protected static final HashMap<ConvOp, org.apache.sysml.lops.ConvolutionTransform.OperationTypes> HopsConv2Lops;
+	static {
+		HopsConv2Lops = new HashMap<ConvOp, org.apache.sysml.lops.ConvolutionTransform.OperationTypes>();
+		HopsConv2Lops.put(ConvOp.IM2COL, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.IM2COL);
+		HopsConv2Lops.put(ConvOp.RESHAPE_COL, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.RESHAPE_COL);
+		HopsConv2Lops.put(ConvOp.ROTATE180, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.ROTATE180);
+		HopsConv2Lops.put(ConvOp.COL2IM, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.COL2IM);
+		HopsConv2Lops.put(ConvOp.MAX_POOLING, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING);
+		HopsConv2Lops.put(ConvOp.MAX_POOLING_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING_BACKWARD);
+		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D);
+		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D_BACKWARD_FILTER);
+		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D_BACKWARD_DATA, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D_BACKWARD_DATA);
 	}
 
 	protected static final HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;

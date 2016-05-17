@@ -76,23 +76,21 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
-	// See: https://issues.apache.org/jira/browse/SYSTEMML-656
-	// @Test
-	// public void testScalarInputBoolean() throws IOException, DMLException {
-	// Connection conn = new Connection();
-	// String str = conn.readScript(baseDirectory + File.separator +
-	// "scalar-input.dml");
-	// PreparedScript script = conn.prepareScript(str, new String[] {
-	// "inScalar1", "inScalar2" }, new String[] {},
-	// false);
-	// boolean inScalar1 = true;
-	// boolean inScalar2 = true;
-	// script.setScalar("inScalar1", inScalar1);
-	// script.setScalar("inScalar2", inScalar2);
-	//
-	// setExpectedStdOut("total:TRUE");
-	// script.executeScript();
-	// }
+	@Test
+	public void testScalarInputBoolean() throws IOException, DMLException {
+		Connection conn = new Connection();
+		String str = conn.readScript(baseDirectory + File.separator + "scalar-input.dml");
+		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {},
+				false);
+		boolean inScalar1 = true;
+		boolean inScalar2 = true;
+		script.setScalar("inScalar1", inScalar1);
+		script.setScalar("inScalar2", inScalar2);
+
+		setExpectedStdOut("total:2.0");
+		script.executeScript();
+		conn.close();
+	}
 
 	@Test
 	public void testScalarInputLong() throws IOException, DMLException {

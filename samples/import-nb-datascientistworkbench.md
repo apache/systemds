@@ -2,7 +2,7 @@
 
 * Clone the repository to download the notebooks
 ```
-git clone https://github.com/niketanpansare/systemml_tutorial.git
+git clone https://github.com/apache/incubator-systemml.git
 ```
 
 * Create Zeppelin notebook

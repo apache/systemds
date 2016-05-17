@@ -2,7 +2,7 @@
 
 * Clone the repository to download the notebooks
 ```
-https://github.com/apache/incubator-systemml.git
+git clone https://github.com/apache/incubator-systemml.git
 ```
 
 * Log on to https://console.ng.bluemix.net/ and create Apache Spark service:

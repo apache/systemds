@@ -34,7 +34,7 @@ public class PoolTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "PoolTest";
 	private final static String TEST_DIR = "functions/tensor/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + Conv2DTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + PoolTest.class.getSimpleName() + "/";
 	private final static double epsilon=0.0000000001;
 	
 	@Override

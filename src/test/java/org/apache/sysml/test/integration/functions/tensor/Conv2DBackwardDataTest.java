@@ -35,7 +35,7 @@ public class Conv2DBackwardDataTest extends AutomatedTestBase
 	
 	private final static String TEST_NAME = "Conv2DBackwardDataTest";
 	private final static String TEST_DIR = "functions/tensor/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + Conv2DTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + Conv2DBackwardDataTest.class.getSimpleName() + "/";
 	private final static double epsilon=0.0000000001;
 	
 	@Override

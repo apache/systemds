@@ -202,7 +202,7 @@
 
 ===============================================================================
 
-The following components come under Apache Software License 2.0
+The following components come under the Apache Software License 2.0.
 
 
 avro-1.7.4.jar
@@ -265,7 +265,7 @@ modification, are permitted provided that the following conditions are met:
    this list of conditions and the following disclaimer in the documentation
    and/or other materials provided with the distribution.
 
- - Neither the name of the Sun Microsystems, Inc. nor the names of
+ - Neither the name of the author nor the names of
    contributors may be used to endorse or promote products derived from this
    software without specific prior written permission.
 

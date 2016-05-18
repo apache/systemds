@@ -210,6 +210,7 @@ commons-configuration:commons-configuration:1.6
 commons-lang:commons-lang:2.6
 commons-logging:commons-logging:1.1.1
 log4j:log4j:1.2.15
+net.sf.opencsv:opencsv:1.8
 org.apache.avro:avro:1.7.4
 org.apache.commons:commons-math3:3.1.1
 org.apache.hadoop:hadoop-auth:2.4.1
@@ -229,7 +230,6 @@ org.apache.hadoop:hadoop-yarn-server-nodemanager:2.4.1
 org.apache.hadoop:hadoop-yarn-server-web-proxy:2.4.1
 org.codehaus.jackson:jackson-core-asl:1.8.8
 org.codehaus.jackson:jackson-mapper-asl:1.8.8
-net.sf.opencsv:opencsv:1.8
 
 Compile-scope dependencies:
 com.google.guava:guava:14.0.1

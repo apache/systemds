@@ -204,15 +204,15 @@
 
 The following compile-scope dependencies come under the Apache Software License 2.0.
 
-Guava: Google Core Libraries for Java (http://code.google.com/p/guava-libraries/guava) com.google.guava:guava:bundle:14.0.1
-Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:wink-json4j:jar:1.4
+Guava: Google Core Libraries for Java (http://code.google.com/p/guava-libraries/guava) com.google.guava:guava:14.0.1
+Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:wink-json4j:1.4
 
 ===============================================================================
 
 The following compile-scope ANTLR dependencies are distributed under the BSD license.
 
-ANTLR 4 Runtime Annotations (http://www.antlr.org/antlr4-annotations) org.antlr:antlr4-annotations:jar:4.3
-ANTLR 4 Runtime (http://www.antlr.org/antlr4-runtime) org.antlr:antlr4-runtime:jar:4.3
+ANTLR 4 Runtime Annotations (http://www.antlr.org/antlr4-annotations) org.antlr:antlr4-annotations:4.3
+ANTLR 4 Runtime (http://www.antlr.org/antlr4-runtime) org.antlr:antlr4-runtime:4.3
 
 Copyright (c) 2012 Terence Parr and Sam Harwell
 All rights reserved.
@@ -253,7 +253,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The following compile-scope abego TreeLayout Core dependency is distributed under the BSD license.
 
-abego TreeLayout Core (http://code.google.com/p/treelayout/) org.abego.treelayout:org.abego.treelayout.core:jar:1.0.1
+abego TreeLayout Core (http://code.google.com/p/treelayout/) org.abego.treelayout:org.abego.treelayout.core:1.0.1
 
 Copyright (c) 2011, abego Software GmbH, Germany (http://www.abego.org)
 All rights reserved.

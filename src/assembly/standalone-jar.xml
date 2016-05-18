@@ -111,6 +111,8 @@
 					<exclude>META-INF/LICENSE.txt</exclude>
 					<exclude>META-INF/NOTICE.txt</exclude>
 					<exclude>META-INF/README.txt</exclude>
+					<exclude>META-INF/LICENSE</exclude>
+					<exclude>META-INF/NOTICE</exclude>
 				</excludes>
 			</unpackOptions>
 			<scope>provided</scope>

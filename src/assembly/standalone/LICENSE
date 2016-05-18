@@ -204,7 +204,6 @@
 
 The following components come under the Apache Software License 2.0.
 
-
 avro-1.7.4.jar
 commons-cli-1.2.jar
 commons-collections-3.2.1.jar
@@ -233,7 +232,7 @@ jackson-mapper-asl-1.8.8.jar
 log4j-1.2.15.jar
 opencsv-1.8.jar
 
-The following windows only components come under Apache Software License 2.0
+The following windows-only components come under the Apache Software License 2.0.
 
 hadoop.dll
 hadoop.exp
@@ -244,11 +243,12 @@ winutils.exe
 winutils.pdb
 
 ===============================================================================
-The ANTLR is distributed under the BSD license with the following copyright:
 
-antlr4-4.3.jar
-antlr4-annotations-4.3.jar
-antlr4-runtime-4.3.jar
+The following ANTLR dependencies are distributed under the BSD license.
+
+ANTLR 4 Tool (http://www.antlr.org) org.antlr:antlr4-annotations:4.3 (antlr4-4.3.jar)
+ANTLR 4 Runtime Annotations (http://www.antlr.org) org.antlr:antlr4-annotations:4.3
+ANTLR 4 Runtime (http://www.antlr.org) org.antlr:antlr4-runtime:4.3
 
 Copyright (c) 2012 Terence Parr and Sam Harwell
 All rights reserved.
@@ -284,11 +284,47 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+================================================================================
+
+The abego TreeLayout Core dependency is distributed under the BSD license.
+
+abego TreeLayout Core (http://code.google.com/p/treelayout/) org.abego.treelayout:org.abego.treelayout.core:1.0.1
+
+Copyright (c) 2011, abego Software GmbH, Germany (http://www.abego.org)
+All rights reserved.
+
+BSD license:
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, 
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice, 
+   this list of conditions and the following disclaimer in the documentation 
+   and/or other materials provided with the distribution.
+3. Neither the name of the abego Software GmbH nor the names of its 
+   contributors may be used to endorse or promote products derived from this 
+   software without specific prior written permission.
+   
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+POSSIBILITY OF SUCH DAMAGE.
 
 ================================================================================
 
-The slf4j-api-1.7.10.jar and slf4j-log4j12-1.7.10.jar are distributed under the
-MIT license:
+The following SLF4J dependencies are distributed under the MIT license.
+
+SLF4J API Module (http://www.slf4j.org) org.slf4j:slf4j-api:1.7.10 (slf4j-api-1.7.10.jar)
+SLF4J LOG4J-12 Binding (http://www.slf4j.org) org.slf4j:slf4j-log4j12:1.7.10 (slf4j-log4j12-1.7.10.jar)
 
 Copyright (c) 2004-2008 QOS.ch
 All rights reserved.

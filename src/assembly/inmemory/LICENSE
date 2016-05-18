@@ -215,15 +215,15 @@ org.apache.hadoop:hadoop-common:2.4.1
 org.apache.hadoop:hadoop-mapreduce-client-core:2.4.1
 
 Compile-scope dependencies:
-com.google.guava:guava:bundle:14.0.1
-org.apache.wink:wink-json4j:jar:1.4
+com.google.guava:guava:14.0.1
+org.apache.wink:wink-json4j:1.4
 
 ===============================================================================
 
 The following ANTLR dependencies are distributed under the BSD license.
 
-ANTLR 4 Runtime Annotations (http://www.antlr.org) org.antlr:antlr4-annotations:jar:4.3
-ANTLR 4 Runtime (http://www.antlr.org) org.antlr:antlr4-runtime:jar:4.3
+ANTLR 4 Runtime Annotations (http://www.antlr.org) org.antlr:antlr4-annotations:4.3
+ANTLR 4 Runtime (http://www.antlr.org) org.antlr:antlr4-runtime:4.3
 
 Copyright (c) 2012 Terence Parr and Sam Harwell
 All rights reserved.
@@ -263,7 +263,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The abego TreeLayout Core dependency is distributed under the BSD license.
 
-abego TreeLayout Core (http://code.google.com/p/treelayout/) org.abego.treelayout:org.abego.treelayout.core:jar:1.0.1
+abego TreeLayout Core (http://code.google.com/p/treelayout/) org.abego.treelayout:org.abego.treelayout.core:1.0.1
 
 Copyright (c) 2011, abego Software GmbH, Germany (http://www.abego.org)
 All rights reserved.

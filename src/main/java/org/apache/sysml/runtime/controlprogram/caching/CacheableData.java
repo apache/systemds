@@ -33,6 +33,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
+import org.apache.sysml.runtime.controlprogram.context.GPUObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
@@ -43,6 +44,7 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -178,6 +180,19 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject _bcHandle = null; //Broadcast handle
+	public GPUObject _gpuHandle = null;
+	
+	public GPUObject getGPUObject() {
+		return _gpuHandle;
+	}
+	public MatrixBlock getMatrixBlock() {
+		if(_data == null)
+			getCache();
+		if(_data != null && _data instanceof MatrixBlock)
+			return (MatrixBlock) _data;
+		else
+			return null;
+	}
 	
 	/**
 	 * Basic constructor for any cacheable data.
@@ -203,6 +218,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_hdfsFileName = that._hdfsFileName;
 		_hdfsFileExists = that._hdfsFileExists; 
 		_varName = that._varName;
+		_gpuHandle = that._gpuHandle;
+		if(_gpuHandle != null)
+			_gpuHandle.numReferences++;
 	}
 
 	
@@ -735,6 +753,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		exportData(fName, outputFormat, -1, formatProperties);
 	}
 	
+	protected void exportGPUData()  throws CacheException { }
+	
 	/**
 	 * Synchronized because there might be parallel threads (parfor local) that
 	 * access the same object (in case it was created before the loop).
@@ -800,6 +820,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				getCache();
 			acquire( false, _data==null ); //incl. read matrix if evicted	
 			
+			exportGPUData();
 			// b) write the matrix 
 			try
 			{

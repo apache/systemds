@@ -103,6 +103,8 @@ public class DMLScript
 	public static String DML_FILE_PATH_ANTLR_PARSER = null;
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
 	
+	public static boolean USE_ACCELERATOR = false;
+	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
 	
@@ -121,6 +123,7 @@ public class DMLScript
 			//+ "   -s: <filename> will be interpreted as a DML script string \n"
 			+ "   -python: (optional) parses Python-like DML\n"
 			+ "   -debug: (optional) run in debug mode\n"
+			+ "   -accelerator: (optional) use acceleration whenever possible. Current version only supports CUDA.\n"
 			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
@@ -301,6 +304,9 @@ public class DMLScript
 					fnameOptConfig = args[++i];
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
+				}
+				else if( args[i].equalsIgnoreCase("-accelerator") ) {	
+					USE_ACCELERATOR = true;
 				}
 				else if( args[i].equalsIgnoreCase("-python") ) {
 					parsePyDML = true;
@@ -673,6 +679,9 @@ public class DMLScript
 		}
 		finally //ensure cleanup/shutdown
 		{	
+			if(DMLScript.USE_ACCELERATOR && ec != null) {
+				ec.destroyGPUContext();
+			}
 			if(ec != null && ec instanceof SparkExecutionContext) {
 				((SparkExecutionContext) ec).close();
 			}

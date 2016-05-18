@@ -32,6 +32,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.controlprogram.context.GPUContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -228,6 +229,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				LibMatrixDNN.cacheReuseableData(arr);
 			}
 		}
+	}
+	
+	@Override
+	protected void exportGPUData() throws CacheException {
+		if(DMLScript.USE_ACCELERATOR)
+			GPUContext.exportData(this);
 	}
 	
 	public String toString()

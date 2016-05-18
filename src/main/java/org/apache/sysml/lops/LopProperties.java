@@ -27,7 +27,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 public class LopProperties 
 {
 	
-	public enum ExecType { CP, CP_FILE, MR, SPARK, INVALID };
+	public enum ExecType { CP, CP_FILE, MR, SPARK, GPU, INVALID };
 	public enum ExecLocation {INVALID, RecordReader, Map, MapOrReduce, MapAndReduce, Reduce, Data, ControlProgram };
 
 	// static variable to assign an unique ID to every lop that is created

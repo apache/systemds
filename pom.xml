@@ -784,6 +784,42 @@
 
 
 	<dependencies>
+	
+		<!-- For GPU backend
+			Use external jars until the mavenized jcuda is up-to-date with jcuda.
+			I prefered this approach as opposed to asking everyone to download jcuda and execute following command: 
+			mvn install:install-file -Dfile=...
+		 -->
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcuda</artifactId>
+			<version>0.7.5b</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/src/test/config/jcuda/jcuda-0.7.5b.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcublas</artifactId>
+			<version>0.7.5b</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/src/test/config/jcuda/jcublas-0.7.5b.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcusparse</artifactId>
+			<version>0.7.5b</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/src/test/config/jcuda/jcusparse-0.7.5b.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcudnn</artifactId>
+			<version>0.7.5</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/src/test/config/jcuda/jcudnn-0.7.5.jar</systemPath>
+		</dependency>
+		<!-- ************************* -->
+	
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_2.10</artifactId>

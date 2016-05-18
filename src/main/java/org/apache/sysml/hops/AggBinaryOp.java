@@ -640,13 +640,40 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		throws HopsException, LopsException
 	{	
 		Lop matmultCP = null;
-		if( isLeftTransposeRewriteApplicable(true, false) ) {
-			matmultCP = constructCPLopsMMWithLeftTransposeRewrite();
+		if(DMLScript.USE_ACCELERATOR) {
+			Hop h1 = getInput().get(0);
+			Hop h2 = getInput().get(1);
+			Lop left; Lop right;
+			boolean isLeftTransposed; boolean isRightTransposed;
+			if( h1 instanceof ReorgOp && ((ReorgOp)h1).getOp()==ReOrgOp.TRANSPOSE ) {
+				isLeftTransposed = true;
+				left = h1.getInput().get(0).constructLops();
+			}
+			else {
+				isLeftTransposed = false;
+				left = h1.constructLops();
+			}
+			if( h2 instanceof ReorgOp && ((ReorgOp)h2).getOp()==ReOrgOp.TRANSPOSE ) {
+				isRightTransposed = true;
+				right = h2.getInput().get(0).constructLops();
+			}
+			else {
+				isRightTransposed = false;
+				right = h2.constructLops();
+			}
+			
+			matmultCP = new Binary(left, right, 
+									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.GPU, isLeftTransposed, isRightTransposed);
 		}
-		else { 
-			int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-			matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);
+		else {
+			if( isLeftTransposeRewriteApplicable(true, false) ) {
+				matmultCP = constructCPLopsMMWithLeftTransposeRewrite();
+			}
+			else { 
+				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+				matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
+										 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);
+			}
 		}
 		
 		setOutputDimensions(matmultCP);

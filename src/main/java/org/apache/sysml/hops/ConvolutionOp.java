@@ -33,6 +33,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.ConvolutionParameters;
+import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
 {	
@@ -88,6 +89,15 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
+		
+		Lop ret = ConvolutionUtils.constructConvolutionLops(this);
+		if(ret != null) {
+			return ret;
+		}
+		ret = ConvolutionUtils.constructConvolutionBackwardDataLops(this);
+		if(ret != null) {
+			return ret;
+		}
 		
 		ExecType et = optFindExecType();
 		ArrayList<Hop> inputs = getInput();

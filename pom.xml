@@ -73,15 +73,24 @@
 	</properties>
 
 	<build>
-	
-		<resources>
-      		<resource>
-      			<directory>scripts/algorithms</directory>
-      			<includes>
-		          <include>**/*.dml</include>
-		        </includes>
-      		</resource>
-      	</resources>
+
+	<!-- Adds scripts to main jar, in-memory jar, sources jar, and standalone jar -->
+	<resources>
+		<resource>
+			<directory>scripts</directory>
+			<excludes>
+				<exclude>algorithms/obsolete/*</exclude>
+				<exclude>algorithms/obsolete</exclude>
+				<exclude>perftest/*</exclude>
+				<exclude>perftest</exclude>
+				<exclude>staging/**/*</exclude>
+				<exclude>staging</exclude>
+				<!-- <exclude>*.sh</exclude> --> <!-- applies to sparkDML.sh -->
+			</excludes>
+			<targetPath>scripts</targetPath>
+		</resource>
+	</resources>
+
 		<plugins>
 
 			<plugin>

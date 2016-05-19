@@ -19,6 +19,7 @@
 
 package org.apache.sysml.api.ml
 
+import java.io.File
 import org.apache.sysml.api.{ MLContext, MLOutput }
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics
 import org.apache.sysml.runtime.instructions.spark.utils.{ RDDConverterUtilsExt => RDDConverterUtils }
@@ -60,7 +61,7 @@ trait HasRegParam extends Params {
   final def getRegParam: Double = $(regParam)
 }
 object LogisticRegression {
-  final val scriptPath = "MultiLogReg.dml"
+  final val scriptPath = "scripts" + File.separator + "algorithms" + File.separator + "MultiLogReg.dml"
 }
 
 /**
@@ -107,7 +108,7 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
   }
 }
 object LogisticRegressionModel {
-  final val scriptPath = "GLM-predict.dml"
+  final val scriptPath = "scripts" + File.separator + "algorithms" + File.separator + "GLM-predict.dml"
 }
 
 /**

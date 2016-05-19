@@ -240,6 +240,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
+	@SuppressWarnings("unused")
 	private MatrixBlock getDenseOutputBlock(ExecutionContext ec, int numRows, int numCols, boolean reuseNonZeroedOutput1) throws DMLRuntimeException {
 		long start = -1;
 		if(DMLScript.STATISTICS)

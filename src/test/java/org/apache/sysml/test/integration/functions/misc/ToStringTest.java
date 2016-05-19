@@ -115,7 +115,8 @@ public class ToStringTest extends AutomatedTestBase {
 	 */
 	@Test
 	public void testBiggerArrayDefaultRowsCols(){
-		final int INPUT_ROWS = 200;
+		//script-consistency required: 200x200
+		//TODO pass as arguments
 		final int INPUT_COLS = 200;
 		final int MAX_ROWS = 100;
 		final int MAX_COLS = 100;
@@ -144,7 +145,8 @@ public class ToStringTest extends AutomatedTestBase {
 	 */
 	@Test
 	public void testBiggerArraySpecifyRowsCols(){
-		final int INPUT_ROWS = 200;
+		//script-consistency required: 200x200
+		//TODO pass as arguments
 		final int INPUT_COLS = 200;
 		final int MAX_ROWS = 190;
 		final int MAX_COLS = 190;

@@ -30,6 +30,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.sysml.api.DMLScript;
@@ -403,6 +404,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			allocateDenseBlock();
 	}
 	
+	@SuppressWarnings("unused")
 	public void allocateDenseBlock(boolean clearNNZ, boolean zeroOut) 
 			throws RuntimeException 
 	{
@@ -416,9 +418,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
 		if(!zeroOut && DMLScript.REUSE_NONZEROED_OUTPUT 
-				&& (denseBlock == null || denseBlock.length < limit)
-				// Not a column vector
-				&& rlen != 1 && clen != 1) {
+			&& (denseBlock == null || denseBlock.length < limit)
+			&& rlen != 1 && clen != 1 ) // Not a column vector 
+		{
 			denseBlock = LibMatrixDNN.getReuseableData(limit);
 		}
 		if(denseBlock == null || denseBlock.length < limit) {

@@ -61,8 +61,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.BinaryMatrixCharacteristics;
 
-import junit.framework.Assert;
-
 
 /**
  * <p>

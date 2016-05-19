@@ -2921,6 +2921,7 @@ public class DMLTranslator
 		return ret;
 	}
 
+	@SuppressWarnings("unused") //TODO remove if not used
 	private ArrayList<Hop> getALHopsForConvOpPoolingIM2COL(Hop first, BuiltinFunctionExpression source, int skip, HashMap<String, Hop> hops) throws ParseException {
 		ArrayList<Hop> ret = new ArrayList<Hop>();
 		ret.add(first);

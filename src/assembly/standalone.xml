@@ -20,7 +20,7 @@
 	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-	<!-- Assembly file for the "standalone" SystemML release for running on a standalone machine. -->
+	<!-- Assembly file for the "standalone" tar.gz and zip SystemML releases for running on a standalone machine. -->
 	<id>standalone</id>
 
 	<formats>
@@ -33,65 +33,17 @@
 
 	<fileSets>
 		<fileSet>
-			<directory>${basedir}/scripts/algorithms</directory>
-			<includes>
-				<include>ALS_predict.dml</include>
-				<include>ALS_topk_predict.dml</include>
-				<include>ALS.dml</include>
-				<include>apply-transform.dml</include>
-				<include>bivar-stats.dml</include>
-				<include>Cox-predict.dml</include>
-				<include>Cox.dml</include>
-				<include>decision-tree-predict.dml</include>
-				<include>decision-tree.dml</include>
-				<include>GLM-predict.dml</include>
-				<include>GLM.dml</include>
-				<include>KM.dml</include>
-				<include>Kmeans-predict.dml</include>
-				<include>Kmeans.dml</include>
-				<include>l2-svm-predict.dml</include>
-				<include>l2-svm.dml</include>
-				<include>LinearRegCG.dml</include>
-				<include>LinearRegDS.dml</include>
-				<include>m-svm-predict.dml</include>
-				<include>m-svm.dml</include>
-				<include>MultiLogReg.dml</include>
-				<include>naive-bayes-predict.dml</include>
-				<include>naive-bayes.dml</include>
-				<include>PCA.dml</include>
-				<include>random-forest-predict.dml</include>
-				<include>random-forest.dml</include>
-				<include>StepGLM.dml</include>
-				<include>StepLinearRegDS.dml</include>
-				<include>stratstats.dml</include>
-				<include>transform.dml</include>
-				<include>Univar-Stats.dml</include>
-			</includes>
-			<outputDirectory>./scripts/algorithms</outputDirectory>
-		</fileSet>
-
-		<fileSet>
-			<directory>${basedir}/scripts/datagen</directory>
-			<includes>
-				<include>genLinearRegressionData.dml</include>
-			</includes>
-			<outputDirectory>./scripts/datagen</outputDirectory>
-		</fileSet>
-
-		<fileSet>
-			<directory>${basedir}/scripts/utils</directory>
-			<includes>
-				<include>cbind.dml</include>
-				<include>csv2bin.dml</include>
-				<include>head.dml</include>
-				<include>project.dml</include>
-				<include>rowIndexMax.dml</include>
-				<include>sample.dml</include>
-				<include>splitXY-dummy.dml</include>
-				<include>splitXY.dml</include>
-				<include>write.dml</include>
-			</includes>
-			<outputDirectory>./scripts/utils</outputDirectory>
+			<directory>${basedir}/scripts</directory>
+			<excludes>
+				<exclude>algorithms/obsolete/*</exclude>
+				<exclude>algorithms/obsolete</exclude>
+				<exclude>perftest/*</exclude>
+				<exclude>perftest</exclude>
+				<exclude>staging/**/*</exclude>
+				<exclude>staging</exclude>
+				<!-- <exclude>*.sh</exclude> --> <!-- applies to sparkDML.sh -->
+			</excludes>
+			<outputDirectory>scripts</outputDirectory>
 		</fileSet>
 
 		<fileSet>

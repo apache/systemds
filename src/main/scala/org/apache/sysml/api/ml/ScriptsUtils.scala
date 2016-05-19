@@ -37,23 +37,23 @@ object ScriptsUtils {
   /*
    * Internal function to get dml path
    */
-  private[sysml] def resolvePath(filename: String): String = {
+  private[sysml] def resolvePath(scriptPath: String): String = {
     import java.io.File
-    ScriptsUtils.systemmlHome + File.separator + "algorithms" + File.separator + filename
+    ScriptsUtils.systemmlHome + File.separator + scriptPath
   }
 
     /*
    * Internal function to get dml string from jar
    */
-  private[sysml] def getDMLScript(algorithmFileName: String): String = {
+  private[sysml] def getDMLScript(scriptPath: String): String = {
     var reader: BufferedReader = null
     val out = new StringBuilder()
     try {
       val in = {
         if (systemmlHome == null || systemmlHome.equals("")) {
-          classOf[LogisticRegression].getClassLoader().getResourceAsStream(algorithmFileName)
+          classOf[LogisticRegression].getClassLoader().getResourceAsStream(scriptPath)
         } else {
-          new java.io.FileInputStream(resolvePath(algorithmFileName))
+          new java.io.FileInputStream(resolvePath(scriptPath))
         }
       }
       var reader = new BufferedReader(new InputStreamReader(in))
@@ -65,7 +65,7 @@ object ScriptsUtils {
       }
     } catch {
       case ex: Exception =>
-        throw new DMLRuntimeException("Cannot read the algorithm file " + algorithmFileName, ex)
+        throw new DMLRuntimeException("Cannot read the script file " + scriptPath, ex)
     } finally {
       if (reader != null)
         reader.close();

@@ -51,7 +51,8 @@ object ScriptsUtils {
     try {
       val in = {
         if (systemmlHome == null || systemmlHome.equals("")) {
-          classOf[LogisticRegression].getClassLoader().getResourceAsStream(File.separator + scriptPath)
+          val resourcePath = "/" + scriptPath.replace("\\", "/")
+          classOf[LogisticRegression].getResourceAsStream(resourcePath)
         } else {
           new java.io.FileInputStream(resolvePath(scriptPath))
         }

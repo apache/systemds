@@ -42,7 +42,7 @@ object ScriptsUtils {
     ScriptsUtils.systemmlHome + File.separator + scriptPath
   }
 
-    /*
+  /*
    * Internal function to get dml string from jar
    */
   private[sysml] def getDMLScript(scriptPath: String): String = {
@@ -51,7 +51,7 @@ object ScriptsUtils {
     try {
       val in = {
         if (systemmlHome == null || systemmlHome.equals("")) {
-          classOf[LogisticRegression].getClassLoader().getResourceAsStream(scriptPath)
+          classOf[LogisticRegression].getClassLoader().getResourceAsStream(File.separator + scriptPath)
         } else {
           new java.io.FileInputStream(resolvePath(scriptPath))
         }

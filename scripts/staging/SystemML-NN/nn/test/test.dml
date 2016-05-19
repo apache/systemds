@@ -1,0 +1,192 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Various tests, not including gradient checks.
+ */
+source("nn/layers/conv.dml") as conv
+source("nn/layers/conv_builtin.dml") as conv_builtin
+source("nn/layers/max_pool.dml") as max_pool
+source("nn/layers/max_pool_builtin.dml") as max_pool_builtin
+source("nn/test/conv_simple.dml") as conv_simple
+source("nn/test/max_pool_simple.dml") as max_pool_simple
+source("nn/util.dml") as util
+
+conv = function() {
+  /*
+   * Test for the `conv` functions.
+   */
+  print("Testing the conv functions.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  F = 2  # num filters
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 1
+  pad = 1
+  X = rand(rows=N, cols=C*Hin*Win, pdf="normal")
+
+  # Create layer
+  [W, b] = conv::init(F, C, Hf, Wf)
+
+  # Forward
+  [out, Hout, Wout] = conv::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_simple, Hout_simple, Wout_simple] =
+    conv_simple::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+  [out_builtin, Hout_builtin, Wout_builtin] =
+    conv_builtin::forward(X, W, b, C, Hin, Win, Hf, Wf, stride, stride, pad, pad)
+
+  # Equivalency check
+  out = matrix(out, rows=1, cols=N*F*Hout*Wout)
+  out_simple = matrix(out_simple, rows=1, cols=N*F*Hout*Wout)
+  out_builtin = matrix(out_builtin, rows=1, cols=N*F*Hout*Wout)
+  for (i in 1:length(out)) {
+    rel_error = util::check_rel_error(as.scalar(out[1,i]), as.scalar(out_simple[1,i]), 1e-10, 1e-12)
+    rel_error = util::check_rel_error(as.scalar(out[1,i]), as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+  }
+}
+
+im2col = function() {
+  /*
+   * Test for the `im2col` and `col2im` functions.
+   */
+  print("Testing the im2col and col2im functions.")
+
+	# Generate data
+  C = 3  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  Hf = 3  # filter height
+  Wf = 3  # filter width
+  stride = 2
+  pad = (Hin * stride - Hin + Hf - stride) / 2
+  Hout = as.integer((Hin + 2 * pad - Hf) / stride + 1)
+  Wout = as.integer((Win + 2 * pad - Wf) / stride + 1)
+  x = rand(rows=C, cols=Hin*Win)
+
+  # pad
+  x_pad = util::pad_image(x, Hin, Win, pad, pad)
+
+  # im2col
+  x_cols = util::im2col(x_pad, Hin+2*pad, Win+2*pad, Hf, Wf, stride, stride)
+
+  # col2im
+  x_pad2 = util::col2im(x_cols, C, Hin+2*pad, Win+2*pad, Hf, Wf, stride, stride, "none")
+
+  # Equivalency check
+  equivalent = util::all_equal(x_pad, x_pad2)
+  if (!equivalent)
+    print("ERROR: im2col and then col2im does not yield the original image.")
+}
+
+padding = function() {
+  /*
+   * Test for the `pad_image` and `unpad_image` functions.
+   */
+  print("Testing the padding and unpadding functions.")
+
+  # Generate data
+  C = 3  # num channels
+  Hin = 5  # input height
+  Win = 5  # input width
+  pad = 3  # padding
+  x = rand(rows=C, cols=Hin*Win)
+
+  # Pad image
+  x_pad = util::pad_image(x, Hin, Win, pad, pad)
+  
+  # Check for padded rows & columns
+  for (c in 1:C) {
+    x_pad_slice = matrix(x_pad[c,], rows=Hin+2*pad, cols=Win+2*pad)
+    for (i in 1:pad) {
+      rowsum = sum(x_pad_slice[i,])
+      colsum = sum(x_pad_slice[,i])
+      if (rowsum != 0)
+        print("ERROR: Padding was not applied to row " + i + ".")
+      if (colsum != 0)
+        print("ERROR: Padding was not applied to column " + i + ".")
+    }
+  }
+
+  # Unpad image
+  x1 = util::unpad_image(x_pad, Hin, Win, pad, pad)
+
+  # Equivalency check
+  equivalent = util::all_equal(x, x1)
+  if (!equivalent)
+    print("ERROR: Padding and then unpadding does not yield the original image.")
+}
+
+max_pool = function() {
+  /*
+   * Test for the `max_pool` functions.
+   */
+  print("Testing the max pool functions.")
+
+  # Generate data
+  N = 2  # num examples
+  C = 3  # num channels
+  Hin = 8  # input height
+  Win = 8  # input width
+  Hf = 2  # filter height
+  Wf = 2  # filter width
+  stride = 2
+  X = rand(rows=N, cols=C*Hin*Win, pdf="normal")
+
+  # Forward
+  [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
+  [out_simple, Hout_simple, Wout_simple] =
+    max_pool_simple::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
+  [out_builtin, Hout_builtin, Wout_builtin] =
+    max_pool_builtin::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
+
+  # Equivalency check
+  out = matrix(out, rows=1, cols=N*C*Hout*Wout)
+  out_simple = matrix(out_simple, rows=1, cols=N*C*Hout*Wout)
+  out_builtin = matrix(out_builtin, rows=1, cols=N*C*Hout*Wout)
+  for (i in 1:length(out)) {
+    rel_error = util::check_rel_error(as.scalar(out[1,i]), as.scalar(out_simple[1,i]), 1e-10, 1e-12)
+    rel_error = util::check_rel_error(as.scalar(out[1,i]), as.scalar(out_builtin[1,i]), 1e-10, 1e-12)
+  }
+
+  # ---
+  # Check for correct behavior
+  # Generate data
+  C = 2  # num channels
+  Hin = 4  # input height
+  Win = 4  # input width
+  X = matrix(seq(1,16,1), rows=Hin, cols=Win)
+  X = matrix(rbind(X, t(X)), rows=1, cols=C*Hin*Win)
+  X = rbind(X, X)  # N=2
+
+  # Forward
+  [out, Hout, Wout] = max_pool::forward(X, C, Hin, Win, Hf, Wf, stride, stride)
+
+  # Equivalency check
+  target = matrix("6 8 14 16 6 14 8 16", rows=1, cols=C*Hout*Wout)
+  target = rbind(target, target)  # N=2
+  tmp = util::check_all_equal(out, target)
+}
+

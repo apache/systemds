@@ -1,0 +1,147 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * 2D Convolutional layer.
+ */
+forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
+                   int C, int Hin, int Win, int Hf, int Wf,
+                   int strideh, int stridew, int padh, int padw)
+    return (matrix[double] out, int Hout, int Wout) {
+  /*
+   * Computes the forward pass for a 2D spatial convolutional layer with
+   * F filters.  The input data has N examples, each represented as a 3D
+   * volume unrolled into a single vector.
+   *
+   * This implementation uses `im2col` internally for each image to
+   * extract local image regions (patches) into columns, and then
+   * performs a matrix multiplication with the filters to compute the
+   * output maps.
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - W: Weights (parameters) matrix, of shape (F, C*Hf*Wf).
+   *  - b: Biases vector, of shape (F, 1).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *  - padw: Padding for left and right sides.
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, F*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   */
+  N = nrow(X)
+  F = nrow(W)
+  Hout = as.integer((Hin + 2 * padh - Hf) / strideh + 1)
+  Wout = as.integer((Win + 2 * padw - Wf) / stridew + 1)
+  
+  # Convolution - built-in implementation
+  out = conv2d(X, W, input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf],
+               stride=[strideh,stridew], padding=[padh,padw])
+
+  # Add bias term to each output filter
+  bias = b
+  for (i in 1:Hout*Wout-1)
+    bias = cbind(bias, b)  # creating shape (F, Hout*Wout)
+  out = out + matrix(bias, rows=1, cols=F*Hout*Wout)
+}
+
+backward = function(matrix[double] dout, int Hout, int Wout,
+                    matrix[double] X, matrix[double] W, matrix[double] b,
+                    int C, int Hin, int Win, int Hf, int Wf,
+                    int strideh, int stridew, int padh, int padw)
+    return (matrix[double] dX, matrix[double] dW, matrix[double] db) {
+  /*
+   * Computes the backward pass for a 2D spatial convolutional layer
+   * with F filters.
+   *
+   * This implementation uses `im2col` and `col2im` internally.
+   *
+   * Inputs:
+   *  - dout: Derivatives from upstream, of shape (N, F*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   *  - X: Previous input data matrix, of shape (N, C*Hin*Win).
+   *  - W: Weights (parameters) matrix, of shape (F, C*Hf*Wf).
+   *  - b: Biases vector, of shape (F, 1).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *  - padw: Padding for left and right sides.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of shape (N, C*Hin*Win).
+   *  - dW: Gradient wrt W, of shape (F, C*Hf*Wf).
+   *  - db: Gradient wrt b, of shape (F, 1).
+   */
+  N = nrow(X)
+  F = nrow(W)
+  
+  # Partial derivatives for convolution - built-in implementation
+  dW = conv2d_backward_filter(X, dout, stride=[strideh,stridew], padding=[padh,padw],
+                              input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
+  dX = conv2d_backward_data(W, dout, stride=[strideh, stridew], padding=[padh,padw],
+                            input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
+
+  # Partial derivatives for bias terms
+  db = matrix(0, rows=F, cols=1)
+  for (n in 1:N) {
+    doutn = matrix(dout[n,], rows=F, cols=Hout*Wout)
+    db = db + rowSums(doutn)
+  }
+}
+
+init = function(int F, int C, int Hf, int Wf)
+    return (matrix[double] W, matrix[double] b) {
+  /*
+   * Initialize the parameters of this layer.
+   * 
+   * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
+   * which limits the magnification of inputs/gradients during
+   * forward/backward passes by scaling unit-Gaussian weights by a
+   * factor of sqrt(2/n), under the assumption of relu neurons.
+   *
+   * Inputs:
+   *  - F: Number of filters.
+   *  - C: Number of input channels (dimensionality of depth).
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *
+   * Outputs:
+   *  - W: Weights (parameters) matrix, of shape (F, C*Hf*Wf).
+   *  - b: Biases vector, of shape (F, 1).
+   */
+  W = rand(rows=F, cols=C*Hf*Wf, pdf="normal") * sqrt(2.0/(C*Hf*Wf))
+  b = matrix(0, rows=F, cols=1) 
+}
+

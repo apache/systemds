@@ -1,0 +1,72 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Script to run tests.
+ */
+source("nn/test/grad_check.dml") as grad_check
+source("nn/test/test.dml") as test
+
+print("")
+print("Starting grad checks.")
+print("---")
+
+tmp = grad_check::cross_entropy_loss()
+tmp = grad_check::l1_loss()
+tmp = grad_check::l2_loss()
+tmp = grad_check::log_loss()
+tmp = grad_check::affine()
+tmp = grad_check::conv_simple()
+tmp = grad_check::conv()
+tmp = grad_check::conv_builtin()
+tmp = grad_check::dropout()
+tmp = grad_check::l1_reg()
+tmp = grad_check::l2_reg()
+tmp = grad_check::max_pool_simple()
+tmp = grad_check::max_pool()
+tmp = grad_check::max_pool_builtin()
+tmp = grad_check::relu()
+tmp = grad_check::sigmoid()
+tmp = grad_check::softmax()
+tmp = grad_check::tanh()
+tmp = grad_check::two_layer_affine_l2_net()
+
+print("---")
+print("Grad checks complete -- look for any ERRORs or WARNINGs.")
+print("If any tests involving ReLUs failed, try a few times " +
+      "to ensure that they were not false negatives due to " +
+      "kinks being crossed.")
+print("")
+
+print("")
+print("Starting other tests.")
+print("---")
+
+tmp = test::im2col()
+tmp = test::padding()
+tmp = test::conv()
+tmp = test::max_pool()
+
+print("---")
+print("Other tests complete -- look for any ERRORs or WARNINGs.")
+print("")
+print("")
+

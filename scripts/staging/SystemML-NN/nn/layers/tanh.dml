@@ -1,0 +1,57 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Tanh nonlinearity layer.
+ */
+forward = function(matrix[double] X) return (matrix[double] out) {
+  /*
+   * Computes the forward pass for a tanh nonlinearity layer.
+   *
+   * tanh(x) = (e^x - e^-x) / (e^x + e^-x)
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (any, any).
+   *
+   * Outputs:
+   *  - out: Ouptuts, of same shape as X.
+   */
+  # Simplification of the above formulation:
+  sigma2X = 1 / (1 + exp(-2*X))
+  out = 2 * sigma2X - 1
+}
+
+backward = function(matrix[double] dout, matrix[double] X) return (matrix[double] dX) {
+  /*
+   * Computes the backward pass for a tanh nonlinearity layer.
+   *
+   * Inputs:
+   *  - dout: Derivatives from upstream, of same shape as X.
+   *  - X: Previous input data matrix, of shape (any, any).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of same shape as X.
+   */
+  sigma2X = 1 / (1 + exp(-2*X))
+  out = 2 * sigma2X - 1
+  dX = (1 - out^2) * dout
+}
+

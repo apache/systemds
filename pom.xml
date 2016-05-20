@@ -455,6 +455,11 @@
 								<descriptor>src/assembly/jar.xml</descriptor>
 							</descriptors>
 							<appendAssemblyId>false</appendAssemblyId>
+							<archive>
+								<manifest>
+									<mainClass>org.apache.sysml.api.DMLScript</mainClass>
+								</manifest>
+							</archive>
 						</configuration>
 					</execution>
 				</executions>

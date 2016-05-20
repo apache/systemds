@@ -77,6 +77,33 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 
 		compareResults(0.00000000001);
 	}
+	
+	@Test
+	public void testSparseMatrixMultiplication() {
+		int m = 40;
+		int n = 10;
+		int k = 30;
+
+		TestConfiguration config = availableTestConfigurations.get("MatrixMultiplicationTest");
+		config.addVariable("m", m);
+		config.addVariable("n1", n);
+		config.addVariable("n2", n);
+		config.addVariable("k", k);
+
+		loadTestConfiguration(config);
+
+		double[][] a = getRandomMatrix(m, n, -1, 1, 0.1, -1);
+		double[][] b = getRandomMatrix(n, k, -1, 1, 0.1, -1);
+		double[][] c = TestUtils.performMatrixMultiplication(a, b);
+
+		writeInputMatrix("a", a);
+		writeInputMatrix("b", b);
+		writeExpectedMatrix("c", c);
+
+		runTest();
+
+		compareResults(0.00000000001);
+	}
 
 	@Test
 	public void testWrongDimensions() {

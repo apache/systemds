@@ -30,10 +30,12 @@ RELEASE=`pwd`/target/RELEASE
 #mvn clean verify gpg:sign install:install deploy:deploy -DaltDeploymentRepository=id::default::file:$RELEASE -Pdistribution,rat  -Dgpg.skip -DskipTests -Darguments="-DskipTests"
 
 #For publishing
-#mvn clean verify gpg:sign install:install deploy:deploy -Dgpg.passphrase=XXXX -DaltDeploymentRepository=apache.staging::default::https://repository.apache.org/service/local/staging/deploy/maven2 -Pdistribution,rat  -Dgpg.skip -DskipTests -Darguments="-DskipTests"
-mvn clean verify gpg:sign install:install deploy:deploy -Dgpg.passphrase=XXXX -Pdistribution,rat -DskipTests -Darguments="-DskipTests"
+#mvn clean verify gpg:sign install:install deploy:deploy -Dgpg.passphrase=XXX -Pdistribution,rat -DskipTests -Darguments="-DskipTests"
 
-mvn release:prepare -Pdistribution,rat -DskipTests -Darguments="-DskipTests" -Dproject
+mvn release:prepare -Pdistribution,rat -DskipTests -Darguments="-DskipTests" -DreleaseVersion="0.10.0-incubating" -DdevelopmentVersion="0.11.0-incubating-SNAPSHOT" -Dtag="0.10.0-incubating"
+
+mvn release:perform gpg:sign install:install deploy:deploy -Dgpg.passphrase=XXX -Pdistribution,rat -DskipTests -Darguments="-DskipTests" -DreleaseVersion="0.10.0-incubating" -DdevelopmentVersion="0.11.0-incubating-SNAPSHOT" -Dtag="0.10.0-incubating"
+
 
 mkdir $RELEASE/
 cp $BUILD/systemml-* $RELEASE/

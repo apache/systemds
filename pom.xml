@@ -386,34 +386,6 @@
 				</configuration>
 			</plugin>
 
-		<!-- Prevent m2e warnings about the use of maven-remote-resources-plugin
-		in the Maven archetype that we currently use for this project. -->
-			<plugin>
-				<groupId>org.eclipse.m2e</groupId>
-				<artifactId>lifecycle-mapping</artifactId>
-				<version>1.0.0</version>
-				<configuration>
-					<lifecycleMappingMetadata>
-						<pluginExecutions>
-							<pluginExecution>
-								<pluginExecutionFilter>
-									<groupId>org.apache.maven.plugins</groupId>
-									<artifactId>maven-remote-resources-plugin</artifactId>
-									<versionRange>[1.0,)</versionRange>
-									<goals>
-										<goal>process</goal>
-									</goals>
-								</pluginExecutionFilter>
-								<action>
-									<ignore>
-									</ignore>
-								</action>
-							</pluginExecution>
-						</pluginExecutions>
-					</lifecycleMappingMetadata>
-				</configuration>
-			</plugin>
-
 			<plugin>
 				<artifactId>maven-clean-plugin</artifactId>
 				<version>3.0.0</version>
@@ -506,6 +478,48 @@
 				<!-- Extra JVM args for Windows go here.-->
 				<integrationTestExtraJVMArgs />
 			</properties>
+		</profile>
+
+		<profile>
+			<id>eclipse-only</id>
+			<activation>
+				<property>
+					<name>m2e.version</name>
+				</property>
+			</activation>
+			<build>
+				<pluginManagement>
+					<plugins>
+						<!-- Prevent m2e warnings about the use of maven-remote-resources-plugin
+                        in the Maven archetype that we currently use for this project. -->
+						<plugin>
+							<groupId>org.eclipse.m2e</groupId>
+							<artifactId>lifecycle-mapping</artifactId>
+							<version>1.0.0</version>
+							<configuration>
+								<lifecycleMappingMetadata>
+									<pluginExecutions>
+										<pluginExecution>
+											<pluginExecutionFilter>
+												<groupId>org.apache.maven.plugins</groupId>
+												<artifactId>maven-remote-resources-plugin</artifactId>
+												<versionRange>[1.0,)</versionRange>
+												<goals>
+													<goal>process</goal>
+												</goals>
+											</pluginExecutionFilter>
+											<action>
+												<ignore>
+												</ignore>
+											</action>
+										</pluginExecution>
+									</pluginExecutions>
+								</lifecycleMappingMetadata>
+							</configuration>
+						</plugin>
+					</plugins>
+				</pluginManagement>
+			</build>
 		</profile>
 
 		<profile>

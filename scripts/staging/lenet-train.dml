@@ -1,0 +1,348 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+# Description:
+# Implements training for a lenet-like Convolutional Neural Net
+#
+# Arguments:
+# X: Location of file containing MNIST feaure vectors
+# Y: Location of file containing MNIST labels (0-9)
+# FMAPS1: (Integer) Number of feature maps in first convolutional layer
+# FMAPS2: (Integer) Number of feature maps in second convolutional layer
+# NODES: (Integer) Number of neurons in fully-connected layer
+# lambda: (Double) Regularization constant
+#
+# Sample invocation:
+# -nvargs X=/home/biuser/sen/cnn/mnist_train.X Y=/home/biuser/sen/cnn/mnist_train.y FMAPS1=32 FMAPS2=64 NODES=512 lambda=5e-04
+#
+#-------------------------------------------------------------
+
+X = read($X)
+num_images = nrow(X)
+
+classes = 10
+
+y = read($Y)
+#Y = table(seq(1,num_images,1), y+1, num_images, classes)
+
+#z-scoring features
+#means = colSums(X)/num_images
+#stds = sqrt((colSums(X^2)/num_images - means^2)*num_images/(num_images-1)) + 1e-17
+means = 255/2
+stds = 255
+X = (X - means)/stds
+
+Xv = X[1:5000,]
+yv = y[1:5000,]
+num_images_validation = 5000
+X = X[5001:60000,]
+y = y[5001:60000,]
+num_images = nrow(y)
+Y = table(seq(1,num_images,1), y+1, num_images, classes)
+
+Xt = read("/home/biuser/sen/cnn/mnist_test.X")
+yt = read("/home/biuser/sen/cnn/mnist_test.y")
+
+num_images_test = nrow(Xt)
+Xt = (Xt - means)/stds
+
+############################## BEGIN CONSTANTS FOR LeNET ##############################
+
+img_width = 28
+img_height = 28
+
+kernel_width = 5
+kernel_height = 5
+pooling_width = 2
+pooling_height = 2
+
+############################## END CONSTANTS FOR LeNET ################################
+
+# cmd line args
+n1 = $FMAPS1
+n2 = $FMAPS2
+n3 = $NODES
+lambda = $lambda
+
+############################## BEGIN INITIALIZE WEIGHT ################################
+
+#1st layer is a convolution layer
+#num_channels=1, kernel_height=5, kernel_width=5
+#there are n1 filters
+conv_layer1_wts = sqrt(2/25) * Rand(rows=n1, cols=kernel_height*kernel_width, pdf="normal")
+bias_conv_layer1 = matrix(0.1, rows=n1, cols=1)
+
+#3rd layer is a convolution layer
+#num_channels=n1, kernel_height=5, kernel_width=5
+#there are n2 filters
+conv_layer3_wts = sqrt(2/(n1*kernel_height*kernel_width)) * Rand(rows=n2, cols=n1*kernel_height*kernel_width, pdf="normal")
+bias_conv_layer3 = matrix(0.1, rows=n2, cols=1)
+
+#5th layer is a fully connected layer
+#number of input nodes is given by: num_channels X channel_height X channel_width
+#where num_channels=n2, channel_width=4, channel_height=4
+num_channels = n2
+#channel_width = ((img_width - kernel_width +1)/pooling_width - kernel_width + 1)/pooling_width
+#channel_height = ((img_height - kernel_height +1)/pooling_height - kernel_height + 1)/pooling_height
+channel_width = img_width/pooling_width/pooling_width
+channel_height = img_height/pooling_height/pooling_height
+fc_layer5_wts = sqrt(2/(num_channels*channel_height*channel_width)) * Rand(rows=num_channels*channel_height*channel_width, cols=n3, pdf="normal")
+bias5 = matrix(0, rows=1, cols=n3)
+
+#6th layer is the softmax layer
+fc_layer6_wts = sqrt(2/n3) * Rand(rows=n3, cols=classes, pdf="normal")
+bias6 = matrix(0, rows=1, cols=classes)
+
+############################## END INITIALIZE WEIGHTS ################################
+
+upd_conv_layer1_wts = matrix(0, rows=nrow(conv_layer1_wts), cols=ncol(conv_layer1_wts))
+upd_conv_layer3_wts = matrix(0, rows=nrow(conv_layer3_wts), cols=ncol(conv_layer3_wts))
+upd_fc_layer5_wts = matrix(0, rows=nrow(fc_layer5_wts), cols=ncol(fc_layer5_wts))
+upd_fc_layer6_wts = matrix(0, rows=nrow(fc_layer6_wts), cols=ncol(fc_layer6_wts))
+upd_bias_conv_layer1 = matrix(0, rows=nrow(bias_conv_layer1), cols=ncol(bias_conv_layer1))
+upd_bias_conv_layer3 = matrix(0, rows=nrow(bias_conv_layer3), cols=ncol(bias_conv_layer3))
+upd_bias5 = matrix(0, rows=nrow(bias5), cols=ncol(bias5))
+upd_bias6 = matrix(0, rows=nrow(bias6), cols=ncol(bias6))
+
+#learning parameters
+mu = 0.9
+maxepochs = 10
+BATCH_SIZE = 64 #100
+decay = 0.95
+step_size = 0.01
+
+#feature_map_height = img_height - kernel_height + 1
+#feature_map_width = img_width - kernel_width + 1
+feature_map_height = img_height
+feature_map_width = img_width
+ones1 = matrix(1, rows=1, cols=feature_map_height*feature_map_width)
+
+#feature_map_height = feature_map_height/pooling_height - kernel_height + 1
+#feature_map_width = feature_map_width/pooling_width - kernel_width + 1
+feature_map_height = img_height/pooling_height
+feature_map_width = img_width/pooling_width
+ones3 = matrix(1, rows=1, cols=feature_map_height*feature_map_width)
+
+num_iters_per_epoch = ceil(num_images/BATCH_SIZE)
+maxiter = maxepochs * num_iters_per_epoch
+obj = 0
+iter = 0
+beg = 1
+while(iter < maxiter){
+      end = beg + BATCH_SIZE - 1
+      if(end > num_images) end = num_images
+
+      #pulling out the batch
+      Xb = X[beg:end,]
+      n = nrow(Xb)
+
+      Yb = Y[beg:end,]
+
+      bias1 = matrix(bias_conv_layer1 %*% ones1, rows=1, cols=n1*ncol(ones1))
+      bias3 = matrix(bias_conv_layer3 %*% ones3, rows=1, cols=n2*ncol(ones3))
+
+      ############################### BEGIN FEED FORWARD #############################
+
+      #1st layer: convolution
+      #H1_activations = conv2d(Xb, conv_layer1_wts, padding=[0,0], stride=[1,1], input_shape=[n,1,img_height,img_width], filter_shape=[n1,1,kernel_height,kernel_width])
+      H1_activations = conv2d(Xb, conv_layer1_wts, padding=[2,2], stride=[1,1], input_shape=[n,1,img_height,img_width], filter_shape=[n1,1,kernel_height,kernel_width])
+      H1_activations = H1_activations + bias1
+      H1 = max(0, H1_activations)
+
+      #2nd layer: pooling
+      #channel_width = img_width-kernel_width+1
+      #channel_height = img_height-kernel_height+1
+      channel_width = img_width
+      channel_height = img_height
+      H2 = max_pool(H1, stride=[pooling_height,pooling_width], padding=[0,0], input_shape=[n,n1,channel_height,channel_width], pool_size=[pooling_height,pooling_width])
+
+      #3rd layer: convolution
+      channel_width = channel_width/pooling_width
+      channel_height = channel_height/pooling_height
+      #H3_activations = conv2d(H2, conv_layer3_wts, padding=[0,0], stride=[1,1], input_shape=[n,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+      H3_activations = conv2d(H2, conv_layer3_wts, padding=[2,2], stride=[1,1], input_shape=[n,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+      H3_activations = H3_activations + bias3
+      H3 = max(0, H3_activations)
+
+      #4th layer: pooling
+      #channel_width = channel_width-kernel_width+1
+      #channel_height = channel_height-kernel_height+1
+      H4 = max_pool(H3, stride=[pooling_height,pooling_width], padding=[0,0], input_shape=[n,n2,channel_height,channel_width], pool_size=[pooling_height,pooling_width])
+
+      #5th layer: fully connected
+      #H4 is a tensor which is internally represented as a matrix
+      #so we pretend H4 is a 2D matrix
+      H5_activations = H4 %*% fc_layer5_wts + bias5
+      H5 = max(0, H5_activations)
+	    
+      # dropout
+      mask = (rand(rows=1, cols=ncol(H5), min=0, max=1, pdf="uniform", sparsity=0.5) > 0) / 0.5
+      H5 = H5 * mask
+
+      #6th layer: softmax
+      H6 = exp(H5 %*% fc_layer6_wts + bias6)
+      H6 = H6/rowSums(H6)
+
+      ############################## END FEED FORWARD ###############################
+
+      #print("EPOCH=" + (iter/num_iters_per_epoch) + " ITER=" + iter + " OBJ=" + sum(Yb * log(H6)) + " beg=" + beg + " end=" + end)
+
+      ############################## BEGIN BACK PROPAGATION #########################
+	    
+      #6th layer: cross entropy
+      delta6 = Yb - H6
+      grad_wts6 = t(H5) %*% delta6
+      grad_bias6 = colSums(delta6)
+
+      #5th layer
+      #delta5 = (H5 > 0) * (delta6 %*% t(fc_layer6_wts))
+      delta5 = ((H5 > 0) * mask) * (delta6 %*% t(fc_layer6_wts))
+      grad_wts5 = t(H4) %*% delta5
+      grad_bias5 = colSums(delta5)	    
+
+      #4th layer
+      delta4 = (H4 > 0) * (delta5 %*% t(fc_layer5_wts))
+
+      #3rd layer
+      #channel_width = (img_width-kernel_width+1)/pooling_width - kernel_width+1
+      #channel_height = (img_height-kernel_height+1)/pooling_height - kernel_height+1
+      channel_width = img_width/pooling_width
+      channel_height = img_height/pooling_height
+      delta3 = max_pool_backward(H3, delta4, stride=[pooling_height,pooling_width], padding=[0,0], input_shape=[n,n2,channel_height,channel_width], pool_size=[pooling_height,pooling_width])
+
+      grad_bias_conv_layer3 = rowSums(matrix(colSums(delta3), rows=n2, cols=channel_width*channel_height))
+      #channel_width = (img_width-kernel_width+1)/pooling_width
+      #channel_height = (img_height-kernel_height+1)/pooling_height
+      channel_width = img_width/pooling_width
+      channel_heigth = img_height/pooling_height
+      #grad_conv_layer3_wts = conv2d_backward_filter(H2, delta3, stride=[1,1], padding=[0,0], input_shape=[n,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+      grad_conv_layer3_wts = conv2d_backward_filter(H2, delta3, stride=[1,1], padding=[2,2], input_shape=[n,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+	    
+      #2nd layer
+      #channel_width = (img_width-kernel_width+1)/pooling_width
+      #channel_height = (img_height-kernel_height+1)/pooling_height
+      channel_width = img_width/pooling_width
+      channel_height = img_height/pooling_height
+      #delta2 = conv2d_backward_data(conv_layer3_wts, delta3, stride=[1,1], padding=[0,0], input_shape=[n,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+      delta2 = conv2d_backward_data(conv_layer3_wts, delta3, stride=[1,1], padding=[2,2], input_shape=[n,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+      delta2 = (H2 > 0) * delta2
+
+      #1st layer
+      #channel_width = img_width-kernel_width+1
+      #channel_height = img_width-kernel_height+1
+      channel_width = img_width
+      channel_height = img_height
+      delta1 = max_pool_backward(H1, delta2, stride=[pooling_height,pooling_width], padding=[0,0], input_shape=[n,n1,channel_height,channel_width], pool_size=[pooling_height,pooling_width])
+      #grad_conv_layer1_wts = conv2d_backward_filter(Xb, delta1, stride=[1,1], padding=[0,0], input_shape=[n,1,img_height,img_width], filter_shape=[n1,1,kernel_height,kernel_width])
+      grad_conv_layer1_wts = conv2d_backward_filter(Xb, delta1, stride=[1,1], padding=[2,2], input_shape=[n,1,img_height,img_width], filter_shape=[n1,1,kernel_height,kernel_width])
+      grad_bias_conv_layer1 = rowSums(matrix(colSums(delta1), rows=n1, cols=channel_width*channel_height))
+
+      ############################## END BACK PROPAGATION ###########################
+
+      #updating weights using their respective gradients
+      local_step_size = step_size / n
+      upd_conv_layer1_wts = local_step_size * (grad_conv_layer1_wts - lambda * conv_layer1_wts) + mu * upd_conv_layer1_wts
+      upd_conv_layer3_wts = local_step_size * (grad_conv_layer3_wts - lambda * conv_layer3_wts) + mu * upd_conv_layer3_wts
+      upd_fc_layer5_wts = local_step_size * (grad_wts5 - lambda * fc_layer5_wts) + mu * upd_fc_layer5_wts
+      upd_fc_layer6_wts = local_step_size * (grad_wts6 - lambda * fc_layer6_wts) + mu * upd_fc_layer6_wts
+      upd_bias_conv_layer1 = local_step_size * grad_bias_conv_layer1 + mu * upd_bias_conv_layer1
+      upd_bias_conv_layer3 = local_step_size * grad_bias_conv_layer3 + mu * upd_bias_conv_layer3
+      upd_bias5 = local_step_size * grad_bias5 + mu * upd_bias5
+      upd_bias6 = local_step_size * grad_bias6 + mu * upd_bias6
+      conv_layer1_wts = conv_layer1_wts + upd_conv_layer1_wts
+      conv_layer3_wts = conv_layer3_wts + upd_conv_layer3_wts
+      fc_layer5_wts = fc_layer5_wts + upd_fc_layer5_wts
+      fc_layer6_wts = fc_layer6_wts + upd_fc_layer6_wts
+      bias_conv_layer1 = bias_conv_layer1 + upd_bias_conv_layer1
+      bias_conv_layer3 = bias_conv_layer3 + upd_bias_conv_layer3
+      bias5 = bias5 + upd_bias5
+      bias6 = bias6 + upd_bias6
+
+      if(iter %% 100 == 0){
+            #H1_activations = conv2d(Xt, conv_layer1_wts, padding=[0,0], stride=[1,1], input_shape=[num_images_test,1,img_height,img_width], filter_shape=[n1,1,kernel_height,kernel_width])
+      	    H1_activations = conv2d(Xv, conv_layer1_wts, padding=[2,2], stride=[1,1], input_shape=[num_images_validation,1,img_height,img_width], filter_shape=[n1,1,kernel_height,kernel_width])
+      	    H1_activations = H1_activations + matrix(bias_conv_layer1 %*% ones1, rows=1, cols=n1*ncol(ones1))
+      	    H1 = max(0, H1_activations)
+
+      	    #channel_width = img_width-kernel_width+1
+      	    #channel_height = img_height-kernel_height+1
+      	    channel_width = img_width
+      	    channel_height = img_height
+      	    #H2 = max_pool(H1, stride=[pooling_height,pooling_width], padding=[0,0], input_shape=[num_images_test,n1,channel_height,channel_width], pool_size=[pooling_height,pooling_width])
+      	    H2 = max_pool(H1, stride=[pooling_height,pooling_width], padding=[0,0], input_shape=[num_images_validation,n1,channel_height,channel_width], pool_size=[pooling_height,pooling_width])
+
+	    channel_width = channel_width/pooling_width
+      	    channel_height = channel_height/pooling_height
+      	    #H3_activations = conv2d(H2, conv_layer3_wts, padding=[0,0], stride=[1,1], input_shape=[num_images_test,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+      	    #H3_activations = conv2d(H2, conv_layer3_wts, padding=[2,2], stride=[1,1], input_shape=[num_images_test,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+      	    H3_activations = conv2d(H2, conv_layer3_wts, padding=[2,2], stride=[1,1], input_shape=[num_images_validation,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+      	    H3_activations = H3_activations + matrix(bias_conv_layer3 %*% ones3, rows=1, cols=n2*ncol(ones3))
+      	    H3 = max(0, H3_activations)
+
+      	    #channel_width = channel_width-kernel_width+1
+      	    #channel_height = channel_height-kernel_height+1
+      	    #H4 = max_pool(H3, stride=[pooling_height,pooling_width], padding=[0,0], input_shape=[num_images_test,n2,channel_height,channel_width], pool_size=[pooling_height,pooling_width])
+      	    H4 = max_pool(H3, stride=[pooling_height,pooling_width], padding=[0,0], input_shape=[num_images_validation,n2,channel_height,channel_width], pool_size=[pooling_height,pooling_width])
+
+      	    H5_activations = H4 %*% fc_layer5_wts + bias5
+      	    H5 = max(0, H5_activations)
+
+      	    pred = rowIndexMax(H5 %*% fc_layer6_wts + bias6)
+
+      	    acc = sum((pred == (yv+1)))*100/num_images_validation
+      	    print("EPOCH=" + (iter/num_iters_per_epoch) + " ITER=" + iter + " Validation set accuracy (%): " + acc + " step-size=" + step_size)
+      }
+
+      iter = iter + 1
+      beg = beg + BATCH_SIZE
+      if(beg > num_images) beg = 1
+      if(iter %% num_iters_per_epoch == 0) step_size = step_size * decay
+}
+
+#H1_activations = conv2d(Xt, conv_layer1_wts, padding=[0,0], stride=[1,1], input_shape=[num_images_test,1,img_height,img_width], filter_shape=[n1,1,kernel_height,kernel_width])
+H1_activations = conv2d(Xt, conv_layer1_wts, padding=[2,2], stride=[1,1], input_shape=[num_images_test,1,img_height,img_width], filter_shape=[n1,1,kernel_height,kernel_width])
+H1_activations = H1_activations + matrix(bias_conv_layer1 %*% ones1, rows=1, cols=n1*ncol(ones1))
+H1 = max(0, H1_activations)
+
+#channel_width = img_width-kernel_width+1
+#channel_height = img_height-kernel_height+1
+channel_width = img_width
+channel_height = img_height
+H2 = max_pool(H1, stride=[pooling_height,pooling_width], padding=[0,0], input_shape=[num_images_test,n1,channel_height,channel_width], pool_size=[pooling_height,pooling_width])
+
+channel_width = channel_width/pooling_width
+channel_height = channel_height/pooling_height
+#H3_activations = conv2d(H2, conv_layer3_wts, padding=[0,0], stride=[1,1], input_shape=[num_images_test,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+H3_activations = conv2d(H2, conv_layer3_wts, padding=[2,2], stride=[1,1], input_shape=[num_images_test,n1,channel_height,channel_width], filter_shape=[n2,n1,kernel_height,kernel_width])
+H3_activations = H3_activations + matrix(bias_conv_layer3 %*% ones3, rows=1, cols=n2*ncol(ones3))
+H3 = max(0, H3_activations)
+
+#channel_width = channel_width-kernel_width+1
+#channel_height = channel_height-kernel_height+1
+H4 = max_pool(H3, stride=[pooling_height,pooling_width], padding=[0,0], input_shape=[num_images_test,n2,channel_height,channel_width], pool_size=[pooling_height,pooling_width])
+
+H5_activations = H4 %*% fc_layer5_wts + bias5
+H5 = max(0, H5_activations)
+
+pred = rowIndexMax(H5 %*% fc_layer6_wts + bias6)
+
+acc = sum((pred == (yt+1)))*100/num_images_test
+print("Final accuracy on test set (%): " + acc)

@@ -23,15 +23,19 @@
 # Implements training for a lenet-like Convolutional Neural Net
 #
 # Arguments:
-# X: Location of file containing MNIST feaure vectors
-# Y: Location of file containing MNIST labels (0-9)
+# X: Location of file containing MNIST TRAINING feaure vectors
+# Y: Location of file containing MNIST TRAINING labels (0-9)
+# Xt: Location of file containing MNIST TEST feature vectors
+# Yt: Location of file containing MNIST TEST labels (0-9)
 # FMAPS1: (Integer) Number of feature maps in first convolutional layer
 # FMAPS2: (Integer) Number of feature maps in second convolutional layer
 # NODES: (Integer) Number of neurons in fully-connected layer
 # lambda: (Double) Regularization constant
 #
 # Sample invocation:
-# -nvargs X=/home/biuser/sen/cnn/mnist_train.X Y=/home/biuser/sen/cnn/mnist_train.y FMAPS1=32 FMAPS2=64 NODES=512 lambda=5e-04
+# -nvargs X=/path-to/mnist_train.X Y=/path-to/mnist_train.y
+# 	  Xt=/path-to/mnist_test.X Yt=/path-to/mnist_test.y
+#  	  FMAPS1=32 FMAPS2=64 NODES=512 lambda=5e-04
 #
 #-------------------------------------------------------------
 
@@ -58,8 +62,8 @@ y = y[5001:60000,]
 num_images = nrow(y)
 Y = table(seq(1,num_images,1), y+1, num_images, classes)
 
-Xt = read("/home/biuser/sen/cnn/mnist_test.X")
-yt = read("/home/biuser/sen/cnn/mnist_test.y")
+Xt = read($Xt)
+yt = read($Yt)
 
 num_images_test = nrow(Xt)
 Xt = (Xt - means)/stds

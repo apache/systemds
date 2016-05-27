@@ -219,8 +219,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_hdfsFileExists = that._hdfsFileExists; 
 		_varName = that._varName;
 		_gpuHandle = that._gpuHandle;
-		if(_gpuHandle != null)
-			_gpuHandle.numReferences++;
 	}
 
 	
@@ -430,6 +428,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( _data == null )
 			getCache();
 		
+		if( _gpuHandle != null )
+			_gpuHandle.acquireHostRead();
+		
 		//read data from HDFS/RDD if required
 		//(probe data for cache_nowrite / jvm_reuse)  
 		if( isEmpty(true) && _data==null ) 
@@ -514,6 +515,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		//get object from cache
 		if( _data == null )
 			getCache();
+		
+		if( _gpuHandle != null )
+			_gpuHandle.acquireHostModify();
 		
 		//read data from HDFS if required
 		if( isEmpty(true) && _data == null )
@@ -693,6 +697,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		clearReusableData();
 		_data = null;	
 		clearCache();
+		if(_gpuHandle != null)
+			_gpuHandle.clearData();
 		
 		// clear rdd/broadcast back refs
 		if( _rddHandle != null )
@@ -782,6 +788,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			throw new CacheException ("MatrixObject not available to read.");
 
 		LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
+		
+		exportGPUData();
 				
 		boolean pWrite = false; // !fName.equals(_hdfsFileName); //persistent write flag
 		if ( fName.equals(_hdfsFileName) ) {
@@ -820,7 +828,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				getCache();
 			acquire( false, _data==null ); //incl. read matrix if evicted	
 			
-			exportGPUData();
 			// b) write the matrix 
 			try
 			{

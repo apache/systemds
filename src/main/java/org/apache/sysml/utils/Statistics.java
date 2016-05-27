@@ -60,6 +60,8 @@ public class Statistics
 	// number of compiled/executed SP instructions
 	private static int iNoOfExecutedSPInst = 0;
 	private static int iNoOfCompiledSPInst = 0;
+	
+	private static int iNoOfExecutedGPUInst = 0;
 
 	//JVM stats
 	private static long jitCompileTime = 0; //in milli sec
@@ -105,6 +107,17 @@ public class Statistics
 	private static AtomicLong denseBlockAllocationTime = new AtomicLong(0);
 	private static AtomicLong sparseBlockAllocationTime = new AtomicLong(0);
 	
+	public static long cudaInitTime = 0;
+	public static long cudaLibrariesInitTime = 0;
+	public static AtomicLong cudaAllocTime = new AtomicLong(0);
+	public static AtomicLong cudaDeAllocTime = new AtomicLong(0);
+	public static AtomicLong cudaToDevTime = new AtomicLong(0);
+	public static AtomicLong cudaFromDevTime = new AtomicLong(0);
+	public static AtomicLong cudaAllocCount = new AtomicLong(0);
+	public static AtomicLong cudaDeAllocCount = new AtomicLong(0);
+	public static AtomicLong cudaToDevCount = new AtomicLong(0);
+	public static AtomicLong cudaFromDevCount = new AtomicLong(0);
+	
 	public static void incrementAllocationTime(long allocationTime, boolean isSparse) {
 		if(isSparse)
 			sparseBlockAllocationTime.addAndGet(allocationTime);
@@ -138,6 +151,19 @@ public class Statistics
 	
 	public static synchronized void incrementNoOfCompiledMRJobs() {
 		iNoOfCompiledMRJobs ++;
+	}
+	
+	
+	public static synchronized void setNoOfExecutedGPUInst(int numJobs) {
+		iNoOfExecutedGPUInst = numJobs;
+	}
+	
+	public static synchronized void incrementNoOfExecutedGPUInst() {
+		iNoOfExecutedGPUInst ++;
+	}
+	
+	public static synchronized int getNoOfExecutedGPUInst() {
+		return iNoOfExecutedGPUInst;
 	}
 
 	public static synchronized void setNoOfExecutedSPInst(int numJobs) {
@@ -226,6 +252,9 @@ public class Statistics
 			setNoOfExecutedMRJobs(count);
 			setNoOfExecutedSPInst(0);
 		}
+		
+		if( DMLScript.USE_ACCELERATOR )
+			setNoOfExecutedGPUInst(0);
 	}
 	
 	public static synchronized void incrementJITCompileTime( long time ) {
@@ -595,6 +624,22 @@ public class Statistics
 			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
 				sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
 			sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");	
+		}
+		
+		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS ) {
+			sb.append("CUDA/CuLibraries init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + "/"
+					+ String.format("%.3f", cudaLibrariesInitTime*1e-9) + ".\n");
+			sb.append("Number of executed GPU inst:\t" + getNoOfExecutedGPUInst() + ".\n");
+			sb.append("GPU mem tx time (alloc/dealloc/toDev/fromDev):\t" 
+					+ String.format("%.3f", cudaAllocTime.get()*1e-9) + "/"
+					+ String.format("%.3f", cudaDeAllocTime.get()*1e-9) + "/"
+					+ String.format("%.3f", cudaToDevTime.get()*1e-9) + "/"
+					+ String.format("%.3f", cudaFromDevTime.get()*1e-9)  + ".\n");
+			sb.append("GPU mem tx count (alloc/dealloc/toDev/fromDev):\t" 
+					+ cudaAllocCount.get() + "/"
+					+ cudaDeAllocCount.get() + "/"
+					+ cudaToDevCount.get() + "/"
+					+ cudaFromDevCount.get()  + ".\n");
 		}
 		
 		//show extended caching/compilation statistics

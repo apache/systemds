@@ -69,6 +69,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.context.GPUContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -307,6 +308,7 @@ public class DMLScript
 				}
 				else if( args[i].equalsIgnoreCase("-accelerator") ) {	
 					USE_ACCELERATOR = true;
+					GPUContext.createGPUContext(); // Set GPU memory budget
 				}
 				else if( args[i].equalsIgnoreCase("-python") ) {
 					parsePyDML = true;

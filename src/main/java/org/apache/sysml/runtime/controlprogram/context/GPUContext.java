@@ -21,47 +21,36 @@ package org.apache.sysml.runtime.controlprogram.context;
 import java.util.ArrayList;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
 public abstract class GPUContext {
 
-	protected ArrayList<GPUObject> allocatedPointers = new ArrayList<GPUObject>(); 
+	public static ArrayList<GPUObject> allocatedPointers = new ArrayList<GPUObject>(); 
 	protected static GPUContext currContext;
 	protected GPUContext() { }
 	
+	public abstract long getAvailableMemory();
+	
 	// Creation / Destruction of GPUContext and related handles
 	public static GPUContext createGPUContext() {
-		if(currContext == null && DMLScript.USE_ACCELERATOR)
+		if(currContext == null && DMLScript.USE_ACCELERATOR) {
 			currContext = new JCudaContext();
+			OptimizerUtils.GPU_MEMORY_BUDGET = ((JCudaContext)currContext).getAvailableMemory();
+		}
 		return currContext;
+	}
+	public static GPUObject createGPUObject(MatrixObject mo) {
+		if(DMLScript.USE_ACCELERATOR) {
+			if(currContext == null)
+				throw new RuntimeException("GPUContext is not created");
+			if(currContext instanceof JCudaContext)
+				return new JCudaObject(mo);
+		}
+		throw new RuntimeException("Cannot create createGPUObject when USE_ACCELERATOR is off");
 	}
 	public abstract void destroy() throws DMLRuntimeException;
 	
-	// Bufferpool-related methods
-	abstract void acquireRead(MatrixObject mat) throws DMLRuntimeException;
-	abstract void acquireModify(MatrixObject mat) throws DMLRuntimeException;
-	abstract void release(MatrixObject mat, boolean isGPUCopyModified);
-	public abstract void remove(MatrixObject mat) throws DMLRuntimeException;
-	
-	// Copying from device -> host occurs here
-	// Called by MatrixObject's exportData
-	public static void exportData(MatrixObject mo) throws CacheException {
-		if(currContext == null) {
-			throw new CacheException("GPUContext is not initialized");
-		}
-		boolean isDeviceCopyModified = mo.getGPUObject() != null && mo.getGPUObject().isDeviceCopyModified;
-		boolean isHostCopyUnavailable = mo.getMatrixBlock() == null || 
-				(mo.getMatrixBlock().getDenseBlock() == null && mo.getMatrixBlock().getSparseBlock() == null);
-		
-		if(mo.getGPUObject() != null && (isDeviceCopyModified || isHostCopyUnavailable)) {
-			try {
-				mo.getGPUObject().copyFromDeviceToHost();
-			} catch (DMLRuntimeException e) {
-				throw new CacheException(e);
-			}
-		}
-	}
 	
 }

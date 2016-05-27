@@ -88,6 +88,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 */
 	public MatrixObject (ValueType vt, String file) {
 		this (vt, file, null); //HDFS file path
+		if(DMLScript.USE_ACCELERATOR)
+			_gpuHandle = GPUContext.createGPUObject(this);
 	}
 	
 	/**
@@ -99,6 +101,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		_hdfsFileName = file;		
 		_cache = null;
 		_data = null;
+		if(DMLScript.USE_ACCELERATOR)
+			_gpuHandle = GPUContext.createGPUObject(this);
 	}
 	
 	/**
@@ -233,8 +237,9 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	
 	@Override
 	protected void exportGPUData() throws CacheException {
-		if(DMLScript.USE_ACCELERATOR)
-			GPUContext.exportData(this);
+		if(DMLScript.USE_ACCELERATOR && getGPUObject() != null) {
+			getGPUObject().acquireHostRead();
+		}
 	}
 	
 	public String toString()

@@ -196,6 +196,8 @@ public class OptimizerUtils
 	public static final boolean ALLOW_COMBINE_FILE_INPUT_FORMAT = true;
 	
 	
+	public static long GPU_MEMORY_BUDGET = -1;
+	
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

@@ -32,6 +32,7 @@ import org.apache.sysml.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.utils.Statistics;
 
 public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 	
@@ -40,6 +41,10 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 	private ArrayList<CPOperand> _filter_shape;
 	private ArrayList<CPOperand> _stride = new ArrayList<CPOperand>();
 	private ArrayList<CPOperand> _padding = new ArrayList<CPOperand>();
+	
+	int N; int C; int H; int W;
+	int K; int R; int S; int stride_h; int stride_w; int pad_h; int pad_w;
+	int P; int Q;
 	
 	public ConvolutionGPUInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode,
 			String istr, ArrayList<CPOperand> stride,
@@ -98,10 +103,6 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionCPInstruction: " + str);
 		}
 	}
-
-	int N; int C; int H; int W;
-	int K; int R; int S; int stride_h; int stride_w; int pad_h; int pad_w;
-	int P; int Q;
 	
 	private int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL,
 			int index) throws DMLRuntimeException {
@@ -113,6 +114,9 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 			throws DMLRuntimeException {
+		
+		Statistics.incrementNoOfExecutedGPUInst();
+		
 		MatrixObject out = null;
 		if (instOpcode.equalsIgnoreCase("conv2d") || 
 				instOpcode.equalsIgnoreCase("conv2d_backward_filter") ||
@@ -192,9 +196,9 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 			throw new DMLRuntimeException("Unsupported op code " + instOpcode);
 		}
 		// release inputs/outputs
-		ec.releaseMatrixInputForGPUInstruction(input1.getName());
-		ec.releaseMatrixInputForGPUInstruction(_in2.getName());
-		ec.setMatrixOutputForGPUInstruction(output.getName(), out.getMatrixBlock());
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(_in2.getName());
+		ec.setMatrixOutput(output.getName(), null);
 	}
 	
 }

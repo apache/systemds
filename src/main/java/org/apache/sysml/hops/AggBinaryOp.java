@@ -640,7 +640,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		throws HopsException, LopsException
 	{	
 		Lop matmultCP = null;
-		if(DMLScript.USE_ACCELERATOR) {
+		
+		if(DMLScript.USE_ACCELERATOR && getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) {
 			Hop h1 = getInput().get(0);
 			Hop h2 = getInput().get(1);
 			Lop left; Lop right;

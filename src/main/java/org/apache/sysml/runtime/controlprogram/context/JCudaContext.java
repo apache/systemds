@@ -18,15 +18,11 @@
  */
 package org.apache.sysml.runtime.controlprogram.context;
 
-import java.util.Collections;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
-
-import java.util.Comparator;
+import org.apache.sysml.utils.Statistics;
 
 import jcuda.driver.JCudaDriver;
 import jcuda.jcublas.JCublas2;
@@ -64,6 +60,7 @@ public class JCudaContext extends GPUContext {
 	public static boolean REFRESH_AVAILABLE_MEMORY_EVERY_TIME = true;
 	
 	static {
+		long start = System.nanoTime();
 		JCuda.setExceptionsEnabled(true);
 		JCudnn.setExceptionsEnabled(true);
 		JCublas2.setExceptionsEnabled(true);
@@ -74,6 +71,7 @@ public class JCudaContext extends GPUContext {
         cuDeviceGetCount(deviceCountArray);
         int deviceCount = deviceCountArray[0];
         LOG.info("Total number of GPUs on the machine: " + deviceCount);
+        Statistics.cudaInitTime = System.nanoTime() - start;
 	}
 	
 	public long getAvailableMemory() {
@@ -97,10 +95,13 @@ public class JCudaContext extends GPUContext {
 			throw new RuntimeException("Cannot create multiple JCudaContext");
 		}
 		GPUContext.currContext = this;
+		
+		long start = System.nanoTime();
 		LibMatrixCUDA.cudnnHandle = new cudnnHandle();
 		cudnnCreate(LibMatrixCUDA.cudnnHandle);
 		LibMatrixCUDA.cublasHandle = new cublasHandle();
 		cublasCreate(LibMatrixCUDA.cublasHandle);
+		Statistics.cudaLibrariesInitTime = System.nanoTime() - start;
 		
 		long free [] = { 0 };
         long total [] = { 0 };
@@ -126,129 +127,5 @@ public class JCudaContext extends GPUContext {
 			throw new DMLRuntimeException("Error while destroying the GPUContext");
 		}
 	}
-	
-	
-	@Override
-	void acquireRead(MatrixObject mat) throws DMLRuntimeException {
-		prepare(mat, true);
-	}
-	
-	@Override
-	void acquireModify(MatrixObject mat) throws DMLRuntimeException {
-		prepare(mat, false);
-		mat._gpuHandle.isDeviceCopyModified = true;
-	}
-	
-	private void prepare(MatrixObject mat, boolean isInput) throws DMLRuntimeException {
-		if(mat._gpuHandle == null) {
-			mat._gpuHandle = GPUObject.createGPUObject(mat, this);
-			long GPUSize = mat._gpuHandle.getSizeOnDevice();
-			
-			// Ensure enough memory while allocating the matrix
-			if(GPUSize > getAvailableMemory()) {
-				if(DEBUG)
-					LOG.info("There is not enough memory on device. Eviction is issued!");
-				evict(GPUSize);
-			}
-			
-			mat._gpuHandle.allocateMemoryOnDevice();
-			synchronized(evictionLock) {
-				allocatedPointers.add(mat._gpuHandle);
-			}
-			if(isInput)
-				mat._gpuHandle.copyFromHostToDevice();
-		}
-		mat._gpuHandle.isLocked = true;
-	}
 
-	
-	Boolean evictionLock = new Boolean(true);
-
-	@Override
-	public void release(MatrixObject mat, boolean isGPUCopyModified) {
-		mat._gpuHandle.isLocked = false;
-		mat._gpuHandle.isDeviceCopyModified = isGPUCopyModified;
-	}
-	
-	
-	/**
-	 * It finds matrix toBeRemoved such that toBeRemoved.GPUSize >= size
-	 * // TODO: it is the smallest matrix size that satisfy the above condition. For now just evicting the largest pointer.
-	 * Then returns toBeRemoved. 
-	 * 
-	 */
-	protected void evict(long GPUSize) throws DMLRuntimeException {
-		if(allocatedPointers.size() == 0) {
-			throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
-		}
-		
-		synchronized(evictionLock) {
-			Collections.sort(allocatedPointers, new Comparator<GPUObject>() {
-	
-				@Override
-				public int compare(GPUObject p1, GPUObject p2) {
-					if(p1.isLocked && p2.isLocked) {
-						return 0;
-					}
-					else if(p1.isLocked && !p2.isLocked) {
-						// p2 by default is considered larger
-						return 1;
-					}
-					else if(!p1.isLocked && p2.isLocked) {
-						return -1;
-					}
-					long p1Size = 0; long p2Size = 0;
-					try {
-						p1Size = p1.getSizeOnDevice();
-						p2Size = p2.getSizeOnDevice();
-					} catch (DMLRuntimeException e) {
-						throw new RuntimeException(e);
-					}
-					if(p1Size == p2Size) {
-						return 0;
-					}
-					else if(p1Size < p2Size) {
-						return 1;
-					}
-					else {
-						return -1;
-					}
-				}
-			});
-			
-			
-			while(GPUSize > getAvailableMemory() && allocatedPointers.size() > 0) {
-				GPUObject toBeRemoved = allocatedPointers.get(allocatedPointers.size() - 1);
-				if(toBeRemoved.isLocked) {
-					throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
-				}
-				if(toBeRemoved.isDeviceCopyModified) {
-					toBeRemoved.copyFromDeviceToHost();
-				}
-				remove(toBeRemoved.mat);
-			}
-		}
-	}
-
-
-	@Override
-	public void remove(MatrixObject mat) throws DMLRuntimeException {
-		if(mat != null && mat._gpuHandle != null) {
-			if(mat._gpuHandle.numReferences <= 1) {
-				synchronized(evictionLock) {
-					allocatedPointers.remove(mat._gpuHandle);
-				}
-				mat._gpuHandle.deallocateMemoryOnDevice();
-				mat._gpuHandle = null;
-			}
-			else {
-				mat._gpuHandle.numReferences--;
-			}
-			
-		}
-	}
-
-
-	
-	
 }

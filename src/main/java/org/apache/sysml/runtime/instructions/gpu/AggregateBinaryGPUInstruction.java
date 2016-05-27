@@ -21,17 +21,22 @@ package org.apache.sysml.runtime.instructions.gpu;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.utils.Statistics;
 
 public class AggregateBinaryGPUInstruction extends BinaryCPInstruction
 {
@@ -80,10 +85,47 @@ public class AggregateBinaryGPUInstruction extends BinaryCPInstruction
 		return new AggregateBinaryGPUInstruction(aggbin, in1, in2, out, opcode, str, isLeftTransposed, isRightTransposed);	
 	}
 	
+	private MatrixBlock transpose(MatrixBlock m1) throws DMLRuntimeException {
+		ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), 1);
+		return (MatrixBlock) (m1.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
+	}
+	
+	private boolean isSparse(ExecutionContext ec, String var) throws DMLRuntimeException {
+		MatrixObject mo = (MatrixObject) ec.getVariable(var);
+		return LibMatrixCUDA.isInSparseFormat(mo);
+	}
+	
 	@Override
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException
 	{	
+		// --------------------------------------
+		// This code will be removed when the JIRA SYSTEMML-702 is complete
+		if(	isSparse(ec, input1.getName()) || isSparse(ec, input2.getName())) {
+			
+			//get inputs
+			MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+	        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+	        
+	        if(isLeftTransposed) 
+	        	matBlock1 = transpose(matBlock1);
+	        if(isRightTransposed) 
+	        	matBlock2 = transpose(matBlock2);
+			
+	        //compute matrix multiplication
+	        AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
+			MatrixBlock soresBlock = (MatrixBlock) (matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op));
+				
+			//release inputs/outputs
+			ec.releaseMatrixInput(input1.getName());
+			ec.releaseMatrixInput(input2.getName());
+			ec.setMatrixOutput(output.getName(), soresBlock);
+			return;
+		}
+		// --------------------------------------
+		
+		Statistics.incrementNoOfExecutedGPUInst();
+		
 		AggregateBinaryOperator op = (AggregateBinaryOperator) _optr;
 		if( !(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus) ) {
 			throw new DMLRuntimeException("Unsupported binary aggregate operation: ("+op.binaryFn+", "+op.aggOp+").");
@@ -101,8 +143,8 @@ public class AggregateBinaryGPUInstruction extends BinaryCPInstruction
         LibMatrixCUDA.matmult(m1, m2, out, isLeftTransposed, isRightTransposed);
         
 		//release inputs/outputs
-		ec.releaseMatrixInputForGPUInstruction(input1.getName());
-		ec.releaseMatrixInputForGPUInstruction(input2.getName());
-		ec.setMatrixOutputForGPUInstruction(output.getName(), out.getMatrixBlock());
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(input2.getName());
+		ec.setMatrixOutput(output.getName(), null);
 	}
 }

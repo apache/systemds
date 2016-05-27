@@ -1443,9 +1443,12 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 
 					//rewire new subdag
 					HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);		
-					HopRewriteUtils.removeAllChildReferences(hi);
-					HopRewriteUtils.removeAllChildReferences(bop);
 					HopRewriteUtils.addChildReference(parent, newBin, pos);
+					if( hi.getParent().isEmpty() )
+						HopRewriteUtils.removeAllChildReferences(hi);
+					if( bop.getParent().isEmpty() )
+						HopRewriteUtils.removeAllChildReferences(bop);
+					
 					
 					hi = newBin;
 					

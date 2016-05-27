@@ -47,6 +47,8 @@ import org.junit.runners.Suite;
 	PrintMatrixTest.class,
 	ReadAfterWriteTest.class,
 	RewriteFusedRandTest.class,
+	RewritePushdownSumOnBinaryTest.class,
+	RewritePushdownUaggTest.class,
 	RewriteSimplifyRowColSumMVMultTest.class,
 	RewriteSlicedMatrixMultTest.class,
 	ScalarAssignmentTest.class,

@@ -41,7 +41,8 @@ forward = function(matrix[double] pred, matrix[double] y)
    *  - loss: Scalar loss, of shape (1).
    */
   N = nrow(y)
-  losses = rowSums(-y * log(pred))
+  eps = 1e-10  # numerical stability to avoid log(0)
+  losses = rowSums(-y * log(pred+eps))
   loss = sum(losses) / N
 }
 
@@ -60,6 +61,7 @@ backward = function(matrix[double] pred, matrix[double] y)
    *  - dpred: Gradient wrt pred, of shape (N, K).
    */
   N = nrow(y)
-  dpred = (1/N) * -y * (1/pred)
+  eps = 1e-10  # numerical stability to avoid divide-by-zero
+  dpred = (1/N) * -y * (1/(pred+eps))
 }
 

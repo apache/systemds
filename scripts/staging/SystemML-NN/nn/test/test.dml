@@ -24,6 +24,7 @@
  */
 source("nn/layers/conv.dml") as conv
 source("nn/layers/conv_builtin.dml") as conv_builtin
+source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/max_pool.dml") as max_pool
 source("nn/layers/max_pool_builtin.dml") as max_pool_builtin
 source("nn/test/conv_simple.dml") as conv_simple
@@ -68,6 +69,31 @@ conv = function() {
   }
 }
 
+cross_entropy_loss = function() {
+  /*
+   * Test for the `cross-entropy` loss function.
+   *
+   * Here we make sure that the cross-entropy loss function does
+   * not propagate `infinity` values in the case that a prediction is
+`  * exactly equal to 0.
+   */
+  print("Testing the cross-entropy loss function with zero-valued predictions.")
+
+  # Generate data
+  N = 3 # num examples
+  K = 10 # num targets
+  pred = matrix(0, rows=N, cols=K)
+  y = rand(rows=N, cols=K, min=0, max=1, pdf="uniform")
+  y = y / rowSums(y)  # normalized probs
+  
+  loss = cross_entropy_loss::forward(pred, y)
+  
+  inf = 1/0
+  if (loss == inf) {
+      print("ERROR: The cross-entropy loss function ouptuts infinity for all-zero predictions.")
+  }
+}
+
 im2col = function() {
   /*
    * Test for the `im2col` and `col2im` functions.
@@ -97,8 +123,9 @@ im2col = function() {
 
   # Equivalency check
   equivalent = util::all_equal(x_pad, x_pad2)
-  if (!equivalent)
+  if (!equivalent) {
     print("ERROR: im2col and then col2im does not yield the original image.")
+  }
 }
 
 padding = function() {
@@ -135,8 +162,9 @@ padding = function() {
 
   # Equivalency check
   equivalent = util::all_equal(x, x1)
-  if (!equivalent)
+  if (!equivalent) {
     print("ERROR: Padding and then unpadding does not yield the original image.")
+  }
 }
 
 max_pool = function() {

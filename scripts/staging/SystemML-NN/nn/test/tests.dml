@@ -63,6 +63,7 @@ print("---")
 tmp = test::im2col()
 tmp = test::padding()
 tmp = test::conv()
+tmp = test::cross_entropy_loss()
 tmp = test::max_pool()
 
 print("---")

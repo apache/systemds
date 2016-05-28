@@ -29,6 +29,11 @@ forward = function(matrix[double] scores) return (matrix[double] probs) {
    * N examples, and the softmax function transforms them to normalized
    * probabilities.
    *
+   * This can be interpreted as a generalization of the sigmoid
+   * function to multiple classes.
+   *
+   * probs_ij = e^scores_ij / sum(e^scores)
+   *
    * Inputs:
    *  - scores: Input data matrix, of shape (N, D).
    *
@@ -36,14 +41,14 @@ forward = function(matrix[double] scores) return (matrix[double] probs) {
    *  - probs: Outputs, of shape (N, D).
    */
   # For numerical stability, we subtract the max score of an example from all scores for that
-  # example.  This is equivalent:
+  # example.  This is equivalent to the original formulation:
   # e^scores_i / sum(e^scores_i) == C*e^scores_i / C*sum(e^scores_i)
   #                              == e^(scores_i+log(C)) / sum(e^(scores_i+log(C))
   # set log(C) = -max(scores_i):
   #                              == e^(scores_i-max(scores_i)) / sum(e^(scores_i-max(scores_i))
   scores = scores - rowMaxs(scores)  # numerical stability
-  unnorm_probs = exp(scores)
-  probs = unnorm_probs / rowSums(unnorm_probs)
+  unnorm_probs = exp(scores)  # unnormalized probabilities
+  probs = unnorm_probs / rowSums(unnorm_probs)  # normalized probabilities
 }
 
 backward = function(matrix[double] dprobs, matrix[double] scores)
@@ -51,11 +56,13 @@ backward = function(matrix[double] dprobs, matrix[double] scores)
   /*
    * Computes the backward pass for a softmax classifier.
    *
+   * Note that dscores_ij has multiple sources:
+   *
    * dprobs_ij/dscores_ij = probs_ij * (1 - probs_ij)
-   * dprobs_ic/dscores_ij = probs_ij * -probs_ic
+   * dprobs_ik/dscores_ij = -probs_ik * probs_ij, for all k != j
    *
    * dloss/dscores_ij = dloss/dprobs_ij * dprobs_ij/dscores_ij + 
-   *                    sum_c(dloss/dprobs_ic * dprobs_ic/dscores_ij)
+   *                    sum_{k!=j}(dloss/dprobs_ik * dprobs_ik/dscores_ij)
    *
    * Inputs:
    *  - dprobs: Derivatives from upstream, of shape (N, D).
@@ -65,9 +72,11 @@ backward = function(matrix[double] dprobs, matrix[double] scores)
    *  - dscores: Gradient wrt scores, of shape (N, D).
    */
   scores = scores - rowMaxs(scores)  # numerical stability
-  unnorm_probs = exp(scores)
-  probs = unnorm_probs / rowSums(unnorm_probs)
-  dscores = dprobs * probs
-  dscores = dscores - probs * rowSums(dscores)
+  unnorm_probs = exp(scores)  # unnormalized probabilities
+  probs = unnorm_probs / rowSums(unnorm_probs)  # normalized probabilities
+  # After some cancellation:
+  # dscores = dprobs*probs - probs*rowSums(dprobs*probs)
+  dtemp = dprobs * probs
+  dscores = dtemp - probs * rowSums(dtemp)
 }
 

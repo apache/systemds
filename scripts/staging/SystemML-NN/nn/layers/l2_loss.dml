@@ -31,6 +31,9 @@ forward = function(matrix[double] pred, matrix[double] y)
    * Computes the forward pass for an L2 loss function.  The inputs
    * consist of N examples, each with M dimensions to predict.
    *
+   * This can be interpreted as the negative log-likelihood assuming
+   * a Gaussian distribution.
+   *
    * Inputs:
    *  - pred: Prediction matrix, of shape (N, M).
    *  - y: Target matrix, of shape (N, M).

@@ -31,6 +31,9 @@ forward = function(matrix[double] pred, matrix[double] y)
   /*
    * Computes the forward pass for a log loss function.
    *
+   * This can be interpreted as the negative log-likelihood assuming
+   * a Bernoulli distribution.
+   *
    * Inputs:
    *  - pred: Prediction matrix, of shape (N, 1).  Predictions should
    *      be probabilities that y=1.

@@ -60,6 +60,9 @@ init = function(matrix[double] X) return (matrix[double] cache) {
   /*
    * Initialize the state for this optimizer.
    *
+   * Note: This is just a convenience function, and state
+   * may be initialized manually if needed.
+   *
    * Inputs:
    *  - X: Parameters to update, of shape (any, any).
    * 

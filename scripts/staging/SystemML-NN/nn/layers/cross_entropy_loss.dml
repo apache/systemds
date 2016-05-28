@@ -33,6 +33,10 @@ forward = function(matrix[double] pred, matrix[double] y)
    * inputs consist of N examples, each with K dimensions corresponding
    * to normalized probabilities of K classes.
    *
+   * This can be interpreted as the negative log-likelihood assuming
+   * a Bernoulli distribution generalized to K dimensions, or a
+   * Multinomial with 1 observation.
+   *
    * Inputs:
    *  - pred: Prediction matrix, of shape (N, K).
    *  - y: Target matrix, of shape (N, K).

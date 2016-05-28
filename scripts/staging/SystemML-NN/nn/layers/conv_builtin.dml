@@ -125,6 +125,9 @@ init = function(int F, int C, int Hf, int Wf)
     return (matrix[double] W, matrix[double] b) {
   /*
    * Initialize the parameters of this layer.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
    * 
    * We use the heuristic by He et al. [http://arxiv.org/abs/1502.01852],
    * which limits the magnification of inputs/gradients during

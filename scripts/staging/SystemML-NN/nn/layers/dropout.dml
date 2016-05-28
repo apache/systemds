@@ -42,8 +42,9 @@ forward = function(matrix[double] X, double p, int seed)
    *  - out: Ouptuts, of same shape as X.
    *  - mask: Dropout mask used to compute the output.
    */
-  if (seed == -1)
+  if (seed == -1) {
     seed = as.integer(floor(as.scalar(rand(rows=1, cols=1, min=1, max=100000))))
+  }
   mask = rand(rows=nrow(X), cols=ncol(X), min=0, max=1, seed=seed) <= p
   out = X * mask / p
 }

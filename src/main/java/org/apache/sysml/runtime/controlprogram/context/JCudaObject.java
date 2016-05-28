@@ -36,24 +36,28 @@ import org.apache.sysml.utils.Statistics;
 public class JCudaObject extends GPUObject {
 	
 	public Pointer jcudaPointer = null;
-	public long numElems = -1;
+//	public long numElems = -1;
 
 	JCudaObject(MatrixObject mat2) {
 		super(mat2);
 	}
 	
-	private void prepare(boolean isInput) throws DMLRuntimeException {
+	private void prepare(boolean isInput, int numElemsToAllocate) throws DMLRuntimeException {
 		if(jcudaPointer != null) {
 			// Already allocated on GPU and expected to be in sync
-			checkDimensions();
+			// checkDimensions();
 		}
 		else {
-			long GPUSize = getSizeOnDevice();
+			long GPUSize;
+			if(numElemsToAllocate != -1)
+				GPUSize = (Sizeof.DOUBLE) * (long) (numElemsToAllocate);
+			else
+				GPUSize = getSizeOnDevice();
 			// Ensure enough memory while allocating the matrix
 			if(GPUSize > getAvailableMemory()) {
 				evict(GPUSize);
 			}
-			allocateMemoryOnDevice();
+			allocateMemoryOnDevice(numElemsToAllocate);
 			synchronized(evictionLock) {
 				GPUContext.allocatedPointers.add(this);
 			}
@@ -65,48 +69,54 @@ public class JCudaObject extends GPUObject {
 	
 	@Override
 	public void acquireDeviceRead() throws DMLRuntimeException {
-		prepare(true);
+		prepare(true, -1);
+		if(!isAllocated) 
+			throw new DMLRuntimeException("Expected device data to be allocated");
 	}
 	
-	private void checkDimensions() throws DMLRuntimeException {
-		if(LibMatrixCUDA.isInSparseFormat(mat))
-			throw new DMLRuntimeException("Sparse format not implemented");
-		else {
-			if(mat.getNumRows()*mat.getNumColumns() != numElems) {
-				throw new DMLRuntimeException("The jcudaPointer and MatrixBlock is not in synched");
-			}
-		}
-	}
+//	private void checkDimensions() throws DMLRuntimeException {
+//		if(LibMatrixCUDA.isInSparseFormat(mat))
+//			throw new DMLRuntimeException("Sparse format not implemented");
+//		else {
+//			if(mat.getNumRows()*mat.getNumColumns() != numElems) {
+//				throw new DMLRuntimeException("The jcudaPointer and MatrixBlock is not in synched");
+//			}
+//		}
+//	}
 	
 	@Override
-	public void acquireDeviceModify() throws DMLRuntimeException {
-//		// Potential for optimization: An allocation of device memory can be saved if it is already allocated
-//		mat.clearData();
-		
-		prepare(false); 
+	public void acquireDenseDeviceModify(int numElemsToAllocate) throws DMLRuntimeException {
+		prepare(false, numElemsToAllocate); 
 		isDeviceCopyModified = true;
+		if(!isAllocated) 
+			throw new DMLRuntimeException("Expected device data to be allocated");
 	}
 	
 	@Override
 	public void acquireHostRead() throws CacheException {
-		try {
-			if(isDeviceCopyModified) {
-				copyFromDeviceToHost();
+		if(isAllocated) {
+			try {
+				if(isDeviceCopyModified) {
+					copyFromDeviceToHost();
+				}
+			} catch (DMLRuntimeException e) {
+				throw new CacheException(e);
 			}
-		} catch (DMLRuntimeException e) {
-			throw new CacheException(e);
 		}
 	}
 	
 	@Override
 	public void acquireHostModify() throws CacheException {
-		try {
-			if(isDeviceCopyModified) {
-				copyFromDeviceToHost();
+		if(isAllocated) {
+			try {
+				if(isDeviceCopyModified) {
+					throw new DMLRuntimeException("Potential overwrite of GPU data");
+					// copyFromDeviceToHost();
+				}
+				clearData();
+			} catch (DMLRuntimeException e) {
+				throw new CacheException(e);
 			}
-			clearData();
-		} catch (DMLRuntimeException e) {
-			throw new CacheException(e);
 		}
 	}
 	
@@ -116,21 +126,25 @@ public class JCudaObject extends GPUObject {
 	}
 
 	@Override
-	void allocateMemoryOnDevice() throws DMLRuntimeException {
+	void allocateMemoryOnDevice(int numElemToAllocate) throws DMLRuntimeException {
 		if(jcudaPointer == null) {
 			long start = System.nanoTime();
 			jcudaPointer = new Pointer();
-			// if(LibMatrixCUDA.isInSparseFormat(mat))
-			if(mat.getMatrixBlock().isInSparseFormat()) 
+			if(numElemToAllocate == -1 && LibMatrixCUDA.isInSparseFormat(mat))
 				throw new DMLRuntimeException("Sparse format not implemented");
+			else if(numElemToAllocate == -1) {
+				// Called for dense input
+				cudaMalloc(jcudaPointer,  mat.getNumRows()*mat.getNumColumns()*Sizeof.DOUBLE);
+			}
 			else {
-				numElems = mat.getNumRows()*mat.getNumColumns();
-				cudaMalloc(jcudaPointer,  numElems*Sizeof.DOUBLE);
+				// Called for dense output
+				cudaMalloc(jcudaPointer,  numElemToAllocate*Sizeof.DOUBLE);
 			}
 			
 			Statistics.cudaAllocTime.addAndGet(System.nanoTime()-start);
 			Statistics.cudaAllocCount.addAndGet(1);
 		}
+		isAllocated = true;
 	}
 	
 	@Override
@@ -141,12 +155,14 @@ public class JCudaObject extends GPUObject {
 			Statistics.cudaDeAllocTime.addAndGet(System.nanoTime()-start);
 			Statistics.cudaDeAllocCount.addAndGet(1);
 		}
-		jcudaPointer = null;	
+		jcudaPointer = null;
+		isAllocated = false;
 	}
 	
 	@Override
 	void copyFromHostToDevice() throws DMLRuntimeException {
 		if(jcudaPointer != null) {
+			printCaller();
 			long start = System.nanoTime();
 			if(LibMatrixCUDA.isInSparseFormat(mat))
 				throw new DMLRuntimeException("Sparse format not implemented");
@@ -175,8 +191,8 @@ public class JCudaObject extends GPUObject {
 	@Override
 	protected void copyFromDeviceToHost() throws DMLRuntimeException {
 		if(jcudaPointer != null) {
-			// if(LibMatrixCUDA.isInSparseFormat(mat))
-			if(mat.getMatrixBlock().isInSparseFormat()) 
+			printCaller();
+			if(LibMatrixCUDA.isInSparseFormat(mat))
 				throw new DMLRuntimeException("Sparse format not implemented");
 			else {
 				long start = System.nanoTime();
@@ -208,7 +224,7 @@ public class JCudaObject extends GPUObject {
 		int rlen = (int) mat.getNumRows();
 		int clen = (int) mat.getNumColumns();
 //		long nonZeros = mat.getNonZeros();
-		if(mat.getMatrixBlock().isInSparseFormat()) {
+		if(LibMatrixCUDA.isInSparseFormat(mat)) {
 		// if(LibMatrixCUDA.isInSparseFormat(mat)) {
 //		
 //		if (mat.getMatrixBlock().isInSparseFormat() ) { // && !emptyBlock) {
@@ -230,9 +246,24 @@ public class JCudaObject extends GPUObject {
 //				else
 //					align = 128; // in the dense case we use this for alignment
 			GPUSize = (Sizeof.DOUBLE) * (long) (rlen * clen + align);
+			
 		}
 		return GPUSize;
 	}
 	
-	
+	private String getClassAndMethod(StackTraceElement st) {
+		String [] str = st.getClassName().split("\\.");
+		return str[str.length - 1] + "." + st.getMethodName();
+	}
+	private void printCaller() {
+		if(JCudaContext.DEBUG) {
+			StackTraceElement[] st = Thread.currentThread().getStackTrace();
+			String ret = getClassAndMethod(st[1]);
+			for(int i = 2; i < st.length && i < 7; i++) {
+				ret += "->" + getClassAndMethod(st[i]);
+			}
+			System.out.println("CALL_STACK:" + ret);
+		}
+			
+	}
 }

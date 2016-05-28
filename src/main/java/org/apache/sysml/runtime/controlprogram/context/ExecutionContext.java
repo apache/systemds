@@ -27,6 +27,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLFrame;
 import org.apache.sysml.debug.DMLProgramCounter;
 import org.apache.sysml.debug.DebugState;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -47,12 +48,9 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
-import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -226,17 +224,19 @@ public class ExecutionContext
 		return mb;
 	}
 	
-	public MatrixObject getMatrixOutputForGPUInstruction(String varName, int out_rlen, int out_clen) 
+	public MatrixObject getDenseMatrixOutputForGPUInstruction(String varName, int nrows, int ncols) 
 			throws DMLRuntimeException 
 	{	
 		MatrixObject mo = (MatrixObject) getVariable(varName);
-		MatrixBlock mb = mo.getMatrixBlock(); 
-		if(mb == null) {
-			mb = new MatrixBlock(out_rlen, out_clen, false);
+		if(mo.getNumRows() != nrows || mo.getNumColumns() != ncols) {
+			mo.setMetaData(new MatrixDimensionsMetaData(new MatrixCharacteristics((long)nrows, (long)ncols, (int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock())));
+		}
+		if(mo.getMatrixBlock() == null) {
+			MatrixBlock mb = new MatrixBlock(nrows, ncols, false);
 			mo.acquireModify(mb);
 			mo.release();
 		}
-		mo.getGPUObject().acquireDeviceModify();
+		mo.getGPUObject().acquireDenseDeviceModify(nrows*ncols);
 		return mo;
 	}
 	
@@ -244,7 +244,10 @@ public class ExecutionContext
 			throws DMLRuntimeException 
 	{	
 		MatrixObject mo = (MatrixObject) getVariable(varName);
-		mo.acquireRead();
+		if(mo.getGPUObject() == null || !mo.getGPUObject().isAllocated) {
+			mo.acquireRead();
+			mo.release();
+		}
 		mo.getGPUObject().acquireDeviceRead();
 		return mo;
 	}
@@ -259,11 +262,15 @@ public class ExecutionContext
 		throws DMLRuntimeException 
 	{
 		MatrixObject mo = (MatrixObject) getVariable(varName);
-		if(_gpuCtx != null && mo.getGPUObject() != null) {
-			mo.getGPUObject().release(false);
-		}
 		mo.release();
 	}
+	
+	public void releaseMatrixInputForGPUInstruction(String varName) 
+			throws DMLRuntimeException 
+		{
+			MatrixObject mo = (MatrixObject) getVariable(varName);
+			mo.getGPUObject().release(false);
+		}
 	
 	/**
 	 * Pins a frame variable into memory and returns the internal frame block.
@@ -331,6 +338,16 @@ public class ExecutionContext
 		setVariable(varName, so);
 	}
 	
+	public void releaseMatrixOutputForGPUInstruction(String varName) throws DMLRuntimeException {
+		MatrixObject mo = (MatrixObject) getVariable(varName);
+		if(mo.getGPUObject() == null || !mo.getGPUObject().isAllocated) {
+			throw new DMLRuntimeException("No output is allocated on GPU");
+		}
+		mo.getGPUObject().release(true);
+//		mo.acquireModify();
+//		mo.release();
+	}
+	
 	/**
 	 * 
 	 * @param varName
@@ -341,25 +358,14 @@ public class ExecutionContext
 			throws DMLRuntimeException 
 	{
 		MatrixObject mo = (MatrixObject) getVariable(varName);
-		if(outputData == null) {
-			// Called by GPU instruction
-			if(mo.getGPUObject() == null) {
-				throw new DMLRuntimeException("Expected the gpu object to be set");
-			}
-			mo.getGPUObject().release(true);
+		if(mo.getGPUObject() != null && mo.getGPUObject().isAllocated) {
+			throw new DMLRuntimeException("GPU instructions should not set matrix output. "
+					+ "Instead should use releaseMatrixOutput. If called by non-GPU instruction, "
+					+ "then inconsistent bufferpool logic. Possible skipped deleting GPU object when acquire modify.");
 		}
-		else {
-			if(mo.getGPUObject() != null) {
-				if(mo.getGPUObject().isDeviceCopyModified) {
-					// Hint: If GPU Instruction, use setMatrixOutputForGPUInstruction
-					throw new DMLRuntimeException("Inconsistent GPU/CPU data");
-				}
-				// Data on GPU exists and CPU copy is modified ... so deallocate the GPU copy
-				mo.getGPUObject().clearData();
-			}
-	        mo.acquireModify(outputData);
-		    mo.release();
-		}
+		
+		mo.acquireModify(outputData);
+	    mo.release();
 	    setVariable(varName, mo);
 	}
 	

@@ -30,6 +30,7 @@ import jcuda.jcudnn.cudnnTensorDescriptor;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.JCudaObject;
+import org.apache.sysml.utils.Statistics;
 
 public class LibMatrixCUDA {
 	
@@ -76,11 +77,13 @@ public class LibMatrixCUDA {
             
 			alpha = pointerTo(1.0); // TODO
 			beta = pointerTo(0.0f);
+			long start = System.nanoTime();
 			int status = cudnnConvolutionForward(cudnnHandle, alpha, 
 					srcTensorDesc, imagePointer, 
 					filterDesc, filterPointer,
 					convDesc, algo, workSpace, sizeInBytes, beta,
 					dstTensorDesc, dstPointer);
+			Statistics.cudaConvFwdTime.addAndGet(System.nanoTime()-start);
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionForward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
@@ -232,11 +235,18 @@ public class LibMatrixCUDA {
 		int ldb = isRightTransposed ? n : k;
 		int ldc = m;
 		
-		Pointer A = ((JCudaObject)left._gpuHandle).jcudaPointer;
-		Pointer B = ((JCudaObject)right._gpuHandle).jcudaPointer;
-		Pointer C = ((JCudaObject)output._gpuHandle).jcudaPointer;
+		if(!left.getGPUObject().isAllocated || !right.getGPUObject().isAllocated)
+			throw new DMLRuntimeException("One of input is not allocated:" + left.getGPUObject().isAllocated + " " + right.getGPUObject().isAllocated);
+		if(!output.getGPUObject().isAllocated)
+			throw new DMLRuntimeException("Output is not allocated:" + output.getGPUObject().isAllocated);
 		
+		Pointer A = ((JCudaObject)left.getGPUObject()).jcudaPointer;
+		Pointer B = ((JCudaObject)right.getGPUObject()).jcudaPointer;
+		Pointer C = ((JCudaObject)output.getGPUObject()).jcudaPointer;
+		
+		long start = System.nanoTime();
 		JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+		Statistics.cudaMultTime.addAndGet(System.nanoTime()-start);
 	}
 	
 //	private void transpose(Pointer A, Pointer ret, int numRows, int numCols) {
@@ -321,6 +331,8 @@ public class LibMatrixCUDA {
 	}
 	
 	public static boolean isInSparseFormat(MatrixObject mo) {
+		if(mo.getGPUObject() != null && mo.getGPUObject().isAllocated)
+			return mo.getGPUObject().isInSparseFormat;
 		return MatrixBlock.evalSparseFormatInMemory(mo.getNumRows(), mo.getNumColumns(), mo.getNnz());
 	}
 }

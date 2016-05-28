@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions;
 import java.util.HashMap;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
@@ -64,18 +65,23 @@ public class GPUInstructionParser  extends InstructionParser
 				throw new DMLRuntimeException("The instruction is not GPU-enabled:" + str);
 			}
 			
+			CPInstruction ret;
 			switch(cptype) 
 			{
 				case AggregateBinary:
-					return AggregateBinaryGPUInstruction.parseInstruction(str);
+					ret = AggregateBinaryGPUInstruction.parseInstruction(str);
+					break;
 					
 				case Convolution:
-					return ConvolutionGPUInstruction.parseInstruction(str);
+					ret = ConvolutionGPUInstruction.parseInstruction(str);
+					break;
 					
 				default: 
 					throw new DMLRuntimeException("Invalid GPU Instruction Type: " + cptype );
 			}
 			
+			ret.setType(INSTRUCTION_TYPE.GPU);
+			return ret;
 		}
 		
 }

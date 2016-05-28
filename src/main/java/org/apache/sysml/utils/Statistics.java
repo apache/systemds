@@ -117,6 +117,9 @@ public class Statistics
 	public static AtomicLong cudaDeAllocCount = new AtomicLong(0);
 	public static AtomicLong cudaToDevCount = new AtomicLong(0);
 	public static AtomicLong cudaFromDevCount = new AtomicLong(0);
+	// Potential CUDA heavy hitter
+	public static AtomicLong cudaMultTime = new AtomicLong(0);
+	public static AtomicLong cudaConvFwdTime = new AtomicLong(0);
 	
 	public static void incrementAllocationTime(long allocationTime, boolean isSparse) {
 		if(isSparse)
@@ -628,18 +631,21 @@ public class Statistics
 		
 		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS ) {
 			sb.append("CUDA/CuLibraries init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + "/"
-					+ String.format("%.3f", cudaLibrariesInitTime*1e-9) + ".\n");
+					+ String.format("%.3f", cudaLibrariesInitTime*1e-9) + " sec.\n");
 			sb.append("Number of executed GPU inst:\t" + getNoOfExecutedGPUInst() + ".\n");
 			sb.append("GPU mem tx time (alloc/dealloc/toDev/fromDev):\t" 
 					+ String.format("%.3f", cudaAllocTime.get()*1e-9) + "/"
 					+ String.format("%.3f", cudaDeAllocTime.get()*1e-9) + "/"
 					+ String.format("%.3f", cudaToDevTime.get()*1e-9) + "/"
-					+ String.format("%.3f", cudaFromDevTime.get()*1e-9)  + ".\n");
+					+ String.format("%.3f", cudaFromDevTime.get()*1e-9)  + " sec.\n");
 			sb.append("GPU mem tx count (alloc/dealloc/toDev/fromDev):\t" 
 					+ cudaAllocCount.get() + "/"
 					+ cudaDeAllocCount.get() + "/"
 					+ cudaToDevCount.get() + "/"
 					+ cudaFromDevCount.get()  + ".\n");
+			sb.append("CUDA op time (mult/conv):\t"
+					+ String.format("%.3f", cudaMultTime.get()*1e-9) + "/"
+					+ String.format("%.3f", cudaConvFwdTime.get()*1e-9)  + " sec.\n");
 		}
 		
 		//show extended caching/compilation statistics

@@ -37,7 +37,8 @@ public abstract class Instruction
 		EXTERNAL_LIBRARY, 
 		MAPREDUCE_JOB, 
 		BREAKPOINT, 
-		SPARK 
+		SPARK,
+		GPU
 	};
 	
 	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());

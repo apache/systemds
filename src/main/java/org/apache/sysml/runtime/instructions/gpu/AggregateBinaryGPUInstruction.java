@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.gpu;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Multiply;
@@ -139,12 +138,12 @@ public class AggregateBinaryGPUInstruction extends BinaryCPInstruction
         int rlen = (int) (isLeftTransposed ? m1.getNumColumns() : m1.getNumRows());
         int clen = (int) (isRightTransposed ? m2.getNumRows() : m2.getNumColumns());
         
-        MatrixObject out = ec.getMatrixOutputForGPUInstruction(output.getName(), rlen, clen);
+        MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(output.getName(), rlen, clen);
         LibMatrixCUDA.matmult(m1, m2, out, isLeftTransposed, isRightTransposed);
         
 		//release inputs/outputs
-		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input2.getName());
-		ec.setMatrixOutput(output.getName(), null);
+		ec.releaseMatrixInputForGPUInstruction(input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(input2.getName());
+		ec.releaseMatrixOutputForGPUInstruction(output.getName());
 	}
 }

@@ -30,20 +30,23 @@ public abstract class GPUObject {
 	public boolean isDeviceCopyModified = false;
 	volatile boolean isLocked = false;
 	
+	public boolean isInSparseFormat = false;
+	public boolean isAllocated = false;
+	
 	MatrixObject mat = null;
 	protected GPUObject(MatrixObject mat2)  {
 		this.mat = mat2;
 	}
 	
 	public abstract void acquireDeviceRead() throws DMLRuntimeException;
-	public abstract void acquireDeviceModify() throws DMLRuntimeException;
+	public abstract void acquireDenseDeviceModify(int numElemsToAllocate) throws DMLRuntimeException;
 	public abstract void acquireHostRead() throws CacheException;
 	public abstract void acquireHostModify() throws CacheException;
 	public abstract void release(boolean isGPUCopyModified) throws CacheException;
 	
 	
 	// package-level visibility as these methods are guarded by underlying GPUContext
-	abstract void allocateMemoryOnDevice() throws DMLRuntimeException;
+	abstract void allocateMemoryOnDevice(int numElemToAllocate) throws DMLRuntimeException;
 	abstract void deallocateMemoryOnDevice() throws DMLRuntimeException;
 	abstract long getSizeOnDevice() throws DMLRuntimeException;
 	abstract void copyFromHostToDevice() throws DMLRuntimeException;

@@ -516,8 +516,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( _data == null )
 			getCache();
 		
-		if( _gpuHandle != null )
-			_gpuHandle.acquireHostModify();
+//		// Donot need to sync GPU data as it can cause redundant copy when GPU instruction does release
+//		if( _gpuHandle != null )
+//			_gpuHandle.acquireHostModify();
 		
 		//read data from HDFS if required
 		if( isEmpty(true) && _data == null )
@@ -697,8 +698,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		clearReusableData();
 		_data = null;	
 		clearCache();
-		if(_gpuHandle != null)
+		if(_gpuHandle != null) {
 			_gpuHandle.clearData();
+		}
 		
 		// clear rdd/broadcast back refs
 		if( _rddHandle != null )

@@ -73,6 +73,24 @@
 		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
 	</properties>
+	
+	<repositories>
+        <repository>
+          <id>central</id>
+          <url>https://repo1.maven.org/maven2</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+        </repository>
+        <repository>
+            <id>mavenized-jcuda-mvn-repo</id>
+            <url>https://raw.github.com/MysterionRise/mavenized-jcuda/mvn-repo/</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
 
 	<build>
 
@@ -791,33 +809,37 @@
 			mvn install:install-file -Dfile=...
 		 -->
 		<dependency>
+			<groupId>org.mystic</groupId>
+            <artifactId>mavenized-jcuda</artifactId>
+            <version>0.7.5b</version>
+            <scope>provided</scope>
+		</dependency>
+		<!-- Since there is no mvn repo for jcuda
+		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda</artifactId>
 			<version>0.7.5b</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/src/test/config/jcuda/jcuda-0.7.5b.jar</systemPath>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas</artifactId>
 			<version>0.7.5b</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/src/test/config/jcuda/jcublas-0.7.5b.jar</systemPath>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse</artifactId>
 			<version>0.7.5b</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/src/test/config/jcuda/jcusparse-0.7.5b.jar</systemPath>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn</artifactId>
 			<version>0.7.5</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/src/test/config/jcuda/jcudnn-0.7.5.jar</systemPath>
+			<scope>provided</scope>
 		</dependency>
+		 -->
 		<!-- ************************* -->
 	
 		<dependency>

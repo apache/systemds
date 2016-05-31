@@ -83,7 +83,8 @@ public class Explain
 		HOPS,     // explain program and hops
 		RUNTIME,  // explain runtime program (default)
 		RECOMPILE_HOPS, // explain hops, incl recompile
-		RECOMPILE_RUNTIME, // explain runtime program, incl recompile 
+		RECOMPILE_RUNTIME, // explain runtime program, incl recompile
+		HOPS_REWRITE		// explain program and hops along with rewrites
 	};
 	
 	public static class ExplainCounts {
@@ -208,8 +209,9 @@ public class Explain
 		//dispatch to individual explain utils
 		switch( type ) {
 			//explain hops with stats
+			case HOPS_REWRITE:
 			case HOPS:     	
-			case RECOMPILE_HOPS:	
+			case RECOMPILE_HOPS:
 				return explain(prog);
 			//explain runtime program	
 			case RUNTIME:  
@@ -523,6 +525,8 @@ public class Explain
 		{
 			if( arg.equalsIgnoreCase("hops") )
 				ret = ExplainType.HOPS;
+			else if( arg.equalsIgnoreCase("hops_rewrite") )
+				ret = ExplainType.HOPS_REWRITE;
 			else if( arg.equalsIgnoreCase("runtime") )
 				ret = ExplainType.RUNTIME;
 			else if( arg.equalsIgnoreCase("recompile_hops") )
@@ -531,7 +535,7 @@ public class Explain
 				ret = ExplainType.RECOMPILE_RUNTIME;
 			else 
 				throw new DMLException("Failed to parse explain type: "+arg+" " +
-						               "(valid types: hops, runtime, recompile_hops, recompile_runtime).");
+						               "(valid types: hops, hops_rewrite, runtime, recompile_hops, recompile_runtime).");
 		}
 		
 		return ret;

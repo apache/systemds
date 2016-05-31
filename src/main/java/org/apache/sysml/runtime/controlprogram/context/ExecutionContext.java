@@ -47,9 +47,12 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
+import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -228,7 +231,18 @@ public class ExecutionContext
 	{	
 		MatrixObject mo = (MatrixObject) getVariable(varName);
 		if(mo.getNumRows() != nrows || mo.getNumColumns() != ncols) {
-			mo.setMetaData(new MatrixDimensionsMetaData(new MatrixCharacteristics((long)nrows, (long)ncols, (int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock())));
+			MatrixCharacteristics mc = new MatrixCharacteristics((long)nrows, (long)ncols, (int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
+			OutputInfo oiOld = null;
+			InputInfo iiOld = null;
+			MetaData oldMetaData = mo.getMetaData();
+			if(oldMetaData != null && oldMetaData instanceof MatrixFormatMetaData) {
+				oiOld = ((MatrixFormatMetaData)oldMetaData).getOutputInfo();
+				iiOld = ((MatrixFormatMetaData)oldMetaData).getInputInfo();
+			}
+			else {
+				throw new DMLRuntimeException("Metadata not available");
+			}
+			mo.setMetaData(new MatrixFormatMetaData(mc, oiOld, iiOld));
 		}
 		if(mo.getMatrixBlock() == null) {
 			MatrixBlock mb = new MatrixBlock(nrows, ncols, false);

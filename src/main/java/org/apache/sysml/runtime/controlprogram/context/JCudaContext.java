@@ -50,7 +50,7 @@ public class JCudaContext extends GPUContext {
 	
 	private static final Log LOG = LogFactory.getLog(JCudaContext.class.getName());
 	
-	public static boolean DEBUG = true;
+	public static boolean DEBUG = false;
 	
 	public static long totalNumBytes = 0;
 	public static long availableNumBytesWithoutUtilFactor = 0;

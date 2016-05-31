@@ -102,6 +102,8 @@ public class AggregateBinaryGPUInstruction extends BinaryCPInstruction
 		// This code will be removed when the JIRA SYSTEMML-702 is complete
 		if(	isSparse(ec, input1.getName()) || isSparse(ec, input2.getName())) {
 			
+			Statistics.gpuSparseMultCount.addAndGet(1);
+			
 			//get inputs
 			MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 	        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());

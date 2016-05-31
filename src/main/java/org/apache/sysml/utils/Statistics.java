@@ -120,6 +120,7 @@ public class Statistics
 	// Potential CUDA heavy hitter
 	public static AtomicLong cudaMultTime = new AtomicLong(0);
 	public static AtomicLong cudaConvFwdTime = new AtomicLong(0);
+	public static AtomicLong gpuSparseMultCount = new AtomicLong(0);
 	
 	public static void incrementAllocationTime(long allocationTime, boolean isSparse) {
 		if(isSparse)
@@ -646,6 +647,9 @@ public class Statistics
 			sb.append("CUDA op time (mult/conv):\t"
 					+ String.format("%.3f", cudaMultTime.get()*1e-9) + "/"
 					+ String.format("%.3f", cudaConvFwdTime.get()*1e-9)  + " sec.\n");
+			if(gpuSparseMultCount.get() > 0)
+				sb.append("CUDA op count (sparse mult):\t"
+						+ gpuSparseMultCount.get() + ".\n");
 		}
 		
 		//show extended caching/compilation statistics

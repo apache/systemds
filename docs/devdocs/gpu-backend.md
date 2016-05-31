@@ -35,11 +35,17 @@ do
 done
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$JCUDA_PATH
 ```
-4. Then you can invoke SystemML in standalone mode as follows:
-```python
-java -classpath $JAR_PATH:systemml-0.10.0-incubating-SNAPSHOT-standalone.jar -server org.apache.sysml.api.DMLScript -f MyDML.dml -exec singlenode ... 
-```
 
 Note for Windows users:
 * CuDNN v4 is available to download: `http://developer.download.nvidia.com/compute/redist/cudnn/v4/cudnn-7.0-win-x64-v4.0-prod.zip`
 * If above steps doesn't work for JCuda, copy the DLLs into C:\lib (or /lib) directory.
+
+To use SystemML's GPU backend, 
+1. Add JCuda's jar into the classpath.
+2. Include CUDA, CuDNN and JCuda's libraries in LD_LIBRARY_PATH (or using -Djava.library.path).
+3. Use `-accelerator` flag.
+
+For example: to use GPU backend in standalone mode:
+```python
+java -classpath $JAR_PATH:systemml-0.10.0-incubating-SNAPSHOT-standalone.jar org.apache.sysml.api.DMLScript -f MyDML.dml -accelerator -exec singlenode ... 
+```

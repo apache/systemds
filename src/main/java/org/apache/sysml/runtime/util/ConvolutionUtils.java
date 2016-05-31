@@ -74,81 +74,92 @@ public class ConvolutionUtils {
 	}
 	
 	public static Lop constructConvolutionBackwardFilterLops(Hop currentHop) throws HopsException, LopsException {
-		if(DMLScript.USE_ACCELERATOR) {
-			if(currentHop != null && isTranspose(currentHop)) {
-				Hop matMult = currentHop.getInput().get(0);
-				if(matMult != null && isMatMult(matMult)) {
-					Hop x_col = matMult.getInput().get(0);
-					Hop right = matMult.getInput().get(1);
-					if(isConvolutionOp(x_col, ConvOp.IM2COL) && isConvolutionOp(right, ConvOp.ROTATE180)) {
-						Hop image = x_col.getInput().get(0);
-						Hop dout = right.getInput().get(0);
-						ArrayList<Hop> inputs = new ArrayList<Hop>();
-						inputs.add(image);
-						inputs.add(dout);
-						for(int i = 1; i < x_col.getInput().size(); i++) {
-							inputs.add(x_col.getInput().get(i));
-						}
-						ConvolutionOp fusedHop = new ConvolutionOp("tmp_directconv2dBackwardFilter" + image.getName(), image.getDataType(), image.getValueType(), ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, inputs);
-						setPositions(currentHop, fusedHop);
-						return fusedHop.constructConvolutionLops(ExecType.GPU, inputs);
+		ExecType et = ExecType.CP;
+		if(DMLScript.USE_ACCELERATOR)
+			et = ExecType.GPU; // TODO: Add memory estimate checks
+		else
+			return null;
+		
+		if(currentHop != null && isTranspose(currentHop)) {
+			Hop matMult = currentHop.getInput().get(0);
+			if(matMult != null && isMatMult(matMult)) {
+				Hop x_col = matMult.getInput().get(0);
+				Hop right = matMult.getInput().get(1);
+				if(isConvolutionOp(x_col, ConvOp.IM2COL) && isConvolutionOp(right, ConvOp.ROTATE180)) {
+					Hop image = x_col.getInput().get(0);
+					Hop dout = right.getInput().get(0);
+					ArrayList<Hop> inputs = new ArrayList<Hop>();
+					inputs.add(image);
+					inputs.add(dout);
+					for(int i = 1; i < x_col.getInput().size(); i++) {
+						inputs.add(x_col.getInput().get(i));
 					}
+					ConvolutionOp fusedHop = new ConvolutionOp("tmp_directconv2dBackwardFilter" + image.getName(), image.getDataType(), image.getValueType(), ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, inputs);
+					setPositions(currentHop, fusedHop);
+					return fusedHop.constructConvolutionLops(et, inputs);
 				}
 			}
 		}
-
 		return null;
 	}
 	
-	public static Lop constructConvolutionLops(Hop currentHop) throws HopsException, LopsException {
-		if(DMLScript.USE_ACCELERATOR) {
-			if(currentHop != null && isConvolutionOp(currentHop, ConvOp.RESHAPE_COL)) {
-				Hop matMult = currentHop.getInput().get(0);
+	public static Lop constructConvolutionLops(Hop currentHop, ExecType et) throws HopsException, LopsException {
+		if(DMLScript.USE_ACCELERATOR)
+			et = ExecType.GPU; // TODO: Add memory estimate checks
+		else
+			return null;
+		
+		if(currentHop != null && isConvolutionOp(currentHop, ConvOp.RESHAPE_COL)) {
+			Hop matMult = currentHop.getInput().get(0);
+			if(matMult != null && isMatMult(matMult)) {
+				Hop filter = matMult.getInput().get(0);
+				Hop x_col = matMult.getInput().get(1);
+				if(isConvolutionOp(x_col, ConvOp.IM2COL)) {
+					Hop image = x_col.getInput().get(0);
+					ArrayList<Hop> inputs = new ArrayList<Hop>();
+					inputs.add(image);
+					inputs.add(filter);
+					for(int i = 1; i < x_col.getInput().size(); i++) {
+						inputs.add(x_col.getInput().get(i));
+					}
+					ConvolutionOp fusedHop = new ConvolutionOp("tmp_directconv2d" + image.getName(), image.getDataType(), image.getValueType(), ConvOp.DIRECT_CONV2D, inputs);
+					setPositions(currentHop, fusedHop);
+					return fusedHop.constructConvolutionLops(et, inputs);
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	public static Lop constructConvolutionBackwardDataLops(Hop currentHop, ExecType et) throws HopsException, LopsException {
+		if(DMLScript.USE_ACCELERATOR)
+			et = ExecType.GPU; // TODO: Add memory estimate checks
+		else
+			return null;
+		
+		if(currentHop != null && isConvolutionOp(currentHop, ConvOp.COL2IM)) {
+			Hop temp = currentHop.getInput().get(0);
+			if(temp != null && isTranspose(temp)) {
+				Hop matMult = temp.getInput().get(0);
 				if(matMult != null && isMatMult(matMult)) {
-					Hop filter = matMult.getInput().get(0);
-					Hop x_col = matMult.getInput().get(1);
-					if(isConvolutionOp(x_col, ConvOp.IM2COL)) {
-						Hop image = x_col.getInput().get(0);
+					Hop rotate180 = matMult.getInput().get(0);
+					Hop filter = matMult.getInput().get(1);
+					if(isConvolutionOp(rotate180, ConvOp.ROTATE180)) {
 						ArrayList<Hop> inputs = new ArrayList<Hop>();
-						inputs.add(image);
 						inputs.add(filter);
-						for(int i = 1; i < x_col.getInput().size(); i++) {
-							inputs.add(x_col.getInput().get(i));
+						inputs.add(rotate180.getInput().get(0));
+						for(int i = 1; i < rotate180.getInput().size(); i++) {
+							inputs.add(rotate180.getInput().get(i));
 						}
-						ConvolutionOp fusedHop = new ConvolutionOp("tmp_directconv2d" + image.getName(), image.getDataType(), image.getValueType(), ConvOp.DIRECT_CONV2D, inputs);
+						ConvolutionOp fusedHop = new ConvolutionOp("tmp_directconv2dBackwardData" + filter.getName(), filter.getDataType(), filter.getValueType(), ConvOp.DIRECT_CONV2D_BACKWARD_DATA, inputs);
 						setPositions(currentHop, fusedHop);
-						return fusedHop.constructConvolutionLops(ExecType.GPU, inputs);
+						return fusedHop.constructConvolutionLops(et, inputs);
 					}
 				}
 			}
 		}
-		return null;
-	}
-	
-	public static Lop constructConvolutionBackwardDataLops(Hop currentHop) throws HopsException, LopsException {
-		if(DMLScript.USE_ACCELERATOR) {
-			if(currentHop != null && isConvolutionOp(currentHop, ConvOp.COL2IM)) {
-				Hop temp = currentHop.getInput().get(0);
-				if(temp != null && isTranspose(temp)) {
-					Hop matMult = temp.getInput().get(0);
-					if(matMult != null && isMatMult(matMult)) {
-						Hop rotate180 = matMult.getInput().get(0);
-						Hop filter = matMult.getInput().get(1);
-						if(isConvolutionOp(rotate180, ConvOp.ROTATE180)) {
-							ArrayList<Hop> inputs = new ArrayList<Hop>();
-							inputs.add(filter);
-							inputs.add(rotate180.getInput().get(0));
-							for(int i = 1; i < rotate180.getInput().size(); i++) {
-								inputs.add(rotate180.getInput().get(i));
-							}
-							ConvolutionOp fusedHop = new ConvolutionOp("tmp_directconv2dBackwardData" + filter.getName(), filter.getDataType(), filter.getValueType(), ConvOp.DIRECT_CONV2D_BACKWARD_DATA, inputs);
-							setPositions(currentHop, fusedHop);
-							return fusedHop.constructConvolutionLops(ExecType.GPU, inputs);
-						}
-					}
-				}
-			}
-		}
+		
 		return null;
 	}
 	

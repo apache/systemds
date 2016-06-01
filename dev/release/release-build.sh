@@ -44,6 +44,7 @@ cd $RELEASE
 # sign
 #for i in *.zip *.gz; do gpg --output $i.asc --detach-sig --armor $i; done
 for i in *.zip *.gz; do openssl md5 -hex $i | sed 's/MD5(\([^)]*\))= \([0-9a-f]*\)/\2 *\1/' > $i.md5; done
+for i in *.jar; do openssl md5 -hex $i | sed 's/MD5(\([^)]*\))= \([0-9a-f]*\)/\2 *\1/' > $i.md5; done
 
 cp $BUILD/rat.txt $RELEASE/
 

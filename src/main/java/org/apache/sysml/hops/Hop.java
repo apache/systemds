@@ -617,6 +617,7 @@ public abstract class Hop
 					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, _nnz );
 				break;
 			}
+			case FRAME:
 			case MATRIX:
 			{
 				//1a) mem estimate based on exactly known dimensions and sparsity
@@ -663,8 +664,7 @@ public abstract class Hop
 				break;
 			}
 			case OBJECT:
-			case UNKNOWN:
-			case FRAME:	
+			case UNKNOWN:	
 			{
 				//memory estimate always unknown
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
@@ -866,15 +866,21 @@ public abstract class Hop
 	}
 	
 	public boolean dimsKnown() {
-		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && _dim1 > 0 && _dim2 > 0) );
+		return ( _dataType == DataType.SCALAR 
+			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
+				&& _dim1 > 0 && _dim2 > 0) );
 	}
 	
 	public boolean dimsKnown(boolean includeNnz) {
-		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && _dim1 > 0 && _dim2 > 0 && ((includeNnz)? _nnz>=0 : true)) );
+		return ( _dataType == DataType.SCALAR 
+			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
+				&& _dim1 > 0 && _dim2 > 0 && ((includeNnz)? _nnz>=0 : true)));
 	}
 
 	public boolean dimsKnownAny() {
-		return ( _dataType == DataType.SCALAR || (_dataType==DataType.MATRIX && (_dim1 > 0 || _dim2 > 0)) );
+		return ( _dataType == DataType.SCALAR 
+			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
+				&& (_dim1 > 0 || _dim2 > 0)) );
 	}
 	
 	public static void resetVisitStatus( ArrayList<Hop> hops )

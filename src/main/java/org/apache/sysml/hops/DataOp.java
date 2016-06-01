@@ -374,13 +374,13 @@ public class DataOp extends Hop
 					ret = 0;
 			}
 		}
-		else //MATRIX 
+		else //MATRIX / FRAME
 		{
 			if(   _dataop == DataOpTypes.PERSISTENTREAD 
 			   || _dataop == DataOpTypes.TRANSIENTREAD ) 
 			{
 				double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
-				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);	
+				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 			}
 			// output memory estimate is not required for "write" nodes (just input)
 		}

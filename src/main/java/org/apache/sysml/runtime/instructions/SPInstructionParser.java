@@ -45,6 +45,7 @@ import org.apache.sysml.runtime.instructions.spark.BinUaggChainSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BuiltinBinarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.BuiltinUnarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CSVReblockSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CovarianceSPInstruction;
@@ -256,6 +257,9 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "binuaggchain", SPINSTRUCTION_TYPE.BinUaggChain);
 		
 		String2SPInstructionType.put( "write"   , SPINSTRUCTION_TYPE.Write);
+	
+		String2SPInstructionType.put( "castdtm"   , SPINSTRUCTION_TYPE.Cast);
+		String2SPInstructionType.put( "castdtf"   , SPINSTRUCTION_TYPE.Cast);
 	}
 
 	public static SPInstruction parseSingleInstruction (String str ) 
@@ -406,6 +410,9 @@ public class SPInstructionParser extends InstructionParser
 				
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);
+			
+			case Cast:
+				return CastSPInstruction.parseInstruction(str);
 				
 			case INVALID:
 			default:

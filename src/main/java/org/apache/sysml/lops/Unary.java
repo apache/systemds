@@ -43,6 +43,7 @@ public class Unary extends Lop
 		ROUND, CEIL, FLOOR, MR_IQM, INVERSE, CHOLESKY,
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
 		SPROP, SIGMOID, SELP, SUBTRACT_NZ, LOG_NZ,
+		CAST_AS_MATRIX, CAST_AS_FRAME,
 		NOTSUPPORTED
 	};
 
@@ -326,6 +327,12 @@ public class Unary extends Lop
 		case SELP:
 			return "sel+";
 		
+		case CAST_AS_MATRIX:
+			return UnaryCP.CAST_AS_MATRIX_OPCODE;
+
+		case CAST_AS_FRAME:
+			return UnaryCP.CAST_AS_FRAME_OPCODE;
+			
 		default:
 			throw new LopsException(
 					"Instruction not defined for Unary operation: " + op);

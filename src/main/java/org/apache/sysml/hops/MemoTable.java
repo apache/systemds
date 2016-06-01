@@ -127,6 +127,9 @@ public class MemoTable
 	 */
 	public MatrixCharacteristics[] getAllInputStats( ArrayList<Hop> inputs )
 	{
+		if( inputs == null )
+			return null;
+		
 		MatrixCharacteristics[] ret = new MatrixCharacteristics[inputs.size()];
 		for( int i=0; i<inputs.size(); i++ )
 		{
@@ -164,6 +167,9 @@ public class MemoTable
 	 */
 	public MatrixCharacteristics getAllInputStats( Hop input )
 	{
+		if( input == null )
+			return null;
+		
 		MatrixCharacteristics ret = null;
 			
 		long dim1 = input.getDim1();

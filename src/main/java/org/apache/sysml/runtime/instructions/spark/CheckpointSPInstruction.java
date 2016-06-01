@@ -51,7 +51,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction
 	
 	public CheckpointSPInstruction(Operator op, CPOperand in, CPOperand out, StorageLevel level, String opcode, String istr) {
 		super(op, in, out, opcode, istr);
-		_sptype = SPINSTRUCTION_TYPE.Reorg;
+		_sptype = SPINSTRUCTION_TYPE.Checkpoint;
 		
 		_level = level;
 	}

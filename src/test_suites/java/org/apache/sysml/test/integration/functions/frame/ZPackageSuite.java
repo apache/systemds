@@ -32,6 +32,7 @@ import org.junit.runners.Suite;
 	FrameCopyTest.class,
 	FrameGetSetTest.class,
 	FrameIndexingTest.class,
+	FrameMatrixCastingTest.class,
 	FrameReadWriteTest.class,
 	FrameSchemaReadTest.class,
 	FrameSerializationTest.class,

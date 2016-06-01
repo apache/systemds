@@ -143,11 +143,9 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		_outputPermutationMatrix = flag;
 	}
 	
-	public Hop getTargetHop()
-	{
-		Hop targetHop = getInput().get(_paramIndexMap.get("target"));
-		
-		return targetHop;
+	public Hop getTargetHop() {
+		return _paramIndexMap.containsKey("target") ?   
+			getInput().get(_paramIndexMap.get("target")) : null;
 	}
 	
 	@Override
@@ -985,13 +983,11 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	@Override
 	protected long[] inferOutputCharacteristics( MemoTable memo )
 	{
-		//CDF always known because 
-		
-		// TOSTRING outputs a string
+		//Notes: CDF, TOSTRING always known because scalar outputs
 		
 		long[] ret = null;
 	
-		Hop input = getInput().get(_paramIndexMap.get("target"));	
+		Hop input = getTargetHop();	
 		MatrixCharacteristics mc = memo.getAllInputStats(input);
 
 		if( _op == ParamBuiltinOp.GROUPEDAGG ) 

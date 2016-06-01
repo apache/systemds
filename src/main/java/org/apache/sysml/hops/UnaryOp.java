@@ -121,8 +121,8 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		{
 			Hop input = getInput().get(0);
 			
-			if (getDataType() == DataType.SCALAR 
-				|| _op == OpOp1.CAST_AS_MATRIX || _op == OpOp1.CAST_AS_FRAME ) //TODO generalize frames to distributed ops 
+			if(    getDataType() == DataType.SCALAR //value type casts or matrix to scalar
+				|| (_op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType()==DataType.SCALAR) )
 			{
 				if (_op == Hop.OpOp1.IQM)  //special handling IQM
 				{

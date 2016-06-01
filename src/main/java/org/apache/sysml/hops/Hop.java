@@ -1288,6 +1288,8 @@ public abstract class Hop
 		HopsOpOp1LopsU.put(OpOp1.SIGMOID, org.apache.sysml.lops.Unary.OperationTypes.SIGMOID);
 		HopsOpOp1LopsU.put(OpOp1.SELP, org.apache.sysml.lops.Unary.OperationTypes.SELP);
 		HopsOpOp1LopsU.put(OpOp1.LOG_NZ, org.apache.sysml.lops.Unary.OperationTypes.LOG_NZ);
+		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysml.lops.Unary.OperationTypes.CAST_AS_MATRIX);
+		HopsOpOp1LopsU.put(OpOp1.CAST_AS_FRAME, org.apache.sysml.lops.Unary.OperationTypes.CAST_AS_FRAME);
 	}
 
 	protected static final HashMap<Hop.OpOp1, org.apache.sysml.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;

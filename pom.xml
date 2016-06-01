@@ -675,7 +675,7 @@
 								</configuration>
 							</execution>
 
-							<execution>
+							<!--execution>
 								<id>create-inmemory-jar</id>
 								<phase>package</phase>
 								<goals>
@@ -686,7 +686,7 @@
 										<descriptor>src/assembly/inmemory.xml</descriptor>
 									</descriptors>
 								</configuration>
-							</execution>
+							</execution-->
 						</executions>
 					</plugin>
 

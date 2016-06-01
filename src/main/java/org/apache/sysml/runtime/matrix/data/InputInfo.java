@@ -72,8 +72,9 @@ public class InputInfo implements Serializable
 	public static final InputInfo BinaryCellInputInfo=new InputInfo(SequenceFileInputFormat.class, 
 			MatrixIndexes.class, MatrixCell.class);
 	public static final InputInfo BinaryBlockInputInfo=new InputInfo(
-			//for jobs like GMR, we use CombineSequenceFileInputFormat (which requires to specify the maxsplitsize, hence not included here)
 			SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class); 
+	public static final InputInfo BinaryBlockFrameInputInfo=new InputInfo(
+			SequenceFileInputFormat.class, LongWritable.class, FrameBlock.class); 
 	
 	// Format that denotes the input of a SORT job
 	public static final InputInfo InputInfoForSort=new InputInfo(SequenceFileInputFormat.class, 

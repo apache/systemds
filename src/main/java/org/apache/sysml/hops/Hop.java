@@ -373,7 +373,7 @@ public abstract class Hop
 				//investigate need for serialized storage of large sparse matrices
 				//(compile- instead of runtime-level for better debugging)
 				boolean serializedStorage = false;
-				if( dimsKnown(true) && !Checkpoint.CHECKPOINT_SPARSE_CSR ) {
+				if( getDataType()==DataType.MATRIX && dimsKnown(true) && !Checkpoint.CHECKPOINT_SPARSE_CSR ) {
 					double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(_dim1, _dim2, _rows_in_block, _cols_in_block, _nnz);
 					double dataCache = SparkExecutionContext.getDataMemoryBudget(true, true);
 					serializedStorage = (MatrixBlock.evalSparseFormatInMemory(_dim1, _dim2, _nnz)

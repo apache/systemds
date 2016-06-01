@@ -41,6 +41,7 @@ import scala.Tuple2;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.MLContext;
 import org.apache.sysml.api.MLContextProxy;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -48,6 +49,7 @@ import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.data.BlockPartitioner;
@@ -58,12 +60,14 @@ import org.apache.sysml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.CopyFrameBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CreateSparseBlockFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -252,8 +256,18 @@ public class SparkExecutionContext extends ExecutionContext
 	public JavaPairRDD<?,?> getRDDHandleForVariable( String varname, InputInfo inputInfo ) 
 		throws DMLRuntimeException
 	{
-		MatrixObject mo = getMatrixObject(varname);
-		return getRDDHandleForMatrixObject(mo, inputInfo);
+		Data dat = getVariable(varname);
+		if( dat instanceof MatrixObject ) {
+			MatrixObject mo = getMatrixObject(varname);
+			return getRDDHandleForMatrixObject(mo, inputInfo);	
+		}
+		else if( dat instanceof FrameObject ) {
+			FrameObject fo = getFrameObject(varname);
+			return getRDDHandleForFrameObject(fo, inputInfo);	
+		}
+		else {
+			throw new DMLRuntimeException("Failed to obtain RDD for data type other than matrix or frame.");
+		}
 	}
 	
 	/**
@@ -300,7 +314,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			else { //default case
 				MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-				rdd = toJavaPairRDD(getSparkContext(), mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
+				rdd = toMatrixJavaPairRDD(getSparkContext(), mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
 				mo.release(); //unpin matrix
 			}
 			
@@ -353,11 +367,14 @@ public class SparkExecutionContext extends ExecutionContext
 	@SuppressWarnings("unchecked")
 	public JavaPairRDD<?,?> getRDDHandleForFrameObject( FrameObject fo, InputInfo inputInfo ) 
 		throws DMLRuntimeException
-	{		
-		//NOTE: MB this logic should be integrated into MatrixObject
+	{	
+		//NOTE: MB this logic should be integrated into FrameObject
 		//However, for now we cannot assume that spark libraries are 
 		//always available and hence only store generic references in 
 		//matrix object while all the logic is in the SparkExecContext
+		
+		InputInfo inputInfo2 = (inputInfo==InputInfo.BinaryBlockInputInfo) ? 
+				InputInfo.BinaryBlockFrameInputInfo : inputInfo;
 		
 		JavaPairRDD<?,?> rdd = null;
 		//CASE 1: rdd already existing (reuse if checkpoint or trigger
@@ -379,15 +396,14 @@ public class SparkExecutionContext extends ExecutionContext
 				if( fo.isDirty() ) { //write only if necessary
 					fo.exportData();
 				}
-				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
-				rdd = ((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd).mapToPair( new CopyBlockPairFunction() ); //cp is workaround for read bug			
+				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo2.inputFormatClass, inputInfo2.inputKeyClass, inputInfo2.inputValueClass);
+				rdd = ((JavaPairRDD<LongWritable, FrameBlock>)rdd).mapToPair( new CopyFrameBlockPairFunction() ); //cp is workaround for read bug			
 				fromFile = true;
 			}
 			else { //default case
-				//MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-				//rdd = toJavaPairRDD(getSparkContext(), mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
-				//fo.release(); //unpin matrix
-				throw new RuntimeException("Not implemented yet.");
+				FrameBlock fb = fo.acquireRead(); //pin frame in memory
+				rdd = toFrameJavaPairRDD(getSparkContext(), fb);
+				fo.release(); //unpin frame
 			}
 			
 			//keep rdd handle for future operations on it
@@ -400,19 +416,18 @@ public class SparkExecutionContext extends ExecutionContext
 		{
 			// parallelize hdfs-resident file
 			// For binary block, these are: SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class
-			if(inputInfo == InputInfo.BinaryBlockInputInfo) {
-				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+			if(inputInfo2 == InputInfo.BinaryBlockFrameInputInfo) {
+				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo2.inputFormatClass, inputInfo2.inputKeyClass, inputInfo2.inputValueClass);
 				//note: this copy is still required in Spark 1.4 because spark hands out whatever the inputformat
 				//recordreader returns; the javadoc explicitly recommend to copy all key/value pairs
-				rdd = ((JavaPairRDD<MatrixIndexes, MatrixBlock>)rdd).mapToPair( new CopyBlockPairFunction() ); //cp is workaround for read bug
+				rdd = ((JavaPairRDD<LongWritable, FrameBlock>)rdd).mapToPair( new CopyFrameBlockPairFunction() ); //cp is workaround for read bug
 			}
-			else if(inputInfo == InputInfo.TextCellInputInfo || inputInfo == InputInfo.CSVInputInfo || inputInfo == InputInfo.MatrixMarketInputInfo) {
-				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
+			else if(inputInfo2 == InputInfo.TextCellInputInfo || inputInfo2 == InputInfo.CSVInputInfo || inputInfo2 == InputInfo.MatrixMarketInputInfo) {
+				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo2.inputFormatClass, inputInfo2.inputKeyClass, inputInfo2.inputValueClass);
 				rdd = ((JavaPairRDD<LongWritable, Text>)rdd).mapToPair( new CopyTextInputFunction() ); //cp is workaround for read bug
 			}
-			else if(inputInfo == InputInfo.BinaryCellInputInfo) {
-				rdd = getSparkContext().hadoopFile( fo.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
-				rdd = ((JavaPairRDD<MatrixIndexes, MatrixCell>)rdd).mapToPair( new CopyBinaryCellFunction() ); //cp is workaround for read bug
+			else if(inputInfo2 == InputInfo.BinaryCellInputInfo) {
+				throw new DMLRuntimeException("Binarycell not supported for frames.");
 			}
 			else {
 				throw new DMLRuntimeException("Incorrect input format in getRDDHandleForVariable");
@@ -541,7 +556,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int brlen, int bclen) 
+	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toMatrixJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int brlen, int bclen) 
 		throws DMLRuntimeException
 	{	
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -579,6 +594,45 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> result = sc.parallelizePairs(list);
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkParallelizeTime(System.nanoTime() - t0);
+			Statistics.incSparkParallelizeCount(1);
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * 
+	 * @param sc
+	 * @param src
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaPairRDD<Long,FrameBlock> toFrameJavaPairRDD(JavaSparkContext sc, FrameBlock src) 
+		throws DMLRuntimeException
+	{	
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		LinkedList<Tuple2<Long,FrameBlock>> list = new LinkedList<Tuple2<Long,FrameBlock>>();
+			
+		//create and write subblocks of matrix
+		int blksize = ConfigurationManager.getBlocksize();
+		for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)blksize); blockRow++)
+		{
+			int maxRow = (blockRow*blksize + blksize < src.getNumRows()) ? blksize : src.getNumRows() - blockRow*blksize;
+			int roffset = blockRow*blksize;
+
+			FrameBlock block = new FrameBlock(src.getSchema());
+			
+			//copy submatrix to block
+			src.sliceOperations( roffset, roffset+maxRow-1, 
+					             0, src.getNumColumns()-1, block );							
+			
+			//append block to sequence file
+			list.addLast(new Tuple2<Long,FrameBlock>(new Long(roffset+1), block));
+		}
+		
+		JavaPairRDD<Long,FrameBlock> result = sc.parallelizePairs(list);
 		if (DMLScript.STATISTICS) {
 			Statistics.accSparkParallelizeTime(System.nanoTime() - t0);
 			Statistics.incSparkParallelizeCount(1);

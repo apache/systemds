@@ -20,12 +20,16 @@
 package org.apache.sysml.runtime.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
+import org.apache.wink.json4j.JSONArray;
 
 public class UtilFunctions 
 {
@@ -144,6 +148,23 @@ public class UtilFunctions
 	 * @param ix
 	 * @param brlen
 	 * @param bclen
+	 * @param rl
+	 * @param ru
+	 * @return
+	 */
+	public static boolean isInFrameBlockRange( Long ix, int brlen, int bclen, long rl, long ru )
+	{
+		if(rl > ix+brlen-1 || ru < ix)
+			return false;
+		else
+			return true;
+	}
+	
+	/**
+	 * 
+	 * @param ix
+	 * @param brlen
+	 * @param bclen
 	 * @param ixrange
 	 * @return
 	 */
@@ -152,6 +173,20 @@ public class UtilFunctions
 		return isInBlockRange(ix, brlen, bclen, 
 				ixrange.rowStart, ixrange.rowEnd, 
 				ixrange.colStart, ixrange.colEnd);
+	}
+	
+	/**
+	 * 
+	 * @param ix
+	 * @param brlen
+	 * @param bclen
+	 * @param ixrange
+	 * @return
+	 */
+	public static boolean isInFrameBlockRange( Long ix, int brlen, int bclen, IndexRange ixrange )
+	{
+		return isInFrameBlockRange(ix, brlen, bclen, 
+				ixrange.rowStart, ixrange.rowEnd);
 	}
 	
 	// Reused by both MR and Spark for performing zero out
@@ -189,6 +224,23 @@ public class UtilFunctions
 			tempRange.colEnd=rightColInRightBlock;
 		
 		return tempRange;
+	}
+	
+	// Reused by both MR and Spark for performing zero out
+	public static IndexRange getSelectedRangeForZeroOut(Pair<Long, FrameBlock> in, int blockRowFactor, int blockColFactor, IndexRange indexRange, long lSrcRowIndex, long lDestRowIndex) 
+	{
+		int iRowStart, iRowEnd, iColStart, iColEnd;
+		
+		if(indexRange.rowStart <= lDestRowIndex)
+			iRowStart = 0;
+		else
+			iRowStart = (int) (indexRange.rowStart - in.getKey());
+		iRowEnd = (int) Math.min(indexRange.rowEnd - lSrcRowIndex, blockRowFactor)-1;
+		
+		iColStart = UtilFunctions.computeCellInBlock(indexRange.colStart, blockColFactor);
+		iColEnd = UtilFunctions.computeCellInBlock(indexRange.colEnd, blockColFactor);
+
+		return  new IndexRange(iRowStart, iRowEnd, iColStart, iColEnd);
 	}
 	
 	public static long getTotalLength(NumItemsByEachReducerMetaData metadata) {
@@ -335,14 +387,29 @@ public class UtilFunctions
 		return (in !=null) ? in.toString() : null;
 	}
 	
+	
 	/**
 	 * 
 	 * @param vt
 	 * @param in1
 	 * @param in2
+	 * 
 	 * @return
 	 */
 	public static int compareTo(ValueType vt, Object in1, Object in2) {
+		return compareTo(vt, in1, in2, 0.00);
+	}
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in1
+	 * @param in2
+	 * @param tolerance
+	 * 
+	 * @return
+	 */
+	public static int compareTo(ValueType vt, Object in1, Object in2, double tolerance) {
 		if(in1 == null && in2 == null) return 0;
 		else if(in1 == null) return -1;
 		else if(in2 == null) return 1;
@@ -351,7 +418,32 @@ public class UtilFunctions
 			case STRING:  return ((String)in1).compareTo((String)in2);
 			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
 			case INT:     return ((Long)in1).compareTo((Long)in2);
-			case DOUBLE:  return ((Double)in1).compareTo((Double)in2);
+			case DOUBLE:  
+				return (Math.abs((Double)in1-(Double)in2) < tolerance)?0:	
+					((Double)in1).compareTo((Double)in2);
+			default: throw new RuntimeException("Unsupported value type: "+vt);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in1
+	 * @param inR
+	 * @return
+	 */
+	public static int compareToR(ValueType vt, Object in1, Object inR, double tolerance) {
+		if(in1 == null && (inR == null || (inR.toString().compareTo("NA")==0))) return 0;
+		else if(in1 == null) return -1;
+		else if(inR == null) return 1;
+ 
+		switch( vt ) {
+			case STRING:  return ((String)in1).compareTo((String)inR);
+			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)inR);
+			case INT:     return ((Long)in1).compareTo((Long)inR);
+			case DOUBLE:  
+				return (Math.abs((Double)in1-(Double)inR) < tolerance)?0:	
+					((Double)in1).compareTo((Double)inR);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
@@ -457,5 +549,49 @@ public class UtilFunctions
 		for( int i=low; i<=up; i+=incr )
 			ret.add(i);
 		return ret;
+	}
+
+	/**
+	 * Returns the schema based on Json object
+	 * 
+	 * @param schemaObject
+	 * @return
+	 */
+	public static List<ValueType> getSchemaType(Object schemaObject)
+	{
+		JSONArray schemaJsonArr = (JSONArray)schemaObject;
+		ValueType[] schemaArray = new ValueType[schemaJsonArr.size()];
+		
+		for(int i=0; i < schemaJsonArr.length(); i++) {
+			if(((String) schemaJsonArr.get(0)).compareTo("DOUBLE") == 0)
+				schemaArray[i] = ValueType.DOUBLE;
+			else if(((String) schemaJsonArr.get(0)).compareTo("INT") == 0)
+				schemaArray[i] = ValueType.INT;
+			else if(((String) schemaJsonArr.get(0)).compareTo("BOOLEAN") == 0)
+				schemaArray[i] = ValueType.BOOLEAN;
+			else if(((String) schemaJsonArr.get(0)).compareTo("STRING") == 0)
+				schemaArray[i] = ValueType.STRING;
+			else
+				schemaArray[i] = ValueType.STRING;
+		}
+		return Arrays.asList(schemaArray);
+	}
+	
+	/**
+	 * Returns the subset of the schema 
+	 * 
+	 * @param srcSchema
+	 * @param lStart
+	 * @param lEnd
+	 * 
+	 * @return
+	 */
+	public static List<ValueType> getSubSchema(List<ValueType> srcSchema, long lStart, long lEnd)
+	{
+		ValueType [] schema = new ValueType[(int) (lEnd-lStart+1)];
+		for(int i = 0; i < schema.length; i++)
+			schema[i] = srcSchema.get((int) (lStart+i));
+		
+		return Arrays.asList(schema);
 	}
 }

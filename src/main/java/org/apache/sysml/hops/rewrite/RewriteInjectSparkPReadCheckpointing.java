@@ -26,6 +26,7 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.parser.Expression.DataType;
 
 /**
  * Rule: BlockSizeAndReblock. For all statement blocks, determine
@@ -73,8 +74,8 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 			return;
 		
 		// The reblocking is performed after transform, and hence checkpoint only non-transformed reads.   
-		if(    (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD && !HopRewriteUtils.hasTransformParents(hop))
-			|| (hop.requiresReblock())
+		if((    (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD && !HopRewriteUtils.hasTransformParents(hop))
+			|| (hop.requiresReblock())) && (hop.getDataType() == DataType.MATRIX)
 			)
 		{
 			//make given hop for checkpointing (w/ default storage level)

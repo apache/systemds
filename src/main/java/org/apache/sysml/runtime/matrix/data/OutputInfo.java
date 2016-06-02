@@ -31,6 +31,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput;
 import org.apache.sysml.runtime.matrix.sort.CompactOutputFormat;
@@ -89,11 +90,18 @@ public class OutputInfo implements Serializable
 			return InputInfo.WeightedPairInputInfo;
 		else if ( oi == OutputInfo.CSVOutputInfo)
 			return InputInfo.CSVInputInfo;
+		if ( oi == OutputInfo.BinaryBlockFrameOutputInfo )
+			return InputInfo.BinaryBlockFrameInputInfo;
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + oi);
 	}
 
 	public static OutputInfo stringToOutputInfo (String str) {
+		return stringToOutputInfo(str, null);
+	}
+
+		
+	public static OutputInfo stringToOutputInfo (String str, DataType datatype) {
 		if ( str.equalsIgnoreCase("textcell")) {
 			return TextCellOutputInfo;
 		}
@@ -104,7 +112,10 @@ public class OutputInfo implements Serializable
 			return BinaryCellOutputInfo;
 		}
 		else if (str.equalsIgnoreCase("binaryblock")) {
-			return BinaryBlockOutputInfo;
+			if(datatype == DataType.FRAME)
+				return BinaryBlockFrameOutputInfo;
+			else
+				return BinaryBlockOutputInfo;
 		}
 		else if ( str.equalsIgnoreCase("sort_input") )
 			return OutputInfoForSortInput;
@@ -126,7 +137,7 @@ public class OutputInfo implements Serializable
 			return "matrixmarket";
 		else if ( oi == BinaryCellOutputInfo )
 			return "binarycell";
-		else if ( oi == BinaryBlockOutputInfo )
+		else if (( oi == BinaryBlockOutputInfo ) || ( oi == BinaryBlockFrameOutputInfo ))
 			return "binaryblock";
 		else if ( oi == OutputInfoForSortInput )
 			return "sort_input";

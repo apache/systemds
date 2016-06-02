@@ -55,11 +55,16 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.data.BlockPartitioner;
+import org.apache.sysml.runtime.instructions.spark.data.BroadcastFrameObject;
+import org.apache.sysml.runtime.instructions.spark.data.BroadcastMatrixObject;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.LineageObject;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastFrame;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedFrameBlock;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysml.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyFrameBlockPairFunction;
@@ -69,8 +74,8 @@ import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -247,6 +252,36 @@ public class SparkExecutionContext extends ExecutionContext
 		throws DMLRuntimeException 
 	{
 		return (JavaPairRDD<MatrixIndexes,MatrixBlock>) getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo);
+	}
+	
+	/**
+	 * Spark instructions should call this for all frame inputs except broadcast
+	 * variables.
+	 * 
+	 * @param varname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	@SuppressWarnings("unchecked")
+	public JavaPairRDD<Long,FrameBlock> getFrameBinaryBlockRDDHandleForVariable( String varname ) 
+		throws DMLRuntimeException 
+	{
+		JavaPairRDD<Long,FrameBlock> out = (JavaPairRDD<Long,FrameBlock>) getFrameRDDHandleForVariable( varname, InputInfo.BinaryBlockFrameInputInfo);
+		return out;
+	}
+	
+	/**
+	 * 
+	 * @param varname
+	 * @param inputInfo
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public JavaPairRDD<?,?> getFrameRDDHandleForVariable( String varname, InputInfo inputInfo ) 
+		throws DMLRuntimeException
+	{
+		FrameObject fo = getFrameObject(varname);
+		return getRDDHandleForFrameObject(fo, inputInfo);
 	}
 	
 	/**
@@ -469,7 +504,7 @@ public class SparkExecutionContext extends ExecutionContext
 		if( mo.getBroadcastHandle()!=null 
 			&& mo.getBroadcastHandle().isValid() ) 
 		{
-			bret = mo.getBroadcastHandle().getBroadcast();
+			bret = (PartitionedBroadcastMatrix) mo.getBroadcastHandle().getBroadcast();
 		}
 		
 		//create new broadcast handle (never created, evicted)
@@ -503,7 +538,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 		
 			bret = new PartitionedBroadcastMatrix(ret);
-			BroadcastObject bchandle = new BroadcastObject(bret, varname);
+			BroadcastObject bchandle = new BroadcastMatrixObject(bret, varname);
 			mo.setBroadcastHandle(bchandle);
 		}
 		
@@ -514,6 +549,75 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		return bret;
 	}
+	
+
+	/**
+	 *
+	 * @param varname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	@SuppressWarnings("unchecked")
+	public PartitionedBroadcastFrame getBroadcastForFrameVariable( String varname/*, int brlen */) 
+		throws DMLRuntimeException
+	{		
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
+		FrameObject fo = getFrameObject(varname);
+		
+		PartitionedBroadcastFrame bret = null;
+		
+		//reuse existing broadcast handle
+		if( fo.getBroadcastHandle()!=null 
+			&& fo.getBroadcastHandle().isValid() ) 
+		{
+			bret = (PartitionedBroadcastFrame) fo.getBroadcastHandle().getBroadcast();
+		}
+		
+		//create new broadcast handle (never created, evicted)
+		if( bret == null ) 
+		{
+			//obtain meta data for matrix 
+			int bclen = (int) fo.getNumColumns();
+			int brlen = (int) Math.min(FrameBlock.getDefBufferSize()/bclen, fo.getNumRows());
+			
+			//create partitioned matrix block and release memory consumed by input
+			FrameBlock mb = fo.acquireRead();
+			PartitionedFrameBlock pmb = new PartitionedFrameBlock(mb, brlen, bclen);
+			fo.release();
+			
+			//determine coarse-grained partitioning
+			int numPerPart = PartitionedBroadcastMatrix.computeBlocksPerPartition(fo.getNumRows(), fo.getNumColumns(), brlen, bclen);
+			int numParts = (int) Math.ceil((double)pmb.getNumRowBlocks()*pmb.getNumColumnBlocks() / numPerPart); 
+			Broadcast<PartitionedFrameBlock>[] ret = new Broadcast[numParts];
+					
+			//create coarse-grained partitioned broadcasts
+			if( numParts > 1 ) {
+				for( int i=0; i<numParts; i++ ) {
+					int offset = i * numPerPart;
+					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
+					PartitionedFrameBlock tmp = pmb.createPartition(offset, numBlks);
+					ret[i] = getSparkContext().broadcast(tmp);
+				}
+			}
+			else { //single partition
+				ret[0] = getSparkContext().broadcast( pmb);
+			}
+		
+			bret = new PartitionedBroadcastFrame(ret);
+			BroadcastFrameObject bchandle = new BroadcastFrameObject(bret, varname);
+			fo.setBroadcastHandle(bchandle);
+		}
+		
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+			Statistics.incSparkBroadcastCount(1);
+		}
+		
+		return bret;
+	}
+	
+
 	
 	/**
 	 * 
@@ -548,6 +652,20 @@ public class SparkExecutionContext extends ExecutionContext
 		obj.setRDDHandle( rddhandle );
 	}
 	
+    /**
+    *
+    * @param varname
+    * @param rdd
+    * @throws DMLRuntimeException
+    */
+	public void setFrameRDDHandleForVariable(String varname, JavaPairRDD<?,?> rdd)
+			throws DMLRuntimeException
+	{
+		FrameObject mo = getFrameObject(varname);
+        RDDObject rddhandle = new RDDObject(rdd, varname);
+        mo.setRDDHandle( rddhandle );
+	}
+
 	/**
 	 * Utility method for creating an RDD out of an in-memory matrix block.
 	 * 
@@ -806,6 +924,90 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 	
 	/**
+	 * This method is a generic abstraction for calls from the buffer pool.
+	 * 
+	 * @param rdd
+	 * @param numRows
+	 * @param numCols
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	@SuppressWarnings("unchecked")
+	public static FrameBlock toFrameBlock(RDDObject rdd, int rlen, int clen, int brlen, int bclen) 
+		throws DMLRuntimeException
+	{			
+		return toFrameBlock(
+				(JavaPairRDD<SerLongWritable, FrameBlock>) rdd.getRDD(), 
+				rlen, clen, brlen, bclen);
+	}
+	
+	/**
+	 * Utility method for creating a single frame block out of a binary block RDD. 
+	 * Note that this collect call might trigger execution of any pending transformations. 
+	 * 
+	 * NOTE: This is an unguarded utility function, which requires memory for both the output frame
+	 * and its collected, blocked representation.
+	 * 
+	 * @param rdd
+	 * @param numRows
+	 * @param numCols
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static FrameBlock toFrameBlock(JavaPairRDD<SerLongWritable,FrameBlock> rdd, int rlen, int clen, int brlen, int bclen) 
+		throws DMLRuntimeException
+	{
+		
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
+		FrameBlock out = null;
+		
+		if( rlen <= brlen && clen <= bclen ) //SINGLE BLOCK
+		{
+			List<Tuple2<SerLongWritable,FrameBlock>> list = rdd.collect();
+			
+			if( list.size()>1 )
+				throw new DMLRuntimeException("Expecting no more than one result block.");
+			else if( list.size()==1 )
+				out = list.get(0)._2();
+			else //empty (e.g., after ops w/ outputEmpty=false)
+				out = new FrameBlock(clen, ValueType.STRING);
+		}
+		else //MULTIPLE BLOCKS
+		{
+			//create output frame block (w/ lazy allocation)
+			out = new FrameBlock(clen, ValueType.STRING);
+			
+			List<Tuple2<SerLongWritable,FrameBlock>> list = rdd.collect();
+			
+			//copy blocks one-at-a-time into output frame block
+			for( Tuple2<SerLongWritable,FrameBlock> keyval : list )
+			{
+				//unpack index-block pair
+				Long ix = keyval._1().get();
+				FrameBlock block = keyval._2();
+				
+				//compute row/column block offsets
+				int row_offset = (int)(ix-1)*brlen;
+				int col_offset = 0;
+				int rows = block.getNumRows();
+				int cols = block.getNumColumns();
+				
+				out.copy( row_offset, row_offset+rows-1, 
+						  col_offset, col_offset+cols-1, block );	
+			}
+			
+		}
+		
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkCollectTime(System.nanoTime() - t0);
+			Statistics.incSparkCollectCount(1);
+		}
+		
+		return out;
+	}
+	
+	/**
 	 * 
 	 * @param rdd
 	 * @param rlen
@@ -933,7 +1135,7 @@ public class SparkExecutionContext extends ExecutionContext
 		JavaPairRDD<?, FrameBlock> lrdd = (JavaPairRDD<Long, FrameBlock>) rdd.getRDD();
 		
 		//convert keys to writables if necessary
-		if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
+		if( oinfo == OutputInfo.BinaryBlockFrameOutputInfo ) {
 			lrdd = ((JavaPairRDD<Long, FrameBlock>)lrdd).mapToPair(
 					new LongFrameToLongWritableFrameFunction());
 			oinfo = OutputInfo.BinaryBlockFrameOutputInfo;
@@ -1071,7 +1273,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 		}
 		else if( lob instanceof BroadcastObject ) {
-			PartitionedBroadcastMatrix pbm = ((BroadcastObject)lob).getBroadcast();
+			PartitionedBroadcastMatrix pbm = (PartitionedBroadcastMatrix) ((BroadcastObject)lob).getBroadcast();
 			if( pbm != null ) //robustness for evictions
 				for( Broadcast<PartitionedMatrixBlock> bc : pbm.getBroadcasts() )
 					cleanupBroadcastVariable(bc);

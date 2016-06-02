@@ -19,28 +19,41 @@
 
 package org.apache.sysml.runtime.instructions.spark.data;
 
-import java.lang.ref.SoftReference;
+import org.apache.spark.broadcast.Broadcast;
 
-public abstract class BroadcastObject extends LineageObject
+public class BroadcastFrameObject extends BroadcastObject
 {
-	//soft reference storage for graceful cleanup in case of memory pressure
-	protected SoftReference<PartitionedBroadcast> _bcHandle = null;
 	
-	public BroadcastObject( PartitionedBroadcast bvar, String varName )
+	public BroadcastFrameObject( PartitionedBroadcastFrame bvar, String varName )
 	{
-		_bcHandle = new SoftReference<PartitionedBroadcast>(bvar);
-		_varName = varName;
+		super(bvar, varName);
 	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public PartitionedBroadcast getBroadcast()
+	public PartitionedBroadcastFrame getBroadcast()
 	{
-		return _bcHandle.get();
+		return (PartitionedBroadcastFrame) _bcHandle.get();
 	}
 	
-	
-	public abstract boolean isValid();
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isValid() 
+	{
+		//check for evicted soft reference
+		PartitionedBroadcastFrame pbm = (PartitionedBroadcastFrame) _bcHandle.get();
+		if( pbm == null )
+			return false;
+		
+		//check for validity of individual broadcasts
+		Broadcast<PartitionedFrameBlock>[] tmp = pbm.getBroadcasts();
+		for( Broadcast<PartitionedFrameBlock> bc : tmp )
+			if( !bc.isValid() )
+				return false;		
+		return true;
+	}
 }

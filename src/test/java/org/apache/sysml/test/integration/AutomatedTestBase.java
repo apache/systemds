@@ -31,6 +31,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.sysml.lops.Lop;
 import org.apache.commons.io.FileUtils;
@@ -50,8 +51,13 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.io.FrameReader;
+import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.utils.TestUtils;
@@ -722,6 +728,44 @@ public abstract class AutomatedTestBase
 	protected static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
+	
+	
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo) 
+			throws DMLRuntimeException, IOException 
+	{
+		//read frame data from hdfs
+		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
+		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
+		
+		MatrixCharacteristics md = readDMLMetaDataFile(fileName);
+		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
+	}
+
+
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) 
+			throws DMLRuntimeException, IOException 
+	{
+		//read frame data from hdfs
+		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
+		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
+		
+		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
+	}
+
+	protected static FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) 
+			throws DMLRuntimeException, IOException 
+	{
+		//read frame data from hdfs
+		String strFrameFileName = baseDirectory + EXPECTED_DIR + fileName;
+
+		CSVFileFormatProperties fprop = new CSVFileFormatProperties();
+		fprop.setHeader(true);
+		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo, fprop);
+		
+		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
+	}
+
+
 
 	public HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
 		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
@@ -1639,5 +1683,89 @@ public abstract class AutomatedTestBase
 		}
 		
 		return sourceDirectory;
+	}
+	
+	/**
+	 * <p>
+	 * Adds a frame to the input path and writes it to a file.
+	 * </p>
+	 * 
+	 * @param name
+	 *            directory name
+	 * @param matrix
+	 *            two dimensional matrix
+	 * @param bIncludeR
+	 *            generates also the corresponding R matrix
+	 * @throws IOException 
+	 * @throws DMLRuntimeException 
+	 */
+	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, List<ValueType> schema, OutputInfo oi) 
+			throws DMLRuntimeException, IOException 
+	{
+		String completePath = baseDirectory + INPUT_DIR + name;
+		String completeRPath = baseDirectory + INPUT_DIR + name + "Csv";
+		
+		try {
+			cleanupExistingData(baseDirectory + INPUT_DIR + name, bIncludeR);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+		
+		TestUtils.writeTestFrame(completePath, data, schema, oi);
+		if (bIncludeR) {
+			TestUtils.writeTestFrame(completeRPath, data, schema, OutputInfo.CSVOutputInfo, true);	//TODO
+			inputRFiles.add(completeRPath);
+		}
+		if (DEBUG)
+			TestUtils.writeTestFrame(DEBUG_TEMP_DIR + completePath, data, schema, oi);
+		inputDirectories.add(baseDirectory + INPUT_DIR + name);
+
+		return data;
+	}
+
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, List<ValueType> schema, OutputInfo oi) 
+			throws DMLRuntimeException, IOException 
+	{
+		MatrixCharacteristics mc = new MatrixCharacteristics(data.length, data[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, data[0].length, -1);
+		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, oi);
+	}
+	
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, List<ValueType> schema, OutputInfo oi) 
+			throws DMLRuntimeException, IOException 
+	{
+		writeInputFrame(name, data, bIncludeR, schema, oi);
+		
+		// write metadata file
+		try
+		{
+			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+			MapReduceTool.writeMetaDataFile(completeMTDPath, schema, mc, oi);
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+	
+		return data;
+	}
+	
+	/**
+	 * <p>
+	 * Adds a matrix to the input path and writes it to a file.
+	 * </p>
+	 * 
+	 * @param name
+	 *            directory name
+	 * @param matrix
+	 *            two dimensional matrix
+	 * @throws IOException 
+	 * @throws DMLRuntimeException 
+	 */
+	protected double[][] writeInputFrame(String name, double[][] data, List<ValueType> schema, OutputInfo oi) 
+			throws DMLRuntimeException, IOException 
+	{
+		return writeInputFrame(name, data, false, schema, oi);
 	}
 }

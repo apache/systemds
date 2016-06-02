@@ -1050,7 +1050,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			throw new DMLRuntimeException("Unexpected error while writing mtd file (" + filePathAndName + ") -- metadata is null.");
 			
 		// Write the matrix to HDFS in requested format			
-		OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) 
+		OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat, this.dataType) 
                 : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
 		
 		if ( oinfo != OutputInfo.MatrixMarketOutputInfo ) {
@@ -1080,7 +1080,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			try {
 				MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 				OutputInfo oi1 = InputInfo.getMatchingOutputInfo( iimd.getInputInfo() );
-				OutputInfo oi2 = OutputInfo.stringToOutputInfo( outputFormat );
+				OutputInfo oi2 = OutputInfo.stringToOutputInfo( outputFormat , this.dataType);
 				if( oi1 != oi2 )
 					ret = false;
 			}

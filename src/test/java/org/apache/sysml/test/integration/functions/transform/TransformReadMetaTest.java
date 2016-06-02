@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameReader;
@@ -184,7 +185,7 @@ public class TransformReadMetaTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//compare meta data frames
-			InputInfo iinfo = InputInfo.stringExternalToInputInfo(ofmt);
+			InputInfo iinfo = InputInfo.stringExternalToInputInfo(ofmt, DataType.FRAME);
 			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo); 
 			FrameBlock mExpected = TfMetaUtils.readTransformMetaDataFromFile(specX, output("M1"), delim);
 			FrameBlock mRet = reader.readFrameFromHDFS(output("M"), rows, 2);

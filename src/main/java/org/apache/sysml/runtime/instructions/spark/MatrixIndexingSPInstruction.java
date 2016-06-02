@@ -33,7 +33,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
@@ -46,13 +45,11 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class MatrixIndexingSPInstruction  extends UnarySPInstruction
+public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 {
-	
 	/*
 	 * This class implements the matrix indexing functionality inside CP.  
 	 * Example instructions: 
@@ -66,72 +63,17 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 	 *         the result is stored in mVar7
 	 *  
 	 */
-	protected CPOperand rowLower, rowUpper, colLower, colUpper;
-	protected SparkAggType _aggType = null;
-	
+
 	public MatrixIndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
 			                          CPOperand out, SparkAggType aggtype, String opcode, String istr)
 	{
-		super(op, in, out, opcode, istr);
-		rowLower = rl;
-		rowUpper = ru;
-		colLower = cl;
-		colUpper = cu;
-
-		_aggType = aggtype;
+		super(op, in, rl, ru, cl, cu, out, aggtype, opcode, istr);
 	}
 	
 	public MatrixIndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu, 
 			                          CPOperand out, String opcode, String istr)
 	{
-		super(op, lhsInput, rhsInput, out, opcode, istr);
-		rowLower = rl;
-		rowUpper = ru;
-		colLower = cl;
-		colUpper = cu;
-	}
-	
-	public static MatrixIndexingSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{	
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode = parts[0];
-		
-		if ( opcode.equalsIgnoreCase("rangeReIndex") ) {
-			if ( parts.length == 8 ) {
-				// Example: rangeReIndex:mVar1:Var2:Var3:Var4:Var5:mVar6
-				CPOperand in = new CPOperand(parts[1]);
-				CPOperand rl = new CPOperand(parts[2]);
-				CPOperand ru = new CPOperand(parts[3]);
-				CPOperand cl = new CPOperand(parts[4]);
-				CPOperand cu = new CPOperand(parts[5]);
-				CPOperand out = new CPOperand(parts[6]);
-				SparkAggType aggtype = SparkAggType.valueOf(parts[7]);
-				return new MatrixIndexingSPInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, aggtype, opcode, str);
-			}
-			else {
-				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
-			}
-		} 
-		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex")) {
-			if ( parts.length == 8 ) {
-				// Example: leftIndex:mVar1:mvar2:Var3:Var4:Var5:Var6:mVar7
-				CPOperand lhsInput = new CPOperand(parts[1]);
-				CPOperand rhsInput = new CPOperand(parts[2]);
-				CPOperand rl = new CPOperand(parts[3]);
-				CPOperand ru = new CPOperand(parts[4]);
-				CPOperand cl = new CPOperand(parts[5]);
-				CPOperand cu = new CPOperand(parts[6]);
-				CPOperand out = new CPOperand(parts[7]);
-				return new MatrixIndexingSPInstruction(new SimpleOperator(null), lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
-			}
-			else {
-				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
-			}
-		}
-		else {
-			throw new DMLRuntimeException("Unknown opcode while parsing a MatrixIndexingSPInstruction: " + str);
-		}
+		super(op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
 	}
 	
 	@Override

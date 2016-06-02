@@ -21,7 +21,7 @@ package org.apache.sysml.runtime.instructions.spark.data;
 
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 
 /**
  * This class is a wrapper around an array of broadcasts of partitioned matrix blocks,
@@ -31,18 +31,18 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * Despite various jiras, this issue still showed up in Spark 1.4/1.5. 
  * 
  */
-public class PartitionedBroadcastMatrix extends PartitionedBroadcast
+public class PartitionedBroadcastFrame extends PartitionedBroadcast
 {
-	private static final long serialVersionUID = 2008690915182810979L;
+	private static final long serialVersionUID = -1553711845891805319L;
 
-	private Broadcast<PartitionedMatrixBlock>[] _pbc = null;
+	private Broadcast<PartitionedFrameBlock>[] _pbc = null;
 	
-	public PartitionedBroadcastMatrix(Broadcast<PartitionedMatrixBlock>[] broadcasts)
+	public PartitionedBroadcastFrame(Broadcast<PartitionedFrameBlock>[] broadcasts)
 	{
 		_pbc = broadcasts;
 	}
 	
-	public Broadcast<PartitionedMatrixBlock>[] getBroadcasts() {
+	public Broadcast<PartitionedFrameBlock>[] getBroadcasts() {
 		return _pbc;
 	}
 	
@@ -65,36 +65,36 @@ public class PartitionedBroadcastMatrix extends PartitionedBroadcast
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public MatrixBlock getMatrixBlock(int rowIndex, int colIndex) 
+	public FrameBlock getFrameBlock(int rowIndex, int colIndex) 
 		throws DMLRuntimeException 
 	{
 		if( _pbc.length > 1 ) { 
 			//compute partition index
-			PartitionedMatrixBlock tmp = _pbc[0].value();
+			PartitionedFrameBlock tmp = _pbc[0].value();
 			int numPerPart = computeBlocksPerPartition(tmp.getNumRows(), tmp.getNumCols(), 
 					tmp.getNumRowsPerBlock(), tmp.getNumColumnsPerBlock());
 			int ix = (rowIndex-1)*tmp.getNumColumnBlocks()+(colIndex-1);
 			int pix = ix / numPerPart;
 			
-			//get matrix block from partition
-			return _pbc[pix].value().getMatrixBlock(rowIndex, colIndex);	
+			//get frame block from partition
+			return _pbc[pix].value().getFrameBlock(rowIndex, colIndex);	
 		}
 		else { //single partition
-			return _pbc[0].value().getMatrixBlock(rowIndex, colIndex);
+			return _pbc[0].value().getFrameBlock(rowIndex, colIndex);
 		}
 		
 	}
 	
-	public MatrixBlock sliceOperations(long rl, long ru, long cl, long cu, MatrixBlock matrixBlock) 
+	public FrameBlock sliceOperations(long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
 		throws DMLRuntimeException 
 	{
-		MatrixBlock ret = null;
+		FrameBlock ret = null;
 		
-		for( Broadcast<PartitionedMatrixBlock> bc : _pbc ) {
-			PartitionedMatrixBlock pm = bc.value();
-			MatrixBlock tmp = pm.sliceOperations(rl, ru, cl, cu, new MatrixBlock());
+		for( Broadcast<PartitionedFrameBlock> bc : _pbc ) {
+			PartitionedFrameBlock pm = bc.value();
+			FrameBlock tmp = pm.sliceOperations(rl, ru, cl, cu, new FrameBlock());
 			if( ret != null )
-				ret.merge(tmp, false);
+				ret.merge(tmp);
 			else
 				ret = tmp;
 		}

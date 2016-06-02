@@ -2272,8 +2272,12 @@ public class Dag<N extends Lop>
 		OutputParameters oparams = node.getOutputParameters();
 		
 		if (oparams.isBlocked()) {
-			if ( !cellModeOverride )
-				oinfo = OutputInfo.BinaryBlockOutputInfo;
+			if ( !cellModeOverride ) {
+				if(node.getDataType() == DataType.FRAME)
+					oinfo = OutputInfo.BinaryBlockFrameOutputInfo;
+				else 
+					oinfo = OutputInfo.BinaryBlockOutputInfo;
+			}
 			else {
 				// output format is overridden, for example, due to recordReaderInstructions in the job
 				oinfo = OutputInfo.BinaryCellOutputInfo;
@@ -2300,7 +2304,7 @@ public class Dag<N extends Lop>
 		}
 
 		/* Instead of following hardcoding, one must get this information from Lops */
-		if (node.getType() == Type.SortKeys && node.getExecType() == ExecType.MR) {
+		if (node.getType() == Type.SortKeys && node.getExecType() == ExecType.MR) {		//TODO Need to handle MR case for FRAME
 			if( ((SortKeys)node).getOpType() == SortKeys.OperationTypes.Indexes)
 				oinfo = OutputInfo.BinaryBlockOutputInfo;
 			else

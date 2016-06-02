@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -50,6 +51,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 {
 	private static final long serialVersionUID = -3993450030207130665L;
 	
+	private static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block 
+
 	//internal configuration
 	private static final boolean REUSE_RECODE_MAPS = true;
 	
@@ -118,6 +121,15 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
+	 * Get default buffer size of the frame block.
+	 * 
+	 * @return 
+	 */
+	public static int getDefBufferSize() {
+		return BUFFER_SIZE;
+	}
+	
+	/**
 	 * Get the number of rows of the frame block.
 	 * 
 	 * @return 
@@ -145,6 +157,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return _schema;
 	}
 	
+	/**
+	 * Sets the schema of the frame block.
+	 * 
+	 * @return
+	 */
+	public void setSchema(List<ValueType> schema) {
+		_schema = schema;
+		_colnames = createColNames(schema.size());
+	}
+
 	/**
 	 * Returns the column names of the frame block.
 	 * 
@@ -295,6 +317,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	{
 		getSchema().clear();
 		getColumnNames().clear();
+		
 		if(_coldata != null)
 			for(int i=0; i < _coldata.size(); ++i)
 				_coldata.get(i)._size = nrow;
@@ -574,20 +597,36 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 					(rl+1) +":" + (ru+1) + ", " + (cl+1) + ":" + (cu+1) + "].");
 		}
 		
-		//allocate output frame (incl deep copy schema)
-		if( ret == null )
-			ret = new FrameBlock();
-		ret._numRows = _numRows;
-		ret._schema = new ArrayList<ValueType>(_schema);
-		ret._colnames = new ArrayList<String>(_colnames);
 		
-		//copy data to output and partial overwrite w/ rhs
-		for( int j=0; j<getNumColumns(); j++ ) {
-			Array tmp = _coldata.get(j).clone();
-			if( j>=cl && j<=cu )
-				tmp.set(rl, ru, rhsFrame._coldata.get(j-cl));
-			ret._coldata.add(tmp);
+		//allocate output frame (incl deep copy schema)
+//		if( ret == null )
+//			ret = new FrameBlock();
+//		ret._numRows = _numRows;								//TODO Need to check why this Original code was written this way
+//		ret._schema = new ArrayList<ValueType>(_schema);			// In Generic test case data was not matching (1st case, (815,110) was null vs Str25.07
+//		ret._colnames = new ArrayList<String>(_colnames);
+//		
+//		//copy data to output and partial overwrite w/ rhs
+//		for( int j=0; j<getNumColumns(); j++ ) {
+//			Array tmp = _coldata.get(j).clone();
+//			if( j>=cl && j<=cu )
+//				tmp.set(rl, ru, rhsFrame._coldata.get(j-cl));		// Throws ClassCastException from String[] to Double[]
+//			ret._coldata.add(tmp);
+//		}
+		
+		if( ret == null )
+			ret = new FrameBlock(this);
+		else {
+			ret._numRows = _numRows;
+			ret._schema = new ArrayList<ValueType>(_schema);
+			ret._colnames = new ArrayList<String>(_colnames);
 		}
+		ret.copy(this);
+		
+		int iMaxRows = Math.min(ru-rl+1, rhsFrame._numRows);
+		for(int i=0; i < iMaxRows; i++)
+			for(int j=cl; j <=cu; j++)
+				ret.set(i+rl, j, ((rhsFrame.get(i, j-cl) != null)?
+						UtilFunctions.stringToObject(ret.getSchema().get(j), rhsFrame.get(i, j-cl).toString()):null));
 		
 		return ret;
 	}
@@ -652,6 +691,42 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return ret;
 	}
 	
+	
+	public void sliceOperations(ArrayList<Pair<LongWritable,FrameBlock>> outlist, IndexRange range, int rowCut, int colCut, 
+			int normalBlockRowFactor, int normalBlockColFactor/*, int boundaryRlen, int boundaryClen*/)
+	{
+		FrameBlock top=null, bottom=null;
+		Iterator<Pair<LongWritable,FrameBlock>> p=outlist.iterator();
+		
+		if(range.rowStart<rowCut)
+			top=(FrameBlock) p.next().getValue();
+		
+		if(range.rowEnd>=rowCut)
+			bottom=(FrameBlock) p.next().getValue();
+		
+		if(getNumRows() > 0)
+		{
+			int r=(int) range.rowStart;
+			
+			for(; r<Math.min(rowCut, range.rowEnd+1); r++)
+			{
+				Object[] row = new Object[(int) (range.colEnd-range.colStart+1)];
+				for(int c=(int) range.colStart; c<range.colEnd+1; c++)
+					row[(int) (c-range.colStart)] = get(r,c);
+				top.appendRow(row);
+			}
+
+			for(; r<=range.rowEnd; r++)
+			{
+				Object[] row = new Object[(int) (range.colEnd-range.colStart+1)];
+				for(int c=(int) range.colStart; c<range.colEnd+1; c++)
+					row[(int) (c-range.colStart)] = get(r,c);
+				bottom.appendRow(row);
+			}
+		}
+
+	}
+
 	/**
 	 * Appends the given argument frameblock 'that' to this frameblock by 
 	 * creating a deep copy to prevent side effects. For cbind, the frames
@@ -789,12 +864,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return map;
 	}
 
+	public void merge(FrameBlock that ) 
+			throws DMLRuntimeException
+	{
+		merge(that, 0, false);
+	}
 	/**
 	 * 
 	 * @param that
 	 * @throws DMLRuntimeException 
 	 */
-	public void merge(FrameBlock that ) 
+	public void merge(FrameBlock that, int iStartIndex, boolean bDoNotCheckRowSize ) 
 		throws DMLRuntimeException
 	{
 		//check for empty input source (nothing to merge)
@@ -802,34 +882,98 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return;
 		
 		//check dimensions (before potentially copy to prevent implicit dimension change) 
-		if( getNumRows() != that.getNumRows() || getNumColumns() != that.getNumColumns() )
+		if (( !bDoNotCheckRowSize) &&
+		    ( getNumRows() != that.getNumRows() || getNumColumns() != that.getNumColumns() ))
+			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+getNumRows()+"x"+getNumColumns()+", source="+that.getNumRows()+"x"+that.getNumColumns()+")");
+		else if( getNumColumns() != that.getNumColumns() )			//TODO How to check size
 			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+getNumRows()+"x"+getNumColumns()+", source="+that.getNumRows()+"x"+that.getNumColumns()+")");
 		
 		//core frame block merge through cell copy
-		for( int i=0; i<getNumRows(); i++ ) {
+		for( int i=0; i<that.getNumRows(); i++ ) {
 			for( int j=0; j<getNumColumns(); j++ ) {
-				switch( _schema.get(j) ) {
-					case STRING:  
-						if (that.get(i,j) != null)
-							set(i,j,that.get(i, j));
-						break;
-					case BOOLEAN: 
-						if ((Boolean)that.get(i,j) != Boolean.getBoolean("false"))
-							set(i,j,that.get(i, j));
-						break;
-					case INT:     
-						if ((Long)that.get(i,j) != 0)
-							set(i,j,that.get(i, j));
-						break;
-					case DOUBLE:  
-						if ((Double)that.get(i,j) != 0.0)
-							set(i,j,that.get(i, j));
-						break;
-					default: throw new RuntimeException("Unsupported value type: "+_schema.get(j));
+				if (that.get(i,j) != null) 
+				{
+					switch( _schema.get(j) ) {
+						case STRING:  
+							set(i+iStartIndex,j,that.get(i, j));
+							break;
+						case BOOLEAN: 
+							if ((Boolean)that.get(i,j) != Boolean.getBoolean("false"))
+								set(i+iStartIndex,j,that.get(i, j));
+							break;
+						case INT:     
+							if ((Long)that.get(i,j) != 0)
+								set(i+iStartIndex,j,that.get(i, j));
+							break;
+						case DOUBLE:  
+							if ((Double)that.get(i,j) != 0.0)
+								set(i+iStartIndex,j,that.get(i, j));
+							break;
+						default: throw new RuntimeException("Unsupported value type: "+_schema.get(j));
+					}
 				}
 			}
 		}
 		
+	}
+
+	
+	/**
+	 * This function ZERO OUT the data in the slicing window applicable for this block.
+	 * 
+	 * 
+	 * @param result
+	 * @param range
+	 * @param complementary
+	 * @param iRowStartSrc
+	 * @param iRowStartDest
+	 * @param brlen
+	 * @param iMaxRowsToCopy
+	 * 
+	 */
+	public FrameBlock zeroOutOperations(FrameBlock result, IndexRange range, boolean complementary, int iRowStartSrc, int iRowStartDest, int brlen, int iMaxRowsToCopy)
+			throws DMLRuntimeException 
+	{
+		int clen = getNumColumns();
+		
+		if(result==null)
+			result=new FrameBlock(getSchema());
+		else 
+		{
+			result.reset(0);
+			result.setSchema(getSchema());
+		}
+		result.ensureAllocatedColumns(brlen);
+		
+		if(complementary)
+		{
+			for(int r=(int) range.rowStart; r<=range.rowEnd&&r+iRowStartDest<brlen; r++)
+			{
+				for(int c=(int) range.colStart; c<=range.colEnd; c++)
+					result.set(r+iRowStartDest, c, get(r+iRowStartSrc,c));
+			}
+		}else
+		{
+			int r=iRowStartDest;
+			for(; r<(int)range.rowStart && r-iRowStartDest<iMaxRowsToCopy ; r++)
+				for(int c=0; c<clen; c++/*, offset++*/)
+					result.set(r, c, get(r+iRowStartSrc-iRowStartDest,c));
+			
+			for(; r<=(int)range.rowEnd && r-iRowStartDest<iMaxRowsToCopy ; r++)
+			{
+				for(int c=0; c<(int)range.colStart; c++)
+					result.set(r, c, get(r+iRowStartSrc-iRowStartDest,c));
+
+				for(int c=(int)range.colEnd+1; c<clen; c++)
+					result.set(r, c, get(r+iRowStartSrc-iRowStartDest,c));
+			}
+			
+			for(; r-iRowStartDest<iMaxRowsToCopy ; r++)
+				for(int c=0; c<clen; c++)
+					result.set(r, c, get(r+iRowStartSrc-iRowStartDest,c));
+		}
+		
+		return result;
 	}
 
 	

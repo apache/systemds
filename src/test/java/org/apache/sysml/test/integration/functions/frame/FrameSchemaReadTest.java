@@ -143,7 +143,7 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			//read frame data from hdfs (not via readers to test physical schema)
-			FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.BinaryBlockInputInfo);
+			FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.BinaryBlockFrameInputInfo);
 			FrameBlock frame2 = ((FrameReaderBinaryBlock)reader).readFirstBlock(output("B"));
 			
 			//verify output schema

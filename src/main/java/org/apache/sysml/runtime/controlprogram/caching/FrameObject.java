@@ -44,6 +44,7 @@ import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
@@ -139,6 +140,15 @@ public class FrameObject extends CacheableData<FrameBlock>
 		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getCols();
 	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public int getNumRowsPerBlock() {
+		MatrixCharacteristics mc = getMatrixCharacteristics();
+		return mc.getRowsPerBlock();
+	}
 
 	@Override
 	protected FrameBlock readBlobFromCache(String fname) throws IOException {
@@ -173,11 +183,19 @@ public class FrameObject extends CacheableData<FrameBlock>
 		return data;
 	}
 
+	/**
+	 * Read Frame object from RDD 
+	 * 
+	 * @param rdd
+	 * @param status
+	 * 
+	 * @param fo
+	 */
 	@Override
 	protected FrameBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 			throws IOException 
 	{
-		//note: the read of a matrix block from an RDD might trigger
+		//note: the read of a frame block from an RDD might trigger
 		//lazy evaluation of pending transformations.
 		RDDObject lrdd = rdd;
 
@@ -186,18 +204,45 @@ public class FrameObject extends CacheableData<FrameBlock>
 		
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
-		FrameBlock fb = null;
 		
-		try  {
+		InputInfo ii = iimd.getInputInfo();
+		FrameBlock fb = null;
+		try 
+		{
 			//prevent unnecessary collect through rdd checkpoint
 			if( rdd.allowsShortCircuitCollect() ) {
 				lrdd = (RDDObject)rdd.getLineageChilds().get(0);
 			}
 			
-			//collect frame block from binary block RDD
+			//obtain frame block from RDD
 			int rlen = (int)mc.getRows();
 			int clen = (int)mc.getCols();
-			fb = SparkExecutionContext.toFrameBlock(lrdd, _schema, rlen, clen);	
+			int brlen = (int)mc.getRowsPerBlock();
+			int bclen = (int)mc.getColsPerBlock();
+
+			// fb = SparkExecutionContext.toFrameBlock(lrdd, _schema, rlen, clen);	//TODO
+			
+			//guarded rdd collect 
+			if( ii == InputInfo.BinaryBlockFrameInputInfo /*&& //guarded collect not for binary cell
+				!OptimizerUtils.checkSparkCollectMemoryBudget(rlen, clen, brlen, bclen, nnz, getPinnedSize()) */ ) {		//TODO
+				
+				//write RDD to hdfs and read to prevent invalid collect memory consumption 
+				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
+				if( !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
+					SparkExecutionContext.writeFrameRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
+					((RDDObject)rdd).setHDFSFile(true); //mark rdd as hdfs file (for restore)
+					status.setValue(true);         //mark for no cache-write on read
+				}
+				fb = readBlobFromHDFS(_hdfsFileName);
+			}
+//			else if( ii == InputInfo.BinaryCellInputInfo ) {				TODO:   Do we need to handle this scenario?
+//				//collect frame block from binary block RDD
+//				fb = SparkExecutionContext.toFrameBlock(lrdd, rlen, clen);		
+//			}
+			else {
+				//collect frame block from binary cell RDD
+				fb = SparkExecutionContext.toFrameBlock(lrdd, rlen, clen, brlen, bclen);	
+			}
 		}
 		catch(DMLRuntimeException ex) {
 			throw new IOException(ex);
@@ -215,7 +260,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop) 
 		throws IOException, DMLRuntimeException 
 	{
-		OutputInfo oinfo = OutputInfo.stringToOutputInfo(ofmt);
+		OutputInfo oinfo = OutputInfo.stringToOutputInfo(ofmt, this.dataType);
 		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo);
 		writer.writeFrameToHDFS(_data, fname,  getNumRows(), getNumColumns());
 	}
@@ -224,13 +269,14 @@ public class FrameObject extends CacheableData<FrameBlock>
 	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt) 
 		throws IOException, DMLRuntimeException 
 	{
-		//prepare output info
-        MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
-	    OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo(ofmt) 
-                : InputInfo.getMatchingOutputInfo (iimd.getInputInfo()));
+	    //prepare output info
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+	    OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo (ofmt, this.dataType) 
+                : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
 	    
 		//note: the write of an RDD to HDFS might trigger
 		//lazy evaluation of pending transformations.				
 		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, oinfo);	
 	}
+
 }

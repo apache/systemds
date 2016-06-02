@@ -119,7 +119,6 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		runFrameCastingTest(TEST_NAME1, true, ValueType.DOUBLE, ExecType.SPARK);
 	}
 
-	/*TODO write distributed frame missing
 	@Test
 	public void testMatrix2FrameCastSingleSpark() {
 		runFrameCastingTest(TEST_NAME2, false, null, ExecType.SPARK);
@@ -129,7 +128,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 	public void testMatrix2FrameCastMultiSpark() {
 		runFrameCastingTest(TEST_NAME2, true, null, ExecType.SPARK);
 	}
-	*/
+	
 	
 	/**
 	 * 

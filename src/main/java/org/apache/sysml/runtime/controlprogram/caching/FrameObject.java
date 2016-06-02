@@ -30,6 +30,7 @@ import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
@@ -41,6 +42,7 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 public class FrameObject extends CacheableData<FrameBlock>
@@ -166,8 +168,38 @@ public class FrameObject extends CacheableData<FrameBlock>
 	protected FrameBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 			throws IOException 
 	{
-		//TODO support for distributed frame representations
-		throw new IOException("Not implemented yet.");
+		//note: the read of a matrix block from an RDD might trigger
+		//lazy evaluation of pending transformations.
+		RDDObject lrdd = rdd;
+
+		//prepare return status (by default only collect)
+		status.setValue(false);
+		
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		FrameBlock fb = null;
+		
+		try  {
+			//prevent unnecessary collect through rdd checkpoint
+			if( rdd.allowsShortCircuitCollect() ) {
+				lrdd = (RDDObject)rdd.getLineageChilds().get(0);
+			}
+			
+			//collect frame block from binary block RDD
+			int rlen = (int)mc.getRows();
+			int clen = (int)mc.getCols();
+			fb = SparkExecutionContext.toFrameBlock(lrdd, _schema, rlen, clen);	
+		}
+		catch(DMLRuntimeException ex) {
+			throw new IOException(ex);
+		}
+		
+		//sanity check correct output
+		if( fb == null ) {
+			throw new IOException("Unable to load matrix from rdd: "+lrdd.getVarName());
+		}
+		
+		return fb;
 	}
 
 	@Override
@@ -183,7 +215,13 @@ public class FrameObject extends CacheableData<FrameBlock>
 	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt) 
 		throws IOException, DMLRuntimeException 
 	{
-		//TODO support for distributed frame representations
-		throw new IOException("Not implemented yet.");
+		//prepare output info
+        MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
+	    OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo(ofmt) 
+                : InputInfo.getMatchingOutputInfo (iimd.getInputInfo()));
+	    
+		//note: the write of an RDD to HDFS might trigger
+		//lazy evaluation of pending transformations.				
+		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, oinfo);	
 	}
 }

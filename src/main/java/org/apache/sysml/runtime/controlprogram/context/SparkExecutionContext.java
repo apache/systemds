@@ -44,6 +44,7 @@ import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
@@ -63,6 +64,7 @@ import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFuncti
 import org.apache.sysml.runtime.instructions.spark.functions.CopyFrameBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyTextInputFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CreateSparseBlockFunction;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -855,6 +857,63 @@ public class SparkExecutionContext extends ExecutionContext
 				
 		return out;
 	}
+
+	/**
+	 * 
+	 * @param rdd
+	 * @param schema
+	 * @param rlen
+	 * @param clen
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	@SuppressWarnings("unchecked")
+	public static FrameBlock toFrameBlock(RDDObject rdd, List<ValueType> schema, int rlen, int clen) 
+		throws DMLRuntimeException 
+	{
+		JavaPairRDD<Long,FrameBlock> lrdd = (JavaPairRDD<Long,FrameBlock>) rdd.getRDD();
+		return toFrameBlock(lrdd, schema, rlen, clen);
+	}
+	
+	/**
+	 * 
+	 * @param rdd
+	 * @param schema
+	 * @param rlen
+	 * @param clen
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static FrameBlock toFrameBlock(JavaPairRDD<Long,FrameBlock> rdd, List<ValueType> schema, int rlen, int clen) 
+		throws DMLRuntimeException
+	{
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
+		//create output frame block (w/ lazy allocation)
+		FrameBlock out = new FrameBlock(schema);
+		out.ensureAllocatedColumns(rlen);
+		
+		List<Tuple2<Long,FrameBlock>> list = rdd.collect();
+		
+		//copy blocks one-at-a-time into output matrix block
+		for( Tuple2<Long,FrameBlock> keyval : list )
+		{
+			//unpack index-block pair
+			int ix = (int)(keyval._1() - 1);
+			FrameBlock block = keyval._2();
+		
+			//copy into output frame
+			out.copy( ix, ix+block.getNumRows(), 
+					  0, block.getNumColumns()-1, block );	
+		}
+		
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkCollectTime(System.nanoTime() - t0);
+			Statistics.incSparkCollectCount(1);
+		}
+		
+		return out;
+	}
 	
 	/**
 	 * 
@@ -877,6 +936,30 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		//return nnz aggregate of all blocks
 		return nnz;
+	}
+	
+	/**
+	 * 
+	 * @param rdd
+	 * @param oinfo
+	 */
+	@SuppressWarnings("unchecked")
+	public static void writeFrameRDDtoHDFS( RDDObject rdd, String path, OutputInfo oinfo )
+	{
+		JavaPairRDD<?, FrameBlock> lrdd = (JavaPairRDD<Long, FrameBlock>) rdd.getRDD();
+		
+		//convert keys to writables if necessary
+		if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
+			lrdd = ((JavaPairRDD<Long, FrameBlock>)lrdd).mapToPair(
+					new LongFrameToLongWritableFrameFunction());
+			oinfo = OutputInfo.BinaryBlockFrameOutputInfo;
+		}
+	
+		//save file is an action which also triggers nnz maintenance
+		lrdd.saveAsHadoopFile(path, 
+				oinfo.outputKeyClass, 
+				oinfo.outputValueClass, 
+				oinfo.outputFormatClass);
 	}
 	
 	///////////////////////////////////////////

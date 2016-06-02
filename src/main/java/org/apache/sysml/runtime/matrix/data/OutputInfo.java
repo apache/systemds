@@ -24,13 +24,13 @@ import java.io.Serializable;
 
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
-
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput;
 import org.apache.sysml.runtime.matrix.sort.CompactOutputFormat;
@@ -59,8 +59,10 @@ public class OutputInfo implements Serializable
 			NullWritable.class, Text.class);
 	public static final OutputInfo BinaryCellOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
 			MatrixIndexes.class, MatrixCell.class);
-	public static final OutputInfo BinaryBlockOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
-			MatrixIndexes.class, MatrixBlock.class);
+	public static final OutputInfo BinaryBlockOutputInfo=new OutputInfo(
+			SequenceFileOutputFormat.class, MatrixIndexes.class, MatrixBlock.class);
+	public static final OutputInfo BinaryBlockFrameOutputInfo=new OutputInfo(
+			SequenceFileOutputFormat.class, LongWritable.class, FrameBlock.class);
 	public static final OutputInfo OutputInfoForSortInput=new OutputInfo(SequenceFileOutputFormat.class, 
 			DoubleWritable.class, IntWritable.class);
 	public static final OutputInfo OutputInfoForSortOutput = new OutputInfo(CompactOutputFormat.class,

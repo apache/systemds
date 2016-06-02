@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -47,6 +48,7 @@ import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Statement;
+import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
@@ -204,7 +206,13 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						//cleanup if only consumer of intermediate
 						if( dright.getParent().isEmpty() ) 
 							HopRewriteUtils.removeAllChildReferences( dright );
-						
+			/*			if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: X * 2 -> 2X where X = (" + left.getHopID() + ") (line "+bop.getBeginLine()+")");
+						}	
+				*/		
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: removeUnnecessaryVectorizeOperation1(" + hi.getHopID() + ")");
+						}
 						LOG.debug("Applied removeUnnecessaryVectorizeOperation1");
 					}
 				}
@@ -222,8 +230,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						//cleanup if only consumer of intermediate
 						if( dleft.getParent().isEmpty() ) 
 							HopRewriteUtils.removeAllChildReferences( dleft );
-						
-						LOG.debug("Applied removeUnnecessaryVectorizeOperation2");
+			/*			if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: 2 * X -> 2X where X = (" + right.getHopID() + ") (line "+bop.getBeginLine()+")");
+						}
+				*/		LOG.debug("Applied removeUnnecessaryVectorizeOperation2");
 					}
 				}
 
@@ -267,6 +277,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.addChildReference(parent, left, pos);
 					hi = left;
 
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						if(bop.getOp()==OpOp2.DIV) 
+							LOG.info("hops_rewrite: X / 1 -> X where X = (" + left.getHopID() + ") (line "+bop.getBeginLine()+")"); 
+						if(bop.getOp()==OpOp2.MULT) 
+							LOG.info("hops_rewrite: X * 1 -> X where X = (" + left.getHopID() + ") (line "+bop.getBeginLine()+")");
+					}
 					LOG.debug("Applied removeUnnecessaryBinaryOperation1 (line "+bop.getBeginLine()+")");
 				}
 			}
@@ -279,7 +295,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeChildReference(parent, bop);
 					HopRewriteUtils.addChildReference(parent, left, pos);
 					hi = left;
-
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						if(bop.getOp()==OpOp2.MINUS)
+							LOG.info("hops_rewrite: X - 0 -> X where X = (" + left.getHopID() + ") (line "+bop.getBeginLine()+")");
+					}
 					LOG.debug("Applied removeUnnecessaryBinaryOperation2 (line "+bop.getBeginLine()+")");
 				}
 			}
@@ -292,7 +311,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeChildReference(parent, bop);
 					HopRewriteUtils.addChildReference(parent, right, pos);
 					hi = right;
-
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						LOG.info("hops_rewrite: 1 * X -> X where X = (" + right.getHopID() + ") (line "+bop.getBeginLine()+")");
+					}
 					LOG.debug("Applied removeUnnecessaryBinaryOperation3 (line "+bop.getBeginLine()+")");
 				}
 			}
@@ -308,7 +329,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeChildReferenceByPos(bop, left, 0);
 					HopRewriteUtils.addChildReference(bop, new LiteralOp(0), 0);
 					hi = bop;
-
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						LOG.info("hops_rewrite: -1 * X -> -X where X = (" + right.getHopID() + ") (line "+bop.getBeginLine()+")");
+					}
 					LOG.debug("Applied removeUnnecessaryBinaryOperation4 (line "+bop.getBeginLine()+")");
 				}
 			}
@@ -322,7 +345,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeChildReferenceByPos(bop, right, 1);
 					HopRewriteUtils.addChildReference(bop, new LiteralOp(0), 0);
 					hi = bop;
-					
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						LOG.info("hops_rewrite: X * -1 -> -X where X = (" + left.getHopID() + ") (line "+bop.getBeginLine()+")");
+					}
 					LOG.debug("Applied removeUnnecessaryBinaryOperation5 (line "+bop.getBeginLine()+")");
 				}
 			}
@@ -388,6 +413,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					}
 					
 					hi = gen;
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						if(bop.getOp() == OpOp2.MULT)
+							LOG.info("hops_rewrite: unif * n -> unif(min*n,max*n) where unif = (" + left.getHopID() + "), n = " + sval + " (line "+bop.getBeginLine()+")");
+						if(bop.getOp() == OpOp2.PLUS)
+							LOG.info("hops_rewrite: unif + n -> unif(min+n,max+n) where unif = (" + left.getHopID() + "), n = " + sval + " (line "+bop.getBeginLine()+")");
+						if(bop.getOp() == OpOp2.MINUS)
+							LOG.info("hops_rewrite: unif - n -> unif(min-n,max-n) where unif = (" + left.getHopID() + "), n = " + sval + " (line "+bop.getBeginLine()+")");
+					}
 					LOG.debug("Applied fuseDatagenAndBinaryOperation1 (line "+bop.getBeginLine()+").");
 				}
 			}
@@ -425,6 +458,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					}
 					
 					hi = gen;
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						if(bop.getOp() == OpOp2.MULT)
+							LOG.info("hops_rewrite: n * unif -> unif(n*min,n*max) where unif = (" + right.getHopID() + "), n = " + sval + " (line "+bop.getBeginLine()+")");
+						if(bop.getOp() == OpOp2.PLUS)
+							LOG.info("hops_rewrite: n + unif -> unif(n+min,n+max) where unif = (" + right.getHopID() + "), n = " + sval + " (line "+bop.getBeginLine()+")");
+					}	
 					LOG.debug("Applied fuseDatagenAndBinaryOperation2 (line "+bop.getBeginLine()+").");
 				}
 			}
@@ -486,6 +525,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					}
 					
 					hi = inputGen;
+				/*	if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						if(bop.getOp() == OpOp2.MULT)
+							LOG.info("hops_rewrite: n * unif -> unif(n*min,n*max) where unif = (" + right.getHopID() + "), n = " + sval + " (line "+bop.getBeginLine()+")");
+					}
+				*/	
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						LOG.info("hops_rewrite: fuseDatagenAndMinusOperation(" + hi.getHopID() + ")");
+					}
 					LOG.debug("Applied fuseDatagenAndMinusOperation (line "+bop.getBeginLine()+").");		
 				}
 			}
@@ -522,7 +569,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					bop.getInput().remove(1);
 					right.getParent().remove(bop);
 					HopRewriteUtils.addChildReference(hi, tmp, 1);
-
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: X + X -> X*2 where X = (" + left.getHopID() + ") (line "+bop.getBeginLine()+")");
+					}		
 					LOG.debug("Applied simplifyBinaryToUnaryOperation1");
 				}
 				else if ( bop.getOp()==OpOp2.MULT ) //X*X -> X^2
@@ -532,7 +581,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					bop.getInput().remove(1);
 					right.getParent().remove(bop);
 					HopRewriteUtils.addChildReference(hi, tmp, 1);
-					
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: X * X -> X^2 where X = (" + left.getHopID() + ") (line "+bop.getBeginLine()+")");
+					}	
 					LOG.debug("Applied simplifyBinaryToUnaryOperation2");
 				}
 			}
@@ -558,13 +609,16 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				hi = uop;
 				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: (X>0) - (X<0) -> sign(X) where X = (" + left.getHopID() + ") (line "+bop.getBeginLine()+")");
+				}
 				LOG.debug("Applied simplifyBinaryToUnaryOperation3");
 			}
 		}
 		
 		return hi;
 	}
-	
+		
 	/**
 	 * Rewrite to canonicalize all patterns like U%*%V+eps, eps+U%*%V, and
 	 * U%*%V-eps into the common representation U%*%V+s which simplifies 
@@ -593,6 +647,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.removeAllChildReferences(bop);
 				HopRewriteUtils.addChildReference(bop, right, 0);
 				HopRewriteUtils.addChildReference(bop, left, 1);
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: (eps + U%*%V) -> (U%*%V + eps) where eps = (" + left.getHopID() + "), U%*%V = " + right.getHopID() + " (line "+bop.getBeginLine()+")");
+				}
 				LOG.debug("Applied canonicalizeMatrixMultScalarAdd1 (line "+hi.getBeginLine()+").");
 			}
 			//pattern: (U%*%V - eps) -> (U%*%V + (-eps))
@@ -602,7 +659,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				bop.setOp(OpOp2.PLUS);
 				HopRewriteUtils.removeChildReferenceByPos(bop, right, 1);
 				HopRewriteUtils.addChildReference(bop, 
-						HopRewriteUtils.createBinary(new LiteralOp(0), right, OpOp2.MINUS), 1);				
+						HopRewriteUtils.createBinary(new LiteralOp(0), right, OpOp2.MINUS), 1);	
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						LOG.info("hops_rewrite: (U%*%V - eps) -> (U%*%V + (-eps)) where eps = (" + right.getHopID() + "), U%*%V = " + left.getHopID() + " (line "+bop.getBeginLine()+")");
+				}
 				LOG.debug("Applied canonicalizeMatrixMultScalarAdd2 (line "+hi.getBeginLine()+").");
 			}
 		}
@@ -646,6 +706,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				hi = rop;
 				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X) where X = (" + hi.getHopID() + ") (line "+hi.getBeginLine()+")");
+				}
 				LOG.debug("Applied simplifyReverseOperation.");
 			}
 		}
@@ -680,6 +743,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			HopRewriteUtils.addChildReference(bop, left);
 			HopRewriteUtils.addChildReference(bop, right);
 			
+			if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+				LOG.info("hops_rewrite: 1-(X*Y) --> X 1-* Y where X = (" + left.getHopID() + "), Y = " + right.getHopID() + ") (line "+bop.getBeginLine()+")");
+			}
 			LOG.debug("Applied simplifyMultiBinaryToBinaryOperation.");
 		}
 		
@@ -735,6 +801,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						hi = mult;
 						applied = true;
 						
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: (Y*X - X) -> (Y-1)*X where X = (" + X.getHopID() + ") and Y = (" + Y.getHopID() + ") (line "+bop.getBeginLine()+")");
+						}
 						LOG.debug("Applied simplifyDistributiveBinaryOperation1");
 					}					
 				}	
@@ -758,7 +827,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						
 						HopRewriteUtils.addChildReference(parent, mult, pos);	
 						hi = mult;
-
+						
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: (X - Y*X) -> (1-Y)*X where X = (" + X.getHopID() + ") and Y = (" + Y.getHopID() + ") (line "+bop.getBeginLine()+")");
+						}
 						LOG.debug("Applied simplifyDistributiveBinaryOperation2");
 					}
 				}	
@@ -818,6 +890,15 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						
 						applied = true;
 						
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							long X = left.getHopID();
+							long Y = left2.getHopID();
+							long Z = right2.getHopID();
+							String opStr = (op == OpOp2.PLUS) ? "+" :  (op == OpOp2.MULT) ? "*" : "op";
+							LOG.info("hops_rewrite: X " + opStr + "(Y" +  opStr + "Z) -> "
+									+ "(X" + opStr + "Y)" + opStr + "Z where X=" + X + ", Y=" + Y + ", Z=" + Z);
+						}
+						
 						LOG.debug("Applied simplifyBushyBinaryOperation1");
 					}
 				}
@@ -844,7 +925,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						
 						HopRewriteUtils.addChildReference(parent, bop4, pos);	
 						hi = bop4;
-						
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							long Z = left.getHopID();
+							long X = left2.getHopID();
+							long Y = right2.getHopID();
+							String opStr = (op == OpOp2.PLUS) ? "+" :  (op == OpOp2.MULT) ? "*" : "op";
+							LOG.info("hops_rewrite: (Z" + opStr + "X)" +  opStr + "Y) -> "
+									+ "Z" + opStr + "(X" + opStr + "Y) where X=" + X + ", Y=" + Y + ", Z=" + Z);
+						}
 						LOG.debug("Applied simplifyBushyBinaryOperation2");
 					}
 				}
@@ -876,7 +964,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.removeAllChildReferences(hi);
 				HopRewriteUtils.removeAllChildReferences(rop);
 				HopRewriteUtils.addChildReference(hi, input);
-				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: sum(t(X)) -> sum(X) where X=(" + input.getHopID() + ") line (" +rop.getBeginLine() + ")");
+				}
 				LOG.debug("Applied simplifyUnaryAggReorgOperation");
 			}
 		}
@@ -910,11 +1000,17 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//pattern 1: row-aggregate to col aggregate, e.g., rowSums(t(X))->t(colSums(X))
 			if( uagg.getDirection()==Direction.Row ) {
 				uagg.setDirection(Direction.Col); 
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: rowSums(t(X))->t(colSums(X)) where X = (" + input.getHopID() + ") (line "+hi.getBeginLine()+")");
+				}
 				LOG.debug("Applied pushdownUnaryAggTransposeOperation1 (line "+hi.getBeginLine()+").");						
 			}
 			//pattern 2: col-aggregate to row aggregate, e.g., colSums(t(X))->t(rowSums(X))
 			else if( uagg.getDirection()==Direction.Col ) {
 				uagg.setDirection(Direction.Row); 
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: colSums(t(X))->t(rowSums(X)) where X = (" + input.getHopID() + ") (line "+hi.getBeginLine()+")");
+				}
 				LOG.debug("Applied pushdownUnaryAggTransposeOperation2 (line "+hi.getBeginLine()+").");
 			}
 			
@@ -950,6 +1046,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				//clear link unary-binary
 				Hop input = uop.getInput().get(0);
 				HopRewriteUtils.removeAllChildReferences(hi);
+				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: simplifyUnaryPPredOperation(" + hi.getHopID() + ")");
+				}
 				
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
 				HopRewriteUtils.addChildReference(parent, input, pos);
@@ -997,6 +1097,12 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(parent, bopnew, pos);
 				
 				hi = bopnew;
+				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					String opStr = (binop == OpOp2.CBIND) ? "cbind" : "rbind";
+					String opStrTranspose = (binop == OpOp2.RBIND) ? "cbind" : "rbind";
+					LOG.info("hops_rewrite: t(" + opStr + "(t(A),t(B))) -> " +  opStrTranspose + "(A,B) where A=(" + left.getHopID() + "), B=(" + right.getHopID() + ") (line = " + hi.getBeginLine() + ")");
+				}
 				LOG.debug("Applied simplifyTransposedAppend (line "+hi.getBeginLine()+").");				
 			}
 		}
@@ -1052,7 +1158,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							HopRewriteUtils.removeAllChildReferences(left);
 						
 						hi = unary;
-						
+			
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: (1-X)*X = sprop(X) where X = (" + right.getHopID() + ") (line "+right.getBeginLine()+")");
+						}
 						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-sprop1");
 					}
 				}				
@@ -1077,7 +1186,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							HopRewriteUtils.removeAllChildReferences(right);
 						
 						hi = unary;
-						
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: X*(1-X) -> sprop(X) where X = (" + left.getHopID() + ") (line "+left.getBeginLine()+")");
+						}
 						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-sprop2");
 					}
 				}
@@ -1137,7 +1248,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 								HopRewriteUtils.removeAllChildReferences(uop);	
 							
 							hi = unary;
-							
+							if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+								if( uopin instanceof BinaryOp && ((BinaryOp)uopin).getOp()==OpOp2.MINUS ) {
+									LOG.info("hops_rewrite: (1 / 1+exp(-X)) -> sigmoid(X) where X = (" + uopin.getHopID() + ") (line "+uopin.getBeginLine()+")");
+								}
+								else {
+									LOG.info("hops_rewrite: (1 / 1+exp(-(-X))) -> sigmoid(X) where X = (" + uopin.getHopID() + ") (line "+uopin.getBeginLine()+")");
+								}
+							}
 							LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-sigmoid1");
 						}				
 					}
@@ -1171,7 +1289,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							HopRewriteUtils.removeAllChildReferences(left);
 						
 						hi = unary;
-						
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: (X>0) * X -> selp(X) where X = (" + right.getHopID() + ") (line "+right.getBeginLine()+")");
+						}
 						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp1");
 					}
 				}				
@@ -1196,7 +1316,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							HopRewriteUtils.removeAllChildReferences(right);
 						
 						hi = unary;
-						
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: X * (X>0) -> selp(X) where X = (" + left.getHopID() + ") (line "+left.getBeginLine()+")");
+						}
 						LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp2");
 					}
 				}
@@ -1214,7 +1336,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				if( bop.getParent().isEmpty() )
 					HopRewriteUtils.removeAllChildReferences(bop);					
 				hi = unary;
-				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: max(X, 0) -> selp+ where X = (" + left.getHopID() + ") (line "+left.getBeginLine()+")");
+				}
 				LOG.debug("Applied fuseBinarySubDAGToUnaryOperation-selp3");
 			}
 		}
@@ -1266,7 +1390,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeAllChildReferences( hi2 );
 				
 				hi = sum;
-				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: trace(X%*%Y) -> sum(X*t(Y)) where X = (" + left.getHopID() + "), Y = (" +right.getHopID() + ") (line "+left.getBeginLine()+")");
+				}
 				LOG.debug("Applied simplifyTraceMatrixMult");
 			}	
 		}
@@ -1317,7 +1443,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			mm.refreshSizeInformation();
 			
 			hi = mm;
-				
+			if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+				LOG.info("hops_rewrite: (X%*%Y)[1,1] -> X[1,] %*% Y[,1] where X = ("+X.getHopID()+"), Y = ("+Y.getHopID()+") (line "+hi.getBeginLine()+")");
+			}	
 			LOG.debug("Applied simplifySlicedMatrixMult");	
 		}
 		
@@ -1356,6 +1484,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						HopRewriteUtils.removeChildReference(hi, hi2);
 					hi = seq;
 					
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						LOG.info("hops_rewrite: simplifyConstantSort1(" + hi.getHopID() + ")");
+					}
+					
 					LOG.debug("Applied simplifyConstantSort1.");
 				}
 				else
@@ -1366,6 +1498,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					if( hi.getParent().isEmpty() )
 						HopRewriteUtils.removeChildReference(hi, hi2);
 					hi = hi2;
+					
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						LOG.info("hops_rewrite: simplifyConstantSort2(" + hi.getHopID() + ")");
+					}
 					
 					LOG.debug("Applied simplifyConstantSort2.");
 				}
@@ -1404,6 +1540,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							HopRewriteUtils.removeChildReference(hi, hi2);
 						hi = seq;
 						
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: simplifyOrderedSort1(" + hi.getHopID() + ")");
+						}
 						LOG.debug("Applied simplifyOrderedSort1.");
 					}
 					else if( !HopRewriteUtils.getBooleanValue((LiteralOp)hi.getInput().get(2)) ) //DATA, ASC
@@ -1415,6 +1554,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 							HopRewriteUtils.removeChildReference(hi, hi2);
 						hi = hi2;
 						
+						if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+							LOG.info("hops_rewrite: simplifyOrderedSort2(" + hi.getHopID() + ")");
+						}
 						LOG.debug("Applied simplifyOrderedSort2.");
 					}
 				}
@@ -1461,6 +1603,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(parent, bop, pos);
 				
 				hi = bop;
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: t(t(A)%*%t(B)+C) -> B%*%A+t(C) where A = (" + A.getHopID() + "), B = (" + B.getHopID() + "), C = (" + C.getHopID() + ") (line "+left.getBeginLine()+")");
+				}
 				LOG.debug("Applied simplifyTransposeAggBinBinaryChains (line "+hi.getBeginLine()+").");						
 			}  
 		}
@@ -1497,6 +1642,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				if( hi2.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( hi2 );
 				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: " + (((ReorgOp)hi2).getOp() == ReOrgOp.TRANSPOSE? "t(t(" : "rev(rev(") + "X)) -> X where X = (" + hi3.getHopID() + ") (line "+hi3.getBeginLine()+")");
+				}
 				LOG.debug("Applied removeUnecessaryReorgOperation.");
 			}
 		}
@@ -1536,7 +1684,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					HopRewriteUtils.removeAllChildReferences( hi );
 				if( hi2.getParent().isEmpty() ) 
 					HopRewriteUtils.removeAllChildReferences( hi2 );
-				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: -(-X) -> X where X = (" + hi3.getHopID() + ") (line "+hi3.getBeginLine()+")");
+				}
 				LOG.debug("Applied removeUnecessaryMinus");
 			}
 		}
@@ -1570,6 +1720,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					
 					HopRewriteUtils.removeChildReference(hi, th);
 					HopRewriteUtils.addChildReference(hi, gh, ix1);
+					
+					if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+						LOG.info("hops_rewrite: simplifyGroupedAggregateCount(" + hi.getHopID() + ")");
+					}
 					
 					LOG.debug("Applied simplifyGroupedAggregateCount");	
 				}
@@ -1619,6 +1773,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(parent, hnew, pos);
 				hi = hnew;
 				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: X - mean*pred(X,0,!=) -> X -nz mean, where X = (" + X.getHopID() + "), mean = (" + s.getHopID() + "), pred = (" + pred.getHopID() + ") (line "+hi.getBeginLine()+")");
+				}
 				LOG.debug("Applied fuseMinusNzBinaryOperation (line "+hi.getBeginLine()+")");	
 			}		
 		}
@@ -1663,6 +1820,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(parent, hnew, pos);
 				hi = hnew;
 				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: pred(X,0,!=)*log(X) -> log_nz(X), where X = (" + X.getHopID() + "), pred = (" + pred.getHopID() + ") (line "+hi.getBeginLine()+")");
+				}
 				LOG.debug("Applied fuseLogNzUnaryOperation (line "+hi.getBeginLine()+").");	
 			}		
 		}
@@ -1708,6 +1868,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(parent, hnew, pos);
 				hi = hnew;
 				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: fuseLogNzBinaryOperation(" + hi.getHopID() + ")");
+				}
 				LOG.debug("Applied fuseLogNzBinaryOperation (line "+hi.getBeginLine()+")");	
 			}		
 		}
@@ -1768,6 +1931,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(parent, pbop, pos);
 				hi = pbop;
 				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: simplifyOuterSeqExpand(" + hi.getHopID() + ")");
+				}
 				LOG.debug("Applied simplifyOuterSeqExpand (line "+hi.getBeginLine()+")");	
 			}
 		}
@@ -1823,6 +1989,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.addChildReference(parent, pbop, pos);
 				hi = pbop;
 				
+				if(DMLScript.EXPLAIN == ExplainType.HOPS_REWRITE) {
+					LOG.info("hops_rewrite: simplifyTableSeqExpand(" + hi.getHopID() + ")");
+				}
 				LOG.debug("Applied simplifyTableSeqExpand (line "+hi.getBeginLine()+")");	
 			}
 		}

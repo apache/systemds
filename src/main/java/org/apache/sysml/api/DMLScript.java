@@ -125,7 +125,7 @@ public class DMLScript
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
 			+ "   -exec: <mode> (optional) execution mode (hadoop, singlenode, [hybrid], hybrid_spark)\n"
-			+ "   -explain: <type> (optional) explain plan (hops, [runtime], recompile_hops, recompile_runtime)\n"
+			+ "   -explain: <type> (optional) explain plan (hops, hops_rewrite, [runtime], recompile_hops, recompile_runtime)\n"
 			+ "   -stats: (optional) monitor and report caching/recompilation statistics\n"
 			+ "   -clean: (optional) cleanup all SystemML working directories (FS, DFS).\n"
 			+ "         All other flags are ignored in this mode. \n"
@@ -591,6 +591,9 @@ public class DMLScript
 		dmlt.liveVariableAnalysis(prog);			
 		dmlt.validateParseTree(prog);
 		dmlt.constructHops(prog);
+		
+		if(EXPLAIN == ExplainType.HOPS_REWRITE)
+			LOG.info(Explain.explain(prog, null, EXPLAIN));
 		
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("\n********************** HOPS DAG (Before Rewrite) *******************");

@@ -641,9 +641,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	{	
 		Lop matmultCP = null;
 		
-		// If you want to force GPU execution, uncomment this
-//		if(DMLScript.USE_ACCELERATOR) {
-		if(DMLScript.USE_ACCELERATOR && getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET) {
+		if(DMLScript.USE_ACCELERATOR && (DMLScript.FORCE_ACCELERATOR || getMemEstimate() < OptimizerUtils.GPU_MEMORY_BUDGET)) {
 			Hop h1 = getInput().get(0);
 			Hop h2 = getInput().get(1);
 			Lop left; Lop right;

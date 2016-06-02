@@ -105,6 +105,7 @@ public class DMLScript
 	public static ExplainType EXPLAIN = ExplainType.NONE; //default explain
 	
 	public static boolean USE_ACCELERATOR = false;
+	public static boolean FORCE_ACCELERATOR = false;
 	
 	// flag that indicates whether or not to suppress any prints to stdout
 	public static boolean _suppressPrint2Stdout = false;
@@ -124,7 +125,8 @@ public class DMLScript
 			//+ "   -s: <filename> will be interpreted as a DML script string \n"
 			+ "   -python: (optional) parses Python-like DML\n"
 			+ "   -debug: (optional) run in debug mode\n"
-			+ "   -accelerator: (optional) use acceleration whenever possible. Current version only supports CUDA.\n"
+			+ "   -accelerator: <flags> (optional) use acceleration whenever possible. Current version only supports CUDA.\n"
+			+ "			Optional <flags> that is supported for this mode is force=(true|false)\n"
 			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
@@ -308,6 +310,20 @@ public class DMLScript
 				}
 				else if( args[i].equalsIgnoreCase("-accelerator") ) {	
 					USE_ACCELERATOR = true;
+					if( args.length > (i+1) && !args[i+1].startsWith("-") ) {
+						String flag = args[++i];
+						if(flag.startsWith("force=")) {
+							String [] flagOptions = flag.split("=");
+							if(flagOptions.length == 2)
+								FORCE_ACCELERATOR = Boolean.parseBoolean(flagOptions[1]);
+							else
+								throw new DMLRuntimeException("Unsupported \"force\" option for -accelerator:" + flag);
+						}
+						else {
+							throw new DMLRuntimeException("Unsupported flag for -accelerator:" + flag);
+						}
+					}
+						
 					GPUContext.createGPUContext(); // Set GPU memory budget
 				}
 				else if( args[i].equalsIgnoreCase("-python") ) {

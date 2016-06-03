@@ -813,6 +813,12 @@
             <artifactId>mavenized-jcuda</artifactId>
             <version>0.7.5b</version>
             <scope>provided</scope>
+            <exclusions>
+		        <exclusion>
+		            <groupId>*</groupId>
+		            <artifactId>*</artifactId>
+		        </exclusion>
+		    </exclusions>
 		</dependency>
 		<!-- Since there is no mvn repo for jcuda
 		<dependency>

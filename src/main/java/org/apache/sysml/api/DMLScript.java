@@ -96,7 +96,7 @@ public class DMLScript
 		SPARK			// execute matrix operations in Spark
 	}
 	
-	public static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID; //default exec mode
+	public static RUNTIME_PLATFORM rtplatform = OptimizerUtils.getDefaultExecutionMode();
 	public static boolean STATISTICS = false; //default statistics
 	public static boolean ENABLE_DEBUG_MODE = false; //default debug mode
 	public static boolean USE_LOCAL_SPARK_CONFIG = false; //set default local spark configuration - used for local testing

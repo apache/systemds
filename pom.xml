@@ -84,7 +84,7 @@
         </repository>
         <repository>
             <id>mavenized-jcuda-mvn-repo</id>
-            <url>https://raw.github.com/MysterionRise/mavenized-jcuda/mvn-repo/</url>
+            <url>https://raw.github.com/niketanpansare/mavenized-jcuda/mvn-repo/</url>
             <snapshots>
                 <enabled>true</enabled>
                 <updatePolicy>always</updatePolicy>
@@ -804,14 +804,13 @@
 	<dependencies>
 	
 		<!-- For GPU backend
-			Use external jars until the mavenized jcuda is up-to-date with jcuda.
-			I prefered this approach as opposed to asking everyone to download jcuda and execute following command: 
-			mvn install:install-file -Dfile=...
+			Use org.mystic:mavenized-jcuda until Alan puts org.jcuda:*
 		 -->
 		<dependency>
 			<groupId>org.mystic</groupId>
             <artifactId>mavenized-jcuda</artifactId>
             <version>0.7.5b</version>
+            <type>jar</type>
             <scope>provided</scope>
             <exclusions>
 		        <exclusion>

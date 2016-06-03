@@ -938,8 +938,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				else if( rhi.getOp() == ReOrgOp.REV )
 					hnew = HopRewriteUtils.createDataGenOp(input, 0);
 				else if( rhi.getOp() == ReOrgOp.DIAG ) {
-					if( HopRewriteUtils.isDimsKnown(input) ){
-						if( input.getDim1()==1 ) //diagv2m
+					if( HopRewriteUtils.isDimsKnown(input) ) {
+						if( input.getDim2()==1 ) //diagv2m
 							hnew = HopRewriteUtils.createDataGenOp(input, false, input, true, 0);
 						else //diagm2v
 							hnew = HopRewriteUtils.createDataGenOpByVal(

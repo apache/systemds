@@ -1931,6 +1931,11 @@ public class Recompiler
 			return false;
 		}		
 		
+		//robustness unknown dimensions, e.g., for csv reblock
+		if( rows <= 0 || cols <= 0 ) {
+			return false;
+		}
+		
 		//check valid dimensions and memory requirements
 		double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
 		double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);			

@@ -23,6 +23,7 @@ package org.apache.sysml.runtime.matrix.data;
 import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -417,7 +418,7 @@ public class OperationsOnMatrixValues
 				int lbrlen = UtilFunctions.computeBlockSize(rlen, leftRowIndex, brlen);
 				int lbclen = UtilFunctions.computeBlockSize(clen, leftColIndex, bclen);
 				MatrixBlock resultBlock = new MatrixBlock(lbrlen, lbclen, false);
-				resultBlock = resultBlock.leftIndexingOperations(slicedRHSBlk, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, null, false);
+				resultBlock = resultBlock.leftIndexingOperations(slicedRHSBlk, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, null, UpdateType.COPY);
 				outlist.add(new IndexedMatrixValue(new MatrixIndexes(leftRowIndex, leftColIndex), resultBlock));
 			}
 		}

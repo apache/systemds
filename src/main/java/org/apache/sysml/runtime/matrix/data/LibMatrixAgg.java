@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinFunctionCode;
 import org.apache.sysml.runtime.functionobjects.CM;
@@ -385,7 +386,7 @@ public class LibMatrixAgg
 				MatrixBlock row = tasks.get(i).getResult();
 				if( uaop.aggOp.correctionExists )
 					row.dropLastRowsOrColums(uaop.aggOp.correctionLocation);
-				tmp.leftIndexingOperations(row, i, i, 0, n2-1, tmp, true);
+				tmp.leftIndexingOperations(row, i, i, 0, n2-1, tmp, UpdateType.INPLACE_PINNED);
 			}
 			MatrixBlock tmp2 = cumaggregateUnaryMatrix(tmp, new MatrixBlock(tasks.size(), n2, false), uop);
 			

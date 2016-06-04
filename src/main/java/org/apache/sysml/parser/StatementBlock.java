@@ -53,9 +53,10 @@ public class StatementBlock extends LiveVariableAnalysis
 	HashMap<String,ConstIdentifier> _constVarsIn;
 	HashMap<String,ConstIdentifier> _constVarsOut;
 	
+	private ArrayList<String> _updateInPlaceVars = null;
 	private boolean _requiresRecompile = false;
 	
-	public StatementBlock(){
+	public StatementBlock() {
 		_dmlProg = null;
 		_statements = new ArrayList<Statement>();
 		_read = new VariableSet();
@@ -66,6 +67,7 @@ public class StatementBlock extends LiveVariableAnalysis
 		_initialized = true;
 		_constVarsIn = new HashMap<String,ConstIdentifier>();
 		_constVarsOut = new HashMap<String,ConstIdentifier>();
+		_updateInPlaceVars = new ArrayList<String>();
 	}
 	
 	public void setDMLProg(DMLProgram dmlProg){
@@ -1048,20 +1050,24 @@ public class StatementBlock extends LiveVariableAnalysis
 	
 
 	/////////
-	// materialized hops recompilation flags
+	// materialized hops recompilation / updateinplace flags
 	////
 	
-	public void updateRecompilationFlag() 
-		throws HopsException
-	{
+	public void updateRecompilationFlag() throws HopsException {
 		_requiresRecompile = ConfigurationManager.isDynamicRecompilation() 
 			                 && Recompiler.requiresRecompilation(get_hops());
 	}
 	
-	public boolean requiresRecompilation()
-	{
+	public boolean requiresRecompilation() {
 		return _requiresRecompile;
 	}
 	
+	public ArrayList<String> getUpdateInPlaceVars() {
+		return _updateInPlaceVars;
+	}
+	
+	public void setUpdateInPlaceVars( ArrayList<String> vars ) {
+		_updateInPlaceVars = vars;
+	}
 	
 }  // end class

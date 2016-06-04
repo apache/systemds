@@ -27,6 +27,7 @@ import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
@@ -57,44 +58,27 @@ public class WhileProgramBlock extends ProgramBlock
 		_childBlocks = new ArrayList<ProgramBlock>(); 
 	}
 	
-	public void printMe() {
-		
-		LOG.debug("***** while current block predicate inst: *****");
-		for (Instruction cp : _predicate){
-			cp.printMe();
-		}
-		
-		for (ProgramBlock pb : this._childBlocks){
-			pb.printMe();
-		}
-		
-		LOG.debug("***** current block inst exit: *****");
-		for (Instruction i : this._exitInstructions) {
-			i.printMe();
-		}
-	}
-	
-	
-
-	
 	public void addProgramBlock(ProgramBlock childBlock) {
 		_childBlocks.add(childBlock);
 	}
 	
-	public void setExitInstructions2(ArrayList<Instruction> exitInstructions)
-		{ _exitInstructions = exitInstructions; }
+	public void setExitInstructions2(ArrayList<Instruction> exitInstructions) { 
+		_exitInstructions = exitInstructions; 
+	}
 
-	public void setExitInstructions1(ArrayList<Instruction> predicate)
-		{ _predicate = predicate; }
+	public void setExitInstructions1(ArrayList<Instruction> predicate) { 
+		_predicate = predicate; 
+	}
 	
-	public void addExitInstruction(Instruction inst)
-		{ _exitInstructions.add(inst); }
+	public void addExitInstruction(Instruction inst) { 
+		_exitInstructions.add(inst); 
+	}
 	
-	public ArrayList<Instruction> getPredicate()
-		{ return _predicate; }
+	public ArrayList<Instruction> getPredicate() { 
+		return _predicate; 
+	}
 	
-	public void setPredicate( ArrayList<Instruction> predicate )
-	{ 
+	public void setPredicate( ArrayList<Instruction> predicate ) { 
 		_predicate = predicate;
 		
 		//update result var if non-empty predicate (otherwise,
@@ -103,14 +87,17 @@ public class WhileProgramBlock extends ProgramBlock
 			_predicateResultVar = findPredicateResultVar();
 	}
 	
-	public String getPredicateResultVar()
-		{ return _predicateResultVar; }
+	public String getPredicateResultVar() { 
+		return _predicateResultVar; 
+	}
 	
-	public void setPredicateResultVar(String resultVar) 
-		{ _predicateResultVar = resultVar; }
+	public void setPredicateResultVar(String resultVar) { 
+		_predicateResultVar = resultVar; 
+	}
 	
-	public ArrayList<Instruction> getExitInstructions()
-		{ return _exitInstructions; }
+	public ArrayList<Instruction> getExitInstructions() { 
+		return _exitInstructions; 
+	}
 	
 	private BooleanObject executePredicate(ExecutionContext ec) 
 		throws DMLRuntimeException 
@@ -157,51 +144,49 @@ public class WhileProgramBlock extends ProgramBlock
 					result = new BooleanObject( scalarResult.getBooleanValue() ); //auto casting
 			}
 		}
-		catch(Exception ex)
-		{
-			LOG.trace("\nWhile predicate variables: "+ ec.getVariables().toString());
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the WHILE predicate.", ex);
+		catch(Exception ex) {
+			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Failed to evaluate the while predicate.", ex);
 		}
 		
 		//(guaranteed to be non-null, see executePredicate/getScalarInput)
 		return result;
 	}
 	
-	public void execute(ExecutionContext ec) throws DMLRuntimeException {
-
-		BooleanObject predResult = executePredicate(ec); 
-		
+	public void execute(ExecutionContext ec) throws DMLRuntimeException 
+	{
 		//execute while loop
 		try 
 		{
-			while(predResult.getBooleanValue())
+			// prepare update in-place variables
+			UpdateType[] flags = prepareUpdateInPlaceVariables(ec);
+			
+			//run loop body until predicate becomes false
+			while( executePredicate(ec).getBooleanValue() )
 			{		
 				//execute all child blocks
 				for (int i=0 ; i < _childBlocks.size() ; i++) {
 					ec.updateDebugState(i);
 					_childBlocks.get(i).execute(ec);
 				}
-				
-				predResult = executePredicate(ec);
 			}
+			
+			// reset update-in-place variables
+			resetUpdateInPlaceVariableFlags(ec, flags);
 		}
-		catch(DMLScriptException e) 
-		{
+		catch (DMLScriptException e) {
+			//propagate stop call
 			throw e;
 		}
-		catch(Exception e)
-		{
-			LOG.trace("\nWhile predicate variables: "+ ec.getVariables().toString());
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating while program block.", e);
+		catch (Exception e) {
+			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating while program block", e);
 		}
 		
 		//execute exit instructions
 		try {
 			executeInstructions(_exitInstructions, ec);
 		}
-		catch(Exception e)
-		{
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error executing while exit instructions.", e);
+		catch(Exception e) {
+			throw new DMLRuntimeException(printBlockErrorLocation() + "Error executing while exit instructions.", e);
 		}
 	}
 
@@ -209,8 +194,7 @@ public class WhileProgramBlock extends ProgramBlock
 		return _childBlocks;
 	}
 	
-	public void setChildBlocks(ArrayList<ProgramBlock> childs) 
-	{
+	public void setChildBlocks(ArrayList<ProgramBlock> childs) {
 		_childBlocks = childs;
 	}
 	

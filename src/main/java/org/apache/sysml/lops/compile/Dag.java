@@ -2283,7 +2283,7 @@ public class Dag<N extends Lop>
 				// TODO: ideally, this should be done by having a member variable in Lop 
 				//       which stores the outputInfo.   
 				try {
-					oparams.setDimensions(oparams.getNumRows(), oparams.getNumCols(), -1, -1, oparams.getNnz(), oparams.getUpdateInPlace());
+					oparams.setDimensions(oparams.getNumRows(), oparams.getNumCols(), -1, -1, oparams.getNnz(), oparams.getUpdateType());
 				} catch(HopsException e) {
 					throw new LopsException(node.printErrorLocation() + "error in getOutputInfo in Dag ", e);
 				}
@@ -2398,7 +2398,7 @@ public class Dag<N extends Lop>
 					Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 					        oparams.getLabel(), oparams.getFile_name(), true, 
 					        DataType.MATRIX, OutputInfo.outputInfoToString(OutputInfo.CSVOutputInfo),
-							new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), -1, -1, oparams.getNnz()), oparams.getUpdateInPlace(), 
+							new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), -1, -1, oparams.getNnz()), oparams.getUpdateType(), 
 							false, delimLop.getStringValue(), true
 						);
 					
@@ -2440,7 +2440,7 @@ public class Dag<N extends Lop>
 											true, node.getDataType(),
 											OutputInfo.outputInfoToString(getOutputInfo(node, false)),
 											new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
-											oparams.getUpdateInPlace()
+											oparams.getUpdateType()
 										);
 				
 				createvarInst.setLocation(node);
@@ -2472,7 +2472,7 @@ public class Dag<N extends Lop>
 								true, fnOut.getDataType(),
 								OutputInfo.outputInfoToString(getOutputInfo(fnOut, false)),
 								new MatrixCharacteristics(fnOutParams.getNumRows(), fnOutParams.getNumCols(), (int)fnOutParams.getRowsInBlock(), (int)fnOutParams.getColsInBlock(), fnOutParams.getNnz()),
-								oparams.getUpdateInPlace()
+								oparams.getUpdateType()
 							);
 						
 						if (node._beginLine != 0)
@@ -2588,7 +2588,7 @@ public class Dag<N extends Lop>
 													true, node.getDataType(),
 													OutputInfo.outputInfoToString(out.getOutInfo()), 
 													new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
-													oparams.getUpdateInPlace()
+													oparams.getUpdateType()
 												);
 						
 						createvarInst.setLocation(node);
@@ -2698,7 +2698,7 @@ public class Dag<N extends Lop>
 													false, node.getDataType(),
 													OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
 													new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
-													oparams.getUpdateInPlace()
+													oparams.getUpdateType()
 												);
 
 							//NOTE: no instruction patching because final write from cp instruction
@@ -2726,7 +2726,7 @@ public class Dag<N extends Lop>
 									                false, node.getDataType(),
 									                OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
 									                new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
-													oparams.getUpdateInPlace()
+													oparams.getUpdateType()
 								                 );
 							// remove the variable
 							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(

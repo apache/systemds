@@ -624,12 +624,6 @@ public class DMLScript
 		//Step 7: generate runtime program
 		Program rtprog = prog.getRuntimeProgram(dmlconf);
 
-		if (LOG.isDebugEnabled()) {
-			LOG.info("********************** Instructions *******************");
-			rtprog.printMe();
-			LOG.info("*******************************************************");
-		}
-
 		//Step 8: [optional global data flow optimization]
 		if(OptimizerUtils.isOptLevel(OptimizationLevel.O4_GLOBAL_TIME_MEMORY) ) 
 		{

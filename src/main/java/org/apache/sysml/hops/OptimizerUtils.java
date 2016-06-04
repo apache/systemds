@@ -170,6 +170,11 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_SPLIT_HOP_DAGS = true;
 	
+	/**
+	 * Enables a specific rewrite that enables update in place for loop variables that are
+	 * only read/updated via cp leftindexing.
+	 */
+	public static boolean ALLOW_LOOP_UPDATE_IN_PLACE = true;
 	
 	
 	/**
@@ -302,6 +307,7 @@ public class OptimizerUtils
 				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
 				ALLOW_BRANCH_REMOVAL = false;
 				ALLOW_SUM_PRODUCT_REWRITES = false;
+				ALLOW_LOOP_UPDATE_IN_PLACE = false;
 				break;
 			// opt level 2: memory-based (all advanced rewrites)
 			case 2:

@@ -30,6 +30,7 @@ import scala.Tuple2;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -390,7 +391,7 @@ public class MatrixIndexingSPInstruction  extends UnarySPInstruction
 				int lhs_lru = UtilFunctions.computeCellInBlock(lhs_ru, _brlen);
 				int lhs_lcl = UtilFunctions.computeCellInBlock(lhs_cl, _bclen);
 				int lhs_lcu = UtilFunctions.computeCellInBlock(lhs_cu, _bclen);
-				MatrixBlock ret = arg._2.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new MatrixBlock(), false);
+				MatrixBlock ret = arg._2.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new MatrixBlock(), UpdateType.COPY);
 				return new Tuple2<MatrixIndexes, MatrixBlock>(arg._1, ret);
 			}
 		}

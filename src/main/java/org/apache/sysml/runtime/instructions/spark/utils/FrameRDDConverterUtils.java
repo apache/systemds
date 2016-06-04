@@ -39,6 +39,7 @@ import scala.Tuple2;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysml.runtime.instructions.spark.data.SerText;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertFrameBlockToIJVLines;
@@ -769,7 +770,7 @@ public class FrameRDDConverterUtils
 					MatrixIndexes matrixIndexes = new MatrixIndexes(UtilFunctions.computeBlockIndex(begRow+1, _brlenMatrix),UtilFunctions.computeBlockIndex(lColId+1, _bclenMatrix));
 
 					MatrixBlock matrixBlocktmp = DataConverter.convertToMatrixBlock(tmpFrame);
-					MatrixBlock matrixBlock = matrixBlocktmp.leftIndexingOperations(matrixBlocktmp, (int)begRowMat, (int)endRowMat, (int)begColMat, (int)endColMat, new MatrixBlock(), true);
+					MatrixBlock matrixBlock = matrixBlocktmp.leftIndexingOperations(matrixBlocktmp, (int)begRowMat, (int)endRowMat, (int)begColMat, (int)endColMat, new MatrixBlock(), UpdateType.INPLACE_PINNED);
 					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(matrixIndexes, matrixBlock));
 					
 					lColId = endCol+1;

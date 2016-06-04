@@ -24,6 +24,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -77,10 +78,10 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 		//left indexing
 		else if ( opcode.equalsIgnoreCase("leftIndex"))
 		{
-			boolean inplace = mo.isUpdateInPlaceEnabled();
+			UpdateType updateType = mo.getUpdateType();
 			if(DMLScript.STATISTICS)
 			{
-				if(inplace)
+				if( updateType.isInPlace() )
 					Statistics.incrementTotalLixUIP();
 				Statistics.incrementTotalLix();
 			}
@@ -91,7 +92,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 			if(input2.getDataType() == DataType.MATRIX) //MATRIX<-MATRIX
 			{
 				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.getName());
-				resultBlock = matBlock.leftIndexingOperations(rhsMatBlock, ixrange, new MatrixBlock(), inplace);
+				resultBlock = matBlock.leftIndexingOperations(rhsMatBlock, ixrange, new MatrixBlock(), updateType);
 				ec.releaseMatrixInput(input2.getName());
 			}
 			else //MATRIX<-SCALAR 
@@ -100,7 +101,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: "+ixrange.toString()+"." );
 				ScalarObject scalar = ec.getScalarInput(input2.getName(), ValueType.DOUBLE, input2.isLiteral());
 				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, 
-						(int)ixrange.rowStart, (int)ixrange.colStart, new MatrixBlock(), inplace);
+						(int)ixrange.rowStart, (int)ixrange.colStart, new MatrixBlock(), updateType);
 			}
 
 			//unpin lhs input
@@ -111,7 +112,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 			resultBlock.examSparsity();
 			
 			//unpin output
-			ec.setMatrixOutput(output.getName(), resultBlock, inplace);
+			ec.setMatrixOutput(output.getName(), resultBlock, updateType);
 		}
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");		

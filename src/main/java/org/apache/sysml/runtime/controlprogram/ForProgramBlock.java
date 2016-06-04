@@ -28,6 +28,7 @@ import org.apache.sysml.parser.ForStatementBlock;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -37,8 +38,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
 public class ForProgramBlock extends ProgramBlock
-{
-	
+{	
 	protected ArrayList<Instruction> 	_fromInstructions;
 	protected ArrayList<Instruction> 	_toInstructions;
 	protected ArrayList<Instruction> 	_incrementInstructions;
@@ -47,34 +47,6 @@ public class ForProgramBlock extends ProgramBlock
 	protected ArrayList<ProgramBlock> 	_childBlocks;
 
 	protected String[]                  _iterablePredicateVars; //from,to,where constants/internal vars not captured via instructions
-	
-	public void printMe() 
-	{		
-		LOG.debug("***** current for block predicate inst: *****");
-		LOG.debug("FROM:");
-		for (Instruction cp : _fromInstructions){
-			cp.printMe();
-		}
-		LOG.debug("TO:");
-		for (Instruction cp : _toInstructions){
-			cp.printMe();
-		}
-		LOG.debug("INCREMENT:");
-		for (Instruction cp : _incrementInstructions){
-			cp.printMe();
-		}
-		
-		LOG.debug("***** children block inst: *****");
-		for (ProgramBlock pb : this._childBlocks){
-			pb.printMe();
-		}
-		
-		LOG.debug("***** current block inst exit: *****");
-		for (Instruction i : this._exitInstructions) {
-			i.printMe();
-		}
-		
-	}
 
 	
 	public ForProgramBlock(Program prog, String[] iterPredVars) throws DMLRuntimeException
@@ -86,70 +58,59 @@ public class ForProgramBlock extends ProgramBlock
 		_iterablePredicateVars = iterPredVars;
 	}
 	
-	public ArrayList<Instruction> getFromInstructions()
-	{
+	public ArrayList<Instruction> getFromInstructions() {
 		return _fromInstructions;
 	}
 	
-	public void setFromInstructions(ArrayList<Instruction> instructions)
-	{
+	public void setFromInstructions(ArrayList<Instruction> instructions) {
 		_fromInstructions = instructions;
 	}
 	
-	public ArrayList<Instruction> getToInstructions()
-	{
+	public ArrayList<Instruction> getToInstructions() {
 		return _toInstructions;
 	}
 	
-	public void setToInstructions(ArrayList<Instruction> instructions)
-	{
+	public void setToInstructions(ArrayList<Instruction> instructions) {
 		_toInstructions = instructions;
 	}
 	
-	public ArrayList<Instruction> getIncrementInstructions()
-	{
+	public ArrayList<Instruction> getIncrementInstructions() {
 		return _incrementInstructions;
 	}
 	
-	public void setIncrementInstructions(ArrayList<Instruction> instructions)
-	{
+	public void setIncrementInstructions(ArrayList<Instruction> instructions) {
 		_incrementInstructions = instructions;
 	}
 	
-	public void addExitInstruction(Instruction inst){
+	public void addExitInstruction(Instruction inst) {
 		_exitInstructions.add(inst);
 	}
 	
-	public ArrayList<Instruction> getExitInstructions(){
+	public ArrayList<Instruction> getExitInstructions() {
 		return _exitInstructions;
 	}
 	
-	public void setExitInstructions(ArrayList<Instruction> inst){
+	public void setExitInstructions(ArrayList<Instruction> inst) {
 		_exitInstructions = inst;
 	}
 	
-
 	public void addProgramBlock(ProgramBlock childBlock) {
 		_childBlocks.add(childBlock);
 	}
 	
-	public ArrayList<ProgramBlock> getChildBlocks() 
-	{
+	public ArrayList<ProgramBlock> getChildBlocks() {
 		return _childBlocks;
 	}
 	
-	public void setChildBlocks(ArrayList<ProgramBlock> pbs) 
-	{
+	public void setChildBlocks(ArrayList<ProgramBlock> pbs) {
 		_childBlocks = pbs;
 	}
 	
-	public String[] getIterablePredicateVars()
-	{
+	public String[] getIterablePredicateVars() {
 		return _iterablePredicateVars;
 	}
 	
-	public void setIterablePredicateVars(String[] iterPredVars)
-	{
+	public void setIterablePredicateVars(String[] iterPredVars) {
 		_iterablePredicateVars = iterPredVars;
 	}
 	
@@ -173,6 +134,9 @@ public class ForProgramBlock extends ProgramBlock
 		// execute for loop
 		try 
 		{
+			// prepare update in-place variables
+			UpdateType[] flags = prepareUpdateInPlaceVariables(ec);
+			
 			// run for loop body for each instance of predicate sequence 
 			SequenceIterator seqIter = new SequenceIterator(iterVarName, from, to, incr);
 			for( IntObject iterVar : seqIter ) 
@@ -186,6 +150,9 @@ public class ForProgramBlock extends ProgramBlock
 					_childBlocks.get(i).execute(ec);
 				}				
 			}
+			
+			// reset update-in-place variables
+			resetUpdateInPlaceVariableFlags(ec, flags);
 		}
 		catch (DMLScriptException e) {
 			//propagate stop call
@@ -275,7 +242,7 @@ public class ForProgramBlock extends ProgramBlock
 		
 		return ret;
 	}
-
+	
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in for program block generated from for statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}

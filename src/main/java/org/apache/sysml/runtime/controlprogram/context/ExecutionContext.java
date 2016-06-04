@@ -36,6 +36,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -315,13 +316,13 @@ public class ExecutionContext
 	 * @param inplace
 	 * @throws DMLRuntimeException
 	 */
-	public void setMatrixOutput(String varName, MatrixBlock outputData, boolean inplace) 
+	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) 
 		throws DMLRuntimeException 
 	{
-		if( inplace ) //modify metadata to prevent output serialization
-		{
+		if( flag.isInPlace() ) {
+			//modify metadata to carry update status
 			MatrixObject sores = (MatrixObject) this.getVariable (varName);
-	        sores.enableUpdateInPlace( true );
+	        sores.setUpdateType( flag );
 		}
 		
 		//default case

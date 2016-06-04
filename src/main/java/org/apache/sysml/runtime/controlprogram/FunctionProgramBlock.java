@@ -153,13 +153,6 @@ public class FunctionProgramBlock extends ProgramBlock
 		return _recompileOnce;
 	}
 	
-	public void printMe() {
-		
-		for (ProgramBlock pb : this._childBlocks){
-			pb.printMe();
-		}
-	}
-	
 	public String printBlockErrorLocation(){
 		return "ERROR: Runtime error in function program block generated from function statement block between lines " + _beginLine + " and " + _endLine + " -- ";
 	}

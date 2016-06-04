@@ -58,6 +58,7 @@ import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -170,7 +171,7 @@ public class ProgramConverter
 		//(each worker requires its own copy of the empty matrix object)
 		for( String var : cpec.getVariables().keySet() ) {
 			Data dat = cpec.getVariables().get(var);
-			if( dat instanceof MatrixObject && ((MatrixObject)dat).isUpdateInPlaceEnabled() ) {
+			if( dat instanceof MatrixObject && ((MatrixObject)dat).getUpdateType().isInPlace() ) {
 				MatrixObject mo = (MatrixObject)dat;
 				MatrixObject moNew = new MatrixObject(mo); 
 				if( mo.getNnz() != 0 ){
@@ -721,6 +722,7 @@ public class ProgramConverter
 				ret.setLiveOut( sb.liveOut() );
 				ret.setUpdatedVariables( sb.variablesUpdated() );
 				ret.setReadVariables( sb.variablesRead() );
+				ret.setUpdateInPlaceVars( sb.getUpdateInPlaceVars() );
 				
 				//shallow copy child statements
 				ret.setStatements( sb.getStatements() );
@@ -774,6 +776,7 @@ public class ProgramConverter
 				ret.setLiveOut( sb.liveOut() );
 				ret.setUpdatedVariables( sb.variablesUpdated() );
 				ret.setReadVariables( sb.variablesRead() );
+				ret.setUpdateInPlaceVars( sb.getUpdateInPlaceVars() );
 				
 				//shallow copy child statements
 				ret.setStatements( sb.getStatements() );
@@ -1002,7 +1005,6 @@ public class ProgramConverter
 				MatrixCharacteristics mc = md.getMatrixCharacteristics();
 				value = mo.getFileName();
 				PDataPartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? mo.getPartitionFormat() : PDataPartitionFormat.NONE;
-				boolean inplace = mo.isUpdateInPlaceEnabled();
 				matrixMetaData = new String[9];
 				matrixMetaData[0] = String.valueOf( mc.getRows() );
 				matrixMetaData[1] = String.valueOf( mc.getCols() );
@@ -1012,7 +1014,7 @@ public class ProgramConverter
 				matrixMetaData[5] = InputInfo.inputInfoToString( md.getInputInfo() );
 				matrixMetaData[6] = OutputInfo.outputInfoToString( md.getOutputInfo() );
 				matrixMetaData[7] = String.valueOf( partFormat );
-				matrixMetaData[8] = String.valueOf( inplace );
+				matrixMetaData[8] = String.valueOf( mo.getUpdateType() );
 				break;
 			default:
 				throw new DMLRuntimeException("Unable to serialize datatype "+datatype);
@@ -2161,14 +2163,14 @@ public class ProgramConverter
 				InputInfo iin = InputInfo.stringToInputInfo( st.nextToken() );
 				OutputInfo oin = OutputInfo.stringToOutputInfo( st.nextToken() );		
 				PDataPartitionFormat partFormat = PDataPartitionFormat.valueOf( st.nextToken() );
-				boolean inplace = Boolean.parseBoolean( st.nextToken() );
+				UpdateType inplace = UpdateType.valueOf( st.nextToken() );
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz); 
 				MatrixFormatMetaData md = new MatrixFormatMetaData( mc, oin, iin );
 				mo.setMetaData( md );
 				mo.setVarName( name );
 				if( partFormat!=PDataPartitionFormat.NONE )
 					mo.setPartitioned( partFormat, -1 ); //TODO once we support BLOCKWISE_N we should support it here as well
-				mo.enableUpdateInPlace(inplace);
+				mo.setUpdateType(inplace);
 				dat = mo;
 				break;
 			}

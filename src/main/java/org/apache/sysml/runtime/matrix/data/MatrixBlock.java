@@ -42,6 +42,7 @@ import org.apache.sysml.lops.MapMultChain.ChainType;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.CTable;
@@ -95,6 +96,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public static final double ULTRA_SPARSITY_TURN_POINT = 0.00004; 
 	//default sparse block type: modified compressed sparse rows 
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
+	//default sparse block type for update in place: compressed sparse rows to prevent serialization
+	public static final SparseBlock.Type DEFAULT_INPLACE_SPARSEBLOCK = SparseBlock.Type.CSR;
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
 	
@@ -3884,12 +3887,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, IndexRange ixrange, MatrixBlock ret, boolean inplace) 
+	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, IndexRange ixrange, MatrixBlock ret, UpdateType update) 
 		throws DMLRuntimeException 
 	{
 		return leftIndexingOperations(
 				rhsMatrix, (int)ixrange.rowStart, (int)ixrange.rowEnd, 
-				(int)ixrange.colStart, (int)ixrange.colEnd, ret, inplace);
+				(int)ixrange.colStart, (int)ixrange.colEnd, ret, update);
 	}
 	
 	/**
@@ -3903,7 +3906,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @throws DMLRuntimeException 
 	 */
 	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, int rl, int ru, 
-			int cl, int cu, MatrixBlock ret, boolean inplace) 
+			int cl, int cu, MatrixBlock ret, UpdateType update) 
 		throws DMLRuntimeException 
 	{	
 		// Check the validity of bounds
@@ -3920,12 +3923,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					(rl+1) +":" + (ru+1) + ", " + (cl+1) + ":" + (cu+1) + "].");
 		}
 		
-		MatrixBlock result = ret;
-		
+		MatrixBlock result = ret;		
 		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, 
 				     rhsMatrix.getNumRows(), rhsMatrix.getNumColumns(), rhsMatrix.getNonZeros());
 		
-		if( !inplace ) //general case
+		if( !update.isInPlace() ) //general case
 		{
 			if(result==null)
 				result=new MatrixBlock(rlen, clen, sp);
@@ -3944,6 +3946,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				result.sparseToDense();
 			else if( !result.sparse && sp )
 				result.denseToSparse();	
+			
+			//ensure right sparse block representation to prevent serialization
+			if( result.sparse && update != UpdateType.INPLACE_PINNED ) {
+				result.sparseBlock = SparseBlockFactory.copySparseBlock(
+						DEFAULT_INPLACE_SPARSEBLOCK, result.sparseBlock, false);
+			}
 		}
 		
 		//NOTE conceptually we could directly use a zeroout and copy(..., false) but
@@ -3983,13 +3991,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public MatrixBlock leftIndexingOperations(ScalarObject scalar, int rl, int cl, MatrixBlock ret, boolean inplace) 
+	public MatrixBlock leftIndexingOperations(ScalarObject scalar, int rl, int cl, MatrixBlock ret, UpdateType update) 
 		throws DMLRuntimeException 
 	{
 		double inVal = scalar.getDoubleValue();
 		boolean sp = estimateSparsityOnLeftIndexing(rlen, clen, nonZeros, 1, 1, (inVal!=0)?1:0);
 		
-		if( !inplace ) //general case
+		if( !update.isInPlace() ) //general case
 		{
 			if(ret==null)
 				ret=new MatrixBlock(rlen, clen, sp);
@@ -3999,7 +4007,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			
 		}
 		else //update in-place
+		{
+			//use current block as in-place result
 			ret = this;
+			
+			//ensure right sparse block representation to prevent serialization
+			if( ret.sparse && update != UpdateType.INPLACE_PINNED ) {
+				ret.sparseBlock = SparseBlockFactory.copySparseBlock(
+						DEFAULT_INPLACE_SPARSEBLOCK, ret.sparseBlock, false);
+			}
+		}
 		
 		ret.quickSetValue(rl, cl, inVal);
 		return ret;

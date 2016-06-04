@@ -38,6 +38,7 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
@@ -82,7 +83,7 @@ public abstract class Hop
 	protected long _rows_in_block = -1;
 	protected long _cols_in_block = -1;
 	protected long _nnz = -1;
-	protected boolean _updateInPlace = false;
+	protected UpdateType _updateType = UpdateType.COPY;
 
 	protected ArrayList<Hop> _parent = new ArrayList<Hop>();
 	protected ArrayList<Hop> _input = new ArrayList<Hop>();
@@ -841,12 +842,12 @@ public abstract class Hop
 		return _nnz;
 	}
 
-	public void setUpdateInPlace(boolean updateInPlace){
-		_updateInPlace = updateInPlace;
+	public void setUpdateType(UpdateType update){
+		_updateType = update;
 	}
 	
-	public boolean getUpdateInPlace(){
-		return _updateInPlace;
+	public UpdateType getUpdateType(){
+		return _updateType;
 	}
 
 	public abstract Lop constructLops() 
@@ -968,7 +969,7 @@ public abstract class Hop
 				s.append(h.getHopID() + "; ");
 			}
 			
-			s.append("\n  dims [" + _dim1 + "," + _dim2 + "] blk [" + _rows_in_block + "," + _cols_in_block + "] nnz: " + _nnz + " UpdateInPlace: " + _updateInPlace);
+			s.append("\n  dims [" + _dim1 + "," + _dim2 + "] blk [" + _rows_in_block + "," + _cols_in_block + "] nnz: " + _nnz + " UpdateInPlace: " + _updateType);
 			s.append("  MemEstimate = Out " + (_outputMemEstimate/1024/1024) + " MB, In&Out " + (_memEstimate/1024/1024) + " MB" );
 			LOG.debug(s.toString());
 		}
@@ -994,7 +995,7 @@ public abstract class Hop
 		throws HopsException
 	{
 		lop.getOutputParameters().setDimensions(
-			getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz(), getUpdateInPlace());	
+			getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz(), getUpdateType());	
 	}
 	
 	public Lop getLops() {
@@ -1863,7 +1864,7 @@ public abstract class Hop
 		_rows_in_block = that._rows_in_block;
 		_cols_in_block = that._cols_in_block;
 		_nnz = that._nnz;
-		_updateInPlace = that._updateInPlace;
+		_updateType = that._updateType;
 
 		//no copy of lops (regenerated)
 		_parent = new ArrayList<Hop>();

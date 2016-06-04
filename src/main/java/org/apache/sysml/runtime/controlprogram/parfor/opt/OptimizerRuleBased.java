@@ -84,6 +84,7 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
@@ -1919,7 +1920,7 @@ public class OptimizerRuleBased extends Optimizer
 			for( String var : retVars ){
 				Data dat = vars.get(var);
 				if( dat instanceof MatrixObject )
-					((MatrixObject)dat).enableUpdateInPlace(true);
+					((MatrixObject)dat).setUpdateType(UpdateType.INPLACE_PINNED);
 			}
 			inPlaceResultVars.addAll(retVars);
 
@@ -1936,7 +1937,7 @@ public class OptimizerRuleBased extends Optimizer
 						for (UIPCandidateHop uipCandHop: uipCandHopList)
 							if(uipCandHop.isIntermediate() && uipCandHop.isLoopApplicable() && uipCandHop.isUpdateInPlace())
 							{
-								uipCandHop.getHop().setUpdateInPlace(true);
+								uipCandHop.getHop().setUpdateType(UpdateType.INPLACE_PINNED);
 								bAnyUIPApplicable = true;
 
 								if(LOG.isDebugEnabled())
@@ -1971,7 +1972,7 @@ public class OptimizerRuleBased extends Optimizer
 						if(uipCandHop.getHop() != null)
 						{
 							LOG.trace("Matrix Object: Name: " + uipCandHop.getHop().getName() + "<" + uipCandHop.getHop().getBeginLine() + "," + uipCandHop.getHop().getEndLine()+ ">, InLoop:"
-								+ uipCandHop.isLoopApplicable() + ", UIPApplicable:" + uipCandHop.isUpdateInPlace() + ", HopUIPApplicable:" + uipCandHop.getHop().getUpdateInPlace());
+								+ uipCandHop.isLoopApplicable() + ", UIPApplicable:" + uipCandHop.isUpdateInPlace() + ", HopUIPApplicable:" + uipCandHop.getHop().getUpdateType());
 							LOG.trace("Explain Candidate HOP after recompile");
 							LOG.trace(Explain.explain(uipCandHop.getHop()));
 						}

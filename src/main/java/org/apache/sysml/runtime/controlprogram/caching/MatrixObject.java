@@ -63,8 +63,17 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 {
 	private static final long serialVersionUID = 6374712373206495637L;
 	
+	public enum UpdateType {
+		COPY,
+		INPLACE,
+		INPLACE_PINNED;
+		public boolean isInPlace() {
+			return (this != COPY);
+		}
+	}
+	
 	//additional matrix-specific flags
-	private boolean _updateInPlaceFlag = false; //flag if in-place update
+	private UpdateType _updateType = UpdateType.COPY; 
 	
 	//information relevant to partitioned matrices.
 	private boolean _partitioned = false; //indicates if obj partitioned
@@ -105,7 +114,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		_metaData = new MatrixFormatMetaData(new MatrixCharacteristics(metaOld.getMatrixCharacteristics()),
 				                             metaOld.getOutputInfo(), metaOld.getInputInfo());
 		
-		_updateInPlaceFlag = mo._updateInPlaceFlag;
+		_updateType = mo._updateType;
 		_partitioned = mo._partitioned;
 		_partitionFormat = mo._partitionFormat;
 		_partitionSize = mo._partitionSize;
@@ -117,16 +126,16 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * 
 	 * @param flag
 	 */
-	public void enableUpdateInPlace(boolean flag) {
-		_updateInPlaceFlag = flag;
+	public void setUpdateType(UpdateType flag) {
+		_updateType = flag;
 	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public boolean isUpdateInPlaceEnabled() {
-		return _updateInPlaceFlag;
+	public UpdateType getUpdateType() {
+		return _updateType;
 	}
 	
 	@Override
@@ -531,7 +540,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	@Override
 	protected boolean isBelowCachingThreshold() {
 		return super.isBelowCachingThreshold()
-			|| isUpdateInPlaceEnabled(); //pinned result variable
+			|| getUpdateType() == UpdateType.INPLACE_PINNED;
 	}
 	
 	@Override

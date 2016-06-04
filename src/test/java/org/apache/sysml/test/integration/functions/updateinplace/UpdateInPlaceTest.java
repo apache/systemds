@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -227,12 +228,15 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	 */
 	private void runUpdateInPlaceTest( String TEST_NAME, int iTestNumber, List<String> listUIPExp, long lTotalUIPVar, long lTotalLixUIP, long lTotalLix)
 	{
+		boolean oldinplace =  OptimizerUtils.ALLOW_LOOP_UPDATE_IN_PLACE;
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			
+			OptimizerUtils.ALLOW_LOOP_UPDATE_IN_PLACE = false;
+					
 			// This is for running the junit test the new way, i.e., construct the arguments directly 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + iTestNumber + ".dml";
@@ -283,7 +287,8 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 				
 			}
 		}
-		finally{
+		finally {
+			OptimizerUtils.ALLOW_LOOP_UPDATE_IN_PLACE = oldinplace;
 		}
 	}
 	

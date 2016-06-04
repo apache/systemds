@@ -61,48 +61,30 @@ public class IfProgramBlock extends ProgramBlock
 		_exitInstructions = new ArrayList<Instruction>();
 	}
 	
-	public ArrayList<ProgramBlock> getChildBlocksIfBody()
-		{ return _childBlocksIfBody; }
-
-	public void setChildBlocksIfBody(ArrayList<ProgramBlock> blocks)
-		{ _childBlocksIfBody = blocks; }
-	
-	public void addProgramBlockIfBody(ProgramBlock pb)
-		{ _childBlocksIfBody.add(pb); }	
-	
-	public ArrayList<ProgramBlock> getChildBlocksElseBody()
-		{ return _childBlocksElseBody; }
-
-	public void setChildBlocksElseBody(ArrayList<ProgramBlock> blocks)
-		{ _childBlocksElseBody = blocks; }
-	
-	public void addProgramBlockElseBody(ProgramBlock pb)
-		{ _childBlocksElseBody.add(pb); }
-	
-	public void printMe() {
-		
-		LOG.debug("***** if current block predicate inst: *****");
-		for (Instruction cp : _predicate){
-			cp.printMe();
-		}
-		
-		LOG.debug("***** children block inst --- if body : *****");
-		for (ProgramBlock pb : this._childBlocksIfBody){
-			pb.printMe();
-		}
-	
-		LOG.debug("***** children block inst --- else body : *****");
-		for (ProgramBlock pb: this._childBlocksElseBody){
-			pb.printMe();
-		}
-		
-		LOG.debug("***** current block inst exit: *****");
-		for (Instruction i : this._exitInstructions) {
-			i.printMe();
-		}	
+	public ArrayList<ProgramBlock> getChildBlocksIfBody() { 
+		return _childBlocksIfBody; 
 	}
 
+	public void setChildBlocksIfBody(ArrayList<ProgramBlock> blocks) { 
+		_childBlocksIfBody = blocks; 
+	}
+	
+	public void addProgramBlockIfBody(ProgramBlock pb) { 
+		_childBlocksIfBody.add(pb); 
+	}	
+	
+	public ArrayList<ProgramBlock> getChildBlocksElseBody() { 
+		return _childBlocksElseBody; 
+	}
 
+	public void setChildBlocksElseBody(ArrayList<ProgramBlock> blocks) { 
+		_childBlocksElseBody = blocks; 
+	}
+	
+	public void addProgramBlockElseBody(ProgramBlock pb) {
+		_childBlocksElseBody.add(pb); 
+	}
+	
 	public void setExitInstructions2(ArrayList<Instruction> exitInstructions){
 		_exitInstructions = exitInstructions;
 	}

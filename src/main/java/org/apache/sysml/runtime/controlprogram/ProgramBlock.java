@@ -27,12 +27,14 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
@@ -49,8 +51,7 @@ import org.apache.sysml.yarn.DMLAppMasterUtils;
 
 
 public class ProgramBlock 
-{	
-	
+{		
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
 	private static final boolean CHECK_MATRIX_SPARSITY = false;
 	
@@ -338,6 +339,64 @@ public class ProgramBlock
 		}
 	}
 	
+
+	/**
+	 *  
+	 * @param ec
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	protected UpdateType[] prepareUpdateInPlaceVariables(ExecutionContext ec) 
+		throws DMLRuntimeException
+	{
+		if( _sb == null || _sb.getUpdateInPlaceVars().isEmpty() )
+			return null;
+		
+		ArrayList<String> varnames = _sb.getUpdateInPlaceVars();
+		UpdateType[] flags = new UpdateType[varnames.size()];
+		for( int i=0; i<flags.length; i++ )
+			if( ec.getVariable(varnames.get(i)) != null ) {
+				String varname = varnames.get(i);
+				MatrixObject mo = ec.getMatrixObject(varname);
+				flags[i] = mo.getUpdateType();
+				//create deep copy if required and if it fits in thread-local mem budget
+				if( flags[i]==UpdateType.COPY && OptimizerUtils.getLocalMemBudget()/2 >
+					OptimizerUtils.estimateSizeExactSparsity(mo.getMatrixCharacteristics())) {
+					MatrixObject moNew = new MatrixObject(mo); 
+					MatrixBlock mbVar = mo.acquireRead();  
+					moNew.acquireModify( !mbVar.isInSparseFormat() ? new MatrixBlock(mbVar) : 
+						new MatrixBlock(mbVar, MatrixBlock.DEFAULT_INPLACE_SPARSEBLOCK, true) );
+					mo.release();
+					moNew.release();			
+					moNew.setUpdateType(UpdateType.INPLACE);
+					ec.setVariable(varname, moNew);
+				}
+			}
+		
+		return flags;
+	}
+	
+	/**
+	 * 
+	 * @param ec
+	 * @param flags
+	 * @throws DMLRuntimeException
+	 */
+	protected void resetUpdateInPlaceVariableFlags(ExecutionContext ec, UpdateType[] flags) 
+		throws DMLRuntimeException
+	{
+		if( flags == null )
+			return;
+		
+		//reset update-in-place flag to pre-loop status
+		ArrayList<String> varnames = _sb.getUpdateInPlaceVars();
+		for( int i=0; i<varnames.size(); i++ )
+			if( ec.getVariable(varnames.get(i)) != null && flags[i] !=null ) {
+				MatrixObject mo = ec.getMatrixObject(varnames.get(i));
+				mo.setUpdateType(flags[i]);
+			}
+	}
+	
 	/**
 	 * 
 	 * @param inst
@@ -346,13 +405,6 @@ public class ProgramBlock
 	private boolean isRemoveVariableInstruction(Instruction inst)
 	{
 		return ( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).isRemoveVariable() );
-	}
-	
-	public void printMe() {
-		//System.out.println("***** INSTRUCTION BLOCK *****");
-		for (Instruction i : this._inst) {
-			i.printMe();
-		}
 	}
 	
 	/**

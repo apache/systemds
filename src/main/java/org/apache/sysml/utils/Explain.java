@@ -558,7 +558,10 @@ public class Explain
 		if (sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			builder.append(offset);
-			builder.append("WHILE (lines "+wsb.getBeginLine()+"-"+wsb.getEndLine()+")\n");
+			if( !wsb.getUpdateInPlaceVars().isEmpty() )
+				builder.append("WHILE (lines "+wsb.getBeginLine()+"-"+wsb.getEndLine()+") [in-place="+wsb.getUpdateInPlaceVars().toString()+"]\n");
+			else
+				builder.append("WHILE (lines "+wsb.getBeginLine()+"-"+wsb.getEndLine()+")\n");
 			builder.append(explainHop(wsb.getPredicateHops(), level+1));
 			
 			WhileStatement ws = (WhileStatement)sb.getStatement(0);
@@ -588,9 +591,12 @@ public class Explain
 			builder.append(offset);
 			if (sb instanceof ParForStatementBlock)
 				builder.append("PARFOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
-			else
-				builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
-			
+			else {
+				if( !fsb.getUpdateInPlaceVars().isEmpty() )
+					builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+") [in-place="+fsb.getUpdateInPlaceVars().toString()+"]\n");
+				else
+					builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
+			}
 			if (fsb.getFromHops() != null) 
 				builder.append(explainHop(fsb.getFromHops(), level+1));
 			if (fsb.getToHops() != null) 
@@ -681,8 +687,8 @@ public class Explain
 		               + hop.getColsInBlock() + "," 
 				       + hop.getNnz());
 		
-		if (hop.getUpdateInPlace())
-			sb.append("," + hop.getUpdateInPlace());
+		if (hop.getUpdateType().isInPlace())
+			sb.append("," + hop.getUpdateType().toString().toLowerCase());
 		
 		sb.append("]");
 		
@@ -832,8 +838,12 @@ public class Explain
 		else if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
+			StatementBlock wsb = pb.getStatementBlock();
 			sb.append(offset);
-			sb.append("WHILE (lines "+wpb.getBeginLine()+"-"+wpb.getEndLine()+")\n");
+			if( wsb != null && !wsb.getUpdateInPlaceVars().isEmpty() )
+				sb.append("WHILE (lines "+wpb.getBeginLine()+"-"+wpb.getEndLine()+") [in-place="+wsb.getUpdateInPlaceVars().toString()+"]\n");
+			else
+				sb.append("WHILE (lines "+wpb.getBeginLine()+"-"+wpb.getEndLine()+")\n");
 			sb.append(explainInstructions(wpb.getPredicate(), level+1));			
 			for( ProgramBlock pbc : wpb.getChildBlocks() )
 				sb.append( explainProgramBlock( pbc, level+1) );
@@ -857,11 +867,16 @@ public class Explain
 		else if (pb instanceof ForProgramBlock) //incl parfor
 		{
 			ForProgramBlock fpb = (ForProgramBlock) pb;
+			StatementBlock fsb = pb.getStatementBlock();
 			sb.append(offset);
 			if( pb instanceof ParForProgramBlock )
 				sb.append("PARFOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+")\n");
-			else
-				sb.append("FOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+")\n");
+			else {
+				if( fsb != null && !fsb.getUpdateInPlaceVars().isEmpty() )
+					sb.append("FOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+") [in-place="+fsb.getUpdateInPlaceVars().toString()+"]\n");
+				else
+					sb.append("FOR (lines "+fpb.getBeginLine()+"-"+fpb.getEndLine()+")\n");
+			}
 			sb.append(explainInstructions(fpb.getFromInstructions(), level+1));
 			sb.append(explainInstructions(fpb.getToInstructions(), level+1));
 			sb.append(explainInstructions(fpb.getIncrementInstructions(), level+1));

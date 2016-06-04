@@ -154,12 +154,4 @@ public class Program
 		
 		ec.clearDebugProgramCounters();
 	}
-		
-	
-	public void printMe() {
-		
-		for (ProgramBlock pb : this._programBlocks) {
-			pb.printMe();
-		}
-	}
 }

@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -133,7 +134,7 @@ public class FrameIndexingTest extends AutomatedTestBase
 				//matrix indexing
 				MatrixBlock mbA = DataConverter.convertToMatrixBlock(A);
 				MatrixBlock mbB = DataConverter.convertToMatrixBlock(B);
-				mbC = mbA.leftIndexingOperations(mbB, rl, ru, cl, cu, new MatrixBlock(), false);
+				mbC = mbA.leftIndexingOperations(mbB, rl, ru, cl, cu, new MatrixBlock(), UpdateType.COPY);
 				
 				//frame indexing
 				frame3 = frame1.leftIndexingOperations(frame2, rl, ru, cl, cu, new FrameBlock());				

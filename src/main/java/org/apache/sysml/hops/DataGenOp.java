@@ -167,7 +167,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 				(getColsInBlock()>0)?getColsInBlock():ConfigurationManager.getBlocksize(),  
 				//actual rand nnz might differ (in cp/mr they are corrected after execution)
 				(_op==DataGenMethod.RAND && et==ExecType.SPARK && getNnz()!=0) ? -1 : getNnz(),
-				getUpdateInPlace());
+				getUpdateType());
 		
 		setLineNumbers(rnd);
 		setLops(rnd);

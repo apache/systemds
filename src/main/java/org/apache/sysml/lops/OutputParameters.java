@@ -20,6 +20,7 @@
 package org.apache.sysml.lops;
 
 import org.apache.sysml.hops.HopsException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 
 /**
  * class to maintain output parameters for a lop.
@@ -37,7 +38,7 @@ public class OutputParameters
 	private long _num_rows = -1;
 	private long _num_cols = -1;
 	private long _nnz = -1;	
-	private boolean _updateInPlace = false;
+	private UpdateType _updateType = UpdateType.COPY;
 	private long _num_rows_in_block = -1;
 	private long _num_cols_in_block = -1;
 	private String _file_name = null;
@@ -82,8 +83,8 @@ public class OutputParameters
 		}
 	}
 
-	public void setDimensions(long rows, long cols, long rows_per_block, long cols_per_block, long nnz, boolean updateInPlace) throws HopsException {
-		_updateInPlace = updateInPlace;
+	public void setDimensions(long rows, long cols, long rows_per_block, long cols_per_block, long nnz, UpdateType update) throws HopsException {
+		_updateType = update;
 		setDimensions(rows, cols, rows_per_block, cols_per_block, nnz);
 	}
 	
@@ -133,13 +134,13 @@ public class OutputParameters
 		_nnz = nnz;
 	}
 	
-	public boolean getUpdateInPlace() {
-		return _updateInPlace;
+	public UpdateType getUpdateType() {
+		return _updateType;
 	}
 	
-	public void setUpdateInPlace(boolean updateInPlace)
+	public void setUpdateType(UpdateType update)
 	{
-		_updateInPlace = updateInPlace;
+		_updateType = update;
 	}
 
 	public long getRowsInBlock() {
@@ -164,7 +165,7 @@ public class OutputParameters
 		sb.append("rows=" + getNumRows() + Lop.VALUETYPE_PREFIX);
 		sb.append("cols=" + getNumCols() + Lop.VALUETYPE_PREFIX);
 		sb.append("nnz=" + getNnz() + Lop.VALUETYPE_PREFIX);
-		sb.append("updateInPlace=" + getUpdateInPlace() + Lop.VALUETYPE_PREFIX);
+		sb.append("updateInPlace=" + getUpdateType().toString() + Lop.VALUETYPE_PREFIX);
 		sb.append("rowsInBlock=" + getRowsInBlock() + Lop.VALUETYPE_PREFIX);
 		sb.append("colsInBlock=" + getColsInBlock() + Lop.VALUETYPE_PREFIX);
 		sb.append("isBlockedRepresentation=" + isBlocked() + Lop.VALUETYPE_PREFIX);

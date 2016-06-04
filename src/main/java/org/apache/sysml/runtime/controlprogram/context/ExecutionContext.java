@@ -231,7 +231,8 @@ public class ExecutionContext
 	{	
 		MatrixObject mo = (MatrixObject) getVariable(varName);
 		if(mo.getNumRows() != nrows || mo.getNumColumns() != ncols) {
-			MatrixCharacteristics mc = new MatrixCharacteristics((long)nrows, (long)ncols, (int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
+			MatrixCharacteristics mc = new MatrixCharacteristics((long)nrows, (long)ncols, 
+					(int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
 			OutputInfo oiOld = null;
 			InputInfo iiOld = null;
 			MetaData oldMetaData = mo.getMetaData();
@@ -250,6 +251,8 @@ public class ExecutionContext
 			mo.release();
 		}
 		mo.getGPUObject().acquireDenseDeviceModify(nrows*ncols);
+		mo.getMatrixCharacteristics().setNonZeros(-1);
+		mo.getMatrixBlock().setNonZeros(-1);
 		return mo;
 	}
 	

@@ -665,6 +665,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			
 			matmultCP = new Binary(left, right, 
 									 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.GPU, isLeftTransposed, isRightTransposed);
+			setOutputDimensions(matmultCP);
+			setNnz(-1);
 		}
 		else {
 			if( isLeftTransposeRewriteApplicable(true, false) ) {
@@ -675,9 +677,9 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
 										 Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);
 			}
+			setOutputDimensions(matmultCP);
 		}
 		
-		setOutputDimensions(matmultCP);
 		setLineNumbers( matmultCP );
 		setLops(matmultCP);
 	}

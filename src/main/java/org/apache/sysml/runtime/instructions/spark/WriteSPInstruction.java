@@ -30,7 +30,6 @@ import org.apache.spark.api.java.JavaRDD;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -190,7 +189,7 @@ public class WriteSPInstruction extends SPInstruction
 				{
 					// This case is applicable when the CSV output from transform() is written out
 					@SuppressWarnings("unchecked")
-					JavaPairRDD<Long,String> rdd = (JavaPairRDD<Long, String>) ((MatrixObject) sec.getVariable(input1.getName())).getRDDHandle().getRDD();
+					JavaPairRDD<Long,String> rdd = (JavaPairRDD<Long, String>) (sec.getMatrixObject(input1.getName())).getRDDHandle().getRDD();
 					out = rdd.values(); 
 
 					String sep = ",";

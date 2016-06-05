@@ -118,7 +118,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 				partition = collectBinaryCellInput( larg._2() );
 			
 			//update in-memory matrix partition
-			MatrixObject mo = (MatrixObject)_ec.getVariable( _inputVar );
+			MatrixObject mo = _ec.getMatrixObject( _inputVar );
 			mo.setInMemoryPartition( partition );
 					
 			//create tasks for input data

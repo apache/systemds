@@ -49,7 +49,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction
 		IndexRange ixrange = getIndexRange(ec);
 		
 		//get original matrix
-		MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
+		MatrixObject mo = ec.getMatrixObject(input1.getName());
 		
 		//right indexing
 		if( opcode.equalsIgnoreCase("rangeReIndex") )

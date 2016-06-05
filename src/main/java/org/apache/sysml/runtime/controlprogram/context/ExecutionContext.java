@@ -210,7 +210,7 @@ public class ExecutionContext
 	public MatrixBlock getMatrixInput(String varName) 
 		throws DMLRuntimeException 
 	{	
-		MatrixObject mo = (MatrixObject) getVariable(varName);
+		MatrixObject mo = getMatrixObject(varName);
 		return mo.acquireRead();
 	}
 	
@@ -223,7 +223,7 @@ public class ExecutionContext
 	public void releaseMatrixInput(String varName) 
 		throws DMLRuntimeException 
 	{
-		MatrixObject mo = (MatrixObject) getVariable(varName);
+		MatrixObject mo = getMatrixObject(varName);
 		mo.release();
 	}
 	
@@ -237,7 +237,7 @@ public class ExecutionContext
 	public FrameBlock getFrameInput(String varName) 
 		throws DMLRuntimeException 
 	{	
-		FrameObject fo = (FrameObject) getVariable(varName);
+		FrameObject fo = getFrameObject(varName);
 		return fo.acquireRead();
 	}
 	
@@ -250,7 +250,7 @@ public class ExecutionContext
 	public void releaseFrameInput(String varName) 
 		throws DMLRuntimeException 
 	{
-		FrameObject fo = (FrameObject) getVariable(varName);
+		FrameObject fo = getFrameObject(varName);
 		fo.release();
 	}
 	
@@ -302,8 +302,8 @@ public class ExecutionContext
 	public void setMatrixOutput(String varName, MatrixBlock outputData) 
 		throws DMLRuntimeException 
 	{
-		MatrixObject mo = (MatrixObject) getVariable(varName);
-        mo.acquireModify(outputData);
+		MatrixObject mo = getMatrixObject(varName);
+		mo.acquireModify(outputData);
 	    mo.release();
 	        
 	    setVariable(varName, mo);
@@ -321,8 +321,8 @@ public class ExecutionContext
 	{
 		if( flag.isInPlace() ) {
 			//modify metadata to carry update status
-			MatrixObject sores = (MatrixObject) this.getVariable (varName);
-	        sores.setUpdateType( flag );
+			MatrixObject mo = getMatrixObject(varName);
+			mo.setUpdateType( flag );
 		}
 		
 		//default case
@@ -338,7 +338,7 @@ public class ExecutionContext
 	public void setFrameOutput(String varName, FrameBlock outputData) 
 		throws DMLRuntimeException 
 	{
-		FrameObject fo = (FrameObject) getVariable(varName);
+		FrameObject fo = getFrameObject(varName);
 		if( outputData.getNumColumns()>0 && outputData.getSchema()!=null )
 			fo.setValueType(outputData.getSchema().get(0));
 		fo.acquireModify(outputData);

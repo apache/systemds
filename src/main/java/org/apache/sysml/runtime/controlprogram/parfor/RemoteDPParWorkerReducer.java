@@ -100,14 +100,14 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			_partition = collectBinaryBlock( valueList );
 		else
 			_partition = collectBinaryCellInput( valueList );
-			
-		//update in-memory matrix partition
-		MatrixObject mo = (MatrixObject)_ec.getVariable( _inputVar );
-		mo.setInMemoryPartition( _partition );
 		
 		//execute program
 		LOG.trace("execute RemoteDPParWorkerReducer "+_stringID+" ("+_workerID+")");
 		try {
+			//update in-memory matrix partition
+			MatrixObject mo = _ec.getMatrixObject( _inputVar );
+			mo.setInMemoryPartition( _partition );
+			
 			//create tasks for input data
 			Task lTask = new Task(TaskType.SET);
 			lTask.addIteration( new IntObject(_iterVar,key.get()) );

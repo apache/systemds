@@ -81,7 +81,7 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction
 		throws DMLRuntimeException 
 	{
 		//get input
-		MatrixObject moIn = (MatrixObject) ec.getVariable(input1.getName());
+		MatrixObject moIn = ec.getMatrixObject(input1.getName());
 		MatrixBlock mb = moIn.acquireRead();
 		
 		//execute operations 

@@ -101,7 +101,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction
 		throws DMLRuntimeException 
 	{
 		String opcode = getOpcode();
-		MatrixObject mo = (MatrixObject) ec.getVariable(input1.getName());
+		MatrixObject mo = ec.getMatrixObject(input1.getName());
 		MatrixBlock[] out = null;
 		
 		if(LibCommonsMath.isSupportedMultiReturnOperation(opcode))

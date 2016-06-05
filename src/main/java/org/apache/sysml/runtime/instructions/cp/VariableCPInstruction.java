@@ -736,13 +736,13 @@ public class VariableCPInstruction extends CPInstruction
 				writeCSVFile(ec, fname);
 			else {
 				// Default behavior
-				MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
+				MatrixObject mo = ec.getMatrixObject(input1.getName());
 				mo.exportData(fname, outFmt);
 			}
 		}
 		else if( input1.getDataType() == DataType.FRAME ) {
 			String outFmt = input3.getName();
-			FrameObject mo = (FrameObject)ec.getVariable(input1.getName());
+			FrameObject mo = ec.getFrameObject(input1.getName());
 			mo.exportData(fname, outFmt);
 		}
 	}
@@ -779,7 +779,7 @@ public class VariableCPInstruction extends CPInstruction
 	private void writeCSVFile(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
 	{
-		MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
+		MatrixObject mo = ec.getMatrixObject(input1.getName());
 		String outFmt = "csv";
 		
 		if(mo.isDirty()) {
@@ -818,7 +818,7 @@ public class VariableCPInstruction extends CPInstruction
 	private void writeMMFile(ExecutionContext ec, String fname) 
 		throws DMLRuntimeException 
 	{
-		MatrixObject mo = (MatrixObject)ec.getVariable(input1.getName());
+		MatrixObject mo = ec.getMatrixObject(input1.getName());
 		String outFmt = "matrixmarket";
 		if(mo.isDirty()) {
 			// there exist data computed in CP that is not backed up on HDFS

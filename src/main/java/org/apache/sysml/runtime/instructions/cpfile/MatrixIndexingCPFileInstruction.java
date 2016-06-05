@@ -96,7 +96,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 	{	
 		String opcode = getOpcode();
 		IndexRange ixrange = getIndexRange(ec).add(1);
-		MatrixObject mo = (MatrixObject) ec.getVariable(input1.getName());
+		MatrixObject mo = ec.getMatrixObject(input1.getName());
 		
 		if( mo.isPartitioned() && opcode.equalsIgnoreCase("rangeReIndex") ) 
 		{
@@ -106,7 +106,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 			
 			if( MapReduceTool.existsFileOnHDFS(pfname) )
 			{
-				MatrixObject out = (MatrixObject)ec.getVariable(output.getName());
+				MatrixObject out = ec.getMatrixObject(output.getName());
 				
 				//create output matrix object				
 				MatrixObject mobj = new MatrixObject(mo.getValueType(), pfname );

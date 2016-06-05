@@ -239,8 +239,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			ec.releaseMatrixInput(params.get("target"));
 		}
 		else if ( opcode.equalsIgnoreCase("transform")) {
-			FrameObject fo = (FrameObject) ec.getVariable(params.get("target"));
-			MatrixObject out = (MatrixObject) ec.getVariable(output.getName());			
+			FrameObject fo = ec.getFrameObject(params.get("target"));
+			MatrixObject out = ec.getMatrixObject(output.getName());			
 			try {
 				JobReturn jt = DataTransform.cpDataTransform(this, new FrameObject[] { fo } , new MatrixObject[] {out} );
 				out.updateMatrixCharacteristics(jt.getMatrixCharacteristics(0));

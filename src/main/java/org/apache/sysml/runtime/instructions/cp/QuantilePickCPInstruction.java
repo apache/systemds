@@ -129,7 +129,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction
 				}
 				else //MR VALUEPICK
 				{
-					MatrixObject mat = (MatrixObject)ec.getVariable(input1.getName());
+					MatrixObject mat = ec.getMatrixObject(input1.getName());
 					String fname = mat.getFileName();
 					MetaData mdata = mat.getMetaData();
 					ScalarObject pickindex = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());

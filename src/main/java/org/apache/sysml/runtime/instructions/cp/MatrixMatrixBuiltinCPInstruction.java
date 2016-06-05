@@ -47,7 +47,7 @@ public class MatrixMatrixBuiltinCPInstruction extends BuiltinBinaryCPInstruction
 		String opcode = getOpcode();
         
         if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
-        	MatrixBlock solution = LibCommonsMath.matrixMatrixOperations((MatrixObject)ec.getVariable(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
+        	MatrixBlock solution = LibCommonsMath.matrixMatrixOperations(ec.getMatrixObject(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
     		ec.setMatrixOutput(output.getName(), solution);
         	return;
         }

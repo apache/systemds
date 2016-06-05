@@ -394,10 +394,9 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 		{
 			// perform data transform on Spark
 			try {
-				DataTransform.spDataTransform(
-						this, 
-						new FrameObject[] { (FrameObject) sec.getVariable(params.get("target")) }, 
-						new MatrixObject[] { (MatrixObject) sec.getVariable(output.getName()) }, ec);
+				DataTransform.spDataTransform( this, 
+						new FrameObject[] { sec.getFrameObject(params.get("target")) }, 
+						new MatrixObject[] { sec.getMatrixObject(output.getName()) }, ec);
 			} catch (Exception e) {
 				throw new DMLRuntimeException(e);
 			}

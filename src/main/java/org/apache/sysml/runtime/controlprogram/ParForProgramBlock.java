@@ -880,7 +880,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		exportMatricesToHDFS(ec);
 				
 		// Step 3) submit MR job (wait for finished work)
-		MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? (MatrixObject)ec.getVariable(_colocatedDPMatrix) : null;
+		MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? ec.getMatrixObject(_colocatedDPMatrix) : null;
 		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile, colocatedDPMatrixObj, _enableCPCaching,
 				                                          _numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, getMinMemory(ec),
 				                                          (ALLOW_REUSE_MR_JVMS & _jvmReuse) );
@@ -935,7 +935,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		// Step 1) prepare partitioned input matrix (needs to happen before serializing the progam)
 		ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
-		MatrixObject inputMatrix = (MatrixObject)ec.getVariable(_colocatedDPMatrix );
+		MatrixObject inputMatrix = ec.getMatrixObject(_colocatedDPMatrix );
 		PDataPartitionFormat inputDPF = sb.determineDataPartitionFormat( _colocatedDPMatrix );
 		inputMatrix.setPartitioned(inputDPF, 1); //mark matrix var as partitioned (for reducers) 
 		
@@ -1071,7 +1071,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		// Step 1) prepare partitioned input matrix (needs to happen before serializing the progam)
 		ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
-		MatrixObject inputMatrix = (MatrixObject)ec.getVariable(_colocatedDPMatrix );
+		MatrixObject inputMatrix = ec.getMatrixObject(_colocatedDPMatrix );
 		PDataPartitionFormat inputDPF = sb.determineDataPartitionFormat( _colocatedDPMatrix );
 		inputMatrix.setPartitioned(inputDPF, 1); //mark matrix var as partitioned (for reducers) 
 		
@@ -2093,7 +2093,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				
 					MatrixObject out = null;
 					synchronized( _ec.getVariables() ){
-						out = (MatrixObject) _ec.getVariable(varname);
+						out = _ec.getMatrixObject(varname);
 					}
 					
 					MatrixObject[] in = new MatrixObject[ _refVars.length ];

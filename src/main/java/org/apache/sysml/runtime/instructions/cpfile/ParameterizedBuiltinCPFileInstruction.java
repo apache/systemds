@@ -122,8 +122,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		if ( opcode.equalsIgnoreCase("rmempty") ) 
 		{
 			// get inputs
-			MatrixObject src = (MatrixObject)ec.getVariable( params.get("target") );
-			MatrixObject out = (MatrixObject)ec.getVariable( output.getName() );
+			MatrixObject src = ec.getMatrixObject( params.get("target") );
+			MatrixObject out = ec.getMatrixObject( output.getName() );
 			String margin = params.get("margin");
 			
 			// export input matrix (if necessary)

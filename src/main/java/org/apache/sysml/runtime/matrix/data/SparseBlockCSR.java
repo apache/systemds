@@ -352,14 +352,15 @@ public class SparseBlockCSR extends SparseBlock
 		if( _values.length < lsize )
 			resize(lsize);
 		int index = posFIndexGT(r, cl);
-		shiftRightByN((index>0)?index:pos(r+1), lnnz);
+		int index2 = (index>0)?index:pos(r+1);
+		shiftRightByN(index2, lnnz);
 		
 		//insert values
 		for( int i=vix; i<vix+vlen; i++ )
 			if( v[i] != 0 ) {
-				_indexes[ index ] = cl+i-vix;
-				_values[ index ] = v[i];
-				index++;
+				_indexes[ index2 ] = cl+i-vix;
+				_values[ index2 ] = v[i];
+				index2++;
 			}
 		incrPtr(r+1, lnnz);
 	}

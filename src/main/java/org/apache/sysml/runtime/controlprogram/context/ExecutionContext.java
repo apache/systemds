@@ -260,6 +260,9 @@ public class ExecutionContext
 			throws DMLRuntimeException 
 	{	
 		MatrixObject mo = (MatrixObject) getVariable(varName);
+		if(mo == null) {
+			throw new DMLRuntimeException("No matrix object available for variable:" + varName);
+		}
 		if(mo.getGPUObject() == null || !mo.getGPUObject().isAllocated) {
 			mo.acquireRead();
 			mo.release();

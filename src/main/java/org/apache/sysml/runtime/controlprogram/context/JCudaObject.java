@@ -51,6 +51,10 @@ public class JCudaObject extends GPUObject {
 			long GPUSize;
 			if(numElemsToAllocate != -1)
 				GPUSize = (Sizeof.DOUBLE) * (long) (numElemsToAllocate);
+			else if(isInput && mat != null && mat.getMatrixBlock() != null && mat.getMatrixBlock().getDenseBlock() != null) {
+				GPUSize = (Sizeof.DOUBLE) * (long) mat.getMatrixBlock().getDenseBlock().length;
+				numElemsToAllocate = mat.getMatrixBlock().getDenseBlock().length;
+			}
 			else
 				GPUSize = getSizeOnDevice();
 			// Ensure enough memory while allocating the matrix

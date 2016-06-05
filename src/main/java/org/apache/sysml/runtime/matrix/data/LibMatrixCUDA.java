@@ -352,6 +352,8 @@ public class LibMatrixCUDA {
 	public static boolean isInSparseFormat(MatrixObject mo) {
 		if(mo.getGPUObject() != null && mo.getGPUObject().isAllocated)
 			return mo.getGPUObject().isInSparseFormat;
+		else if(mo.getMatrixBlock() != null && mo.getMatrixBlock().getDenseBlock() != null)
+			return false;
 		return MatrixBlock.evalSparseFormatInMemory(mo.getNumRows(), mo.getNumColumns(), mo.getNnz());
 	}
 }

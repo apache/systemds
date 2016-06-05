@@ -174,6 +174,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				HopsConv2Lops.get(op), getDataType(), getValueType(), et, k);
 		setOutputDimensions(transform1);
 		setLineNumbers(transform1);
+		in.addOutput(transform1);
 		
 		// stride1, stride2, padding1, padding2  
 		// input_shape1, input_shape2, input_shape3, input_shape4, 
@@ -182,7 +183,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		{
 			Lop ltmp = inputs.get(i).constructLops();
 			transform1.addInput(ltmp);
-			// ltmp.addOutput(transform1);
+			if(i == 1 && expectedNumInputs == 14)
+				ltmp.addOutput(transform1);
 		}
 		transform1.setLevel(); //force order of added lops
 		return transform1;

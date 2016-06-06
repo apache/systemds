@@ -161,8 +161,10 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = fuseLogNzBinaryOperation(hop, hi, i);           //e.g., ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
 			hi = simplifyOuterSeqExpand(hop, hi, i);             //e.g., outer(v, seq(1,m), "==") -> rexpand(v, max=m, dir=row, ignore=true, cast=false)
 			hi = simplifyTableSeqExpand(hop, hi, i);             //e.g., table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
+			hi = simplifyMultiBinaryToScalarOperation(hop, hi, i);//e.g., sum(lamda*X) -> lamda*sum(X)
+
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
-			
+
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
 				rule_AlgebraicSimplification(hi, descendFirst);
@@ -1870,5 +1872,39 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		
 		return hi;
 	}
-	
+	/**
+	 * 
+	 * @param parent
+	 * @param hi
+	 * @param pos
+	 * @return
+	 * @throws HopsException
+	 */
+	private Hop simplifyMultiBinaryToScalarOperation(Hop parent, Hop hi, int pos ) throws HopsException {
+		//pattern:  sum(lamda*X) -> lamda*sum(X)
+		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol
+				&& ((AggUnaryOp)hi).getOp()==Hop.AggOp.SUM
+				&& ((AggUnaryOp)hi).getInput().get(0) instanceof BinaryOp
+				&& ((BinaryOp)hi.getInput().get(0)).getOp()==OpOp2.MULT
+				&& (((BinaryOp)hi.getInput().get(0)).getInput().get(0).getDataType()==DataType.SCALAR && ((BinaryOp)hi.getInput().get(0)).getInput().get(1).getDataType()==DataType.MATRIX
+					||((BinaryOp)hi.getInput().get(0)).getInput().get(0).getDataType()==DataType.MATRIX && ((BinaryOp)hi.getInput().get(0)).getInput().get(1).getDataType()==DataType.SCALAR))
+		{
+			Hop operand1 = ((BinaryOp)hi.getInput().get(0)).getInput().get(0); 
+			Hop operand2 =  ((BinaryOp)hi.getInput().get(0)).getInput().get(1);
+
+			//check which operand is the Scalar and which is the matrix
+			Hop lamda = (operand1.getDataType()==DataType.SCALAR) ? operand1 : operand2; 
+			Hop matrix = (operand1.getDataType()==DataType.MATRIX) ? operand1 : operand2; 
+
+			AggUnaryOp aggOp=HopRewriteUtils.createAggUnaryOp(matrix, AggOp.SUM, Direction.RowCol);
+			Hop bop = HopRewriteUtils.createBinary(lamda, aggOp, OpOp2.MULT);
+			
+			HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
+			HopRewriteUtils.addChildReference(parent, bop, pos);
+			
+			LOG.debug("Applied simplifyMultiBinaryToScalarOperation.");
+			return bop;
+		}
+		return hi;
+	}
 }

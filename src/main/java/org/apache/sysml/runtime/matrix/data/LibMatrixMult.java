@@ -178,7 +178,7 @@ public class LibMatrixMult
 		
 		//prepare row-upper for special cases of vector-matrix / matrix-matrix
 		boolean pm2r = checkParMatrixMultRightInputRows(m1, m2, k);
-		boolean pm2c = checkParMatrixMultRightInputCols(m1, m2, k);
+		boolean pm2c = checkParMatrixMultRightInputCols(m1, m2, k, pm2r);
 		int num = pm2r ? m2.rlen : pm2c ? m2.clen : m1.rlen; 
 		
 		//core multi-threaded matrix mult computation
@@ -3978,10 +3978,10 @@ public class LibMatrixMult
 	 * @param k
 	 * @return
 	 */
-	private static boolean checkParMatrixMultRightInputCols( MatrixBlock m1, MatrixBlock m2, int k ) {
+	private static boolean checkParMatrixMultRightInputCols( MatrixBlock m1, MatrixBlock m2, int k, boolean pm2r ) {
 		//parallelize over cols in rhs matrix if dense, number of cols in rhs is large, and lhs fits in l2
 		return (LOW_LEVEL_OPTIMIZATION && !m1.sparse && !m2.sparse 
-				&& m2.clen > k * 1024 && m1.rlen < k * 32 && m1.rlen > 16 && m1.clen > 1 
+				&& m2.clen > k * 1024 && m1.rlen < k * 32 && !pm2r
 				&& 8*m1.rlen*m1.clen < 256*1024 ); //lhs fits in L2 cache
 	}
 	

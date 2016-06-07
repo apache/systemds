@@ -30,21 +30,19 @@ import java.util.concurrent.Future;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
-
 /**
- * Multi-threaded frame binary block writer.
+ * Multi-threaded frame text cell writer.
  * 
  */
-public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
-{	
+public class FrameWriterTextCellParallel extends FrameWriterTextCell
+{
 	/**
 	 * 
 	 * @param path
@@ -53,23 +51,22 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 	 * @param rlen
 	 * @param clen
 	 * @throws IOException
-	 * @throws DMLRuntimeException
 	 */
-	protected void writeBinaryBlockFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen )
-		throws IOException, DMLRuntimeException
+	@Override
+	protected void writeTextCellFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen )
+		throws IOException
 	{
 		//estimate output size and number of output blocks (min 1)
-		int blen = ConfigurationManager.getBlocksize();
-		int numPartFiles = Math.max((int)(OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, blen, blen, rlen*clen) 
-						   / InfrastructureAnalyzer.getHDFSBlockSize()), 1);
+		int numPartFiles = Math.max((int)(OptimizerUtils.estimateSizeTextOutput(rlen, clen, rlen*clen, 
+				              OutputInfo.TextCellOutputInfo)  / InfrastructureAnalyzer.getHDFSBlockSize()), 1);
 		
 		//determine degree of parallelism
-		int numThreads = OptimizerUtils.getParallelBinaryWriteParallelism();
+		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();
 		numThreads = Math.min(numThreads, numPartFiles);
-
+		
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
 		if( numThreads <= 1 ) {
-			super.writeBinaryBlockFrameToHDFS(path, job, src, rlen, clen);
+			super.writeTextCellFrameToHDFS(path, job, src, rlen, clen);
 			return;
 		}
 		
@@ -77,15 +74,15 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 		MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		FileSystem fs = FileSystem.get(job);
 		
-		//create and execute write tasks
+		//create and execute tasks
 		try 
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
 			ArrayList<WriteFileTask> tasks = new ArrayList<WriteFileTask>();
-			int blklen = (int)Math.ceil((double)rlen / blen / numThreads) * blen;
+			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, String.format("0-m-%05d",i));
-				tasks.add(new WriteFileTask(newPath, job, fs, src, i*blklen, Math.min((i+1)*blklen, (int)rlen), blen));
+				tasks.add(new WriteFileTask(newPath, job, fs, src, i*blklen, (int)Math.min((i+1)*blklen, rlen)));
 			}
 
 			//wait until all tasks have been executed
@@ -97,10 +94,10 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 				task.get();
 		} 
 		catch (Exception e) {
-			throw new IOException("Failed parallel write of binary block input.", e);
-		}	
-	}
-
+			throw new IOException("Failed parallel write of text output.", e);
+		}
+	}	
+	
 	/**
 	 * 
 	 */
@@ -110,23 +107,21 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 		private JobConf _job = null;
 		private FileSystem _fs = null;
 		private FrameBlock _src = null;
-		private int _blen = -1;
 		private int _rl = -1;
 		private int _ru = -1;
 		
-		public WriteFileTask(Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru, int blen) {
+		public WriteFileTask(Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru) {
 			_path = path;
 			_fs = fs;
 			_job = job;
 			_src = src;
 			_rl = rl;
 			_ru = ru;
-			_blen = blen;
 		}
 	
 		@Override
 		public Object call() throws Exception  {
-			writeBinaryBlockFrameToSequenceFile(_path, _job, _fs, _src, _blen, _rl, _ru);
+			writeTextCellFrameToFile(_path, _job, _fs, _src, _rl, _ru);
 			return null;
 		}
 	}

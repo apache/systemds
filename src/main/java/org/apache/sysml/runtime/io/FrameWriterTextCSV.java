@@ -34,6 +34,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
 /**
+ * Single-threaded frame text csv writer.
  * 
  */
 public class FrameWriterTextCSV extends FrameWriter
@@ -58,25 +59,45 @@ public class FrameWriterTextCSV extends FrameWriter
 	 * @throws DMLRuntimeException  
 	 */
 	@Override
-	public void writeFrameToHDFS(FrameBlock src, String fname, long rlen, long clen) 
+	public final void writeFrameToHDFS(FrameBlock src, String fname, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 
 	{
-		//validity check frame dimensions
-		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {
-			throw new IOException("Frame dimensions mismatch with metadata: "+src.getNumRows()+"x"+src.getNumColumns()+" vs "+rlen+"x"+clen+".");
-		}
-		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.
 		MapReduceTool.deleteFileIfExistOnHDFS( fname );
-			
-		//core write
+	
+		//validity check frame dimensions
+		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {
+			throw new IOException("Frame dimensions mismatch with metadata: " + 
+					src.getNumRows()+"x"+src.getNumColumns()+" vs "+rlen+"x"+clen+".");
+		}
+		
+		//core write (sequential/parallel)
 		writeCSVFrameToHDFS(path, job, src, rlen, clen, _props);
 	}
 
+	/**
+	 * 
+	 * @param path
+	 * @param job
+	 * @param src
+	 * @param rlen
+	 * @param clen
+	 * @param csvprops
+	 * @throws IOException
+	 */
+	protected void writeCSVFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen, CSVFileFormatProperties csvprops ) 
+		throws IOException
+	{
+		FileSystem fs = FileSystem.get(job);
+        
+		//sequential write to single text file
+		writeCSVFrameToFile(path, job, fs, src, 0, (int)rlen, csvprops);	
+	}
+	
 	/**
 	 * 
 	 * @param path
@@ -88,12 +109,13 @@ public class FrameWriterTextCSV extends FrameWriter
 	 * @return
 	 * @throws IOException
 	 */
-	protected void writeCSVFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen, CSVFileFormatProperties props )
+	protected final void writeCSVFrameToFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru, CSVFileFormatProperties props )
 		throws IOException
 	{
-		FileSystem fs = FileSystem.get(job);
-        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
-		
+    	//create buffered writer
+		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+    	int cols = src.getNumColumns();
+	
 		try
 		{
 			//for obj reuse and preventing repeated buffer re-allocations
@@ -103,13 +125,13 @@ public class FrameWriterTextCSV extends FrameWriter
 			String delim = props.getDelim();
 			
 			// Write header line, if needed
-			if( props.hasHeader() ) 
+			if( props.hasHeader() && rl==0 ) 
 			{
 				//write row chunk-wise to prevent OOM on large number of columns
-				for( int bj=0; bj<clen; bj+=BLOCKSIZE_J ) {
-					for( int j=bj; j < Math.min(clen,bj+BLOCKSIZE_J); j++) {
+				for( int bj=0; bj<cols; bj+=BLOCKSIZE_J ) {
+					for( int j=bj; j < Math.min(cols,bj+BLOCKSIZE_J); j++) {
 						sb.append("C"+ (j+1));
-						if ( j < clen-1 )
+						if ( j < cols-1 )
 							sb.append(delim);
 					}
 					br.write( sb.toString() );
@@ -121,15 +143,15 @@ public class FrameWriterTextCSV extends FrameWriter
 			}
 			
 			// Write data lines
-			Iterator<String[]> iter = src.getStringRowIterator();
+			Iterator<String[]> iter = src.getStringRowIterator(rl, ru);
 			while( iter.hasNext() ) {
 				//write row chunk-wise to prevent OOM on large number of columns
 				String[] row = iter.next();
-				for( int bj=0; bj<clen; bj+=BLOCKSIZE_J ) {
-					for( int j=bj; j<Math.min(clen,bj+BLOCKSIZE_J); j++ ) {
+				for( int bj=0; bj<cols; bj+=BLOCKSIZE_J ) {
+					for( int j=bj; j<Math.min(cols,bj+BLOCKSIZE_J); j++ ) {
 						if(row[j] != null)
 							sb.append(row[j]);					
-						if( j != clen-1 )
+						if( j != cols-1 )
 							sb.append(delim);
 					}
 					br.write( sb.toString() );

@@ -57,12 +57,18 @@ public class FrameWriterFactory
 		FrameWriter writer = null;
 		
 		if( oinfo == OutputInfo.TextCellOutputInfo ) {
-			writer = new FrameWriterTextCell();
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
+				writer = new FrameWriterTextCellParallel();
+			else
+				writer = new FrameWriterTextCell();
 		}
 		else if( oinfo == OutputInfo.CSVOutputInfo ) {
 			if( props!=null && !(props instanceof CSVFileFormatProperties) )
 				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
-			writer = new FrameWriterTextCSV((CSVFileFormatProperties)props);
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
+				writer = new FrameWriterTextCSVParallel((CSVFileFormatProperties)props);
+			else
+				writer = new FrameWriterTextCSV((CSVFileFormatProperties)props);	
 		}
 		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )

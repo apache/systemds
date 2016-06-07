@@ -348,7 +348,19 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return
 	 */
 	public Iterator<String[]> getStringRowIterator() {
-		return new StringRowIterator();
+		return new StringRowIterator(0, _numRows);
+	}
+	
+	/**
+	 * Get a row iterator over the frame where all fields are encoded
+	 * as strings independent of their value types.  
+	 * 
+	 * @param rl
+	 * @param ru
+	 * @return
+	 */
+	public Iterator<String[]> getStringRowIterator(int rl, int ru) {
+		return new StringRowIterator(rl, ru);
 	}
 	
 	/**
@@ -358,7 +370,19 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @return
 	 */
 	public Iterator<Object[]> getObjectRowIterator() {
-		return new ObjectRowIterator();
+		return new ObjectRowIterator(0, _numRows);
+	}
+	
+	/**
+	 * Get a row iterator over the frame where all fields are encoded
+	 * as boxed objects according to their value types.  
+	 * 
+	 * @param rl
+	 * @param ru
+	 * @return
+	 */
+	public Iterator<Object[]> getObjectRowIterator(int rl, int ru) {
+		return new ObjectRowIterator(rl, ru);
 	}
 
 	///////
@@ -744,15 +768,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	private abstract class RowIterator<T> implements Iterator<T[]> {
 		protected T[] _curRow = null;
 		protected int _curPos = -1;
+		protected int _maxPos = -1;
 		
-		protected RowIterator() {
-			_curPos = 0;
+		protected RowIterator(int rl, int ru) {
+			_curPos = rl;
+			_maxPos = ru;
 			_curRow = createRow(getNumColumns());
 		}
 		
 		@Override
 		public boolean hasNext() {
-			return (_curPos < _numRows);
+			return (_curPos < _maxPos);
 		}
 
 		@Override
@@ -767,6 +793,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 */
 	private class StringRowIterator extends RowIterator<String> {
+		public StringRowIterator(int rl, int ru) {
+			super(rl, ru);
+		}
+		
 		@Override
 		protected String[] createRow(int size) {
 			return new String[size];
@@ -787,6 +817,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 */
 	private class ObjectRowIterator extends RowIterator<Object> {
+		public ObjectRowIterator(int rl, int ru) {
+			super(rl, ru);
+		}
+		
 		@Override
 		protected Object[] createRow(int size) {
 			return new Object[size];

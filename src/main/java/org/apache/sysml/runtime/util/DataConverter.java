@@ -761,12 +761,38 @@ public class DataConverter
 		}
 		else //DENSE
 		{
-			for( int i=0; i<mb.getNumRows(); i++ ) {
-				for( int j=0; j<mb.getNumColumns(); j++ ) {
-						row[j] = UtilFunctions.doubleToObject(
-								schema.get(j), mb.quickGetValue(i, j));
+			int dFreq = Collections.frequency(schema, ValueType.DOUBLE);
+		
+			if( dFreq == schema.size() ) {
+				// special case double schema (without cell-object creation, 
+				// col pre-allocation, and cache-friendly row-column copy)
+				int m = mb.getNumRows();
+				int n = mb.getNumColumns();
+				double[] a = mb.getDenseBlock();
+				double[][] c = new double[n][m];
+				int blocksizeIJ = 16; //blocks of a/c+overhead in L1 cache
+				if( !mb.isEmptyBlock(false) )
+					for( int bi=0; bi<m; bi+=blocksizeIJ )
+						for( int bj=0; bj<n; bj+=blocksizeIJ ) {
+							int bimin = Math.min(bi+blocksizeIJ, m);
+							int bjmin = Math.min(bj+blocksizeIJ, n);
+							for( int i=bi, aix=bi*n; i<bimin; i++, aix+=n )
+								for( int j=bj; j<bjmin; j++ )
+									c[j][i] = a[aix+j];
+						}
+				frame.reset();
+				for( int j=0; j<n; j++ )
+					frame.appendColumn(c[j]);
+			}
+			else { 
+				// general case
+				for( int i=0; i<mb.getNumRows(); i++ ) {
+					for( int j=0; j<mb.getNumColumns(); j++ ) {
+							row[j] = UtilFunctions.doubleToObject(
+									schema.get(j), mb.quickGetValue(i, j));
+					}
+					frame.appendRow(row);
 				}
-				frame.appendRow(row);
 			}
 		}
 		

@@ -201,8 +201,17 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	private static List<String> createColNames(int size) {
 		ArrayList<String> ret = new ArrayList<String>(size);
 		for( int i=1; i<=size; i++ )
-			ret.add("C"+i);
+			ret.add(createColName(i));
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param i
+	 * @return
+	 */
+	private static String createColName(int i) {
+		return "C" + i;
 	}
 	
 	///////
@@ -282,6 +291,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumn(String[] col) {
 		ensureColumnCompatibility(col.length);
 		_schema.add(ValueType.STRING);
+		_colnames.add(createColName(_schema.size()));
 		_coldata.add(new StringArray(col));
 		_numRows = col.length;
 	}
@@ -296,6 +306,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumn(boolean[] col) {
 		ensureColumnCompatibility(col.length);
 		_schema.add(ValueType.BOOLEAN);
+		_colnames.add(createColName(_schema.size()));
 		_coldata.add(new BooleanArray(col));	
 		_numRows = col.length;
 	}
@@ -310,6 +321,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumn(long[] col) {
 		ensureColumnCompatibility(col.length);
 		_schema.add(ValueType.INT);
+		_colnames.add(createColName(_schema.size()));
 		_coldata.add(new LongArray(col));
 		_numRows = col.length;
 	}
@@ -324,6 +336,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumn(double[] col) {
 		ensureColumnCompatibility(col.length);
 		_schema.add(ValueType.DOUBLE);
+		_colnames.add(createColName(_schema.size()));
 		_coldata.add(new DoubleArray(col));
 		_numRows = col.length;
 	}

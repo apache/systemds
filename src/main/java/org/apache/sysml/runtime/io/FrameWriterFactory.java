@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.io;
 
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
@@ -30,8 +32,6 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
  */
 public class FrameWriterFactory 
 {
-
-	
 	/**
 	 * 
 	 * @param oinfo
@@ -65,7 +65,10 @@ public class FrameWriterFactory
 			writer = new FrameWriterTextCSV((CSVFileFormatProperties)props);
 		}
 		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
-			writer = new FrameWriterBinaryBlock();
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )
+				writer = new FrameWriterBinaryBlockParallel();
+			else
+				writer = new FrameWriterBinaryBlock();
 		}
 		else {
 			throw new DMLRuntimeException("Failed to create frame writer for unknown output info: "

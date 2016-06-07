@@ -90,12 +90,12 @@ public class ReadMMTest extends AutomatedTestBase
 	private void runMMTest(int testNumber, RUNTIME_PLATFORM platform, boolean parallel) {
 		
 		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		boolean oldpar = CompilerConfig.FLAG_PARREAD_TEXT;
+		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 		
 		try
 		{
 			rtplatform = platform;
-			CompilerConfig.FLAG_PARREAD_TEXT = parallel;
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
@@ -122,7 +122,7 @@ public class ReadMMTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = oldPlatform;
-			CompilerConfig.FLAG_PARREAD_TEXT = oldpar;
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 		}
 	}
 	

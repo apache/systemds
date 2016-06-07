@@ -75,17 +75,18 @@ public class CompilerConfig
 	
 	//default flags (exposed for testing purposes only)
 	public static boolean FLAG_DYN_RECOMPILE = true;
-	public static boolean FLAG_PARREAD_TEXT = true;
+	public static boolean FLAG_PARREADWRITE_TEXT = true;
+	public static boolean FLAG_PARREADWRITE_BINARY = true;
 	
 	private HashMap<ConfigType, Boolean> _bmap = null;
 	private HashMap<ConfigType, Integer> _imap = null;
 	
 	public CompilerConfig() {
 		_bmap = new HashMap<ConfigType, Boolean>();
-		_bmap.put(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, FLAG_PARREAD_TEXT);
-		_bmap.put(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, true);
-		_bmap.put(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, true);
-		_bmap.put(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, true);
+		_bmap.put(ConfigType.PARALLEL_CP_READ_TEXTFORMATS, FLAG_PARREADWRITE_TEXT);
+		_bmap.put(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS, FLAG_PARREADWRITE_TEXT);
+		_bmap.put(ConfigType.PARALLEL_CP_READ_BINARYFORMATS, FLAG_PARREADWRITE_BINARY);
+		_bmap.put(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS, FLAG_PARREADWRITE_BINARY);
 		_bmap.put(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS, true);
 		_bmap.put(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR, true);
 		_bmap.put(ConfigType.ALLOW_DYN_RECOMPILATION,          FLAG_DYN_RECOMPILE);

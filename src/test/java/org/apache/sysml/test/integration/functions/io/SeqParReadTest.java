@@ -210,11 +210,11 @@ public class SeqParReadTest extends AutomatedTestBase {
 	
 	private void runReadTypeFormatSparsitySizeTest(boolean parallel, OutputInfo fmt, boolean dense, boolean big ) {
 		
-		boolean oldpar = CompilerConfig.FLAG_PARREAD_TEXT;
+		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 
 		try
 		{
-			CompilerConfig.FLAG_PARREAD_TEXT = parallel;
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
@@ -250,7 +250,7 @@ public class SeqParReadTest extends AutomatedTestBase {
 		}
 		finally
 		{
-			CompilerConfig.FLAG_PARREAD_TEXT = oldpar;		
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;		
 		}
 	}
 	

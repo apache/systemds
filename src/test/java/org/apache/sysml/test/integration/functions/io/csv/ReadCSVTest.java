@@ -137,12 +137,12 @@ public class ReadCSVTest extends AutomatedTestBase
 	{
 		
 		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		boolean oldpar = CompilerConfig.FLAG_PARREAD_TEXT;
+		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 		
 		try
 		{
 			rtplatform = platform;
-			CompilerConfig.FLAG_PARREAD_TEXT = parallel;
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
@@ -170,7 +170,7 @@ public class ReadCSVTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = oldPlatform;
-			CompilerConfig.FLAG_PARREAD_TEXT = oldpar;		
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;		
 		}
 	}
 	

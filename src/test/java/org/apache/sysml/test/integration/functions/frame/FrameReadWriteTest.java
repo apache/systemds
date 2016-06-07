@@ -23,9 +23,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.sysml.conf.CompilerConfig;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.cp.AppendCPInstruction.AppendType;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriter;
@@ -61,33 +62,33 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testFrameStringsStringsCBind()  {
-		runFrameCopyTest(schemaStrings, schemaStrings, AppendType.CBIND);
+	public void testFrameStringsStrings()  {
+		runFrameReadWriteTest(schemaStrings, schemaStrings, false);
 	}
 	
 	@Test
-	public void testFrameStringsStringsRBind()  { //note: ncol(A)=ncol(B)
-		runFrameCopyTest(schemaStrings, schemaStrings, AppendType.RBIND);
+	public void testFrameStringsStringsParallel()  { 
+		runFrameReadWriteTest(schemaStrings, schemaStrings, true);
 	}
 	
 	@Test
-	public void testFrameMixedStringsCBind()  {
-		runFrameCopyTest(schemaMixed, schemaStrings, AppendType.CBIND);
+	public void testFrameMixedStrings()  {
+		runFrameReadWriteTest(schemaMixed, schemaStrings, false);
 	}
 	
 	@Test
-	public void testFrameStringsMixedCBind()  {
-		runFrameCopyTest(schemaStrings, schemaMixed, AppendType.CBIND);
+	public void testFrameStringsMixedParallel()  {
+		runFrameReadWriteTest(schemaStrings, schemaMixed, true);
 	}
 	
 	@Test
-	public void testFrameMixedMixedCBind()  {
-		runFrameCopyTest(schemaMixed, schemaMixed, AppendType.CBIND);
+	public void testFrameMixedMixed()  {
+		runFrameReadWriteTest(schemaMixed, schemaMixed, false);
 	}
 	
 	@Test
-	public void testFrameMixedMixedRBind()  { //note: ncol(A)=ncol(B)
-		runFrameCopyTest(schemaMixed, schemaMixed, AppendType.RBIND);
+	public void testFrameMixedMixedParallel()  {
+		runFrameReadWriteTest(schemaMixed, schemaMixed, true);
 	}
 
 	
@@ -97,10 +98,17 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runFrameCopyTest( ValueType[] schema1, ValueType[] schema2, AppendType atype)
+	private void runFrameReadWriteTest( ValueType[] schema1, ValueType[] schema2, boolean parallel)
 	{
+		boolean oldParText = CompilerConfig.FLAG_PARREADWRITE_TEXT;
+		boolean oldParBin = CompilerConfig.FLAG_PARREADWRITE_BINARY;
+		
 		try
 		{
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
+			CompilerConfig.FLAG_PARREADWRITE_BINARY = parallel;
+			ConfigurationManager.setGlobalConfig(new CompilerConfig());
+			
 			//data generation
 			double[][] A = getRandomMatrix(rows, schema1.length, -10, 10, 0.9, 2373); 
 			double[][] B = getRandomMatrix(rows, schema2.length, -10, 10, 0.9, 129); 
@@ -128,6 +136,11 @@ public class FrameReadWriteTest extends AutomatedTestBase
 		catch(Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
+		}
+		finally {
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldParText;
+			CompilerConfig.FLAG_PARREADWRITE_BINARY = oldParBin;
+			ConfigurationManager.setGlobalConfig(new CompilerConfig());
 		}
 	}
 	

@@ -21,23 +21,29 @@ package org.apache.sysml.api.monitoring;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import org.apache.sysml.lops.Lop;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.spark.SPInstruction;
+import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
 
 import scala.collection.Seq;
 import scala.xml.Node;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
-import org.apache.sysml.lops.Lop;
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.Instruction;
-import org.apache.sysml.runtime.instructions.spark.SPInstruction;
-import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
 
 /**
  * Usage guide:
@@ -47,13 +53,11 @@ import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
  * mlCtx.getMonitoringUtil().getRuntimeInfoInHTML("runtime.html");
  */
 public class SparkMonitoringUtil {
-	// ----------------------------------------------------
-	// For VLDB Demo:
-	private Multimap<Location, String> instructions = TreeMultimap.create();
-	private Multimap<String, Integer> stageIDs = TreeMultimap.create();  // instruction -> stageIds
-	private Multimap<String, Integer> jobIDs = TreeMultimap.create();  // instruction -> jobIds
 	private HashMap<String, String> lineageInfo = new HashMap<String, String>();	// instruction -> lineageInfo
 	private HashMap<String, Long> instructionCreationTime = new HashMap<String, Long>();
+	private MultiMap<Location, String> instructions = new MultiMap<Location, String>();
+	private MultiMap<String, Integer> stageIDs = new MultiMap<String, Integer>();
+	private MultiMap<String, Integer> jobIDs = new MultiMap<String, Integer>();
 	
 	private Multimap<Integer, String> rddInstructionMapping = TreeMultimap.create();
 	
@@ -596,5 +600,48 @@ public class SparkMonitoringUtil {
 		tmp = tmp.replaceAll(Lop.DATATYPE_PREFIX, ".");
 		tmp = tmp.replaceAll(Lop.INSTRUCTION_DELIMITOR, ", ");
 		return tmp;
+	}
+
+	public class MultiMap<K, V extends Comparable<V>> {
+		private SortedMap<K, List<V>> m = new TreeMap<K, List<V>>();
+
+		public MultiMap(){
+		}
+		
+		public void put(K key, V value) {
+			List<V> list;
+			if (!m.containsKey(key)) {
+				list = new ArrayList<V>();
+				m.put(key, list);
+			} else {
+				list = m.get(key);
+			}
+			list.add(value);
+			Collections.sort(list);
+		}
+
+		public Collection<Entry<K, V>> entries() {
+			// the treemap is sorted and the lists are sorted, so can traverse
+			// to generate a key/value ordered list of all entries.
+			Collection<Entry<K, V>> allEntries = new ArrayList<Entry<K, V>>();
+
+			for (K key : m.keySet()) {
+				List<V> list = m.get(key);
+				for (V value : list) {
+					Entry<K, V> listEntry = new SimpleEntry<K, V>(key, value);
+					allEntries.add(listEntry);
+				}
+			}
+
+			return allEntries;
+		}
+
+		public List<V> get(K key) {
+			return m.get(key);
+		}
+
+		public Set<K> keySet() {
+			return m.keySet();
+		}
 	}
 }

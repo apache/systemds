@@ -172,7 +172,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		hop.setVisited(Hop.VisitStatus.DONE);
 	}
 	
-	
 	/**
 	 * 
 	 * @param hi

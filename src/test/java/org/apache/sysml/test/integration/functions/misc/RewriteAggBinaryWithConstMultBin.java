@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -35,16 +34,17 @@ import org.apache.sysml.utils.Statistics;
  * Regression test for function recompile-once issue with literal replacement.
  * 
  */
-public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase 
+public class RewriteAggBinaryWithConstMultBin extends AutomatedTestBase 
 {
 	
-	private static final String TEST_NAME1 = "RewriteRowSumsMVMult";
-	private static final String TEST_NAME2 = "RewriteRowSumsMVMult";
+	private static final String TEST_NAME1 = "RewritePlusBinaryWithConstMultBin";
+	private static final String TEST_NAME2 = "RewriteMinusBinaryWithConstMultBin";
+
 	private static final String TEST_DIR = "functions/misc/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteSimplifyRowColSumMVMultTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteAggBinaryWithConstMultBin.class.getSimpleName() + "/";
 	
-	private static final int rows = 1234;
-	private static final int cols = 567;
+	//private static final int rows = 1234;
+	//private static final int cols = 567;
 	private static final double eps = Math.pow(10, -10);
 	
 	@Override
@@ -54,30 +54,33 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 	}
-
+	
 	@Test
-	public void testMultiScalarToBinaryNoRewrite() 
+	public void testPlusBinaryWithConstMultBinNoRewrite() 
 	{
-		testRewriteRowColSumsMVMult( TEST_NAME1, false );
+		RewriteAggBinaryWithConstMultBin( TEST_NAME1, false );
+	}
+	
+	
+	@Test
+	public void testPlusBinaryWithConstMultBinRewrite() 
+	{
+		RewriteAggBinaryWithConstMultBin( TEST_NAME1, true);
+	}
+	
+	
+	@Test
+	public void testMinusBinaryWithConstMultBinNoRewrite() 
+	{
+		RewriteAggBinaryWithConstMultBin( TEST_NAME2, false );
 	}
 	
 	@Test
-	public void testMultiScalarToBinaryRewrite() 
+	public void testMinusBinaryWithConstMultBinRewrite() 
 	{
-		testRewriteRowColSumsMVMult( TEST_NAME1, true );
+		RewriteAggBinaryWithConstMultBin( TEST_NAME2, true );
 	}
 	
-	@Test
-	public void testMultiBinaryToScalarNoRewrite() 
-	{
-		testRewriteRowColSumsMVMult( TEST_NAME2, false );
-	}
-	
-	@Test
-	public void testMultiBinaryToScalarRewrite() 
-	{
-		testRewriteRowColSumsMVMult( TEST_NAME2, true );
-	}
 	
 	/**
 	 * 
@@ -85,7 +88,7 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 	 * @param branchRemoval
 	 * @param IPA
 	 */
-	private void testRewriteRowColSumsMVMult( String testname, boolean rewrites )
+	private void RewriteAggBinaryWithConstMultBin( String testname, boolean rewrites )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
@@ -94,32 +97,30 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
 			
+			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{ "-stats","-args", input("X"), output("R") };
+			programArgs = new String[]{"-explain", "-stats","-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());			
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
-			double[][] X = getRandomMatrix(rows, cols, -1, 1, 0.56d, 7);
-			writeInputMatrixWithMTD("X", X, true);
-			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
+			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));
+			System.out.println("Test case passed");
 			
-			//check matrix mult existence
-			Assert.assertTrue( Statistics.getCPHeavyHitterOpCodes().contains("ba+*") == rewrites );
 		}
 		finally
 		{
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
+		
 	}	
 }

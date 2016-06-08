@@ -30,6 +30,7 @@ import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.PickByCount;
+import org.apache.sysml.lops.PlusMult;
 import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.lops.Ternary;
 import org.apache.sysml.lops.UnaryCP;
@@ -137,6 +138,11 @@ public class TernaryOp extends Hop
 					
 				case CTABLE:
 					constructLopsCtable();
+					break;
+				
+				case PLUS_MULT:
+				case MINUS_MULT:
+					constructLopsPlusMult();
 					break;
 					
 				default:
@@ -621,7 +627,25 @@ public class TernaryOp extends Hop
 			}
 		}
 	}
-	
+	private void constructLopsPlusMult() throws HopsException, LopsException {
+		if ( _op != OpOp3.PLUS_MULT && _op != OpOp3.MINUS_MULT )
+			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
+		/*
+		Lop[] inputLops = new Lop[getInput().size()];
+		for(int i=0; i < getInput().size(); i++) {
+			inputLops[i] = getInput().get(i).constructLops();
+		}	
+		Ternary tern = new Ternary(inputLops, Ternary.OperationTypes.PLUS_MULT, getDataType(), getValueType(), ExecType.CP);
+		//tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
+		setOutputDimensions(tern);
+		setLineNumbers(tern);
+		setLops(tern);
+		*/	
+		PlusMult plusmult = new PlusMult(getInput().get(0).constructLops(),getInput().get(1).constructLops(),getInput().get(2).constructLops(), _op, getDataType(),getValueType(), ExecType.CP);
+		setOutputDimensions(plusmult);
+		setLineNumbers(plusmult);
+		setLops(plusmult);
+	}
 	@Override
 	public String getOpString() {
 		String s = new String("");
@@ -667,7 +691,11 @@ public class TernaryOp extends Hop
 				// This part of the code is executed only when a vector of quantiles are computed
 				// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
-				
+			case PLUS_MULT:
+			case MINUS_MULT:
+				//revisit
+				sparsity = OptimizerUtils.getSparsity(dim1, dim2, (nnz<=dim1)?nnz:dim1); 
+				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 			default:
 				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
 		}
@@ -742,6 +770,10 @@ public class TernaryOp extends Hop
 				if( mc[2].dimsKnown() )
 					return new long[]{mc[2].getRows(), 1, mc[2].getRows()};
 				break;
+			case PLUS_MULT:
+			case MINUS_MULT:
+				//revisit
+				return new long[]{mc[2].getRows(), 1, mc[2].getRows()};
 			
 			default:
 				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
@@ -845,7 +877,12 @@ public class TernaryOp extends Hop
 					// Output is a vector of length = #of quantiles to be computed, and it is likely to be dense.
 					// TODO qx1
 					break;	
-					
+				
+				case PLUS_MULT:
+				case MINUS_MULT:
+					setDim1( getInput().get(0)._dim1 );
+					setDim2( getInput().get(0)._dim2 );
+					break;
 				default:
 					throw new RuntimeException("Size information for operation (" + _op + ") can not be updated.");
 			}

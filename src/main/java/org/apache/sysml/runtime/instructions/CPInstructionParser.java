@@ -51,6 +51,7 @@ import org.apache.sysml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.PMMJCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.PlusMultCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuantilePickCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuantileSortCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuaternaryCPInstruction;
@@ -63,6 +64,7 @@ import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
 import org.apache.sysml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
 public class CPInstructionParser extends InstructionParser 
 {
@@ -120,7 +122,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "^2"   , CPINSTRUCTION_TYPE.ArithmeticBinary); //special ^ case
 		String2CPInstructionType.put( "*2"   , CPINSTRUCTION_TYPE.ArithmeticBinary); //special * case
 		String2CPInstructionType.put( "-nz"  , CPINSTRUCTION_TYPE.ArithmeticBinary); //special - case
-		
+		String2CPInstructionType.put( "+*"  , CPINSTRUCTION_TYPE.ArithmeticBinary); 
+		String2CPInstructionType.put( "-*"  , CPINSTRUCTION_TYPE.ArithmeticBinary); 
+
 		
 		// Boolean Instruction Opcodes 
 		String2CPInstructionType.put( "&&"   , CPINSTRUCTION_TYPE.BooleanBinary);
@@ -306,7 +310,11 @@ public class CPInstructionParser extends InstructionParser
 				return AggregateTernaryCPInstruction.parseInstruction(str);
 				
 			case ArithmeticBinary:
-				return ArithmeticBinaryCPInstruction.parseInstruction(str);
+				String opcode = InstructionUtils.getOpCode(str);
+				if( opcode.equals("+*") || opcode.equals("-*")  )
+					return PlusMultCPInstruction.parseInstruction(str);
+				else
+					return ArithmeticBinaryCPInstruction.parseInstruction(str);
 			
 			case Ternary:
 				return TernaryCPInstruction.parseInstruction(str);

@@ -21,8 +21,6 @@ package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,7 +31,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
@@ -84,21 +81,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 		informat.configure(job);
 
 		InputSplit[] splits = informat.getSplits(job, _numThreads);
-
-		if (splits[0] instanceof FileSplit) {
-			// The splits do not always arrive in order by file name.
-			// Sort the splits lexicographically by path so that the header will
-			// be in the first split.
-			// Note that we're assuming that the splits come in order by offset
-			Arrays.sort(splits, new Comparator<InputSplit>() {
-				@Override
-				public int compare(InputSplit o1, InputSplit o2) {
-					Path p1 = ((FileSplit) o1).getPath();
-					Path p2 = ((FileSplit) o2).getPath();
-					return p1.toString().compareTo(p2.toString());
-				}
-			});
-		}
+		splits = IOUtilFunctions.sortInputSplits(splits);
 
 		// check existence and non-empty file
 		checkValidInputFile(fs, path);

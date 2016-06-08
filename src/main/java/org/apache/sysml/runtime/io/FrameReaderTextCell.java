@@ -42,9 +42,12 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
+/**
+ * Single-threaded frame textcell reader.
+ * 
+ */
 public class FrameReaderTextCell extends FrameReader
 {
-
 	/**
 	 * 
 	 * @param fname
@@ -57,12 +60,13 @@ public class FrameReaderTextCell extends FrameReader
 	 * @throws IOException 
 	 */
 	@Override
-	public FrameBlock readFrameFromHDFS(String fname, List<ValueType> schema, List<String> names,
-			long rlen, long clen)
-			throws IOException, DMLRuntimeException
+	public final FrameBlock readFrameFromHDFS(String fname, List<ValueType> schema, List<String> names, long rlen, long clen)
+		throws IOException, DMLRuntimeException
 	{
 		//allocate output frame block
-		FrameBlock ret = createOutputFrameBlock(schema, names, rlen);
+		List<ValueType> lschema = createOutputSchema(schema, clen);
+		List<String> lnames = createOutputNames(names, clen);
+		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
@@ -72,11 +76,8 @@ public class FrameReaderTextCell extends FrameReader
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 
 	
-		//core read 
-		if( fs.isDirectory(path) )
-			readTextCellFrameFromHDFS(path, job, ret, schema, names, rlen, clen);
-		else
-			readRawTextCellFrameFromHDFS(path, job, fs, ret, schema, names, rlen, clen);
+		//core read (sequential/parallel)
+		readTextCellFrameFromHDFS(path, job, fs, ret, lschema, lnames, rlen, clen);
 		
 		return ret;
 	}
@@ -90,7 +91,7 @@ public class FrameReaderTextCell extends FrameReader
 	 * @throws IOException
 	 * @throws DMLRuntimeException
 	 */
-	public FrameBlock readFrameFromInputStream(InputStream is, long rlen, long clen) 
+	public final FrameBlock readFrameFromInputStream(InputStream is, long rlen, long clen) 
 		throws IOException, DMLRuntimeException {
 		return readFrameFromInputStream(is, getDefSchema(clen), getDefColNames(clen), rlen, clen);
 	}
@@ -106,83 +107,98 @@ public class FrameReaderTextCell extends FrameReader
 	 * @throws DMLRuntimeException 
 	 * @throws IOException 
 	 */
-	public FrameBlock readFrameFromInputStream(InputStream is, List<ValueType> schema, List<String> names, long rlen, long clen) 
+	public final FrameBlock readFrameFromInputStream(InputStream is, List<ValueType> schema, List<String> names, long rlen, long clen) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output frame block
-		FrameBlock ret = createOutputFrameBlock(schema, names, rlen);
+		List<ValueType> lschema = createOutputSchema(schema, clen);
+		List<String> lnames = createOutputNames(names, clen);
+		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 	
 		//core read 
-		readRawTextCellFrameFromInputStream(is, ret, schema, names, rlen, clen);
+		readRawTextCellFrameFromInputStream(is, ret, lschema, lnames, rlen, clen);
 		
 		return ret;
 	}
 	
-
 	/**
 	 * 
 	 * @param path
 	 * @param job
+	 * @param fs
 	 * @param dest
 	 * @param schema
 	 * @param names
 	 * @param rlen
 	 * @param clen
-	 * @return
 	 * @throws IOException
 	 */
-	private void readTextCellFrameFromHDFS( Path path, JobConf job, FrameBlock dest, 
+	protected void readTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
 			List<ValueType> schema, List<String> names, long rlen, long clen)
 		throws IOException
 	{
-		FileInputFormat.addInputPath(job, path);
-		TextInputFormat informat = new TextInputFormat();
-		informat.configure(job);
-		InputSplit[] splits = informat.getSplits(job, 1);
+		if( fs.isDirectory(path) ) {
+			FileInputFormat.addInputPath(job, path);
+			TextInputFormat informat = new TextInputFormat();
+			informat.configure(job);
+			InputSplit[] splits = informat.getSplits(job, 1);
+			for(InputSplit split: splits)
+				readTextCellFrameFromInputSplit(split, informat, job, dest);
+		}
+		else {
+			readRawTextCellFrameFromHDFS(path, job, fs, dest, schema, names, rlen, clen);
+		}
+	}
+
+	/**
+	 * 
+	 * @param split
+	 * @param dest
+	 * @param schema
+	 * @param names
+	 * @param rlen
+	 * @param clen
+	 * @throws IOException
+	 */
+	protected final void readTextCellFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, FrameBlock dest)
+		throws IOException
+	{
+		List<ValueType> schema = dest.getSchema();
+		int rlen = dest.getNumRows();
+		int clen = dest.getNumColumns();
+		
+		//create record reader
+		RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
 		
 		LongWritable key = new LongWritable();
 		Text value = new Text();
+		FastStringTokenizer st = new FastStringTokenizer(' ');
 		int row = -1;
 		int col = -1;
 		
 		try
 		{
-			FastStringTokenizer st = new FastStringTokenizer(' ');
-			
-			for(InputSplit split: splits)
-			{
-				RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
-			
-				try
-				{
-					while( reader.next(key, value) )
-					{
-						st.reset( value.toString() ); //reinit tokenizer
-						row = st.nextInt()-1;
-						col = st.nextInt()-1;
-						dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), st.nextToken()));
-					}
-				}
-				finally
-				{
-					if( reader != null )
-						reader.close();
-				}
+			while( reader.next(key, value) ) {
+				st.reset( value.toString() ); //reinit tokenizer
+				row = st.nextInt()-1;
+				col = st.nextInt()-1;
+				dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), st.nextToken()));
 			}
 		}
-		catch(Exception ex)
+		catch(Exception ex) 
 		{
 			//post-mortem error handling and bounds checking
-			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen )
-			{
+			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen ) {
 				throw new IOException("Frame cell ["+(row+1)+","+(col+1)+"] " +
 									  "out of overall frame range [1:"+rlen+",1:"+clen+"].");
 			}
-			else
-			{
+			else {
 				throw new IOException( "Unable to read frame in text cell format.", ex );
 			}
 		}
+		finally {
+			IOUtilFunctions.closeSilently(reader);
+		}		
 	}
 
 	
@@ -199,7 +215,7 @@ public class FrameReaderTextCell extends FrameReader
 	 * @return
 	 * @throws IOException
 	 */
-	private void readRawTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
+	protected final void readRawTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
 			List<ValueType> schema, List<String> names, long rlen, long clen)
 		throws IOException
 	{
@@ -221,21 +237,20 @@ public class FrameReaderTextCell extends FrameReader
 	 * @return
 	 * @throws IOException
 	 */
-	private void readRawTextCellFrameFromInputStream( InputStream is, FrameBlock dest, List<ValueType> schema, List<String> names, long rlen, long clen)
-			throws IOException
+	protected final void readRawTextCellFrameFromInputStream( InputStream is, FrameBlock dest, List<ValueType> schema, List<String> names, long rlen, long clen)
+		throws IOException
 	{
+		//create buffered reader
 		BufferedReader br = new BufferedReader(new InputStreamReader( is ));	
 		
 		String value = null;
+		FastStringTokenizer st = new FastStringTokenizer(' ');
 		int row = -1;
 		int col = -1;
 		
 		try
 		{			
-			FastStringTokenizer st = new FastStringTokenizer(' ');
-			
-			while( (value=br.readLine())!=null )
-			{
+			while( (value=br.readLine())!=null ) {
 				st.reset( value ); //reinit tokenizer
 				row = st.nextInt()-1;
 				col = st.nextInt()-1;	
@@ -245,18 +260,15 @@ public class FrameReaderTextCell extends FrameReader
 		catch(Exception ex)
 		{
 			//post-mortem error handling and bounds checking
-			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen ) 
-			{
+			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen ) {
 				throw new IOException("Frame cell ["+(row+1)+","+(col+1)+"] " +
 									  "out of overall frame range [1:"+rlen+",1:"+clen+"].", ex);
 			}
-			else
-			{
+			else {
 				throw new IOException( "Unable to read frame in raw text cell format.", ex );
 			}
 		}
-		finally
-		{
+		finally {
 			IOUtilFunctions.closeSilently(br);
 		}
 	}

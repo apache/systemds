@@ -80,12 +80,18 @@ public class FrameReaderFactory
 		FrameReader reader = null;
 
 		if( iinfo == InputInfo.TextCellInputInfo ) {
-			reader = new FrameReaderTextCell();
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) )
+				reader = new FrameReaderTextCellParallel();
+			else	
+				reader = new FrameReaderTextCell();
 		}
 		else if( iinfo == InputInfo.CSVInputInfo ) {
 			if( props!=null && !(props instanceof CSVFileFormatProperties) )
 				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
-			reader = new FrameReaderTextCSV( (CSVFileFormatProperties)props);
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) )
+				reader = new FrameReaderTextCSVParallel( (CSVFileFormatProperties)props );
+			else
+				reader = new FrameReaderTextCSV( (CSVFileFormatProperties)props );
 		}
 		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) )

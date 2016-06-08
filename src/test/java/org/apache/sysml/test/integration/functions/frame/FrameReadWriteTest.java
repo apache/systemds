@@ -62,35 +62,94 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testFrameStringsStrings()  {
-		runFrameReadWriteTest(schemaStrings, schemaStrings, false);
+	public void testFrameStringsStringsBinary()  {
+		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaStrings, schemaStrings, false);
 	}
 	
 	@Test
-	public void testFrameStringsStringsParallel()  { 
-		runFrameReadWriteTest(schemaStrings, schemaStrings, true);
+	public void testFrameStringsStringsBinaryParallel()  { 
+		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaStrings, schemaStrings, true);
 	}
 	
 	@Test
-	public void testFrameMixedStrings()  {
-		runFrameReadWriteTest(schemaMixed, schemaStrings, false);
+	public void testFrameMixedStringsBinary()  {
+		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaMixed, schemaStrings, false);
 	}
 	
 	@Test
-	public void testFrameStringsMixedParallel()  {
-		runFrameReadWriteTest(schemaStrings, schemaMixed, true);
+	public void testFrameStringsMixedBinaryParallel()  {
+		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaStrings, schemaMixed, true);
 	}
 	
 	@Test
-	public void testFrameMixedMixed()  {
-		runFrameReadWriteTest(schemaMixed, schemaMixed, false);
+	public void testFrameMixedMixedBinary()  {
+		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaMixed, schemaMixed, false);
 	}
 	
 	@Test
-	public void testFrameMixedMixedParallel()  {
-		runFrameReadWriteTest(schemaMixed, schemaMixed, true);
+	public void testFrameMixedMixedBinaryParallel()  {
+		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaMixed, schemaMixed, true);
 	}
 
+	@Test
+	public void testFrameStringsStringsTextCell()  {
+		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaStrings, schemaStrings, false);
+	}
+	
+	@Test
+	public void testFrameStringsStringsTextCellParallel()  { 
+		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaStrings, schemaStrings, true);
+	}
+	
+	@Test
+	public void testFrameMixedStringsTextCell()  {
+		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaMixed, schemaStrings, false);
+	}
+	
+	@Test
+	public void testFrameStringsMixedTextCellParallel()  {
+		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaStrings, schemaMixed, true);
+	}
+	
+	@Test
+	public void testFrameMixedMixedTextCell()  {
+		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaMixed, schemaMixed, false);
+	}
+	
+	@Test
+	public void testFrameMixedMixedTextCellParallel()  {
+		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaMixed, schemaMixed, true);
+	}
+
+	@Test
+	public void testFrameStringsStringsTextCSV()  {
+		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaStrings, schemaStrings, false);
+	}
+	
+	@Test
+	public void testFrameStringsStringsTextCSVParallel()  { 
+		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaStrings, schemaStrings, true);
+	}
+	
+	@Test
+	public void testFrameMixedStringsTextCSV()  {
+		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaMixed, schemaStrings, false);
+	}
+	
+	@Test
+	public void testFrameStringsMixedTextCSVParallel()  {
+		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaStrings, schemaMixed, true);
+	}
+	
+	@Test
+	public void testFrameMixedMixedTextCSV()  {
+		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaMixed, schemaMixed, false);
+	}
+	
+	@Test
+	public void testFrameMixedMixedTextCSVParallel()  {
+		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaMixed, schemaMixed, true);
+	}
 	
 	/**
 	 * 
@@ -98,7 +157,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	 * @param sparseM2
 	 * @param instType
 	 */
-	private void runFrameReadWriteTest( ValueType[] schema1, ValueType[] schema2, boolean parallel)
+	private void runFrameReadWriteTest( OutputInfo oinfo, ValueType[] schema1, ValueType[] schema2, boolean parallel)
 	{
 		boolean oldParText = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 		boolean oldParBin = CompilerConfig.FLAG_PARREADWRITE_BINARY;
@@ -129,9 +188,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 			fprop.setDelim(DELIMITER);
 			fprop.setHeader(HEADER);
 			
-			writeAndVerifyData(OutputInfo.TextCellOutputInfo, frame1, frame2, fprop);
-			writeAndVerifyData(OutputInfo.CSVOutputInfo, frame1, frame2, fprop);
-			writeAndVerifyData(OutputInfo.BinaryBlockOutputInfo, frame1, frame2, fprop);
+			writeAndVerifyData(oinfo, frame1, frame2, fprop);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

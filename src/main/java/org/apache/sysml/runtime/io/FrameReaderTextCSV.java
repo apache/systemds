@@ -19,32 +19,37 @@
 
 package org.apache.sysml.runtime.io;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import org.apache.hadoop.fs.FileStatus;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
+/**
+ * Single-threaded frame text csv reader.
+ * 
+ */
 public class FrameReaderTextCSV extends FrameReader
 {
-
-	private CSVFileFormatProperties _props = null;
+	protected CSVFileFormatProperties _props = null;
 	
-	public FrameReaderTextCSV(CSVFileFormatProperties props)
-	{
+	public FrameReaderTextCSV(CSVFileFormatProperties props) {
 		_props = props;
 	}
 	
@@ -61,15 +66,10 @@ public class FrameReaderTextCSV extends FrameReader
 	 * @throws IOException 
 	 */
 	@Override
-	public FrameBlock readFrameFromHDFS(String fname, List<ValueType> schema, List<String> names,
+	public final FrameBlock readFrameFromHDFS(String fname, List<ValueType> schema, List<String> names,
 			long rlen, long clen)
 		throws IOException, DMLRuntimeException 
 	{
-		//allocate output frame block
-		FrameBlock ret = null;
-		if( rlen>0 && clen>0 ) //otherwise CSV reblock based on file size for frame w/ unknown dimensions
-			ret = createOutputFrameBlock(schema, names, rlen);
-		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 		FileSystem fs = FileSystem.get(job);
@@ -77,13 +77,52 @@ public class FrameReaderTextCSV extends FrameReader
 		
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 
+		
+		//compute size if necessary
+		if( rlen <= 0 || clen <= 0 ) {
+			Pair<Integer,Integer> size = computeCSVSize(path, job, fs);
+			rlen = size.getKey();
+			clen = size.getValue();
+		}
+		
+		//allocate output frame block
+		List<ValueType> lschema = createOutputSchema(schema, clen);
+		List<String> lnames = createOutputNames(names, clen);
+		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 	
-		//core read 
-		ret = readCSVFrameFromHDFS(path, job, fs, ret, schema, names, rlen, clen,  
-				   _props.hasHeader(), _props.getDelim(), _props.isFill() );
+		//core read (sequential/parallel) 
+		readCSVFrameFromHDFS(path, job, fs, ret, lschema, lnames, rlen, clen);
 		
 		return ret;
 	}
+
+	/**
+	 * 
+	 * @param path
+	 * @param job
+	 * @param fs
+	 * @param dest
+	 * @param schema
+	 * @param names
+	 * @param rlen
+	 * @param clen
+	 * @return
+	 * @throws IOException 
+	 */
+	protected void readCSVFrameFromHDFS( Path path, JobConf job, FileSystem fs, 
+			FrameBlock dest, List<ValueType> schema, List<String> names, long rlen, long clen) 
+		throws IOException
+	{
+		FileInputFormat.addInputPath(job, path);
+		TextInputFormat informat = new TextInputFormat();
+		informat.configure(job);
+		InputSplit[] splits = informat.getSplits(job, 1);
+		splits = IOUtilFunctions.sortInputSplits(splits);
+		for( int i=0; i<splits.length; i++ )
+			readCSVFrameFrameFromInputSplit(splits[i], informat, job, dest, schema, names, rlen, clen, 0, i==0);
+	}
+	
+	
 	
 	/**
 	 * 
@@ -99,72 +138,60 @@ public class FrameReaderTextCSV extends FrameReader
 	 * @return
 	 * @throws IOException
 	 */
-	@SuppressWarnings("unchecked")
-	private FrameBlock readCSVFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
-			List<ValueType> schema, List<String> names, long rlen, long clen, boolean hasHeader, String delim, boolean fill)
+	protected final void readCSVFrameFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, 
+			FrameBlock dest, List<ValueType> schema, List<String> names, long rlen, long clen, int rl, boolean first)
 		throws IOException
 	{
-		ArrayList<Path> files=new ArrayList<Path>();
-		if(fs.isDirectory(path)) {
-			for(FileStatus stat: fs.listStatus(path, CSVReblockMR.hiddenFileFilter))
-				files.add(stat.getPath());
-			Collections.sort(files);
-		}
-		else
-			files.add(path);
+		boolean hasHeader = _props.hasHeader();
+		boolean isFill = _props.isFill();
+		double dfillValue = _props.getFillValue();
+		String sfillValue = String.valueOf(_props.getFillValue());
+		String delim = _props.getDelim();
 		
-		if ( dest == null ) {
-			dest = computeCSVSize(files, fs, schema, names, hasHeader, delim);
-			clen = dest.getNumColumns();
-		}
-		
-		/////////////////////////////////////////
-		String value = null;
-		int row = 0;
+		//create record reader
+		RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
+		LongWritable key = new LongWritable();
+		Text value = new Text();
+		int row = rl;
 		int col = -1;
 		
-		for(int fileNo=0; fileNo<files.size(); fileNo++)
-		{
-			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));
-			if(fileNo==0 && hasHeader ) 
-				br.readLine(); //ignore header
+		//handle header if existing
+		if(first && hasHeader ) 
+			reader.next(key, value); //ignore header
 			
-			// Read the data
-			boolean emptyValuesFound = false;
-			try
+		// Read the data
+		boolean emptyValuesFound = false;
+		try
+		{
+			while( reader.next(key, value) ) //foreach line
 			{
-				while( (value=br.readLine())!=null ) //foreach line
+				String cellStr = value.toString().trim();
+				emptyValuesFound = false; col = 0;
+				String[] parts = IOUtilFunctions.split(cellStr, delim);
+				
+				for( String part : parts ) //foreach cell
 				{
-					String cellStr = value.toString().trim();
-					emptyValuesFound = false;
-					String[] parts = IOUtilFunctions.split(cellStr, delim);
-					col = 0;
-					
-					for( String part : parts ) //foreach cell
-					{
-						part = part.trim();
-						if ( part.isEmpty() ) {
-							//TODO: Do we need to handle empty cell condition?
-							emptyValuesFound = true;
-						}
-						else {
-							dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), part));
-						}
-						col++;
+					part = part.trim();
+					if ( part.isEmpty() ) {
+						if( isFill && dfillValue!=0 )
+							dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), sfillValue));
+						emptyValuesFound = true;
 					}
-					
-					//sanity checks for empty values and number of columns
-					IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, fill, emptyValuesFound);
-					IOUtilFunctions.checkAndRaiseErrorCSVNumColumns(path.toString(), cellStr, parts, clen);
-					row++;
+					else {
+						dest.set(row, col, UtilFunctions.stringToObject(schema.get(col), part));
+					}
+					col++;
 				}
-			}
-			finally {
-				IOUtilFunctions.closeSilently(br);
+				
+				//sanity checks for empty values and number of columns
+				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, isFill, emptyValuesFound);
+				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns("", cellStr, parts, clen);
+				row++;
 			}
 		}
-		
-		return dest;
+		finally {
+			IOUtilFunctions.closeSilently(reader);
+		}
 	}
 	
 	/**
@@ -178,35 +205,45 @@ public class FrameReaderTextCSV extends FrameReader
 	 * @return
 	 * @throws IOException
 	 */
-	private FrameBlock computeCSVSize ( List<Path> files, FileSystem fs, List<ValueType> schema, List<String> names, boolean hasHeader, String delim) 
+	protected Pair<Integer,Integer> computeCSVSize( Path path, JobConf job, FileSystem fs) 
 		throws IOException 
 	{		
-		int nrow = 0;
-		for(int fileNo=0; fileNo<files.size(); fileNo++)
+		FileInputFormat.addInputPath(job, path);
+		TextInputFormat informat = new TextInputFormat();
+		informat.configure(job);
+		InputSplit[] splits = informat.getSplits(job, 1);
+		splits = IOUtilFunctions.sortInputSplits(splits);
+		
+		boolean first = true;
+		int ncol = -1;
+		int nrow = -1;
+		
+		for( InputSplit split : splits ) 
 		{
-			BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(files.get(fileNo))));	
+			RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
+			LongWritable key = new LongWritable();
+			Text value = new Text();
+			
 			try
 			{
-				// Read the header line, if there is one.
-				if(fileNo==0)
-				{
-					if ( hasHeader ) 
-						br.readLine(); //ignore header
+				//read head and first line to determine num columns
+				if( first ) {
+					if ( _props.hasHeader() ) 
+						reader.next(key, value); //ignore header
+					reader.next(key, value);
+					ncol = StringUtils.countMatches(value.toString(), _props.getDelim()) + 1;
+					nrow = 1; first = false;
 				}
 				
-				while ( br.readLine() != null ) {
+				//count remaining number of rows
+				while ( reader.next(key, value) )
 					nrow++;
-				}
 			}
 			finally {
-				IOUtilFunctions.closeSilently(br);
+				IOUtilFunctions.closeSilently(reader);
 			}
 		}
 		
-		//create new frame block
-		FrameBlock frameBlock = new FrameBlock(schema, names);
-		frameBlock.ensureAllocatedColumns(nrow);
-		return frameBlock;
+		return new Pair<Integer,Integer>(nrow, ncol);
 	}
-
 }

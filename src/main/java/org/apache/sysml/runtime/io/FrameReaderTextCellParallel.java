@@ -29,76 +29,85 @@ import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 
-
 /**
- * Multi-threaded frame binary block reader.
+ * Multi-threaded frame textcell reader.
  * 
  */
-public class FrameReaderBinaryBlockParallel extends FrameReaderBinaryBlock
-{
+public class FrameReaderTextCellParallel extends FrameReaderTextCell
+{	
 	/**
 	 * 
 	 * @param path
 	 * @param job
-	 * @param fs 
+	 * @param fs
 	 * @param dest
+	 * @param schema
+	 * @param names
 	 * @param rlen
 	 * @param clen
-	 * 
 	 * @throws IOException
-	 * @throws DMLRuntimeException 
 	 */
-	protected void readBinaryBlockFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, long rlen, long clen )
-		throws IOException, DMLRuntimeException
+	@Override
+	protected void readTextCellFrameFromHDFS( Path path, JobConf job, FileSystem fs, FrameBlock dest, 
+			List<ValueType> schema, List<String> names, long rlen, long clen)
+		throws IOException
 	{
-		int numThreads = OptimizerUtils.getParallelBinaryReadParallelism();
+		int numThreads = OptimizerUtils.getParallelTextReadParallelism();
+		
+		FileInputFormat.addInputPath(job, path);
+		TextInputFormat informat = new TextInputFormat();
+		informat.configure(job);
 		
 		try 
 		{
-			//create read tasks for all files
+			//create read tasks for all splits
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-			ArrayList<ReadFileTask> tasks = new ArrayList<ReadFileTask>();
-			for( Path lpath : getSequenceFilePaths(fs, path) )
-				tasks.add(new ReadFileTask(lpath, job, fs, dest));
-
+			InputSplit[] splits = informat.getSplits(job, numThreads);
+			ArrayList<ReadTask> tasks = new ArrayList<ReadTask>();
+			for( InputSplit split : splits )
+				tasks.add(new ReadTask(split, informat, job, dest));
+			
 			//wait until all tasks have been executed
 			List<Future<Object>> rt = pool.invokeAll(tasks);	
 			pool.shutdown();
-			
+				
 			//check for exceptions
 			for( Future<Object> task : rt )
 				task.get();
 		} 
 		catch (Exception e) {
-			throw new IOException("Failed parallel read of binary block input.", e);
+			throw new IOException("Failed parallel read of text cell input.", e);
 		}
 	}
 	
 	/**
 	 * 
 	 */
-	private class ReadFileTask implements Callable<Object> 
+	public class ReadTask implements Callable<Object> 
 	{
-		private Path _path = null;
+		private InputSplit _split = null;
+		private TextInputFormat _informat = null;
 		private JobConf _job = null;
-		private FileSystem _fs = null;
 		private FrameBlock _dest = null;
 		
-		public ReadFileTask(Path path, JobConf job, FileSystem fs, FrameBlock dest) {
-			_path = path;
-			_fs = fs;
+		public ReadTask( InputSplit split, TextInputFormat informat, JobConf job, FrameBlock dest ) {
+			_split = split;
+			_informat = informat;
 			_job = job;
 			_dest = dest;
 		}
 
 		@Override
 		public Object call() throws Exception {
-			readBinaryBlockFrameFromSequenceFile(_path, _job, _fs, _dest);
+			readTextCellFrameFromInputSplit(_split, _informat, _job, _dest);
 			return null;
 		}
 	}

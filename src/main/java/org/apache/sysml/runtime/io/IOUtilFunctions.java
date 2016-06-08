@@ -24,10 +24,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Comparator;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.FileSplit;
+import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -155,5 +160,28 @@ public class IOUtilFunctions
 			bos.write(buff, 0, len);
 		input.close();		
 		return bos.toString("UTF-8");
+	}
+
+	/**
+	 * 
+	 * @param splits
+	 * @return
+	 */
+	public static InputSplit[] sortInputSplits(InputSplit[] splits) {
+		if (splits[0] instanceof FileSplit) {
+			// The splits do not always arrive in order by file name.
+			// Sort the splits lexicographically by path so that the header will
+			// be in the first split.
+			// Note that we're assuming that the splits come in order by offset
+			Arrays.sort(splits, new Comparator<InputSplit>() {
+				@Override
+				public int compare(InputSplit o1, InputSplit o2) {
+					Path p1 = ((FileSplit) o1).getPath();
+					Path p2 = ((FileSplit) o2).getPath();
+					return p1.toString().compareTo(p2.toString());
+				}
+			});
+		}		
+		return splits;
 	}
 }

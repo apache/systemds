@@ -215,7 +215,6 @@ org.apache.hadoop:hadoop-common:2.4.1
 org.apache.hadoop:hadoop-mapreduce-client-core:2.4.1
 
 Compile-scope dependencies:
-com.google.guava:guava:14.0.1
 org.apache.wink:wink-json4j:1.4
 
 ===============================================================================

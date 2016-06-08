@@ -121,8 +121,6 @@ public class IOUtilFunctions
 	 */
 	public static String[] split(String str, String delim)
 	{
-		//note: split via stringutils faster than precompiled pattern / guava splitter
-		
 		//split by whole separator required for multi-character delimiters, preserve
 		//all tokens required for empty cells and in order to keep cell alignment
 		return StringUtils.splitByWholeSeparatorPreserveAllTokens(str, delim);

@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.io;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -161,6 +162,30 @@ public abstract class FrameReader
 		FrameBlock ret = new FrameBlock(schema, names);
 		ret.ensureAllocatedColumns((int)nrow);
 		return ret;
+	}
+	
+	/**
+	 * 
+	 * @param schema
+	 * @param ncol
+	 * @return
+	 */
+	protected static List<ValueType> createOutputSchema(List<ValueType> schema, long ncol) {
+		if( schema.size()==1 && ncol > 1 )
+			return Collections.nCopies((int)ncol, schema.get(0));
+		return schema;
+	}
+	
+	/**
+	 * 
+	 * @param names
+	 * @param ncol
+	 * @return
+	 */
+	protected static List<String> createOutputNames(List<String> names, long ncol) {
+		if( names.size()==1 && ncol > 1 )
+			return FrameBlock.createColNames((int)ncol);
+		return names;
 	}
 	
 	/**

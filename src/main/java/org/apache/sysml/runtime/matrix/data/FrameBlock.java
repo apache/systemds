@@ -198,7 +198,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param size
 	 * @return
 	 */
-	private static List<String> createColNames(int size) {
+	public static List<String> createColNames(int size) {
 		ArrayList<String> ret = new ArrayList<String>(size);
 		for( int i=1; i<=size; i++ )
 			ret.add(createColName(i));
@@ -210,7 +210,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param i
 	 * @return
 	 */
-	private static String createColName(int i) {
+	public static String createColName(int i) {
 		return "C" + i;
 	}
 	

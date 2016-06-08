@@ -18,9 +18,7 @@
 # under the License.
 #
 #-------------------------------------------------------------
-
 X=matrix(1,10,10)
-if(1==1){}
-lamda=7
-y=sum(X*lamda)
-write(y, $1)
+lamda=sum(X)
+args<-commandArgs(TRUE)
+write(sum(X*lamda),paste(args[2],"Scalar",sep=""))

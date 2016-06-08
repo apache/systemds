@@ -21,6 +21,6 @@
 
 X=matrix(1,10,10)
 if(1==1){}
-lamda=7
-y=sum(lamda*X)
+lamda=sum(X)
+y=sum(X*lamda)
 write(y, $1)

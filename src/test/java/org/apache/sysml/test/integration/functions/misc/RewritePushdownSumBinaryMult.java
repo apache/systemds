@@ -34,14 +34,14 @@ import org.apache.sysml.utils.Statistics;
  * Regression test for function recompile-once issue with literal replacement.
  * 
  */
-public class RewriteMultiBinaryToScalar extends AutomatedTestBase 
+public class RewritePushdownSumBinaryMult extends AutomatedTestBase 
 {
 	
-	private static final String TEST_NAME1 = "RewriteMultiBinaryToScalar";
-	private static final String TEST_NAME2 = "RewriteMultiBinaryToScalar2";
+	private static final String TEST_NAME1 = "RewritePushdownSumBinaryMult";
+	private static final String TEST_NAME2 = "RewritePushdownSumBinaryMult2";
 
 	private static final String TEST_DIR = "functions/misc/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteMultiBinaryToScalar.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewritePushdownSumBinaryMult.class.getSimpleName() + "/";
 	
 	//private static final int rows = 1234;
 	//private static final int cols = 567;
@@ -56,29 +56,29 @@ public class RewriteMultiBinaryToScalar extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRewriteRowSumsMVMultNoRewrite() 
+	public void testPushdownSumBinaryMultNoRewrite() 
 	{
-		testRewriteMultiBinaryToScalar( TEST_NAME1, false );
+		testRewritePushdownSumBinaryMult( TEST_NAME1, false );
 	}
 	
 	
 	@Test
-	public void testRewriteRowSumsMVMultRewrite() 
+	public void testPushdownSumBinaryMultRewrite() 
 	{
-		testRewriteMultiBinaryToScalar( TEST_NAME1, true );
+		testRewritePushdownSumBinaryMult( TEST_NAME1, true );
 	}
 	
 	
 	@Test
-	public void testRewriteColSumsMVMultNoRewrite() 
+	public void testPushdownSumBinaryMultNoRewrite2() 
 	{
-		testRewriteMultiBinaryToScalar( TEST_NAME2, false );
+		testRewritePushdownSumBinaryMult( TEST_NAME2, false );
 	}
 	
 	@Test
-	public void testRewriteColSumsMVMultRewrite() 
+	public void testPushdownSumBinaryMultRewrite2() 
 	{
-		testRewriteMultiBinaryToScalar( TEST_NAME2, true );
+		testRewritePushdownSumBinaryMult( TEST_NAME2, true );
 	}
 	
 	
@@ -88,7 +88,7 @@ public class RewriteMultiBinaryToScalar extends AutomatedTestBase
 	 * @param branchRemoval
 	 * @param IPA
 	 */
-	private void testRewriteMultiBinaryToScalar( String testname, boolean rewrites )
+	private void testRewritePushdownSumBinaryMult( String testname, boolean rewrites )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		

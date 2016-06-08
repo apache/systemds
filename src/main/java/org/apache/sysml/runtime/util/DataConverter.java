@@ -624,14 +624,41 @@ public class DataConverter
 	public static MatrixBlock convertToMatrixBlock(FrameBlock frame) 
 		throws DMLRuntimeException
 	{
-		MatrixBlock mb = new MatrixBlock(frame.getNumRows(), frame.getNumColumns(), false);
+		int m = frame.getNumRows();
+		int n = frame.getNumColumns();
+		MatrixBlock mb = new MatrixBlock(m, n, false);
+		mb.allocateDenseBlock();
 		
 		List<ValueType> schema = frame.getSchema();
-		for( int i=0; i<frame.getNumRows(); i++ ) 
-			for( int j=0; j<frame.getNumColumns(); j++ ) {
-				mb.appendValue(i, j, UtilFunctions.objectToDouble(
-						schema.get(j), frame.get(i, j)));
-			}
+		int dFreq = Collections.frequency(schema, ValueType.DOUBLE);
+		
+		if( dFreq == schema.size() ) {
+			// special case double schema (without cell-object creation, 
+			// cache-friendly row-column copy)
+			double[][] a = new double[n][];
+			double[] c = mb.getDenseBlock();
+			for( int j=0; j<n; j++ )
+				a[j] = (double[])frame.getColumn(j);			
+			int blocksizeIJ = 16; //blocks of a+overhead/c in L1 cache
+			for( int bi=0; bi<m; bi+=blocksizeIJ )
+				for( int bj=0; bj<n; bj+=blocksizeIJ ) {
+					int bimin = Math.min(bi+blocksizeIJ, m);
+					int bjmin = Math.min(bj+blocksizeIJ, n);
+					for( int i=bi, aix=bi*n; i<bimin; i++, aix+=n )
+						for( int j=bj; j<bjmin; j++ )
+							c[aix+j] = a[j][i];
+				}
+		}
+		else { 
+			//general case
+			for( int i=0; i<frame.getNumRows(); i++ ) 
+				for( int j=0; j<frame.getNumColumns(); j++ ) {
+					mb.appendValue(i, j, UtilFunctions.objectToDouble(
+							schema.get(j), frame.get(i, j)));
+				}
+		}
+		
+		//post-processing
 		mb.examSparsity();
 		
 		return mb;

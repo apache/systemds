@@ -342,6 +342,21 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
+	 * 
+	 * @param c
+	 * @return
+	 */
+	public Object getColumn(int c) {
+		switch(_schema.get(c)) {
+			case STRING:  return ((StringArray)_coldata.get(c))._data; 
+			case BOOLEAN: return ((BooleanArray)_coldata.get(c))._data;
+			case INT:     return ((LongArray)_coldata.get(c))._data;
+			case DOUBLE:  return ((DoubleArray)_coldata.get(c))._data;
+			default:      return null;
+	 	}
+	}
+	
+	/**
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as strings independent of their value types.  
 	 * 

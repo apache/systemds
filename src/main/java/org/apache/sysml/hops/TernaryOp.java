@@ -630,17 +630,7 @@ public class TernaryOp extends Hop
 	private void constructLopsPlusMult() throws HopsException, LopsException {
 		if ( _op != OpOp3.PLUS_MULT && _op != OpOp3.MINUS_MULT )
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.PLUS_MULT + " or" +  OpOp3.MINUS_MULT);
-		/*
-		Lop[] inputLops = new Lop[getInput().size()];
-		for(int i=0; i < getInput().size(); i++) {
-			inputLops[i] = getInput().get(i).constructLops();
-		}	
-		Ternary tern = new Ternary(inputLops, Ternary.OperationTypes.PLUS_MULT, getDataType(), getValueType(), ExecType.CP);
-		//tertiary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
-		setOutputDimensions(tern);
-		setLineNumbers(tern);
-		setLops(tern);
-		*/	
+		
 		PlusMult plusmult = new PlusMult(getInput().get(0).constructLops(),getInput().get(1).constructLops(),getInput().get(2).constructLops(), _op, getDataType(),getValueType(), ExecType.CP);
 		setOutputDimensions(plusmult);
 		setLineNumbers(plusmult);
@@ -693,8 +683,7 @@ public class TernaryOp extends Hop
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
 			case PLUS_MULT:
 			case MINUS_MULT:
-				//revisit
-				sparsity = OptimizerUtils.getSparsity(dim1, dim2, (nnz<=dim1)?nnz:dim1); 
+				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz); 
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 			default:
 				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
@@ -772,9 +761,11 @@ public class TernaryOp extends Hop
 				break;
 			case PLUS_MULT:
 			case MINUS_MULT:
-				//revisit
-				return new long[]{mc[2].getRows(), 1, mc[2].getRows()};
-			
+				//compute back NNz
+				double matrix1Sparsity = OptimizerUtils.getSparsity(mc[0].getRows(), mc[0].getRows(), mc[0].getNonZeros()); 
+				double matrix2Sparsity = OptimizerUtils.getSparsity(mc[2].getRows(), mc[2].getRows(), mc[2].getNonZeros());
+				double overallSparsity = (matrix1Sparsity + matrix2Sparsity < 1) ? matrix1Sparsity + matrix2Sparsity : 1;
+				return new long[]{mc[0].getRows(), mc[0].getCols(), (long) (overallSparsity*mc[0].getRows()*mc[0].getCols())};
 			default:
 				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
 		}

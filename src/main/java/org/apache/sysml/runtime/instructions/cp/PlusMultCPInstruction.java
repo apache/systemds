@@ -15,11 +15,12 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
-public class PlusMultCPInstruction extends ComputationCPInstruction {
+public class PlusMultCPInstruction extends ArithmeticBinaryCPInstruction {
 	public PlusMultCPInstruction(BinaryOperator op, CPOperand in1, CPOperand in2, 
 			CPOperand in3, CPOperand out, String opcode, String str) 
 	{
-		super(op, in1, in2, in3, out, opcode, str);
+		super(op, in1, in2, out, opcode, str);
+		input3=in3;
 	}
 	public static PlusMultCPInstruction parseInstruction(String str)
 	{

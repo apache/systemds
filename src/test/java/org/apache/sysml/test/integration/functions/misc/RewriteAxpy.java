@@ -34,14 +34,14 @@ import org.apache.sysml.utils.Statistics;
  * Regression test for function recompile-once issue with literal replacement.
  * 
  */
-public class RewriteAggBinaryWithConstMultBin extends AutomatedTestBase 
+public class RewriteAxpy extends AutomatedTestBase 
 {
 	
-	private static final String TEST_NAME1 = "RewritePlusBinaryWithConstMultBin";
-	private static final String TEST_NAME2 = "RewriteMinusBinaryWithConstMultBin";
+	private static final String TEST_NAME1 = "RewriteAxpy";
+	private static final String TEST_NAME2 = "RewriteAxmy";
 
 	private static final String TEST_DIR = "functions/misc/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteAggBinaryWithConstMultBin.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteAxpy.class.getSimpleName() + "/";
 	
 	//private static final int rows = 1234;
 	//private static final int cols = 567;
@@ -54,33 +54,33 @@ public class RewriteAggBinaryWithConstMultBin extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 	}
+	/*
+	@Test
+	public void testAxpyNoRewrite() 
+	{
+		testRewriteAxpy( TEST_NAME1, false );
+	}
+	*/
 	
 	@Test
-	public void testPlusBinaryWithConstMultBinNoRewrite() 
+	public void testAxpyRewrite() 
 	{
-		RewriteAggBinaryWithConstMultBin( TEST_NAME1, false );
+		testRewriteAxpy( TEST_NAME1, true);
 	}
 	
-	
+	/*
 	@Test
-	public void testPlusBinaryWithConstMultBinRewrite() 
+	public void testAxmyNoRewrite() 
 	{
-		RewriteAggBinaryWithConstMultBin( TEST_NAME1, true);
-	}
-	
-	
-	@Test
-	public void testMinusBinaryWithConstMultBinNoRewrite() 
-	{
-		RewriteAggBinaryWithConstMultBin( TEST_NAME2, false );
+		testRewriteAxpy( TEST_NAME2, false );
 	}
 	
 	@Test
-	public void testMinusBinaryWithConstMultBinRewrite() 
+	public void testAxmyRewrite() 
 	{
-		RewriteAggBinaryWithConstMultBin( TEST_NAME2, true );
+		testRewriteAxpy( TEST_NAME2, true );
 	}
-	
+	*/
 	
 	/**
 	 * 
@@ -88,7 +88,7 @@ public class RewriteAggBinaryWithConstMultBin extends AutomatedTestBase
 	 * @param branchRemoval
 	 * @param IPA
 	 */
-	private void RewriteAggBinaryWithConstMultBin( String testname, boolean rewrites )
+	private void testRewriteAxpy( String testname, boolean rewrites )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		

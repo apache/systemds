@@ -20,6 +20,7 @@ package org.apache.sysml.runtime.controlprogram.context;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
@@ -28,7 +29,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 public abstract class GPUObject {
 
 	public boolean isDeviceCopyModified = false;
-	volatile boolean isLocked = false;
+	AtomicInteger numLocks = new AtomicInteger(0);
 	
 	public boolean isInSparseFormat = false;
 	public boolean isAllocated = false;
@@ -69,30 +70,38 @@ public abstract class GPUObject {
 	
 				@Override
 				public int compare(GPUObject p1, GPUObject p2) {
-					if(p1.isLocked && p2.isLocked) {
-						return 0;
+					int p1Val = p1.numLocks.get();
+					int p2Val = p2.numLocks.get();
+					
+					if(p1Val < 0 || p2Val < 0) {
+						throw new RuntimeException("Number of locks cannot be negative");
 					}
-					else if(p1.isLocked && !p2.isLocked) {
-						// p2 by default is considered larger
-						return 1;
+					else if(p1Val == 0 && p2Val == 0) {
+						// Both p1 and p2 are unlocked, return largest object
+						// TODO: Modify this !!
+						long p1Size = 0; long p2Size = 0;
+						try {
+							p1Size = p1.getSizeOnDevice();
+							p2Size = p2.getSizeOnDevice();
+						} catch (DMLRuntimeException e) {
+							throw new RuntimeException(e);
+						}
+						if(p1Size == p2Size) {
+							return 0;
+						}
+						else if(p1Size < p2Size) {
+							return 1;
+						}
+						else {
+							return -1;
+						}
 					}
-					else if(!p1.isLocked && p2.isLocked) {
-						return -1;
-					}
-					long p1Size = 0; long p2Size = 0;
-					try {
-						p1Size = p1.getSizeOnDevice();
-						p2Size = p2.getSizeOnDevice();
-					} catch (DMLRuntimeException e) {
-						throw new RuntimeException(e);
-					}
-					if(p1Size == p2Size) {
-						return 0;
-					}
-					else if(p1Size < p2Size) {
+					else if(p1Val > p2Val) {
+						// There are more locks on p1
 						return 1;
 					}
 					else {
+						// There are more locks on p2
 						return -1;
 					}
 				}
@@ -101,7 +110,7 @@ public abstract class GPUObject {
 			
 			while(GPUSize > getAvailableMemory() && GPUContext.allocatedPointers.size() > 0) {
 				GPUObject toBeRemoved = GPUContext.allocatedPointers.get(GPUContext.allocatedPointers.size() - 1);
-				if(toBeRemoved.isLocked) {
+				if(toBeRemoved.numLocks.get() != 0) {
 					throw new DMLRuntimeException("There is not enough memory on device for this matrix!");
 				}
 				if(toBeRemoved.isDeviceCopyModified) {

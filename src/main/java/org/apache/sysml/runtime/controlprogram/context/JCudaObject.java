@@ -67,8 +67,8 @@ public class JCudaObject extends GPUObject {
 			}
 			if(isInput)
 				copyFromHostToDevice();
-			isLocked = true;
 		}
+		numLocks.addAndGet(1);
 	}
 	
 	@Override
@@ -125,7 +125,9 @@ public class JCudaObject extends GPUObject {
 	}
 	
 	public void release(boolean isGPUCopyModified) throws CacheException {
-		isLocked = false;
+		if(numLocks.addAndGet(-1) < 0) {
+			throw new CacheException("Redundant release of GPU object");
+		}
 		isDeviceCopyModified = isGPUCopyModified;
 	}
 
@@ -161,6 +163,7 @@ public class JCudaObject extends GPUObject {
 		}
 		jcudaPointer = null;
 		isAllocated = false;
+		numLocks.set(0);
 	}
 	
 	@Override

@@ -221,7 +221,7 @@ public class ExecutionContext
 	public MatrixBlock getMatrixInput(String varName) 
 		throws DMLRuntimeException 
 	{	
-		MatrixObject mo = (MatrixObject) getVariable(varName);
+		MatrixObject mo = getMatrixObject(varName);
 		MatrixBlock mb = mo.acquireRead();
 		return mb;
 	}
@@ -229,7 +229,7 @@ public class ExecutionContext
 	public MatrixObject getDenseMatrixOutputForGPUInstruction(String varName, int nrows, int ncols) 
 			throws DMLRuntimeException 
 	{	
-		MatrixObject mo = (MatrixObject) getVariable(varName);
+		MatrixObject mo = getMatrixObject(varName);
 		if(mo.getNumRows() != nrows || mo.getNumColumns() != ncols) {
 			MatrixCharacteristics mc = new MatrixCharacteristics((long)nrows, (long)ncols, 
 					(int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
@@ -259,7 +259,7 @@ public class ExecutionContext
 	public MatrixObject getMatrixInputForGPUInstruction(String varName) 
 			throws DMLRuntimeException 
 	{	
-		MatrixObject mo = (MatrixObject) getVariable(varName);
+		MatrixObject mo = getMatrixObject(varName);
 		if(mo == null) {
 			throw new DMLRuntimeException("No matrix object available for variable:" + varName);
 		}
@@ -280,14 +280,14 @@ public class ExecutionContext
 	public void releaseMatrixInput(String varName) 
 		throws DMLRuntimeException 
 	{
-		MatrixObject mo = (MatrixObject) getVariable(varName);
+		MatrixObject mo = getMatrixObject(varName);
 		mo.release();
 	}
 	
 	public void releaseMatrixInputForGPUInstruction(String varName) 
 			throws DMLRuntimeException 
 		{
-			MatrixObject mo = (MatrixObject) getVariable(varName);
+			MatrixObject mo = getMatrixObject(varName);
 			mo.getGPUObject().release(false);
 		}
 	
@@ -358,7 +358,7 @@ public class ExecutionContext
 	}
 	
 	public void releaseMatrixOutputForGPUInstruction(String varName) throws DMLRuntimeException {
-		MatrixObject mo = (MatrixObject) getVariable(varName);
+		MatrixObject mo = getMatrixObject(varName);
 		if(mo.getGPUObject() == null || !mo.getGPUObject().isAllocated) {
 			throw new DMLRuntimeException("No output is allocated on GPU");
 		}
@@ -376,7 +376,7 @@ public class ExecutionContext
 	public void setMatrixOutput(String varName, MatrixBlock outputData) 
 			throws DMLRuntimeException 
 	{
-		MatrixObject mo = (MatrixObject) getVariable(varName);
+		MatrixObject mo = getMatrixObject(varName);
 		if(mo.getGPUObject() != null && mo.getGPUObject().isAllocated) {
 			throw new DMLRuntimeException("GPU instructions should not set matrix output. "
 					+ "Instead should use releaseMatrixOutput. If called by non-GPU instruction, "

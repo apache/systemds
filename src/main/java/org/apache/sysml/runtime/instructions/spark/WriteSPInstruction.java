@@ -23,11 +23,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -36,11 +37,15 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.functions.ComputeBinaryBlockNnzFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameBlockToLongWritableFrameBlock;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -54,6 +59,7 @@ public class WriteSPInstruction extends SPInstruction
 	private FileFormatProperties formatProperties;
 	
 	//scalars might occur for transform
+	// TODO remove once transform over frames supported
 	private boolean isInputMatrixBlock = true; 
 	
 	public WriteSPInstruction(String opcode, String istr) {
@@ -87,10 +93,9 @@ public class WriteSPInstruction extends SPInstruction
 		
 		//SPARK°write°_mVar2·MATRIX·DOUBLE°./src/test/scripts/functions/data/out/B·SCALAR·STRING·true°matrixmarket·SCALAR·STRING·true
 		// _mVar2·MATRIX·DOUBLE
-		CPOperand in1=null, in2=null, in3=null;
-		in1 = new CPOperand(parts[1]);
-		in2 = new CPOperand(parts[2]);
-		in3 = new CPOperand(parts[3]);
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
+		CPOperand in3 = new CPOperand(parts[3]);
 		
 		WriteSPInstruction inst = new WriteSPInstruction(in1, in2, in3, opcode, str); 
 		
@@ -141,110 +146,172 @@ public class WriteSPInstruction extends SPInstruction
 			//prepare output info according to meta data
 			String outFmt = input3.getName();
 			OutputInfo oi = OutputInfo.stringToOutputInfo(outFmt);
-				
-			//get input rdd
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 			
-			if(    oi == OutputInfo.MatrixMarketOutputInfo
-				|| oi == OutputInfo.TextCellOutputInfo     ) 
-			{
-				//recompute nnz if necessary (required for header if matrix market)
-				if ( isInputMatrixBlock && !mc.nnzKnown() )
-					mc.setNonZeros( SparkUtils.computeNNZFromBlocks(in1) );
-				
-				JavaRDD<String> header = null;				
-				if(outFmt.equalsIgnoreCase("matrixmarket")) {
-					ArrayList<String> headerContainer = new ArrayList<String>(1);
-					// First output MM header
-					String headerStr = "%%MatrixMarket matrix coordinate real general\n" +
-							// output number of rows, number of columns and number of nnz
-							mc.getRows() + " " + mc.getCols() + " " + mc.getNonZeros();
-					headerContainer.add(headerStr);
-					header = sec.getSparkContext().parallelize(headerContainer);
-				}
-				
-				JavaRDD<String> ijv = in1.flatMap(new ConvertMatrixBlockToIJVLines(mc.getRowsPerBlock(), mc.getColsPerBlock()));
-				if(header != null)
-					customSaveTextFile(header.union(ijv), fname, true);
-				else
-					customSaveTextFile(ijv, fname, false);
-			}
-			else if( oi == OutputInfo.CSVOutputInfo ) 
-			{
-				JavaRDD<String> out = null;
-				Accumulator<Double> aNnz = null;
-				
-				if ( isInputMatrixBlock ) {
-					//piggyback nnz computation on actual write
-					if( !mc.nnzKnown() ) {
-						aNnz = sec.getSparkContext().accumulator(0L);
-						in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
-					}	
-					
-					out = RDDConverterUtils.binaryBlockToCsv(in1, mc, 
-							(CSVFileFormatProperties) formatProperties, true);
-				}
-				else 
-				{
-					// This case is applicable when the CSV output from transform() is written out
-					@SuppressWarnings("unchecked")
-					JavaPairRDD<Long,String> rdd = (JavaPairRDD<Long, String>) (sec.getMatrixObject(input1.getName())).getRDDHandle().getRDD();
-					out = rdd.values(); 
-
-					String sep = ",";
-					boolean hasHeader = false;
-					if(formatProperties != null) {
-						sep = ((CSVFileFormatProperties) formatProperties).getDelim();
-						hasHeader = ((CSVFileFormatProperties) formatProperties).hasHeader();
-					}
-					
-					if(hasHeader) {
-						StringBuffer buf = new StringBuffer();
-			    		for(int j = 1; j < mc.getCols(); j++) {
-			    			if(j != 1) {
-			    				buf.append(sep);
-			    			}
-			    			buf.append("C" + j);
-			    		}
-			    		ArrayList<String> headerContainer = new ArrayList<String>(1);
-			    		headerContainer.add(0, buf.toString());
-			    		JavaRDD<String> header = sec.getSparkContext().parallelize(headerContainer);
-			    		out = header.union(out);
-					}
-				}
-				
-				customSaveTextFile(out, fname, false);
-				
-				if( isInputMatrixBlock && !mc.nnzKnown() )
-					mc.setNonZeros((long)aNnz.value().longValue());
-			}
-			else if( oi == OutputInfo.BinaryBlockOutputInfo ) {
-				//piggyback nnz computation on actual write
-				Accumulator<Double> aNnz = null;
-				if( !mc.nnzKnown() ) {
-					aNnz = sec.getSparkContext().accumulator(0L);
-					in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
-				}
-				
-				//save binary block rdd on hdfs
-				in1.saveAsHadoopFile(fname, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
-				
-				if( !mc.nnzKnown() )
-					mc.setNonZeros((long)aNnz.value().longValue());
-			}
-			else {
-				//unsupported formats: binarycell (not externalized)
-				throw new DMLRuntimeException("Unexpected data format: " + outFmt);
-			}
-			
-			// write meta data file
-			MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);	
+			//core matrix/frame write
+			if( input1.getDataType()==DataType.MATRIX )
+				processMatrixWriteInstruction(sec, fname, oi);
+			else
+				processFrameWriteInstruction(sec, fname, oi);
 		}
 		catch(IOException ex)
 		{
 			throw new DMLRuntimeException("Failed to process write instruction", ex);
 		}
+	}
+	
+	/**
+	 * 
+	 * @param sec
+	 * @param fname
+	 * @param oi
+	 * @throws DMLRuntimeException
+	 * @throws IOException 
+	 */
+	protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi) 
+		throws DMLRuntimeException, IOException
+	{
+		//get input rdd
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
+		
+		if(    oi == OutputInfo.MatrixMarketOutputInfo
+			|| oi == OutputInfo.TextCellOutputInfo     ) 
+		{
+			//recompute nnz if necessary (required for header if matrix market)
+			if ( isInputMatrixBlock && !mc.nnzKnown() )
+				mc.setNonZeros( SparkUtils.computeNNZFromBlocks(in1) );
+			
+			JavaRDD<String> header = null;				
+			if( oi == OutputInfo.MatrixMarketOutputInfo  ) {
+				ArrayList<String> headerContainer = new ArrayList<String>(1);
+				// First output MM header
+				String headerStr = "%%MatrixMarket matrix coordinate real general\n" +
+						// output number of rows, number of columns and number of nnz
+						mc.getRows() + " " + mc.getCols() + " " + mc.getNonZeros();
+				headerContainer.add(headerStr);
+				header = sec.getSparkContext().parallelize(headerContainer);
+			}
+			
+			JavaRDD<String> ijv = in1.flatMap(new ConvertMatrixBlockToIJVLines(mc.getRowsPerBlock(), mc.getColsPerBlock()));
+			if(header != null)
+				customSaveTextFile(header.union(ijv), fname, true);
+			else
+				customSaveTextFile(ijv, fname, false);
+		}
+		else if( oi == OutputInfo.CSVOutputInfo ) 
+		{
+			JavaRDD<String> out = null;
+			Accumulator<Double> aNnz = null;
+			
+			if ( isInputMatrixBlock ) {
+				//piggyback nnz computation on actual write
+				if( !mc.nnzKnown() ) {
+					aNnz = sec.getSparkContext().accumulator(0L);
+					in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+				}	
+				
+				out = RDDConverterUtils.binaryBlockToCsv(in1, mc, 
+						(CSVFileFormatProperties) formatProperties, true);
+			}
+			else 
+			{
+				// This case is applicable when the CSV output from transform() is written out
+				// TODO remove once transform over frames supported
+				@SuppressWarnings("unchecked")
+				JavaPairRDD<Long,String> rdd = (JavaPairRDD<Long, String>) (sec.getMatrixObject(input1.getName())).getRDDHandle().getRDD();
+				out = rdd.values(); 
+
+				String sep = ",";
+				boolean hasHeader = false;
+				if(formatProperties != null) {
+					sep = ((CSVFileFormatProperties) formatProperties).getDelim();
+					hasHeader = ((CSVFileFormatProperties) formatProperties).hasHeader();
+				}
+				
+				if(hasHeader) {
+					StringBuffer buf = new StringBuffer();
+		    		for(int j = 1; j < mc.getCols(); j++) {
+		    			if(j != 1) {
+		    				buf.append(sep);
+		    			}
+		    			buf.append("C" + j);
+		    		}
+		    		ArrayList<String> headerContainer = new ArrayList<String>(1);
+		    		headerContainer.add(0, buf.toString());
+		    		JavaRDD<String> header = sec.getSparkContext().parallelize(headerContainer);
+		    		out = header.union(out);
+				}
+			}
+			
+			customSaveTextFile(out, fname, false);
+			
+			if( isInputMatrixBlock && !mc.nnzKnown() )
+				mc.setNonZeros((long)aNnz.value().longValue());
+		}
+		else if( oi == OutputInfo.BinaryBlockOutputInfo ) {
+			//piggyback nnz computation on actual write
+			Accumulator<Double> aNnz = null;
+			if( !mc.nnzKnown() ) {
+				aNnz = sec.getSparkContext().accumulator(0L);
+				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+			}
+			
+			//save binary block rdd on hdfs
+			in1.saveAsHadoopFile(fname, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
+			
+			if( !mc.nnzKnown() )
+				mc.setNonZeros((long)aNnz.value().longValue());
+		}
+		else {
+			//unsupported formats: binarycell (not externalized)
+			throw new DMLRuntimeException("Unexpected data format: " + OutputInfo.outputInfoToString(oi));
+		}
+		
+		// write meta data file
+		MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);	
+	}
+
+	/**
+	 * 
+	 * @param sec
+	 * @param fname
+	 * @param oi
+	 * @throws DMLRuntimeException 
+	 * @throws IOException 
+	 */
+	@SuppressWarnings("unchecked")
+	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi) 
+		throws DMLRuntimeException, IOException
+	{
+		//get input rdd
+		JavaPairRDD<Long,FrameBlock> in1 = (JavaPairRDD<Long,FrameBlock>)sec
+				.getRDDHandleForVariable( input1.getName(), InputInfo.BinaryBlockInputInfo );
+		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
+		
+		if( oi == OutputInfo.TextCellOutputInfo ) 
+		{
+			JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToTextCell(in1, mc);
+			customSaveTextFile(out, fname, false);
+		}
+		else if( oi == OutputInfo.CSVOutputInfo ) 
+		{
+			CSVFileFormatProperties props = (formatProperties!=null) ? 
+					(CSVFileFormatProperties) formatProperties : null;					
+			JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
+			customSaveTextFile(out, fname, false);
+		}
+		else if( oi == OutputInfo.BinaryBlockOutputInfo ) 
+		{
+			JavaPairRDD<LongWritable,FrameBlock> out = in1.mapToPair(new LongFrameBlockToLongWritableFrameBlock());
+			out.saveAsHadoopFile(fname, LongWritable.class, FrameBlock.class, SequenceFileOutputFormat.class);
+		}
+		else {
+			//unsupported formats: binarycell (not externalized)
+			throw new DMLRuntimeException("Unexpected data format: " + OutputInfo.outputInfoToString(oi));
+		}
+		
+		// write meta data file
+		MapReduceTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), DataType.FRAME, mc, oi, formatProperties);	
 	}
 	
 	/**

@@ -37,7 +37,6 @@ import org.apache.sysml.runtime.util.LocalFileUtils;
 
 public class DataOp extends Hop 
 {
-
 	private DataOpTypes _dataop;
 	private String _fileName = null;
 	
@@ -436,8 +435,8 @@ public class DataOp extends Hop
 		{
 			checkAndSetForcedPlatform();
 
-			//additional check for write only (TODO: remove frame here once support for distributed)
-			if( getDataType()==DataType.SCALAR || getDataType()==DataType.FRAME )
+			//additional check for write only
+			if( getDataType()==DataType.SCALAR || (getDataType()==DataType.FRAME && REMOTE==ExecType.MR) )
 				_etypeForced = ExecType.CP;
 			
 			if( _etypeForced != null ) 			

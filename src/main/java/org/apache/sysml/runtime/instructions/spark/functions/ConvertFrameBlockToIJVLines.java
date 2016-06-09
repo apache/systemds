@@ -19,37 +19,46 @@
 package org.apache.sysml.runtime.instructions.spark.functions;
 
 import java.util.ArrayList;
-import org.apache.hadoop.io.LongWritable;
+import java.util.Iterator;
+
 import org.apache.spark.api.java.function.FlatMapFunction;
 
 import scala.Tuple2;
 
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 
-public class ConvertFrameBlockToIJVLines implements FlatMapFunction<Tuple2<LongWritable,FrameBlock>, String> {
-
+public class ConvertFrameBlockToIJVLines implements FlatMapFunction<Tuple2<Long,FrameBlock>, String> 
+{
 	private static final long serialVersionUID = 1803516615963340115L;
 
-	int brlen; int bclen;
-	public ConvertFrameBlockToIJVLines(int brlen, int bclen) {
-		this.brlen = brlen;
-		this.bclen = bclen;
-	}
-
 	@Override
-	public Iterable<String> call(Tuple2<LongWritable, FrameBlock> kv) throws Exception {
-
-		long lRowIndex = kv._1.get();
+	public Iterable<String> call(Tuple2<Long, FrameBlock> kv) 
+		throws Exception 
+	{
+		long rowoffset = kv._1;
 		FrameBlock block = kv._2;
 		
 		ArrayList<String> cells = new ArrayList<String>();
 		
-		for (int i=0; i<block.getNumRows(); ++i)
-			for (int j=0; j<block.getNumColumns(); ++j) {
-				Object obj = block.get(i, j);
-				if(obj != null)
-					cells.add(lRowIndex+i+" "+(j+1)+" "+obj.toString());
+		//convert frame block to list of ijv cell triples
+		StringBuilder sb = new StringBuilder();
+		Iterator<String[]> iter = block.getStringRowIterator();
+		for( int i=0; iter.hasNext(); i++ ) { //for all rows
+			String rowIndex = Long.toString(rowoffset + i);
+			String[] row = iter.next();
+			for( int j=0; j<row.length; j++ ) {
+				if( row[j] != null ) {
+					sb.append( rowIndex );
+					sb.append(' ');
+					sb.append( j+1 );
+					sb.append(' ');
+					sb.append( row[j] );
+					cells.add( sb.toString() );
+					sb.setLength(0); 
+				}
 			}
+		}
+		
 		return cells;
 	}
 }

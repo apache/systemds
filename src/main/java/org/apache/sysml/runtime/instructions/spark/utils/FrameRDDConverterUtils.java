@@ -132,11 +132,9 @@ public class FrameRDDConverterUtils
 	 * @param strict
 	 * @return
 	 */
-	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<LongWritable,FrameBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
+	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<Long,FrameBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
 	{
-		//convert input rdd to serializable long/frame block
-		JavaPairRDD<LongWritable,FrameBlock> input = 
-				in.mapToPair(new LongWritableToSerFunction());
+		JavaPairRDD<Long,FrameBlock> input = in;
 		
 		//sort if required (on blocks/rows)
 		if( strict ) {
@@ -152,7 +150,8 @@ public class FrameRDDConverterUtils
 	
 	
 	//=====================================
-	// cellText <--> Binary block
+	// Text cell <--> Binary block
+	
 	/**
 	 * 
 	 * @param sc
@@ -206,16 +205,19 @@ public class FrameRDDConverterUtils
 		return out;
 	}
 
-		
-	// Useful for printing, testing binary blocked RDD and also for external use.
-	public static JavaRDD<String> binaryBlockToStringRDD(JavaPairRDD<LongWritable, FrameBlock> input, MatrixCharacteristics mcIn, String format) throws DMLRuntimeException {
-		if(format.equals("text")) {
-			JavaRDD<String> ijv = input.flatMap(new ConvertFrameBlockToIJVLines(mcIn.getRowsPerBlock(), mcIn.getColsPerBlock()));
-			return ijv;
-		}
-		else {
-			throw new DMLRuntimeException("The output format:" + format + " is not implemented yet.");
-		}
+	/**
+	 * 
+	 * @param input
+	 * @param mcIn
+	 * @param format
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static JavaRDD<String> binaryBlockToTextCell(JavaPairRDD<Long, FrameBlock> input, MatrixCharacteristics mcIn) 
+		throws DMLRuntimeException 
+	{
+		//convert frame blocks to ijv string triples  
+		return input.flatMap(new ConvertFrameBlockToIJVLines());
 	}
 	
 	//=====================================
@@ -336,6 +338,19 @@ public class FrameRDDConverterUtils
 		@Override
 		public Tuple2<Long, Text> call(Tuple2<LongWritable, Text> arg0) throws Exception  {
 			return new Tuple2<Long,Text>(new Long(arg0._1.get()), arg0._2);
+		}
+	}
+	
+	/**
+	 *
+	 */
+	public static class LongFrameBlockToLongWritableFrameBlock implements PairFunction<Tuple2<Long,FrameBlock>,LongWritable,FrameBlock> 
+	{
+		private static final long serialVersionUID = 3201887196237766424L;
+
+		@Override
+		public Tuple2<LongWritable, FrameBlock> call(Tuple2<Long, FrameBlock> arg0) throws Exception  {
+			return new Tuple2<LongWritable,FrameBlock>(new LongWritable(arg0._1), arg0._2);
 		}
 	}
 	
@@ -465,7 +480,7 @@ public class FrameRDDConverterUtils
 	/**
 	 * 
 	 */
-	private static class BinaryBlockToCSVFunction implements FlatMapFunction<Tuple2<LongWritable,FrameBlock>,String> 
+	private static class BinaryBlockToCSVFunction implements FlatMapFunction<Tuple2<Long,FrameBlock>,String> 
 	{
 		private static final long serialVersionUID = 8020608184930291069L;
 
@@ -476,16 +491,16 @@ public class FrameRDDConverterUtils
 		}
 
 		@Override
-		public Iterable<String> call(Tuple2<LongWritable, FrameBlock> arg0)
+		public Iterable<String> call(Tuple2<Long, FrameBlock> arg0)
 			throws Exception 
 		{
-			LongWritable ix = arg0._1();
+			Long ix = arg0._1();
 			FrameBlock blk = arg0._2();
 			
 			ArrayList<String> ret = new ArrayList<String>();
 			
 			//handle header information
-			if(_props.hasHeader() && ix.get()==1 ) {
+			if(_props.hasHeader() && ix==1 ) {
 				StringBuilder sb = new StringBuilder();
 				for(int j = 1; j <= blk.getNumColumns(); j++) {
 					if(j != 1)
@@ -497,14 +512,14 @@ public class FrameRDDConverterUtils
 		
 			//handle Frame block data
 			StringBuilder sb = new StringBuilder();
-			for(int i=0; i<blk.getNumRows(); i++) {
-				for(int j=0; j<blk.getNumColumns(); j++) {
+			Iterator<String[]> iter = blk.getStringRowIterator();
+			while( iter.hasNext() ) {
+				String[] row = iter.next();
+				for(int j=0; j<row.length; j++) {
 					if(j != 0)
 						sb.append(_props.getDelim());
-					Object val = blk.get(i, j);
-	    			
-					if(val != null)
-						sb.append(val);
+					if(row[j] != null)
+						sb.append(row[j]);
 				}
 				ret.add(sb.toString());
 				sb.setLength(0); //reset

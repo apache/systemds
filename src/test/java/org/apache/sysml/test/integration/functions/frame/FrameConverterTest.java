@@ -37,6 +37,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.instructions.spark.functions.CopyFrameBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
@@ -449,8 +450,9 @@ public class FrameConverterTest extends AutomatedTestBase
 			case BIN2CSV: {
 				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
 				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
+				JavaPairRDD<Long, FrameBlock> rddIn2 = rddIn.mapToPair(new CopyFrameBlockPairFunction(false));
 				CSVFileFormatProperties fprop = new CSVFileFormatProperties();
-				JavaRDD<String> rddOut = FrameRDDConverterUtils.binaryBlockToCsv(rddIn, mc, fprop, true);
+				JavaRDD<String> rddOut = FrameRDDConverterUtils.binaryBlockToCsv(rddIn2, mc, fprop, true);
 				rddOut.saveAsTextFile(fnameOut);
 				break;
 			}
@@ -466,7 +468,8 @@ public class FrameConverterTest extends AutomatedTestBase
 			case BIN2TXTCELL: {
 				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
 				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
-				JavaRDD<String> rddOut = FrameRDDConverterUtils.binaryBlockToStringRDD(rddIn, mc, "text");
+				JavaPairRDD<Long, FrameBlock> rddIn2 = rddIn.mapToPair(new CopyFrameBlockPairFunction(false));
+				JavaRDD<String> rddOut = FrameRDDConverterUtils.binaryBlockToTextCell(rddIn2, mc);
 				rddOut.saveAsTextFile(fnameOut);
 				break;
 			}

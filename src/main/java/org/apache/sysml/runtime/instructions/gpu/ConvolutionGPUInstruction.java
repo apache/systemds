@@ -109,15 +109,6 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 		return (int) ec.getScalarInput(aL.get(index).getName(),
 				aL.get(index).getValueType(), aL.get(index).isLiteral())
 				.getLongValue();
-//		try {
-//			// TODO: Temporary fix cases where we use ¶n¶·SCALAR·INT·false
-//			// Need to investigate why n is not marked as literal !!!
-//			return (int) Double.parseDouble(aL.get(index).getName());
-//		} catch(Exception e) {
-//			return (int) ec.getScalarInput(aL.get(index).getName(),
-//					aL.get(index).getValueType(), aL.get(index).isLiteral())
-//					.getLongValue();
-//		}
 	}
 	
 	@Override

@@ -183,7 +183,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		{
 			Lop ltmp = inputs.get(i).constructLops();
 			transform1.addInput(ltmp);
-			if(i == 1 && expectedNumInputs == 14)
+			//if(i == 1 && expectedNumInputs == 14)
 				ltmp.addOutput(transform1);
 		}
 		transform1.setLevel(); //force order of added lops

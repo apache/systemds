@@ -1164,7 +1164,7 @@ public abstract class AutomatedTestBase
 		args.add("-config="+ getCurConfigFile().getPath());
 		
 		if(TEST_GPU)
-			args.add("-accelerator");
+			args.add("-gpu");
 		
 		// program-specific parameters
 		if ( newWay ) {

@@ -308,7 +308,7 @@ public class DMLScript
 				else if( args[i].equalsIgnoreCase("-debug") ) {					
 					ENABLE_DEBUG_MODE = true;
 				}
-				else if( args[i].equalsIgnoreCase("-accelerator") ) {	
+				else if( args[i].equalsIgnoreCase("-gpu") ) {	
 					USE_ACCELERATOR = true;
 					if( args.length > (i+1) && !args[i+1].startsWith("-") ) {
 						String flag = args[++i];
@@ -317,10 +317,10 @@ public class DMLScript
 							if(flagOptions.length == 2)
 								FORCE_ACCELERATOR = Boolean.parseBoolean(flagOptions[1]);
 							else
-								throw new DMLRuntimeException("Unsupported \"force\" option for -accelerator:" + flag);
+								throw new DMLRuntimeException("Unsupported \"force\" option for -gpu:" + flag);
 						}
 						else {
-							throw new DMLRuntimeException("Unsupported flag for -accelerator:" + flag);
+							throw new DMLRuntimeException("Unsupported flag for -gpu:" + flag);
 						}
 					}
 						

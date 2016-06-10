@@ -62,9 +62,9 @@ Note for Windows users:
 To use SystemML's GPU backend, 
 1. Add JCuda's jar into the classpath.
 2. Include CUDA, CuDNN and JCuda's libraries in LD_LIBRARY_PATH (or using -Djava.library.path).
-3. Use `-accelerator` flag.
+3. Use `-gpu` flag.
 
 For example: to use GPU backend in standalone mode:
 ```python
-java -classpath $JAR_PATH:systemml-0.10.0-incubating-SNAPSHOT-standalone.jar org.apache.sysml.api.DMLScript -f MyDML.dml -accelerator -exec singlenode ... 
+java -classpath $JAR_PATH:systemml-0.10.0-incubating-SNAPSHOT-standalone.jar org.apache.sysml.api.DMLScript -f MyDML.dml -gpu -exec singlenode ... 
 ```

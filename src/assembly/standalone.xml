@@ -109,7 +109,6 @@
 				<!-- Exclude compile-scoped dependencies since they are in main artifact jar -->
 				<exclude>*:antlr4-annotations*</exclude>
 				<exclude>*:antlr4-runtime*</exclude>
-				<exclude>*:guava*</exclude>
 				<exclude>*:org.abego.treelayout.core*</exclude>
 				<exclude>*:wink-json4j*</exclude>
 			</excludes>

@@ -232,7 +232,6 @@ org.codehaus.jackson:jackson-core-asl:1.8.8
 org.codehaus.jackson:jackson-mapper-asl:1.8.8
 
 Compile-scope dependencies:
-com.google.guava:guava:14.0.1
 org.apache.wink:wink-json4j:1.4
 
 ===============================================================================

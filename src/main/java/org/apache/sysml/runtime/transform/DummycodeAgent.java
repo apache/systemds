@@ -23,10 +23,15 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -34,17 +39,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
-
-import com.google.common.base.Functions;
-import com.google.common.collect.Ordering;
-
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 public class DummycodeAgent extends Encoder 
 {		
@@ -228,8 +229,20 @@ public class DummycodeAgent extends Encoder
 				if ( map != null  ) 
 				{
 					// order map entries by their recodeID
-					Ordering<String> valueComparator = Ordering.natural().onResultOf(Functions.forMap(map));
-					newNames = valueComparator.sortedCopy(map.keySet());
+					List<Map.Entry<String, Long>> entryList = new ArrayList<Map.Entry<String, Long>>(map.entrySet());
+					Comparator<Map.Entry<String, Long>> comp = new Comparator<Map.Entry<String, Long>>() {
+						@Override
+						public int compare(Entry<String, Long> entry1, Entry<String, Long> entry2) {
+							Long value1 = entry1.getValue();
+							Long value2 = entry2.getValue();
+							return (int) (value1 - value2);
+						}
+					};
+					Collections.sort(entryList, comp);
+					newNames = new ArrayList<String>();
+					for (Entry<String, Long> entry : entryList) {
+						newNames.add(entry.getKey());
+					}
 					
 					// construct concatenated string of map entries
 					sb.setLength(0);
@@ -252,15 +265,23 @@ public class DummycodeAgent extends Encoder
 				
 				if ( map != null ) 
 				{
-					// order map entries by their recodeID (represented as Strings .. "1", "2", etc.)
-					Ordering<String> orderByID = new Ordering<String>() 
-					{
-			    		public int compare(String s1, String s2) {
-			        		return (Integer.parseInt(s1) - Integer.parseInt(s2));
-			    		}
-					};
 					
-					newNames = orderByID.onResultOf(Functions.forMap(map)).sortedCopy(map.keySet());
+					// order map entries by their recodeID (represented as Strings .. "1", "2", etc.)
+					List<Map.Entry<String, String>> entryList = new ArrayList<Map.Entry<String, String>>(map.entrySet());
+					Comparator<Map.Entry<String, String>> comp = new Comparator<Map.Entry<String, String>>() {
+						@Override
+						public int compare(Entry<String, String> entry1, Entry<String, String> entry2) {
+							String value1 = entry1.getValue();
+							String value2 = entry2.getValue();
+							return (Integer.parseInt(value1) - Integer.parseInt(value2));
+						}
+					};
+					Collections.sort(entryList, comp);
+					newNames = new ArrayList<String>();
+					for (Entry<String, String> entry : entryList) {
+						newNames.add(entry.getKey());
+					}
+					
 					// construct concatenated string of map entries
 					sb.setLength(0);
 					for(int idx=0; idx < newNames.size(); idx++) 
@@ -403,31 +424,24 @@ public class DummycodeAgent extends Encoder
 
 	@Override
 	public double[] encode(String[] in, double[] out) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void build(String[] in) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void build(FrameBlock in) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 }

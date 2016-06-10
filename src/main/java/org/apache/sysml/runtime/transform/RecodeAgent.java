@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -35,12 +36,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
-
-import com.google.common.collect.Ordering;
-
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -49,6 +44,9 @@ import org.apache.sysml.runtime.transform.MVImputeAgent.MVMethod;
 import org.apache.sysml.runtime.transform.decode.DecoderRecode;
 import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 public class RecodeAgent extends Encoder 
 {	
@@ -261,8 +259,8 @@ public class RecodeAgent extends Encoder
 			throw new RuntimeException("Can not proceed since \"" + agents.getName(colID) + "\" (id=" + colID + ") contains only the missing values, and not a single valid value -- set imputation method to \"constant\".");
 		
 		// Order entries by category (string) value
-		Ordering<String> valueComparator = Ordering.natural();
-		List<String> newNames = valueComparator.sortedCopy(map.keySet());
+		List<String> newNames = new ArrayList<String>(map.keySet());
+		Collections.sort(newNames);
 
 		for(String w : newNames) { //map.keySet()) {
 				count = map.get(w);

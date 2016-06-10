@@ -204,7 +204,6 @@
 
 The following compile-scope dependencies come under the Apache Software License 2.0.
 
-Guava: Google Core Libraries for Java (http://code.google.com/p/guava-libraries/guava) com.google.guava:guava:14.0.1
 Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:wink-json4j:1.4
 
 ===============================================================================

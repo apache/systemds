@@ -333,8 +333,9 @@ The console output should show the accuracy of the trained model in percent, i.e
 
 The generated file `l2-svm-confusion.csv` should contain the following confusion matrix of this form:
 
-    |t1 t2|
-    |t3 t4|
+    |0   1.0 2.0|
+    |1.0 t1  t2 |
+    |2.0 t3  t4 |
 
  * The model correctly predicted label 1 `t1` times
  * The model incorrectly predicted label 1 as opposed to label 2 `t2` times
@@ -343,8 +344,9 @@ The generated file `l2-svm-confusion.csv` should contain the following confusion
 
 If the confusion matrix looks like this ...
 
-    107.0,38.0
-    0.0,2.0
+    0,1.0,2.0
+    1.0,107.0,38.0
+    2.0,0.0,2.0
 
 ... then the accuracy of the model is (t1+t4)/(t1+t2+t3+t4) = (107+2)/107+38+0+2) = 0.741496599
 

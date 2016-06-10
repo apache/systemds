@@ -27,6 +27,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
@@ -92,8 +93,9 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		if (hop instanceof DataOp) 
 		{
 			// if block size does not match
-			if(    canReblock && hop.getDataType() == DataType.MATRIX
-				&& (hop.getRowsInBlock() != GLOBAL_BLOCKSIZE || hop.getColsInBlock() != GLOBAL_BLOCKSIZE) ) 
+			if( canReblock //TODO change frame condition to != BINARY once transform over frames supported
+				&& ((hop.getDataType() == DataType.MATRIX && (hop.getRowsInBlock() != GLOBAL_BLOCKSIZE || hop.getColsInBlock() != GLOBAL_BLOCKSIZE)
+				  ||(hop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() && ((DataOp)hop).getInputFormatType()==FileFormatTypes.TEXT)))) 
 			{
 				if (((DataOp) hop).getDataOpType() == DataOp.DataOpTypes.PERSISTENTREAD) 
 				{
@@ -141,6 +143,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				}
 			}
 		} 
+		//TODO remove once transform rebased to frames
 		else if ( (hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp)hop).getOp() == ParamBuiltinOp.TRANSFORM) ) {
 			
 			// check if there exists a non-csv-write output. If yes, add reblock

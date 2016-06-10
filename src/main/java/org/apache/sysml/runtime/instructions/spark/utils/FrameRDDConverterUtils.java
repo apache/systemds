@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions.spark.utils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -161,23 +162,20 @@ public class FrameRDDConverterUtils
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static JavaPairRDD<LongWritable, FrameBlock> textCellToBinaryBlock(JavaSparkContext sc,
+	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> in, MatrixCharacteristics mcOut, List<ValueType> schema ) 
 		throws DMLRuntimeException  
 	{
+		//replicate schema entry if necessary
+		List<ValueType> lschema = (schema.size()==1 && mcOut.getCols()>1) ?
+				Collections.nCopies((int)mcOut.getCols(), schema.get(0)) : schema;
 		
 		//convert input rdd to serializable long/frame block
 		JavaPairRDD<Long,Text> input = 
 				in.mapToPair(new LongWritableTextToLongTextFunction());
 		
-		//Do actual conversion
-		JavaPairRDD<Long,FrameBlock> output = textCellToBinaryBlockLongIndex(sc, input, mcOut, schema);
-		
-		//convert input rdd to serializable long/frame block
-		JavaPairRDD<LongWritable,FrameBlock> out = 
-				output.mapToPair(new LongFrameToLongWritableFrameFunction());
-		
-		return out;
+		//do actual conversion
+		return textCellToBinaryBlockLongIndex(sc, input, mcOut, lschema);
 	}
 
 		
@@ -736,13 +734,12 @@ public class FrameRDDConverterUtils
 	{
 		private static final long serialVersionUID = -2654986510471835933L;
 		
-		MatrixCharacteristics _mcIn, _mcOut;
+		private MatrixCharacteristics _mcIn;
+		private MatrixCharacteristics _mcOut;
 
-		public BinaryBlockToMatrixBlockFunction(MatrixCharacteristics mcIn,
-				MatrixCharacteristics mcOut) {
-				
-				_mcIn = mcIn;		//Frame Characteristics
-				_mcOut = mcOut;		//Matrix Characteristics
+		public BinaryBlockToMatrixBlockFunction(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) {			
+			_mcIn = mcIn;		//Frame Characteristics
+			_mcOut = mcOut;		//Matrix Characteristics
 		}
 
 		@Override
@@ -753,46 +750,35 @@ public class FrameRDDConverterUtils
 			FrameBlock blk = arg0._2();
 			
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();
+			long rlen = _mcIn.getRows();
+			long clen = _mcIn.getCols();
+			int brlen = _mcOut.getRowsPerBlock();
+			int bclen = _mcOut.getColsPerBlock();
 			
-			int _brlenMatrix = _mcOut.getRowsPerBlock();
-			int _bclenMatrix = _mcOut.getColsPerBlock();
-			long _rlen = _mcIn.getRows();
-			long _clen = _mcIn.getCols();
-			
-			long lRowId = 0;
-			while (lRowId < blk.getNumRows()) {
-				// Global Row indices (indexes) across all frame blocks  
-				long endRow = ((rowIndex+lRowId-1)/_brlenMatrix+1) * _brlenMatrix;
-				long begRow = Math.max(endRow-_brlenMatrix+1, 0);
-				endRow = Math.min(endRow, _rlen);
-				
-				// Local Row indices (indexes) within a matrix block  
-				long begRowMat = UtilFunctions.computeCellInBlock(begRow, _brlenMatrix);
-				long endRowMat = UtilFunctions.computeCellInBlock(endRow, _brlenMatrix);
-				
-				long lColId = 0;
-				while (lColId < blk.getNumColumns()) {
-					// Global Column index across all frame blocks  
-					long endCol = Math.min(lColId+_bclenMatrix-1, _clen-1);
-
-					// Local Column indices (indexes) within a matrix block  
-					long begColMat = UtilFunctions.computeCellInBlock(lColId+1, _bclenMatrix);
-					long endColMat = UtilFunctions.computeCellInBlock(endCol+1, _bclenMatrix);
-
-					FrameBlock tmpFrame = new FrameBlock();
-					tmpFrame = blk.sliceOperations((int)lRowId, (int)(lRowId+endRowMat-begRowMat), (int)lColId, (int)endCol, tmpFrame);
-
-					MatrixIndexes matrixIndexes = new MatrixIndexes(UtilFunctions.computeBlockIndex(begRow+1, _brlenMatrix),UtilFunctions.computeBlockIndex(lColId+1, _bclenMatrix));
-
-					MatrixBlock matrixBlocktmp = DataConverter.convertToMatrixBlock(tmpFrame);
-					MatrixBlock matrixBlock = matrixBlocktmp.leftIndexingOperations(matrixBlocktmp, (int)begRowMat, (int)endRowMat, (int)begColMat, (int)endColMat, new MatrixBlock(), UpdateType.INPLACE_PINNED);
-					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(matrixIndexes, matrixBlock));
-					
-					lColId = endCol+1;
+			//slice aligned matrix blocks out of given frame block
+			long rstartix = UtilFunctions.computeBlockIndex(rowIndex, brlen);
+			long rendix = UtilFunctions.computeBlockIndex(rowIndex+blk.getNumRows()-1, brlen);
+			long cendix = UtilFunctions.computeBlockIndex(blk.getNumColumns(), bclen);
+			for( long rix=rstartix; rix<=rendix; rix++ ) { //for all row blocks
+				long rpos = UtilFunctions.computeCellIndex(rix, brlen, 0);
+				int lrlen = UtilFunctions.computeBlockSize(rlen, rix, brlen);
+				int fix = (int)((rpos-rowIndex>=0) ? rpos-rowIndex : 0);
+				int fix2 = (int)Math.min(rpos+lrlen-rowIndex-1,blk.getNumRows()-1);
+				int mix = UtilFunctions.computeCellInBlock(rowIndex+fix, brlen);
+				int mix2 = mix + (fix2-fix);
+				for( long cix=1; cix<=cendix; cix++ ) { //for all column blocks
+					long cpos = UtilFunctions.computeCellIndex(cix, bclen, 0);
+					int lclen = UtilFunctions.computeBlockSize(clen, cix, bclen);
+					MatrixBlock matrix = new MatrixBlock(lrlen, lclen, false);
+					FrameBlock frame = blk.sliceOperations(fix, fix2, 
+							(int)cpos-1, (int)cpos+lclen-2, new FrameBlock());
+					MatrixBlock mframe = DataConverter.convertToMatrixBlock(frame);
+					ret.add(new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(rix, cix), 
+							matrix.leftIndexingOperations(mframe, mix, mix2, 0, lclen-1, 
+							new MatrixBlock(), UpdateType.INPLACE_PINNED)));
 				}
-				lRowId += (endRow-begRow+1);
 			}
-			
+
 			return ret;
 		}
 	}

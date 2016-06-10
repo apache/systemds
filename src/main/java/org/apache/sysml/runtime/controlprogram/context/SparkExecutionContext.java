@@ -47,6 +47,7 @@ import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -532,11 +533,8 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 	
 	/**
-	 * Keep the output rdd of spark rdd operations as meta data of matrix objects in the 
-	 * symbol table.
-	 * 
-	 * Spark instructions should call this for all matrix outputs.
-	 * 
+	 * Keep the output rdd of spark rdd operations as meta data of matrix/frame 
+	 * objects in the symbol table.
 	 * 
 	 * @param varname
 	 * @param rdd
@@ -545,23 +543,9 @@ public class SparkExecutionContext extends ExecutionContext
 	public void setRDDHandleForVariable(String varname, JavaPairRDD<?,?> rdd) 
 		throws DMLRuntimeException
 	{
-		MatrixObject mo = getMatrixObject(varname);
+		CacheableData<?> obj = getCacheableData(varname);
 		RDDObject rddhandle = new RDDObject(rdd, varname);
-		mo.setRDDHandle( rddhandle );
-	}
-	
-	/**
-	 * 
-	 * @param varname
-	 * @param rdd
-	 * @throws DMLRuntimeException
-	 */
-	public void setFrameRDDHandleForVariable(String varname, JavaPairRDD<?,?> rdd) 
-		throws DMLRuntimeException
-	{
-		FrameObject mo = getFrameObject(varname);
-		RDDObject rddhandle = new RDDObject(rdd, varname);
-		mo.setRDDHandle( rddhandle );
+		obj.setRDDHandle( rddhandle );
 	}
 	
 	/**

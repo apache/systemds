@@ -107,7 +107,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction
 
 		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
 		if( Recompiler.checkCPReblock(sec, input1.getName()) ) {
-			Recompiler.executeInMemoryReblock(sec, input1.getName(), output.getName());
+			Recompiler.executeInMemoryMatrixReblock(sec, input1.getName(), output.getName());
 			return;
 		}
 		

@@ -86,6 +86,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 	public FrameObject(FrameObject fo) {
 		super(fo);
 	}
+	
+	public List<ValueType> getSchema() {
+		return _schema;
+	}
 
 	public void setSchema(String schema) {
 		if( schema.equals("*") ) {

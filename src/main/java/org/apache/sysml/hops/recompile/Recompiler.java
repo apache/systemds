@@ -78,6 +78,8 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
@@ -94,6 +96,7 @@ import org.apache.sysml.runtime.instructions.mr.RandInstruction;
 import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -1907,8 +1910,8 @@ public class Recompiler
 	public static boolean checkCPReblock(ExecutionContext ec, String varin) 
 		throws DMLRuntimeException
 	{
-		MatrixObject in = ec.getMatrixObject(varin);
-		MatrixCharacteristics mc = in.getMatrixCharacteristics();
+		CacheableData<?> obj = ec.getCacheableData(varin);
+		MatrixCharacteristics mc = ec.getMatrixCharacteristics(varin);
 		
 		long rows = mc.getRows();
 		long cols = mc.getCols();
@@ -1924,8 +1927,8 @@ public class Recompiler
 		//robustness for usage through mlcontext (key/values of input rdds are 
 		//not serializable for text; also bufferpool rdd read only supported for 
 		// binarycell and binaryblock)
-		MatrixFormatMetaData iimd = (MatrixFormatMetaData) in.getMetaData();
-		if( in.getRDDHandle() != null 
+		MatrixFormatMetaData iimd = (MatrixFormatMetaData) obj.getMetaData();
+		if( obj.getRDDHandle() != null 
 			&& iimd.getInputInfo() != InputInfo.BinaryBlockInputInfo 
 			&& iimd.getInputInfo() != InputInfo.BinaryCellInputInfo ) {
 			return false;
@@ -2061,7 +2064,7 @@ public class Recompiler
 	 * @param out
 	 * @throws DMLRuntimeException 
 	 */
-	public static void executeInMemoryReblock(ExecutionContext ec, String varin, String varout) 
+	public static void executeInMemoryMatrixReblock(ExecutionContext ec, String varin, String varout) 
 		throws DMLRuntimeException
 	{
 		MatrixObject in = ec.getMatrixObject(varin);
@@ -2073,6 +2076,29 @@ public class Recompiler
 		
 		//set output (incl update matrix characteristics)
 		out.acquireModify( mb );
+		out.release();
+		in.release();				
+	}
+	
+	/**
+	 * 
+	 * @param ec
+	 * @param varin
+	 * @param varout
+	 * @throws DMLRuntimeException
+	 */
+	public static void executeInMemoryFrameReblock(ExecutionContext ec, String varin, String varout) 
+		throws DMLRuntimeException
+	{
+		FrameObject in = ec.getFrameObject(varin);
+		FrameObject out = ec.getFrameObject(varout);
+
+		//read text input frame (through buffer pool, frame object carries all relevant
+		//information including additional arguments for csv reblock)
+		FrameBlock fb = in.acquireRead(); 
+		
+		//set output (incl update matrix characteristics)
+		out.acquireModify( fb );
 		out.release();
 		in.release();				
 	}

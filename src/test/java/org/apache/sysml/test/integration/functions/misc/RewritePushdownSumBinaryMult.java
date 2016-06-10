@@ -21,14 +21,12 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.apache.sysml.utils.Statistics;
 
 /**
  * Regression test for function recompile-once issue with literal replacement.
@@ -36,57 +34,44 @@ import org.apache.sysml.utils.Statistics;
  */
 public class RewritePushdownSumBinaryMult extends AutomatedTestBase 
 {
-	
 	private static final String TEST_NAME1 = "RewritePushdownSumBinaryMult";
 	private static final String TEST_NAME2 = "RewritePushdownSumBinaryMult2";
 
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewritePushdownSumBinaryMult.class.getSimpleName() + "/";
 	
-	//private static final int rows = 1234;
-	//private static final int cols = 567;
-	private static final double eps = Math.pow(10, -10);
-	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 	}
 	
 	@Test
-	public void testPushdownSumBinaryMultNoRewrite() 
-	{
+	public void testPushdownSumBinaryMultNoRewrite() {
 		testRewritePushdownSumBinaryMult( TEST_NAME1, false );
 	}
 	
 	
 	@Test
-	public void testPushdownSumBinaryMultRewrite() 
-	{
+	public void testPushdownSumBinaryMultRewrite() {
 		testRewritePushdownSumBinaryMult( TEST_NAME1, true );
 	}
 	
-	
 	@Test
-	public void testPushdownSumBinaryMultNoRewrite2() 
-	{
+	public void testPushdownSumBinaryMultNoRewrite2() {
 		testRewritePushdownSumBinaryMult( TEST_NAME2, false );
 	}
 	
 	@Test
-	public void testPushdownSumBinaryMultRewrite2() 
-	{
+	public void testPushdownSumBinaryMultRewrite2() {
 		testRewritePushdownSumBinaryMult( TEST_NAME2, true );
 	}
 	
-	
 	/**
 	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
+	 * @param testname
+	 * @param rewrites
 	 */
 	private void testRewritePushdownSumBinaryMult( String testname, boolean rewrites )
 	{	
@@ -96,7 +81,6 @@ public class RewritePushdownSumBinaryMult extends AutomatedTestBase
 		{
 			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
-			
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
@@ -114,13 +98,9 @@ public class RewritePushdownSumBinaryMult extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("Scalar");
 			HashMap<CellIndex, Double> rfile  = readRScalarFromFS("Scalar");
 			TestUtils.compareScalars(dmlfile.toString(), rfile.toString());
-			System.out.println("Test case passed");
-			
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
-		}
-		
+		}	
 	}	
 }

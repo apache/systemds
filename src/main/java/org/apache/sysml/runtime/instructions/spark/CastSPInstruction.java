@@ -79,20 +79,17 @@ public class CastSPInstruction extends UnarySPInstruction
 			in = ((JavaPairRDD<Long, FrameBlock>)in).mapToPair(new LongFrameToLongWritableFrameFunction());
 			out = FrameRDDConverterUtils.binaryBlockToMatrixBlock(
 				(JavaPairRDD<LongWritable, FrameBlock>)in, mcIn, mcOut);
-			
-			sec.setRDDHandleForVariable(output.getName(), out);
 		}
 		else if( opcode.equals(UnaryCP.CAST_AS_FRAME_OPCODE) ) {
 			out = FrameRDDConverterUtils.matrixBlockToBinaryBlockLongIndex(sec.getSparkContext(), 
 				(JavaPairRDD<MatrixIndexes, MatrixBlock>)in, mcIn);
-		
-			sec.setFrameRDDHandleForVariable(output.getName(), out);
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported spark cast operation: "+opcode);
 		}
 		
 		//update output statistics and add lineage
+		sec.setRDDHandleForVariable(output.getName(), out);
 		updateUnaryOutputMatrixCharacteristics(sec, input1.getName(), output.getName());
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}

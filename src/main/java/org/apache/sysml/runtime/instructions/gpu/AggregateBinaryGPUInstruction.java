@@ -140,7 +140,8 @@ public class AggregateBinaryGPUInstruction extends BinaryCPInstruction
         int rlen = (int) (isLeftTransposed ? m1.getNumColumns() : m1.getNumRows());
         int clen = (int) (isRightTransposed ? m2.getNumRows() : m2.getNumColumns());
         
-        MatrixObject out = ec.getDenseMatrixOutputForGPUInstruction(output.getName(), rlen, clen);
+        ec.setMetaData(output.getName(), rlen, clen);
+        MatrixObject out = ec.getMatrixOutputForGPUInstruction(output.getName(), false);
         LibMatrixCUDA.matmult(m1, m2, out, isLeftTransposed, isRightTransposed);
         
 		//release inputs/outputs

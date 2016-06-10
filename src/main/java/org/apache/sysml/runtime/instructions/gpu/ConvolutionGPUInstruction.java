@@ -151,7 +151,8 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 				if(filter.getNumRows() != K || filter.getNumColumns() != C*R*S) 
 					throw new DMLRuntimeException("Incorrect dimensions for filter in conv2d");
 				
-				out = ec.getDenseMatrixOutputForGPUInstruction(output.getName(), N, K * P * Q);
+				ec.setMetaData(output.getName(), N, K * P * Q);
+				out = ec.getMatrixOutputForGPUInstruction(output.getName(), false);
 				LibMatrixCUDA.conv2d(image, filter, out, N, C, H, W,
 						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 				
@@ -167,7 +168,8 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 					throw new DMLRuntimeException("Incorrect dimensions for dout in conv2d_backward_filter: " + 
 							dout.getNumRows() + " != " +  N + " || " + dout.getNumColumns() + " != " + K*P*Q);
 				
-				out = ec.getDenseMatrixOutputForGPUInstruction(output.getName(), K, C * R * S);
+				ec.setMetaData(output.getName(), K, C * R * S);
+				out = ec.getMatrixOutputForGPUInstruction(output.getName(), false);
 				LibMatrixCUDA.conv2d_backward_filter(image, dout, out, N, C, H, W,
 						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 				// TODO: For now always copy the device data to host
@@ -184,7 +186,8 @@ public class ConvolutionGPUInstruction extends UnaryCPInstruction {
 					throw new DMLRuntimeException("Incorrect dimensions for dout in conv2d_backward_data: " + 
 							dout.getNumRows() + " != " +  N + " || " + dout.getNumColumns() + " != " + K*P*Q);
 				
-				out = ec.getDenseMatrixOutputForGPUInstruction(output.getName(), N, C * H * W);
+				ec.setMetaData(output.getName(), N, C * H * W);
+				out = ec.getMatrixOutputForGPUInstruction(output.getName(), false);
 				LibMatrixCUDA.conv2d_backward_data(filter, dout, out, N, C, H, W,
 						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
 			}

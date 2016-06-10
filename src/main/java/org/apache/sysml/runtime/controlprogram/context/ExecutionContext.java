@@ -226,9 +226,7 @@ public class ExecutionContext
 		return mb;
 	}
 	
-	public MatrixObject getDenseMatrixOutputForGPUInstruction(String varName, int nrows, int ncols) 
-			throws DMLRuntimeException 
-	{	
+	public void setMetaData(String varName, long nrows, long ncols) throws DMLRuntimeException  {
 		MatrixObject mo = getMatrixObject(varName);
 		if(mo.getNumRows() != nrows || mo.getNumColumns() != ncols) {
 			MatrixCharacteristics mc = new MatrixCharacteristics((long)nrows, (long)ncols, 
@@ -245,12 +243,20 @@ public class ExecutionContext
 			}
 			mo.setMetaData(new MatrixFormatMetaData(mc, oiOld, iiOld));
 		}
+	}
+	
+	public MatrixObject getMatrixOutputForGPUInstruction(String varName, boolean isSparse) 
+			throws DMLRuntimeException {	
+		if(isSparse) {
+			throw new DMLRuntimeException("Sparse matrix block is not supported for GPU instruction");
+		}
+		MatrixObject mo = getMatrixObject(varName);
 		if(mo.getMatrixBlock() == null) {
-			MatrixBlock mb = new MatrixBlock(nrows, ncols, false);
+			MatrixBlock mb = new MatrixBlock((int)mo.getNumRows(), (int)mo.getNumColumns(), false);
 			mo.acquireModify(mb);
 			mo.release();
 		}
-		mo.getGPUObject().acquireDenseDeviceModify(nrows*ncols);
+		mo.getGPUObject().acquireDenseDeviceModify((int)(mo.getNumRows()*mo.getNumColumns()));
 		mo.getMatrixCharacteristics().setNonZeros(-1);
 		mo.getMatrixBlock().setNonZeros(-1);
 		return mo;

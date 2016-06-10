@@ -204,6 +204,7 @@
 
 The following dependencies come under the Apache Software License 2.0.
 
+com.google.guava:guava:11.0.2
 commons-cli:commons-cli:1.2
 commons-collections:commons-collections:3.2.1
 commons-configuration:commons-configuration:1.6

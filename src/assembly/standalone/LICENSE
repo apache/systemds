@@ -212,6 +212,7 @@ commons-httpclient-3.1.jar
 commons-lang-2.6.jar
 commons-logging-1.1.1.jar
 commons-math3-3.1.1.jar
+guava-11.0.2.jar
 hadoop-auth-2.4.1.jar
 hadoop-client-2.4.1.jar
 hadoop-common-2.4.1.jar

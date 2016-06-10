@@ -126,6 +126,7 @@
 				<include>*:commons-lang</include>
 				<include>*:commons-logging*</include>
 				<include>*:commons-math3*</include>
+				<include>*:guava*</include>
 				<include>*:hadoop-auth*</include>
 				<include>*:hadoop-client*</include>
 				<include>*:hadoop-common*</include>

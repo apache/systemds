@@ -31,22 +31,35 @@ public abstract class GPUContext {
 	protected static GPUContext currContext;
 	protected GPUContext() { }
 	
+	public static volatile Boolean isGPUContextCreated = false;
+	
 	public abstract long getAvailableMemory();
 	
 	// Creation / Destruction of GPUContext and related handles
 	public static GPUContext createGPUContext() {
 		if(currContext == null && DMLScript.USE_ACCELERATOR) {
-			currContext = new JCudaContext();
-			OptimizerUtils.GPU_MEMORY_BUDGET = ((JCudaContext)currContext).getAvailableMemory();
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					// Lazy GPU context creation
+					synchronized(isGPUContextCreated) {
+						currContext = new JCudaContext();
+						OptimizerUtils.GPU_MEMORY_BUDGET = ((JCudaContext)currContext).getAvailableMemory();
+						isGPUContextCreated = true;
+					}
+				}
+			}).start();
 		}
 		return currContext;
 	}
 	public static GPUObject createGPUObject(MatrixObject mo) {
 		if(DMLScript.USE_ACCELERATOR) {
-			if(currContext == null)
-				throw new RuntimeException("GPUContext is not created");
-			if(currContext instanceof JCudaContext)
-				return new JCudaObject(mo);
+			synchronized(isGPUContextCreated) {
+				if(currContext == null)
+					throw new RuntimeException("GPUContext is not created");
+				if(currContext instanceof JCudaContext)
+					return new JCudaObject(mo);
+			}
 		}
 		throw new RuntimeException("Cannot create createGPUObject when USE_ACCELERATOR is off");
 	}

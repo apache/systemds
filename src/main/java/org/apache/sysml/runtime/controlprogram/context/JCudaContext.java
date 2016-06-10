@@ -91,8 +91,20 @@ public class JCudaContext extends GPUContext {
 	
 	
 	public JCudaContext() {
-		if(GPUContext.currContext != null) {
-			throw new RuntimeException("Cannot create multiple JCudaContext");
+		if(isGPUContextCreated) {
+			// Wait until it is deleted. This case happens during multi-threaded testing.
+			// This also allows for multi-threaded execute calls
+			long startTime = System.currentTimeMillis();
+			do {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {}
+			} while(isGPUContextCreated && (System.currentTimeMillis() - startTime) < 60000);
+			synchronized(isGPUContextCreated) {
+				if(GPUContext.currContext != null) {
+					throw new RuntimeException("Cannot create multiple JCudaContext. Waited for 10 min to close previous GPUContext");
+				}
+			}
 		}
 		GPUContext.currContext = this;
 		
@@ -119,9 +131,12 @@ public class JCudaContext extends GPUContext {
 	@Override
 	public void destroy() throws DMLRuntimeException {
 		if(currContext != null) {
-			currContext = null;
-			cudnnDestroy(LibMatrixCUDA.cudnnHandle);
-			cublasDestroy(LibMatrixCUDA.cublasHandle);
+			synchronized(isGPUContextCreated) {
+				cudnnDestroy(LibMatrixCUDA.cudnnHandle);
+				cublasDestroy(LibMatrixCUDA.cublasHandle);
+				currContext = null;
+				isGPUContextCreated = false;
+			}
 		}
 		else if(LibMatrixCUDA.cudnnHandle != null || LibMatrixCUDA.cublasHandle != null) {
 			throw new DMLRuntimeException("Error while destroying the GPUContext");

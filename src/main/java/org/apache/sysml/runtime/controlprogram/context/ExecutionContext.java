@@ -101,8 +101,6 @@ public class ExecutionContext
 		if (DMLScript.ENABLE_DEBUG_MODE){
 			_dbState = DebugState.getInstance();
 		}
-		if(DMLScript.USE_ACCELERATOR)
-			_gpuCtx = GPUContext.createGPUContext();
 	}
 	
 	public Program getProgram(){

@@ -117,9 +117,8 @@ backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X, i
         for (wout in 1:Wout) {  # all output columns
           win = (wout-1) * stridew + 1
           img_slice_patch = img_slice[hin:hin+Hf-1, win:win+Wf-1]
-          max_val = max(img_slice_patch)
-          max_val_ind = ppred(img_slice_patch, max_val, "==")  # max value indicator
-          # gradient passes through only for the max value in this patch
+          max_val_ind = img_slice_patch == max(img_slice_patch)  # max value indicator matrix
+          # gradient passes through only for the max value(s) in this patch
           dimg_slice_patch = max_val_ind * dout[n, (c-1)*Hout*Wout + (hout-1)*Wout + wout]
           dimg_slice[hin:hin+Hf-1, win:win+Wf-1] =
             dimg_slice[hin:hin+Hf-1, win:win+Wf-1] + dimg_slice_patch

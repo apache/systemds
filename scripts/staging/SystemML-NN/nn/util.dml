@@ -34,7 +34,7 @@ all_equal = function(matrix[double] X1, matrix[double] X2)
    * Outputs:
    *  - equivalent: Whether or not the two matrices are equivalent.
    */
-  equivalent = as.logical(prod(ppred(X1, X2, "==")))
+  equivalent = as.logical(prod(X1 == X2))
 }
 
 check_all_equal = function(matrix[double] X1, matrix[double] X2)

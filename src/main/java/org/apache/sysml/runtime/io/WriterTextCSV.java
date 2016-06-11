@@ -58,7 +58,7 @@ public class WriterTextCSV extends MatrixWriter
 	}
 	
 	@Override
-	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
+	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//validity check matrix dimensions
@@ -68,24 +68,42 @@ public class WriterTextCSV extends MatrixWriter
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.
 		MapReduceTool.deleteFileIfExistOnHDFS( fname );
 			
-		//core write
-		writeCSVMatrixToHDFS(path, job, src, rlen, clen, nnz, _props);
+		//core write (sequential/parallel)
+		writeCSVMatrixToHDFS(path, job, fs, src, _props);
 	}
 
 	@Override
-	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
 		throws IOException, DMLRuntimeException 
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
 
 		MatrixBlock src = new MatrixBlock((int)rlen, 1, true);
-		writeCSVMatrixToHDFS(path, job, src, brlen, clen, 0, _props);
+		writeCSVMatrixToHDFS(path, job, fs, src, _props);
+	}
+	
+	/**
+	 * 
+	 * @param path
+	 * @param job
+	 * @param fs
+	 * @param src
+	 * @param csvprops
+	 * @throws IOException 
+	 */
+	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, CSVFileFormatProperties csvprops) 
+		throws IOException 
+	{
+		//sequential write csv file
+		writeCSVMatrixToFile(path, job, fs, src, 0, (int)src.getNumRows(), csvprops);
 	}
 	
 	/**
@@ -97,12 +115,14 @@ public class WriterTextCSV extends MatrixWriter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	protected void writeCSVMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, CSVFileFormatProperties props )
+	protected final void writeCSVMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
-		FileSystem fs = FileSystem.get(job);
-        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+		int clen = src.getNumColumns();
+		
+		//create buffered writer
+		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
 		
 		try
 		{
@@ -114,7 +134,7 @@ public class WriterTextCSV extends MatrixWriter
 			boolean csvsparse = props.isSparse();
 			
 			// Write header line, if needed
-			if( props.hasHeader() ) 
+			if( props.hasHeader() && rl==0 ) 
 			{
 				//write row chunk-wise to prevent OOM on large number of columns
 				for( int bj=0; bj<clen; bj+=BLOCKSIZE_J )
@@ -137,7 +157,7 @@ public class WriterTextCSV extends MatrixWriter
 			if( sparse ) //SPARSE
 			{	
 				SparseBlock sblock = src.getSparseBlock();
-				for(int i=0; i < rlen; i++) 
+				for(int i=rl; i < ru; i++) 
 	            {
 					//write row chunk-wise to prevent OOM on large number of columns
 					int prev_jix = -1;
@@ -204,7 +224,7 @@ public class WriterTextCSV extends MatrixWriter
 			}
 			else //DENSE
 			{
-				for( int i=0; i<rlen; i++ ) 
+				for( int i=rl; i<ru; i++ ) 
 				{
 					//write row chunk-wise to prevent OOM on large number of columns
 					for( int bj=0; bj<clen; bj+=BLOCKSIZE_J )
@@ -230,8 +250,7 @@ public class WriterTextCSV extends MatrixWriter
 				}
 			}
 		}
-		finally
-		{
+		finally {
 			IOUtilFunctions.closeSilently(br);
 		}
 	}
@@ -251,7 +270,7 @@ public class WriterTextCSV extends MatrixWriter
 	 * @param clen
 	 * @throws IOException
 	 */
-	public void mergeCSVPartFiles(String srcFileName, String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
+	public final void mergeCSVPartFiles(String srcFileName, String destFileName, CSVFileFormatProperties csvprop, long rlen, long clen) 
 		throws IOException 
 	{	
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
@@ -331,7 +350,7 @@ public class WriterTextCSV extends MatrixWriter
 	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
-	public void addHeaderToCSV(String srcFileName, String destFileName, long rlen, long clen) 
+	public final void addHeaderToCSV(String srcFileName, String destFileName, long rlen, long clen) 
 		throws IOException 
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());

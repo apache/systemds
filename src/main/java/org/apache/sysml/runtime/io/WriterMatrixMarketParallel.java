@@ -19,11 +19,8 @@
 
 package org.apache.sysml.runtime.io;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -36,7 +33,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -46,22 +42,15 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  */
 public class WriterMatrixMarketParallel extends WriterMatrixMarket
 {
-	/**
-	 * 
-	 * @param fileName
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param nnz
-	 * @throws IOException
-	 */
 	@Override
-	protected void writeMatrixMarketMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz )
+	protected void writeMatrixMarketMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src )
 		throws IOException
 	{
+		int rlen = src.getNumRows();
+		
 		//estimate output size and number of output blocks (min 1)
-		int numPartFiles = (int)(OptimizerUtils.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(), src.getNonZeros(), 
-				              OutputInfo.MatrixMarketOutputInfo)  / InfrastructureAnalyzer.getHDFSBlockSize());
+		int numPartFiles = (int)(OptimizerUtils.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(), 
+				src.getNonZeros(), OutputInfo.MatrixMarketOutputInfo)  / InfrastructureAnalyzer.getHDFSBlockSize());
 		numPartFiles = Math.max(numPartFiles, 1);
 		
 		//determine degree of parallelism
@@ -70,7 +59,7 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 		
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
 		if( numThreads <= 1 ) {
-			super.writeMatrixMarketMatrixToHDFS(path, job, src, rlen, clen, nnz);
+			super.writeMatrixMarketMatrixToHDFS(path, job, fs, src);
 			return;
 		}
 		
@@ -85,7 +74,7 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, String.format("0-m-%05d",i));
-				tasks.add(new WriteMMTask(newPath, job, src, i*blklen, (int)Math.min((i+1)*blklen, rlen)));
+				tasks.add(new WriteMMTask(newPath, job, fs, src, i*blklen, (int)Math.min((i+1)*blklen, rlen)));
 			}
 
 			//wait until all tasks have been executed
@@ -105,18 +94,19 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 	 * 
 	 * 
 	 */
-	private static class WriteMMTask implements Callable<Object> 
+	private class WriteMMTask implements Callable<Object> 
 	{
 		private JobConf _job = null;
+		private FileSystem _fs = null;
 		private MatrixBlock _src = null;
 		private Path _path =null;
 		private int _rl = -1;
 		private int _ru = -1;
 
-		public WriteMMTask(Path path, JobConf job, MatrixBlock src, int rl, int ru)
-		{
+		public WriteMMTask(Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru) {
 			_path = path;
 			_job = job;
+			_fs = fs;
 			_src = src;
 			_rl = rl;
 			_ru = ru;
@@ -125,83 +115,7 @@ public class WriterMatrixMarketParallel extends WriterMatrixMarket
 		@Override
 		public Object call() throws Exception 
 		{
-			boolean entriesWritten = false;
-			FileSystem fs = FileSystem.get(_job);
-			BufferedWriter bw = null;
-			
-			int rows = _src.getNumRows();
-	    	int cols = _src.getNumColumns();
-	    	long nnz = _src.getNonZeros();
-	    	
-			try
-			{
-				//for obj reuse and preventing repeated buffer re-allocations
-				StringBuilder sb = new StringBuilder();
-		        bw = new BufferedWriter(new OutputStreamWriter(fs.create(_path,true)));
-				
-		        if( _rl == 0 ) {
-					// First output MM header
-					sb.append ("%%MatrixMarket matrix coordinate real general\n");
-				
-					// output number of rows, number of columns and number of nnz
-					sb.append (rows + " " + cols + " " + nnz + "\n");
-		            bw.write( sb.toString());
-		            sb.setLength(0);		            
-		        }
-		        
-				if( _src.isInSparseFormat() ) //SPARSE
-				{			   
-					Iterator<IJV> iter = _src.getSparseBlockIterator(_rl, _ru);
-
-					while( iter.hasNext() )
-					{
-						IJV cell = iter.next();
-
-						sb.append(cell.getI()+1);
-						sb.append(' ');
-						sb.append(cell.getJ()+1);
-						sb.append(' ');
-						sb.append(cell.getV());
-						sb.append('\n');
-						bw.write( sb.toString() );
-						sb.setLength(0); 
-						entriesWritten = true;
-					}
-				}
-				else //DENSE
-				{
-					for( int i=_rl; i<_ru; i++ )
-					{
-						String rowIndex = Integer.toString(i+1);					
-						for( int j=0; j<cols; j++ )
-						{
-							double lvalue = _src.getValueDenseUnsafe(i, j);
-							if( lvalue != 0 ) //for nnz
-							{
-								sb.append(rowIndex);
-								sb.append(' ');
-								sb.append( j+1 );
-								sb.append(' ');
-								sb.append( lvalue );
-								sb.append('\n');
-								bw.write( sb.toString() );
-								sb.setLength(0); 
-								entriesWritten = true;
-							}
-						}
-					}
-				}
-				
-				//handle empty result
-				if ( !entriesWritten ) {
-			        bw.write("1 1 0\n");
-				}
-			}
-			finally
-			{
-				IOUtilFunctions.closeSilently(bw);
-			}
-			
+			writeMatrixMarketMatrixToFile(_path, _job, _fs, _src, _rl, _ru);
 			return null;
 		}
 	}

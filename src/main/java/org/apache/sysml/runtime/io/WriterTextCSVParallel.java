@@ -19,9 +19,7 @@
 
 package org.apache.sysml.runtime.io;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -38,7 +36,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
 /**
@@ -50,22 +47,12 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		super( props );
 	}
 
-	/**
-	 * 
-	 * @param fileName
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param nnz
-	 * @throws IOException
-	 */
-	@Override
-	protected void writeCSVMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz, CSVFileFormatProperties props )
-		throws IOException
+	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, CSVFileFormatProperties csvprops) 
+		throws IOException 
 	{
 		//estimate output size and number of output blocks (min 1)
-		int numPartFiles = (int)(OptimizerUtils.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(), src.getNonZeros(), 
-				              OutputInfo.CSVOutputInfo)  / InfrastructureAnalyzer.getHDFSBlockSize());
+		int numPartFiles = (int)(OptimizerUtils.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(), 
+				src.getNonZeros(), OutputInfo.CSVOutputInfo)  / InfrastructureAnalyzer.getHDFSBlockSize());
 		numPartFiles = Math.max(numPartFiles, 1);
 		
 		//determine degree of parallelism
@@ -74,7 +61,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 	
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
 		if( numThreads <= 1 ) {
-			super.writeCSVMatrixToHDFS(path, job, src, rlen, clen, nnz, props);
+			super.writeCSVMatrixToHDFS(path, job, fs, src, csvprops);
 			return;
 		}
 		
@@ -86,10 +73,11 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		{
 			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
 			ArrayList<WriteCSVTask> tasks = new ArrayList<WriteCSVTask>();
+			int rlen = src.getNumRows();
 			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, String.format("0-m-%05d",i));
-				tasks.add(new WriteCSVTask(newPath, job, src, i*blklen, (int)Math.min((i+1)*blklen, rlen), props));
+				tasks.add(new WriteCSVTask(newPath, job, fs, src, i*blklen, (int)Math.min((i+1)*blklen, rlen), csvprops));
 			}
 
 			//wait until all tasks have been executed
@@ -102,27 +90,28 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel write of csv output.", e);
-		}
-	}
+		}		
+	}	
 
 	
 	/**
 	 * 
 	 * 
 	 */
-	private static class WriteCSVTask implements Callable<Object> 
+	private class WriteCSVTask implements Callable<Object> 
 	{
 		private JobConf _job = null;
+		private FileSystem _fs = null;
 		private MatrixBlock _src = null;
 		private Path _path =null;
 		private int _rl = -1;
 		private int _ru = -1;
 		private CSVFileFormatProperties _props = null;
 		
-		public WriteCSVTask(Path path, JobConf job, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props)
-		{
+		public WriteCSVTask(Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props) {
 			_path = path;
 			_job = job;
+			_fs = fs;
 			_src = src;
 			_rl = rl;
 			_ru = ru;
@@ -132,143 +121,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		@Override
 		public Object call() throws Exception 
 		{
-			FileSystem _fs = FileSystem.get(_job);
-	        BufferedWriter bw = null;
-	        
-			boolean sparse = _src.isInSparseFormat();
-			int cols = _src.getNumColumns();
-
-			try
-			{
-				//for obj reuse and preventing repeated buffer re-allocations
-				StringBuilder sb = new StringBuilder();
-				bw = new BufferedWriter(new OutputStreamWriter(_fs.create(_path,true)));
-				
-				_props = (_props==null)? new CSVFileFormatProperties() : _props;
-				String delim = _props.getDelim(); //Pattern.quote(csvProperties.getDelim());
-				boolean csvsparse = _props.isSparse();
-				
-				// Write header line, if needed
-				if( _props.hasHeader() && _rl == 0 ) 
-				{
-					//write row chunk-wise to prevent OOM on large number of columns
-					for( int bj=0; bj<cols; bj+=WriterTextCSV.BLOCKSIZE_J )
-					{
-						for( int j=bj; j < Math.min(cols,bj+WriterTextCSV.BLOCKSIZE_J); j++) 
-						{
-							sb.append("C"+ (j+1));
-							if ( j < cols-1 )
-								sb.append(delim);
-						}
-						bw.write( sb.toString() );
-			            sb.setLength(0);	
-					}
-					sb.append('\n');
-					bw.write( sb.toString() );
-		            sb.setLength(0);
-				}
-				
-				// Write data lines
-				if( sparse ) //SPARSE
-				{	
-					SparseBlock sblock = _src.getSparseBlock();
-					for( int i=_rl; i<_ru; i++ )
-					{
-						//write row chunk-wise to prevent OOM on large number of columns
-						int prev_jix = -1;
-						if(    sblock!=null && i<sblock.numRows() 
-							&& !sblock.isEmpty(i) )
-						{
-							int pos = sblock.pos(i);
-							int alen = sblock.size(i);
-							int[] aix = sblock.indexes(i);
-							double[] avals = sblock.values(i);
-							
-							for(int j=pos; j<pos+alen; j++) 
-							{
-								int jix = aix[j];
-								
-								// output empty fields, if needed
-								for( int j2=prev_jix; j2<jix-1; j2++ ) {
-									if( !csvsparse )
-										sb.append('0');
-									sb.append(delim);
-								
-									//flush buffered string
-						            if( j2%WriterTextCSV.BLOCKSIZE_J==0 ){
-										bw.write( sb.toString() );
-							            sb.setLength(0);
-						            }
-								}
-								
-								// output the value (non-zero)
-								sb.append( avals[j] );
-								if( jix < cols-1)
-									sb.append(delim);
-								bw.write( sb.toString() );
-					            sb.setLength(0);
-					            
-					            //flush buffered string
-					            if( jix%WriterTextCSV.BLOCKSIZE_J==0 ){
-									bw.write( sb.toString() );
-						            sb.setLength(0);
-					            }
-					            
-								prev_jix = jix;
-							}
-						}
-						
-						// Output empty fields at the end of the row.
-						// In case of an empty row, output (clen-1) empty fields
-						for( int bj=prev_jix+1; bj<cols; bj+=WriterTextCSV.BLOCKSIZE_J )
-						{
-							for( int j = bj; j < Math.min(cols,bj+WriterTextCSV.BLOCKSIZE_J); j++) {
-								if( !csvsparse )
-									sb.append('0');
-								if( j < cols-1 )
-									sb.append(delim);
-							}
-							bw.write( sb.toString() );
-				            sb.setLength(0);	
-						}
-
-						sb.append('\n');
-						bw.write( sb.toString() ); 
-						sb.setLength(0); 
-					}
-				}
-				else //DENSE
-				{
-					for( int i=_rl; i<_ru; i++ )
-					{
-						//write row chunk-wise to prevent OOM on large number of columns
-						for( int bj=0; bj<cols; bj+=WriterTextCSV.BLOCKSIZE_J )
-						{
-							for( int j=bj; j<Math.min(cols,bj+WriterTextCSV.BLOCKSIZE_J); j++ )
-							{
-								double lvalue = _src.getValueDenseUnsafe(i, j);
-								if( lvalue != 0 ) //for nnz
-									sb.append(lvalue);
-								else if( !csvsparse ) 
-									sb.append('0');
-								
-								if( j != cols-1 )
-									sb.append(delim);
-							}
-							bw.write( sb.toString() );
-				            sb.setLength(0);
-						}
-						
-						sb.append('\n');
-						bw.write( sb.toString() ); //same as append
-						sb.setLength(0); 
-					}
-				}
-			}
-			finally
-			{
-				IOUtilFunctions.closeSilently(bw);
-			}			
+			writeCSVMatrixToFile(_path, _job, _fs, _src, _rl, _ru, _props);
 			return null;
 		}
 	}

@@ -40,32 +40,36 @@ public class WriterBinaryBlock extends MatrixWriter
 {
 	protected int _replication = -1;
 	
-	public WriterBinaryBlock( int replication )
-	{
+	public WriterBinaryBlock( int replication ) {
 		_replication  = replication;
 	}
 
 	@Override
-	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
+	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.
 		MapReduceTool.deleteFileIfExistOnHDFS( fname );
-			
-		//core write
+
+		//set up preferred custom serialization framework for binary block format
+		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
+			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		
+		//core write sequential/parallel
 		if( src.isDiag() )
-			writeDiagBinaryBlockMatrixToHDFS(path, job, src, rlen, clen, brlen, bclen, _replication);
+			writeDiagBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, brlen, bclen);
 		else
-			writeBinaryBlockMatrixToHDFS(path, job, src, rlen, clen, brlen, bclen, _replication);
+			writeBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, brlen, bclen);
 	}
 
 	@Override
 	@SuppressWarnings("deprecation")
-	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
 		throws IOException, DMLRuntimeException 
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -94,25 +98,42 @@ public class WriterBinaryBlock extends MatrixWriter
 	 * @throws IOException
 	 * @throws DMLRuntimeException 
 	 */
-	@SuppressWarnings("deprecation")
-	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication )
+	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
 		throws IOException, DMLRuntimeException
 	{
+		//sequential write 
+		writeBinaryBlockMatrixToSequenceFile(path, job, fs, src, brlen, bclen, 0, (int)rlen);
+	}
+	
+	/**
+	 * 
+	 * @param path
+	 * @param job
+	 * @param fs
+	 * @param src
+	 * @param brlen
+	 * @param bclen
+	 * @param rl
+	 * @param ru
+	 * @throws DMLRuntimeException
+	 * @throws IOException
+	 */
+	@SuppressWarnings("deprecation")
+	protected final void writeBinaryBlockMatrixToSequenceFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int brlen, int bclen, int rl, int ru ) 
+		throws DMLRuntimeException, IOException
+	{
 		boolean sparse = src.isInSparseFormat();
-		FileSystem fs = FileSystem.get(job);
-		
-		//set up preferred custom serialization framework for binary block format
-		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
-			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		int rlen = src.getNumRows();
+		int clen = src.getNumColumns();
 		
 		// 1) create sequence file writer, with right replication factor 
 		// (config via MRConfigurationNames.DFS_REPLICATION not possible since sequence file internally calls fs.getDefaultReplication())
 		SequenceFile.Writer writer = null;
-		if( replication > 0 ) //if replication specified (otherwise default)
+		if( _replication > 0 ) //if replication specified (otherwise default)
 		{
 			//copy of SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class), except for replication
 			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class, job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096),
-					                         (short)replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	
+					                         (short)_replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	
 		}
 		else	
 		{
@@ -131,7 +152,7 @@ public class WriterBinaryBlock extends MatrixWriter
 			//3) reblock and write
 			MatrixIndexes indexes = new MatrixIndexes();
 
-			if( rlen <= brlen && clen <= bclen ) //opt for single block
+			if( rlen <= brlen && clen <= bclen && rl == 0 ) //opt for single block
 			{
 				//directly write single block
 				indexes.setIndexes(1, 1);
@@ -143,7 +164,7 @@ public class WriterBinaryBlock extends MatrixWriter
 				MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, brlen, bclen, sparse, src.getNonZeros());  
 				
 				//create and write subblocks of matrix
-				for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)brlen); blockRow++)
+				for(int blockRow = rl/brlen; blockRow < (int)Math.ceil(ru/(double)brlen); blockRow++)
 					for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)bclen); blockCol++)
 					{
 						int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
@@ -168,8 +189,7 @@ public class WriterBinaryBlock extends MatrixWriter
 					}
 			}
 		}
-		finally
-		{
+		finally {
 			IOUtilFunctions.closeSilently(writer);
 		}
 	}
@@ -188,24 +208,19 @@ public class WriterBinaryBlock extends MatrixWriter
 	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("deprecation")
-	protected void writeDiagBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication ) 
+	protected final void writeDiagBinaryBlockMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen, int brlen, int bclen ) 
 		throws IOException, DMLRuntimeException
 	{
 		boolean sparse = src.isInSparseFormat();
-		FileSystem fs = FileSystem.get(job);
-		
-		//set up preferred custom serialization framework for binary block format
-		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
-			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 		
 		// 1) create sequence file writer, with right replication factor 
 		// (config via MRConfigurationNames.DFS_REPLICATION not possible since sequence file internally calls fs.getDefaultReplication())
 		SequenceFile.Writer writer = null;
-		if( replication > 0 ) //if replication specified (otherwise default)
+		if( _replication > 0 ) //if replication specified (otherwise default)
 		{
 			//copy of SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class), except for replication
 			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class, job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096),
-					                         (short)replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	
+					                         (short)_replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	
 		}
 		else	
 		{
@@ -272,8 +287,7 @@ public class WriterBinaryBlock extends MatrixWriter
 					}
 			}				
 		}
-		finally
-		{
+		finally {
 			IOUtilFunctions.closeSilently(writer);
 		}
 	}
@@ -292,7 +306,7 @@ public class WriterBinaryBlock extends MatrixWriter
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("deprecation")
-	public void writePartitionedBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pformat )
+	public final void writePartitionedBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, PDataPartitionFormat pformat )
 			throws IOException, DMLRuntimeException
 	{
 		boolean sparse = src.isInSparseFormat();

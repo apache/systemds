@@ -45,7 +45,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 public class WriterMatrixMarket extends MatrixWriter
 {
 	@Override
-	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
+	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//validity check matrix dimensions
@@ -55,17 +55,18 @@ public class WriterMatrixMarket extends MatrixWriter
 				
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.
 		MapReduceTool.deleteFileIfExistOnHDFS( fname );
 			
 		//core write
-		writeMatrixMarketMatrixToHDFS(path, job, src, rlen, clen, nnz);
+		writeMatrixMarketMatrixToHDFS(path, job, fs, src);
 	}
 
 	@Override
-	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
 		throws IOException, DMLRuntimeException 
 	{
 		Path path = new Path( fname );
@@ -85,41 +86,51 @@ public class WriterMatrixMarket extends MatrixWriter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	protected void writeMatrixMarketMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, long nnz )
+	protected void writeMatrixMarketMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src )
+		throws IOException
+	{
+		//sequential write
+		writeMatrixMarketMatrixToFile(path, job, fs, src, 0, src.getNumRows());
+	}
+	
+	/**
+	 * 
+	 * @param path
+	 * @param job
+	 * @param src
+	 * @param rl
+	 * @param ru
+	 * @throws IOException
+	 */
+	protected final void writeMatrixMarketMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
-		boolean entriesWritten = false;
-		FileSystem fs = FileSystem.get(job);
-        BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
-        
-    	int rows = src.getNumRows();
-		int cols = src.getNumColumns();
-
-		//bound check per block
-		if( rows > rlen || cols > clen )
-		{
-			throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
-					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
-		}
+		int rlen = src.getNumRows();
+		int clen = src.getNumColumns();
+		long nnz = src.getNonZeros();
 		
+		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+
 		try
 		{
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
 			
-			// First output MM header
-			sb.append ("%%MatrixMarket matrix coordinate real general\n");
-		
-			// output number of rows, number of columns and number of nnz
-			sb.append (rlen + " " + clen + " " + nnz + "\n");
-            br.write( sb.toString());
-            sb.setLength(0);
-            
+			if( rl == 0 ) {
+				// First output MM header
+				sb.append ("%%MatrixMarket matrix coordinate real general\n");
+			
+				// output number of rows, number of columns and number of nnz
+				sb.append (rlen + " " + clen + " " + nnz + "\n");
+				br.write( sb.toString());
+				sb.setLength(0);
+			}
+			 
             // output matrix cell
 			if( sparse ) //SPARSE
 			{			   
-				Iterator<IJV> iter = src.getSparseBlockIterator();
+				Iterator<IJV> iter = src.getSparseBlockIterator(rl, ru);
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
@@ -132,15 +143,14 @@ public class WriterMatrixMarket extends MatrixWriter
 					sb.append('\n');
 					br.write( sb.toString() ); //same as append
 					sb.setLength(0); 
-					entriesWritten = true;					
 				}
 			}
 			else //DENSE
 			{
-				for( int i=0; i<rows; i++ )
+				for( int i=rl; i<ru; i++ )
 				{
 					String rowIndex = Integer.toString(i+1);					
-					for( int j=0; j<cols; j++ )
+					for( int j=0; j<clen; j++ )
 					{
 						double lvalue = src.getValueDenseUnsafe(i, j);
 						if( lvalue != 0 ) //for nnz
@@ -153,19 +163,17 @@ public class WriterMatrixMarket extends MatrixWriter
 							sb.append('\n');
 							br.write( sb.toString() ); //same as append
 							sb.setLength(0); 
-							entriesWritten = true;
 						}
 					}
 				}
 			}
 	
 			//handle empty result
-			if ( !entriesWritten ) {
+			if ( src.isEmptyBlock(false) && rl==0 ) {
 				br.write("1 1 0\n");
 			}
 		}
-		finally
-		{
+		finally {
 			IOUtilFunctions.closeSilently(br);
 		}
 	}
@@ -179,7 +187,7 @@ public class WriterMatrixMarket extends MatrixWriter
 	 * @param nnz
 	 * @throws IOException
 	 */
-	public void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
+	public final void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
 		throws IOException
 	{
 		  Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());

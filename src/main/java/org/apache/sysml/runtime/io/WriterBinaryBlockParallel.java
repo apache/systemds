@@ -29,44 +29,27 @@ import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
-import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class WriterBinaryBlockParallel extends WriterBinaryBlock
 {
-	public WriterBinaryBlockParallel( int replication )
-	{
+	public WriterBinaryBlockParallel( int replication ) {
 		super(replication);
 	}
 	
-	/**
-	 * 
-	 * @param path
-	 * @param job
-	 * @param src
-	 * @param rlen
-	 * @param clen
-	 * @param brlen
-	 * @param bclen
-	 * @throws IOException
-	 * @throws DMLRuntimeException 
-	 */
 	@Override
-	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen, int replication )
+	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
 		throws IOException, DMLRuntimeException
 	{
 		//estimate output size and number of output blocks (min 1)
-		int numPartFiles = (int)(OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, src.getNonZeros()) 
-						   / InfrastructureAnalyzer.getHDFSBlockSize());
+		int numPartFiles = (int)(OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, 
+				brlen, bclen, src.getNonZeros()) / InfrastructureAnalyzer.getHDFSBlockSize());
 		numPartFiles = Math.max(numPartFiles, 1);
 		
 		//determine degree of parallelism
@@ -75,17 +58,12 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 		
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
 		if( numThreads <= 1 ) {
-			super.writeBinaryBlockMatrixToHDFS(path, job, src, rlen, clen, brlen, bclen, replication);
+			super.writeBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, brlen, bclen);
 			return;
 		}
-			
-		//set up preferred custom serialization framework for binary block format
-		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
-			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 
 		//create directory for concurrent tasks
 		MapReduceTool.createDirIfNotExistOnHDFS(path.toString(), DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
-		FileSystem fs = FileSystem.get(job);
 		
 		//create and execute write tasks
 		try 
@@ -95,7 +73,7 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 			int blklen = (int)Math.ceil((double)rlen / brlen / numThreads) * brlen;
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, String.format("0-m-%05d",i));
-				tasks.add(new WriteFileTask(newPath, job, fs, src, i*blklen, Math.min((i+1)*blklen, rlen), brlen, bclen, _replication));
+				tasks.add(new WriteFileTask(newPath, job, fs, src, i*blklen, Math.min((i+1)*blklen, rlen), brlen, bclen));
 			}
 
 			//wait until all tasks have been executed
@@ -114,7 +92,7 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 	/**
 	 * 
 	 */
-	private static class WriteFileTask implements Callable<Object> 
+	private class WriteFileTask implements Callable<Object> 
 	{
 		private Path _path = null;
 		private JobConf _job = null;
@@ -124,10 +102,8 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 		private long _ru = -1;
 		private int _brlen = -1;
 		private int _bclen = -1;
-		private int _replication = 1;
 		
-		public WriteFileTask(Path path, JobConf job, FileSystem fs, MatrixBlock src, long rl, long ru, int brlen, int bclen, int rep)
-		{
+		public WriteFileTask(Path path, JobConf job, FileSystem fs, MatrixBlock src, long rl, long ru, int brlen, int bclen) {
 			_path = path;
 			_fs = fs;
 			_job = job;
@@ -136,66 +112,13 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 			_ru = ru;
 			_brlen = brlen;
 			_bclen = bclen;
-			_replication = rep;
 		}
 	
 		@Override
-		@SuppressWarnings("deprecation")
-		public Object call() throws Exception 
+		public Object call() 
+			throws Exception 
 		{
-			// 1) create sequence file writer, with right replication factor 
-			// (config via MRConfigurationNames.DFS_REPLICATION not possible since sequence file internally calls fs.getDefaultReplication())
-			SequenceFile.Writer writer = null;
-			if( _replication > 0 ) //if replication specified (otherwise default)
-			{
-				//copy of SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class), except for replication
-				writer = new SequenceFile.Writer(_fs, _job, _path, MatrixIndexes.class, MatrixBlock.class, _job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096),
-						                         (short)_replication, _fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());
-			}
-			else	
-			{
-				writer = new SequenceFile.Writer(_fs, _job, _path, MatrixIndexes.class, MatrixBlock.class);
-			}
-			
-			try
-			{
-				//3) reblock and write
-				MatrixIndexes indexes = new MatrixIndexes();
-
-				//initialize blocks for reuse (at most 4 different blocks required)
-				MatrixBlock[] blocks = createMatrixBlocksForReuse(_src.getNumRows(), _src.getNumColumns(),
-						_brlen, _bclen, _src.isInSparseFormat(), _src.getNonZeros());  
-					
-				//create and write subblocks of matrix
-				for(int blockRow = (int)_rl/_brlen; blockRow < (int)Math.ceil(_ru/(double)_brlen); blockRow++)
-					for(int blockCol = 0; blockCol < (int)Math.ceil(_src.getNumColumns()/(double)_bclen); blockCol++)
-					{
-						int maxRow = (blockRow*_brlen + _brlen < _src.getNumRows()) ? _brlen : _src.getNumRows() - blockRow*_brlen;
-						int maxCol = (blockCol*_bclen + _bclen < _src.getNumColumns()) ? _bclen : _src.getNumColumns() - blockCol*_bclen;
-				
-						int row_offset = blockRow*_brlen;
-						int col_offset = blockCol*_bclen;
-						
-						//get reuse matrix block
-						MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, _brlen, _bclen);
-	
-						//copy submatrix to block
-						_src.sliceOperations( row_offset, row_offset+maxRow-1, 
-								             col_offset, col_offset+maxCol-1, block );
-						
-						//append block to sequence file
-						indexes.setIndexes(blockRow+1, blockCol+1);
-						writer.append(indexes, block);
-							
-						//reset block for later reuse
-						block.reset();
-					}
-			}
-			finally
-			{
-				IOUtilFunctions.closeSilently(writer);
-			}	
-			
+			writeBinaryBlockMatrixToSequenceFile(_path, _job, _fs, _src, _brlen, _bclen, (int)_rl, (int)_ru);
 			return null;
 		}
 	}

@@ -37,7 +37,7 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 public class WriterTextCell extends MatrixWriter
 {
 	@Override
-	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
+	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//validity check matrix dimensions
@@ -47,17 +47,18 @@ public class WriterTextCell extends MatrixWriter
 				
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.
 		MapReduceTool.deleteFileIfExistOnHDFS( fname );
 			
 		//core write
-		writeTextCellMatrixToHDFS(path, job, src, rlen, clen);
+		writeTextCellMatrixToHDFS(path, job, fs, src, rlen, clen);
 	}
 
 	@Override
-	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
 		throws IOException, DMLRuntimeException 
 	{
 		Path path = new Path( fname );
@@ -79,24 +80,30 @@ public class WriterTextCell extends MatrixWriter
 	 * @param bclen
 	 * @throws IOException
 	 */
-	protected void writeTextCellMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen )
+	protected void writeTextCellMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen )
+		throws IOException
+	{
+		//sequential write text cell file
+		writeTextCellMatrixToFile(path, job, fs, src, 0, (int)rlen);
+	}
+	
+	/**
+	 * 
+	 * @param path
+	 * @param job
+	 * @param src
+	 * @param rl
+	 * @param ru
+	 * @throws IOException
+	 */
+	protected final void writeTextCellMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
-		boolean entriesWritten = false;
-		FileSystem fs = FileSystem.get(job);
-        BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+		int clen = src.getNumColumns();
 		
-    	int rows = src.getNumRows();
-		int cols = src.getNumColumns();
+		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
 
-		//bound check per block
-		if( rows > rlen || cols > clen )
-		{
-			throw new IOException("Matrix block [1:"+rows+",1:"+cols+"] " +
-					              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
-		}
-		
 		try
 		{
 			//for obj reuse and preventing repeated buffer re-allocations
@@ -104,7 +111,7 @@ public class WriterTextCell extends MatrixWriter
 			
 			if( sparse ) //SPARSE
 			{			   
-				Iterator<IJV> iter = src.getSparseBlockIterator();
+				Iterator<IJV> iter = src.getSparseBlockIterator(rl, ru);
 				while( iter.hasNext() )
 				{
 					IJV cell = iter.next();
@@ -117,15 +124,14 @@ public class WriterTextCell extends MatrixWriter
 					sb.append('\n');
 					br.write( sb.toString() ); //same as append
 					sb.setLength(0); 
-					entriesWritten = true;					
 				}
 			}
 			else //DENSE
 			{
-				for( int i=0; i<rows; i++ )
+				for( int i=rl; i<ru; i++ )
 				{
 					String rowIndex = Integer.toString(i+1);					
-					for( int j=0; j<cols; j++ )
+					for( int j=0; j<clen; j++ )
 					{
 						double lvalue = src.getValueDenseUnsafe(i, j);
 						if( lvalue != 0 ) //for nnz
@@ -138,7 +144,6 @@ public class WriterTextCell extends MatrixWriter
 							sb.append('\n');
 							br.write( sb.toString() ); //same as append
 							sb.setLength(0); 
-							entriesWritten = true;
 						}
 						
 					}
@@ -146,13 +151,12 @@ public class WriterTextCell extends MatrixWriter
 			}
 	
 			//handle empty result
-			if ( !entriesWritten ) {
+			if ( src.isEmptyBlock(false) && rl==0 ) {
 				br.write("1 1 0\n");
 			}
 		}
-		finally
-		{
+		finally {
 			IOUtilFunctions.closeSilently(br);
 		}
-	}	
+	}
 }

@@ -31,11 +31,6 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    * F filters.  The input data has N examples, each represented as a 3D
    * volume unrolled into a single vector.
    *
-   * This implementation uses `im2col` internally for each image to
-   * extract local image regions (patches) into columns, and then
-   * performs a matrix multiplication with the filters to compute the
-   * output maps.
-   *
    * Inputs:
    *  - X: Input data matrix, of shape (N, C*Hin*Win).
    *  - W: Weights (parameters) matrix, of shape (F, C*Hf*Wf).
@@ -48,7 +43,15 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *  - strideh: Stride over height.
    *  - stridew: Stride over width.
    *  - padh: Padding for top and bottom sides.
+   *      For same output height as input, set padh = (Hf - 1) / 2,
+   *      assuming strideh = 1.
+   *      More generally, padh = (Hin*(strideh-1) + Hf - strideh) / 2
+   *      preserves the spatial dimensions of the input.
    *  - padw: Padding for left and right sides.
+   *      For same output width as input, set padw = (Wf - 1) / 2,
+   *      assuming stridew = 1.
+   *      More generally, padw = (Win*(stridew-1) + Wf - stridew) / 2
+   *      preserves the spatial dimensions of the input.
    *
    * Outputs:
    *  - out: Outputs, of shape (N, F*Hout*Wout).
@@ -65,10 +68,9 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
                stride=[strideh,stridew], padding=[padh,padw])
 
   # Add bias term to each output filter
-  bias = b
-  for (i in 1:Hout*Wout-1)
-    bias = cbind(bias, b)  # creating shape (F, Hout*Wout)
-  out = out + matrix(bias, rows=1, cols=F*Hout*Wout)
+  # Note: Biases vector b is replicated to (F, Hout*Wout) first.
+  ones = matrix(1, rows=1, cols=Hout*Wout)
+  out = out + matrix(b %*% ones, rows=1, cols=F*Hout*Wout)
 }
 
 backward = function(matrix[double] dout, int Hout, int Wout,
@@ -79,8 +81,6 @@ backward = function(matrix[double] dout, int Hout, int Wout,
   /*
    * Computes the backward pass for a 2D spatial convolutional layer
    * with F filters.
-   *
-   * This implementation uses `im2col` and `col2im` internally.
    *
    * Inputs:
    *  - dout: Derivatives from upstream, of shape (N, F*Hout*Wout).
@@ -113,12 +113,8 @@ backward = function(matrix[double] dout, int Hout, int Wout,
   dX = conv2d_backward_data(W, dout, stride=[strideh, stridew], padding=[padh,padw],
                             input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
 
-  # Partial derivatives for bias terms
-  db = matrix(0, rows=F, cols=1)
-  for (n in 1:N) {
-    doutn = matrix(dout[n,], rows=F, cols=Hout*Wout)
-    db = db + rowSums(doutn)
-  }
+  # Partial derivatives for bias vector
+  db = rowSums(matrix(colSums(dout), rows=F, cols=Hout*Wout))
 }
 
 init = function(int F, int C, int Hf, int Wf)

@@ -50,7 +50,15 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *  - strideh: Stride over height.
    *  - stridew: Stride over width.
    *  - padh: Padding for top and bottom sides.
+   *      For same output height as input, set padh = (Hf - 1) / 2,
+   *      assuming strideh = 1.
+   *      More generally, padh = (Hin*(strideh-1) + Hf - strideh) / 2
+   *      preserves the spatial dimensions of the input.
    *  - padw: Padding for left and right sides.
+   *      For same output width as input, set padw = (Wf - 1) / 2,
+   *      assuming stridew = 1.
+   *      More generally, padw = (Win*(stridew-1) + Wf - stridew) / 2
+   *      preserves the spatial dimensions of the input.
    *
    * Outputs:
    *  - out: Outputs, of shape (N, F*Hout*Wout).
@@ -118,15 +126,13 @@ backward = function(matrix[double] dout, int Hout, int Wout,
   F = nrow(W)
   
   # Create gradient volumes
+  # Note: Create convenience gradient volumes for dW and db that will
+  # allow for one gradient to be stored per example, allowing for
+  # parallel computation at the expense of memory.  We will reduce at
+  # the end.
   dX = matrix(0, rows=N, cols=C*Hin*Win)
-  dW = matrix(0, rows=F, cols=C*Hf*Wf)
-  db = matrix(0, rows=F, cols=1)
-
-  # Create convenience gradient volumes for dW and db that will allow
-  # for one gradient to be stored per example, allowing for parallel
-  # computation at the expense of memory.  We will reduce at the end.
-  dWN = matrix(0, rows=N, cols=F*C*Hf*Wf)
-  dbN = matrix(0, rows=N, cols=F)
+  dWN = matrix(0, rows=N, cols=F*C*Hf*Wf)  # dW = matrix(0, rows=F, cols=C*Hf*Wf)
+  dbN = matrix(0, rows=N, cols=F)  # db = matrix(0, rows=F, cols=1)
 
   # Partial derivatives for convolution - im2col implementation
   parfor (n in 1:N) {  # all examples
@@ -136,11 +142,11 @@ backward = function(matrix[double] dout, int Hout, int Wout,
     Xn = matrix(X[n,], rows=C, cols=Hin*Win)  # reshape
     Xn_padded = util::pad_image(Xn, Hin, Win, padh, padw)  # shape (C, (Hin+2*padh)*(Win+2*padw))
     Xn_padded_cols = util::im2col(Xn_padded, Hin+2*padh, Win+2*padw, Hf, Wf, strideh, stridew)
-    #dW = dW + doutn %*% t(Xn_padded_cols)
+    # dW = dW + doutn %*% t(Xn_padded_cols)
     dWN[n,] = matrix(doutn %*% t(Xn_padded_cols), rows=1, cols=F*C*Hf*Wf)
 
     # Compute db
-    #db = db + rowSums(doutn)
+    # db = db + rowSums(doutn)
     dbN[n,] = matrix(rowSums(doutn), rows=1, cols=F)
 
     # Compute dX

@@ -26,6 +26,7 @@ import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -48,6 +49,14 @@ import org.apache.sysml.runtime.util.DataConverter;
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 {
+	private static final int TOSTRING_MAXROWS = 100;
+	private static final int TOSTRING_MAXCOLS = 100;
+	private static final int TOSTRING_DECIMAL = 3;
+	private static final boolean TOSTRING_SPARSE = false;
+	private static final String TOSTRING_SEPARATOR = " ";
+	private static final String TOSTRING_LINESEPARATOR = "\n";
+	
+	
 	private int arity;
 	protected HashMap<String,String> params;
 	
@@ -62,7 +71,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 		return arity;
 	}
 	
-	public HashMap<String,String> getParameterMap() { return params; }
+	public HashMap<String,String> getParameterMap() { 
+		return params; 
+	}
+	
+	public String getParam(String key) {
+		return getParameterMap().get(key);
+	}
 	
 	public static HashMap<String, String> constructParameterMap(String[] params) {
 		// process all elements in "params" except first(opcode) and last(output)
@@ -294,48 +309,30 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			ec.setFrameOutput(output.getName(), meta);
 		}
 		else if ( opcode.equalsIgnoreCase("toString")) {
-			// Default Arguments
-			final int MAXROWS = 100;
-			final int MAXCOLS = 100;
-			final int DECIMAL = 3;
-			final boolean SPARSE = false;
-			final String SEPARATOR = " ";
-			final String LINESEPARATOR = "\n";
+			//handle input parameters
+			int rows = (getParam("rows")!=null) ? Integer.parseInt(getParam("rows")) : TOSTRING_MAXROWS;
+			int cols = (getParam("cols") != null) ? Integer.parseInt(getParam("cols")) : TOSTRING_MAXCOLS;
+			int decimal = (getParam("decimal") != null) ? Integer.parseInt(getParam("decimal")) : TOSTRING_DECIMAL;
+			boolean sparse = (getParam("sparse") != null) ? Boolean.parseBoolean(getParam("sparse")) : TOSTRING_SPARSE;
+			String separator = (getParam("sep") != null) ? getParam("sep") : TOSTRING_SEPARATOR;
+			String lineseparator = (getParam("linesep") != null) ? getParam("linesep") : TOSTRING_LINESEPARATOR;
 			
-			int rows=MAXROWS, cols=MAXCOLS, decimal=DECIMAL;
-			boolean sparse = SPARSE;
-			String separator=SEPARATOR, lineseparator=LINESEPARATOR; 
-			
-			String rowsStr = getParameterMap().get("rows");
-			if (rowsStr != null){ rows = Integer.parseInt(rowsStr); }
-			
-			String colsStr = getParameterMap().get("cols");
-			if (colsStr != null) { cols = Integer.parseInt(rowsStr); }
-			
-			String decimalStr = getParameterMap().get("decimal");
-			if (decimalStr != null) { decimal = Integer.parseInt(decimalStr); }
-			
-			String sparseStr = getParameterMap().get("sparse");
-			if (sparseStr != null) { sparse = Boolean.parseBoolean(sparseStr); }
-			
-			String separatorStr = getParameterMap().get("sep");
-			if (separatorStr != null) { separator = separatorStr; }
-			
-			String lineseparatorStr = getParameterMap().get("linesep");
-			if (lineseparatorStr != null) { lineseparator = lineseparatorStr; }
-			
-			// The matrix argument is "null"
-			String matrixStr = getParameterMap().get("null");
-			Data data = ec.getVariable(matrixStr);
-			if (!(data instanceof MatrixObject))
-				throw new DMLRuntimeException("toString only converts matrix objects to string");
-			MatrixBlock matrix = ec.getMatrixInput(matrixStr);
-
-			String outputStr = DataConverter.convertToString(matrix, sparse, separator, lineseparator, rows, cols, decimal);
-			
-			ec.releaseMatrixInput(matrixStr);
-			ec.setScalarOutput(output.getName(), new StringObject(outputStr));
-			
+			//get input matrix/frame and convert to string
+			CacheableData<?> data = ec.getCacheableData(getParam("target"));
+			String out = null;
+			if( data instanceof MatrixObject ) {
+				MatrixBlock matrix = (MatrixBlock) data.acquireRead();
+				out = DataConverter.toString(matrix, sparse, separator, lineseparator, rows, cols, decimal);
+			}
+			else if( data instanceof FrameObject ) {
+				FrameBlock frame = (FrameBlock) data.acquireRead();
+				out = DataConverter.toString(frame, sparse, separator, lineseparator, rows, cols, decimal);
+			}
+			else {
+				throw new DMLRuntimeException("toString only converts matrix or frames to string");
+			}
+			ec.releaseCacheableData(getParam("target"));
+			ec.setScalarOutput(output.getName(), new StringObject(out));
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

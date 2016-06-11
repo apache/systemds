@@ -736,23 +736,32 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		return;
 	}
 	
-
-	private void validateCastAsString(DataIdentifier output, boolean conditional) throws LanguageException {
-		
+	/**
+	 * 
+	 * @param output
+	 * @param conditional
+	 * @throws LanguageException
+	 */
+	private void validateCastAsString(DataIdentifier output, boolean conditional) 
+		throws LanguageException 
+	{
 		HashMap<String, Expression> varParams = getVarParams();
-		// null is for the matrix argument
-		String[] validArgsArr = {null, "rows", "cols", "decimal", "sparse", "sep", "linesep"};
+		
+		// replace parameter name for matrix argument
+		if( varParams.containsKey(null) )
+			varParams.put("target", varParams.remove(null));
+		
+		// check validate parameter names
+		String[] validArgsArr = {"target", "rows", "cols", "decimal", "sparse", "sep", "linesep"};
 		HashSet<String> validArgs = new HashSet<String>(Arrays.asList(validArgsArr));
-		for (String k : varParams.keySet()){
-			if (!validArgs.contains(k)){
-				String errMsg = "Invalid parameter " + k + " for as.string, valid parameters are " + validArgsArr[0];
-				for (int i=1; i<validArgsArr.length; ++i) 
-					errMsg += "," + validArgsArr[i];
-				raiseValidateError(errMsg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		for( String k : varParams.keySet() ) {
+			if( !validArgs.contains(k) ) {
+				raiseValidateError("Invalid parameter " + k + " for toString, valid parameters are " + 
+						Arrays.toString(validArgsArr), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
 		
-		// Output is a string
+		// set output characteristics
 		output.setDataType(DataType.SCALAR);
 		output.setValueType(ValueType.STRING);
 		output.setDimensions(0, 0);

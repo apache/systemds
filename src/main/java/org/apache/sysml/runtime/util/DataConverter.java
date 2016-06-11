@@ -913,7 +913,7 @@ public class DataConverter
 	 * @param decimal number of decimal places to print, -1 for default
 	 * @return
 	 */
-	public static String convertToString(MatrixBlock mb, boolean sparse, String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal){
+	public static String toString(MatrixBlock mb, boolean sparse, String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal){
 		StringBuffer sb = new StringBuffer();
 		
 		// Setup number of rows and columns to print
@@ -969,6 +969,79 @@ public class DataConverter
 				sb.append(df.format(value));	// Do not put separator after last element
 				sb.append(lineseparator);
 			}
+		}
+		
+		return sb.toString();
+	}
+	
+	/**
+	 * 
+	 * @param fb
+	 * @param sparse
+	 * @param separator
+	 * @param lineseparator
+	 * @param rowsToPrint
+	 * @param colsToPrint
+	 * @param decimal
+	 * @return
+	 */
+	public static String toString(FrameBlock fb, boolean sparse, String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal)
+	{
+		StringBuffer sb = new StringBuffer();
+		
+		// Setup number of rows and columns to print
+		int rlen = fb.getNumRows();
+		int clen = fb.getNumColumns();
+		int rowLength = rlen;
+		int colLength = clen;
+		if (rowsToPrint >= 0)
+			rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
+		if (colsToPrint >= 0)
+			colLength = colsToPrint < clen ? colsToPrint : clen;
+		
+		//print frame header
+		sb.append("# FRAME: ");
+		sb.append("nrow = " + fb.getNumRows() + ", ");
+		sb.append("ncol = " + fb.getNumColumns() + lineseparator);
+		
+		//print column names
+		sb.append("#"); sb.append(separator);
+		for( int j=0; j<colLength; j++ ) {
+			sb.append(fb.getColumnNames().get(j));
+			if( j != colLength-1 )
+				sb.append(separator);
+		}
+		sb.append(lineseparator);
+		
+		//print schema
+		sb.append("#"); sb.append(separator);
+		for( int j=0; j<colLength; j++ ) {
+			sb.append(fb.getSchema().get(j));
+			if( j != colLength-1 )
+				sb.append(separator);
+		}
+		sb.append(lineseparator);
+		
+		//print data
+		DecimalFormat df = new DecimalFormat();
+		df.setGroupingUsed(false);
+		if (decimal >= 0)
+			df.setMinimumFractionDigits(decimal);
+		
+		Iterator<Object[]> iter = fb.getObjectRowIterator(0, rowLength);
+		while( iter.hasNext() ) {
+			Object[] row = iter.next();
+			for( int j=0; j<colLength; j++ ) {
+				if( row[j]!=null ) {
+					if( fb.getSchema().get(j) == ValueType.DOUBLE )
+						sb.append(df.format(row[j]));
+					else
+						sb.append(row[j]);
+					if( j != colLength-1 )
+						sb.append(separator);
+				}
+			}
+			sb.append(lineseparator);
 		}
 		
 		return sb.toString();

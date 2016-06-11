@@ -179,6 +179,12 @@ public class ExecutionContext
 		return (FrameObject) dat;
 	}
 	
+	/**
+	 * 
+	 * @param varname
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
 	public CacheableData<?> getCacheableData(String varname) 
 		throws DMLRuntimeException
 	{
@@ -191,6 +197,18 @@ public class ExecutionContext
 			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix or frame.");
 		
 		return (CacheableData<?>) dat;
+	}
+	
+	/**
+	 * 
+	 * @param varname
+	 * @throws DMLRuntimeException
+	 */
+	public void releaseCacheableData(String varname) 
+		throws DMLRuntimeException
+	{
+		CacheableData<?> dat = getCacheableData(varname);
+		dat.release();
 	}
 	
 	public MatrixCharacteristics getMatrixCharacteristics( String varname ) 

@@ -195,6 +195,14 @@ public class OptimizerUtils
 	 */
 	public static final boolean ALLOW_COMBINE_FILE_INPUT_FORMAT = true;
 	
+	/**
+	 * Enables automatic csv-binary block reblock.
+	 * 
+	 * TODO enable by default and remove once file-based transform completely
+	 * removed via frame-based transform/transformapply 
+	 */
+	public static boolean ALLOW_FRAME_CSV_REBLOCK = false;
+	
 	
 	//////////////////////
 	// Optimizer levels //

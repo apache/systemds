@@ -93,9 +93,10 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		if (hop instanceof DataOp) 
 		{
 			// if block size does not match
-			if( canReblock //TODO change frame condition to != BINARY once transform over frames supported
+			if( canReblock 
 				&& ((hop.getDataType() == DataType.MATRIX && (hop.getRowsInBlock() != GLOBAL_BLOCKSIZE || hop.getColsInBlock() != GLOBAL_BLOCKSIZE)
-				  ||(hop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() && ((DataOp)hop).getInputFormatType()==FileFormatTypes.TEXT)))) 
+				  ||(hop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() && (((DataOp)hop).getInputFormatType()==FileFormatTypes.TEXT
+						  || ((DataOp)hop).getInputFormatType()==FileFormatTypes.CSV && OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK))))) 
 			{
 				if (((DataOp) hop).getDataOpType() == DataOp.DataOpTypes.PERSISTENTREAD) 
 				{

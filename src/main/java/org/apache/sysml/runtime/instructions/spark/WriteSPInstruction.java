@@ -38,7 +38,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.functions.ComputeBinaryBlockNnzFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
-import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameBlockToLongWritableFrameBlock;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -302,7 +302,7 @@ public class WriteSPInstruction extends SPInstruction
 		}
 		else if( oi == OutputInfo.BinaryBlockOutputInfo ) 
 		{
-			JavaPairRDD<LongWritable,FrameBlock> out = in1.mapToPair(new LongFrameBlockToLongWritableFrameBlock());
+			JavaPairRDD<LongWritable,FrameBlock> out = in1.mapToPair(new LongFrameToLongWritableFrameFunction());
 			out.saveAsHadoopFile(fname, LongWritable.class, FrameBlock.class, SequenceFileOutputFormat.class);
 		}
 		else {

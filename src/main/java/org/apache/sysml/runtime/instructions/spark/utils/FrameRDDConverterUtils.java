@@ -75,7 +75,7 @@ public class FrameRDDConverterUtils
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static JavaPairRDD<LongWritable, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
+	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, 
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
 		throws DMLRuntimeException 
@@ -94,9 +94,9 @@ public class FrameRDDConverterUtils
 				.zipWithIndex(); //zip row index
 		
 		//convert csv rdd to binary block rdd (w/ partial blocks)
-		JavaPairRDD<LongWritable, FrameBlock> out = 
-				prepinput.mapPartitionsToPair(
-					new CSVToBinaryBlockFunction(mcOut, hasHeader, delim, fill));
+		JavaPairRDD<Long, FrameBlock> out = prepinput
+				.mapPartitionsToPair(new CSVToBinaryBlockFunction(mcOut, hasHeader, delim, fill))
+				.mapToPair(new LongWritableFrameToLongFrameFunction());
 		
 		return out;
 	}
@@ -112,7 +112,7 @@ public class FrameRDDConverterUtils
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static JavaPairRDD<LongWritable, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
+	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaRDD<String> input, MatrixCharacteristics mcOut, 
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
 		throws DMLRuntimeException 
@@ -340,26 +340,10 @@ public class FrameRDDConverterUtils
 	}
 	
 	/**
-	 *
-	 */
-	public static class LongFrameBlockToLongWritableFrameBlock implements PairFunction<Tuple2<Long,FrameBlock>,LongWritable,FrameBlock> 
-	{
-		private static final long serialVersionUID = 3201887196237766424L;
-
-		@Override
-		public Tuple2<LongWritable, FrameBlock> call(Tuple2<Long, FrameBlock> arg0) throws Exception  {
-			return new Tuple2<LongWritable,FrameBlock>(new LongWritable(arg0._1), arg0._2);
-		}
-	}
-	
-	
-	
-	/**
 	 * 
 	 */
 	public static class LongFrameToLongWritableFrameFunction implements PairFunction<Tuple2<Long,FrameBlock>,LongWritable,FrameBlock> 
 	{
-
 		private static final long serialVersionUID = -1467314923206783333L;
 
 		@Override
@@ -368,6 +352,18 @@ public class FrameRDDConverterUtils
 		}
 	}
 
+	/**
+	 * 
+	 */
+	public static class LongWritableFrameToLongFrameFunction implements PairFunction<Tuple2<LongWritable,FrameBlock>,Long,FrameBlock> 
+	{
+		private static final long serialVersionUID = -1232439643533739078L;
+
+		@Override
+		public Tuple2<Long, FrameBlock> call(Tuple2<LongWritable, FrameBlock> arg0) throws Exception  {
+			return new Tuple2<Long, FrameBlock>(arg0._1.get(), arg0._2);
+		}
+	}
 	
 	/**
 	 * 

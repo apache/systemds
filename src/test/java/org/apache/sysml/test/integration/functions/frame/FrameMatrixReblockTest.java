@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameWriter;
@@ -99,11 +100,10 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		runFrameReblockTest(TEST_NAME1, false, false, "text", ExecType.SPARK);
 	}
 
-//TODO enable csv spark tests once transform over frame supported	
-//	@Test
-//	public void testFrameWriteSingleDenseCsvSpark() {
-//		runFrameReblockTest(TEST_NAME1, false, false, "csv", ExecType.SPARK);
-//	}
+	@Test
+	public void testFrameWriteSingleDenseCsvSpark() {
+		runFrameReblockTest(TEST_NAME1, false, false, "csv", ExecType.SPARK);
+	}
 	
 	@Test
 	public void testFrameWriteMultipleDenseBinarySpark() {
@@ -115,10 +115,10 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		runFrameReblockTest(TEST_NAME1, true, false, "text", ExecType.SPARK);
 	}
 	
-//	@Test
-//	public void testFrameWriteMultipleDenseCsvSpark() {
-//		runFrameReblockTest(TEST_NAME1, true, false, "csv", ExecType.SPARK);
-//	}
+	@Test
+	public void testFrameWriteMultipleDenseCsvSpark() {
+		runFrameReblockTest(TEST_NAME1, true, false, "csv", ExecType.SPARK);
+	}
 	
 	@Test
 	public void testFrameWriteSingleSparseBinaryCP() {
@@ -160,10 +160,10 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		runFrameReblockTest(TEST_NAME1, false, true, "text", ExecType.SPARK);
 	}
 	
-//	@Test
-//	public void testFrameWriteSingleSparseCsvSpark() {
-//		runFrameReblockTest(TEST_NAME1, false, true, "csv", ExecType.SPARK);
-//	}
+	@Test
+	public void testFrameWriteSingleSparseCsvSpark() {
+		runFrameReblockTest(TEST_NAME1, false, true, "csv", ExecType.SPARK);
+	}
 	
 	@Test
 	public void testFrameWriteMultipleSparseBinarySpark() {
@@ -175,10 +175,10 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		runFrameReblockTest(TEST_NAME1, true, true, "text", ExecType.SPARK);
 	}
 	
-//	@Test
-//	public void testFrameWriteMultipleSparseCsvSpark() {
-//		runFrameReblockTest(TEST_NAME1, true, true, "csv", ExecType.SPARK);
-//	}
+	@Test
+	public void testFrameWriteMultipleSparseCsvSpark() {
+		runFrameReblockTest(TEST_NAME1, true, true, "csv", ExecType.SPARK);
+	}
 	
 	/**
 	 * 
@@ -200,6 +200,10 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
+		boolean csvReblockOld = OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK;
+		if( ofmt.equals("csv") )
+			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = true;
 		
 		try
 		{
@@ -231,6 +235,7 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			OptimizerUtils.ALLOW_FRAME_CSV_REBLOCK = csvReblockOld;
 		}
 	}
 	

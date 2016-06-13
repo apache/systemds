@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.controlprogram.context;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -64,7 +65,6 @@ import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatr
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedFrameBlock;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedMatrixBlock;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
-import org.apache.sysml.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyFrameBlockPairFunction;
@@ -266,22 +266,8 @@ public class SparkExecutionContext extends ExecutionContext
 	public JavaPairRDD<Long,FrameBlock> getFrameBinaryBlockRDDHandleForVariable( String varname ) 
 		throws DMLRuntimeException 
 	{
-		JavaPairRDD<Long,FrameBlock> out = (JavaPairRDD<Long,FrameBlock>) getFrameRDDHandleForVariable( varname, InputInfo.BinaryBlockFrameInputInfo);
+		JavaPairRDD<Long,FrameBlock> out = (JavaPairRDD<Long,FrameBlock>) getRDDHandleForVariable( varname, InputInfo.BinaryBlockFrameInputInfo);
 		return out;
-	}
-	
-	/**
-	 * 
-	 * @param varname
-	 * @param inputInfo
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public JavaPairRDD<?,?> getFrameRDDHandleForVariable( String varname, InputInfo inputInfo ) 
-		throws DMLRuntimeException
-	{
-		FrameObject fo = getFrameObject(varname);
-		return getRDDHandleForFrameObject(fo, inputInfo);
 	}
 	
 	/**
@@ -558,7 +544,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	public PartitionedBroadcastFrame getBroadcastForFrameVariable( String varname/*, int brlen */) 
+	public PartitionedBroadcastFrame getBroadcastForFrameVariable( String varname) 
 		throws DMLRuntimeException
 	{		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -577,11 +563,11 @@ public class SparkExecutionContext extends ExecutionContext
 		//create new broadcast handle (never created, evicted)
 		if( bret == null ) 
 		{
-			//obtain meta data for matrix 
+			//obtain meta data for frame 
 			int bclen = (int) fo.getNumColumns();
-			int brlen = (int) Math.min(FrameBlock.getDefBufferSize()/bclen, fo.getNumRows());
+			int brlen = OptimizerUtils.getDefaultFrameSize();
 			
-			//create partitioned matrix block and release memory consumed by input
+			//create partitioned frame block and release memory consumed by input
 			FrameBlock mb = fo.acquireRead();
 			PartitionedFrameBlock pmb = new PartitionedFrameBlock(mb, brlen, bclen);
 			fo.release();
@@ -922,91 +908,7 @@ public class SparkExecutionContext extends ExecutionContext
 		
 		return out;
 	}
-	
-	/**
-	 * This method is a generic abstraction for calls from the buffer pool.
-	 * 
-	 * @param rdd
-	 * @param numRows
-	 * @param numCols
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
-	@SuppressWarnings("unchecked")
-	public static FrameBlock toFrameBlock(RDDObject rdd, int rlen, int clen, int brlen, int bclen) 
-		throws DMLRuntimeException
-	{			
-		return toFrameBlock(
-				(JavaPairRDD<SerLongWritable, FrameBlock>) rdd.getRDD(), 
-				rlen, clen, brlen, bclen);
-	}
-	
-	/**
-	 * Utility method for creating a single frame block out of a binary block RDD. 
-	 * Note that this collect call might trigger execution of any pending transformations. 
-	 * 
-	 * NOTE: This is an unguarded utility function, which requires memory for both the output frame
-	 * and its collected, blocked representation.
-	 * 
-	 * @param rdd
-	 * @param numRows
-	 * @param numCols
-	 * @return
-	 * @throws DMLRuntimeException
-	 */
-	public static FrameBlock toFrameBlock(JavaPairRDD<SerLongWritable,FrameBlock> rdd, int rlen, int clen, int brlen, int bclen) 
-		throws DMLRuntimeException
-	{
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-
-		FrameBlock out = null;
-		
-		if( rlen <= brlen && clen <= bclen ) //SINGLE BLOCK
-		{
-			List<Tuple2<SerLongWritable,FrameBlock>> list = rdd.collect();
-			
-			if( list.size()>1 )
-				throw new DMLRuntimeException("Expecting no more than one result block.");
-			else if( list.size()==1 )
-				out = list.get(0)._2();
-			else //empty (e.g., after ops w/ outputEmpty=false)
-				out = new FrameBlock(clen, ValueType.STRING);
-		}
-		else //MULTIPLE BLOCKS
-		{
-			//create output frame block (w/ lazy allocation)
-			out = new FrameBlock(clen, ValueType.STRING);
-			
-			List<Tuple2<SerLongWritable,FrameBlock>> list = rdd.collect();
-			
-			//copy blocks one-at-a-time into output frame block
-			for( Tuple2<SerLongWritable,FrameBlock> keyval : list )
-			{
-				//unpack index-block pair
-				Long ix = keyval._1().get();
-				FrameBlock block = keyval._2();
-				
-				//compute row/column block offsets
-				int row_offset = (int)(ix-1)*brlen;
-				int col_offset = 0;
-				int rows = block.getNumRows();
-				int cols = block.getNumColumns();
-				
-				out.copy( row_offset, row_offset+rows-1, 
-						  col_offset, col_offset+cols-1, block );	
-			}
-			
-		}
-		
-		if (DMLScript.STATISTICS) {
-			Statistics.accSparkCollectTime(System.nanoTime() - t0);
-			Statistics.incSparkCollectCount(1);
-		}
-		
-		return out;
-	}
-	
 	/**
 	 * 
 	 * @param rdd
@@ -1075,6 +977,9 @@ public class SparkExecutionContext extends ExecutionContext
 	{
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
+		if(schema == null)
+			schema = 	Collections.nCopies(clen, ValueType.STRING);
+
 		//create output frame block (w/ lazy allocation)
 		FrameBlock out = new FrameBlock(schema);
 		out.ensureAllocatedColumns(rlen);
@@ -1089,7 +994,7 @@ public class SparkExecutionContext extends ExecutionContext
 			FrameBlock block = keyval._2();
 		
 			//copy into output frame
-			out.copy( ix, ix+block.getNumRows(), 
+			out.copy( ix, ix+block.getNumRows()-1, 
 					  0, block.getNumColumns()-1, block );	
 		}
 		

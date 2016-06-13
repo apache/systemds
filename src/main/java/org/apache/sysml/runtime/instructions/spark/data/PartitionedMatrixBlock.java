@@ -306,8 +306,8 @@ public class PartitionedMatrixBlock extends PartitionedBlock implements External
 	private void writeHeaderAndPayload(DataOutput dos) 
 		throws IOException
 	{
-		dos.writeInt(_rlen);
-		dos.writeInt(_clen);
+		dos.writeLong(_rlen);
+		dos.writeLong(_clen);
 		dos.writeInt(_brlen);
 		dos.writeInt(_bclen);
 		dos.writeInt(_offset);

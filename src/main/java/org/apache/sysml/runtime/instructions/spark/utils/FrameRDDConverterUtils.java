@@ -196,7 +196,6 @@ public class FrameRDDConverterUtils
 		JavaPairRDD<Long, FrameBlock> output = input.values().mapPartitionsToPair(new TextToBinaryBlockFunction( mcOut, schema ));
 		
 		//aggregate partial matrix blocks
-		@SuppressWarnings("unchecked")
 		JavaPairRDD<Long,FrameBlock> out = 
 				(JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey( output ); 
 
@@ -252,7 +251,6 @@ public class FrameRDDConverterUtils
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	@SuppressWarnings("unchecked")
 	public static JavaPairRDD<Long, FrameBlock> matrixBlockToBinaryBlockLongIndex(JavaSparkContext sc,
 			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn)
 		throws DMLRuntimeException 
@@ -265,7 +263,7 @@ public class FrameRDDConverterUtils
 			
 			//aggregate partial frame blocks
 			if(mcIn.getCols() > mcIn.getColsPerBlock())
-				out = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey( out ); 	//TODO: Will need better merger
+				out = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey( out );
 		}
 		else
 			out = input.mapToPair(new MatrixToBinaryBlockOneColumnBlockFunction(mcIn));

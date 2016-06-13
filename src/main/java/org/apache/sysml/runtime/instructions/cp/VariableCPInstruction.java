@@ -309,7 +309,7 @@ public class VariableCPInstruction extends CPInstruction
 				if ( parts.length != 6 && parts.length != 12+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
-			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt, dt);
+			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
 			InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
 			
 			MatrixCharacteristics mc = new MatrixCharacteristics();

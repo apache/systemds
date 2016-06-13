@@ -146,7 +146,7 @@ public class WriteSPInstruction extends SPInstruction
 			//prepare output info according to meta data
 			String outFmt = input3.getName();
 			OutputInfo oi = OutputInfo.stringToOutputInfo(outFmt);
-			
+				
 			//core matrix/frame write
 			if( input1.getDataType()==DataType.MATRIX )
 				processMatrixWriteInstruction(sec, fname, oi);
@@ -311,7 +311,7 @@ public class WriteSPInstruction extends SPInstruction
 		}
 		
 		// write meta data file
-		MapReduceTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), DataType.FRAME, mc, oi, formatProperties);	
+		MapReduceTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), null, DataType.FRAME, mc, oi, formatProperties);	
 	}
 	
 	/**

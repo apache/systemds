@@ -781,7 +781,7 @@ public class RDDAggregateUtils
 	 * @param: in
 	 * @return: 
 	 */
-	public static JavaPairRDD<?, FrameBlock> mergeByFrameKey( JavaPairRDD<?, FrameBlock> in )
+	public static JavaPairRDD<Long, FrameBlock> mergeByFrameKey( JavaPairRDD<Long, FrameBlock> in )
 	{
 		return in.reduceByKey(
 				new MergeFrameBlocksFunction());

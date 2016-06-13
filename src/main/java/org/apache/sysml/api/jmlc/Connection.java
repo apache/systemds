@@ -43,7 +43,6 @@ import org.apache.sysml.parser.AParserWrapper;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -430,7 +429,7 @@ public class Connection implements Closeable
 			long rows = jmtd.getLong(DataExpression.READROWPARAM);
 			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format, DataType.FRAME);			
+			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);			
 		
 			//read frame file
 			return readStringFrame(fname, iinfo, rows, cols);

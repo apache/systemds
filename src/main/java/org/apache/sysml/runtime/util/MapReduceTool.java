@@ -441,20 +441,20 @@ public class MapReduceTool
 	
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, MatrixCharacteristics mc, OutputInfo outinfo) 
 		throws IOException {
-		writeMetaDataFile(mtdfile, vt, DataType.MATRIX, mc, outinfo);
+		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, outinfo);
 	}
 	
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataType dt, MatrixCharacteristics mc, OutputInfo outinfo) 
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, List<ValueType> schema, DataType dt, MatrixCharacteristics mc, OutputInfo outinfo) 
 		throws IOException {
-		writeMetaDataFile(mtdfile, vt, dt, mc, outinfo, null);
+		writeMetaDataFile(mtdfile, vt, schema, dt, mc, outinfo, null);
 	}
 
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, MatrixCharacteristics mc,  OutputInfo outinfo, FileFormatProperties formatProperties) 
 		throws IOException {
-		writeMetaDataFile(mtdfile, vt, DataType.MATRIX, mc, outinfo, formatProperties);
+		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, outinfo, formatProperties);
 	}
 	
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataType dt, MatrixCharacteristics mc, 
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, List<ValueType> schema, DataType dt, MatrixCharacteristics mc, 
 			OutputInfo outinfo, FileFormatProperties formatProperties) 
 		throws IOException 
 	{
@@ -468,25 +468,52 @@ public class MapReduceTool
 		try {
 			// build JSON metadata object
 			mtd.put(DataExpression.DATATYPEPARAM, dt.toString().toLowerCase());
-			switch (vt) {
-				case DOUBLE:
-					mtd.put(DataExpression.VALUETYPEPARAM, "double");
-					break;
-				case INT:
-					mtd.put(DataExpression.VALUETYPEPARAM, "int");
-					break;
-				case BOOLEAN:
-					mtd.put(DataExpression.VALUETYPEPARAM, "boolean");
-					break;
-				case STRING:
-					mtd.put(DataExpression.VALUETYPEPARAM, "string");
-					break;
-				case UNKNOWN:
-					mtd.put(DataExpression.VALUETYPEPARAM, "unknown");
-					break;
-				case OBJECT:
-					mtd.put(DataExpression.VALUETYPEPARAM, "object");
-					break;
+			if (schema == null)
+				switch (vt) {
+					case DOUBLE:
+						mtd.put(DataExpression.VALUETYPEPARAM, "double");
+						break;
+					case INT:
+						mtd.put(DataExpression.VALUETYPEPARAM, "int");
+						break;
+					case BOOLEAN:
+						mtd.put(DataExpression.VALUETYPEPARAM, "boolean");
+						break;
+					case STRING:
+						mtd.put(DataExpression.VALUETYPEPARAM, "string");
+						break;
+					case UNKNOWN:
+						mtd.put(DataExpression.VALUETYPEPARAM, "unknown");
+						break;
+					case OBJECT:
+						mtd.put(DataExpression.VALUETYPEPARAM, "object");
+						break;
+				}
+			else
+			{
+				StringBuffer schemaStrBuffer = new StringBuffer();
+				for(int i=0; i < schema.size(); i++) {
+					switch (schema.get(i)) {
+						case DOUBLE:
+							schemaStrBuffer.append("DOUBLE");
+							break;
+						case INT:
+							schemaStrBuffer.append("INT");
+							break;
+						case BOOLEAN:
+							schemaStrBuffer.append("BOOLEAN");
+							break;
+						case STRING:
+							schemaStrBuffer.append("STRING");
+							break;
+						case UNKNOWN:
+						default:
+							schemaStrBuffer.append("*");
+							break;
+					}
+					schemaStrBuffer.append(DataExpression.DEFAULT_DELIM_DELIMITER);
+				}
+				mtd.put(DataExpression.SCHEMAPARAM, schemaStrBuffer.toString());
 			}
 			mtd.put(DataExpression.READROWPARAM, mc.getRows());
 			mtd.put(DataExpression.READCOLPARAM, mc.getCols());
@@ -501,7 +528,7 @@ public class MapReduceTool
 			}
 			if (outinfo == OutputInfo.TextCellOutputInfo) {
 				mtd.put(DataExpression.FORMAT_TYPE, "text");
-			} else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo ) {
+			} else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo || outinfo == OutputInfo.BinaryBlockFrameOutputInfo) {
 				mtd.put(DataExpression.FORMAT_TYPE, "binary");
 			} else if (outinfo == OutputInfo.CSVOutputInfo) {
 				mtd.put(DataExpression.FORMAT_TYPE, "csv");
@@ -523,94 +550,6 @@ public class MapReduceTool
 			throw new IOException("Error creating and writing metadata JSON file", e);
 		}
 	}
-
-	public static void writeMetaDataFile(String mtdfile, List<ValueType> schema, MatrixCharacteristics mc, OutputInfo outinfo) 
-			throws IOException {
-			writeMetaDataFile(mtdfile, schema, DataType.FRAME, mc, outinfo);
-		}
-		
-		public static void writeMetaDataFile(String mtdfile, List<ValueType> schema, DataType dt, MatrixCharacteristics mc, OutputInfo outinfo) 
-			throws IOException {
-			writeMetaDataFile(mtdfile, schema, dt, mc, outinfo, null);
-		}
-
-		public static void writeMetaDataFile(String mtdfile, List<ValueType> schema, MatrixCharacteristics mc,  OutputInfo outinfo, FileFormatProperties formatProperties) 
-			throws IOException {
-			writeMetaDataFile(mtdfile, schema, DataType.FRAME, mc, outinfo, formatProperties);
-		}
-		
-		public static void writeMetaDataFile(String mtdfile, List<ValueType> schema, DataType dt, MatrixCharacteristics mc, 
-				OutputInfo outinfo, FileFormatProperties formatProperties) 
-			throws IOException 
-		{
-			Path pt = new Path(mtdfile);
-			FileSystem fs = FileSystem.get(_rJob);
-			BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
-			formatProperties = (formatProperties==null && outinfo==OutputInfo.CSVOutputInfo) ?
-					new CSVFileFormatProperties() : formatProperties;
-			OrderedJSONObject mtd = new OrderedJSONObject(); // maintain order in output file
-
-			try {
-				// build JSON metadata object
-				mtd.put(DataExpression.DATATYPEPARAM, dt.toString().toLowerCase());
-				String schemaString[] = new String[schema.size()];
-				for(int i=0; i < schema.size(); i++) {
-					switch (schema.get(i)) {
-						case DOUBLE:
-							schemaString[i] = "DOUBLE";
-							break;
-						case INT:
-							schemaString[i] = "INT";
-							break;
-						case BOOLEAN:
-							schemaString[i] = "BOOLEAN";
-							break;
-						case STRING:
-							schemaString[i] = "STRING";
-							break;
-						case UNKNOWN:
-							default:
-							schemaString[i] = "*";
-							break;
-					}
-				}
-//				mtd.put(DataExpression.SCHEMAPARAM, schemaString);	//TODO
-
-				mtd.put(DataExpression.READROWPARAM, mc.getRows());
-				mtd.put(DataExpression.READCOLPARAM, mc.getCols());
-				// only output rows_in_block and cols_in_block for matrix binary format
-				if (outinfo == OutputInfo.BinaryBlockOutputInfo && dt.isMatrix() ) {
-					mtd.put(DataExpression.ROWBLOCKCOUNTPARAM, mc.getRowsPerBlock());
-					mtd.put(DataExpression.COLUMNBLOCKCOUNTPARAM, mc.getColsPerBlock());
-				}
-				// only output nnz for matrix
-				if( dt.isMatrix() ) {
-					mtd.put(DataExpression.READNUMNONZEROPARAM, mc.getNonZeros());
-				}
-				if (outinfo == OutputInfo.TextCellOutputInfo) {
-					mtd.put(DataExpression.FORMAT_TYPE, "text");
-				} else if (outinfo == OutputInfo.BinaryBlockFrameOutputInfo) {
-					mtd.put(DataExpression.FORMAT_TYPE, "binary");				//TODO ?
-				} else if (outinfo == OutputInfo.CSVOutputInfo) {
-					mtd.put(DataExpression.FORMAT_TYPE, "csv");
-				} else {
-					mtd.put(DataExpression.FORMAT_TYPE, "specialized");
-				}
-				if (outinfo == OutputInfo.CSVOutputInfo) {
-					CSVFileFormatProperties csvProperties = (CSVFileFormatProperties) formatProperties;
-					mtd.put(DataExpression.DELIM_HAS_HEADER_ROW, csvProperties.hasHeader());
-					mtd.put(DataExpression.DELIM_DELIMITER, csvProperties.getDelim());
-				}
-				mtd.put(DataExpression.DESCRIPTIONPARAM,
-						new OrderedJSONObject().put(DataExpression.AUTHORPARAM, "SystemML"));
-
-				// write metadata JSON object to file
-				mtd.write(br, 4); // indent with 4 spaces
-				br.close();
-			} catch (Exception e) {
-				throw new IOException("Error creating and writing metadata JSON file", e);
-			}
-		}
 
 	public static void writeScalarMetaDataFile(String mtdfile, ValueType v) throws IOException {
 		Path pt=new Path(mtdfile);

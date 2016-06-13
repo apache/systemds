@@ -41,6 +41,7 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
+import org.apache.sysml.test.utils.TestUtils;
 
 public class FrameIndexingDistTest extends AutomatedTestBase
 {
@@ -68,16 +69,14 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	private final static List<ValueType> schemaMixedLargeListDble  = Collections.nCopies(cols/4, ValueType.DOUBLE);
 	private final static List<ValueType> schemaMixedLargeListInt  = Collections.nCopies(cols/4, ValueType.INT);
 	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(cols/4, ValueType.BOOLEAN);
-	private static List<ValueType> schemaMixedLargeList = null;
+//	private static List<ValueType> schemaMixedLargeList = null;
+	private static ValueType[] schemaMixedLarge = null;
 	static {
-		schemaMixedLargeList = new ArrayList<ValueType>(schemaMixedLargeListStr);
+		final List<ValueType> schemaMixedLargeList = new ArrayList<ValueType>(schemaMixedLargeListStr);
 		schemaMixedLargeList.addAll(schemaMixedLargeListDble);
 		schemaMixedLargeList.addAll(schemaMixedLargeListInt);
 		schemaMixedLargeList.addAll(schemaMixedLargeListBool);
-	}
-	
-	private static ValueType[] schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
-	static {
+		schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
 		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
 	}
 	 
@@ -126,7 +125,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	      
 //	        long rowstart=2, rowend=4, colstart=2, colend=4;
 	        long rowstart=816, rowend=1229, colstart=109 /*967*/, colend=1009;
-//	        long rowstart=816, rowend=1229, colstart=109 /*967*/, colend=1009;
+//	        long rowstart=816, rowend=2829, colstart=109 /*967*/, colend=1009;
 
 	        config.addVariable("rowstart", rowstart);
 	        config.addVariable("rowend", rowend);
@@ -155,7 +154,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 			List<ValueType> lschema = Arrays.asList(schema);
 	
 			double sparsity=1.0;//rand.nextDouble(); 
-	        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*System.currentTimeMillis()*/);
+	        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
 	        writeInputFrameWithMTD("A", A, true, lschema, OutputInfo.BinaryBlockFrameOutputInfo);	        
 	        
 	        sparsity=0.1;//rand.nextDouble();
@@ -204,7 +203,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 			for( int j=0; j<frame1.getNumColumns(); j++ )	{
 				Object val1 = UtilFunctions.stringToObject(schema[j], UtilFunctions.objectToString(frame1.get(i, j)));
 				Object val2 = UtilFunctions.stringToObject(schema[j], UtilFunctions.objectToString(frame2.get(i, j)));
-				if( UtilFunctions.compareToR(schema[j], val1, val2, epsilon) != 0)
+				if( TestUtils.compareToR(schema[j], val1, val2, epsilon) != 0)
 					Assert.fail("The DML data for cell ("+ i + "," + j + ") is " + val1 + 
 							", not same as the R value " + val2);
 			}

@@ -32,7 +32,6 @@ import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.parser.DataExpression;
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.sort.PickFromCompactInputFormat;
@@ -115,10 +114,6 @@ public class InputInfo implements Serializable
 	}
 	
 	public static InputInfo stringToInputInfo(String str) {
-		return stringToInputInfo(str, null);
-	}
-	
-	public static InputInfo stringToInputInfo(String str, DataType datatype) {
 		if ( str.equalsIgnoreCase("textcell")) {
 			return TextCellInputInfo;
 		}
@@ -129,10 +124,7 @@ public class InputInfo implements Serializable
 			return BinaryCellInputInfo;
 		}
 		else if (str.equalsIgnoreCase("binaryblock")) {
-			if(datatype == DataType.FRAME)
-				return BinaryBlockFrameInputInfo;
-			else
-				return BinaryBlockInputInfo;
+			return BinaryBlockInputInfo;
 		}
 		else if ( str.equalsIgnoreCase("sort_input"))
 			return InputInfoForSort;
@@ -147,17 +139,12 @@ public class InputInfo implements Serializable
 		return null;
 	}
 	
-
-	public static InputInfo stringExternalToInputInfo(String str) {
-		return stringExternalToInputInfo(str, null);
-	}
-	
 	/**
 	 * 
 	 * @param str
 	 * @return
 	 */
-	public static InputInfo stringExternalToInputInfo(String str, DataType datatype) {
+	public static InputInfo stringExternalToInputInfo(String str) {
 		if( DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(str) )
 			return InputInfo.TextCellInputInfo;
 		else if( DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(str) )
@@ -165,10 +152,7 @@ public class InputInfo implements Serializable
 		else if( DataExpression.FORMAT_TYPE_VALUE_CSV.equals(str) )
 			return InputInfo.CSVInputInfo; 
 		else if( DataExpression.FORMAT_TYPE_VALUE_BINARY.equals(str) )
-			if(datatype == DataType.FRAME)
-				return InputInfo.BinaryBlockFrameInputInfo;
-			else
-				return InputInfo.BinaryBlockInputInfo; 		
+			return InputInfo.BinaryBlockInputInfo; 		
 		return null;
 	}
 	

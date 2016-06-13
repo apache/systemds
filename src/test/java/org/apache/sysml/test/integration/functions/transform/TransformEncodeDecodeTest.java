@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
@@ -111,7 +110,7 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 			getAndLoadTestConfiguration(TEST_NAME1);
 			
 			//get input/output info
-			InputInfo iinfo = InputInfo.stringExternalToInputInfo(fmt, DataType.FRAME);			
+			InputInfo iinfo = InputInfo.stringExternalToInputInfo(fmt);			
 			OutputInfo oinfo = InputInfo.getMatchingOutputInfo(iinfo);
 			
 			//generate and write input data

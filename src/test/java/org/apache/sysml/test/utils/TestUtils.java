@@ -851,6 +851,66 @@ public class TestUtils
 		return false;
 	}
 	
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in1
+	 * @param in2
+	 * @param tolerance
+	 * 
+	 * @return
+	 */
+	public static int compareTo(ValueType vt, Object in1, Object in2, double tolerance) {
+		if(in1 == null && in2 == null) return 0;
+		else if(in1 == null) return -1;
+		else if(in2 == null) return 1;
+ 
+		switch( vt ) {
+			case STRING:  return ((String)in1).compareTo((String)in2);
+			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
+			case INT:     return ((Long)in1).compareTo((Long)in2);
+			case DOUBLE:  
+				return (Math.abs((Double)in1-(Double)in2) < tolerance)?0:	
+					((Double)in1).compareTo((Double)in2);
+			default: throw new RuntimeException("Unsupported value type: "+vt);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in1
+	 * @param inR
+	 * @return
+	 */
+	public static int compareToR(ValueType vt, Object in1, Object inR, double tolerance) {
+		if(in1 == null && (inR == null || (inR.toString().compareTo("NA")==0))) return 0;
+		else if(in1 == null && vt == ValueType.STRING) return -1;
+		else if(inR == null) return 1;
+ 
+		switch( vt ) {
+			case STRING:  return ((String)in1).compareTo((String)inR);
+			case BOOLEAN: 
+				if(in1 == null)
+					return Boolean.FALSE.compareTo(((Boolean)inR).booleanValue());
+				else
+					return ((Boolean)in1).compareTo((Boolean)inR);
+			case INT:     
+				if(in1 == null)
+					return new Long(0).compareTo(((Long)inR));
+				else
+					return ((Long)in1).compareTo((Long)inR);
+			case DOUBLE:  
+				if(in1 == null)
+					return (new Double(0)).compareTo((Double)inR);
+				else
+					return (Math.abs((Double)in1-(Double)inR) < tolerance)?0:	
+						((Double)in1).compareTo((Double)inR);
+			default: throw new RuntimeException("Unsupported value type: "+vt);
+		}
+	}
+	
 	/**
 	 * Converts a 2D array into a sparse hashmap matrix.
 	 * 

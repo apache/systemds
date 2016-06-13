@@ -46,6 +46,7 @@ import org.apache.sysml.api.MLContext;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.DataExpression;
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -1693,9 +1694,9 @@ public abstract class AutomatedTestBase
 	 * @param name
 	 *            directory name
 	 * @param matrix
-	 *            two dimensional matrix
+	 *            two dimensional frame data
 	 * @param bIncludeR
-	 *            generates also the corresponding R matrix
+	 *            generates also the corresponding R frame data
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */
@@ -1714,7 +1715,7 @@ public abstract class AutomatedTestBase
 		
 		TestUtils.writeTestFrame(completePath, data, schema, oi);
 		if (bIncludeR) {
-			TestUtils.writeTestFrame(completeRPath, data, schema, OutputInfo.CSVOutputInfo, true);	//TODO
+			TestUtils.writeTestFrame(completeRPath, data, schema, OutputInfo.CSVOutputInfo, true);
 			inputRFiles.add(completeRPath);
 		}
 		if (DEBUG)
@@ -1740,7 +1741,7 @@ public abstract class AutomatedTestBase
 		try
 		{
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			MapReduceTool.writeMetaDataFile(completeMTDPath, schema, mc, oi);
+			MapReduceTool.writeMetaDataFile(completeMTDPath, null, schema, DataType.FRAME, mc, oi);
 		}
 		catch(IOException e)
 		{
@@ -1753,13 +1754,15 @@ public abstract class AutomatedTestBase
 	
 	/**
 	 * <p>
-	 * Adds a matrix to the input path and writes it to a file.
+	 * Adds a frame to the input path and writes it to a file.
 	 * </p>
 	 * 
 	 * @param name
 	 *            directory name
 	 * @param matrix
-	 *            two dimensional matrix
+	 *            two dimensional frame data
+	 * @param schema
+	 * @param oi
 	 * @throws IOException 
 	 * @throws DMLRuntimeException 
 	 */

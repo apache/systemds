@@ -387,6 +387,163 @@ public class UtilFunctions
 		return (in !=null) ? in.toString() : null;
 	}
 	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static Double objectToDouble( Object in ) {
+		if(in == null) return null;
+		else if (in instanceof String)
+			return Double.valueOf((String)in);
+		else if (in instanceof Double)
+			return (Double)in;
+		else if (in instanceof Long)
+			return Double.valueOf(((Long)in).longValue());
+		else if (in instanceof Boolean)
+			return ((((Boolean)in).booleanValue())? 1.0:0);
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static Long objectToLong( Object in ) {
+		if(in == null) return null;
+		else if (in instanceof String)
+			return Long.valueOf((String)in);
+		else if (in instanceof Double)
+			return Long.valueOf(((Double)in).longValue());
+		else if (in instanceof Long)
+			return (Long)in;
+		else if (in instanceof Boolean)
+			return ((((Boolean)in).booleanValue())? 1L:0);
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static Boolean objectToBoolean( Object in ) {
+		if(in == null) return null;
+		else if (in instanceof String)
+			return Boolean.valueOf((String)in);
+		else if (in instanceof Double)
+			return (((Double)in)>0?(new Boolean(true)):(new Boolean(false)));
+		else if (in instanceof Long)
+			return (((Long)in)>0?(new Boolean(true)):(new Boolean(false)));
+		else if (in instanceof Boolean)
+			return ((Boolean)in);
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static String objectToString( Object in, boolean bDoNotUpdateZeroData ) {
+		String strReturn = objectToString(in); 
+		if( strReturn == null )
+			return strReturn;
+		else if (bDoNotUpdateZeroData){
+			if(in instanceof Double && ((Double)in).doubleValue() == 0.0)
+				return null;
+			else if(in instanceof Long && ((Long)in).longValue() == 0)
+				return null;
+			else if(in instanceof Boolean && ((Boolean)in).booleanValue() == false)
+				return null;
+			else
+				return strReturn;
+		} 
+		else
+			return strReturn;
+	}
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @return
+	 */
+	public static Object objectToObject(ValueType vt, Object in) {
+		if( in == null )  return null;
+		switch( vt ) {
+			case STRING:  return objectToString(in);
+			case BOOLEAN: return objectToBoolean(in);
+			case INT:     return objectToLong(in);
+			case DOUBLE:  return objectToDouble(in);
+			default: throw new RuntimeException("Unsupported value type: "+vt);
+		}
+	}	
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @return
+	 */
+	public static Object[] objArrayToObjArray(ValueType vt, String in[]) {
+		if( in == null )  return null;
+		
+		Object out[] = new Object[in.length];
+		for (int i=0; i<in.length; ++i)
+			out[i] = UtilFunctions.objectToObject(vt, in[i]);
+		
+		return out;
+	}	
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @return
+	 */
+	public static Object[] objArrayToObjArray(ValueType vt, double in[]) {
+		if( in == null )  return null;
+		
+		Object out[] = new Object[in.length];
+		for (int i=0; i<in.length; ++i)
+			out[i] = UtilFunctions.objectToObject(vt, in[i]);
+		
+		return out;
+	}	
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @return
+	 */
+	public static Object[] objArrayToObjArray(ValueType vt, long in[]) {
+		if( in == null )  return null;
+		
+		Object out[] = new Object[in.length];
+		for (int i=0; i<in.length; ++i)
+			out[i] = UtilFunctions.objectToObject(vt, in[i]);
+		
+		return out;
+	}	
+	
+	/**
+	 * 
+	 * @param vt
+	 * @param in
+	 * @return
+	 */
+	public static Object[] objArrayToObjArray(ValueType vt, boolean in[]) {
+		if( in == null )  return null;
+		
+		Object out[] = new Object[in.length];
+		for (int i=0; i<in.length; ++i)
+			out[i] = UtilFunctions.objectToObject(vt, in[i]);
+		
+		return out;
+	}	
 	
 	/**
 	 * 
@@ -397,19 +554,6 @@ public class UtilFunctions
 	 * @return
 	 */
 	public static int compareTo(ValueType vt, Object in1, Object in2) {
-		return compareTo(vt, in1, in2, 0.00);
-	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in1
-	 * @param in2
-	 * @param tolerance
-	 * 
-	 * @return
-	 */
-	public static int compareTo(ValueType vt, Object in1, Object in2, double tolerance) {
 		if(in1 == null && in2 == null) return 0;
 		else if(in1 == null) return -1;
 		else if(in2 == null) return 1;
@@ -418,36 +562,11 @@ public class UtilFunctions
 			case STRING:  return ((String)in1).compareTo((String)in2);
 			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
 			case INT:     return ((Long)in1).compareTo((Long)in2);
-			case DOUBLE:  
-				return (Math.abs((Double)in1-(Double)in2) < tolerance)?0:	
-					((Double)in1).compareTo((Double)in2);
+			case DOUBLE:  return ((Double)in1).compareTo((Double)in2);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in1
-	 * @param inR
-	 * @return
-	 */
-	public static int compareToR(ValueType vt, Object in1, Object inR, double tolerance) {
-		if(in1 == null && (inR == null || (inR.toString().compareTo("NA")==0))) return 0;
-		else if(in1 == null) return -1;
-		else if(inR == null) return 1;
- 
-		switch( vt ) {
-			case STRING:  return ((String)in1).compareTo((String)inR);
-			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)inR);
-			case INT:     return ((Long)in1).compareTo((Long)inR);
-			case DOUBLE:  
-				return (Math.abs((Double)in1-(Double)inR) < tolerance)?0:	
-					((Double)in1).compareTo((Double)inR);
-			default: throw new RuntimeException("Unsupported value type: "+vt);
-		}
-	}
-	
+
 	/**
 	 * Compares two version strings of format x.y.z, where x is major,
 	 * y is minor, and z is maintenance release.

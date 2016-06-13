@@ -214,7 +214,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		
 		//write meta data
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blksize, blksize);
-		MapReduceTool.writeMetaDataFile(fname+".mtd", vt, dt, mc, OutputInfo.BinaryBlockOutputInfo);
+		MapReduceTool.writeMetaDataFile(fname+".mtd", vt, null, dt, mc, OutputInfo.BinaryBlockOutputInfo);
 	
 	}
 	

@@ -28,6 +28,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -73,7 +74,6 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 	}
 	
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public void processInstruction(ExecutionContext ec)
 			throws DMLRuntimeException 
@@ -102,12 +102,12 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			mcOut.set(mcLeft.getRows(), mcLeft.getCols(), mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock());
 			checkValidOutputDimensions(mcOut);
 			
-			//note: always matrix rhs, scalars are preprocessed via cast to 1x1 matrix
+			//note: always frame rhs, scalars are preprocessed via cast to 1x1 frame
 			MatrixCharacteristics mcRight = ec.getMatrixCharacteristics(input2.getName());
 				
 			//sanity check matching index range and rhs dimensions
 			if(!mcRight.dimsKnown()) {
-				throw new DMLRuntimeException("The right input matrix dimensions are not specified for MatrixIndexingSPInstruction");
+				throw new DMLRuntimeException("The right input frame dimensions are not specified for FrameIndexingSPInstruction");
 			}
 			if(!(ru-rl+1 == mcRight.getRows() && cu-cl+1 == mcRight.getCols())) {
 				throw new DMLRuntimeException("Invalid index range of leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"] vs ["+mcRight.getRows()+"x"+mcRight.getCols()+"]." );
@@ -115,13 +115,14 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			
 			if(opcode.equalsIgnoreCase("mapLeftIndex")) 
 			{
-				broadcastIn2 = sec.getBroadcastForFrameVariable( input2.getName()/*, 1000 */);
+				broadcastIn2 = sec.getBroadcastForFrameVariable( input2.getName());
 				
 				//partitioning-preserving mappartitions (key access required for broadcast loopkup)
 				out = in1.mapPartitionsToPair(
 						new LeftIndexPartitionFunction(broadcastIn2, ixrange, mcOut), true);
 			}
 			else { //general case
+				
 				// zero-out lhs
 				in1 = in1.flatMapToPair(new ZeroOutLHS(false, ixrange, mcLeft));
 				
@@ -140,7 +141,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 				sec.addLineageRDD(output.getName(), input2.getName());
 		}
 		else
-			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingSPInstruction.");		
+			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in FrameIndexingSPInstruction.");		
 	}
 		
 	/**
@@ -152,7 +153,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		throws DMLRuntimeException
 	{
 		if(!mcOut.dimsKnown()) {
-			throw new DMLRuntimeException("MatrixIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
+			throw new DMLRuntimeException("FrameIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
 		}
 	}
 	
@@ -173,7 +174,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 			_ixrange = ixrange;
 			_rlen = mcLeft.getRows();
 			_clen = mcLeft.getCols();
-			_brlen = (int) Math.min(FrameBlock.getDefBufferSize()/mcLeft.getCols(), mcLeft.getRows());
+			_brlen = (int) Math.min(OptimizerUtils.getDefaultFrameSize(), _rlen);
 			_bclen = (int) mcLeft.getCols();
 		}
 
@@ -204,7 +205,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		public ZeroOutLHS(boolean complement, IndexRange range, MatrixCharacteristics mcLeft) {
 			_complement = complement;
 			_ixrange = range;
-			_brlen = (int) Math.min(FrameBlock.getDefBufferSize()/mcLeft.getCols(), mcLeft.getRows());
+			_brlen = (int) OptimizerUtils.getDefaultFrameSize();
 			_bclen = (int) mcLeft.getCols();
 			_rlen = mcLeft.getRows();
 		}
@@ -215,40 +216,32 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		{
 			ArrayList<Pair<Long,FrameBlock>> out = new ArrayList<Pair<Long,FrameBlock>>();
 
-//			if( !UtilFunctions.isInFrameBlockRange(kv._1(), _brlen, _bclen, _ixrange) ) {	//TODO Check if validation is needed to zero out, as splitting of frame will be still required, so need to handle it if requited.
-//				System.out.println("Skip the current block with row index = " + kv._1 + " as its not in the range.");
-//				out.add(new Pair<Long, FrameBlock>(kv._1, kv._2));
-//			}
-//			else 
-			{
+			IndexRange curBlockRange = new IndexRange(_ixrange.rowStart, _ixrange.rowEnd, _ixrange.colStart, _ixrange.colEnd);
 			
-				IndexRange curBlockRange = new IndexRange(_ixrange.rowStart, _ixrange.rowEnd, _ixrange.colStart, _ixrange.colEnd);
-				
-				// Global index of row (1-based)
-				long lGblStartRow = ((kv._1.longValue()-1)/_brlen)*_brlen+1;
-				FrameBlock zeroBlk = null;
-				int iMaxRowsToCopy = 0;
-				
-				// Starting local location (0-based) of target block where to start copy. 
-				int iRowStartDest = UtilFunctions.computeCellInBlock(kv._1, _brlen);
-				for(int iRowStartSrc = 0; iRowStartSrc<kv._2.getNumRows(); iRowStartSrc += iMaxRowsToCopy, lGblStartRow += _brlen) {
-					IndexRange range = UtilFunctions.getSelectedRangeForZeroOut(new Pair<Long, FrameBlock>(kv._1, kv._2), _brlen, _bclen, curBlockRange, lGblStartRow-1, lGblStartRow);
-					if(range.rowStart == -1 && range.rowEnd == -1 && range.colStart == -1 && range.colEnd == -1) {
-						throw new Exception("Error while getting range for zero-out");
-					}
-					//Maximum range of rows in target block 
-					int iMaxRows=(int) Math.min(_brlen, _rlen-lGblStartRow+1);
-					
-					// Maximum number of rows to be copied from source block to target.
-					iMaxRowsToCopy = Math.min(iMaxRows, kv._2.getNumRows()-iRowStartSrc);
-					iMaxRowsToCopy = Math.min(iMaxRowsToCopy, iMaxRows-iRowStartDest);
-					
-					// Zero out the applicable range in this block
-					zeroBlk = (FrameBlock) kv._2.zeroOutOperations(new FrameBlock(), range, _complement, iRowStartSrc, iRowStartDest, iMaxRows, iMaxRowsToCopy);
-					out.add(new Pair<Long, FrameBlock>(lGblStartRow, zeroBlk));
-					curBlockRange.rowStart =  lGblStartRow + _brlen;
-					iRowStartDest = UtilFunctions.computeCellInBlock(iRowStartDest+iMaxRowsToCopy+1, _brlen);
+			// Global index of row (1-based)
+			long lGblStartRow = ((kv._1.longValue()-1)/_brlen)*_brlen+1;
+			FrameBlock zeroBlk = null;
+			int iMaxRowsToCopy = 0;
+			
+			// Starting local location (0-based) of target block where to start copy. 
+			int iRowStartDest = UtilFunctions.computeCellInBlock(kv._1, _brlen);
+			for(int iRowStartSrc = 0; iRowStartSrc<kv._2.getNumRows(); iRowStartSrc += iMaxRowsToCopy, lGblStartRow += _brlen) {
+				IndexRange range = UtilFunctions.getSelectedRangeForZeroOut(new Pair<Long, FrameBlock>(kv._1, kv._2), _brlen, _bclen, curBlockRange, lGblStartRow-1, lGblStartRow);
+				if(range.rowStart == -1 && range.rowEnd == -1 && range.colStart == -1 && range.colEnd == -1) {
+					throw new Exception("Error while getting range for zero-out");
 				}
+				//Maximum range of rows in target block 
+				int iMaxRows=(int) Math.min(_brlen, _rlen-lGblStartRow+1);
+				
+				// Maximum number of rows to be copied from source block to target.
+				iMaxRowsToCopy = Math.min(iMaxRows, kv._2.getNumRows()-iRowStartSrc);
+				iMaxRowsToCopy = Math.min(iMaxRowsToCopy, iMaxRows-iRowStartDest);
+				
+				// Zero out the applicable range in this block
+				zeroBlk = (FrameBlock) kv._2.zeroOutOperations(new FrameBlock(), range, _complement, iRowStartSrc, iRowStartDest, iMaxRows, iMaxRowsToCopy);
+				out.add(new Pair<Long, FrameBlock>(lGblStartRow, zeroBlk));
+				curBlockRange.rowStart =  lGblStartRow + _brlen;
+				iRowStartDest = UtilFunctions.computeCellInBlock(iRowStartDest+iMaxRowsToCopy+1, _brlen);
 			}
 			return SparkUtils.fromIndexedFrameBlock(out);
 		}
@@ -309,7 +302,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 				long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
 				
 				// Provide global zero-based index to sliceOperations
-				FrameBlock slicedRHSMatBlock = _binput.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new FrameBlock());
+				FrameBlock slicedRHSMatBlock = _binput.sliceOperations(_ixrange, rhs_rl, rhs_ru, rhs_cl, rhs_cu, new FrameBlock());
 				
 				// Provide local zero-based index to leftIndexingOperations
 				int lhs_lrl = (int)(lhs_rl- arg._1);

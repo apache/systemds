@@ -22,11 +22,12 @@ package org.apache.sysml.runtime.instructions.spark.data;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.util.IndexRange;
 
 /**
- * This class is a wrapper around an array of broadcasts of partitioned matrix blocks,
+ * This class is a wrapper around an array of broadcasts of partitioned frame blocks,
  * which is required due to 2GB limitations of Spark's broadcast handling. Without this
- * partitioning of Broadcast<PartitionedMatrixBlock> into Broadcast<PartitionedMatrixBlock>[],
+ * partitioning of Broadcast<PartitionedFrameBlock> into Broadcast<PartitionedFrameBlock>[],
  * we got java.lang.IllegalArgumentException: Size exceeds Integer.MAX_VALUE issue.
  * Despite various jiras, this issue still showed up in Spark 1.4/1.5. 
  * 
@@ -85,14 +86,14 @@ public class PartitionedBroadcastFrame extends PartitionedBroadcast
 		
 	}
 	
-	public FrameBlock sliceOperations(long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
+	public FrameBlock sliceOperations(IndexRange ixrange, long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
 		throws DMLRuntimeException 
 	{
 		FrameBlock ret = null;
 		
 		for( Broadcast<PartitionedFrameBlock> bc : _pbc ) {
 			PartitionedFrameBlock pm = bc.value();
-			FrameBlock tmp = pm.sliceOperations(rl, ru, cl, cu, new FrameBlock());
+			FrameBlock tmp = pm.sliceOperations(ixrange, rl, ru, cl, cu, new FrameBlock());
 			if( ret != null )
 				ret.merge(tmp);
 			else

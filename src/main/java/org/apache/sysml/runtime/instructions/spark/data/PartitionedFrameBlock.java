@@ -29,12 +29,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
-import scala.Tuple2;
-
-import org.apache.hadoop.io.LongWritable;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.data.Pair;
@@ -58,7 +53,7 @@ public class PartitionedFrameBlock extends PartitionedBlock implements Externali
 	
 	public PartitionedFrameBlock(FrameBlock mb, int brlen, int bclen) 
 	{
-		//get the input matrix block
+		//get the input frame block
 		int rlen = mb.getNumRows();
 		int clen = mb.getNumColumns();
 		
@@ -90,19 +85,6 @@ public class PartitionedFrameBlock extends PartitionedBlock implements Externali
 		_offset = 0;
 	}
 	
-	public PartitionedFrameBlock(int rlen, int clen/*, int brlen, int bclen*/) 
-	{
-		//partitioning input broadcast
-		_rlen = rlen;
-		_clen = clen;
-		_brlen = Math.min(FrameBlock.getDefBufferSize()/clen, rlen);
-		_bclen = clen;
-		
-		int nrblks = getNumRowBlocks();
-		int ncblks = getNumColumnBlocks();
-		_partBlocks = new FrameBlock[nrblks * ncblks];		
-	}
-	
 	/**
 	 * 
 	 * @param rowIndex
@@ -120,36 +102,11 @@ public class PartitionedFrameBlock extends PartitionedBlock implements Externali
 			throw new DMLRuntimeException("Block indexes ["+rowIndex+","+colIndex+"] out of range ["+nrblks+","+ncblks+"]");
 		}
 		
-		//get the requested matrix block
+		//get the requested frame block
 		int rix = rowIndex - 1;
 		int cix = colIndex - 1;
 		int ix = rix*ncblks+cix - _offset;
 		return (FrameBlock) _partBlocks[ ix ];
-	}
-	
-	/**
-	 * 
-	 * @param rowIndex
-	 * @param colIndex
-	 * @param fb
-	 * @throws DMLRuntimeException
-	 */
-	public void setMatrixBlock(int rowIndex, int colIndex, FrameBlock fb) 
-		throws DMLRuntimeException
-	{
-		//check for valid block index
-		int nrblks = getNumRowBlocks();
-		int ncblks = getNumColumnBlocks();
-		if( rowIndex <= 0 || rowIndex > nrblks || colIndex <= 0 || colIndex > ncblks ) {
-			throw new DMLRuntimeException("Block indexes ["+rowIndex+","+colIndex+"] out of range ["+nrblks+","+ncblks+"]");
-		}
-		
-		//get the requested matrix block
-		int rix = rowIndex - 1;
-		int cix = colIndex - 1;
-		int ix = rix*ncblks+cix - _offset;
-		_partBlocks[ ix ] = fb;
-		
 	}
 	
 	/**
@@ -175,18 +132,18 @@ public class PartitionedFrameBlock extends PartitionedBlock implements Externali
 
 	/**
 	 * Utility for slice operations over partitioned matrices, where the index range can cover
-	 * multiple blocks. The result is always a single result matrix block. All semantics are 
-	 * equivalent to the core matrix block slice operations. 
+	 * multiple blocks. The result is always a single result frame block. All semantics are 
+	 * equivalent to the core frame block slice operations. 
 	 * 
 	 * @param rl
 	 * @param ru
 	 * @param cl
 	 * @param cu
-	 * @param matrixBlock
+	 * @param frameBlock
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public FrameBlock sliceOperations(long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
+	public FrameBlock sliceOperations(IndexRange ixrangeGbl, long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
 		throws DMLRuntimeException 
 	{
 		int lrl = (int) rl;
@@ -194,37 +151,38 @@ public class PartitionedFrameBlock extends PartitionedBlock implements Externali
 		int lcl = (int) cl;
 		int lcu = (int) cu;
 		
-		ArrayList<Tuple2<LongWritable, FrameBlock>> allBlks = new ArrayList<Tuple2<LongWritable,FrameBlock>>();
+		ArrayList<Pair<Long, FrameBlock>> allBlks = new ArrayList<Pair<Long,FrameBlock>>();
 		int start_iix = (lrl-1)/_brlen+1;
 		int end_iix = (lru-1)/_brlen+1;
 		int start_jix = (lcl-1)/_bclen+1;
 		int end_jix = (lcu-1)/_bclen+1;
 				
+		FrameBlock in = null;
 		for( int iix = start_iix; iix <= end_iix; iix++ )
 			for(int jix = start_jix; jix <= end_jix; jix++)		
 			{
-				FrameBlock in = getFrameBlock(iix, jix);
-				Pair<LongWritable, FrameBlock> lfp = new Pair<LongWritable, FrameBlock>(new LongWritable(((iix-1)*_brlen)+1), in);
-				
-				ArrayList<Pair<LongWritable, FrameBlock>> outlist = new ArrayList<Pair<LongWritable, FrameBlock>>();
+				in = getFrameBlock(iix, jix);
+				Pair<Long, FrameBlock> lfp = new Pair<Long, FrameBlock>(new Long(((iix-1)*_brlen)+1), in);
+				ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<Pair<Long, FrameBlock>>();
 				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
 				OperationsOnMatrixValues.performSlice(lfp, ixrange, _brlen, _bclen, outlist);
-				allBlks.addAll(SparkUtils.fromIndexedLongWritableFrameBlock(outlist));
+				allBlks.addAll(outlist);
 			}
 		
 		if(allBlks.size() == 1) {
-			return allBlks.get(0)._2;
+			return allBlks.get(0).getValue();
 		}
 		else {
 			//allocate output frame
-			FrameBlock ret = new FrameBlock(lcu-lcl+1, ValueType.STRING);
+//			FrameBlock ret = new FrameBlock(lcu-lcl+1, ValueType.STRING);
+			FrameBlock ret = new FrameBlock(in.getSchema());
 			ret.ensureAllocatedColumns((int) (ru-rl+1));
 			
-			for(Tuple2<LongWritable, FrameBlock> kv : allBlks) {
-				ret.merge(kv._2, (int) (kv._1.get()-rl), true);
+			for(Pair<Long, FrameBlock> kv : allBlks) {
+				ret.merge(kv.getValue(), (int) (kv.getKey()-rl), true);
 			}
 			return ret;
-		}
+		} 
 	}
 	
 	/**
@@ -279,8 +237,8 @@ public class PartitionedFrameBlock extends PartitionedBlock implements Externali
 	private void writeHeaderAndPayload(DataOutput dos) 
 		throws IOException
 	{
-		dos.writeInt(_rlen);
-		dos.writeInt(_clen);
+		dos.writeLong(_rlen);
+		dos.writeLong(_clen);
 		dos.writeInt(_brlen);
 		dos.writeInt(_bclen);
 		dos.writeInt(_offset);

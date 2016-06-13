@@ -776,6 +776,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			LOG.trace("Export data "+getVarName()+" "+fName);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
+		if (this instanceof FrameObject)
+			outputFormat = FrameObject.getOutputFormat(outputFormat);
+		
 		//prevent concurrent modifications
 		if ( !isAvailableToRead() )
 			throw new CacheException ("MatrixObject not available to read.");
@@ -1050,7 +1053,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			throw new DMLRuntimeException("Unexpected error while writing mtd file (" + filePathAndName + ") -- metadata is null.");
 			
 		// Write the matrix to HDFS in requested format			
-		OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat, this.dataType) 
+		OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) 
                 : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
 		
 		if ( oinfo != OutputInfo.MatrixMarketOutputInfo ) {
@@ -1064,7 +1067,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			{
 				mc = new MatrixCharacteristics(mc.getRows(), mc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros());
 			}
-			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, dataType, mc, oinfo, formatProperties);
+			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, null, dataType, mc, oinfo, formatProperties);
 		}
 	}
 	
@@ -1080,7 +1083,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			try {
 				MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 				OutputInfo oi1 = InputInfo.getMatchingOutputInfo( iimd.getInputInfo() );
-				OutputInfo oi2 = OutputInfo.stringToOutputInfo( outputFormat , this.dataType);
+				OutputInfo oi2 = OutputInfo.stringToOutputInfo( outputFormat );
 				if( oi1 != oi2 )
 					ret = false;
 			}

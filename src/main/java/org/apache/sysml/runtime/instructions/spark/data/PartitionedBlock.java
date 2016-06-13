@@ -37,8 +37,8 @@ public abstract class PartitionedBlock implements Externalizable
 {
 
 	protected CacheBlock[] _partBlocks = null; 
-	protected int _rlen = -1;
-	protected int _clen = -1;
+	protected long _rlen = -1;
+	protected long _clen = -1;
 	protected int _brlen = -1;
 	protected int _bclen = -1;
 	protected int _offset = 0;

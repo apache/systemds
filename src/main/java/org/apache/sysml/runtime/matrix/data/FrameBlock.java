@@ -149,6 +149,14 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
+	 * 
+	 * @param colnames
+	 */
+	public void setColumnNames(List<String> colnames) {
+		_colnames = colnames;
+	}
+	
+	/**
 	 * Creates a mapping from column names to column IDs, i.e., 
 	 * 1-based column indexes
 	 * 

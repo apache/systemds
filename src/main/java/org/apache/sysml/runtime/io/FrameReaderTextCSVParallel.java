@@ -32,7 +32,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
@@ -74,10 +73,9 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 	{
 		int numThreads = OptimizerUtils.getParallelTextReadParallelism();
 		
-		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
-		InputSplit[] splits = informat.getSplits(job, numThreads);
+		InputSplit[] splits = informat.getSplits(job, numThreads); 
 		splits = IOUtilFunctions.sortInputSplits(splits);
 
 		try 
@@ -120,7 +118,6 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 	{		
 		int numThreads = OptimizerUtils.getParallelTextReadParallelism();
 		
-		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
 		InputSplit[] splits = informat.getSplits(job, numThreads);
@@ -177,7 +174,6 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		public Long call() 
 			throws Exception 
 		{
-			
 			RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
 			LongWritable key = new LongWritable();
 			Text value = new Text();
@@ -227,7 +223,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		public Object call() 
 			throws Exception 
 		{
-			readCSVFrameFrameFromInputSplit(_split, _informat, _job, _dest, _dest.getSchema(), 
+			readCSVFrameFromInputSplit(_split, _informat, _job, _dest, _dest.getSchema(), 
 					_dest.getColumnNames(), _dest.getNumRows(), _dest.getNumColumns(), _offset, _isFirstSplit);
 			return null;
 		}

@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -74,6 +75,7 @@ public class FrameReaderTextCSV extends FrameReader
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
 		FileSystem fs = FileSystem.get(job);
 		Path path = new Path( fname );
+		FileInputFormat.addInputPath(job, path);
 		
 		//check existence and non-empty file
 		checkValidInputFile(fs, path); 
@@ -113,13 +115,12 @@ public class FrameReaderTextCSV extends FrameReader
 			FrameBlock dest, List<ValueType> schema, List<String> names, long rlen, long clen) 
 		throws IOException
 	{
-		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
 		InputSplit[] splits = informat.getSplits(job, 1);
 		splits = IOUtilFunctions.sortInputSplits(splits);
 		for( int i=0; i<splits.length; i++ )
-			readCSVFrameFrameFromInputSplit(splits[i], informat, job, dest, schema, names, rlen, clen, 0, i==0);
+			readCSVFrameFromInputSplit(splits[i], informat, job, dest, schema, names, rlen, clen, 0, i==0);
 	}
 	
 	
@@ -138,7 +139,7 @@ public class FrameReaderTextCSV extends FrameReader
 	 * @return
 	 * @throws IOException
 	 */
-	protected final void readCSVFrameFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, 
+	protected final void readCSVFrameFromInputSplit( InputSplit split, TextInputFormat informat, JobConf job, 
 			FrameBlock dest, List<ValueType> schema, List<String> names, long rlen, long clen, int rl, boolean first)
 		throws IOException
 	{
@@ -156,8 +157,11 @@ public class FrameReaderTextCSV extends FrameReader
 		int col = -1;
 		
 		//handle header if existing
-		if(first && hasHeader ) 
-			reader.next(key, value); //ignore header
+		if(first && hasHeader ) {
+			reader.next(key, value); //read header
+			List<String> colnames = Arrays.asList(value.toString().split(delim));
+			dest.setColumnNames(colnames);
+		}
 			
 		// Read the data
 		boolean emptyValuesFound = false;
@@ -207,8 +211,7 @@ public class FrameReaderTextCSV extends FrameReader
 	 */
 	protected Pair<Integer,Integer> computeCSVSize( Path path, JobConf job, FileSystem fs) 
 		throws IOException 
-	{		
-		FileInputFormat.addInputPath(job, path);
+	{	
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
 		InputSplit[] splits = informat.getSplits(job, 1);

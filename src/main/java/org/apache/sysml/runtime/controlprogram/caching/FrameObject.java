@@ -152,10 +152,15 @@ public class FrameObject extends CacheableData<FrameBlock>
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
 		
+		//handle missing schema if necessary
+		List<ValueType> lschema = (_schema!=null) ? _schema : 
+			Collections.nCopies(clen>=1 ? (int)clen : 1, ValueType.STRING);
+		
+		//read the frame block
 		FrameBlock data = null;
 		try {
-			FrameReader reader = FrameReaderFactory.createFrameReader(iimd.getInputInfo());
-			data = reader.readFrameFromHDFS(fname, _schema, mc.getRows(), mc.getCols()); 
+			FrameReader reader = FrameReaderFactory.createFrameReader(iimd.getInputInfo(), getFileFormatProperties());
+			data = reader.readFrameFromHDFS(fname, lschema, mc.getRows(), mc.getCols()); 
 		}
 		catch( DMLRuntimeException ex ) {
 			throw new IOException(ex);

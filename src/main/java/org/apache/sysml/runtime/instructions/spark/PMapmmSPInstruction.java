@@ -38,7 +38,7 @@ import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBlock;
 import org.apache.sysml.runtime.instructions.spark.functions.IsBlockInRange;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -115,8 +115,8 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 					.mapToPair(new PMapMMRebaseBlocksFunction(i/mc1.getRowsPerBlock()));
 			
 			int rlen = (int)Math.min(mc1.getRows()-i, NUM_ROWBLOCKS*mc1.getRowsPerBlock());
-			PartitionedMatrixBlock pmb = SparkExecutionContext.toPartitionedMatrixBlock(rdd, rlen, (int)mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1L);
-			Broadcast<PartitionedMatrixBlock> bpmb = sec.getSparkContext().broadcast(pmb);
+			PartitionedBlock pmb = SparkExecutionContext.toPartitionedMatrixBlock(rdd, rlen, (int)mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1L);
+			Broadcast<PartitionedBlock> bpmb = sec.getSparkContext().broadcast(pmb);
 			
 			//matrix multiplication
 			JavaPairRDD<MatrixIndexes,MatrixBlock> rdd2 = in2
@@ -178,10 +178,10 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 		private static final long serialVersionUID = -4520080421816885321L;
 
 		private AggregateBinaryOperator _op = null;
-		private Broadcast<PartitionedMatrixBlock> _pbc = null;
+		private Broadcast<PartitionedBlock> _pbc = null;
 		private long _offset = -1;
 		
-		public PMapMMFunction( Broadcast<PartitionedMatrixBlock> binput, long offset )
+		public PMapMMFunction( Broadcast<PartitionedBlock> binput, long offset )
 		{
 			_pbc = binput;
 			_offset = offset;
@@ -195,7 +195,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
 			throws Exception 
 		{
-			PartitionedMatrixBlock pm = _pbc.value();
+			PartitionedBlock pm = _pbc.value();
 			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
@@ -207,7 +207,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction
 			
 			//get the right hand side matrix
 			for( int i=1; i<=pm.getNumRowBlocks(); i++ ) {
-				MatrixBlock left = pm.getMatrixBlock(i, (int)ixIn.getRowIndex());
+				MatrixBlock left = (MatrixBlock)pm.getBlock(i, (int)ixIn.getRowIndex());
 			
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.performAggregateBinary( 

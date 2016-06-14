@@ -35,7 +35,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.IsBlockInRange;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
@@ -123,7 +123,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex"))
 		{
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			PartitionedBroadcastMatrix broadcastIn2 = null;
+			PartitionedBroadcast broadcastIn2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 			
@@ -276,12 +276,12 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	{
 		private static final long serialVersionUID = 1757075506076838258L;
 		
-		private PartitionedBroadcastMatrix _binput;
+		private PartitionedBroadcast _binput;
 		private IndexRange _ixrange = null;
 		private int _brlen = -1;
 		private int _bclen = -1;
 		
-		public LeftIndexPartitionFunction(PartitionedBroadcastMatrix binput, IndexRange ixrange, MatrixCharacteristics mc) 
+		public LeftIndexPartitionFunction(PartitionedBroadcast binput, IndexRange ixrange, MatrixCharacteristics mc) 
 		{
 			_binput = binput;
 			_ixrange = ixrange;

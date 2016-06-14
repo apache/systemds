@@ -27,7 +27,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
 
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.WeightedCell;
@@ -139,9 +139,9 @@ public abstract class ExtractGroup implements Serializable
 	{
 		private static final long serialVersionUID = 5709955602290131093L;
 		
-		private PartitionedBroadcastMatrix _pbm = null;
+		private PartitionedBroadcast _pbm = null;
 		
-		public ExtractGroupBroadcast( PartitionedBroadcastMatrix pbm, long bclen, long ngroups, Operator op ) {
+		public ExtractGroupBroadcast( PartitionedBroadcast pbm, long bclen, long ngroups, Operator op ) {
 			super(bclen, ngroups, op);
 			_pbm = pbm;
 		}
@@ -152,7 +152,7 @@ public abstract class ExtractGroup implements Serializable
 				throws Exception 
 		{
 			MatrixIndexes ix = arg._1;
-			MatrixBlock group = _pbm.getMatrixBlock((int)ix.getRowIndex(), 1);
+			MatrixBlock group = (MatrixBlock)_pbm.getBlock((int)ix.getRowIndex(), 1);
 			MatrixBlock target = arg._2;
 			
 			return execute(ix, group, target);

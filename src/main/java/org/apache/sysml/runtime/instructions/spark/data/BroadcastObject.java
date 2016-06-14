@@ -21,7 +21,9 @@ package org.apache.sysml.runtime.instructions.spark.data;
 
 import java.lang.ref.SoftReference;
 
-public abstract class BroadcastObject extends LineageObject
+import org.apache.spark.broadcast.Broadcast;
+
+public class BroadcastObject extends LineageObject
 {
 	//soft reference storage for graceful cleanup in case of memory pressure
 	protected SoftReference<PartitionedBroadcast> _bcHandle = null;
@@ -41,6 +43,22 @@ public abstract class BroadcastObject extends LineageObject
 		return _bcHandle.get();
 	}
 	
-	
-	public abstract boolean isValid();
+	/**
+	 * 
+	 * @return
+	 */
+	public boolean isValid() 
+	{
+		//check for evicted soft reference
+		PartitionedBroadcast pbm = (PartitionedBroadcast) _bcHandle.get();
+		if( pbm == null )
+			return false;
+		
+		//check for validity of individual broadcasts
+		Broadcast<PartitionedBlock>[] tmp = pbm.getBroadcasts();
+		for( Broadcast<PartitionedBlock> bc : tmp )
+			if( !bc.isValid() )
+				return false;		
+		return true;
+	}
 }

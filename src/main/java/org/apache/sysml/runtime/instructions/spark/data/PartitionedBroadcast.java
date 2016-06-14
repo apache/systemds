@@ -21,19 +21,53 @@ package org.apache.sysml.runtime.instructions.spark.data;
 
 import java.io.Serializable;
 
+import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.IndexRange;
+
 /**
- * This class is a wrapper around an array of broadcasts of partitioned matrix blocks,
+ * This class is a wrapper around an array of broadcasts of partitioned matrix/frame blocks,
  * which is required due to 2GB limitations of Spark's broadcast handling. Without this
- * partitioning of Broadcast<PartitionedMatrixBlock> into Broadcast<PartitionedMatrixBlock>[],
+ * partitioning of Broadcast<PartitionedBlock> into Broadcast<PartitionedBlock>[],
  * we got java.lang.IllegalArgumentException: Size exceeds Integer.MAX_VALUE issue.
  * Despite various jiras, this issue still showed up in Spark 1.4/1.5. 
  * 
  */
-public abstract class PartitionedBroadcast implements Serializable
+public class PartitionedBroadcast implements Serializable
 {
 	private static final long serialVersionUID = 7041959166079438401L;
 
 	protected static final long BROADCAST_PARTSIZE = 200L*1024*1024; //200M cells ~ 1.6GB 
+	
+	private Broadcast<PartitionedBlock>[] _pbc = null;
+	
+	public PartitionedBroadcast() {
+		//do nothing (required for Externalizable)
+	}
+	
+	public PartitionedBroadcast(Broadcast<PartitionedBlock>[] broadcasts)
+	{
+		_pbc = broadcasts;
+	}
+	
+	public Broadcast<PartitionedBlock>[] getBroadcasts() {
+		return _pbc;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public int getNumRowBlocks() {
+		return _pbc[0].value().getNumRowBlocks();
+	}
+	
+	public int getNumColumnBlocks() {
+		return _pbc[0].value().getNumColumnBlocks();
+	}
 	
 	/**
 	 * 
@@ -47,4 +81,62 @@ public abstract class PartitionedBroadcast implements Serializable
 		return (int) Math.floor( BROADCAST_PARTSIZE /  
 				Math.min(rlen, brlen) / Math.min(clen, bclen));
 	}
+	/**
+	 * 
+	 * @param rowIndex
+	 * @param colIndex
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
+	public CacheBlock getBlock(int rowIndex, int colIndex) 
+		throws DMLRuntimeException 
+	{
+		int pix = 0;
+		
+		if( _pbc.length > 1 ) { 
+			//compute partition index
+			PartitionedBlock tmp = _pbc[0].value();
+			int numPerPart = computeBlocksPerPartition(tmp.getNumRows(), tmp.getNumCols(), 
+					tmp.getNumRowsPerBlock(), tmp.getNumColumnsPerBlock());
+			int ix = (rowIndex-1)*tmp.getNumColumnBlocks()+(colIndex-1);
+			pix = ix / numPerPart;
+		}
+			
+		return _pbc[pix].value().getBlock(rowIndex, colIndex);
+	}
+	
+	public FrameBlock sliceOperations(IndexRange ixrange, long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
+		throws DMLRuntimeException 
+	{
+		FrameBlock ret = null;
+		
+		for( Broadcast<PartitionedBlock> bc : _pbc ) {
+			PartitionedBlock pm = bc.value();
+			FrameBlock tmp = pm.sliceOperations(ixrange, rl, ru, cl, cu, new FrameBlock());
+			if( ret != null )
+				ret.merge(tmp);
+			else
+				ret = tmp;
+		}
+		
+		return ret;
+	}
+	
+	public MatrixBlock sliceOperations(long rl, long ru, long cl, long cu, MatrixBlock matrixBlock) 
+		throws DMLRuntimeException 
+	{
+		MatrixBlock ret = null;
+		
+		for( Broadcast<PartitionedBlock> bc : _pbc ) {
+			PartitionedBlock pm = bc.value();
+			MatrixBlock tmp = pm.sliceOperations(rl, ru, cl, cu, new MatrixBlock());
+			if( ret != null )
+				ret.merge(tmp, false);
+			else
+				ret = tmp;
+		}
+		
+		return ret;
+	}
+
 }

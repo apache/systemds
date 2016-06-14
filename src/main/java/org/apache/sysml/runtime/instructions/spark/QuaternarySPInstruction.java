@@ -51,7 +51,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -237,8 +237,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(getOpcode())
 			|| WeightedUnaryMM.OPCODE.equalsIgnoreCase(getOpcode())) 
 		{
-			PartitionedBroadcastMatrix bc1 = sec.getBroadcastForVariable( input2.getName() );
-			PartitionedBroadcastMatrix bc2 = sec.getBroadcastForVariable( input3.getName() );
+			PartitionedBroadcast bc1 = sec.getBroadcastForVariable( input2.getName() );
+			PartitionedBroadcast bc2 = sec.getBroadcastForVariable( input3.getName() );
 			
 			//partitioning-preserving mappartitions (key access required for broadcast loopkup)
 			boolean noKeyChange = (qop.wtype3 == null || qop.wtype3.isBasic()); //only wdivmm changes keys
@@ -251,8 +251,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		//reduce-side operation (two/three/four rdd inputs, zero/one/two broadcasts)
 		else 
 		{
-			PartitionedBroadcastMatrix bc1 = _cacheU ? sec.getBroadcastForVariable( input2.getName() ) : null;
-			PartitionedBroadcastMatrix bc2 = _cacheV ? sec.getBroadcastForVariable( input3.getName() ) : null;
+			PartitionedBroadcast bc1 = _cacheU ? sec.getBroadcastForVariable( input2.getName() ) : null;
+			PartitionedBroadcast bc2 = _cacheV ? sec.getBroadcastForVariable( input3.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inU = (!_cacheU) ? sec.getBinaryBlockRDDHandleForVariable( input2.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inV = (!_cacheV) ? sec.getBinaryBlockRDDHandleForVariable( input3.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inW = (qop.hasFourInputs() && !_input4.isLiteral()) ? 
@@ -361,10 +361,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 		private static final long serialVersionUID = -3175397651350954930L;
 		
 		protected QuaternaryOperator _qop = null;
-		protected PartitionedBroadcastMatrix _pmU = null;
-		protected PartitionedBroadcastMatrix _pmV = null;
+		protected PartitionedBroadcast _pmU = null;
+		protected PartitionedBroadcast _pmV = null;
 		
-		public RDDQuaternaryBaseFunction( QuaternaryOperator qop, PartitionedBroadcastMatrix bcU, PartitionedBroadcastMatrix bcV ) {
+		public RDDQuaternaryBaseFunction( QuaternaryOperator qop, PartitionedBroadcast bcU, PartitionedBroadcast bcV ) {
 			_qop = qop;		
 			_pmU = bcU;
 			_pmV = bcV;
@@ -388,7 +388,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 	{
 		private static final long serialVersionUID = -8209188316939435099L;
 		
-		public RDDQuaternaryFunction1( QuaternaryOperator qop, PartitionedBroadcastMatrix bcU, PartitionedBroadcastMatrix bcV ) 
+		public RDDQuaternaryFunction1( QuaternaryOperator qop, PartitionedBroadcast bcU, PartitionedBroadcast bcV ) 
 			throws DMLRuntimeException
 		{
 			super(qop, bcU, bcV);
@@ -415,8 +415,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 				MatrixBlock blkIn = arg._2();
 				MatrixBlock blkOut = new MatrixBlock();
 				
-				MatrixBlock mbU = _pmU.getMatrixBlock((int)ixIn.getRowIndex(), 1);
-				MatrixBlock mbV = _pmV.getMatrixBlock((int)ixIn.getColumnIndex(), 1);
+				MatrixBlock mbU = (MatrixBlock)_pmU.getBlock((int)ixIn.getRowIndex(), 1);
+				MatrixBlock mbV = (MatrixBlock)_pmV.getBlock((int)ixIn.getColumnIndex(), 1);
 				
 				//execute core operation
 				blkIn.quaternaryOperations(_qop, mbU, mbV, null, blkOut);
@@ -437,7 +437,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 	{
 		private static final long serialVersionUID = 7493974462943080693L;
 		
-		public RDDQuaternaryFunction2( QuaternaryOperator qop, PartitionedBroadcastMatrix bcU, PartitionedBroadcastMatrix bcV ) 
+		public RDDQuaternaryFunction2( QuaternaryOperator qop, PartitionedBroadcast bcU, PartitionedBroadcast bcV ) 
 			throws DMLRuntimeException
 		{
 			super(qop, bcU, bcV);
@@ -452,8 +452,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			MatrixBlock blkIn2 = arg0._2()._2();
 			MatrixBlock blkOut = new MatrixBlock();
 			
-			MatrixBlock mbU = (_pmU!=null)?_pmU.getMatrixBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
-			MatrixBlock mbV = (_pmV!=null)?_pmV.getMatrixBlock((int)ixIn.getColumnIndex(), 1) : blkIn2;
+			MatrixBlock mbU = (_pmU!=null)?(MatrixBlock)_pmU.getBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
+			MatrixBlock mbV = (_pmV!=null)?(MatrixBlock)_pmV.getBlock((int)ixIn.getColumnIndex(), 1) : blkIn2;
 			MatrixBlock mbW = (_qop.hasFourInputs()) ? blkIn2 : null;
 			
 			//execute core operation
@@ -473,7 +473,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 	{
 		private static final long serialVersionUID = -2294086455843773095L;
 		
-		public RDDQuaternaryFunction3( QuaternaryOperator qop, PartitionedBroadcastMatrix bcU, PartitionedBroadcastMatrix bcV ) 
+		public RDDQuaternaryFunction3( QuaternaryOperator qop, PartitionedBroadcast bcU, PartitionedBroadcast bcV ) 
 			throws DMLRuntimeException
 		{
 			super(qop, bcU, bcV);
@@ -490,8 +490,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction
 			
 			MatrixBlock blkOut = new MatrixBlock();
 			
-			MatrixBlock mbU = (_pmU!=null)?_pmU.getMatrixBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
-			MatrixBlock mbV = (_pmV!=null)?_pmV.getMatrixBlock((int)ixIn.getColumnIndex(), 1) : 
+			MatrixBlock mbU = (_pmU!=null)?(MatrixBlock)_pmU.getBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
+			MatrixBlock mbV = (_pmV!=null)?(MatrixBlock)_pmV.getBlock((int)ixIn.getColumnIndex(), 1) : 
 				              (_pmU!=null)? blkIn2 : blkIn3;
 			MatrixBlock mbW = (_qop.hasFourInputs())? blkIn3 : null;
 			

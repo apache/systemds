@@ -56,14 +56,10 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.data.BlockPartitioner;
-import org.apache.sysml.runtime.instructions.spark.data.BroadcastFrameObject;
-import org.apache.sysml.runtime.instructions.spark.data.BroadcastMatrixObject;
 import org.apache.sysml.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysml.runtime.instructions.spark.data.LineageObject;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastFrame;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcastMatrix;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedFrameBlock;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedMatrixBlock;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBlock;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
@@ -477,20 +473,20 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	public PartitionedBroadcastMatrix getBroadcastForVariable( String varname ) 
+	public PartitionedBroadcast getBroadcastForVariable( String varname ) 
 		throws DMLRuntimeException
 	{		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		MatrixObject mo = getMatrixObject(varname);
 		
-		PartitionedBroadcastMatrix bret = null;
+		PartitionedBroadcast bret = null;
 		
 		//reuse existing broadcast handle
 		if( mo.getBroadcastHandle()!=null 
 			&& mo.getBroadcastHandle().isValid() ) 
 		{
-			bret = (PartitionedBroadcastMatrix) mo.getBroadcastHandle().getBroadcast();
+			bret = (PartitionedBroadcast) mo.getBroadcastHandle().getBroadcast();
 		}
 		
 		//create new broadcast handle (never created, evicted)
@@ -502,20 +498,20 @@ public class SparkExecutionContext extends ExecutionContext
 			
 			//create partitioned matrix block and release memory consumed by input
 			MatrixBlock mb = mo.acquireRead();
-			PartitionedMatrixBlock pmb = new PartitionedMatrixBlock(mb, brlen, bclen);
+			PartitionedBlock pmb = new PartitionedBlock(mb, brlen, bclen);
 			mo.release();
 			
 			//determine coarse-grained partitioning
-			int numPerPart = PartitionedBroadcastMatrix.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), brlen, bclen);
+			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), brlen, bclen);
 			int numParts = (int) Math.ceil((double)pmb.getNumRowBlocks()*pmb.getNumColumnBlocks() / numPerPart); 
-			Broadcast<PartitionedMatrixBlock>[] ret = new Broadcast[numParts];
+			Broadcast<PartitionedBlock>[] ret = new Broadcast[numParts];
 					
 			//create coarse-grained partitioned broadcasts
 			if( numParts > 1 ) {
 				for( int i=0; i<numParts; i++ ) {
 					int offset = i * numPerPart;
 					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
-					PartitionedMatrixBlock tmp = pmb.createPartition(offset, numBlks);
+					PartitionedBlock tmp = pmb.createPartition(offset, numBlks);
 					ret[i] = getSparkContext().broadcast(tmp);
 				}
 			}
@@ -523,8 +519,8 @@ public class SparkExecutionContext extends ExecutionContext
 				ret[0] = getSparkContext().broadcast( pmb);
 			}
 		
-			bret = new PartitionedBroadcastMatrix(ret);
-			BroadcastObject bchandle = new BroadcastMatrixObject(bret, varname);
+			bret = new PartitionedBroadcast(ret);
+			BroadcastObject bchandle = new BroadcastObject(bret, varname);
 			mo.setBroadcastHandle(bchandle);
 		}
 		
@@ -543,21 +539,22 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
+	
 	@SuppressWarnings("unchecked")
-	public PartitionedBroadcastFrame getBroadcastForFrameVariable( String varname) 
+	public PartitionedBroadcast getBroadcastForFrameVariable( String varname) 
 		throws DMLRuntimeException
 	{		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		FrameObject fo = getFrameObject(varname);
 		
-		PartitionedBroadcastFrame bret = null;
+		PartitionedBroadcast bret = null;
 		
 		//reuse existing broadcast handle
 		if( fo.getBroadcastHandle()!=null 
 			&& fo.getBroadcastHandle().isValid() ) 
 		{
-			bret = (PartitionedBroadcastFrame) fo.getBroadcastHandle().getBroadcast();
+			bret = (PartitionedBroadcast) fo.getBroadcastHandle().getBroadcast();
 		}
 		
 		//create new broadcast handle (never created, evicted)
@@ -569,20 +566,20 @@ public class SparkExecutionContext extends ExecutionContext
 			
 			//create partitioned frame block and release memory consumed by input
 			FrameBlock mb = fo.acquireRead();
-			PartitionedFrameBlock pmb = new PartitionedFrameBlock(mb, brlen, bclen);
+			PartitionedBlock pmb = new PartitionedBlock(mb, brlen, bclen);
 			fo.release();
 			
 			//determine coarse-grained partitioning
-			int numPerPart = PartitionedBroadcastMatrix.computeBlocksPerPartition(fo.getNumRows(), fo.getNumColumns(), brlen, bclen);
+			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(fo.getNumRows(), fo.getNumColumns(), brlen, bclen);
 			int numParts = (int) Math.ceil((double)pmb.getNumRowBlocks()*pmb.getNumColumnBlocks() / numPerPart); 
-			Broadcast<PartitionedFrameBlock>[] ret = new Broadcast[numParts];
+			Broadcast<PartitionedBlock>[] ret = new Broadcast[numParts];
 					
 			//create coarse-grained partitioned broadcasts
 			if( numParts > 1 ) {
 				for( int i=0; i<numParts; i++ ) {
 					int offset = i * numPerPart;
 					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
-					PartitionedFrameBlock tmp = pmb.createPartition(offset, numBlks);
+					PartitionedBlock tmp = pmb.createPartition(offset, numBlks);
 					ret[i] = getSparkContext().broadcast(tmp);
 				}
 			}
@@ -590,8 +587,8 @@ public class SparkExecutionContext extends ExecutionContext
 				ret[0] = getSparkContext().broadcast( pmb);
 			}
 		
-			bret = new PartitionedBroadcastFrame(ret);
-			BroadcastFrameObject bchandle = new BroadcastFrameObject(bret, varname);
+			bret = new PartitionedBroadcast(ret);
+			BroadcastObject bchandle = new BroadcastObject(bret, varname);
 			fo.setBroadcastHandle(bchandle);
 		}
 		
@@ -920,13 +917,13 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static PartitionedMatrixBlock toPartitionedMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen, long nnz) 
+	public static PartitionedBlock toPartitionedMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen, long nnz) 
 		throws DMLRuntimeException
 	{
 		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
-		PartitionedMatrixBlock out = new PartitionedMatrixBlock(rlen, clen, brlen, bclen);
+		PartitionedBlock out = new PartitionedBlock(rlen, clen, brlen, bclen);
 		List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
 		
 		//copy blocks one-at-a-time into output matrix block
@@ -935,7 +932,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//unpack index-block pair
 			MatrixIndexes ix = keyval._1();
 			MatrixBlock block = keyval._2();
-			out.setMatrixBlock((int)ix.getRowIndex(), (int)ix.getColumnIndex(), block);
+			out.setBlock((int)ix.getRowIndex(), (int)ix.getColumnIndex(), block);
 		}
 		
 		if (DMLScript.STATISTICS) {
@@ -1178,9 +1175,9 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 		}
 		else if( lob instanceof BroadcastObject ) {
-			PartitionedBroadcastMatrix pbm = (PartitionedBroadcastMatrix) ((BroadcastObject)lob).getBroadcast();
+			PartitionedBroadcast pbm = (PartitionedBroadcast) ((BroadcastObject)lob).getBroadcast();
 			if( pbm != null ) //robustness for evictions
-				for( Broadcast<PartitionedMatrixBlock> bc : pbm.getBroadcasts() )
+				for( Broadcast<PartitionedBlock> bc : pbm.getBroadcasts() )
 					cleanupBroadcastVariable(bc);
 		}
 	

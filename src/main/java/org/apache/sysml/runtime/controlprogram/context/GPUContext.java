@@ -38,6 +38,7 @@ public abstract class GPUContext {
 	// Creation / Destruction of GPUContext and related handles
 	public static GPUContext createGPUContext() {
 		if(currContext == null && DMLScript.USE_ACCELERATOR) {
+			// TODO: Handle this thread and resolve concurrency related bugs if any
 			new Thread(new Runnable() {
 				@Override
 				public void run() {

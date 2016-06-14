@@ -282,7 +282,7 @@ public class FrameRDDConverterUtils
 	 * @param strict
 	 * @return
 	 */
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockToMatrixBlock(JavaPairRDD<LongWritable,FrameBlock> input, 
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockToMatrixBlock(JavaPairRDD<Long,FrameBlock> input, 
 			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) 
 	{
 		//convert binary block to matrix block
@@ -726,7 +726,7 @@ public class FrameRDDConverterUtils
 	/**
 	 * 
 	 */
-	private static class BinaryBlockToMatrixBlockFunction implements PairFlatMapFunction<Tuple2<LongWritable,FrameBlock>,MatrixIndexes, MatrixBlock> 
+	private static class BinaryBlockToMatrixBlockFunction implements PairFlatMapFunction<Tuple2<Long,FrameBlock>,MatrixIndexes, MatrixBlock> 
 	{
 		private static final long serialVersionUID = -2654986510471835933L;
 		
@@ -739,10 +739,10 @@ public class FrameRDDConverterUtils
 		}
 
 		@Override
-		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<LongWritable, FrameBlock> arg0)
+		public Iterable<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<Long, FrameBlock> arg0)
 			throws Exception 
 		{
-			long rowIndex = arg0._1().get();
+			long rowIndex = arg0._1();
 			FrameBlock blk = arg0._2();
 			
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes, MatrixBlock>>();

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import org.apache.hadoop.io.LongWritable;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.UnaryCP;
@@ -29,7 +28,6 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
-import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -73,12 +71,10 @@ public class CastSPInstruction extends UnarySPInstruction
 		
 		//convert frame-matrix / matrix-frame and set output
 		if( opcode.equals(UnaryCP.CAST_AS_MATRIX_OPCODE) ) {
-			//TODO: simplify converter api to allow long indexes to be passed in
 			MatrixCharacteristics mcOut = new MatrixCharacteristics(mcIn);
 			mcOut.setBlockSize(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
-			in = ((JavaPairRDD<Long, FrameBlock>)in).mapToPair(new LongFrameToLongWritableFrameFunction());
 			out = FrameRDDConverterUtils.binaryBlockToMatrixBlock(
-				(JavaPairRDD<LongWritable, FrameBlock>)in, mcIn, mcOut);
+					(JavaPairRDD<Long, FrameBlock>)in, mcIn, mcOut);
 		}
 		else if( opcode.equals(UnaryCP.CAST_AS_FRAME_OPCODE) ) {
 			out = FrameRDDConverterUtils.matrixBlockToBinaryBlockLongIndex(sec.getSparkContext(), 

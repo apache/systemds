@@ -902,6 +902,15 @@ public class DataConverter
 	}
 	
 	/**
+	 * 
+	 * @param mb
+	 * @return
+	 */
+	public static String toString(MatrixBlock mb) {
+		return toString(mb, false, " ", "\n", mb.getNumRows(), mb.getNumColumns(), 3);
+	}
+	
+	/**
 	 * Returns a string representation of a matrix
 	 * @param mb
 	 * @param sparse if true, string will contain a table with row index, col index, value (where value != 0.0)
@@ -972,6 +981,15 @@ public class DataConverter
 		}
 		
 		return sb.toString();
+	}
+	
+	/**
+	 * 
+	 * @param fb
+	 * @return
+	 */
+	public static String toString(FrameBlock fb) {
+		return toString(fb, false, " ", "\n", fb.getNumRows(), fb.getNumColumns(), 3);
 	}
 	
 	/**

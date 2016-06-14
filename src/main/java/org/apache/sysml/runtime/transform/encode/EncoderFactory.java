@@ -44,6 +44,20 @@ public class EncoderFactory
 		return createEncoder(spec, Collections.nCopies(clen, ValueType.STRING), meta);
 	}
 	
+	/**
+	 * 
+	 * @param spec
+	 * @param schema
+	 * @param clen
+	 * @param meta
+	 * @return
+	 * @throws DMLRuntimeException
+	 */
+	public static Encoder createEncoder(String spec, List<ValueType> schema, int clen, FrameBlock meta) throws DMLRuntimeException {
+		List<ValueType> lschema = (schema==null) ? Collections.nCopies(clen, ValueType.STRING) : schema;
+		return createEncoder(spec, lschema, meta);
+	}
+	
 	
 	/**
 	 * 

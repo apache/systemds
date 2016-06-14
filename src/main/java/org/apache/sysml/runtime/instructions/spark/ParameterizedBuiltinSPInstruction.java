@@ -25,6 +25,7 @@ import java.util.HashMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
@@ -50,9 +51,12 @@ import org.apache.sysml.runtime.instructions.spark.functions.ExtractGroupNWeight
 import org.apache.sysml.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
 import org.apache.sysml.runtime.instructions.spark.functions.PerformGroupByAggInReducer;
 import org.apache.sysml.runtime.instructions.spark.functions.ReplicateVectorFunction;
+import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
@@ -66,6 +70,9 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTy
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.transform.DataTransform;
+import org.apache.sysml.runtime.transform.encode.Encoder;
+import org.apache.sysml.runtime.transform.encode.EncoderFactory;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction 
@@ -156,7 +163,8 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			}
 			else if(   opcode.equalsIgnoreCase("rexpand") 
 					|| opcode.equalsIgnoreCase("replace")
-					|| opcode.equalsIgnoreCase("transform") ) 
+					|| opcode.equalsIgnoreCase("transform")
+					|| opcode.equalsIgnoreCase("transformapply")) 
 			{
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
@@ -169,6 +177,7 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 	
 
 	@Override 
+	@SuppressWarnings("unchecked")
 	public void processInstruction(ExecutionContext ec) 
 		throws DMLRuntimeException 
 	{
@@ -400,6 +409,36 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			} catch (Exception e) {
 				throw new DMLRuntimeException(e);
 			}
+		}
+		else if ( opcode.equalsIgnoreCase("transformapply") ) 
+		{
+			//get input RDD and meta data
+			FrameObject fo = sec.getFrameObject(params.get("target"));
+			JavaPairRDD<Long,FrameBlock> in = (JavaPairRDD<Long,FrameBlock>)
+					sec.getRDDHandleForFrameObject(fo, InputInfo.BinaryBlockInputInfo);
+			FrameBlock meta = sec.getFrameInput(params.get("meta"));		
+			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(params.get("target"));
+			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			mcOut.setDimension(mcIn.getRows(), mcIn.getCols()); //TODO encoder awareness
+			
+			//create encoder broadcast (avoiding replication per task) 
+			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), 
+					fo.getSchema(), (int)fo.getNumColumns(), meta);
+			Broadcast<Encoder> bmeta = sec.getSparkContext().broadcast(encoder);
+		
+			//execute transform apply
+			JavaPairRDD<Long,FrameBlock> tmp = in
+					.mapValues(new RDDTransformApplyFunction(bmeta));
+			JavaPairRDD<MatrixIndexes,MatrixBlock> out = FrameRDDConverterUtils
+					.binaryBlockToMatrixBlock(tmp, mcIn, mcOut);
+			
+			//set output and maintain lineage/output characteristics
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), params.get("target"));
+			ec.releaseFrameInput(params.get("meta"));
+		}
+		else {
+			throw new DMLRuntimeException("Unknown parameterized builtin opcode: "+opcode);
 		}
 	}
 	
@@ -640,6 +679,32 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			}
 			
 			return new MatrixCell(val);
+		}
+	}
+
+	/**
+	 * 
+	 */
+	public static class RDDTransformApplyFunction implements Function<FrameBlock,FrameBlock> 
+	{
+		private static final long serialVersionUID = 5759813006068230916L;
+		
+		private Broadcast<Encoder> _bencoder = null;
+		
+		public RDDTransformApplyFunction(Broadcast<Encoder> bencoder) {
+			_bencoder = bencoder;
+		}
+
+		@Override
+		public FrameBlock call(FrameBlock in) 
+			throws Exception 
+		{
+			//execute block transform apply
+			Encoder encoder = _bencoder.getValue();
+			MatrixBlock tmp = encoder.apply(in, new MatrixBlock(in.getNumRows(), in.getNumColumns(), false));
+			
+			//convert to frameblock to reuse frame-matrix reblock
+			return DataConverter.convertToFrameBlock(tmp);
 		}
 	}
 	

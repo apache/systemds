@@ -137,6 +137,7 @@
 				<include>*:jackson-mapper-asl*</include>
 				<include>*:log4j*</include>
 				<include>*:opencsv*</include>
+				<include>*:protobuf-java*</include>
 				<include>*:slf4j-api*</include>
 				<include>*:slf4j-log4j*</include>
 			</includes>

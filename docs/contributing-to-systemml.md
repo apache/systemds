@@ -59,7 +59,7 @@ click the Fork button to fork a personal remote copy of the SystemML repository 
 
 The next step is to clone your SystemML fork to your local machine.
 
-	$ git clone https://github.com/apache/incubator-systemml.git
+	$ git clone https://github.com/YOUR_GITHUB_NAME/incubator-systemml.git
 
 Following this, it's a good idea to set your git user name and email address. In addition, you may want
 to set the `push.default` property to `simple`. You only need to execute these commands once.

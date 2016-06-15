@@ -33,6 +33,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.ConvolutionParameters;
+import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 public class ConvolutionOp extends Hop  implements MultiThreadedHop
 {	
@@ -90,6 +91,16 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			return getLops();
 		
 		ExecType et = optFindExecType();
+		
+		Lop ret = ConvolutionUtils.constructConvolutionLops(this, et);
+		if(ret != null) {
+			return ret;
+		}
+		ret = ConvolutionUtils.constructConvolutionBackwardDataLops(this, et);
+		if(ret != null) {
+			return ret;
+		}
+		
 		ArrayList<Hop> inputs = getInput();
 		switch( op )
 		{
@@ -99,11 +110,26 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case COL2IM:
 			case MAX_POOLING:
 			case MAX_POOLING_BACKWARD:
+			{	
+				et = ExecType.CP; // TODO: Since max_backwards and other Convolution Ops only implemented for CP
+				
+				if( et == ExecType.CP  )
+				{
+					setLops(constructConvolutionLops(et, inputs));
+					break;
+				}
+				else {
+					// TODO: Add support for SPARK/MR backends once we are happy with the performance of
+					// single node Lenet script. 
+					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
+				}
+				// break;
+			}	
 			case DIRECT_CONV2D:
 			case DIRECT_CONV2D_BACKWARD_DATA:
 			case DIRECT_CONV2D_BACKWARD_FILTER:
 			{	
-				if( et == ExecType.CP )
+				if( et == ExecType.GPU )
 				{
 					setLops(constructConvolutionLops(et, inputs));
 					break;
@@ -148,15 +174,17 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				HopsConv2Lops.get(op), getDataType(), getValueType(), et, k);
 		setOutputDimensions(transform1);
 		setLineNumbers(transform1);
+		in.addOutput(transform1);
 		
 		// stride1, stride2, padding1, padding2  
 		// input_shape1, input_shape2, input_shape3, input_shape4, 
 		// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-		for( int i=1; i <= (expectedNumInputs-1); i++ )
+		for( int i=1; i < inputs.size(); i++ )
 		{
 			Lop ltmp = inputs.get(i).constructLops();
 			transform1.addInput(ltmp);
-			ltmp.addOutput(transform1);
+			//if(i == 1 && expectedNumInputs == 14)
+				ltmp.addOutput(transform1);
 		}
 		transform1.setLevel(); //force order of added lops
 		return transform1;
@@ -264,11 +292,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			// TODO: After adding Spark backend, uncomment this
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
-			}
-			// Choose CP, if the input dimensions are below threshold or if the input is a vector
-			else if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
-			{
-				_etype = ExecType.CP;
 			}
 			else 
 			{

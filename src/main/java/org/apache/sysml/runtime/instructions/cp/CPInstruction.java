@@ -23,8 +23,8 @@ import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.instructions.CPInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.InstructionParser;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 
@@ -78,7 +78,8 @@ public abstract class CPInstruction extends Instruction
 		{
 			//note: no exchange of updated instruction as labels might change in the general case
 			String updInst = RunMRJobs.updateLabels(tmp.toString(), ec.getVariables());
-			tmp = CPInstructionParser.parseSingleInstruction(updInst);
+			// tmp = CPInstructionParser.parseSingleInstruction(updInst);
+			tmp = InstructionParser.parseSingleInstruction(updInst);
 			if(MLContextProxy.isActive()) {
 				MLContextProxy.setInstructionForMonitoring(tmp);
 			}

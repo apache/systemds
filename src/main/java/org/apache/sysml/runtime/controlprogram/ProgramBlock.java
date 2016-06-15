@@ -37,6 +37,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -308,7 +309,11 @@ public class ProgramBlock
 			
 			// maintain aggregate statistics
 			if( DMLScript.STATISTICS) {
-				Statistics.maintainCPHeavyHitters(
+				if(tmp.getType() == INSTRUCTION_TYPE.GPU)
+					Statistics.maintainCPHeavyHitters(
+							"gpu_"+tmp.getExtendedOpcode(), System.nanoTime()-t0);
+				else
+					Statistics.maintainCPHeavyHitters(
 						tmp.getExtendedOpcode(), System.nanoTime()-t0);
 			}
 				

@@ -46,6 +46,11 @@ public class InstructionParser
 			SPINSTRUCTION_TYPE sptype = InstructionUtils.getSPType(str); 
 			return SPInstructionParser.parseSingleInstruction (sptype, str);
 		}
+		else if (   execType.equalsIgnoreCase(ExecType.GPU.toString()) ) 
+		{
+			CPINSTRUCTION_TYPE cptype = InstructionUtils.getGPUType(str); 
+			return GPUInstructionParser.parseSingleInstruction (cptype, str);
+		}
 		else if ( execType.equalsIgnoreCase("MR") ) {
 			MRINSTRUCTION_TYPE mrtype = InstructionUtils.getMRType(str); 
 			if ( mrtype == null )

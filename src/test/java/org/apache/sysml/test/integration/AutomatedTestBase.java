@@ -86,6 +86,9 @@ public abstract class AutomatedTestBase
 	public static final boolean EXCEPTION_EXPECTED = true;
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;
 	
+	// By default: TEST_GPU is set to false to allow developers without Nvidia GPU to run integration test suite 
+	public static final boolean TEST_GPU = false;
+	
 	protected ScriptType scriptType;
 	
 	// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
@@ -105,8 +108,18 @@ public abstract class AutomatedTestBase
 
 			System.setProperty("hadoop.home.dir", cwd + File.separator
 					+ "\\src\\test\\config\\hadoop_bin_windows");
-			System.setProperty("java.library.path", cwd + File.separator
+			
+			if(TEST_GPU) {
+				String CUDA_LIBRARY_PATH = System.getenv("CUDA_PATH") + File.separator + "bin"; 
+				System.setProperty("java.library.path", cwd + File.separator
+						+ "\\src\\test\\config\\hadoop_bin_windows\\bin" + File.pathSeparator
+						+ "/lib" + File.pathSeparator
+						+ CUDA_LIBRARY_PATH);
+			}
+			else {
+				System.setProperty("java.library.path", cwd + File.separator
 					+ "\\src\\test\\config\\hadoop_bin_windows\\bin");
+			}
 			
 
 		    // Need to muck around with the classloader to get it to use the new
@@ -1150,6 +1163,8 @@ public abstract class AutomatedTestBase
 		//use optional config file since default under SystemML/DML
 		args.add("-config="+ getCurConfigFile().getPath());
 		
+		if(TEST_GPU)
+			args.add("-gpu");
 		
 		// program-specific parameters
 		if ( newWay ) {

@@ -34,6 +34,7 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.util.ConvolutionUtils;
 
 /**
  *  Reorg (cell) operation: aij
@@ -118,6 +119,11 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		if( getLops() != null )
 			return getLops();
 
+		Lop ret = ConvolutionUtils.constructConvolutionBackwardFilterLops(this);
+		if(ret != null) {
+			return ret;
+		}
+		
 		ExecType et = optFindExecType();
 		
 		switch( op )

@@ -204,6 +204,8 @@ public class OptimizerUtils
 	public static boolean ALLOW_FRAME_CSV_REBLOCK = false;
 	
 	
+	public static long GPU_MEMORY_BUDGET = -1;
+	
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

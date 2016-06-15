@@ -206,6 +206,8 @@ public class OptimizerUtils
 	
 	public static long GPU_MEMORY_BUDGET = -1;
 	
+	public static long GPU_MEMORY_BUDGET = -1;
+	
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

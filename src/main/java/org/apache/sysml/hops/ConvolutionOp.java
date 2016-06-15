@@ -315,7 +315,26 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	// input_shape1, input_shape2, input_shape3, input_shape4, 
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
 	ConvolutionParameters parseInput() throws DMLRuntimeException {
-		ConvolutionParameters params = new ConvolutionParameters(
+		ConvolutionParameters params = null;
+		if(op == ConvOp.MAX_POOLING_BACKWARD 
+				|| op == ConvOp.DIRECT_CONV2D 
+				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_FILTER
+				|| op == ConvOp.DIRECT_CONV2D_BACKWARD_DATA) {
+			params = new ConvolutionParameters(
+					extractValue(getInput().get(6)),
+					extractValue(getInput().get(7)), 
+					extractValue(getInput().get(8)), 
+					extractValue(getInput().get(9)), 
+					extractValue(getInput().get(10)), 
+					extractValue(getInput().get(12)), 
+					extractValue(getInput().get(13)), 
+					extractValue(getInput().get(2)), 
+					extractValue(getInput().get(3)), 
+					extractValue(getInput().get(4)), 
+					extractValue(getInput().get(5)), _maxNumThreads);
+		}
+		else {
+			params = new ConvolutionParameters(
 				extractValue(getInput().get(5)),
 				extractValue(getInput().get(6)), 
 				extractValue(getInput().get(7)), 
@@ -327,6 +346,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				extractValue(getInput().get(2)), 
 				extractValue(getInput().get(3)), 
 				extractValue(getInput().get(4)), _maxNumThreads);
+		}
 		return params;
 	}
 	

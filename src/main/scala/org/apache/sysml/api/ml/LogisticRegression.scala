@@ -19,7 +19,10 @@
 
 package org.apache.sysml.api.ml
 
-import org.apache.spark.SparkContext
+import java.io.File
+
+import scala.reflect.runtime.universe
+
 import org.apache.spark.ml.Estimator
 import org.apache.spark.ml.Model
 import org.apache.spark.ml.param.DoubleParam
@@ -68,7 +71,7 @@ object LogisticRegression {
 /**
  * Logistic Regression Scala API
  */
-class LogisticRegression(override val uid: String, val sc: SparkContext) extends Estimator[LogisticRegressionModel] with HasIcpt
+class LogisticRegression(override val uid: String) extends Estimator[LogisticRegressionModel] with HasIcpt
     with HasRegParam with HasTol with HasMaxOuterIter with HasMaxInnerIter {
 
   def setIcpt(value: Int) = set(icpt, value)
@@ -78,11 +81,12 @@ class LogisticRegression(override val uid: String, val sc: SparkContext) extends
   def setTol(value: Double) = set(tol, value)
 
   override def copy(extra: ParamMap): LogisticRegression = {
-    val that = new LogisticRegression(uid, sc)
+    val that = new LogisticRegression(uid)
     copyValues(that, extra)
   }
   override def transformSchema(schema: StructType): StructType = schema
   override def fit(df: DataFrame): LogisticRegressionModel = {
+    val sc = df.sqlContext.sparkContext
     val ml = new MLContext(df.rdd.sparkContext)
     val mcXin = new MatrixCharacteristics()
     val Xin = RDDConverterUtils.vectorDataFrameToBinaryBlock(sc, df, mcXin, false, "features")
@@ -190,7 +194,7 @@ object LogisticRegressionExample {
       LabeledPoint(1.0, Vectors.dense(1.0, 0.5, 2.2)),
       LabeledPoint(2.0, Vectors.dense(1.6, 0.8, 3.6)),
       LabeledPoint(1.0, Vectors.dense(1.0, 0.0, 2.3))))
-    val lr = new LogisticRegression("log", sc)
+    val lr = new LogisticRegression("log")
     val lrmodel = lr.fit(training.toDF)
     lrmodel.mloutput.getDF(sqlContext, "B_out").show()
 

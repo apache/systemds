@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.applications.mlpipeline
+package org.apache.sysml.api.ml
 
 import org.scalatest.{ BeforeAndAfterAll, Suite }
 import org.apache.spark.{ SparkConf, SparkContext }

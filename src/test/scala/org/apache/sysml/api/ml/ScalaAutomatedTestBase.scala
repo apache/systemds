@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysml.test.integration.applications.mlpipeline
+package org.apache.sysml.api.ml
 
 import java.io.File
 import org.apache.sysml.api.ml.ScriptsUtils

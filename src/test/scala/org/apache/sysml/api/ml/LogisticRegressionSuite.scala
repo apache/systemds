@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.applications.mlpipeline
+package org.apache.sysml.api.ml
 
 import scala.reflect.runtime.universe
 
@@ -30,7 +30,6 @@ import org.apache.spark.ml.tuning.CrossValidator
 import org.apache.spark.ml.tuning.ParamGridBuilder
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.sysml.api.ml.LogisticRegression
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
 
@@ -56,7 +55,7 @@ class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Mat
       LabeledPoint(1.0, Vectors.dense(1.0, 0.4, 2.1)),
       LabeledPoint(2.0, Vectors.dense(1.2, 0.0, 3.5))))
       //.map { x => LabeledPoint(x.label-1,x.features)}
-    val lr = new LogisticRegression("log", sc)
+    val lr = new LogisticRegression("log")
     val lrmodel = lr.setTol(0.00003).fit(training.toDF)
     lrmodel.transform(testing.toDF).show
     
@@ -80,7 +79,7 @@ class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Mat
       LabeledPoint(2.0, Vectors.dense(1.2, 0.0, 3.5))))
       
     //Systemml need label column as [1.0, 2.0]
-    val lr_systemml = new LogisticRegression("log", sc)
+    val lr_systemml = new LogisticRegression("log")
     val lrmodel_systemml = lr_systemml.fit(training.toDF)
     val scored_systemml = lrmodel_systemml.transform(testing.toDF).orderBy("ID")
     scored_systemml.select("prediction").collect() shouldEqual testing.toDF.select("label").collect()
@@ -122,7 +121,7 @@ class LogisticRegressionSuite extends FunSuite with WrapperSparkContext with Mat
     val hashingTF = new HashingTF().setNumFeatures(1000).setInputCol(tokenizer.getOutputCol).setOutputCol("features")
     
     
-    val lr_systemml = new LogisticRegression("log",sc)
+    val lr_systemml = new LogisticRegression("log")
     val pipeline_systemml = new Pipeline().setStages(Array(tokenizer, hashingTF, lr_systemml))
     val crossval_systemml = new CrossValidator().setEstimator(pipeline_systemml).setEvaluator(new BinaryClassificationEvaluator)
     val paramGrid_systemml = new ParamGridBuilder().addGrid(hashingTF.numFeatures, Array(10, 100, 1000)).addGrid(lr_systemml.regParam, Array(0.1, 0.01)).build()

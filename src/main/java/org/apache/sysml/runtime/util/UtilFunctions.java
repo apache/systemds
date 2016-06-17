@@ -392,60 +392,6 @@ public class UtilFunctions
 	 * @param in
 	 * @return
 	 */
-	public static Double objectToDouble( Object in ) {
-		if(in == null) return null;
-		else if (in instanceof String)
-			return Double.valueOf((String)in);
-		else if (in instanceof Double)
-			return (Double)in;
-		else if (in instanceof Long)
-			return Double.valueOf(((Long)in).longValue());
-		else if (in instanceof Boolean)
-			return ((((Boolean)in).booleanValue())? 1.0:0);
-		return null;
-	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
-	public static Long objectToLong( Object in ) {
-		if(in == null) return null;
-		else if (in instanceof String)
-			return Long.valueOf((String)in);
-		else if (in instanceof Double)
-			return Long.valueOf(((Double)in).longValue());
-		else if (in instanceof Long)
-			return (Long)in;
-		else if (in instanceof Boolean)
-			return ((((Boolean)in).booleanValue())? 1L:0);
-		return null;
-	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
-	public static Boolean objectToBoolean( Object in ) {
-		if(in == null) return null;
-		else if (in instanceof String)
-			return Boolean.valueOf((String)in);
-		else if (in instanceof Double)
-			return (((Double)in)>0?(new Boolean(true)):(new Boolean(false)));
-		else if (in instanceof Long)
-			return (((Long)in)>0?(new Boolean(true)):(new Boolean(false)));
-		else if (in instanceof Boolean)
-			return ((Boolean)in);
-		return null;
-	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
 	public static String objectToString( Object in, boolean bDoNotUpdateZeroData ) {
 		String strReturn = objectToString(in); 
 		if( strReturn == null )
@@ -470,16 +416,10 @@ public class UtilFunctions
 	 * @param in
 	 * @return
 	 */
-	public static Object objectToObject(ValueType vt, Object in) {
-		if( in == null )  return null;
-		switch( vt ) {
-			case STRING:  return objectToString(in);
-			case BOOLEAN: return objectToBoolean(in);
-			case INT:     return objectToLong(in);
-			case DOUBLE:  return objectToDouble(in);
-			default: throw new RuntimeException("Unsupported value type: "+vt);
-		}
-	}	
+	public static Object objectToObject(ValueType vt, Object in ) {
+		String str = objectToString(in);
+		return stringToObject(vt, str );
+	}
 	
 	/**
 	 * 
@@ -487,62 +427,12 @@ public class UtilFunctions
 	 * @param in
 	 * @return
 	 */
-	public static Object[] objArrayToObjArray(ValueType vt, String in[]) {
-		if( in == null )  return null;
-		
-		Object out[] = new Object[in.length];
-		for (int i=0; i<in.length; ++i)
-			out[i] = UtilFunctions.objectToObject(vt, in[i]);
-		
-		return out;
-	}	
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
-	public static Object[] objArrayToObjArray(ValueType vt, double in[]) {
-		if( in == null )  return null;
-		
-		Object out[] = new Object[in.length];
-		for (int i=0; i<in.length; ++i)
-			out[i] = UtilFunctions.objectToObject(vt, in[i]);
-		
-		return out;
-	}	
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
-	public static Object[] objArrayToObjArray(ValueType vt, long in[]) {
-		if( in == null )  return null;
-		
-		Object out[] = new Object[in.length];
-		for (int i=0; i<in.length; ++i)
-			out[i] = UtilFunctions.objectToObject(vt, in[i]);
-		
-		return out;
-	}	
-	
-	/**
-	 * 
-	 * @param vt
-	 * @param in
-	 * @return
-	 */
-	public static Object[] objArrayToObjArray(ValueType vt, boolean in[]) {
-		if( in == null )  return null;
-		
-		Object out[] = new Object[in.length];
-		for (int i=0; i<in.length; ++i)
-			out[i] = UtilFunctions.objectToObject(vt, in[i]);
-		
-		return out;
+	public static Object objectToObject(ValueType vt, Object in, boolean bDoNotUpdateZeroData ) {
+		String str = objectToString(in, bDoNotUpdateZeroData);
+		if (str==null || vt == ValueType.STRING)
+			return str;
+		else
+			return stringToObject(vt, str); 
 	}	
 	
 	/**
@@ -681,18 +571,8 @@ public class UtilFunctions
 		JSONArray schemaJsonArr = (JSONArray)schemaObject;
 		ValueType[] schemaArray = new ValueType[schemaJsonArr.size()];
 		
-		for(int i=0; i < schemaJsonArr.length(); i++) {
-			if(((String) schemaJsonArr.get(0)).compareTo("DOUBLE") == 0)
-				schemaArray[i] = ValueType.DOUBLE;
-			else if(((String) schemaJsonArr.get(0)).compareTo("INT") == 0)
-				schemaArray[i] = ValueType.INT;
-			else if(((String) schemaJsonArr.get(0)).compareTo("BOOLEAN") == 0)
-				schemaArray[i] = ValueType.BOOLEAN;
-			else if(((String) schemaJsonArr.get(0)).compareTo("STRING") == 0)
-				schemaArray[i] = ValueType.STRING;
-			else
-				schemaArray[i] = ValueType.STRING;
-		}
+		for(int i=0; i < schemaJsonArr.length(); i++)
+				schemaArray[i] = ValueType.valueOf((String)schemaJsonArr.get(0));
 		return Arrays.asList(schemaArray);
 	}
 	

@@ -46,11 +46,11 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * 
  */
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
-public class FrameBlock implements Writable, CacheBlock, Externalizable
+public class FrameBlock implements Writable, CacheBlock, Externalizable  
 {
 	private static final long serialVersionUID = -3993450030207130665L;
 	
-	private static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block 
+	public static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block 
 
 	//internal configuration
 	private static final boolean REUSE_RECODE_MAPS = true;
@@ -117,15 +117,6 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			appendRow(data[i]);
 		if( REUSE_RECODE_MAPS )
 			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
-	}
-	
-	/**
-	 * Get default buffer size of the frame block.
-	 * 
-	 * @return 
-	 */
-	public static int getDefBufferSize() {
-		return BUFFER_SIZE;
 	}
 	
 	/**
@@ -309,47 +300,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param val
 	 */
 	public void set(int r, int c, Object val) {
-		set(r, c, val, false);
+		_coldata.get(c).set(r, UtilFunctions.objectToObject(_schema.get(c), val));
 	}
 
-	/**
-	 * Sets the value in position (r,c), where the input is assumed
-	 * to be a boxed object consistent with the schema definition.
-	 * 
-	 * @param r
-	 * @param c
-	 * @param val
-	 * @param bDoNotUpdateZeroData
-	 * 			If this flag set to true, then values of null, 0.0 in case of Double, 0 in case of Int/Long, or false in case of Boolean will not be set.
-	 * 			This flag is primarily used in the mserge scenario. 
-	 * 			In other cases, user/programmer can call regular set() function without this flag.
-	 */
-	public void set(int r, int c, Object val,  boolean bDoNotUpdateZeroData ) {
-		switch( _schema.get(c) ) {
-			case STRING:
-				String strTemp = UtilFunctions.objectToString(val, bDoNotUpdateZeroData);
-				if ((bDoNotUpdateZeroData &&  strTemp != null) || (!bDoNotUpdateZeroData))
-					_coldata.get(c).set(r, strTemp);
-				break;
-			case BOOLEAN:
-				Boolean bTemp = UtilFunctions.objectToBoolean(val);
-				if ((bDoNotUpdateZeroData &&  (bTemp.booleanValue() != false)) || (!bDoNotUpdateZeroData))
-					_coldata.get(c).set(r, bTemp);
-				break;
-			case INT:     
-				Long lTemp = UtilFunctions.objectToLong(val);
-				if ((bDoNotUpdateZeroData &&  lTemp != 0) || (!bDoNotUpdateZeroData))
-					_coldata.get(c).set(r, lTemp);
-				break;
-			case DOUBLE:  
-				Double dTemp = UtilFunctions.objectToDouble(val);
-				if ((bDoNotUpdateZeroData &&  dTemp != 0.0) || (!bDoNotUpdateZeroData))
-					_coldata.get(c).set(r, dTemp);
-				break;
-			default: throw new RuntimeException("Unsupported value type: "+_schema.get(c));
-		}
-	}
-	
 	public void reset(int nrow) 
 	{
 		getSchema().clear();
@@ -715,8 +668,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	
-	public void sliceOperations(ArrayList<Pair<Long,FrameBlock>> outlist, IndexRange range, int rowCut, int colCut, 
-			int normalBlockRowFactor, int normalBlockColFactor/*, int boundaryRlen, int boundaryClen*/)
+	public void sliceOperations(ArrayList<Pair<Long,FrameBlock>> outlist, IndexRange range, int rowCut)
 	{
 		FrameBlock top=null, bottom=null;
 		Iterator<Pair<Long,FrameBlock>> p=outlist.iterator();
@@ -887,17 +839,12 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return map;
 	}
 
-	public void merge(FrameBlock that ) 
-			throws DMLRuntimeException
-	{
-		merge(that, 0, false);
-	}
 	/**
 	 * 
 	 * @param that
 	 * @throws DMLRuntimeException 
 	 */
-	public void merge(FrameBlock that, int iStartIndex, boolean bDoNotCheckRowSize ) 
+	public void merge(FrameBlock that) 
 		throws DMLRuntimeException
 	{
 		//check for empty input source (nothing to merge)
@@ -905,17 +852,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			return;
 		
 		//check dimensions (before potentially copy to prevent implicit dimension change) 
-		if (( !bDoNotCheckRowSize) &&
-		    ( getNumRows() != that.getNumRows() || getNumColumns() != that.getNumColumns() ))
-			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+getNumRows()+"x"+getNumColumns()+", source="+that.getNumRows()+"x"+that.getNumColumns()+")");
-		else if( getNumColumns() != that.getNumColumns() )
+		if ( getNumRows() != that.getNumRows() || getNumColumns() != that.getNumColumns() )
 			throw new DMLRuntimeException("Dimension mismatch on merge disjoint (target="+getNumRows()+"x"+getNumColumns()+", source="+that.getNumRows()+"x"+that.getNumColumns()+")");
 		
 		//core frame block merge through cell copy
 		for( int i=0; i<that.getNumRows(); i++ ) {
-			for( int j=0; j<getNumColumns(); j++ )
-				if (that.get(i,j) != null) 
-					set(i+iStartIndex,j,that.get(i, j), true);		// Do not update with "null" data
+			for( int j=0; j<getNumColumns(); j++ ) {
+				Object obj = UtilFunctions.objectToObject(getSchema().get(j), that.get(i,j), true);
+				if (obj != null) 			// Do not update with "null" data
+					set(i, j,obj);
+			}
 		}
 		
 	}
@@ -1100,14 +1046,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			set(rl, ru, value, 0);
 		}
 		public void set(int rl, int ru, Array value, int rlSrc) {
-			if (value instanceof StringArray)
-				System.arraycopy(((StringArray)value)._data, rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof DoubleArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.STRING, ((DoubleArray)value)._data), rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof LongArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.STRING, ((LongArray)value)._data), rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof BooleanArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.STRING, ((BooleanArray)value)._data), rlSrc, _data, rl, ru-rl+1);
+			System.arraycopy(((StringArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
 		public void append(String value) {
 			if( _data.length <= _size )
@@ -1153,14 +1092,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			set(rl, ru, value, 0);
 		}
 		public void set(int rl, int ru, Array value, int rlSrc) {
-			if (value instanceof StringArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.BOOLEAN, ((StringArray)value)._data), rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof DoubleArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.BOOLEAN, ((DoubleArray)value)._data), rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof LongArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.BOOLEAN, ((BooleanArray)value)._data), rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof BooleanArray)
-				System.arraycopy(((BooleanArray)value)._data, rlSrc, _data, rl, ru-rl+1);
+			System.arraycopy(((BooleanArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
 		public void append(String value) {
 			append(Boolean.parseBoolean(value));
@@ -1207,14 +1139,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			set(rl, ru, value, 0);
 		}
 		public void set(int rl, int ru, Array value, int rlSrc) {
-			if (value instanceof StringArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.INT, ((StringArray)value)._data), rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof DoubleArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.INT, ((DoubleArray)value)._data), rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof LongArray)
-				System.arraycopy(((LongArray)value)._data, rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof BooleanArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.INT, ((BooleanArray)value)._data), rlSrc, _data, rl, ru-rl+1);
+			System.arraycopy(((LongArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
 		public void append(String value) {
 			append((value!=null)?Long.parseLong(value):null);
@@ -1261,14 +1186,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			set(rl,ru, value, 0);
 		}
 		public void set(int rl, int ru, Array value, int rlSrc) {
-			if (value instanceof StringArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.DOUBLE, ((StringArray)value)._data), rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof DoubleArray)
-				System.arraycopy(((DoubleArray)value)._data, rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof LongArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.DOUBLE, ((LongArray)value)._data), rlSrc, _data, rl, ru-rl+1);
-			else if (value instanceof BooleanArray)
-				System.arraycopy(UtilFunctions.objArrayToObjArray( ValueType.DOUBLE, ((BooleanArray)value)._data), rlSrc, _data, rl, ru-rl+1);
+			System.arraycopy(((DoubleArray)value)._data, rlSrc, _data, rl, ru-rl+1);
 		}
 		public void append(String value) {
 			append((value!=null)?Double.parseDouble(value):null);

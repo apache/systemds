@@ -133,7 +133,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 				out = (JavaPairRDD<Long, FrameBlock>) RDDAggregateUtils.mergeByFrameKey(in1.union(in2));
 			}
 			
-			sec.setFrameRDDHandleForVariable(output.getName(), out);
+			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 			if( broadcastIn2 != null)
 				sec.addLineageBroadcast(output.getName(), input2.getName());
@@ -301,15 +301,28 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 				long rhs_cl = lhs_cl - _ixrange.colStart + 1;
 				long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
 				
-				// Provide global zero-based index to sliceOperations
-				FrameBlock slicedRHSMatBlock = _binput.sliceOperations(_ixrange, rhs_rl, rhs_ru, rhs_cl, rhs_cu, new FrameBlock());
-				
 				// Provide local zero-based index to leftIndexingOperations
 				int lhs_lrl = (int)(lhs_rl- arg._1);
 				int lhs_lru = (int)(lhs_ru- arg._1);
 				int lhs_lcl = (int)lhs_cl-1;
 				int lhs_lcu = (int)lhs_cu-1;
-				FrameBlock ret = arg._2.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl, lhs_lru, lhs_lcl, lhs_lcu, new FrameBlock());
+
+				FrameBlock ret = arg._2;
+				int brlen = OptimizerUtils.DEFAULT_BLOCKSIZE;
+				long rhs_rl_pb = rhs_rl;
+				long rhs_ru_pb = Math.min(rhs_ru, (((rhs_rl-1)/brlen)+1)*brlen); 
+				while(rhs_rl_pb <= rhs_ru_pb) {
+					// Provide global zero-based index to sliceOperations, but only for one RHS partition block at a time.
+					FrameBlock slicedRHSMatBlock = _binput.sliceOperations(rhs_rl_pb, rhs_ru_pb, rhs_cl, rhs_cu, new FrameBlock());
+					
+					// Provide local zero-based index to leftIndexingOperations
+					int lhs_lrl_pb = (int) (lhs_lrl + (rhs_rl_pb - rhs_rl));
+					int lhs_lru_pb = (int) (lhs_lru + (rhs_ru_pb - rhs_ru));
+					ret = ret.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl_pb, lhs_lru_pb, lhs_lcl, lhs_lcu, new FrameBlock());
+					rhs_rl_pb = rhs_ru_pb + 1;
+					rhs_ru_pb = Math.min(rhs_ru, rhs_ru_pb+brlen);
+				}
+				
 				return new Tuple2<Long, FrameBlock>(arg._1, ret);
 			}
 		}

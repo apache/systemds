@@ -2272,9 +2272,8 @@ public class Dag<N extends Lop>
 		OutputParameters oparams = node.getOutputParameters();
 		
 		if (oparams.isBlocked()) {
-			if ( !cellModeOverride ) {
+			if ( !cellModeOverride )
 				oinfo = OutputInfo.BinaryBlockOutputInfo;
-			}
 			else {
 				// output format is overridden, for example, due to recordReaderInstructions in the job
 				oinfo = OutputInfo.BinaryCellOutputInfo;

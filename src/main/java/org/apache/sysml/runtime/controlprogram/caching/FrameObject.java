@@ -144,15 +144,6 @@ public class FrameObject extends CacheableData<FrameBlock>
 		return mc.getCols();
 	}
 	
-	public static String getOutputFormat(String outformat)
-	{
-		if (outformat.equalsIgnoreCase("binaryblock"))
-			return "framebinaryblock";
-		else 
-			return outformat;
-	}
-	
-	
 	@Override
 	protected FrameBlock readBlobFromCache(String fname) throws IOException {
 		return (FrameBlock)LazyWriteBuffer.readBlock(fname, false);
@@ -250,10 +241,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt) 
 		throws IOException, DMLRuntimeException 
 	{
-	    //prepare output info
+		//prepare output info
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
-	    OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo (ofmt ) 
-                : InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
+		OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo (ofmt ) 
+				: InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
 	    
 		//note: the write of an RDD to HDFS might trigger
 		//lazy evaluation of pending transformations.				

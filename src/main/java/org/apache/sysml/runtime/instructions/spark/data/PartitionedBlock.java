@@ -302,8 +302,8 @@ public class PartitionedBlock implements Externalizable
 	 * @param frameBlock
 	 * @return
 	 * @throws DMLRuntimeException 
-	 */
-	public FrameBlock sliceOperations(IndexRange ixrangeGbl, long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
+	 */	
+	public FrameBlock sliceOperations(long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
 		throws DMLRuntimeException 
 	{
 		int lrl = (int) rl;
@@ -333,14 +333,7 @@ public class PartitionedBlock implements Externalizable
 			return allBlks.get(0).getValue();
 		}
 		else {
-			//allocate output frame
-			FrameBlock ret = new FrameBlock(in.getSchema());
-			ret.ensureAllocatedColumns((int) (ru-rl+1));
-			
-			for(Pair<Long, FrameBlock> kv : allBlks) {
-				ret.merge(kv.getValue(), (int) (kv.getKey()-rl), true);
-			}
-			return ret;
+			throw new DMLRuntimeException("There should not be more than one block created.");
 		} 
 	}
 	

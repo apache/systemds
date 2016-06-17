@@ -776,9 +776,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			LOG.trace("Export data "+getVarName()+" "+fName);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
-		if (this instanceof FrameObject)
-			outputFormat = FrameObject.getOutputFormat(outputFormat);
-		
 		//prevent concurrent modifications
 		if ( !isAvailableToRead() )
 			throw new CacheException ("MatrixObject not available to read.");

@@ -50,7 +50,7 @@ public class BroadcastObject extends LineageObject
 	public boolean isValid() 
 	{
 		//check for evicted soft reference
-		PartitionedBroadcast pbm = (PartitionedBroadcast) _bcHandle.get();
+		PartitionedBroadcast pbm = _bcHandle.get();
 		if( pbm == null )
 			return false;
 		

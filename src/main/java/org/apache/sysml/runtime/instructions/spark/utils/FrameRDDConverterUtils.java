@@ -402,7 +402,7 @@ public class FrameRDDConverterUtils
 			_hasHeader = hasHeader;
 			_delim = delim;
 			_fill = fill;
-			_maxRowsPerBlock = Math.max((int) (FrameBlock.getDefBufferSize()/_clen), 1);
+			_maxRowsPerBlock = Math.max((int) (FrameBlock.BUFFER_SIZE/_clen), 1);
 		}
 
 		@Override
@@ -536,7 +536,7 @@ public class FrameRDDConverterUtils
 			_clen = mc.getCols();
 			
 			//determine upper bounded buffer len
-			_bufflen = (int) Math.min(_rlen*_clen, FrameBlock.getDefBufferSize());
+			_bufflen = (int) Math.min(_rlen*_clen, FrameBlock.BUFFER_SIZE);
 		}
 
 
@@ -623,7 +623,7 @@ public class FrameRDDConverterUtils
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
 			_clen = mc.getCols();
-			_maxRowsPerBlock = Math.max((int) (FrameBlock.getDefBufferSize()/_clen), 1);
+			_maxRowsPerBlock = Math.max((int) (FrameBlock.BUFFER_SIZE/_clen), 1);
 		}
 
 		@Override

@@ -262,7 +262,7 @@ public class SparkExecutionContext extends ExecutionContext
 	public JavaPairRDD<Long,FrameBlock> getFrameBinaryBlockRDDHandleForVariable( String varname ) 
 		throws DMLRuntimeException 
 	{
-		JavaPairRDD<Long,FrameBlock> out = (JavaPairRDD<Long,FrameBlock>) getRDDHandleForVariable( varname, InputInfo.BinaryBlockFrameInputInfo);
+		JavaPairRDD<Long,FrameBlock> out = (JavaPairRDD<Long,FrameBlock>) getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo);
 		return out;
 	}
 	
@@ -486,7 +486,7 @@ public class SparkExecutionContext extends ExecutionContext
 		if( mo.getBroadcastHandle()!=null 
 			&& mo.getBroadcastHandle().isValid() ) 
 		{
-			bret = (PartitionedBroadcast) mo.getBroadcastHandle().getBroadcast();
+			bret = mo.getBroadcastHandle().getBroadcast();
 		}
 		
 		//create new broadcast handle (never created, evicted)
@@ -554,7 +554,7 @@ public class SparkExecutionContext extends ExecutionContext
 		if( fo.getBroadcastHandle()!=null 
 			&& fo.getBroadcastHandle().isValid() ) 
 		{
-			bret = (PartitionedBroadcast) fo.getBroadcastHandle().getBroadcast();
+			bret = fo.getBroadcastHandle().getBroadcast();
 		}
 		
 		//create new broadcast handle (never created, evicted)
@@ -635,20 +635,6 @@ public class SparkExecutionContext extends ExecutionContext
 		obj.setRDDHandle( rddhandle );
 	}
 	
-    /**
-    *
-    * @param varname
-    * @param rdd
-    * @throws DMLRuntimeException
-    */
-	public void setFrameRDDHandleForVariable(String varname, JavaPairRDD<?,?> rdd)
-			throws DMLRuntimeException
-	{
-		FrameObject mo = getFrameObject(varname);
-        RDDObject rddhandle = new RDDObject(rdd, varname);
-        mo.setRDDHandle( rddhandle );
-	}
-
 	/**
 	 * Utility method for creating an RDD out of an in-memory matrix block.
 	 * 
@@ -975,7 +961,7 @@ public class SparkExecutionContext extends ExecutionContext
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		if(schema == null)
-			schema = 	Collections.nCopies(clen, ValueType.STRING);
+			schema = Collections.nCopies(clen, ValueType.STRING);
 
 		//create output frame block (w/ lazy allocation)
 		FrameBlock out = new FrameBlock(schema);
@@ -1175,7 +1161,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 		}
 		else if( lob instanceof BroadcastObject ) {
-			PartitionedBroadcast pbm = (PartitionedBroadcast) ((BroadcastObject)lob).getBroadcast();
+			PartitionedBroadcast pbm = ((BroadcastObject)lob).getBroadcast();
 			if( pbm != null ) //robustness for evictions
 				for( Broadcast<PartitionedBlock> bc : pbm.getBroadcasts() )
 					cleanupBroadcastVariable(bc);

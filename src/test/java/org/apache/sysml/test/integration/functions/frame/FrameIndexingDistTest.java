@@ -56,10 +56,10 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 //	private final static int rows = 5, cols=8;
 
 	// Test data with 2 blocks of rows and columns
-	private final static int rows = 1279, cols=1060;
+//	private final static int rows = 1279, cols=1060;
 
 	// Test data with 2+ blocks of rows and columns
-//	private final static int rows = 3279, cols=1060;
+	private final static int rows = 3279, cols=1060;
 
 	
 	private final static int min=0;
@@ -124,8 +124,8 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	        config.addVariable("cols", cols);
 	      
 //	        long rowstart=2, rowend=4, colstart=2, colend=4;
-	        long rowstart=816, rowend=1229, colstart=109 /*967*/, colend=1009;
-//	        long rowstart=816, rowend=2829, colstart=109 /*967*/, colend=1009;
+//	        long rowstart=816, rowend=1229, colstart=109 /*967*/, colend=1009;
+	        long rowstart=816, rowend=2829, colstart=109 /*967*/, colend=1009;
 
 	        config.addVariable("rowstart", rowstart);
 	        config.addVariable("rowend", rowend);

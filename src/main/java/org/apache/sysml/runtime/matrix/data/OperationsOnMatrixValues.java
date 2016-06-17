@@ -510,26 +510,22 @@ public class OperationsOnMatrixValues
 		
 		// Get Top Row and Left column cutting point. 
 		int rowCut=(int)(ixrange.rowStart-index);
-		int colCut=(int)ixrange.colStart-1;
 		
 		// Get indices for result block
 		long resultBlockIndexTop=UtilFunctions.computeBlockIndex(cellIndexOverlapTop, brlen);
 		long resultBlockIndexBottom=UtilFunctions.computeBlockIndex(cellIndexOverlapBottom, brlen);
-		long resultBlockIndexLeft=UtilFunctions.computeBlockIndex(cellIndexOverlapLeft, bclen);
-		long resultBlockIndexRight=UtilFunctions.computeBlockIndex(cellIndexOverlapRight, bclen);
 		
 		//allocate space for the output value
 		for(long r=resultBlockIndexTop; r<=resultBlockIndexBottom; r++)
-			for(long c=resultBlockIndexLeft; c<=resultBlockIndexRight; c++)
-			{
-				List<ValueType> schema = UtilFunctions.getSubSchema(block.getSchema(), tmpRange.colStart, tmpRange.colEnd);
-				long iResultIndex = (r-1)*brlen+tmpRange.rowStart;
-				Pair<Long,FrameBlock> out=new Pair<Long,FrameBlock>(new Long(iResultIndex+1), new FrameBlock(schema));
-				outlist.add(out);
-			}
+		{
+			List<ValueType> schema = UtilFunctions.getSubSchema(block.getSchema(), tmpRange.colStart, tmpRange.colEnd);
+			long iResultIndex = (r-1)*brlen+tmpRange.rowStart;
+			Pair<Long,FrameBlock> out=new Pair<Long,FrameBlock>(new Long(iResultIndex+1), new FrameBlock(schema));
+			outlist.add(out);
+		}
 		
 		//execute actual slice operation
-		block.sliceOperations(outlist, tmpRange, rowCut, colCut, brlen, bclen);
+		block.sliceOperations(outlist, tmpRange, rowCut);
 	}
 
 	/**

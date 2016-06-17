@@ -26,7 +26,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.util.IndexRange;
 
 /**
  * This class is a wrapper around an array of broadcasts of partitioned matrix/frame blocks,
@@ -105,14 +104,14 @@ public class PartitionedBroadcast implements Serializable
 		return _pbc[pix].value().getBlock(rowIndex, colIndex);
 	}
 	
-	public FrameBlock sliceOperations(IndexRange ixrange, long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
+	public FrameBlock sliceOperations(long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
 		throws DMLRuntimeException 
 	{
 		FrameBlock ret = null;
 		
 		for( Broadcast<PartitionedBlock> bc : _pbc ) {
 			PartitionedBlock pm = bc.value();
-			FrameBlock tmp = pm.sliceOperations(ixrange, rl, ru, cl, cu, new FrameBlock());
+			FrameBlock tmp = pm.sliceOperations(rl, ru, cl, cu, new FrameBlock());
 			if( ret != null )
 				ret.merge(tmp);
 			else

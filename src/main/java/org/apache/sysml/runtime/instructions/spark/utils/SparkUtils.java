@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.hadoop.io.LongWritable;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
@@ -147,38 +146,6 @@ public class SparkUtils
 	 */
 	public static Pair<Long,FrameBlock> toIndexedFrameBlock( Long ix, FrameBlock fb ) {
 		return new Pair<Long,FrameBlock>(ix, fb);
-	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
-	public static Pair<LongWritable,FrameBlock> toIndexedLongWritableFrameBlock( Tuple2<LongWritable,FrameBlock> in ) {
-		return new Pair<LongWritable,FrameBlock>(in._1(), in._2());
-	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
-	public static Tuple2<LongWritable,FrameBlock> fromIndexedLongWritableFrameBlock( Pair<LongWritable, FrameBlock> in ){
-		return new Tuple2<LongWritable, FrameBlock>(in.getKey(), in.getValue());
-	}
-	
-	/**
-	 * 
-	 * @param in
-	 * @return
-	 */
-	public static ArrayList<Tuple2<LongWritable,FrameBlock>> fromIndexedLongWritableFrameBlock( ArrayList<Pair<LongWritable, FrameBlock>> in )
-	{
-		ArrayList<Tuple2<LongWritable, FrameBlock>> ret = new ArrayList<Tuple2<LongWritable, FrameBlock>>();
-		for( Pair<LongWritable, FrameBlock> ifv : in )
-			ret.add(fromIndexedLongWritableFrameBlock(ifv));
-		
-		return ret;
 	}
 
 	/**

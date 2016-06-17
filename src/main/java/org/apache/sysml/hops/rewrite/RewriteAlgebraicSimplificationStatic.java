@@ -1936,8 +1936,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);
 				HopRewriteUtils.addChildReference(parent, ternOp, pos);
 				
-				System.out.println("Applied simplifyAggBinaryWithConstMultBinOperation.");
-				LOG.debug("Applied simplifyAggBinaryWithConstMultBinOperation.");
+				LOG.debug("Applied simplifyAxpy.");
 				return ternOp;
 			}
 		}

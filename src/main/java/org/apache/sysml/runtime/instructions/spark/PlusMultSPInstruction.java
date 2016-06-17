@@ -58,8 +58,8 @@ public class PlusMultSPInstruction extends  ArithmeticBinarySPInstruction
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode=parts[0];
 		CPOperand operand1 = new CPOperand(parts[1]);
-		CPOperand operand2 = new CPOperand(parts[2]);
-		CPOperand operand3 = new CPOperand(parts[3]);
+		CPOperand operand2 = new CPOperand(parts[3]);	//put the second matrix (parts[3]) in Operand2 to make using Binary matrix operations easier
+		CPOperand operand3 = new CPOperand(parts[2]);
 		CPOperand outOperand = new CPOperand(parts[4]);
 		BinaryOperator bOperator = null;
 		if(opcode.equals("+*"))
@@ -76,40 +76,12 @@ public class PlusMultSPInstruction extends  ArithmeticBinarySPInstruction
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
-		//sanity check dimensions
-		checkMatrixMatrixBinaryCharacteristics(sec);
-		
-		// Get input RDDs
-		String rddVar1 = input1.getName();
-		String rddVar3 = input3.getName();
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar1 );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = sec.getBinaryBlockRDDHandleForVariable( rddVar3 );
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( rddVar1 );
-		MatrixCharacteristics mc3 = sec.getMatrixCharacteristics( rddVar3 );
-		
-		ScalarObject constant = (ScalarObject) ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
+		//pass the scalar
+		ScalarObject constant = (ScalarObject) ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral());
 		((ValueFunctionWithConstant) ((BinaryOperator)_optr).fn).setConstant(constant.getDoubleValue());
 
-		BinaryOperator bop = (BinaryOperator) _optr;
-		//vector replication if required (mv or outer operations)
-		boolean rowvector = (mc3.getRows()==1 && mc1.getRows()>1);
-		long numRepLeft = getNumReplicas(mc1, mc3, true);
-		long numRepRight = getNumReplicas(mc1, mc3, false);
-		if( numRepLeft > 1 )
-			in1 = in1.flatMapToPair(new ReplicateVectorFunction(false, numRepLeft ));
-		if( numRepRight > 1 )
-			in3 = in3.flatMapToPair(new ReplicateVectorFunction(rowvector, numRepRight));
-		
-		//execute operation
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-				.join(in3)
-				.mapValues(new MatrixMatrixBinaryOpFunction(bop));
-		
-		//set output RDD
-		updateBinaryOutputMatrixCharacteristics(sec);
-		sec.setRDDHandleForVariable(output.getName(), out);
-		sec.addLineageRDD(output.getName(), rddVar1);
-		sec.addLineageRDD(output.getName(), rddVar3);
-	}
+		super.processMatrixMatrixBinaryInstruction(sec);
 	
+	}
+
 }

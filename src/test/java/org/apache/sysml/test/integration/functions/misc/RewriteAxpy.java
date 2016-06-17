@@ -23,7 +23,10 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -58,27 +61,53 @@ public class RewriteAxpy extends AutomatedTestBase
 	@Test
 	public void testAxpyNoRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME1, false );
+		testRewriteAxpy( TEST_NAME1, false, ExecType.CP );
 	}
-	*/
+	
 	
 	@Test
 	public void testAxpyRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME1, true);
+		testRewriteAxpy( TEST_NAME1, true, ExecType.CP);
 	}
-	
-	/*
 	@Test
 	public void testAxmyNoRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME2, false );
+		testRewriteAxpy( TEST_NAME2, false, ExecType.CP );
 	}
 	
 	@Test
 	public void testAxmyRewrite() 
 	{
-		testRewriteAxpy( TEST_NAME2, true );
+		testRewriteAxpy( TEST_NAME2, true, ExecType.CP );
+	}
+	*/
+	
+	/*
+	@Test
+	public void testSpAxpyNoRewrite() 
+	{
+		testRewriteAxpy( TEST_NAME1, false, ExecType.SPARK );
+	}
+	*/
+	
+	@Test
+	public void testSpAxpyRewrite() 
+	{
+		testRewriteAxpy( TEST_NAME1, true, ExecType.SPARK );
+	}
+	
+	/*
+	@Test
+	public void testSpAxmyNoRewrite() 
+	{
+		testRewriteAxpy( TEST_NAME2, false, ExecType.SPARK  );
+	}
+	
+	@Test
+	public void testSpAxmyRewrite() 
+	{
+		testRewriteAxpy( TEST_NAME2, true, ExecType.SPARK  );
 	}
 	*/
 	
@@ -88,12 +117,23 @@ public class RewriteAxpy extends AutomatedTestBase
 	 * @param branchRemoval
 	 * @param IPA
 	 */
-	private void testRewriteAxpy( String testname, boolean rewrites )
+	private void testRewriteAxpy( String testname, boolean rewrites, ExecType instType )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 		try
 		{
+			
 			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
 			
@@ -120,6 +160,10 @@ public class RewriteAxpy extends AutomatedTestBase
 		finally
 		{
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
+			
 		}
 		
 	}	

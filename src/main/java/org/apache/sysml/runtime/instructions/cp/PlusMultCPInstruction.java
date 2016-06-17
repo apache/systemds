@@ -27,8 +27,8 @@ public class PlusMultCPInstruction extends ArithmeticBinaryCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode=parts[0];
 		CPOperand operand1 = new CPOperand(parts[1]);
-		CPOperand operand2 = new CPOperand(parts[2]);
-		CPOperand operand3 = new CPOperand(parts[3]);
+		CPOperand operand2 = new CPOperand(parts[3]); //put the second matrix (parts[3]) in Operand2 to make using Binary matrix operations easier
+		CPOperand operand3 = new CPOperand(parts[2]); 
 		CPOperand outOperand = new CPOperand(parts[4]);
 		BinaryOperator bOperator = null;
 		if(opcode.equals("+*"))
@@ -47,11 +47,9 @@ public class PlusMultCPInstruction extends ArithmeticBinaryCPInstruction {
 
 		//get all the inputs
 		MatrixBlock matrix1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock matrix2 = ec.getMatrixInput(input2.getName());
+		ScalarObject lambda = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()); 
 		
-		CPOperand scalarInput = input2;
-		ScalarObject lambda = ec.getScalarInput(scalarInput.getName(), scalarInput.getValueType(), scalarInput.isLiteral()); 
-		
-		MatrixBlock matrix2 = ec.getMatrixInput(input3.getName());
 		
 		//execution
 		((ValueFunctionWithConstant) ((BinaryOperator)_optr).fn).setConstant(lambda.getDoubleValue());
@@ -59,7 +57,7 @@ public class PlusMultCPInstruction extends ArithmeticBinaryCPInstruction {
 		
 		//release the matrices
 		ec.releaseMatrixInput(input1.getName());
-		ec.releaseMatrixInput(input3.getName());
+		ec.releaseMatrixInput(input2.getName());
 		
 		ec.setMatrixOutput(output_name, out);
 	}

@@ -121,6 +121,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 
 		Lop ret = ConvolutionUtils.constructConvolutionBackwardFilterLops(this);
 		if(ret != null) {
+			setLops( ret );
 			return ret;
 		}
 		

@@ -21,67 +21,55 @@ package org.apache.sysml.runtime.instructions;
 import java.util.HashMap;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.Instruction.INSTRUCTION_TYPE;
-import org.apache.sysml.runtime.instructions.cp.CPInstruction;
-import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ConvolutionGPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 
 public class GPUInstructionParser  extends InstructionParser 
 {
-	public static final HashMap<String, CPINSTRUCTION_TYPE> String2GPUInstructionType;
+	public static final HashMap<String, GPUINSTRUCTION_TYPE> String2GPUInstructionType;
 	static {
-		String2GPUInstructionType = new HashMap<String, CPINSTRUCTION_TYPE>();
-		String2GPUInstructionType.put( "conv2d"      , CPINSTRUCTION_TYPE.Convolution);
-		String2GPUInstructionType.put( "conv2d_backward_filter"      , CPINSTRUCTION_TYPE.Convolution);
-		String2GPUInstructionType.put( "conv2d_backward_data"      , CPINSTRUCTION_TYPE.Convolution);
-		String2GPUInstructionType.put( "ba+*"   	, CPINSTRUCTION_TYPE.AggregateBinary);
+		String2GPUInstructionType = new HashMap<String, GPUINSTRUCTION_TYPE>();
+		String2GPUInstructionType.put( "conv2d",                 GPUINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "conv2d_backward_filter", GPUINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "conv2d_backward_data",   GPUINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "ba+*",                   GPUINSTRUCTION_TYPE.AggregateBinary);
 		
 	}
 	
-	public static CPInstruction parseSingleInstruction (String str ) 
-			throws DMLRuntimeException 
-		{
-			if ( str == null || str.isEmpty() )
-				return null;
+	public static GPUInstruction parseSingleInstruction (String str ) 
+		throws DMLRuntimeException 
+	{
+		if ( str == null || str.isEmpty() )
+			return null;
 
-			CPINSTRUCTION_TYPE cptype = InstructionUtils.getCPType(str); 
-			if ( cptype == null ) 
-				throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
-			CPInstruction cpinst = parseSingleInstruction(cptype, str);
-			if ( cpinst == null )
-				throw new DMLRuntimeException("Unable to parse instruction: " + str);
-			return cpinst;
-		}
+		GPUINSTRUCTION_TYPE cptype = InstructionUtils.getGPUType(str); 
+		if ( cptype == null ) 
+			throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
+		GPUInstruction cpinst = parseSingleInstruction(cptype, str);
+		if ( cpinst == null )
+			throw new DMLRuntimeException("Unable to parse instruction: " + str);
+		return cpinst;
+	}
 	
-	public static CPInstruction parseSingleInstruction ( CPINSTRUCTION_TYPE cptype, String str ) 
-			throws DMLRuntimeException 
-		{
-			
-			if ( str == null || str.isEmpty() ) 
-				return null;
-			
-			if(cptype == null) {
-				throw new DMLRuntimeException("The instruction is not GPU-enabled:" + str);
-			}
-			
-			CPInstruction ret;
-			switch(cptype) 
-			{
-				case AggregateBinary:
-					ret = AggregateBinaryGPUInstruction.parseInstruction(str);
-					break;
-					
-				case Convolution:
-					ret = ConvolutionGPUInstruction.parseInstruction(str);
-					break;
-					
-				default: 
-					throw new DMLRuntimeException("Invalid GPU Instruction Type: " + cptype );
-			}
-			
-			ret.setType(INSTRUCTION_TYPE.GPU);
-			return ret;
-		}
+	public static GPUInstruction parseSingleInstruction ( GPUINSTRUCTION_TYPE gputype, String str ) 
+		throws DMLRuntimeException 
+	{
+		if( str == null || str.isEmpty() ) 
+			return null;	
+		if( gputype == null )
+			throw new DMLRuntimeException("The instruction is not GPU-enabled:" + str);
 		
+		switch(gputype) {
+			case AggregateBinary:
+				return AggregateBinaryGPUInstruction.parseInstruction(str);
+				
+			case Convolution:
+				return ConvolutionGPUInstruction.parseInstruction(str);
+				
+			default: 
+				throw new DMLRuntimeException("Invalid GPU Instruction Type: " + gputype );
+		}
+	}	
 }

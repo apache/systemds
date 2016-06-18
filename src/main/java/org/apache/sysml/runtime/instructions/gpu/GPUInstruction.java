@@ -17,27 +17,25 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.instructions.cp;
+package org.apache.sysml.runtime.instructions.gpu;
 
-import org.apache.sysml.api.MLContextProxy;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.instructions.CPInstructionParser;
+import org.apache.sysml.runtime.instructions.GPUInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
-
-public abstract class CPInstruction extends Instruction 
+public abstract class GPUInstruction extends Instruction 
 {
-	public enum CPINSTRUCTION_TYPE { INVALID, AggregateUnary, AggregateBinary, AggregateTernary, ArithmeticBinary, Ternary, Quaternary, BooleanBinary, BooleanUnary, BuiltinBinary, BuiltinUnary, MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin, Builtin, Reorg, RelationalBinary, File, Variable, External, Append, Rand, QSort, QPick, MatrixIndexing, MMTSJ, PMMJ, MMChain, MatrixReshape, Partition, StringInit, CentralMoment, Covariance, UaggOuterChain, Convolution }; 
+	public enum GPUINSTRUCTION_TYPE { AggregateBinary, Convolution }; 
 	
-	protected CPINSTRUCTION_TYPE _cptype;
+	protected GPUINSTRUCTION_TYPE _gputype;
 	protected Operator _optr;
 	
 	protected boolean _requiresLabelUpdate = false;
 	
-	public CPInstruction(String opcode, String istr) {
+	public GPUInstruction(String opcode, String istr) {
 		type = INSTRUCTION_TYPE.CONTROL_PROGRAM;
 		instString = istr;
 		
@@ -46,18 +44,17 @@ public abstract class CPInstruction extends Instruction
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
 	
-	public CPInstruction(Operator op, String opcode, String istr) {
+	public GPUInstruction(Operator op, String opcode, String istr) {
 		this(opcode, istr);
 		_optr = op;
 	}
 	
-	public CPINSTRUCTION_TYPE getCPInstructionType() {
-		return _cptype;
+	public GPUINSTRUCTION_TYPE getGPUInstructionType() {
+		return _gputype;
 	}
 	
 	@Override
-	public boolean requiresLabelUpdate()
-	{
+	public boolean requiresLabelUpdate() {
 		return _requiresLabelUpdate;
 	}
 
@@ -74,14 +71,10 @@ public abstract class CPInstruction extends Instruction
 		Instruction tmp = super.preprocessInstruction(ec);
 		
 		//instruction patching
-		if( tmp.requiresLabelUpdate() ) //update labels only if required
-		{
+		if( tmp.requiresLabelUpdate() ) { //update labels only if required
 			//note: no exchange of updated instruction as labels might change in the general case
 			String updInst = RunMRJobs.updateLabels(tmp.toString(), ec.getVariables());
-			tmp = CPInstructionParser.parseSingleInstruction(updInst);
-			if(MLContextProxy.isActive()) {
-				MLContextProxy.setInstructionForMonitoring(tmp);
-			}
+			tmp = GPUInstructionParser.parseSingleInstruction(updInst);
 		}
 
 		return tmp;

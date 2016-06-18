@@ -85,9 +85,6 @@ public class Statistics
 	private static AtomicLong sparkCollectCount = new AtomicLong(0L);
 	private static AtomicLong sparkBroadcast = new AtomicLong(0L);
 	private static AtomicLong sparkBroadcastCount = new AtomicLong(0L);
-	
-
-	
 
 	//PARFOR optimization stats 
 	private static long parforOptTime = 0; //in milli sec
@@ -117,10 +114,6 @@ public class Statistics
 	public static AtomicLong cudaDeAllocCount = new AtomicLong(0);
 	public static AtomicLong cudaToDevCount = new AtomicLong(0);
 	public static AtomicLong cudaFromDevCount = new AtomicLong(0);
-	// Potential CUDA heavy hitter
-	public static AtomicLong cudaMultTime = new AtomicLong(0);
-	public static AtomicLong cudaConvFwdTime = new AtomicLong(0);
-	public static AtomicLong gpuSparseMultCount = new AtomicLong(0);
 	
 	public static void incrementAllocationTime(long allocationTime, boolean isSparse) {
 		if(isSparse)
@@ -644,12 +637,6 @@ public class Statistics
 					+ cudaDeAllocCount.get() + "/"
 					+ cudaToDevCount.get() + "/"
 					+ cudaFromDevCount.get()  + ".\n");
-			sb.append("CUDA op time (mult/conv):\t"
-					+ String.format("%.3f", cudaMultTime.get()*1e-9) + "/"
-					+ String.format("%.3f", cudaConvFwdTime.get()*1e-9)  + " sec.\n");
-			if(gpuSparseMultCount.get() > 0)
-				sb.append("CUDA op count (sparse mult):\t"
-						+ gpuSparseMultCount.get() + ".\n");
 		}
 		
 		//show extended caching/compilation statistics

@@ -49,8 +49,8 @@ import jcuda.jcudnn.cudnnTensorDescriptor;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.JCudaObject;
-import org.apache.sysml.utils.Statistics;
 
+//FIXME move could to respective instructions, this is not a block library
 public class LibMatrixCUDA {
 	
 	public static cudnnHandle cudnnHandle;
@@ -96,13 +96,11 @@ public class LibMatrixCUDA {
             
 			alpha = pointerTo(1.0); // TODO
 			beta = pointerTo(0.0f);
-			long start = System.nanoTime();
 			int status = cudnnConvolutionForward(cudnnHandle, alpha, 
 					srcTensorDesc, imagePointer, 
 					filterDesc, filterPointer,
 					convDesc, algo, workSpace, sizeInBytes, beta,
 					dstTensorDesc, dstPointer);
-			Statistics.cudaConvFwdTime.addAndGet(System.nanoTime()-start);
 			if(status != jcuda.jcudnn.cudnnStatus.CUDNN_STATUS_SUCCESS) {
 				throw new DMLRuntimeException("Could not executed cudnnConvolutionForward: " + jcuda.jcudnn.cudnnStatus.stringFor(status));
 			}
@@ -254,36 +252,17 @@ public class LibMatrixCUDA {
 		int ldb = isRightTransposed ? n : k;
 		int ldc = m;
 		
-		if(!left.getGPUObject().isAllocated || !right.getGPUObject().isAllocated)
-			throw new DMLRuntimeException("One of input is not allocated:" + left.getGPUObject().isAllocated + " " + right.getGPUObject().isAllocated);
-		if(!output.getGPUObject().isAllocated)
-			throw new DMLRuntimeException("Output is not allocated:" + output.getGPUObject().isAllocated);
+		if(!left.getGPUObject().isAllocated() || !right.getGPUObject().isAllocated())
+			throw new DMLRuntimeException("One of input is not allocated:" + left.getGPUObject().isAllocated() + " " + right.getGPUObject().isAllocated());
+		if(!output.getGPUObject().isAllocated())
+			throw new DMLRuntimeException("Output is not allocated:" + output.getGPUObject().isAllocated());
 		
 		Pointer A = ((JCudaObject)left.getGPUObject()).jcudaPointer;
 		Pointer B = ((JCudaObject)right.getGPUObject()).jcudaPointer;
 		Pointer C = ((JCudaObject)output.getGPUObject()).jcudaPointer;
 		
-		long start = System.nanoTime();
 		JCublas.cublasDgemm(transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
-		Statistics.cudaMultTime.addAndGet(System.nanoTime()-start);
 	}
-	
-//	private void transpose(Pointer A, Pointer ret, int numRows, int numCols) {
-//		Pointer alpha = null; 
-//		Pointer beta = null;
-//		try {
-//			alpha = pointerTo(1.0);
-//			beta = pointerTo(0.0);
-//			JCublas2.cublasDgeam(cublasHandle, CUBLAS_OP_T, CUBLAS_OP_N, numCols, numRows, 
-//					alpha, A, numRows, beta, A, numCols, ret, numCols);
-//		}
-//		finally {
-//			if(alpha != null)
-//				cudaFree(alpha);
-//			if(beta != null)
-//				cudaFree(beta);
-//		}
-//	}
 
 	public static void conv2d_backward_data(MatrixObject filter, MatrixObject dout,
 			MatrixObject output, int N, int C, int H, int W, int K, int R,
@@ -350,10 +329,8 @@ public class LibMatrixCUDA {
 	}
 	
 	public static boolean isInSparseFormat(MatrixObject mo) {
-		if(mo.getGPUObject() != null && mo.getGPUObject().isAllocated)
-			return mo.getGPUObject().isInSparseFormat;
-		else if(mo.getMatrixBlock() != null && mo.getMatrixBlock().getDenseBlock() != null)
-			return false;
+		if(mo.getGPUObject() != null && mo.getGPUObject().isAllocated())
+			return mo.getGPUObject().isInSparseFormat();
 		return MatrixBlock.evalSparseFormatInMemory(mo.getNumRows(), mo.getNumColumns(), mo.getNnz());
 	}
 }

@@ -70,6 +70,7 @@ import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceDiag;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
@@ -263,10 +264,10 @@ public class InstructionUtils
 	 * @return
 	 * @throws DMLUnsupportedOperationException
 	 */
-	public static CPINSTRUCTION_TYPE getGPUType( String str ) 
+	public static GPUINSTRUCTION_TYPE getGPUType( String str ) 
 	{
 		String opcode = getOpCode(str);
-		CPINSTRUCTION_TYPE cptype = GPUInstructionParser.String2GPUInstructionType.get( opcode ); 
+		GPUINSTRUCTION_TYPE cptype = GPUInstructionParser.String2GPUInstructionType.get( opcode ); 
 		return cptype;
 	}
 	

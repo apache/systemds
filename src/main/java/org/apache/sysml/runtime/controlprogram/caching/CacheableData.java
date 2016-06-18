@@ -44,7 +44,6 @@ import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -181,18 +180,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject _bcHandle = null; //Broadcast handle
 	public GPUObject _gpuHandle = null;
-	
-	public GPUObject getGPUObject() {
-		return _gpuHandle;
-	}
-	public MatrixBlock getMatrixBlock() {
-		if(_data == null)
-			getCache();
-		if(_data != null && _data instanceof MatrixBlock)
-			return (MatrixBlock) _data;
-		else
-			return null;
-	}
 	
 	/**
 	 * Basic constructor for any cacheable data.
@@ -394,6 +381,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			bc.setBackReference(this);
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public GPUObject getGPUObject() {
+		return _gpuHandle;
+	}
+	
+	
 	// *********************************************
 	// ***                                       ***
 	// ***    HIGH-LEVEL METHODS THAT SPECIFY    ***
@@ -515,11 +511,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		//get object from cache
 		if( _data == null )
 			getCache();
-		
-//		// Donot need to sync GPU data as it can cause redundant copy when GPU instruction does release
-//		if( _gpuHandle != null )
-//			_gpuHandle.acquireHostModify();
-		
+
 		//read data from HDFS if required
 		if( isEmpty(true) && _data == null )
 		{
@@ -698,15 +690,14 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		clearReusableData();
 		_data = null;	
 		clearCache();
-		if(_gpuHandle != null) {
-			_gpuHandle.clearData();
-		}
 		
 		// clear rdd/broadcast back refs
 		if( _rddHandle != null )
 			_rddHandle.setBackReference(null);
 		if( _bcHandle != null )
 			_bcHandle.setBackReference(null);
+		if( _gpuHandle != null )
+			_gpuHandle.clearData();
 		
 		// change object state EMPTY
 		setDirty(false);
@@ -791,6 +782,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 		LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 		
+		//TODO remove 
 		exportGPUData();
 				
 		boolean pWrite = false; // !fName.equals(_hdfsFileName); //persistent write flag

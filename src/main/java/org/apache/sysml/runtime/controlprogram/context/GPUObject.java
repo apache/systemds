@@ -26,17 +26,26 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
-public abstract class GPUObject {
-
-	public boolean isDeviceCopyModified = false;
-	AtomicInteger numLocks = new AtomicInteger(0);
+//FIXME merge JCudaObject into GPUObject to avoid unnecessary complexity
+//FIXME move to gpu instruction package
+public abstract class GPUObject 
+{
+	protected boolean isDeviceCopyModified = false;
+	protected AtomicInteger numLocks = new AtomicInteger(0);
+	protected boolean isInSparseFormat = false;
+	protected boolean isAllocated = false;
+	protected MatrixObject mat = null;
 	
-	public boolean isInSparseFormat = false;
-	public boolean isAllocated = false;
-	
-	MatrixObject mat = null;
 	protected GPUObject(MatrixObject mat2)  {
 		this.mat = mat2;
+	}
+	
+	public boolean isInSparseFormat() {
+		return isInSparseFormat;
+	}
+	
+	public boolean isAllocated() {
+		return isAllocated;
 	}
 	
 	public abstract void acquireDeviceRead() throws DMLRuntimeException;

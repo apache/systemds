@@ -50,6 +50,7 @@ public abstract class Instruction
 	public static final String INSTRUCTION_DELIM = Lop.INSTRUCTION_DELIMITOR;
 	public static final String NAME_VALUE_SEPARATOR = Lop.NAME_VALUE_SEPARATOR;
 	public static final String SP_INST_PREFIX = "sp_";
+	public static final String GPU_INST_PREFIX = "gpu_";
 	
 	//basic instruction meta data
 	protected INSTRUCTION_TYPE type = null;
@@ -162,6 +163,8 @@ public abstract class Instruction
 	public String getExtendedOpcode() {
 		if( type == INSTRUCTION_TYPE.SPARK )
 			return SP_INST_PREFIX + getOpcode();
+		else if( type == INSTRUCTION_TYPE.GPU )
+			return GPU_INST_PREFIX + getOpcode();
 		else
 			return getOpcode();
 	}

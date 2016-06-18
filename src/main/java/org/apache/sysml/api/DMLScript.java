@@ -125,8 +125,8 @@ public class DMLScript
 			//+ "   -s: <filename> will be interpreted as a DML script string \n"
 			+ "   -python: (optional) parses Python-like DML\n"
 			+ "   -debug: (optional) run in debug mode\n"
-			+ "   -accelerator: <flags> (optional) use acceleration whenever possible. Current version only supports CUDA.\n"
-			+ "			Optional <flags> that is supported for this mode is force=(true|false)\n"
+			+ "   -gpu: <flags> (optional) use acceleration whenever possible. Current version only supports CUDA.\n"
+			+ "			Supported <flags> for this mode is force=(true|false)\n"
 			// Later add optional flags to indicate optimizations turned on or off. Currently they are turned off.
 			//+ "   -debug: <flags> (optional) run in debug mode\n"
 			//+ "			Optional <flags> that is supported for this mode is optimize=(on|off)\n"
@@ -323,7 +323,6 @@ public class DMLScript
 							throw new DMLRuntimeException("Unsupported flag for -gpu:" + flag);
 						}
 					}
-						
 					GPUContext.createGPUContext(); // Set GPU memory budget
 				}
 				else if( args[i].equalsIgnoreCase("-python") ) {

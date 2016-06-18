@@ -50,9 +50,7 @@ import org.apache.sysml.runtime.matrix.MatrixDimensionsMetaData;
 import org.apache.sysml.runtime.matrix.MatrixFormatMetaData;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -238,43 +236,36 @@ public class ExecutionContext
 		throws DMLRuntimeException 
 	{	
 		MatrixObject mo = getMatrixObject(varName);
-		MatrixBlock mb = mo.acquireRead();
-		return mb;
+		return mo.acquireRead();
 	}
 	
-	public void setMetaData(String varName, long nrows, long ncols) throws DMLRuntimeException  {
+	public void setMetaData(String varName, long nrows, long ncols) 
+		throws DMLRuntimeException  
+	{
 		MatrixObject mo = getMatrixObject(varName);
-		if(mo.getNumRows() != nrows || mo.getNumColumns() != ncols) {
-			MatrixCharacteristics mc = new MatrixCharacteristics((long)nrows, (long)ncols, 
-					(int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
-			OutputInfo oiOld = null;
-			InputInfo iiOld = null;
-			MetaData oldMetaData = mo.getMetaData();
-			if(oldMetaData != null && oldMetaData instanceof MatrixFormatMetaData) {
-				oiOld = ((MatrixFormatMetaData)oldMetaData).getOutputInfo();
-				iiOld = ((MatrixFormatMetaData)oldMetaData).getInputInfo();
-			}
-			else {
-				throw new DMLRuntimeException("Metadata not available");
-			}
-			mo.setMetaData(new MatrixFormatMetaData(mc, oiOld, iiOld));
-		}
+		if(mo.getNumRows() == nrows && mo.getNumColumns() == ncols) 
+			return;
+		
+		MetaData oldMetaData = mo.getMetaData();
+		if( oldMetaData == null || !(oldMetaData instanceof MatrixFormatMetaData) )
+			throw new DMLRuntimeException("Metadata not available");
+			
+		MatrixCharacteristics mc = new MatrixCharacteristics((long)nrows, (long)ncols, 
+				(int) mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
+		mo.setMetaData(new MatrixFormatMetaData(mc, 
+				((MatrixFormatMetaData)oldMetaData).getOutputInfo(),
+				((MatrixFormatMetaData)oldMetaData).getInputInfo()));
 	}
 	
 	public MatrixObject getMatrixOutputForGPUInstruction(String varName, boolean isSparse) 
-			throws DMLRuntimeException {	
+		throws DMLRuntimeException 
+	{	
 		if(isSparse) {
 			throw new DMLRuntimeException("Sparse matrix block is not supported for GPU instruction");
 		}
 		MatrixObject mo = getMatrixObject(varName);
-		if(mo.getMatrixBlock() == null) {
-			MatrixBlock mb = new MatrixBlock((int)mo.getNumRows(), (int)mo.getNumColumns(), false);
-			mo.acquireModify(mb);
-			mo.release();
-		}
 		mo.getGPUObject().acquireDenseDeviceModify((int)(mo.getNumRows()*mo.getNumColumns()));
 		mo.getMatrixCharacteristics().setNonZeros(-1);
-		mo.getMatrixBlock().setNonZeros(-1);
 		return mo;
 	}
 	
@@ -307,11 +298,11 @@ public class ExecutionContext
 	}
 	
 	public void releaseMatrixInputForGPUInstruction(String varName) 
-			throws DMLRuntimeException 
-		{
-			MatrixObject mo = getMatrixObject(varName);
-			mo.getGPUObject().release(false);
-		}
+		throws DMLRuntimeException 
+	{
+		MatrixObject mo = getMatrixObject(varName);
+		mo.getGPUObject().release(false);
+	}
 	
 	/**
 	 * Pins a frame variable into memory and returns the internal frame block.
@@ -385,8 +376,6 @@ public class ExecutionContext
 			throw new DMLRuntimeException("No output is allocated on GPU");
 		}
 		mo.getGPUObject().release(true);
-//		mo.acquireModify();
-//		mo.release();
 	}
 	
 	/**
@@ -399,12 +388,6 @@ public class ExecutionContext
 			throws DMLRuntimeException 
 	{
 		MatrixObject mo = getMatrixObject(varName);
-		if(mo.getGPUObject() != null && mo.getGPUObject().isAllocated) {
-			throw new DMLRuntimeException("GPU instructions should not set matrix output. "
-					+ "Instead should use releaseMatrixOutput. If called by non-GPU instruction, "
-					+ "then inconsistent bufferpool logic. Possible skipped deleting GPU object when acquire modify.");
-		}
-		
 		mo.acquireModify(outputData);
 	    mo.release();
 	    setVariable(varName, mo);

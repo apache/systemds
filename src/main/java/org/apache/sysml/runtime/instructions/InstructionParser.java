@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.instructions;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPINSTRUCTION_TYPE;
+import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRINSTRUCTION_TYPE;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPINSTRUCTION_TYPE;
 
@@ -41,14 +42,14 @@ public class InstructionParser
 			CPINSTRUCTION_TYPE cptype = InstructionUtils.getCPType(str); 
 			return CPInstructionParser.parseSingleInstruction (cptype, str);
 		}
-		else if (   execType.equalsIgnoreCase(ExecType.SPARK.toString()) ) 
+		else if ( execType.equalsIgnoreCase(ExecType.SPARK.toString()) ) 
 		{
 			SPINSTRUCTION_TYPE sptype = InstructionUtils.getSPType(str); 
 			return SPInstructionParser.parseSingleInstruction (sptype, str);
 		}
-		else if (   execType.equalsIgnoreCase(ExecType.GPU.toString()) ) 
+		else if ( execType.equalsIgnoreCase(ExecType.GPU.toString()) ) 
 		{
-			CPINSTRUCTION_TYPE cptype = InstructionUtils.getGPUType(str); 
+			GPUINSTRUCTION_TYPE cptype = InstructionUtils.getGPUType(str); 
 			return GPUInstructionParser.parseSingleInstruction (cptype, str);
 		}
 		else if ( execType.equalsIgnoreCase("MR") ) {

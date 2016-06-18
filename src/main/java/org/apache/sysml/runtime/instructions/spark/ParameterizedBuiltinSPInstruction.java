@@ -25,6 +25,7 @@ import java.util.HashMap;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
@@ -70,10 +71,14 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTy
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.transform.DataTransform;
+import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.transform.encode.EncoderFactory;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysml.runtime.transform.meta.TfOffsetMap;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
+
 
 public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction 
 {	
@@ -419,18 +424,26 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			FrameBlock meta = sec.getFrameInput(params.get("meta"));		
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(params.get("target"));
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			mcOut.setDimension(mcIn.getRows(), mcIn.getCols()); //TODO encoder awareness
 			
+			//compute omit offset map for block shifts
+			TfOffsetMap omap = null;
+			if( TfMetaUtils.containsOmitSpec(params.get("spec")) ) {
+				omap = new TfOffsetMap(SparkUtils.toIndexedLong(in.mapToPair(
+					new RDDTransformApplyOffsetFunction(params.get("spec"))).collect()));
+			}
+				
 			//create encoder broadcast (avoiding replication per task) 
 			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), 
 					fo.getSchema(), (int)fo.getNumColumns(), meta);
+			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), encoder.getNumCols()); 
 			Broadcast<Encoder> bmeta = sec.getSparkContext().broadcast(encoder);
-		
+			Broadcast<TfOffsetMap> bomap = (omap!=null) ? sec.getSparkContext().broadcast(omap) : null;
+			
 			//execute transform apply
 			JavaPairRDD<Long,FrameBlock> tmp = in
-					.mapValues(new RDDTransformApplyFunction(bmeta));
+					.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = FrameRDDConverterUtils
-					.binaryBlockToMatrixBlock(tmp, mcIn, mcOut);
+					.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
 			
 			//set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -685,26 +698,79 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 	/**
 	 * 
 	 */
-	public static class RDDTransformApplyFunction implements Function<FrameBlock,FrameBlock> 
+	public static class RDDTransformApplyFunction implements PairFunction<Tuple2<Long,FrameBlock>,Long,FrameBlock> 
 	{
 		private static final long serialVersionUID = 5759813006068230916L;
 		
 		private Broadcast<Encoder> _bencoder = null;
+		private Broadcast<TfOffsetMap> _omap = null;
 		
-		public RDDTransformApplyFunction(Broadcast<Encoder> bencoder) {
+		public RDDTransformApplyFunction(Broadcast<Encoder> bencoder, Broadcast<TfOffsetMap> omap) {
 			_bencoder = bencoder;
+			_omap = omap;
 		}
 
 		@Override
-		public FrameBlock call(FrameBlock in) 
+		public Tuple2<Long,FrameBlock> call(Tuple2<Long, FrameBlock> in) 
 			throws Exception 
 		{
+			long key = in._1();
+			FrameBlock blk = in._2();
+			
 			//execute block transform apply
 			Encoder encoder = _bencoder.getValue();
-			MatrixBlock tmp = encoder.apply(in, new MatrixBlock(in.getNumRows(), in.getNumColumns(), false));
+			MatrixBlock tmp = encoder.apply(blk, new MatrixBlock(blk.getNumRows(), blk.getNumColumns(), false));
+			
+			//remap keys
+			if( _omap != null ) {
+				key = _omap.getValue().getOffset(key);
+			}
 			
 			//convert to frameblock to reuse frame-matrix reblock
-			return DataConverter.convertToFrameBlock(tmp);
+			return new Tuple2<Long, FrameBlock>(key, 
+					DataConverter.convertToFrameBlock(tmp));
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public static class RDDTransformApplyOffsetFunction implements PairFunction<Tuple2<Long,FrameBlock>,Long,Long> 
+	{
+		private static final long serialVersionUID = 3450977356721057440L;
+		
+		private int[] _omitColList = null;
+		
+		public RDDTransformApplyOffsetFunction(String spec) {
+			try {
+				_omitColList = TfMetaUtils.parseJsonIDList(spec, TfUtils.TXMETHOD_OMIT);
+			} 
+			catch (DMLRuntimeException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		@Override
+		public Tuple2<Long,Long> call(Tuple2<Long, FrameBlock> in) 
+			throws Exception 
+		{
+			long key = in._1();
+			long rmRows = 0;
+			
+			FrameBlock blk = in._2();
+			
+			for( int i=0; i<blk.getNumRows(); i++ ) {
+				boolean valid = true;
+				for( int j=0; j<_omitColList.length; j++ ) {
+					int colID = _omitColList[j];
+					Object val = blk.get(i, colID-1);
+					valid &= !(val==null || (blk.getSchema().get(colID-1)==
+							ValueType.STRING &&  val.toString().isEmpty())); 
+				}
+				rmRows += valid ? 0 : 1;
+			}
+			
+			return new Tuple2<Long, Long>(key, rmRows);
 		}
 	}
 	

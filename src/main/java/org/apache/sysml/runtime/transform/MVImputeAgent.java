@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -50,6 +51,7 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.transform.encode.Encoder;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class MVImputeAgent extends Encoder 
@@ -102,10 +104,19 @@ public class MVImputeAgent extends Encoder
 	public KahanObject[] getMeans_scnomv()   { return _scnomvMeanList; }
 	public CM_COV_Object[] getVars_scnomv()  { return _scnomvVarList; }
 	
-	public MVImputeAgent(JSONObject parsedSpec, String[] NAstrings)
+	public MVImputeAgent(JSONObject parsedSpec, int clen) 
+		throws JSONException
+	{
+		super(null, clen);
+		int[] collist = TfMetaUtils.parseJsonObjectIDList(parsedSpec, TfUtils.TXMETHOD_IMPUTE);
+		initColList(collist);
+	
+	}
+			
+	public MVImputeAgent(JSONObject parsedSpec, String[] NAstrings, int clen)
 		throws JSONException 
 	{
-		super(null);	
+		super(null, clen);	
 		boolean isMV = parsedSpec.containsKey(TfUtils.TXMETHOD_IMPUTE);
 		boolean isSC = parsedSpec.containsKey(TfUtils.TXMETHOD_SCALE);		
 		_NAstrings = NAstrings;
@@ -518,7 +529,7 @@ public class MVImputeAgent extends Encoder
 	
 	private void writeTfMtd(int colID, String mean, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
-		Path pt=new Path(tfMtdDir+"/Impute/"+ agents.getName(colID) + TfUtils.MV_FILE_SUFFIX);
+		Path pt=new Path(tfMtdDir+"/Impute/"+ agents.getName(colID) + TfUtils.TXMTD_MV_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TfUtils.TXMTD_SEP + mean + "\n");
 		br.close();
@@ -534,7 +545,7 @@ public class MVImputeAgent extends Encoder
 	
 	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
-		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + TfUtils.BIN_FILE_SUFFIX);
+		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + TfUtils.TXMTD_BIN_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
 		br.close();
@@ -799,7 +810,7 @@ public class MVImputeAgent extends Encoder
 
 	private String readReplacement(int colID, FileSystem fs, Path  txMtdDir, TfUtils agents) throws IOException
 	{
-		Path path = new Path( txMtdDir + "/Impute/" + agents.getName(colID) + TfUtils.MV_FILE_SUFFIX);
+		Path path = new Path( txMtdDir + "/Impute/" + agents.getName(colID) + TfUtils.TXMTD_MV_FILE_SUFFIX);
 		TfUtils.checkValidInputFile(fs, path, true); 
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
@@ -915,11 +926,6 @@ public class MVImputeAgent extends Encoder
 		return words;
 	}
 	
-	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
-		return null;
-	}
-	
 	public MVMethod getMethod(int colID) {
 		int idx = isApplicable(colID);		
 		if(idx == -1)
@@ -944,6 +950,20 @@ public class MVImputeAgent extends Encoder
 		int idx = isApplicable(colID);		
 		return (idx == -1) ? null : _replacementList[idx];
 	}
+	
+
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+		for(int i=0; i<in.getNumRows(); i++) {
+			for(int j=0; j<_colList.length; j++) {
+				int colID = _colList[j];
+				if( Double.isNaN(out.quickGetValue(i, colID-1)) )
+					out.quickSetValue(i, colID-1, Double.parseDouble(_replacementList[j]));
+			}
+		}
+		return out;
+	}
+	
 	@Override
 	public double[] encode(String[] in, double[] out) {
 		// TODO Auto-generated method stub
@@ -968,5 +988,29 @@ public class MVImputeAgent extends Encoder
 	public FrameBlock getMetaData(FrameBlock out) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	/**
+	 * 
+	 * @param meta
+	 * @param rcList
+	 */
+	public void initReplacementList(FrameBlock meta, List<Integer> rcList) {
+		//init replacement lists, replace recoded values to
+		//apply mv imputation potentially after recoding
+		_replacementList = new String[_colList.length];
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j];
+			String mvVal = UtilFunctions.unquote(meta.getColumnMetadata(colID-1).getMvValue()); 
+			if( rcList.contains(colID) ) {
+				Long mvVal2 = meta.getRecodeMap(colID-1).get(mvVal);
+				if( mvVal2 == null) 
+					throw new RuntimeException("Missing recode value for impute value '"+mvVal+"'.");
+				_replacementList[j] = mvVal2.toString();
+			}
+			else {
+				_replacementList[j] = mvVal;
+			}
+		}
 	}
 }

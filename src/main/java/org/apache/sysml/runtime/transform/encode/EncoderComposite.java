@@ -47,26 +47,34 @@ public class EncoderComposite extends Encoder
 	private List<Encoder> _encoders = null;
 	
 	protected EncoderComposite(List<Encoder> encoders) {
-		super(null);
+		super(null, -1);
 		_encoders = encoders;
 	}
 	
 	protected EncoderComposite(Encoder[] encoders) {
-		super(null);
+		super(null, -1);
 		_encoders = Arrays.asList(encoders);
 	}
-
+	
+	@Override
+	public int getNumCols() {
+		int clen = 0;
+		for( Encoder encoder : _encoders )
+			clen = Math.max(clen, encoder.getNumCols());
+		return clen;
+	}
+	
 	@Override
 	public double[] encode(String[] in, double[] out) {
 		for( Encoder encoder : _encoders )
-			encoder.encode(in, out);
+			out = encoder.encode(in, out);
 		return out;
 	}
 
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
 		for( Encoder encoder : _encoders )
-			encoder.encode(in, out);
+			out = encoder.encode(in, out);
 		return out;
 	}
 
@@ -99,7 +107,7 @@ public class EncoderComposite extends Encoder
 	@Override 
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		for( Encoder encoder : _encoders )
-			encoder.apply(in, out);
+			out = encoder.apply(in, out);
 		return out;
 	}
 

@@ -44,15 +44,15 @@ public class EncoderPassThrough extends Encoder
 {
 	private static final long serialVersionUID = -8473768154646831882L;
 	
-	protected EncoderPassThrough(int[] ptCols) {
-		super(ptCols); //0-based indexes
+	protected EncoderPassThrough(int[] ptCols, int clen) {
+		super(ptCols, clen); //1-based 
 	}
 
 	@Override
 	public double[] encode(String[] in, double[] out) {
 		for( int j=0; j<_colList.length; j++ ) {
-			String tmp = in[_colList[j]];
-			out[_colList[j]] = (tmp==null) ? 0 : 
+			String tmp = in[_colList[j]-1];
+			out[_colList[j]-1] = (tmp==null) ? 0 : 
 				Double.parseDouble(tmp);
 		}
 		
@@ -87,12 +87,13 @@ public class EncoderPassThrough extends Encoder
 	@Override 
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		for( int j=0; j<_colList.length; j++ ) {
-			int col = _colList[j];
+			int col = _colList[j]-1;
 			ValueType vt = in.getSchema().get(col);
 			for( int i=0; i<in.getNumRows(); i++ ) {
 				Object val = in.get(i, col);
-				out.quickSetValue(i, col,
-					UtilFunctions.objectToDouble(vt, val));
+				out.quickSetValue(i, col, (val==null||(vt==ValueType.STRING 
+						&& val.toString().isEmpty())) ? Double.NaN : 
+						UtilFunctions.objectToDouble(vt, val));
 			}
 		}
 		

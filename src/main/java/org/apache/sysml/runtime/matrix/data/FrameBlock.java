@@ -62,6 +62,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	/** The column names of the data frame as an ordered list of strings */
 	private List<String> _colnames = null;
 	
+	private List<ColumnMetadata> _colmeta = null;
+	
 	/** The data frame data as an ordered list of columns */
 	private List<Array> _coldata = null;
 	
@@ -72,6 +74,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_numRows = 0;
 		_schema = new ArrayList<ValueType>();
 		_colnames = new ArrayList<String>();
+		_colmeta = new ArrayList<ColumnMetadata>();
 		_coldata = new ArrayList<Array>();
 		if( REUSE_RECODE_MAPS )
 			_rcdMapCache = new HashMap<Integer, SoftReference<HashMap<String,Long>>>();
@@ -104,6 +107,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		_numRows = 0; //maintained on append
 		_schema = new ArrayList<ValueType>(schema);
 		_colnames = new ArrayList<String>(names);
+		_colmeta = new ArrayList<ColumnMetadata>();
+		for( int j=0; j<_schema.size(); j++ )
+			_colmeta.add(new ColumnMetadata(0));
 		_coldata = new ArrayList<Array>();
 		for( int i=0; i<data.length; i++ )
 			appendRow(data[i]);
@@ -157,6 +163,40 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
+	 * 
+	 * @return
+	 */
+	public List<ColumnMetadata> getColumnMetadata() {
+		return _colmeta;
+	}
+	
+	/**
+	 * 
+	 * @param c
+	 * @return
+	 */
+	public ColumnMetadata getColumnMetadata(int c) {
+		return _colmeta.get(c);
+	}
+	
+	/**
+	 * 
+	 * @param colmeta
+	 */
+	public void setColumnMetadata(List<ColumnMetadata> colmeta) {
+		_colmeta = colmeta;
+	}
+	
+	/**
+	 * 
+	 * @param c
+	 * @param colmeta
+	 */
+	public void setColumnMetadata(int c, ColumnMetadata colmeta) {
+		_colmeta.set(c, colmeta);
+	}
+	
+	/**
 	 * Creates a mapping from column names to column IDs, i.e., 
 	 * 1-based column indexes
 	 * 
@@ -177,6 +217,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		//early abort if already allocated
 		if( _schema.size() == _coldata.size() ) 
 			return;		
+		//allocate column meta data
+		for( int j=0; j<_schema.size(); j++ )
+			_colmeta.add(new ColumnMetadata(0));
 		//allocate columns if necessary
 		for( int j=0; j<_schema.size(); j++ ) {
 			if( j >= _coldata.size() )
@@ -420,6 +463,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int j=0; j<getNumColumns(); j++ ) {
 			out.writeByte(_schema.get(j).ordinal());
 			out.writeUTF(_colnames.get(j));
+			out.writeLong(_colmeta.get(j).getNumDistinct());
+			out.writeUTF( (_colmeta.get(j).getMvValue()!=null) ? 
+					_colmeta.get(j).getMvValue() : "" );
 			_coldata.get(j).write(out);
 		}
 	}
@@ -429,12 +475,15 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		//read head (rows, cols)
 		_numRows = in.readInt();
 		int numCols = in.readInt();
-		//read columns (value type, data)
+		//read columns (value type, meta, data)
 		_schema.clear();
+		_colmeta.clear();
 		_coldata.clear();
 		for( int j=0; j<numCols; j++ ) {
 			ValueType vt = ValueType.values()[in.readByte()];
 			String name = in.readUTF();
+			long ndistinct = in.readLong();
+			String mvvalue = in.readUTF();
 			Array arr = null;
 			switch( vt ) {
 				case STRING:  arr = new StringArray(new String[_numRows]); break;
@@ -446,6 +495,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			arr.readFields(in);
 			_schema.add(vt);
 			_colnames.add(name);
+			_colmeta.add(new ColumnMetadata(ndistinct, 
+					mvvalue.isEmpty() ? null : mvvalue));
 			_coldata.add(arr);
 		}
 	}
@@ -1065,6 +1116,35 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		public Array slice(int rl, int ru) {
 			return new DoubleArray(Arrays.copyOfRange(_data,rl,ru+1));
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public static class ColumnMetadata {
+		private long _ndistinct = -1;
+		private String _mvValue = null;
+		
+		public ColumnMetadata(long ndistinct, String mvval) {
+			_ndistinct = ndistinct;
+			_mvValue = mvval;
+		}
+		public ColumnMetadata(long ndistinct) {
+			_ndistinct = ndistinct;
+		}
+
+		public long getNumDistinct() {
+			return _ndistinct;
+		}		
+		public void setNumDistinct(long ndistinct) {
+			_ndistinct = ndistinct;
+		}
+		public String getMvValue() {
+			return _mvValue;
+		}
+		public void setMvValue(String mvVal) {
+			_mvValue = mvVal;
 		}
 	}
 }

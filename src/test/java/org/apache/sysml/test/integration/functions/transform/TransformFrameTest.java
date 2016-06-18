@@ -39,10 +39,14 @@ public class TransformFrameTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/transform/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameTest.class.getSimpleName() + "/";
 	
-	private final static String DATASET 	= "homes3/homes.csv";
+	//dataset and transform tasks without missing values
+	private final static String DATASET1 	= "homes3/homes.csv";
 	private final static String SPEC1 		= "homes3/homes.tfspec_recode.json"; 
 	private final static String SPEC2 		= "homes3/homes.tfspec_dummy.json";
-	private final static String SPEC3 		= "homes3/homes.tfspec_bin.json";
+	private final static String SPEC3 		= "homes3/homes.tfspec_bin.json"; //incl recode
+	
+	//dataset and transform tasks with missing values
+	private final static String DATASET2 	= "homes/homes.csv";
 	private final static String SPEC4 		= "homes3/homes.tfspec_impute.json";
 	private final static String SPEC5 		= "homes3/homes.tfspec_omit.json";
 	
@@ -70,6 +74,46 @@ public class TransformFrameTest extends AutomatedTestBase
 	public void testHomesRecodeSparkCSV() {
 		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.RECODE);
 	}
+	
+	@Test
+	public void testHomesDummycodeSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.DUMMY);
+	}
+	
+	@Test
+	public void testHomesDummycodeSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.DUMMY);
+	}
+	
+	@Test
+	public void testHomesBinningSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.BIN);
+	}
+	
+	@Test
+	public void testHomesBinningSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.BIN);
+	}
+	
+	@Test
+	public void testHomesOmitSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.OMIT);
+	}
+	
+	@Test
+	public void testHomesOmitSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.OMIT);
+	}
+	
+	@Test
+	public void testHomesImputeSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.IMPUTE);
+	}
+	
+	@Test
+	public void testHomesImputeSparkCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.IMPUTE);
+	}
 
 	/**
 	 * 
@@ -89,13 +133,13 @@ public class TransformFrameTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		//set transform specification
-		String SPEC = null;
+		String SPEC = null; String DATASET = null;
 		switch( type ) {
-			case RECODE: SPEC = SPEC1; break;
-			case DUMMY:  SPEC = SPEC2; break;
-			case BIN:    SPEC = SPEC3; break;
-			case IMPUTE: SPEC = SPEC4; break;
-			case OMIT:   SPEC = SPEC5; break;
+			case RECODE: SPEC = SPEC1; DATASET = DATASET1; break;
+			case DUMMY:  SPEC = SPEC2; DATASET = DATASET1; break;
+			case BIN:    SPEC = SPEC3; DATASET = DATASET1; break;
+			case IMPUTE: SPEC = SPEC4; DATASET = DATASET2; break;
+			case OMIT:   SPEC = SPEC5; DATASET = DATASET2; break;
 		}
 
 		if( !ofmt.equals("csv") )

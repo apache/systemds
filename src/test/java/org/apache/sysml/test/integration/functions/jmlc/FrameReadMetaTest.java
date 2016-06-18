@@ -20,16 +20,22 @@
 package org.apache.sysml.test.integration.functions.jmlc;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.transform.TfUtils;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -101,19 +107,19 @@ public class FrameReadMetaTest extends AutomatedTestBase
 		//establish connection to SystemML
 		Connection conn = new Connection();
 		
-		//read meta data frame
+		//read meta data frame 
 		String spec = MapReduceTool.readStringFromHDFSFile(SCRIPT_DIR + TEST_DIR+"tfmtd_example/spec.json");
 		FrameBlock M = readFrame ?
 				DataConverter.convertToFrameBlock(conn.readStringFrame(SCRIPT_DIR + TEST_DIR+"tfmtd_frame_example/tfmtd_frame")) : 
-				conn.readTransformMetaDataFromFile(useSpec ? spec : null, SCRIPT_DIR + TEST_DIR+"tfmtd_example/");
-		
-		//generate data based on recode maps
-		HashMap<String,Long>[] RC = getRecodeMaps(M);
-		double[][] X = generateData(rows, cols, RC);
-		String[][] F = null;
+				conn.readTransformMetaDataFromFile(spec, SCRIPT_DIR + TEST_DIR+"tfmtd_example/");
 		
 		try
 		{
+			//generate data based on recode maps
+			HashMap<String,Long>[] RC = getRecodeMaps(spec, M);
+			double[][] X = generateData(rows, cols, RC);
+			String[][] F = null;
+			
 			//prepare input arguments
 			HashMap<String,String> args = new HashMap<String,String>();
 			args.put("$TRANSFORM_SPEC", spec);
@@ -139,6 +145,17 @@ public class FrameReadMetaTest extends AutomatedTestBase
 				//get output parameter
 				F = rs.getFrame("F");
 			}
+			
+
+			//check correct result 
+			//for all generated data, probe recode maps and compare versus output
+			for( int i=0; i<rows; i++ ) 
+				for( int j=0; j<cols; j++ ) 
+					if( RC[j] != null ) {
+						Assert.assertEquals("Wrong result: "+F[i][j]+".", 
+								Double.valueOf(X[i][j]), 
+								Double.valueOf(RC[j].get(F[i][j]).toString()));
+					}	
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -149,31 +166,26 @@ public class FrameReadMetaTest extends AutomatedTestBase
 			if( conn != null )
 				conn.close();
 		}
-		
-		//check correct result 
-		//for all generated data, probe recode maps and compare versus output
-		for( int i=0; i<rows; i++ ) 
-			for( int j=0; j<cols; j++ ) 
-				if( RC[j] != null ) {
-					Assert.assertEquals("Wrong result: "+F[i][j]+".", 
-							Double.valueOf(X[i][j]), 
-							Double.valueOf(RC[j].get(F[i][j]).toString()));
-				}	
 	}
 
 	/**
 	 * 
 	 * @param M
 	 * @return
+	 * @throws DMLRuntimeException 
 	 */
 	@SuppressWarnings("unchecked")
-	private HashMap<String,Long>[] getRecodeMaps(FrameBlock M) {
+	private HashMap<String,Long>[] getRecodeMaps(String spec, FrameBlock M) 
+		throws DMLRuntimeException 
+	{
+		List<Integer> collist = Arrays.asList(ArrayUtils.toObject(
+				TfMetaUtils.parseJsonIDList(spec, TfUtils.TXMETHOD_RECODE)));
 		HashMap<String,Long>[] ret = new HashMap[M.getNumColumns()];
 		Iterator<Object[]> iter = M.getObjectRowIterator();
 		while( iter.hasNext() ) {
 			Object[] tmp = iter.next();
 			for( int j=0; j<tmp.length; j++ ) 
-				if( tmp[j] != null ) {
+				if( collist.contains(j+1) && tmp[j] != null ) {
 					if( ret[j] == null )
 						ret[j] = new HashMap<String,Long>();
 					String[] parts = tmp[j].toString().split(Lop.DATATYPE_PREFIX);

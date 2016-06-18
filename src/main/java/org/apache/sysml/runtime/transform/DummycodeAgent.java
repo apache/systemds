@@ -42,8 +42,8 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.encode.Encoder;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -51,8 +51,6 @@ public class DummycodeAgent extends Encoder
 {		
 	private static final long serialVersionUID = 5832130477659116489L;
 
-	private long numCols = 0;
-	
 	private HashMap<Integer, HashMap<String,String>> _finalMaps = null;
 	private HashMap<Integer, HashMap<String,Long>> _finalMapsCP = null;
 	private int[] _binList = null;
@@ -62,18 +60,22 @@ public class DummycodeAgent extends Encoder
 	private int[] _dcdColumnMap = null;			// to help in translating between original and dummycoded column IDs
 	private long _dummycodedLength = 0;			// #of columns after dummycoded
 	
-	public DummycodeAgent(int[] list) {
-		super(list);
+	public DummycodeAgent(int[] list, int clen) {
+		super(list, clen);
 	}
 	
-	public DummycodeAgent(JSONObject parsedSpec, long ncol) throws JSONException {
-		super(null);
-		numCols = ncol;
+	public DummycodeAgent(JSONObject parsedSpec, int clen) throws JSONException {
+		super(null, clen);
 		
-		if ( !parsedSpec.containsKey(TfUtils.TXMETHOD_DUMMYCODE) )
-			return;		
-		JSONObject obj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_DUMMYCODE);
-		initColList( (JSONArray)obj.get(TfUtils.JSON_ATTRS) );	
+		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_DUMMYCODE) ) {
+			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, TfUtils.TXMETHOD_DUMMYCODE);
+			initColList(collist);
+		}
+	}
+	
+	@Override
+	public int getNumCols() {
+		return (int)_dummycodedLength;
 	}
 	
 	/**
@@ -335,7 +337,7 @@ public class DummycodeAgent extends Encoder
 	@Override
 	public void loadTxMtd(JobConf job, FileSystem fs, Path txMtdDir, TfUtils agents) throws IOException {
 		if ( !isApplicable() ) {
-			_dummycodedLength = numCols;
+			_dummycodedLength = _clen;
 			return;
 		}
 		
@@ -343,7 +345,7 @@ public class DummycodeAgent extends Encoder
 		Arrays.sort(_colList);	
 		_domainSizes = new int[_colList.length];
 
-		_dummycodedLength = numCols;
+		_dummycodedLength = _clen;
 		
 		//HashMap<String, String> map = null;
 		for(int i=0; i<_colList.length; i++) {
@@ -418,30 +420,63 @@ public class DummycodeAgent extends Encoder
 	}
 	
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
-		return null;
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) 
+	{
+		MatrixBlock ret = new MatrixBlock(out.getNumRows(), (int)_dummycodedLength, false);
+		
+		for( int i=0; i<out.getNumRows(); i++ ) {
+			for(int colID=1, idx=0, ncolID=1; colID <= out.getNumColumns(); colID++) {
+				double val = out.quickGetValue(i, colID-1);
+				if(idx < _colList.length && colID==_colList[idx]) {
+					ret.quickSetValue(i, ncolID-1+(int)val-1, 1);
+					ncolID += _domainSizes[idx];
+					idx++;
+				}
+				else {
+					double ptval = UtilFunctions.objectToDouble(in.getSchema().get(colID-1), in.get(i, colID-1));
+					ret.quickSetValue(i, ncolID-1, ptval);
+					ncolID++;
+				}
+			}
+		}
+		
+		return ret;
 	}
 
 	@Override
 	public double[] encode(String[] in, double[] out) {
+		//TODO
 		return null;
 	}
 
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		return null;
+		return apply(in, out);
 	}
 
 	@Override
 	public void build(String[] in) {
+		//do nothing
 	}
 
 	@Override
 	public void build(FrameBlock in) {
+		//do nothing
 	}
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		return null;
+	}
+	
+	public void initDomainSizes(FrameBlock meta) {
+		//initialize domain sizes and output num columns
+		_domainSizes = new int[_colList.length];
+		_dummycodedLength = _clen;
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j]; //1-based
+			_domainSizes[j] = (int)meta.getColumnMetadata().get(colID-1).getNumDistinct();
+			_dummycodedLength +=  _domainSizes[j];
+		}
 	}
 }

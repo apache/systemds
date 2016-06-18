@@ -20,15 +20,23 @@
 package org.apache.sysml.runtime.transform.encode;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.transform.BinAgent;
+import org.apache.sysml.runtime.transform.DummycodeAgent;
+import org.apache.sysml.runtime.transform.MVImputeAgent;
+import org.apache.sysml.runtime.transform.OmitAgent;
 import org.apache.sysml.runtime.transform.RecodeAgent;
 import org.apache.sysml.runtime.transform.TfUtils;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONObject;
 
 public class EncoderFactory 
@@ -66,43 +74,66 @@ public class EncoderFactory
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("unchecked")
 	public static Encoder createEncoder(String spec, List<ValueType> schema, FrameBlock meta) 
 		throws DMLRuntimeException 
 	{	
 		Encoder encoder = null;
+		int clen = schema.size();
 		
 		try {
 			//parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
 			List<Encoder> lencoders = new ArrayList<Encoder>();
 		
-			//create encoders 'recode' and 'pass-through'
-			if ( jSpec.containsKey(TfUtils.TXMETHOD_RECODE))  {
-				RecodeAgent ra = new RecodeAgent(jSpec);
+			//prepare basic id lists (recode, dummycode, pass-through)
+			//note: any dummycode column requires recode as preparation
+			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, TfUtils.TXMETHOD_RECODE)));
+			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, TfUtils.TXMETHOD_DUMMYCODE))); 
+			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
+			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec); 
+			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils.subtract(
+					CollectionUtils.subtract(UtilFunctions.getSequenceList(1, clen, 1), rcIDs), binIDs)); 
+			List<Integer> oIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, TfUtils.TXMETHOD_OMIT))); 
+			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonObjectIDList(jSpec, TfUtils.TXMETHOD_IMPUTE))); 
+			
+			//create individual encoders
+			if( !rcIDs.isEmpty() ) {
+				RecodeAgent ra = new RecodeAgent(jSpec, clen);
+				ra.setColList(ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])));
 				if( meta != null )
 					ra.initRecodeMaps(meta);
-				lencoders.add(ra);
-			
-				//pass-through decode (non-recode columns)
-				int[] rcCols = ra.getColList();
-				if( schema.size() > rcCols.length ) {
-					int[] ptCols = new int[schema.size()-rcCols.length]; 
-					HashSet<Integer> probe = new HashSet<Integer>();
-					for( int j=0; j<rcCols.length; j++ )
-						probe.add(rcCols[j]-1);
-					for( int j=0, pos=0; j<schema.size(); j++ )
-						if( !probe.contains(j) )
-							ptCols[pos++] = j;
-					lencoders.add(new EncoderPassThrough(ptCols));	
-				}
+				lencoders.add(ra);	
 			}
-			//create full 'pass-through' encoder if necessary
-			else {
-				int[] ptCols = new int[schema.size()];
-				for( int j=0; j<ptCols.length; j++ )
-					ptCols[j] = j;
-				lencoders.add(new EncoderPassThrough(ptCols));
-			}	
+			if( !ptIDs.isEmpty() ) {
+				lencoders.add(new EncoderPassThrough(
+						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));	
+			}
+			if( !dcIDs.isEmpty() ) {
+				DummycodeAgent da = new DummycodeAgent(jSpec, schema.size());
+				if( meta != null )
+					da.initDomainSizes(meta);
+				lencoders.add(da);
+			}
+			if( !binIDs.isEmpty() ) {
+				BinAgent ba = new BinAgent(jSpec, schema.size(), true);
+				if( meta != null )
+					ba.initBins(meta);
+				lencoders.add(ba);
+			}
+			if( !oIDs.isEmpty() ) {
+				lencoders.add(new OmitAgent(jSpec, schema.size()));
+			}
+			if( !mvIDs.isEmpty() ) {
+				MVImputeAgent ma = new MVImputeAgent(jSpec, schema.size());
+				if( meta != null )
+					ma.initReplacementList(meta, rcIDs);
+				lencoders.add(ma);
+			}
 			
 			//create composite decoder of all created decoders
 			encoder = new EncoderComposite(lencoders);

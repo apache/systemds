@@ -45,15 +45,26 @@ public abstract class Encoder implements Serializable
 {
 	private static final long serialVersionUID = 2299156350718979064L;
 	
+	protected int _clen = -1; 
 	protected int[] _colList = null;
 	
-	protected Encoder( int[] colList ) {
+	protected Encoder( int[] colList, int clen ) {
 		_colList = colList;
+		_clen = clen;
 	}
 	
 	public int[] getColList() {
 		return _colList;
 	}
+	
+	public void setColList(int[] colList) {
+		_colList = colList;
+	}
+	
+	public int getNumCols() {
+		return _clen;
+	}
+	
 	
 	/**
 	 * 
@@ -63,6 +74,16 @@ public abstract class Encoder implements Serializable
 		_colList = new int[attrs.size()];
 		for(int i=0; i < _colList.length; i++) 
 			_colList[i] = UtilFunctions.toInt(attrs.get(i));	
+		return _colList.length;
+	}
+	
+	/**
+	 * 
+	 * @param attrs
+	 * @return
+	 */
+	public int initColList(int[] colList) {
+		_colList = colList;
 		return _colList.length;
 	}
 	

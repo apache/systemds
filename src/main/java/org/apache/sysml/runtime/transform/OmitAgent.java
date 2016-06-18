@@ -27,34 +27,40 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.encode.Encoder;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class OmitAgent extends Encoder 
 {	
 	private static final long serialVersionUID = 1978852120416654195L;
 
-	public OmitAgent() { 
-		super(null);
+	private int _rmRows = 0;
+	
+	public OmitAgent(int clen) { 
+		super(null, clen);
 	}
 	
-	public OmitAgent(int[] list) {
-		super(list);
+	public OmitAgent(int[] list, int clen) {
+		super(list, clen);
 	}
 	
-	public OmitAgent(JSONObject parsedSpec) 
+	public OmitAgent(JSONObject parsedSpec, int clen) 
 		throws JSONException 
 	{
-		super(null);
+		super(null, clen);
 		if (!parsedSpec.containsKey(TfUtils.TXMETHOD_OMIT))
 			return;
-		JSONObject obj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_OMIT);
-		initColList((JSONArray) obj.get(TfUtils.JSON_ATTRS));
+		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, TfUtils.TXMETHOD_OMIT);
+		initColList(collist);
+	}
+	
+	public int getNumRemovedRows() {
+		return _rmRows;
 	}
 	
 	public boolean omit(String[] words, TfUtils agents) 
@@ -93,8 +99,37 @@ public class OmitAgent extends Encoder
 	}
 	
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
-		return null;
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) 
+	{
+		//determine output size
+		int numRows = 0;
+		for(int i=0; i<out.getNumRows(); i++) {
+			boolean valid = true;
+			for(int j=0; j<_colList.length; j++)
+				valid &= !Double.isNaN(out.quickGetValue(i, _colList[j]-1));
+			numRows += valid ? 1 : 0;
+		}
+		
+		//copy over valid rows into the output
+		MatrixBlock ret = new MatrixBlock(numRows, out.getNumColumns(), false);
+		int pos = 0;
+		for(int i=0; i<in.getNumRows(); i++) {
+			//determine if valid row or omit
+			boolean valid = true;
+			for(int j=0; j<_colList.length; j++)
+				valid &= !Double.isNaN(out.quickGetValue(i, _colList[j]-1));
+			//copy row if necessary
+			if( valid ) {
+				for(int j=0; j<out.getNumColumns(); j++)
+					ret.quickSetValue(pos, j, out.quickGetValue(i, j));
+				pos++;
+			}
+		}
+	
+		//keep info an remove rows
+		_rmRows = out.getNumRows() - pos;
+		
+		return ret; 
 	}
 
 	@Override
@@ -104,22 +139,23 @@ public class OmitAgent extends Encoder
 
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		return null;
+		return apply(in, out);
 	}
 
 	@Override
 	public void build(String[] in) {
-		
+		//do nothing
 	}
 
 	@Override
 	public void build(FrameBlock in) {	
-	
+		//do nothing
 	}
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
-		return null;
+		//do nothing
+		return out;
 	}
 }
  

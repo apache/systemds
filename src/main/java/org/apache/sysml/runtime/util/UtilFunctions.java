@@ -19,6 +19,9 @@
 
 package org.apache.sysml.runtime.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.NumItemsByEachReducerMetaData;
@@ -440,5 +443,19 @@ public class UtilFunctions
 			return Long.parseLong(arg.substring(0,arg.length()-1)) * 1024;
 		else 
 			return Long.parseLong(arg.substring(0,arg.length()));
+	}
+	
+	/**
+	 * 
+	 * @param low   lower bound (inclusive)
+	 * @param up    upper bound (inclusive)
+	 * @param incr  increment 
+	 * @return
+	 */
+	public static List<Integer> getSequenceList(int low, int up, int incr) {
+		ArrayList<Integer> ret = new ArrayList<Integer>();
+		for( int i=low; i<=up; i+=incr )
+			ret.add(i);
+		return ret;
 	}
 }

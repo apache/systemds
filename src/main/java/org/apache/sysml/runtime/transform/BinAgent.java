@@ -28,7 +28,9 @@ import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -37,11 +39,13 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.MVImputeAgent.MVMethod;
 import org.apache.sysml.runtime.transform.encode.Encoder;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class BinAgent extends Encoder 
@@ -56,33 +60,57 @@ public class BinAgent extends Encoder
 	private double[] _min=null, _max=null;	// min and max among non-missing values
 	private double[] _binWidths = null;		// width of a bin for each attribute
 	
-	public BinAgent() {
-		super( null );
+	//frame transform-apply attributes
+	private double[][] _binMins = null;
+	private double[][] _binMaxs = null;
+	
+	public BinAgent(int clen) {
+		super( null, clen );
 	}
 	
-	public BinAgent(JSONObject parsedSpec) 
-		throws JSONException 
+	public BinAgent(JSONObject parsedSpec, int clen) 
+		throws JSONException, IOException 
 	{
-		super( null );		
+		this(parsedSpec, clen, false);
+	}
+	
+	/**
+	 * 
+	 * @param parsedSpec
+	 * @param clen
+	 * @throws JSONException
+	 * @throws IOException 
+	 */
+	public BinAgent(JSONObject parsedSpec, int clen, boolean colsOnly) 
+		throws JSONException, IOException 
+	{
+		super( null, clen );		
 		if ( !parsedSpec.containsKey(TfUtils.TXMETHOD_BIN) )
 			return;
 		
-		JSONObject obj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_BIN);		
-		JSONArray attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
-		JSONArray nbins = (JSONArray) obj.get(TfUtils.JSON_NBINS);
+		if( colsOnly ) {
+			List<Integer> collist = TfMetaUtils.parseBinningColIDs(parsedSpec);
+			initColList(ArrayUtils.toPrimitive(collist.toArray(new Integer[0])));
+		}
+		else 
+		{
+			JSONObject obj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_BIN);		
+			JSONArray attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
+			JSONArray nbins = (JSONArray) obj.get(TfUtils.JSON_NBINS);
+			initColList(attrs);
 			
-		initColList(attrs);
-		_numBins = new int[attrs.size()];
-		for(int i=0; i < _numBins.length; i++)
-			_numBins[i] = UtilFunctions.toInt(nbins.get(i)); 
-		
-		// initialize internal transformation metadata
-		_min = new double[_colList.length];
-		Arrays.fill(_min, Double.MAX_VALUE);
-		_max = new double[_colList.length];
-		Arrays.fill(_max, -Double.MAX_VALUE);
-		
-		_binWidths = new double[_colList.length];
+			_numBins = new int[attrs.size()];
+			for(int i=0; i < _numBins.length; i++)
+				_numBins[i] = UtilFunctions.toInt(nbins.get(i)); 
+			
+			// initialize internal transformation metadata
+			_min = new double[_colList.length];
+			Arrays.fill(_min, Double.MAX_VALUE);
+			_max = new double[_colList.length];
+			Arrays.fill(_max, -Double.MAX_VALUE);
+			
+			_binWidths = new double[_colList.length];
+		}
 	}
 
 	public int[] getNumBins() { return _numBins; }
@@ -173,7 +201,7 @@ public class BinAgent extends Encoder
 
 	private void writeTfMtd(int colID, String min, String max, String binwidth, String nbins, String tfMtdDir, FileSystem fs, TfUtils agents) throws IOException 
 	{
-		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + TfUtils.BIN_FILE_SUFFIX);
+		Path pt = new Path(tfMtdDir+"/Bin/"+ agents.getName(colID) + TfUtils.TXMTD_BIN_FILE_SUFFIX);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 		br.write(colID + TfUtils.TXMTD_SEP + min + TfUtils.TXMTD_SEP + max + TfUtils.TXMTD_SEP + binwidth + TfUtils.TXMTD_SEP + nbins + "\n");
 		br.close();
@@ -263,7 +291,7 @@ public class BinAgent extends Encoder
 			for(int i=0; i<_colList.length;i++) {
 				int colID = _colList[i];
 				
-				Path path = new Path( txMtdDir + "/Bin/" + agents.getName(colID) + TfUtils.BIN_FILE_SUFFIX);
+				Path path = new Path( txMtdDir + "/Bin/" + agents.getName(colID) + TfUtils.TXMTD_BIN_FILE_SUFFIX);
 				TfUtils.checkValidInputFile(fs, path, true); 
 					
 				BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
@@ -320,7 +348,17 @@ public class BinAgent extends Encoder
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
-		return null;
+		for(int j=0; j<_colList.length; j++) {
+			int colID = _colList[j];
+			for( int i=0; i<in.getNumRows(); i++ ) {
+				double inVal = UtilFunctions.objectToDouble(
+						in.getSchema().get(colID-1), in.get(i, colID-1));
+				int ix = Arrays.binarySearch(_binMaxs[j], inVal);
+				int binID = ((ix < 0) ? Math.abs(ix+1) : ix) + 1;		
+				out.quickSetValue(i, colID-1, binID);
+			}	
+		}
+		return out;
 	}
 	
 	@Override
@@ -331,25 +369,43 @@ public class BinAgent extends Encoder
 
 	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		// TODO Auto-generated method stub
-		return null;
+		build(in);
+		return apply(in, out);
 	}
 
 	@Override
 	public void build(String[] in) {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void build(FrameBlock in) {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	/**
+	 * 
+	 * @param meta
+	 */
+	public void initBins(FrameBlock meta) {
+		_binMins = new double[_colList.length][];
+		_binMaxs = new double[_colList.length][];
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j]; //1-based
+			int nbins = (int)meta.getColumnMetadata().get(colID-1).getNumDistinct();
+			_binMins[j] = new double[nbins];
+			_binMaxs[j] = new double[nbins];
+			for( int i=0; i<nbins; i++ ) {
+				String[] tmp = meta.get(i, colID-1).toString().split(Lop.DATATYPE_PREFIX);
+				_binMins[j][i] = Double.parseDouble(tmp[0]);
+				_binMaxs[j][i] = Double.parseDouble(tmp[1]);
+			}
+		}
 	}
 }

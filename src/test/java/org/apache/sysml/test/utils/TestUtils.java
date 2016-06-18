@@ -730,8 +730,10 @@ public class TestUtils
 		int countErrors = 0;
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
-				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, false))
+				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, false)) {
+					System.out.println(expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
 					countErrors++;
+				}
 			}
 		}
 		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);

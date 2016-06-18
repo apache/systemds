@@ -83,20 +83,20 @@ public class TfUtils implements Serializable{
 	public static final String TXMETHOD_MVRCD     = "mvrcd";
 		
 	//transform meta data constants
-	public static final String TXMTD_SEP 	     = ",";
-	public static final String TXMTD_COLTYPES 	 = "coltypes.csv";	
+	public static final String TXMTD_SEP         = ",";
+	public static final String TXMTD_COLTYPES    = "coltypes.csv";	
 	public static final String TXMTD_COLNAMES    = "column.names";
 	public static final String TXMTD_DC_COLNAMES = "dummycoded.column.names";	
-	public static final String TXMTD_RCD_MAP_SUFFIX 	 = ".map";
+	public static final String TXMTD_RCD_MAP_SUFFIX      = ".map";
 	public static final String TXMTD_RCD_DISTINCT_SUFFIX = ".ndistinct";
+	public static final String TXMTD_BIN_FILE_SUFFIX     = ".bin";
+	public static final String TXMTD_MV_FILE_SUFFIX      = ".impute";
 	
 	public static final String JSON_ATTRS 	= "attributes"; 
 	public static final String JSON_MTHD 	= "methods"; 
 	public static final String JSON_CONSTS = "constants"; 
 	public static final String JSON_NBINS 	= "numbins"; 		
-	protected static final String MV_FILE_SUFFIX 		= ".impute";
 	protected static final String MODE_FILE_SUFFIX 		= ".mode";
-	protected static final String BIN_FILE_SUFFIX 		= ".bin";
 	protected static final String SCALE_FILE_SUFFIX		= ".scale";
 	protected static final String DCD_FILE_NAME 		= "dummyCodeMaps.csv";	
 	protected static final String DCD_NAME_SEP 	= "_";
@@ -119,7 +119,7 @@ public class TfUtils implements Serializable{
 	private String _delimString = null;
 	private String[] _NAstrings = null;
 	private String[] _outputColumnNames = null;
-	private long _numInputCols = -1;
+	private int _numInputCols = -1;
 	
 	private String _tfMtdDir = null;
 	private String _spec = null;
@@ -135,7 +135,7 @@ public class TfUtils implements Serializable{
 		}		
 		_NAstrings = TfUtils.parseNAStrings(job);
 		_spec = job.get(MRJobConfiguration.TF_SPEC);
-		_oa = new OmitAgent(new JSONObject(_spec));
+		_oa = new OmitAgent(new JSONObject(_spec), -1);
 	}
 	
 	// called from GenTFMtdMapper, ApplyTf (Hadoop)
@@ -176,7 +176,7 @@ public class TfUtils implements Serializable{
 		throws IOException, JSONException 
 	{
 		//TODO recodemaps handover
-		_numInputCols = inNcol;
+		_numInputCols = (int)inNcol;
 		createAgents(spec, new String[]{});
 	}
 	
@@ -244,10 +244,10 @@ public class TfUtils implements Serializable{
 	private void createAgents(JSONObject spec, String[] naStrings) 
 		throws IOException, JSONException 
 	{
-		_oa = new OmitAgent(spec);
-		_mia = new MVImputeAgent(spec, naStrings);
-		_ra = new RecodeAgent(spec);
-		_ba = new BinAgent(spec);
+		_oa = new OmitAgent(spec, _numInputCols);
+		_mia = new MVImputeAgent(spec, naStrings, _numInputCols);
+		_ra = new RecodeAgent(spec, _numInputCols);
+		_ba = new BinAgent(spec, _numInputCols);
 		_da = new DummycodeAgent(spec, _numInputCols);
 	}
 	
@@ -279,7 +279,7 @@ public class TfUtils implements Serializable{
 		_delimString = delim;
 		_delim = Pattern.compile(Pattern.quote(delim));
 		_NAstrings = naStrings;
-		_numInputCols = numCols;
+		_numInputCols = (int)numCols;
 		_offsetFile = offsetFile;
 		_tmpDir = tmpPath;
 		_outputPath = outputPath;

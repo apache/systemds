@@ -678,7 +678,7 @@ public class DataTransform
 		{
 			int id = UtilFunctions.toInt(o);
 			
-			Path binpath = new Path( tfMtdPath + "/Bin/" + UtilFunctions.unquote(columnNames[id-1]) + TfUtils.BIN_FILE_SUFFIX);
+			Path binpath = new Path( tfMtdPath + "/Bin/" + UtilFunctions.unquote(columnNames[id-1]) + TfUtils.TXMTD_BIN_FILE_SUFFIX);
 			Path rcdpath = new Path( tfMtdPath + "/Recode/" + UtilFunctions.unquote(columnNames[id-1]) + TfUtils.TXMTD_RCD_DISTINCT_SUFFIX);
 			
 			if ( TfUtils.checkValidInputFile(fs, binpath, false ) )
@@ -698,7 +698,7 @@ public class DataTransform
 			else
 				throw new DMLRuntimeException("Relevant transformation metadata for column (id=" + id + ", name=" + columnNames[id-1] + ") is not found.");
 		}
-		//System.out.println("Number of columns in transformed data: " + ret);
+		
 		return ret;
 	}
 	

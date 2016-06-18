@@ -43,8 +43,8 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.MVImputeAgent.MVMethod;
 import org.apache.sysml.runtime.transform.decode.DecoderRecode;
 import org.apache.sysml.runtime.transform.encode.Encoder;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -59,37 +59,23 @@ public class RecodeAgent extends Encoder
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<Integer, HashMap<String, Long>>();
 	private HashMap<Integer, HashMap<String,String>> _finalMaps = null;
 	
-	public RecodeAgent(JSONObject parsedSpec)
+	public RecodeAgent(JSONObject parsedSpec, int clen)
 		throws JSONException 
 	{
-		super(null);
-		int rcdCount = 0;	
-		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_RECODE)) 
-		{
-			//TODO consolidate external and internal json spec definitions
-			JSONArray attrs = null;
-			if( parsedSpec.get(TfUtils.TXMETHOD_RECODE) instanceof JSONObject ) {
-				JSONObject obj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_RECODE);
-				attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
-			}
-			else
-				attrs = (JSONArray)parsedSpec.get(TfUtils.TXMETHOD_RECODE);			
-			rcdCount = initColList(attrs);
+		super(null, clen);
+		int rcdCount = 0;
+		
+		if( parsedSpec.containsKey(TfUtils.TXMETHOD_RECODE) ) {
+			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, TfUtils.TXMETHOD_RECODE);
+			rcdCount = initColList(collist);
 		}
 		
-		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_MVRCD)) 
-		{
-			JSONObject obj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_MVRCD);
-			JSONArray attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
-			
-			_mvrcdList = new int[attrs.size()];
-			for(int i=0; i < _mvrcdList.length; i++) 
-				_mvrcdList[i] = UtilFunctions.toInt(attrs.get(i));
-			rcdCount += attrs.size();
+		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_MVRCD)) {
+			_mvrcdList = TfMetaUtils.parseJsonIDList(parsedSpec, TfUtils.TXMETHOD_MVRCD);
+			rcdCount += _mvrcdList.length;
 		}
 		
-		if ( rcdCount > 0 )
-		{
+		if ( rcdCount > 0 ) {
 			_fullrcdList = new int[rcdCount];
 			int idx = -1;
 			if(_colList != null)
@@ -305,7 +291,7 @@ public class RecodeAgent extends Encoder
 		
 		if (isModeImputed) 
 		{
-			pt=new Path(outputDir+"/Impute/"+ agents.getName(colID) + TfUtils.MV_FILE_SUFFIX);
+			pt=new Path(outputDir+"/Impute/"+ agents.getName(colID) + TfUtils.TXMTD_MV_FILE_SUFFIX);
 			br=new BufferedWriter(new OutputStreamWriter(fs.create(pt,true)));
 			br.write(colID + "," + UtilFunctions.quote(mode));
 			br.close();

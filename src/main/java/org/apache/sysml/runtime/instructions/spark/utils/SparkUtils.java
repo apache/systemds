@@ -117,6 +117,18 @@ public class SparkUtils
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static ArrayList<Pair<Long,Long>> toIndexedLong( List<Tuple2<Long, Long>> in ) {
+		ArrayList<Pair<Long, Long>> ret = new ArrayList<Pair<Long, Long>>();
+		for( Tuple2<Long, Long> e : in )
+			ret.add(new Pair<Long,Long>(e._1(), e._2()));
+		return ret;
+	}
+	
 	
 	/**
 	 * 

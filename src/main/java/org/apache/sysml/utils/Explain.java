@@ -241,20 +241,20 @@ public class Explain
 						
 		// Explain functions (if exists)
 		boolean firstFunction = true;
-		for (String namespace : prog.getNamespaces().keySet()){
-			for (String fname : prog.getFunctionStatementBlocks(namespace).keySet()){
+		for (String namespace : prog.getNamespaces().keySet()) {
+			for (String fname : prog.getFunctionStatementBlocks(namespace).keySet()) {
 				if (firstFunction) {
 					sb.append("--FUNCTIONS\n");
 					firstFunction = false;
+					
+					//show function call dag
+					sb.append("----FUNCTION CALL DAG\n");
+					sb.append("------MAIN PROGRAM\n");
+					HashSet<String> fstack = new HashSet<String>();
+					HashSet<String> lfset = new HashSet<String>();
+					for( StatementBlock sblk : prog.getStatementBlocks() )
+						sb.append(explainFunctionCallDag(sblk, fstack, lfset, 3));
 				}
-				
-				//show function call dag
-				sb.append("----FUNCTION CALL DAG\n");
-				sb.append("------MAIN PROGRAM\n");
-				HashSet<String> fstack = new HashSet<String>();
-				HashSet<String> lfset = new HashSet<String>();
-				for( StatementBlock sblk : prog.getStatementBlocks() )
-					sb.append(explainFunctionCallDag(sblk, fstack, lfset, 3));
 				
 				//show individual functions
 				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(namespace, fname);
@@ -589,8 +589,12 @@ public class Explain
 		else if (sb instanceof ForStatementBlock) {
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			builder.append(offset);
-			if (sb instanceof ParForStatementBlock)
-				builder.append("PARFOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
+			if (sb instanceof ParForStatementBlock) {
+				if( !fsb.getUpdateInPlaceVars().isEmpty() )
+					builder.append("PARFOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+") [in-place="+fsb.getUpdateInPlaceVars().toString()+"]\n");
+				else
+					builder.append("PARFOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+")\n");
+			}
 			else {
 				if( !fsb.getUpdateInPlaceVars().isEmpty() )
 					builder.append("FOR (lines "+fsb.getBeginLine()+"-"+fsb.getEndLine()+") [in-place="+fsb.getUpdateInPlaceVars().toString()+"]\n");

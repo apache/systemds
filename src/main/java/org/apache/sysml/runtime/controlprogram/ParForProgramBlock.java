@@ -719,6 +719,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			for( int i=0; i<_numThreads; i++ )
 			{
 				//create parallel workers as (lazy) deep copies
+				//including preparation of update-in-place variables
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec ); 
 				threads[i] = new Thread( workers[i] );
 				threads[i].setPriority(Thread.MAX_PRIORITY); 
@@ -1417,8 +1418,11 @@ public class ParForProgramBlock extends ForProgramBlock
 				cpChildBlocks = ProgramConverter.rcreateDeepCopyProgramBlocks(_childBlocks, pwID, _IDPrefix, new HashSet<String>(), fnNames, false, false); 
 			}             
 			
-			//deep copy execution context
+			//deep copy execution context (including prepare parfor update-in-place)
 			ExecutionContext cpEc = ProgramConverter.createDeepCopyExecutionContext(ec);
+			
+			//prepare basic update-in-place variables (vars dropped on result merge)
+			prepareUpdateInPlaceVariables(cpEc);
 			
 			//copy compiler configuration (for jmlc w/o global config)
 			CompilerConfig cconf = ConfigurationManager.getCompilerConfig();

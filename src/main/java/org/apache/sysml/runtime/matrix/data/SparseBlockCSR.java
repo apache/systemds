@@ -340,7 +340,8 @@ public class SparseBlockCSR extends SparseBlock
 	@Override
 	public void setIndexRange(int r, int cl, int cu, double[] v, int vix, int vlen) {
 		//delete existing values in range if necessary 
-		deleteIndexRange(r, cl, cu);
+		if( !isEmpty(r) )
+			deleteIndexRange(r, cl, cu);
 		
 		//determine input nnz
 		int lnnz = 0;
@@ -506,10 +507,28 @@ public class SparseBlockCSR extends SparseBlock
 		double tmpCap = _values.length * RESIZE_FACTOR1;
 		int newCap = (int)Math.min(tmpCap, Integer.MAX_VALUE);
 		
-		resize(newCap);
+		resizeCopy(newCap);
 	}
 	
-	private void resize(int capacity) {
+	/**
+	 * 
+	 * @param minsize
+	 */
+	private void resize(int minsize) {
+		//compute new size until minsize reached
+		double tmpCap = _values.length;
+		while( tmpCap < minsize )
+			tmpCap *= RESIZE_FACTOR1;
+		int newCap = (int)Math.min(tmpCap, Integer.MAX_VALUE);
+		
+		resizeCopy(newCap);
+	}
+	
+	/**
+	 * 
+	 * @param capacity
+	 */
+	private void resizeCopy(int capacity) {
 		//reallocate arrays and copy old values
 		_indexes = Arrays.copyOf(_indexes, capacity);
 		_values = Arrays.copyOf(_values, capacity);

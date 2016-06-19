@@ -1581,8 +1581,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		throws DMLRuntimeException
 	{	
 		//handle empty src and dest
-		if( src.isEmptyBlock(false) )
-		{
+		if( src.isEmptyBlock(false) ) {
 			if( awareDestNZ && denseBlock != null ) {
 				nonZeros -= recomputeNonZeros(rl, ru, cl, cu);
 				copyEmptyToDense(rl, ru, cl, cu);
@@ -1591,8 +1590,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		if(denseBlock==null)
 			allocateDenseBlock();
-		else if( awareDestNZ )
-		{
+		else if( awareDestNZ ) {
 			nonZeros -= recomputeNonZeros(rl, ru, cl, cu);
 			copyEmptyToDense(rl, ru, cl, cu);
 		}
@@ -1620,30 +1618,29 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	private void copyDenseToSparse(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ)
 	{
 		//handle empty src and dest
-		if( src.isEmptyBlock(false) )
-		{
+		if( src.isEmptyBlock(false) ) {
 			if( awareDestNZ && sparseBlock != null )
 				copyEmptyToSparse(rl, ru, cl, cu, true);
 			return;		
 		}
-		if(sparseBlock==null) {
-			sparseBlock=SparseBlockFactory
-			.createSparseBlock(DEFAULT_SPARSEBLOCK, rlen);
-		}
+		
+		//allocate output block
 		//no need to clear for awareDestNZ since overwritten  
+		allocateSparseRowsBlock(false);
 		
 		//copy values
 		SparseBlock a = sparseBlock;
 		for( int i=0, ix=0; i<src.rlen; i++, ix+=src.clen )
 		{
 			int rix = rl + i;
-			if( a.isEmpty(rix) )
+			if( a instanceof SparseBlockMCSR 
+				&& a.isEmpty(rix) ) //special case MCSR append
 			{
 				for( int j=0; j<src.clen; j++ ) {
 					double val = src.denseBlock[ix+j];
 					if( val != 0 ) {
 						a.allocate(rix, estimatedNNzsPerRow, clen);
-						sparseBlock.append(rix, cl+j, val); 
+						a.append(rix, cl+j, val); 
 					}
 				}
 			
@@ -1675,20 +1672,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	private void copyDenseToDense(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ) 
 		throws DMLRuntimeException
-	{
+	{	
 		//handle empty src and dest
-		if( src.isEmptyBlock(false) )
-		{
+		if( src.isEmptyBlock(false) ) {
 			if( awareDestNZ && denseBlock != null ) {
 				nonZeros -= recomputeNonZeros(rl, ru, cl, cu);
 				copyEmptyToDense(rl, ru, cl, cu);
 			}
 			return;		
 		}
-		if(denseBlock==null)
-			allocateDenseBlock();
+		
+		//allocate output block
 		//no need to clear for awareDestNZ since overwritten 
-	
+		allocateDenseBlock(false);
+		
 		if( awareDestNZ )
 			nonZeros = nonZeros - recomputeNonZeros(rl, ru, cl, cu) + src.nonZeros;
 		
@@ -2796,8 +2793,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	@Override
 	public boolean isShallowSerialize() {
-		//shallow serialize if dense in serialized form or already in CSR
-		return !evalSparseFormatOnDisk()
+		//shallow serialize if dense, dense in serialized form or already in CSR
+		return !sparse || !evalSparseFormatOnDisk()
 			|| (sparse && sparseBlock instanceof SparseBlockCSR);
 	}
 	
@@ -3961,15 +3958,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//result = (MatrixBlockDSM) zeroOutOperations(result, new IndexRange(rowLower,rowUpper, colLower, colUpper ), false);
 		
 		MatrixBlock src = (MatrixBlock)rhsMatrix;
-		
 
-		if(rl==ru && cl==cu) //specific case: cell update			
-		{
+		if(rl==ru && cl==cu) { //specific case: cell update			
 			//copy single value and update nnz
 			result.quickSetValue(rl, cl, src.quickGetValue(0, 0));
 		}		
-		else //general case
-		{
+		else { //general case
 			//copy submatrix into result
 			result.copy(rl, ru, cl, cu, src, true);
 		}

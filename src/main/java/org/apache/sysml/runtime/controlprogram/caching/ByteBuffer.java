@@ -69,17 +69,11 @@ public class ByteBuffer
 			}
 			else //SPARSE/DENSE -> DENSE
 			{
-				//special handling sparse matrix blocks whose serialized representation
-				//is dense; change representation (if required), incl. free sparse
-				if( cb instanceof MatrixBlock && ((MatrixBlock)cb).isInSparseFormat() )
-					((MatrixBlock)cb).examSparsity();
-				
 				//shallow serialize
 				_cdata = cb;
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new IOException("Failed to serialize cache block.", ex);
 		}
 		

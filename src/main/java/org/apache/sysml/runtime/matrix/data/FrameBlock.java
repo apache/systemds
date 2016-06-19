@@ -596,6 +596,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		ret._numRows = _numRows;								
 		ret._schema = new ArrayList<ValueType>(_schema);
 		ret._colnames = new ArrayList<String>(_colnames);
+		ret._colmeta = new ArrayList<ColumnMetadata>(_colmeta);
 		
 		//copy data to output and partial overwrite w/ rhs
 		for( int j=0; j<getNumColumns(); j++ ) {
@@ -655,6 +656,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int j=cl; j<=cu; j++ ) {
 			ret._schema.add(_schema.get(j));
 			ret._colnames.add(_colnames.get(j));
+			ret._colmeta.add(_colmeta.get(j));
 		}	
 		ret._numRows = ru-rl+1;
 

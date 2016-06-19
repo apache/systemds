@@ -35,9 +35,9 @@ public class OuterVectorBinaryOpFunction implements PairFlatMapFunction<Tuple2<M
 	private static final long serialVersionUID = 1730704346934726826L;
 	
 	private BinaryOperator _op;
-	private PartitionedBroadcast _pmV;
+	private PartitionedBroadcast<MatrixBlock> _pmV;
 	
-	public OuterVectorBinaryOpFunction( BinaryOperator op, PartitionedBroadcast binput ) 
+	public OuterVectorBinaryOpFunction( BinaryOperator op, PartitionedBroadcast<MatrixBlock> binput ) 
 	{
 		_op = op;
 		_pmV = binput;
@@ -84,7 +84,7 @@ public class OuterVectorBinaryOpFunction implements PairFlatMapFunction<Tuple2<M
 				MatrixIndexes ix = _currBlk._1();
 				MatrixBlock in1 = _currBlk._2();
 				
-				MatrixBlock in2 = (MatrixBlock)_pmV.getBlock(1, _currPos);
+				MatrixBlock in2 = _pmV.getBlock(1, _currPos);
 				MatrixBlock resultBlk = (MatrixBlock)in1.binaryOperations (_op, in2, new MatrixBlock());
 				resultBlk.examSparsity(); 
 				ret = new Tuple2<MatrixIndexes,MatrixBlock>(

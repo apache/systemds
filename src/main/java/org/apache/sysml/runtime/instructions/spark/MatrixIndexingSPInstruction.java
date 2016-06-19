@@ -123,7 +123,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 		else if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex"))
 		{
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-			PartitionedBroadcast broadcastIn2 = null;
+			PartitionedBroadcast<MatrixBlock> broadcastIn2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 			
@@ -276,12 +276,12 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 	{
 		private static final long serialVersionUID = 1757075506076838258L;
 		
-		private PartitionedBroadcast _binput;
+		private PartitionedBroadcast<MatrixBlock> _binput;
 		private IndexRange _ixrange = null;
 		private int _brlen = -1;
 		private int _bclen = -1;
 		
-		public LeftIndexPartitionFunction(PartitionedBroadcast binput, IndexRange ixrange, MatrixCharacteristics mc) 
+		public LeftIndexPartitionFunction(PartitionedBroadcast<MatrixBlock> binput, IndexRange ixrange, MatrixCharacteristics mc) 
 		{
 			_binput = binput;
 			_ixrange = ixrange;
@@ -326,7 +326,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 				long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
 				
 				// Provide global zero-based index to sliceOperations
-				MatrixBlock slicedRHSMatBlock = _binput.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
+				MatrixBlock slicedRHSMatBlock = (MatrixBlock) _binput.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
 				
 				// Provide local zero-based index to leftIndexingOperations
 				int lhs_lrl = UtilFunctions.computeCellInBlock(lhs_rl, _brlen);

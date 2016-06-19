@@ -543,7 +543,7 @@ public class OperationsOnMatrixValues
 		throws DMLRuntimeException
 	{
 		Long ix = in.getKey();
-		FrameBlock fb = (FrameBlock)in.getValue();
+		FrameBlock fb = in.getValue();
 		long start_lhs_globalRowIndex = ixrange.rowStart + (ix-1);
 		long start_lhs_globalColIndex = ixrange.colStart;
 		long end_lhs_globalRowIndex = start_lhs_globalRowIndex + fb.getNumRows() - 1;

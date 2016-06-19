@@ -20,6 +20,8 @@
 package org.apache.sysml.runtime.controlprogram.caching;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBlock;
 
 
 /**
@@ -40,7 +42,7 @@ public interface CacheBlock extends Writable
 	 * @return
 	 */
 	public long getExactSerializedSize();
-	
+
 	/**
 	 * Indicates if the cache block is subject to shallow serialized,
 	 * which is generally true if in-memory size and serialized size
@@ -54,4 +56,25 @@ public interface CacheBlock extends Writable
 	 * Free unnecessarily allocated empty block.
 	 */
 	public void compactEmptyBlock();
+	
+	public int getNumRows();
+	public int getNumColumns();
+	
+	public CacheBlock getNewInstance();
+
+	public CacheBlock[] getNewInstances(int n);
+	
+	public CacheBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock block) 
+			throws DMLRuntimeException;
+	
+	public CacheBlock sliceOperations(long rl, long ru, long cl, long cu, CacheBlock block, int _brlen, int _bclen, PartitionedBlock<CacheBlock> pBlock) 
+			throws DMLRuntimeException;
+			
+	public long estimateSizeInMemory();
+	
+	public long estimateSizeOnDisk();
+	
+	public void merge(CacheBlock that, boolean appendOnly) 
+			throws DMLRuntimeException;
+
 }

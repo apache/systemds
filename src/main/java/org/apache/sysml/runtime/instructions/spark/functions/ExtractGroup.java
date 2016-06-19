@@ -139,9 +139,9 @@ public abstract class ExtractGroup implements Serializable
 	{
 		private static final long serialVersionUID = 5709955602290131093L;
 		
-		private PartitionedBroadcast _pbm = null;
+		private PartitionedBroadcast<MatrixBlock> _pbm = null;
 		
-		public ExtractGroupBroadcast( PartitionedBroadcast pbm, long bclen, long ngroups, Operator op ) {
+		public ExtractGroupBroadcast( PartitionedBroadcast<MatrixBlock> pbm, long bclen, long ngroups, Operator op ) {
 			super(bclen, ngroups, op);
 			_pbm = pbm;
 		}
@@ -152,7 +152,7 @@ public abstract class ExtractGroup implements Serializable
 				throws Exception 
 		{
 			MatrixIndexes ix = arg._1;
-			MatrixBlock group = (MatrixBlock)_pbm.getBlock((int)ix.getRowIndex(), 1);
+			MatrixBlock group = _pbm.getBlock((int)ix.getRowIndex(), 1);
 			MatrixBlock target = arg._2;
 			
 			return execute(ix, group, target);

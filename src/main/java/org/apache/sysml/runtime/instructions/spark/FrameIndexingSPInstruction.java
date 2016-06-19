@@ -92,7 +92,7 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 		if ( opcode.equalsIgnoreCase("leftIndex") || opcode.equalsIgnoreCase("mapLeftIndex"))
 		{
 			JavaPairRDD<Long,FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable( input1.getName() );
-			PartitionedBroadcast broadcastIn2 = null;
+			PartitionedBroadcast<FrameBlock> broadcastIn2 = null;
 			JavaPairRDD<Long,FrameBlock> in2 = null;
 			JavaPairRDD<Long,FrameBlock> out = null;
 			
@@ -254,10 +254,10 @@ public class FrameIndexingSPInstruction  extends IndexingSPInstruction
 	{
 		private static final long serialVersionUID = -911940376947364915L;
 
-		private PartitionedBroadcast _binput;
+		private PartitionedBroadcast<FrameBlock> _binput;
 		private IndexRange _ixrange = null;
 		
-		public LeftIndexPartitionFunction(PartitionedBroadcast binput, IndexRange ixrange, MatrixCharacteristics mc) 
+		public LeftIndexPartitionFunction(PartitionedBroadcast<FrameBlock> binput, IndexRange ixrange, MatrixCharacteristics mc) 
 		{
 			_binput = binput;
 			_ixrange = ixrange;

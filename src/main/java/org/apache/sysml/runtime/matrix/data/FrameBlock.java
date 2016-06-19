@@ -39,6 +39,7 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBlock;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -633,9 +634,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param ret
 	 * @return
 	 */
-	public FrameBlock sliceOperations(int rl, int ru, int cl, int cu, FrameBlock ret) 
+	public FrameBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock retCache) 
 		throws DMLRuntimeException
 	{
+		FrameBlock ret = (FrameBlock)retCache;
 		// check the validity of bounds
 		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
 			|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
@@ -839,6 +841,12 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return map;
 	}
 
+	public void merge(CacheBlock that, boolean bDummy) 
+			throws DMLRuntimeException
+	{
+		merge((FrameBlock)that);
+	}
+	
 	/**
 	 * 
 	 * @param that
@@ -865,7 +873,6 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 		
 	}
-
 	
 	/**
 	 * This function ZERO OUT the data in the slicing window applicable for this block.
@@ -1241,4 +1248,75 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_mvValue = mvVal;
 		}
 	}
+	@Override
+	public FrameBlock getNewInstance()
+	{
+		return new FrameBlock();
+	}
+
+	@Override
+	public FrameBlock[] getNewInstances(int iNumber)
+	{
+		return new FrameBlock[iNumber];
+	}
+
+	@Override
+	public long estimateSizeInMemory() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public long estimateSizeOnDisk() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	
+	/**
+	 * Utility for slice operations over partitioned frames, where the index range can cover
+	 * multiple blocks. The result is always a single result frame block. All semantics are 
+	 * equivalent to the core frame block slice operations. 
+	 * 
+	 * @param rl
+	 * @param ru
+	 * @param cl
+	 * @param cu
+	 * @param frameBlock
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */	
+	public FrameBlock sliceOperations(long rl, long ru, long cl, long cu, CacheBlock cacheBlock, int _brlen, int _bclen, PartitionedBlock<CacheBlock> pBlock) 
+		throws DMLRuntimeException 
+	{
+		int lrl = (int) rl;
+		int lru = (int) ru;
+		int lcl = (int) cl;
+		int lcu = (int) cu;
+		
+		ArrayList<Pair<Long, FrameBlock>> allBlks = new ArrayList<Pair<Long,FrameBlock>>();
+		int start_iix = (lrl-1)/_brlen+1;
+		int end_iix = (lru-1)/_brlen+1;
+		int start_jix = (lcl-1)/_bclen+1;
+		int end_jix = (lcu-1)/_bclen+1;
+				
+		FrameBlock in = null;
+		for( int iix = start_iix; iix <= end_iix; iix++ )
+			for(int jix = start_jix; jix <= end_jix; jix++)		
+			{
+				in = (FrameBlock)pBlock.getBlock(iix, jix);
+				Pair<Long, FrameBlock> lfp = new Pair<Long, FrameBlock>(new Long(((iix-1)*_brlen)+1), in);
+				ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<Pair<Long, FrameBlock>>();
+				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
+				OperationsOnMatrixValues.performSlice(lfp, ixrange, _brlen, _bclen, outlist);
+				allBlks.addAll(outlist);
+			}
+		
+		if(allBlks.size() == 1) {
+			return allBlks.get(0).getValue();
+		}
+		else {
+			throw new DMLRuntimeException("There should not be more than one block created.");
+		} 
+	}
+
 }

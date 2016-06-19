@@ -117,7 +117,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		
 		//get inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-		PartitionedBroadcast in2 = sec.getBroadcastForVariable( bcastVar ); 
+		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar ); 
 		
 		//empty input block filter
 		if( !_outputEmpty )
@@ -196,9 +196,9 @@ public class MapmmSPInstruction extends BinarySPInstruction
 
 		private CacheType _type = null;
 		private AggregateBinaryOperator _op = null;
-		private PartitionedBroadcast _pbc = null;
+		private PartitionedBroadcast<MatrixBlock> _pbc = null;
 		
-		public RDDMapMMFunction( CacheType type, PartitionedBroadcast binput )
+		public RDDMapMMFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput )
 		{
 			_type = type;
 			_pbc = binput;
@@ -221,7 +221,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			if( _type == CacheType.LEFT )
 			{
 				//get the right hand side matrix
-				MatrixBlock left = (MatrixBlock)_pbc.getBlock(1, (int)ixIn.getRowIndex());
+				MatrixBlock left = _pbc.getBlock(1, (int)ixIn.getRowIndex());
 				
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.performAggregateBinary( 
@@ -230,7 +230,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 			else //if( _type == CacheType.RIGHT )
 			{
 				//get the right hand side matrix
-				MatrixBlock right = (MatrixBlock)_pbc.getBlock((int)ixIn.getColumnIndex(), 1);
+				MatrixBlock right = _pbc.getBlock((int)ixIn.getColumnIndex(), 1);
 				
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.performAggregateBinary(
@@ -252,9 +252,9 @@ public class MapmmSPInstruction extends BinarySPInstruction
 	
 		private CacheType _type = null;
 		private AggregateBinaryOperator _op = null;
-		private PartitionedBroadcast _pbc = null;
+		private PartitionedBroadcast<MatrixBlock> _pbc = null;
 		
-		public RDDMapMMPartitionFunction( CacheType type, PartitionedBroadcast binput )
+		public RDDMapMMPartitionFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput )
 		{
 			_type = type;
 			_pbc = binput;
@@ -293,7 +293,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 				if( _type == CacheType.LEFT )
 				{
 					//get the right hand side matrix
-					MatrixBlock left = (MatrixBlock)_pbc.getBlock(1, (int)ixIn.getRowIndex());
+					MatrixBlock left = _pbc.getBlock(1, (int)ixIn.getRowIndex());
 					
 					//execute index preserving matrix multiplication
 					left.aggregateBinaryOperations(left, blkIn, blkOut, _op);						
@@ -301,7 +301,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 				else //if( _type == CacheType.RIGHT )
 				{
 					//get the right hand side matrix
-					MatrixBlock right = (MatrixBlock)_pbc.getBlock((int)ixIn.getColumnIndex(), 1);
+					MatrixBlock right = _pbc.getBlock((int)ixIn.getColumnIndex(), 1);
 
 					//execute index preserving matrix multiplication
 					blkIn.aggregateBinaryOperations(blkIn, right, blkOut, _op);	
@@ -322,9 +322,9 @@ public class MapmmSPInstruction extends BinarySPInstruction
 		
 		private CacheType _type = null;
 		private AggregateBinaryOperator _op = null;
-		private PartitionedBroadcast _pbc = null;
+		private PartitionedBroadcast<MatrixBlock> _pbc = null;
 		
-		public RDDFlatMapMMFunction( CacheType type, PartitionedBroadcast binput )
+		public RDDFlatMapMMFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput )
 		{
 			_type = type;
 			_pbc = binput;
@@ -349,7 +349,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 				int len = _pbc.getNumRowBlocks();
 				for( int i=1; i<=len; i++ ) 
 				{
-					MatrixBlock left = (MatrixBlock)_pbc.getBlock(i, (int)ixIn.getRowIndex());
+					MatrixBlock left = _pbc.getBlock(i, (int)ixIn.getRowIndex());
 					MatrixIndexes ixOut = new MatrixIndexes();
 					MatrixBlock blkOut = new MatrixBlock();
 					
@@ -367,7 +367,7 @@ public class MapmmSPInstruction extends BinarySPInstruction
 				for( int j=1; j<=len; j++ ) 
 				{
 					//get the right hand side matrix
-					MatrixBlock right = (MatrixBlock)_pbc.getBlock((int)ixIn.getColumnIndex(), j);
+					MatrixBlock right = _pbc.getBlock((int)ixIn.getColumnIndex(), j);
 					MatrixIndexes ixOut = new MatrixIndexes();
 					MatrixBlock blkOut = new MatrixBlock();
 					

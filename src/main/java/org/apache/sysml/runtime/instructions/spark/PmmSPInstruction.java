@@ -106,7 +106,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 		
 		//get inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-		PartitionedBroadcast in2 = sec.getBroadcastForVariable( bcastVar ); 
+		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar ); 
 		
 		//execute pmm instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
@@ -130,11 +130,11 @@ public class PmmSPInstruction extends BinarySPInstruction
 	{
 		private static final long serialVersionUID = -1696560050436469140L;
 		
-		private PartitionedBroadcast _pmV = null;
+		private PartitionedBroadcast<MatrixBlock> _pmV = null;
 		private long _rlen = -1;
 		private int _brlen = -1;
 		
-		public RDDPMMFunction( CacheType type, PartitionedBroadcast binput, long rlen, int brlen ) 
+		public RDDPMMFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput, long rlen, int brlen ) 
 			throws DMLRuntimeException
 		{
 			_brlen = brlen;
@@ -151,7 +151,7 @@ public class PmmSPInstruction extends BinarySPInstruction
 			MatrixBlock mb2 = arg0._2();
 			
 			//get the right hand side matrix
-			MatrixBlock mb1 = (MatrixBlock)_pmV.getBlock((int)ixIn.getRowIndex(), 1);
+			MatrixBlock mb1 = _pmV.getBlock((int)ixIn.getRowIndex(), 1);
 			
 			//compute target block indexes
 			long minPos = UtilFunctions.toLong( mb1.minNonZero() );

@@ -24,8 +24,6 @@ import java.io.Serializable;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
  * This class is a wrapper around an array of broadcasts of partitioned matrix/frame blocks,
@@ -35,24 +33,24 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * Despite various jiras, this issue still showed up in Spark 1.4/1.5. 
  * 
  */
-public class PartitionedBroadcast implements Serializable
+public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 {
 	private static final long serialVersionUID = 7041959166079438401L;
 
 	protected static final long BROADCAST_PARTSIZE = 200L*1024*1024; //200M cells ~ 1.6GB 
 	
-	private Broadcast<PartitionedBlock>[] _pbc = null;
+	private Broadcast<PartitionedBlock<T>>[] _pbc = null;
 	
 	public PartitionedBroadcast() {
 		//do nothing (required for Externalizable)
 	}
 	
-	public PartitionedBroadcast(Broadcast<PartitionedBlock>[] broadcasts)
+	public PartitionedBroadcast(Broadcast<PartitionedBlock<T>>[] broadcasts)
 	{
 		_pbc = broadcasts;
 	}
 	
-	public Broadcast<PartitionedBlock>[] getBroadcasts() {
+	public Broadcast<PartitionedBlock<T>>[] getBroadcasts() {
 		return _pbc;
 	}
 	
@@ -87,14 +85,14 @@ public class PartitionedBroadcast implements Serializable
 	 * @return
 	 * @throws DMLRuntimeException 
 	 */
-	public CacheBlock getBlock(int rowIndex, int colIndex) 
+	public T getBlock(int rowIndex, int colIndex) 
 		throws DMLRuntimeException 
 	{
 		int pix = 0;
 		
 		if( _pbc.length > 1 ) { 
 			//compute partition index
-			PartitionedBlock tmp = _pbc[0].value();
+			PartitionedBlock<T> tmp = _pbc[0].value();
 			int numPerPart = computeBlocksPerPartition(tmp.getNumRows(), tmp.getNumCols(), 
 					tmp.getNumRowsPerBlock(), tmp.getNumColumnsPerBlock());
 			int ix = (rowIndex-1)*tmp.getNumColumnBlocks()+(colIndex-1);
@@ -104,31 +102,14 @@ public class PartitionedBroadcast implements Serializable
 		return _pbc[pix].value().getBlock(rowIndex, colIndex);
 	}
 	
-	public FrameBlock sliceOperations(long rl, long ru, long cl, long cu, FrameBlock frameBlock) 
-		throws DMLRuntimeException 
+	public T sliceOperations(long rl, long ru, long cl, long cu, T block) 
+			throws DMLRuntimeException 
 	{
-		FrameBlock ret = null;
+		T ret = null;
 		
-		for( Broadcast<PartitionedBlock> bc : _pbc ) {
-			PartitionedBlock pm = bc.value();
-			FrameBlock tmp = pm.sliceOperations(rl, ru, cl, cu, new FrameBlock());
-			if( ret != null )
-				ret.merge(tmp);
-			else
-				ret = tmp;
-		}
-		
-		return ret;
-	}
-	
-	public MatrixBlock sliceOperations(long rl, long ru, long cl, long cu, MatrixBlock matrixBlock) 
-		throws DMLRuntimeException 
-	{
-		MatrixBlock ret = null;
-		
-		for( Broadcast<PartitionedBlock> bc : _pbc ) {
-			PartitionedBlock pm = bc.value();
-			MatrixBlock tmp = pm.sliceOperations(rl, ru, cl, cu, new MatrixBlock());
+		for( Broadcast<PartitionedBlock<T>> bc : _pbc ) {
+			PartitionedBlock<T> pm = bc.value();
+			T tmp = pm.sliceOperations(rl, ru, cl, cu, block);
 			if( ret != null )
 				ret.merge(tmp, false);
 			else

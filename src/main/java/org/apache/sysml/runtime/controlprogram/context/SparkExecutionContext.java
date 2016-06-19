@@ -48,6 +48,7 @@ import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -473,14 +474,14 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @throws DMLRuntimeException
 	 */
 	@SuppressWarnings("unchecked")
-	public PartitionedBroadcast getBroadcastForVariable( String varname ) 
+	public PartitionedBroadcast<MatrixBlock> getBroadcastForVariable( String varname ) 
 		throws DMLRuntimeException
 	{		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		MatrixObject mo = getMatrixObject(varname);
 		
-		PartitionedBroadcast bret = null;
+		PartitionedBroadcast<MatrixBlock> bret = null;
 		
 		//reuse existing broadcast handle
 		if( mo.getBroadcastHandle()!=null 
@@ -498,20 +499,20 @@ public class SparkExecutionContext extends ExecutionContext
 			
 			//create partitioned matrix block and release memory consumed by input
 			MatrixBlock mb = mo.acquireRead();
-			PartitionedBlock pmb = new PartitionedBlock(mb, brlen, bclen);
+			PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<MatrixBlock>(mb, brlen, bclen);
 			mo.release();
 			
 			//determine coarse-grained partitioning
 			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), brlen, bclen);
 			int numParts = (int) Math.ceil((double)pmb.getNumRowBlocks()*pmb.getNumColumnBlocks() / numPerPart); 
-			Broadcast<PartitionedBlock>[] ret = new Broadcast[numParts];
+			Broadcast<PartitionedBlock<MatrixBlock>>[] ret = new Broadcast[numParts];
 					
 			//create coarse-grained partitioned broadcasts
 			if( numParts > 1 ) {
 				for( int i=0; i<numParts; i++ ) {
 					int offset = i * numPerPart;
 					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
-					PartitionedBlock tmp = pmb.createPartition(offset, numBlks);
+					PartitionedBlock<MatrixBlock> tmp = pmb.createPartition(offset, numBlks, new MatrixBlock());
 					ret[i] = getSparkContext().broadcast(tmp);
 				}
 			}
@@ -519,8 +520,8 @@ public class SparkExecutionContext extends ExecutionContext
 				ret[0] = getSparkContext().broadcast( pmb);
 			}
 		
-			bret = new PartitionedBroadcast(ret);
-			BroadcastObject bchandle = new BroadcastObject(bret, varname);
+			bret = new PartitionedBroadcast<MatrixBlock>(ret);
+			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<MatrixBlock>(bret, varname);
 			mo.setBroadcastHandle(bchandle);
 		}
 		
@@ -541,14 +542,14 @@ public class SparkExecutionContext extends ExecutionContext
 	 */
 	
 	@SuppressWarnings("unchecked")
-	public PartitionedBroadcast getBroadcastForFrameVariable( String varname) 
+	public PartitionedBroadcast<FrameBlock> getBroadcastForFrameVariable( String varname) 
 		throws DMLRuntimeException
 	{		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		FrameObject fo = getFrameObject(varname);
 		
-		PartitionedBroadcast bret = null;
+		PartitionedBroadcast<FrameBlock> bret = null;
 		
 		//reuse existing broadcast handle
 		if( fo.getBroadcastHandle()!=null 
@@ -566,20 +567,20 @@ public class SparkExecutionContext extends ExecutionContext
 			
 			//create partitioned frame block and release memory consumed by input
 			FrameBlock mb = fo.acquireRead();
-			PartitionedBlock pmb = new PartitionedBlock(mb, brlen, bclen);
+			PartitionedBlock<FrameBlock> pmb = new PartitionedBlock<FrameBlock>(mb, brlen, bclen);
 			fo.release();
 			
 			//determine coarse-grained partitioning
 			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(fo.getNumRows(), fo.getNumColumns(), brlen, bclen);
 			int numParts = (int) Math.ceil((double)pmb.getNumRowBlocks()*pmb.getNumColumnBlocks() / numPerPart); 
-			Broadcast<PartitionedBlock>[] ret = new Broadcast[numParts];
+			Broadcast<PartitionedBlock<FrameBlock>>[] ret = new Broadcast[numParts];
 					
 			//create coarse-grained partitioned broadcasts
 			if( numParts > 1 ) {
 				for( int i=0; i<numParts; i++ ) {
 					int offset = i * numPerPart;
 					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
-					PartitionedBlock tmp = pmb.createPartition(offset, numBlks);
+					PartitionedBlock<FrameBlock> tmp = pmb.createPartition(offset, numBlks, new FrameBlock());
 					ret[i] = getSparkContext().broadcast(tmp);
 				}
 			}
@@ -587,8 +588,8 @@ public class SparkExecutionContext extends ExecutionContext
 				ret[0] = getSparkContext().broadcast( pmb);
 			}
 		
-			bret = new PartitionedBroadcast(ret);
-			BroadcastObject bchandle = new BroadcastObject(bret, varname);
+			bret = new PartitionedBroadcast<FrameBlock>(ret);
+			BroadcastObject<FrameBlock> bchandle = new BroadcastObject<FrameBlock>(bret, varname);
 			fo.setBroadcastHandle(bchandle);
 		}
 		
@@ -903,13 +904,13 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	public static PartitionedBlock toPartitionedMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen, long nnz) 
+	public static PartitionedBlock<MatrixBlock> toPartitionedMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen, long nnz) 
 		throws DMLRuntimeException
 	{
 		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
-		PartitionedBlock out = new PartitionedBlock(rlen, clen, brlen, bclen);
+		PartitionedBlock<MatrixBlock> out = new PartitionedBlock<MatrixBlock>(rlen, clen, brlen, bclen, new MatrixBlock());
 		List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
 		
 		//copy blocks one-at-a-time into output matrix block
@@ -1067,7 +1068,7 @@ public class SparkExecutionContext extends ExecutionContext
 		throws DMLRuntimeException 
 	{
 		RDDObject parent = getCacheableData(varParent).getRDDHandle();
-		BroadcastObject child = getCacheableData(varChild).getBroadcastHandle();
+		BroadcastObject<CacheBlock> child = getCacheableData(varChild).getBroadcastHandle();
 		
 		parent.addLineageChild( child );
 	}
@@ -1139,6 +1140,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param lob
 	 * @throws IOException
 	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void rCleanupLineageObject(LineageObject lob) 
 		throws IOException
 	{		

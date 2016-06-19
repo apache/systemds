@@ -154,7 +154,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction
 		String rddVar = input1.getName(); 
 		String bcastVar = input2.getName();
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-		PartitionedBroadcast in2 = sec.getBroadcastForVariable( bcastVar );
+		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(rddVar);
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(bcastVar);
 		

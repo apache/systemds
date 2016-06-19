@@ -218,8 +218,8 @@ public class RDDSortUtils
 			sortedIxSrc.quickSetValue((int)sortedIx.quickGetValue(i,0)-1, 0, i+1);			
 
 		//broadcast index vector
-		PartitionedBlock pmb = new PartitionedBlock(sortedIxSrc, brlen, bclen);		
-		Broadcast<PartitionedBlock> _pmb = sec.getSparkContext().broadcast(pmb);	
+		PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<MatrixBlock>(sortedIxSrc, brlen, bclen);		
+		Broadcast<PartitionedBlock<MatrixBlock>> _pmb = sec.getSparkContext().broadcast(pmb);	
 
 		//sort data with broadcast index vector
 		JavaPairRDD<MatrixIndexes, RowMatrixBlock> ret = data
@@ -641,9 +641,9 @@ public class RDDSortUtils
 		private long _rlen = -1;
 		private int _brlen = -1;
 
-		private Broadcast<PartitionedBlock> _pmb = null;
+		private Broadcast<PartitionedBlock<MatrixBlock>> _pmb = null;
 		
-		public ShuffleMatrixBlockRowsInMemFunction(long rlen, int brlen, Broadcast<PartitionedBlock> pmb)
+		public ShuffleMatrixBlockRowsInMemFunction(long rlen, int brlen, Broadcast<PartitionedBlock<MatrixBlock>> pmb)
 		{
 			_rlen = rlen;
 			_brlen = brlen;
@@ -694,7 +694,7 @@ public class RDDSortUtils
 					//produce next output tuple
 					MatrixIndexes ixmap = _currBlk._1();
 					MatrixBlock data = _currBlk._2();
-					MatrixBlock mbTargetIndex = (MatrixBlock)_pmb.value().getBlock((int)ixmap.getRowIndex(), 1);
+					MatrixBlock mbTargetIndex = _pmb.value().getBlock((int)ixmap.getRowIndex(), 1);
 					
 					long valix = (long) mbTargetIndex.getValue(_currPos, 0);
 					long rix = UtilFunctions.computeBlockIndex(valix, _brlen);

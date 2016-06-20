@@ -42,9 +42,6 @@ import org.apache.sysml.runtime.instructions.spark.functions.SparkListener;
 import scala.collection.Seq;
 import scala.xml.Node;
 
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
-
 /**
  * Usage guide:
  * MLContext mlCtx = new MLContext(sc, true);
@@ -58,8 +55,7 @@ public class SparkMonitoringUtil {
 	private MultiMap<Location, String> instructions = new MultiMap<Location, String>();
 	private MultiMap<String, Integer> stageIDs = new MultiMap<String, Integer>();
 	private MultiMap<String, Integer> jobIDs = new MultiMap<String, Integer>();
-	
-	private Multimap<Integer, String> rddInstructionMapping = TreeMultimap.create();
+	private MultiMap<Integer, String> rddInstructionMapping = new MultiMap<Integer, String>();
 	
 	private HashSet<String> getRelatedInstructions(int stageID) {
 		HashSet<String> retVal = new HashSet<String>();

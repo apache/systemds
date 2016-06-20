@@ -91,6 +91,7 @@
 				<include>*:commons-lang</include>
 				<include>*:commons-logging*</include>
 				<include>*:commons-math3*</include>
+				<include>*:guava*</include>
 				<include>*:hadoop-auth*</include>
 				<include>*:hadoop-client*</include>
 				<include>*:hadoop-common*</include>
@@ -101,6 +102,7 @@
 				<include>*:jackson-mapper-asl*</include>
 				<include>*:log4j*</include>
 				<include>*:opencsv*</include>
+				<include>*:protobuf-java*</include>
 				<include>*:slf4j-api*</include>
 				<include>*:slf4j-log4j*</include>
 			</includes>

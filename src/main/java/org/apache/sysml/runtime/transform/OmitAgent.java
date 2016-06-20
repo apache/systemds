@@ -94,6 +94,16 @@ public class OmitAgent extends Encoder
 	}
 
 	@Override
+	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		return apply(in, out);
+	}
+	
+	@Override
+	public void build(FrameBlock in) {	
+		//do nothing
+	}
+	
+	@Override
 	public String[] apply(String[] words) {
 		return null;
 	}
@@ -133,29 +143,14 @@ public class OmitAgent extends Encoder
 	}
 
 	@Override
-	public double[] encode(String[] in, double[] out) {
-		return null;
-	}
-
-	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		return apply(in, out);
-	}
-
-	@Override
-	public void build(String[] in) {
-		//do nothing
-	}
-
-	@Override
-	public void build(FrameBlock in) {	
-		//do nothing
-	}
-
-	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		//do nothing
 		return out;
+	}
+	
+	@Override
+	public void initMetaData(FrameBlock meta) {
+		//do nothing
 	}
 }
  

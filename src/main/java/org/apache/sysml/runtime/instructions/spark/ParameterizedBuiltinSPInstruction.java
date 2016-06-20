@@ -37,6 +37,7 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
@@ -72,6 +73,8 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.transform.DataTransform;
 import org.apache.sysml.runtime.transform.TfUtils;
+import org.apache.sysml.runtime.transform.decode.Decoder;
+import org.apache.sysml.runtime.transform.decode.DecoderFactory;
 import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.transform.encode.EncoderFactory;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
@@ -169,7 +172,8 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			else if(   opcode.equalsIgnoreCase("rexpand") 
 					|| opcode.equalsIgnoreCase("replace")
 					|| opcode.equalsIgnoreCase("transform")
-					|| opcode.equalsIgnoreCase("transformapply")) 
+					|| opcode.equalsIgnoreCase("transformapply")
+					|| opcode.equalsIgnoreCase("transformdecode")) 
 			{
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
@@ -444,6 +448,30 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 					.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = FrameRDDConverterUtils
 					.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
+			
+			//set output and maintain lineage/output characteristics
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), params.get("target"));
+			ec.releaseFrameInput(params.get("meta"));
+		}
+		else if ( opcode.equalsIgnoreCase("transformdecode") ) 
+		{
+			//get input RDD and meta data
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(params.get("target"));
+			MatrixCharacteristics mc = sec.getMatrixCharacteristics(params.get("target"));
+			FrameBlock meta = sec.getFrameInput(params.get("meta"));		
+			
+			//reblock if necessary (clen > bclen)
+			if( mc.getCols() > mc.getNumColBlocks() ) {
+				in = in.mapToPair(new RDDTransformDecodeExpandFunction(
+						(int)mc.getCols(), mc.getColsPerBlock()));
+				in = RDDAggregateUtils.mergeByKey(in);
+			}
+			
+			//construct decoder and decode individual matrix blocks
+			Decoder decoder = DecoderFactory.createDecoder(params.get("spec"), null, meta);
+			JavaPairRDD<Long,FrameBlock> out = in.mapToPair(
+					new RDDTransformDecodeFunction(decoder, meta.getNumColumns(), mc.getRowsPerBlock()));
 			
 			//set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -771,6 +799,62 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			}
 			
 			return new Tuple2<Long, Long>(key, rmRows);
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	public static class RDDTransformDecodeFunction implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>,Long,FrameBlock> 
+	{
+		private static final long serialVersionUID = -4797324742568170756L;
+		
+		private Decoder _decoder = null;
+		private int _clen = -1;
+		private int _brlen = -1;
+		
+		public RDDTransformDecodeFunction(Decoder decoder, int clen, int brlen) {
+			_decoder = decoder;
+			_clen = clen;
+			_brlen = brlen;
+		}
+
+		@Override
+		public Tuple2<Long,FrameBlock> call(Tuple2<MatrixIndexes, MatrixBlock> in) 
+			throws Exception 
+		{
+			long rix = UtilFunctions.computeCellIndex(in._1().getRowIndex(), _brlen, 0);
+			return new Tuple2<Long, FrameBlock>(rix, 
+					_decoder.decode(in._2(), new FrameBlock(_clen, ValueType.STRING)));
+		}
+	}
+	
+	public static class RDDTransformDecodeExpandFunction implements PairFunction<Tuple2<MatrixIndexes,MatrixBlock>,MatrixIndexes,MatrixBlock> 
+	{
+		private static final long serialVersionUID = -8187400248076127598L;
+		
+		private int _clen = -1;
+		private int _bclen = -1;
+		
+		public RDDTransformDecodeExpandFunction(int clen, int bclen) {
+			_clen = clen;
+			_bclen = bclen;
+		}
+
+		@Override
+		public Tuple2<MatrixIndexes,MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> in) 
+			throws Exception 
+		{
+			MatrixIndexes inIx = in._1();
+			MatrixBlock inBlk = in._2();
+			
+			//construct expanded block via leftindexing
+			int cl = (int)UtilFunctions.computeCellIndex(inIx.getColumnIndex(), _bclen, 0)-1;
+			int cu = (int)UtilFunctions.computeCellIndex(inIx.getColumnIndex(), _bclen, inBlk.getNumColumns()-1)-1;
+			MatrixBlock out = new MatrixBlock(inBlk.getNumRows(), _clen, false);
+			out = out.leftIndexingOperations(inBlk, 0, inBlk.getNumRows()-1, cl, cu, null, UpdateType.INPLACE_PINNED);
+			
+			return new Tuple2<MatrixIndexes, MatrixBlock>(new MatrixIndexes(inIx.getRowIndex(), 1), out);
 		}
 	}
 	

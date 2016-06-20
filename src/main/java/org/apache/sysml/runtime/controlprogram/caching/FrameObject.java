@@ -177,14 +177,6 @@ public class FrameObject extends CacheableData<FrameBlock>
 		return data;
 	}
 
-	/**
-	 * Read Frame object from RDD 
-	 * 
-	 * @param rdd
-	 * @param status
-	 * 
-	 * @param fo
-	 */
 	@Override
 	protected FrameBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 			throws IOException 
@@ -198,26 +190,27 @@ public class FrameObject extends CacheableData<FrameBlock>
 		
 		MatrixFormatMetaData iimd = (MatrixFormatMetaData) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		int rlen = (int)mc.getRows();
+		int clen = (int)mc.getCols();
+		
+		//handle missing schema if necessary
+		List<ValueType> lschema = (_schema!=null) ? _schema : 
+			Collections.nCopies(clen>=1 ? (int)clen : 1, ValueType.STRING);
 		
 		FrameBlock fb = null;
-		try 
-		{
+		try  {
 			//prevent unnecessary collect through rdd checkpoint
 			if( rdd.allowsShortCircuitCollect() ) {
 				lrdd = (RDDObject)rdd.getLineageChilds().get(0);
 			}
 			
-			//obtain frame block from RDD
-			int rlen = (int)mc.getRows();
-			int clen = (int)mc.getCols();
-
-			//collect frame block from binary cell RDD
-			fb = SparkExecutionContext.toFrameBlock(lrdd, _schema, rlen, clen);	
+			//collect frame block from binary block RDD
+			fb = SparkExecutionContext.toFrameBlock(lrdd, lschema, rlen, clen);	
 		}
 		catch(DMLRuntimeException ex) {
 			throw new IOException(ex);
 		}
-		
+				
 		//sanity check correct output
 		if( fb == null ) {
 			throw new IOException("Unable to load frame from rdd: "+lrdd.getVarName());

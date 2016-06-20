@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.DistinctValue;
@@ -45,6 +46,7 @@ public class EncoderComposite extends Encoder
 	private static final long serialVersionUID = -8473768154646831882L;
 	
 	private List<Encoder> _encoders = null;
+	private FrameBlock _meta = null;
 	
 	protected EncoderComposite(List<Encoder> encoders) {
 		super(null, -1);
@@ -63,25 +65,29 @@ public class EncoderComposite extends Encoder
 			clen = Math.max(clen, encoder.getNumCols());
 		return clen;
 	}
+
+	public List<Encoder> getEncoders() {
+		return _encoders;
+	}
 	
 	@Override
-	public double[] encode(String[] in, double[] out) {
-		for( Encoder encoder : _encoders )
-			out = encoder.encode(in, out);
-		return out;
-	}
-
-	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		//build meta data first (for all encoders)
 		for( Encoder encoder : _encoders )
-			out = encoder.encode(in, out);
+			encoder.build(in);
+		
+		//propagate meta data 
+		_meta = new FrameBlock(in.getNumColumns(), ValueType.STRING);
+		for( Encoder encoder : _encoders ) {
+			encoder.initMetaData(_meta);
+			_meta = encoder.getMetaData(_meta);
+		}
+		
+		//apply meta data
+		for( Encoder encoder : _encoders )
+			out = encoder.apply(in, out);
+			
 		return out;
-	}
-
-	@Override
-	public void build(String[] in) {
-		for( Encoder encoder : _encoders )
-			encoder.build(in);		
 	}
 
 	@Override
@@ -90,13 +96,7 @@ public class EncoderComposite extends Encoder
 			encoder.build(in);
 	}
 
-	@Override
-	public FrameBlock getMetaData(FrameBlock out) {
-		for( Encoder encoder : _encoders )
-			encoder.getMetaData(out);
-		return out;
-	}
-	
+
 	@Override
 	public String[] apply(String[] in) {
 		for( Encoder encoder : _encoders )
@@ -109,6 +109,21 @@ public class EncoderComposite extends Encoder
 		for( Encoder encoder : _encoders )
 			out = encoder.apply(in, out);
 		return out;
+	}
+	
+	@Override
+	public FrameBlock getMetaData(FrameBlock out) {
+		if( _meta != null )
+			return _meta;
+		for( Encoder encoder : _encoders )
+			encoder.getMetaData(out);
+		return out;
+	}
+	
+	@Override
+	public void initMetaData(FrameBlock out) {
+		for( Encoder encoder : _encoders )
+			encoder.initMetaData(out);
 	}
 
 	@Override

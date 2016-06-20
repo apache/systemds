@@ -96,7 +96,7 @@ public class MVImputeAgent extends Encoder
 	
 	private String[] _replacementList = null;		// replacements: for global_mean, mean; and for global_mode, recode id of mode category
 	private String[] _NAstrings = null;
-	
+	private List<Integer> _rcList = null; 
 	
 	public String[] getReplacements() { return _replacementList; }
 	public KahanObject[] getMeans()   { return _meanList; }
@@ -890,12 +890,43 @@ public class MVImputeAgent extends Encoder
 		}
 	}
 	
-	/**
-	 * Method to apply transformations.
-	 * 
-	 * @param words
-	 * @return
-	 */
+	public MVMethod getMethod(int colID) {
+		int idx = isApplicable(colID);		
+		if(idx == -1)
+			return MVMethod.INVALID;
+		
+		switch(_mvMethodList[idx])
+		{
+			case 1: return MVMethod.GLOBAL_MEAN;
+			case 2: return MVMethod.GLOBAL_MODE;
+			case 3: return MVMethod.CONSTANT;
+			default: return MVMethod.INVALID;
+		}
+		
+	}
+	
+	public long getNonMVCount(int colID) {
+		int idx = isApplicable(colID);
+		return (idx == -1) ? 0 : _countList[idx];
+	}
+	
+	public String getReplacement(int colID)  {
+		int idx = isApplicable(colID);		
+		return (idx == -1) ? null : _replacementList[idx];
+	}
+	
+	@Override
+	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public void build(FrameBlock in) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	@Override
 	public String[] apply(String[] words) 
 	{	
@@ -926,32 +957,6 @@ public class MVImputeAgent extends Encoder
 		return words;
 	}
 	
-	public MVMethod getMethod(int colID) {
-		int idx = isApplicable(colID);		
-		if(idx == -1)
-			return MVMethod.INVALID;
-		
-		switch(_mvMethodList[idx])
-		{
-			case 1: return MVMethod.GLOBAL_MEAN;
-			case 2: return MVMethod.GLOBAL_MODE;
-			case 3: return MVMethod.CONSTANT;
-			default: return MVMethod.INVALID;
-		}
-		
-	}
-	
-	public long getNonMVCount(int colID) {
-		int idx = isApplicable(colID);
-		return (idx == -1) ? 0 : _countList[idx];
-	}
-	
-	public String getReplacement(int colID)  {
-		int idx = isApplicable(colID);		
-		return (idx == -1) ? null : _replacementList[idx];
-	}
-	
-
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		for(int i=0; i<in.getNumRows(); i++) {
@@ -965,26 +970,6 @@ public class MVImputeAgent extends Encoder
 	}
 	
 	@Override
-	public double[] encode(String[] in, double[] out) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public void build(String[] in) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void build(FrameBlock in) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		// TODO Auto-generated method stub
 		return null;
@@ -995,14 +980,14 @@ public class MVImputeAgent extends Encoder
 	 * @param meta
 	 * @param rcList
 	 */
-	public void initReplacementList(FrameBlock meta, List<Integer> rcList) {
+	public void initMetaData(FrameBlock meta) {
 		//init replacement lists, replace recoded values to
 		//apply mv imputation potentially after recoding
 		_replacementList = new String[_colList.length];
 		for( int j=0; j<_colList.length; j++ ) {
 			int colID = _colList[j];
 			String mvVal = UtilFunctions.unquote(meta.getColumnMetadata(colID-1).getMvValue()); 
-			if( rcList.contains(colID) ) {
+			if( _rcList.contains(colID) ) {
 				Long mvVal2 = meta.getRecodeMap(colID-1).get(mvVal);
 				if( mvVal2 == null) 
 					throw new RuntimeException("Missing recode value for impute value '"+mvVal+"'.");
@@ -1012,5 +997,13 @@ public class MVImputeAgent extends Encoder
 				_replacementList[j] = mvVal;
 			}
 		}
+	}
+	
+	/**
+	 * 
+	 * @param rcList
+	 */
+	public void initRecodeIDList(List<Integer> rcList) {
+		_rcList = rcList;
 	}
 }

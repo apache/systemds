@@ -74,13 +74,10 @@ import org.apache.sysml.runtime.matrix.JobReturn;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
-import org.apache.sysml.runtime.transform.encode.Encoder;
-import org.apache.sysml.runtime.transform.encode.EncoderFactory;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.JSONHelper;
@@ -1040,26 +1037,6 @@ public class DataTransform
 		}
 		
 		return ret;
-	}
-	
-	/**
-	 * Apply given transform metadata (incl recode maps) over an in-memory frame input in order to
-	 * create a transformed numerical matrix. Note: The number of rows always remains unchanged, 
-	 * whereas the number of column might increase or decrease. 
-	 * 
-	 * @param params
-	 * @param input
-	 * @param meta
-	 * @param spec
-	 * @return
-	 * @throws DMLRuntimeException
-	 * @throws  
-	 */
-	public static MatrixBlock cpDataTransform(HashMap<String,String> params, FrameBlock input, FrameBlock meta) 
-		throws DMLRuntimeException
-	{
-		Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), input.getNumColumns(), meta);
-		return encoder.apply(input, new MatrixBlock(input.getNumRows(), input.getNumColumns(), false));
 	}
 	
 	/**

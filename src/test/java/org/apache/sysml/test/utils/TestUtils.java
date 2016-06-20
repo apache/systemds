@@ -747,6 +747,27 @@ public class TestUtils
 		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);
 	}
 	
+	/**
+	 * 
+	 * @param expectedMatrix
+	 * @param actualMatrix
+	 * @param rows
+	 * @param cols
+	 * @param epsilon
+	 */
+	public static void compareFrames(String[][] expectedMatrix, String[][] actualMatrix, int rows, int cols ) {
+		int countErrors = 0;
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				if( !(expectedMatrix[i][j].equals(actualMatrix[i][j]) || (expectedMatrix[i][j]+".0").equals(actualMatrix[i][j])) ) {
+					System.out.println(expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
+					countErrors++;
+				}
+			}
+		}
+		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);
+	}
+	
 	public static void compareScalars(double d1, double d2, double tol) {
 		if(!compareCellValue(d1, d2, tol, false)) {
 			assertTrue("Given scalars do not match: " + d1 + " != " + d2 , false);

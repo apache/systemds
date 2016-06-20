@@ -315,6 +315,18 @@ public class BinAgent extends Encoder
 		}
 	}
 	
+
+	@Override
+	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		build(in);
+		return apply(in, out);
+	}
+
+	@Override
+	public void build(FrameBlock in) {
+		// TODO Auto-generated method stub
+	}
+	
 	/**
 	 * Method to apply transformations.
 	 * 
@@ -360,40 +372,15 @@ public class BinAgent extends Encoder
 		}
 		return out;
 	}
-	
-	@Override
-	public double[] encode(String[] in, double[] out) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		build(in);
-		return apply(in, out);
-	}
-
-	@Override
-	public void build(String[] in) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void build(FrameBlock in) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public FrameBlock getMetaData(FrameBlock out) {
+	public FrameBlock getMetaData(FrameBlock meta) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
-	/**
-	 * 
-	 * @param meta
-	 */
-	public void initBins(FrameBlock meta) {
+	@Override
+	public void initMetaData(FrameBlock meta) {
 		_binMins = new double[_colList.length][];
 		_binMaxs = new double[_colList.length][];
 		for( int j=0; j<_colList.length; j++ ) {

@@ -110,15 +110,17 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 						if (hop.getDataType() == DataType.SCALAR) {
 							dop.removeInput("iofilename");
 						}
-					} else
+					} 
+					else
 						LOG.warn("Non-registered persistent read of variable '"+dop.getName()+"' (line "+dop.getBeginLine()+").");
 					break;
 				case PERSISTENTWRITE:
-					if( _outputs.contains(dop.getName()) )
+					if( _outputs.contains(dop.getName()) ) {
 						dop.setDataOpType(DataOpTypes.TRANSIENTWRITE);
 						if (hop.getDataType() == DataType.SCALAR) {
 							dop.removeInput("iofilename");
 						}
+					}
 					else
 						LOG.warn("Non-registered persistent write of variable '"+dop.getName()+"' (line "+dop.getBeginLine()+").");
 					break;

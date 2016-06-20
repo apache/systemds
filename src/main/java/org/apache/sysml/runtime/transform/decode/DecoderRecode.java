@@ -37,54 +37,63 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public class DecoderRecode extends Decoder
 {
-	private int[] _rcCols = null; //0-based
+	private static final long serialVersionUID = -3784249774608228805L;
+
 	private HashMap<Long, Object>[] _rcMaps = null;
+	private boolean _onOut = false;
 	
+	protected DecoderRecode(List<ValueType> schema, boolean onOut, int[] rcCols) {
+		super(schema, rcCols);
+		_onOut = onOut;
+	}
+
+	@Override
+	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
+		if( _onOut ) { //recode on output (after dummy)
+			for( int i=0; i<in.getNumRows(); i++ ) {
+				for( int j=0; j<_colList.length; j++ ) {
+					int colID = _colList[j];
+					double val = UtilFunctions.objectToDouble(
+							out.getSchema().get(colID-1), out.get(i, colID-1));
+					long key = UtilFunctions.toLong(val);
+					out.set(i, colID-1, _rcMaps[j].get(key));
+				}
+			}
+		}
+		else { //recode on input (no dummy)
+			out.ensureAllocatedColumns(in.getNumRows());
+			for( int i=0; i<in.getNumRows(); i++ ) {
+				for( int j=0; j<_colList.length; j++ ) {
+					double val = in.quickGetValue(i, _colList[j]-1);
+					long key = UtilFunctions.toLong(val);
+					out.set(i, _colList[j]-1, _rcMaps[j].get(key));
+				}
+			}
+		}
+		return out;
+	}
+
+	@Override
 	@SuppressWarnings("unchecked")
-	protected DecoderRecode(List<ValueType> schema, FrameBlock meta, int[] rcCols) {
-		super(schema);
-		
+	public void initMetaData(FrameBlock meta) {
 		//initialize recode maps according to schema
-		_rcCols = rcCols;
-		_rcMaps = new HashMap[_rcCols.length];
-		for( int j=0; j<_rcCols.length; j++ ) {
+		_rcMaps = new HashMap[_colList.length];
+		for( int j=0; j<_colList.length; j++ ) {
 			HashMap<Long, Object> map = new HashMap<Long, Object>();
 			for( int i=0; i<meta.getNumRows(); i++ ) {
-				if( meta.get(i, _rcCols[j])==null )
+				if( meta.get(i, _colList[j]-1)==null )
 					break; //reached end of recode map
-				String[] tmp = meta.get(i, _rcCols[j]).toString().split(Lop.DATATYPE_PREFIX);				
-				Object obj = UtilFunctions.stringToObject(schema.get(_rcCols[j]), tmp[0]);
+				String[] tmp = meta.get(i, _colList[j]-1).toString().split(Lop.DATATYPE_PREFIX);				
+				Object obj = UtilFunctions.stringToObject(_schema.get(_colList[j]-1), tmp[0]);
 				map.put(Long.parseLong(tmp[1]), obj);				
 			}
 			_rcMaps[j] = map;
 		}
 	}
-
-	@Override
-	public Object[] decode(double[] in, Object[] out) {
-		for( int j=0; j<_rcCols.length; j++ ) {
-			long key = UtilFunctions.toLong(in[_rcCols[j]]);
-			out[_rcCols[j]] = _rcMaps[j].get(key);
-		}
-		return out;
-	}
-
-	@Override
-	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
-		out.ensureAllocatedColumns(in.getNumRows());
-		for( int i=0; i<in.getNumRows(); i++ ) {
-			for( int j=0; j<_rcCols.length; j++ ) {
-				double val = in.quickGetValue(i, _rcCols[j]);
-				long key = UtilFunctions.toLong(val);
-				out.set(i, _rcCols[j], _rcMaps[j].get(key));
-			}
-		}
-		return out;
-	}
 	
 	/**
 	 * Parses a line of <token, ID, count> into <token, ID> pairs, where 
-	 * quoted tokens (potentially including separators) are supportd.
+	 * quoted tokens (potentially including separators) are supported.
 	 * 
 	 * @param entry
 	 * @param pair

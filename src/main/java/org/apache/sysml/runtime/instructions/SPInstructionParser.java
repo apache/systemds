@@ -56,6 +56,7 @@ import org.apache.sysml.runtime.instructions.spark.IndexingSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MapmmChainSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MatrixReshapeSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.PMapmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.PmmSPInstruction;
@@ -213,6 +214,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "rexpand"	     , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2SPInstructionType.put( "transform"    , SPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		String2SPInstructionType.put( "transformapply",SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "transformdecode",SPINSTRUCTION_TYPE.ParameterizedBuiltin);
+		String2SPInstructionType.put( "transformencode",SPINSTRUCTION_TYPE.MultiReturnBuiltin);
 		
 		String2SPInstructionType.put( "mappend", SPINSTRUCTION_TYPE.MAppend);
 		String2SPInstructionType.put( "rappend", SPINSTRUCTION_TYPE.RAppend);
@@ -366,6 +369,9 @@ public class SPInstructionParser extends InstructionParser
 				
 			case ParameterizedBuiltin:
 				return ParameterizedBuiltinSPInstruction.parseInstruction(str);
+				
+			case MultiReturnBuiltin:
+				return MultiReturnParameterizedBuiltinSPInstruction.parseInstruction(str);
 				
 			case MatrixReshape:
 				return MatrixReshapeSPInstruction.parseInstruction(str);

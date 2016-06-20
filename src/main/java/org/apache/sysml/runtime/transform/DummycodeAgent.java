@@ -377,10 +377,20 @@ public class DummycodeAgent extends Encoder
 				}
 			}
 			_dummycodedLength += _domainSizes[i]-1;
-			//System.out.println("colID=" + colID + ", domainsize=" + _domainSizes[i] + ", dcdLength=" + _dummycodedLength);
 		}
 	}
 
+
+	@Override
+	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		return apply(in, out);
+	}
+
+	@Override
+	public void build(FrameBlock in) {
+		//do nothing
+	}
+	
 	/**
 	 * Method to apply transformations.
 	 * 
@@ -444,39 +454,19 @@ public class DummycodeAgent extends Encoder
 	}
 
 	@Override
-	public double[] encode(String[] in, double[] out) {
-		//TODO
-		return null;
-	}
-
-	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		return apply(in, out);
-	}
-
-	@Override
-	public void build(String[] in) {
-		//do nothing
-	}
-
-	@Override
-	public void build(FrameBlock in) {
-		//do nothing
-	}
-
-	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
-		return null;
+		return out;
 	}
 	
-	public void initDomainSizes(FrameBlock meta) {
+	@Override
+	public void initMetaData(FrameBlock meta) {
 		//initialize domain sizes and output num columns
 		_domainSizes = new int[_colList.length];
 		_dummycodedLength = _clen;
 		for( int j=0; j<_colList.length; j++ ) {
 			int colID = _colList[j]; //1-based
 			_domainSizes[j] = (int)meta.getColumnMetadata().get(colID-1).getNumDistinct();
-			_dummycodedLength +=  _domainSizes[j];
+			_dummycodedLength +=  _domainSizes[j]-1;
 		}
 	}
 }

@@ -132,7 +132,10 @@ public class TfMetaUtils
 			for(int j=0; j<colspecs.size(); j++) {
 				JSONObject colspec = (JSONObject) colspecs.get(j);
 				colList[j] = colspec.getInt("id");
-			}	
+			}
+			
+			//ensure ascending order of column IDs
+			Arrays.sort(colList);
 		}
 		
 		return colList;

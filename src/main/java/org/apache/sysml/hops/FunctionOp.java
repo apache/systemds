@@ -214,16 +214,13 @@ public class FunctionOp extends Hop
 
 		ExecType et = optFindExecType();
 		
-		if ( et != ExecType.CP ) {
-			throw new HopsException("Invalid execution type for function: " + _fname);
-		}
 		//construct input lops (recursive)
 		ArrayList<Lop> tmp = new ArrayList<Lop>();
 		for( Hop in : getInput() )
 			tmp.add( in.constructLops() );
 		
 		//construct function call
-		FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops );
+		FunctionCallCP fcall = new FunctionCallCP( tmp, _fnamespace, _fname, _outputs, _outputHops, et );
 		setLineNumbers( fcall );
 		setLops( fcall );
 	
@@ -242,23 +239,30 @@ public class FunctionOp extends Hop
 	protected ExecType optFindExecType() 
 		throws HopsException 
 	{
+		checkAndSetForcedPlatform();
+		
 		if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
-			// Since the memory estimate is only conservative, do not throw
-			// exception if the estimated memory is larger than the budget
-			// Nevertheless, memory estimates these functions are useful for 
-			// other purposes, such as compiling parfor
-			return ExecType.CP;
 			
 			// check if there is sufficient memory to execute this function
-			/*if ( getMemEstimate() < OptimizerUtils.getMemBudget(true) ) {
-				return ExecType.CP;
-			}
+			if( getFunctionName().equalsIgnoreCase("transformencode") ) {
+				_etype = ((_etypeForced==ExecType.SPARK 
+					|| (getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
+						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
+			}	
 			else {
-				throw new HopsException("Insufficient memory to execute function: " + getFunctionName());
-			}*/
+				// Since the memory estimate is only conservative, do not throw
+				// exception if the estimated memory is larger than the budget
+				// Nevertheless, memory estimates these functions are useful for 
+				// other purposes, such as compiling parfor
+				_etype = ExecType.CP;
+			}
 		}
-		// the actual function call is always CP
-		return ExecType.CP;
+		else {
+			// the actual function call is always CP
+			_etype = ExecType.CP;
+		}
+		
+		return _etype;
 	}
 
 	@Override

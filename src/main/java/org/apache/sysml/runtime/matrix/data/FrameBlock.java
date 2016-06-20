@@ -277,6 +277,18 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return "C" + i;
 	}
 	
+	/**
+	 * 
+	 */
+	public void recomputeColumnCardinality() {
+		for( int j=0; j<getNumColumns(); j++ ) {
+			int card = 0;
+			for( int i=0; i<getNumRows(); i++ )
+				card += (get(i, j) != null) ? 1 : 0;
+			_colmeta.get(j).setNumDistinct(card);
+		}
+	}
+	
 	///////
 	// basic get and set functionality
 	

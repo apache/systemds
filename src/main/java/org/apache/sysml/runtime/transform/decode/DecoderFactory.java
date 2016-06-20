@@ -20,16 +20,18 @@
 package org.apache.sysml.runtime.transform.decode;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.transform.TfUtils;
+import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 
 
@@ -43,6 +45,7 @@ public class DecoderFactory
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
+	@SuppressWarnings("unchecked")
 	public static Decoder createDecoder(String spec, List<ValueType> schema, FrameBlock meta) 
 		throws DMLRuntimeException 
 	{	
@@ -59,44 +62,34 @@ public class DecoderFactory
 				schema = Collections.nCopies(meta.getNumColumns(), ValueType.STRING);
 			}
 			
-			//create decoders 'recode' and 'pass-through'
-			if ( jSpec.containsKey(TfUtils.TXMETHOD_RECODE))  {
-				JSONArray attrs = null;
-				if( jSpec.get(TfUtils.TXMETHOD_RECODE) instanceof JSONObject ) {
-					JSONObject obj = (JSONObject) jSpec.get(TfUtils.TXMETHOD_RECODE);
-					attrs = (JSONArray) obj.get(TfUtils.JSON_ATTRS);
-				}
-				else
-					attrs = (JSONArray)jSpec.get(TfUtils.TXMETHOD_RECODE);
-				
-				//recode decoder
-				int[] rcCols = new int[attrs.size()]; 
-				for(int j=0; j<rcCols.length; j++) 
-					rcCols[j] = UtilFunctions.toInt(attrs.get(j))-1;
-				ldecoders.add(new DecoderRecode(schema, meta, rcCols));
-				
-				//pass-through decode (non-recode columns)
-				if( schema.size() > attrs.size() ) {
-					int[] ptCols = new int[schema.size()-attrs.size()]; 
-					HashSet<Integer> probe = new HashSet<Integer>();
-					for( int j=0; j<rcCols.length; j++ )
-						probe.add(rcCols[j]);
-					for( int j=0, pos=0; j<schema.size(); j++ )
-						if( !probe.contains(j) )
-							ptCols[pos++] = j;
-					ldecoders.add(new DecoderPassThrough(schema, ptCols));	
-				}
+			//create decoders 'recode', 'dummy' and 'pass-through'
+			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, TfUtils.TXMETHOD_RECODE)));
+			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, TfUtils.TXMETHOD_DUMMYCODE))); 
+			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
+			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils
+					.subtract(UtilFunctions.getSequenceList(1, schema.size(), 1), rcIDs)); 
+			
+			if( !dcIDs.isEmpty() ) {
+				ldecoders.add(new DecoderDummycode(schema, 
+						ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
 			}
-			//create full 'pass-through' decoder if necessary
-			else {
-				int[] ptCols = new int[schema.size()];
-				for( int j=0; j<ptCols.length; j++ )
-					ptCols[j] = j;
-				ldecoders.add(new DecoderPassThrough(schema, ptCols));
+			if( !rcIDs.isEmpty() ) {
+				ldecoders.add(new DecoderRecode(schema, !dcIDs.isEmpty(),
+						ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0]))));
+			}
+			if( !ptIDs.isEmpty() ) {
+				ldecoders.add(new DecoderPassThrough(schema, 
+						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])),
+						ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));	
 			}
 			
 			//create composite decoder of all created decoders
+			//and initialize with given meta data (recode, dummy, bin)
 			decoder = new DecoderComposite(schema, ldecoders);
+			if( meta != null )
+				decoder.initMetaData(meta);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);

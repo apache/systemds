@@ -42,17 +42,18 @@ public class FunctionCallCP extends Lop
 	private String[] _outputs;
 	private ArrayList<Lop> _outputLops = null;
 
-	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs, ArrayList<Hop> outputHops) throws HopsException, LopsException {
-		this(inputs, fnamespace, fname, outputs);
+	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs, ArrayList<Hop> outputHops, ExecType et) 
+		throws HopsException, LopsException 
+	{
+		this(inputs, fnamespace, fname, outputs, et);
 		if(outputHops != null) {
 			_outputLops = new ArrayList<Lop>();
-			for(Hop h : outputHops) {
+			for(Hop h : outputHops)
 				_outputLops.add( h.constructLops() );
-			}
 		}
 	}
 	
-	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs) 
+	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs, ExecType et) 
 	{
 		super(Lop.Type.FunctionCallCP, DataType.UNKNOWN, ValueType.UNKNOWN);	
 		//note: data scalar in order to prevent generation of redundant createvar, rmvar
@@ -62,8 +63,7 @@ public class FunctionCallCP extends Lop
 		_outputs = outputs;
 		
 		//wire inputs
-		for( Lop in : inputs )
-		{
+		for( Lop in : inputs ) {
 			addInput( in );
 			in.addOutput( this );
 		}
@@ -73,7 +73,7 @@ public class FunctionCallCP extends Lop
 		boolean aligner = false;
 		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties(inputs, ExecType.CP, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
 	}
 
 	public ArrayList<Lop> getFunctionOutputs() {
@@ -87,7 +87,7 @@ public class FunctionCallCP extends Lop
 
 	private String getInstructionsMultipleReturnBuiltins(String[] inputs, String[] outputs) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("CP");
+		sb.append(getExecType());
 		
 		sb.append(Lop.OPERAND_DELIMITOR); 
 		sb.append(_fname.toLowerCase());
@@ -123,8 +123,8 @@ public class FunctionCallCP extends Lop
 		//NOTE: we have to append full input operand information to distinguish literals from variables w/ equal name
 
 		StringBuilder inst = new StringBuilder();
+		inst.append(getExecType());
 		
-		inst.append("CP");
 		inst.append(Lop.OPERAND_DELIMITOR); 
 		inst.append("extfunct");
 		inst.append(Lop.OPERAND_DELIMITOR);

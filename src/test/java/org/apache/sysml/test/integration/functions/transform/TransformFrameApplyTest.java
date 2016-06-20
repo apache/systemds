@@ -32,12 +32,12 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
-public class TransformFrameTest extends AutomatedTestBase 
+public class TransformFrameApplyTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME1 = "Transform";
 	private final static String TEST_NAME2 = "ApplyFrame";
 	private final static String TEST_DIR = "functions/transform/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameApplyTest.class.getSimpleName() + "/";
 	
 	//dataset and transform tasks without missing values
 	private final static String DATASET1 	= "homes3/homes.csv";

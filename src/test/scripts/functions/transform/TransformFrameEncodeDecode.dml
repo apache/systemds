@@ -19,30 +19,14 @@
 #
 #-------------------------------------------------------------
 
-#read data frame and meta data
-F1 = read($F1, data_type="frame", format="csv"); #new data
-M = read($M, data_type="frame", format="csv"); #existing recode maps
-specJson1 = $TRANSFORM_SPEC1
-specJson2 = $TRANSFORM_SPEC2
+F1 = read($DATA, data_type="frame", format="csv");
+jspec = read($TFSPEC, data_type="scalar", value_type="string");
 
-#frame indexing
-F11 = F1[,1:2];
-F12 = F1[,3];
-M1 = M[,1:2];
-M2 = M[,3];
+[X, M] = transformencode(target=F1, spec=jspec);
 
-X1 = transformapply(target=F11, meta=M1, spec=specJson1);
-X2 = transformapply(target=F12, meta=M2, spec=specJson2);
+if(1==1){}
 
-X1 = X1 * (X1!=77.7);
-X2 = X2 * (X2!=77.7);
+F2 = transformdecode(target=X, spec=jspec, meta=M);
 
-X1 = append(X1, matrix(0, rows=nrow(X1), cols=1));
-F2 = transformdecode(target=X1, meta=M1, spec=specJson1);
-F22 = transformdecode(target=X2, meta=M2, spec=specJson2);
+write(F2, $TFDATA, format=$OFMT);
 
-#frame leftindexing
-F2 = append(F2, F2[,2])
-F2[,3] = F22;
-
-write(F2, $F2);

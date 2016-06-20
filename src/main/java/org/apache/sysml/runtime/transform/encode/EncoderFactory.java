@@ -105,38 +105,28 @@ public class EncoderFactory
 			if( !rcIDs.isEmpty() ) {
 				RecodeAgent ra = new RecodeAgent(jSpec, clen);
 				ra.setColList(ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])));
-				if( meta != null )
-					ra.initRecodeMaps(meta);
 				lencoders.add(ra);	
 			}
-			if( !ptIDs.isEmpty() ) {
+			if( !ptIDs.isEmpty() )
 				lencoders.add(new EncoderPassThrough(
 						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));	
-			}
-			if( !dcIDs.isEmpty() ) {
-				DummycodeAgent da = new DummycodeAgent(jSpec, schema.size());
-				if( meta != null )
-					da.initDomainSizes(meta);
-				lencoders.add(da);
-			}
-			if( !binIDs.isEmpty() ) {
-				BinAgent ba = new BinAgent(jSpec, schema.size(), true);
-				if( meta != null )
-					ba.initBins(meta);
-				lencoders.add(ba);
-			}
-			if( !oIDs.isEmpty() ) {
+			if( !dcIDs.isEmpty() )
+				lencoders.add(new DummycodeAgent(jSpec, schema.size()));
+			if( !binIDs.isEmpty() )
+				lencoders.add(new BinAgent(jSpec, schema.size(), true));
+			if( !oIDs.isEmpty() )
 				lencoders.add(new OmitAgent(jSpec, schema.size()));
-			}
 			if( !mvIDs.isEmpty() ) {
 				MVImputeAgent ma = new MVImputeAgent(jSpec, schema.size());
-				if( meta != null )
-					ma.initReplacementList(meta, rcIDs);
+				ma.initRecodeIDList(rcIDs);
 				lencoders.add(ma);
 			}
 			
-			//create composite decoder of all created decoders
+			//create composite decoder of all created encoders
+			//and initialize meta data (recode, dummy, bin, mv)
 			encoder = new EncoderComposite(lencoders);
+			if( meta != null )
+				encoder.initMetaData(meta);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);

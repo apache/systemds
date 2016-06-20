@@ -88,19 +88,6 @@ public class RecodeAgent extends Encoder
 		}
 	}
 	
-	/**
-	 * Construct the recodemaps from the given input frame for all 
-	 * columns registered for recode.
-	 * 
-	 * @param frame
-	 */
-	public void initRecodeMaps( FrameBlock frame ) {
-		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j]; //1-based
-			_rcdMaps.put(colID, frame.getRecodeMap(colID-1));
-		}
-	}
-	
 	public HashMap<Integer, HashMap<String,Long>> getCPRecodeMaps() { 
 		return _rcdMaps; 
 	}
@@ -382,6 +369,56 @@ public class RecodeAgent extends Encoder
 	}	
 
 	/**
+	 * 
+	 * @param colID
+	 * @param key
+	 * @return
+	 */
+	private String lookupRCDMap(int colID, String key) {
+		if( _finalMaps!=null )
+			return _finalMaps.get(colID).get(key);
+		else { //used for cp
+			Long tmp = _rcdMaps.get(colID).get(key);
+			return (tmp!=null) ? Long.toString(tmp) : null;
+		}
+	}
+	
+
+	@Override
+	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
+		if( !isApplicable() )
+			return out;
+		
+		//build and apply recode maps 
+		build(in);
+		apply(in, out);
+		
+		return out;
+	}
+
+	@Override
+	public void build(FrameBlock in) {
+		if( !isApplicable() )
+			return;		
+		
+		Iterator<String[]> iter = in.getStringRowIterator();
+		while( iter.hasNext() ) {
+			String[] row = iter.next(); 
+			for( int j=0; j<_colList.length; j++ ) {
+				int colID = _colList[j]; //1-based
+				//allocate column map if necessary
+				if( !_rcdMaps.containsKey(colID) ) 
+					_rcdMaps.put(colID, new HashMap<String,Long>());
+				//probe and build column map
+				HashMap<String,Long> map = _rcdMaps.get(colID);
+				String key = row[colID-1];
+				if( !map.containsKey(key) )
+					map.put(key, new Long(map.size()+1));
+			}
+		}
+	}
+	
+	/**
 	 * Method to apply transformations.
 	 * 
 	 * @param words
@@ -422,81 +459,11 @@ public class RecodeAgent extends Encoder
 		
 		return out;
 	}
-	
-	/**
-	 * 
-	 * @param colID
-	 * @param key
-	 * @return
-	 */
-	private String lookupRCDMap(int colID, String key) {
-		if( _finalMaps!=null )
-			return _finalMaps.get(colID).get(key);
-		else { //used for cp
-			Long tmp = _rcdMaps.get(colID).get(key);
-			return (tmp!=null) ? Long.toString(tmp) : null;
-		}
-	}
 
 	@Override
-	public double[] encode(String[] in, double[] out) {
+	public FrameBlock getMetaData(FrameBlock meta) {
 		if( !isApplicable() )
-			return out;
-		
-		//build and apply recode maps
-		build(in);
-		apply(in);
-		
-		//convert to double 
-		for( int j=0; j<_colList.length; j++ )
-			out[_colList[j]-1] = Double.parseDouble(in[_colList[j]-1]);		
-		return out;
-	}
-
-	@Override
-	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
-		if( !isApplicable() )
-			return out;
-		
-		//build and apply recode maps 
-		build(in);
-		apply(in, out);
-		
-		return out;
-	}
-
-	@Override
-	public void build(String[] in) {
-		if( !isApplicable() )
-			return;
-		
-		for( int j=0; j<_colList.length; j++ ) {
-			int colID = _colList[j]; //1-based
-			//allocate column map if necessary
-			if( !_rcdMaps.containsKey(colID) ) 
-				_rcdMaps.put(colID, new HashMap<String,Long>());
-			//probe and build column map
-			HashMap<String,Long> map = _rcdMaps.get(colID);
-			String key = in[colID-1];
-			if( !map.containsKey(key) )
-				map.put(key, new Long(map.size()+1));
-		}
-	}
-
-	@Override
-	public void build(FrameBlock in) {
-		if( !isApplicable() )
-			return;		
-		
-		Iterator<String[]> iter = in.getStringRowIterator();
-		while( iter.hasNext() )
-			build( iter.next() );
-	}
-
-	@Override
-	public FrameBlock getMetaData(FrameBlock out) {
-		if( !isApplicable() )
-			return out;
+			return meta;
 		
 		//inverse operation to initRecodeMaps
 		
@@ -505,7 +472,7 @@ public class RecodeAgent extends Encoder
 		for( int j=0; j<_colList.length; j++ )
 			if( _rcdMaps.containsKey(_colList[j]) )
 				maxDistinct = Math.max(maxDistinct, _rcdMaps.get(_colList[j]).size());
-		out.ensureAllocatedColumns(maxDistinct);
+		meta.ensureAllocatedColumns(maxDistinct);
 		
 		//create compact meta data representation
 		for( int j=0; j<_colList.length; j++ ) {
@@ -513,12 +480,41 @@ public class RecodeAgent extends Encoder
 			int rowID = 0;
 			if( _rcdMaps.containsKey(_colList[j]) )
 				for( Entry<String, Long> e : _rcdMaps.get(colID).entrySet() ) {
-					String tmp = e.getKey() + Lop.DATATYPE_PREFIX + e.getValue().toString();
-					out.set(rowID++, colID-1, tmp); 
+					String tmp = constructRecodeMapEntry(e.getKey(), e.getValue());
+					meta.set(rowID++, colID-1, tmp); 
 				}
+			meta.getColumnMetadata(colID-1).setNumDistinct(
+					_rcdMaps.get(colID).size());
 		}
 		
-		return out;
+		return meta;
+	}
+	
+
+	/**
+	 * Construct the recodemaps from the given input frame for all 
+	 * columns registered for recode.
+	 * 
+	 * @param frame
+	 */
+	public void initMetaData( FrameBlock meta ) {
+		if( meta == null || meta.getNumRows()<=0 )
+			return;
+		
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j]; //1-based
+			_rcdMaps.put(colID, meta.getRecodeMap(colID-1));
+		}
+	}
+	
+	/**
+	 * 
+	 * @param token
+	 * @param code
+	 * @return
+	 */
+	public static String constructRecodeMapEntry(String token, Long code) {
+		return token + Lop.DATATYPE_PREFIX + code.toString();
 	}
 }
  

@@ -53,8 +53,7 @@ public abstract class FrameReader
 	 * @param clen
 	 * @return
 	 */
-	public abstract FrameBlock readFrameFromHDFS( String fname, List<ValueType> schema, List<String> names,
-			long rlen, long clen)
+	public abstract FrameBlock readFrameFromHDFS( String fname, List<ValueType> schema, List<String> names, long rlen, long clen)
 		throws IOException, DMLRuntimeException;
 	
 	/**
@@ -89,13 +88,11 @@ public abstract class FrameReader
 	 * @param iNumColumns
 	 * @return
 	 */
-	public List<ValueType> getDefSchema( long lNumColumns )
+	public List<ValueType> getDefSchema( long clen )
 		throws IOException, DMLRuntimeException
 	{
-		List<ValueType> schema = new ArrayList<ValueType>();
-		for (int i=0; i < lNumColumns; ++i)
-			schema.add(ValueType.STRING);
-		return schema;
+		int lclen = Math.max((int)clen, 1);
+		return Collections.nCopies(lclen, ValueType.STRING);
 	}
 
 	/**
@@ -103,11 +100,11 @@ public abstract class FrameReader
 	 * @param iNumColumns
 	 * @return
 	 */
-	public List<String> getDefColNames( long lNumColumns )
+	public List<String> getDefColNames( long clen )
 		throws IOException, DMLRuntimeException
 	{
 		List<String> colNames = new ArrayList<String>();
-		for (int i=0; i < lNumColumns; ++i)
+		for (int i=0; i < clen; ++i)
 			colNames.add("C"+i);
 		return colNames;
 	}
@@ -183,7 +180,7 @@ public abstract class FrameReader
 	 * @return
 	 */
 	protected static List<String> createOutputNames(List<String> names, long ncol) {
-		if( names.size()==1 && ncol > 1 )
+		if( names.size() != ncol )
 			return FrameBlock.createColNames((int)ncol);
 		return names;
 	}
@@ -203,7 +200,6 @@ public abstract class FrameReader
 	
 		//check for empty file
 		if( MapReduceTool.isFileEmpty( fs, path.toString() ) )
-			throw new EOFException("Empty input file "+ path.toString() +".");
-		
+			throw new EOFException("Empty input file "+ path.toString() +".");		
 	}
 }

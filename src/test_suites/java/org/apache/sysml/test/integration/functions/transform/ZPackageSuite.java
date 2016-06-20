@@ -30,7 +30,8 @@ import org.junit.runners.Suite;
 	ScalingTest.class,
 	TransformAndApplyTest.class,
 	TransformEncodeDecodeTest.class,
-	TransformFrameTest.class,
+	TransformFrameApplyTest.class,
+	TransformFrameEncodeDecodeTest.class,
 	TransformReadMetaTest.class,
 	TransformTest.class,
 })

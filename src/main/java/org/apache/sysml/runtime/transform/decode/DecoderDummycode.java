@@ -27,58 +27,47 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
- * Simple atomic decoder for passing through numeric columns to the output.
- * This is required for block-wise decoding. 
+ * Simple atomic decoder for dummycoded columns. This decoder builds internally
+ * inverted column mappings from the given frame meta data. 
  *  
  */
-public class DecoderPassThrough extends Decoder
+public class DecoderDummycode extends Decoder
 {
-	private static final long serialVersionUID = -8525203889417422598L;
+	private static final long serialVersionUID = 4758831042891032129L;
 	
-	private int[] _dcCols = null;
-	private int[] _srcCols = null;
+	private int[] _clPos = null;
+	private int[] _cuPos = null;
 	
-	protected DecoderPassThrough(List<ValueType> schema, int[] ptCols, int[] dcCols) {
-		super(schema, ptCols);
-		_dcCols = dcCols;
+	protected DecoderDummycode(List<ValueType> schema, int[] dcCols) {
+		//dcCols refers to column IDs in output (non-dc)
+		super(schema, dcCols);
 	}
 
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
 		out.ensureAllocatedColumns(in.getNumRows());
-		for( int i=0; i<in.getNumRows(); i++ ) {
-			for( int j=0; j<_colList.length; j++ ) {
-				int srcColID = _srcCols[j];
-				int tgtColID = _colList[j];
-				double val = in.quickGetValue(i, srcColID-1);
-				out.set(i, tgtColID-1, UtilFunctions.doubleToObject(
-						_schema.get(tgtColID-1), val));
-			}
-		}
+		for( int i=0; i<in.getNumRows(); i++ )
+			for( int j=0; j<_colList.length; j++ )
+				for( int k=_clPos[j]; k<_cuPos[j]; k++ )
+					if( in.quickGetValue(i, k-1) != 0 ) {
+						int col = _colList[j] - 1;
+						out.set(i, col, UtilFunctions.doubleToObject(
+								out.getSchema().get(col), k-_clPos[j]+1));
+					}		
 		return out;
 	}
-	
+
 	@Override
 	public void initMetaData(FrameBlock meta) {
-		if( _dcCols.length > 0 ) {
-			//prepare source column id mapping w/ dummy coding
-			_srcCols = new int[_colList.length];
-			int ix1 = 0, ix2 = 0, off = 0;
-			while( ix1<_colList.length ) {
-				if( ix2>=_dcCols.length || _colList[ix1] < _dcCols[ix2] ) {
-					_srcCols[ix1] = _colList[ix1] + off;
-					ix1 ++;
-				}
-				else { //_colList[ix1] > _dcCols[ix2]
-					off += (int)meta.getColumnMetadata()
-							.get(_dcCols[ix2]-1).getNumDistinct() - 1;
-					ix2 ++;
-				}
-			}
-		}
-		else {
-			//prepare direct source column mapping
-			_srcCols = _colList;
+		_clPos = new int[_colList.length]; //col lower pos 
+		_cuPos = new int[_colList.length]; //col upper pos 
+		for( int j=0, off=0; j<_colList.length; j++ ) {
+			int colID = _colList[j];
+			int ndist = (int)meta.getColumnMetadata()
+					.get(colID-1).getNumDistinct();
+			_clPos[j] = off + colID;
+			_cuPos[j] = _clPos[j] + ndist;
+			off += ndist - 1;
 		}
 	}
 }

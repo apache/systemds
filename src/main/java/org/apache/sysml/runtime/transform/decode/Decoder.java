@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.transform.decode;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
@@ -30,23 +31,17 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * interface for decoding matrices to frames.
  * 
  */
-public abstract class Decoder 
+public abstract class Decoder implements Serializable
 {	
+	private static final long serialVersionUID = -1732411001366177787L;
+	
 	protected List<ValueType> _schema = null;
-	
-	protected Decoder( List<ValueType> schema ) {
+	protected int[] _colList = null;
+		
+	protected Decoder( List<ValueType> schema, int[] colList ) {
 		_schema = schema;
+		_colList = colList;
 	}
-	
-	/**
-	 * Row decode API converting a matrix row into a frame row
-	 * of the specified decoder schema.
-	 * 
-	 * @param in
-	 * @param out
-	 * @return
-	 */
-	public abstract Object[] decode(double[] in, Object[] out);
 	
 	/**
 	 * Block decode API converting a matrix block into a frame block.
@@ -57,4 +52,10 @@ public abstract class Decoder
 	 * @return returns given output frame block for convenience
 	 */
 	public abstract FrameBlock decode(MatrixBlock in, FrameBlock out);
+	
+	/**
+	 * 
+	 * @param meta
+	 */
+	public abstract void initMetaData(FrameBlock meta);
 }

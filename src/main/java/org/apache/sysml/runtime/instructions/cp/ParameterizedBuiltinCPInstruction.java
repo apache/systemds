@@ -43,6 +43,8 @@ import org.apache.sysml.runtime.transform.DataTransform;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.decode.Decoder;
 import org.apache.sysml.runtime.transform.decode.DecoderFactory;
+import org.apache.sysml.runtime.transform.encode.Encoder;
+import org.apache.sysml.runtime.transform.encode.EncoderFactory;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
 
@@ -269,7 +271,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));		
 			
 			//compute transformapply
-			MatrixBlock mbout = DataTransform.cpDataTransform(getParameterMap(), data, meta );
+			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), data.getNumColumns(), meta);
+			MatrixBlock mbout = encoder.apply(data, new MatrixBlock(data.getNumRows(), data.getNumColumns(), false));
 			
 			//release locks
 			ec.setMatrixOutput(output.getName(), mbout);
@@ -283,7 +286,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction
 			
 			//compute transformdecode
 			Decoder decoder = DecoderFactory.createDecoder(getParameterMap().get("spec"), null, meta);
-			FrameBlock fbout = decoder.decode(data, new FrameBlock(data.getNumColumns(), ValueType.STRING));
+			FrameBlock fbout = decoder.decode(data, new FrameBlock(meta.getNumColumns(), ValueType.STRING));
 			
 			//release locks
 			ec.setFrameOutput(output.getName(), fbout);

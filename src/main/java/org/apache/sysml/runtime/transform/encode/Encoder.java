@@ -110,15 +110,6 @@ public abstract class Encoder implements Serializable
 	}
 	
 	/**
-	 * Row encode: build and apply (transform encode).
-	 * 
-	 * @param in
-	 * @param out
-	 * @return
-	 */
-	public abstract double[] encode(String[] in, double[] out);
-	
-	/**
 	 * Block encode: build and apply (transform encode).
 	 * 
 	 * @param in
@@ -128,36 +119,12 @@ public abstract class Encoder implements Serializable
 	public abstract MatrixBlock encode(FrameBlock in, MatrixBlock out);
 
 	/**
-	 * Build the transform meta data for given row input. This call modifies
-	 * and keeps meta data as encoder state.
-	 * 
-	 * @param in
-	 */
-	public abstract void build(String[] in);
-	
-	/**
 	 * Build the transform meta data for the given block input. This call modifies
 	 * and keeps meta data as encoder state.
 	 * 
 	 * @param in
 	 */
 	public abstract void build(FrameBlock in);
-	
-	/**
-	 * Construct a frame block out of the transform meta data.
-	 * 
-	 * @return
-	 */
-	public abstract FrameBlock getMetaData(FrameBlock out);
-	
-	/**
-	 * Encode input data according to existing transform meta
-	 * data (transform apply).
-	 * 
-	 * @param in
-	 * @return
-	 */
-	public abstract String[] apply(String[] in);
 	
 	/**
 	 * Encode input data blockwise according to existing transform meta
@@ -168,6 +135,30 @@ public abstract class Encoder implements Serializable
 	 * @return
 	 */
 	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out);
+	
+	/**
+	 * Encode input data according to existing transform meta
+	 * data (transform apply).
+	 * TODO remove once file-based transform removed
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public abstract String[] apply(String[] in);
+
+	/**
+	 * Construct a frame block out of the transform meta data.
+	 * 
+	 * @return
+	 */
+	public abstract FrameBlock getMetaData(FrameBlock out);
+
+	/**
+	 * Sets up the required meta data for a subsequent call to apply.
+	 * 
+	 * @param meta
+	 */
+	public abstract void initMetaData(FrameBlock meta);
 	
 	
 	//OLD API: kept for a transition phase only

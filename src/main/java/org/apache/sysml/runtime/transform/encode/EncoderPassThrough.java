@@ -49,24 +49,8 @@ public class EncoderPassThrough extends Encoder
 	}
 
 	@Override
-	public double[] encode(String[] in, double[] out) {
-		for( int j=0; j<_colList.length; j++ ) {
-			String tmp = in[_colList[j]-1];
-			out[_colList[j]-1] = (tmp==null) ? 0 : 
-				Double.parseDouble(tmp);
-		}
-		
-		return out;
-	}
-
-	@Override
 	public MatrixBlock encode(FrameBlock in, MatrixBlock out) {
 		return apply(in, out);
-	}
-
-	@Override
-	public void build(String[] in) {
-		//do nothing	
 	}
 
 	@Override
@@ -74,11 +58,6 @@ public class EncoderPassThrough extends Encoder
 		//do nothing
 	}
 
-	@Override
-	public FrameBlock getMetaData(FrameBlock out) {
-		return null;
-	}
-	
 	@Override
 	public String[] apply(String[] in) {
 		return in;
@@ -100,6 +79,18 @@ public class EncoderPassThrough extends Encoder
 		return out;
 	}
 
+	@Override
+	public FrameBlock getMetaData(FrameBlock meta) {
+		//do nothing
+		return meta;
+	}
+	
+	@Override
+	public void initMetaData(FrameBlock meta) {
+		//do nothing
+	}
+	
+	
 	@Override
 	public void mapOutputTransformationMetadata(OutputCollector<IntWritable, DistinctValue> out, int taskID, TfUtils agents) throws IOException {
 		throw new RuntimeException("File-based api not supported.");

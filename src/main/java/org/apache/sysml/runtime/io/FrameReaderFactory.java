@@ -93,7 +93,7 @@ public class FrameReaderFactory
 			else
 				reader = new FrameReaderTextCSV( (CSVFileFormatProperties)props );
 		}
-		else if( iinfo == InputInfo.BinaryBlockInputInfo || iinfo == InputInfo.BinaryBlockFrameInputInfo ) {
+		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) )
 				reader = new FrameReaderBinaryBlockParallel();
 			else

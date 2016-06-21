@@ -107,8 +107,6 @@ public class InputInfo implements Serializable
 			return OutputInfo.WeightedPairOutputInfo;
 		else if ( ii == InputInfo.CSVInputInfo)
 			return OutputInfo.CSVOutputInfo;
-		if ( ii == InputInfo.BinaryBlockFrameInputInfo )
-			return OutputInfo.BinaryBlockFrameOutputInfo;
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + ii);
 	}
@@ -134,8 +132,6 @@ public class InputInfo implements Serializable
 			return WeightedPairInputInfo;
 		else if ( str.equalsIgnoreCase("csv"))
 			return CSVInputInfo;
-		else if (str.equalsIgnoreCase("framebinaryblock"))
-			return BinaryBlockFrameInputInfo;
 		return null;
 	}
 	
@@ -163,7 +159,7 @@ public class InputInfo implements Serializable
 			return "textcell";
 		else if ( ii == BinaryCellInputInfo )
 			return "binarycell";
-		else if ( ii == BinaryBlockInputInfo || ii == BinaryBlockFrameInputInfo)
+		else if ( ii == BinaryBlockInputInfo )
 			return "binaryblock";
 		else if ( ii == InputInfoForSort )
 			return "sort_input";

@@ -27,11 +27,16 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
+import org.apache.sysml.runtime.util.IndexRange;
 
 /**
  * This class is for partitioned matrix/frame blocks, to be used
@@ -104,14 +109,14 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 
 		int nrblks = getNumRowBlocks();
 		int ncblks = getNumColumnBlocks();
-		_partBlocks = (T[]) block.getNewInstances(nrblks * ncblks);
 		
 		try
 		{
+			_partBlocks = (T[])Array.newInstance((block.getClass()), nrblks * ncblks);
 			for( int i=0, ix=0; i<nrblks; i++ )
 				for( int j=0; j<ncblks; j++, ix++ )
 				{
-					T tmp = (T) block.getNewInstance();
+					T tmp = (T) block.getClass().newInstance();
 					block.sliceOperations(i*_brlen, Math.min((i+1)*_brlen, rlen)-1, 
 							           j*_bclen, Math.min((j+1)*_bclen, clen)-1, tmp);
 					_partBlocks[ix] = tmp;
@@ -135,7 +140,8 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		
 		int nrblks = getNumRowBlocks();
 		int ncblks = getNumColumnBlocks();
-		_partBlocks = (T[]) block.getNewInstances(nrblks * ncblks);
+		_partBlocks = (T[])Array.newInstance((block.getClass()), nrblks * ncblks);
+
 	}
 	
 	/**
@@ -201,10 +207,9 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		ret._clen = _clen;
 		ret._brlen = _brlen;
 		ret._bclen = _bclen;
-		ret._partBlocks = (T[]) block.getNewInstances(numBlks);
-		
+
+		_partBlocks = (T[])Array.newInstance(block.getClass(), numBlks);
 		ret._offset = offset;
-		
 		System.arraycopy(_partBlocks, offset, ret._partBlocks, 0, numBlks);
 		
 		return ret;
@@ -213,15 +218,15 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	/**
 	 * 
 	 * @return
-	 */
-	public long estimateSizeInMemory()
+	 */	
+	public long getInMemorySize()
 	{
 		long ret = 24; //header
 		ret += 32;    //block array
 		
 		if( _partBlocks != null )
 			for( T block : _partBlocks )
-				ret += block.estimateSizeInMemory();
+				ret += block.getInMemorySize();
 		
 		return ret;
 	}
@@ -230,22 +235,72 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	 * 
 	 * @return
 	 */
-	public long estimateSizeOnDisk()
+	
+	public long getExactSerializedSize()
 	{
 		long ret = 24; //header
 		
 		if( _partBlocks != null )
 			for( T block :  _partBlocks )
-				ret += block.estimateSizeOnDisk();
+				ret += block.getExactSerializedSize();
 		
 		return ret;
 	}
-	
+
+	/**
+	 * Utility for slice operations over partitioned matrices, where the index range can cover
+	 * multiple blocks. The result is always a single result matrix block. All semantics are 
+	 * equivalent to the core matrix block slice operations. 
+	 * 
+	 * @param rl
+	 * @param ru
+	 * @param cl
+	 * @param cu
+	 * @param matrixBlock
+	 * @return
+	 * @throws DMLRuntimeException 
+	 */
 	@SuppressWarnings("unchecked")
 	public T sliceOperations(long rl, long ru, long cl, long cu, T block) 
-			throws DMLRuntimeException
+		throws DMLRuntimeException 
 	{
-		return (T) block.sliceOperations(rl, ru, cl, cu, block, _brlen, _bclen, (PartitionedBlock<CacheBlock>) this);
+		int lrl = (int) rl;
+		int lru = (int) ru;
+		int lcl = (int) cl;
+		int lcu = (int) cu;
+		
+		ArrayList<Pair<?, ?>> allBlks = block.getPairList();
+		int start_iix = (lrl-1)/_brlen+1;
+		int end_iix = (lru-1)/_brlen+1;
+		int start_jix = (lcl-1)/_bclen+1;
+		int end_jix = (lcu-1)/_bclen+1;
+				
+		for( int iix = start_iix; iix <= end_iix; iix++ )
+			for(int jix = start_jix; jix <= end_jix; jix++)		
+			{
+				T in = getBlock(iix, jix);
+				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
+				ArrayList<Pair<?, ?>> outlist = block.performSlice(ixrange, _brlen, _bclen, iix, jix, in);
+				allBlks.addAll(outlist);
+			}
+		
+		if(allBlks.size() == 1) {
+			return (T) allBlks.get(0).getValue();
+		}
+		else {
+			//allocate output matrix
+			Constructor<?> constr;
+			try {
+				constr = block.getClass().getConstructor(int.class, int.class, boolean.class);
+				T ret = (T) constr.newInstance(lru-lrl+1, lcu-lcl+1, false);
+				for(Pair<?, ?> kv : allBlks) {
+					ret.merge((T)kv.getValue(), false);
+				}
+				return ret;
+			} catch (Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
 	}
 
 	/**
@@ -328,11 +383,17 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		
 		int len = dis.readInt();
 		
-		_partBlocks = (T[]) _partBlocks[0].getNewInstances(len);
-		for( int i=0; i<len; i++ ) {
-			_partBlocks[i] = (T) _partBlocks[0].getNewInstance();
-			_partBlocks[i].readFields(dis);
+		try
+		{
+			_partBlocks = (T[])Array.newInstance(getClass(), len);
+			for( int i=0; i<len; i++ ) {
+				_partBlocks[i].readFields(dis);
+			}
 		}
+		catch(Exception ex) {
+			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
+		}
+		
 	}
 	
 }

@@ -70,7 +70,7 @@ public class FrameWriterFactory
 			else
 				writer = new FrameWriterTextCSV((CSVFileFormatProperties)props);	
 		}
-		else if( oinfo == OutputInfo.BinaryBlockOutputInfo || oinfo == OutputInfo.BinaryBlockFrameOutputInfo ) {
+		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )
 				writer = new FrameWriterBinaryBlockParallel();
 			else

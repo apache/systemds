@@ -63,8 +63,6 @@ import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBlock;
-import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
@@ -86,8 +84,6 @@ import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
-
-import scala.Tuple2;
 
 
 
@@ -6225,65 +6221,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		public SparsityEstimate(){}
 	}
 
-	@Override
-	public MatrixBlock getNewInstance() {
-		return new MatrixBlock();
-	}
-
-	@Override
-	public MatrixBlock[] getNewInstances(int n) {
-		return new MatrixBlock[n];
-	}
-	/**
-	 * Utility for slice operations over partitioned matrices, where the index range can cover
-	 * multiple blocks. The result is always a single result matrix block. All semantics are 
-	 * equivalent to the core matrix block slice operations. 
-	 * 
-	 * @param rl
-	 * @param ru
-	 * @param cl
-	 * @param cu
-	 * @param matrixBlock
-	 * @return
-	 * @throws DMLRuntimeException 
-	 */
-	public MatrixBlock sliceOperations(long rl, long ru, long cl, long cu, CacheBlock cacheBlock, int _brlen, int _bclen, PartitionedBlock<CacheBlock> pBlock) 
-		throws DMLRuntimeException 
+	public ArrayList<Pair<MatrixIndexes, MatrixBlock>> getPairList()
 	{
-		int lrl = (int) rl;
-		int lru = (int) ru;
-		int lcl = (int) cl;
-		int lcu = (int) cu;
-		
-		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> allBlks = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-		int start_iix = (lrl-1)/_brlen+1;
-		int end_iix = (lru-1)/_brlen+1;
-		int start_jix = (lcl-1)/_bclen+1;
-		int end_jix = (lcu-1)/_bclen+1;
-				
-		for( int iix = start_iix; iix <= end_iix; iix++ )
-			for(int jix = start_jix; jix <= end_jix; jix++)		
-			{
-				MatrixBlock in = (MatrixBlock)pBlock.getBlock(iix, jix);
-				IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), in);
-				
-				ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
-				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
-				OperationsOnMatrixValues.performSlice(imv, ixrange, _brlen, _bclen, outlist);
-				allBlks.addAll(SparkUtils.fromIndexedMatrixBlock(outlist));
-			}
-		
-		if(allBlks.size() == 1) {
-			return allBlks.get(0)._2;
-		}
-		else {
-			//allocate output matrix
-			MatrixBlock ret = new MatrixBlock(lru-lrl+1, lcu-lcl+1, false);
-			for(Tuple2<MatrixIndexes, MatrixBlock> kv : allBlks) {
-				ret.merge(kv._2, false);
-			}
-			return ret;
-		}
+		return new ArrayList<Pair<MatrixIndexes,MatrixBlock>>();
 	}
 	
+	@SuppressWarnings("unchecked")
+	public ArrayList<Pair<?, ?>> performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) throws DMLRuntimeException
+	{
+		return OperationsOnMatrixValues.performSlice(ixrange, brlen, bclen, iix, jix, (MatrixBlock)in);
+	}
 }

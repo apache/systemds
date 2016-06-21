@@ -549,9 +549,9 @@ public class ParameterizedBuiltinSPInstruction  extends ComputationSPInstruction
 			//IndexedMatrixValue offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2()._2());
 			IndexedMatrixValue offsets = null;
 			if(_rmRows)
-				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), (MatrixBlock)_off.getBlock((int)arg0._1().getRowIndex(), 1));
+				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock((int)arg0._1().getRowIndex(), 1));
 			else
-				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), (MatrixBlock)_off.getBlock(1, (int)arg0._1().getColumnIndex()));
+				offsets = SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock(1, (int)arg0._1().getColumnIndex()));
 			
 			//execute remove empty operations
 			ArrayList<IndexedMatrixValue> out = new ArrayList<IndexedMatrixValue>();

@@ -48,7 +48,6 @@ import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
-import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -1024,7 +1023,7 @@ public class SparkExecutionContext extends ExecutionContext
 		JavaPairRDD<?, FrameBlock> lrdd = (JavaPairRDD<Long, FrameBlock>) rdd.getRDD();
 		
 		//convert keys to writables if necessary
-		if( oinfo == OutputInfo.BinaryBlockFrameOutputInfo ) {
+		if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
 			lrdd = ((JavaPairRDD<Long, FrameBlock>)lrdd).mapToPair(
 					new LongFrameToLongWritableFrameFunction());
 			oinfo = OutputInfo.BinaryBlockFrameOutputInfo;
@@ -1068,7 +1067,7 @@ public class SparkExecutionContext extends ExecutionContext
 		throws DMLRuntimeException 
 	{
 		RDDObject parent = getCacheableData(varParent).getRDDHandle();
-		BroadcastObject<CacheBlock> child = getCacheableData(varChild).getBroadcastHandle();
+		BroadcastObject<?> child = getCacheableData(varChild).getBroadcastHandle();
 		
 		parent.addLineageChild( child );
 	}

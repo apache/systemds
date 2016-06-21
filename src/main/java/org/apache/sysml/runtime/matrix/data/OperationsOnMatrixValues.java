@@ -28,6 +28,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -295,6 +296,17 @@ public class OperationsOnMatrixValues
 		value1.aggregateBinaryOperations(value1, value2, valueOut, op);
 	}
 	
+	@SuppressWarnings("rawtypes")
+	public static ArrayList performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, MatrixBlock in) 
+			throws DMLRuntimeException
+	{
+		IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), (MatrixBlock)in);
+		ArrayList<IndexedMatrixValue> outlist = new ArrayList<IndexedMatrixValue>();
+		performSlice(imv, ixrange, brlen, bclen, outlist);
+	
+		return SparkUtils.fromIndexedMatrixBlockToPair(outlist);
+	}
+
 	/**
 	 * 
 	 * @param val
@@ -467,6 +479,17 @@ public class OperationsOnMatrixValues
 		}
 	}
 	
+	@SuppressWarnings("rawtypes")
+	public static ArrayList performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, FrameBlock in) 
+			throws DMLRuntimeException
+	{
+		Pair<Long, FrameBlock> lfp = new Pair<Long, FrameBlock>(new Long(((iix-1)*brlen)+1), in);
+		ArrayList<Pair<Long, FrameBlock>> outlist = new ArrayList<Pair<Long, FrameBlock>>();
+		performSlice(lfp, ixrange, brlen, bclen, outlist);
+	
+		return outlist;
+	}
+
 	
 	/**
 	 * This function will get slice of the input frame block overlapping in overall slice(Range), slice has requested for.

@@ -89,8 +89,6 @@ public class OutputInfo implements Serializable
 			return InputInfo.WeightedPairInputInfo;
 		else if ( oi == OutputInfo.CSVOutputInfo)
 			return InputInfo.CSVInputInfo;
-		if ( oi == OutputInfo.BinaryBlockFrameOutputInfo )
-			return InputInfo.BinaryBlockFrameInputInfo;
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + oi);
 	}
@@ -108,8 +106,6 @@ public class OutputInfo implements Serializable
 		else if (str.equalsIgnoreCase("binaryblock")) {
 			return BinaryBlockOutputInfo;
 		}
-		else if (str.equalsIgnoreCase("framebinaryblock"))
-			return BinaryBlockFrameOutputInfo;
 		else if ( str.equalsIgnoreCase("sort_input") )
 			return OutputInfoForSortInput;
 		else if ( str.equalsIgnoreCase("sort_output"))
@@ -132,8 +128,6 @@ public class OutputInfo implements Serializable
 			return "binarycell";
 		else if ( oi == BinaryBlockOutputInfo )
 			return "binaryblock";
-		else if ( oi == BinaryBlockFrameOutputInfo )
-			return "framebinaryblock";
 		else if ( oi == OutputInfoForSortInput )
 			return "sort_input";
 		else if ( oi == OutputInfoForSortOutput )

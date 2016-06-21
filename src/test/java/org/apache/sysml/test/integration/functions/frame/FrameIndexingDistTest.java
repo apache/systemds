@@ -52,15 +52,8 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	
 	private final static double epsilon=0.0000000001;
 
-	// Test data with very small rows and columns
-//	private final static int rows = 5, cols=8;
-
 	// Test data with 2 blocks of rows and columns
 	private final static int rows = 1279, cols=1060;
-
-	// Test data with 2+ blocks of rows and columns
-//	private final static int rows = 3279, cols=1060;
-
 	
 	private final static int min=0;
 	private final static int max=100;
@@ -69,7 +62,6 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	private final static List<ValueType> schemaMixedLargeListDble  = Collections.nCopies(cols/4, ValueType.DOUBLE);
 	private final static List<ValueType> schemaMixedLargeListInt  = Collections.nCopies(cols/4, ValueType.INT);
 	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(cols/4, ValueType.BOOLEAN);
-//	private static List<ValueType> schemaMixedLargeList = null;
 	private static ValueType[] schemaMixedLarge = null;
 	static {
 		final List<ValueType> schemaMixedLargeList = new ArrayList<ValueType>(schemaMixedLargeListStr);
@@ -123,9 +115,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	        config.addVariable("rows", rows);
 	        config.addVariable("cols", cols);
 	      
-//	        long rowstart=2, rowend=4, colstart=2, colend=4;
 	        long rowstart=816, rowend=1229, colstart=109 /*967*/, colend=1009;
-//	        long rowstart=816, rowend=2829, colstart=109 /*967*/, colend=1009;
 
 	        config.addVariable("rowstart", rowstart);
 	        config.addVariable("rowend", rowend);
@@ -155,21 +145,21 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	
 			double sparsity=1.0;//rand.nextDouble(); 
 	        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
-	        writeInputFrameWithMTD("A", A, true, lschema, OutputInfo.BinaryBlockFrameOutputInfo);	        
+	        writeInputFrameWithMTD("A", A, true, lschema, OutputInfo.BinaryBlockOutputInfo);	        
 	        
 	        sparsity=0.1;//rand.nextDouble();
 	        double[][] B = getRandomMatrix((int)(rowend-rowstart+1), (int)(colend-colstart+1), min, max, sparsity, 2345 /*System.currentTimeMillis()*/);
 	        List<ValueType> lschemaB = lschema.subList((int)colstart-1, (int)colend); 
-	        writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockFrameOutputInfo);	        
+	        writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
 
 	        sparsity=0.5;//rand.nextDouble();
 	        double[][] C = getRandomMatrix((int)(rowend), (int)(cols-colstart+1), min, max, sparsity, 3267 /*System.currentTimeMillis()*/);
 	        List<ValueType> lschemaC = lschema.subList((int)colstart-1, (int)cols); 
-	        writeInputFrameWithMTD("C", C, true, lschemaC, OutputInfo.BinaryBlockFrameOutputInfo);	        
+	        writeInputFrameWithMTD("C", C, true, lschemaC, OutputInfo.BinaryBlockOutputInfo);	        
 
 	        sparsity=0.01;//rand.nextDoublBe();
 	        double[][] D = getRandomMatrix(rows, (int)(colend-colstart+1), min, max, sparsity, 4856 /*System.currentTimeMillis()*/);
-	        writeInputFrameWithMTD("D", D, true, lschemaB, OutputInfo.BinaryBlockFrameOutputInfo);	        
+	        writeInputFrameWithMTD("D", D, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
 	
 	        boolean exceptionExpected = false;
 			int expectedNumberOfJobs = -1;
@@ -190,9 +180,9 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	
 		for(String file: config.getOutputFiles())
 		{
-			FrameBlock frameBlock = readDMLFrameFromHDFS(file, InputInfo.BinaryBlockFrameInputInfo);
+			FrameBlock frameBlock = readDMLFrameFromHDFS(file, InputInfo.BinaryBlockInputInfo);
 			MatrixCharacteristics md = new MatrixCharacteristics(frameBlock.getNumRows(), frameBlock.getNumColumns(), -1, -1);
-			FrameBlock frameRBlock = readRFrameFromHDFS(file+"Csv", InputInfo.CSVInputInfo, md);
+			FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", InputInfo.CSVInputInfo, md);
 			verifyFrameData(frameBlock, frameRBlock, schema);
 			System.out.println("File processed is " + file);
 		}

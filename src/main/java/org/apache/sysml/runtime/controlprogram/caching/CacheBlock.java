@@ -19,9 +19,12 @@
 
 package org.apache.sysml.runtime.controlprogram.caching;
 
+import java.util.ArrayList;
+
 import org.apache.hadoop.io.Writable;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBlock;
+import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.util.IndexRange;
 
 
 /**
@@ -60,21 +63,15 @@ public interface CacheBlock extends Writable
 	public int getNumRows();
 	public int getNumColumns();
 	
-	public CacheBlock getNewInstance();
-
-	public CacheBlock[] getNewInstances(int n);
-	
 	public CacheBlock sliceOperations(int rl, int ru, int cl, int cu, CacheBlock block) 
 			throws DMLRuntimeException;
 	
-	public CacheBlock sliceOperations(long rl, long ru, long cl, long cu, CacheBlock block, int _brlen, int _bclen, PartitionedBlock<CacheBlock> pBlock) 
-			throws DMLRuntimeException;
-			
-	public long estimateSizeInMemory();
-	
-	public long estimateSizeOnDisk();
-	
 	public void merge(CacheBlock that, boolean appendOnly) 
 			throws DMLRuntimeException;
+	
+	@SuppressWarnings("rawtypes")
+	public 	ArrayList getPairList();
 
+	ArrayList<Pair<?, ?>> performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) 
+			throws DMLRuntimeException;
 }

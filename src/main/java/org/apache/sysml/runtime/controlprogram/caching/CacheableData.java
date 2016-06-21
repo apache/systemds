@@ -178,7 +178,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	//note: we use the abstraction of LineageObjects for two reasons: (1) to keep track of cleanup
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
 	private RDDObject _rddHandle = null; //RDD handle
-	private BroadcastObject<CacheBlock> _bcHandle = null; //Broadcast handle
+	private BroadcastObject<T> _bcHandle = null; //Broadcast handle
 	public GPUObject _gpuHandle = null;
 	
 	/**
@@ -362,7 +362,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			rdd.setBackReference(this);
 	}
 	
-	public BroadcastObject<CacheBlock> getBroadcastHandle() {
+	public BroadcastObject<T> getBroadcastHandle() {
 		return _bcHandle;
 	}
 	

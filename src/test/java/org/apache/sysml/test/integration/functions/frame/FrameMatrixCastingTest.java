@@ -203,7 +203,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		//write input data
 		if( dt == DataType.FRAME ) {
 			FrameBlock fb = DataConverter.convertToFrameBlock(DataConverter.convertToMatrixBlock(A), vt);
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(OutputInfo.BinaryBlockFrameOutputInfo);
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(OutputInfo.BinaryBlockOutputInfo);
 			writer.writeFrameToHDFS(fb, fname, rows, cols);
 		}
 		else {
@@ -235,7 +235,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		
 		//read input data
 		if( dt == DataType.FRAME ) {
-			FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.BinaryBlockFrameInputInfo);
+			FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.BinaryBlockInputInfo);
 			FrameBlock fb = reader.readFrameFromHDFS(fname, rows, cols);
 			ret = DataConverter.convertToMatrixBlock(fb);
 		}

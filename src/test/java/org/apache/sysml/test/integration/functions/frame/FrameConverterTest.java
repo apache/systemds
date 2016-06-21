@@ -206,26 +206,26 @@ public class FrameConverterTest extends AutomatedTestBase
 			switch( type ) {
 				case CSV2BIN: 
 					oinfo = OutputInfo.CSVOutputInfo;
-					iinfo = InputInfo.BinaryBlockFrameInputInfo;
+					iinfo = InputInfo.BinaryBlockInputInfo;
 					break;
 				case BIN2CSV:
-					oinfo = OutputInfo.BinaryBlockFrameOutputInfo;
+					oinfo = OutputInfo.BinaryBlockOutputInfo;
 					iinfo = InputInfo.CSVInputInfo;
 					break;
 				case TXTCELL2BIN:
 					oinfo = OutputInfo.TextCellOutputInfo;
-					iinfo = InputInfo.BinaryBlockFrameInputInfo;
+					iinfo = InputInfo.BinaryBlockInputInfo;
 					break;
 				case BIN2TXTCELL:
-					oinfo = OutputInfo.BinaryBlockFrameOutputInfo;
+					oinfo = OutputInfo.BinaryBlockOutputInfo;
 					iinfo = InputInfo.TextCellInputInfo;
 					break;
 				case MAT2BIN: 
 					oinfo = OutputInfo.BinaryBlockOutputInfo;
-					iinfo = InputInfo.BinaryBlockFrameInputInfo;
+					iinfo = InputInfo.BinaryBlockInputInfo;
 					break;
 				case BIN2MAT:
-					oinfo = OutputInfo.BinaryBlockFrameOutputInfo;
+					oinfo = OutputInfo.BinaryBlockOutputInfo;
 					iinfo = InputInfo.BinaryBlockInputInfo;
 					break;
 				default: 
@@ -460,7 +460,7 @@ public class FrameConverterTest extends AutomatedTestBase
 			}
 			case TXTCELL2BIN: {
 				InputInfo iinfo = InputInfo.TextCellInputInfo;
-				OutputInfo oinfo = OutputInfo.BinaryBlockFrameOutputInfo;
+				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
 				JavaPairRDD<LongWritable,Text> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.textCellToBinaryBlock(sc, rddIn, mc, schema)

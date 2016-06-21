@@ -92,6 +92,29 @@ public class SparkUtils
 		return ret;
 	}
 	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static Pair<MatrixIndexes,MatrixBlock> fromIndexedMatrixBlockToPair( IndexedMatrixValue in ){
+		return new Pair<MatrixIndexes,MatrixBlock>(in.getIndexes(), (MatrixBlock)in.getValue());
+	}
+	
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static ArrayList<Pair<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlockToPair( ArrayList<IndexedMatrixValue> in )
+	{
+		ArrayList<Pair<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Pair<MatrixIndexes,MatrixBlock>>();
+		for( IndexedMatrixValue imv : in )
+			ret.add(fromIndexedMatrixBlockToPair(imv));
+		
+		return ret;
+	}
+	
 	
 	/**
 	 * 

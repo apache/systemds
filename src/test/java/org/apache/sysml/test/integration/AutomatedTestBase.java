@@ -1704,7 +1704,7 @@ public abstract class AutomatedTestBase
 			throws DMLRuntimeException, IOException 
 	{
 		String completePath = baseDirectory + INPUT_DIR + name;
-		String completeRPath = baseDirectory + INPUT_DIR + name + "Csv";
+		String completeRPath = baseDirectory + INPUT_DIR + name + ".csv";
 		
 		try {
 			cleanupExistingData(baseDirectory + INPUT_DIR + name, bIncludeR);

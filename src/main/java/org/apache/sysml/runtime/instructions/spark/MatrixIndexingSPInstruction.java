@@ -326,7 +326,7 @@ public class MatrixIndexingSPInstruction  extends IndexingSPInstruction
 				long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
 				
 				// Provide global zero-based index to sliceOperations
-				MatrixBlock slicedRHSMatBlock = (MatrixBlock) _binput.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
+				MatrixBlock slicedRHSMatBlock = _binput.sliceOperations(rhs_rl, rhs_ru, rhs_cl, rhs_cu, new MatrixBlock());
 				
 				// Provide local zero-based index to leftIndexingOperations
 				int lhs_lrl = UtilFunctions.computeCellInBlock(lhs_rl, _brlen);

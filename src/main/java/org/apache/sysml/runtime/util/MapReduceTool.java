@@ -528,7 +528,7 @@ public class MapReduceTool
 			}
 			if (outinfo == OutputInfo.TextCellOutputInfo) {
 				mtd.put(DataExpression.FORMAT_TYPE, "text");
-			} else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo || outinfo == OutputInfo.BinaryBlockFrameOutputInfo ) {
+			} else if (outinfo == OutputInfo.BinaryBlockOutputInfo || outinfo == OutputInfo.BinaryCellOutputInfo ) {
 				mtd.put(DataExpression.FORMAT_TYPE, "binary");
 			} else if (outinfo == OutputInfo.CSVOutputInfo) {
 				mtd.put(DataExpression.FORMAT_TYPE, "csv");

@@ -164,8 +164,6 @@ public class FrameObject extends CacheableData<FrameBlock>
 		FrameBlock data = null;
 		try {
 			FrameReader reader = FrameReaderFactory.createFrameReader(iimd.getInputInfo(), getFileFormatProperties());
-			if( _schema == null )
-				setSchema("*");
 			data = reader.readFrameFromHDFS(fname, lschema, mc.getRows(), mc.getCols()); 
 		}
 		catch( DMLRuntimeException ex ) {

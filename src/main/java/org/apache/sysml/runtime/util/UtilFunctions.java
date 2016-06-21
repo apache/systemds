@@ -390,18 +390,22 @@ public class UtilFunctions
 	/**
 	 * 
 	 * @param in
+	 * @param ignoreNull	
+	 * 		If this flag has set, it will ignore null. This flag is mainly used in merge functionality to override data with "null" data.
 	 * @return
 	 */
-	public static String objectToString( Object in, boolean bDoNotUpdateZeroData ) {
+	public static String objectToString( Object in, boolean ignoreNull ) {
 		String strReturn = objectToString(in); 
 		if( strReturn == null )
 			return strReturn;
-		else if (bDoNotUpdateZeroData){
+		else if (ignoreNull){
 			if(in instanceof Double && ((Double)in).doubleValue() == 0.0)
 				return null;
 			else if(in instanceof Long && ((Long)in).longValue() == 0)
 				return null;
 			else if(in instanceof Boolean && ((Boolean)in).booleanValue() == false)
+				return null;
+			else if(in instanceof String && ((String)in).trim().length() == 0)
 				return null;
 			else
 				return strReturn;
@@ -427,8 +431,8 @@ public class UtilFunctions
 	 * @param in
 	 * @return
 	 */
-	public static Object objectToObject(ValueType vt, Object in, boolean bDoNotUpdateZeroData ) {
-		String str = objectToString(in, bDoNotUpdateZeroData);
+	public static Object objectToObject(ValueType vt, Object in, boolean ignoreNull ) {
+		String str = objectToString(in, ignoreNull);
 		if (str==null || vt == ValueType.STRING)
 			return str;
 		else

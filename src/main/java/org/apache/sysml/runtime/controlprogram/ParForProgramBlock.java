@@ -1422,7 +1422,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			ExecutionContext cpEc = ProgramConverter.createDeepCopyExecutionContext(ec);
 			
 			//prepare basic update-in-place variables (vars dropped on result merge)
-			prepareUpdateInPlaceVariables(cpEc);
+			prepareUpdateInPlaceVariables(cpEc, pwID);
 			
 			//copy compiler configuration (for jmlc w/o global config)
 			CompilerConfig cconf = ConfigurationManager.getCompilerConfig();

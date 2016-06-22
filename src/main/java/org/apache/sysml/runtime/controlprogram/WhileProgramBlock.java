@@ -158,7 +158,7 @@ public class WhileProgramBlock extends ProgramBlock
 		try 
 		{
 			// prepare update in-place variables
-			UpdateType[] flags = prepareUpdateInPlaceVariables(ec);
+			UpdateType[] flags = prepareUpdateInPlaceVariables(ec, _tid);
 			
 			//run loop body until predicate becomes false
 			while( executePredicate(ec).getBooleanValue() )

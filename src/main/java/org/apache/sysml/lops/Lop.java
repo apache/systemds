@@ -90,6 +90,7 @@ public abstract class Lop
 	public static final String MATRIX_VAR_NAME_PREFIX = "_mVar";
 	public static final String FRAME_VAR_NAME_PREFIX = "_fVar";
 	public static final String SCALAR_VAR_NAME_PREFIX = "_Var";
+	public static final String UPDATE_INPLACE_PREFIX = "_uip";
 	
 	// Boolean array to hold the list of nodes(lops) in the DAG that are reachable from this lop.
 	private boolean[] reachable = null;

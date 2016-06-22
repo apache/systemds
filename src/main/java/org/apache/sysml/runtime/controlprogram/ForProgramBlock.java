@@ -135,7 +135,7 @@ public class ForProgramBlock extends ProgramBlock
 		try 
 		{
 			// prepare update in-place variables
-			UpdateType[] flags = prepareUpdateInPlaceVariables(ec);
+			UpdateType[] flags = prepareUpdateInPlaceVariables(ec, _tid);
 			
 			// run for loop body for each instance of predicate sequence 
 			SequenceIterator seqIter = new SequenceIterator(iterVarName, from, to, incr);

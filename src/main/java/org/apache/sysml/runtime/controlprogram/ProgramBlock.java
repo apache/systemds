@@ -29,6 +29,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -346,7 +347,7 @@ public class ProgramBlock
 	 * @return
 	 * @throws DMLRuntimeException
 	 */
-	protected UpdateType[] prepareUpdateInPlaceVariables(ExecutionContext ec) 
+	protected UpdateType[] prepareUpdateInPlaceVariables(ExecutionContext ec, long tid) 
 		throws DMLRuntimeException
 	{
 		if( _sb == null || _sb.getUpdateInPlaceVars().isEmpty() )
@@ -366,6 +367,7 @@ public class ProgramBlock
 					MatrixBlock mbVar = mo.acquireRead();  
 					moNew.acquireModify( !mbVar.isInSparseFormat() ? new MatrixBlock(mbVar) : 
 						new MatrixBlock(mbVar, MatrixBlock.DEFAULT_INPLACE_SPARSEBLOCK, true) );
+					moNew.setFileName(mo.getFileName()+Lop.UPDATE_INPLACE_PREFIX+tid);
 					mo.release();
 					moNew.release();			
 					moNew.setUpdateType(UpdateType.INPLACE);
